@@ -31,17 +31,17 @@
 #    toKafka: path to Kafka and KafkaNodePool resources, collected in one file, in the version of Strimzi, to which we are doing the downgrade
 # --- Structure ---
 - fromVersion: HEAD
-  toVersion: 0.50.0
+  toVersion: 0.50.1
   fromExamples: HEAD
-  toExamples: strimzi-0.50.0
+  toExamples: strimzi-0.50.1
   fromUrl: HEAD
-  toUrl: https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.50.0/strimzi-0.50.0.zip
+  toUrl: https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.50.1/strimzi-0.50.1.zip
   fromKafkaVersionsUrl: HEAD
   additionalTopics: 2
   imagesAfterOperations:
-    kafka: strimzi/kafka:0.50.0-kafka-4.1.1
-    topicOperator: strimzi/operator:0.50.0
-    userOperator: strimzi/operator:0.50.0
+    kafka: strimzi/kafka:0.50.1-kafka-4.1.1
+    topicOperator: strimzi/operator:0.50.1
+    userOperator: strimzi/operator:0.50.1
   deployKafkaVersion: 4.1.1
   client:
     continuousClientsMessages: 400
@@ -56,17 +56,17 @@
     fromKafka: "/examples/kafka/kafka-persistent.yaml"
     toKafka: "/examples/kafka/kafka-persistent.yaml"
 - fromVersion: HEAD
-  toVersion: 0.50.0
+  toVersion: 0.50.1
   fromExamples: HEAD
-  toExamples: strimzi-0.50.0
+  toExamples: strimzi-0.50.1
   fromUrl: HEAD
-  toUrl: https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.50.0/strimzi-0.50.0.zip
+  toUrl: https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.50.1/strimzi-0.50.1.zip
   fromKafkaVersionsUrl: HEAD
   additionalTopics: 2
   imagesAfterOperations:
-    kafka: strimzi/kafka:0.50.0-kafka-4.1.1
-    topicOperator: strimzi/operator:0.50.0
-    userOperator: strimzi/operator:0.50.0
+    kafka: strimzi/kafka:0.50.1-kafka-4.1.1
+    topicOperator: strimzi/operator:0.50.1
+    userOperator: strimzi/operator:0.50.1
   deployKafkaVersion: 4.1.1
   client:
     continuousClientsMessages: 400
@@ -81,17 +81,17 @@
     fromKafka: "/examples/kafka/kafka-persistent.yaml"
     toKafka: "/examples/kafka/kafka-persistent.yaml"
 - fromVersion: HEAD
-  toVersion: 0.50.0
+  toVersion: 0.50.1
   fromExamples: HEAD
-  toExamples: strimzi-0.50.0
+  toExamples: strimzi-0.50.1
   fromUrl: HEAD
-  toUrl: https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.50.0/strimzi-0.50.0.zip
+  toUrl: https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.50.1/strimzi-0.50.1.zip
   fromKafkaVersionsUrl: HEAD
   additionalTopics: 2
   imagesAfterOperations:
-    kafka: strimzi/kafka:0.50.0-kafka-4.1.1
-    topicOperator: strimzi/operator:0.50.0
-    userOperator: strimzi/operator:0.50.0
+    kafka: strimzi/kafka:0.50.1-kafka-4.1.1
+    topicOperator: strimzi/operator:0.50.1
+    userOperator: strimzi/operator:0.50.1
   deployKafkaVersion: 4.1.1
   client:
     continuousClientsMessages: 400
