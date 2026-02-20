@@ -100,12 +100,18 @@ include::../../modules/operators/proc-configuring-proxy-config-cluster-operator.
 //disabling FIPS mode
 include::../../modules/operators/proc-disabling-fips-mode-cluster-operator.adoc[leveloffset=+2]
 
-//`KafkaConnect` resource config
+// `KafkaConnect` resource core configuration (includes minimal configuration)
 include::../../modules/configuring/con-config-kafka-connect.adoc[leveloffset=+1]
-//running multiple Kafka Connect instances
-include::../../modules/configuring/con-config-kafka-connect-multiple-instances.adoc[leveloffset=+2]
-//if authorization is enabled, configure the Kafka Connect user for read/write access rights
+// Securing Kafka Connect connections (TLS and authentication)
+include::../../modules/configuring/con-config-kafka-connect-securing-connections.adoc[leveloffset=+2]
+// Granting Kafka Connect access to Kafka resources
 include::../../modules/configuring/proc-config-kafka-connect-user-authorization.adoc[leveloffset=+2]
+// Adding connector plugins (building a custom image)
+include::../../modules/configuring/con-config-kafka-connect-build.adoc[leveloffset=+2]
+// Tuning Kafka Connect worker settings
+include::../../modules/configuring/con-config-kafka-connect-worker-settings.adoc[leveloffset=+2]
+// Running multiple Kafka Connect instances against the same Kafka cluster
+include::../../modules/configuring/con-config-kafka-connect-multiple-instances.adoc[leveloffset=+2]
 
 //`KafkaConnector` resource config
 include::../../modules/configuring/con-config-kafka-connector.adoc[leveloffset=+1]

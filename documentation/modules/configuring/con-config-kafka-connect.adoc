@@ -8,186 +8,78 @@
 = Configuring Kafka Connect
 
 [role="_abstract"]
-Update the `spec` properties of the `KafkaConnect` custom resource to configure your Kafka Connect deployment.
+Configure your Kafka Connect deployment by updating the `spec` properties of the `KafkaConnect` custom resource.
 
-Use Kafka Connect to set up external data connections to your Kafka cluster.
-Use the properties of the `KafkaConnect` resource to configure your Kafka Connect deployment.
+Start with a minimal configuration that defines the core requirements.
+Extend it with optional settings to support the following:
 
-You can also use the `KafkaConnect` resource to specify the following:
+* Securing connections (TLS and authentication)
+* Configuring Kafka Connect user authorization
+* Adding connector plugins by building a custom image
+* Tuning Kafka Connect worker settings
+* Enabling `KafkaConnector` resources to manage connectors
+* Running multiple Kafka Connect instances against the same Kafka cluster
+* xref:con-common-config-{context}[Common configuration], including resource limits and requests (recommended), JVM options, and metrics
+* xref:assembly-logging-configuration-{context}[Logging configuration]
 
-* Connector plugin configuration to build a container image that includes the plugins to make connections
-* Configuration for the Kafka Connect worker pods that run connectors
-* An annotation to enable use of the `KafkaConnector` resource to manage connectors
+Certain settings, though optional, are recommended for production deployments, such as security and resource allocation.
 
-The Cluster Operator manages Kafka Connect clusters deployed using the `KafkaConnect` resource and connectors created using the `KafkaConnector` resource.
+For details of all configuration options, see the link:{BookURLConfiguring}[Strimzi Custom Resource API Reference^].
 
-For a deeper understanding of the Kafka Connect cluster configuration options, refer to the link:{BookURLConfiguring}[Strimzi Custom Resource API Reference^].
+== Minimal configuration for Kafka Connect
 
-.Handling high volumes of messages
-You can tune the configuration to handle high volumes of messages.
-For more information, see xref:con-high-volume-config-properties-{context}[Handling high volumes of messages].
+A minimal `KafkaConnect` resource requires the following in its spec:
 
-.Example `KafkaConnect` custom resource configuration
-[source,yaml,subs=attributes+,options="nowrap"]
+* `.spec.bootstrapServers`: The bootstrap address for the Kafka cluster.
+* `.spec.replicas`: The number of Kafka Connect worker pods to deploy.
+
+Depending on the CRD API version you use, you might also need to specify the Kafka Connect cluster group ID and internal topic names.
+For example, in the `v1` CRD API, the following properties are required:
+
+* `.spec.groupId`
+* `.spec.configStorageTopic`
+* `.spec.offsetStorageTopic`
+* `.spec.statusStorageTopic`
+
+If you want to manage connectors using `KafkaConnector` resources, add the `strimzi.io/use-connector-resources: "true"` annotation to the `KafkaConnect` resource.
+
+.Minimal configuration for KafkaConnect
+[source,yaml,subs="+quotes,attributes"]
 ----
 # Basic configuration (required)
 apiVersion: {KafkaConnectApiVersion}
-kind: KafkaConnect # <1>
+kind: KafkaConnect
 metadata:
   name: my-connect-cluster
   annotations:
-    strimzi.io/use-connector-resources: "true" # <2>
-# Deployment specifications
+    # Enables KafkaConnector resources
+    strimzi.io/use-connector-resources: "true"
 spec:
   # Replicas (required)
-  replicas: 3 # <3>
+  replicas: 3
   # Bootstrap servers (required)
-  bootstrapServers: my-cluster-kafka-bootstrap:9092 # <4>
-  # Connect cluster group ID (required in v1 CRD API)
-  groupId: my-connect-cluster # <5>
-  # Connect cluster storage topics (required in v1 CRD API)
-  configStorageTopic: my-connect-cluster-configs # <6>
-  offsetStorageTopic: my-connect-cluster-offsets # <7>
-  statusStorageTopic: my-connect-cluster-status # <8>
-  # Kafka Connect configuration (recommended)
-  config: # <9>
+  bootstrapServers: my-cluster-kafka-bootstrap:9092
+  # The following properties are required in the `v1` CRD API.
+  groupId: my-connect-cluster
+  configStorageTopic: my-connect-cluster-configs
+  offsetStorageTopic: my-connect-cluster-offsets
+  statusStorageTopic: my-connect-cluster-status
+  # Kafka Connect worker configuration (optional)
+  config:
     key.converter: org.apache.kafka.connect.json.JsonConverter
     value.converter: org.apache.kafka.connect.json.JsonConverter
     key.converter.schemas.enable: true
     value.converter.schemas.enable: true
-    config.storage.replication.factor: 3
-    offset.storage.replication.factor: 3
-    status.storage.replication.factor: 3
-  # Resources requests and limits (recommended)
-  resources: # <10>
-    requests:
-      cpu: "1"
-      memory: 2Gi
-    limits:
-      cpu: "2"
-      memory: 2Gi
-  # Authentication (optional)
-  authentication: # <11>
-    type: tls
-    certificateAndKey:
-      certificate: source.crt
-      key: source.key
-      secretName: my-user-source
-  # TLS configuration (optional)
-  tls: # <12>
-    trustedCertificates:
-      - secretName: my-cluster-cluster-cert
-        pattern: "*.crt"
-      - secretName: my-cluster-cluster-cert
-        pattern: "*.crt"
-  # Build configuration (optional)
-  build: # <13>
-    output: # <14>
-      type: docker
-      image: my-registry.io/my-org/my-connect-cluster:latest
-      pushSecret: my-registry-credentials
-    plugins: # <15>
-      - name: connector-1
-        artifacts:
-          - type: tgz
-            url: <url_to_download_connector_1_artifact>
-            sha512sum: <SHA-512_checksum_of_connector_1_artifact>
-      - name: connector-2
-        artifacts:
-          - type: jar
-            url: <url_to_download_connector_2_artifact>
-            sha512sum: <SHA-512_checksum_of_connector_2_artifact>
-  # Logging configuration (optional)
-  logging: # <16>
-    type: inline
-    loggers:
-      # Kafka 4.0+ uses Log4j2
-      rootLogger.level: INFO
-  # Readiness probe (optional)
-  readinessProbe: # <17>
-    initialDelaySeconds: 15
-    timeoutSeconds: 5
-  # Liveness probe (optional)
-  livenessProbe:
-    initialDelaySeconds: 15
-    timeoutSeconds: 5
-  # Metrics configuration (optional)
-  metricsConfig: # <18>
-    type: jmxPrometheusExporter
-    valueFrom:
-      configMapKeyRef:
-        name: my-config-map
-        key: my-key
-  # JVM options (optional)
-  jvmOptions: # <19>
-    "-Xmx": "1g"
-    "-Xms": "1g"
-  # Custom image (optional)
-  image: my-org/my-image:latest # <20>
-  # Rack awareness (optional)
-  rack:
-    topologyKey: topology.kubernetes.io/zone # <21>
-  # Pod and container template (optional)
-  template: # <22>
-    pod:
-      affinity:
-        podAntiAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            - labelSelector:
-                matchExpressions:
-                  - key: application
-                    operator: In
-                    values:
-                      - postgresql
-                      - mongodb
-              topologyKey: "kubernetes.io/hostname"
-    connectContainer: # <23>
-      env:
-        - name: OTEL_SERVICE_NAME
-          value: my-otel-service
-        - name: OTEL_EXPORTER_OTLP_ENDPOINT
-          value: "http://otlp-host:4317"
-        - name: AWS_ACCESS_KEY_ID
-          valueFrom:
-            secretKeyRef:
-              name: aws-creds
-              key: awsAccessKey
-        - name: AWS_SECRET_ACCESS_KEY
-          valueFrom:
-            secretKeyRef:
-              name: aws-creds
-              key: awsSecretAccessKey
-  # Tracing configuration (optional)
-  tracing:
-    type: opentelemetry # <24>
 ----
-<1> Use `KafkaConnect`.
-<2> Enables the use of `KafkaConnector` resources to start, stop, and manage connector instances.
-<3> The number of replica nodes for the workers that run tasks.
-<4> Bootstrap address for connection to the Kafka cluster. The address takes the format `<cluster_name>-kafka-bootstrap:<port_number>`. The Kafka cluster doesn't need to be managed by Strimzi or deployed to a Kubernetes cluster.
-<5> A unique ID that identifies the Connect cluster group. Required in `v1` CRD API.
-<6> Name of the Kafka topic where connector configurations are stored. Required in `v1` CRD API.
-<7> Name of the Kafka topic where source connector offsets are stored. Required in `v1` CRD API.
-<8> Name of the Kafka topic where connector and task statuses are stored. Required in `v1` CRD API.
-<9> Kafka Connect configuration of workers (not connectors) that run connectors and their tasks.
-Standard Apache Kafka configuration may be provided, restricted to those properties not managed directly by Strimzi.
-In this example, JSON convertors are specified.
-A replication factor of 3 is set for the internal topics used by Kafka Connect (minimum requirement for production environment).
-Changing the replication factor after the topics have been created has no effect.
-<10> Requests for reservation of supported resources, currently `cpu` and `memory`, and limits to specify the maximum resources that can be consumed.
-<11> Authentication for the Kafka Connect cluster, specified as `tls`, `scram-sha-256`, `scram-sha-512`, `plain`, or `custom`.
-By default, Kafka Connect connects to Kafka brokers using a plaintext connection.
-For details on configuring authentication, see the link:{BookURLConfiguring}#type-KafkaConnectSpec-schema-reference[`KafkaConnectSpec` schema properties^].
-<12> TLS configuration for encrypted connections to the Kafka cluster, with trusted certificates stored in X.509 format within the specified secrets.
-<13> Build configuration properties for building a container image with connector plugins automatically.
-<14> (Required) Configuration of the container registry where new images are pushed.
-<15> (Required) List of connector plugins and their artifacts to add to the new container image. Each plugin must be configured with at least one `artifact`.
-<16> Kafka Connect loggers and log levels added directly (`inline`) or indirectly (`external`) through a `ConfigMap`. Custom Log4j configuration must be placed under the `log4j2.properties` key in the `ConfigMap`. You can set log levels to `INFO`, `ERROR`, `WARN`, `TRACE`, `DEBUG`, `FATAL` or `OFF`.
-<17> Healthchecks to know when to restart a container (liveness) and when a container can accept traffic (readiness).
-<18> Prometheus metrics, which are enabled by referencing a ConfigMap containing configuration for the Prometheus JMX exporter in this example. You can enable metrics without further configuration using a reference to a ConfigMap containing an empty file under `metricsConfig.valueFrom.configMapKeyRef.key`.
-<19> JVM configuration options to optimize performance for the Virtual Machine (VM) running Kafka Connect.
-<20> ADVANCED OPTION: Container image configuration, which is recommended only in special situations.
-<21> SPECIALIZED OPTION: Rack awareness configuration for the deployment. This is a specialized option intended for a deployment within the same location, not across regions. Use this option if you want connectors to consume from the closest replica rather than the leader replica. In certain cases, consuming from the closest replica can improve network utilization or reduce costs . The `topologyKey` must match a node label containing the rack ID. The example used in this configuration specifies a zone using the standard `{K8sZoneLabel}` label. To consume from the closest replica, enable the `RackAwareReplicaSelector`  in the Kafka broker configuration.
-<22> Template customization. Here a pod is scheduled with anti-affinity, so the pod is not scheduled on nodes with the same hostname.
-<23> Environment variables are set for distributed tracing and to pass credentials to connectors.
-<24> Distributed tracing is enabled by using OpenTelemetry.
+
+* `metadata.annotations.strimzi.io/use-connector-resources` enables the use of `KafkaConnector` resources to start, stop, and manage connector instances.
+* `spec.replicas` specifies the number of Kafka Connect worker replicas to run.
+* `spec.bootstrapServers` specifies the bootstrap address for the Kafka cluster.
+For a Strimzi-managed cluster, you can use the bootstrap service name, for example `<cluster_name>-kafka-bootstrap:<port>`.
+* `spec.groupId` identifies the Kafka Connect cluster group.
+This property is required in the `v1` CRD API.
+* `spec.configStorageTopic`, `spec.offsetStorageTopic`, and `spec.statusStorageTopic` specify the internal Kafka topics used by Kafka Connect.
+These properties are required in the `v1` CRD API.
+* `spec.config` defines Kafka Connect worker configuration, such as converters and internal topic replication factors.
+
+NOTE: The Kafka cluster does not need to be managed by Strimzi or run on Kubernetes.

@@ -5,10 +5,10 @@
 // assembly-config.adoc
 
 [id='proc-manual-restart-connector-{context}']
-= Manually restarting Kafka Connect connectors
+= Restarting Kafka Connect connectors
 
 [role="_abstract"]
-If you are using `KafkaConnector` resources to manage connectors, use the `strimzi.io/restart` annotation to manually trigger a restart of a connector.
+If you are using `KafkaConnector` resources to manage connectors, use the `strimzi.io/restart` annotation to trigger a connector restart.
 
 .Prerequisites
 
@@ -23,7 +23,7 @@ If you are using `KafkaConnector` resources to manage connectors, use the `strim
 kubectl get KafkaConnector
 ----
 
-. Restart the connector by annotating the `KafkaConnector` resource in Kubernetes:
+. Restart the connector by adding the `strimzi.io/restart` annotation to the `KafkaConnector` resource:
 +
 [source,shell,subs="+quotes"]
 ----
@@ -32,14 +32,14 @@ kubectl annotate KafkaConnector <kafka_connector_name> strimzi.io/restart="true"
 +
 The `restart` annotation is set to `true`. 
 +
-You can also refine the restart behavior with the `includeTasks` and `onlyFailed` parameters, which both default to `false`.  
+You can refine the restart behavior using the `includeTasks` and `onlyFailed` parameters. Both default to `false`.  
 +
 --
 * `includeTasks` restarts both the connector instance and its task instances.  
 * `onlyFailed` restarts only instances with a `FAILED` status when set to `true`.  
 --
 +
-For example: 
+For example, to restart only failed connectors and their tasks: 
 +
 [source,shell]
 ----
@@ -48,5 +48,5 @@ strimzi.io/restart="includeTasks,onlyFailed"
 
 . Wait for the next reconciliation to occur (every two minutes by default).
 +
-The Kafka connector is restarted, as long as the annotation was detected by the reconciliation process.
+The connector is restarted when the annotation is detected during reconciliation.
 When Kafka Connect accepts the restart request, the annotation is removed from the `KafkaConnector` custom resource.

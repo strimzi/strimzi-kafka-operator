@@ -1,0 +1,84 @@
+:_mod-docs-content-type: CONCEPT
+
+// Module included in the following assemblies:
+//
+// assembly-config.adoc
+
+[id='con-config-kafka-connect-build-{context}']
+= Adding connector plugins to Kafka Connect
+
+[role="_abstract"]
+Add connector plugins to Kafka Connect so that connectors can be deployed and run.
+
+This configuration prepares the Kafka Connect cluster with the required plugins.
+It does not create or manage connector instances.
+
+Kafka Connect requires connector plugins to be available on the plugin path of Kafka Connect worker pods.
+You can add connector plugins by building a custom container image using the `KafkaConnect` resource.
+
+In most deployments, connector plugins must be added explicitly.
+
+== How it works
+
+When you configure connector plugins in the `KafkaConnect` resource, the Cluster Operator automatically does the following:
+
+* Builds a new container image that includes the specified connector plugins.
+* Pushes the image to a container registry.
+* Deploys Kafka Connect worker pods using the new image.
+* Ensures that all Kafka Connect worker pods in the same `KafkaConnect` deployment use the same set of connector plugins.
+
+After connector plugins are added to the Kafka Connect image, you can create and manage connector instances using `KafkaConnector` resources or the Kafka Connect API.
+
+For information on adding plugins and creating connector instances, see
+xref:using-kafka-connect-with-plug-ins-{context}[Adding Kafka Connect connectors].
+
+== When to use this configuration
+
+Use the build configuration in the following situations:
+
+* You want to deploy source or sink connectors that are not included in the Kafka Connect image.
+* You want the Cluster Operator to build and manage Kafka Connect images that include connector plugins.
+* You want to avoid maintaining a separate image build pipeline for Kafka Connect.
+
+When using the build configuration, consider the following:
+
+* Kafka Connect worker pods are restarted when a new image is built and deployed.
+* The container registry must be reachable from the Kubernetes cluster.
+* If a plugin artifact URL or checksum is incorrect, the build fails and Kafka Connect is not updated.
+
+== Configuring connector plugins
+
+To add connector plugins, configure the `spec.build` property in the `KafkaConnect` resource.
+
+.Example configuration for adding connector plugins
+[source,yaml,subs="+quotes,attributes"]
+----
+spec:
+  build:
+    output:
+      type: docker
+      image: my-registry.io/my-org/my-connect-cluster:latest
+      pushSecret: my-registry-credentials
+    plugins:
+      - name: connector-1
+        artifacts:
+          - type: tgz
+            url: <url_to_download_connector_1_artifact>
+            sha512sum: <SHA-512_checksum_of_connector_1_artifact>
+      - name: connector-2
+        artifacts:
+          - type: jar
+            url: <url_to_download_connector_2_artifact>
+            sha512sum: <SHA-512_checksum_of_connector_2_artifact>
+----
+
+* `spec.build.output` specifies where the new container image is built and pushed.
+* `spec.build.output.image` specifies the name of the container image to create.
+* `spec.build.output.pushSecret` specifies the Secret used to authenticate with the container registry.
+* `spec.build.plugins` specifies the connector plugins to include in the image.
+* Each plugin must include at least one artifact.
+Supported artifact types include JAR and compressed archives.
+
+
+
+
