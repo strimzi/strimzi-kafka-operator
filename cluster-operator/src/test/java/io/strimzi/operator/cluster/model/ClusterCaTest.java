@@ -112,12 +112,62 @@ public class ClusterCaTest {
 
     @Test
     public void testNotRemoveOldCertificateWithCustomCa() {
+        // Dummy cert valid until 2126 for testing purposes
+        String newDummyCert = """
+                -----BEGIN CERTIFICATE-----
+                MIIDlzCCAn+gAwIBAgIUemVt2M8YnfYLntb16p2/oSFQVHEwDQYJKoZIhvcNAQEL
+                BQAwWjELMAkGA1UEBhMCQVUxEzARBgNVBAgMClNvbWUtU3RhdGUxITAfBgNVBAoM
+                GEludGVybmV0IFdpZGdpdHMgUHR5IEx0ZDETMBEGA1UEAwwKY2x1c3Rlci1jYTAg
+                Fw0yNjAyMTYxNTI1MzhaGA8yMTI2MDEyMzE1MjUzOFowWjELMAkGA1UEBhMCQVUx
+                EzARBgNVBAgMClNvbWUtU3RhdGUxITAfBgNVBAoMGEludGVybmV0IFdpZGdpdHMg
+                UHR5IEx0ZDETMBEGA1UEAwwKY2x1c3Rlci1jYTCCASIwDQYJKoZIhvcNAQEBBQAD
+                ggEPADCCAQoCggEBALulA0Z4vXwcQw9BD1ZehrAJPVg6o9ok7WxM6vbSEHc8ptV1
+                97dXy0EoIcaJKnwzbwzqBL0KDVa/ZXpiHnWN/o7eq3ZBXxTv/1SGcgwx4vDN99ui
+                qwyQ+eGBjdiuJ4NbRdD5rM59SOxTvL890RELrRAEW6Cx3v0A0kJkxxKLsxpwfgOY
+                KpY3B46Y+LNx41upA6sLKzWxgATAeXJK5TPtr5Es8wYPYuQR0JGYJJCv2pPABHTr
+                aWGQHkdDjf+YV+VISVtD3yK5uZopKZzy3qv6mhKSP5ZOv9zVFJffHrAyMjSQMiTT
+                iuGZ1bJtz/f+BPxU0JlC18ZORXN7iJLHhErM+hkCAwEAAaNTMFEwHQYDVR0OBBYE
+                FOCa9ssHAazYsg4eCeXJwpVaEWbcMB8GA1UdIwQYMBaAFOCa9ssHAazYsg4eCeXJ
+                wpVaEWbcMA8GA1UdEwEB/wQFMAMBAf8wDQYJKoZIhvcNAQELBQADggEBAI7tgXgb
+                PKrT/0mLDK1qeIC/kCXoeAfv0WvQ8LKlGeaHG8IwXvbZS4ZVkiMIb3dN/A+taY4M
+                3GvYn5O1z0v6BJhDZKVLKQXI0zYW+8w4wjoquELyz7EHR8+8tUNAN6bWoUpo6npO
+                vuP+weaGjg1FHiyxmuMmqC0WqBOl71uyzUxsV4d1iOPNosdBahONQ36BafgUT4CU
+                Vl47oh7M7k/idihozfse+qBWyXR8yqdhunrn6arV0aqtJ0htfXaBNFGfESvl6qhd
+                UEkhEUgk/J/NUrZfq4hmnU0MwPxodua8b8gvl58n9O3f9lbmNc6k9xbt44coZEOx
+                gs5WXXBDclPQMjg=
+                -----END CERTIFICATE-----
+                """;
+        // Dummy cert valid until 2126 for testing purposes
+        String dummyCert = """
+                -----BEGIN CERTIFICATE-----
+                MIIDlzCCAn+gAwIBAgIULOreW0R5KZmFBnzDzzU+9Yemb2MwDQYJKoZIhvcNAQEL
+                BQAwWjELMAkGA1UEBhMCQVUxEzARBgNVBAgMClNvbWUtU3RhdGUxITAfBgNVBAoM
+                GEludGVybmV0IFdpZGdpdHMgUHR5IEx0ZDETMBEGA1UEAwwKY2x1c3Rlci1jYTAg
+                Fw0yNjAyMTYxNTI4MzhaGA8yMTI2MDEyMzE1MjgzOFowWjELMAkGA1UEBhMCQVUx
+                EzARBgNVBAgMClNvbWUtU3RhdGUxITAfBgNVBAoMGEludGVybmV0IFdpZGdpdHMg
+                UHR5IEx0ZDETMBEGA1UEAwwKY2x1c3Rlci1jYTCCASIwDQYJKoZIhvcNAQEBBQAD
+                ggEPADCCAQoCggEBAL5mmWQZhofW12eZIMULMIkDg3vmRnUgR90w2fYER4tbFzPI
+                pd0ZFkqrs/TkViV5aJcl8heXjBh3rmo18dkC03E0bfCIRSB9v9hllBpcSiX9zI6S
+                lqQhlXMnbcoPCK2OPZpLlajuiRnc58GLL9tv7xpgBdUeh4sZ+KsAlgFWo7SbO+hR
+                eyT0Ut/XsNDTVIVpUPuqsDLYzyVLvbupe4Esf+OUGp9WYgpbzPlQtADB7FLWAO7U
+                4Ag++PR4aeqwxHwXkHR2sLyfsvFQQ6H0SNRZ7EVFVWmcmSpu0OyUtCzSViEJOwTC
+                wkLL3yuazj3ItntijdxEvXoi1qW33iak4DPXeb8CAwEAAaNTMFEwHQYDVR0OBBYE
+                FBGpiw0mw5DlDFWNCDymbMKN/M29MB8GA1UdIwQYMBaAFBGpiw0mw5DlDFWNCDym
+                bMKN/M29MA8GA1UdEwEB/wQFMAMBAf8wDQYJKoZIhvcNAQELBQADggEBADUeHezN
+                4A/aBNYL23XE9wJntdV02L+NfmlvbPQewKKWxupTkLhvo6Iam25SQ7YpCvN8qWau
+                u/SvI51sHmUS0uGY2SfVVVADMjGkyJLtYCqYU9QSDxlWjT4pWVKz/t+L42l6Zx+A
+                OfMbtJxcZnOIk52wGerTXBOYWn/7RFU5oe1Ok/y+w+CdkXVCdOc9AgO82R1KsurH
+                sKNCWwP0TQxR8J7o6ycO4yQPNs36HrWDq4O05MwArSI10sY04iTNJiwVmV1Yn4t6
+                jZQE7PgOGbAPOLdqzyH+VfX8N7y5HUcyrVdtCozGHwJmFUIpY3fPAuMokZjGyOm3
+                b5jRgwN6wcq20no=
+                -----END CERTIFICATE-----
+                """;
         Map<String, String> clusterCaCertData = new HashMap<>();
-        clusterCaCertData.put(Ca.CA_CRT, Base64.getEncoder().encodeToString("new-dummy-crt".getBytes()));
+        clusterCaCertData.put(Ca.CA_CRT, Base64.getEncoder().encodeToString(newDummyCert.getBytes()));
         clusterCaCertData.put(Ca.CA_STORE, Base64.getEncoder().encodeToString("dummy-p12".getBytes()));
         clusterCaCertData.put(Ca.CA_STORE_PASSWORD, Base64.getEncoder().encodeToString("dummy-password".getBytes()));
         // simulate old cert still present
-        clusterCaCertData.put("ca-2023-03-23T09-00-00Z.crt", Base64.getEncoder().encodeToString("dummy-crt".getBytes()));
+        clusterCaCertData.put("ca-2023-03-23T09-00-00Z.crt", Base64.getEncoder().encodeToString(dummyCert.getBytes()));
 
         Secret clusterCaCert = new SecretBuilder()
                 .withNewMetadata()
@@ -143,10 +193,10 @@ public class ClusterCaTest {
         // checking that the cluster CA related Secret was not touched by the operator
         Map<String, String> clusterCaCertDataInSecret = clusterCa.caCertData();
         assertThat(clusterCaCertDataInSecret.size(), is(4));
-        assertThat(Util.decodeFromBase64(clusterCaCertDataInSecret.get(Ca.CA_CRT)).equals("new-dummy-crt"), is(true));
+        assertThat(Util.decodeFromBase64(clusterCaCertDataInSecret.get(Ca.CA_CRT)).equals(newDummyCert), is(true));
         assertThat(Util.decodeFromBase64(clusterCaCertDataInSecret.get(Ca.CA_STORE)).equals("dummy-p12"), is(true));
         assertThat(Util.decodeFromBase64(clusterCaCertDataInSecret.get(Ca.CA_STORE_PASSWORD)).equals("dummy-password"), is(true));
-        assertThat(Util.decodeFromBase64(clusterCaCertDataInSecret.get("ca-2023-03-23T09-00-00Z.crt")).equals("dummy-crt"), is(true));
+        assertThat(Util.decodeFromBase64(clusterCaCertDataInSecret.get("ca-2023-03-23T09-00-00Z.crt")).equals(dummyCert), is(true));
     }
 
     @Test

@@ -226,7 +226,7 @@ public class KafkaUserModelTest {
         model.maybeGenerateCertificates(Reconciliation.DUMMY_RECONCILIATION, mockCertManager, passwordGenerator, clientsCaCert, clientsCaKey, null, 365, 30, null, Clock.systemUTC());
         Secret generated = model.generateSecret();
 
-        assertThat(Util.decodeFromBase64(generated.getData().get("ca.crt")), is("clients-ca-crt"));
+        assertThat(generated.getData().get("ca.crt"),  is(MockCertManager.clientsCaCert()));
         assertThat(Util.decodeFromBase64(generated.getData().get("user.crt")), is(MockCertManager.userCert()));
         assertThat(Util.decodeFromBase64(generated.getData().get("user.key")), is(MockCertManager.userKey()));
         assertThat(Util.decodeFromBase64(generated.getData().get("user.p12")), is(MockCertManager.userKeyStore()));
@@ -272,7 +272,7 @@ public class KafkaUserModelTest {
     public void testGenerateSecretGeneratesCertificateAtCaChange() {
         Secret userCert = ResourceUtils.createUserSecretTls(ResourceUtils.NAMESPACE);
         Secret clientsCaCertSecret = ResourceUtils.createClientsCaCertSecret(ResourceUtils.NAMESPACE);
-        clientsCaCertSecret.getData().put("ca.crt", Base64.getEncoder().encodeToString("different-clients-ca-crt".getBytes()));
+        clientsCaCertSecret.getData().put("ca.crt", MockCertManager.alternateClientsCaCert());
 
         Secret clientsCaKeySecret = ResourceUtils.createClientsCaKeySecret(ResourceUtils.NAMESPACE);
         clientsCaKeySecret.getData().put("ca.key", Base64.getEncoder().encodeToString("different-clients-ca-key".getBytes()));
@@ -281,7 +281,7 @@ public class KafkaUserModelTest {
         model.maybeGenerateCertificates(Reconciliation.DUMMY_RECONCILIATION, mockCertManager, passwordGenerator, clientsCaCertSecret, clientsCaKeySecret, userCert, 365, 30, null, Clock.systemUTC());
         Secret generatedSecret = model.generateSecret();
     
-        assertThat(Util.decodeFromBase64(generatedSecret.getData().get("ca.crt")),  is("different-clients-ca-crt"));
+        assertThat(generatedSecret.getData().get("ca.crt"),  is(MockCertManager.alternateClientsCaCert()));
         assertThat(Util.decodeFromBase64(generatedSecret.getData().get("user.crt")), is(MockCertManager.userCert()));
         assertThat(Util.decodeFromBase64(generatedSecret.getData().get("user.key")), is(MockCertManager.userKey()));
         assertThat(Util.decodeFromBase64(generatedSecret.getData().get("user.p12")), is(MockCertManager.userKeyStore()));
@@ -300,7 +300,7 @@ public class KafkaUserModelTest {
         Secret generatedSecret = model.generateSecret();
 
         // These values match those in ResourceUtils.createUserSecretTls()
-        assertThat(Util.decodeFromBase64(generatedSecret.getData().get("ca.crt")),  is("clients-ca-crt"));
+        assertThat(generatedSecret.getData().get("ca.crt"),  is(MockCertManager.clientsCaCert()));
         assertThat(Util.decodeFromBase64(generatedSecret.getData().get("user.crt")), is("expected-crt"));
         assertThat(Util.decodeFromBase64(generatedSecret.getData().get("user.key")), is("expected-key"));
         assertThat(Util.decodeFromBase64(generatedSecret.getData().get("user.p12")), is("expected-p12"));
@@ -317,7 +317,7 @@ public class KafkaUserModelTest {
         model.maybeGenerateCertificates(Reconciliation.DUMMY_RECONCILIATION, mockCertManager, passwordGenerator, clientsCaCert, clientsCaKey, userCert, 365, 30, null, Clock.systemUTC());
         Secret generated = model.generateSecret();
 
-        assertThat(Util.decodeFromBase64(generated.getData().get("ca.crt")),  is("clients-ca-crt"));
+        assertThat(generated.getData().get("ca.crt"),  is(MockCertManager.clientsCaCert()));
         assertThat(Util.decodeFromBase64(generated.getData().get("user.crt")), is(MockCertManager.userCert()));
         assertThat(Util.decodeFromBase64(generated.getData().get("user.key")), is(MockCertManager.userKey()));
         assertThat(Util.decodeFromBase64(generated.getData().get("user.p12")), is(MockCertManager.userKeyStore()));
@@ -343,7 +343,7 @@ public class KafkaUserModelTest {
 
         assertThat(generatedSecret.getData().keySet(), is(Set.of("ca.crt", "user.crt", "user.key", "user.p12", "user.password")));
 
-        assertThat(Util.decodeFromBase64(generatedSecret.getData().get("ca.crt")), is("clients-ca-crt"));
+        assertThat(generatedSecret.getData().get("ca.crt"),  is(MockCertManager.clientsCaCert()));
         assertThat(Util.decodeFromBase64(generatedSecret.getData().get("user.crt")), is(MockCertManager.userCert()));
         assertThat(Util.decodeFromBase64(generatedSecret.getData().get("user.key")), is(MockCertManager.userKey()));
         // assert that keystore and password have been re-added

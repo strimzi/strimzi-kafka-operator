@@ -46,6 +46,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 
 import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -58,6 +60,8 @@ import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.time.Clock;
 import java.time.Instant;
+import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.HashMap;
@@ -1086,21 +1090,60 @@ public class CaReconcilerReconcileCasTest {
     }
 
     @Test
-    public void testUserManagedCertsNotReconciled(Vertx vertx, VertxTestContext context)
-            throws IOException, CertificateException, KeyStoreException, NoSuchAlgorithmException {
+    public void testUserManagedCertsNotReconciled(Vertx vertx, VertxTestContext context) throws IOException {
         CertificateAuthority certificateAuthority = new CertificateAuthorityBuilder()
-                .withValidityDays(2)
-                .withRenewalDays(3)
+                .withValidityDays(100)
+                .withRenewalDays(10)
                 .withGenerateCertificateAuthority(false)
                 .build();
 
-        List<Secret> clusterCaSecrets = initialClusterCaSecrets(certificateAuthority);
-        Secret initialClusterCaKeySecret = clusterCaSecrets.get(0);
-        Secret initialClusterCaCertSecret = clusterCaSecrets.get(1);
+        Subject sbj = new Subject.Builder()
+                .withOrganizationName("io.strimzi")
+                .withCommonName("ca").build();
 
-        List<Secret> clientsCaSecrets = initialClientsCaSecrets(certificateAuthority);
-        Secret initialClientsCaKeySecret = clientsCaSecrets.get(0);
-        Secret initialClientsCaCertSecret = clientsCaSecrets.get(1);
+        File rootKey = Files.createTempFile("key-", ".key").toFile();
+        rootKey.deleteOnExit();
+        File rootCert = Files.createTempFile("crt-", ".crt").toFile();
+        rootCert.deleteOnExit();
+        File intermediateKey1 = Files.createTempFile("key-", ".key").toFile();
+        intermediateKey1.deleteOnExit();
+        File intermediateCert1 = Files.createTempFile("crt-", ".crt").toFile();
+        intermediateCert1.deleteOnExit();
+        File intermediateKey2 = Files.createTempFile("key-", ".key").toFile();
+        intermediateKey2.deleteOnExit();
+        File intermediateCert2 = Files.createTempFile("crt-", ".crt").toFile();
+
+        Instant now = Instant.now();
+        ZonedDateTime notBefore = now.truncatedTo(ChronoUnit.SECONDS).atZone(Clock.systemUTC().getZone());
+        ZonedDateTime notAfter = now.plus(2, ChronoUnit.HOURS).truncatedTo(ChronoUnit.SECONDS).atZone(Clock.systemUTC().getZone());
+        CERT_MANAGER.generateRootCaCert(sbj, rootKey, rootCert, notBefore, notAfter, 1);
+
+        // Generate an intermediate cert
+        Subject intermediateSubject1 = new Subject.Builder().withCommonName("IntermediateCn1").withOrganizationName("MyOrganization").build();
+        CERT_MANAGER.generateIntermediateCaCert(rootKey, rootCert, intermediateSubject1, intermediateKey1, intermediateCert1, notBefore, notAfter, 1);
+
+        // Generate an additional intermediate cert
+        Subject intermediateSubject2 = new Subject.Builder().withCommonName("IntermediateCn2").withOrganizationName("MyOrganization").build();
+        CERT_MANAGER.generateIntermediateCaCert(intermediateKey1, intermediateCert1, intermediateSubject2, intermediateKey2, intermediateCert2, notBefore, notAfter, 1);
+
+        String caKey = Base64.getEncoder().encodeToString(Files.readAllBytes(rootKey.toPath()));
+
+        // Generate combined Pem files with CA chain in correct order
+        String validCombinedPem;
+        try (FileInputStream int2CertFis = new FileInputStream(intermediateCert2);
+             FileInputStream int1CertFis = new FileInputStream(intermediateCert1);
+             FileInputStream rootCertFis = new FileInputStream(rootCert)) {
+            String combinedPem = String.join("\n",
+                    new String(int2CertFis.readAllBytes(), StandardCharsets.US_ASCII),
+                    new String(int1CertFis.readAllBytes(), StandardCharsets.US_ASCII),
+                    new String(rootCertFis.readAllBytes(), StandardCharsets.US_ASCII));
+            validCombinedPem = Base64.getEncoder().encodeToString(combinedPem.getBytes(StandardCharsets.US_ASCII));
+        }
+
+        Secret initialClusterCaKeySecret = ResourceUtils.createInitialCaKeySecret(NAMESPACE, NAME, AbstractModel.clusterCaKeySecretName(NAME), caKey);
+        Secret initialClusterCaCertSecret = ResourceUtils.createInitialCaCertSecret(NAMESPACE, NAME, AbstractModel.clusterCaCertSecretName(NAME), validCombinedPem, null, null);
+        Secret initialClientsCaKeySecret = ResourceUtils.createInitialCaKeySecret(NAMESPACE, NAME, KafkaResources.clientsCaKeySecretName(NAME), caKey);
+        Secret initialClientsCaCertSecret = ResourceUtils.createInitialCaCertSecret(NAMESPACE, NAME, KafkaResources.clientsCaCertificateSecretName(NAME), validCombinedPem, null, null);
 
         secrets.add(initialClusterCaCertSecret);
         secrets.add(initialClusterCaKeySecret);
@@ -1114,6 +1157,76 @@ public class CaReconcilerReconcileCasTest {
                     verify(supplier.secretOperations, times(0)).reconcile(any(), eq(NAMESPACE), eq(AbstractModel.clusterCaKeySecretName(NAME)), any(Secret.class));
                     verify(supplier.secretOperations, times(0)).reconcile(any(), eq(NAMESPACE), eq(KafkaResources.clientsCaCertificateSecretName(NAME)), any(Secret.class));
                     verify(supplier.secretOperations, times(0)).reconcile(any(), eq(NAMESPACE), eq(KafkaResources.clientsCaKeySecretName(NAME)), any(Secret.class));
+                    async.flag();
+                })));
+    }
+
+    @Test
+    public void testUserManagedCasWithInvalidCa(Vertx vertx, VertxTestContext context) throws IOException {
+        CertificateAuthority certificateAuthority = new CertificateAuthorityBuilder()
+                .withValidityDays(100)
+                .withRenewalDays(10)
+                .withGenerateCertificateAuthority(false)
+                .build();
+
+        Subject sbj = new Subject.Builder()
+                .withOrganizationName("io.strimzi")
+                .withCommonName("ca").build();
+
+        File rootKey = Files.createTempFile("key-", ".key").toFile();
+        rootKey.deleteOnExit();
+        File rootCert = Files.createTempFile("crt-", ".crt").toFile();
+        rootCert.deleteOnExit();
+        File intermediateKey1 = Files.createTempFile("key-", ".key").toFile();
+        intermediateKey1.deleteOnExit();
+        File intermediateCert1 = Files.createTempFile("crt-", ".crt").toFile();
+        intermediateCert1.deleteOnExit();
+        File intermediateKey2 = Files.createTempFile("key-", ".key").toFile();
+        intermediateKey2.deleteOnExit();
+        File intermediateCert2 = Files.createTempFile("crt-", ".crt").toFile();
+
+        Instant now = Instant.now();
+        ZonedDateTime notBefore = now.truncatedTo(ChronoUnit.SECONDS).atZone(Clock.systemUTC().getZone());
+        ZonedDateTime notAfter = now.plus(2, ChronoUnit.HOURS).truncatedTo(ChronoUnit.SECONDS).atZone(Clock.systemUTC().getZone());
+        CERT_MANAGER.generateRootCaCert(sbj, rootKey, rootCert, notBefore, notAfter, 1);
+
+        // Generate an intermediate cert
+        Subject intermediateSubject1 = new Subject.Builder().withCommonName("IntermediateCn1").withOrganizationName("MyOrganization").build();
+        CERT_MANAGER.generateIntermediateCaCert(rootKey, rootCert, intermediateSubject1, intermediateKey1, intermediateCert1, notBefore, notAfter, 1);
+
+        // Generate an additional intermediate cert
+        Subject intermediateSubject2 = new Subject.Builder().withCommonName("IntermediateCn2").withOrganizationName("MyOrganization").build();
+        CERT_MANAGER.generateIntermediateCaCert(intermediateKey1, intermediateCert1, intermediateSubject2, intermediateKey2, intermediateCert2, notBefore, notAfter, 1);
+
+        String caKey = Base64.getEncoder().encodeToString(Files.readAllBytes(rootKey.toPath()));
+
+        // Generate combined Pem files with CA chain in wrong order
+        String invalidCombinedPem;
+        try (FileInputStream int2CertFis = new FileInputStream(intermediateCert2);
+             FileInputStream int1CertFis = new FileInputStream(intermediateCert1);
+             FileInputStream rootCertFis = new FileInputStream(rootCert)) {
+            String combinedPem = String.join("\n",
+                    new String(rootCertFis.readAllBytes(), StandardCharsets.US_ASCII),
+                    new String(int1CertFis.readAllBytes(), StandardCharsets.US_ASCII),
+                    new String(int2CertFis.readAllBytes(), StandardCharsets.US_ASCII));
+            invalidCombinedPem = Base64.getEncoder().encodeToString(combinedPem.getBytes(StandardCharsets.US_ASCII));
+        }
+
+        Secret initialClusterCaKeySecret = ResourceUtils.createInitialCaKeySecret(NAMESPACE, NAME, AbstractModel.clusterCaKeySecretName(NAME), caKey);
+        Secret initialClusterCaCertSecret = ResourceUtils.createInitialCaCertSecret(NAMESPACE, NAME, AbstractModel.clusterCaCertSecretName(NAME), invalidCombinedPem, null, null);
+        Secret initialClientsCaKeySecret = ResourceUtils.createInitialCaKeySecret(NAMESPACE, NAME, KafkaResources.clientsCaKeySecretName(NAME), caKey);
+        Secret initialClientsCaCertSecret = ResourceUtils.createInitialCaCertSecret(NAMESPACE, NAME, KafkaResources.clientsCaCertificateSecretName(NAME), invalidCombinedPem, null, null);
+
+        secrets.add(initialClusterCaCertSecret);
+        secrets.add(initialClusterCaKeySecret);
+        secrets.add(initialClientsCaCertSecret);
+        secrets.add(initialClientsCaKeySecret);
+
+        Checkpoint async = context.checkpoint();
+        reconcileCas(vertx, certificateAuthority, certificateAuthority)
+                .onComplete(context.failing(e -> context.verify(() -> {
+                    assertThat(e, instanceOf(RuntimeException.class));
+                    assertThat(e.getMessage(), is("User supplied Cluster CA cert chain ca.crt is not valid. Certificates must be provided in the correct order."));
                     async.flag();
                 })));
     }
