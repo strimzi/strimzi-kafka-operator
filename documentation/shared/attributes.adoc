@@ -14,8 +14,8 @@
 :toclevels: 2
 
 //Latest Strimzi version
-:ProductVersion: 0.51.0
-:ProductVersionPrevious: 0.50.1
+:ProductVersion: 1.0.0
+:ProductVersionPrevious: 0.51.0
 
 // Kubernetes versions
 :KubernetesVersion: 1.30 and later

@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 1.0.0
+
+* Nothing here yet, but we will surely develop something new pretty soon 😉
+
+### Major changes, deprecations, and removals
+
+* n/a
+
 ## 0.51.0
 
 * Add support for Kafka 4.2.0 and remove support for Kafka 4.0.0 and 4.0.1
