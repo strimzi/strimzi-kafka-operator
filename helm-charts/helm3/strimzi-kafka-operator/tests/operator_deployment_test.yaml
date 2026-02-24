@@ -119,7 +119,24 @@ tests:
           value: STRIMZI_NAMESPACE
       - equal:
           path: spec.template.spec.containers[0].env[0].value
-          value: "test-namespace,test-namespace2,strimzi-test-namespace"
+          value: "strimzi-test-namespace,test-namespace,test-namespace2"
+
+  - it: should set STRIMZI_NAMESPACE to comma separated specified namespaces and deployment namespace if watchNamespaces is specified and overlapping with release namespace
+    set:
+      watchAnyNamespace: false
+      watchNamespaces:
+        - test-namespace
+        - test-namespace2
+        - strimzi-test-namespace
+    asserts:
+      - isKind:
+          of: Deployment
+      - equal:
+          path: spec.template.spec.containers[0].env[0].name
+          value: STRIMZI_NAMESPACE
+      - equal:
+          path: spec.template.spec.containers[0].env[0].value
+          value: "strimzi-test-namespace,test-namespace,test-namespace2"
 
   - it: should construct all kafka images from default image registry if not provided
     asserts:
