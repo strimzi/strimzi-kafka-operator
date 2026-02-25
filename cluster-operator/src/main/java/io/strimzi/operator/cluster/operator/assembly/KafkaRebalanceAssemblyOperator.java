@@ -10,7 +10,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.fabric8.kubernetes.api.model.ConfigMap;
-import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -31,6 +30,7 @@ import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceState;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceStatus;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceStatusBuilder;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
+import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.model.ConfigMapUtils;
 import io.strimzi.operator.cluster.model.CruiseControl;
 import io.strimzi.operator.cluster.model.ModelUtils;
@@ -351,14 +351,7 @@ public class KafkaRebalanceAssemblyOperator
 
                     if (existingConfigMap != null) {
                         if (desiredConfigMap == null) {
-                            ConfigMap loadAndProgressConfigMap = ConfigMapUtils.createConfigMap(
-                                existingConfigMap.getMetadata().getName(),
-                                existingConfigMap.getMetadata().getNamespace(),
-                                Labels.fromMap(existingConfigMap.getMetadata().getLabels()),
-                                ModelUtils.createOwnerReference(kafkaRebalance, false),
-                                existingConfigMap.getData()
-                            );
-
+                            ConfigMap loadAndProgressConfigMap = createConfigMapForRebalance(kafkaRebalance, existingConfigMap.getData());
                             desiredStatusAndMap.setLoadAndProgressConfigMap(loadAndProgressConfigMap);
                             desiredConfigMap = loadAndProgressConfigMap;
                         } else {
@@ -721,15 +714,7 @@ public class KafkaRebalanceAssemblyOperator
         JsonNode beforeAndAfterBrokerLoad = parseLoadStats(
                 brokerLoadBeforeOptimization, brokerLoadAfterOptimization);
 
-        ConfigMap rebalanceMap = new ConfigMapBuilder()
-                .withNewMetadata()
-                    .withNamespace(kafkaRebalance.getMetadata().getNamespace())
-                    .withName(kafkaRebalance.getMetadata().getName())
-                    .withLabels(Collections.singletonMap("app", "strimzi"))
-                    .withOwnerReferences(ModelUtils.createOwnerReference(kafkaRebalance, false))
-                .endMetadata()
-                .withData(Collections.singletonMap(BROKER_LOAD_KEY, beforeAndAfterBrokerLoad.toPrettyString()))
-                .build();
+        ConfigMap rebalanceMap = createConfigMapForRebalance(kafkaRebalance, Collections.singletonMap(BROKER_LOAD_KEY, beforeAndAfterBrokerLoad.toPrettyString()));
 
         Map<String, Object> summaryMap = OBJECT_MAPPER.convertValue(proposalJson.get(CruiseControlRebalanceKeys.SUMMARY.getKey()), new TypeReference<Map<String, Object>>() { });
         summaryMap.put("afterBeforeLoadConfigMap", rebalanceMap.getMetadata().getName());
@@ -887,13 +872,7 @@ public class KafkaRebalanceAssemblyOperator
                     "If this occurs often, consider increasing the value for max.active.user.tasks in the Cruise Control configuration.");
             configMapOperator.getAsync(kafkaRebalance.getMetadata().getNamespace(), kafkaRebalance.getMetadata().getName())
                     .onSuccess(loadmap -> p.complete(new MapAndStatus<>(
-                        ConfigMapUtils.createConfigMap(
-                            loadmap.getMetadata().getName(),
-                            loadmap.getMetadata().getNamespace(),
-                            Labels.fromMap(loadmap.getMetadata().getLabels()),
-                            ModelUtils.createOwnerReference(kafkaRebalance, false),
-                            loadmap.getData()
-                        ),
+                        loadmap != null ? createConfigMapForRebalance(kafkaRebalance, loadmap.getData()) : null,
                         buildRebalanceStatusFromPreviousStatus(kafkaRebalance.getStatus(), conditions))
                     ));
             return;
@@ -962,13 +941,7 @@ public class KafkaRebalanceAssemblyOperator
                 LOGGER.infoCr(reconciliation, "Rebalance ({}) optimization proposal is still being prepared", sessionId);
                 configMapOperator.getAsync(kafkaRebalance.getMetadata().getNamespace(), kafkaRebalance.getMetadata().getName())
                         .onSuccess(loadmap -> p.complete(new MapAndStatus<>(
-                            ConfigMapUtils.createConfigMap(
-                                loadmap.getMetadata().getName(),
-                                loadmap.getMetadata().getNamespace(),
-                                Labels.fromMap(loadmap.getMetadata().getLabels()),
-                                ModelUtils.createOwnerReference(kafkaRebalance, false),
-                                loadmap.getData()
-                            ),
+                            loadmap != null ? createConfigMapForRebalance(kafkaRebalance, loadmap.getData()) : null,
                             buildRebalanceStatusFromPreviousStatus(kafkaRebalance.getStatus(), conditions))
                         ));
                 break;
@@ -1008,13 +981,7 @@ public class KafkaRebalanceAssemblyOperator
                 case none:
                     LOGGER.debugCr(reconciliation, "No {} annotation set", ANNO_STRIMZI_IO_REBALANCE);
                     return configMapOperator.getAsync(kafkaRebalance.getMetadata().getNamespace(), kafkaRebalance.getMetadata().getName()).compose(loadmap -> Future.succeededFuture(new MapAndStatus<>(
-                        ConfigMapUtils.createConfigMap(
-                            loadmap.getMetadata().getName(),
-                            loadmap.getMetadata().getNamespace(),
-                            Labels.fromMap(loadmap.getMetadata().getLabels()),
-                            ModelUtils.createOwnerReference(kafkaRebalance, false),
-                            loadmap.getData()
-                        ),
+                        loadmap != null ? createConfigMapForRebalance(kafkaRebalance, loadmap.getData()) : null,
                         buildRebalanceStatusFromPreviousStatus(kafkaRebalance.getStatus(), StatusUtils.validate(reconciliation, kafkaRebalance)))
                     ));
                 case approve:
@@ -1029,13 +996,7 @@ public class KafkaRebalanceAssemblyOperator
                     validateAnnotation(reconciliation, conditions, KafkaRebalanceState.ProposalReady, rebalanceAnnotation, kafkaRebalance);
                     return configMapOperator.getAsync(kafkaRebalance.getMetadata().getNamespace(), kafkaRebalance.getMetadata().getName())
                             .compose(loadmap -> Future.succeededFuture(new MapAndStatus<>(
-                                ConfigMapUtils.createConfigMap(
-                                    loadmap.getMetadata().getName(),
-                                    loadmap.getMetadata().getNamespace(),
-                                    Labels.fromMap(loadmap.getMetadata().getLabels()),
-                                    ModelUtils.createOwnerReference(kafkaRebalance, false),
-                                    loadmap.getData()
-                                ),
+                                loadmap != null ? createConfigMapForRebalance(kafkaRebalance, loadmap.getData()) : null,
                                 buildRebalanceStatusFromPreviousStatus(kafkaRebalance.getStatus(), conditions))
                             ));
             }
@@ -1155,13 +1116,7 @@ public class KafkaRebalanceAssemblyOperator
             validateAnnotation(reconciliation, conditions, KafkaRebalanceState.Ready, rebalanceAnnotation, kafkaRebalance);
             return configMapOperator.getAsync(kafkaRebalance.getMetadata().getNamespace(), kafkaRebalance.getMetadata().getName())
                     .compose(loadmap -> Future.succeededFuture(new MapAndStatus<>(
-                        ConfigMapUtils.createConfigMap(
-                            loadmap.getMetadata().getName(),
-                            loadmap.getMetadata().getNamespace(),
-                            Labels.fromMap(loadmap.getMetadata().getLabels()),
-                            ModelUtils.createOwnerReference(kafkaRebalance, false),
-                            loadmap.getData()
-                        ),
+                        loadmap != null ? createConfigMapForRebalance(kafkaRebalance, loadmap.getData()) : null,
                         buildRebalanceStatusFromPreviousStatus(kafkaRebalance.getStatus(), conditions))
                     ));
         }
@@ -1437,6 +1392,24 @@ public class KafkaRebalanceAssemblyOperator
         } else {
             return CruiseControlIssues.checkForMatch(kafkaRebalance.getStatus().getConditions());
         }
+    }
+
+    /**
+     * Method returning ConfigMap for KafkaRebalance and specific data.
+     *
+     * @param kafkaRebalance    KafkaRebalance for which we are creating the ConfigMap.
+     * @param data              rebalance data that should be added to the ConfigMap.
+     *
+     * @return  ConfigMap for KafkaRebalance and specific data.
+     */
+    private static ConfigMap createConfigMapForRebalance(KafkaRebalance kafkaRebalance, Map<String, String> data) {
+        return ConfigMapUtils.createConfigMap(
+            kafkaRebalance.getMetadata().getName(),
+            kafkaRebalance.getMetadata().getNamespace(),
+            Labels.generateDefaultLabels(kafkaRebalance, kafkaRebalance.getMetadata().getName(), "kafka-rebalance", AbstractModel.STRIMZI_CLUSTER_OPERATOR_NAME),
+            ModelUtils.createOwnerReference(kafkaRebalance, false),
+            data
+        );
     }
 
     /**
