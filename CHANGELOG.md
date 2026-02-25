@@ -2,7 +2,7 @@
 
 ## 1.0.0
 
-* Nothing here yet, but we will surely develop something new pretty soon 😉
+* Add support for Kafka 4.1.2
 
 ### Major changes, deprecations, and removals
 
