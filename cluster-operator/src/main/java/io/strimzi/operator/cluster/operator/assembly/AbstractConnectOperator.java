@@ -9,6 +9,7 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.DefaultKubernetesResourceList;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
+import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.ServiceAccount;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
@@ -874,11 +875,17 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                     Map<String, String> labels = existingConfigMap.getMetadata().getLabels();
                     labels.putAll(resource.getMetadata().getLabels());
 
+                    OwnerReference ownerReference = ModelUtils.createOwnerReference(resource, false);
+
+                    if (!existingConfigMap.getMetadata().getOwnerReferences().isEmpty()) {
+                        ownerReference = existingConfigMap.getMetadata().getOwnerReferences().get(0);
+                    }
+
                     ConfigMap listOffsetsConfigMap = ConfigMapUtils.createConfigMap(
                         existingConfigMap.getMetadata().getName(),
                         existingConfigMap.getMetadata().getNamespace(),
                         Labels.fromMap(labels),
-                        ModelUtils.createOwnerReference(resource, false),
+                        ownerReference,
                         data
                     );
 
