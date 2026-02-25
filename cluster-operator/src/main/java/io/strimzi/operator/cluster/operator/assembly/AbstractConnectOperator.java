@@ -9,7 +9,6 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.DefaultKubernetesResourceList;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
-import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.ServiceAccount;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
@@ -869,20 +868,15 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                         ));
                     }
 
-                    Map<String, String> labels = existingConfigMap.getMetadata().getLabels();
-                    labels.putAll(resource.getMetadata().getLabels());
-                    ObjectMeta objectMeta = existingConfigMap.getMetadata();
-                    objectMeta.setLabels(labels);
-                    existingConfigMap.setMetadata(objectMeta);
-
-                    if (existingConfigMap.getMetadata().getOwnerReferences().isEmpty()) {
-                        existingConfigMap.addOwnerReference(ModelUtils.createOwnerReference(resource, false));
-                    }
-
                     Map<String, String> data = existingConfigMap.getData();
                     data.putAll(offsetsData);
-                    existingConfigMap.setData(data);
-                    return Future.succeededFuture(existingConfigMap);
+
+                    return Future.succeededFuture(ConfigMapUtils.createFromExistingConfigMap(
+                        existingConfigMap,
+                        Labels.fromMap(resource.getMetadata().getLabels()),
+                        data,
+                        ModelUtils.createOwnerReference(resource, false)
+                    ));
                 });
     }
 

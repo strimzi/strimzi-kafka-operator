@@ -31,6 +31,7 @@ import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceState;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceStatus;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceStatusBuilder;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
+import io.strimzi.operator.cluster.model.ConfigMapUtils;
 import io.strimzi.operator.cluster.model.CruiseControl;
 import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.cluster.model.NoSuchResourceException;
@@ -350,10 +351,7 @@ public class KafkaRebalanceAssemblyOperator
 
                     if (existingConfigMap != null) {
                         if (desiredConfigMap == null) {
-                            // we need to remove the managedFields from the metadata, as we cannot apply/update the resource
-                            // with this field configured
-                            existingConfigMap.getMetadata().setManagedFields(null);
-                            desiredStatusAndMap.setLoadAndProgressConfigMap(existingConfigMap);
+                            desiredStatusAndMap.setLoadAndProgressConfigMap(ConfigMapUtils.createFromExistingConfigMap(existingConfigMap, null, null, null));
                             desiredConfigMap = existingConfigMap;
                         } else {
                             // Ensure desiredConfigMap retains broker load information if it exists.
@@ -880,7 +878,10 @@ public class KafkaRebalanceAssemblyOperator
             LOGGER.warnCr(reconciliation, "The maximum number of active user tasks that Cruise Control can run concurrently has been reached, therefore will retry getting user tasks in the next reconciliation. " +
                     "If this occurs often, consider increasing the value for max.active.user.tasks in the Cruise Control configuration.");
             configMapOperator.getAsync(kafkaRebalance.getMetadata().getNamespace(), kafkaRebalance.getMetadata().getName())
-                    .onSuccess(loadmap -> p.complete(new MapAndStatus<>(loadmap, buildRebalanceStatusFromPreviousStatus(kafkaRebalance.getStatus(), conditions))));
+                    .onSuccess(loadmap -> p.complete(new MapAndStatus<>(
+                        ConfigMapUtils.createFromExistingConfigMap(loadmap, null, null, null),
+                        buildRebalanceStatusFromPreviousStatus(kafkaRebalance.getStatus(), conditions))
+                    ));
             return;
         }
 
@@ -946,7 +947,10 @@ public class KafkaRebalanceAssemblyOperator
                 // check that the optimisation proposal is added to the status on the next reconcile.
                 LOGGER.infoCr(reconciliation, "Rebalance ({}) optimization proposal is still being prepared", sessionId);
                 configMapOperator.getAsync(kafkaRebalance.getMetadata().getNamespace(), kafkaRebalance.getMetadata().getName())
-                        .onSuccess(loadmap -> p.complete(new MapAndStatus<>(loadmap, buildRebalanceStatusFromPreviousStatus(kafkaRebalance.getStatus(), conditions))));
+                        .onSuccess(loadmap -> p.complete(new MapAndStatus<>(
+                            ConfigMapUtils.createFromExistingConfigMap(loadmap, null, null, null),
+                            buildRebalanceStatusFromPreviousStatus(kafkaRebalance.getStatus(), conditions))
+                        ));
                 break;
             default:
                 LOGGER.errorCr(reconciliation, "Unexpected state {}", taskStatus);
@@ -983,7 +987,10 @@ public class KafkaRebalanceAssemblyOperator
             switch (rebalanceAnnotation) {
                 case none:
                     LOGGER.debugCr(reconciliation, "No {} annotation set", ANNO_STRIMZI_IO_REBALANCE);
-                    return configMapOperator.getAsync(kafkaRebalance.getMetadata().getNamespace(), kafkaRebalance.getMetadata().getName()).compose(loadmap -> Future.succeededFuture(new MapAndStatus<>(loadmap, buildRebalanceStatusFromPreviousStatus(kafkaRebalance.getStatus(), StatusUtils.validate(reconciliation, kafkaRebalance)))));
+                    return configMapOperator.getAsync(kafkaRebalance.getMetadata().getNamespace(), kafkaRebalance.getMetadata().getName()).compose(loadmap -> Future.succeededFuture(new MapAndStatus<>(
+                        ConfigMapUtils.createFromExistingConfigMap(loadmap, null, null, null),
+                        buildRebalanceStatusFromPreviousStatus(kafkaRebalance.getStatus(), StatusUtils.validate(reconciliation, kafkaRebalance)))
+                    ));
                 case approve:
                     LOGGER.debugCr(reconciliation, "Annotation {}={}", ANNO_STRIMZI_IO_REBALANCE, KafkaRebalanceAnnotation.approve);
                     return requestRebalance(reconciliation, host, apiClient, kafkaRebalance, false, rebalanceOptionsBuilder);
@@ -995,7 +1002,10 @@ public class KafkaRebalanceAssemblyOperator
                     Set<Condition> conditions = StatusUtils.validate(reconciliation, kafkaRebalance);
                     validateAnnotation(reconciliation, conditions, KafkaRebalanceState.ProposalReady, rebalanceAnnotation, kafkaRebalance);
                     return configMapOperator.getAsync(kafkaRebalance.getMetadata().getNamespace(), kafkaRebalance.getMetadata().getName())
-                            .compose(loadmap -> Future.succeededFuture(new MapAndStatus<>(loadmap, buildRebalanceStatusFromPreviousStatus(kafkaRebalance.getStatus(), conditions))));
+                            .compose(loadmap -> Future.succeededFuture(new MapAndStatus<>(
+                                ConfigMapUtils.createFromExistingConfigMap(loadmap, null, null, null),
+                                buildRebalanceStatusFromPreviousStatus(kafkaRebalance.getStatus(), conditions))
+                            ));
             }
         }
     }
@@ -1112,7 +1122,10 @@ public class KafkaRebalanceAssemblyOperator
             Set<Condition> conditions = StatusUtils.validate(reconciliation, kafkaRebalance);
             validateAnnotation(reconciliation, conditions, KafkaRebalanceState.Ready, rebalanceAnnotation, kafkaRebalance);
             return configMapOperator.getAsync(kafkaRebalance.getMetadata().getNamespace(), kafkaRebalance.getMetadata().getName())
-                    .compose(loadmap -> Future.succeededFuture(new MapAndStatus<>(loadmap, buildRebalanceStatusFromPreviousStatus(kafkaRebalance.getStatus(), conditions))));
+                    .compose(loadmap -> Future.succeededFuture(new MapAndStatus<>(
+                        ConfigMapUtils.createFromExistingConfigMap(loadmap, null, null, null),
+                        buildRebalanceStatusFromPreviousStatus(kafkaRebalance.getStatus(), conditions))
+                    ));
         }
     }
 

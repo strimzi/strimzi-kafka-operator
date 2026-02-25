@@ -8,6 +8,9 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.ConfigMapKeySelector;
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.ManagedFieldsEntryBuilder;
+import io.fabric8.kubernetes.api.model.OwnerReference;
+import io.fabric8.kubernetes.api.model.OwnerReferenceBuilder;
 import io.strimzi.api.kafka.model.common.ExternalLoggingBuilder;
 import io.strimzi.api.kafka.model.common.metrics.JmxPrometheusExporterMetricsBuilder;
 import io.strimzi.api.kafka.model.connect.KafkaConnectSpecBuilder;
@@ -22,11 +25,13 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import org.junit.jupiter.api.Test;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 public class ConfigMapUtilsTest {
@@ -78,6 +83,49 @@ public class ConfigMapUtilsTest {
         assertThat(data.size(), is(2));
         assertThat(data.get(JmxPrometheusExporterModel.CONFIG_MAP_KEY), is(notNullValue()));
         assertThat(data.get(LoggingModel.LOG4J2_CONFIG_MAP_KEY), is(notNullValue()));
+    }
+
+    @Test
+    public void testCreateFromExistingConfigMap() {
+        Map<String, String> existingData = Map.of("key1", "value1", "key2", "value2");
+        ConfigMap existingConfigMap = ConfigMapUtils.createConfigMap(NAME, NAMESPACE, LABELS, ResourceUtils.DUMMY_OWNER_REFERENCE, existingData);
+        existingConfigMap.getMetadata().setManagedFields(List.of(new ManagedFieldsEntryBuilder().withManager("my-manager").build()));
+
+        ConfigMap newFromExisting = ConfigMapUtils.createFromExistingConfigMap(existingConfigMap, null, null, null);
+
+        assertThat(newFromExisting.getMetadata().getManagedFields(), nullValue());
+        assertThat(newFromExisting.getMetadata().getLabels(), is(LABELS.toMap()));
+        assertThat(newFromExisting.getMetadata().getOwnerReferences(), is(List.of(ResourceUtils.DUMMY_OWNER_REFERENCE)));
+        assertThat(newFromExisting.getData(), is(existingData));
+
+        Labels additionalLabels = Labels.fromMap(Map.of("another-label", "value"));
+        Map<String, String> additionalData = Map.of("key3", "value3");
+        OwnerReference differentOwnerReference = new OwnerReferenceBuilder().withName("my-different-reference").build();
+
+        newFromExisting = ConfigMapUtils.createFromExistingConfigMap(existingConfigMap, additionalLabels, additionalData, differentOwnerReference);
+
+        Map<String, String> expectedLabels = new HashMap<>(LABELS.toMap());
+        expectedLabels.putAll(additionalLabels.toMap());
+
+        Map<String, String> expectedData = new HashMap<>(existingData);
+        expectedData.putAll(additionalData);
+
+        assertThat(newFromExisting.getMetadata().getManagedFields(), nullValue());
+        assertThat(newFromExisting.getMetadata().getLabels(), is(expectedLabels));
+        assertThat(newFromExisting.getMetadata().getOwnerReferences(), is(List.of(ResourceUtils.DUMMY_OWNER_REFERENCE)));
+        assertThat(newFromExisting.getData(), is(expectedData));
+
+        // set labels, OwnerReference, and data to `null` to check if they will be correctly set
+        existingConfigMap.getMetadata().setOwnerReferences(null);
+        existingConfigMap.getMetadata().setLabels(null);
+        existingConfigMap.setData(null);
+
+        newFromExisting = ConfigMapUtils.createFromExistingConfigMap(existingConfigMap, additionalLabels, additionalData, differentOwnerReference);
+
+        assertThat(newFromExisting.getMetadata().getManagedFields(), nullValue());
+        assertThat(newFromExisting.getMetadata().getLabels(), is(additionalLabels.toMap()));
+        assertThat(newFromExisting.getMetadata().getOwnerReferences(), is(List.of(differentOwnerReference)));
+        assertThat(newFromExisting.getData(), is(additionalData));
     }
 
     private static class ModelWithoutMetricsAndLogging extends AbstractModel   {

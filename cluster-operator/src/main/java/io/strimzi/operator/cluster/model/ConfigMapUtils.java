@@ -15,6 +15,7 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -50,6 +51,53 @@ public class ConfigMapUtils {
                 .endMetadata()
                 .withData(data)
                 .build();
+    }
+
+    /**
+     * Method for creating ConfigMap from existing ConfigMap, setting the additional information like labels, data, and {@link OwnerReference}.
+     * It also sets the `.metadata.managedFields` to `null`, so we don't have conflicts (because of the forbidden option) during Server-Side Apply patch.
+     *
+     * @param existingConfigMap     already existing ConfigMap.
+     * @param labels                additional Labels that should be set.
+     * @param data                  data that should be added to the ConfigMap.
+     * @param ownerReference        {@link OwnerReference} of the ConfigMap.
+     *
+     * @return  ConfigMap created from the existing one, with updated fields.
+     */
+    public static ConfigMap createFromExistingConfigMap(
+        ConfigMap existingConfigMap,
+        Labels labels,
+        Map<String, String> data,
+        OwnerReference ownerReference
+    ) {
+        ConfigMap newConfigMap = new ConfigMapBuilder(existingConfigMap).build();
+
+        if (labels != null) {
+            if (newConfigMap.getMetadata().getLabels() != null) {
+                newConfigMap.getMetadata().getLabels().putAll(labels.toMap());
+            } else {
+                newConfigMap.getMetadata().setLabels(labels.toMap());
+            }
+        }
+
+        if (data != null) {
+            if (newConfigMap.getData() != null) {
+                newConfigMap.getData().putAll(data);
+            } else {
+                newConfigMap.setData(data);
+            }
+        }
+
+        if (ownerReference != null
+            && (newConfigMap.getMetadata().getOwnerReferences() == null || newConfigMap.getMetadata().getOwnerReferences().isEmpty())
+        ) {
+            newConfigMap.getMetadata().setOwnerReferences(List.of(ownerReference));
+        }
+
+        // we need to set `managedFields` in `metadata` to `null` to prevent issues with Server-Side Apply
+        newConfigMap.getMetadata().setManagedFields(null);
+
+        return newConfigMap;
     }
 
     /**
