@@ -14,10 +14,12 @@ import io.strimzi.api.kafka.model.connector.KafkaConnector;
 import io.strimzi.api.kafka.model.connector.KafkaConnectorBuilder;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ResourceUtils;
+import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.model.KafkaConnectCluster;
 import io.strimzi.operator.cluster.model.KafkaConnectorOffsetsAnnotation;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.model.Labels;
 import io.strimzi.platform.KubernetesVersion;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
@@ -277,6 +279,16 @@ public class KafkaConnectAssemblyOperatorConnectorOffsetsTest {
                     assertThat(configMap.getMetadata().getName(), is(CONFIGMAP_NAME));
                     assertThat(configMap.getMetadata().getLabels(), hasEntry("connector-label", "custom"));
 
+                    assertThat(configMap.getMetadata().getLabels(), hasEntry(Labels.STRIMZI_NAME_LABEL, connector.getMetadata().getName()));
+                    assertThat(configMap.getMetadata().getLabels(), hasEntry(Labels.STRIMZI_KIND_LABEL, connector.getKind()));
+                    assertThat(configMap.getMetadata().getLabels(), hasEntry(Labels.STRIMZI_CLUSTER_LABEL, connector.getMetadata().getName()));
+                    assertThat(configMap.getMetadata().getLabels(), hasEntry(Labels.STRIMZI_COMPONENT_TYPE_LABEL, "kafka-connector"));
+
+                    assertThat(configMap.getMetadata().getLabels(), hasEntry(Labels.KUBERNETES_PART_OF_LABEL, "strimzi-" + connector.getMetadata().getName()));
+                    assertThat(configMap.getMetadata().getLabels(), hasEntry(Labels.KUBERNETES_MANAGED_BY_LABEL, AbstractModel.STRIMZI_CLUSTER_OPERATOR_NAME));
+                    assertThat(configMap.getMetadata().getLabels(), hasEntry(Labels.KUBERNETES_NAME_LABEL, "kafka-connector"));
+                    assertThat(configMap.getMetadata().getLabels(), hasEntry(Labels.KUBERNETES_INSTANCE_LABEL, connector.getMetadata().getName()));
+
                     List<OwnerReference> ownerReferenceList = configMap.getMetadata().getOwnerReferences();
                     assertThat(ownerReferenceList, hasSize(1));
                     assertThat(ownerReferenceList.get(0).getName(), is(CONNECTOR_NAME));
@@ -301,17 +313,14 @@ public class KafkaConnectAssemblyOperatorConnectorOffsetsTest {
                 supplier, ResourceUtils.dummyClusterOperatorConfig());
         Reconciliation reconciliation = Reconciliation.DUMMY_RECONCILIATION;
 
-        Map<String, String> existingCMLabels = new HashMap<>();
-        existingCMLabels.put("label1", "value1");
         Map<String, String> existingData = new HashMap<>();
         existingData.put("data1", "value1");
         ConfigMap existingCM = new ConfigMapBuilder()
                 .withNewMetadata()
                     .withName(CONFIGMAP_NAME)
                     .withNamespace(NAMESPACE)
-                    .withLabels(existingCMLabels)
                     .withOwnerReferences(ResourceUtils.DUMMY_OWNER_REFERENCE)
-                    .endMetadata()
+                .endMetadata()
                 .withData(existingData)
                 .build();
 
@@ -335,9 +344,20 @@ public class KafkaConnectAssemblyOperatorConnectorOffsetsTest {
 
                     List<OwnerReference> ownerReferenceList = configMap.getMetadata().getOwnerReferences();
                     assertThat(ownerReferenceList, hasSize(1));
-                    assertThat(ownerReferenceList.get(0).getName(), is("my-name"));
-                    assertThat(configMap.getMetadata().getLabels(), hasEntry("label1", "value1"));
+                    assertThat(ownerReferenceList.get(0).getName(), is(connector.getMetadata().getName()));
+                    assertThat(ownerReferenceList.get(0).getKind(), is(connector.getKind()));
                     assertThat(configMap.getMetadata().getLabels(), hasEntry("connector-label", "custom"));
+
+                    assertThat(configMap.getMetadata().getLabels(), hasEntry(Labels.STRIMZI_NAME_LABEL, connector.getMetadata().getName()));
+                    assertThat(configMap.getMetadata().getLabels(), hasEntry(Labels.STRIMZI_KIND_LABEL, connector.getKind()));
+                    assertThat(configMap.getMetadata().getLabels(), hasEntry(Labels.STRIMZI_CLUSTER_LABEL, connector.getMetadata().getName()));
+                    assertThat(configMap.getMetadata().getLabels(), hasEntry(Labels.STRIMZI_COMPONENT_TYPE_LABEL, "kafka-connector"));
+
+                    assertThat(configMap.getMetadata().getLabels(), hasEntry(Labels.KUBERNETES_PART_OF_LABEL, "strimzi-" + connector.getMetadata().getName()));
+                    assertThat(configMap.getMetadata().getLabels(), hasEntry(Labels.KUBERNETES_MANAGED_BY_LABEL, AbstractModel.STRIMZI_CLUSTER_OPERATOR_NAME));
+                    assertThat(configMap.getMetadata().getLabels(), hasEntry(Labels.KUBERNETES_NAME_LABEL, "kafka-connector"));
+                    assertThat(configMap.getMetadata().getLabels(), hasEntry(Labels.KUBERNETES_INSTANCE_LABEL, connector.getMetadata().getName()));
+
                     Map<String, String> configMapData = configMap.getData();
                     assertThat(configMapData, hasEntry("offsets.json", OFFSETS_JSON));
                     assertThat(configMapData, hasEntry("data1", "value1"));

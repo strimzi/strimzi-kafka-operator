@@ -9,7 +9,6 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.DefaultKubernetesResourceList;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
-import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.ServiceAccount;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
@@ -30,6 +29,7 @@ import io.strimzi.api.kafka.model.kafka.Status;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
+import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.model.ConfigMapUtils;
 import io.strimzi.operator.cluster.model.ImagePullPolicy;
 import io.strimzi.operator.cluster.model.KafkaConnectCluster;
@@ -821,33 +821,22 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         String configMapNamespace = resource.getMetadata().getNamespace();
         return configMapOperations.getAsync(configMapNamespace, configMapName)
                 .compose(existingConfigMap -> {
+                    Map<String, String> data;
+
                     if (existingConfigMap == null) {
-                        return Future.succeededFuture(ConfigMapUtils.createConfigMap(
-                                configMapName,
-                                configMapNamespace,
-                                Labels.fromMap(resource.getMetadata().getLabels()),
-                                ModelUtils.createOwnerReference(resource, false),
-                                offsetsData
-                        ));
+                        data = offsetsData;
+                    } else {
+                        data = existingConfigMap.getData();
+                        data.putAll(offsetsData);
                     }
 
-                    Map<String, String> labels = existingConfigMap.getMetadata().getLabels();
-                    labels.putAll(resource.getMetadata().getLabels());
-                    ObjectMeta objectMeta = existingConfigMap.getMetadata();
-                    objectMeta.setLabels(labels);
-                    // We need to remove the managedFields from the metadata, as we can use server-side-apply.
-                    // This should be fixed properly as part of https://github.com/strimzi/strimzi-kafka-operator/issues/12462
-                    objectMeta.setManagedFields(null);
-                    existingConfigMap.setMetadata(objectMeta);
-
-                    if (existingConfigMap.getMetadata().getOwnerReferences().isEmpty()) {
-                        existingConfigMap.addOwnerReference(ModelUtils.createOwnerReference(resource, false));
-                    }
-
-                    Map<String, String> data = existingConfigMap.getData();
-                    data.putAll(offsetsData);
-                    existingConfigMap.setData(data);
-                    return Future.succeededFuture(existingConfigMap);
+                    return Future.succeededFuture(ConfigMapUtils.createConfigMap(
+                        configMapName,
+                        configMapNamespace,
+                        Labels.generateDefaultLabels(resource, resource.getMetadata().getName(), "kafka-connector", AbstractModel.STRIMZI_CLUSTER_OPERATOR_NAME),
+                        ModelUtils.createOwnerReference(resource, false),
+                        data
+                    ));
                 });
     }
 
