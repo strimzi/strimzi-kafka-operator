@@ -871,12 +871,18 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                     Map<String, String> data = existingConfigMap.getData();
                     data.putAll(offsetsData);
 
-                    return Future.succeededFuture(ConfigMapUtils.createFromExistingConfigMap(
-                        existingConfigMap,
-                        Labels.fromMap(resource.getMetadata().getLabels()),
-                        data,
-                        ModelUtils.createOwnerReference(resource, false)
-                    ));
+                    Map<String, String> labels = existingConfigMap.getMetadata().getLabels();
+                    labels.putAll(resource.getMetadata().getLabels());
+
+                    ConfigMap listOffsetsConfigMap = ConfigMapUtils.createConfigMap(
+                        existingConfigMap.getMetadata().getName(),
+                        existingConfigMap.getMetadata().getNamespace(),
+                        Labels.fromMap(labels),
+                        ModelUtils.createOwnerReference(resource, false),
+                        data
+                    );
+
+                    return Future.succeededFuture(listOffsetsConfigMap);
                 });
     }
 
