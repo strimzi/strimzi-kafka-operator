@@ -30,7 +30,7 @@ public class KafkaVersionTestUtils {
     public static final String LATEST_KAFKA_CONNECT_IMAGE = KAFKA_CONNECT_IMAGE_STR + LATEST_KAFKA_VERSION;
     public static final String LATEST_KAFKA_MIRROR_MAKER_2_IMAGE = KAFKA_MIRROR_MAKER_2_IMAGE_STR + LATEST_KAFKA_VERSION;
 
-    public static final String PREVIOUS_KAFKA_VERSION = "4.1.1";
+    public static final String PREVIOUS_KAFKA_VERSION = "4.1.2";
     public static final String PREVIOUS_FORMAT_VERSION = "4.1";
     public static final String PREVIOUS_PROTOCOL_VERSION = "4.1";
     public static final String PREVIOUS_METADATA_VERSION = "4.1-IV1";

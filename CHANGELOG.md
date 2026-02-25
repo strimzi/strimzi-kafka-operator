@@ -5,6 +5,7 @@
 * Use the `v1` API in the Cluster Operator
 * Use the `v1` API as the _stored_ API version
 * Allow upgrading from unknown Apache Kafka versions (that might be used in Strimzi patch releases)
+* Add support for Kafka 4.1.2
 
 ### Major changes, deprecations, and removals
 
