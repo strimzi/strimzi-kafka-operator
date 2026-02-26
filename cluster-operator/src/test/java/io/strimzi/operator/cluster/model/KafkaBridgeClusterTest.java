@@ -195,7 +195,7 @@ public class KafkaBridgeClusterTest {
         assertThat(svc.getSpec().getIpFamilyPolicy(), is(nullValue()));
         assertThat(svc.getSpec().getIpFamilies(), is(nullValue()));
 
-        assertThat(svc.getMetadata().getAnnotations(), is(kbc.getDiscoveryAnnotation(KafkaBridgeCluster.DEFAULT_REST_API_PORT)));
+        assertThat(svc.getMetadata().getAnnotations(), is(kbc.getDiscoveryAnnotation(KafkaBridgeCluster.DEFAULT_REST_API_PORT, false)));
 
         io.strimzi.operator.cluster.TestUtils.checkOwnerReference(svc, resource);
     }
@@ -398,6 +398,40 @@ public class KafkaBridgeClusterTest {
         String bridgeConfigurations = configMap.getData().get(BRIDGE_CONFIGURATION_FILENAME);
         assertThat(bridgeConfigurations, containsString("kafka.sasl.mechanism=PLAIN"));
         assertThat(bridgeConfigurations, containsString("kafka.sasl.jaas.config=org.apache.kafka.common.security.plain.PlainLoginModule required username=\"user1\" password=\"${strimzidir:/opt/strimzi/bridge-password/user1-secret:password}\";"));
+    }
+
+    @Test
+    public void testGenerateDeploymentWithHttpTls() {
+        KafkaBridge resource = new KafkaBridgeBuilder(this.resource)
+                .editSpec()
+                    .withNewHttp()
+                        .withPort(8443)
+                        .withNewTls()
+                            .withNewCertificateAndKey()
+                                .withSecretName("my-secret")
+                                .withCertificate("my-secret")
+                                .withKey("private.key")
+                            .endCertificateAndKey()
+                        .endTls()
+                    .endHttp()
+                .endSpec()
+                .build();
+        KafkaBridgeCluster kbc = KafkaBridgeCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, SHARED_ENV_PROVIDER);
+        Deployment dep = kbc.generateDeployment(emptyMap(), true, null, null);
+
+        assertThat(dep.getSpec().getTemplate().getSpec().getVolumes().get(2).getName(), is("my-secret"));
+
+        List<Container> containers = dep.getSpec().getTemplate().getSpec().getContainers();
+
+        assertThat(containers.get(0).getVolumeMounts().get(2).getMountPath(), is(KafkaBridgeCluster.HTTP_SERVER_CERTS_BASE_VOLUME_MOUNT + "my-secret"));
+
+        ConfigMap configMap = kbc.generateBridgeConfigMap(metricsAndLogging);
+        String bridgeConfigurations = configMap.getData().get(BRIDGE_CONFIGURATION_FILENAME);
+
+        assertThat(bridgeConfigurations, containsString("http.port=8443"));
+        assertThat(bridgeConfigurations, containsString("http.ssl.enable=true"));
+        assertThat(bridgeConfigurations, containsString("http.ssl.keystore.location=/opt/strimzi/bridge-server-certs/my-secret/my-secret"));
+        assertThat(bridgeConfigurations, containsString("http.ssl.keystore.key.location=/opt/strimzi/bridge-server-certs/my-secret/private.key"));
     }
 
     @Test
@@ -1351,7 +1385,7 @@ public class KafkaBridgeClusterTest {
         assertThat(svc.getSpec().getPorts().get(0).getPort(), is(1874));
         assertThat(svc.getSpec().getPorts().get(0).getName(), is(KafkaBridgeCluster.REST_API_PORT_NAME));
         assertThat(svc.getSpec().getPorts().get(0).getProtocol(), is("TCP"));
-        assertThat(svc.getMetadata().getAnnotations(), is(kbc.getDiscoveryAnnotation(1874)));
+        assertThat(svc.getMetadata().getAnnotations(), is(kbc.getDiscoveryAnnotation(1874, false)));
         io.strimzi.operator.cluster.TestUtils.checkOwnerReference(svc, resource);
     }
 

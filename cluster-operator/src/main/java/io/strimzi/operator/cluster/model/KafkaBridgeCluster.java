@@ -85,10 +85,10 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
      * HTTP port configuration
      */
     public static final int DEFAULT_REST_API_PORT = 8080;
-
     /* test */ static final String COMPONENT_TYPE = "kafka-bridge";
     protected static final String REST_API_PORT_NAME = "rest-api";
     protected static final String TLS_CERTS_BASE_VOLUME_MOUNT = "/opt/strimzi/bridge-certs/";
+    protected static final String HTTP_SERVER_CERTS_BASE_VOLUME_MOUNT = "/opt/strimzi/bridge-server-certs/";
     protected static final String PASSWORD_VOLUME_MOUNT = "/opt/strimzi/bridge-password/";
     protected static final String ENV_VAR_KAFKA_INIT_INIT_FOLDER_KEY = "INIT_FOLDER";
     private static final String KAFKA_BRIDGE_CONFIG_VOLUME_NAME = "kafka-bridge-configurations";
@@ -247,8 +247,10 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
      */
     public Service generateService() {
         int port = DEFAULT_REST_API_PORT;
+        boolean isTls = false;
         if (http != null) {
             port = http.getPort();
+            isTls = http.getTls() != null;
         }
 
         return ServiceUtils.createDiscoverableClusterIpService(
@@ -260,7 +262,7 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
                 List.of(ServiceUtils.createServicePort(REST_API_PORT_NAME, port, REST_API_PORT_NAME, "TCP")),
                 labels.strimziSelectorLabels(),
                 ModelUtils.getCustomLabelsOrAnnotations(CO_ENV_VAR_CUSTOM_SERVICE_LABELS),
-                Util.mergeLabelsOrAnnotations(getDiscoveryAnnotation(port), ModelUtils.getCustomLabelsOrAnnotations(CO_ENV_VAR_CUSTOM_SERVICE_ANNOTATIONS))
+                Util.mergeLabelsOrAnnotations(getDiscoveryAnnotation(port, isTls), ModelUtils.getCustomLabelsOrAnnotations(CO_ENV_VAR_CUSTOM_SERVICE_ANNOTATIONS))
         );
     }
 
@@ -269,14 +271,14 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
      *
      * @return  JSON with discovery annotation
      */
-    /*test*/ Map<String, String> getDiscoveryAnnotation(int port) {
+    /*test*/ Map<String, String> getDiscoveryAnnotation(int port, boolean isTls) {
+        JsonArray anno = new JsonArray();
+
         JsonObject discovery = new JsonObject();
         discovery.put("port", port);
-        discovery.put("tls", false);
+        discovery.put("tls", isTls);
         discovery.put("auth", "none");
-        discovery.put("protocol", "http");
-
-        JsonArray anno = new JsonArray();
+        discovery.put("protocol", isTls ? "https" : "http");
         anno.add(discovery);
 
         return Collections.singletonMap(Labels.STRIMZI_DISCOVERY_LABEL, anno.encodePrettily());
@@ -304,6 +306,19 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
             CertUtils.createTrustedCertificatesVolumes(volumeList, tls.getTrustedCertificates(), isOpenShift);
         }
 
+        if (http != null && http.getTls() != null) {
+            if (http.getTls().getCertificateAndKey() != null) {
+                String secretName = http.getTls().getCertificateAndKey().getSecretName();
+                // skipping if a volume mount with same Secret name was already added
+                if (volumeList.stream().noneMatch(v -> v.getName().equals(secretName))) {
+                    volumeList.add(VolumeUtils.createSecretVolume(secretName, secretName, isOpenShift));
+                }
+            } else {
+                LOGGER.warnCr(reconciliation, "The spec.http.tls.certificateAndKey property is missing. This is required when TLS is enabled for HTTP Bridge.");
+                throw new InvalidResourceException("The TLS configuration for the HTTP is not specified.");
+            }
+        }
+
         if (rack != null) {
             volumeList.add(VolumeUtils.createEmptyDirVolume(INIT_VOLUME_NAME, "1Mi", "Memory"));
         }
@@ -323,6 +338,20 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
 
         if (tls != null) {
             CertUtils.createTrustedCertificatesVolumeMounts(volumeMountList, tls.getTrustedCertificates(), TLS_CERTS_BASE_VOLUME_MOUNT);
+        }
+
+        if (http != null && http.getTls() != null) {
+            if (http.getTls().getCertificateAndKey() != null) {
+                String secretName = http.getTls().getCertificateAndKey().getSecretName();
+                // skipping if a volume mount with same Secret name was already added
+                if (volumeMountList.stream().noneMatch(vm -> vm.getName().equals(secretName))) {
+                    volumeMountList.add(VolumeUtils.createVolumeMount(secretName,
+                            HTTP_SERVER_CERTS_BASE_VOLUME_MOUNT + secretName));
+                }
+            } else {
+                LOGGER.warnCr(reconciliation, "The spec.http.tls.certificateAndKey property is missing. This is required when TLS is enabled for HTTP Bridge.");
+                throw new InvalidResourceException("The TLS configuration for the HTTP is not specified.");
+            }
         }
 
         if (rack != null) {
