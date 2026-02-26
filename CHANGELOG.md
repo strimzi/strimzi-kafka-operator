@@ -3,6 +3,7 @@
 ## 0.45.2
 
 * Add support for Kafka 3.9.2
+* Update Kafka Exporter to [1.9.0](https://github.com/danielqsj/kafka_exporter/releases/tag/v1.9.0)
 
 ## 0.45.1
 
