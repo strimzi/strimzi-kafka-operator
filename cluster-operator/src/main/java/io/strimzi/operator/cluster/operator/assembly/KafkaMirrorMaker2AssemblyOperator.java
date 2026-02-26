@@ -303,11 +303,6 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
             (mirror1, status2) -> new KafkaMirrorMaker2Builder(mirror1).withStatus(status2).build());
     }
 
-    @Override
-    protected String normalizeConnectorName(String connectorName) {
-        return connectorName.replace("->", "--");
-    }
-
     // Methods for working with connector restarts
 
     /**

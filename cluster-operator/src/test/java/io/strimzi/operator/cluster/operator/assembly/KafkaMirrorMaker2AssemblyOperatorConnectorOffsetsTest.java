@@ -444,7 +444,7 @@ public class KafkaMirrorMaker2AssemblyOperatorConnectorOffsetsTest {
                     assertThat(configMap.getMetadata().getName(), is(CONFIGMAP_NAME));
                     assertThat(configMap.getMetadata().getLabels(), hasEntry("mm2-label", "custom"));
 
-                    assertThat(configMap.getMetadata().getLabels(), hasEntry(Labels.STRIMZI_NAME_LABEL, connectorName.replace("->", "--")));
+                    assertThat(configMap.getMetadata().getLabels(), hasEntry(Labels.STRIMZI_NAME_LABEL, MM2_NAME));
                     assertThat(configMap.getMetadata().getLabels(), hasEntry(Labels.STRIMZI_KIND_LABEL, KafkaMirrorMaker2.RESOURCE_KIND));
                     assertThat(configMap.getMetadata().getLabels(), hasEntry(Labels.STRIMZI_CLUSTER_LABEL, MM2_NAME));
                     assertThat(configMap.getMetadata().getLabels(), hasEntry(Labels.STRIMZI_COMPONENT_TYPE_LABEL, "kafka-connector"));
@@ -518,7 +518,7 @@ public class KafkaMirrorMaker2AssemblyOperatorConnectorOffsetsTest {
                     assertThat(configMap.getMetadata().getName(), is(CONFIGMAP_NAME));
                     assertThat(configMap.getMetadata().getLabels(), hasEntry("mm2-label", "custom"));
 
-                    assertThat(configMap.getMetadata().getLabels(), hasEntry(Labels.STRIMZI_NAME_LABEL, connectorName.replace("->", "--")));
+                    assertThat(configMap.getMetadata().getLabels(), hasEntry(Labels.STRIMZI_NAME_LABEL, MM2_NAME));
                     assertThat(configMap.getMetadata().getLabels(), hasEntry(Labels.STRIMZI_KIND_LABEL, KafkaMirrorMaker2.RESOURCE_KIND));
                     assertThat(configMap.getMetadata().getLabels(), hasEntry(Labels.STRIMZI_CLUSTER_LABEL, MM2_NAME));
                     assertThat(configMap.getMetadata().getLabels(), hasEntry(Labels.STRIMZI_COMPONENT_TYPE_LABEL, "kafka-connector"));

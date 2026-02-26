@@ -871,7 +871,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                     return Future.succeededFuture(ConfigMapUtils.createConfigMap(
                         configMapName,
                         configMapNamespace,
-                        Labels.generateDefaultLabels(resource, normalizeConnectorName(connectorName), "kafka-connector", AbstractModel.STRIMZI_CLUSTER_OPERATOR_NAME),
+                        Labels.generateDefaultLabels(resource, resource.getMetadata().getName(), "kafka-connector", AbstractModel.STRIMZI_CLUSTER_OPERATOR_NAME),
                         ModelUtils.createOwnerReference(resource, false),
                         data
                     ));
@@ -1009,18 +1009,6 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
     private Future<ConnectorStatusAndConditions> updateConnectorTopics(Reconciliation reconciliation, String host, KafkaConnectApi apiClient, String connectorName, ConnectorStatusAndConditions status) {
         return VertxUtil.completableFutureToVertxFuture(apiClient.getConnectorTopics(reconciliation, host, port, connectorName))
             .compose(updateConnectorStatusAndConditions(status));
-    }
-
-    /**
-     * Method for normalizing the Connector name in case that it contains some forbidden characters.
-     * By default, it returns just the name as is.
-     *
-     * @param connectorName     name of the Connector.
-     *
-     * @return  normalized Connector name.
-     */
-    protected String normalizeConnectorName(String connectorName) {
-        return connectorName;
     }
 
     // Abstract methods for working with connector restarts. These methods are implemented in the KafkaConnectAssemblyOperator and KafkaMirrorMaker2AssemblyOperator
