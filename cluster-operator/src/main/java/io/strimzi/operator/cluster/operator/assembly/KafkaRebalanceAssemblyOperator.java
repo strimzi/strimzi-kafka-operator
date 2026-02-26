@@ -714,7 +714,7 @@ public class KafkaRebalanceAssemblyOperator
         JsonNode beforeAndAfterBrokerLoad = parseLoadStats(
                 brokerLoadBeforeOptimization, brokerLoadAfterOptimization);
 
-        ConfigMap rebalanceMap = createConfigMapForRebalance(kafkaRebalance, Collections.singletonMap(BROKER_LOAD_KEY, beforeAndAfterBrokerLoad.toPrettyString()));
+        ConfigMap rebalanceMap = createConfigMapForRebalance(kafkaRebalance, Map.of(BROKER_LOAD_KEY, beforeAndAfterBrokerLoad.toPrettyString()));
 
         Map<String, Object> summaryMap = OBJECT_MAPPER.convertValue(proposalJson.get(CruiseControlRebalanceKeys.SUMMARY.getKey()), new TypeReference<Map<String, Object>>() { });
         summaryMap.put("afterBeforeLoadConfigMap", rebalanceMap.getMetadata().getName());
