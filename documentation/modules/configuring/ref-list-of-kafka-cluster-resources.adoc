@@ -23,7 +23,7 @@ The following resources are created by the Cluster Operator in the Kubernetes cl
 `<kafka_cluster_name>-kafka`:: Name given to the following Kafka resources:
 +
 - Service account used by the Kafka pods.
-- PodDisruptionBudget that applies to all Kafka cluster node pool pods.
+- PodDisruptionBudget that applies to all Kafka pods in the cluster, including broker-only, controller-only, and mixed-role (broker/controller) pods.
 - Role granting the Kafka brokers and controllers access to read their certificates and credentials.
 
 `<kafka_cluster_name>-kafka-brokers`:: Service needed to have DNS resolve the Kafka broker pods IP addresses directly.
