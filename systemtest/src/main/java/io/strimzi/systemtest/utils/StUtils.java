@@ -112,6 +112,12 @@ public class StUtils {
      * @return Updated docker image with a proper registry, org, tag
      */
     public static String changeOrgAndTag(String image) {
+        // in case that the image in the file contains `@sha256:`, we want to test exactly some digest and we
+        // will skip configuring the other parts, so returning the image as is
+        if (image.contains("@sha256:")) {
+            return image;
+        }
+
         Matcher m = IMAGE_PATTERN_FULL_PATH.matcher(image);
         if (m.find()) {
             String registry = setImageProperties(m.group("registry"), Environment.STRIMZI_REGISTRY);
