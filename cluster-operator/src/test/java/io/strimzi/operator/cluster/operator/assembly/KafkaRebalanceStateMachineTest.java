@@ -19,6 +19,7 @@ import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceState;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceStatus;
 import io.strimzi.certs.Subject;
 import io.strimzi.operator.cluster.ResourceUtils;
+import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.AbstractRebalanceOptions;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlApi;
@@ -214,6 +215,19 @@ public class KafkaRebalanceStateMachineTest {
                         assertThat(result.getStatus().getConditions(), StateMatchers.hasStateInConditions(nextState));
                         if (initialAnnotation != KafkaRebalanceAnnotation.none && !currentState.isValidateAnnotation(initialAnnotation)) {
                             assertThat("InvalidAnnotation", is(result.status.getConditions().get(0).getReason()));
+                        }
+                        if (result.getLoadAndProgressConfigMap() != null) {
+                            Map<String, String> cmLabels = result.getLoadAndProgressConfigMap().getMetadata().getLabels();
+
+                            assertThat(cmLabels.get(Labels.STRIMZI_NAME_LABEL), is(kcRebalance.getMetadata().getName()));
+                            assertThat(cmLabels.get(Labels.STRIMZI_KIND_LABEL), is(KafkaRebalance.RESOURCE_KIND));
+                            assertThat(cmLabels.get(Labels.STRIMZI_CLUSTER_LABEL), is(kcRebalance.getMetadata().getName()));
+                            assertThat(cmLabels.get(Labels.STRIMZI_COMPONENT_TYPE_LABEL), is("kafka-rebalance"));
+
+                            assertThat(cmLabels.get(Labels.KUBERNETES_PART_OF_LABEL), is("strimzi-" + kcRebalance.getMetadata().getName()));
+                            assertThat(cmLabels.get(Labels.KUBERNETES_MANAGED_BY_LABEL), is(AbstractModel.STRIMZI_CLUSTER_OPERATOR_NAME));
+                            assertThat(cmLabels.get(Labels.KUBERNETES_NAME_LABEL), is("kafka-rebalance"));
+                            assertThat(cmLabels.get(Labels.KUBERNETES_INSTANCE_LABEL), is(kcRebalance.getMetadata().getName()));
                         }
                     });
                     return Future.succeededFuture(result.getStatus());
