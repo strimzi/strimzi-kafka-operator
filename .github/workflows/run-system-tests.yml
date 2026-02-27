@@ -149,7 +149,7 @@ jobs:
         if: ${{ inputs.buildRunId != '' }}
         uses: actions/download-artifact@v7
         with:
-          name: "containers-${{ matrix.config.arch }}.tar"
+          name: "containers-operators-${{ matrix.config.arch }}.tar"
           run-id: ${{ inputs.buildRunId }}
           github-token: ${{ github.token }}
 
@@ -158,7 +158,7 @@ jobs:
         if: ${{ inputs.buildRunId == '' }}
         uses: actions/download-artifact@v7
         with:
-          name: "containers-${{ matrix.config.arch }}.tar"
+          name: "containers-operators-${{ matrix.config.arch }}.tar"
 
       # Load Strimzi images from Build workflow
       - name: Load Strimzi images
