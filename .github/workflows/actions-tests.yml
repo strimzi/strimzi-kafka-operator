@@ -35,7 +35,9 @@ jobs:
           sudo install -m 0755 ./bin/act /usr/local/bin/act
           
       - name: Install yq
-        uses: ./.github/actions/dependencies/install-yq
+        uses: strimzi/github-actions/.github/actions/dependencies/install-yq@main
+        with:
+          version: "v4.6.3"
 
       # Test all parse-comment scenarios
       - name: Test parse-comment action scenarios
@@ -119,7 +121,9 @@ jobs:
           sudo install -m 0755 ./bin/act /usr/local/bin/act
           
       - name: Install yq
-        uses: ./.github/actions/dependencies/install-yq
+        uses: strimzi/github-actions/.github/actions/dependencies/install-yq@main
+        with:
+          version: "v4.6.3"
 
       # Test all check-permissions scenarios
       - name: Test check-permissions action scenarios
@@ -213,7 +217,9 @@ jobs:
           sudo install -m 0755 ./bin/act /usr/local/bin/act
 
       - name: Install yq
-        uses: ./.github/actions/dependencies/install-yq
+        uses: strimzi/github-actions/.github/actions/dependencies/install-yq@main
+        with:
+          version: "v4.6.3"
 
       # Test all generate-matrix scenarios
       - name: Test generate-matrix action scenarios
@@ -298,7 +304,9 @@ jobs:
           sudo install -m 0755 ./bin/act /usr/local/bin/act
 
       - name: Install yq
-        uses: ./.github/actions/dependencies/install-yq
+        uses: strimzi/github-actions/.github/actions/dependencies/install-yq@main
+        with:
+          version: "v4.6.3"
 
       # Test all validate-matrix scenarios
       - name: Test validate-matrix action scenarios
@@ -393,7 +401,9 @@ jobs:
           sudo install -m 0755 ./bin/act /usr/local/bin/act
 
       - name: Install yq
-        uses: ./.github/actions/dependencies/install-yq
+        uses: strimzi/github-actions/.github/actions/dependencies/install-yq@main
+        with:
+          version: "v4.6.3"
 
       # Test all perf-report scenarios
       - name: Test perf-report action scenarios

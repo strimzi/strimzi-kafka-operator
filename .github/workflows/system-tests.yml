@@ -218,10 +218,35 @@ jobs:
       - uses: actions/checkout@v6
         with:
           ref: ${{ needs.parse-params.outputs.ref }}
-      - uses: ./.github/actions/build/build-strimzi-binaries
+
+      - name: Setup Java and Maven
+        uses: strimzi/github-actions/.github/actions/dependencies/setup-java@main
         with:
-          mvnArgs: "-B -DskipTests -Dmaven.javadoc.skip=true"
-          runnerArch: "amd64"
+          javaVersion: "21"
+
+      - name: Install yq
+        uses: strimzi/github-actions/.github/actions/dependencies/install-yq@main
+        with:
+          version: "v4.6.3"
+
+      - name: Install Shellcheck
+        uses: strimzi/github-actions/.github/actions/dependencies/install-shellcheck@main
+        with:
+          version: "0.11.0"
+
+      - name: Install Helm
+        uses: strimzi/github-actions/.github/actions/dependencies/install-helm@main
+        with:
+          helmVersion: "v3.16.0"
+
+      - name: Build binaries using build-binaries action
+        uses: strimzi/github-actions/.github/actions/build/build-binaries@main
+        with:
+          mainJavaBuild: "true"
+          artifactSuffix: "operators"
+          clusterOperatorBuild: "true"
+        env:
+          MVN_ARGS: "-DskipTests -Dmaven.javadoc.skip=true"
 
   build-images:
     name: build-images
@@ -250,10 +275,25 @@ jobs:
       - uses: actions/checkout@v6
         with:
           ref: ${{ needs.parse-params.outputs.ref }}
-      - uses: ./.github/actions/build/build-containers
+
+      - name: Install Docker
+        uses: strimzi/github-actions/.github/actions/dependencies/install-docker@main
+
+      - name: Install yq
+        uses: strimzi/github-actions/.github/actions/dependencies/install-yq@main
+        with:
+          version: "v4.6.3"
+
+      - name: Install Shellcheck
+        uses: strimzi/github-actions/.github/actions/dependencies/install-shellcheck@main
+        with:
+          version: "0.11.0"
+
+      - uses: strimzi/github-actions/.github/actions/build/build-containers@main
         with:
           architecture: ${{ matrix.architecture }}
-          runnerArch: "arm64"
+          imagesDir: "./docker-images/container-archives"
+          artifactSuffix: "operators"
 
   run-tests:
     name: run-tests
