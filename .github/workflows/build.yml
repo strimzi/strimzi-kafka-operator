@@ -39,6 +39,10 @@ jobs:
           name: commit-sha.txt
           path: commit-sha.txt
 
+      - name: Remove commit-sha.txt
+        run: |
+          rm -rf commit-sha.txt
+
       - name: Setup Java and Maven
         uses: strimzi/github-actions/.github/actions/dependencies/setup-java@main
         with:
