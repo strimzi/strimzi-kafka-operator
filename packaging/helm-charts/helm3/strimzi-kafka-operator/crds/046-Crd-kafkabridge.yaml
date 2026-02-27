@@ -160,7 +160,7 @@ spec:
                     port:
                       type: integer
                       minimum: 1023
-                      description: The port which is the server listening on.
+                      description: Port the server listens on.
                     cors:
                       type: object
                       properties:
@@ -1786,7 +1786,7 @@ spec:
                     port:
                       type: integer
                       minimum: 1023
-                      description: The port which is the server listening on.
+                      description: Port the server listens on.
                     cors:
                       type: object
                       properties:

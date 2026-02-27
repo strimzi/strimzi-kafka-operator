@@ -44,7 +44,7 @@ public class KafkaBridgeHttpConfig implements UnknownPropertyPreserving {
         this.port = port;
     }
 
-    @Description("The port which is the server listening on.")
+    @Description("Port the server listens on.")
     @JsonProperty(defaultValue = "8080")
     @Minimum(1023)
     public int getPort() {

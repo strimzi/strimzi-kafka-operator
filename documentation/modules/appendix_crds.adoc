@@ -3923,7 +3923,7 @@ include::../api/io.strimzi.api.kafka.model.bridge.KafkaBridgeHttpConfig.adoc[lev
 |Property |Property type |Description
 |port
 |integer
-|The port which is the server listening on.
+|Port the server listens on.
 |cors
 |xref:type-KafkaBridgeHttpCors-{context}[`KafkaBridgeHttpCors`]
 |CORS configuration for the HTTP Bridge.
