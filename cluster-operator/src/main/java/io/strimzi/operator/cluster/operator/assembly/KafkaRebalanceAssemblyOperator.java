@@ -350,9 +350,6 @@ public class KafkaRebalanceAssemblyOperator
 
                     if (existingConfigMap != null) {
                         if (desiredConfigMap == null) {
-                            // we need to remove the managedFields from the metadata, as we cannot apply/update the resource
-                            // with this field configured
-                            existingConfigMap.getMetadata().setManagedFields(null);
                             desiredStatusAndMap.setLoadAndProgressConfigMap(existingConfigMap);
                             desiredConfigMap = existingConfigMap;
                         } else {
@@ -419,8 +416,14 @@ public class KafkaRebalanceAssemblyOperator
                     .compose(statusAndMap -> updateProgressFields(reconciliation, host, cruiseControlPort, apiClient, kafkaRebalance, configMapOperator, statusAndMap))
                     .compose(desiredStatusAndMap -> {
                         KafkaRebalanceAnnotation rebalanceAnnotation = rebalanceAnnotation(kafkaRebalance);
-                        return configMapOperator.reconcile(reconciliation, kafkaRebalance.getMetadata().getNamespace(),
-                                        kafkaRebalance.getMetadata().getName(), desiredStatusAndMap.getLoadAndProgressConfigMap())
+                        ConfigMap loadAndProgressConfigMap = desiredStatusAndMap.getLoadAndProgressConfigMap();
+                        // We need to remove the managedFields from the metadata, as we can use server-side-apply.
+                        // This should be fixed properly as part of https://github.com/strimzi/strimzi-kafka-operator/issues/12447
+                        if (loadAndProgressConfigMap != null && loadAndProgressConfigMap.getMetadata() != null) {
+                            loadAndProgressConfigMap.getMetadata().setManagedFields(null);
+                        }
+
+                        return configMapOperator.reconcile(reconciliation, kafkaRebalance.getMetadata().getNamespace(), kafkaRebalance.getMetadata().getName(), loadAndProgressConfigMap)
                                 .onComplete(ignoredConfigMapResult -> {
                                     KafkaRebalanceStatus kafkaRebalanceStatus = updateStatus(kafkaRebalance, desiredStatusAndMap.getStatus(), null);
                                     if (kafkaRebalance.getStatus() != null

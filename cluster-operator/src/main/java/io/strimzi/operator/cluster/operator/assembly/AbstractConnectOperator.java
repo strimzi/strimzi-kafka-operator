@@ -873,6 +873,9 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                     labels.putAll(resource.getMetadata().getLabels());
                     ObjectMeta objectMeta = existingConfigMap.getMetadata();
                     objectMeta.setLabels(labels);
+                    // We need to remove the managedFields from the metadata, as we can use server-side-apply.
+                    // This should be fixed properly as part of https://github.com/strimzi/strimzi-kafka-operator/issues/12462
+                    objectMeta.setManagedFields(null);
                     existingConfigMap.setMetadata(objectMeta);
 
                     if (existingConfigMap.getMetadata().getOwnerReferences().isEmpty()) {
