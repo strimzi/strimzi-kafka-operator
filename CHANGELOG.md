@@ -4,6 +4,21 @@
 
 * Add support for Kafka 3.9.2
 * Update Kafka Exporter to [1.9.0](https://github.com/danielqsj/kafka_exporter/releases/tag/v1.9.0)
+* Update dependencies to fix CVEs:
+  * VertX to 4.5.24
+  * Log4j to 2.25.3
+  * Netty to 4.1.130.Final
+  * CruiseControl to 2.5.146
+  * GRPC Netty to 1.75.0
+  * ZooKeeper to 3.8.5
+
+### Major changes, deprecations and removals
+
+* **Strimzi 0.45 is the last minor Strimzi version with support for ZooKeeper-based Apache Kafka clusters and MirrorMaker 1 deployments.**
+  **Please make sure to [migrate to KRaft](https://strimzi.io/docs/operators/latest/full/deploying.html#assembly-kraft-mode-str) and MirrorMaker 2 before upgrading to Strimzi 0.46 or newer.**
+* **Strimzi 0.45 is the last Strimzi version to include the [Strimzi EnvVar Configuration Provider](https://github.com/strimzi/kafka-env-var-config-provider) (deprecated in Strimzi 0.38.0) and [Strimzi MirrorMaker 2 Extensions](https://github.com/strimzi/mirror-maker-2-extensions) (deprecated in Strimzi 0.28.0).**
+  Please use the Apache Kafka [EnvVarConfigProvider](https://github.com/strimzi/kafka-env-var-config-provider?tab=readme-ov-file#deprecation-notice) and [Identity Replication Policy](https://github.com/strimzi/mirror-maker-2-extensions?tab=readme-ov-file#identity-replication-policy) instead.
+* **Strimzi 0.45.2 is the last version from Strimzi 0.45.x versions, there will be no new patch releases after this one**
 
 ## 0.45.1
 
