@@ -4,13 +4,7 @@
 
 * Add support for Kafka 3.9.2
 * Update Kafka Exporter to [1.9.0](https://github.com/danielqsj/kafka_exporter/releases/tag/v1.9.0)
-* Update dependencies to fix CVEs:
-  * VertX to 4.5.24
-  * Log4j to 2.25.3
-  * Netty to 4.1.130.Final
-  * CruiseControl to 2.5.146
-  * GRPC Netty to 1.75.0
-  * ZooKeeper to 3.8.5
+* Dependency updates
 
 ### Major changes, deprecations and removals
 
