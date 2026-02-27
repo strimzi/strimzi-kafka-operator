@@ -88,30 +88,33 @@ jobs:
           checkDescription: "Test run for ${{ matrix.config.jobName }}"
 
       - name: Setup Java and Maven
-        uses: ./.github/actions/dependencies/setup-java
+        uses: strimzi/github-actions/.github/actions/dependencies/setup-java@main
+        with:
+          javaVersion: "21"
 
-      - name: Install Helm
-        uses: ./.github/actions/dependencies/install-helm
+      - name: Install yq
+        uses: strimzi/github-actions/.github/actions/dependencies/install-yq@main
+        with:
+          version: "v4.6.3"
 
       - name: Install Shellcheck
-        uses: ./.github/actions/dependencies/install-shellcheck
+        uses: strimzi/github-actions/.github/actions/dependencies/install-shellcheck@main
         with:
-          architecture: ${{ matrix.config.arch }}
-      - name: Install yq
-        uses: ./.github/actions/dependencies/install-yq
-        with:
-          architecture: ${{ matrix.config.arch }}
+          version: "0.11.0"
 
-      - name: Install Docker
-        uses: ./.github/actions/dependencies/install-docker
-
-      - name: Install Kind
-        uses: ./.github/actions/dependencies/setup-kind
+      - name: Install Helm
+        uses: strimzi/github-actions/.github/actions/dependencies/install-helm@main
         with:
-          architecture: ${{ matrix.config.arch }}
-          # Could be overriden per pipeline
+          helmVersion: "v3.16.0"
+
+      - name: Setup Kind cluster
+        uses: strimzi/github-actions/.github/actions/dependencies/setup-kind@main
+        with:
           controlNodes: 1
-          workerNodes: 1
+          workerNodes: 3
+          kindVersion: 0.31.0
+        env:
+          KIND_NODE_IMAGE: "latest"
 
       - name: Set default environment variables
         uses: ./.github/actions/utils/set-defaults
