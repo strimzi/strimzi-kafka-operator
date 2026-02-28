@@ -10,7 +10,6 @@ import io.strimzi.api.kafka.model.common.Rack;
 import io.strimzi.api.kafka.model.kafka.KafkaAuthorization;
 import io.strimzi.api.kafka.model.kafka.KafkaAuthorizationCustom;
 import io.strimzi.api.kafka.model.kafka.KafkaAuthorizationKeycloak;
-import io.strimzi.api.kafka.model.kafka.KafkaAuthorizationOpa;
 import io.strimzi.api.kafka.model.kafka.KafkaAuthorizationSimple;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlResources;
@@ -39,7 +38,6 @@ import io.strimzi.operator.common.model.cruisecontrol.CruiseControlConfiguration
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -652,12 +650,10 @@ public class KafkaBrokerConfigurationBuilder {
      * @param superUsers        Super-users list who have all the rights on the cluster
      * @param authorization     The authorization configuration from the Kafka CR
      */
-    @SuppressWarnings("deprecation") // OPA Authorization is deprecated
+    @SuppressWarnings("deprecation") // Keycloak Authorization is deprecated
     private void configureAuthorization(String clusterName, List<String> superUsers, KafkaAuthorization authorization) {
         if (authorization instanceof KafkaAuthorizationSimple simpleAuthz) {
             configureSimpleAuthorization(simpleAuthz, superUsers);
-        } else if (authorization instanceof KafkaAuthorizationOpa opaAuthz) {
-            configureOpaAuthorization(opaAuthz, superUsers);
         } else if (authorization instanceof KafkaAuthorizationKeycloak keycloakAuthz) {
             configureKeycloakAuthorization(clusterName, keycloakAuthz, superUsers);
         } else if (authorization instanceof KafkaAuthorizationCustom customAuthz) {
@@ -673,35 +669,6 @@ public class KafkaBrokerConfigurationBuilder {
      */
     private void configureSimpleAuthorization(KafkaAuthorizationSimple authorization, List<String> superUsers) {
         writer.println("authorizer.class.name=" + KafkaAuthorizationSimple.KRAFT_AUTHORIZER_CLASS_NAME);
-
-        // User configured super-users
-        if (authorization.getSuperUsers() != null && !authorization.getSuperUsers().isEmpty()) {
-            superUsers.addAll(authorization.getSuperUsers().stream().map(e -> String.format("User:%s", e)).toList());
-        }
-    }
-
-    /**
-     * Configures Open Policy Agent (OPA) authorization
-     *
-     * @param authorization     OPA authorization configuration
-     * @param superUsers        Super-users list who have all the rights on the cluster
-     */
-    @SuppressWarnings("deprecation") // OPA Authorization is deprecated
-    private void configureOpaAuthorization(KafkaAuthorizationOpa authorization, List<String> superUsers) {
-        writer.println("authorizer.class.name=" + KafkaAuthorizationOpa.AUTHORIZER_CLASS_NAME);
-
-        writer.println(String.format("%s=%s", "opa.authorizer.url", authorization.getUrl()));
-        writer.println(String.format("%s=%b", "opa.authorizer.allow.on.error", authorization.isAllowOnError()));
-        writer.println(String.format("%s=%b", "opa.authorizer.metrics.enabled", authorization.isEnableMetrics()));
-        writer.println(String.format("%s=%d", "opa.authorizer.cache.initial.capacity", authorization.getInitialCacheCapacity()));
-        writer.println(String.format("%s=%d", "opa.authorizer.cache.maximum.size", authorization.getMaximumCacheSize()));
-        writer.println(String.format("%s=%d", "opa.authorizer.cache.expire.after.seconds", Duration.ofMillis(authorization.getExpireAfterMs()).getSeconds()));
-
-        if (authorization.getTlsTrustedCertificates() != null && !authorization.getTlsTrustedCertificates().isEmpty())    {
-            writer.println("opa.authorizer.truststore.path=/tmp/kafka/authz-opa.truststore.p12");
-            writer.println("opa.authorizer.truststore.password=" + PLACEHOLDER_CERT_STORE_PASSWORD_CONFIG_PROVIDER_ENV_VAR);
-            writer.println("opa.authorizer.truststore.type=PKCS12");
-        }
 
         // User configured super-users
         if (authorization.getSuperUsers() != null && !authorization.getSuperUsers().isEmpty()) {

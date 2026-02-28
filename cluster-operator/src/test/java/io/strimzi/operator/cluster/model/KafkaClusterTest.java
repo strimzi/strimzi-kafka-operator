@@ -35,7 +35,6 @@ import io.fabric8.kubernetes.api.model.Toleration;
 import io.fabric8.kubernetes.api.model.TolerationBuilder;
 import io.fabric8.kubernetes.api.model.TopologySpreadConstraint;
 import io.fabric8.kubernetes.api.model.TopologySpreadConstraintBuilder;
-import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.VolumeMountBuilder;
 import io.fabric8.kubernetes.api.model.WeightedPodAffinityTermBuilder;
@@ -47,8 +46,6 @@ import io.fabric8.kubernetes.api.model.policy.v1.PodDisruptionBudget;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.Role;
 import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
-import io.strimzi.api.kafka.model.common.CertSecretSource;
-import io.strimzi.api.kafka.model.common.CertSecretSourceBuilder;
 import io.strimzi.api.kafka.model.common.JvmOptions;
 import io.strimzi.api.kafka.model.common.Probe;
 import io.strimzi.api.kafka.model.common.ProbeBuilder;
@@ -62,7 +59,6 @@ import io.strimzi.api.kafka.model.common.template.AdditionalVolumeBuilder;
 import io.strimzi.api.kafka.model.common.template.ContainerEnvVar;
 import io.strimzi.api.kafka.model.kafka.JbodStorageBuilder;
 import io.strimzi.api.kafka.model.kafka.Kafka;
-import io.strimzi.api.kafka.model.kafka.KafkaAuthorizationOpaBuilder;
 import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.PersistentClaimStorageBuilder;
@@ -3063,62 +3059,6 @@ public class KafkaClusterTest {
                 }
             }
         }
-    }
-
-    @Test
-    public void testGenerateDeploymentWithOpa() {
-        CertSecretSource cert1 = new CertSecretSourceBuilder()
-                .withSecretName("first-certificate")
-                .withCertificate("ca.crt")
-                .build();
-
-        CertSecretSource cert2 = new CertSecretSourceBuilder()
-                .withSecretName("second-certificate")
-                .withCertificate("tls.crt")
-                .build();
-
-        Kafka kafkaAssembly = new KafkaBuilder(KAFKA)
-                .editSpec()
-                    .editKafka()
-                        .withAuthorization(
-                            new KafkaAuthorizationOpaBuilder()
-                                    .withUrl("http://opa:8080")
-                                    .withTlsTrustedCertificates(cert1, cert2)
-                                    .build())
-                    .endKafka()
-                .endSpec()
-                .build();
-        List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, List.of(POOL_CONTROLLERS, POOL_MIXED, POOL_BROKERS), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, SHARED_ENV_PROVIDER);
-        KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, null, SHARED_ENV_PROVIDER);
-        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, node -> Map.of());
-
-        podSets.stream().forEach(podSet -> PodSetUtils.podSetToPods(podSet).stream().forEach(pod -> {
-            // Volume mounts
-            Container cont = pod.getSpec().getContainers().stream().findAny().orElseThrow();
-            assertThat(cont.getVolumeMounts().stream().filter(mount -> "authz-opa-first-certificate".equals(mount.getName())).findFirst().orElseThrow().getMountPath(), is(KafkaCluster.TRUSTED_CERTS_BASE_VOLUME_MOUNT + "/authz-opa-certs/first-certificate"));
-            assertThat(cont.getVolumeMounts().stream().filter(mount -> "authz-opa-second-certificate".equals(mount.getName())).findFirst().orElseThrow().getMountPath(), is(KafkaCluster.TRUSTED_CERTS_BASE_VOLUME_MOUNT + "/authz-opa-certs/second-certificate"));
-
-            // Environment variable
-            assertThat(cont.getEnv().stream().filter(e -> "STRIMZI_OPA_AUTHZ_TRUSTED_CERTS".equals(e.getName())).findFirst().orElseThrow().getValue(), is("first-certificate/ca.crt;second-certificate/tls.crt"));
-
-            // Volumes
-            List<Volume> volumes = pod.getSpec().getVolumes();
-            assertThat(volumes.stream().filter(vol -> "authz-opa-first-certificate".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().isEmpty(), is(true));
-            assertThat(volumes.stream().filter(vol -> "authz-opa-second-certificate".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().isEmpty(), is(true));
-        }));
-
-        String brokerConfig = kc.generatePerBrokerConfiguration(1, ADVERTISED_HOSTNAMES, ADVERTISED_PORTS);
-        // Due to a bug, this is set when custom values are configured even in controllers
-        assertThat(brokerConfig, CoreMatchers.containsString("authorizer.class.name=org.openpolicyagent.kafka.OpaAuthorizer\n"));
-        assertThat(brokerConfig, CoreMatchers.containsString("opa.authorizer.url=http://opa:8080\n"));
-
-        brokerConfig = kc.generatePerBrokerConfiguration(3, ADVERTISED_HOSTNAMES, ADVERTISED_PORTS);
-        assertThat(brokerConfig, CoreMatchers.containsString("authorizer.class.name=org.openpolicyagent.kafka.OpaAuthorizer\n"));
-        assertThat(brokerConfig, CoreMatchers.containsString("opa.authorizer.url=http://opa:8080\n"));
-
-        brokerConfig = kc.generatePerBrokerConfiguration(6, ADVERTISED_HOSTNAMES, ADVERTISED_PORTS);
-        assertThat(brokerConfig, CoreMatchers.containsString("authorizer.class.name=org.openpolicyagent.kafka.OpaAuthorizer\n"));
-        assertThat(brokerConfig, CoreMatchers.containsString("opa.authorizer.url=http://opa:8080\n"));
     }
 
     @Test
