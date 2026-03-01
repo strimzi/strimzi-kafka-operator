@@ -118,7 +118,7 @@ class DocGenerator {
     }
 
     private List<? extends Class<?>> subtypesOrSelf(Class<?> returnType) {
-        return isPolymorphic(returnType) ? subtypes(null, returnType) : singletonList(returnType);
+        return isPolymorphic(returnType) ? subtypes(crApiVersion, returnType) : singletonList(returnType);
     }
 
     public void generate(Class<? extends CustomResource> crdClass) throws IOException {
@@ -425,7 +425,7 @@ class DocGenerator {
                         .append(NL);
             }
 
-            String subtypeLinks = subtypes(null, cls.getSuperclass()).stream().filter(c -> !c.equals(cls)).map(c -> {
+            String subtypeLinks = subtypes(crApiVersion, cls.getSuperclass()).stream().filter(c -> !c.equals(cls)).map(c -> {
                 try {
                     return typeLink(crd, c);
                 } catch (IOException e) {
@@ -471,7 +471,7 @@ class DocGenerator {
                 || boolean.class.equals(cls)) {
             out.append(cls.getSimpleName().toLowerCase(Locale.ENGLISH));
         } else if (isPolymorphic(cls)) {
-            out.append(subtypes(null, cls).stream().map(c -> {
+            out.append(subtypes(crApiVersion, cls).stream().map(c -> {
                 try {
                     return typeLink(crd, c);
                 } catch (IOException e) {
@@ -527,7 +527,7 @@ class DocGenerator {
             }
         }
 
-        ApiVersion crApiVersion = ApiVersion.V1BETA2;
+        ApiVersion crApiVersion = ApiVersion.V1;
 
         try (OutputStreamWriter writer = new OutputStreamWriter(new FileOutputStream(out), StandardCharsets.UTF_8)) {
             writer.append(":_mod-docs-content-type: REFERENCE").append(NL).append(NL);
