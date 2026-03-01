@@ -254,7 +254,7 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
      *
      * @return  KafkaConnectSpec built out of the KafkaMirrorMaker2Spec instance
      */
-    @SuppressWarnings("deprecation") // External Configuration, connectCluster, and clusters are deprecated
+    @SuppressWarnings("deprecation") // ConnectCluster, and clusters are deprecated
     private static KafkaConnectSpec buildKafkaConnectSpec(KafkaMirrorMaker2Spec spec) {
         return new KafkaConnectSpecBuilder()
                 // Target cluster defined fields from .spec.target
@@ -281,7 +281,6 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
                 .withRack(spec.getRack())
                 .withTracing(spec.getTracing())
                 .withTemplate(spec.getTemplate())
-                .withExternalConfiguration(spec.getExternalConfiguration())
                 .build();
     }
 

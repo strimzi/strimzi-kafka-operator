@@ -5,23 +5,17 @@
 package io.strimzi.operator.cluster.model;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
-import io.fabric8.kubernetes.api.model.ConfigMapVolumeSource;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerPort;
 import io.fabric8.kubernetes.api.model.EnvVar;
-import io.fabric8.kubernetes.api.model.EnvVarBuilder;
-import io.fabric8.kubernetes.api.model.EnvVarSource;
-import io.fabric8.kubernetes.api.model.EnvVarSourceBuilder;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.Secret;
-import io.fabric8.kubernetes.api.model.SecretVolumeSource;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServicePort;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeBuilder;
 import io.fabric8.kubernetes.api.model.VolumeMount;
-import io.fabric8.kubernetes.api.model.VolumeMountBuilder;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyIngressRule;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPeer;
@@ -53,10 +47,6 @@ import io.strimzi.api.kafka.model.common.template.ResourceTemplate;
 import io.strimzi.api.kafka.model.common.tracing.JaegerTracing;
 import io.strimzi.api.kafka.model.common.tracing.OpenTelemetryTracing;
 import io.strimzi.api.kafka.model.common.tracing.Tracing;
-import io.strimzi.api.kafka.model.connect.ExternalConfiguration;
-import io.strimzi.api.kafka.model.connect.ExternalConfigurationEnv;
-import io.strimzi.api.kafka.model.connect.ExternalConfigurationEnvVarSource;
-import io.strimzi.api.kafka.model.connect.ExternalConfigurationVolumeSource;
 import io.strimzi.api.kafka.model.connect.ImageArtifact;
 import io.strimzi.api.kafka.model.connect.KafkaConnect;
 import io.strimzi.api.kafka.model.connect.KafkaConnectResources;
@@ -82,7 +72,6 @@ import io.strimzi.operator.common.model.Labels;
 import io.strimzi.plugin.security.profiles.PodSecurityProviderContext;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -164,11 +153,6 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
     protected String configStorageTopic;
     protected String statusStorageTopic;
     protected String offsetStorageTopic;
-    @SuppressWarnings("deprecation") // External Configuration environment variables are deprecated
-    protected List<ExternalConfigurationEnv> externalEnvs = Collections.emptyList();
-
-    @SuppressWarnings("deprecation") // External Configuration volumes are deprecated
-    protected List<ExternalConfigurationVolumeSource> externalVolumes = Collections.emptyList();
     protected Tracing tracing;
     protected JmxModel jmx;
     protected MetricsModel metrics;
@@ -342,18 +326,6 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
             result.templateInitContainer = template.getInitContainer();
         }
 
-        if (spec.getExternalConfiguration() != null)    {
-            ExternalConfiguration externalConfiguration = spec.getExternalConfiguration();
-
-            if (externalConfiguration.getEnv() != null && !externalConfiguration.getEnv().isEmpty())    {
-                result.externalEnvs = externalConfiguration.getEnv();
-            }
-
-            if (externalConfiguration.getVolumes() != null && !externalConfiguration.getVolumes().isEmpty())    {
-                result.externalVolumes = externalConfiguration.getVolumes();
-            }
-        }
-
         result.mountedPlugins = spec.getPlugins();
 
         return result;
@@ -459,7 +431,6 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
         }
 
         AuthenticationUtils.configureClientAuthenticationVolumes(authentication, volumeList, KafkaConnectResources.internalOauthTrustedCertsSecretName(cluster), isOpenShift, "", true);
-        volumeList.addAll(getExternalConfigurationVolumes(isOpenShift));
         volumeList.addAll(getMountedPluginVolumes());
         
         TemplateUtils.addAdditionalVolumes(templatePod, volumeList);
@@ -493,50 +464,6 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
         return volumeList;
     }
 
-    @SuppressWarnings("deprecation") // External Configuration volumes are deprecated
-    private List<Volume> getExternalConfigurationVolumes(boolean isOpenShift)  {
-        int mode = 0444;
-        if (isOpenShift) {
-            mode = 0440;
-        }
-
-        List<Volume> volumeList = new ArrayList<>(0);
-
-        for (ExternalConfigurationVolumeSource volume : externalVolumes)    {
-            String name = volume.getName();
-
-            if (name != null) {
-                if (volume.getConfigMap() != null && volume.getSecret() != null) {
-                    LOGGER.warnCr(reconciliation, "Volume {} with external Kafka Connect configuration has to contain exactly one volume source reference to either ConfigMap or Secret", name);
-                } else  {
-                    if (volume.getConfigMap() != null) {
-                        ConfigMapVolumeSource source = volume.getConfigMap();
-                        source.setDefaultMode(mode);
-
-                        Volume newVol = new VolumeBuilder()
-                                .withName(VolumeUtils.getValidVolumeName(EXTERNAL_CONFIGURATION_VOLUME_NAME_PREFIX + name))
-                                .withConfigMap(source)
-                                .build();
-
-                        volumeList.add(newVol);
-                    } else if (volume.getSecret() != null)    {
-                        SecretVolumeSource source = volume.getSecret();
-                        source.setDefaultMode(mode);
-
-                        Volume newVol = new VolumeBuilder()
-                                .withName(VolumeUtils.getValidVolumeName(EXTERNAL_CONFIGURATION_VOLUME_NAME_PREFIX + name))
-                                .withSecret(source)
-                                .build();
-
-                        volumeList.add(newVol);
-                    }
-                }
-            }
-        }
-
-        return volumeList;
-    }
-
     protected List<VolumeMount> getVolumeMounts() {
         List<VolumeMount> volumeMountList = new ArrayList<>(2);
         volumeMountList.add(VolumeUtils.createTempDirVolumeMount());
@@ -547,7 +474,6 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
         }
 
         AuthenticationUtils.configureClientAuthenticationVolumeMounts(authentication, volumeMountList, TLS_CERTS_BASE_VOLUME_MOUNT, PASSWORD_VOLUME_MOUNT, OAUTH_TLS_CERTS_BASE_VOLUME_MOUNT, KafkaConnectResources.internalOauthTrustedCertsSecretName(cluster), "", true, OAUTH_SECRETS_BASE_VOLUME_MOUNT);
-        volumeMountList.addAll(getExternalConfigurationVolumeMounts());
         volumeMountList.addAll(getMountedPluginVolumeMounts());
 
         TemplateUtils.addAdditionalVolumeMounts(volumeMountList, templateContainer);
@@ -575,30 +501,6 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
                     }
                 } else {
                     LOGGER.warnCr(reconciliation, "The mounted plugin {} has no artifacts", plugin.getName());
-                }
-            }
-        }
-
-        return volumeMountList;
-    }
-
-    @SuppressWarnings("deprecation") // External Configuration volumes are deprecated
-    private List<VolumeMount> getExternalConfigurationVolumeMounts()    {
-        List<VolumeMount> volumeMountList = new ArrayList<>(0);
-
-        for (ExternalConfigurationVolumeSource volume : externalVolumes)    {
-            String name = volume.getName();
-
-            if (name != null)   {
-                if (volume.getConfigMap() != null && volume.getSecret() != null) {
-                    LOGGER.warnCr(reconciliation, "Volume {} with external Kafka Connect configuration has to contain exactly one volume source reference to either ConfigMap or Secret", name);
-                } else  if (volume.getConfigMap() != null || volume.getSecret() != null) {
-                    VolumeMount volumeMount = new VolumeMountBuilder()
-                            .withName(VolumeUtils.getValidVolumeName(EXTERNAL_CONFIGURATION_VOLUME_NAME_PREFIX + name))
-                            .withMountPath(EXTERNAL_CONFIGURATION_VOLUME_MOUNT_BASE_PATH + name)
-                            .build();
-
-                    volumeMountList.add(volumeMount);
                 }
             }
         }
@@ -739,46 +641,7 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
         // Add shared environment variables used for all containers
         varList.addAll(sharedEnvironmentProvider.variables());
 
-        varList.addAll(getExternalConfigurationEnvVars());
-
         ContainerUtils.addContainerEnvsToExistingEnvs(reconciliation, varList, templateContainer);
-
-        return varList;
-    }
-
-    @SuppressWarnings("deprecation") // External Configuration environment variables are deprecated
-    private List<EnvVar> getExternalConfigurationEnvVars()   {
-        List<EnvVar> varList = new ArrayList<>();
-
-        for (ExternalConfigurationEnv var : externalEnvs)    {
-            String name = var.getName();
-
-            if (name != null && !name.startsWith("KAFKA_") && !name.startsWith("STRIMZI_")) {
-                ExternalConfigurationEnvVarSource valueFrom = var.getValueFrom();
-
-                if (valueFrom != null)  {
-                    if (valueFrom.getConfigMapKeyRef() != null && valueFrom.getSecretKeyRef() != null) {
-                        LOGGER.warnCr(reconciliation, "Environment variable {} with external Kafka Connect configuration has to contain exactly one reference to either ConfigMap or Secret", name);
-                    } else {
-                        if (valueFrom.getConfigMapKeyRef() != null) {
-                            EnvVarSource envVarSource = new EnvVarSourceBuilder()
-                                    .withConfigMapKeyRef(var.getValueFrom().getConfigMapKeyRef())
-                                    .build();
-
-                            varList.add(new EnvVarBuilder().withName(name).withValueFrom(envVarSource).build());
-                        } else if (valueFrom.getSecretKeyRef() != null)    {
-                            EnvVarSource envVarSource = new EnvVarSourceBuilder()
-                                    .withSecretKeyRef(var.getValueFrom().getSecretKeyRef())
-                                    .build();
-
-                            varList.add(new EnvVarBuilder().withName(name).withValueFrom(envVarSource).build());
-                        }
-                    }
-                }
-            } else {
-                LOGGER.warnCr(reconciliation, "Name of an environment variable with external Kafka Connect configuration cannot start with `KAFKA_` or `STRIMZI`.");
-            }
-        }
 
         return varList;
     }
