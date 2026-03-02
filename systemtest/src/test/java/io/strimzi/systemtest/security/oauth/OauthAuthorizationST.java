@@ -4,22 +4,20 @@
  */
 package io.strimzi.systemtest.security.oauth;
 
-import io.fabric8.kubernetes.api.model.LabelSelector;
+import io.fabric8.kubernetes.api.model.SecretVolumeSourceBuilder;
+import io.fabric8.kubernetes.api.model.VolumeMountBuilder;
 import io.skodjob.kubetest4j.resources.KubeResourceManager;
-import io.strimzi.api.kafka.model.common.CertSecretSourceBuilder;
-import io.strimzi.api.kafka.model.kafka.KafkaAuthorizationKeycloak;
+import io.strimzi.api.kafka.model.common.template.AdditionalVolumeBuilder;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.systemtest.Environment;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.FIPSNotSupported;
-import io.strimzi.systemtest.annotations.IsolatedTest;
-import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaOauthClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaOauthClientsBuilder;
 import io.strimzi.systemtest.keycloak.KeycloakInstance;
-import io.strimzi.systemtest.labels.LabelSelectors;
 import io.strimzi.systemtest.resources.crd.KafkaComponents;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
@@ -27,40 +25,24 @@ import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaUserTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
-import io.strimzi.systemtest.utils.RollingUpdateUtils;
-import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.JobUtils;
-import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
-import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
-import io.strimzi.systemtest.utils.specific.KeycloakUtils;
-import io.strimzi.test.WaitException;
-import io.vertx.core.json.JsonArray;
-import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.TestMethodOrder;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import static io.strimzi.systemtest.TestTags.OAUTH;
 import static io.strimzi.systemtest.TestTags.REGRESSION;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @Tag(OAUTH)
 @Tag(REGRESSION)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @FIPSNotSupported("Keycloak is not customized to run on FIPS env - https://github.com/strimzi/strimzi-kafka-operator/issues/8331")
-@SuppressWarnings("deprecation") // OAuth authentication and Keycloak Authorization are deprecated
 public class OauthAuthorizationST extends OauthAbstractST {
     protected static final Logger LOGGER = LogManager.getLogger(OauthAuthorizationST.class);
 
@@ -68,7 +50,6 @@ public class OauthAuthorizationST extends OauthAbstractST {
 
     private static final String TEAM_A_CLIENT = "team-a-client";
     private static final String TEAM_B_CLIENT = "team-b-client";
-    private static final String KAFKA_CLIENT_ID = "kafka";
 
     private static final String TEAM_A_CLIENT_SECRET = "team-a-client-secret";
     private static final String TEAM_B_CLIENT_SECRET = "team-b-client-secret";
@@ -283,8 +264,7 @@ public class OauthAuthorizationST extends OauthAbstractST {
     }
 
     /**
-     * As a member of team A, I can write to topics starting with 'x-' and " +
-     *             "as a member of team B can read from topics starting with 'x-'.
+     * As a member of team A, I can write to topics starting with 'x-' and as a member of team B can read from topics starting with 'x-'.
      */
     @ParallelTest
     @Order(5)
@@ -338,363 +318,70 @@ public class OauthAuthorizationST extends OauthAbstractST {
         ClientUtils.waitForClientSuccess(Environment.TEST_SUITE_NAMESPACE, teamBConsumerName, testStorage.getMessageCount());
     }
 
-    /**
-     * As a superuser of team A and team B, i am able to break defined authorization rules.
-     */
-    @ParallelTest
-    @Order(6)
-    void testSuperUserWithOauthAuthorization() {
-        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
-        String teamAProducerName = TEAM_A_PRODUCER_NAME + "-" + testStorage.getClusterName();
-        String teamAConsumerName = TEAM_A_CONSUMER_NAME + "-" + testStorage.getClusterName();
-        String teamBProducerName = TEAM_B_PRODUCER_NAME + "-" + testStorage.getClusterName();
-        String teamBConsumerName = TEAM_B_CONSUMER_NAME + "-" + testStorage.getClusterName();
-        // only write means that Team A can not create new topic 'x-.*'
-        String topicXName = TOPIC_X + testStorage.getTopicName();
-        LabelSelector brokerSelector = LabelSelectors.kafkaLabelSelector(oauthClusterName, KafkaComponents.getBrokerPodSetName(oauthClusterName));
-
-        KubeResourceManager.get().createResourceWithWait(KafkaTopicTemplates.topic(Environment.TEST_SUITE_NAMESPACE, topicXName, oauthClusterName).build());
-
-        LOGGER.info("Verifying that team B is not able write to Topic starting with 'x-' because in Kafka cluster" +
-                "does not have super-users to break authorization rules");
-
-        KubeResourceManager.get().createResourceWithWait(KafkaUserTemplates.tlsUser(Environment.TEST_SUITE_NAMESPACE, testStorage.getKafkaUsername(), oauthClusterName).build());
-
-        KafkaOauthClients teamBOauthClientJob = new KafkaOauthClientsBuilder()
-            .withNamespaceName(Environment.TEST_SUITE_NAMESPACE)
-            .withProducerName(teamBProducerName)
-            .withConsumerName(teamBConsumerName)
-            .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(oauthClusterName))
-            .withTopicName(topicXName)
-            .withMessageCount(testStorage.getMessageCount())
-            .withConsumerGroup("x-consumer_group_b-" + testStorage.getClusterName())
-            .withOauthClientId(TEAM_B_CLIENT)
-            .withOauthClientSecret(TEAM_B_CLIENT_SECRET)
-            .withOauthTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
-            .withClientUserName(testStorage.getKafkaUsername())
-            .build();
-
-        KubeResourceManager.get().createResourceWithWait(teamBOauthClientJob.producerStrimziOauthTls(oauthClusterName));
-        JobUtils.waitForJobFailure(Environment.TEST_SUITE_NAMESPACE, teamBProducerName, 30_000);
-        JobUtils.deleteJobWithWait(Environment.TEST_SUITE_NAMESPACE, teamBProducerName);
-
-        LOGGER.info("Verifying that team A is not able read to Topic starting with 'x-' because in Kafka cluster" +
-                "does not have super-users to break authorization rules");
-
-        KafkaOauthClients teamAOauthClientJob = new KafkaOauthClientsBuilder()
-            .withNamespaceName(Environment.TEST_SUITE_NAMESPACE)
-            .withProducerName(teamAProducerName)
-            .withConsumerName(teamAConsumerName)
-            .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(oauthClusterName))
-            .withTopicName(topicXName)
-            .withMessageCount(testStorage.getMessageCount())
-            .withConsumerGroup("x-consumer_group_b1-" + testStorage.getClusterName())
-            .withOauthClientId(TEAM_A_CLIENT)
-            .withOauthClientSecret(TEAM_A_CLIENT_SECRET)
-            .withOauthTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
-            .withClientUserName(testStorage.getKafkaUsername())
-            .build();
-
-        KubeResourceManager.get().createResourceWithWait(teamAOauthClientJob.consumerStrimziOauthTls(oauthClusterName));
-        JobUtils.waitForJobFailure(Environment.TEST_SUITE_NAMESPACE, teamAConsumerName, 30_000);
-        JobUtils.deleteJobWithWait(Environment.TEST_SUITE_NAMESPACE, teamAConsumerName);
-
-        Map<String, String> brokerPods = PodUtils.podSnapshot(Environment.TEST_SUITE_NAMESPACE, brokerSelector);
-
-        KafkaUtils.replace(Environment.TEST_SUITE_NAMESPACE, oauthClusterName, kafka -> {
-
-            List<String> superUsers = new ArrayList<>(2);
-            superUsers.add("service-account-" + TEAM_A_CLIENT);
-            superUsers.add("service-account-" + TEAM_B_CLIENT);
-
-            ((KafkaAuthorizationKeycloak) kafka.getSpec().getKafka().getAuthorization()).setSuperUsers(superUsers);
-        });
-
-        RollingUpdateUtils.waitTillComponentHasRolled(Environment.TEST_SUITE_NAMESPACE, brokerSelector, 3, brokerPods);
-
-        LOGGER.info("Verifying that team B is able to write to Topic starting with 'x-' and break authorization rule");
-
-        KubeResourceManager.get().createResourceWithWait(teamBOauthClientJob.producerStrimziOauthTls(oauthClusterName));
-        ClientUtils.waitForClientSuccess(Environment.TEST_SUITE_NAMESPACE, teamBProducerName, testStorage.getMessageCount());
-
-        LOGGER.info("Verifying that team A is able to write to Topic starting with 'x-' and break authorization rule");
-
-        teamAOauthClientJob = new KafkaOauthClientsBuilder(teamAOauthClientJob)
-            .withConsumerGroup("x-consumer_group_b2-" + testStorage.getClusterName())
-            .withTopicName(topicXName)
-            .build();
-
-        KubeResourceManager.get().createResourceWithWait(teamAOauthClientJob.consumerStrimziOauthTls(oauthClusterName));
-        ClientUtils.waitForClientSuccess(Environment.TEST_SUITE_NAMESPACE, teamAConsumerName, testStorage.getMessageCount());
-    }
-
-    /**
-     * 1) Try to send messages to topic starting with `x-` with producer from Dev Team A
-     * 2) Change the Oauth listener configuration -> add the maxSecondsWithoutReauthentication set to 30s
-     * 3) Try to send messages with delay of 1000ms (in the meantime, the permissions configuration will be changed)
-     * 4) Get all configuration from the Keycloak (realms, policies) and change the policy so the Dev Team A producer should not be able to send messages to the topic
-     *      starting with `x-` -> updating the policy through the Keycloak API
-     * 5) Wait for the WaitException to appear -> as the producer doesn't have permission for sending messages, the
-     *      job will be in error state
-     * 6) Try to send messages to topic with `a-` -> we should still be able to sent messages, because we didn't changed the permissions
-     * 6) Change the permissions back and check that the messages are correctly sent
-     *
-     * The re-authentication can be seen in the log of team-a-producer pod.
-     */
-    @IsolatedTest("Modification of shared Kafka cluster")
-    @Order(7)
-    @SuppressWarnings({"checkstyle:MethodLength"})
-    void testSessionReAuthentication() {
-        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
-        String topicXName = TOPIC_X + "-example-topic";
-        String topicAName = TOPIC_A + "-example-topic";
-        String teamAProducerName = TEAM_A_PRODUCER_NAME + "-" + testStorage.getClusterName();
-        String teamAConsumerName = TEAM_A_CONSUMER_NAME + "-" + testStorage.getClusterName();
-
-        LOGGER.info("Verifying that team A producer is able to send messages to the {} Topic -> the Topic starting with 'x'", topicXName);
-
-        KubeResourceManager.get().createResourceWithWait(KafkaTopicTemplates.topic(Environment.TEST_SUITE_NAMESPACE, topicXName, oauthClusterName).build());
-        KubeResourceManager.get().createResourceWithWait(KafkaTopicTemplates.topic(Environment.TEST_SUITE_NAMESPACE, topicAName, oauthClusterName).build());
-
-        KafkaOauthClients teamAOauthClientJob = new KafkaOauthClientsBuilder()
-            .withNamespaceName(Environment.TEST_SUITE_NAMESPACE)
-            .withProducerName(teamAProducerName)
-            .withConsumerName(teamAConsumerName)
-            .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(oauthClusterName))
-            .withTopicName(topicXName)
-            .withMessageCount(testStorage.getMessageCount())
-            .withConsumerGroup("a-consumer_group")
-            .withClientUserName(TEAM_A_CLIENT)
-            .withOauthClientId(TEAM_A_CLIENT)
-            .withOauthClientSecret(TEAM_A_CLIENT_SECRET)
-            .withOauthTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
-            .build();
-
-        KubeResourceManager.get().createResourceWithWait(teamAOauthClientJob.producerStrimziOauthTls(oauthClusterName));
-        ClientUtils.waitForClientSuccess(Environment.TEST_SUITE_NAMESPACE, teamAProducerName, testStorage.getMessageCount());
-
-        LOGGER.info("Adding the maxSecondsWithoutReauthentication to Kafka listener with OAuth authentication");
-        KafkaUtils.replace(Environment.TEST_SUITE_NAMESPACE, oauthClusterName, kafka -> {
-            kafka.getSpec().getKafka().setListeners(Arrays.asList(new GenericKafkaListenerBuilder()
-                    .withName("tls")
-                    .withPort(9093)
-                    .withType(KafkaListenerType.INTERNAL)
-                    .withTls(true)
-                    .withNewKafkaListenerAuthenticationOAuth()
-                        .withValidIssuerUri(keycloakInstance.getValidIssuerUri())
-                        .withJwksExpirySeconds(keycloakInstance.getJwksExpireSeconds())
-                        .withJwksRefreshSeconds(keycloakInstance.getJwksRefreshSeconds())
-                        .withJwksEndpointUri(keycloakInstance.getJwksEndpointUri())
-                        .withUserNameClaim(keycloakInstance.getUserNameClaim())
-                        .withTlsTrustedCertificates(
-                            new CertSecretSourceBuilder()
-                                .withSecretName(KeycloakInstance.KEYCLOAK_SECRET_NAME)
-                                .withCertificate(KeycloakInstance.KEYCLOAK_SECRET_CERT)
-                                .build())
-                        .withDisableTlsHostnameVerification(true)
-                        .withMaxSecondsWithoutReauthentication(30)
-                    .endKafkaListenerAuthenticationOAuth()
-                .build()));
-        });
-
-        KafkaUtils.waitForKafkaReady(Environment.TEST_SUITE_NAMESPACE, oauthClusterName);
-
-        String baseUri = "https://" + keycloakInstance.getHttpsUri();
-
-        LOGGER.info("Setting the master realm token's lifespan to 3600s");
-
-        // get admin token for all operation on realms
-        String token = KeycloakUtils.getToken(Environment.TEST_SUITE_NAMESPACE, baseUri, keycloakInstance.getUsername(), keycloakInstance.getPassword());
-
-        // firstly we will increase token lifespan
-        JsonObject masterRealm = KeycloakUtils.getKeycloakRealm(Environment.TEST_SUITE_NAMESPACE, baseUri, token, "master");
-        masterRealm.put("accessTokenLifespan", "3600");
-        KeycloakUtils.putConfigurationToRealm(Environment.TEST_SUITE_NAMESPACE, baseUri, token, masterRealm, "master");
-
-        // now we need to get the token with new lifespan
-        token = KeycloakUtils.getToken(Environment.TEST_SUITE_NAMESPACE, baseUri, keycloakInstance.getUsername(), keycloakInstance.getPassword());
-
-        LOGGER.info("Getting the {} Kafka client for obtaining the Dev A Team policy for the x Topics", TEST_REALM);
-        // we need to get clients for kafka-authz realm to access auth policies in kafka client
-        JsonArray kafkaAuthzRealm = KeycloakUtils.getKeycloakRealmClients(Environment.TEST_SUITE_NAMESPACE, baseUri, token, TEST_REALM);
-
-        String kafkaClientId = "";
-        for (Object client : kafkaAuthzRealm) {
-            JsonObject clientObject = new JsonObject(client.toString());
-            if (clientObject.getString("clientId").equals("kafka")) {
-                kafkaClientId = clientObject.getString("id");
-            }
-        }
-
-        JsonArray kafkaAuthzRealmPolicies = KeycloakUtils.getPoliciesFromRealmClient(Environment.TEST_SUITE_NAMESPACE, baseUri, token, TEST_REALM, kafkaClientId);
-
-        JsonObject devAPolicy = new JsonObject();
-        for (Object resource : kafkaAuthzRealmPolicies) {
-            JsonObject resourceObject = new JsonObject(resource.toString());
-            if (resourceObject.getValue("name").toString().contains("Dev Team A can write to topics that start with x- on any cluster")) {
-                devAPolicy = resourceObject;
-            }
-        }
-
-        JsonObject newDevAPolicy = devAPolicy;
-
-        Map<String, String> config = new HashMap<>();
-        config.put("resources", "[\"Topic:x-*\"]");
-        config.put("scopes", "[\"Describe\"]");
-        config.put("applyPolicies", "[\"Dev Team A\"]");
-
-        newDevAPolicy.put("config", config);
-
-        LOGGER.info("Changing the Dev Team A policy for Topics starting with x- and checking that Job will not be successful");
-        KeycloakUtils.updatePolicyOfRealmClient(Environment.TEST_SUITE_NAMESPACE, baseUri, token, newDevAPolicy, TEST_REALM, kafkaClientId);
-        assertThrows(WaitException.class, () -> ClientUtils.waitForClientSuccess(Environment.TEST_SUITE_NAMESPACE, teamAProducerName, testStorage.getMessageCount()));
-
-        JobUtils.deleteJobWithWait(Environment.TEST_SUITE_NAMESPACE, teamAProducerName);
-
-        LOGGER.info("Sending messages to Topic starting with a- -> the messages should be successfully sent");
-
-        teamAOauthClientJob = new KafkaOauthClientsBuilder(teamAOauthClientJob)
-            .withTopicName(topicAName)
-            .build();
-
-        KubeResourceManager.get().createResourceWithWait(teamAOauthClientJob.producerStrimziOauthTls(oauthClusterName));
-        ClientUtils.waitForClientSuccess(Environment.TEST_SUITE_NAMESPACE, teamAProducerName, testStorage.getMessageCount());
-
-        LOGGER.info("Changing back to the original settings and checking, if the producer will be successful");
-
-        config.put("scopes", "[\"Describe\",\"Write\"]");
-        newDevAPolicy.put("config", config);
-
-        KeycloakUtils.updatePolicyOfRealmClient(Environment.TEST_SUITE_NAMESPACE, baseUri, token, newDevAPolicy, TEST_REALM, kafkaClientId);
-        teamAOauthClientJob = new KafkaOauthClientsBuilder(teamAOauthClientJob)
-            .withTopicName(topicXName)
-            .withDelayMs(1000)
-            .build();
-
-        KubeResourceManager.get().createResourceWithWait(teamAOauthClientJob.producerStrimziOauthTls(oauthClusterName));
-        ClientUtils.waitForClientSuccess(Environment.TEST_SUITE_NAMESPACE, teamAProducerName, testStorage.getMessageCount());
-
-        LOGGER.info("Changing configuration of Kafka back to it's original form");
-        KafkaUtils.replace(Environment.TEST_SUITE_NAMESPACE, oauthClusterName, kafka -> {
-            kafka.getSpec().getKafka().setListeners(Collections.singletonList(OauthAbstractST.BUILD_OAUTH_TLS_LISTENER.apply(keycloakInstance)));
-        });
-
-        KafkaUtils.waitForKafkaReady(Environment.TEST_SUITE_NAMESPACE, oauthClusterName);
-    }
-
-    @Disabled("Will be implemented in next PR")
-    @ParallelTest
-    @Order(8)
-    void testListTopics() {
-        // TODO: in the new PR add AdminClient support with operations listTopics(), etc.
-    }
-
-    @Disabled("Will be implemented in next PR")
-    @ParallelTest
-    @Order(9)
-    void testClusterVerification() {
-        // TODO: create more examples via cluster wide stuff
-    }
-
-    @ParallelNamespaceTest
-    @Order(10)
-    void testKeycloakAuthorizerToDelegateToSimpleAuthorizer() {
-        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
-
-        if (!Environment.isNamespaceRbacScope()) {
-            // we have to create keycloak, team-a-client and team-b-client secret from `co-namespace` to the new namespace
-            KubeResourceManager.get().createResourceWithWait(SecretUtils.createCopyOfSecret(Environment.TEST_SUITE_NAMESPACE, testStorage.getNamespaceName(), KeycloakInstance.KEYCLOAK_SECRET_NAME).build());
-            KubeResourceManager.get().createResourceWithWait(SecretUtils.createCopyOfSecret(Environment.TEST_SUITE_NAMESPACE, testStorage.getNamespaceName(), TEAM_A_CLIENT_SECRET).build());
-            KubeResourceManager.get().createResourceWithWait(SecretUtils.createCopyOfSecret(Environment.TEST_SUITE_NAMESPACE, testStorage.getNamespaceName(), TEAM_B_CLIENT_SECRET).build());
-        }
-
-        KubeResourceManager.get().createResourceWithWait(
-            KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 1).build(),
-            KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 1).build()
-        );
-        KubeResourceManager.get().createResourceWithWait(KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getClusterName(), 1)
-            .editSpec()
-                .editKafka()
-                    .withListeners(OauthAbstractST.BUILD_OAUTH_TLS_LISTENER.apply(keycloakInstance))
-                    .withNewKafkaAuthorizationKeycloak()
-                        .withClientId(KAFKA_CLIENT_ID)
-                        .withDisableTlsHostnameVerification(true)
-                        .withDelegateToKafkaAcls(true)
-                        // ca.crt a tls.crt
-                        .withTlsTrustedCertificates(
-                            new CertSecretSourceBuilder()
-                                .withSecretName(KeycloakInstance.KEYCLOAK_SECRET_NAME)
-                                .withCertificate(KeycloakInstance.KEYCLOAK_SECRET_CERT)
-                                .build()
-                        )
-                        .withTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
-                    .endKafkaAuthorizationKeycloak()
-                .endKafka()
-            .endSpec()
-            .build());
-
-        // we do not need to create a KafkaUsers when RBAC=NAMESPACE (they are already created)
-        if (!Environment.isNamespaceRbacScope()) {
-            KubeResourceManager.get().createResourceWithWait(KafkaUserTemplates.tlsUser(testStorage.getNamespaceName(), TEAM_A_CLIENT, testStorage.getClusterName()).build());
-            KubeResourceManager.get().createResourceWithWait(KafkaUserTemplates.tlsUser(testStorage.getNamespaceName(), TEAM_B_CLIENT, testStorage.getClusterName()).build());
-        }
-
-        final String teamAProducerName = TEAM_A_PRODUCER_NAME + "-" + testStorage.getClusterName();
-        final String teamAConsumerName = TEAM_A_CONSUMER_NAME + "-" + testStorage.getClusterName();
-        final String topicName = TOPIC_A + "-" + testStorage.getTopicName();
-        final String consumerGroup = "a-consumer_group-" + testStorage.getConsumerName();
-
-        KubeResourceManager.get().createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getNamespaceName(), topicName, testStorage.getClusterName()).build());
-
-        KafkaOauthClients teamAOauthClientJob = new KafkaOauthClientsBuilder()
-            .withNamespaceName(testStorage.getNamespaceName())
-            .withProducerName(teamAProducerName)
-            .withConsumerName(teamAConsumerName)
-            .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(testStorage.getClusterName()))
-            .withTopicName(topicName)
-            .withMessageCount(testStorage.getMessageCount())
-            .withConsumerGroup(consumerGroup)
-            .withOauthClientId(TEAM_A_CLIENT)
-            .withOauthClientSecret(TEAM_A_CLIENT_SECRET)
-            .withOauthTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
-            .build();
-
-        KubeResourceManager.get().createResourceWithWait(teamAOauthClientJob.producerStrimziOauthTls(testStorage.getClusterName()));
-        ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), teamAProducerName, testStorage.getMessageCount());
-        KubeResourceManager.get().createResourceWithWait(teamAOauthClientJob.consumerStrimziOauthTls(testStorage.getClusterName()));
-        ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), teamAConsumerName, testStorage.getMessageCount());
-    }
-
     @BeforeAll
     void setUp()  {
         super.setupCoAndKeycloak(Environment.TEST_SUITE_NAMESPACE);
 
         keycloakInstance.setRealm(TEST_REALM, true);
 
+        String jaasConfig = JAAS_CONFIG_BUILDER.apply("org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule",
+                Map.of(
+                        "unsecuredLoginStringClaim_sub", "thePrincipalName",
+                        "oauth.valid.issuer.uri", keycloakInstance.getValidIssuerUri(),
+                        "oauth.jwks.expiry.seconds", Integer.toString(keycloakInstance.getJwksExpireSeconds()),
+                        "oauth.jwks.refresh.seconds", Integer.toString(keycloakInstance.getJwksRefreshSeconds()),
+                        "oauth.jwks.endpoint.uri", keycloakInstance.getJwksEndpointUri(),
+                        "oauth.username.claim", keycloakInstance.getUserNameClaim(),
+                        "oauth.ssl.endpoint.identification.algorithm", "",
+                        "oauth.ssl.truststore.location", "/mnt/keycloak-certs/" + KeycloakInstance.KEYCLOAK_SECRET_CERT,
+                        "oauth.ssl.truststore.type", "PEM"
+                ));
+
         KubeResourceManager.get().createResourceWithWait(
             KafkaNodePoolTemplates.brokerPoolPersistentStorage(Environment.TEST_SUITE_NAMESPACE, KafkaComponents.getBrokerPoolName(oauthClusterName), oauthClusterName, 3).build(),
             KafkaNodePoolTemplates.controllerPoolPersistentStorage(Environment.TEST_SUITE_NAMESPACE, KafkaComponents.getControllerPoolName(oauthClusterName), oauthClusterName, 1).build()
         );
         KubeResourceManager.get().createResourceWithWait(KafkaTemplates.kafka(Environment.TEST_SUITE_NAMESPACE, oauthClusterName, 3)
-            .editSpec()
-                .editKafka()
-                    .withListeners(OauthAbstractST.BUILD_OAUTH_TLS_LISTENER.apply(keycloakInstance))
-                    .withNewKafkaAuthorizationKeycloak()
-                        .withClientId(KAFKA_CLIENT_ID)
-                        .withDisableTlsHostnameVerification(true)
-                        .withDelegateToKafkaAcls(false)
-                        // ca.crt a tls.crt
-                        .withTlsTrustedCertificates(
-                            new CertSecretSourceBuilder()
-                                .withSecretName(KeycloakInstance.KEYCLOAK_SECRET_NAME)
-                                .withCertificate(KeycloakInstance.KEYCLOAK_SECRET_CERT)
-                                .build()
-                        )
-                        .withTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
-                    .endKafkaAuthorizationKeycloak()
-                .endKafka()
-            .endSpec()
-            .build());
+                .editSpec()
+                    .editKafka()
+                        .withListeners(new GenericKafkaListenerBuilder()
+                                .withName(TestConstants.TLS_LISTENER_DEFAULT_NAME)
+                                .withPort(9093)
+                                .withType(KafkaListenerType.INTERNAL)
+                                .withTls(true)
+                                .withNewKafkaListenerAuthenticationCustomAuth()
+                                    .withSasl(true)
+                                    .withListenerConfig(Map.of(
+                                            "sasl.enabled.mechanisms", "OAUTHBEARER",
+                                            "oauthbearer.sasl.server.callback.handler.class", "io.strimzi.kafka.oauth.server.JaasServerOauthValidatorCallbackHandler",
+                                            "oauthbearer.sasl.jaas.config", jaasConfig
+                                    ))
+                                .endKafkaListenerAuthenticationCustomAuth()
+                                .build())
+                        .withNewKafkaAuthorizationCustom()
+                            .withAuthorizerClass("io.strimzi.kafka.oauth.server.authorizer.KeycloakAuthorizer")
+                            .withSupportsAdminApi(false)
+                        .endKafkaAuthorizationCustom()
+                        .addToConfig(Map.of(
+                                "principal.builder.class", "io.strimzi.kafka.oauth.server.OAuthKafkaPrincipalBuilder",
+                                "strimzi.authorization.client.id", "kafka",
+                                "strimzi.authorization.token.endpoint.uri", keycloakInstance.getOauthTokenEndpointUri(),
+                                "strimzi.authorization.ssl.endpoint.identification.algorithm", "",
+                                "strimzi.authorization.delegate.to.kafka.acl", "true",
+                                "strimzi.authorization.ssl.truststore.location", "/mnt/keycloak-certs/" + KeycloakInstance.KEYCLOAK_SECRET_CERT,
+                                "strimzi.authorization.ssl.truststore.type", "PEM"
+                        ))
+                        .withNewTemplate()
+                            .withNewPod()
+                                .withVolumes(new AdditionalVolumeBuilder().withName("keycloak-certs").withSecret(new SecretVolumeSourceBuilder().withSecretName(KeycloakInstance.KEYCLOAK_SECRET_NAME).build()).build())
+                            .endPod()
+                            .withNewKafkaContainer()
+                                .withVolumeMounts(new VolumeMountBuilder().withName("keycloak-certs").withMountPath("/mnt/keycloak-certs").build())
+                            .endKafkaContainer()
+                        .endTemplate()
+                    .endKafka()
+                .endSpec()
+                .build());
 
         LOGGER.info("Setting producer and consumer properties");
 

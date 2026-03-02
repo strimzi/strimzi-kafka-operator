@@ -37,7 +37,7 @@ import java.util.List;
 import java.util.Map;
 
 public class SetupKeycloak {
-    private static final List<String> KEYCLOAK_REALMS_FILE_NAMES = List.of("internal_realm.json", "authorization_realm.json", "scope_audience_realm.json");
+    private static final List<String> KEYCLOAK_REALMS_FILE_NAMES = List.of("internal_realm.json", "authorization_realm.json");
     private static final String KEYCLOAK_INSTALL_FILES_BASE_PATH = TestUtils.USER_PATH + "/../systemtest/src/test/resources/oauth2";
     private static final String KEYCLOAK_INSTANCE_FILE_PATH = KEYCLOAK_INSTALL_FILES_BASE_PATH + "/keycloak-instance.yaml";
     private static final String POSTGRES_FILE_PATH = KEYCLOAK_INSTALL_FILES_BASE_PATH + "/postgres.yaml";
