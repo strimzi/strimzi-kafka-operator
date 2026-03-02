@@ -154,7 +154,7 @@ Example of complex type.
 Used in: xref:type-ExampleCrd-{context}[`ExampleCrd`]
 
 
-The `discrim` property is a discriminator that distinguishes use of the `PolymorphicLeft` type from other subtypes which may be added in the future.
+The `discrim` property is a discriminator that distinguishes use of the `PolymorphicLeft` type from other subtypes that may be added in the future.
 It must have the value `left` for the type `PolymorphicLeft`.
 [cols="2,2,3a",options="header"]
 |====

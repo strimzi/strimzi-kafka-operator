@@ -436,7 +436,7 @@ class DocGenerator {
                     .append("` property is a discriminator that distinguishes use of the `")
                     .append(cls.getSimpleName()).append("` type from ");
             if (subtypeLinks.trim().isEmpty()) {
-                out.append("other subtypes which may be added in the future.");
+                out.append("other subtypes that may be added in the future.");
             } else {
                 out.append(subtypeLinks).append(".");
             }

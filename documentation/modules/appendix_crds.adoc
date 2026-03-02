@@ -609,7 +609,7 @@ include::../api/io.strimzi.api.kafka.model.common.jmx.KafkaJmxOptions.adoc[level
 Used in: xref:type-KafkaJmxOptions-{context}[`KafkaJmxOptions`]
 
 
-The `type` property is a discriminator that distinguishes use of the `KafkaJmxAuthenticationPassword` type from other subtypes which may be added in the future.
+The `type` property is a discriminator that distinguishes use of the `KafkaJmxAuthenticationPassword` type from other subtypes that may be added in the future.
 It must have the value `password` for the type `KafkaJmxAuthenticationPassword`.
 [cols="2,2,3a",options="header"]
 |====
@@ -1062,7 +1062,7 @@ include::../api/io.strimzi.api.kafka.model.kafka.tieredstorage.TieredStorageCust
 == `TieredStorageCustom` schema properties
 
 
-The `type` property is a discriminator that distinguishes use of the `TieredStorageCustom` type from other subtypes which may be added in the future.
+The `type` property is a discriminator that distinguishes use of the `TieredStorageCustom` type from other subtypes that may be added in the future.
 It must have the value `custom` for the type `TieredStorageCustom`.
 [cols="2,2,3a",options="header"]
 |====
@@ -1488,7 +1488,7 @@ Used in: xref:type-BrokerCapacity-{context}[`BrokerCapacity`]
 Used in: xref:type-CruiseControlSpec-{context}[`CruiseControlSpec`]
 
 
-The `type` property is a discriminator that distinguishes use of the `HashLoginServiceApiUsers` type from other subtypes which may be added in the future.
+The `type` property is a discriminator that distinguishes use of the `HashLoginServiceApiUsers` type from other subtypes that may be added in the future.
 It must have the value `hashLoginService` for the type `HashLoginServiceApiUsers`.
 [cols="2,2,3a",options="header"]
 |====
@@ -2095,7 +2095,7 @@ It must have the value `custom` for the type `KafkaClientAuthenticationCustom`.
 Used in: xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaMirrorMaker2Spec-{context}[`KafkaMirrorMaker2Spec`]
 
 
-The `type` property is a discriminator that distinguishes use of the `OpenTelemetryTracing` type from other subtypes which may be added in the future.
+The `type` property is a discriminator that distinguishes use of the `OpenTelemetryTracing` type from other subtypes that may be added in the future.
 It must have the value `opentelemetry` for the type `OpenTelemetryTracing`.
 [cols="2,2,3a",options="header"]
 |====
@@ -2422,7 +2422,7 @@ include::../api/io.strimzi.api.kafka.model.connect.MountedPlugin.adoc[leveloffse
 Used in: xref:type-MountedPlugin-{context}[`MountedPlugin`]
 
 
-The `type` property is a discriminator that distinguishes use of the `ImageArtifact` type from other subtypes which may be added in the future.
+The `type` property is a discriminator that distinguishes use of the `ImageArtifact` type from other subtypes that may be added in the future.
 It must have the value `image` for the type `ImageArtifact`.
 [cols="2,2,3a",options="header"]
 |====
@@ -2698,7 +2698,7 @@ Used in: xref:type-KafkaUserScramSha512ClientAuthentication-{context}[`KafkaUser
 Used in: xref:type-KafkaUserSpec-{context}[`KafkaUserSpec`]
 
 
-The `type` property is a discriminator that distinguishes use of the `KafkaUserAuthorizationSimple` type from other subtypes which may be added in the future.
+The `type` property is a discriminator that distinguishes use of the `KafkaUserAuthorizationSimple` type from other subtypes that may be added in the future.
 It must have the value `simple` for the type `KafkaUserAuthorizationSimple`.
 [cols="2,2,3a",options="header"]
 |====
