@@ -35,10 +35,33 @@ spec:
         - name: example-secret
           secret: 
             secretName: secret-name
+        - name: foo
+          secret:
+            secretName: mysecret
+            items:
+              - key: username
+                path: my-group/my-username
         - name: example-configmap
           configMap:
             name: config-map-name
+        - name: config-vol
+          configMap:
+            name: log-config
+            items:
+              - key: log_level
+                path: log_level
     connectContainer:
+      env:
+        - name: SOME_VARIABLE
+          valueFrom:
+            secretKeyRef:
+              name: myaccesskey
+              key: access-key
+        - name: SOME_OTHER_VARIABLE
+          valueFrom:
+            configMapKeyRef:
+              name: myconfig
+              key: some-property
       volumeMounts:
         - name: example-secret
           mountPath: /path/to/mount/secret-volume

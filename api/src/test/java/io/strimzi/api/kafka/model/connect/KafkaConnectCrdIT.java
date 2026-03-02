@@ -92,20 +92,6 @@ public class KafkaConnectCrdIT extends AbstractCrdIT {
     }
 
     @Test
-    public void testKafkaConnectWithExternalConfiguration() {
-        createDeleteCustomResource("KafkaConnect-with-external-configuration.yaml");
-    }
-
-    @Test
-    void testKafkaConnectWithInvalidExternalConfiguration() {
-        Throwable exception = assertThrows(
-                KubernetesClientException.class,
-                () -> createDeleteCustomResource("KafkaConnect-with-invalid-external-configuration.yaml"));
-
-        assertMissingRequiredPropertiesMessage(exception.getMessage(), "valueFrom");
-    }
-
-    @Test
     public void testKafkaConnectWithDnsConfig() {
         createDeleteCustomResource("KafkaConnect-with-dnsConfig.yaml");
     }

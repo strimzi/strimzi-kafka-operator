@@ -92,20 +92,6 @@ public class KafkaMirrorMaker2CrdIT extends AbstractCrdIT {
     }
 
     @Test
-    public void testKafkaMirrorMaker2WithExternalConfiguration() {
-        createDeleteCustomResource("KafkaMirrorMaker2-with-external-configuration.yaml");
-    }
-
-    @Test
-    public void testKafkaMirrorMaker2WithInvalidExternalConfiguration() {
-        Throwable exception = assertThrows(
-                KubernetesClientException.class,
-                () -> createDeleteCustomResource("KafkaMirrorMaker2-with-invalid-external-configuration.yaml"));
-
-        assertMissingRequiredPropertiesMessage(exception.getMessage(), "valueFrom");
-    }
-
-    @Test
     void testKafkaMirrorMaker2WithDnsConfig() {
         createDeleteCustomResource("KafkaMirrorMaker2-with-dnsConfig.yaml");
     }
