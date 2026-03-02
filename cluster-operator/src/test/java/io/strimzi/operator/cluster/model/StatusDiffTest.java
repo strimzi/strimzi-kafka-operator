@@ -90,7 +90,13 @@ public class StatusDiffTest {
                 .withListeners(ls3, ls1)
                 .build();
 
-        StatusDiff diff = new StatusDiff(status1, status2);
+        StatusDiff diff = new StatusDiff(null, status1);
+        assertThat(diff.isEmpty(), is(false));
+
+        diff = new StatusDiff(new KafkaStatus(), status1);
+        assertThat(diff.isEmpty(), is(false));
+
+        diff = new StatusDiff(status1, status2);
         assertThat(diff.isEmpty(), is(true));
 
         diff = new StatusDiff(status1, status3);
