@@ -12,7 +12,6 @@ import io.strimzi.api.kafka.model.kafka.EphemeralStorageBuilder;
 import io.strimzi.api.kafka.model.kafka.JbodStorageBuilder;
 import io.strimzi.api.kafka.model.kafka.KafkaAuthorization;
 import io.strimzi.api.kafka.model.kafka.KafkaAuthorizationKeycloakBuilder;
-import io.strimzi.api.kafka.model.kafka.KafkaAuthorizationOpaBuilder;
 import io.strimzi.api.kafka.model.kafka.KafkaAuthorizationSimpleBuilder;
 import io.strimzi.api.kafka.model.kafka.KafkaClusterSpecBuilder;
 import io.strimzi.api.kafka.model.kafka.PersistentClaimStorageBuilder;
@@ -400,88 +399,6 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "strimzi.authorization.ssl.endpoint.identification.algorithm=HTTPS",
                 "strimzi.authorization.read.timeout.seconds=30",
                 "super.users=User:CN=my-cluster-kafka,O=io.strimzi;User:CN=my-cluster-entity-topic-operator,O=io.strimzi;User:CN=my-cluster-entity-user-operator,O=io.strimzi;User:CN=my-cluster-kafka-exporter,O=io.strimzi;User:CN=my-cluster-cruise-control,O=io.strimzi;User:CN=cluster-operator,O=io.strimzi"));
-    }
-
-    @Test
-    public void testOpaAuthorizationWithDefaults() {
-        KafkaAuthorization auth = new KafkaAuthorizationOpaBuilder()
-                .withUrl("http://opa:8181/v1/data/kafka/allow")
-                .build();
-
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
-                .withAuthorization("my-cluster", auth)
-                .build();
-
-        assertThat(configuration, isEquivalent("node.id=2",
-                "authorizer.class.name=org.openpolicyagent.kafka.OpaAuthorizer",
-                "opa.authorizer.url=http://opa:8181/v1/data/kafka/allow",
-                "opa.authorizer.allow.on.error=false",
-                "opa.authorizer.metrics.enabled=false",
-                "opa.authorizer.cache.initial.capacity=5000",
-                "opa.authorizer.cache.maximum.size=50000",
-                "opa.authorizer.cache.expire.after.seconds=3600",
-                "super.users=User:CN=my-cluster-kafka,O=io.strimzi;User:CN=my-cluster-entity-topic-operator,O=io.strimzi;User:CN=my-cluster-entity-user-operator,O=io.strimzi;User:CN=my-cluster-kafka-exporter,O=io.strimzi;User:CN=my-cluster-cruise-control,O=io.strimzi;User:CN=cluster-operator,O=io.strimzi"));
-    }
-
-    @Test
-    public void testOpaAuthorization() {
-        KafkaAuthorization auth = new KafkaAuthorizationOpaBuilder()
-                .withUrl("http://opa:8181/v1/data/kafka/allow")
-                .withAllowOnError(true)
-                .withInitialCacheCapacity(1000)
-                .withMaximumCacheSize(10000)
-                .withExpireAfterMs(60000)
-                .addToSuperUsers("jack", "CN=conor")
-                .build();
-
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
-                .withAuthorization("my-cluster", auth)
-                .build();
-
-        assertThat(configuration, isEquivalent("node.id=2",
-                "authorizer.class.name=org.openpolicyagent.kafka.OpaAuthorizer",
-                "opa.authorizer.url=http://opa:8181/v1/data/kafka/allow",
-                "opa.authorizer.allow.on.error=true",
-                "opa.authorizer.metrics.enabled=false",
-                "opa.authorizer.cache.initial.capacity=1000",
-                "opa.authorizer.cache.maximum.size=10000",
-                "opa.authorizer.cache.expire.after.seconds=60",
-                "super.users=User:CN=my-cluster-kafka,O=io.strimzi;User:CN=my-cluster-entity-topic-operator,O=io.strimzi;User:CN=my-cluster-entity-user-operator,O=io.strimzi;User:CN=my-cluster-kafka-exporter,O=io.strimzi;User:CN=my-cluster-cruise-control,O=io.strimzi;User:CN=cluster-operator,O=io.strimzi;User:jack;User:CN=conor"));
-    }
-
-    @Test
-    public void testOpaAuthorizationWithTls() {
-        CertSecretSource cert = new CertSecretSourceBuilder()
-            .withSecretName("my-secret")
-            .withCertificate("my.crt")
-            .build();
-
-        KafkaAuthorization auth = new KafkaAuthorizationOpaBuilder()
-            .withUrl("https://opa:8181/v1/data/kafka/allow")
-            .withAllowOnError(true)
-            .withInitialCacheCapacity(1000)
-            .withMaximumCacheSize(10000)
-            .withExpireAfterMs(60000)
-            .withTlsTrustedCertificates(cert)
-            .addToSuperUsers("jack", "CN=conor")
-            .build();
-
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
-            .withAuthorization("my-cluster", auth)
-            .build();
-
-        assertThat(configuration, isEquivalent("node.id=2",
-                "authorizer.class.name=org.openpolicyagent.kafka.OpaAuthorizer",
-                "opa.authorizer.url=https://opa:8181/v1/data/kafka/allow",
-                "opa.authorizer.allow.on.error=true",
-                "opa.authorizer.metrics.enabled=false",
-                "opa.authorizer.cache.initial.capacity=1000",
-                "opa.authorizer.cache.maximum.size=10000",
-                "opa.authorizer.cache.expire.after.seconds=60",
-                "opa.authorizer.truststore.path=/tmp/kafka/authz-opa.truststore.p12",
-                "opa.authorizer.truststore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "opa.authorizer.truststore.type=PKCS12",
-                "super.users=User:CN=my-cluster-kafka,O=io.strimzi;User:CN=my-cluster-entity-topic-operator,O=io.strimzi;User:CN=my-cluster-entity-user-operator,O=io.strimzi;User:CN=my-cluster-kafka-exporter,O=io.strimzi;User:CN=my-cluster-cruise-control,O=io.strimzi;User:CN=cluster-operator,O=io.strimzi;User:jack;User:CN=conor"));
     }
 
     @Test

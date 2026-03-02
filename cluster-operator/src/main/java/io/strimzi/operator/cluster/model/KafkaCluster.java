@@ -53,7 +53,6 @@ import io.strimzi.api.kafka.model.common.template.ResourceTemplate;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaAuthorization;
 import io.strimzi.api.kafka.model.kafka.KafkaAuthorizationKeycloak;
-import io.strimzi.api.kafka.model.kafka.KafkaAuthorizationOpa;
 import io.strimzi.api.kafka.model.kafka.KafkaClusterSpec;
 import io.strimzi.api.kafka.model.kafka.KafkaClusterTemplate;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
@@ -146,7 +145,6 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
     protected static final String ENV_VAR_KAFKA_INIT_EXTERNAL_ADDRESS = "EXTERNAL_ADDRESS";
     private static final String ENV_VAR_KAFKA_JMX_EXPORTER_ENABLED = "KAFKA_JMX_EXPORTER_ENABLED";
     private static final String ENV_VAR_KAFKA_CLUSTER_NAME = "KAFKA_CLUSTER_NAME";
-    private static final String ENV_VAR_STRIMZI_OPA_AUTHZ_TRUSTED_CERTS = "STRIMZI_OPA_AUTHZ_TRUSTED_CERTS";
     private static final String ENV_VAR_STRIMZI_KEYCLOAK_AUTHZ_TRUSTED_CERTS = "STRIMZI_KEYCLOAK_AUTHZ_TRUSTED_CERTS";
 
     // For port names in services, a 'tcp-' prefix is added to support Istio protocol selection
@@ -1364,7 +1362,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
      *
      * @return List of non-data volumes used by the Kafka pods
      */
-    @SuppressWarnings("deprecation") // OPA and Keycloak authorization, OAuth authentication, and Secrets in custom authentication are deprecated
+    @SuppressWarnings("deprecation") // Keycloak authorization, OAuth authentication, and Secrets in custom authentication are deprecated
     private List<Volume> getNonDataVolumes(boolean isOpenShift, NodeRef node, PodTemplate templatePod) {
         List<Volume> volumeList = new ArrayList<>();
 
@@ -1391,10 +1389,6 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
                     volumeList.addAll(AuthenticationUtils.configureGenericSecretVolumes("custom-listener-" + ListenersUtils.identifier(listener), custom.getSecrets(), isOpenShift));
                 }
             }
-        }
-
-        if (authorization instanceof KafkaAuthorizationOpa opaAuthz) {
-            CertUtils.createTrustedCertificatesVolumes(volumeList, opaAuthz.getTlsTrustedCertificates(), isOpenShift, "authz-opa");
         }
 
         if (authorization instanceof KafkaAuthorizationKeycloak keycloakAuthz) {
@@ -1435,7 +1429,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
      *
      * @return  List of volume mounts
      */
-    @SuppressWarnings("deprecation") // OPA and Keycloak Authorization, OAuth authentication, and Secrets in custom authentication are deprecated
+    @SuppressWarnings("deprecation") // Keycloak Authorization, OAuth authentication, and Secrets in custom authentication are deprecated
     private List<VolumeMount> getVolumeMounts(Storage storage, ContainerTemplate containerTemplate, boolean isBroker) {
         List<VolumeMount> volumeMountList = new ArrayList<>(VolumeUtils.createVolumeMounts(storage, false));
         volumeMountList.add(VolumeUtils.createTempDirVolumeMount());
@@ -1463,10 +1457,6 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
                     volumeMountList.addAll(AuthenticationUtils.configureGenericSecretVolumeMounts("custom-listener-" + identifier, custom.getSecrets(), CUSTOM_AUTHN_SECRETS_VOLUME_MOUNT + "/custom-listener-" + identifier));
                 }
             }
-        }
-
-        if (authorization instanceof KafkaAuthorizationOpa opaAuthz) {
-            CertUtils.createTrustedCertificatesVolumeMounts(volumeMountList, opaAuthz.getTlsTrustedCertificates(), TRUSTED_CERTS_BASE_VOLUME_MOUNT + "/authz-opa-certs/", "authz-opa");
         }
 
         if (authorization instanceof KafkaAuthorizationKeycloak keycloakAuthz) {
@@ -1557,7 +1547,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
      *
      * @return  List of environment variables
      */
-    @SuppressWarnings("deprecation") // OPA and Keycloak Authorization and OAuth authentication are deprecated
+    @SuppressWarnings("deprecation") // Keycloak Authorization and OAuth authentication are deprecated
     private  List<EnvVar> getEnvVars(KafkaPool pool) {
         List<EnvVar> varList = new ArrayList<>();
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_JMX_EXPORTER_ENABLED,
@@ -1584,12 +1574,6 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
                     }
                 }
             }
-        }
-
-        if (authorization instanceof KafkaAuthorizationOpa opaAuthz
-                && opaAuthz.getTlsTrustedCertificates() != null
-                && !opaAuthz.getTlsTrustedCertificates().isEmpty()) {
-            varList.add(ContainerUtils.createEnvVar(ENV_VAR_STRIMZI_OPA_AUTHZ_TRUSTED_CERTS, CertUtils.trustedCertsEnvVar(opaAuthz.getTlsTrustedCertificates())));
         }
 
         if (authorization instanceof KafkaAuthorizationKeycloak keycloakAuthz

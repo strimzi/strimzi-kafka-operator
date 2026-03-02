@@ -16,7 +16,6 @@ import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaAuthorization;
 import io.strimzi.api.kafka.model.kafka.KafkaAuthorizationCustomBuilder;
 import io.strimzi.api.kafka.model.kafka.KafkaAuthorizationKeycloakBuilder;
-import io.strimzi.api.kafka.model.kafka.KafkaAuthorizationOpa;
 import io.strimzi.api.kafka.model.kafka.KafkaAuthorizationSimple;
 import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
@@ -299,11 +298,10 @@ public class EntityUserOperatorTest {
         assertThat(binding.getRoleRef().getName(), is("my-cluster-entity-operator"));
     }
 
-    @SuppressWarnings("deprecation") // OPA Authorization is deprecated
+    @SuppressWarnings("deprecation") // Keycloak Authorization is deprecated
     @Test
     public void testAclsAdminApiSupported() {
         testAclsAdminApiSupported(new KafkaAuthorizationSimple());
-        testAclsAdminApiSupported(new KafkaAuthorizationOpa());
         testAclsAdminApiSupported(new KafkaAuthorizationKeycloakBuilder().withDelegateToKafkaAcls(true).build());
         testAclsAdminApiSupported(new KafkaAuthorizationKeycloakBuilder().withDelegateToKafkaAcls(false).build());
         testAclsAdminApiSupported(new KafkaAuthorizationCustomBuilder().withSupportsAdminApi(true).build());

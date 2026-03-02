@@ -137,7 +137,6 @@
 :OLMOperatorDocs: link:https://olm.operatorframework.io/docs/[Operator Lifecycle Manager documentation^]
 
 // Security, policy, and specs
-:OPAAuthorizer: link:https://github.com/anderseknert/opa-kafka-plugin[Open Policy Agent plugin for Kafka authorization^]
 :external-cors-link: link:https://fetch.spec.whatwg.org/[Fetch CORS specification^]
 
 // Certificate management

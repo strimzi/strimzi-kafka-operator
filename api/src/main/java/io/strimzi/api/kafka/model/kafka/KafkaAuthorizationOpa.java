@@ -10,7 +10,6 @@ import io.strimzi.api.annotations.DeprecatedType;
 import io.strimzi.api.kafka.model.common.CertSecretSource;
 import io.strimzi.api.kafka.model.common.Constants;
 import io.strimzi.crdgenerator.annotations.Description;
-import io.strimzi.crdgenerator.annotations.DescriptionFile;
 import io.strimzi.crdgenerator.annotations.Example;
 import io.strimzi.crdgenerator.annotations.PresentInVersions;
 import io.sundr.builder.annotations.Buildable;
@@ -22,7 +21,6 @@ import java.util.List;
 /**
  * Configures the broker authorization to use Open Policy Agent as an authorization and policy server.
  */
-@DescriptionFile
 @Buildable(
         editableEnabled = false,
         builderPackage = Constants.FABRIC8_KUBERNETES_API
@@ -37,8 +35,6 @@ import java.util.List;
 @PresentInVersions("v1beta2")
 public class KafkaAuthorizationOpa extends KafkaAuthorization {
     public static final String TYPE_OPA = "opa";
-
-    public static final String AUTHORIZER_CLASS_NAME = "org.openpolicyagent.kafka.OpaAuthorizer";
 
     private List<String> superUsers;
     private String url;
