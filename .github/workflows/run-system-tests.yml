@@ -61,7 +61,7 @@ jobs:
       KAFKA_VERSION: ${{ inputs.kafkaVersion }}
       DOCKER_TAG: ${{ inputs.releaseVersion }}
       PROFILE: ${{ matrix.config.profile }}
-      ARCH: ${{ matrix.config.architecture }}
+      ARCH: ${{ matrix.config.arch }}
       STRIMZI_RBAC_SCOPE: ${{ matrix.config.strimzi_rbac_scope }}
       CLUSTER_OPERATOR_INSTALL_TYPE: ${{ matrix.config.cluster_operator_install_type }}
       STRIMZI_FEATURE_GATES: ${{ matrix.config.strimzi_feature_gates }}
