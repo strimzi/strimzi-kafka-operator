@@ -5,10 +5,6 @@
 package io.strimzi.systemtest.security.oauth;
 
 import io.skodjob.kubetest4j.resources.KubeResourceManager;
-import io.strimzi.api.kafka.model.common.CertSecretSourceBuilder;
-import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListener;
-import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
-import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
@@ -29,7 +25,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.StringJoiner;
 import java.util.function.BiFunction;
-import java.util.function.Function;
 
 import static io.strimzi.systemtest.TestTags.OAUTH;
 import static io.strimzi.systemtest.TestTags.REGRESSION;
@@ -47,8 +42,6 @@ public class OauthAbstractST extends AbstractST {
     protected static final String OAUTH_CLIENT_AUDIENCE_CONSUMER = "kafka-audience-consumer";
     protected static final String OAUTH_CLIENT_AUDIENCE_SECRET = "kafka-audience-secret";
 
-    protected static final String OAUTH_KAFKA_BROKER_NAME = "kafka-broker";
-    protected static final String OAUTH_KAFKA_CLIENT_NAME = "kafka-client";
     protected static final String OAUTH_PRODUCER_NAME = "oauth-producer";
     protected static final String OAUTH_CONSUMER_NAME = "oauth-consumer";
 
@@ -62,10 +55,6 @@ public class OauthAbstractST extends AbstractST {
     protected static final String OAUTH_TEAM_B_SECRET = "team-b-client-secret";
     protected static final String OAUTH_KAFKA_CLIENT_SECRET = "kafka-client-secret";
     protected static final String OAUTH_KEY = "clientSecret";
-
-    protected static final String OAUTH_BRIDGE_CLIENT_ID = "kafka-bridge";
-    protected static final String OAUTH_CONNECT_CLIENT_ID = "kafka-connect";
-    protected static final String OAUTH_MM2_CLIENT_ID = "kafka-mirror-maker-2";
 
     // broker oauth configuration
     protected static final Integer CONNECT_TIMEOUT_S = 100;
@@ -83,8 +72,6 @@ public class OauthAbstractST extends AbstractST {
         "groupsClaimDelimiter", GROUPS_CLAIM_DELIMITER
     );
 
-    protected final String audienceListenerPort = "9098";
-
     protected KeycloakInstance keycloakInstance;
 
     public static Map<String, Object> connectorConfig;
@@ -95,28 +82,6 @@ public class OauthAbstractST extends AbstractST {
         connectorConfig.put("offset.storage.replication.factor", -1);
         connectorConfig.put("status.storage.replication.factor", -1);
     }
-
-    protected static final Function<KeycloakInstance, GenericKafkaListener> BUILD_OAUTH_TLS_LISTENER = (keycloakInstance) -> {
-        return new GenericKafkaListenerBuilder()
-            .withName(TestConstants.TLS_LISTENER_DEFAULT_NAME)
-            .withPort(9093)
-            .withType(KafkaListenerType.INTERNAL)
-            .withTls(true)
-            .withNewKafkaListenerAuthenticationOAuth()
-                .withValidIssuerUri(keycloakInstance.getValidIssuerUri())
-                .withJwksExpirySeconds(keycloakInstance.getJwksExpireSeconds())
-                .withJwksRefreshSeconds(keycloakInstance.getJwksRefreshSeconds())
-                .withJwksEndpointUri(keycloakInstance.getJwksEndpointUri())
-                .withUserNameClaim(keycloakInstance.getUserNameClaim())
-                .withTlsTrustedCertificates(
-                    new CertSecretSourceBuilder()
-                        .withSecretName(KeycloakInstance.KEYCLOAK_SECRET_NAME)
-                        .withCertificate(KeycloakInstance.KEYCLOAK_SECRET_CERT)
-                        .build())
-                .withDisableTlsHostnameVerification(true)
-            .endKafkaListenerAuthenticationOAuth()
-            .build();
-    };
 
     /**
      * Used by the system tests using `type: custom` authentication
