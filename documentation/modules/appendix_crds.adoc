@@ -30,9 +30,6 @@ Used in: xref:type-Kafka-{context}[`Kafka`]
 |kafka
 |xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`]
 |Configuration of the Kafka cluster.
-|zookeeper
-|xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
-|**The `zookeeper` property has been deprecated.** ZooKeeper-based Apache Kafka clusters are not supported anymore since Strimzi 0.46.0. As of Strimzi 0.46.0, ZooKeeper-based Apache Kafka clusters are not supported anymore and this option is ignored.
 |entityOperator
 |xref:type-EntityOperatorSpec-{context}[`EntityOperatorSpec`]
 |Configuration of the Entity Operator.
@@ -45,9 +42,6 @@ Used in: xref:type-Kafka-{context}[`Kafka`]
 |cruiseControl
 |xref:type-CruiseControlSpec-{context}[`CruiseControlSpec`]
 |Configuration for Cruise Control deployment. Deploys a Cruise Control instance when specified.
-|jmxTrans
-|xref:type-JmxTransSpec-{context}[`JmxTransSpec`]
-|**The `jmxTrans` property has been deprecated.** JMXTrans is deprecated and related resources removed in Strimzi 0.35.0. As of Strimzi 0.35.0, JMXTrans is not supported anymore and this option is ignored.
 |kafkaExporter
 |xref:type-KafkaExporterSpec-{context}[`KafkaExporterSpec`]
 |Configuration of the Kafka Exporter. Kafka Exporter can provide additional metrics, for example lag of consumer group at topic/partition.
@@ -78,9 +72,6 @@ include::../api/io.strimzi.api.kafka.model.kafka.KafkaClusterSpec.adoc[leveloffs
 |metadataVersion
 |string
 |Added in Strimzi 0.39.0. The KRaft metadata version used by the Kafka cluster. This property is ignored when running in ZooKeeper mode. If the property is not set, it defaults to the metadata version that corresponds to the `version` property.
-|replicas
-|integer
-|**The `replicas` property has been deprecated.** Use `KafkaNodePool` resources. Replicas are now configured in `KafkaNodePool` resources and this option is ignored.
 |image
 |string
 |The container image used for Kafka pods. If the property is not set, the default Kafka image version is determined based on the `version` configuration. The image names are specifically mapped to corresponding versions in the Cluster Operator configuration. Changing the Kafka image version does not automatically update the image versions for other components, such as Kafka Exporter. 
@@ -90,11 +81,8 @@ include::../api/io.strimzi.api.kafka.model.kafka.KafkaClusterSpec.adoc[leveloffs
 |config
 |map
 |Kafka broker config properties with certain prefixes cannot be set unless it is in the exception list. Consult the documentation for the list of forbidden prefixes and exceptions.
-|storage
-|xref:type-EphemeralStorage-{context}[`EphemeralStorage`], xref:type-PersistentClaimStorage-{context}[`PersistentClaimStorage`], xref:type-JbodStorage-{context}[`JbodStorage`]
-|**The `storage` property has been deprecated.** Use `KafkaNodePool` resources. Storage is now configured in the `KafkaNodePool` resources and this option is ignored.
 |authorization
-|xref:type-KafkaAuthorizationSimple-{context}[`KafkaAuthorizationSimple`], xref:type-KafkaAuthorizationOpa-{context}[`KafkaAuthorizationOpa`], xref:type-KafkaAuthorizationKeycloak-{context}[`KafkaAuthorizationKeycloak`], xref:type-KafkaAuthorizationCustom-{context}[`KafkaAuthorizationCustom`]
+|xref:type-KafkaAuthorizationSimple-{context}[`KafkaAuthorizationSimple`], xref:type-KafkaAuthorizationCustom-{context}[`KafkaAuthorizationCustom`]
 |Authorization configuration for Kafka brokers.
 |rack
 |xref:type-Rack-{context}[`Rack`]
@@ -114,9 +102,6 @@ include::../api/io.strimzi.api.kafka.model.kafka.KafkaClusterSpec.adoc[leveloffs
 |jmxOptions
 |xref:type-KafkaJmxOptions-{context}[`KafkaJmxOptions`]
 |JMX Options for Kafka brokers.
-|resources
-|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#resourcerequirements-v1-core[ResourceRequirements]
-|**The `resources` property has been deprecated.** Use `KafkaNodePool` custom resources to configure CPU and memory. CPU and memory resources to reserve.
 |metricsConfig
 |xref:type-JmxPrometheusExporterMetrics-{context}[`JmxPrometheusExporterMetrics`], xref:type-StrimziMetricsReporter-{context}[`StrimziMetricsReporter`]
 |Metrics configuration.
@@ -171,7 +156,7 @@ include::../api/io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListener.a
 |boolean
 |Enables TLS encryption on the listener. This is a required property. For `route` and `ingress` type listeners, TLS encryption must be always enabled.
 |authentication
-|xref:type-KafkaListenerAuthenticationTls-{context}[`KafkaListenerAuthenticationTls`], xref:type-KafkaListenerAuthenticationScramSha512-{context}[`KafkaListenerAuthenticationScramSha512`], xref:type-KafkaListenerAuthenticationOAuth-{context}[`KafkaListenerAuthenticationOAuth`], xref:type-KafkaListenerAuthenticationCustom-{context}[`KafkaListenerAuthenticationCustom`]
+|xref:type-KafkaListenerAuthenticationTls-{context}[`KafkaListenerAuthenticationTls`], xref:type-KafkaListenerAuthenticationScramSha512-{context}[`KafkaListenerAuthenticationScramSha512`], xref:type-KafkaListenerAuthenticationCustom-{context}[`KafkaListenerAuthenticationCustom`]
 |Authentication configuration for this listener.
 |configuration
 |xref:type-GenericKafkaListenerConfiguration-{context}[`GenericKafkaListenerConfiguration`]
@@ -187,7 +172,7 @@ include::../api/io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListener.a
 Used in: xref:type-GenericKafkaListener-{context}[`GenericKafkaListener`]
 
 
-The `type` property is a discriminator that distinguishes use of the `KafkaListenerAuthenticationTls` type from xref:type-KafkaListenerAuthenticationScramSha512-{context}[`KafkaListenerAuthenticationScramSha512`], xref:type-KafkaListenerAuthenticationOAuth-{context}[`KafkaListenerAuthenticationOAuth`], xref:type-KafkaListenerAuthenticationCustom-{context}[`KafkaListenerAuthenticationCustom`].
+The `type` property is a discriminator that distinguishes use of the `KafkaListenerAuthenticationTls` type from xref:type-KafkaListenerAuthenticationScramSha512-{context}[`KafkaListenerAuthenticationScramSha512`], xref:type-KafkaListenerAuthenticationCustom-{context}[`KafkaListenerAuthenticationCustom`].
 It must have the value `tls` for the type `KafkaListenerAuthenticationTls`.
 [cols="2,2,3a",options="header"]
 |====
@@ -203,7 +188,7 @@ It must have the value `tls` for the type `KafkaListenerAuthenticationTls`.
 Used in: xref:type-GenericKafkaListener-{context}[`GenericKafkaListener`]
 
 
-The `type` property is a discriminator that distinguishes use of the `KafkaListenerAuthenticationScramSha512` type from xref:type-KafkaListenerAuthenticationTls-{context}[`KafkaListenerAuthenticationTls`], xref:type-KafkaListenerAuthenticationOAuth-{context}[`KafkaListenerAuthenticationOAuth`], xref:type-KafkaListenerAuthenticationCustom-{context}[`KafkaListenerAuthenticationCustom`].
+The `type` property is a discriminator that distinguishes use of the `KafkaListenerAuthenticationScramSha512` type from xref:type-KafkaListenerAuthenticationTls-{context}[`KafkaListenerAuthenticationTls`], xref:type-KafkaListenerAuthenticationCustom-{context}[`KafkaListenerAuthenticationCustom`].
 It must have the value `scram-sha-512` for the type `KafkaListenerAuthenticationScramSha512`.
 [cols="2,2,3a",options="header"]
 |====
@@ -211,184 +196,6 @@ It must have the value `scram-sha-512` for the type `KafkaListenerAuthentication
 |type
 |string
 |Must be `scram-sha-512`.
-|====
-
-[id='type-KafkaListenerAuthenticationOAuth-{context}']
-= `KafkaListenerAuthenticationOAuth` schema reference
-
-*The type `KafkaListenerAuthenticationOAuth` has been deprecated.*
-Please use xref:type-KafkaListenerAuthenticationCustom-{context}[`KafkaListenerAuthenticationCustom`] instead.
-
-Used in: xref:type-GenericKafkaListener-{context}[`GenericKafkaListener`]
-
-
-The type KafkaListenerAuthenticationOAuth is supported only in the Strimzi API version(s) v1beta2.
-
-The `type` property is a discriminator that distinguishes use of the `KafkaListenerAuthenticationOAuth` type from xref:type-KafkaListenerAuthenticationTls-{context}[`KafkaListenerAuthenticationTls`], xref:type-KafkaListenerAuthenticationScramSha512-{context}[`KafkaListenerAuthenticationScramSha512`], xref:type-KafkaListenerAuthenticationCustom-{context}[`KafkaListenerAuthenticationCustom`].
-It must have the value `oauth` for the type `KafkaListenerAuthenticationOAuth`.
-[cols="2,2,3a",options="header"]
-|====
-|Property |Property type |Description
-|type
-|string
-|Must be `oauth`.
-|clientId
-|string
-|OAuth Client ID which the Kafka broker can use to authenticate against the authorization server and use the introspect endpoint URI.
-|clientSecret
-|xref:type-GenericSecretSource-{context}[`GenericSecretSource`]
-|Link to Kubernetes Secret containing the OAuth client secret which the Kafka broker can use to authenticate against the authorization server and use the introspect endpoint URI.
-|validIssuerUri
-|string
-|URI of the token issuer used for authentication.
-|checkIssuer
-|boolean
-|Enable or disable issuer checking. By default issuer is checked using the value configured by `validIssuerUri`. Default value is `true`.
-|checkAudience
-|boolean
-|Enable or disable audience checking. Audience checks identify the recipients of tokens. If audience checking is enabled, the OAuth Client ID also has to be configured using the `clientId` property. The Kafka broker will reject tokens that do not have its `clientId` in their `aud` (audience) claim.Default value is `false`.
-|jwksEndpointUri
-|string
-|URI of the JWKS certificate endpoint, which can be used for local JWT validation.
-|jwksRefreshSeconds
-|integer
-|Configures how often are the JWKS certificates refreshed. The refresh interval has to be at least 60 seconds shorter then the expiry interval specified in `jwksExpirySeconds`. Defaults to 300 seconds.
-|jwksMinRefreshPauseSeconds
-|integer
-|The minimum pause between two consecutive refreshes. When an unknown signing key is encountered the refresh is scheduled immediately, but will always wait for this minimum pause. Defaults to 1 second.
-|jwksExpirySeconds
-|integer
-|Configures how often are the JWKS certificates considered valid. The expiry interval has to be at least 60 seconds longer then the refresh interval specified in `jwksRefreshSeconds`. Defaults to 360 seconds.
-|jwksIgnoreKeyUse
-|boolean
-|Flag to ignore the 'use' attribute of `key` declarations in a JWKS endpoint response. Default value is `false`.
-|introspectionEndpointUri
-|string
-|URI of the token introspection endpoint which can be used to validate opaque non-JWT tokens.
-|userNameClaim
-|string
-|Name of the claim from the JWT authentication token, Introspection Endpoint response or User Info Endpoint response which will be used to extract the user id. Defaults to `sub`.
-|fallbackUserNameClaim
-|string
-|The fallback username claim to be used for the user ID if the claim specified by `userNameClaim` is not present. This is useful when `client_credentials` authentication only results in the client ID being provided in another claim. It only takes effect if `userNameClaim` is set.
-|fallbackUserNamePrefix
-|string
-|The prefix to use with the value of `fallbackUserNameClaim` to construct the user id. This only takes effect if `fallbackUserNameClaim` is true, and the value is present for the claim. Mapping usernames and client ids into the same user id space is useful in preventing name collisions.
-|groupsClaim
-|string
-|JsonPath query used to extract groups for the user during authentication. Extracted groups can be used by a custom authorizer. By default no groups are extracted.
-|groupsClaimDelimiter
-|string
-|A delimiter used to parse groups when they are extracted as a single String value rather than a JSON array. Default value is ',' (comma).
-|userInfoEndpointUri
-|string
-|URI of the User Info Endpoint to use as a fallback to obtaining the user id when the Introspection Endpoint does not return information that can be used for the user id. 
-|checkAccessTokenType
-|boolean
-|Configure whether the access token type check is performed or not. This should be set to `false` if the authorization server does not include 'typ' claim in JWT token. Defaults to `true`.
-|validTokenType
-|string
-|Valid value for the `token_type` attribute returned by the Introspection Endpoint. No default value, and not checked by default.
-|accessTokenIsJwt
-|boolean
-|Configure whether the access token is treated as JWT. This must be set to `false` if the authorization server returns opaque tokens. Defaults to `true`.
-|tlsTrustedCertificates
-|xref:type-CertSecretSource-{context}[`CertSecretSource`] array
-|Trusted certificates for TLS connection to the OAuth server.
-|disableTlsHostnameVerification
-|boolean
-|Enable or disable TLS hostname verification. Default value is `false`.
-|enableECDSA
-|boolean
-|**The `enableECDSA` property has been deprecated.** Enable or disable ECDSA support by installing BouncyCastle crypto provider. ECDSA support is always enabled. The BouncyCastle libraries are no longer packaged with Strimzi. Value is ignored.
-|maxSecondsWithoutReauthentication
-|integer
-|Maximum number of seconds the authenticated session remains valid without re-authentication. This enables Apache Kafka re-authentication feature, and causes sessions to expire when the access token expires. If the access token expires before max time or if max time is reached, the client has to re-authenticate, otherwise the server will drop the connection. Not set by default - the authenticated session does not expire when the access token expires. This option only applies to SASL_OAUTHBEARER authentication mechanism (when `enableOauthBearer` is `true`).
-|enablePlain
-|boolean
-|Enable or disable OAuth authentication over SASL_PLAIN. There is no re-authentication support when this mechanism is used. Default value is `false`.
-|tokenEndpointUri
-|string
-|URI of the Token Endpoint to use with SASL_PLAIN mechanism when the client authenticates with `clientId` and a `secret`. If set, the client can authenticate over SASL_PLAIN by either setting `username` to `clientId`, and setting `password` to client `secret`, or by setting `username` to account username, and `password` to access token prefixed with `$accessToken:`. If this option is not set, the `password` is always interpreted as an access token (without a prefix), and `username` as the account username (a so called 'no-client-credentials' mode).
-|enableOauthBearer
-|boolean
-|Enable or disable OAuth authentication over SASL_OAUTHBEARER. Default value is `true`.
-|customClaimCheck
-|string
-|JsonPath filter query to be applied to the JWT token or to the response of the introspection endpoint for additional token validation. Not set by default.
-|connectTimeoutSeconds
-|integer
-|The connect timeout in seconds when connecting to authorization server. If not set, the effective connect timeout is 60 seconds.
-|readTimeoutSeconds
-|integer
-|The read timeout in seconds when connecting to authorization server. If not set, the effective read timeout is 60 seconds.
-|httpRetries
-|integer
-|The maximum number of retries to attempt if an initial HTTP request fails. If not set, the default is to not attempt any retries.
-|httpRetryPauseMs
-|integer
-|The pause to take before retrying a failed HTTP request. If not set, the default is to not pause at all but to immediately repeat a request.
-|clientScope
-|string
-|The scope to use when making requests to the authorization server's token endpoint. Used for inter-broker authentication and for configuring OAuth 2.0 over PLAIN using the `clientId` and `secret` method.
-|clientAudience
-|string
-|The audience to use when making requests to the authorization server's token endpoint. Used for inter-broker authentication and for configuring OAuth 2.0 over PLAIN using the `clientId` and `secret` method.
-|clientGrantType
-|string
-|The grant type to use when making requests to the authorization server's token endpoint. Used for `OAuth over PLAIN` when `username` and `password` passed via SASL_PLAIN client authentication are passed on to the authorization server as `clientId` and `secret`.
-|enableMetrics
-|boolean
-|Enable or disable OAuth metrics. Default value is `false`.
-|failFast
-|boolean
-|Enable or disable termination of Kafka broker processes due to potentially recoverable runtime errors during startup. Default value is `true`.
-|includeAcceptHeader
-|boolean
-|Whether the Accept header should be set in requests to the authorization servers. The default value is `true`.
-|serverBearerTokenLocation
-|string
-|Path to the file on the local filesystem that contains a bearer token to be used instead of client ID and secret when authenticating to authorization server.
-|userNamePrefix
-|string
-|The prefix to use with the value of `userNameClaim` to construct the user ID. This only takes effect if `userNameClaim` is specified and the value is present for the claim. When used in combination with `fallbackUserNameClaims`, it ensures consistent mapping of usernames and client IDs into the same user ID space and prevents name collisions.
-|====
-
-[id='type-GenericSecretSource-{context}']
-= `GenericSecretSource` schema reference
-
-Used in: xref:type-KafkaClientAuthenticationOAuth-{context}[`KafkaClientAuthenticationOAuth`], xref:type-KafkaListenerAuthenticationCustom-{context}[`KafkaListenerAuthenticationCustom`], xref:type-KafkaListenerAuthenticationOAuth-{context}[`KafkaListenerAuthenticationOAuth`]
-
-
-[cols="2,2,3a",options="header"]
-|====
-|Property |Property type |Description
-|key
-|string
-|The key under which the secret value is stored in the Kubernetes Secret.
-|secretName
-|string
-|The name of the Kubernetes Secret containing the secret value.
-|====
-
-[id='type-CertSecretSource-{context}']
-= `CertSecretSource` schema reference
-
-Used in: xref:type-ClientTls-{context}[`ClientTls`], xref:type-KafkaAuthorizationKeycloak-{context}[`KafkaAuthorizationKeycloak`], xref:type-KafkaAuthorizationOpa-{context}[`KafkaAuthorizationOpa`], xref:type-KafkaClientAuthenticationOAuth-{context}[`KafkaClientAuthenticationOAuth`], xref:type-KafkaListenerAuthenticationOAuth-{context}[`KafkaListenerAuthenticationOAuth`]
-
-
-[cols="2,2,3a",options="header"]
-|====
-|Property |Property type |Description
-|secretName
-|string
-|The name of the Secret containing the certificate.
-|certificate
-|string
-|The name of the file certificate in the secret.
-|pattern
-|string
-|Pattern for the certificate files in the secret. Use the link:https://en.wikipedia.org/wiki/Glob_(programming)[_glob syntax_] for the pattern. All files in the secret that match the pattern are used.
 |====
 
 [id='type-KafkaListenerAuthenticationCustom-{context}']
@@ -404,7 +211,7 @@ include::../api/io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthentic
 == `KafkaListenerAuthenticationCustom` schema properties
 
 
-The `type` property is a discriminator that distinguishes use of the `KafkaListenerAuthenticationCustom` type from xref:type-KafkaListenerAuthenticationTls-{context}[`KafkaListenerAuthenticationTls`], xref:type-KafkaListenerAuthenticationScramSha512-{context}[`KafkaListenerAuthenticationScramSha512`], xref:type-KafkaListenerAuthenticationOAuth-{context}[`KafkaListenerAuthenticationOAuth`].
+The `type` property is a discriminator that distinguishes use of the `KafkaListenerAuthenticationCustom` type from xref:type-KafkaListenerAuthenticationTls-{context}[`KafkaListenerAuthenticationTls`], xref:type-KafkaListenerAuthenticationScramSha512-{context}[`KafkaListenerAuthenticationScramSha512`].
 It must have the value `custom` for the type `KafkaListenerAuthenticationCustom`.
 [cols="2,2,3a",options="header"]
 |====
@@ -418,9 +225,6 @@ It must have the value `custom` for the type `KafkaListenerAuthenticationCustom`
 |listenerConfig
 |map
 |Configuration to be used for a specific listener. All values are prefixed with `listener.name.<listener_name>`.
-|secrets
-|xref:type-GenericSecretSource-{context}[`GenericSecretSource`] array
-|**The `secrets` property has been deprecated.** Please use the template section to configure additional volumes instead. Secrets to be mounted to `/opt/kafka/custom-authn-secrets/custom-listener-<listener_name>-<port>/<secret_name>`.
 |====
 
 [id='type-GenericKafkaListenerConfiguration-{context}']
@@ -630,107 +434,6 @@ include::../api/io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerCo
 |External IPs associated to the nodeport service. These IPs are used by clients external to the Kubernetes cluster to access the Kafka brokers. This field is helpful when `nodeport` without `externalIP` is not sufficient. For example on bare-metal Kubernetes clusters that do not support Loadbalancer service types. This field can only be used with `nodeport` type listener.
 |====
 
-[id='type-EphemeralStorage-{context}']
-= `EphemeralStorage` schema reference
-
-Used in: xref:type-JbodStorage-{context}[`JbodStorage`], xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaNodePoolSpec-{context}[`KafkaNodePoolSpec`], xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
-
-
-The `type` property is a discriminator that distinguishes use of the `EphemeralStorage` type from xref:type-PersistentClaimStorage-{context}[`PersistentClaimStorage`].
-It must have the value `ephemeral` for the type `EphemeralStorage`.
-[cols="2,2,3a",options="header"]
-|====
-|Property |Property type |Description
-|id
-|integer
-|Storage identification number. It is mandatory only for storage volumes defined in a storage of type 'jbod'.
-|sizeLimit
-|string
-|When type=ephemeral, defines the total amount of local storage required for this EmptyDir volume (for example 1Gi).
-|type
-|string
-|Must be `ephemeral`.
-|kraftMetadata
-|string (one of [shared])
-|Specifies whether this volume should be used for storing KRaft metadata. This property is optional. When set, the only currently supported value is `shared`. At most one volume can have this property set.
-|====
-
-[id='type-PersistentClaimStorage-{context}']
-= `PersistentClaimStorage` schema reference
-
-Used in: xref:type-JbodStorage-{context}[`JbodStorage`], xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaNodePoolSpec-{context}[`KafkaNodePoolSpec`], xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
-
-
-The `type` property is a discriminator that distinguishes use of the `PersistentClaimStorage` type from xref:type-EphemeralStorage-{context}[`EphemeralStorage`].
-It must have the value `persistent-claim` for the type `PersistentClaimStorage`.
-[cols="2,2,3a",options="header"]
-|====
-|Property |Property type |Description
-|id
-|integer
-|Storage identification number. It is mandatory only for storage volumes defined in a storage of type 'jbod'.
-|type
-|string
-|Must be `persistent-claim`.
-|size
-|string
-|When `type=persistent-claim`, defines the size of the persistent volume claim, such as 100Gi. Mandatory when `type=persistent-claim`.
-|kraftMetadata
-|string (one of [shared])
-|Specifies whether this volume should be used for storing KRaft metadata. This property is optional. When set, the only currently supported value is `shared`. At most one volume can have this property set.
-|class
-|string
-|The storage class to use for dynamic volume allocation.
-|volumeAttributesClass
-|string
-|Specifies `VolumeAttributeClass` name for dynamically configuring storage attributes.
-|selector
-|map
-|Specifies a specific persistent volume to use. It contains key:value pairs representing labels for selecting such a volume.
-|deleteClaim
-|boolean
-|Specifies whether the persistent volume claim is deleted when a Kafka node is deleted. Optional. Defaults to `false`.
-|overrides
-|xref:type-PersistentClaimStorageOverride-{context}[`PersistentClaimStorageOverride`] array
-|**The `overrides` property has been deprecated.** The storage overrides for individual brokers are not supported anymore since Strimzi 0.46.0. As of Strimzi 0.46.0, the storage overrides for individual brokers are not supported anymore and this option is ignored.
-|====
-
-[id='type-PersistentClaimStorageOverride-{context}']
-= `PersistentClaimStorageOverride` schema reference
-
-Used in: xref:type-PersistentClaimStorage-{context}[`PersistentClaimStorage`]
-
-
-[cols="2,2,3a",options="header"]
-|====
-|Property |Property type |Description
-|class
-|string
-|The storage class to use for dynamic volume allocation for this broker.
-|broker
-|integer
-|Id of the kafka broker (broker identifier).
-|====
-
-[id='type-JbodStorage-{context}']
-= `JbodStorage` schema reference
-
-Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaNodePoolSpec-{context}[`KafkaNodePoolSpec`]
-
-
-The `type` property is a discriminator that distinguishes use of the `JbodStorage` type from xref:type-EphemeralStorage-{context}[`EphemeralStorage`], xref:type-PersistentClaimStorage-{context}[`PersistentClaimStorage`].
-It must have the value `jbod` for the type `JbodStorage`.
-[cols="2,2,3a",options="header"]
-|====
-|Property |Property type |Description
-|type
-|string
-|Must be `jbod`.
-|volumes
-|xref:type-EphemeralStorage-{context}[`EphemeralStorage`], xref:type-PersistentClaimStorage-{context}[`PersistentClaimStorage`] array
-|List of volumes as Storage objects representing the JBOD disks array.
-|====
-
 [id='type-KafkaAuthorizationSimple-{context}']
 = `KafkaAuthorizationSimple` schema reference
 
@@ -744,7 +447,7 @@ include::../api/io.strimzi.api.kafka.model.kafka.KafkaAuthorizationSimple.adoc[l
 == `KafkaAuthorizationSimple` schema properties
 
 
-The `type` property is a discriminator that distinguishes use of the `KafkaAuthorizationSimple` type from xref:type-KafkaAuthorizationOpa-{context}[`KafkaAuthorizationOpa`], xref:type-KafkaAuthorizationKeycloak-{context}[`KafkaAuthorizationKeycloak`], xref:type-KafkaAuthorizationCustom-{context}[`KafkaAuthorizationCustom`].
+The `type` property is a discriminator that distinguishes use of the `KafkaAuthorizationSimple` type from xref:type-KafkaAuthorizationCustom-{context}[`KafkaAuthorizationCustom`].
 It must have the value `simple` for the type `KafkaAuthorizationSimple`.
 [cols="2,2,3a",options="header"]
 |====
@@ -755,127 +458,6 @@ It must have the value `simple` for the type `KafkaAuthorizationSimple`.
 |superUsers
 |string array
 |List of super users. Should contain list of user principals which should get unlimited access rights.
-|====
-
-[id='type-KafkaAuthorizationOpa-{context}']
-= `KafkaAuthorizationOpa` schema reference
-
-*The type `KafkaAuthorizationOpa` has been deprecated.*
-Please use xref:type-KafkaAuthorizationCustom-{context}[`KafkaAuthorizationCustom`] instead.
-
-Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`]
-
-xref:type-KafkaAuthorizationOpa-schema-{context}[Full list of `KafkaAuthorizationOpa` schema properties]
-
-include::../api/io.strimzi.api.kafka.model.kafka.KafkaAuthorizationOpa.adoc[leveloffset=+1]
-
-[id='type-KafkaAuthorizationOpa-schema-{context}']
-== `KafkaAuthorizationOpa` schema properties
-
-
-The type KafkaAuthorizationOpa is supported only in the Strimzi API version(s) v1beta2.
-
-The `type` property is a discriminator that distinguishes use of the `KafkaAuthorizationOpa` type from xref:type-KafkaAuthorizationSimple-{context}[`KafkaAuthorizationSimple`], xref:type-KafkaAuthorizationKeycloak-{context}[`KafkaAuthorizationKeycloak`], xref:type-KafkaAuthorizationCustom-{context}[`KafkaAuthorizationCustom`].
-It must have the value `opa` for the type `KafkaAuthorizationOpa`.
-[cols="2,2,3a",options="header"]
-|====
-|Property |Property type |Description
-|type
-|string
-|Must be `opa`.
-|url
-|string
-|The URL used to connect to the Open Policy Agent server. The URL has to include the policy which will be queried by the authorizer. This option is required.
-|allowOnError
-|boolean
-|Defines whether a Kafka client should be allowed or denied by default when the authorizer fails to query the Open Policy Agent, for example, when it is temporarily unavailable). Defaults to `false` - all actions will be denied.
-|initialCacheCapacity
-|integer
-|Initial capacity of the local cache used by the authorizer to avoid querying the Open Policy Agent for every request Defaults to `5000`.
-|maximumCacheSize
-|integer
-|Maximum capacity of the local cache used by the authorizer to avoid querying the Open Policy Agent for every request. Defaults to `50000`.
-|expireAfterMs
-|integer
-|The expiration of the records kept in the local cache to avoid querying the Open Policy Agent for every request. Defines how often the cached authorization decisions are reloaded from the Open Policy Agent server. In milliseconds. Defaults to `3600000`.
-|tlsTrustedCertificates
-|xref:type-CertSecretSource-{context}[`CertSecretSource`] array
-|Trusted certificates for TLS connection to the OPA server.
-|superUsers
-|string array
-|List of super users, which is specifically a list of user principals that have unlimited access rights.
-|enableMetrics
-|boolean
-|Defines whether the Open Policy Agent authorizer plugin should provide metrics. Defaults to `false`.
-|====
-
-[id='type-KafkaAuthorizationKeycloak-{context}']
-= `KafkaAuthorizationKeycloak` schema reference
-
-*The type `KafkaAuthorizationKeycloak` has been deprecated.*
-Please use xref:type-KafkaAuthorizationCustom-{context}[`KafkaAuthorizationCustom`] instead.
-
-Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`]
-
-
-The type KafkaAuthorizationKeycloak is supported only in the Strimzi API version(s) v1beta2.
-
-The `type` property is a discriminator that distinguishes use of the `KafkaAuthorizationKeycloak` type from xref:type-KafkaAuthorizationSimple-{context}[`KafkaAuthorizationSimple`], xref:type-KafkaAuthorizationOpa-{context}[`KafkaAuthorizationOpa`], xref:type-KafkaAuthorizationCustom-{context}[`KafkaAuthorizationCustom`].
-It must have the value `keycloak` for the type `KafkaAuthorizationKeycloak`.
-[cols="2,2,3a",options="header"]
-|====
-|Property |Property type |Description
-|type
-|string
-|Must be `keycloak`.
-|clientId
-|string
-|OAuth Client ID which the Kafka client can use to authenticate against the OAuth server and use the token endpoint URI.
-|tokenEndpointUri
-|string
-|Authorization server token endpoint URI.
-|tlsTrustedCertificates
-|xref:type-CertSecretSource-{context}[`CertSecretSource`] array
-|Trusted certificates for TLS connection to the OAuth server.
-|disableTlsHostnameVerification
-|boolean
-|Enable or disable TLS hostname verification. Default value is `false`.
-|delegateToKafkaAcls
-|boolean
-|Whether authorization decision should be delegated to the 'Simple' authorizer if DENIED by Keycloak Authorization Services policies. Default value is `false`.
-|grantsRefreshPeriodSeconds
-|integer
-|The time between two consecutive grants refresh runs in seconds. The default value is 60.
-|grantsRefreshPoolSize
-|integer
-|The number of threads to use to refresh grants for active sessions. The more threads, the more parallelism, so the sooner the job completes. However, using more threads places a heavier load on the authorization server. The default value is 5.
-|grantsMaxIdleTimeSeconds
-|integer
-|The time, in seconds, after which an idle grant can be evicted from the cache. The default value is 300.
-|grantsGcPeriodSeconds
-|integer
-|The time, in seconds, between consecutive runs of a job that cleans stale grants from the cache. The default value is 300.
-|grantsAlwaysLatest
-|boolean
-|Controls whether the latest grants are fetched for a new session. When enabled, grants are retrieved from Keycloak and cached for the user. The default value is `false`.
-|superUsers
-|string array
-|List of super users. Should contain list of user principals which should get unlimited access rights.
-|connectTimeoutSeconds
-|integer
-|The connect timeout in seconds when connecting to authorization server. If not set, the effective connect timeout is 60 seconds.
-|readTimeoutSeconds
-|integer
-|The read timeout in seconds when connecting to authorization server. If not set, the effective read timeout is 60 seconds.
-|httpRetries
-|integer
-|The maximum number of retries to attempt if an initial HTTP request fails. If not set, the default is to not attempt any retries.
-|enableMetrics
-|boolean
-|Enable or disable OAuth metrics. The default value is `false`.
-|includeAcceptHeader
-|boolean
-|Whether the Accept header should be set in requests to the authorization servers. The default value is `true`.
 |====
 
 [id='type-KafkaAuthorizationCustom-{context}']
@@ -891,7 +473,7 @@ include::../api/io.strimzi.api.kafka.model.kafka.KafkaAuthorizationCustom.adoc[l
 == `KafkaAuthorizationCustom` schema properties
 
 
-The `type` property is a discriminator that distinguishes use of the `KafkaAuthorizationCustom` type from xref:type-KafkaAuthorizationSimple-{context}[`KafkaAuthorizationSimple`], xref:type-KafkaAuthorizationOpa-{context}[`KafkaAuthorizationOpa`], xref:type-KafkaAuthorizationKeycloak-{context}[`KafkaAuthorizationKeycloak`].
+The `type` property is a discriminator that distinguishes use of the `KafkaAuthorizationCustom` type from xref:type-KafkaAuthorizationSimple-{context}[`KafkaAuthorizationSimple`].
 It must have the value `custom` for the type `KafkaAuthorizationCustom`.
 [cols="2,2,3a",options="header"]
 |====
@@ -934,7 +516,7 @@ include::../api/io.strimzi.api.kafka.model.common.Rack.adoc[leveloffset=+1]
 [id='type-Probe-{context}']
 = `Probe` schema reference
 
-Used in: xref:type-CruiseControlSpec-{context}[`CruiseControlSpec`], xref:type-EntityTopicOperatorSpec-{context}[`EntityTopicOperatorSpec`], xref:type-EntityUserOperatorSpec-{context}[`EntityUserOperatorSpec`], xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaExporterSpec-{context}[`KafkaExporterSpec`], xref:type-KafkaMirrorMaker2Spec-{context}[`KafkaMirrorMaker2Spec`], xref:type-TlsSidecar-{context}[`TlsSidecar`], xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
+Used in: xref:type-CruiseControlSpec-{context}[`CruiseControlSpec`], xref:type-EntityTopicOperatorSpec-{context}[`EntityTopicOperatorSpec`], xref:type-EntityUserOperatorSpec-{context}[`EntityUserOperatorSpec`], xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaExporterSpec-{context}[`KafkaExporterSpec`], xref:type-KafkaMirrorMaker2Spec-{context}[`KafkaMirrorMaker2Spec`]
 
 
 [cols="2,2,3a",options="header"]
@@ -960,7 +542,7 @@ Used in: xref:type-CruiseControlSpec-{context}[`CruiseControlSpec`], xref:type-E
 [id='type-JvmOptions-{context}']
 = `JvmOptions` schema reference
 
-Used in: xref:type-CruiseControlSpec-{context}[`CruiseControlSpec`], xref:type-EntityTopicOperatorSpec-{context}[`EntityTopicOperatorSpec`], xref:type-EntityUserOperatorSpec-{context}[`EntityUserOperatorSpec`], xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaMirrorMaker2Spec-{context}[`KafkaMirrorMaker2Spec`], xref:type-KafkaNodePoolSpec-{context}[`KafkaNodePoolSpec`], xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
+Used in: xref:type-CruiseControlSpec-{context}[`CruiseControlSpec`], xref:type-EntityTopicOperatorSpec-{context}[`EntityTopicOperatorSpec`], xref:type-EntityUserOperatorSpec-{context}[`EntityUserOperatorSpec`], xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaMirrorMaker2Spec-{context}[`KafkaMirrorMaker2Spec`], xref:type-KafkaNodePoolSpec-{context}[`KafkaNodePoolSpec`]
 
 
 [cols="2,2,3a",options="header"]
@@ -1003,7 +585,7 @@ Used in: xref:type-JvmOptions-{context}[`JvmOptions`]
 [id='type-KafkaJmxOptions-{context}']
 = `KafkaJmxOptions` schema reference
 
-Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaMirrorMaker2Spec-{context}[`KafkaMirrorMaker2Spec`], xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
+Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaMirrorMaker2Spec-{context}[`KafkaMirrorMaker2Spec`]
 
 xref:type-KafkaJmxOptions-schema-{context}[Full list of `KafkaJmxOptions` schema properties]
 
@@ -1027,7 +609,7 @@ include::../api/io.strimzi.api.kafka.model.common.jmx.KafkaJmxOptions.adoc[level
 Used in: xref:type-KafkaJmxOptions-{context}[`KafkaJmxOptions`]
 
 
-The `type` property is a discriminator that distinguishes use of the `KafkaJmxAuthenticationPassword` type from other subtypes which may be added in the future.
+The `type` property is a discriminator that distinguishes use of the `KafkaJmxAuthenticationPassword` type from other subtypes that may be added in the future.
 It must have the value `password` for the type `KafkaJmxAuthenticationPassword`.
 [cols="2,2,3a",options="header"]
 |====
@@ -1040,7 +622,7 @@ It must have the value `password` for the type `KafkaJmxAuthenticationPassword`.
 [id='type-JmxPrometheusExporterMetrics-{context}']
 = `JmxPrometheusExporterMetrics` schema reference
 
-Used in: xref:type-CruiseControlSpec-{context}[`CruiseControlSpec`], xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaMirrorMaker2Spec-{context}[`KafkaMirrorMaker2Spec`], xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
+Used in: xref:type-CruiseControlSpec-{context}[`CruiseControlSpec`], xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaMirrorMaker2Spec-{context}[`KafkaMirrorMaker2Spec`]
 
 
 The `type` property is a discriminator that distinguishes use of the `JmxPrometheusExporterMetrics` type from xref:type-StrimziMetricsReporter-{context}[`StrimziMetricsReporter`].
@@ -1073,7 +655,7 @@ Used in: xref:type-ExternalLogging-{context}[`ExternalLogging`], xref:type-JmxPr
 [id='type-StrimziMetricsReporter-{context}']
 = `StrimziMetricsReporter` schema reference
 
-Used in: xref:type-CruiseControlSpec-{context}[`CruiseControlSpec`], xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaMirrorMaker2Spec-{context}[`KafkaMirrorMaker2Spec`], xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
+Used in: xref:type-CruiseControlSpec-{context}[`CruiseControlSpec`], xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaMirrorMaker2Spec-{context}[`KafkaMirrorMaker2Spec`]
 
 
 The `type` property is a discriminator that distinguishes use of the `StrimziMetricsReporter` type from xref:type-JmxPrometheusExporterMetrics-{context}[`JmxPrometheusExporterMetrics`].
@@ -1106,7 +688,7 @@ Used in: xref:type-StrimziMetricsReporter-{context}[`StrimziMetricsReporter`]
 [id='type-InlineLogging-{context}']
 = `InlineLogging` schema reference
 
-Used in: xref:type-CruiseControlSpec-{context}[`CruiseControlSpec`], xref:type-EntityTopicOperatorSpec-{context}[`EntityTopicOperatorSpec`], xref:type-EntityUserOperatorSpec-{context}[`EntityUserOperatorSpec`], xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaMirrorMaker2Spec-{context}[`KafkaMirrorMaker2Spec`], xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
+Used in: xref:type-CruiseControlSpec-{context}[`CruiseControlSpec`], xref:type-EntityTopicOperatorSpec-{context}[`EntityTopicOperatorSpec`], xref:type-EntityUserOperatorSpec-{context}[`EntityUserOperatorSpec`], xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaMirrorMaker2Spec-{context}[`KafkaMirrorMaker2Spec`]
 
 
 The `type` property is a discriminator that distinguishes use of the `InlineLogging` type from xref:type-ExternalLogging-{context}[`ExternalLogging`].
@@ -1125,7 +707,7 @@ It must have the value `inline` for the type `InlineLogging`.
 [id='type-ExternalLogging-{context}']
 = `ExternalLogging` schema reference
 
-Used in: xref:type-CruiseControlSpec-{context}[`CruiseControlSpec`], xref:type-EntityTopicOperatorSpec-{context}[`EntityTopicOperatorSpec`], xref:type-EntityUserOperatorSpec-{context}[`EntityUserOperatorSpec`], xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaMirrorMaker2Spec-{context}[`KafkaMirrorMaker2Spec`], xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
+Used in: xref:type-CruiseControlSpec-{context}[`CruiseControlSpec`], xref:type-EntityTopicOperatorSpec-{context}[`EntityTopicOperatorSpec`], xref:type-EntityUserOperatorSpec-{context}[`EntityUserOperatorSpec`], xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaMirrorMaker2Spec-{context}[`KafkaMirrorMaker2Spec`]
 
 
 The `type` property is a discriminator that distinguishes use of the `ExternalLogging` type from xref:type-InlineLogging-{context}[`InlineLogging`].
@@ -1150,9 +732,6 @@ Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`]
 [cols="2,2,3a",options="header"]
 |====
 |Property |Property type |Description
-|statefulset
-|xref:type-StatefulSetTemplate-{context}[`StatefulSetTemplate`]
-|**The `statefulset` property has been deprecated.** Support for StatefulSets was removed in Strimzi 0.35.0. This property is ignored. Template for Kafka `StatefulSet`.
 |pod
 |xref:type-PodTemplate-{context}[`PodTemplate`]
 |Template for Kafka `Pods`.
@@ -1209,51 +788,10 @@ Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`]
 |Template for Kafka `StrimziPodSet` resource.
 |====
 
-[id='type-StatefulSetTemplate-{context}']
-= `StatefulSetTemplate` schema reference
-
-Used in: xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`], xref:type-ZookeeperClusterTemplate-{context}[`ZookeeperClusterTemplate`]
-
-
-[cols="2,2,3a",options="header"]
-|====
-|Property |Property type |Description
-|metadata
-|xref:type-MetadataTemplate-{context}[`MetadataTemplate`]
-|Metadata applied to the resource.
-|podManagementPolicy
-|string (one of [OrderedReady, Parallel])
-|PodManagementPolicy which will be used for this StatefulSet. Valid values are `Parallel` and `OrderedReady`. Defaults to `Parallel`.
-|====
-
-[id='type-MetadataTemplate-{context}']
-= `MetadataTemplate` schema reference
-
-Used in: xref:type-BuildConfigTemplate-{context}[`BuildConfigTemplate`], xref:type-DeploymentTemplate-{context}[`DeploymentTemplate`], xref:type-InternalServiceTemplate-{context}[`InternalServiceTemplate`], xref:type-PodDisruptionBudgetTemplate-{context}[`PodDisruptionBudgetTemplate`], xref:type-PodTemplate-{context}[`PodTemplate`], xref:type-ResourceTemplate-{context}[`ResourceTemplate`], xref:type-StatefulSetTemplate-{context}[`StatefulSetTemplate`]
-
-xref:type-MetadataTemplate-schema-{context}[Full list of `MetadataTemplate` schema properties]
-
-include::../api/io.strimzi.api.kafka.model.common.template.MetadataTemplate.adoc[leveloffset=+1]
-
-[id='type-MetadataTemplate-schema-{context}']
-== `MetadataTemplate` schema properties
-
-
-[cols="2,2,3a",options="header"]
-|====
-|Property |Property type |Description
-|labels
-|map
-|Labels added to the Kubernetes resource.
-|annotations
-|map
-|Annotations added to the Kubernetes resource.
-|====
-
 [id='type-PodTemplate-{context}']
 = `PodTemplate` schema reference
 
-Used in: xref:type-CruiseControlTemplate-{context}[`CruiseControlTemplate`], xref:type-EntityOperatorTemplate-{context}[`EntityOperatorTemplate`], xref:type-JmxTransTemplate-{context}[`JmxTransTemplate`], xref:type-KafkaBridgeTemplate-{context}[`KafkaBridgeTemplate`], xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`], xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`], xref:type-KafkaExporterTemplate-{context}[`KafkaExporterTemplate`], xref:type-KafkaNodePoolTemplate-{context}[`KafkaNodePoolTemplate`], xref:type-ZookeeperClusterTemplate-{context}[`ZookeeperClusterTemplate`]
+Used in: xref:type-CruiseControlTemplate-{context}[`CruiseControlTemplate`], xref:type-EntityOperatorTemplate-{context}[`EntityOperatorTemplate`], xref:type-KafkaBridgeTemplate-{context}[`KafkaBridgeTemplate`], xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`], xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`], xref:type-KafkaExporterTemplate-{context}[`KafkaExporterTemplate`], xref:type-KafkaNodePoolTemplate-{context}[`KafkaNodePoolTemplate`]
 
 xref:type-PodTemplate-schema-{context}[Full list of `PodTemplate` schema properties]
 
@@ -1316,6 +854,30 @@ include::../api/io.strimzi.api.kafka.model.common.template.PodTemplate.adoc[leve
 |Use the host user namespace. Optional. Defaults to `true`. When `true` or not set, the pod runs in the host user namespace. This is required when the pod needs features available only in the host namespace, such as loading kernel modules with `CAP_SYS_MODULE`.When set to `false`, the pod runs in a new user namespace. Setting `false` helps mitigate container breakout vulnerabilities and allows containers to run as `root` without granting `root` privileges on the host. This property is alpha-level in Kubernetes and is supported only by Kubernetes clusters that enable the `UserNamespacesSupport` feature.
 |====
 
+[id='type-MetadataTemplate-{context}']
+= `MetadataTemplate` schema reference
+
+Used in: xref:type-BuildConfigTemplate-{context}[`BuildConfigTemplate`], xref:type-DeploymentTemplate-{context}[`DeploymentTemplate`], xref:type-InternalServiceTemplate-{context}[`InternalServiceTemplate`], xref:type-PodDisruptionBudgetTemplate-{context}[`PodDisruptionBudgetTemplate`], xref:type-PodTemplate-{context}[`PodTemplate`], xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
+
+xref:type-MetadataTemplate-schema-{context}[Full list of `MetadataTemplate` schema properties]
+
+include::../api/io.strimzi.api.kafka.model.common.template.MetadataTemplate.adoc[leveloffset=+1]
+
+[id='type-MetadataTemplate-schema-{context}']
+== `MetadataTemplate` schema properties
+
+
+[cols="2,2,3a",options="header"]
+|====
+|Property |Property type |Description
+|labels
+|map
+|Labels added to the Kubernetes resource.
+|annotations
+|map
+|Annotations added to the Kubernetes resource.
+|====
+
 [id='type-AdditionalVolume-{context}']
 = `AdditionalVolume` schema reference
 
@@ -1368,7 +930,7 @@ Used in: xref:type-AdditionalVolume-{context}[`AdditionalVolume`]
 [id='type-InternalServiceTemplate-{context}']
 = `InternalServiceTemplate` schema reference
 
-Used in: xref:type-CruiseControlTemplate-{context}[`CruiseControlTemplate`], xref:type-KafkaBridgeTemplate-{context}[`KafkaBridgeTemplate`], xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`], xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`], xref:type-ZookeeperClusterTemplate-{context}[`ZookeeperClusterTemplate`]
+Used in: xref:type-CruiseControlTemplate-{context}[`CruiseControlTemplate`], xref:type-KafkaBridgeTemplate-{context}[`KafkaBridgeTemplate`], xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`], xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`]
 
 
 [cols="2,2,3a",options="header"]
@@ -1388,7 +950,7 @@ Used in: xref:type-CruiseControlTemplate-{context}[`CruiseControlTemplate`], xre
 [id='type-ResourceTemplate-{context}']
 = `ResourceTemplate` schema reference
 
-Used in: xref:type-CruiseControlTemplate-{context}[`CruiseControlTemplate`], xref:type-EntityOperatorTemplate-{context}[`EntityOperatorTemplate`], xref:type-JmxTransTemplate-{context}[`JmxTransTemplate`], xref:type-KafkaBridgeTemplate-{context}[`KafkaBridgeTemplate`], xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`], xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`], xref:type-KafkaExporterTemplate-{context}[`KafkaExporterTemplate`], xref:type-KafkaNodePoolTemplate-{context}[`KafkaNodePoolTemplate`], xref:type-KafkaUserTemplate-{context}[`KafkaUserTemplate`], xref:type-ZookeeperClusterTemplate-{context}[`ZookeeperClusterTemplate`]
+Used in: xref:type-CruiseControlTemplate-{context}[`CruiseControlTemplate`], xref:type-EntityOperatorTemplate-{context}[`EntityOperatorTemplate`], xref:type-KafkaBridgeTemplate-{context}[`KafkaBridgeTemplate`], xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`], xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`], xref:type-KafkaExporterTemplate-{context}[`KafkaExporterTemplate`], xref:type-KafkaNodePoolTemplate-{context}[`KafkaNodePoolTemplate`], xref:type-KafkaUserTemplate-{context}[`KafkaUserTemplate`]
 
 
 [cols="2,2,3a",options="header"]
@@ -1402,7 +964,7 @@ Used in: xref:type-CruiseControlTemplate-{context}[`CruiseControlTemplate`], xre
 [id='type-PodDisruptionBudgetTemplate-{context}']
 = `PodDisruptionBudgetTemplate` schema reference
 
-Used in: xref:type-CruiseControlTemplate-{context}[`CruiseControlTemplate`], xref:type-EntityOperatorTemplate-{context}[`EntityOperatorTemplate`], xref:type-KafkaBridgeTemplate-{context}[`KafkaBridgeTemplate`], xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`], xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`], xref:type-KafkaExporterTemplate-{context}[`KafkaExporterTemplate`], xref:type-ZookeeperClusterTemplate-{context}[`ZookeeperClusterTemplate`]
+Used in: xref:type-CruiseControlTemplate-{context}[`CruiseControlTemplate`], xref:type-EntityOperatorTemplate-{context}[`EntityOperatorTemplate`], xref:type-KafkaBridgeTemplate-{context}[`KafkaBridgeTemplate`], xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`], xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`], xref:type-KafkaExporterTemplate-{context}[`KafkaExporterTemplate`]
 
 xref:type-PodDisruptionBudgetTemplate-schema-{context}[Full list of `PodDisruptionBudgetTemplate` schema properties]
 
@@ -1426,7 +988,7 @@ include::../api/io.strimzi.api.kafka.model.common.template.PodDisruptionBudgetTe
 [id='type-ContainerTemplate-{context}']
 = `ContainerTemplate` schema reference
 
-Used in: xref:type-CruiseControlTemplate-{context}[`CruiseControlTemplate`], xref:type-EntityOperatorTemplate-{context}[`EntityOperatorTemplate`], xref:type-JmxTransTemplate-{context}[`JmxTransTemplate`], xref:type-KafkaBridgeTemplate-{context}[`KafkaBridgeTemplate`], xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`], xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`], xref:type-KafkaExporterTemplate-{context}[`KafkaExporterTemplate`], xref:type-KafkaNodePoolTemplate-{context}[`KafkaNodePoolTemplate`], xref:type-ZookeeperClusterTemplate-{context}[`ZookeeperClusterTemplate`]
+Used in: xref:type-CruiseControlTemplate-{context}[`CruiseControlTemplate`], xref:type-EntityOperatorTemplate-{context}[`EntityOperatorTemplate`], xref:type-KafkaBridgeTemplate-{context}[`KafkaBridgeTemplate`], xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`], xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`], xref:type-KafkaExporterTemplate-{context}[`KafkaExporterTemplate`], xref:type-KafkaNodePoolTemplate-{context}[`KafkaNodePoolTemplate`]
 
 xref:type-ContainerTemplate-schema-{context}[Full list of `ContainerTemplate` schema properties]
 
@@ -1500,7 +1062,7 @@ include::../api/io.strimzi.api.kafka.model.kafka.tieredstorage.TieredStorageCust
 == `TieredStorageCustom` schema properties
 
 
-The `type` property is a discriminator that distinguishes use of the `TieredStorageCustom` type from other subtypes which may be added in the future.
+The `type` property is a discriminator that distinguishes use of the `TieredStorageCustom` type from other subtypes that may be added in the future.
 It must have the value `custom` for the type `TieredStorageCustom`.
 [cols="2,2,3a",options="header"]
 |====
@@ -1592,98 +1154,6 @@ It must have the value `strimzi` for the type `QuotasPluginStrimzi`.
 |List of principals that are excluded from the quota. The principals have to be prefixed with `User:`, for example `User:my-user;User:CN=my-other-user`.
 |====
 
-[id='type-ZookeeperClusterSpec-{context}']
-= `ZookeeperClusterSpec` schema reference
-
-*The type `ZookeeperClusterSpec` has been deprecated.*
-
-Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
-
-
-[cols="2,2,3a",options="header"]
-|====
-|Property |Property type |Description
-|replicas
-|integer
-|The number of pods in the cluster.
-|image
-|string
-|The container image used for ZooKeeper pods. If no image name is explicitly specified, it is determined based on the Kafka version set in `spec.kafka.version`. The image names are specifically mapped to corresponding versions in the Cluster Operator configuration.
-|storage
-|xref:type-EphemeralStorage-{context}[`EphemeralStorage`], xref:type-PersistentClaimStorage-{context}[`PersistentClaimStorage`]
-|Storage configuration (disk). Cannot be updated.
-|config
-|map
-|The ZooKeeper broker config. Properties with the following prefixes cannot be set: server., dataDir, dataLogDir, clientPort, authProvider, quorum.auth, requireClientAuthScheme, snapshot.trust.empty, standaloneEnabled, reconfigEnabled, 4lw.commands.whitelist, secureClientPort, ssl., serverCnxnFactory, sslQuorum (with the exception of: ssl.protocol, ssl.quorum.protocol, ssl.enabledProtocols, ssl.quorum.enabledProtocols, ssl.ciphersuites, ssl.quorum.ciphersuites, ssl.hostnameVerification, ssl.quorum.hostnameVerification).
-|livenessProbe
-|xref:type-Probe-{context}[`Probe`]
-|Pod liveness checking.
-|readinessProbe
-|xref:type-Probe-{context}[`Probe`]
-|Pod readiness checking.
-|jvmOptions
-|xref:type-JvmOptions-{context}[`JvmOptions`]
-|JVM Options for pods.
-|jmxOptions
-|xref:type-KafkaJmxOptions-{context}[`KafkaJmxOptions`]
-|JMX Options for Zookeeper nodes.
-|resources
-|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#resourcerequirements-v1-core[ResourceRequirements]
-|CPU and memory resources to reserve.
-|metricsConfig
-|xref:type-JmxPrometheusExporterMetrics-{context}[`JmxPrometheusExporterMetrics`], xref:type-StrimziMetricsReporter-{context}[`StrimziMetricsReporter`]
-|Metrics configuration.
-|logging
-|xref:type-InlineLogging-{context}[`InlineLogging`], xref:type-ExternalLogging-{context}[`ExternalLogging`]
-|Logging configuration for ZooKeeper.
-|template
-|xref:type-ZookeeperClusterTemplate-{context}[`ZookeeperClusterTemplate`]
-|Template for ZooKeeper cluster resources. The template allows users to specify how the Kubernetes resources are generated.
-|====
-
-[id='type-ZookeeperClusterTemplate-{context}']
-= `ZookeeperClusterTemplate` schema reference
-
-*The type `ZookeeperClusterTemplate` has been deprecated.*
-
-Used in: xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
-
-
-[cols="2,2,3a",options="header"]
-|====
-|Property |Property type |Description
-|statefulset
-|xref:type-StatefulSetTemplate-{context}[`StatefulSetTemplate`]
-|**The `statefulset` property has been deprecated.** Support for StatefulSets was removed in Strimzi 0.35.0. This property is ignored. Template for ZooKeeper `StatefulSet`.
-|podSet
-|xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
-|Template for ZooKeeper `StrimziPodSet` resource.
-|pod
-|xref:type-PodTemplate-{context}[`PodTemplate`]
-|Template for ZooKeeper `Pods`.
-|clientService
-|xref:type-InternalServiceTemplate-{context}[`InternalServiceTemplate`]
-|Template for ZooKeeper client `Service`.
-|nodesService
-|xref:type-InternalServiceTemplate-{context}[`InternalServiceTemplate`]
-|Template for ZooKeeper nodes `Service`.
-|persistentVolumeClaim
-|xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
-|Template for all ZooKeeper `PersistentVolumeClaims`.
-|podDisruptionBudget
-|xref:type-PodDisruptionBudgetTemplate-{context}[`PodDisruptionBudgetTemplate`]
-|Template for ZooKeeper `PodDisruptionBudget`.
-|zookeeperContainer
-|xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
-|Template for the ZooKeeper container.
-|serviceAccount
-|xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
-|Template for the ZooKeeper service account.
-|jmxSecret
-|xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
-|Template for Secret of the Zookeeper Cluster JMX authentication.
-|====
-
 [id='type-EntityOperatorSpec-{context}']
 = `EntityOperatorSpec` schema reference
 
@@ -1699,9 +1169,6 @@ Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 |userOperator
 |xref:type-EntityUserOperatorSpec-{context}[`EntityUserOperatorSpec`]
 |Configuration of the User Operator.
-|tlsSidecar
-|xref:type-TlsSidecar-{context}[`TlsSidecar`]
-|**The `tlsSidecar` property has been deprecated.** TLS sidecar was removed in Strimzi 0.41.0. This property is ignored. TLS sidecar configuration.
 |template
 |xref:type-EntityOperatorTemplate-{context}[`EntityOperatorTemplate`]
 |Template for Entity Operator resources. The template allows users to specify how a `Deployment` and `Pod` is generated.
@@ -1729,15 +1196,9 @@ include::../api/io.strimzi.api.kafka.model.kafka.entityoperator.EntityTopicOpera
 |image
 |string
 |The image to use for the Topic Operator.
-|reconciliationIntervalSeconds
-|integer
-|**The `reconciliationIntervalSeconds` property has been deprecated, and should now be configured using `.spec.entityOperator.topicOperator.reconciliationIntervalMs`.** Interval between periodic reconciliations in seconds. Ignored if reconciliationIntervalMs is set.
 |reconciliationIntervalMs
 |integer
 |Interval between periodic reconciliations in milliseconds.
-|zookeeperSessionTimeoutSeconds
-|integer
-|**The `zookeeperSessionTimeoutSeconds` property has been deprecated.** This property is not used anymore in Strimzi 0.41.0 and it is ignored. Timeout for the ZooKeeper session.
 |startupProbe
 |xref:type-Probe-{context}[`Probe`]
 |Pod startup checking.
@@ -1750,9 +1211,6 @@ include::../api/io.strimzi.api.kafka.model.kafka.entityoperator.EntityTopicOpera
 |resources
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#resourcerequirements-v1-core[ResourceRequirements]
 |CPU and memory resources to reserve.
-|topicMetadataMaxAttempts
-|integer
-|**The `topicMetadataMaxAttempts` property has been deprecated.** This property is not used anymore in Strimzi 0.41.0 and it is ignored. The number of attempts at getting topic metadata.
 |logging
 |xref:type-InlineLogging-{context}[`InlineLogging`], xref:type-ExternalLogging-{context}[`ExternalLogging`]
 |Logging configuration.
@@ -1783,15 +1241,9 @@ include::../api/io.strimzi.api.kafka.model.kafka.entityoperator.EntityUserOperat
 |image
 |string
 |The image to use for the User Operator.
-|reconciliationIntervalSeconds
-|integer
-|**The `reconciliationIntervalSeconds` property has been deprecated, and should now be configured using `.spec.entityOperator.userOperator.reconciliationIntervalMs`.** Interval between periodic reconciliations in seconds. Ignored if reconciliationIntervalMs is set.
 |reconciliationIntervalMs
 |integer
 |Interval between periodic reconciliations in milliseconds.
-|zookeeperSessionTimeoutSeconds
-|integer
-|**The `zookeeperSessionTimeoutSeconds` property has been deprecated.** This property has been deprecated because ZooKeeper is not used anymore by the User Operator. Timeout for the ZooKeeper session.
 |secretPrefix
 |string
 |The prefix that will be added to the KafkaUser name to be used as the Secret name.
@@ -1810,41 +1262,6 @@ include::../api/io.strimzi.api.kafka.model.kafka.entityoperator.EntityUserOperat
 |jvmOptions
 |xref:type-JvmOptions-{context}[`JvmOptions`]
 |JVM Options for pods.
-|====
-
-[id='type-TlsSidecar-{context}']
-= `TlsSidecar` schema reference
-
-*The type `TlsSidecar` has been deprecated.*
-
-Used in: xref:type-CruiseControlSpec-{context}[`CruiseControlSpec`], xref:type-EntityOperatorSpec-{context}[`EntityOperatorSpec`]
-
-xref:type-TlsSidecar-schema-{context}[Full list of `TlsSidecar` schema properties]
-
-include::../api/io.strimzi.api.kafka.model.kafka.entityoperator.TlsSidecar.adoc[leveloffset=+1]
-
-[id='type-TlsSidecar-schema-{context}']
-== `TlsSidecar` schema properties
-
-
-[cols="2,2,3a",options="header"]
-|====
-|Property |Property type |Description
-|image
-|string
-|The docker image for the container.
-|resources
-|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#resourcerequirements-v1-core[ResourceRequirements]
-|CPU and memory resources to reserve.
-|livenessProbe
-|xref:type-Probe-{context}[`Probe`]
-|Pod liveness checking.
-|readinessProbe
-|xref:type-Probe-{context}[`Probe`]
-|Pod readiness checking.
-|logLevel
-|string (one of [emerg, debug, crit, err, alert, warning, notice, info])
-|The log level for the TLS sidecar. Default value is `notice`.
 |====
 
 [id='type-EntityOperatorTemplate-{context}']
@@ -1868,9 +1285,6 @@ Used in: xref:type-EntityOperatorSpec-{context}[`EntityOperatorSpec`]
 |userOperatorContainer
 |xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
 |Template for the Entity User Operator container.
-|tlsSidecarContainer
-|xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
-|**The `tlsSidecarContainer` property has been deprecated.** TLS sidecar was removed in Strimzi 0.41.0. This property is ignored. Template for the Entity Operator TLS sidecar container.
 |serviceAccount
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
 |Template for the Entity Operator service account.
@@ -1891,7 +1305,7 @@ Used in: xref:type-EntityOperatorSpec-{context}[`EntityOperatorSpec`]
 [id='type-DeploymentTemplate-{context}']
 = `DeploymentTemplate` schema reference
 
-Used in: xref:type-CruiseControlTemplate-{context}[`CruiseControlTemplate`], xref:type-EntityOperatorTemplate-{context}[`EntityOperatorTemplate`], xref:type-JmxTransTemplate-{context}[`JmxTransTemplate`], xref:type-KafkaBridgeTemplate-{context}[`KafkaBridgeTemplate`], xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`], xref:type-KafkaExporterTemplate-{context}[`KafkaExporterTemplate`]
+Used in: xref:type-CruiseControlTemplate-{context}[`CruiseControlTemplate`], xref:type-EntityOperatorTemplate-{context}[`EntityOperatorTemplate`], xref:type-KafkaBridgeTemplate-{context}[`KafkaBridgeTemplate`], xref:type-KafkaExporterTemplate-{context}[`KafkaExporterTemplate`]
 
 xref:type-DeploymentTemplate-schema-{context}[Full list of `DeploymentTemplate` schema properties]
 
@@ -1958,9 +1372,6 @@ include::../api/io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlSpec
 |image
 |string
 |The container image used for Cruise Control pods. If no image name is explicitly specified, the image name corresponds to the name specified in the Cluster Operator configuration. If an image name is not defined in the Cluster Operator configuration, a default value is used.
-|tlsSidecar
-|xref:type-TlsSidecar-{context}[`TlsSidecar`]
-|**The `tlsSidecar` property has been deprecated.** TLS sidecar configuration.
 |resources
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#resourcerequirements-v1-core[ResourceRequirements]
 |CPU and memory resources to reserve for the Cruise Control container.
@@ -2020,9 +1431,6 @@ Used in: xref:type-CruiseControlSpec-{context}[`CruiseControlSpec`]
 |cruiseControlContainer
 |xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
 |Template for the Cruise Control container.
-|tlsSidecarContainer
-|xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
-|**The `tlsSidecarContainer` property has been deprecated.** Template for the Cruise Control TLS sidecar container.
 |serviceAccount
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
 |Template for the Cruise Control service account.
@@ -2037,12 +1445,6 @@ Used in: xref:type-CruiseControlSpec-{context}[`CruiseControlSpec`]
 [cols="2,2,3a",options="header"]
 |====
 |Property |Property type |Description
-|disk
-|string
-|**The `disk` property has been deprecated.** The Cruise Control disk capacity setting has been deprecated, is ignored, and will be removed in the future Broker capacity for disk in bytes. Use a number value with either standard Kubernetes byte units (K, M, G, or T), their bibyte (power of two) equivalents (Ki, Mi, Gi, or Ti), or a byte value with or without E notation. For example, 100000M, 100000Mi, 104857600000, or 1e+11.
-|cpuUtilization
-|integer
-|**The `cpuUtilization` property has been deprecated.** The Cruise Control CPU capacity setting has been deprecated, is ignored, and will be removed in the future Broker capacity for CPU resource utilization as a percentage (0 - 100).
 |cpu
 |string
 |Broker capacity for CPU resource in cores or millicores. For example, 1, 1.500, 1500m. For more information on valid CPU resource units see https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#meaning-of-cpu.
@@ -2086,7 +1488,7 @@ Used in: xref:type-BrokerCapacity-{context}[`BrokerCapacity`]
 Used in: xref:type-CruiseControlSpec-{context}[`CruiseControlSpec`]
 
 
-The `type` property is a discriminator that distinguishes use of the `HashLoginServiceApiUsers` type from other subtypes which may be added in the future.
+The `type` property is a discriminator that distinguishes use of the `HashLoginServiceApiUsers` type from other subtypes that may be added in the future.
 It must have the value `hashLoginService` for the type `HashLoginServiceApiUsers`.
 [cols="2,2,3a",options="header"]
 |====
@@ -2143,109 +1545,6 @@ Used in: xref:type-AlterOffsets-{context}[`AlterOffsets`], xref:type-KafkaAutoRe
 |name
 |string
 |
-|====
-
-[id='type-JmxTransSpec-{context}']
-= `JmxTransSpec` schema reference
-
-*The type `JmxTransSpec` has been deprecated.*
-
-Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
-
-
-[cols="2,2,3a",options="header"]
-|====
-|Property |Property type |Description
-|image
-|string
-|The image to use for the JmxTrans.
-|outputDefinitions
-|xref:type-JmxTransOutputDefinitionTemplate-{context}[`JmxTransOutputDefinitionTemplate`] array
-|Defines the output hosts that will be referenced later on. For more information on these properties see, xref:type-JmxTransOutputDefinitionTemplate-reference[`JmxTransOutputDefinitionTemplate` schema reference].
-|logLevel
-|string
-|Sets the logging level of the JmxTrans deployment.For more information see, https://github.com/jmxtrans/jmxtrans-agent/wiki/Troubleshooting[JmxTrans Logging Level].
-|kafkaQueries
-|xref:type-JmxTransQueryTemplate-{context}[`JmxTransQueryTemplate`] array
-|Queries to send to the Kafka brokers to define what data should be read from each broker. For more information on these properties see, xref:type-JmxTransQueryTemplate-reference[`JmxTransQueryTemplate` schema reference].
-|resources
-|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#resourcerequirements-v1-core[ResourceRequirements]
-|CPU and memory resources to reserve.
-|template
-|xref:type-JmxTransTemplate-{context}[`JmxTransTemplate`]
-|Template for JmxTrans resources.
-|====
-
-[id='type-JmxTransOutputDefinitionTemplate-{context}']
-= `JmxTransOutputDefinitionTemplate` schema reference
-
-Used in: xref:type-JmxTransSpec-{context}[`JmxTransSpec`]
-
-
-[cols="2,2,3a",options="header"]
-|====
-|Property |Property type |Description
-|outputType
-|string
-|Template for setting the format of the data that will be pushed.For more information see https://github.com/jmxtrans/jmxtrans/wiki/OutputWriters[JmxTrans OutputWriters].
-|host
-|string
-|The DNS/hostname of the remote host that the data is pushed to.
-|port
-|integer
-|The port of the remote host that the data is pushed to.
-|flushDelayInSeconds
-|integer
-|How many seconds the JmxTrans waits before pushing a new set of data out.
-|typeNames
-|string array
-|Template for filtering data to be included in response to a wildcard query. For more information see https://github.com/jmxtrans/jmxtrans/wiki/Queries[JmxTrans queries].
-|name
-|string
-|Template for setting the name of the output definition. This is used to identify where to send the results of queries should be sent.
-|====
-
-[id='type-JmxTransQueryTemplate-{context}']
-= `JmxTransQueryTemplate` schema reference
-
-Used in: xref:type-JmxTransSpec-{context}[`JmxTransSpec`]
-
-
-[cols="2,2,3a",options="header"]
-|====
-|Property |Property type |Description
-|targetMBean
-|string
-|If using wildcards instead of a specific MBean then the data is gathered from multiple MBeans. Otherwise if specifying an MBean then data is gathered from that specified MBean.
-|attributes
-|string array
-|Determine which attributes of the targeted MBean should be included.
-|outputs
-|string array
-|List of the names of output definitions specified in the spec.kafka.jmxTrans.outputDefinitions that have defined where JMX metrics are pushed to, and in which data format.
-|====
-
-[id='type-JmxTransTemplate-{context}']
-= `JmxTransTemplate` schema reference
-
-Used in: xref:type-JmxTransSpec-{context}[`JmxTransSpec`]
-
-
-[cols="2,2,3a",options="header"]
-|====
-|Property |Property type |Description
-|deployment
-|xref:type-DeploymentTemplate-{context}[`DeploymentTemplate`]
-|Template for JmxTrans `Deployment`.
-|pod
-|xref:type-PodTemplate-{context}[`PodTemplate`]
-|Template for JmxTrans `Pods`.
-|container
-|xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
-|Template for JmxTrans container.
-|serviceAccount
-|xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
-|Template for the JmxTrans service account.
 |====
 
 [id='type-KafkaExporterSpec-{context}']
@@ -2310,9 +1609,6 @@ Used in: xref:type-KafkaExporterSpec-{context}[`KafkaExporterSpec`]
 |pod
 |xref:type-PodTemplate-{context}[`PodTemplate`]
 |Template for Kafka Exporter `Pods`.
-|service
-|xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
-|**The `service` property has been deprecated.** The Kafka Exporter service has been removed. Template for Kafka Exporter `Service`.
 |container
 |xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
 |Template for the Kafka Exporter container.
@@ -2345,9 +1641,6 @@ Used in: xref:type-Kafka-{context}[`Kafka`]
 |kafkaNodePools
 |xref:type-UsedNodePoolStatus-{context}[`UsedNodePoolStatus`] array
 |List of the KafkaNodePools used by this Kafka cluster.
-|registeredNodeIds
-|integer array
-|**The `registeredNodeIds` property has been deprecated.** The `registeredNodeIds` property is deprecated and it is not used anymore. It will be removed in the future. Registered node IDs used by this Kafka cluster. This field is used for internal purposes only and will be removed in the future.
 |clusterId
 |string
 |Kafka cluster Id.
@@ -2360,9 +1653,6 @@ Used in: xref:type-Kafka-{context}[`Kafka`]
 |kafkaMetadataVersion
 |string
 |The KRaft metadata.version currently used by the Kafka cluster.
-|kafkaMetadataState
-|string (one of [PreKRaft, ZooKeeper, KRaftMigration, KRaftDualWriting, KRaftPostMigration, KRaft])
-|**The `kafkaMetadataState` property has been deprecated.** The `kafkaMetadataState` property is deprecated and will be removed in the future. Defines where cluster metadata are stored. This property is deprecated and not used anymore.
 |autoRebalance
 |xref:type-KafkaAutoRebalanceStatus-{context}[`KafkaAutoRebalanceStatus`]
 |The status of an auto-rebalancing triggered by a cluster scaling request.
@@ -2403,9 +1693,6 @@ Used in: xref:type-KafkaStatus-{context}[`KafkaStatus`]
 [cols="2,2,3a",options="header"]
 |====
 |Property |Property type |Description
-|type
-|string
-|**The `type` property has been deprecated, and should now be configured using `.status.listeners.name`.** The `type` property is not used anymore. Use the `name` property with the same value. The name of the listener.
 |name
 |string
 |The name of the listener.
@@ -2560,7 +1847,7 @@ include::../api/io.strimzi.api.kafka.model.connect.KafkaConnectSpec.adoc[levelof
 |xref:type-ClientTls-{context}[`ClientTls`]
 |TLS configuration.
 |authentication
-|xref:type-KafkaClientAuthenticationTls-{context}[`KafkaClientAuthenticationTls`], xref:type-KafkaClientAuthenticationScramSha256-{context}[`KafkaClientAuthenticationScramSha256`], xref:type-KafkaClientAuthenticationScramSha512-{context}[`KafkaClientAuthenticationScramSha512`], xref:type-KafkaClientAuthenticationPlain-{context}[`KafkaClientAuthenticationPlain`], xref:type-KafkaClientAuthenticationOAuth-{context}[`KafkaClientAuthenticationOAuth`], xref:type-KafkaClientAuthenticationCustom-{context}[`KafkaClientAuthenticationCustom`]
+|xref:type-KafkaClientAuthenticationTls-{context}[`KafkaClientAuthenticationTls`], xref:type-KafkaClientAuthenticationScramSha256-{context}[`KafkaClientAuthenticationScramSha256`], xref:type-KafkaClientAuthenticationScramSha512-{context}[`KafkaClientAuthenticationScramSha512`], xref:type-KafkaClientAuthenticationPlain-{context}[`KafkaClientAuthenticationPlain`], xref:type-KafkaClientAuthenticationCustom-{context}[`KafkaClientAuthenticationCustom`]
 |Authentication configuration for Kafka Connect.
 |config
 |map
@@ -2593,14 +1880,11 @@ include::../api/io.strimzi.api.kafka.model.connect.KafkaConnectSpec.adoc[levelof
 |xref:type-JmxPrometheusExporterMetrics-{context}[`JmxPrometheusExporterMetrics`], xref:type-StrimziMetricsReporter-{context}[`StrimziMetricsReporter`]
 |Metrics configuration.
 |tracing
-|xref:type-JaegerTracing-{context}[`JaegerTracing`], xref:type-OpenTelemetryTracing-{context}[`OpenTelemetryTracing`]
+|xref:type-OpenTelemetryTracing-{context}[`OpenTelemetryTracing`]
 |The configuration of tracing in Kafka Connect.
 |template
 |xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`]
 |Template for Kafka Connect and Kafka MirrorMaker 2 resources. The template allows users to specify how the `Pods`, `Service`, and other services are generated.
-|externalConfiguration
-|xref:type-ExternalConfiguration-{context}[`ExternalConfiguration`]
-|**The `externalConfiguration` property has been deprecated.** The external configuration is deprecated and will be removed in the future. Please use the template section instead to configure additional environment variables or volumes. Pass data from Secrets or ConfigMaps to the Kafka Connect pods and use them to configure connectors.
 |build
 |xref:type-Build-{context}[`Build`]
 |Configures how the Connect container image should be built. Optional.
@@ -2630,6 +1914,26 @@ include::../api/io.strimzi.api.kafka.model.common.ClientTls.adoc[leveloffset=+1]
 |Trusted certificates for TLS connection.
 |====
 
+[id='type-CertSecretSource-{context}']
+= `CertSecretSource` schema reference
+
+Used in: xref:type-ClientTls-{context}[`ClientTls`]
+
+
+[cols="2,2,3a",options="header"]
+|====
+|Property |Property type |Description
+|secretName
+|string
+|The name of the Secret containing the certificate.
+|certificate
+|string
+|The name of the file certificate in the secret.
+|pattern
+|string
+|Pattern for the certificate files in the secret. Use the link:https://en.wikipedia.org/wiki/Glob_(programming)[_glob syntax_] for the pattern. All files in the secret that match the pattern are used.
+|====
+
 [id='type-KafkaClientAuthenticationTls-{context}']
 = `KafkaClientAuthenticationTls` schema reference
 
@@ -2643,7 +1947,7 @@ include::../api/io.strimzi.api.kafka.model.common.authentication.KafkaClientAuth
 == `KafkaClientAuthenticationTls` schema properties
 
 
-The `type` property is a discriminator that distinguishes use of the `KafkaClientAuthenticationTls` type from xref:type-KafkaClientAuthenticationScramSha256-{context}[`KafkaClientAuthenticationScramSha256`], xref:type-KafkaClientAuthenticationScramSha512-{context}[`KafkaClientAuthenticationScramSha512`], xref:type-KafkaClientAuthenticationPlain-{context}[`KafkaClientAuthenticationPlain`], xref:type-KafkaClientAuthenticationOAuth-{context}[`KafkaClientAuthenticationOAuth`], xref:type-KafkaClientAuthenticationCustom-{context}[`KafkaClientAuthenticationCustom`].
+The `type` property is a discriminator that distinguishes use of the `KafkaClientAuthenticationTls` type from xref:type-KafkaClientAuthenticationScramSha256-{context}[`KafkaClientAuthenticationScramSha256`], xref:type-KafkaClientAuthenticationScramSha512-{context}[`KafkaClientAuthenticationScramSha512`], xref:type-KafkaClientAuthenticationPlain-{context}[`KafkaClientAuthenticationPlain`], xref:type-KafkaClientAuthenticationCustom-{context}[`KafkaClientAuthenticationCustom`].
 It must have the value `tls` for the type `KafkaClientAuthenticationTls`.
 [cols="2,2,3a",options="header"]
 |====
@@ -2686,7 +1990,7 @@ include::../api/io.strimzi.api.kafka.model.common.authentication.KafkaClientAuth
 [id='type-PasswordSecretSource-{context}']
 = `PasswordSecretSource` schema reference
 
-Used in: xref:type-KafkaClientAuthenticationOAuth-{context}[`KafkaClientAuthenticationOAuth`], xref:type-KafkaClientAuthenticationPlain-{context}[`KafkaClientAuthenticationPlain`], xref:type-KafkaClientAuthenticationScramSha256-{context}[`KafkaClientAuthenticationScramSha256`], xref:type-KafkaClientAuthenticationScramSha512-{context}[`KafkaClientAuthenticationScramSha512`]
+Used in: xref:type-KafkaClientAuthenticationPlain-{context}[`KafkaClientAuthenticationPlain`], xref:type-KafkaClientAuthenticationScramSha256-{context}[`KafkaClientAuthenticationScramSha256`], xref:type-KafkaClientAuthenticationScramSha512-{context}[`KafkaClientAuthenticationScramSha512`]
 
 
 [cols="2,2,3a",options="header"]
@@ -2740,7 +2044,7 @@ include::../api/io.strimzi.api.kafka.model.common.authentication.KafkaClientAuth
 == `KafkaClientAuthenticationPlain` schema properties
 
 
-The `type` property is a discriminator that distinguishes use of the `KafkaClientAuthenticationPlain` type from xref:type-KafkaClientAuthenticationTls-{context}[`KafkaClientAuthenticationTls`], xref:type-KafkaClientAuthenticationScramSha256-{context}[`KafkaClientAuthenticationScramSha256`], xref:type-KafkaClientAuthenticationScramSha512-{context}[`KafkaClientAuthenticationScramSha512`], xref:type-KafkaClientAuthenticationOAuth-{context}[`KafkaClientAuthenticationOAuth`], xref:type-KafkaClientAuthenticationCustom-{context}[`KafkaClientAuthenticationCustom`].
+The `type` property is a discriminator that distinguishes use of the `KafkaClientAuthenticationPlain` type from xref:type-KafkaClientAuthenticationTls-{context}[`KafkaClientAuthenticationTls`], xref:type-KafkaClientAuthenticationScramSha256-{context}[`KafkaClientAuthenticationScramSha256`], xref:type-KafkaClientAuthenticationScramSha512-{context}[`KafkaClientAuthenticationScramSha512`], xref:type-KafkaClientAuthenticationCustom-{context}[`KafkaClientAuthenticationCustom`].
 It must have the value `plain` for the type `KafkaClientAuthenticationPlain`.
 [cols="2,2,3a",options="header"]
 |====
@@ -2756,109 +2060,6 @@ It must have the value `plain` for the type `KafkaClientAuthenticationPlain`.
 |Reference to the `Secret` which holds the password.
 |====
 
-[id='type-KafkaClientAuthenticationOAuth-{context}']
-= `KafkaClientAuthenticationOAuth` schema reference
-
-*The type `KafkaClientAuthenticationOAuth` has been deprecated.*
-Please use xref:type-KafkaClientAuthenticationCustom-{context}[`KafkaClientAuthenticationCustom`] instead.
-
-Used in: xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaMirrorMaker2ClusterSpec-{context}[`KafkaMirrorMaker2ClusterSpec`], xref:type-KafkaMirrorMaker2TargetClusterSpec-{context}[`KafkaMirrorMaker2TargetClusterSpec`]
-
-xref:type-KafkaClientAuthenticationOAuth-schema-{context}[Full list of `KafkaClientAuthenticationOAuth` schema properties]
-
-include::../api/io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationOAuth.adoc[leveloffset=+1]
-
-[id='type-KafkaClientAuthenticationOAuth-schema-{context}']
-== `KafkaClientAuthenticationOAuth` schema properties
-
-
-The type KafkaClientAuthenticationOAuth is supported only in the Strimzi API version(s) v1beta2.
-
-The `type` property is a discriminator that distinguishes use of the `KafkaClientAuthenticationOAuth` type from xref:type-KafkaClientAuthenticationTls-{context}[`KafkaClientAuthenticationTls`], xref:type-KafkaClientAuthenticationScramSha256-{context}[`KafkaClientAuthenticationScramSha256`], xref:type-KafkaClientAuthenticationScramSha512-{context}[`KafkaClientAuthenticationScramSha512`], xref:type-KafkaClientAuthenticationPlain-{context}[`KafkaClientAuthenticationPlain`], xref:type-KafkaClientAuthenticationCustom-{context}[`KafkaClientAuthenticationCustom`].
-It must have the value `oauth` for the type `KafkaClientAuthenticationOAuth`.
-[cols="2,2,3a",options="header"]
-|====
-|Property |Property type |Description
-|type
-|string
-|Must be `oauth`.
-|clientId
-|string
-|OAuth Client ID which the Kafka client can use to authenticate against the OAuth server and use the token endpoint URI.
-|username
-|string
-|Username used for the authentication.
-|scope
-|string
-|OAuth scope to use when authenticating against the authorization server. Some authorization servers require this to be set. The possible values depend on how authorization server is configured. By default `scope` is not specified when doing the token endpoint request.
-|audience
-|string
-|OAuth audience to use when authenticating against the authorization server. Some authorization servers require the audience to be explicitly set. The possible values depend on how the authorization server is configured. By default, `audience` is not specified when performing the token endpoint request.
-|tokenEndpointUri
-|string
-|Authorization server token endpoint URI.
-|connectTimeoutSeconds
-|integer
-|The connect timeout in seconds when connecting to authorization server. If not set, the effective connect timeout is 60 seconds.
-|readTimeoutSeconds
-|integer
-|The read timeout in seconds when connecting to authorization server. If not set, the effective read timeout is 60 seconds.
-|httpRetries
-|integer
-|The maximum number of retries to attempt if an initial HTTP request fails. If not set, the default is to not attempt any retries.
-|httpRetryPauseMs
-|integer
-|The pause to take before retrying a failed HTTP request. If not set, the default is to not pause at all but to immediately repeat a request.
-|clientSecret
-|xref:type-GenericSecretSource-{context}[`GenericSecretSource`]
-|Link to Kubernetes Secret containing the OAuth client secret which the Kafka client can use to authenticate against the OAuth server and use the token endpoint URI.
-|passwordSecret
-|xref:type-PasswordSecretSource-{context}[`PasswordSecretSource`]
-|Reference to the `Secret` which holds the password.
-|accessToken
-|xref:type-GenericSecretSource-{context}[`GenericSecretSource`]
-|Link to Kubernetes Secret containing the access token which was obtained from the authorization server.
-|refreshToken
-|xref:type-GenericSecretSource-{context}[`GenericSecretSource`]
-|Link to Kubernetes Secret containing the refresh token which can be used to obtain access token from the authorization server.
-|tlsTrustedCertificates
-|xref:type-CertSecretSource-{context}[`CertSecretSource`] array
-|Trusted certificates for TLS connection to the OAuth server.
-|disableTlsHostnameVerification
-|boolean
-|Enable or disable TLS hostname verification. Default value is `false`.
-|maxTokenExpirySeconds
-|integer
-|Set or limit time-to-live of the access tokens to the specified number of seconds. This should be set if the authorization server returns opaque tokens.
-|accessTokenIsJwt
-|boolean
-|Configure whether access token should be treated as JWT. This should be set to `false` if the authorization server returns opaque tokens. Defaults to `true`.
-|enableMetrics
-|boolean
-|Enable or disable OAuth metrics. Default value is `false`.
-|includeAcceptHeader
-|boolean
-|Whether the Accept header should be set in requests to the authorization servers. The default value is `true`.
-|accessTokenLocation
-|string
-|Path to the token file containing an access token to be used for authentication.
-|clientAssertion
-|xref:type-GenericSecretSource-{context}[`GenericSecretSource`]
-|Link to Kubernetes secret containing the client assertion which was manually configured for the client.
-|clientAssertionLocation
-|string
-|Path to the file containing the client assertion to be used for authentication.
-|clientAssertionType
-|string
-|The client assertion type. If not set, and either `clientAssertion` or `clientAssertionLocation` is configured, this value defaults to `urn:ietf:params:oauth:client-assertion-type:jwt-bearer`.
-|saslExtensions
-|map
-|SASL extensions parameters.
-|grantType
-|string
-|A custom OAuth grant type to use when authenticating against the authorization server with `clientId` and one of `clientSecret` or `clientAssertion`. The value defaults to `client_credentials` in these cases. This is optional configuration, only used with custom authorization server implementations.
-|====
-
 [id='type-KafkaClientAuthenticationCustom-{context}']
 = `KafkaClientAuthenticationCustom` schema reference
 
@@ -2872,7 +2073,7 @@ include::../api/io.strimzi.api.kafka.model.common.authentication.KafkaClientAuth
 == `KafkaClientAuthenticationCustom` schema properties
 
 
-The `type` property is a discriminator that distinguishes use of the `KafkaClientAuthenticationCustom` type from xref:type-KafkaClientAuthenticationTls-{context}[`KafkaClientAuthenticationTls`], xref:type-KafkaClientAuthenticationScramSha256-{context}[`KafkaClientAuthenticationScramSha256`], xref:type-KafkaClientAuthenticationScramSha512-{context}[`KafkaClientAuthenticationScramSha512`], xref:type-KafkaClientAuthenticationPlain-{context}[`KafkaClientAuthenticationPlain`], xref:type-KafkaClientAuthenticationOAuth-{context}[`KafkaClientAuthenticationOAuth`].
+The `type` property is a discriminator that distinguishes use of the `KafkaClientAuthenticationCustom` type from xref:type-KafkaClientAuthenticationTls-{context}[`KafkaClientAuthenticationTls`], xref:type-KafkaClientAuthenticationScramSha256-{context}[`KafkaClientAuthenticationScramSha256`], xref:type-KafkaClientAuthenticationScramSha512-{context}[`KafkaClientAuthenticationScramSha512`], xref:type-KafkaClientAuthenticationPlain-{context}[`KafkaClientAuthenticationPlain`].
 It must have the value `custom` for the type `KafkaClientAuthenticationCustom`.
 [cols="2,2,3a",options="header"]
 |====
@@ -2888,33 +2089,13 @@ It must have the value `custom` for the type `KafkaClientAuthenticationCustom`.
 |Configuration for the custom authentication mechanism. Only properties with the `sasl.` and `ssl.keystore.` prefixes are allowed. Specify other options in the regular configuration section of the custom resource.
 |====
 
-[id='type-JaegerTracing-{context}']
-= `JaegerTracing` schema reference
-
-*The type `JaegerTracing` has been deprecated.*
-
-Used in: xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaMirrorMaker2Spec-{context}[`KafkaMirrorMaker2Spec`]
-
-
-The type JaegerTracing is supported only in the Strimzi API version(s) v1beta2.
-
-The `type` property is a discriminator that distinguishes use of the `JaegerTracing` type from xref:type-OpenTelemetryTracing-{context}[`OpenTelemetryTracing`].
-It must have the value `jaeger` for the type `JaegerTracing`.
-[cols="2,2,3a",options="header"]
-|====
-|Property |Property type |Description
-|type
-|string
-|Must be `jaeger`.
-|====
-
 [id='type-OpenTelemetryTracing-{context}']
 = `OpenTelemetryTracing` schema reference
 
 Used in: xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaMirrorMaker2Spec-{context}[`KafkaMirrorMaker2Spec`]
 
 
-The `type` property is a discriminator that distinguishes use of the `OpenTelemetryTracing` type from xref:type-JaegerTracing-{context}[`JaegerTracing`].
+The `type` property is a discriminator that distinguishes use of the `OpenTelemetryTracing` type from other subtypes that may be added in the future.
 It must have the value `opentelemetry` for the type `OpenTelemetryTracing`.
 [cols="2,2,3a",options="header"]
 |====
@@ -2933,9 +2114,6 @@ Used in: xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-Kaf
 [cols="2,2,3a",options="header"]
 |====
 |Property |Property type |Description
-|deployment
-|xref:type-DeploymentTemplate-{context}[`DeploymentTemplate`]
-|**The `deployment` property has been deprecated.** Kafka Connect and MirrorMaker 2 operands do not use `Deployment` resources anymore. This field will be ignored. Template for Kafka Connect `Deployment`.
 |podSet
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
 |Template for Kafka Connect `StrimziPodSet` resource.
@@ -2997,93 +2175,6 @@ Used in: xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`]
 |Container Registry Secret with the credentials for pulling the base image.
 |====
 
-[id='type-ExternalConfiguration-{context}']
-= `ExternalConfiguration` schema reference
-
-*The type `ExternalConfiguration` has been deprecated.*
-Please use xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`] instead.
-
-Used in: xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaMirrorMaker2Spec-{context}[`KafkaMirrorMaker2Spec`]
-
-xref:type-ExternalConfiguration-schema-{context}[Full list of `ExternalConfiguration` schema properties]
-
-include::../api/io.strimzi.api.kafka.model.connect.ExternalConfiguration.adoc[leveloffset=+1]
-
-[id='type-ExternalConfiguration-schema-{context}']
-== `ExternalConfiguration` schema properties
-
-
-[cols="2,2,3a",options="header"]
-|====
-|Property |Property type |Description
-|env
-|xref:type-ExternalConfigurationEnv-{context}[`ExternalConfigurationEnv`] array
-|**The `env` property has been deprecated.** The external configuration environment variables are deprecated and will be removed in the future. Please use the environment variables in a container template instead. Makes data from a Secret or ConfigMap available in the Kafka Connect pods as environment variables.
-|volumes
-|xref:type-ExternalConfigurationVolumeSource-{context}[`ExternalConfigurationVolumeSource`] array
-|**The `volumes` property has been deprecated.** The external configuration volumes are deprecated and will be removed in the future. Please use the additional volumes and volume mounts in pod and container templates instead to mount additional secrets or config maps. Makes data from a Secret or ConfigMap available in the Kafka Connect pods as volumes.
-|====
-
-[id='type-ExternalConfigurationEnv-{context}']
-= `ExternalConfigurationEnv` schema reference
-
-*The type `ExternalConfigurationEnv` has been deprecated.*
-Please use xref:type-ContainerEnvVar-{context}[`ContainerEnvVar`] instead.
-
-Used in: xref:type-ExternalConfiguration-{context}[`ExternalConfiguration`]
-
-
-[cols="2,2,3a",options="header"]
-|====
-|Property |Property type |Description
-|name
-|string
-|Name of the environment variable which will be passed to the Kafka Connect pods. The name of the environment variable cannot start with `KAFKA_` or `STRIMZI_`.
-|valueFrom
-|xref:type-ExternalConfigurationEnvVarSource-{context}[`ExternalConfigurationEnvVarSource`]
-|Value of the environment variable which will be passed to the Kafka Connect pods. It can be passed either as a reference to Secret or ConfigMap field. The field has to specify exactly one Secret or ConfigMap.
-|====
-
-[id='type-ExternalConfigurationEnvVarSource-{context}']
-= `ExternalConfigurationEnvVarSource` schema reference
-
-Used in: xref:type-ExternalConfigurationEnv-{context}[`ExternalConfigurationEnv`]
-
-
-[cols="2,2,3a",options="header"]
-|====
-|Property |Property type |Description
-|secretKeyRef
-|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#secretkeyselector-v1-core[SecretKeySelector]
-|Reference to a key in a Secret.
-|configMapKeyRef
-|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#configmapkeyselector-v1-core[ConfigMapKeySelector]
-|Reference to a key in a ConfigMap.
-|====
-
-[id='type-ExternalConfigurationVolumeSource-{context}']
-= `ExternalConfigurationVolumeSource` schema reference
-
-*The type `ExternalConfigurationVolumeSource` has been deprecated.*
-Please use xref:type-AdditionalVolume-{context}[`AdditionalVolume`] instead.
-
-Used in: xref:type-ExternalConfiguration-{context}[`ExternalConfiguration`]
-
-
-[cols="2,2,3a",options="header"]
-|====
-|Property |Property type |Description
-|name
-|string
-|Name of the volume which will be added to the Kafka Connect pods.
-|secret
-|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#secretvolumesource-v1-core[SecretVolumeSource]
-|Reference to a key in a Secret. Exactly one Secret or ConfigMap has to be specified.
-|configMap
-|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#configmapvolumesource-v1-core[ConfigMapVolumeSource]
-|Reference to a key in a ConfigMap. Exactly one Secret or ConfigMap has to be specified.
-|====
-
 [id='type-Build-{context}']
 = `Build` schema reference
 
@@ -3128,9 +2219,6 @@ It must have the value `docker` for the type `DockerOutput`.
 |pushSecret
 |string
 |Container Registry Secret with the credentials for pushing the newly built image.
-|additionalKanikoOptions
-|string array
-|**The `additionalKanikoOptions` property has been deprecated, and should now be configured using `.spec.build.output.additionalBuildOptions`.** The `additionalKanikoOptions` configuration is deprecated and will be removed in the `v1` CRD API. Configures additional options which will be passed to the Kaniko executor when building the new Connect image. Allowed options are: --customPlatform, --custom-platform, --insecure, --insecure-pull, --insecure-registry, --log-format, --log-timestamp, --registry-mirror, --reproducible, --single-snapshot, --skip-tls-verify, --skip-tls-verify-pull, --skip-tls-verify-registry, --verbosity, --snapshotMode, --use-new-run, --registry-certificate, --registry-client-cert, --ignore-path. These options will be used only on Kubernetes where the Kaniko executor is used. They will be ignored on OpenShift. The options are described in the link:https://github.com/GoogleContainerTools/kaniko[Kaniko GitHub repository^]. Changing this field does not trigger new build of the Kafka Connect image.
 |additionalBuildOptions
 |string array
 |Configures additional options to pass to the `build` command of either Kaniko or Buildah (depending on the feature gate setting) when building a new Kafka Connect image. Allowed Kaniko options: --customPlatform, --custom-platform, --insecure, --insecure-pull, --insecure-registry, --log-format, --log-timestamp, --registry-mirror, --reproducible, --single-snapshot, --skip-tls-verify, --skip-tls-verify-pull, --skip-tls-verify-registry, --verbosity, --snapshotMode, --use-new-run, --registry-certificate, --registry-client-cert, --ignore-path. Allowed Buildah `build` options: --authfile, --cert-dir, --creds, --decryption-key, --retry, --retry-delay, --tls-verify. Those options are used only on Kubernetes, where Kaniko and Buildah are available. They are ignored on OpenShift. For more information, see the link:https://github.com/GoogleContainerTools/kaniko[Kaniko GitHub repository^] or the link:https://github.com/containers/buildah/blob/main/docs/buildah-build.1.md[Buildah build document^]. Changing this field does not trigger a rebuild of the Kafka Connect image.
@@ -3334,7 +2422,7 @@ include::../api/io.strimzi.api.kafka.model.connect.MountedPlugin.adoc[leveloffse
 Used in: xref:type-MountedPlugin-{context}[`MountedPlugin`]
 
 
-The `type` property is a discriminator that distinguishes use of the `ImageArtifact` type from other subtypes which may be added in the future.
+The `type` property is a discriminator that distinguishes use of the `ImageArtifact` type from other subtypes that may be added in the future.
 It must have the value `image` for the type `ImageArtifact`.
 [cols="2,2,3a",options="header"]
 |====
@@ -3610,7 +2698,7 @@ Used in: xref:type-KafkaUserScramSha512ClientAuthentication-{context}[`KafkaUser
 Used in: xref:type-KafkaUserSpec-{context}[`KafkaUserSpec`]
 
 
-The `type` property is a discriminator that distinguishes use of the `KafkaUserAuthorizationSimple` type from other subtypes which may be added in the future.
+The `type` property is a discriminator that distinguishes use of the `KafkaUserAuthorizationSimple` type from other subtypes that may be added in the future.
 It must have the value `simple` for the type `KafkaUserAuthorizationSimple`.
 [cols="2,2,3a",options="header"]
 |====
@@ -3648,9 +2736,6 @@ include::../api/io.strimzi.api.kafka.model.user.acl.AclRule.adoc[leveloffset=+1]
 |host
 |string
 |The host from which the action described in the ACL rule is allowed or denied. If not set, it defaults to `*`, allowing or denying the action from any host.
-|operation
-|string (one of [Read, Write, Delete, Alter, Describe, All, IdempotentWrite, ClusterAction, Create, AlterConfigs, DescribeConfigs])
-|**The `operation` property has been deprecated, and should now be configured using `spec.authorization.acls[*].operations`.** Operation which will be allowed or denied. Supported operations are: Read, Write, Create, Delete, Alter, Describe, ClusterAction, AlterConfigs, DescribeConfigs, IdempotentWrite and All.
 |operations
 |string (one or more of [Read, Write, Delete, Alter, Describe, All, IdempotentWrite, ClusterAction, Create, AlterConfigs, DescribeConfigs]) array
 |List of operations to allow or deny. Supported operations are: Read, Write, Create, Delete, Alter, Describe, ClusterAction, AlterConfigs, DescribeConfigs, IdempotentWrite and All. Only certain operations work with the specified resource.
@@ -3856,7 +2941,7 @@ include::../api/io.strimzi.api.kafka.model.bridge.KafkaBridgeSpec.adoc[leveloffs
 |xref:type-ClientTls-{context}[`ClientTls`]
 |TLS configuration for connecting HTTP Bridge to the cluster.
 |authentication
-|xref:type-KafkaClientAuthenticationTls-{context}[`KafkaClientAuthenticationTls`], xref:type-KafkaClientAuthenticationScramSha256-{context}[`KafkaClientAuthenticationScramSha256`], xref:type-KafkaClientAuthenticationScramSha512-{context}[`KafkaClientAuthenticationScramSha512`], xref:type-KafkaClientAuthenticationPlain-{context}[`KafkaClientAuthenticationPlain`], xref:type-KafkaClientAuthenticationOAuth-{context}[`KafkaClientAuthenticationOAuth`], xref:type-KafkaClientAuthenticationCustom-{context}[`KafkaClientAuthenticationCustom`]
+|xref:type-KafkaClientAuthenticationTls-{context}[`KafkaClientAuthenticationTls`], xref:type-KafkaClientAuthenticationScramSha256-{context}[`KafkaClientAuthenticationScramSha256`], xref:type-KafkaClientAuthenticationScramSha512-{context}[`KafkaClientAuthenticationScramSha512`], xref:type-KafkaClientAuthenticationPlain-{context}[`KafkaClientAuthenticationPlain`], xref:type-KafkaClientAuthenticationCustom-{context}[`KafkaClientAuthenticationCustom`]
 |Authentication configuration for connecting to the cluster.
 |http
 |xref:type-KafkaBridgeHttpConfig-{context}[`KafkaBridgeHttpConfig`]
@@ -3885,9 +2970,6 @@ include::../api/io.strimzi.api.kafka.model.bridge.KafkaBridgeSpec.adoc[leveloffs
 |rack
 |xref:type-Rack-{context}[`Rack`]
 |Configuration of the node label which will be used as the client.rack consumer configuration.
-|enableMetrics
-|boolean
-|**The `enableMetrics` property has been deprecated, and should now be configured using `.spec.metricsConfig`.** The `enableMetrics` configuration is deprecated and will be removed in the future. Enable the metrics for the HTTP Bridge. Default is false.
 |metricsConfig
 |xref:type-JmxPrometheusExporterMetrics-{context}[`JmxPrometheusExporterMetrics`], xref:type-StrimziMetricsReporter-{context}[`StrimziMetricsReporter`]
 |Metrics configuration.
@@ -3901,7 +2983,7 @@ include::../api/io.strimzi.api.kafka.model.bridge.KafkaBridgeSpec.adoc[leveloffs
 |xref:type-KafkaBridgeTemplate-{context}[`KafkaBridgeTemplate`]
 |Template for HTTP Bridge resources. The template allows users to specify how a `Deployment` and `Pod` is generated.
 |tracing
-|xref:type-JaegerTracing-{context}[`JaegerTracing`], xref:type-OpenTelemetryTracing-{context}[`OpenTelemetryTracing`]
+|xref:type-OpenTelemetryTracing-{context}[`OpenTelemetryTracing`]
 |The configuration of tracing in HTTP Bridge.
 |====
 
@@ -4111,9 +3193,6 @@ Used in: xref:type-KafkaConnector-{context}[`KafkaConnector`]
 |config
 |map
 |The Kafka Connector configuration. The following properties cannot be set: name, connector.class, tasks.max, connector.plugin.version.
-|pause
-|boolean
-|**The `pause` property has been deprecated.** Deprecated in Strimzi 0.38.0, use state instead. Whether the connector should be paused. Defaults to false.
 |state
 |string (one of [running, paused, stopped])
 |The state the connector should be in. Defaults to running.
@@ -4259,12 +3338,6 @@ Used in: xref:type-KafkaMirrorMaker2-{context}[`KafkaMirrorMaker2`]
 |image
 |string
 |The container image used for Kafka Connect pods. If no image name is explicitly specified, it is determined based on the `spec.version` configuration. The image names are specifically mapped to corresponding versions in the Cluster Operator configuration.
-|connectCluster
-|string
-|**The `connectCluster` property has been deprecated, and should now be configured using `.spec.target`.** The `connectCluster` property is deprecated and will be removed in the `v1` CRD API. The cluster alias used for Kafka Connect. The value must match the alias of the *target* Kafka cluster as specified in the `spec.clusters` configuration. The target Kafka cluster is used by the underlying Kafka Connect framework for its internal topics.
-|clusters
-|xref:type-KafkaMirrorMaker2ClusterSpec-{context}[`KafkaMirrorMaker2ClusterSpec`] array
-|**The `clusters` property has been deprecated.** The `clusters` section is deprecated and will be removed in the `v1` CRD API. Please use the `.spec.target` and `.spec.mirrors[].source` sections instead. Kafka clusters for mirroring.
 |target
 |xref:type-KafkaMirrorMaker2TargetClusterSpec-{context}[`KafkaMirrorMaker2TargetClusterSpec`]
 |The target Apache Kafka cluster. The target Kafka cluster is used by the underlying Kafka Connect framework for its internal topics.
@@ -4299,47 +3372,11 @@ Used in: xref:type-KafkaMirrorMaker2-{context}[`KafkaMirrorMaker2`]
 |xref:type-JmxPrometheusExporterMetrics-{context}[`JmxPrometheusExporterMetrics`], xref:type-StrimziMetricsReporter-{context}[`StrimziMetricsReporter`]
 |Metrics configuration.
 |tracing
-|xref:type-JaegerTracing-{context}[`JaegerTracing`], xref:type-OpenTelemetryTracing-{context}[`OpenTelemetryTracing`]
+|xref:type-OpenTelemetryTracing-{context}[`OpenTelemetryTracing`]
 |The configuration of tracing in Kafka Connect.
 |template
 |xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`]
 |Template for Kafka Connect and Kafka MirrorMaker 2 resources. The template allows users to specify how the `Pods`, `Service`, and other services are generated.
-|externalConfiguration
-|xref:type-ExternalConfiguration-{context}[`ExternalConfiguration`]
-|**The `externalConfiguration` property has been deprecated.** The external configuration is deprecated and will be removed in the future. Please use the template section instead to configure additional environment variables or volumes. Pass data from Secrets or ConfigMaps to the Kafka Connect pods and use them to configure connectors.
-|====
-
-[id='type-KafkaMirrorMaker2ClusterSpec-{context}']
-= `KafkaMirrorMaker2ClusterSpec` schema reference
-
-Used in: xref:type-KafkaMirrorMaker2MirrorSpec-{context}[`KafkaMirrorMaker2MirrorSpec`], xref:type-KafkaMirrorMaker2Spec-{context}[`KafkaMirrorMaker2Spec`]
-
-xref:type-KafkaMirrorMaker2ClusterSpec-schema-{context}[Full list of `KafkaMirrorMaker2ClusterSpec` schema properties]
-
-include::../api/io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2ClusterSpec.adoc[leveloffset=+1]
-
-[id='type-KafkaMirrorMaker2ClusterSpec-schema-{context}']
-== `KafkaMirrorMaker2ClusterSpec` schema properties
-
-
-[cols="2,2,3a",options="header"]
-|====
-|Property |Property type |Description
-|alias
-|string
-|Alias used to reference the Kafka cluster.
-|bootstrapServers
-|string
-|A comma-separated list of `host:port` pairs for establishing the connection to the Kafka cluster.
-|tls
-|xref:type-ClientTls-{context}[`ClientTls`]
-|TLS configuration for connecting MirrorMaker 2 connectors to a cluster.
-|authentication
-|xref:type-KafkaClientAuthenticationTls-{context}[`KafkaClientAuthenticationTls`], xref:type-KafkaClientAuthenticationScramSha256-{context}[`KafkaClientAuthenticationScramSha256`], xref:type-KafkaClientAuthenticationScramSha512-{context}[`KafkaClientAuthenticationScramSha512`], xref:type-KafkaClientAuthenticationPlain-{context}[`KafkaClientAuthenticationPlain`], xref:type-KafkaClientAuthenticationOAuth-{context}[`KafkaClientAuthenticationOAuth`], xref:type-KafkaClientAuthenticationCustom-{context}[`KafkaClientAuthenticationCustom`]
-|Authentication configuration for connecting to the cluster.
-|config
-|map
-|The MirrorMaker 2 cluster config. Properties with the following prefixes cannot be set: ssl., sasl., security., listeners, plugin.path, rest., bootstrap.servers, consumer.interceptor.classes, producer.interceptor.classes (with the exception of: ssl.endpoint.identification.algorithm, ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols).
 |====
 
 [id='type-KafkaMirrorMaker2TargetClusterSpec-{context}']
@@ -4380,7 +3417,7 @@ include::../api/io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2TargetC
 |xref:type-ClientTls-{context}[`ClientTls`]
 |TLS configuration for connecting MirrorMaker 2 connectors to a cluster.
 |authentication
-|xref:type-KafkaClientAuthenticationTls-{context}[`KafkaClientAuthenticationTls`], xref:type-KafkaClientAuthenticationScramSha256-{context}[`KafkaClientAuthenticationScramSha256`], xref:type-KafkaClientAuthenticationScramSha512-{context}[`KafkaClientAuthenticationScramSha512`], xref:type-KafkaClientAuthenticationPlain-{context}[`KafkaClientAuthenticationPlain`], xref:type-KafkaClientAuthenticationOAuth-{context}[`KafkaClientAuthenticationOAuth`], xref:type-KafkaClientAuthenticationCustom-{context}[`KafkaClientAuthenticationCustom`]
+|xref:type-KafkaClientAuthenticationTls-{context}[`KafkaClientAuthenticationTls`], xref:type-KafkaClientAuthenticationScramSha256-{context}[`KafkaClientAuthenticationScramSha256`], xref:type-KafkaClientAuthenticationScramSha512-{context}[`KafkaClientAuthenticationScramSha512`], xref:type-KafkaClientAuthenticationPlain-{context}[`KafkaClientAuthenticationPlain`], xref:type-KafkaClientAuthenticationCustom-{context}[`KafkaClientAuthenticationCustom`]
 |Authentication configuration for connecting to the cluster.
 |config
 |map
@@ -4396,42 +3433,60 @@ Used in: xref:type-KafkaMirrorMaker2Spec-{context}[`KafkaMirrorMaker2Spec`]
 [cols="2,2,3a",options="header"]
 |====
 |Property |Property type |Description
-|sourceCluster
-|string
-|**The `sourceCluster` property has been deprecated, and should now be configured using `.spec.mirrors.source`.** The `sourceCluster` property is deprecated and will be removed in the `v1` CRD API. The alias of the source cluster used by the Kafka MirrorMaker 2 connectors. The alias must match a cluster in the list at `spec.clusters`.
-|targetCluster
-|string
-|**The `targetCluster` property has been deprecated, and should now be configured using `.spec.target`.** The `targetCluster` property is deprecated and will be removed in the `v1` CRD API. The alias of the target cluster used by the Kafka MirrorMaker 2 connectors. The alias must match a cluster in the list at `spec.clusters`.
 |source
 |xref:type-KafkaMirrorMaker2ClusterSpec-{context}[`KafkaMirrorMaker2ClusterSpec`]
 |The source Apache Kafka cluster. The source Kafka cluster is used by the Kafka MirrorMaker 2 connectors.
 |sourceConnector
 |xref:type-KafkaMirrorMaker2ConnectorSpec-{context}[`KafkaMirrorMaker2ConnectorSpec`]
 |The specification of the Kafka MirrorMaker 2 source connector.
-|heartbeatConnector
-|xref:type-KafkaMirrorMaker2ConnectorSpec-{context}[`KafkaMirrorMaker2ConnectorSpec`]
-|**The `heartbeatConnector` property has been deprecated.** The `heartbeatConnector` property is deprecated and will be removed in the `v1` CRD API. The specification of the Kafka MirrorMaker 2 heartbeat connector.
 |checkpointConnector
 |xref:type-KafkaMirrorMaker2ConnectorSpec-{context}[`KafkaMirrorMaker2ConnectorSpec`]
 |The specification of the Kafka MirrorMaker 2 checkpoint connector.
 |topicsPattern
 |string
 |A regular expression matching the topics to be mirrored, for example, "topic1\|topic2\|topic3". Comma-separated lists are also supported.
-|topicsBlacklistPattern
-|string
-|**The `topicsBlacklistPattern` property has been deprecated, and should now be configured using `.spec.mirrors.topicsExcludePattern`.** A regular expression matching the topics to exclude from mirroring. Comma-separated lists are also supported.
 |topicsExcludePattern
 |string
 |A regular expression matching the topics to exclude from mirroring. Comma-separated lists are also supported.
 |groupsPattern
 |string
 |A regular expression matching the consumer groups to be mirrored. Comma-separated lists are also supported.
-|groupsBlacklistPattern
-|string
-|**The `groupsBlacklistPattern` property has been deprecated, and should now be configured using `.spec.mirrors.groupsExcludePattern`.** A regular expression matching the consumer groups to exclude from mirroring. Comma-separated lists are also supported.
 |groupsExcludePattern
 |string
 |A regular expression matching the consumer groups to exclude from mirroring. Comma-separated lists are also supported.
+|====
+
+[id='type-KafkaMirrorMaker2ClusterSpec-{context}']
+= `KafkaMirrorMaker2ClusterSpec` schema reference
+
+Used in: xref:type-KafkaMirrorMaker2MirrorSpec-{context}[`KafkaMirrorMaker2MirrorSpec`]
+
+xref:type-KafkaMirrorMaker2ClusterSpec-schema-{context}[Full list of `KafkaMirrorMaker2ClusterSpec` schema properties]
+
+include::../api/io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2ClusterSpec.adoc[leveloffset=+1]
+
+[id='type-KafkaMirrorMaker2ClusterSpec-schema-{context}']
+== `KafkaMirrorMaker2ClusterSpec` schema properties
+
+
+[cols="2,2,3a",options="header"]
+|====
+|Property |Property type |Description
+|alias
+|string
+|Alias used to reference the Kafka cluster.
+|bootstrapServers
+|string
+|A comma-separated list of `host:port` pairs for establishing the connection to the Kafka cluster.
+|tls
+|xref:type-ClientTls-{context}[`ClientTls`]
+|TLS configuration for connecting MirrorMaker 2 connectors to a cluster.
+|authentication
+|xref:type-KafkaClientAuthenticationTls-{context}[`KafkaClientAuthenticationTls`], xref:type-KafkaClientAuthenticationScramSha256-{context}[`KafkaClientAuthenticationScramSha256`], xref:type-KafkaClientAuthenticationScramSha512-{context}[`KafkaClientAuthenticationScramSha512`], xref:type-KafkaClientAuthenticationPlain-{context}[`KafkaClientAuthenticationPlain`], xref:type-KafkaClientAuthenticationCustom-{context}[`KafkaClientAuthenticationCustom`]
+|Authentication configuration for connecting to the cluster.
+|config
+|map
+|The MirrorMaker 2 cluster config. Properties with the following prefixes cannot be set: ssl., sasl., security., listeners, plugin.path, rest., bootstrap.servers, consumer.interceptor.classes, producer.interceptor.classes (with the exception of: ssl.endpoint.identification.algorithm, ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols).
 |====
 
 [id='type-KafkaMirrorMaker2ConnectorSpec-{context}']
@@ -4446,9 +3501,6 @@ Used in: xref:type-KafkaMirrorMaker2MirrorSpec-{context}[`KafkaMirrorMaker2Mirro
 |tasksMax
 |integer
 |The maximum number of tasks for the Kafka Connector.
-|pause
-|boolean
-|**The `pause` property has been deprecated.** Deprecated in Strimzi 0.38.0, use state instead. Whether the connector should be paused. Defaults to false.
 |version
 |string
 |Desired version or version range to respect when starting the Kafka Connector. This is only supported when using Kafka Connect version 4.1.0 and higher.
@@ -4672,6 +3724,87 @@ Used in: xref:type-KafkaNodePool-{context}[`KafkaNodePool`]
 |template
 |xref:type-KafkaNodePoolTemplate-{context}[`KafkaNodePoolTemplate`]
 |Template for pool resources. The template allows users to specify how the resources belonging to this pool are generated.
+|====
+
+[id='type-EphemeralStorage-{context}']
+= `EphemeralStorage` schema reference
+
+Used in: xref:type-JbodStorage-{context}[`JbodStorage`], xref:type-KafkaNodePoolSpec-{context}[`KafkaNodePoolSpec`]
+
+
+The `type` property is a discriminator that distinguishes use of the `EphemeralStorage` type from xref:type-PersistentClaimStorage-{context}[`PersistentClaimStorage`].
+It must have the value `ephemeral` for the type `EphemeralStorage`.
+[cols="2,2,3a",options="header"]
+|====
+|Property |Property type |Description
+|id
+|integer
+|Storage identification number. It is mandatory only for storage volumes defined in a storage of type 'jbod'.
+|sizeLimit
+|string
+|When type=ephemeral, defines the total amount of local storage required for this EmptyDir volume (for example 1Gi).
+|type
+|string
+|Must be `ephemeral`.
+|kraftMetadata
+|string (one of [shared])
+|Specifies whether this volume should be used for storing KRaft metadata. This property is optional. When set, the only currently supported value is `shared`. At most one volume can have this property set.
+|====
+
+[id='type-PersistentClaimStorage-{context}']
+= `PersistentClaimStorage` schema reference
+
+Used in: xref:type-JbodStorage-{context}[`JbodStorage`], xref:type-KafkaNodePoolSpec-{context}[`KafkaNodePoolSpec`]
+
+
+The `type` property is a discriminator that distinguishes use of the `PersistentClaimStorage` type from xref:type-EphemeralStorage-{context}[`EphemeralStorage`].
+It must have the value `persistent-claim` for the type `PersistentClaimStorage`.
+[cols="2,2,3a",options="header"]
+|====
+|Property |Property type |Description
+|id
+|integer
+|Storage identification number. It is mandatory only for storage volumes defined in a storage of type 'jbod'.
+|type
+|string
+|Must be `persistent-claim`.
+|size
+|string
+|When `type=persistent-claim`, defines the size of the persistent volume claim, such as 100Gi. Mandatory when `type=persistent-claim`.
+|kraftMetadata
+|string (one of [shared])
+|Specifies whether this volume should be used for storing KRaft metadata. This property is optional. When set, the only currently supported value is `shared`. At most one volume can have this property set.
+|class
+|string
+|The storage class to use for dynamic volume allocation.
+|volumeAttributesClass
+|string
+|Specifies `VolumeAttributeClass` name for dynamically configuring storage attributes.
+|selector
+|map
+|Specifies a specific persistent volume to use. It contains key:value pairs representing labels for selecting such a volume.
+|deleteClaim
+|boolean
+|Specifies whether the persistent volume claim is deleted when a Kafka node is deleted. Optional. Defaults to `false`.
+|====
+
+[id='type-JbodStorage-{context}']
+= `JbodStorage` schema reference
+
+Used in: xref:type-KafkaNodePoolSpec-{context}[`KafkaNodePoolSpec`]
+
+
+The `type` property is a discriminator that distinguishes use of the `JbodStorage` type from xref:type-EphemeralStorage-{context}[`EphemeralStorage`], xref:type-PersistentClaimStorage-{context}[`PersistentClaimStorage`].
+It must have the value `jbod` for the type `JbodStorage`.
+[cols="2,2,3a",options="header"]
+|====
+|Property |Property type |Description
+|type
+|string
+|Must be `jbod`.
+|volumes
+|xref:type-EphemeralStorage-{context}[`EphemeralStorage`], xref:type-PersistentClaimStorage-{context}[`PersistentClaimStorage`] array
+|List of volumes as Storage objects representing the JBOD disks array.
 |====
 
 [id='type-KafkaNodePoolTemplate-{context}']
