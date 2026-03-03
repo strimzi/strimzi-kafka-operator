@@ -26,7 +26,7 @@ public abstract class AbstractJsonDiff {
     public AbstractJsonDiff() { }
 
     protected static JsonNode lookupPath(JsonNode source, String path) {
-        if (path.isEmpty()) {
+        if (path.isEmpty() || "/".equals(path)) {
             return source;
         } else {
             JsonNode s = source;
