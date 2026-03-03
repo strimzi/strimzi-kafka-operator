@@ -33,18 +33,6 @@ public class ListenersUtils {
     private ListenersUtils() { }
 
     /**
-     * Finds out if any of the listeners has OAuth authentication enabled
-     *
-     * @param listeners List of all listeners
-     *
-     * @return          True if any listener in the list is using OAuth authentication. False otherwise.
-     */
-    public static boolean hasListenerWithOAuth(List<GenericKafkaListener> listeners)    {
-        return listeners.stream()
-                .anyMatch(ListenersUtils::isListenerWithOAuth);
-    }
-
-    /**
      * Checks whether the listener is using OAuth authentication
      *
      * @param listener  Listener to check

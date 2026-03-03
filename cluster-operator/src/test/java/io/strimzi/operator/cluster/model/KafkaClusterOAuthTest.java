@@ -9,7 +9,6 @@ import io.fabric8.kubernetes.api.model.Volume;
 import io.strimzi.api.kafka.model.common.CertSecretSource;
 import io.strimzi.api.kafka.model.common.CertSecretSourceBuilder;
 import io.strimzi.api.kafka.model.kafka.Kafka;
-import io.strimzi.api.kafka.model.kafka.KafkaAuthorizationKeycloakBuilder;
 import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
 import io.strimzi.api.kafka.model.kafka.PersistentClaimStorageBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
@@ -22,7 +21,6 @@ import io.strimzi.api.kafka.model.podset.StrimziPodSet;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.model.nodepools.NodePoolUtils;
 import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.operator.common.model.InvalidResourceException;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -31,7 +29,6 @@ import java.util.Map;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class KafkaClusterOAuthTest {
     private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
@@ -374,91 +371,5 @@ public class KafkaClusterOAuthTest {
                 assertThat(volumes.stream().filter(vol -> "oauth-external-9094-second-certificate".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().isEmpty(), is(true));
             }
         }));
-    }
-
-    @Test
-    public void testGenerateDeploymentWithKeycloakAuthorization() {
-        CertSecretSource cert1 = new CertSecretSourceBuilder()
-                .withSecretName("first-certificate")
-                .withCertificate("ca.crt")
-                .build();
-
-        CertSecretSource cert2 = new CertSecretSourceBuilder()
-                .withSecretName("second-certificate")
-                .withCertificate("tls.crt")
-                .build();
-
-        Kafka kafkaAssembly = new KafkaBuilder(KAFKA)
-                .editSpec()
-                    .editKafka()
-                        .withListeners(new GenericKafkaListenerBuilder()
-                                .withName("plain")
-                                .withPort(9092)
-                                .withType(KafkaListenerType.INTERNAL)
-                                .withTls(false)
-                                .withAuth(
-                                        new KafkaListenerAuthenticationOAuthBuilder()
-                                                .withClientId("my-client-id")
-                                                .withValidIssuerUri("http://valid-issuer")
-                                                .withIntrospectionEndpointUri("http://introspection")
-                                                .withMaxSecondsWithoutReauthentication(3600)
-                                                .withNewClientSecret()
-                                                .withSecretName("my-secret-secret")
-                                                .withKey("my-secret-key")
-                                                .endClientSecret()
-                                                .withDisableTlsHostnameVerification(true)
-                                                .withTlsTrustedCertificates(cert1, cert2)
-                                                .build())
-                                .build())
-                    .withAuthorization(
-                            new KafkaAuthorizationKeycloakBuilder()
-                                    .withClientId("my-client-id")
-                                    .withTokenEndpointUri("http://token-endpoint-uri")
-                                    .withDisableTlsHostnameVerification(true)
-                                    .withDelegateToKafkaAcls(false)
-                                    .withGrantsRefreshPeriodSeconds(90)
-                                    .withGrantsRefreshPoolSize(4)
-                                    .withTlsTrustedCertificates(cert1, cert2)
-                                    .build())
-                    .endKafka()
-                .endSpec()
-                .build();
-        List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, List.of(POOL_CONTROLLERS, POOL_MIXED, POOL_BROKERS), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, SHARED_ENV_PROVIDER);
-        KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, null, SHARED_ENV_PROVIDER);
-
-        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, node -> Map.of());
-        assertThat(podSets.size(), is(3));
-
-        podSets.forEach(podSet -> PodSetUtils.podSetToPods(podSet).forEach(pod -> {
-            Container cont = pod.getSpec().getContainers().stream().findAny().orElseThrow();
-            // Volume mounts
-            assertThat(cont.getVolumeMounts().stream().filter(mount -> "authz-keycloak-first-certificate".equals(mount.getName())).findFirst().orElseThrow().getMountPath(), is(KafkaCluster.TRUSTED_CERTS_BASE_VOLUME_MOUNT + "/authz-keycloak-certs/first-certificate"));
-            assertThat(cont.getVolumeMounts().stream().filter(mount -> "authz-keycloak-second-certificate".equals(mount.getName())).findFirst().orElseThrow().getMountPath(), is(KafkaCluster.TRUSTED_CERTS_BASE_VOLUME_MOUNT + "/authz-keycloak-certs/second-certificate"));
-
-            // Environment variable
-            assertThat(cont.getEnv().stream().filter(e -> "STRIMZI_KEYCLOAK_AUTHZ_TRUSTED_CERTS".equals(e.getName())).findFirst().orElseThrow().getValue(), is("first-certificate/ca.crt;second-certificate/tls.crt"));
-
-            // Volumes
-            List<Volume> volumes = pod.getSpec().getVolumes();
-            assertThat(volumes.stream().filter(vol -> "authz-keycloak-first-certificate".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().isEmpty(), is(true));
-            assertThat(volumes.stream().filter(vol -> "authz-keycloak-second-certificate".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().isEmpty(), is(true));
-        }));
-    }
-
-    @Test
-    public void testGenerateDeploymentWithKeycloakAuthorizationMissingOAuthListeners() {
-        assertThrows(InvalidResourceException.class, () -> {
-            Kafka kafkaAssembly = new KafkaBuilder(KAFKA)
-                    .editSpec()
-                    .editKafka()
-                    .withAuthorization(
-                            new KafkaAuthorizationKeycloakBuilder().build())
-                    .endKafka()
-                    .endSpec()
-                    .build();
-
-            List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, List.of(POOL_CONTROLLERS, POOL_MIXED, POOL_BROKERS), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, SHARED_ENV_PROVIDER);
-            KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, null, SHARED_ENV_PROVIDER);
-        });
     }
 }
