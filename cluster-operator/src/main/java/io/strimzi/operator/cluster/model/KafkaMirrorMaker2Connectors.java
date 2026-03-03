@@ -210,9 +210,9 @@ public class KafkaMirrorMaker2Connectors {
             // into a shared Prometheus registry instance, so they can be exposed through
             // the Kafka Connect SMR listener endpoint without enabling a new listener
             Object existingValue = config.get("metric.reporters");
-            String newValue = StrimziMetricsReporterConfig.KAFKA_CLASS;
+            String newValue = StrimziMetricsReporterConfig.CLIENT_CLASS;
             config.put("metric.reporters", existingValue != null
-                    && !existingValue.toString().contains(StrimziMetricsReporterConfig.KAFKA_CLASS)
+                    && !existingValue.toString().contains(StrimziMetricsReporterConfig.CLIENT_CLASS)
                         ? existingValue + "," + newValue : newValue);
             config.put(StrimziMetricsReporterConfig.LISTENER_ENABLE, "false");
         }

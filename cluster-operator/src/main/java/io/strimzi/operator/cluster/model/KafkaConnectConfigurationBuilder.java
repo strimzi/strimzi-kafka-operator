@@ -352,7 +352,7 @@ public class KafkaConnectConfigurationBuilder {
         List<String> reportersToInject = new ArrayList<>();
         // JmxPrometheusExporter depends on JmxReporter, which needs to be explicitly added when having custom metrics reporters
         if (injectKafkaJmxReporter) reportersToInject.add("org.apache.kafka.common.metrics.JmxReporter");
-        if (injectStrimziMetricsReporter) reportersToInject.add(StrimziMetricsReporterConfig.KAFKA_CLASS);
+        if (injectStrimziMetricsReporter) reportersToInject.add(StrimziMetricsReporterConfig.CLIENT_CLASS);
 
         if (!reportersToInject.isEmpty()) {
             if (userConfig != null && !userConfig.getConfiguration().isEmpty() &&
