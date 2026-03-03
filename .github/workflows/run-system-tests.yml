@@ -96,6 +96,7 @@ jobs:
         uses: strimzi/github-actions/.github/actions/dependencies/install-yq@main
         with:
           version: "v4.6.3"
+          architecture: ${{ matrix.config.arch }}
 
       - name: Install Shellcheck
         uses: strimzi/github-actions/.github/actions/dependencies/install-shellcheck@main
