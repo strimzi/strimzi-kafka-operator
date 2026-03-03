@@ -934,6 +934,7 @@ public class CaReconcilerTest {
         SecretOperator secretOps = supplier.secretOperations;
 
         when(secretOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(Future.succeededFuture(secrets));
+        when(secretOps.getAsync(eq(NAMESPACE), any())).thenReturn(Future.succeededFuture(null));
         when(secretOps.reconcile(any(), eq(NAMESPACE), any(), any(Secret.class))).thenReturn(Future.succeededFuture());
 
         PodOperator mockPodOps = supplier.podOperations;

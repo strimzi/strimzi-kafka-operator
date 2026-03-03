@@ -369,7 +369,7 @@ public abstract class Ca {
      * @param caCertSecret Secret to extract the CA cert from
      * @return CA generation or the initial generation if no generation is set
      */
-    private int initCaCertGeneration(Secret caCertSecret) {
+    protected int initCaCertGeneration(Secret caCertSecret) {
         if (caCertSecret != null) {
             if (!Annotations.hasAnnotation(caCertSecret, ANNO_STRIMZI_IO_CA_CERT_GENERATION)) {
                 LOGGER.warnOp("Secret {}/{} is missing generation annotation {}",
@@ -488,7 +488,8 @@ public abstract class Ca {
                     certChain,
                     null,
                     Files.readAllBytes(keyStoreFile.toPath()),
-                    keyStorePassword);
+                    keyStorePassword,
+                    caCertGeneration);
         } catch (IOException | CertificateException | KeyStoreException | NoSuchAlgorithmException | InvalidKeySpecException e) {
             throw new RuntimeException(e);
         }
@@ -578,8 +579,7 @@ public abstract class Ca {
     /**
      * Create the CA {@code Secrets} if they don't exist, otherwise if within the renewal period then either renew
      * the CA cert or replace the CA cert and key, according to the configured policy. After calling this method
-     * {@link #certRenewed()} and {@link #certsRemoved()} will return whether the certificate was renewed and whether
-     * expired secrets were removed from the Secret.
+     * {@link #certsRemoved()} will return whether expired secrets were removed from the Secret.
      *
      * @param maintenanceWindowSatisfied Flag indicating whether we are in the maintenance window
      * @param forceReplace Flag indicating whether to do a force replace
@@ -842,14 +842,6 @@ public abstract class Ca {
         return this.caCertsRemoved;
     }
 
-    /**
-     * True if the last call to {@link #createRenewOrReplace(boolean, boolean, boolean)}
-     * resulted in a renewed CA certificate.
-     * @return Whether the certificate was renewed.
-     */
-    public boolean certRenewed() {
-        return renewalType.equals(RenewalType.RENEW_CERT) || renewalType.equals(RenewalType.REPLACE_KEY);
-    }
 
     /**
      * True if the last call to {@link #createRenewOrReplace(boolean, boolean, boolean)}

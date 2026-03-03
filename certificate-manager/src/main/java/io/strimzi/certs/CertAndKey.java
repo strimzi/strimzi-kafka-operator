@@ -16,6 +16,7 @@ public class CertAndKey {
     private final byte[] trustStore;
     private final byte[] keyStore;
     private final String storePassword;
+    private final int caCertGeneration;
 
     /**
      * Construct the CertAndKey instance from byte arrays of the certificate and key
@@ -24,7 +25,18 @@ public class CertAndKey {
      * @param cert  Byte array with the cert bytes
      */
     public CertAndKey(byte[] key, byte[] cert) {
-        this(key, cert, null, null, null);
+        this(key, cert, null, null, null, 0);
+    }
+
+    /**
+     * Construct the CertAndKey instance from byte arrays of the certificate and key with CA generation
+     *
+     * @param key               Byte array with the key bytes
+     * @param cert              Byte array with the cert bytes
+     * @param caCertGeneration  The CA certificate generation that signed this certificate
+     */
+    public CertAndKey(byte[] key, byte[] cert, int caCertGeneration) {
+        this(key, cert, null, null, null, caCertGeneration);
     }
 
     /**
@@ -37,11 +49,26 @@ public class CertAndKey {
      * @param storePassword     The store password
      */
     public CertAndKey(byte[] key, byte[] cert, byte[] trustStore, byte[] keyStore, String storePassword) {
+        this(key, cert, trustStore, keyStore, storePassword, 0);
+    }
+
+    /**
+     * Constructs the CertAndKey instance with CA generation
+     *
+     * @param key               Byte array with the key bytes
+     * @param cert              Byte array with the cert bytes
+     * @param trustStore        Byte array with the truststore
+     * @param keyStore          Byte array with the keystore
+     * @param storePassword     The store password
+     * @param caCertGeneration  The CA certificate generation that signed this certificate
+     */
+    public CertAndKey(byte[] key, byte[] cert, byte[] trustStore, byte[] keyStore, String storePassword, int caCertGeneration) {
         this.key = key;
         this.cert = cert;
         this.trustStore = trustStore;
         this.keyStore = keyStore;
         this.storePassword = storePassword;
+        this.caCertGeneration = caCertGeneration;
     }
 
     /**
@@ -132,5 +159,14 @@ public class CertAndKey {
      */
     public String storePasswordAsBase64String() {
         return Base64.getEncoder().encodeToString(storePassword.getBytes(StandardCharsets.US_ASCII));
+    }
+
+    /**
+     * Gets the CA certificate generation that signed this certificate
+     *
+     * @return The CA certificate generation that signed this certificate.
+     */
+    public int caCertGeneration() {
+        return caCertGeneration;
     }
 }

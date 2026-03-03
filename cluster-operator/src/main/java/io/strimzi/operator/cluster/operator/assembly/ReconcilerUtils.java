@@ -203,9 +203,6 @@ public class ReconcilerUtils {
         }
 
         for (Ca ca: cas) {
-            if (ca.certRenewed()) {
-                restartReasons.add(RestartReason.CA_CERT_RENEWED, ca + " certificate renewal");
-            }
             if (ca.certsRemoved()) {
                 restartReasons.add(RestartReason.CA_CERT_REMOVED, ca + " certificate removal");
             }

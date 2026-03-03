@@ -103,7 +103,6 @@ import static io.strimzi.operator.cluster.model.AbstractModel.clusterCaCertSecre
 import static io.strimzi.operator.cluster.model.AbstractModel.clusterCaKeySecretName;
 import static io.strimzi.operator.cluster.model.RestartReason.CA_CERT_HAS_OLD_GENERATION;
 import static io.strimzi.operator.cluster.model.RestartReason.CA_CERT_REMOVED;
-import static io.strimzi.operator.cluster.model.RestartReason.CA_CERT_RENEWED;
 import static io.strimzi.operator.cluster.model.RestartReason.CLUSTER_CA_CERT_KEY_REPLACED;
 import static io.strimzi.operator.cluster.model.RestartReason.CONFIG_CHANGE_REQUIRES_RESTART;
 import static io.strimzi.operator.cluster.model.RestartReason.FILE_SYSTEM_RESIZE_NEEDED;
@@ -353,8 +352,8 @@ public class KubernetesRestartEventsMockTest {
     void testEventEmittedWhenCaCertRenewed(Vertx vertx, VertxTestContext context) {
         ClusterCa ca = new OverridingClusterCa() {
             @Override
-            public boolean certRenewed() {
-                return true;
+            protected int initCaCertGeneration(Secret caCertSecret) {
+                return 1;
             }
         };
 
@@ -376,7 +375,7 @@ public class KubernetesRestartEventsMockTest {
                 PFA,
                 vertx);
 
-        reconciler.reconcile(new KafkaStatus(), Clock.systemUTC()).onComplete(verifyEventPublished(CA_CERT_RENEWED, context));
+        reconciler.reconcile(new KafkaStatus(), Clock.systemUTC()).onComplete(verifyEventPublished(CA_CERT_HAS_OLD_GENERATION, context));
     }
 
     @Test

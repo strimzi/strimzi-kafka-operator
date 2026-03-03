@@ -73,7 +73,7 @@ public class ClusterCaRenewalTest {
     @Test
     public void renewalOfCertificatesWithCaRenewal() throws IOException {
         MockedClusterCa mockedCa = new MockedClusterCa(Reconciliation.DUMMY_RECONCILIATION, null, null, null, null, null, 2, 1, true, null);
-        mockedCa.setCertRenewed(true);
+        mockedCa.setCaCertGeneration(1);
 
         Map<String, CertAndKey> initialCerts = new HashMap<>();
         initialCerts.put("pod0", new CertAndKey("old-key".getBytes(), "old-cert".getBytes()));
@@ -95,16 +95,19 @@ public class ClusterCaRenewalTest {
         assertThat(new String(newCerts.get("pod0").key()), is("new-key0"));
         assertThat(new String(newCerts.get("pod0").keyStore()), is("new-keystore0"));
         assertThat(newCerts.get("pod0").storePassword(), is("new-password0"));
+        assertThat(newCerts.get("pod0").caCertGeneration(), is(1));
 
         assertThat(new String(newCerts.get("pod1").cert()), is("new-cert1"));
         assertThat(new String(newCerts.get("pod1").key()), is("new-key1"));
         assertThat(new String(newCerts.get("pod1").keyStore()), is("new-keystore1"));
         assertThat(newCerts.get("pod1").storePassword(), is("new-password1"));
+        assertThat(newCerts.get("pod1").caCertGeneration(), is(1));
 
         assertThat(new String(newCerts.get("pod2").cert()), is("new-cert2"));
         assertThat(new String(newCerts.get("pod2").key()), is("new-key2"));
         assertThat(new String(newCerts.get("pod2").keyStore()), is("new-keystore2"));
         assertThat(newCerts.get("pod2").storePassword(), is("new-password2"));
+        assertThat(newCerts.get("pod2").caCertGeneration(), is(1));
     }
 
     @Test
@@ -132,16 +135,22 @@ public class ClusterCaRenewalTest {
         assertThat(new String(newCerts.get("pod0").key()), is("new-key0"));
         assertThat(new String(newCerts.get("pod0").keyStore()), is("new-keystore0"));
         assertThat(newCerts.get("pod0").storePassword(), is("new-password0"));
+        assertThat(newCerts.get("pod0").caCertGeneration(), is(0));
+
 
         assertThat(new String(newCerts.get("pod1").cert()), is("new-cert1"));
         assertThat(new String(newCerts.get("pod1").key()), is("new-key1"));
         assertThat(new String(newCerts.get("pod1").keyStore()), is("new-keystore1"));
         assertThat(newCerts.get("pod1").storePassword(), is("new-password1"));
+        assertThat(newCerts.get("pod1").caCertGeneration(), is(0));
+
 
         assertThat(new String(newCerts.get("pod2").cert()), is("new-cert2"));
         assertThat(new String(newCerts.get("pod2").key()), is("new-key2"));
         assertThat(new String(newCerts.get("pod2").keyStore()), is("new-keystore2"));
         assertThat(newCerts.get("pod2").storePassword(), is("new-password2"));
+        assertThat(newCerts.get("pod2").caCertGeneration(), is(0));
+
     }
 
     @Test
@@ -167,12 +176,18 @@ public class ClusterCaRenewalTest {
 
         assertThat(new String(newCerts.get("pod0").cert()), is("old-cert"));
         assertThat(new String(newCerts.get("pod0").key()), is("old-key"));
+        assertThat(newCerts.get("pod0").caCertGeneration(), is(0));
+
 
         assertThat(new String(newCerts.get("pod1").cert()), is("old-cert"));
         assertThat(new String(newCerts.get("pod1").key()), is("old-key"));
+        assertThat(newCerts.get("pod1").caCertGeneration(), is(0));
+
 
         assertThat(new String(newCerts.get("pod2").cert()), is("old-cert"));
         assertThat(new String(newCerts.get("pod2").key()), is("old-key"));
+        assertThat(newCerts.get("pod1").caCertGeneration(), is(0));
+
     }
 
     @Test
@@ -206,7 +221,7 @@ public class ClusterCaRenewalTest {
     }
 
     @Test
-    public void noRenewal() throws IOException {
+    public void noRenewalOfCertificates() throws IOException {
         MockedClusterCa mockedCa = new MockedClusterCa(Reconciliation.DUMMY_RECONCILIATION, null, null, null, null, null, 2, 1, true, null);
 
         Map<String, CertAndKey> initialCerts = new HashMap<>();
@@ -234,7 +249,7 @@ public class ClusterCaRenewalTest {
     }
 
     @Test
-    public void noRenewalWithScaleUp() throws IOException {
+    public void nosRenewalOfCertificatesWithScaleUp() throws IOException {
         MockedClusterCa mockedCa = new MockedClusterCa(Reconciliation.DUMMY_RECONCILIATION, null, null, null, null, null, 2, 1, true, null);
 
         Map<String, CertAndKey> initialCerts = new HashMap<>();
@@ -260,7 +275,7 @@ public class ClusterCaRenewalTest {
     }
 
     @Test
-    public void noRenewalWithScaleUpInTheMiddle() throws IOException {
+    public void noRenewalOfCertificatesWithScaleUpInTheMiddle() throws IOException {
         MockedClusterCa mockedCa = new MockedClusterCa(Reconciliation.DUMMY_RECONCILIATION, null, null, null, null, null, 2, 1, true, null);
 
         Map<String, CertAndKey> initialCerts = new HashMap<>();
@@ -287,7 +302,7 @@ public class ClusterCaRenewalTest {
     }
 
     @Test
-    public void noRenewalScaleDown() throws IOException {
+    public void noRenewalOfCertificatesScaleDown() throws IOException {
         MockedClusterCa mockedCa = new MockedClusterCa(Reconciliation.DUMMY_RECONCILIATION, null, null, null, null, null, 2, 1, true, null);
 
         Map<String, CertAndKey> initialCerts = new HashMap<>();
@@ -313,7 +328,7 @@ public class ClusterCaRenewalTest {
     }
 
     @Test
-    public void changedSubject() throws IOException {
+    public void changedSubjectOfCertificates() throws IOException {
         MockedClusterCa mockedCa = new MockedClusterCa(Reconciliation.DUMMY_RECONCILIATION, null, null, null, null, null, 2, 1, true, null);
         mockedCa.setCertExpiring(true);
 
@@ -385,9 +400,102 @@ public class ClusterCaRenewalTest {
         assertThat(new String(newCerts.get("pod2").cert()), is("new-cert2CA-CERT"));
     }
 
+    @Test
+    public void testRenewalOfDeploymentCertificateWithNullCertAndKey() {
+        MockedClusterCa mockedCa = new MockedClusterCa(Reconciliation.DUMMY_RECONCILIATION, null, null, null, null, null, 2, 1, true, null);
+
+        CertAndKey newCert = mockedCa.maybeCopyOrGenerateCert(
+                Reconciliation.DUMMY_RECONCILIATION,
+                "deployment",
+                null,
+                true
+        );
+
+        assertThat(new String(newCert.cert()), is("new-cert0"));
+        assertThat(new String(newCert.key()), is("new-key0"));
+        assertThat(newCert.caCertGeneration(), is(0));
+    }
+
+    @Test
+    public void testRenewalOfDeploymentCertificateWithRenewingCa() {
+        MockedClusterCa mockedCa = new MockedClusterCa(Reconciliation.DUMMY_RECONCILIATION, null, null, null, null, null, 2, 1, true, null);
+        mockedCa.setCaCertGeneration(1);
+
+        CertAndKey initialCert = new CertAndKey("old-key".getBytes(), "old-cert".getBytes());
+
+        CertAndKey newCert = mockedCa.maybeCopyOrGenerateCert(
+                Reconciliation.DUMMY_RECONCILIATION,
+                "deployment",
+                initialCert,
+                true
+        );
+
+        assertThat(new String(newCert.cert()), is("new-cert0"));
+        assertThat(new String(newCert.key()), is("new-key0"));
+        assertThat(newCert.caCertGeneration(), is(1));
+    }
+
+    @Test
+    public void testRenewalOfDeploymentCertificateDelayedRenewal() {
+        MockedClusterCa mockedCa = new MockedClusterCa(Reconciliation.DUMMY_RECONCILIATION, null, null, null, null, null, 2, 1, true, null);
+        mockedCa.setCertExpiring(true);
+
+        CertAndKey initialCert = new CertAndKey("old-key".getBytes(), "old-cert".getBytes());
+
+        CertAndKey newCert = mockedCa.maybeCopyOrGenerateCert(
+                Reconciliation.DUMMY_RECONCILIATION,
+                "deployment",
+                initialCert,
+                true
+        );
+
+        assertThat(new String(newCert.cert()), is("new-cert0"));
+        assertThat(new String(newCert.key()), is("new-key0"));
+        assertThat(newCert.caCertGeneration(), is(0));
+    }
+
+    @Test
+    public void testRenewalOfDeploymentCertificateDelayedRenewalOutsideOfMaintenanceWindow() throws IOException {
+        MockedClusterCa mockedCa = new MockedClusterCa(Reconciliation.DUMMY_RECONCILIATION, null, null, null, null, null, 2, 1, true, null);
+        mockedCa.setCertExpiring(true);
+
+        CertAndKey initialCert = new CertAndKey("old-key".getBytes(), "old-cert".getBytes());
+
+        CertAndKey newCert = mockedCa.maybeCopyOrGenerateCert(
+                Reconciliation.DUMMY_RECONCILIATION,
+                "deployment",
+                initialCert,
+                false
+        );
+
+        assertThat(new String(newCert.cert()), is("old-cert"));
+        assertThat(new String(newCert.key()), is("old-key"));
+        assertThat(newCert.caCertGeneration(), is(0));
+    }
+
+    @Test
+    public void testHandlingOldSecretWithPKCS12Files() throws IOException {
+        MockedClusterCa mockedCa = new MockedClusterCa(Reconciliation.DUMMY_RECONCILIATION, null, null, null, null, null, 2, 1, true, null);
+
+        CertAndKey initialCert = new CertAndKey("old-key".getBytes(), "old-cert".getBytes(), null, "old-keystore".getBytes(), "old-password");
+
+        CertAndKey newCert = mockedCa.maybeCopyOrGenerateCert(
+                Reconciliation.DUMMY_RECONCILIATION,
+                "deployment",
+                initialCert,
+                true
+        );
+
+        assertThat(new String(newCert.cert()), is("old-cert"));
+        assertThat(new String(newCert.key()), is("old-key"));
+        assertThat(new String(newCert.keyStore()), is("old-keystore"));
+        assertThat(newCert.storePassword(), is("old-password"));
+        assertThat(newCert.caCertGeneration(), is(0));
+    }
+
     public static class MockedClusterCa extends ClusterCa {
         private final AtomicInteger invocationCount = new AtomicInteger(0);
-        private boolean isCertRenewed;
+        private int caCertGeneration;
         private boolean isCertExpiring;
 
         public MockedClusterCa(Reconciliation reconciliation, CertManager certManager, PasswordGenerator passwordGenerator, String commonName, Secret caCertSecret, Secret caKeySecret, int validityDays, int renewalDays, boolean generateCa, CertificateExpirationPolicy policy) {
@@ -397,11 +505,6 @@ public class ClusterCaRenewalTest {
         @Override
         public byte[] currentCaCertBytes() {
             return "CA-CERT".getBytes();
-        }
-
-        @Override
-        public boolean certRenewed() {
-            return isCertRenewed;
         }
 
         @Override
@@ -433,7 +536,8 @@ public class ClusterCaRenewalTest {
                     cert,
                     ("new-truststore" + index).getBytes(),
                     ("new-keystore" + index).getBytes(),
-                    "new-password" + index
+                    "new-password" + index,
+                    caCertGeneration
             );
         }
 
@@ -448,13 +552,18 @@ public class ClusterCaRenewalTest {
                     ("new-keystore" + index).getBytes(),
                     "new-password" + index);
         }
-        
-        public void setCertRenewed(boolean certRenewed) {
-            isCertRenewed = certRenewed;
+
+        @Override
+        public int caCertGeneration() {
+            return caCertGeneration;
         }
 
         public void setCertExpiring(boolean certExpiring) {
             isCertExpiring = certExpiring;
+        }
+
+        public void setCaCertGeneration(int value) {
+            caCertGeneration = value;
         }
     }
 }
