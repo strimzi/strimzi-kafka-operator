@@ -52,7 +52,6 @@ import io.strimzi.api.kafka.model.common.template.PodTemplate;
 import io.strimzi.api.kafka.model.common.template.ResourceTemplate;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaAuthorization;
-import io.strimzi.api.kafka.model.kafka.KafkaAuthorizationKeycloak;
 import io.strimzi.api.kafka.model.kafka.KafkaClusterSpec;
 import io.strimzi.api.kafka.model.kafka.KafkaClusterTemplate;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
@@ -145,7 +144,6 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
     protected static final String ENV_VAR_KAFKA_INIT_EXTERNAL_ADDRESS = "EXTERNAL_ADDRESS";
     private static final String ENV_VAR_KAFKA_JMX_EXPORTER_ENABLED = "KAFKA_JMX_EXPORTER_ENABLED";
     private static final String ENV_VAR_KAFKA_CLUSTER_NAME = "KAFKA_CLUSTER_NAME";
-    private static final String ENV_VAR_STRIMZI_KEYCLOAK_AUTHZ_TRUSTED_CERTS = "STRIMZI_KEYCLOAK_AUTHZ_TRUSTED_CERTS";
 
     // For port names in services, a 'tcp-' prefix is added to support Istio protocol selection
     // This helps Istio to avoid using a wildcard listener and instead present IP:PORT pairs which effects
@@ -282,7 +280,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
      *
      * @return Kafka cluster instance
      */
-    @SuppressWarnings({"NPathComplexity", "deprecation"}) // Keycloak Authorization is deprecated; resource configuration in Kafka CR (.spec.kafka.resources) is deprecated
+    @SuppressWarnings({"NPathComplexity", "deprecation"}) // Resource configuration in Kafka CR (.spec.kafka.resources) is deprecated
     public static KafkaCluster fromCrd(Reconciliation reconciliation,
                                        Kafka kafka,
                                        List<KafkaPool> pools,
@@ -364,19 +362,6 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
         }
         ListenersValidator.validate(reconciliation, result.brokerNodes(), listeners);
         result.listeners = listeners;
-
-        // Set authorization
-        if (kafkaClusterSpec.getAuthorization() instanceof KafkaAuthorizationKeycloak) {
-            if (!ListenersUtils.hasListenerWithOAuth(listeners)) {
-                throw new InvalidResourceException("You cannot configure Keycloak Authorization without any listener with OAuth based authentication");
-            } else {
-                KafkaAuthorizationKeycloak authorizationKeycloak = (KafkaAuthorizationKeycloak) kafkaClusterSpec.getAuthorization();
-                if (authorizationKeycloak.getClientId() == null || authorizationKeycloak.getTokenEndpointUri() == null) {
-                    LOGGER.errorCr(reconciliation, "Keycloak Authorization: Token Endpoint URI and clientId are both required");
-                    throw new InvalidResourceException("Keycloak Authorization: Token Endpoint URI and clientId are both required");
-                }
-            }
-        }
 
         result.authorization = kafkaClusterSpec.getAuthorization();
 
@@ -1391,10 +1376,6 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
             }
         }
 
-        if (authorization instanceof KafkaAuthorizationKeycloak keycloakAuthz) {
-            CertUtils.createTrustedCertificatesVolumes(volumeList, keycloakAuthz.getTlsTrustedCertificates(), isOpenShift, "authz-keycloak");
-        }
-
         TemplateUtils.addAdditionalVolumes(templatePod, volumeList);
 
         return volumeList;
@@ -1457,10 +1438,6 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
                     volumeMountList.addAll(AuthenticationUtils.configureGenericSecretVolumeMounts("custom-listener-" + identifier, custom.getSecrets(), CUSTOM_AUTHN_SECRETS_VOLUME_MOUNT + "/custom-listener-" + identifier));
                 }
             }
-        }
-
-        if (authorization instanceof KafkaAuthorizationKeycloak keycloakAuthz) {
-            CertUtils.createTrustedCertificatesVolumeMounts(volumeMountList, keycloakAuthz.getTlsTrustedCertificates(), TRUSTED_CERTS_BASE_VOLUME_MOUNT + "/authz-keycloak-certs/", "authz-keycloak");
         }
 
         TemplateUtils.addAdditionalVolumeMounts(volumeMountList, containerTemplate);
@@ -1574,12 +1551,6 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
                     }
                 }
             }
-        }
-
-        if (authorization instanceof KafkaAuthorizationKeycloak keycloakAuthz
-                && keycloakAuthz.getTlsTrustedCertificates() != null
-                && !keycloakAuthz.getTlsTrustedCertificates().isEmpty()) {
-            varList.add(ContainerUtils.createEnvVar(ENV_VAR_STRIMZI_KEYCLOAK_AUTHZ_TRUSTED_CERTS, CertUtils.trustedCertsEnvVar(keycloakAuthz.getTlsTrustedCertificates())));
         }
 
         varList.addAll(jmx.envVars());

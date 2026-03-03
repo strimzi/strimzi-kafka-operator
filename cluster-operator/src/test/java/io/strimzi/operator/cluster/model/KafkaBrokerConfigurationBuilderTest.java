@@ -11,7 +11,6 @@ import io.strimzi.api.kafka.model.common.metrics.StrimziMetricsReporterBuilder;
 import io.strimzi.api.kafka.model.kafka.EphemeralStorageBuilder;
 import io.strimzi.api.kafka.model.kafka.JbodStorageBuilder;
 import io.strimzi.api.kafka.model.kafka.KafkaAuthorization;
-import io.strimzi.api.kafka.model.kafka.KafkaAuthorizationKeycloakBuilder;
 import io.strimzi.api.kafka.model.kafka.KafkaAuthorizationSimpleBuilder;
 import io.strimzi.api.kafka.model.kafka.KafkaClusterSpecBuilder;
 import io.strimzi.api.kafka.model.kafka.PersistentClaimStorageBuilder;
@@ -314,91 +313,6 @@ public class KafkaBrokerConfigurationBuilderTest {
         assertThat(configuration, isEquivalent("node.id=2",
                 "authorizer.class.name=org.apache.kafka.metadata.authorizer.StandardAuthorizer",
                 "super.users=User:CN=my-cluster-kafka,O=io.strimzi;User:CN=my-cluster-entity-topic-operator,O=io.strimzi;User:CN=my-cluster-entity-user-operator,O=io.strimzi;User:CN=my-cluster-kafka-exporter,O=io.strimzi;User:CN=my-cluster-cruise-control,O=io.strimzi;User:CN=cluster-operator,O=io.strimzi;User:jakub;User:CN=kuba"));
-    }
-
-    @Test
-    public void testKeycloakAuthorization() {
-        CertSecretSource cert = new CertSecretSourceBuilder()
-                .withSecretName("my-secret")
-                .withCertificate("my.crt")
-                .build();
-
-        KafkaAuthorization auth = new KafkaAuthorizationKeycloakBuilder()
-                .withTokenEndpointUri("http://token-endpoint-uri")
-                .withClientId("my-client-id")
-                .withDelegateToKafkaAcls(false)
-                .withGrantsRefreshPeriodSeconds(120)
-                .withGrantsRefreshPoolSize(10)
-                .withGrantsMaxIdleTimeSeconds(600)
-                .withGrantsGcPeriodSeconds(120)
-                .withGrantsAlwaysLatest(true)
-                .withTlsTrustedCertificates(cert)
-                .withDisableTlsHostnameVerification(true)
-                .addToSuperUsers("giada", "CN=paccu")
-                .withConnectTimeoutSeconds(30)
-                .withReadTimeoutSeconds(10)
-                .withHttpRetries(2)
-                .withEnableMetrics(true)
-                .withIncludeAcceptHeader(false)
-                .build();
-
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
-                .withAuthorization("my-cluster", auth)
-                .build();
-
-        assertThat(configuration, isEquivalent("node.id=2",
-                "authorizer.class.name=io.strimzi.kafka.oauth.server.authorizer.KeycloakAuthorizer",
-                "strimzi.authorization.token.endpoint.uri=http://token-endpoint-uri",
-                "strimzi.authorization.client.id=my-client-id",
-                "strimzi.authorization.delegate.to.kafka.acl=false",
-                "strimzi.authorization.kafka.cluster.name=my-cluster",
-                "strimzi.authorization.ssl.truststore.location=/tmp/kafka/authz-keycloak.truststore.p12",
-                "strimzi.authorization.ssl.truststore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "strimzi.authorization.ssl.truststore.type=PKCS12",
-                "strimzi.authorization.ssl.endpoint.identification.algorithm=",
-                "strimzi.authorization.grants.refresh.period.seconds=120",
-                "strimzi.authorization.grants.refresh.pool.size=10",
-                "strimzi.authorization.grants.max.idle.time.seconds=600",
-                "strimzi.authorization.grants.gc.period.seconds=120",
-                "strimzi.authorization.reuse.grants=false",
-                "strimzi.authorization.connect.timeout.seconds=30",
-                "strimzi.authorization.read.timeout.seconds=10",
-                "strimzi.authorization.http.retries=2",
-                "strimzi.authorization.enable.metrics=true",
-                "strimzi.authorization.include.accept.header=false",
-                "super.users=User:CN=my-cluster-kafka,O=io.strimzi;User:CN=my-cluster-entity-topic-operator,O=io.strimzi;User:CN=my-cluster-entity-user-operator,O=io.strimzi;User:CN=my-cluster-kafka-exporter,O=io.strimzi;User:CN=my-cluster-cruise-control,O=io.strimzi;User:CN=cluster-operator,O=io.strimzi;User:giada;User:CN=paccu"));
-    }
-
-    @Test
-    public void testKeycloakAuthorizationWithDefaults() {
-        CertSecretSource cert = new CertSecretSourceBuilder()
-                .withSecretName("my-secret")
-                .withCertificate("my.crt")
-                .build();
-
-        KafkaAuthorization auth = new KafkaAuthorizationKeycloakBuilder()
-                .withTokenEndpointUri("http://token-endpoint-uri")
-                .withClientId("my-client-id")
-                .withTlsTrustedCertificates(cert)
-                .withReadTimeoutSeconds(30)
-                .build();
-
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
-                .withAuthorization("my-cluster", auth)
-                .build();
-
-        assertThat(configuration, isEquivalent("node.id=2",
-                "authorizer.class.name=io.strimzi.kafka.oauth.server.authorizer.KeycloakAuthorizer",
-                "strimzi.authorization.token.endpoint.uri=http://token-endpoint-uri",
-                "strimzi.authorization.client.id=my-client-id",
-                "strimzi.authorization.delegate.to.kafka.acl=false",
-                "strimzi.authorization.kafka.cluster.name=my-cluster",
-                "strimzi.authorization.ssl.truststore.location=/tmp/kafka/authz-keycloak.truststore.p12",
-                "strimzi.authorization.ssl.truststore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "strimzi.authorization.ssl.truststore.type=PKCS12",
-                "strimzi.authorization.ssl.endpoint.identification.algorithm=HTTPS",
-                "strimzi.authorization.read.timeout.seconds=30",
-                "super.users=User:CN=my-cluster-kafka,O=io.strimzi;User:CN=my-cluster-entity-topic-operator,O=io.strimzi;User:CN=my-cluster-entity-user-operator,O=io.strimzi;User:CN=my-cluster-kafka-exporter,O=io.strimzi;User:CN=my-cluster-cruise-control,O=io.strimzi;User:CN=cluster-operator,O=io.strimzi"));
     }
 
     @Test

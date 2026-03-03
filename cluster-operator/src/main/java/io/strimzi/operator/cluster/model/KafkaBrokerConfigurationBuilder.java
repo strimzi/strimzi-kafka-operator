@@ -9,7 +9,6 @@ import io.strimzi.api.kafka.model.common.CertAndKeySecretSource;
 import io.strimzi.api.kafka.model.common.Rack;
 import io.strimzi.api.kafka.model.kafka.KafkaAuthorization;
 import io.strimzi.api.kafka.model.kafka.KafkaAuthorizationCustom;
-import io.strimzi.api.kafka.model.kafka.KafkaAuthorizationKeycloak;
 import io.strimzi.api.kafka.model.kafka.KafkaAuthorizationSimple;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlResources;
@@ -635,7 +634,7 @@ public class KafkaBrokerConfigurationBuilder {
             superUsers.add(String.format("User:CN=%s,O=io.strimzi", "cluster-operator"));
 
             printSectionHeader("Authorization");
-            configureAuthorization(clusterName, superUsers, authorization);
+            configureAuthorization(superUsers, authorization);
             writer.println("super.users=" + String.join(";", superUsers));
             writer.println();
         }
@@ -646,16 +645,12 @@ public class KafkaBrokerConfigurationBuilder {
     /**
      * Configures authorization for the Kafka brokers. This method is used only internally.
      *
-     * @param clusterName       Name of the cluster
      * @param superUsers        Super-users list who have all the rights on the cluster
      * @param authorization     The authorization configuration from the Kafka CR
      */
-    @SuppressWarnings("deprecation") // Keycloak Authorization is deprecated
-    private void configureAuthorization(String clusterName, List<String> superUsers, KafkaAuthorization authorization) {
+    private void configureAuthorization(List<String> superUsers, KafkaAuthorization authorization) {
         if (authorization instanceof KafkaAuthorizationSimple simpleAuthz) {
             configureSimpleAuthorization(simpleAuthz, superUsers);
-        } else if (authorization instanceof KafkaAuthorizationKeycloak keycloakAuthz) {
-            configureKeycloakAuthorization(clusterName, keycloakAuthz, superUsers);
         } else if (authorization instanceof KafkaAuthorizationCustom customAuthz) {
             configureCustomAuthorization(customAuthz, superUsers);
         }
@@ -669,52 +664,6 @@ public class KafkaBrokerConfigurationBuilder {
      */
     private void configureSimpleAuthorization(KafkaAuthorizationSimple authorization, List<String> superUsers) {
         writer.println("authorizer.class.name=" + KafkaAuthorizationSimple.KRAFT_AUTHORIZER_CLASS_NAME);
-
-        // User configured super-users
-        if (authorization.getSuperUsers() != null && !authorization.getSuperUsers().isEmpty()) {
-            superUsers.addAll(authorization.getSuperUsers().stream().map(e -> String.format("User:%s", e)).toList());
-        }
-    }
-
-    /**
-     * Configures Keycloak authorization
-     *
-     * @param clusterName       Name of the cluster
-     * @param authorization     Custom authorization configuration
-     * @param superUsers        Super-users list who have all the rights on the cluster
-     */
-    @SuppressWarnings("deprecation") // Keycloak Authorization is deprecated
-    private void configureKeycloakAuthorization(String clusterName, KafkaAuthorizationKeycloak authorization, List<String> superUsers) {
-        writer.println("authorizer.class.name=" + KafkaAuthorizationKeycloak.AUTHORIZER_CLASS_NAME);
-        writer.println("strimzi.authorization.token.endpoint.uri=" + authorization.getTokenEndpointUri());
-        writer.println("strimzi.authorization.client.id=" + authorization.getClientId());
-        writer.println("strimzi.authorization.delegate.to.kafka.acl=" + authorization.isDelegateToKafkaAcls());
-        addOptionIfNotNull(writer, "strimzi.authorization.grants.refresh.period.seconds", authorization.getGrantsRefreshPeriodSeconds());
-        addOptionIfNotNull(writer, "strimzi.authorization.grants.refresh.pool.size", authorization.getGrantsRefreshPoolSize());
-        addOptionIfNotNull(writer, "strimzi.authorization.grants.max.idle.time.seconds", authorization.getGrantsMaxIdleTimeSeconds());
-        addOptionIfNotNull(writer, "strimzi.authorization.grants.gc.period.seconds", authorization.getGrantsGcPeriodSeconds());
-        addOptionIfNotNull(writer, "strimzi.authorization.connect.timeout.seconds", authorization.getConnectTimeoutSeconds());
-        addOptionIfNotNull(writer, "strimzi.authorization.read.timeout.seconds", authorization.getReadTimeoutSeconds());
-        addOptionIfNotNull(writer, "strimzi.authorization.http.retries", authorization.getHttpRetries());
-        if (authorization.isGrantsAlwaysLatest()) {
-            writer.println("strimzi.authorization.reuse.grants=false");
-        }
-        if (authorization.isEnableMetrics()) {
-            writer.println("strimzi.authorization.enable.metrics=true");
-        }
-        if (!authorization.isIncludeAcceptHeader()) {
-            writer.println("strimzi.authorization.include.accept.header=false");
-        }
-
-        writer.println("strimzi.authorization.kafka.cluster.name=" + clusterName);
-
-        if (authorization.getTlsTrustedCertificates() != null && !authorization.getTlsTrustedCertificates().isEmpty())    {
-            writer.println("strimzi.authorization.ssl.truststore.location=/tmp/kafka/authz-keycloak.truststore.p12");
-            writer.println("strimzi.authorization.ssl.truststore.password=" + PLACEHOLDER_CERT_STORE_PASSWORD_CONFIG_PROVIDER_ENV_VAR);
-            writer.println("strimzi.authorization.ssl.truststore.type=PKCS12");
-            String endpointIdentificationAlgorithm = authorization.isDisableTlsHostnameVerification() ? "" : "HTTPS";
-            writer.println("strimzi.authorization.ssl.endpoint.identification.algorithm=" + endpointIdentificationAlgorithm);
-        }
 
         // User configured super-users
         if (authorization.getSuperUsers() != null && !authorization.getSuperUsers().isEmpty()) {

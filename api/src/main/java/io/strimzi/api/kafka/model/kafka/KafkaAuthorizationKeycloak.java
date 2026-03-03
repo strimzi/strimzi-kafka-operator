@@ -40,8 +40,6 @@ import java.util.List;
 public class KafkaAuthorizationKeycloak extends KafkaAuthorization {
     public static final String TYPE_KEYCLOAK = "keycloak";
 
-    public static final String AUTHORIZER_CLASS_NAME = "io.strimzi.kafka.oauth.server.authorizer.KeycloakAuthorizer";
-
     private String clientId;
     private String tokenEndpointUri;
     private List<CertSecretSource> tlsTrustedCertificates;
