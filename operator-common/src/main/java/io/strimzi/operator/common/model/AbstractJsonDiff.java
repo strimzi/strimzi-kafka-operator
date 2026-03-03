@@ -26,19 +26,23 @@ public abstract class AbstractJsonDiff {
     public AbstractJsonDiff() { }
 
     protected static JsonNode lookupPath(JsonNode source, String path) {
-        JsonNode s = source;
-        for (String component : path.substring(1).split("/")) {
-            if (s.isArray()) {
-                try {
-                    s = s.path(Integer.parseInt(component));
-                } catch (NumberFormatException e) {
-                    return MissingNode.getInstance();
+        if (path.isEmpty() || "/".equals(path)) {
+            return source;
+        } else {
+            JsonNode s = source;
+            for (String component : path.substring(1).split("/")) {
+                if (s.isArray()) {
+                    try {
+                        s = s.path(Integer.parseInt(component));
+                    } catch (NumberFormatException e) {
+                        return MissingNode.getInstance();
+                    }
+                } else {
+                    s = s.path(component);
                 }
-            } else {
-                s = s.path(component);
             }
+            return s;
         }
-        return s;
     }
 
     /**
