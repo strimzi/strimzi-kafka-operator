@@ -135,7 +135,6 @@ public class KafkaPool extends AbstractModel {
      *
      * @return Kafka pool instance
      */
-    @SuppressWarnings("deprecation") // Resource configuration in Kafka CR (.spec.kafka.resources) is deprecated
     public static KafkaPool fromCrd(
             Reconciliation reconciliation,
             Kafka kafka,
@@ -152,7 +151,7 @@ public class KafkaPool extends AbstractModel {
 
         result.gcLoggingEnabled = isGcLoggingEnabled(kafka, pool);
         result.jvmOptions = pool.getSpec().getJvmOptions() != null ? pool.getSpec().getJvmOptions() : kafka.getSpec().getKafka().getJvmOptions();
-        result.resources = pool.getSpec().getResources() != null ? pool.getSpec().getResources() : kafka.getSpec().getKafka().getResources();
+        result.resources = pool.getSpec().getResources();
         result.processRoles = new HashSet<>(pool.getSpec().getRoles());
 
         if (oldStorage != null) {

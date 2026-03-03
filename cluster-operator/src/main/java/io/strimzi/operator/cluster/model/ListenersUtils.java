@@ -11,7 +11,6 @@ import io.strimzi.api.kafka.model.common.template.IpFamilyPolicy;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListener;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerConfiguration;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerConfigurationBroker;
-import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthenticationCustom;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthenticationOAuth;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.api.kafka.model.kafka.listener.NodeAddressType;
@@ -45,20 +44,6 @@ public class ListenersUtils {
             return false;
 
         return KafkaListenerAuthenticationOAuth.TYPE_OAUTH.equals(listener.getAuth().getType());
-    }
-
-    /**
-     * Checks whether the listener is using Custom authentication
-     *
-     * @param listener  Listener to check
-     *
-     * @return  True if the listener uses Custom authentication. False otherwise.
-     */
-    public static boolean isListenerWithCustomAuth(GenericKafkaListener listener) {
-        if (listener.getAuth() == null || listener.getAuth().getType() == null)
-            return false;
-
-        return KafkaListenerAuthenticationCustom.TYPE_CUSTOM.equals(listener.getAuth().getType());
     }
 
     /**

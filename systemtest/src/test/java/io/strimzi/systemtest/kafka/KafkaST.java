@@ -186,7 +186,6 @@ class KafkaST extends AbstractST {
         Kafka kafka = KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getClusterName(), 1)
             .editSpec()
                 .editKafka()
-                    .withResources(brokersResReq)
                     .withJvmOptions(brokerJvmOptions)
                 .endKafka()
                 .withNewEntityOperator()

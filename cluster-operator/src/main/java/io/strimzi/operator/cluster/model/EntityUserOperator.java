@@ -32,7 +32,6 @@ import io.strimzi.operator.common.Reconciliation;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Represents the User Operator deployment
@@ -130,7 +129,7 @@ public class EntityUserOperator extends AbstractModel implements SupportsLogging
             result.image = image;
 
             result.watchedNamespace = userOperatorSpec.getWatchedNamespace() != null ? userOperatorSpec.getWatchedNamespace() : kafkaAssembly.getMetadata().getNamespace();
-            result.reconciliationIntervalMs = configuredReconciliationIntervalMs(userOperatorSpec);
+            result.reconciliationIntervalMs = userOperatorSpec.getReconciliationIntervalMs();
             result.secretPrefix = userOperatorSpec.getSecretPrefix() == null ? EntityUserOperatorSpec.DEFAULT_SECRET_PREFIX : userOperatorSpec.getSecretPrefix();
             result.logging = new LoggingModel(userOperatorSpec, result.getClass().getSimpleName());
             result.gcLoggingEnabled = userOperatorSpec.getJvmOptions() == null ? JvmOptions.DEFAULT_GC_LOGGING_ENABLED : userOperatorSpec.getJvmOptions().isGcLoggingEnabled();
@@ -168,13 +167,6 @@ public class EntityUserOperator extends AbstractModel implements SupportsLogging
         } else {
             return null;
         }
-    }
-
-    @SuppressWarnings("deprecation")
-    private static Long configuredReconciliationIntervalMs(EntityUserOperatorSpec spec) {
-        // if they are both set reconciliationIntervalMs takes precedence
-        return (spec.getReconciliationIntervalMs() != null) ? spec.getReconciliationIntervalMs()
-            : (spec.getReconciliationIntervalSeconds() != null) ? TimeUnit.SECONDS.toMillis(spec.getReconciliationIntervalSeconds()) : null;
     }
 
     protected Container createContainer(ImagePullPolicy imagePullPolicy) {
