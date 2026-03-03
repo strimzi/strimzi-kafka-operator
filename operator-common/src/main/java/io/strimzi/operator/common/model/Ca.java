@@ -546,17 +546,13 @@ public abstract class Ca {
      * @return  True when the certificate should be renewed. False otherwise.
      */
     public boolean isExpiring(Secret secret, String certKey)  {
-        boolean isExpiring = false;
-
         try {
             X509Certificate currentCert = cert(secret, certKey);
-            isExpiring = certNeedsRenewal(currentCert);
+            return certNeedsRenewal(currentCert);
         } catch (RuntimeException e) {
-            // TODO: We should mock the certificates properly so that this doesn't fail in tests (not now => long term :-o)
             LOGGER.debugCr(reconciliation, "Failed to parse existing certificate", e);
+            throw new RuntimeException(e);
         }
-
-        return isExpiring;
     }
 
     /**
@@ -842,6 +838,14 @@ public abstract class Ca {
         return this.caCertsRemoved;
     }
 
+    /**
+     * True if the last call to {@link #createRenewOrReplace(boolean, boolean, boolean)}
+     * resulted in a renewed CA certificate.
+     * @return Whether the certificate was renewed.
+     */
+    public boolean certRenewed() {
+        return renewalType.equals(RenewalType.RENEW_CERT) || renewalType.equals(RenewalType.REPLACE_KEY);
+    }
 
     /**
      * True if the last call to {@link #createRenewOrReplace(boolean, boolean, boolean)}

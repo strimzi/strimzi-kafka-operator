@@ -141,7 +141,7 @@ public class ClusterCa extends Ca {
             reconciliation,
             Set.of(ccNode),
             subjectFn,
-            Map.of(CruiseControl.COMPONENT_TYPE, existingCertificate),
+            existingCertificate == null ? Map.of() : Map.of(CruiseControl.COMPONENT_TYPE, existingCertificate),
             isMaintenanceTimeWindowsSatisfied,
             false
         );
@@ -265,16 +265,15 @@ public class ClusterCa extends Ca {
                     .map(existing -> existing.get(podName))
                     .orElse(null);
 
-            if (certAndKey == null || (certAndKey.caCertGeneration() != caCertGeneration())) {
-                // A certificate for this node does not exist or the CA got renewed, so we will generate a new certificate
-                LOGGER.debugCr(reconciliation, "Generating new certificate for node {}", node);
-                CertAndKey k = generateSignedCert(subject, brokerCsrFile, brokerKeyFile, brokerCertFile, brokerKeyStoreFile, includeCaChain);
-                certs.put(podName, k);
+            List<String> reasons = new ArrayList<>();
+
+            if (certAndKey == null) {
+                reasons.add("certificate doesn't exist yet for pod");
+            } else if (hasCaCertGenerationChanged(certAndKey.caCertGeneration(), podName)) {
+                reasons.add("certificate for pod has old cert generation");
             } else {
                 // A certificate for this node already exists, so we will try to reuse it
-                LOGGER.debugCr(reconciliation, "Certificate for node {} already exists", node);
-
-                List<String> reasons = new ArrayList<>();
+                LOGGER.debugCr(reconciliation, "certificate for node {} already exists", node);
 
                 if (certSubjectChanged(certAndKey, subject, podName))   {
                     reasons.add("DNS names changed");
@@ -283,7 +282,7 @@ public class ClusterCa extends Ca {
                 if (isExpiring(certAndKey.cert()) && isMaintenanceTimeWindowsSatisfied)  {
                     reasons.add("certificate is expiring");
                 }
-                
+
                 // In Strimzi 0.48 we moved to using the PEM certificates directly instead of PKCS12 in the Kafka brokers.
                 // But that (unintentionally) removed the full CA chain from the server certificates. We added them back
                 // in Strimzi 0.50. But this logic is needed to actually roll out the updated Secrets with the full CA chain.
@@ -294,15 +293,15 @@ public class ClusterCa extends Ca {
                 if (includeCaChain && !includesCaChain(certAndKey.cert(), currentCaCertBytes())) {
                     reasons.add("CA chain added");
                 }
-                
-                if (!reasons.isEmpty())  {
-                    LOGGER.infoCr(reconciliation, "Certificate for pod {} need to be regenerated because: {}", podName, String.join(", ", reasons));
+            }
 
-                    CertAndKey newCertAndKey = generateSignedCert(subject, brokerCsrFile, brokerKeyFile, brokerCertFile, brokerKeyStoreFile, includeCaChain);
-                    certs.put(podName, newCertAndKey);
-                }   else {
-                    certs.put(podName, certAndKey);
-                }
+            if (!reasons.isEmpty())  {
+                LOGGER.infoCr(reconciliation, "Certificate for pod {} needs to be regenerated because: {}", podName, String.join(", ", reasons));
+
+                CertAndKey newCertAndKey = generateSignedCert(subject, brokerCsrFile, brokerKeyFile, brokerCertFile, brokerKeyStoreFile, includeCaChain);
+                certs.put(podName, newCertAndKey);
+            }   else {
+                certs.put(podName, certAndKey);
             }
         }
 
@@ -332,25 +331,21 @@ public class ClusterCa extends Ca {
             CertAndKey existingCertAndKey,
             boolean isMaintenanceTimeWindowsSatisfied
     ) {
-        boolean shouldBeRegenerated = false;
         List<String> reasons = new ArrayList<>();
 
         if (existingCertAndKey == null) {
             reasons.add("certificate doesn't exist yet");
-            shouldBeRegenerated = true;
-        } else if (existingCertAndKey.caCertGeneration() != caCertGeneration()) {
-            reasons.add("CA generation changed");
-            shouldBeRegenerated = true;
+        } else if (hasCaCertGenerationChanged(existingCertAndKey.caCertGeneration(), commonName)) {
+            reasons.add("certificate has old cert generation");
         } else {
             // Certificate exists and CA generation matches - check if renewal is needed
             if (isExpiring(existingCertAndKey.cert()) && isMaintenanceTimeWindowsSatisfied) {
                 reasons.add("certificate is expiring");
-                shouldBeRegenerated = true;
             }
         }
 
         CertAndKey certAndKey = null;
-        if (shouldBeRegenerated) {
+        if (!reasons.isEmpty()) {
             LOGGER.infoCr(reconciliation, "Certificate for component {} needs to be regenerated because: {}", commonName, String.join(", ", reasons));
 
             try {
@@ -366,6 +361,16 @@ public class ClusterCa extends Ca {
 
         return certAndKey;
     }
+
+    /**
+     * It checks if the current CA certificate generation is changed compared to the one
+     * that signed the CertAndKey.
+     */
+    private boolean hasCaCertGenerationChanged(int certAndKeyCaCertGeneration, String podName) {
+        LOGGER.debugOp("Pod {} generation anno = {}, current CA generation = {}", podName, certAndKeyCaCertGeneration, caCertGeneration);
+        return certAndKeyCaCertGeneration != caCertGeneration();
+    }
+
 
     /**
      * Checks if the CA chain is contained at the end of the certificate.

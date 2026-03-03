@@ -722,8 +722,8 @@ public class KafkaUserOperatorMockTest {
                         .withKubernetesManagedBy(KafkaUserModel.KAFKA_USER_OPERATOR_NAME)
                         .toMap()));
         assertThat(userSecret.getData().get("ca.crt"), is(MockCertManager.clientsCaCert()));
-        assertThat(Util.decodeFromBase64(userSecret.getData().get("user.crt")), is("expected-crt"));
-        assertThat(Util.decodeFromBase64(userSecret.getData().get("user.key")), is("expected-key"));
+        assertThat(userSecret.getData().get("user.crt"), is(MockCertManager.clientsCaCert()));
+        assertThat(userSecret.getData().get("user.key"), is(MockCertManager.clientsCaKey()));
 
         // Assert the mocked Kafka ACLs
         List<String> capturedAclNames = aclNameCaptor.getAllValues();
@@ -795,8 +795,8 @@ public class KafkaUserOperatorMockTest {
                         .withKubernetesManagedBy(KafkaUserModel.KAFKA_USER_OPERATOR_NAME)
                         .toMap()));
         assertThat(userSecret.getData().get("ca.crt"), is(MockCertManager.clientsCaCert()));
-        assertThat(Util.decodeFromBase64(userSecret.getData().get("user.crt")), is("expected-crt"));
-        assertThat(Util.decodeFromBase64(userSecret.getData().get("user.key")), is("expected-key"));
+        assertThat(userSecret.getData().get("user.crt"), is(MockCertManager.clientsCaCert()));
+        assertThat(userSecret.getData().get("user.key"), is(MockCertManager.clientsCaKey()));
 
         // Assert the mocked Kafka ACLs
         List<String> capturedAclNames = aclNameCaptor.getAllValues();
