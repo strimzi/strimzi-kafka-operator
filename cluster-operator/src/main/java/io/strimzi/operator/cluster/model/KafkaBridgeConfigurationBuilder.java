@@ -395,22 +395,14 @@ public class KafkaBridgeConfigurationBuilder {
      * Configures the JMX Prometheus Metrics Exporter.
      *
      * @param model JMX Prometheus Metrics Exporter configuration
-     * @param isLegacyMetricsConfigEnabled Flag which indicates whether the metrics are enabled or not in legacy mode.
      *
      * @return Returns the builder instance
      */
-    public KafkaBridgeConfigurationBuilder withJmxPrometheusExporter(
-            JmxPrometheusExporterModel model, boolean isLegacyMetricsConfigEnabled) {
-        if (model != null || isLegacyMetricsConfigEnabled) {
+    public KafkaBridgeConfigurationBuilder withJmxPrometheusExporter(JmxPrometheusExporterModel model) {
+        if (model != null) {
             printSectionHeader("Prometheus JMX Exporter configuration");
             writer.println("bridge.metrics=" + JmxPrometheusExporterMetrics.TYPE_JMX_EXPORTER);
-
-            // if isLegacyMetricsConfigEnabled is not used, we pass the path of the config file.
-            // If it is used, the Bridge will use the fallback config.
-            if (!isLegacyMetricsConfigEnabled) {
-                writer.println("bridge.metrics.exporter.config.path="
-                        + KAFKA_BRIDGE_CONFIG_VOLUME_MOUNT + JmxPrometheusExporterModel.CONFIG_MAP_KEY);
-            }
+            writer.println("bridge.metrics.exporter.config.path=" + KAFKA_BRIDGE_CONFIG_VOLUME_MOUNT + JmxPrometheusExporterModel.CONFIG_MAP_KEY);
 
             writer.println();
         }

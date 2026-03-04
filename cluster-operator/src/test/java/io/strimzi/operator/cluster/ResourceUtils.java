@@ -181,7 +181,11 @@ public class ResourceUtils {
                     .withBootstrapServers(bootstrapServers)
                     .withProducer(producer)
                     .withConsumer(consumer)
-                    .withEnableMetrics(enableMetrics)
+                    .withNewJmxPrometheusExporterMetricsConfig()
+                        .withNewValueFrom()
+                            .withNewConfigMapKeyRef("metrics.yaml", "my-metrics-config", false)
+                        .endValueFrom()
+                    .endJmxPrometheusExporterMetricsConfig()
                     .withHttp(http)
                 .endSpec()
                 .build();

@@ -119,7 +119,6 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
     private KafkaBridgeAdminClientSpec kafkaBridgeAdminClient;
     private KafkaBridgeConsumerSpec kafkaBridgeConsumer;
     private KafkaBridgeProducerSpec kafkaBridgeProducer;
-    private boolean isLegacyMetricsConfigEnabled = false;
     private LoggingModel logging;
     private MetricsModel metrics;
 
@@ -165,7 +164,7 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
      * @param sharedEnvironmentProvider Shared environment provider
      * @return KafkaBridgeCluster instance
      */
-    @SuppressWarnings({"checkstyle:NPathComplexity", "deprecation"})
+    @SuppressWarnings({"checkstyle:NPathComplexity"})
     public static KafkaBridgeCluster fromCrd(Reconciliation reconciliation,
                                              KafkaBridge kafkaBridge,
                                              SharedEnvironmentProvider sharedEnvironmentProvider) {
@@ -201,8 +200,6 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
             result.metrics = new JmxPrometheusExporterModel(spec);
         } else if (spec.getMetricsConfig() instanceof StrimziMetricsReporter) {
             result.metrics = new StrimziMetricsReporterModel(spec, DEFAULT_METRICS_ALLOW_LIST);
-        } else {
-            result.isLegacyMetricsConfigEnabled = Boolean.TRUE.equals(spec.getEnableMetrics());
         }
 
         result.setTls(spec.getTls() != null ? spec.getTls() : null);
@@ -579,10 +576,10 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
                         .withKafkaConsumer(kafkaBridgeConsumer)
                         .withHttp(http, kafkaBridgeProducer, kafkaBridgeConsumer);
 
-        if ((metrics instanceof JmxPrometheusExporterModel) || isLegacyMetricsConfigEnabled) {
-            builder.withJmxPrometheusExporter((JmxPrometheusExporterModel) metrics, isLegacyMetricsConfigEnabled);
-        } else if (metrics instanceof StrimziMetricsReporterModel) {
-            builder.withStrimziMetricsReporter((StrimziMetricsReporterModel) metrics);
+        if (metrics instanceof JmxPrometheusExporterModel jmxPrometheusExporterModel) {
+            builder.withJmxPrometheusExporter(jmxPrometheusExporterModel);
+        } else if (metrics instanceof StrimziMetricsReporterModel strimziMetricsReporterModel) {
+            builder.withStrimziMetricsReporter(strimziMetricsReporterModel);
         }
 
         data.put(BRIDGE_CONFIGURATION_FILENAME, builder.build());
