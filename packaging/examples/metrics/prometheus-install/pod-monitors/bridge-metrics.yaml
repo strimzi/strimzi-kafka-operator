@@ -14,4 +14,4 @@ spec:
       - myproject
   podMetricsEndpoints:
   - path: /metrics
-    port: rest-api
+    port: rest-api-mgmt
