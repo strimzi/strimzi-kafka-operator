@@ -115,7 +115,6 @@ public class KafkaMirrorMaker2Connectors {
                 KafkaMirrorMaker2ConnectorSpec mm2ConnectorSpec = connectorType.getValue().apply(mirror);
 
                 if (mm2ConnectorSpec != null) {
-                    @SuppressWarnings("deprecation") // getPause() is deprecated
                     KafkaConnector connector = new KafkaConnectorBuilder()
                             .withNewMetadata()
                                 .withName(mirror.getSource().getAlias() + "->" + target.getAlias() + connectorType.getKey())
@@ -123,7 +122,6 @@ public class KafkaMirrorMaker2Connectors {
                             .withNewSpec()
                                 .withClassName(CONNECTOR_JAVA_PACKAGE + connectorType.getKey())
                                 .withConfig(prepareMirrorMaker2ConnectorConfig(mirror, mm2ConnectorSpec))
-                                .withPause(mm2ConnectorSpec.getPause())
                                 .withState(mm2ConnectorSpec.getState())
                                 .withAutoRestart(mm2ConnectorSpec.getAutoRestart())
                                 .withTasksMax(mm2ConnectorSpec.getTasksMax())

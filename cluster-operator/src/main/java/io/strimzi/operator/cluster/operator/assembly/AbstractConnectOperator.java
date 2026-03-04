@@ -508,18 +508,9 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         if (!(path instanceof String state)) {
             return Future.failedFuture("JSON response lacked $.connector.state");
         } else {
-            ConnectorState desiredState = connectorSpec.getState();
-            @SuppressWarnings("deprecation")
-            Boolean shouldPause = connectorSpec.getPause();
-            ConnectorState targetState = desiredState != null ? desiredState :
-                    Boolean.TRUE.equals(shouldPause) ? ConnectorState.PAUSED : ConnectorState.RUNNING;
-            if (desiredState != null && shouldPause != null) {
-                String message = "Both pause and state are set. Since pause is deprecated, state takes precedence " +
-                        "so the connector will be " + targetState.toValue();
-                LOGGER.warnCr(reconciliation, message);
-                conditions.add(StatusUtils.buildWarningCondition("UpdateState", message));
-            }
+            ConnectorState targetState = connectorSpec.getState();
             Future<Void> future = Future.succeededFuture();
+
             switch (state) {
                 case "RUNNING" -> {
                     if (targetState == ConnectorState.PAUSED) {
