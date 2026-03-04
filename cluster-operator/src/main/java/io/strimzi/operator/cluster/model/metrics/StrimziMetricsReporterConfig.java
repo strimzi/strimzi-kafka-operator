@@ -8,6 +8,9 @@ package io.strimzi.operator.cluster.model.metrics;
  * This class holds Strimzi Metrics Reporter and related configuration keys.
  */
 public class StrimziMetricsReporterConfig {
+    /** KafkaMetricsReporter fully qualified class name. */
+    public static final String KAFKA_CLASS = "io.strimzi.kafka.metrics.KafkaPrometheusMetricsReporter";
+
     /** ClientMetricsReporter fully qualified class name (for Kafka clients). */
     public static final String CLIENT_CLASS = "io.strimzi.kafka.metrics.prometheus.ClientMetricsReporter";
 
