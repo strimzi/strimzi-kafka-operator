@@ -7,7 +7,6 @@ package io.strimzi.operator.user.model.acl;
 import io.strimzi.api.kafka.model.user.acl.AclOperation;
 import io.strimzi.api.kafka.model.user.acl.AclRule;
 import io.strimzi.api.kafka.model.user.acl.AclRuleType;
-import io.strimzi.operator.common.model.InvalidResourceException;
 import org.apache.kafka.common.acl.AccessControlEntry;
 import org.apache.kafka.common.acl.AclBinding;
 import org.apache.kafka.common.acl.AclPermissionType;
@@ -141,20 +140,17 @@ public class SimpleAclRule {
      * @param rule AclRule object from KafkaUser CR
      * @return The SimpleAclRule.
      */
-    @SuppressWarnings("deprecation")
     public static List<SimpleAclRule> fromCrd(AclRule rule) {
-        if (rule.getOperations() != null && rule.getOperation() != null) {
-            throw new InvalidResourceException("Both fields `operations` and `operation` cannot be filled in at the same time");
-        } else if (rule.getOperations() == null && rule.getOperation() == null) {
-            throw new InvalidResourceException("Both fields `operations` and `operation` are null. At least one of them must be specified.");
-        } else if (rule.getOperations() != null) {
+        if (rule.getOperations() != null) {
             List<SimpleAclRule> simpleAclRules = new ArrayList<>();
             for (AclOperation operation : rule.getOperations()) {
                 simpleAclRules.add(new SimpleAclRule(rule.getType(), SimpleAclRuleResource.fromCrd(rule.getResource()), rule.getHost(), operation));
             }
             return simpleAclRules;
         } else {
-            return List.of(new SimpleAclRule(rule.getType(), SimpleAclRuleResource.fromCrd(rule.getResource()), rule.getHost(), rule.getOperation()));
+            // Should not happen, because in v1 CRD the operations field is required.
+            // But you never know, so we better handle it to be sure.
+            return List.of();
         }
     }
 
