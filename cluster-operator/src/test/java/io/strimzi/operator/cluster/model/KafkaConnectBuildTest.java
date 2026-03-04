@@ -517,7 +517,7 @@ public class KafkaConnectBuildTest {
                         .withNewDockerOutput()
                             .withImage("my-image:latest")
                             .withPushSecret("my-docker-credentials")
-                            .withAdditionalKanikoOptions("--reproducible", "--single-snapshot", "--log-format=json")
+                            .withAdditionalBuildOptions("--reproducible", "--single-snapshot", "--log-format=json")
                         .endDockerOutput()
                     .endBuild()
                 .endSpec()
@@ -536,7 +536,7 @@ public class KafkaConnectBuildTest {
                         .withNewDockerOutput()
                             .withImage("my-image:latest")
                             .withPushSecret("my-docker-credentials")
-                            .withAdditionalKanikoOptions("--reproducible", "--reproducible-something", "--build-arg", "--single-snapshot", "--digest-file=/dev/null", "--log-format=json")
+                            .withAdditionalBuildOptions("--reproducible", "--reproducible-something", "--build-arg", "--single-snapshot", "--digest-file=/dev/null", "--log-format=json")
                         .endDockerOutput()
                     .endBuild()
                 .endSpec()
@@ -546,7 +546,7 @@ public class KafkaConnectBuildTest {
             KafkaConnectBuild.fromCrd(new Reconciliation("test", "KafkaConnect", NAMESPACE, NAME), kc, VERSIONS, SHARED_ENV_PROVIDER, false)
         );
 
-        assertThat(e.getMessage(), containsString(".spec.build.output.additionalKanikoOptions contains forbidden options: [--reproducible-something, --build-arg, --digest-file]"));
+        assertThat(e.getMessage(), containsString(".spec.build.output.additionalBuildOptions contains forbidden options: [--reproducible-something, --build-arg, --digest-file]"));
     }
 
     @Test
@@ -616,31 +616,6 @@ public class KafkaConnectBuildTest {
         );
 
         assertThat(e.getMessage(), containsString(".spec.build.output.additionalPushOptions contains forbidden options: [--digestfile, --sign-by, --format]"));
-    }
-
-    @Test
-    public void testKanikoAdditionalOptionsConfiguredOnBothPlaces() {
-        List<String> expectedArgs = new ArrayList<>(EXPECTED_DEFAULT_KANIKO_OPTIONS);
-        expectedArgs.add("--single-snapshot");
-        expectedArgs.add("--log-format=json");
-
-        KafkaConnect kc = new KafkaConnectBuilder(RESOURCE)
-                .editSpec()
-                    .editBuild()
-                        .withNewDockerOutput()
-                            .withImage("my-image:latest")
-                            .withPushSecret("my-docker-credentials")
-                            .withAdditionalKanikoOptions("--reproducible")
-                            .withAdditionalBuildOptions("--single-snapshot", "--log-format=json")
-                        .endDockerOutput()
-                    .endBuild()
-                .endSpec()
-                .build();
-        KafkaConnectBuild build = KafkaConnectBuild.fromCrd(new Reconciliation("test", "KafkaConnect", NAMESPACE, NAME), kc, VERSIONS, SHARED_ENV_PROVIDER, false);
-
-        Pod pod = build.generateBuilderPod(true, false, ImagePullPolicy.IFNOTPRESENT, null, "cf065b80ede090aa");
-        assertThat(pod.getSpec().getContainers().get(0).getArgs(), is(expectedArgs));
-        assertThat(pod.getSpec().getContainers().get(0).getArgs().contains("--reproducible"), is(false));
     }
 
     @Test

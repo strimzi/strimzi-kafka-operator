@@ -104,7 +104,7 @@ public class KafkaConnectBuild extends AbstractModel {
      * @param useConnectBuildWithBuildah    determines if Buildah should be used for the Connect Build
      * @return              Instance of KafkaConnectBuild class
      */
-    @SuppressWarnings({"checkstyle:CyclomaticComplexity", "deprecation"})
+    @SuppressWarnings({"checkstyle:CyclomaticComplexity"})
     public static KafkaConnectBuild fromCrd(Reconciliation reconciliation,
                                             KafkaConnect kafkaConnect,
                                             KafkaVersion.Lookup versions,
@@ -120,7 +120,6 @@ public class KafkaConnectBuild extends AbstractModel {
         if (spec.getBuild() != null)    {
             validateBuildConfiguration(spec.getBuild());
 
-            // The additionalKanikoOptions are validated separately to avoid parsing the list twice
             if (spec.getBuild().getOutput() != null
                     && spec.getBuild().getOutput() instanceof DockerOutput dockerOutput) {
 
@@ -142,14 +141,8 @@ public class KafkaConnectBuild extends AbstractModel {
                 } else {
                     if (dockerOutput.getAdditionalBuildOptions() != null
                             && !dockerOutput.getAdditionalBuildOptions().isEmpty()) {
-                        // in case that we are using Kaniko and `.additionalBuildOptions` field contains some options, we want to check them
-                        // because `.additionalKanikoOptions` is deprecated and `.additionalBuildOptions` is replacement
                         validateAdditionalOptions(DockerOutput.ALLOWED_KANIKO_OPTIONS, dockerOutput.getAdditionalBuildOptions(), ".spec.build.output.additionalBuildOptions");
                         result.additionalBuildOptions = dockerOutput.getAdditionalBuildOptions();
-                    } else if (dockerOutput.getAdditionalKanikoOptions() != null
-                            && !dockerOutput.getAdditionalKanikoOptions().isEmpty()) {
-                        validateAdditionalOptions(DockerOutput.ALLOWED_KANIKO_OPTIONS, dockerOutput.getAdditionalKanikoOptions(), ".spec.build.output.additionalKanikoOptions");
-                        result.additionalBuildOptions = dockerOutput.getAdditionalKanikoOptions();
                     }
                 }
             }

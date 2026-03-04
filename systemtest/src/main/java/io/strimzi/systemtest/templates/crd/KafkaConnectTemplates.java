@@ -186,7 +186,7 @@ public class KafkaConnectTemplates {
             dockerOutputBuilder.withAdditionalPushOptions("--tls-verify=false");
         } else if (!Environment.isConnectBuildWithBuildahEnabled() && KubeClusterResource.getInstance().isKind()) {
             // if we use Kind we add insecure option
-            dockerOutputBuilder.withAdditionalKanikoOptions(
+            dockerOutputBuilder.withAdditionalBuildOptions(
                 // --insecure for PUSH via HTTP instead of HTTPS
                 "--insecure");
         }
