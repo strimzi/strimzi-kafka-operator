@@ -2183,58 +2183,7 @@ public class KafkaClusterTest {
     }
 
     @Test
-    public void testKafkaInitContainerSectionIsConfigurable() {
-        Map<String, Quantity> limits = new HashMap<>();
-        limits.put("cpu", Quantity.parse("1"));
-        limits.put("memory", Quantity.parse("256Mi"));
-
-        Map<String, Quantity> requirements = new HashMap<>();
-        requirements.put("cpu", Quantity.parse("100m"));
-        requirements.put("memory", Quantity.parse("128Mi"));
-
-        ResourceRequirements resourceReq = new ResourceRequirementsBuilder()
-            .withLimits(limits)
-            .withRequests(requirements)
-            .build();
-
-        Kafka kafka = new KafkaBuilder(KAFKA)
-            .editSpec()
-                .editKafka()
-                    .withResources(resourceReq)
-                    .withNewRack()
-                        .withTopologyKey("rack-key")
-                    .endRack()
-                .endKafka()
-            .endSpec()
-            .build();
-        List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafka, List.of(POOL_CONTROLLERS, POOL_MIXED, POOL_BROKERS), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, SHARED_ENV_PROVIDER);
-        KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, null, SHARED_ENV_PROVIDER);
-        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, node -> Map.of());
-        
-        podSets.stream().forEach(podSet -> PodSetUtils.podSetToPods(podSet).stream().forEach(pod -> {
-            if (!pod.getMetadata().getName().startsWith(CLUSTER + "-controllers")) {
-                ResourceRequirements initContainersResources = pod.getSpec().getInitContainers().stream().findAny().orElseThrow().getResources();
-                assertThat(initContainersResources.getRequests(), is(requirements));
-                assertThat(initContainersResources.getLimits(), is(limits));
-            }
-        }));
-    }
-
-    @Test
-    public void testKafkaInitContainerSectionIsConfigurableInKafkaAndNodePool() {
-        Map<String, Quantity> limits = new HashMap<>();
-        limits.put("cpu", Quantity.parse("1"));
-        limits.put("memory", Quantity.parse("256Mi"));
-
-        Map<String, Quantity> requirements = new HashMap<>();
-        requirements.put("cpu", Quantity.parse("100m"));
-        requirements.put("memory", Quantity.parse("128Mi"));
-
-        ResourceRequirements resourceReq = new ResourceRequirementsBuilder()
-            .withLimits(limits)
-            .withRequests(requirements)
-            .build();
-
+    public void testKafkaInitContainerResourcesConfiguration() {
         Map<String, Quantity> poolLimits = new HashMap<>();
         poolLimits.put("cpu", Quantity.parse("10"));
         poolLimits.put("memory", Quantity.parse("2560Mi"));
@@ -2251,30 +2200,31 @@ public class KafkaClusterTest {
         Kafka kafka = new KafkaBuilder(KAFKA)
             .editSpec()
                 .editKafka()
-                    .withResources(resourceReq)
                     .withNewRack()
                         .withTopologyKey("rack-key")
                     .endRack()
                 .endKafka()
             .endSpec()
             .build();
-        KafkaNodePool controllers = new KafkaNodePoolBuilder(POOL_CONTROLLERS)
+        KafkaNodePool brokers = new KafkaNodePoolBuilder(POOL_BROKERS)
                 .editSpec()
                     .withResources(poolResourceReq)
                 .endSpec()
                 .build();
 
-        List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafka, List.of(controllers, POOL_MIXED, POOL_BROKERS), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, SHARED_ENV_PROVIDER);
+        List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafka, List.of(POOL_CONTROLLERS, POOL_MIXED, brokers), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, SHARED_ENV_PROVIDER);
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, null, SHARED_ENV_PROVIDER);
         List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, node -> Map.of());
 
         podSets.stream().forEach(podSet -> PodSetUtils.podSetToPods(podSet).stream().forEach(pod -> {
             if (pod.getMetadata().getName().startsWith(CLUSTER + "-controllers")) {
                 assertThat(pod.getSpec().getInitContainers(), is(empty()));
-            } else {
+            } else if (pod.getMetadata().getName().startsWith(CLUSTER + "-brokers")) {
                 ResourceRequirements initContainersResources = pod.getSpec().getInitContainers().get(0).getResources();
-                assertThat(initContainersResources.getRequests(), is(requirements));
-                assertThat(initContainersResources.getLimits(), is(limits));
+                assertThat(initContainersResources.getRequests(), is(poolRequirements));
+                assertThat(initContainersResources.getLimits(), is(poolLimits));
+            } else {
+                assertThat(pod.getSpec().getInitContainers().get(0).getResources(), is(nullValue()));
             }
         }));
     }
@@ -3659,10 +3609,6 @@ public class KafkaClusterTest {
                 .editSpec()
                     .editKafka()
                         .withImage(image)
-                        .withResources(new ResourceRequirementsBuilder()
-                                .withRequests(Map.of("cpu", new Quantity("100m"), "memory", new Quantity("4Gi")))
-                                .withLimits(Map.of("cpu", new Quantity("500m"), "memory", new Quantity("8Gi")))
-                                .build())
                         .withNewJvmOptions()
                             .withGcLoggingEnabled(true)
                         .endJvmOptions()
@@ -3775,8 +3721,6 @@ public class KafkaClusterTest {
                 assertThat(pod.getSpec().getContainers().get(0).getEnv().stream().filter(e -> envVar1.getName().equals(e.getName())).findFirst().orElseThrow().getValue(), is(envVar1.getValue()));
                 assertThat(pod.getSpec().getContainers().get(0).getEnv().stream().filter(e -> envVar2.getName().equals(e.getName())).findFirst().orElseThrow().getValue(), is(envVar2.getValue()));
                 assertThat(pod.getSpec().getContainers().get(0).getEnv().stream().filter(e -> envVar3.getName().equals(e.getName())).findFirst().orElseThrow().getValue(), is(not(envVar3.getValue())));
-                assertThat(pod.getSpec().getContainers().get(0).getResources().getRequests(), is(Map.of("cpu", new Quantity("100m"), "memory", new Quantity("4Gi"))));
-                assertThat(pod.getSpec().getContainers().get(0).getResources().getLimits(), is(Map.of("cpu", new Quantity("500m"), "memory", new Quantity("8Gi"))));
 
                 assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().size(), is(5));
                 assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(0).getName(), is("data-0"));
@@ -3946,10 +3890,6 @@ public class KafkaClusterTest {
         Kafka kafka = new KafkaBuilder(KAFKA)
                 .editSpec()
                     .editKafka()
-                        .withResources(new ResourceRequirementsBuilder()
-                                .withRequests(Map.of("cpu", new Quantity("1000m"), "memory", new Quantity("40Gi")))
-                                .withLimits(Map.of("cpu", new Quantity("5000m"), "memory", new Quantity("80Gi")))
-                                .build())
                         .withNewJvmOptions()
                             .withGcLoggingEnabled(true)
                         .endJvmOptions()
@@ -3992,9 +3932,9 @@ public class KafkaClusterTest {
         KafkaNodePool brokers = new KafkaNodePoolBuilder(POOL_BROKERS)
                 .editSpec()
                     .withResources(new ResourceRequirementsBuilder()
-                            .withRequests(Map.of("cpu", new Quantity("100m"), "memory", new Quantity("4Gi")))
-                            .withLimits(Map.of("cpu", new Quantity("500m"), "memory", new Quantity("8Gi")))
-                            .build())
+                        .withRequests(Map.of("cpu", new Quantity("100m"), "memory", new Quantity("4Gi")))
+                        .withLimits(Map.of("cpu", new Quantity("500m"), "memory", new Quantity("8Gi")))
+                        .build())
                     .withNewJvmOptions()
                         .withGcLoggingEnabled(false)
                     .endJvmOptions()
@@ -4145,8 +4085,7 @@ public class KafkaClusterTest {
                     assertThat(pod.getSpec().getContainers().get(0).getEnv().stream().filter(e -> envVar1.getName().equals(e.getName())).findFirst().orElse(null), is(nullValue()));
                     assertThat(pod.getSpec().getContainers().get(0).getEnv().stream().filter(e -> envVar2.getName().equals(e.getName())).findFirst().orElseThrow().getValue(), is(envVar2.getValue()));
                     assertThat(pod.getSpec().getContainers().get(0).getEnv().stream().filter(e -> envVar3.getName().equals(e.getName())).findFirst().orElseThrow().getValue(), is(not(envVar3.getValue())));
-                    assertThat(pod.getSpec().getContainers().get(0).getResources().getRequests(), is(Map.of("cpu", new Quantity("1000m"), "memory", new Quantity("40Gi"))));
-                    assertThat(pod.getSpec().getContainers().get(0).getResources().getLimits(), is(Map.of("cpu", new Quantity("5000m"), "memory", new Quantity("80Gi"))));
+                    assertThat(pod.getSpec().getContainers().get(0).getResources(), is(nullValue()));
 
                     assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().size(), is(5));
                     assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(0).getName(), is("data-0"));

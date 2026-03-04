@@ -60,7 +60,6 @@ import io.strimzi.api.kafka.model.kafka.Storage;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlResources;
 import io.strimzi.api.kafka.model.kafka.exporter.KafkaExporterResources;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListener;
-import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthenticationCustom;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthenticationOAuth;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthenticationTls;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
@@ -280,7 +279,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
      *
      * @return Kafka cluster instance
      */
-    @SuppressWarnings({"NPathComplexity", "deprecation"}) // Resource configuration in Kafka CR (.spec.kafka.resources) is deprecated
+    @SuppressWarnings({"NPathComplexity"})
     public static KafkaCluster fromCrd(Reconciliation reconciliation,
                                        Kafka kafka,
                                        List<KafkaPool> pools,
@@ -308,7 +307,6 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
         // Number of broker nodes => used later in various validation methods
         long numberOfBrokers = result.brokerNodes().size();
 
-        ModelUtils.validateComputeResources(kafkaClusterSpec.getResources(), ".spec.kafka.resources");
         validateIntConfigProperty("default.replication.factor", kafkaClusterSpec, numberOfBrokers);
         validateIntConfigProperty("offsets.topic.replication.factor", kafkaClusterSpec, numberOfBrokers);
         validateIntConfigProperty("transaction.state.log.replication.factor", kafkaClusterSpec, numberOfBrokers);
@@ -1347,7 +1345,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
      *
      * @return List of non-data volumes used by the Kafka pods
      */
-    @SuppressWarnings("deprecation") // Keycloak authorization, OAuth authentication, and Secrets in custom authentication are deprecated
+    @SuppressWarnings("deprecation") // OAuth authentication is deprecated
     private List<Volume> getNonDataVolumes(boolean isOpenShift, NodeRef node, PodTemplate templatePod) {
         List<Volume> volumeList = new ArrayList<>();
 
@@ -1367,11 +1365,6 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
                 if (ListenersUtils.isListenerWithOAuth(listener)) {
                     KafkaListenerAuthenticationOAuth oauth = (KafkaListenerAuthenticationOAuth) listener.getAuth();
                     CertUtils.createTrustedCertificatesVolumes(volumeList, oauth.getTlsTrustedCertificates(), isOpenShift, "oauth-" + ListenersUtils.identifier(listener));
-                }
-
-                if (ListenersUtils.isListenerWithCustomAuth(listener)) {
-                    KafkaListenerAuthenticationCustom custom = (KafkaListenerAuthenticationCustom) listener.getAuth();
-                    volumeList.addAll(AuthenticationUtils.configureGenericSecretVolumes("custom-listener-" + ListenersUtils.identifier(listener), custom.getSecrets(), isOpenShift));
                 }
             }
         }
@@ -1410,7 +1403,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
      *
      * @return  List of volume mounts
      */
-    @SuppressWarnings("deprecation") // Keycloak Authorization, OAuth authentication, and Secrets in custom authentication are deprecated
+    @SuppressWarnings("deprecation") // OAuth authentication is deprecated
     private List<VolumeMount> getVolumeMounts(Storage storage, ContainerTemplate containerTemplate, boolean isBroker) {
         List<VolumeMount> volumeMountList = new ArrayList<>(VolumeUtils.createVolumeMounts(storage, false));
         volumeMountList.add(VolumeUtils.createTempDirVolumeMount());
@@ -1431,11 +1424,6 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
                 if (ListenersUtils.isListenerWithOAuth(listener))   {
                     KafkaListenerAuthenticationOAuth oauth = (KafkaListenerAuthenticationOAuth) listener.getAuth();
                     CertUtils.createTrustedCertificatesVolumeMounts(volumeMountList, oauth.getTlsTrustedCertificates(), TRUSTED_CERTS_BASE_VOLUME_MOUNT + "/oauth-" + identifier + "-certs/", "oauth-" + identifier);
-                }
-
-                if (ListenersUtils.isListenerWithCustomAuth(listener)) {
-                    KafkaListenerAuthenticationCustom custom = (KafkaListenerAuthenticationCustom) listener.getAuth();
-                    volumeMountList.addAll(AuthenticationUtils.configureGenericSecretVolumeMounts("custom-listener-" + identifier, custom.getSecrets(), CUSTOM_AUTHN_SECRETS_VOLUME_MOUNT + "/custom-listener-" + identifier));
                 }
             }
         }

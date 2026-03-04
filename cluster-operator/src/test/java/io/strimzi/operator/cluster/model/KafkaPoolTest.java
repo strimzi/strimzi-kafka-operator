@@ -232,7 +232,6 @@ public class KafkaPoolTest {
         Kafka kafka = new KafkaBuilder(KAFKA)
                 .editSpec()
                     .editKafka()
-                        .withResources(new ResourceRequirementsBuilder().withRequests(Map.of("cpu", new Quantity("4"), "memory", new Quantity("16Gi"))).build())
                         .withNewJvmOptions()
                             .withGcLoggingEnabled()
                             .withXmx("4096m")
@@ -259,7 +258,7 @@ public class KafkaPoolTest {
         assertThat(kp, is(notNullValue()));
         assertThat(kp.componentName, is(CLUSTER_NAME + "-pool"));
         assertThat(kp.storage, is(new JbodStorageBuilder().withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("100Gi").build()).build()));
-        assertThat(kp.resources.getRequests(), is(Map.of("cpu", new Quantity("4"), "memory", new Quantity("16Gi"))));
+        assertThat(kp.resources, is(nullValue()));
         assertThat(kp.gcLoggingEnabled, is(true));
         assertThat(kp.jvmOptions.getXmx(), is("4096m"));
         assertThat(kp.templateContainer.getEnv(), is(List.of(new ContainerEnvVarBuilder().withName("MY_ENV_VAR").withValue("my-env-var-value").build())));
@@ -292,7 +291,6 @@ public class KafkaPoolTest {
         Kafka kafka = new KafkaBuilder(KAFKA)
                 .editSpec()
                     .editKafka()
-                        .withResources(new ResourceRequirementsBuilder().withRequests(Map.of("cpu", new Quantity("6"), "memory", new Quantity("20Gi"))).build())
                         .withNewJvmOptions()
                             .withGcLoggingEnabled()
                             .withXmx("8192m")
@@ -339,6 +337,7 @@ public class KafkaPoolTest {
     public void testKafkaPoolConfigureOptionsMixed()  {
         KafkaNodePool pool = new KafkaNodePoolBuilder(POOL)
                 .editSpec()
+                    .withResources(new ResourceRequirementsBuilder().withRequests(Map.of("cpu", new Quantity("6"), "memory", new Quantity("20Gi"))).build())
                     .withNewTemplate()
                         .withNewKafkaContainer()
                             .addToEnv(new ContainerEnvVarBuilder().withName("MY_ENV_VAR").withValue("my-env-var-value").build())
@@ -350,7 +349,6 @@ public class KafkaPoolTest {
         Kafka kafka = new KafkaBuilder(KAFKA)
                 .editSpec()
                     .editKafka()
-                        .withResources(new ResourceRequirementsBuilder().withRequests(Map.of("cpu", new Quantity("6"), "memory", new Quantity("20Gi"))).build())
                         .withNewJvmOptions()
                             .withGcLoggingEnabled()
                             .withXmx("8192m")

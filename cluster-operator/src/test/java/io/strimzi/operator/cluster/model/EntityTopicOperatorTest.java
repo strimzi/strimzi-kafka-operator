@@ -137,21 +137,10 @@ public class EntityTopicOperatorTest {
         EntityTopicOperator entityTopicOperator0 = buildEntityTopicOperatorWithReconciliationInterval(entityTopicOperatorSpec0);
         assertThat(entityTopicOperator0.reconciliationIntervalMs, nullValue());
         
-        // new config (ms)
+        // user config (ms)
         EntityTopicOperatorSpec entityTopicOperatorSpec1 = new EntityTopicOperatorSpecBuilder().withReconciliationIntervalMs(10_000L).build();
         EntityTopicOperator entityTopicOperator1 = buildEntityTopicOperatorWithReconciliationInterval(entityTopicOperatorSpec1);
         assertThat(entityTopicOperator1.reconciliationIntervalMs, is(10_000L));
-        
-        // legacy config (seconds)
-        EntityTopicOperatorSpec entityTopicOperatorSpec2 = new EntityTopicOperatorSpecBuilder().withReconciliationIntervalSeconds(15).build();
-        EntityTopicOperator entityTopicOperator2 = buildEntityTopicOperatorWithReconciliationInterval(entityTopicOperatorSpec2);
-        assertThat(entityTopicOperator2.reconciliationIntervalMs, is(15_000L));
-        
-        // both (new config should prevail)
-        EntityTopicOperatorSpec entityTopicOperatorSpec3 = new EntityTopicOperatorSpecBuilder()
-            .withReconciliationIntervalMs(10_000L).withReconciliationIntervalSeconds(15).build();
-        EntityTopicOperator entityTopicOperator3 = buildEntityTopicOperatorWithReconciliationInterval(entityTopicOperatorSpec3);
-        assertThat(entityTopicOperator3.reconciliationIntervalMs, is(10_000L));
     }
     
     private EntityTopicOperator buildEntityTopicOperatorWithReconciliationInterval(EntityTopicOperatorSpec topicOperatorSpec) {
