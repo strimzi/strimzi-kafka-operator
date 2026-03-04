@@ -140,7 +140,7 @@ public class UserOperatorScalabilityPerformance extends AbstractST {
             } finally {
                 LOGGER.info("Cleaning namespace: {}", testStorage.getNamespaceName());
                 List<KafkaUser> kafkaUsers = CrdClients.kafkaUserClient().inNamespace(testStorage.getNamespaceName()).list().getItems();
-                KubeResourceManager.get().deleteResourceAsyncWait(kafkaUsers.toArray(new KafkaUser[0]));
+                KubeResourceManager.get().deleteResourceWithoutWait(kafkaUsers.toArray(new KafkaUser[0]));
                 KafkaUserUtils.waitForUserWithPrefixDeletion(testStorage.getNamespaceName(), testStorage.getUsername());
 
                 final Map<String, Object> performanceAttributes = new LinkedHashMap<>();
@@ -253,7 +253,7 @@ public class UserOperatorScalabilityPerformance extends AbstractST {
             } finally {
                 LOGGER.info("Cleaning namespace: {}", testStorage.getNamespaceName());
                 List<KafkaUser> kafkaUsers = CrdClients.kafkaUserClient().inNamespace(testStorage.getNamespaceName()).list().getItems();
-                KubeResourceManager.get().deleteResourceAsyncWait(kafkaUsers.toArray(new KafkaUser[0]));
+                KubeResourceManager.get().deleteResourceWithoutWait(kafkaUsers.toArray(new KafkaUser[0]));
                 KafkaUserUtils.waitForUserWithPrefixDeletion(testStorage.getNamespaceName(), testStorage.getUsername());
 
                 if (latencyMetrics != null) {
