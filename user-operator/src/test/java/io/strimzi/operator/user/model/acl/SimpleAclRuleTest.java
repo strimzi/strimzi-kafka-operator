@@ -11,7 +11,6 @@ import io.strimzi.api.kafka.model.user.acl.AclRuleBuilder;
 import io.strimzi.api.kafka.model.user.acl.AclRuleResource;
 import io.strimzi.api.kafka.model.user.acl.AclRuleTopicResourceBuilder;
 import io.strimzi.api.kafka.model.user.acl.AclRuleType;
-import io.strimzi.operator.common.model.InvalidResourceException;
 import org.apache.kafka.common.acl.AccessControlEntry;
 import org.apache.kafka.common.acl.AclBinding;
 import org.apache.kafka.common.acl.AclPermissionType;
@@ -27,7 +26,6 @@ import java.util.stream.Collectors;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class SimpleAclRuleTest {
     private static final AclRuleResource ACL_RULE_TOPIC_RESOURCE;
@@ -48,7 +46,7 @@ public class SimpleAclRuleTest {
             .withType(AclRuleType.ALLOW)
             .withResource(ACL_RULE_TOPIC_RESOURCE)
             .withHost("127.0.0.1")
-            .withOperation(AclOperation.READ)
+            .withOperations(AclOperation.READ)
             .build();
 
         List<SimpleAclRule> simpleAclRules = SimpleAclRule.fromCrd(rule);
@@ -59,33 +57,14 @@ public class SimpleAclRuleTest {
     }
 
     @Test
-    public void testFromCrdWithBothOperationsAndOperationSetAtTheSameTime()   {
-        assertThrows(InvalidResourceException.class, () -> {
-            AclRule rule = new AclRuleBuilder()
-                .withType(AclRuleType.ALLOW)
-                .withResource(ACL_RULE_TOPIC_RESOURCE)
-                .withHost("127.0.0.1")
-                .withOperation(AclOperation.READ)
-                .withOperations(AclOperation.READ, AclOperation.WRITE, AclOperation.DESCRIBECONFIGS)
-                .build();
+    public void testFromCrdWithNoOperations()   {
+        AclRule rule = new AclRuleBuilder()
+            .withType(AclRuleType.ALLOW)
+            .withResource(ACL_RULE_TOPIC_RESOURCE)
+            .withHost("127.0.0.1")
+            .build();
 
-            SimpleAclRule.fromCrd(rule);
-        });
-    }
-
-    @Test
-    public void testFromCrdWithNoOperationsAndOperationSet()   {
-        InvalidResourceException ex = assertThrows(InvalidResourceException.class, () -> {
-            AclRule rule = new AclRuleBuilder()
-                .withType(AclRuleType.ALLOW)
-                .withResource(ACL_RULE_TOPIC_RESOURCE)
-                .withHost("127.0.0.1")
-                .build();
-
-            SimpleAclRule.fromCrd(rule);
-        });
-
-        assertThat(ex.getMessage(), is("Both fields `operations` and `operation` are null. At least one of them must be specified."));
+        assertThat(SimpleAclRule.fromCrd(rule).size(), is(0));
     }
 
     @Test
@@ -145,7 +124,7 @@ public class SimpleAclRuleTest {
             .withType(AclRuleType.ALLOW)
             .withResource(ACL_RULE_TOPIC_RESOURCE)
             .withHost("127.0.0.1")
-            .withOperation(AclOperation.READ)
+            .withOperations(AclOperation.READ)
             .build();
 
         AclBinding expectedKafkaAclBinding = new AclBinding(
