@@ -5,7 +5,6 @@
 package io.strimzi.operator.cluster.model;
 
 import io.strimzi.api.kafka.model.common.CertSecretSourceBuilder;
-import io.strimzi.api.kafka.model.common.ConnectorState;
 import io.strimzi.api.kafka.model.common.metrics.StrimziMetricsReporterBuilder;
 import io.strimzi.api.kafka.model.connector.KafkaConnector;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2;
@@ -31,7 +30,6 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-@SuppressWarnings("deprecation") // Uses deprecated getPause() field in tests
 public class KafkaMirrorMaker2ConnectorsTest {
     private static final String PREFIX = "prefix.";
 
@@ -103,7 +101,6 @@ public class KafkaMirrorMaker2ConnectorsTest {
         assertThat(kc.getMetadata().getName(), is("source->target.MirrorSourceConnector"));
         assertThat(kc.getSpec().getClassName(), is("org.apache.kafka.connect.mirror.MirrorSourceConnector"));
         assertThat(kc.getSpec().getTasksMax(), is(5));
-        assertThat(kc.getSpec().getPause(), is(nullValue()));
         assertThat(kc.getSpec().getState(), is(nullValue()));
         assertThat(kc.getSpec().getConfig(), is(expectedSource));
 
@@ -111,7 +108,6 @@ public class KafkaMirrorMaker2ConnectorsTest {
         assertThat(kc.getMetadata().getName(), is("source->target.MirrorCheckpointConnector"));
         assertThat(kc.getSpec().getClassName(), is("org.apache.kafka.connect.mirror.MirrorCheckpointConnector"));
         assertThat(kc.getSpec().getTasksMax(), is(3));
-        assertThat(kc.getSpec().getPause(), is(nullValue()));
         assertThat(kc.getSpec().getState(), is(nullValue()));
         assertThat(kc.getSpec().getConfig(), is(expectedCheckpoint));
 
@@ -119,7 +115,6 @@ public class KafkaMirrorMaker2ConnectorsTest {
         assertThat(kc.getMetadata().getName(), is("source->target.MirrorHeartbeatConnector"));
         assertThat(kc.getSpec().getClassName(), is("org.apache.kafka.connect.mirror.MirrorHeartbeatConnector"));
         assertThat(kc.getSpec().getTasksMax(), is(1));
-        assertThat(kc.getSpec().getPause(), is(nullValue()));
         assertThat(kc.getSpec().getState(), is(nullValue()));
         assertThat(kc.getSpec().getConfig(), is(expectedAll));
     }
@@ -160,7 +155,6 @@ public class KafkaMirrorMaker2ConnectorsTest {
         assertThat(kc.getMetadata().getName(), is("source->target.MirrorSourceConnector"));
         assertThat(kc.getSpec().getClassName(), is("org.apache.kafka.connect.mirror.MirrorSourceConnector"));
         assertThat(kc.getSpec().getTasksMax(), is(nullValue()));
-        assertThat(kc.getSpec().getPause(), is(nullValue()));
         assertThat(kc.getSpec().getState(), is(nullValue()));
         assertThat(kc.getSpec().getConfig(), is(expectedSource));
     }
@@ -234,7 +228,6 @@ public class KafkaMirrorMaker2ConnectorsTest {
         assertThat(kc.getMetadata().getName(), is("source->target.MirrorSourceConnector"));
         assertThat(kc.getSpec().getClassName(), is("org.apache.kafka.connect.mirror.MirrorSourceConnector"));
         assertThat(kc.getSpec().getTasksMax(), is(5));
-        assertThat(kc.getSpec().getPause(), is(nullValue()));
         assertThat(kc.getSpec().getState(), is(nullValue()));
         assertThat(kc.getSpec().getConfig(), is(expectedSource));
 
@@ -242,7 +235,6 @@ public class KafkaMirrorMaker2ConnectorsTest {
         assertThat(kc.getMetadata().getName(), is("source->target.MirrorCheckpointConnector"));
         assertThat(kc.getSpec().getClassName(), is("org.apache.kafka.connect.mirror.MirrorCheckpointConnector"));
         assertThat(kc.getSpec().getTasksMax(), is(3));
-        assertThat(kc.getSpec().getPause(), is(nullValue()));
         assertThat(kc.getSpec().getState(), is(nullValue()));
         assertThat(kc.getSpec().getConfig(), is(expectedCheckpoint));
 
@@ -250,7 +242,6 @@ public class KafkaMirrorMaker2ConnectorsTest {
         assertThat(kc.getMetadata().getName(), is("source->target.MirrorHeartbeatConnector"));
         assertThat(kc.getSpec().getClassName(), is("org.apache.kafka.connect.mirror.MirrorHeartbeatConnector"));
         assertThat(kc.getSpec().getTasksMax(), is(1));
-        assertThat(kc.getSpec().getPause(), is(nullValue()));
         assertThat(kc.getSpec().getState(), is(nullValue()));
         assertThat(kc.getSpec().getConfig(), is(expectedAll));
 
@@ -258,7 +249,6 @@ public class KafkaMirrorMaker2ConnectorsTest {
         assertThat(kc.getMetadata().getName(), is("other-source->target.MirrorSourceConnector"));
         assertThat(kc.getSpec().getClassName(), is("org.apache.kafka.connect.mirror.MirrorSourceConnector"));
         assertThat(kc.getSpec().getTasksMax(), is(15));
-        assertThat(kc.getSpec().getPause(), is(nullValue()));
         assertThat(kc.getSpec().getState(), is(nullValue()));
         assertThat(kc.getSpec().getConfig(), is(expectedSource2));
 
@@ -266,7 +256,6 @@ public class KafkaMirrorMaker2ConnectorsTest {
         assertThat(kc.getMetadata().getName(), is("other-source->target.MirrorCheckpointConnector"));
         assertThat(kc.getSpec().getClassName(), is("org.apache.kafka.connect.mirror.MirrorCheckpointConnector"));
         assertThat(kc.getSpec().getTasksMax(), is(13));
-        assertThat(kc.getSpec().getPause(), is(nullValue()));
         assertThat(kc.getSpec().getState(), is(nullValue()));
         assertThat(kc.getSpec().getConfig(), is(expectedCheckpoint2));
 
@@ -274,7 +263,6 @@ public class KafkaMirrorMaker2ConnectorsTest {
         assertThat(kc.getMetadata().getName(), is("other-source->target.MirrorHeartbeatConnector"));
         assertThat(kc.getSpec().getClassName(), is("org.apache.kafka.connect.mirror.MirrorHeartbeatConnector"));
         assertThat(kc.getSpec().getTasksMax(), is(11));
-        assertThat(kc.getSpec().getPause(), is(nullValue()));
         assertThat(kc.getSpec().getState(), is(nullValue()));
         assertThat(kc.getSpec().getConfig(), is(expectedAll2));
     }
@@ -301,49 +289,6 @@ public class KafkaMirrorMaker2ConnectorsTest {
         kc = kcs.stream().filter(k -> k.getMetadata().getName().contains("source->target.MirrorHeartbeatConnector")).findFirst().orElseThrow();
         assertThat(kc.getMetadata().getName(), is("source->target.MirrorHeartbeatConnector"));
         assertThat(kc.getSpec().getClassName(), is("org.apache.kafka.connect.mirror.MirrorHeartbeatConnector"));
-    }
-
-    @Test
-    public void testConnectorsPauseState() {
-        KafkaMirrorMaker2 kmm2 = new KafkaMirrorMaker2Builder(KMM2)
-                .editSpec()
-                    .editMirror(0)
-                        .editSourceConnector()
-                            .withState(ConnectorState.PAUSED)
-                        .endSourceConnector()
-                        .editCheckpointConnector()
-                            .withPause(true)
-                        .endCheckpointConnector()
-                        .editHeartbeatConnector()
-                            .withState(ConnectorState.STOPPED)
-                            .withPause(true)
-                        .endHeartbeatConnector()
-                    .endMirror()
-                .endSpec()
-                .build();
-
-        KafkaMirrorMaker2Connectors connectors = KafkaMirrorMaker2Connectors.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kmm2);
-        List<KafkaConnector> kcs = connectors.generateConnectorDefinitions();
-
-        assertThat(kcs.size(), is(3));
-
-        KafkaConnector kc = kcs.stream().filter(k -> k.getMetadata().getName().contains("source->target.MirrorSourceConnector")).findFirst().orElseThrow();
-        assertThat(kc.getMetadata().getName(), is("source->target.MirrorSourceConnector"));
-        assertThat(kc.getSpec().getClassName(), is("org.apache.kafka.connect.mirror.MirrorSourceConnector"));
-        assertThat(kc.getSpec().getPause(), is(nullValue()));
-        assertThat(kc.getSpec().getState(), is(ConnectorState.PAUSED));
-
-        kc = kcs.stream().filter(k -> k.getMetadata().getName().contains("source->target.MirrorCheckpointConnector")).findFirst().orElseThrow();
-        assertThat(kc.getMetadata().getName(), is("source->target.MirrorCheckpointConnector"));
-        assertThat(kc.getSpec().getClassName(), is("org.apache.kafka.connect.mirror.MirrorCheckpointConnector"));
-        assertThat(kc.getSpec().getPause(), is(true));
-        assertThat(kc.getSpec().getState(), is(nullValue()));
-
-        kc = kcs.stream().filter(k -> k.getMetadata().getName().contains("source->target.MirrorHeartbeatConnector")).findFirst().orElseThrow();
-        assertThat(kc.getMetadata().getName(), is("source->target.MirrorHeartbeatConnector"));
-        assertThat(kc.getSpec().getClassName(), is("org.apache.kafka.connect.mirror.MirrorHeartbeatConnector"));
-        assertThat(kc.getSpec().getPause(), is(true));
-        assertThat(kc.getSpec().getState(), is(ConnectorState.STOPPED));
     }
 
     @Test
