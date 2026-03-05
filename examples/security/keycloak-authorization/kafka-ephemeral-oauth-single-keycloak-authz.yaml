@@ -15,7 +15,6 @@ spec:
       - id: 0
         type: persistent-claim
         size: 100Gi
-        deleteClaim: false
         kraftMetadata: shared
 ---
 
@@ -25,8 +24,8 @@ metadata:
   name: my-cluster
 spec:
   kafka:
-    version: 4.1.1
-    metadataVersion: 4.1-IV1
+    version: 4.2.0
+    metadataVersion: 4.2-IV1
     listeners:
       - name: tls
         port: 9093
