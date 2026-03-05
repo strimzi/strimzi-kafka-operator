@@ -5,6 +5,7 @@
 package io.strimzi.operator.cluster.operator.assembly;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
@@ -143,6 +144,8 @@ public class KafkaBridgeAssemblyOperatorTest {
         when(mockPdbOps.reconcile(any(), anyString(), any(), pdbCaptor.capture())).thenReturn(Future.succeededFuture());
 
         when(mockCmOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture());
+        // Metrics configuration map
+        when(mockCmOps.getAsync(any(), eq("my-metrics-config"))).thenReturn(Future.succeededFuture(new ConfigMapBuilder().withData(Map.of("metrics.yaml", "metrics-config")).build()));
 
         ArgumentCaptor<KafkaBridge> bridgeCaptor = ArgumentCaptor.forClass(KafkaBridge.class);
         when(mockBridgeOps.updateStatusAsync(any(), bridgeCaptor.capture())).thenReturn(Future.succeededFuture());
@@ -171,7 +174,7 @@ public class KafkaBridgeAssemblyOperatorTest {
                 assertThat(dc.getMetadata().getName(), is(bridge.getComponentName()));
                 assertThat(dc, is(bridge.generateDeployment(Map.of(
                         Annotations.ANNO_STRIMZI_AUTH_HASH, "0",
-                        Annotations.ANNO_STRIMZI_IO_CONFIGURATION_HASH, "eeacc2f1"
+                        Annotations.ANNO_STRIMZI_IO_CONFIGURATION_HASH, "9fd6bb72"
                         ), true, null, null)));
 
                 // Verify PodDisruptionBudget
@@ -239,6 +242,9 @@ public class KafkaBridgeAssemblyOperatorTest {
         when(mockPdbOps.reconcile(any(), anyString(), any(), pdbCaptor.capture())).thenReturn(Future.succeededFuture());
 
         when(mockCmOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new ConfigMap())));
+        // Metrics configuration map
+        when(mockCmOps.getAsync(any(), eq("my-metrics-config"))).thenReturn(Future.succeededFuture(new ConfigMapBuilder().withData(Map.of("metrics.yaml", "metrics-config")).build()));
+
         KafkaBridgeAssemblyOperator ops = new KafkaBridgeAssemblyOperator(vertx,
                 new PlatformFeaturesAvailability(true, kubernetesVersion),
                 new MockCertManager(), new PasswordGenerator(10, "a", "a"),
@@ -317,6 +323,8 @@ public class KafkaBridgeAssemblyOperatorTest {
         when(mockPdbOps.reconcile(any(), anyString(), any(), pdbCaptor.capture())).thenReturn(Future.succeededFuture());
 
         when(mockCmOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture());
+        // Metrics configuration map
+        when(mockCmOps.getAsync(any(), eq("my-metrics-config"))).thenReturn(Future.succeededFuture(new ConfigMapBuilder().withData(Map.of("metrics.yaml", "metrics-config")).build()));
 
         KafkaBridgeAssemblyOperator ops = new KafkaBridgeAssemblyOperator(vertx,
                 new PlatformFeaturesAvailability(true, kubernetesVersion),
@@ -344,7 +352,7 @@ public class KafkaBridgeAssemblyOperatorTest {
                 assertThat(dc.getMetadata().getName(), is(compareTo.getComponentName()));
                 assertThat(dc, is(compareTo.generateDeployment(Map.of(
                         Annotations.ANNO_STRIMZI_AUTH_HASH, "0",
-                        Annotations.ANNO_STRIMZI_IO_CONFIGURATION_HASH, "eeacc2f1"
+                        Annotations.ANNO_STRIMZI_IO_CONFIGURATION_HASH, "9fd6bb72"
                 ), true, null, null)));
 
                 // Verify PodDisruptionBudget
@@ -707,15 +715,22 @@ public class KafkaBridgeAssemblyOperatorTest {
         when(mockBridgeOps.get(kbNamespace, kbName)).thenReturn(kb);
         when(mockBridgeOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(kb));
         when(mockBridgeOps.get(anyString(), anyString())).thenReturn(kb);
+        ArgumentCaptor<KafkaBridge> bridgeCaptor = ArgumentCaptor.forClass(KafkaBridge.class);
+        when(mockBridgeOps.updateStatusAsync(any(), bridgeCaptor.capture())).thenReturn(Future.succeededFuture());
+
         when(mockServiceOps.reconcile(any(), anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
+
         when(mockDcOps.reconcile(any(), anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
         when(mockDcOps.scaleUp(any(), anyString(), anyString(), anyInt(), anyLong())).thenReturn(Future.succeededFuture(42));
         when(mockDcOps.scaleDown(any(), anyString(), anyString(), anyInt(), anyLong())).thenReturn(Future.succeededFuture(42));
         when(mockDcOps.waitForObserved(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+
         when(mockPdbOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture());
+
         when(mockCmOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new ConfigMap())));
-        ArgumentCaptor<KafkaBridge> bridgeCaptor = ArgumentCaptor.forClass(KafkaBridge.class);
-        when(mockBridgeOps.updateStatusAsync(any(), bridgeCaptor.capture())).thenReturn(Future.succeededFuture());
+        // Metrics configuration map
+        when(mockCmOps.getAsync(any(), eq("my-metrics-config"))).thenReturn(Future.succeededFuture(new ConfigMapBuilder().withData(Map.of("metrics.yaml", "metrics-config")).build()));
+
         KafkaBridgeAssemblyOperator ops = new KafkaBridgeAssemblyOperator(vertx,
                 new PlatformFeaturesAvailability(true, kubernetesVersion),
                 new MockCertManager(), new PasswordGenerator(10, "a", "a"),

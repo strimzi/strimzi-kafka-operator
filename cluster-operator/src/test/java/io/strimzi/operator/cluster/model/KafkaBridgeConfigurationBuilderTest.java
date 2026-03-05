@@ -664,20 +664,6 @@ public class KafkaBridgeConfigurationBuilderTest {
                 "kafka.security.protocol=PLAINTEXT"
         ));
     }
-    
-    @Test
-    public void testWithPrometheusJmxExporterLegacyMode() {
-        String configuration = new KafkaBridgeConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, BRIDGE_CLUSTER, BRIDGE_BOOTSTRAP_SERVERS)
-                .withJmxPrometheusExporter(null, true)
-                .build();
-
-        assertThat(configuration, isEquivalent(
-                "bridge.id=my-bridge",
-                "bridge.metrics=" + JmxPrometheusExporterMetrics.TYPE_JMX_EXPORTER,
-                "kafka.bootstrap.servers=my-cluster-kafka-bootstrap:9092",
-                "kafka.security.protocol=PLAINTEXT"
-        ));
-    }
 
     @Test
     public void testWithPrometheusJmxExporter() {
@@ -691,7 +677,7 @@ public class KafkaBridgeConfigurationBuilderTest {
                         .build());
 
         String configuration = new KafkaBridgeConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, BRIDGE_CLUSTER, BRIDGE_BOOTSTRAP_SERVERS)
-                .withJmxPrometheusExporter(model, false)
+                .withJmxPrometheusExporter(model)
                 .build();
 
         assertThat(configuration, isEquivalent(
