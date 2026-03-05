@@ -235,12 +235,6 @@ class ConnectST extends AbstractST {
             .endSpec()
             .build());
 
-        // TODO in future releases can be removed completely as 'spec.pause' property is becoming deprecated.
-        LOGGER.info("Verify pausing and running KafkaConnector, by setting 'spec.pause' property to 'true' and 'false'");
-        verifySinkConnectorByBlockAndUnblock(testStorage, connectPodName,
-            connector -> connector.getSpec().setPause(true),
-            connector -> connector.getSpec().setPause(false));
-
         LOGGER.info("Verify stopping and running KafkaConnector, by setting 'spec.state' property to '' and false");
         verifySinkConnectorByBlockAndUnblock(testStorage, connectPodName,
             connector -> connector.getSpec().setState(ConnectorState.STOPPED),
