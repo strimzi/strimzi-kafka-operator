@@ -1,0 +1,402 @@
+/*
+ * Copyright Strimzi authors.
+ * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
+ */
+package io.strimzi.systemtest.security.custom;
+
+import io.fabric8.kubernetes.api.model.SecretVolumeSourceBuilder;
+import io.fabric8.kubernetes.api.model.VolumeMountBuilder;
+import io.skodjob.kubetest4j.resources.KubeResourceManager;
+import io.skodjob.kubetest4j.security.CertAndKey;
+import io.skodjob.kubetest4j.security.CertAndKeyFiles;
+import io.strimzi.api.kafka.model.common.CertSecretSourceBuilder;
+import io.strimzi.api.kafka.model.common.template.AdditionalVolumeBuilder;
+import io.strimzi.api.kafka.model.connect.KafkaConnect;
+import io.strimzi.api.kafka.model.kafka.KafkaResources;
+import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
+import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
+import io.strimzi.systemtest.AbstractST;
+import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
+import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
+import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
+import io.strimzi.systemtest.security.SystemTestCertBundle;
+import io.strimzi.systemtest.security.SystemTestCertGenerator;
+import io.strimzi.systemtest.storage.TestStorage;
+import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
+import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
+import io.strimzi.systemtest.templates.crd.KafkaTemplates;
+import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
+import io.strimzi.systemtest.templates.crd.KafkaUserTemplates;
+import io.strimzi.systemtest.utils.ClientUtils;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
+import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
+import org.apache.kafka.common.config.SslClientAuth;
+import org.apache.kafka.common.config.SslConfigs;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Tag;
+
+import java.security.cert.X509Certificate;
+import java.util.List;
+
+import static io.strimzi.systemtest.TestTags.CONNECT;
+import static io.strimzi.systemtest.TestTags.CONNECT_COMPONENTS;
+import static io.strimzi.systemtest.TestTags.REGRESSION;
+import static io.strimzi.systemtest.security.SystemTestCertGenerator.exportToPemFiles;
+import static io.strimzi.systemtest.security.SystemTestCertGenerator.generateEndEntityCertAndKey;
+import static io.strimzi.systemtest.security.SystemTestCertGenerator.generateIntermediateCaCertAndKey;
+import static io.strimzi.systemtest.security.SystemTestCertGenerator.generateRootCaCertAndKey;
+import static io.strimzi.systemtest.security.SystemTestCertGenerator.generateStrimziCaCertAndKey;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
+import static org.hamcrest.Matchers.is;
+
+@Tag(REGRESSION)
+// TODO: add suite doc
+public class CustomCaChainST extends AbstractST {
+
+    private static final Logger LOGGER = LogManager.getLogger(CustomCaChainST.class);
+
+    @ParallelNamespaceTest
+        // TODO: add test doc
+    void testMultistageCustomCaUserCertificateAuthentication() {
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
+
+        //  Generate CA chain: Root -> Intermediate -> Leaf
+        final CertAndKey rootCa = generateRootCaCertAndKey();
+        final CertAndKey intermediateCa = generateIntermediateCaCertAndKey(rootCa);
+        final CertAndKey leafCa = generateStrimziCaCertAndKey(intermediateCa, "C=CZ, L=Prague, O=StrimziTest, CN=LeafCA");
+
+        // Generate a foreign (unrelated) Root CA
+        final CertAndKey foreignRootCa = generateRootCaCertAndKey("C=CZ, L=Prague, O=Foreign, CN=ForeignRootCA", null);
+
+        //  Generate user certificates signed by different CAs
+        final String userLeafSignedName = "user-leaf-signed";
+        final String userIntermediateSignedName = "user-intermediate-signed";
+        final String userRootSignedName = "user-root-signed";
+        final String userForeignSignedName = "user-foreign-signed";
+        final String usedKeyInSecret = "user";
+
+        final CertAndKey userLeafSigned = generateEndEntityCertAndKey(leafCa,
+            SystemTestCertGenerator.retrieveKafkaBrokerSANs(testStorage),
+            "C=CZ, L=Prague, O=Strimzi, CN=" + userLeafSignedName);
+        final CertAndKey userIntermediateSigned = generateEndEntityCertAndKey(intermediateCa,
+            SystemTestCertGenerator.retrieveKafkaBrokerSANs(testStorage),
+            "C=CZ, L=Prague, O=Strimzi, CN=" + userIntermediateSignedName);
+        final CertAndKey userRootSigned = generateEndEntityCertAndKey(rootCa,
+            SystemTestCertGenerator.retrieveKafkaBrokerSANs(testStorage),
+            "C=CZ, L=Prague, O=Strimzi, CN=" + userRootSignedName);
+        final CertAndKey userForeignSigned = generateEndEntityCertAndKey(foreignRootCa,
+            SystemTestCertGenerator.retrieveKafkaBrokerSANs(testStorage),
+            "C=CZ, L=Prague, O=Strimzi, CN=" + userForeignSignedName);
+
+        //  Export to PEM files and create K8s secrets
+        final CertAndKeyFiles leafSignedFiles = exportToPemFiles(userLeafSigned);
+        final CertAndKeyFiles intermediateSignedFiles = exportToPemFiles(userIntermediateSigned);
+        final CertAndKeyFiles rootSignedFiles = exportToPemFiles(userRootSigned);
+        final CertAndKeyFiles foreignSignedFiles = exportToPemFiles(userForeignSigned);
+
+        // CA trust secret containing only the Leaf CA cert
+        final String customCaCertName = "custom-leaf-ca";
+        final CertAndKeyFiles leafCaCertFiles = exportToPemFiles(leafCa);
+
+        SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(), userLeafSignedName, leafSignedFiles, usedKeyInSecret);
+        SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(), userIntermediateSignedName, intermediateSignedFiles, usedKeyInSecret);
+        SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(), userRootSignedName, rootSignedFiles, usedKeyInSecret);
+        SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(), userForeignSignedName, foreignSignedFiles, usedKeyInSecret);
+        SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(), customCaCertName, leafCaCertFiles);
+
+        // Deploy Kafka with custom listener
+        final String mountPath = "/mnt/kafka/custom-authn-secrets/my-listener";
+
+        KubeResourceManager.get().createResourceWithWait(
+            KafkaNodePoolTemplates.brokerPool(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
+            KafkaNodePoolTemplates.controllerPool(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 1).build()
+        );
+        KubeResourceManager.get().createResourceWithWait(KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getClusterName(), 3)
+            .editSpec()
+                .editKafka()
+                    .editTemplate()
+                        .editPod()
+                            .addToVolumes(new AdditionalVolumeBuilder()
+                                .withName(customCaCertName)
+                                .withSecret(new SecretVolumeSourceBuilder()
+                                    .withSecretName(customCaCertName)
+                                    .build())
+                                .build())
+                        .endPod()
+                        .editKafkaContainer()
+                            .addToVolumeMounts(new VolumeMountBuilder()
+                                .withName(customCaCertName)
+                                .withMountPath(mountPath + "/" + customCaCertName)
+                                .build())
+                        .endKafkaContainer()
+                    .endTemplate()
+                    .withListeners(new GenericKafkaListenerBuilder()
+                        .withType(KafkaListenerType.INTERNAL)
+                        .withName("custom")
+                        .withPort(9122)
+                        .withTls(true)
+                        .withNewKafkaListenerAuthenticationCustomAuth()
+                            .withSasl(false)
+                            .addToListenerConfig("ssl.client.auth", SslClientAuth.REQUIRED.toString())
+                            .addToListenerConfig(SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG, mountPath + "/" + customCaCertName + "/ca.crt")
+                            .addToListenerConfig(SslConfigs.SSL_TRUSTSTORE_TYPE_CONFIG, "PEM")
+                        .endKafkaListenerAuthenticationCustomAuth()
+                        .build())
+                .endKafka()
+            .endSpec()
+            .build());
+
+        KubeResourceManager.get().createResourceWithWait(KafkaTopicTemplates.topic(testStorage).build());
+
+        final String bootstrapAddress = KafkaResources.bootstrapServiceName(testStorage.getClusterName()) + ":9122";
+
+        // i.) Leaf-CA-signed user should succeed
+        LOGGER.info("Testing that user with Leaf-CA-signed certificate can connect");
+        final KafkaClients kafkaClients = ClientUtils.getInstantTlsClients(testStorage, bootstrapAddress);
+        kafkaClients.setUsername(userLeafSignedName);
+        KubeResourceManager.get().createResourceWithWait(
+            kafkaClients.producerTlsStrimzi(testStorage.getClusterName()),
+            kafkaClients.consumerTlsStrimzi(testStorage.getClusterName())
+        );
+        ClientUtils.waitForInstantClientSuccess(testStorage);
+
+        // ii.) Intermediate-CA-signed user should be rejected
+        // i.e.,
+        // org.apache.kafka.common.errors.SslAuthenticationException: Failed to process post-handshake messages                                       │
+        // Caused by: javax.net.ssl.SSLHandshakeException: Received fatal alert: certificate_required
+        LOGGER.info("Testing that user with Intermediate-CA-signed certificate is rejected");
+        kafkaClients.setUsername(userIntermediateSignedName);
+        KubeResourceManager.get().createResourceWithWait(
+            kafkaClients.producerTlsStrimzi(testStorage.getClusterName()),
+            kafkaClients.consumerTlsStrimzi(testStorage.getClusterName())
+        );
+        ClientUtils.waitForInstantClientsTimeout(testStorage);
+
+        // iii.) Root-CA-signed user should be rejected
+        LOGGER.info("Testing that user with Root-CA-signed certificate is rejected");
+        kafkaClients.setUsername(userRootSignedName);
+        KubeResourceManager.get().createResourceWithWait(
+            kafkaClients.producerTlsStrimzi(testStorage.getClusterName()),
+            kafkaClients.consumerTlsStrimzi(testStorage.getClusterName())
+        );
+        ClientUtils.waitForInstantClientsTimeout(testStorage);
+
+        // iv.) Foreign-CA-signed user should be rejected
+        LOGGER.info("Testing that user with foreign-CA-signed certificate is rejected");
+        kafkaClients.setUsername(userForeignSignedName);
+        KubeResourceManager.get().createResourceWithWait(
+            kafkaClients.producerTlsStrimzi(testStorage.getClusterName()),
+            kafkaClients.consumerTlsStrimzi(testStorage.getClusterName())
+        );
+        ClientUtils.waitForInstantClientsTimeout(testStorage);
+    }
+
+    @ParallelNamespaceTest
+        // TODO: add test doc
+    void testMultistageCustomCaTrustChainEstablishment() {
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
+
+        final SystemTestCertBundle clusterCa = new SystemTestCertBundle(
+            "CN=" + testStorage.getTestName() + "ClusterCA",
+            KafkaResources.clusterCaCertificateSecretName(testStorage.getClusterName()),
+            KafkaResources.clusterCaKeySecretName(testStorage.getClusterName()));
+
+        final SystemTestCertBundle clientsCa = new SystemTestCertBundle(
+            "CN=" + testStorage.getTestName() + "ClientsCA",
+            KafkaResources.clientsCaCertificateSecretName(testStorage.getClusterName()),
+            KafkaResources.clientsCaKeySecretName(testStorage.getClusterName()));
+
+        clusterCa.createCustomSecretsFromBundles(testStorage.getNamespaceName(), testStorage.getClusterName());
+        clientsCa.createCustomSecretsFromBundles(testStorage.getNamespaceName(), testStorage.getClusterName());
+
+        KubeResourceManager.get().createResourceWithWait(
+            KafkaNodePoolTemplates.brokerPool(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
+            KafkaNodePoolTemplates.controllerPool(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 1).build()
+        );
+        KubeResourceManager.get().createResourceWithWait(KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getClusterName(), 3)
+            .editSpec()
+                .withNewClusterCa()
+                    .withGenerateCertificateAuthority(false)
+                .endClusterCa()
+                .withNewClientsCa()
+                    .withGenerateCertificateAuthority(false)
+                .endClientsCa()
+            .endSpec()
+            .build());
+
+        //  Verify broker certificate chain
+        LOGGER.info("Verifying broker certificate chain contains all certificates");
+        final String brokerPodName = KubeResourceManager.get().kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getBrokerSelector()).get(0).getMetadata().getName();
+        final List<X509Certificate> brokerChain = SecretUtils.getCertificatesFromSecret(
+            KubeResourceManager.get().kubeClient().getClient().secrets().inNamespace(testStorage.getNamespaceName()).withName(brokerPodName).get(),
+            brokerPodName + ".crt");
+        LOGGER.info("Broker certificate chain contains {} certificates", brokerChain.size());
+        assertThat("Broker certificate chain should contain at least the leaf cert", brokerChain.size(), is(greaterThanOrEqualTo(1)));
+
+        //  Create KafkaUser and Topic
+        KubeResourceManager.get().createResourceWithWait(KafkaTopicTemplates.topic(testStorage).build());
+        KubeResourceManager.get().createResourceWithWait(KafkaUserTemplates.tlsUser(testStorage).build());
+
+        //  Create trust secrets with different chain levels
+        final String trustFullChainName = "trust-full-chain";
+        final String trustRootIntermediateName = "trust-root-intermediate";
+        final String trustRootOnlyName = "trust-root-only";
+        final String trustForeignName = "trust-foreign";
+
+        final CertAndKeyFiles fullChainFiles = exportToPemFiles(clusterCa.getSystemTestCa(), clusterCa.getIntermediateCa(), clusterCa.getStrimziRootCa());
+        final CertAndKeyFiles rootIntermediateFiles = exportToPemFiles(clusterCa.getIntermediateCa(), clusterCa.getStrimziRootCa());
+        final CertAndKeyFiles rootOnlyFiles = exportToPemFiles(clusterCa.getStrimziRootCa());
+
+        SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(), trustFullChainName, fullChainFiles);
+        SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(), trustRootIntermediateName, rootIntermediateFiles);
+        SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(), trustRootOnlyName, rootOnlyFiles);
+
+        // Generate foreign Root CA
+        final CertAndKey foreignRootCa = generateRootCaCertAndKey("C=CZ, L=Prague, O=Foreign, CN=ForeignRootCA", null);
+        final CertAndKeyFiles foreignCaFiles = exportToPemFiles(foreignRootCa);
+        SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(), trustForeignName, foreignCaFiles);
+
+        //  Verify trust with each chain level
+        final String[] trustSecretNames = {trustFullChainName, trustRootIntermediateName, trustRootOnlyName};
+        for (String trustSecretName : trustSecretNames) {
+            LOGGER.info("Testing trust establishment with trust secret: {}", trustSecretName);
+            final KafkaClients kafkaClients = ClientUtils.getInstantTlsClientBuilder(testStorage)
+                .withCaCertSecretName(trustSecretName)
+                .build();
+            KubeResourceManager.get().createResourceWithWait(
+                kafkaClients.producerTlsStrimzi(testStorage.getClusterName()),
+                kafkaClients.consumerTlsStrimzi(testStorage.getClusterName())
+            );
+            ClientUtils.waitForInstantClientSuccess(testStorage);
+        }
+
+        //  Verify foreign CA trust fails
+        LOGGER.info("Testing that foreign CA trust secret fails to establish trust");
+        final KafkaClients foreignClients = ClientUtils.getInstantTlsClientBuilder(testStorage)
+            .withCaCertSecretName(trustForeignName)
+            .build();
+        KubeResourceManager.get().createResourceWithWait(
+            foreignClients.producerTlsStrimzi(testStorage.getClusterName()),
+            foreignClients.consumerTlsStrimzi(testStorage.getClusterName())
+        );
+        ClientUtils.waitForInstantClientsTimeout(testStorage);
+    }
+
+    @ParallelNamespaceTest
+    @Tag(CONNECT)
+    @Tag(CONNECT_COMPONENTS)
+        // TODO: add test doc
+    void testKafkaConnectTrustWithCustomCaChain() {
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
+
+        final SystemTestCertBundle clusterCa = new SystemTestCertBundle(
+            "CN=" + testStorage.getTestName() + "ClusterCA",
+            KafkaResources.clusterCaCertificateSecretName(testStorage.getClusterName()),
+            KafkaResources.clusterCaKeySecretName(testStorage.getClusterName()));
+
+        final SystemTestCertBundle clientsCa = new SystemTestCertBundle(
+            "CN=" + testStorage.getTestName() + "ClientsCA",
+            KafkaResources.clientsCaCertificateSecretName(testStorage.getClusterName()),
+            KafkaResources.clientsCaKeySecretName(testStorage.getClusterName()));
+
+        // Generate a Subleaf CA signed by the Leaf CA (one level deeper)
+        final CertAndKey subleafCa = generateStrimziCaCertAndKey(clusterCa.getSystemTestCa(), "C=CZ, L=Prague, O=StrimziTest, CN=SubleafCA");
+
+        clusterCa.createCustomSecretsFromBundles(testStorage.getNamespaceName(), testStorage.getClusterName());
+        clientsCa.createCustomSecretsFromBundles(testStorage.getNamespaceName(), testStorage.getClusterName());
+
+        KubeResourceManager.get().createResourceWithWait(
+            KafkaNodePoolTemplates.brokerPool(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
+            KafkaNodePoolTemplates.controllerPool(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 1).build()
+        );
+        KubeResourceManager.get().createResourceWithWait(KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getClusterName(), 3)
+            .editSpec()
+                .withNewClusterCa()
+                    .withGenerateCertificateAuthority(false)
+                .endClusterCa()
+                .withNewClientsCa()
+                    .withGenerateCertificateAuthority(false)
+                .endClientsCa()
+            .endSpec()
+            .build());
+
+        //  Create trust secrets for KafkaConnect
+        final String connectTrustFullName = "trust-full";
+        final String connectTrustRootIntermediateName = "trust-root-im";
+        final String connectTrustRootName = "trust-root";
+        final String connectTrustSubleafName = "trust-subleaf";
+
+        final CertAndKeyFiles fullChainFiles = exportToPemFiles(clusterCa.getSystemTestCa(), clusterCa.getIntermediateCa(), clusterCa.getStrimziRootCa());
+        final CertAndKeyFiles rootIntermediateFiles = exportToPemFiles(clusterCa.getIntermediateCa(), clusterCa.getStrimziRootCa());
+        final CertAndKeyFiles rootOnlyFiles = exportToPemFiles(clusterCa.getStrimziRootCa());
+        final CertAndKeyFiles subleafChainFiles = exportToPemFiles(subleafCa, clusterCa.getSystemTestCa(), clusterCa.getIntermediateCa(), clusterCa.getStrimziRootCa());
+
+        SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(), connectTrustFullName, fullChainFiles);
+        SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(), connectTrustRootIntermediateName, rootIntermediateFiles);
+        SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(), connectTrustRootName, rootOnlyFiles);
+        SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(), connectTrustSubleafName, subleafChainFiles);
+
+        // Positive cases: KafkaConnect should become ready
+        // Deploy one at a time to avoid multiple KafkaConnect instances in the same namespace
+        final String[] positiveSecrets = {connectTrustFullName, connectTrustRootIntermediateName, connectTrustRootName};
+        for (String trustSecretName : positiveSecrets) {
+
+            final String connectClusterName = testStorage.getClusterName() + "-connect-" + trustSecretName;
+            LOGGER.info("Deploying KafkaConnect with trust secret: {}", trustSecretName);
+
+            final KafkaConnect kafkaConnect = KafkaConnectTemplates.kafkaConnect(testStorage.getNamespaceName(), connectClusterName, testStorage.getClusterName(), 1)
+                .editOrNewSpec()
+                    .withNewTls()
+                        .withTrustedCertificates(
+                            new CertSecretSourceBuilder()
+                                .withSecretName(trustSecretName)
+                                .withCertificate("ca.crt")
+                                .build()
+                        )
+                    .endTls()
+                .endSpec()
+                .build();
+
+            KubeResourceManager.get().createResourceWithoutWait(kafkaConnect);
+            KafkaConnectUtils.waitForConnectReady(testStorage.getNamespaceName(), connectClusterName);
+            LOGGER.info("KafkaConnect with trust secret {} is ready, deleting before next iteration", trustSecretName);
+            KubeResourceManager.get().deleteResourceWithWait(kafkaConnect);
+        }
+
+        //  Negative case: Subleaf trust secret should fail
+        final String connectSubleafClusterName = testStorage.getClusterName() + "-connect-subleaf";
+        LOGGER.info("Deploying KafkaConnect with Subleaf trust secret (should fail)");
+        // i.e. this should be in the logs of the KafkaConnect:
+        //  (certificate_unknown) PKIX path building failed: sun.security.provider.certpath.SunCertPathBuilderException:
+        //  unable to find valid certification path to requested target
+        // Plus org.apache.kafka.common.errors.SslAuthenticationException: SSL handshake failed
+
+        KubeResourceManager.get().createResourceWithoutWait(
+            KafkaConnectTemplates.kafkaConnect(testStorage.getNamespaceName(), connectSubleafClusterName, testStorage.getClusterName(), 1)
+                .editOrNewSpec()
+                    .withNewTls()
+                        .withTrustedCertificates(
+                            new CertSecretSourceBuilder()
+                                .withSecretName(connectTrustSubleafName)
+                                .withCertificate("ca.crt")
+                                .build()
+                        )
+                    .endTls()
+                .endSpec()
+                .build());
+
+        KafkaConnectUtils.waitForConnectNotReady(testStorage.getNamespaceName(), connectSubleafClusterName);
+        LOGGER.info("KafkaConnect with Subleaf trust secret correctly failed to become ready");
+    }
+
+    @BeforeAll
+    void setup() {
+        SetupClusterOperator
+            .getInstance()
+            .withDefaultConfiguration()
+            .install();
+    }
+}
