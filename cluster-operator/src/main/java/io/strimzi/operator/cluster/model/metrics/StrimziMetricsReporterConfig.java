@@ -11,8 +11,14 @@ public class StrimziMetricsReporterConfig {
     /** KafkaMetricsReporter fully qualified class name. */
     public static final String KAFKA_CLASS = "io.strimzi.kafka.metrics.KafkaPrometheusMetricsReporter";
 
-    /** YammerMetricsReporter fully qualified class name. */
-    public static final String YAMMER_CLASS = "io.strimzi.kafka.metrics.YammerPrometheusMetricsReporter";
+    /** ClientMetricsReporter fully qualified class name (for Kafka clients). */
+    public static final String CLIENT_CLASS = "io.strimzi.kafka.metrics.prometheus.ClientMetricsReporter";
+
+    /** ServerKafkaMetricsReporter fully qualified class name (for Kafka servers). */
+    public static final String SERVER_KAFKA_CLASS = "io.strimzi.kafka.metrics.prometheus.ServerKafkaMetricsReporter";
+
+    /** ServerYammerMetricsReporter fully qualified class name (for Kafka servers). */
+    public static final String SERVER_YAMMER_CLASS = "io.strimzi.kafka.metrics.prometheus.ServerYammerMetricsReporter";
 
     /** Enable HTTP listener (true/false). */
     public static final String LISTENER_ENABLE = "prometheus.metrics.reporter.listener.enable";
