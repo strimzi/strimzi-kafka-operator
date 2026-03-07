@@ -165,7 +165,6 @@ public class KafkaPool extends AbstractModel {
                         "changing the kraftMetadata flag (but only one volume can be marked to store the KRaft metadata log at a time), " +
                         "adding volumes to Jbod storage or removing volumes from Jbod storage, " +
                         "each volume in Jbod storage should have an unique ID, " +
-                        "changing overrides to nodes which do not exist yet, " +
                         "and increasing size of persistent claim volumes (depending on the volume type and used storage class).");
                 LOGGER.warnCr(reconciliation, "The desired Kafka storage configuration in the KafkaNodePool resource {}/{} contains changes which are not allowed. As a " +
                         "result, all storage changes will be ignored. Use DEBUG level logging for more information " +

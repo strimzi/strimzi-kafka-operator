@@ -8,7 +8,6 @@ import io.strimzi.api.kafka.model.kafka.EphemeralStorageBuilder;
 import io.strimzi.api.kafka.model.kafka.JbodStorageBuilder;
 import io.strimzi.api.kafka.model.kafka.KRaftMetadataStorage;
 import io.strimzi.api.kafka.model.kafka.PersistentClaimStorageBuilder;
-import io.strimzi.api.kafka.model.kafka.PersistentClaimStorageOverrideBuilder;
 import io.strimzi.api.kafka.model.kafka.Storage;
 import io.strimzi.operator.common.Reconciliation;
 import org.junit.jupiter.api.Test;
@@ -60,51 +59,6 @@ public class StorageDiffTest {
         assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent, persistent2, Set.of(0, 1, 5), Set.of(0, 1, 5)).isEmpty(), is(false));
         assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent, persistent2, Set.of(0, 1, 5), Set.of(0, 1, 5)).shrinkSize(), is(false));
         assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent, persistent2, Set.of(0, 1, 5), Set.of(0, 1, 5)).issuesDetected(), is(true));
-    }
-
-    @Test
-    public void testOverridesAreIgnoredInDiff()    {
-        Storage persistent = new PersistentClaimStorageBuilder()
-                .withStorageClass("gp2-ssd")
-                .withDeleteClaim(false)
-                .withId(0)
-                .withSize("100Gi")
-                .build();
-        Storage persistent2 = new PersistentClaimStorageBuilder()
-                .withStorageClass("gp2-ssd")
-                .withDeleteClaim(false)
-                .withId(0)
-                .withSize("100Gi")
-                .withOverrides(new PersistentClaimStorageOverrideBuilder()
-                        .withBroker(1)
-                        .withStorageClass("gp2-ssd-az1")
-                        .build())
-                .build();
-        Storage persistent3 = new PersistentClaimStorageBuilder()
-                .withStorageClass("gp2-ssd")
-                .withDeleteClaim(false)
-                .withId(0)
-                .withSize("100Gi")
-                .withOverrides(new PersistentClaimStorageOverrideBuilder()
-                        .withBroker(1)
-                        .withStorageClass("gp2-ssd-az2")
-                        .build())
-                .build();
-
-        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent, persistent, Set.of(0, 1, 5), Set.of(0, 1, 5)).changesType(), is(false));
-        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent, persistent, Set.of(0, 1, 5), Set.of(0, 1, 5)).isEmpty(), is(true));
-        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent, persistent, Set.of(0, 1, 5), Set.of(0, 1, 5)).shrinkSize(), is(false));
-        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent, persistent, Set.of(0, 1, 5), Set.of(0, 1, 5)).issuesDetected(), is(false));
-
-        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent, persistent2, Set.of(0, 1, 5), Set.of(0, 1, 5)).changesType(), is(false));
-        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent, persistent2, Set.of(0, 1, 5), Set.of(0, 1, 5)).isEmpty(), is(true));
-        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent, persistent2, Set.of(0, 1, 5), Set.of(0, 1, 5)).shrinkSize(), is(false));
-        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent, persistent2, Set.of(0, 1, 5), Set.of(0, 1, 5)).issuesDetected(), is(false));
-
-        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent2, persistent3, Set.of(0, 1, 5), Set.of(0, 1, 5)).changesType(), is(false));
-        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent2, persistent3, Set.of(0, 1, 5), Set.of(0, 1, 5)).isEmpty(), is(true));
-        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent2, persistent3, Set.of(0, 1, 5), Set.of(0, 1, 5)).shrinkSize(), is(false));
-        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent2, persistent3, Set.of(0, 1, 5), Set.of(0, 1, 5)).issuesDetected(), is(false));
     }
 
     @Test
