@@ -692,9 +692,6 @@ class MirrorMaker2ST extends AbstractST {
         checkpointConnectorConfig.put("emit.checkpoints.interval.seconds", "1");
         checkpointConnectorConfig.put("checkpoints.topic.replication.factor", "1");
 
-        Map<String, Object> heartbeatConnectorConfig = new HashMap<>();
-        heartbeatConnectorConfig.put("heartbeats.topic.replication.factor", "1");
-
         KubeResourceManager.get().createResourceWithWait(
             KafkaMirrorMaker2Templates.kafkaMirrorMaker2(testStorage.getNamespaceName(), testStorage.getSourceClusterName(), testStorage.getSourceClusterName(), testStorage.getTargetClusterName(), 1, false)
                 .editSpec()
@@ -705,9 +702,6 @@ class MirrorMaker2ST extends AbstractST {
                         .editCheckpointConnector()
                             .addToConfig(checkpointConnectorConfig)
                         .endCheckpointConnector()
-                        .editOrNewHeartbeatConnector()
-                            .addToConfig(heartbeatConnectorConfig)
-                        .endHeartbeatConnector()
                         .withTopicsPattern(".*")
                         .withGroupsPattern(".*")
                     .endMirror()
@@ -722,9 +716,6 @@ class MirrorMaker2ST extends AbstractST {
                         .editCheckpointConnector()
                             .addToConfig(checkpointConnectorConfig)
                         .endCheckpointConnector()
-                        .editOrNewHeartbeatConnector()
-                            .addToConfig(heartbeatConnectorConfig)
-                        .endHeartbeatConnector()
                         .withTopicsPattern(".*")
                         .withGroupsPattern(".*")
                     .endMirror()

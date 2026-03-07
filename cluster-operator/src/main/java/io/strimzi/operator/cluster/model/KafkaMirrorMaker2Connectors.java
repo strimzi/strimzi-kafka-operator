@@ -55,16 +55,13 @@ public class KafkaMirrorMaker2Connectors {
     private static final String CONNECT_CONFIG_FILE = "/tmp/strimzi-connect.properties";
     private static final String SOURCE_CONNECTOR_SUFFIX = ".MirrorSourceConnector";
     private static final String CHECKPOINT_CONNECTOR_SUFFIX = ".MirrorCheckpointConnector";
-    private static final String HEARTBEAT_CONNECTOR_SUFFIX = ".MirrorHeartbeatConnector";
     protected static final String PLACEHOLDER_CERT_STORE_PASSWORD_CONFIG_PROVIDER_ENV_VAR = "${strimzienv:MIRRORMAKER_2_CERTS_STORE_PASSWORD}";
 
     private static final String PLACEHOLDER_MIRRORMAKER2_CONNECTOR_CONFIGS_TEMPLATE_CONFIG_PROVIDER_DIR = "${strimzidir:%s%s/%s:%s}";
 
-    @SuppressWarnings("deprecation") // Heartbeat connector is deprecated
     private static final Map<String, Function<KafkaMirrorMaker2MirrorSpec, KafkaMirrorMaker2ConnectorSpec>> CONNECTORS = Map.of(
             SOURCE_CONNECTOR_SUFFIX, KafkaMirrorMaker2MirrorSpec::getSourceConnector,
-            CHECKPOINT_CONNECTOR_SUFFIX, KafkaMirrorMaker2MirrorSpec::getCheckpointConnector,
-            HEARTBEAT_CONNECTOR_SUFFIX, KafkaMirrorMaker2MirrorSpec::getHeartbeatConnector
+            CHECKPOINT_CONNECTOR_SUFFIX, KafkaMirrorMaker2MirrorSpec::getCheckpointConnector
     );
 
     private final Reconciliation reconciliation;
@@ -157,14 +154,8 @@ public class KafkaMirrorMaker2Connectors {
 
         // Topics exclusion pattern
         String topicsExcludePattern = mirror.getTopicsExcludePattern();
-        @SuppressWarnings("deprecation") // getTopicsBlacklistPattern() is deprecated
-        String topicsBlacklistPattern = mirror.getTopicsBlacklistPattern();
-        if (topicsExcludePattern != null && topicsBlacklistPattern != null) {
-            LOGGER.warnCr(reconciliation, "Both topicsExcludePattern and topicsBlacklistPattern mirror properties are present, ignoring topicsBlacklistPattern as it is deprecated");
-        }
-        String topicsExclude = topicsExcludePattern != null ? topicsExcludePattern : topicsBlacklistPattern;
-        if (topicsExclude != null) {
-            config.put("topics.exclude", topicsExclude);
+        if (topicsExcludePattern != null) {
+            config.put("topics.exclude", topicsExcludePattern);
         }
 
         // Groups pattern
@@ -174,14 +165,8 @@ public class KafkaMirrorMaker2Connectors {
 
         // Groups exclusion pattern
         String groupsExcludePattern = mirror.getGroupsExcludePattern();
-        @SuppressWarnings("deprecation") // getGroupsBlacklistPattern() is deprecated
-        String groupsBlacklistPattern = mirror.getGroupsBlacklistPattern();
-        if (groupsExcludePattern != null && groupsBlacklistPattern != null) {
-            LOGGER.warnCr(reconciliation, "Both groupsExcludePattern and groupsBlacklistPattern mirror properties are present, ignoring groupsBlacklistPattern as it is deprecated");
-        }
-        String groupsExclude = groupsExcludePattern != null ? groupsExcludePattern :  groupsBlacklistPattern;
-        if (groupsExclude != null) {
-            config.put("groups.exclude", groupsExclude);
+        if (groupsExcludePattern != null) {
+            config.put("groups.exclude", groupsExcludePattern);
         }
 
         // Tracing

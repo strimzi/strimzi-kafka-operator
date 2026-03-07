@@ -11,7 +11,6 @@ import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2Builder;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2ClusterSpec;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2ClusterSpecBuilder;
-import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2MirrorSpec;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2MirrorSpecBuilder;
 import io.strimzi.operator.cluster.model.metrics.StrimziMetricsReporterConfig;
 import io.strimzi.operator.common.Reconciliation;
@@ -61,9 +60,6 @@ public class KafkaMirrorMaker2ConnectorsTest {
                             .withTasksMax(3)
                             .withConfig(Map.of("sync.group.offsets.enabled", "true"))
                         .endCheckpointConnector()
-                        .withNewHeartbeatConnector()
-                            .withTasksMax(1)
-                        .endHeartbeatConnector()
                         .withTopicsPattern("my-topic-.*")
                         .withTopicsExcludePattern("exclude-topic-.*")
                         .withGroupsPattern("my-group-.*")
@@ -95,7 +91,7 @@ public class KafkaMirrorMaker2ConnectorsTest {
         Map<String, Object> expectedCheckpoint = new TreeMap<>(expectedAll);
         expectedCheckpoint.put("sync.group.offsets.enabled", "true");
 
-        assertThat(kcs.size(), is(3));
+        assertThat(kcs.size(), is(2));
 
         KafkaConnector kc = kcs.stream().filter(k -> k.getMetadata().getName().contains("source->target.MirrorSourceConnector")).findFirst().orElseThrow();
         assertThat(kc.getMetadata().getName(), is("source->target.MirrorSourceConnector"));
@@ -110,13 +106,6 @@ public class KafkaMirrorMaker2ConnectorsTest {
         assertThat(kc.getSpec().getTasksMax(), is(3));
         assertThat(kc.getSpec().getState(), is(nullValue()));
         assertThat(kc.getSpec().getConfig(), is(expectedCheckpoint));
-
-        kc = kcs.stream().filter(k -> k.getMetadata().getName().contains("source->target.MirrorHeartbeatConnector")).findFirst().orElseThrow();
-        assertThat(kc.getMetadata().getName(), is("source->target.MirrorHeartbeatConnector"));
-        assertThat(kc.getSpec().getClassName(), is("org.apache.kafka.connect.mirror.MirrorHeartbeatConnector"));
-        assertThat(kc.getSpec().getTasksMax(), is(1));
-        assertThat(kc.getSpec().getState(), is(nullValue()));
-        assertThat(kc.getSpec().getConfig(), is(expectedAll));
     }
 
     @Test
@@ -180,9 +169,6 @@ public class KafkaMirrorMaker2ConnectorsTest {
                                 .withTasksMax(13)
                                 .withConfig(Map.of("sync.group.offsets.enabled", "false"))
                             .endCheckpointConnector()
-                            .withNewHeartbeatConnector()
-                                .withTasksMax(11)
-                            .endHeartbeatConnector()
                             .build())
                 .endSpec()
                 .build();
@@ -222,7 +208,7 @@ public class KafkaMirrorMaker2ConnectorsTest {
         Map<String, Object> expectedCheckpoint2 = new TreeMap<>(expectedAll2);
         expectedCheckpoint2.put("sync.group.offsets.enabled", "false");
 
-        assertThat(kcs.size(), is(6));
+        assertThat(kcs.size(), is(4));
 
         KafkaConnector kc = kcs.stream().filter(k -> k.getMetadata().getName().contains("source->target.MirrorSourceConnector")).findFirst().orElseThrow();
         assertThat(kc.getMetadata().getName(), is("source->target.MirrorSourceConnector"));
@@ -238,13 +224,6 @@ public class KafkaMirrorMaker2ConnectorsTest {
         assertThat(kc.getSpec().getState(), is(nullValue()));
         assertThat(kc.getSpec().getConfig(), is(expectedCheckpoint));
 
-        kc = kcs.stream().filter(k -> k.getMetadata().getName().contains("source->target.MirrorHeartbeatConnector")).findFirst().orElseThrow();
-        assertThat(kc.getMetadata().getName(), is("source->target.MirrorHeartbeatConnector"));
-        assertThat(kc.getSpec().getClassName(), is("org.apache.kafka.connect.mirror.MirrorHeartbeatConnector"));
-        assertThat(kc.getSpec().getTasksMax(), is(1));
-        assertThat(kc.getSpec().getState(), is(nullValue()));
-        assertThat(kc.getSpec().getConfig(), is(expectedAll));
-
         kc = kcs.stream().filter(k -> k.getMetadata().getName().contains("other-source->target.MirrorSourceConnector")).findFirst().orElseThrow();
         assertThat(kc.getMetadata().getName(), is("other-source->target.MirrorSourceConnector"));
         assertThat(kc.getSpec().getClassName(), is("org.apache.kafka.connect.mirror.MirrorSourceConnector"));
@@ -258,13 +237,6 @@ public class KafkaMirrorMaker2ConnectorsTest {
         assertThat(kc.getSpec().getTasksMax(), is(13));
         assertThat(kc.getSpec().getState(), is(nullValue()));
         assertThat(kc.getSpec().getConfig(), is(expectedCheckpoint2));
-
-        kc = kcs.stream().filter(k -> k.getMetadata().getName().contains("other-source->target.MirrorHeartbeatConnector")).findFirst().orElseThrow();
-        assertThat(kc.getMetadata().getName(), is("other-source->target.MirrorHeartbeatConnector"));
-        assertThat(kc.getSpec().getClassName(), is("org.apache.kafka.connect.mirror.MirrorHeartbeatConnector"));
-        assertThat(kc.getSpec().getTasksMax(), is(11));
-        assertThat(kc.getSpec().getState(), is(nullValue()));
-        assertThat(kc.getSpec().getConfig(), is(expectedAll2));
     }
 
     @Test
@@ -280,15 +252,11 @@ public class KafkaMirrorMaker2ConnectorsTest {
         KafkaMirrorMaker2Connectors connectors = KafkaMirrorMaker2Connectors.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kmm2);
         List<KafkaConnector> kcs = connectors.generateConnectorDefinitions();
 
-        assertThat(kcs.size(), is(2));
+        assertThat(kcs.size(), is(1));
 
         KafkaConnector kc = kcs.stream().filter(k -> k.getMetadata().getName().contains("source->target.MirrorSourceConnector")).findFirst().orElseThrow();
         assertThat(kc.getMetadata().getName(), is("source->target.MirrorSourceConnector"));
         assertThat(kc.getSpec().getClassName(), is("org.apache.kafka.connect.mirror.MirrorSourceConnector"));
-
-        kc = kcs.stream().filter(k -> k.getMetadata().getName().contains("source->target.MirrorHeartbeatConnector")).findFirst().orElseThrow();
-        assertThat(kc.getMetadata().getName(), is("source->target.MirrorHeartbeatConnector"));
-        assertThat(kc.getSpec().getClassName(), is("org.apache.kafka.connect.mirror.MirrorHeartbeatConnector"));
     }
 
     @Test
@@ -314,7 +282,7 @@ public class KafkaMirrorMaker2ConnectorsTest {
         KafkaMirrorMaker2Connectors connectors = KafkaMirrorMaker2Connectors.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kmm2);
         List<KafkaConnector> kcs = connectors.generateConnectorDefinitions();
 
-        assertThat(kcs.size(), is(3));
+        assertThat(kcs.size(), is(2));
 
         KafkaConnector kc = kcs.stream().filter(k -> k.getMetadata().getName().contains("source->target.MirrorSourceConnector")).findFirst().orElseThrow();
         assertThat(kc.getMetadata().getName(), is("source->target.MirrorSourceConnector"));
@@ -328,11 +296,6 @@ public class KafkaMirrorMaker2ConnectorsTest {
         assertThat(kc.getSpec().getClassName(), is("org.apache.kafka.connect.mirror.MirrorCheckpointConnector"));
         assertThat(kc.getSpec().getAutoRestart(), is(notNullValue()));
         assertThat(kc.getSpec().getAutoRestart().isEnabled(), is(false));
-
-        kc = kcs.stream().filter(k -> k.getMetadata().getName().contains("source->target.MirrorHeartbeatConnector")).findFirst().orElseThrow();
-        assertThat(kc.getMetadata().getName(), is("source->target.MirrorHeartbeatConnector"));
-        assertThat(kc.getSpec().getClassName(), is("org.apache.kafka.connect.mirror.MirrorHeartbeatConnector"));
-        assertThat(kc.getSpec().getAutoRestart(), is(nullValue()));
     }
 
     @Test
@@ -353,63 +316,6 @@ public class KafkaMirrorMaker2ConnectorsTest {
         expected.put("topics.exclude", "exclude-topic-.*");
         expected.put("groups", "my-group-.*");
         expected.put("groups.exclude", "exclude-group-.*");
-
-        assertThat(new TreeMap<>(config), is(expected));
-    }
-
-    @Test
-    public void testConnectorConfigurationAlsoWithDeprecatedFields() {
-        KafkaMirrorMaker2MirrorSpec mirror = new KafkaMirrorMaker2MirrorSpecBuilder(KMM2.getSpec().getMirrors().get(0))
-                .withGroupsBlacklistPattern("other-group-.*")
-                .withTopicsBlacklistPattern("other-topic-.*")
-
-                .build();
-
-        KafkaMirrorMaker2Connectors connectors = KafkaMirrorMaker2Connectors.fromCrd(Reconciliation.DUMMY_RECONCILIATION, KMM2);
-        Map<String, Object> config = connectors.prepareMirrorMaker2ConnectorConfig(mirror,
-                KMM2.getSpec().getMirrors().get(0).getSourceConnector());
-
-        Map<String, Object> expected = new TreeMap<>();
-        expected.put("source.cluster.alias", "source");
-        expected.put("source.cluster.bootstrap.servers", "source:9092");
-        expected.put("source.cluster.security.protocol", "PLAINTEXT");
-        expected.put("target.cluster.alias", "target");
-        expected.put("target.cluster.bootstrap.servers", "target:9092");
-        expected.put("target.cluster.security.protocol", "PLAINTEXT");
-        expected.put("sync.topic.acls.enabled", "false");
-        expected.put("topics", "my-topic-.*");
-        expected.put("topics.exclude", "exclude-topic-.*");
-        expected.put("groups", "my-group-.*");
-        expected.put("groups.exclude", "exclude-group-.*");
-
-        assertThat(new TreeMap<>(config), is(expected));
-    }
-
-    @Test
-    public void testConnectorConfigurationOnlyWithDeprecatedFields() {
-        KafkaMirrorMaker2MirrorSpec mirror = new KafkaMirrorMaker2MirrorSpecBuilder(KMM2.getSpec().getMirrors().get(0))
-                .withGroupsBlacklistPattern("other-group-.*")
-                .withTopicsBlacklistPattern("other-topic-.*")
-                .withTopicsExcludePattern(null)
-                .withGroupsExcludePattern(null)
-                .build();
-
-        KafkaMirrorMaker2Connectors connectors = KafkaMirrorMaker2Connectors.fromCrd(Reconciliation.DUMMY_RECONCILIATION, KMM2);
-        Map<String, Object> config = connectors.prepareMirrorMaker2ConnectorConfig(mirror,
-                KMM2.getSpec().getMirrors().get(0).getSourceConnector());
-
-        Map<String, Object> expected = new TreeMap<>();
-        expected.put("source.cluster.alias", "source");
-        expected.put("source.cluster.bootstrap.servers", "source:9092");
-        expected.put("source.cluster.security.protocol", "PLAINTEXT");
-        expected.put("target.cluster.alias", "target");
-        expected.put("target.cluster.bootstrap.servers", "target:9092");
-        expected.put("target.cluster.security.protocol", "PLAINTEXT");
-        expected.put("sync.topic.acls.enabled", "false");
-        expected.put("topics", "my-topic-.*");
-        expected.put("topics.exclude", "other-topic-.*");
-        expected.put("groups", "my-group-.*");
-        expected.put("groups.exclude", "other-group-.*");
 
         assertThat(new TreeMap<>(config), is(expected));
     }
