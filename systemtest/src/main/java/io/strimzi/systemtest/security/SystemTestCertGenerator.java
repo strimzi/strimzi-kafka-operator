@@ -5,6 +5,7 @@
 package io.strimzi.systemtest.security;
 
 import io.skodjob.kubetest4j.security.CertAndKey;
+import io.skodjob.kubetest4j.security.CertAndKeyBuilder;
 import io.skodjob.kubetest4j.security.CertAndKeyFiles;
 import io.strimzi.systemtest.storage.TestStorage;
 import org.bouncycastle.asn1.ASN1Encodable;
@@ -44,11 +45,15 @@ public class SystemTestCertGenerator {
     }
 
     public static CertAndKey generateRootCaCertAndKey(final String rootCaDn, final ASN1Encodable[] sanDnsNames) {
-        return rootCaCertBuilder()
+        CertAndKeyBuilder builder = rootCaCertBuilder()
             .withIssuerDn(rootCaDn)
-            .withSubjectDn(rootCaDn)
-            .withSanDnsNames(sanDnsNames)
-            .build();
+            .withSubjectDn(rootCaDn);
+
+        if (sanDnsNames != null) {
+            builder.withSanDnsNames(sanDnsNames);
+        }
+
+        return builder.build();
     }
 
     public static CertAndKey generateIntermediateCaCertAndKey(CertAndKey rootCert) {
