@@ -14,11 +14,6 @@ import io.fabric8.kubernetes.api.model.ServiceBuilder;
 import io.fabric8.kubernetes.api.model.ServicePortBuilder;
 import io.fabric8.openshift.api.model.RouteBuilder;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
-import io.strimzi.api.kafka.model.bridge.KafkaBridge;
-import io.strimzi.api.kafka.model.bridge.KafkaBridgeBuilder;
-import io.strimzi.api.kafka.model.bridge.KafkaBridgeConsumerSpec;
-import io.strimzi.api.kafka.model.bridge.KafkaBridgeHttpConfig;
-import io.strimzi.api.kafka.model.bridge.KafkaBridgeProducerSpec;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2Builder;
@@ -147,47 +142,6 @@ public class ResourceUtils {
                     .withLabels(Labels.forStrimziCluster(clusterName).withStrimziKind(Kafka.RESOURCE_KIND).toMap())
                 .endMetadata()
                 .addToData("ca.key", caKey)
-                .build();
-    }
-
-    /**
-     * Create an empty Kafka Bridge custom resource
-     */
-    public static KafkaBridge createEmptyKafkaBridge(String namespace, String name) {
-        return new KafkaBridgeBuilder()
-                .withMetadata(new ObjectMetaBuilder()
-                        .withName(name)
-                        .withNamespace(namespace)
-                        .withLabels(Map.of(Labels.KUBERNETES_DOMAIN + "part-of", "tests",
-                                "my-user-label", "cromulent"))
-                        .build())
-                .withNewSpec()
-                    .withNewHttp(8080)
-                .endSpec()
-                .build();
-    }
-
-    public static KafkaBridge createKafkaBridge(String namespace, String name, String image, int replicas, String bootstrapServers, KafkaBridgeProducerSpec producer, KafkaBridgeConsumerSpec consumer, KafkaBridgeHttpConfig http, boolean enableMetrics) {
-        return new KafkaBridgeBuilder()
-                .withMetadata(new ObjectMetaBuilder()
-                        .withName(name)
-                        .withNamespace(namespace)
-                        .withLabels(Map.of(Labels.KUBERNETES_DOMAIN + "part-of", "tests",
-                                "my-user-label", "cromulent"))
-                        .build())
-                .withNewSpec()
-                    .withImage(image)
-                    .withReplicas(replicas)
-                    .withBootstrapServers(bootstrapServers)
-                    .withProducer(producer)
-                    .withConsumer(consumer)
-                    .withNewJmxPrometheusExporterMetricsConfig()
-                        .withNewValueFrom()
-                            .withNewConfigMapKeyRef("metrics.yaml", "my-metrics-config", false)
-                        .endValueFrom()
-                    .endJmxPrometheusExporterMetricsConfig()
-                    .withHttp(http)
-                .endSpec()
                 .build();
     }
 
