@@ -4,8 +4,6 @@
  */
 package io.strimzi.operator.cluster.model;
 
-import io.strimzi.api.kafka.model.common.CertSecretSource;
-import io.strimzi.api.kafka.model.common.CertSecretSourceBuilder;
 import io.strimzi.api.kafka.model.common.Rack;
 import io.strimzi.api.kafka.model.common.metrics.StrimziMetricsReporterBuilder;
 import io.strimzi.api.kafka.model.kafka.EphemeralStorageBuilder;
@@ -20,8 +18,6 @@ import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListener;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerConfigurationBroker;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerConfigurationBrokerBuilder;
-import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthenticationOAuth;
-import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthenticationOAuthBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.api.kafka.model.kafka.quotas.QuotasPluginKafka;
 import io.strimzi.api.kafka.model.kafka.quotas.QuotasPluginKafkaBuilder;
@@ -29,8 +25,6 @@ import io.strimzi.api.kafka.model.kafka.quotas.QuotasPluginStrimzi;
 import io.strimzi.api.kafka.model.kafka.quotas.QuotasPluginStrimziBuilder;
 import io.strimzi.api.kafka.model.kafka.tieredstorage.RemoteStorageManager;
 import io.strimzi.api.kafka.model.kafka.tieredstorage.TieredStorageCustom;
-import io.strimzi.kafka.oauth.server.ServerConfig;
-import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.model.cruisecontrol.CruiseControlMetricsReporter;
 import io.strimzi.operator.cluster.model.metrics.MetricsModel;
 import io.strimzi.operator.cluster.model.metrics.StrimziMetricsReporterConfig;
@@ -43,7 +37,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -55,17 +48,13 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.equalTo;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @SuppressWarnings("checkstyle:classdataabstractioncoupling")
 public class KafkaBrokerConfigurationBuilderTest {
     private final static NodeRef NODE_REF = new NodeRef("my-cluster-kafka-2", 2, "kafka", false, true);
-
-    private final static KafkaVersion KAFKA_VERSION = new KafkaVersion(KafkaVersionTestUtils.LATEST_KAFKA_VERSION, "", false, false, "");
 
     @Test
     public void testBrokerId()  {
@@ -946,142 +935,6 @@ public class KafkaBrokerConfigurationBuilderTest {
     }
 
     @Test
-    public void testKraftOauthBrokerControllerAndMixedNodes()  {
-        Set<NodeRef> nodes = Set.of(
-                new NodeRef("my-cluster-controllers-0", 0, "controllers", true, false),
-                new NodeRef("my-cluster-controllers-1", 1, "controllers", true, false),
-                new NodeRef("my-cluster-controllers-2", 2, "controllers", true, false),
-                new NodeRef("my-cluster-brokers-10", 10, "brokers", false, true),
-                new NodeRef("my-cluster-brokers-11", 11, "brokers", false, true),
-                new NodeRef("my-cluster-brokers-12", 12, "brokers", false, true),
-                new NodeRef("my-cluster-kafka-13", 13, "kafka", true, true),
-                new NodeRef("my-cluster-kafka-14", 14, "kafka", true, true),
-                new NodeRef("my-cluster-kafka-15", 15, "kafka", true, true)
-        );
-
-        GenericKafkaListener listener = new GenericKafkaListenerBuilder()
-                .withName("plain")
-                .withPort(9092)
-                .withType(KafkaListenerType.INTERNAL)
-                .withTls(false)
-                .withNewKafkaListenerAuthenticationOAuth()
-                .withValidIssuerUri("http://valid-issuer")
-                .withJwksEndpointUri("http://jwks")
-                .withEnableECDSA(true)
-                .withUserNameClaim("preferred_username")
-                .withGroupsClaim("$.groups")
-                .withGroupsClaimDelimiter(";")
-                .withMaxSecondsWithoutReauthentication(3600)
-                .withJwksMinRefreshPauseSeconds(5)
-                .withEnablePlain(true)
-                .withTokenEndpointUri("http://token")
-                .withConnectTimeoutSeconds(30)
-                .withReadTimeoutSeconds(30)
-                .withEnableMetrics(true)
-                .withIncludeAcceptHeader(false)
-                .endKafkaListenerAuthenticationOAuth()
-                .build();
-
-        // Controller-only node
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION,
-                nodes.stream().filter(nodeRef -> nodeRef.nodeId() == 2).findFirst().get())
-                .withKRaft("my-cluster", "my-namespace", nodes)
-                .withListeners("my-cluster", "my-namespace", singletonList(listener), listenerId -> "my-cluster-controllers-2.my-cluster-kafka-brokers.my-namespace.svc", listenerId -> "9092")
-                .build();
-
-        assertThat(configuration, isEquivalent("node.id=2",
-                "process.roles=controller",
-                "advertised.listeners=CONTROLPLANE-9090://my-cluster-controllers-2.my-cluster-kafka-brokers.my-namespace.svc:9090",
-                "controller.listener.names=CONTROLPLANE-9090",
-                "controller.quorum.voters=0@my-cluster-controllers-0.my-cluster-kafka-brokers.my-namespace.svc:9090,1@my-cluster-controllers-1.my-cluster-kafka-brokers.my-namespace.svc:9090,2@my-cluster-controllers-2.my-cluster-kafka-brokers.my-namespace.svc:9090,13@my-cluster-kafka-13.my-cluster-kafka-brokers.my-namespace.svc:9090,14@my-cluster-kafka-14.my-cluster-kafka-brokers.my-namespace.svc:9090,15@my-cluster-kafka-15.my-cluster-kafka-brokers.my-namespace.svc:9090",
-                "listener.name.controlplane-9090.ssl.client.auth=required",
-                "listener.name.controlplane-9090.ssl.keystore.certificate.chain=${strimzisecrets:namespace/my-cluster-controllers-2:my-cluster-controllers-2.crt}",
-                "listener.name.controlplane-9090.ssl.keystore.key=${strimzisecrets:namespace/my-cluster-controllers-2:my-cluster-controllers-2.key}",
-                "listener.name.controlplane-9090.ssl.keystore.type=PEM",
-                "listener.name.controlplane-9090.ssl.truststore.certificates=${strimzisecrets:namespace/my-cluster-trustbundle:cluster-ca.crt}",
-                "listener.name.controlplane-9090.ssl.truststore.type=PEM",
-                "listeners=CONTROLPLANE-9090://0.0.0.0:9090",
-                "listener.security.protocol.map=CONTROLPLANE-9090:SSL",
-                "sasl.enabled.mechanisms=",
-                "ssl.endpoint.identification.algorithm=HTTPS",
-                "principal.builder.class=io.strimzi.kafka.oauth.server.OAuthKafkaPrincipalBuilder"));
-
-        // Broker-only node
-        configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION,
-                nodes.stream().filter(nodeRef -> nodeRef.nodeId() == 11).findFirst().get())
-                .withKRaft("my-cluster", "my-namespace", nodes)
-                .withListeners("my-cluster", "my-namespace", singletonList(listener), listenerId -> "my-cluster-brokers-11.my-cluster-kafka-brokers.my-namespace.svc", listenerId -> "9092")
-                .build();
-
-        assertThat(configuration, isEquivalent("node.id=11",
-                "process.roles=broker",
-                "controller.listener.names=CONTROLPLANE-9090",
-                "controller.quorum.voters=0@my-cluster-controllers-0.my-cluster-kafka-brokers.my-namespace.svc:9090,1@my-cluster-controllers-1.my-cluster-kafka-brokers.my-namespace.svc:9090,2@my-cluster-controllers-2.my-cluster-kafka-brokers.my-namespace.svc:9090,13@my-cluster-kafka-13.my-cluster-kafka-brokers.my-namespace.svc:9090,14@my-cluster-kafka-14.my-cluster-kafka-brokers.my-namespace.svc:9090,15@my-cluster-kafka-15.my-cluster-kafka-brokers.my-namespace.svc:9090",
-                "listener.name.controlplane-9090.ssl.client.auth=required",
-                "listener.name.controlplane-9090.ssl.keystore.certificate.chain=${strimzisecrets:namespace/my-cluster-brokers-11:my-cluster-brokers-11.crt}",
-                "listener.name.controlplane-9090.ssl.keystore.key=${strimzisecrets:namespace/my-cluster-brokers-11:my-cluster-brokers-11.key}",
-                "listener.name.controlplane-9090.ssl.keystore.type=PEM",
-                "listener.name.controlplane-9090.ssl.truststore.certificates=${strimzisecrets:namespace/my-cluster-trustbundle:cluster-ca.crt}",
-                "listener.name.controlplane-9090.ssl.truststore.type=PEM",
-                "listener.name.replication-9091.ssl.keystore.certificate.chain=${strimzisecrets:namespace/my-cluster-brokers-11:my-cluster-brokers-11.crt}",
-                "listener.name.replication-9091.ssl.keystore.key=${strimzisecrets:namespace/my-cluster-brokers-11:my-cluster-brokers-11.key}",
-                "listener.name.replication-9091.ssl.keystore.type=PEM",
-                "listener.name.replication-9091.ssl.truststore.certificates=${strimzisecrets:namespace/my-cluster-trustbundle:cluster-ca.crt}",
-                "listener.name.replication-9091.ssl.truststore.type=PEM",
-                "listener.name.replication-9091.ssl.client.auth=required",
-                "listeners=REPLICATION-9091://0.0.0.0:9091,PLAIN-9092://0.0.0.0:9092",
-                "advertised.listeners=REPLICATION-9091://my-cluster-brokers-11.my-cluster-kafka-brokers.my-namespace.svc:9091,PLAIN-9092://my-cluster-brokers-11.my-cluster-kafka-brokers.my-namespace.svc:9092",
-                "listener.security.protocol.map=CONTROLPLANE-9090:SSL,REPLICATION-9091:SSL,PLAIN-9092:SASL_PLAINTEXT",
-                "inter.broker.listener.name=REPLICATION-9091",
-                "sasl.enabled.mechanisms=",
-                "ssl.endpoint.identification.algorithm=HTTPS",
-                "principal.builder.class=io.strimzi.kafka.oauth.server.OAuthKafkaPrincipalBuilder",
-                "listener.name.plain-9092.oauthbearer.sasl.server.callback.handler.class=io.strimzi.kafka.oauth.server.JaasServerOauthValidatorCallbackHandler",
-                "listener.name.plain-9092.oauthbearer.sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required unsecuredLoginStringClaim_sub=\"thePrincipalName\" oauth.valid.issuer.uri=\"http://valid-issuer\" oauth.jwks.endpoint.uri=\"http://jwks\" oauth.jwks.refresh.min.pause.seconds=\"5\" oauth.username.claim=\"preferred_username\" oauth.groups.claim=\"$.groups\" oauth.groups.claim.delimiter=\";\" oauth.connect.timeout.seconds=\"30\" oauth.read.timeout.seconds=\"30\" oauth.enable.metrics=\"true\" oauth.include.accept.header=\"false\" oauth.config.id=\"PLAIN-9092\";",
-                "listener.name.plain-9092.plain.sasl.server.callback.handler.class=io.strimzi.kafka.oauth.server.plain.JaasServerOauthOverPlainValidatorCallbackHandler",
-                "listener.name.plain-9092.plain.sasl.jaas.config=org.apache.kafka.common.security.plain.PlainLoginModule required oauth.valid.issuer.uri=\"http://valid-issuer\" oauth.jwks.endpoint.uri=\"http://jwks\" oauth.jwks.refresh.min.pause.seconds=\"5\" oauth.username.claim=\"preferred_username\" oauth.groups.claim=\"$.groups\" oauth.groups.claim.delimiter=\";\" oauth.connect.timeout.seconds=\"30\" oauth.read.timeout.seconds=\"30\" oauth.enable.metrics=\"true\" oauth.include.accept.header=\"false\" oauth.config.id=\"PLAIN-9092\" oauth.token.endpoint.uri=\"http://token\";",
-                "listener.name.plain-9092.sasl.enabled.mechanisms=OAUTHBEARER,PLAIN",
-                "listener.name.plain-9092.connections.max.reauth.ms=3600000"));
-
-        // Mixed node
-        configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION,
-                nodes.stream().filter(nodeRef -> nodeRef.nodeId() == 14).findFirst().get())
-                .withKRaft("my-cluster", "my-namespace", nodes)
-                .withListeners("my-cluster", "my-namespace", singletonList(listener), listenerId -> "my-cluster-kafka-14.my-cluster-kafka-brokers.my-namespace.svc", listenerId -> "9092")
-                .build();
-
-        assertThat(configuration, isEquivalent("node.id=14",
-                "process.roles=broker,controller",
-                "controller.listener.names=CONTROLPLANE-9090",
-                "controller.quorum.voters=0@my-cluster-controllers-0.my-cluster-kafka-brokers.my-namespace.svc:9090,1@my-cluster-controllers-1.my-cluster-kafka-brokers.my-namespace.svc:9090,2@my-cluster-controllers-2.my-cluster-kafka-brokers.my-namespace.svc:9090,13@my-cluster-kafka-13.my-cluster-kafka-brokers.my-namespace.svc:9090,14@my-cluster-kafka-14.my-cluster-kafka-brokers.my-namespace.svc:9090,15@my-cluster-kafka-15.my-cluster-kafka-brokers.my-namespace.svc:9090",
-                "listener.name.controlplane-9090.ssl.client.auth=required",
-                "listener.name.controlplane-9090.ssl.keystore.certificate.chain=${strimzisecrets:namespace/my-cluster-kafka-14:my-cluster-kafka-14.crt}",
-                "listener.name.controlplane-9090.ssl.keystore.key=${strimzisecrets:namespace/my-cluster-kafka-14:my-cluster-kafka-14.key}",
-                "listener.name.controlplane-9090.ssl.keystore.type=PEM",
-                "listener.name.controlplane-9090.ssl.truststore.certificates=${strimzisecrets:namespace/my-cluster-trustbundle:cluster-ca.crt}",
-                "listener.name.controlplane-9090.ssl.truststore.type=PEM",
-                "listener.name.replication-9091.ssl.keystore.certificate.chain=${strimzisecrets:namespace/my-cluster-kafka-14:my-cluster-kafka-14.crt}",
-                "listener.name.replication-9091.ssl.keystore.key=${strimzisecrets:namespace/my-cluster-kafka-14:my-cluster-kafka-14.key}",
-                "listener.name.replication-9091.ssl.keystore.type=PEM",
-                "listener.name.replication-9091.ssl.truststore.certificates=${strimzisecrets:namespace/my-cluster-trustbundle:cluster-ca.crt}",
-                "listener.name.replication-9091.ssl.truststore.type=PEM",
-                "listener.name.replication-9091.ssl.client.auth=required",
-                "listeners=CONTROLPLANE-9090://0.0.0.0:9090,REPLICATION-9091://0.0.0.0:9091,PLAIN-9092://0.0.0.0:9092",
-                "advertised.listeners=CONTROLPLANE-9090://my-cluster-kafka-14.my-cluster-kafka-brokers.my-namespace.svc:9090,REPLICATION-9091://my-cluster-kafka-14.my-cluster-kafka-brokers.my-namespace.svc:9091,PLAIN-9092://my-cluster-kafka-14.my-cluster-kafka-brokers.my-namespace.svc:9092",
-                "listener.security.protocol.map=CONTROLPLANE-9090:SSL,REPLICATION-9091:SSL,PLAIN-9092:SASL_PLAINTEXT",
-                "inter.broker.listener.name=REPLICATION-9091",
-                "sasl.enabled.mechanisms=",
-                "ssl.endpoint.identification.algorithm=HTTPS",
-                "principal.builder.class=io.strimzi.kafka.oauth.server.OAuthKafkaPrincipalBuilder",
-                "listener.name.plain-9092.oauthbearer.sasl.server.callback.handler.class=io.strimzi.kafka.oauth.server.JaasServerOauthValidatorCallbackHandler",
-                "listener.name.plain-9092.oauthbearer.sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required unsecuredLoginStringClaim_sub=\"thePrincipalName\" oauth.valid.issuer.uri=\"http://valid-issuer\" oauth.jwks.endpoint.uri=\"http://jwks\" oauth.jwks.refresh.min.pause.seconds=\"5\" oauth.username.claim=\"preferred_username\" oauth.groups.claim=\"$.groups\" oauth.groups.claim.delimiter=\";\" oauth.connect.timeout.seconds=\"30\" oauth.read.timeout.seconds=\"30\" oauth.enable.metrics=\"true\" oauth.include.accept.header=\"false\" oauth.config.id=\"PLAIN-9092\";",
-                "listener.name.plain-9092.plain.sasl.server.callback.handler.class=io.strimzi.kafka.oauth.server.plain.JaasServerOauthOverPlainValidatorCallbackHandler",
-                "listener.name.plain-9092.plain.sasl.jaas.config=org.apache.kafka.common.security.plain.PlainLoginModule required oauth.valid.issuer.uri=\"http://valid-issuer\" oauth.jwks.endpoint.uri=\"http://jwks\" oauth.jwks.refresh.min.pause.seconds=\"5\" oauth.username.claim=\"preferred_username\" oauth.groups.claim=\"$.groups\" oauth.groups.claim.delimiter=\";\" oauth.connect.timeout.seconds=\"30\" oauth.read.timeout.seconds=\"30\" oauth.enable.metrics=\"true\" oauth.include.accept.header=\"false\" oauth.config.id=\"PLAIN-9092\" oauth.token.endpoint.uri=\"http://token\";",
-                "listener.name.plain-9092.sasl.enabled.mechanisms=OAUTHBEARER,PLAIN",
-                "listener.name.plain-9092.connections.max.reauth.ms=3600000"));
-    }
-
-    @Test
     public void testWithPlainListenersWithSaslAuth()  {
         GenericKafkaListener listener = new GenericKafkaListenerBuilder()
                 .withName("plain")
@@ -1756,342 +1609,6 @@ public class KafkaBrokerConfigurationBuilderTest {
     }
 
     @Test
-    public void testOauthConfiguration()  {
-        GenericKafkaListener listener = new GenericKafkaListenerBuilder()
-                .withName("plain")
-                .withPort(9092)
-                .withType(KafkaListenerType.INTERNAL)
-                .withTls(false)
-                .withNewKafkaListenerAuthenticationOAuth()
-                    .withValidIssuerUri("http://valid-issuer")
-                    .withJwksEndpointUri("http://jwks")
-                    .withServerBearerTokenLocation("/var/run/secrets/kubernetes.io/serviceaccount/token")
-                    .withEnableECDSA(true)
-                    .withUserNameClaim("preferred_username")
-                    .withUserNamePrefix("user-")
-                    .withFallbackUserNameClaim("client_id")
-                    .withFallbackUserNamePrefix("service-account-")
-                    .withGroupsClaim("$.groups")
-                    .withGroupsClaimDelimiter(";")
-                    .withMaxSecondsWithoutReauthentication(3600)
-                    .withJwksMinRefreshPauseSeconds(5)
-                    .withEnablePlain(true)
-                    .withClientGrantType("custom_client_credentials")
-                    .withTokenEndpointUri("http://token")
-                    .withConnectTimeoutSeconds(30)
-                    .withReadTimeoutSeconds(30)
-                    .withEnableMetrics(true)
-                    .withIncludeAcceptHeader(false)
-                .endKafkaListenerAuthenticationOAuth()
-                .build();
-
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
-                .withListeners("my-cluster", "my-namespace", singletonList(listener), listenerId -> "dummy-advertised-address", listenerId -> "1919")
-                .build();
-
-        assertThat(configuration, isEquivalent("node.id=2",
-                "listener.name.controlplane-9090.ssl.client.auth=required",
-                "listener.name.controlplane-9090.ssl.keystore.certificate.chain=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.crt}",
-                "listener.name.controlplane-9090.ssl.keystore.key=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.key}",
-                "listener.name.controlplane-9090.ssl.keystore.type=PEM",
-                "listener.name.controlplane-9090.ssl.truststore.certificates=${strimzisecrets:namespace/my-cluster-trustbundle:cluster-ca.crt}",
-                "listener.name.controlplane-9090.ssl.truststore.type=PEM",
-                "listener.name.replication-9091.ssl.keystore.certificate.chain=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.crt}",
-                "listener.name.replication-9091.ssl.keystore.key=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.key}",
-                "listener.name.replication-9091.ssl.keystore.type=PEM",
-                "listener.name.replication-9091.ssl.truststore.certificates=${strimzisecrets:namespace/my-cluster-trustbundle:cluster-ca.crt}",
-                "listener.name.replication-9091.ssl.truststore.type=PEM",
-                "listener.name.replication-9091.ssl.client.auth=required",
-                "listeners=REPLICATION-9091://0.0.0.0:9091,PLAIN-9092://0.0.0.0:9092",
-                "advertised.listeners=REPLICATION-9091://my-cluster-kafka-2.my-cluster-kafka-brokers.my-namespace.svc:9091,PLAIN-9092://dummy-advertised-address:1919",
-                "listener.security.protocol.map=CONTROLPLANE-9090:SSL,REPLICATION-9091:SSL,PLAIN-9092:SASL_PLAINTEXT",
-                "inter.broker.listener.name=REPLICATION-9091",
-                "sasl.enabled.mechanisms=",
-                "ssl.endpoint.identification.algorithm=HTTPS",
-                "principal.builder.class=io.strimzi.kafka.oauth.server.OAuthKafkaPrincipalBuilder",
-                "listener.name.plain-9092.oauthbearer.sasl.server.callback.handler.class=io.strimzi.kafka.oauth.server.JaasServerOauthValidatorCallbackHandler",
-                "listener.name.plain-9092.oauthbearer.sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required unsecuredLoginStringClaim_sub=\"thePrincipalName\" oauth.valid.issuer.uri=\"http://valid-issuer\" oauth.client.credentials.grant.type=\"custom_client_credentials\" oauth.jwks.endpoint.uri=\"http://jwks\" oauth.jwks.refresh.min.pause.seconds=\"5\" oauth.server.bearer.token.location=\"/var/run/secrets/kubernetes.io/serviceaccount/token\" oauth.username.claim=\"preferred_username\" oauth.username.prefix=\"user-\" oauth.fallback.username.claim=\"client_id\" oauth.fallback.username.prefix=\"service-account-\" oauth.groups.claim=\"$.groups\" oauth.groups.claim.delimiter=\";\" oauth.connect.timeout.seconds=\"30\" oauth.read.timeout.seconds=\"30\" oauth.enable.metrics=\"true\" oauth.include.accept.header=\"false\" oauth.config.id=\"PLAIN-9092\";",
-                "listener.name.plain-9092.plain.sasl.server.callback.handler.class=io.strimzi.kafka.oauth.server.plain.JaasServerOauthOverPlainValidatorCallbackHandler",
-                "listener.name.plain-9092.plain.sasl.jaas.config=org.apache.kafka.common.security.plain.PlainLoginModule required oauth.valid.issuer.uri=\"http://valid-issuer\" oauth.client.credentials.grant.type=\"custom_client_credentials\" oauth.jwks.endpoint.uri=\"http://jwks\" oauth.jwks.refresh.min.pause.seconds=\"5\" oauth.server.bearer.token.location=\"/var/run/secrets/kubernetes.io/serviceaccount/token\" oauth.username.claim=\"preferred_username\" oauth.username.prefix=\"user-\" oauth.fallback.username.claim=\"client_id\" oauth.fallback.username.prefix=\"service-account-\" oauth.groups.claim=\"$.groups\" oauth.groups.claim.delimiter=\";\" oauth.connect.timeout.seconds=\"30\" oauth.read.timeout.seconds=\"30\" oauth.enable.metrics=\"true\" oauth.include.accept.header=\"false\" oauth.config.id=\"PLAIN-9092\" oauth.token.endpoint.uri=\"http://token\";",
-                "listener.name.plain-9092.sasl.enabled.mechanisms=OAUTHBEARER,PLAIN",
-                "listener.name.plain-9092.connections.max.reauth.ms=3600000"));
-    }
-
-    @Test
-    public void testOauthConfigurationWithPlainOnly()  {
-        GenericKafkaListener listener = new GenericKafkaListenerBuilder()
-                .withName("plain")
-                .withPort(9092)
-                .withType(KafkaListenerType.INTERNAL)
-                .withTls(false)
-                .withNewKafkaListenerAuthenticationOAuth()
-                .withValidIssuerUri("http://valid-issuer")
-                .withJwksEndpointUri("http://jwks")
-                .withUserNameClaim("preferred_username")
-                .withMaxSecondsWithoutReauthentication(3600)
-                .withJwksMinRefreshPauseSeconds(5)
-                .withEnablePlain(true)
-                .withEnableOauthBearer(false)
-                .withTokenEndpointUri("http://token")
-                .withClientAudience("kafka")
-                .withClientScope("messaging")
-                .withClientGrantType("custom_client_credentials")
-                .withConnectTimeoutSeconds(30)
-                .withEnableMetrics(true)
-                .endKafkaListenerAuthenticationOAuth()
-                .build();
-
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
-                .withListeners("my-cluster", "my-namespace", singletonList(listener), listenerId -> "dummy-advertised-address", listenerId -> "1919")
-                .build();
-
-        assertThat(configuration, isEquivalent("node.id=2",
-                "listener.name.controlplane-9090.ssl.client.auth=required",
-                "listener.name.controlplane-9090.ssl.keystore.certificate.chain=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.crt}",
-                "listener.name.controlplane-9090.ssl.keystore.key=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.key}",
-                "listener.name.controlplane-9090.ssl.keystore.type=PEM",
-                "listener.name.controlplane-9090.ssl.truststore.certificates=${strimzisecrets:namespace/my-cluster-trustbundle:cluster-ca.crt}",
-                "listener.name.controlplane-9090.ssl.truststore.type=PEM",
-                "listener.name.replication-9091.ssl.keystore.certificate.chain=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.crt}",
-                "listener.name.replication-9091.ssl.keystore.key=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.key}",
-                "listener.name.replication-9091.ssl.keystore.type=PEM",
-                "listener.name.replication-9091.ssl.truststore.certificates=${strimzisecrets:namespace/my-cluster-trustbundle:cluster-ca.crt}",
-                "listener.name.replication-9091.ssl.truststore.type=PEM",
-                "listener.name.replication-9091.ssl.client.auth=required",
-                "listeners=REPLICATION-9091://0.0.0.0:9091,PLAIN-9092://0.0.0.0:9092",
-                "advertised.listeners=REPLICATION-9091://my-cluster-kafka-2.my-cluster-kafka-brokers.my-namespace.svc:9091,PLAIN-9092://dummy-advertised-address:1919",
-                "listener.security.protocol.map=CONTROLPLANE-9090:SSL,REPLICATION-9091:SSL,PLAIN-9092:SASL_PLAINTEXT",
-                "inter.broker.listener.name=REPLICATION-9091",
-                "sasl.enabled.mechanisms=",
-                "ssl.endpoint.identification.algorithm=HTTPS",
-                "principal.builder.class=io.strimzi.kafka.oauth.server.OAuthKafkaPrincipalBuilder",
-                "listener.name.plain-9092.plain.sasl.server.callback.handler.class=io.strimzi.kafka.oauth.server.plain.JaasServerOauthOverPlainValidatorCallbackHandler",
-                "listener.name.plain-9092.plain.sasl.jaas.config=org.apache.kafka.common.security.plain.PlainLoginModule required oauth.valid.issuer.uri=\"http://valid-issuer\" oauth.client.credentials.grant.type=\"custom_client_credentials\" oauth.scope=\"messaging\" oauth.audience=\"kafka\" oauth.jwks.endpoint.uri=\"http://jwks\" oauth.jwks.refresh.min.pause.seconds=\"5\" oauth.username.claim=\"preferred_username\" oauth.connect.timeout.seconds=\"30\" oauth.enable.metrics=\"true\" oauth.config.id=\"PLAIN-9092\" oauth.token.endpoint.uri=\"http://token\";",
-                "listener.name.plain-9092.sasl.enabled.mechanisms=PLAIN",
-                "listener.name.plain-9092.connections.max.reauth.ms=3600000"));
-    }
-
-    @Test
-    public void testOauthConfigurationWithoutOptions()  {
-        GenericKafkaListener listener = new GenericKafkaListenerBuilder()
-                .withName("plain")
-                .withPort(9092)
-                .withType(KafkaListenerType.INTERNAL)
-                .withTls(false)
-                .withNewKafkaListenerAuthenticationOAuth()
-                .endKafkaListenerAuthenticationOAuth()
-                .build();
-
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
-                .withListeners("my-cluster", "my-namespace", singletonList(listener), listenerId -> "dummy-advertised-address", listenerId -> "1919")
-                .build();
-
-        assertThat(configuration, isEquivalent("node.id=2",
-                "listener.name.controlplane-9090.ssl.client.auth=required",
-                "listener.name.controlplane-9090.ssl.keystore.certificate.chain=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.crt}",
-                "listener.name.controlplane-9090.ssl.keystore.key=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.key}",
-                "listener.name.controlplane-9090.ssl.keystore.type=PEM",
-                "listener.name.controlplane-9090.ssl.truststore.certificates=${strimzisecrets:namespace/my-cluster-trustbundle:cluster-ca.crt}",
-                "listener.name.controlplane-9090.ssl.truststore.type=PEM",
-                "listener.name.replication-9091.ssl.keystore.certificate.chain=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.crt}",
-                "listener.name.replication-9091.ssl.keystore.key=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.key}",
-                "listener.name.replication-9091.ssl.keystore.type=PEM",
-                "listener.name.replication-9091.ssl.truststore.certificates=${strimzisecrets:namespace/my-cluster-trustbundle:cluster-ca.crt}",
-                "listener.name.replication-9091.ssl.truststore.type=PEM",
-                "listener.name.replication-9091.ssl.client.auth=required",
-                "listeners=REPLICATION-9091://0.0.0.0:9091,PLAIN-9092://0.0.0.0:9092",
-                "advertised.listeners=REPLICATION-9091://my-cluster-kafka-2.my-cluster-kafka-brokers.my-namespace.svc:9091,PLAIN-9092://dummy-advertised-address:1919",
-                "listener.security.protocol.map=CONTROLPLANE-9090:SSL,REPLICATION-9091:SSL,PLAIN-9092:SASL_PLAINTEXT",
-                "inter.broker.listener.name=REPLICATION-9091",
-                "sasl.enabled.mechanisms=",
-                "ssl.endpoint.identification.algorithm=HTTPS",
-                "listener.name.plain-9092.oauthbearer.sasl.server.callback.handler.class=io.strimzi.kafka.oauth.server.JaasServerOauthValidatorCallbackHandler",
-                "listener.name.plain-9092.oauthbearer.sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required unsecuredLoginStringClaim_sub=\"thePrincipalName\" oauth.config.id=\"PLAIN-9092\";",
-                "listener.name.plain-9092.sasl.enabled.mechanisms=OAUTHBEARER",
-                "principal.builder.class=io.strimzi.kafka.oauth.server.OAuthKafkaPrincipalBuilder"));
-    }
-
-    @Test
-    public void testOauthConfigurationWithTlsConfig()  {
-        CertSecretSource cert = new CertSecretSourceBuilder()
-                .withSecretName("my-secret")
-                .withCertificate("my.crt")
-                .build();
-
-        GenericKafkaListener listener = new GenericKafkaListenerBuilder()
-                .withName("plain")
-                .withPort(9092)
-                .withType(KafkaListenerType.INTERNAL)
-                .withTls(false)
-                .withNewKafkaListenerAuthenticationOAuth()
-                    .withValidIssuerUri("https://valid-issuer")
-                    .withJwksEndpointUri("https://jwks")
-                    .withEnableECDSA(true)
-                    .withUserNameClaim("preferred_username")
-                    .withDisableTlsHostnameVerification(true)
-                    .withTlsTrustedCertificates(cert)
-                .endKafkaListenerAuthenticationOAuth()
-                .build();
-
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
-                .withListeners("my-cluster", "my-namespace", singletonList(listener), listenerId -> "dummy-advertised-address", listenerId -> "1919")
-                .build();
-
-        assertThat(configuration, isEquivalent("node.id=2",
-                "listener.name.controlplane-9090.ssl.client.auth=required",
-                "listener.name.controlplane-9090.ssl.keystore.certificate.chain=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.crt}",
-                "listener.name.controlplane-9090.ssl.keystore.key=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.key}",
-                "listener.name.controlplane-9090.ssl.keystore.type=PEM",
-                "listener.name.controlplane-9090.ssl.truststore.certificates=${strimzisecrets:namespace/my-cluster-trustbundle:cluster-ca.crt}",
-                "listener.name.controlplane-9090.ssl.truststore.type=PEM",
-                "listener.name.replication-9091.ssl.keystore.certificate.chain=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.crt}",
-                "listener.name.replication-9091.ssl.keystore.key=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.key}",
-                "listener.name.replication-9091.ssl.keystore.type=PEM",
-                "listener.name.replication-9091.ssl.truststore.certificates=${strimzisecrets:namespace/my-cluster-trustbundle:cluster-ca.crt}",
-                "listener.name.replication-9091.ssl.truststore.type=PEM",
-                "listener.name.replication-9091.ssl.client.auth=required",
-                "listeners=REPLICATION-9091://0.0.0.0:9091,PLAIN-9092://0.0.0.0:9092",
-                "advertised.listeners=REPLICATION-9091://my-cluster-kafka-2.my-cluster-kafka-brokers.my-namespace.svc:9091,PLAIN-9092://dummy-advertised-address:1919",
-                "listener.security.protocol.map=CONTROLPLANE-9090:SSL,REPLICATION-9091:SSL,PLAIN-9092:SASL_PLAINTEXT",
-                "inter.broker.listener.name=REPLICATION-9091",
-                "sasl.enabled.mechanisms=",
-                "ssl.endpoint.identification.algorithm=HTTPS",
-                "listener.name.plain-9092.oauthbearer.sasl.server.callback.handler.class=io.strimzi.kafka.oauth.server.JaasServerOauthValidatorCallbackHandler",
-                "listener.name.plain-9092.oauthbearer.sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required unsecuredLoginStringClaim_sub=\"thePrincipalName\" oauth.valid.issuer.uri=\"https://valid-issuer\" oauth.jwks.endpoint.uri=\"https://jwks\" oauth.username.claim=\"preferred_username\" oauth.ssl.endpoint.identification.algorithm=\"\" oauth.config.id=\"PLAIN-9092\" oauth.ssl.truststore.location=\"/tmp/kafka/oauth-plain-9092.truststore.p12\" oauth.ssl.truststore.password=\"${strimzienv:CERTS_STORE_PASSWORD}\" oauth.ssl.truststore.type=\"PKCS12\";",
-                "listener.name.plain-9092.sasl.enabled.mechanisms=OAUTHBEARER",
-                "principal.builder.class=io.strimzi.kafka.oauth.server.OAuthKafkaPrincipalBuilder"));
-    }
-
-    @Test
-    public void testOauthConfigurationWithClientSecret()  {
-        GenericKafkaListener listener = new GenericKafkaListenerBuilder()
-                .withName("plain")
-                .withPort(9092)
-                .withType(KafkaListenerType.INTERNAL)
-                .withTls(false)
-                .withNewKafkaListenerAuthenticationOAuth()
-                    .withValidIssuerUri("https://valid-issuer")
-                    .withIntrospectionEndpointUri("https://intro")
-                    .withCheckAudience(true)
-                    .withCustomClaimCheck("'kafka-user' in @.roles.client-roles.kafka")
-                    .withClientId("my-oauth-client")
-                    .withNewClientSecret()
-                        .withSecretName("my-secret")
-                        .withKey("client-secret")
-                    .endClientSecret()
-                .endKafkaListenerAuthenticationOAuth()
-                .build();
-
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
-                .withListeners("my-cluster", "my-namespace", singletonList(listener), listenerId -> "dummy-advertised-address", listenerId -> "1919")
-                .build();
-
-        assertThat(configuration, isEquivalent("node.id=2",
-                "listener.name.controlplane-9090.ssl.client.auth=required",
-                "listener.name.controlplane-9090.ssl.keystore.certificate.chain=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.crt}",
-                "listener.name.controlplane-9090.ssl.keystore.key=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.key}",
-                "listener.name.controlplane-9090.ssl.keystore.type=PEM",
-                "listener.name.controlplane-9090.ssl.truststore.certificates=${strimzisecrets:namespace/my-cluster-trustbundle:cluster-ca.crt}",
-                "listener.name.controlplane-9090.ssl.truststore.type=PEM",
-                "listener.name.replication-9091.ssl.keystore.certificate.chain=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.crt}",
-                "listener.name.replication-9091.ssl.keystore.key=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.key}",
-                "listener.name.replication-9091.ssl.keystore.type=PEM",
-                "listener.name.replication-9091.ssl.truststore.certificates=${strimzisecrets:namespace/my-cluster-trustbundle:cluster-ca.crt}",
-                "listener.name.replication-9091.ssl.truststore.type=PEM",
-                "listener.name.replication-9091.ssl.client.auth=required",
-                "listeners=REPLICATION-9091://0.0.0.0:9091,PLAIN-9092://0.0.0.0:9092",
-                "advertised.listeners=REPLICATION-9091://my-cluster-kafka-2.my-cluster-kafka-brokers.my-namespace.svc:9091,PLAIN-9092://dummy-advertised-address:1919",
-                "listener.security.protocol.map=CONTROLPLANE-9090:SSL,REPLICATION-9091:SSL,PLAIN-9092:SASL_PLAINTEXT",
-                "inter.broker.listener.name=REPLICATION-9091",
-                "sasl.enabled.mechanisms=",
-                "ssl.endpoint.identification.algorithm=HTTPS",
-                "listener.name.plain-9092.oauthbearer.sasl.server.callback.handler.class=io.strimzi.kafka.oauth.server.JaasServerOauthValidatorCallbackHandler",
-                "listener.name.plain-9092.oauthbearer.sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required unsecuredLoginStringClaim_sub=\"thePrincipalName\" oauth.client.id=\"my-oauth-client\" oauth.valid.issuer.uri=\"https://valid-issuer\" oauth.check.audience=\"true\" oauth.custom.claim.check=\"'kafka-user' in @.roles.client-roles.kafka\" oauth.introspection.endpoint.uri=\"https://intro\" oauth.config.id=\"PLAIN-9092\" oauth.client.secret=\"${strimzienv:STRIMZI_PLAIN_9092_OAUTH_CLIENT_SECRET}\";",
-                "listener.name.plain-9092.sasl.enabled.mechanisms=OAUTHBEARER",
-                "principal.builder.class=io.strimzi.kafka.oauth.server.OAuthKafkaPrincipalBuilder"));
-    }
-
-    @SuppressWarnings("deprecation") // OAuth authentication is deprecated
-    @Test
-    public void testOAuthOptions()  {
-        KafkaListenerAuthenticationOAuth auth = new KafkaListenerAuthenticationOAuthBuilder()
-                .withValidIssuerUri("http://valid-issuer")
-                .withCheckIssuer(false)
-                .withCheckAudience(true)
-                .withJwksEndpointUri("http://jwks-endpoint")
-                .withIntrospectionEndpointUri("http://introspection-endpoint")
-                .withServerBearerTokenLocation("/var/run/secrets/kubernetes.io/serviceaccount/token")
-                .withUserInfoEndpointUri("http://userinfo-endpoint")
-                .withJwksExpirySeconds(160)
-                .withJwksRefreshSeconds(50)
-                .withJwksMinRefreshPauseSeconds(5)
-                .withJwksIgnoreKeyUse()
-                .withEnableECDSA(true)
-                .withUserNameClaim("preferred_username")
-                .withUserNamePrefix("user-")
-                .withFallbackUserNameClaim("client_id")
-                .withFallbackUserNamePrefix("client-account-")
-                .withCheckAccessTokenType(false)
-                .withClientId("my-kafka-id")
-                .withAccessTokenIsJwt(false)
-                .withValidTokenType("access_token")
-                .withDisableTlsHostnameVerification(true)
-                .withMaxSecondsWithoutReauthentication(3600)
-                .withEnablePlain(true)
-                .withTokenEndpointUri("http://token")
-                .withCustomClaimCheck("@.aud && @.aud == 'something'")
-                .withConnectTimeoutSeconds(30)
-                .withReadTimeoutSeconds(60)
-                .withHttpRetries(2)
-                .withHttpRetryPauseMs(500)
-                .withClientGrantType("custom_client_credentials")
-                .withClientAudience("kafka")
-                .withClientScope("messaging")
-                .withEnableMetrics(true)
-                .withFailFast(false)
-                .withIncludeAcceptHeader(false)
-                .build();
-
-        Map<String, String> expectedOptions = new HashMap<>();
-        expectedOptions.put(ServerConfig.OAUTH_CLIENT_ID, "my-kafka-id");
-        expectedOptions.put(ServerConfig.OAUTH_VALID_ISSUER_URI, "http://valid-issuer");
-        expectedOptions.put(ServerConfig.OAUTH_CHECK_ISSUER, String.valueOf(false));
-        expectedOptions.put(ServerConfig.OAUTH_CHECK_AUDIENCE, String.valueOf(true));
-        expectedOptions.put(ServerConfig.OAUTH_CUSTOM_CLAIM_CHECK, "@.aud && @.aud == 'something'");
-        expectedOptions.put(ServerConfig.OAUTH_CLIENT_CREDENTIALS_GRANT_TYPE, "custom_client_credentials");
-        expectedOptions.put(ServerConfig.OAUTH_SCOPE, "messaging");
-        expectedOptions.put(ServerConfig.OAUTH_AUDIENCE, "kafka");
-        expectedOptions.put(ServerConfig.OAUTH_JWKS_ENDPOINT_URI, "http://jwks-endpoint");
-        expectedOptions.put(ServerConfig.OAUTH_JWKS_REFRESH_SECONDS, "50");
-        expectedOptions.put(ServerConfig.OAUTH_JWKS_EXPIRY_SECONDS, "160");
-        expectedOptions.put(ServerConfig.OAUTH_JWKS_REFRESH_MIN_PAUSE_SECONDS, "5");
-        expectedOptions.put(ServerConfig.OAUTH_JWKS_IGNORE_KEY_USE, String.valueOf(true));
-        expectedOptions.put(ServerConfig.OAUTH_INTROSPECTION_ENDPOINT_URI, "http://introspection-endpoint");
-        expectedOptions.put(ServerConfig.OAUTH_SERVER_BEARER_TOKEN_LOCATION, "/var/run/secrets/kubernetes.io/serviceaccount/token");
-        expectedOptions.put(ServerConfig.OAUTH_USERINFO_ENDPOINT_URI, "http://userinfo-endpoint");
-        expectedOptions.put(ServerConfig.OAUTH_USERNAME_CLAIM, "preferred_username");
-        expectedOptions.put(ServerConfig.OAUTH_USERNAME_PREFIX, "user-");
-        expectedOptions.put(ServerConfig.OAUTH_FALLBACK_USERNAME_CLAIM, "client_id");
-        expectedOptions.put(ServerConfig.OAUTH_FALLBACK_USERNAME_PREFIX, "client-account-");
-        expectedOptions.put(ServerConfig.OAUTH_ACCESS_TOKEN_IS_JWT, String.valueOf(false));
-        expectedOptions.put(ServerConfig.OAUTH_CHECK_ACCESS_TOKEN_TYPE, String.valueOf(false));
-        expectedOptions.put(ServerConfig.OAUTH_VALID_TOKEN_TYPE, "access_token");
-        expectedOptions.put(ServerConfig.OAUTH_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM, "");
-        expectedOptions.put(ServerConfig.OAUTH_CONNECT_TIMEOUT_SECONDS, "30");
-        expectedOptions.put(ServerConfig.OAUTH_READ_TIMEOUT_SECONDS, "60");
-        expectedOptions.put(ServerConfig.OAUTH_HTTP_RETRIES, "2");
-        expectedOptions.put(ServerConfig.OAUTH_HTTP_RETRY_PAUSE_MILLIS, "500");
-        expectedOptions.put(ServerConfig.OAUTH_ENABLE_METRICS, String.valueOf(true));
-        expectedOptions.put(ServerConfig.OAUTH_FAIL_FAST, String.valueOf(false));
-        expectedOptions.put(ServerConfig.OAUTH_INCLUDE_ACCEPT_HEADER, String.valueOf(false));
-
-        // enablePlain and tokenEndpointUri are handled separately from getOAuthOptions
-        Map<String, String> actualOptions = KafkaBrokerConfigurationBuilder.getOAuthOptions(auth);
-
-        assertThat(actualOptions, is(equalTo(expectedOptions)));
-    }
-
-    @Test
     public void testCustomAuthConfigSetProtocolMapCorrectlyForsSslSasl() {
         GenericKafkaListener listener = new GenericKafkaListenerBuilder()
                 .withName("CUSTOM-LISTENER")
@@ -2270,16 +1787,6 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "inter.broker.listener.name=REPLICATION-9091",
                 "sasl.enabled.mechanisms=",
                 "ssl.endpoint.identification.algorithm=HTTPS"));
-    }
-
-    @SuppressWarnings("deprecation") // OAuth authentication is deprecated
-    @Test
-    public void testOAuthDefaultOptions()  {
-        KafkaListenerAuthenticationOAuth auth = new KafkaListenerAuthenticationOAuthBuilder()
-                .build();
-
-        Map<String, String> actualOptions = KafkaBrokerConfigurationBuilder.getOAuthOptions(auth);
-        assertThat(actualOptions, is(equalTo(Collections.emptyMap())));
     }
 
     @Test

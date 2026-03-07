@@ -16,7 +16,6 @@ import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListener;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerConfiguration;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthentication;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthenticationCustom;
-import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthenticationOAuth;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthenticationScramSha512;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthenticationTls;
 import io.strimzi.api.kafka.model.kafka.quotas.QuotasPlugin;
@@ -25,8 +24,6 @@ import io.strimzi.api.kafka.model.kafka.quotas.QuotasPluginStrimzi;
 import io.strimzi.api.kafka.model.kafka.tieredstorage.RemoteStorageManager;
 import io.strimzi.api.kafka.model.kafka.tieredstorage.TieredStorage;
 import io.strimzi.api.kafka.model.kafka.tieredstorage.TieredStorageCustom;
-import io.strimzi.kafka.oauth.server.ServerConfig;
-import io.strimzi.kafka.oauth.server.plain.ServerPlainConfig;
 import io.strimzi.operator.cluster.model.cruisecontrol.CruiseControlMetricsReporter;
 import io.strimzi.operator.cluster.model.metrics.MetricsModel;
 import io.strimzi.operator.cluster.model.metrics.StrimziMetricsReporterConfig;
@@ -42,7 +39,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -59,11 +55,8 @@ import java.util.stream.Collectors;
 public class KafkaBrokerConfigurationBuilder {
     private final static String CONTROL_PLANE_LISTENER_NAME = "CONTROLPLANE-" + KafkaCluster.CONTROLPLANE_PORT;
     private final static String REPLICATION_LISTENER_NAME = "REPLICATION-" + KafkaCluster.REPLICATION_PORT;
-    // Names of environment variables expanded through config providers inside the Kafka node
-    private final static String PLACEHOLDER_CERT_STORE_PASSWORD_CONFIG_PROVIDER_ENV_VAR = "${strimzienv:CERTS_STORE_PASSWORD}";
     // the secrets file template: <namespace>/<secret_name>:<secret_key>
     private static final String PLACEHOLDER_SECRET_TEMPLATE_KUBE_CONFIG_PROVIDER = "${strimzisecrets:%s/%s:%s}";
-    private final static String PLACEHOLDER_OAUTH_CLIENT_SECRET_TEMPLATE_CONFIG_PROVIDER_ENV_VAR = "${strimzienv:STRIMZI_%s_OAUTH_CLIENT_SECRET}";
 
     private final StringWriter stringWriter = new StringWriter();
     private final PrintWriter writer = new PrintWriter(stringWriter);
@@ -304,9 +297,6 @@ public class KafkaBrokerConfigurationBuilder {
         // Shared configurations with values dependent on all listeners
         ////////////////////
 
-        // configure OAuth principal builder for all the nodes - brokers, controllers, and mixed
-        configureOAuthPrincipalBuilderIfNeeded(writer, kafkaListeners);
-
         printSectionHeader("Common listener configuration");
         writer.println("listener.security.protocol.map=" + String.join(",", securityProtocol));
         writer.println("listeners=" + String.join(",", listeners));
@@ -326,17 +316,6 @@ public class KafkaBrokerConfigurationBuilder {
         writer.println();
 
         return this;
-    }
-
-    @SuppressWarnings("deprecation") // OAuth authentication is deprecated
-    private void configureOAuthPrincipalBuilderIfNeeded(PrintWriter writer, List<GenericKafkaListener> kafkaListeners) {
-        for (GenericKafkaListener listener : kafkaListeners) {
-            if (listener.getAuth() instanceof KafkaListenerAuthenticationOAuth) {
-                writer.println(String.format("principal.builder.class=%s", KafkaListenerAuthenticationOAuth.PRINCIPAL_BUILDER_CLASS_NAME));
-                writer.println();
-                return;
-            }
-        }
     }
 
     /**
@@ -426,57 +405,10 @@ public class KafkaBrokerConfigurationBuilder {
      * @param tls   Flag whether this protocol is using TLS or not
      * @param auth  The authentication configuration from the Kafka CR
      */
-    @SuppressWarnings("deprecation") // OAuth authentication is deprecated
     private void configureAuthentication(String listenerName, List<String> securityProtocol, boolean tls, KafkaListenerAuthentication auth, String clusterName)    {
         final String listenerNameInProperty = listenerName.toLowerCase(Locale.ENGLISH);
-        final String listenerNameInEnvVar = listenerName.replace("-", "_");
 
-        if (auth instanceof KafkaListenerAuthenticationOAuth oauth) {
-            securityProtocol.add(String.format("%s:%s", listenerName, getSecurityProtocol(tls, true)));
-
-            Map<String, String> jaasOptions = new LinkedHashMap<>(getOAuthOptions(oauth));
-            addOptionIfNotNull(jaasOptions, "oauth.config.id", listenerName);
-
-            if (oauth.getClientSecret() != null)    {
-                addOptionIfNotNull(jaasOptions, "oauth.client.secret", String.format(PLACEHOLDER_OAUTH_CLIENT_SECRET_TEMPLATE_CONFIG_PROVIDER_ENV_VAR, listenerNameInEnvVar));
-            }
-
-            if (oauth.getTlsTrustedCertificates() != null && !oauth.getTlsTrustedCertificates().isEmpty())    {
-                addOptionIfNotNull(jaasOptions, "oauth.ssl.truststore.location", String.format("/tmp/kafka/oauth-%s.truststore.p12", listenerNameInProperty));
-                addOptionIfNotNull(jaasOptions, "oauth.ssl.truststore.password", PLACEHOLDER_CERT_STORE_PASSWORD_CONFIG_PROVIDER_ENV_VAR);
-                addOptionIfNotNull(jaasOptions, "oauth.ssl.truststore.type", "PKCS12");
-            }
-
-            StringBuilder enabledMechanisms = new StringBuilder();
-            if (oauth.isEnableOauthBearer()) {
-                writer.println(String.format("listener.name.%s.oauthbearer.sasl.server.callback.handler.class=io.strimzi.kafka.oauth.server.JaasServerOauthValidatorCallbackHandler", listenerNameInProperty));
-                var oauthBearerOptions = new LinkedHashMap<String, String>();
-                addOptionIfNotNull(oauthBearerOptions, "unsecuredLoginStringClaim_sub", "thePrincipalName");
-                oauthBearerOptions.putAll(jaasOptions);
-                writer.println(String.format("listener.name.%s.oauthbearer.sasl.jaas.config=%s", listenerNameInProperty,
-                        AuthenticationUtils.jaasConfig("org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule", oauthBearerOptions)));
-                enabledMechanisms.append("OAUTHBEARER");
-            }
-
-            if (oauth.isEnablePlain()) {
-                addOptionIfNotNull(jaasOptions, ServerPlainConfig.OAUTH_TOKEN_ENDPOINT_URI, oauth.getTokenEndpointUri());
-                writer.println(String.format("listener.name.%s.plain.sasl.server.callback.handler.class=io.strimzi.kafka.oauth.server.plain.JaasServerOauthOverPlainValidatorCallbackHandler", listenerNameInProperty));
-                writer.println(String.format("listener.name.%s.plain.sasl.jaas.config=%s", listenerNameInProperty,
-                        AuthenticationUtils.jaasConfig("org.apache.kafka.common.security.plain.PlainLoginModule", jaasOptions)));
-                if (!enabledMechanisms.isEmpty()) {
-                    enabledMechanisms.append(",");
-                }
-                enabledMechanisms.append("PLAIN");
-
-            }
-
-            writer.println(String.format("listener.name.%s.sasl.enabled.mechanisms=%s", listenerNameInProperty, enabledMechanisms));
-
-            if (oauth.getMaxSecondsWithoutReauthentication() != null) {
-                writer.println(String.format("listener.name.%s.connections.max.reauth.ms=%s", listenerNameInProperty, 1000 * oauth.getMaxSecondsWithoutReauthentication()));
-            }
-            writer.println();
-        } else if (auth instanceof KafkaListenerAuthenticationScramSha512) {
+        if (auth instanceof KafkaListenerAuthenticationScramSha512) {
             securityProtocol.add(String.format("%s:%s", listenerName, getSecurityProtocol(tls, true)));
             writer.println(String.format("listener.name.%s.scram-sha-512.sasl.jaas.config=%s", listenerNameInProperty,
                     AuthenticationUtils.jaasConfig("org.apache.kafka.common.security.scram.ScramLoginModule", Map.of())));
@@ -513,97 +445,6 @@ public class KafkaBrokerConfigurationBuilder {
     private String getSecurityProtocol(boolean tls, boolean sasl)   {
         String a = tls ? "SSL" : "PLAINTEXT";
         return sasl ? "SASL_" + a : a;
-    }
-
-    /**
-     * Generates the public part of the OAUTH configuration for JAAS. The private part is not added here but mounted as
-     * a secret reference to keep it secure. This is only internal method.
-     *
-     * @param oauth     OAuth type authentication object
-     * @return  Returns the builder instance
-     */
-    @SuppressWarnings("deprecation") // OAuth authentication is deprecated
-    /*test*/ static Map<String, String> getOAuthOptions(KafkaListenerAuthenticationOAuth oauth)  {
-        Map<String, String> options = new LinkedHashMap<>();
-
-        addOptionIfNotNull(options, ServerConfig.OAUTH_CLIENT_ID, oauth.getClientId());
-        addOptionIfNotNull(options, ServerConfig.OAUTH_VALID_ISSUER_URI, oauth.getValidIssuerUri());
-        addBooleanOptionIfFalse(options, ServerConfig.OAUTH_CHECK_ISSUER, oauth.isCheckIssuer());
-        addBooleanOptionIfTrue(options, ServerConfig.OAUTH_CHECK_AUDIENCE, oauth.isCheckAudience());
-        addOptionIfNotNull(options, ServerConfig.OAUTH_CUSTOM_CLAIM_CHECK, oauth.getCustomClaimCheck());
-        addOptionIfNotNull(options, ServerConfig.OAUTH_CLIENT_CREDENTIALS_GRANT_TYPE, oauth.getClientGrantType());
-        addOptionIfNotNull(options, ServerConfig.OAUTH_SCOPE, oauth.getClientScope());
-        addOptionIfNotNull(options, ServerConfig.OAUTH_AUDIENCE, oauth.getClientAudience());
-        addOptionIfNotNull(options, ServerConfig.OAUTH_JWKS_ENDPOINT_URI, oauth.getJwksEndpointUri());
-        if (oauth.getJwksRefreshSeconds() != null && oauth.getJwksRefreshSeconds() > 0) {
-            addOptionIfNotNull(options, ServerConfig.OAUTH_JWKS_REFRESH_SECONDS, String.valueOf(oauth.getJwksRefreshSeconds()));
-        }
-        if (oauth.getJwksRefreshSeconds() != null && oauth.getJwksExpirySeconds() > 0) {
-            addOptionIfNotNull(options, ServerConfig.OAUTH_JWKS_EXPIRY_SECONDS, String.valueOf(oauth.getJwksExpirySeconds()));
-        }
-        if (oauth.getJwksMinRefreshPauseSeconds() != null && oauth.getJwksMinRefreshPauseSeconds() >= 0) {
-            addOptionIfNotNull(options, ServerConfig.OAUTH_JWKS_REFRESH_MIN_PAUSE_SECONDS, String.valueOf(oauth.getJwksMinRefreshPauseSeconds()));
-        }
-        addOptionIfNotEmpty(options, ServerConfig.OAUTH_SERVER_BEARER_TOKEN_LOCATION, oauth.getServerBearerTokenLocation());
-        addBooleanOptionIfTrue(options, ServerConfig.OAUTH_JWKS_IGNORE_KEY_USE, oauth.getJwksIgnoreKeyUse());
-        addOptionIfNotNull(options, ServerConfig.OAUTH_INTROSPECTION_ENDPOINT_URI, oauth.getIntrospectionEndpointUri());
-        addOptionIfNotNull(options, ServerConfig.OAUTH_USERINFO_ENDPOINT_URI, oauth.getUserInfoEndpointUri());
-        addOptionIfNotNull(options, ServerConfig.OAUTH_USERNAME_CLAIM, oauth.getUserNameClaim());
-        addOptionIfNotNull(options, ServerConfig.OAUTH_USERNAME_PREFIX, oauth.getUserNamePrefix());
-        addOptionIfNotNull(options, ServerConfig.OAUTH_FALLBACK_USERNAME_CLAIM, oauth.getFallbackUserNameClaim());
-        addOptionIfNotNull(options, ServerConfig.OAUTH_FALLBACK_USERNAME_PREFIX, oauth.getFallbackUserNamePrefix());
-        addOptionIfNotNull(options, ServerConfig.OAUTH_GROUPS_CLAIM, oauth.getGroupsClaim());
-        addOptionIfNotNull(options, ServerConfig.OAUTH_GROUPS_CLAIM_DELIMITER, oauth.getGroupsClaimDelimiter());
-        addBooleanOptionIfFalse(options, ServerConfig.OAUTH_ACCESS_TOKEN_IS_JWT, oauth.isAccessTokenIsJwt());
-        addBooleanOptionIfFalse(options, ServerConfig.OAUTH_CHECK_ACCESS_TOKEN_TYPE, oauth.isCheckAccessTokenType());
-        addOptionIfNotNull(options, ServerConfig.OAUTH_VALID_TOKEN_TYPE, oauth.getValidTokenType());
-
-        if (oauth.isDisableTlsHostnameVerification()) {
-            addOptionIfNotNull(options, ServerConfig.OAUTH_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM, "");
-        }
-
-        if (oauth.getConnectTimeoutSeconds() != null && oauth.getConnectTimeoutSeconds() > 0) {
-            addOptionIfNotNull(options, ServerConfig.OAUTH_CONNECT_TIMEOUT_SECONDS, String.valueOf(oauth.getConnectTimeoutSeconds()));
-        }
-        if (oauth.getReadTimeoutSeconds() != null && oauth.getReadTimeoutSeconds() > 0) {
-            addOptionIfNotNull(options, ServerConfig.OAUTH_READ_TIMEOUT_SECONDS, String.valueOf(oauth.getReadTimeoutSeconds()));
-        }
-        if (oauth.getHttpRetries() != null && oauth.getHttpRetries() > 0) {
-            addOptionIfNotNull(options, ServerConfig.OAUTH_HTTP_RETRIES, String.valueOf(oauth.getHttpRetries()));
-        }
-        if (oauth.getHttpRetryPauseMs() != null && oauth.getHttpRetryPauseMs() > 0) {
-            addOptionIfNotNull(options, ServerConfig.OAUTH_HTTP_RETRY_PAUSE_MILLIS, String.valueOf(oauth.getHttpRetryPauseMs()));
-        }
-
-        addBooleanOptionIfTrue(options, ServerConfig.OAUTH_ENABLE_METRICS, oauth.isEnableMetrics());
-        addBooleanOptionIfFalse(options, ServerConfig.OAUTH_FAIL_FAST, oauth.getFailFast());
-        addBooleanOptionIfFalse(options, ServerConfig.OAUTH_INCLUDE_ACCEPT_HEADER, oauth.isIncludeAcceptHeader());
-
-        return options;
-    }
-
-    static void addOptionIfNotNull(Map<String, String> options, String option, String value) {
-        if (value != null) {
-            options.put(option, value);
-        }
-    }
-
-    static void addOptionIfNotEmpty(Map<String, String> options, String option, String value) {
-        if (value != null && !value.isEmpty()) {
-            options.put(option, value);
-        }
-    }
-
-    static void addBooleanOptionIfTrue(Map<String, String> options, String option, boolean value) {
-        if (value) {
-            options.put(option, String.valueOf(true));
-        }
-    }
-
-    static void addBooleanOptionIfFalse(Map<String, String> options, String option, boolean value) {
-        if (!value) {
-            options.put(option, String.valueOf(false));
-        }
     }
 
     static void addOptionIfNotNull(PrintWriter writer, String name, Object value) {

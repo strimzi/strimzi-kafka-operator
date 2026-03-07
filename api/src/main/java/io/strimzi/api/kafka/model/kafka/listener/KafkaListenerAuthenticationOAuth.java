@@ -44,10 +44,6 @@ import java.util.List;
 @PresentInVersions("v1beta2")
 public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthentication {
     public static final String TYPE_OAUTH = "oauth";
-    public static final int DEFAULT_JWKS_EXPIRY_SECONDS = 360;
-    public static final int DEFAULT_JWKS_REFRESH_SECONDS = 300;
-
-    public static final String PRINCIPAL_BUILDER_CLASS_NAME = "io.strimzi.kafka.oauth.server.OAuthKafkaPrincipalBuilder";
 
     private String clientId;
     private GenericSecretSource clientSecret;

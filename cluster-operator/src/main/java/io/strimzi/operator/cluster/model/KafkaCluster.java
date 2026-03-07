@@ -60,7 +60,6 @@ import io.strimzi.api.kafka.model.kafka.Storage;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlResources;
 import io.strimzi.api.kafka.model.kafka.exporter.KafkaExporterResources;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListener;
-import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthenticationOAuth;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthenticationTls;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.api.kafka.model.kafka.quotas.QuotasPlugin;
@@ -171,8 +170,6 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
     public static final int INGRESS_PORT = 443;
 
     protected static final String KAFKA_NAME = "kafka";
-    protected static final String TRUSTED_CERTS_BASE_VOLUME_MOUNT = "/opt/kafka/certificates";
-    protected static final String CUSTOM_AUTHN_SECRETS_VOLUME_MOUNT = "/opt/kafka/custom-authn-secrets";
     private static final String LOG_AND_METRICS_CONFIG_VOLUME_NAME = "kafka-metrics-and-logging";
     private static final String LOG_AND_METRICS_CONFIG_VOLUME_MOUNT = "/opt/kafka/custom-config/";
 
@@ -1149,18 +1146,15 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
     /**
      * Generates the StrimziPodSet for the Kafka cluster.
      *
-     * @param isOpenShift            Flags whether we are on OpenShift or not
      * @param imagePullPolicy        Image pull policy which will be used by the pods
      * @param imagePullSecrets       List of image pull secrets
      * @param podAnnotationsProvider Function which provides annotations for given pod based on its broker ID. The
      *                               annotations for each pod are different due to the individual configurations.
      *                               So they need to be dynamically generated though this function instead of just
      *                               passed as Map.
-     *
      * @return List of generated StrimziPodSets with Kafka pods
      */
-    public List<StrimziPodSet> generatePodSets(boolean isOpenShift,
-                                               ImagePullPolicy imagePullPolicy,
+    public List<StrimziPodSet> generatePodSets(ImagePullPolicy imagePullPolicy,
                                                List<LocalObjectReference> imagePullSecrets,
                                                Function<NodeRef, Map<String, String>> podAnnotationsProvider) {
         List<StrimziPodSet> podSets = new ArrayList<>();
@@ -1191,7 +1185,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
                             ModelUtils.affinityWithRackLabelSelector(pool.templatePod, rack),
                             ContainerUtils.listOrNull(createInitContainer(imagePullPolicy, pool)),
                             List.of(createContainer(imagePullPolicy, pool)),
-                            getPodSetVolumes(node, pool.storage, pool.templatePod, isOpenShift),
+                            getPodSetVolumes(node, pool.storage, pool.templatePod),
                             imagePullSecrets,
                             securityProvider.kafkaPodSecurityContext(podSecurityProviderContext),
                             securityProvider.kafkaHostUsers(podSecurityProviderContext))
@@ -1338,15 +1332,13 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
      * Generates list of non-data volumes used by Kafka Pods. This includes tmp volumes, mounted secrets and config
      * maps.
      *
-     * @param isOpenShift Indicates whether we are on OpenShift or not
      * @param node        The node for which are these volumes generated. It is used to identify which ConfigMap should
      *                    be used or whether init container volumes should be used.
      * @param templatePod Template with custom pod configurations
      *
      * @return List of non-data volumes used by the Kafka pods
      */
-    @SuppressWarnings("deprecation") // OAuth authentication is deprecated
-    private List<Volume> getNonDataVolumes(boolean isOpenShift, NodeRef node, PodTemplate templatePod) {
+    private List<Volume> getNonDataVolumes(NodeRef node, PodTemplate templatePod) {
         List<Volume> volumeList = new ArrayList<>();
 
         volumeList.add(VolumeUtils.createTempDirVolume(templatePod));
@@ -1358,14 +1350,6 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
             // Volume for sharing data with init container for rack awareness and node port listeners
             if (rack != null || isExposedWithNodePort()) {
                 volumeList.add(VolumeUtils.createEmptyDirVolume(INIT_VOLUME_NAME, "1Mi", "Memory"));
-            }
-
-            // Listener specific volumes related to their specific authentication or encryption settings
-            for (GenericKafkaListener listener : listeners) {
-                if (ListenersUtils.isListenerWithOAuth(listener)) {
-                    KafkaListenerAuthenticationOAuth oauth = (KafkaListenerAuthenticationOAuth) listener.getAuth();
-                    CertUtils.createTrustedCertificatesVolumes(volumeList, oauth.getTlsTrustedCertificates(), isOpenShift, "oauth-" + ListenersUtils.identifier(listener));
-                }
             }
         }
 
@@ -1381,15 +1365,14 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
      * @param node          Node for which the volumes should be generated
      * @param storage       Storage for which the volumes should be generated
      * @param templatePod   Pod template with pod customizations
-     * @param isOpenShift   Flag whether we are on OpenShift or not
      *
      * @return              List of volumes to be included in the StrimziPodSet pod
      */
-    private List<Volume> getPodSetVolumes(NodeRef node, Storage storage, PodTemplate templatePod, boolean isOpenShift) {
+    private List<Volume> getPodSetVolumes(NodeRef node, Storage storage, PodTemplate templatePod) {
         List<Volume> volumeList = new ArrayList<>();
 
         volumeList.addAll(VolumeUtils.createPodSetVolumes(node.podName(), storage, false));
-        volumeList.addAll(getNonDataVolumes(isOpenShift, node, templatePod));
+        volumeList.addAll(getNonDataVolumes(node, templatePod));
 
         return volumeList;
     }
@@ -1403,7 +1386,6 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
      *
      * @return  List of volume mounts
      */
-    @SuppressWarnings("deprecation") // OAuth authentication is deprecated
     private List<VolumeMount> getVolumeMounts(Storage storage, ContainerTemplate containerTemplate, boolean isBroker) {
         List<VolumeMount> volumeMountList = new ArrayList<>(VolumeUtils.createVolumeMounts(storage, false));
         volumeMountList.add(VolumeUtils.createTempDirVolumeMount());
@@ -1415,16 +1397,6 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
             // Volume for sharing data with init container for rack awareness and node port listeners
             if (rack != null || isExposedWithNodePort()) {
                 volumeMountList.add(VolumeUtils.createVolumeMount(INIT_VOLUME_NAME, INIT_VOLUME_MOUNT));
-            }
-
-            // Listener specific volumes related to their specific authentication or encryption settings
-            for (GenericKafkaListener listener : listeners) {
-                String identifier = ListenersUtils.identifier(listener);
-
-                if (ListenersUtils.isListenerWithOAuth(listener))   {
-                    KafkaListenerAuthenticationOAuth oauth = (KafkaListenerAuthenticationOAuth) listener.getAuth();
-                    CertUtils.createTrustedCertificatesVolumeMounts(volumeMountList, oauth.getTlsTrustedCertificates(), TRUSTED_CERTS_BASE_VOLUME_MOUNT + "/oauth-" + identifier + "-certs/", "oauth-" + identifier);
-                }
             }
         }
 
@@ -1512,7 +1484,6 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
      *
      * @return  List of environment variables
      */
-    @SuppressWarnings("deprecation") // Keycloak Authorization and OAuth authentication are deprecated
     private  List<EnvVar> getEnvVars(KafkaPool pool) {
         List<EnvVar> varList = new ArrayList<>();
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_JMX_EXPORTER_ENABLED,
@@ -1523,23 +1494,6 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
         JvmOptionUtils.heapOptions(varList, 50, 5L * 1024L * 1024L * 1024L, pool.jvmOptions, pool.resources);
         JvmOptionUtils.jvmPerformanceOptions(varList, pool.jvmOptions);
         JvmOptionUtils.jvmSystemProperties(varList, pool.jvmOptions);
-
-        // Some environment variables are used only on nodes with broker role and are not needed on controller-only nodes
-        if (pool.isBroker()) {
-            for (GenericKafkaListener listener : listeners) {
-                if (ListenersUtils.isListenerWithOAuth(listener)) {
-                    KafkaListenerAuthenticationOAuth oauth = (KafkaListenerAuthenticationOAuth) listener.getAuth();
-
-                    if (oauth.getTlsTrustedCertificates() != null && !oauth.getTlsTrustedCertificates().isEmpty()) {
-                        varList.add(ContainerUtils.createEnvVar("STRIMZI_" + ListenersUtils.envVarIdentifier(listener) + "_OAUTH_TRUSTED_CERTS", CertUtils.trustedCertsEnvVar(oauth.getTlsTrustedCertificates())));
-                    }
-
-                    if (oauth.getClientSecret() != null) {
-                        varList.add(ContainerUtils.createEnvVarFromSecret("STRIMZI_" + ListenersUtils.envVarIdentifier(listener) + "_OAUTH_CLIENT_SECRET", oauth.getClientSecret().getSecretName(), oauth.getClientSecret().getKey()));
-                    }
-                }
-            }
-        }
 
         varList.addAll(jmx.envVars());
 

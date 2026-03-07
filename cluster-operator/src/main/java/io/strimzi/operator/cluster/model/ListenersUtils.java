@@ -11,7 +11,6 @@ import io.strimzi.api.kafka.model.common.template.IpFamilyPolicy;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListener;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerConfiguration;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerConfigurationBroker;
-import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthenticationOAuth;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.api.kafka.model.kafka.listener.NodeAddressType;
 
@@ -30,21 +29,6 @@ public class ListenersUtils {
     /*test*/ static final String BACKWARDS_COMPATIBLE_EXTERNAL_PORT_NAME = "tcp-external";
 
     private ListenersUtils() { }
-
-    /**
-     * Checks whether the listener is using OAuth authentication
-     *
-     * @param listener  Listener to check
-     *
-     * @return  True if the listener is configured to use OAuth authentication. False otherwise.
-     */
-    @SuppressWarnings("deprecation") // OAuth authentication is deprecated
-    public static boolean isListenerWithOAuth(GenericKafkaListener listener) {
-        if (listener.getAuth() == null || listener.getAuth().getType() == null)
-            return false;
-
-        return KafkaListenerAuthenticationOAuth.TYPE_OAUTH.equals(listener.getAuth().getType());
-    }
 
     /**
      * Returns list of all listeners with given type
