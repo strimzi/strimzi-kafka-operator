@@ -4,29 +4,23 @@
  */
 package io.strimzi.operator.cluster.model;
 
-import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.strimzi.api.kafka.model.common.CertSecretSource;
 import io.strimzi.certs.CertAndKey;
-import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Ca;
 import io.strimzi.operator.common.model.InvalidResourceException;
-import io.strimzi.operator.common.model.Labels;
 
-import java.io.IOException;
 import java.math.BigInteger;
 import java.security.cert.CertificateEncodingException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-
-import static java.util.Collections.emptyMap;
 
 /**
  * Certificate utility methods
@@ -62,61 +56,6 @@ public class CertUtils {
         } catch (CertificateEncodingException e) {
             throw new RuntimeException("Failed to get certificate thumbprint of " + key + " from Secret " + certSecret.getMetadata().getName(), e);
         }
-    }
-
-    /**
-     * Builds a clusterCa certificate secret for the different Strimzi components (TO, UO, KE, ...)
-     *
-     * @param reconciliation                        Reconciliation marker
-     * @param clusterCa                             The Cluster CA
-     * @param secret                                Existing Kubernetes certificate Secret containing the certificate to use if present and does not need renewing
-     * @param namespace                             Namespace
-     * @param secretName                            Name of the Kubernetes secret
-     * @param commonName                            Common Name of the certificate
-     * @param keyCertName                           Key under which the certificate will be stored in the new Secret
-     * @param labels                                Labels
-     * @param ownerReference                        Owner reference
-     * @param isMaintenanceTimeWindowsSatisfied     Flag whether we are inside a maintenance window or not
-     *
-     * @return  Newly built Secret
-     */
-    public static Secret buildTrustedCertificateSecret(Reconciliation reconciliation, ClusterCa clusterCa, Secret secret, String namespace,
-                                                       String secretName, String commonName, String keyCertName,
-                                                       Labels labels, OwnerReference ownerReference, boolean isMaintenanceTimeWindowsSatisfied) {
-        boolean shouldBeRegenerated = false;
-        List<String> reasons = new ArrayList<>(2);
-
-        if (secret == null) {
-            reasons.add("certificate doesn't exist yet");
-            shouldBeRegenerated = true;
-        } else {
-            if (clusterCa.keyCreated()
-                    || clusterCa.certRenewed()
-                    || (isMaintenanceTimeWindowsSatisfied && clusterCa.isExpiring(secret, Ca.SecretEntry.CRT.asKey(keyCertName)))
-                    || clusterCa.hasCaCertGenerationChanged(secret)) {
-                reasons.add("certificate needs to be renewed");
-                shouldBeRegenerated = true;
-            }
-        }
-
-        CertAndKey certAndKey = null;
-        if (shouldBeRegenerated) {
-            LOGGER.debugCr(reconciliation, "Certificate for pod {} need to be regenerated because: {}", keyCertName, String.join(", ", reasons));
-
-            try {
-                certAndKey = clusterCa.generateSignedCert(commonName, Ca.IO_STRIMZI);
-            } catch (IOException e) {
-                LOGGER.warnCr(reconciliation, "Error while generating certificates", e);
-            }
-
-            LOGGER.debugCr(reconciliation, "End generating certificates");
-        } else {
-            certAndKey = keyStoreCertAndKey(secret, keyCertName);
-        }
-
-        Map<String, String> secretData = certAndKey == null ? Map.of() : buildSecretData(Map.of(keyCertName, certAndKey));
-
-        return ModelUtils.createSecret(secretName, namespace, labels, ownerReference, secretData, Map.ofEntries(clusterCa.caCertGenerationFullAnnotation()), emptyMap());
     }
 
     /**
@@ -161,12 +100,17 @@ public class CertUtils {
      * Extracts the KeyStore from the Kubernetes Secret as a CertAndKey
      * @param secret to extract certificate and key from
      * @param keyCertName name of the KeyStore
-     * @return the KeyStore as a CertAndKey. Returned object has empty truststore and
-     * may have empty key, cert or keystore and null store password.
+     * @param caCertGenerationAnnotation Annotation for the CA certificate generation that signed this certificate
+     * @return the KeyStore as a CertAndKey including the CA certificate generation that signed this certificate.
+     * Returned object has empty truststore and may have empty key, cert or keystore and null store password.
      */
-    public static CertAndKey keyStoreCertAndKey(Secret secret, String keyCertName) {
+    public static CertAndKey keyStoreCertAndKey(Secret secret, String keyCertName, String caCertGenerationAnnotation) {
+        if (secret == null) {
+            return null;
+        }
+        int caCertGeneration = Annotations.intAnnotation(secret, caCertGenerationAnnotation, Ca.INIT_GENERATION);
         return new CertAndKey(decodeFromSecret(secret, Ca.SecretEntry.KEY.asKey(keyCertName)),
-                decodeFromSecret(secret, Ca.SecretEntry.CRT.asKey(keyCertName)));
+                decodeFromSecret(secret, Ca.SecretEntry.CRT.asKey(keyCertName)), caCertGeneration);
     }
 
     /**
@@ -337,34 +281,6 @@ public class CertUtils {
             return String.join(";", paths);
         } else {
             return null;
-        }
-    }
-
-    /**
-     * Extract pairs of public certificates and private keys from a Secret
-     *
-     * @param secret    Secret to extract certificates and keys from
-     * @param nodes     Set of nodes the Secret contains certificates and keys for
-     *
-     * @return  Map of public certificates and private keys
-     */
-    public static Map<String, CertAndKey> extractCertsAndKeysFromSecret(Secret secret, Set<NodeRef> nodes)    {
-        if (secret == null || secret.getData() == null || secret.getData().isEmpty()) {
-            return null;
-        } else {
-            Map<String, String> certificateData = secret.getData();
-            Map<String, CertAndKey> certsAndKeys = new HashMap<>();
-
-            for (NodeRef node : nodes) {
-                String podName = node.podName();
-                String keyData = certificateData.get(Ca.SecretEntry.KEY.asKey(podName));
-                String certData = certificateData.get(Ca.SecretEntry.CRT.asKey(podName));
-                if (keyData != null && certData != null) {
-                    certsAndKeys.put(podName, new CertAndKey(Util.decodeBytesFromBase64(keyData), Util.decodeBytesFromBase64(certData)));
-                }
-            }
-
-            return certsAndKeys;
         }
     }
 }

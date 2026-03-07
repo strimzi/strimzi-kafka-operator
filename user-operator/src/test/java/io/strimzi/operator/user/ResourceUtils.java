@@ -189,8 +189,8 @@ public class ResourceUtils {
                         .toMap())
                 .endMetadata()
                 .addToData("ca.crt", MockCertManager.clientsCaCert())
-                .addToData("user.key", Base64.getEncoder().encodeToString("expected-key".getBytes()))
-                .addToData("user.crt", Base64.getEncoder().encodeToString("expected-crt".getBytes()))
+                .addToData("user.key", MockCertManager.clientsCaKey())
+                .addToData("user.crt", MockCertManager.clientsCaCert())
                 .addToData("user.p12", Base64.getEncoder().encodeToString("expected-p12".getBytes()))
                 .addToData("user.password", Base64.getEncoder().encodeToString("expected-password".getBytes()))
                 .build();

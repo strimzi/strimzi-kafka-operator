@@ -135,6 +135,7 @@ public class CruiseControlReconcilerTest {
         when(mockSaOps.reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.serviceAccountName(NAME)), any())).thenReturn(Future.succeededFuture());
 
         when(mockSecretOps.reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.secretName(NAME)), any())).thenReturn(Future.succeededFuture());
+        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(CruiseControlResources.secretName(NAME)))).thenReturn(Future.succeededFuture());
         when(mockSecretOps.reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.apiSecretName(NAME)), any())).thenReturn(Future.succeededFuture());
 
         if (apiUsersEnabled) {

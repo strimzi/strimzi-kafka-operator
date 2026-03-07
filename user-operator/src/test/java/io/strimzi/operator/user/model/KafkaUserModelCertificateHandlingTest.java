@@ -60,7 +60,7 @@ public class KafkaUserModelCertificateHandlingTest {
     private final PasswordGenerator passwordGenerator = new PasswordGenerator(10, "a", "a");
 
     @Test
-    public void testNewUser()    {
+    public void testNewUser() {
         MockKafkaUserModel model = new MockKafkaUserModel();
         model.maybeGenerateCertificates(Reconciliation.DUMMY_RECONCILIATION, mockCertManager, passwordGenerator, clientsCaCert, clientsCaKey, null, 365, 30, null, Clock.systemUTC());
 
@@ -69,7 +69,7 @@ public class KafkaUserModelCertificateHandlingTest {
     }
 
     @Test
-    public void testExistingUserWithIncompleteSecret()    {
+    public void testExistingUserWithIncompleteSecret() {
         Secret userSecret = new SecretBuilder()
                 .withNewMetadata()
                     .withName(ResourceUtils.NAME)
@@ -86,7 +86,7 @@ public class KafkaUserModelCertificateHandlingTest {
     }
 
     @Test
-    public void testExistingUserWithCompleteSecretButOldCa()    {
+    public void testExistingUserWithCompleteSecretButOldCa() {
         Secret userSecret = new SecretBuilder()
                 .withNewMetadata()
                     .withName(ResourceUtils.NAME)
@@ -105,15 +105,15 @@ public class KafkaUserModelCertificateHandlingTest {
     }
 
     @Test
-    public void testExistingUserWithCompleteSecret()    {
+    public void testExistingUserWithCompleteSecret() {
         Secret userSecret = new SecretBuilder()
                 .withNewMetadata()
                     .withName(ResourceUtils.NAME)
                     .withNamespace(ResourceUtils.NAMESPACE)
                 .endMetadata()
                 .withData(Map.of("ca.crt", clientsCaCert.getData().get("ca.crt"),
-                        "user.crt", Base64.getEncoder().encodeToString("User public key".getBytes(StandardCharsets.UTF_8)),
-                        "user.key", Base64.getEncoder().encodeToString("User private key".getBytes(StandardCharsets.UTF_8))))
+                        "user.crt", MockCertManager.clientsCaCert(),
+                        "user.key", MockCertManager.clientsCaKey()))
                 .build();
 
         MockKafkaUserModel model = new MockKafkaUserModel();
@@ -124,7 +124,7 @@ public class KafkaUserModelCertificateHandlingTest {
     }
 
     @Test
-    public void testExistingUserWithExpiringCertWithoutMaintenanceWindows()    {
+    public void testExistingUserWithExpiringCertWithoutMaintenanceWindows() {
         Secret userSecret = new SecretBuilder()
                 .withNewMetadata()
                     .withName(ResourceUtils.NAME)
@@ -143,7 +143,7 @@ public class KafkaUserModelCertificateHandlingTest {
     }
 
     @Test
-    public void testExistingUserWithExpiringCertInMaintenanceWindow()    {
+    public void testExistingUserWithExpiringCertInMaintenanceWindow() {
         Secret userSecret = new SecretBuilder()
                 .withNewMetadata()
                     .withName(ResourceUtils.NAME)
@@ -162,7 +162,7 @@ public class KafkaUserModelCertificateHandlingTest {
     }
 
     @Test
-    public void testExistingUserWithExpiringCertOutsideOfMaintenanceWindow()    {
+    public void testExistingUserWithExpiringCertOutsideOfMaintenanceWindow() {
         Secret userSecret = new SecretBuilder()
                 .withNewMetadata()
                     .withName(ResourceUtils.NAME)
