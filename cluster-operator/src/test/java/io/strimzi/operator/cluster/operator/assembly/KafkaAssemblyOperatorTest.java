@@ -864,7 +864,7 @@ public class KafkaAssemblyOperatorTest {
         // Pod Sets
         StrimziPodSetOperator mockPodSetOps = supplier.strimziPodSetOperator;
         ConcurrentHashMap<String, StrimziPodSet> podSets = new ConcurrentHashMap<>();
-        originalKafkaCluster.generatePodSets(openShift, null, null, (p) -> Map.of()).forEach(sps -> podSets.put(sps.getMetadata().getName(), sps));
+        originalKafkaCluster.generatePodSets(null, null, (p) -> Map.of()).forEach(sps -> podSets.put(sps.getMetadata().getName(), sps));
         when(mockPodSetOps.reconcile(any(), eq(NAMESPACE), startsWith(CLUSTER_NAME + "-"), any())).thenAnswer(invocation -> {
             StrimziPodSet sps = invocation.getArgument(3, StrimziPodSet.class);
             podSets.put(sps.getMetadata().getName(), sps);

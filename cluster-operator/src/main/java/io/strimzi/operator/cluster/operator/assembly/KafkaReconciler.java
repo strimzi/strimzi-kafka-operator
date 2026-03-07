@@ -915,7 +915,7 @@ public class KafkaReconciler {
                 .batchReconcile(
                         reconciliation,
                         reconciliation.namespace(),
-                        kafka.generatePodSets(pfa.isOpenshift(), imagePullPolicy, imagePullSecrets, this::podSetPodAnnotations),
+                        kafka.generatePodSets(imagePullPolicy, imagePullSecrets, this::podSetPodAnnotations),
                         kafka.getSelectorLabels()
                 )
                 .compose(podSetDiff -> waitForNewNodes().map(podSetDiff));
