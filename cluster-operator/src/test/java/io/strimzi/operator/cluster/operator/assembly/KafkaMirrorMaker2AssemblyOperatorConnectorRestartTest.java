@@ -272,11 +272,7 @@ public class KafkaMirrorMaker2AssemblyOperatorConnectorRestartTest {
                                     .withNewCheckpointConnector()
                                         .withTasksMax(1)
                                         .withConfig(Map.of("replication.factor", "-1"))
-                                        .endCheckpointConnector()
-                                    .withNewHeartbeatConnector()
-                                        .withTasksMax(1)
-                                        .withConfig(Map.of("replication.factor", "-1"))
-                                    .endHeartbeatConnector()
+                                    .endCheckpointConnector()
                                     .build()
                     ).endSpec();
     }

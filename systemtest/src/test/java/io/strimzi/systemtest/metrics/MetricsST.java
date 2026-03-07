@@ -419,8 +419,8 @@ public class MetricsST extends AbstractST {
             .withComponent(KafkaMirrorMaker2MetricsComponent.create(mm2ClusterName))
             .build();
 
-        assertMetricValue(kmm2Collector, "kafka_connect_worker_connector_count", 3.0);
-        assertMetricValueHigherThanOrEqualTo(kmm2Collector, "kafka_connect_worker_task_count", 2.0);
+        assertMetricValue(kmm2Collector, "kafka_connect_worker_connector_count", 2.0);
+        assertMetricValueHigherThanOrEqualTo(kmm2Collector, "kafka_connect_worker_task_count", 1.0);
 
         // Check CO metrics and look for KafkaBridge
         clusterOperatorCollector.collectMetricsFromPods(TestConstants.METRICS_COLLECT_TIMEOUT);

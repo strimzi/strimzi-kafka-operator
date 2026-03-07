@@ -385,15 +385,7 @@ class CustomResourceStatusST extends AbstractST {
             KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 1).build()
         );
         KubeResourceManager.get().createResourceWithWait(KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getClusterName(), 1).build());
-        KubeResourceManager.get().createResourceWithWait(KafkaMirrorMaker2Templates.kafkaMirrorMaker2(testStorage.getNamespaceName(), testStorage.getClusterName(), testStorage.getClusterName(), sharedTestStorage.getClusterName(), 1, false)
-                .editSpec()
-                    .editFirstMirror()
-                        .editOrNewHeartbeatConnector()
-                        .withConfig(Map.of("heartbeats.topic.replication.factor", "1"))
-                        .endHeartbeatConnector()
-                    .endMirror()
-                .endSpec()
-                .build());
+        KubeResourceManager.get().createResourceWithWait(KafkaMirrorMaker2Templates.kafkaMirrorMaker2(testStorage.getNamespaceName(), testStorage.getClusterName(), testStorage.getClusterName(), sharedTestStorage.getClusterName(), 1, false).build());
         KafkaMirrorMaker2Utils.waitForKafkaMirrorMaker2Ready(Environment.TEST_SUITE_NAMESPACE, testStorage.getClusterName());
         KafkaMirrorMaker2Utils.waitForKafkaMirrorMaker2ConnectorReadiness(Environment.TEST_SUITE_NAMESPACE, testStorage.getClusterName());
         assertKafkaMirrorMaker2Status(1, mm2Url, testStorage.getClusterName());

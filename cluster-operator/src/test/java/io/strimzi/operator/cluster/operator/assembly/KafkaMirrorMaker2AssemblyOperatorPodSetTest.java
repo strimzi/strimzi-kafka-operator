@@ -940,57 +940,6 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
     }
 
     @Test
-    @SuppressWarnings("deprecation")
-    public void testTopicsGroupsBlacklist(VertxTestContext context) {
-        String kmm2Name = "foo";
-        String sourceNamespace = "source-ns";
-        String targetNamespace = "target-ns";
-        String sourceClusterAlias = "my-cluster-src";
-        String targetClusterAlias = "my-cluster-tgt";
-        String excludedTopicList = "excludedTopic0,excludedTopic1";
-        String excludedGroupList = "excludedGroup0,excludedGroup1";
-
-        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
-        KafkaMirrorMaker2 kmm2 = ResourceUtils.createEmptyKafkaMirrorMaker2(targetNamespace, kmm2Name);
-        ArgumentCaptor<KafkaMirrorMaker2> mirrorMaker2Captor = createMirrorMaker2CaptorMock(targetNamespace, kmm2Name, kmm2, supplier);
-        KafkaConnectApi mockConnectClient = createConnectClientMock();
-
-        KafkaMirrorMaker2ClusterSpec sourceCluster =
-                new KafkaMirrorMaker2ClusterSpecBuilder()
-                        .withAlias(sourceClusterAlias)
-                        .withBootstrapServers(sourceClusterAlias + "." + sourceNamespace + ".svc:9092")
-                        .build();
-        KafkaMirrorMaker2ClusterSpec targetCluster =
-                new KafkaMirrorMaker2ClusterSpecBuilder()
-                        .withAlias(targetClusterAlias)
-                        .withBootstrapServers(targetClusterAlias + "." + targetNamespace + ".svc:9092")
-                        .build();
-        kmm2.getSpec().setClusters(List.of(sourceCluster, targetCluster));
-        kmm2.getSpec().setConnectCluster(targetClusterAlias);
-
-        KafkaMirrorMaker2MirrorSpec deprecatedMirrorConnector = new KafkaMirrorMaker2MirrorSpecBuilder()
-                .withSourceCluster(sourceClusterAlias)
-                .withTargetCluster(targetClusterAlias)
-                .withTopicsBlacklistPattern(excludedTopicList)
-                .withGroupsBlacklistPattern(excludedGroupList)
-                .build();
-        kmm2.getSpec().setMirrors(List.of(deprecatedMirrorConnector));
-
-        KafkaMirrorMaker2AssemblyOperator mm2AssemblyOperator = new KafkaMirrorMaker2AssemblyOperator(vertx, new PlatformFeaturesAvailability(true, KubernetesVersion.MINIMAL_SUPPORTED_VERSION),
-                supplier, ResourceUtils.dummyClusterOperatorConfig(), x -> mockConnectClient);
-
-        Checkpoint async = context.checkpoint();
-        KafkaMirrorMaker2Cluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kmm2, VERSIONS, supplier.sharedEnvironmentProvider);
-        mm2AssemblyOperator.reconcile(new Reconciliation("test-blacklist", KafkaMirrorMaker2.RESOURCE_KIND, targetNamespace, kmm2Name))
-                .onComplete(context.succeeding(v -> context.verify(() -> {
-                    KafkaMirrorMaker2MirrorSpec capturedMirrorConnector = mirrorMaker2Captor.getAllValues().get(0).getSpec().getMirrors().get(0);
-                    assertThat(capturedMirrorConnector.getTopicsBlacklistPattern(), is(excludedTopicList));
-                    assertThat(capturedMirrorConnector.getGroupsBlacklistPattern(), is(excludedGroupList));
-                    async.flag();
-                })));
-    }
-
-    @Test
     public void testDeleteClusterRoleBindings(VertxTestContext context) {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
