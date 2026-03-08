@@ -85,7 +85,6 @@ public class KafkaMirrorMaker2AssemblyOperatorConnectorOffsetsTest {
 
     private static final String SOURCE_CONNECTOR = "MirrorSourceConnector";
     private static final String CHECKPOINT_CONNECTOR = "MirrorCheckpointConnector";
-    private static final String HEARTBEAT_CONNECTOR = "MirrorHeartbeatConnector";
 
     private static String getConnectorName(String connector) {
         return SOURCE_CLUSTER_ALIAS + "->" + TARGET_CLUSTER_ALIAS + "." + connector;
@@ -108,8 +107,7 @@ public class KafkaMirrorMaker2AssemblyOperatorConnectorOffsetsTest {
     private static Stream<Arguments> connectors() {
         return Stream.of(
                 Arguments.of(SOURCE_CONNECTOR),
-                Arguments.of(CHECKPOINT_CONNECTOR),
-                Arguments.of(HEARTBEAT_CONNECTOR)
+                Arguments.of(CHECKPOINT_CONNECTOR)
         );
     }
 
@@ -1129,10 +1127,6 @@ public class KafkaMirrorMaker2AssemblyOperatorConnectorOffsetsTest {
                                     .withTasksMax(1)
                                     .withConfig(Map.of("replication.factor", "-1"))
                                 .endCheckpointConnector()
-                                .withNewHeartbeatConnector()
-                                    .withTasksMax(1)
-                                    .withConfig(Map.of("replication.factor", "-1"))
-                                .endHeartbeatConnector()
                                 .build()
                 ).endSpec();
     }
@@ -1174,9 +1168,6 @@ public class KafkaMirrorMaker2AssemblyOperatorConnectorOffsetsTest {
                         .editCheckpointConnector()
                             .withListOffsets(listOffsets)
                         .endCheckpointConnector()
-                        .editHeartbeatConnector()
-                            .withListOffsets(listOffsets)
-                        .endHeartbeatConnector()
                     .endMirror()
                 .endSpec()
                 .build();
@@ -1203,9 +1194,6 @@ public class KafkaMirrorMaker2AssemblyOperatorConnectorOffsetsTest {
                         .editCheckpointConnector()
                             .withAlterOffsets(alterOffsets)
                         .endCheckpointConnector()
-                        .editHeartbeatConnector()
-                            .withAlterOffsets(alterOffsets)
-                        .endHeartbeatConnector()
                     .endMirror()
                 .endSpec()
                 .build();

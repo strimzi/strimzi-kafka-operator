@@ -67,7 +67,7 @@ public class KafkaMirrorMaker2Utils {
         TestUtils.waitFor("MirrorMaker2 connectors readiness", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT, () -> {
             KafkaMirrorMaker2Status kafkaMirrorMaker2Status = kafkaMirrorMaker2Client().inNamespace(namespaceName).withName(clusterName).get().getStatus();
             // There should be only three connectors in the status of MM2
-            if (kafkaMirrorMaker2Status.getConnectors().size() != 3) {
+            if (kafkaMirrorMaker2Status.getConnectors().size() != 2) {
                 return false;
             }
             for (Map<String, Object> connector : kafkaMirrorMaker2Status.getConnectors()) {
