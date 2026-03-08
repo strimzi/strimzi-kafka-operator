@@ -474,7 +474,7 @@ public class KafkaClusterStorageTest {
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, KAFKA, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, null, SHARED_ENV_PROVIDER);
 
         // Test generated SPS
-        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, node -> Map.of());
+        List<StrimziPodSet> podSets = kc.generatePodSets(null, null, node -> Map.of());
         assertThat(podSets.size(), is(3));
 
         for (StrimziPodSet podSet : podSets)    {
@@ -507,7 +507,7 @@ public class KafkaClusterStorageTest {
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, KAFKA, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, null, SHARED_ENV_PROVIDER);
 
         // Test generated SPS
-        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, node -> Map.of());
+        List<StrimziPodSet> podSets = kc.generatePodSets(null, null, node -> Map.of());
         assertThat(podSets.size(), is(3));
 
         for (StrimziPodSet podSet : podSets)    {

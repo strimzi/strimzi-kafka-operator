@@ -13,7 +13,6 @@ import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerConfigurati
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerConfigurationBroker;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerConfigurationBrokerBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerConfigurationBuilder;
-import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthenticationOAuthBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.api.kafka.model.kafka.listener.NodeAddressType;
 import io.strimzi.operator.common.Reconciliation;
@@ -32,8 +31,6 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.not;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class ListenersValidatorTest {
@@ -906,23 +903,6 @@ public class ListenersValidatorTest {
     }
 
     @Test
-    public void testValidateOauth() {
-        GenericKafkaListener listener1 = new GenericKafkaListenerBuilder()
-                .withName("listener1")
-                .withPort(9900)
-                .withType(KafkaListenerType.INTERNAL)
-                .withAuth(new KafkaListenerAuthenticationOAuthBuilder().build())
-                .build();
-
-        List<GenericKafkaListener> listeners = List.of(listener1);
-
-        Exception exception = assertThrows(InvalidResourceException.class, () -> ListenersValidator.validate(Reconciliation.DUMMY_RECONCILIATION, THREE_NODES, listeners));
-        assertThat(exception.getMessage(), allOf(
-                containsString("listener listener1: Introspection endpoint URI or JWKS endpoint URI has to be specified"),
-                containsString("listener listener1: Valid Issuer URI has to be specified or 'checkIssuer' set to 'false'")));
-    }
-
-    @Test
     public void testValidateBrokerCertChainAndKey() {
         GenericKafkaListener listener1 = new GenericKafkaListenerBuilder()
                 .withName("listener1")
@@ -999,159 +979,6 @@ public class ListenersValidatorTest {
         List<GenericKafkaListener> listeners = List.of(internal, route, lb, np, inq);
 
         assertThat(ListenersValidator.validateAndGetErrorMessages(Reconciliation.DUMMY_RECONCILIATION, THREE_NODES, listeners), empty());
-    }
-
-    @Test
-    public void testValidateOauthPlain() {
-        KafkaListenerAuthenticationOAuthBuilder authBuilder = new KafkaListenerAuthenticationOAuthBuilder()
-                .withEnableOauthBearer(false);
-
-        GenericKafkaListenerBuilder listenerBuilder = new GenericKafkaListenerBuilder()
-                .withName("listener1")
-                .withPort(9900)
-                .withType(KafkaListenerType.INTERNAL)
-                .withAuth(authBuilder.build());
-
-        GenericKafkaListener listener = listenerBuilder.withAuth(authBuilder.build())
-                .build();
-
-        List<GenericKafkaListener> listeners = List.of(listener);
-
-        Exception exception = assertThrows(InvalidResourceException.class, () -> ListenersValidator.validate(Reconciliation.DUMMY_RECONCILIATION, THREE_NODES, listeners));
-        assertThat(exception.getMessage(), allOf(
-                containsString("listener listener1: At least one of 'enablePlain', 'enableOauthBearer' has to be set to 'true'")));
-
-        // enable plain with neither introspectionEndpointUri nor jwksEndpointUri set
-        authBuilder.withEnablePlain(true);
-        listener = listenerBuilder.withAuth(authBuilder.build())
-                .build();
-        List<GenericKafkaListener> listeners2 = List.of(listener);
-
-        exception = assertThrows(InvalidResourceException.class, () -> ListenersValidator.validate(Reconciliation.DUMMY_RECONCILIATION, THREE_NODES, listeners2));
-        assertThat(exception.getMessage(), allOf(
-                containsString("listener listener1: Introspection endpoint URI or JWKS endpoint URI has to be specified")));
-
-        // enable plain with jwksEndpointUri set but tokenEndpointUri not set
-        authBuilder.withJwksEndpointUri("http://localhost:8080/jwks").withCheckIssuer(false);
-        listener = listenerBuilder.withAuth(authBuilder.build())
-                .build();
-        List<GenericKafkaListener> listeners3 = List.of(listener);
-
-        assertDoesNotThrow(() -> ListenersValidator.validate(Reconciliation.DUMMY_RECONCILIATION, THREE_NODES, listeners3));
-    }
-
-    @Test
-    public void testValidateAudienceOauth() {
-        KafkaListenerAuthenticationOAuthBuilder authBuilder = new KafkaListenerAuthenticationOAuthBuilder()
-                .withCheckAudience(true);
-
-        GenericKafkaListenerBuilder listenerBuilder = new GenericKafkaListenerBuilder()
-                .withName("listener1")
-                .withPort(9900)
-                .withType(KafkaListenerType.INTERNAL)
-                .withAuth(authBuilder.build());
-
-        GenericKafkaListener listener = listenerBuilder.withAuth(authBuilder.build())
-                .build();
-
-        List<GenericKafkaListener> listeners = List.of(listener);
-
-        Exception exception = assertThrows(InvalidResourceException.class, () -> ListenersValidator.validate(Reconciliation.DUMMY_RECONCILIATION, THREE_NODES, listeners));
-        assertThat(exception.getMessage(), allOf(
-                containsString("listener listener1: 'clientId' has to be configured when 'checkAudience' is 'true'")));
-
-        // set clientId
-        authBuilder.withClientId("kafka");
-
-        listener = listenerBuilder.withAuth(authBuilder.build())
-                .build();
-        List<GenericKafkaListener> listeners2 = List.of(listener);
-
-        exception = assertThrows(InvalidResourceException.class, () -> ListenersValidator.validate(Reconciliation.DUMMY_RECONCILIATION, THREE_NODES, listeners2));
-        assertThat(exception.getMessage(), allOf(
-                not(containsString("listener listener1: 'clientId' has to be configured when 'checkAudience' is 'true'"))));
-    }
-
-    @Test
-    public void testValidateCustomClaimCheckOauth() {
-        KafkaListenerAuthenticationOAuthBuilder authBuilder = new KafkaListenerAuthenticationOAuthBuilder()
-                .withCustomClaimCheck("invalid");
-
-        GenericKafkaListenerBuilder listenerBuilder = new GenericKafkaListenerBuilder()
-                .withName("listener1")
-                .withPort(9900)
-                .withType(KafkaListenerType.INTERNAL)
-                .withAuth(authBuilder.build());
-
-        GenericKafkaListener listener = listenerBuilder.withAuth(authBuilder.build())
-                .build();
-
-        List<GenericKafkaListener> listeners = List.of(listener);
-
-        Exception exception = assertThrows(InvalidResourceException.class, () -> ListenersValidator.validate(Reconciliation.DUMMY_RECONCILIATION, THREE_NODES, listeners));
-        assertThat(exception.getMessage(), allOf(
-                containsString("listener listener1: 'customClaimCheck' value not a valid JsonPath filter query - Failed to parse filter query: \"invalid\"")));
-
-        // set valid JsonPath query
-        authBuilder.withCustomClaimCheck("@.valid == 'value'");
-
-        listener = listenerBuilder.withAuth(authBuilder.build())
-                .build();
-        List<GenericKafkaListener> listeners2 = List.of(listener);
-
-        exception = assertThrows(InvalidResourceException.class, () -> ListenersValidator.validate(Reconciliation.DUMMY_RECONCILIATION, THREE_NODES, listeners2));
-        assertThat(exception.getMessage(), allOf(
-                not(containsString("listener listener1: 'customClaimCheck' value not a valid JsonPath filter query - Failed to parse query: \"invalid\" at position: 0"))));
-    }
-
-    @Test
-    public void testValidateTimeoutsOauth() {
-        KafkaListenerAuthenticationOAuthBuilder authBuilder = new KafkaListenerAuthenticationOAuthBuilder()
-                .withConnectTimeoutSeconds(0);
-
-        GenericKafkaListenerBuilder listenerBuilder = new GenericKafkaListenerBuilder()
-                .withName("listener1")
-                .withPort(9900)
-                .withType(KafkaListenerType.INTERNAL)
-                .withAuth(authBuilder.build());
-
-
-        List<GenericKafkaListener> listeners = List.of(listenerBuilder.withAuth(authBuilder.build()).build());
-
-        Exception exception = assertThrows(InvalidResourceException.class, () -> ListenersValidator.validate(Reconciliation.DUMMY_RECONCILIATION, THREE_NODES, listeners));
-        assertThat(exception.getMessage(), allOf(
-                containsString("listener listener1: 'connectTimeoutSeconds' needs to be a positive integer (set to: 0)")));
-
-        // set valid connectTimeoutSeconds
-        authBuilder.withConnectTimeoutSeconds(1);
-
-        List<GenericKafkaListener> listeners2 = List.of(listenerBuilder.withAuth(authBuilder.build()).build());
-
-        exception = assertThrows(InvalidResourceException.class, () -> ListenersValidator.validate(Reconciliation.DUMMY_RECONCILIATION, THREE_NODES, listeners2));
-        assertThat(exception.getMessage(), allOf(
-                not(containsString("listener listener1: 'connectTimeoutSeconds' needs to be a positive integer"))));
-
-        //
-        // Repeat for readTimeoutSeconds
-        //
-        authBuilder.withConnectTimeoutSeconds(null)
-                .withReadTimeoutSeconds(0);
-
-        List<GenericKafkaListener> listeners3 = List.of(listenerBuilder.withAuth(authBuilder.build()).build());
-
-        exception = assertThrows(InvalidResourceException.class, () -> ListenersValidator.validate(Reconciliation.DUMMY_RECONCILIATION, THREE_NODES, listeners3));
-        assertThat(exception.getMessage(), allOf(
-                containsString("listener listener1: 'readTimeoutSeconds' needs to be a positive integer (set to: 0)")));
-
-        // set valid readTimeoutSeconds
-        authBuilder.withReadTimeoutSeconds(1);
-
-        List<GenericKafkaListener> listeners4 = List.of(listenerBuilder.withAuth(authBuilder.build()).build());
-
-        exception = assertThrows(InvalidResourceException.class, () -> ListenersValidator.validate(Reconciliation.DUMMY_RECONCILIATION, THREE_NODES, listeners4));
-        assertThat(exception.getMessage(), allOf(
-                not(containsString("listener listener1: 'readTimeoutSeconds' needs to be a positive integer"))));
-
     }
 
     @Test

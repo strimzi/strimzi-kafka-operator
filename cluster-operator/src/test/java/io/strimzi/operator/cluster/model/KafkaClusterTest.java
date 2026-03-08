@@ -351,7 +351,7 @@ public class KafkaClusterTest {
                 .build();
         List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafka, List.of(POOL_CONTROLLERS, POOL_MIXED, POOL_BROKERS), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, SHARED_ENV_PROVIDER);
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, null, SHARED_ENV_PROVIDER);
-        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, node -> Map.of());
+        List<StrimziPodSet> podSets = kc.generatePodSets(null, null, node -> Map.of());
         assertThat(podSets.size(), is(3));
 
         podSets.stream().forEach(podSet -> PodSetUtils.podSetToPods(podSet).stream().forEach(pod -> {
@@ -389,7 +389,7 @@ public class KafkaClusterTest {
 
         List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(controllers, mixed, brokers), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, SHARED_ENV_PROVIDER);
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, KAFKA, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, null, SHARED_ENV_PROVIDER);
-        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, node -> Map.of());
+        List<StrimziPodSet> podSets = kc.generatePodSets(null, null, node -> Map.of());
         assertThat(podSets.size(), is(3));
 
         podSets.stream().forEach(podSet -> PodSetUtils.podSetToPods(podSet).stream().forEach(pod -> {
@@ -436,7 +436,7 @@ public class KafkaClusterTest {
 
         List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafka, List.of(POOL_CONTROLLERS, mixed, brokers), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, SHARED_ENV_PROVIDER);
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, null, SHARED_ENV_PROVIDER);
-        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, node -> Map.of());
+        List<StrimziPodSet> podSets = kc.generatePodSets(null, null, node -> Map.of());
         assertThat(podSets.size(), is(3));
 
         podSets.stream().forEach(podSet -> PodSetUtils.podSetToPods(podSet).stream().forEach(pod -> {
@@ -467,7 +467,7 @@ public class KafkaClusterTest {
                 .build();
         List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, List.of(POOL_CONTROLLERS, POOL_MIXED, POOL_BROKERS), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, SHARED_ENV_PROVIDER);
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, null, SHARED_ENV_PROVIDER);
-        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, node -> Map.of());
+        List<StrimziPodSet> podSets = kc.generatePodSets(null, null, node -> Map.of());
 
         podSets.stream().forEach(podSet -> PodSetUtils.podSetToPods(podSet).stream().forEach(pod -> {
             // Check container
@@ -504,7 +504,7 @@ public class KafkaClusterTest {
                 .build();
         List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, List.of(POOL_CONTROLLERS, POOL_MIXED, POOL_BROKERS), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, SHARED_ENV_PROVIDER);
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, null, SHARED_ENV_PROVIDER);
-        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, node -> Map.of());
+        List<StrimziPodSet> podSets = kc.generatePodSets(null, null, node -> Map.of());
 
         podSets.stream().forEach(podSet -> PodSetUtils.podSetToPods(podSet).stream().forEach(pod -> {
             Container cont = pod.getSpec().getContainers().stream().findAny().orElseThrow();
@@ -584,7 +584,7 @@ public class KafkaClusterTest {
                 .build();
         List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, List.of(POOL_CONTROLLERS, POOL_MIXED, POOL_BROKERS), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, SHARED_ENV_PROVIDER);
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, null, SHARED_ENV_PROVIDER);
-        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, node -> Map.of());
+        List<StrimziPodSet> podSets = kc.generatePodSets(null, null, node -> Map.of());
 
         podSets.stream().forEach(podSet -> PodSetUtils.podSetToPods(podSet).stream().forEach(pod -> {
             Container initCont = pod.getSpec().getInitContainers().stream().findAny().orElse(null);
@@ -691,7 +691,7 @@ public class KafkaClusterTest {
 
         List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, List.of(POOL_CONTROLLERS, mixed, brokers), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, SHARED_ENV_PROVIDER);
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, null, SHARED_ENV_PROVIDER);
-        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, node -> Map.of());
+        List<StrimziPodSet> podSets = kc.generatePodSets(null, null, node -> Map.of());
 
         podSets.stream().forEach(podSet -> PodSetUtils.podSetToPods(podSet).stream().forEach(pod -> {
             Container initCont = pod.getSpec().getInitContainers().stream().findAny().orElse(null);
@@ -813,7 +813,7 @@ public class KafkaClusterTest {
 
         List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, List.of(controllers, mixed, brokers), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, SHARED_ENV_PROVIDER);
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, null, SHARED_ENV_PROVIDER);
-        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, node -> Map.of());
+        List<StrimziPodSet> podSets = kc.generatePodSets(null, null, node -> Map.of());
 
         podSets.stream().forEach(podSet -> PodSetUtils.podSetToPods(podSet).stream().forEach(pod -> {
             Container initCont = pod.getSpec().getInitContainers().stream().findAny().orElse(null);
@@ -976,7 +976,7 @@ public class KafkaClusterTest {
                 .build();
         List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafka, List.of(POOL_CONTROLLERS, POOL_MIXED, POOL_BROKERS), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, SHARED_ENV_PROVIDER);
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, null, SHARED_ENV_PROVIDER);
-        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, node -> Map.of());
+        List<StrimziPodSet> podSets = kc.generatePodSets(null, null, node -> Map.of());
 
         podSets.stream().forEach(podSet -> PodSetUtils.podSetToPods(podSet).stream().forEach(pod -> {
             Container cont = pod.getSpec().getContainers().stream().findAny().orElseThrow();
@@ -1026,7 +1026,7 @@ public class KafkaClusterTest {
     private void assertExpectedContainerPortsAreSet(Kafka kafka) {
         List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafka, List.of(POOL_CONTROLLERS, POOL_MIXED, POOL_BROKERS), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, SHARED_ENV_PROVIDER);
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, null, SHARED_ENV_PROVIDER);
-        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, node -> Map.of());
+        List<StrimziPodSet> podSets = kc.generatePodSets(null, null, node -> Map.of());
 
         podSets.stream().forEach(podSet -> PodSetUtils.podSetToPods(podSet).stream().forEach(pod -> {
             List<ContainerPort> ports = pod.getSpec().getContainers().stream().findAny().orElseThrow().getPorts();
@@ -2164,7 +2164,7 @@ public class KafkaClusterTest {
 
         List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafka, List.of(POOL_CONTROLLERS, POOL_MIXED, POOL_BROKERS), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, SHARED_ENV_PROVIDER);
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, null, SHARED_ENV_PROVIDER);
-        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, node -> Map.of());
+        List<StrimziPodSet> podSets = kc.generatePodSets(null, null, node -> Map.of());
 
         podSets.stream().forEach(podSet -> PodSetUtils.podSetToPods(podSet).stream().forEach(pod -> {
             if (pod.getMetadata().getName().startsWith(CLUSTER + "-controllers")) {
@@ -2214,7 +2214,7 @@ public class KafkaClusterTest {
 
         List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafka, List.of(POOL_CONTROLLERS, POOL_MIXED, brokers), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, SHARED_ENV_PROVIDER);
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, null, SHARED_ENV_PROVIDER);
-        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, node -> Map.of());
+        List<StrimziPodSet> podSets = kc.generatePodSets(null, null, node -> Map.of());
 
         podSets.stream().forEach(podSet -> PodSetUtils.podSetToPods(podSet).stream().forEach(pod -> {
             if (pod.getMetadata().getName().startsWith(CLUSTER + "-controllers")) {
@@ -2261,7 +2261,7 @@ public class KafkaClusterTest {
 
         List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafka, List.of(POOL_CONTROLLERS, mixed, POOL_BROKERS), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, SHARED_ENV_PROVIDER);
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, null, SHARED_ENV_PROVIDER);
-        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, node -> Map.of());
+        List<StrimziPodSet> podSets = kc.generatePodSets(null, null, node -> Map.of());
 
         podSets.stream().forEach(podSet -> PodSetUtils.podSetToPods(podSet).stream().forEach(pod -> {
             Container initCont = pod.getSpec().getInitContainers().stream().findAny().orElse(null);
@@ -2428,7 +2428,7 @@ public class KafkaClusterTest {
         List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafka, List.of(POOL_CONTROLLERS, POOL_MIXED, POOL_BROKERS), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, SHARED_ENV_PROVIDER);
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, null, SHARED_ENV_PROVIDER);
 
-        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, node -> Map.of());
+        List<StrimziPodSet> podSets = kc.generatePodSets(null, null, node -> Map.of());
         assertThat(podSets.size(), is(3));
 
         for (StrimziPodSet podSet : podSets)    {
@@ -2480,7 +2480,7 @@ public class KafkaClusterTest {
         List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafka, List.of(POOL_CONTROLLERS, POOL_MIXED, POOL_BROKERS), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, SHARED_ENV_PROVIDER);
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, null, SHARED_ENV_PROVIDER);
 
-        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, node -> Map.of());
+        List<StrimziPodSet> podSets = kc.generatePodSets(null, null, node -> Map.of());
         assertThat(podSets.size(), is(3));
 
         for (StrimziPodSet podSet : podSets)    {
@@ -2562,7 +2562,7 @@ public class KafkaClusterTest {
         List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafka, List.of(POOL_CONTROLLERS, POOL_MIXED, brokers), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, SHARED_ENV_PROVIDER);
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, null, SHARED_ENV_PROVIDER);
 
-        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, node -> Map.of());
+        List<StrimziPodSet> podSets = kc.generatePodSets(null, null, node -> Map.of());
         assertThat(podSets.size(), is(3));
 
         for (StrimziPodSet podSet : podSets)    {
@@ -2618,7 +2618,7 @@ public class KafkaClusterTest {
         List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(POOL_CONTROLLERS, POOL_MIXED, brokers), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, SHARED_ENV_PROVIDER);
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, KAFKA, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, null, SHARED_ENV_PROVIDER);
 
-        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, node -> Map.of());
+        List<StrimziPodSet> podSets = kc.generatePodSets(null, null, node -> Map.of());
         assertThat(podSets.size(), is(3));
 
         for (StrimziPodSet podSet : podSets)    {
@@ -2717,7 +2717,7 @@ public class KafkaClusterTest {
         List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafka, List.of(POOL_CONTROLLERS, POOL_MIXED, POOL_BROKERS), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, SHARED_ENV_PROVIDER);
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, null, SHARED_ENV_PROVIDER);
 
-        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, node -> Map.of());
+        List<StrimziPodSet> podSets = kc.generatePodSets(null, null, node -> Map.of());
         assertThat(podSets.size(), is(3));
 
         for (StrimziPodSet podSet : podSets)    {
@@ -2879,7 +2879,7 @@ public class KafkaClusterTest {
         List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafka, List.of(POOL_CONTROLLERS, POOL_MIXED, brokers), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, SHARED_ENV_PROVIDER);
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, null, SHARED_ENV_PROVIDER);
 
-        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, node -> Map.of());
+        List<StrimziPodSet> podSets = kc.generatePodSets(null, null, node -> Map.of());
         assertThat(podSets.size(), is(3));
 
         for (StrimziPodSet podSet : podSets)    {
@@ -2994,7 +2994,7 @@ public class KafkaClusterTest {
         List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafka, List.of(POOL_CONTROLLERS, POOL_MIXED, brokers), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, SHARED_ENV_PROVIDER);
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, null, SHARED_ENV_PROVIDER);
 
-        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, node -> Map.of());
+        List<StrimziPodSet> podSets = kc.generatePodSets(null, null, node -> Map.of());
         assertThat(podSets.size(), is(3));
 
         for (StrimziPodSet podSet : podSets)    {
@@ -3014,7 +3014,7 @@ public class KafkaClusterTest {
     @Test
     public void testImagePullPolicy() {
         // Test ALWAYS policy
-        List<StrimziPodSet> podSets = KC.generatePodSets(true, ImagePullPolicy.ALWAYS, null, node -> Map.of());
+        List<StrimziPodSet> podSets = KC.generatePodSets(ImagePullPolicy.ALWAYS, null, node -> Map.of());
         assertThat(podSets.size(), is(3));
 
         for (StrimziPodSet podSet : podSets)    {
@@ -3026,7 +3026,7 @@ public class KafkaClusterTest {
         }
 
         // Test IFNOTPRESENT policy
-        podSets = KC.generatePodSets(true, ImagePullPolicy.IFNOTPRESENT, null, node -> Map.of());
+        podSets = KC.generatePodSets(ImagePullPolicy.IFNOTPRESENT, null, node -> Map.of());
         assertThat(podSets.size(), is(3));
 
         for (StrimziPodSet podSet : podSets)    {
@@ -3038,7 +3038,7 @@ public class KafkaClusterTest {
         }
 
         // Test NEVER policy
-        podSets = KC.generatePodSets(true, ImagePullPolicy.NEVER, null, node -> Map.of());
+        podSets = KC.generatePodSets(ImagePullPolicy.NEVER, null, node -> Map.of());
         assertThat(podSets.size(), is(3));
 
         for (StrimziPodSet podSet : podSets)    {
@@ -3071,7 +3071,7 @@ public class KafkaClusterTest {
         List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafka, List.of(POOL_CONTROLLERS, POOL_MIXED, POOL_BROKERS), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, SHARED_ENV_PROVIDER);
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, null, SHARED_ENV_PROVIDER);
 
-        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, node -> Map.of());
+        List<StrimziPodSet> podSets = kc.generatePodSets(null, null, node -> Map.of());
         assertThat(podSets.size(), is(3));
 
         for (StrimziPodSet podSet : podSets)    {
@@ -3094,7 +3094,7 @@ public class KafkaClusterTest {
         secrets.add(secret1);
         secrets.add(secret2);
 
-        List<StrimziPodSet> podSets = KC.generatePodSets(true, null, secrets, node -> Map.of());
+        List<StrimziPodSet> podSets = KC.generatePodSets(null, secrets, node -> Map.of());
         assertThat(podSets.size(), is(3));
 
         for (StrimziPodSet podSet : podSets)    {
@@ -3129,7 +3129,7 @@ public class KafkaClusterTest {
         List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafka, List.of(POOL_CONTROLLERS, POOL_MIXED, POOL_BROKERS), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, SHARED_ENV_PROVIDER);
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, null, SHARED_ENV_PROVIDER);
 
-        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, List.of(secret1), node -> Map.of());
+        List<StrimziPodSet> podSets = kc.generatePodSets(null, List.of(secret1), node -> Map.of());
         assertThat(podSets.size(), is(3));
 
         for (StrimziPodSet podSet : podSets)    {
@@ -3173,7 +3173,7 @@ public class KafkaClusterTest {
         List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafka, List.of(POOL_CONTROLLERS, POOL_MIXED, brokers), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, SHARED_ENV_PROVIDER);
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, null, SHARED_ENV_PROVIDER);
 
-        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, node -> Map.of());
+        List<StrimziPodSet> podSets = kc.generatePodSets(null, null, node -> Map.of());
         assertThat(podSets.size(), is(3));
 
         for (StrimziPodSet podSet : podSets)    {
@@ -3211,7 +3211,7 @@ public class KafkaClusterTest {
         List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(POOL_CONTROLLERS, POOL_MIXED, brokers), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, SHARED_ENV_PROVIDER);
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, KAFKA, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, null, SHARED_ENV_PROVIDER);
 
-        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, List.of(secret1), node -> Map.of());
+        List<StrimziPodSet> podSets = kc.generatePodSets(null, List.of(secret1), node -> Map.of());
         assertThat(podSets.size(), is(3));
 
         for (StrimziPodSet podSet : podSets)    {
@@ -3233,7 +3233,7 @@ public class KafkaClusterTest {
 
     @Test
     public void testDefaultImagePullSecrets() {
-        List<StrimziPodSet> podSets = KC.generatePodSets(true, null, null, node -> Map.of());
+        List<StrimziPodSet> podSets = KC.generatePodSets(null, null, node -> Map.of());
         assertThat(podSets.size(), is(3));
 
         for (StrimziPodSet podSet : podSets)    {
@@ -3253,7 +3253,7 @@ public class KafkaClusterTest {
         kc.securityProvider.configure(new PlatformFeaturesAvailability(false, KubernetesVersion.MINIMAL_SUPPORTED_VERSION));
 
         // Test generated SPS
-        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, node -> Map.of());
+        List<StrimziPodSet> podSets = kc.generatePodSets(null, null, node -> Map.of());
         assertThat(podSets.size(), is(3));
 
         for (StrimziPodSet podSet : podSets)    {
@@ -3272,7 +3272,7 @@ public class KafkaClusterTest {
 
     @Test
     public void testDefaultSecurityContext() {
-        List<StrimziPodSet> podSets = KC.generatePodSets(true, null, null, node -> Map.of());
+        List<StrimziPodSet> podSets = KC.generatePodSets(null, null, node -> Map.of());
         assertThat(podSets.size(), is(3));
 
         for (StrimziPodSet podSet : podSets)    {
@@ -3297,7 +3297,7 @@ public class KafkaClusterTest {
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, KAFKA, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, null, SHARED_ENV_PROVIDER);
 
         // Test generated SPS
-        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, node -> Map.of());
+        List<StrimziPodSet> podSets = kc.generatePodSets(null, null, node -> Map.of());
         assertThat(podSets.size(), is(3));
 
         for (StrimziPodSet podSet : podSets)    {
@@ -3321,7 +3321,7 @@ public class KafkaClusterTest {
     @SuppressWarnings({"checkstyle:MethodLength"})
     @Test
     public void testPodSet()   {
-        List<StrimziPodSet> podSets = KC.generatePodSets(true, null, null, node -> Map.of("test-anno", "test-value"));
+        List<StrimziPodSet> podSets = KC.generatePodSets(null, null, node -> Map.of("test-anno", "test-value"));
         assertThat(podSets.size(), is(3));
 
         // Controllers
@@ -3656,7 +3656,7 @@ public class KafkaClusterTest {
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, null, SHARED_ENV_PROVIDER);
 
         // Test generated SPS
-        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, node -> Map.of("special", "annotation"));
+        List<StrimziPodSet> podSets = kc.generatePodSets(null, null, node -> Map.of("special", "annotation"));
         assertThat(podSets.size(), is(3));
 
         for (StrimziPodSet podSet : podSets)    {
@@ -3977,7 +3977,7 @@ public class KafkaClusterTest {
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, null, SHARED_ENV_PROVIDER);
 
         // Test generated SPS
-        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, node -> Map.of("special", "annotation"));
+        List<StrimziPodSet> podSets = kc.generatePodSets(null, null, node -> Map.of("special", "annotation"));
         assertThat(podSets.size(), is(3));
 
         for (StrimziPodSet podSet : podSets)    {
@@ -4253,7 +4253,7 @@ public class KafkaClusterTest {
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, KAFKA, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, null, SHARED_ENV_PROVIDER);
 
         // Test generated SPS
-        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, node -> Map.of("special", "annotation"));
+        List<StrimziPodSet> podSets = kc.generatePodSets(null, null, node -> Map.of("special", "annotation"));
         assertThat(podSets.size(), is(3));
 
         for (StrimziPodSet podSet : podSets)    {

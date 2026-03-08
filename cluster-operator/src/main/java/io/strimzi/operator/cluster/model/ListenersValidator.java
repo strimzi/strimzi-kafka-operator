@@ -7,11 +7,8 @@ package io.strimzi.operator.cluster.model;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListener;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerConfiguration;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerConfigurationBroker;
-import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthenticationOAuth;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthenticationTls;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
-import io.strimzi.kafka.oauth.jsonpath.JsonPathFilterQuery;
-import io.strimzi.kafka.oauth.jsonpath.JsonPathQuery;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.model.InvalidResourceException;
@@ -21,8 +18,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-
-import static io.strimzi.operator.cluster.model.ListenersUtils.isListenerWithOAuth;
 
 /**
  * Util methods for validating Kafka listeners
@@ -73,7 +68,6 @@ public class ListenersValidator {
             validatePortNumbers(errors, listener);
             validateRouteAndIngressTlsOnly(errors, listener);
             validateTlsFeaturesOnNonTlsListener(errors, listener);
-            validateOauth(errors, listener);
 
             if (listener.getConfiguration() != null)    {
                 validateServiceDnsDomain(errors, listener);
@@ -578,112 +572,6 @@ public class ListenersValidator {
         Set<Integer> configuredIds = listener.getConfiguration().getBrokers().stream().map(GenericKafkaListenerConfigurationBroker::getBroker).collect(Collectors.toSet());
         configuredIds.removeAll(brokerNodes.stream().map(NodeRef::nodeId).collect(Collectors.toSet()));
         return configuredIds;
-    }
-
-    /**
-     * Validates provided OAuth configuration. Throws InvalidResourceException when OAuth configuration contains forbidden combinations.
-     *
-     * @param errors    List where any found errors will be added
-     * @param listener  The listener where OAuth authentication should be validated
-     */
-    @SuppressWarnings({"checkstyle:BooleanExpressionComplexity", "checkstyle:NPathComplexity", "checkstyle:CyclomaticComplexity", "deprecation"}) // OAuth authentication is deprecated
-    private static void validateOauth(Set<String> errors, GenericKafkaListener listener) {
-        if (isListenerWithOAuth(listener)) {
-            KafkaListenerAuthenticationOAuth oAuth = (KafkaListenerAuthenticationOAuth) listener.getAuth();
-            String listenerName = listener.getName();
-
-            if (!oAuth.isEnablePlain() && !oAuth.isEnableOauthBearer()) {
-                errors.add("listener " + listenerName + ": At least one of 'enablePlain', 'enableOauthBearer' has to be set to 'true'");
-            }
-            boolean hasJwksRefreshSecondsValidInput = oAuth.getJwksRefreshSeconds() != null && oAuth.getJwksRefreshSeconds() > 0;
-            boolean hasJwksExpirySecondsValidInput = oAuth.getJwksExpirySeconds() != null && oAuth.getJwksExpirySeconds() > 0;
-            boolean hasJwksMinRefreshPauseSecondsValidInput = oAuth.getJwksMinRefreshPauseSeconds() != null && oAuth.getJwksMinRefreshPauseSeconds() >= 0;
-
-            if (oAuth.getIntrospectionEndpointUri() == null && oAuth.getJwksEndpointUri() == null) {
-                errors.add("listener " + listenerName + ": Introspection endpoint URI or JWKS endpoint URI has to be specified");
-            }
-
-            if (oAuth.getValidIssuerUri() == null && oAuth.isCheckIssuer()) {
-                errors.add("listener " + listenerName + ": Valid Issuer URI has to be specified or 'checkIssuer' set to 'false'");
-            }
-
-            if (oAuth.getConnectTimeoutSeconds() != null && oAuth.getConnectTimeoutSeconds() <= 0) {
-                errors.add("listener " + listenerName + ": 'connectTimeoutSeconds' needs to be a positive integer (set to: " + oAuth.getConnectTimeoutSeconds() + ")");
-            }
-
-            if (oAuth.getReadTimeoutSeconds() != null && oAuth.getReadTimeoutSeconds() <= 0) {
-                errors.add("listener " + listenerName + ": 'readTimeoutSeconds' needs to be a positive integer (set to: " + oAuth.getReadTimeoutSeconds() + ")");
-            }
-
-            if (oAuth.isCheckAudience() && oAuth.getClientId() == null) {
-                errors.add("listener " + listenerName + ": 'clientId' has to be configured when 'checkAudience' is 'true'");
-            }
-
-            String customCheckQuery = oAuth.getCustomClaimCheck();
-            if (customCheckQuery != null) {
-                try {
-                    JsonPathFilterQuery.parse(customCheckQuery);
-                } catch (Exception e) {
-                    errors.add("listener " + listenerName + ": 'customClaimCheck' value not a valid JsonPath filter query - " + e.getMessage());
-                }
-            }
-
-            if (oAuth.getIntrospectionEndpointUri() != null && (oAuth.getClientId() == null || oAuth.getClientSecret() == null)) {
-                errors.add("listener " + listenerName + ": Introspection Endpoint URI needs to be configured together with 'clientId' and 'clientSecret'");
-            }
-
-            if (oAuth.getUserInfoEndpointUri() != null && oAuth.getIntrospectionEndpointUri() == null) {
-                errors.add("listener " + listenerName + ": User Info Endpoint URI can only be used if Introspection Endpoint URI is also configured");
-            }
-
-            if (oAuth.getJwksEndpointUri() == null && (hasJwksRefreshSecondsValidInput || hasJwksExpirySecondsValidInput || hasJwksMinRefreshPauseSecondsValidInput)) {
-                errors.add("listener " + listenerName + ": 'jwksRefreshSeconds', 'jwksExpirySeconds' and 'jwksMinRefreshPauseSeconds' can only be used together with 'jwksEndpointUri'");
-            }
-
-            if (oAuth.getJwksRefreshSeconds() != null && !hasJwksRefreshSecondsValidInput) {
-                errors.add("listener " + listenerName + ": 'jwksRefreshSeconds' needs to be a positive integer (set to: " + oAuth.getJwksRefreshSeconds() + ")");
-            }
-
-            if (oAuth.getJwksExpirySeconds() != null && !hasJwksExpirySecondsValidInput) {
-                errors.add("listener " + listenerName + ": 'jwksExpirySeconds' needs to be a positive integer (set to: " + oAuth.getJwksExpirySeconds() + ")");
-            }
-
-            if (oAuth.getJwksMinRefreshPauseSeconds() != null && !hasJwksMinRefreshPauseSecondsValidInput) {
-                errors.add("listener " + listenerName + ": 'jwksMinRefreshPauseSeconds' needs to be a positive integer or zero (set to: " + oAuth.getJwksMinRefreshPauseSeconds() + ")");
-            }
-
-            if ((hasJwksExpirySecondsValidInput && hasJwksRefreshSecondsValidInput && oAuth.getJwksExpirySeconds() < oAuth.getJwksRefreshSeconds() + 60) ||
-                    (!hasJwksExpirySecondsValidInput && hasJwksRefreshSecondsValidInput && KafkaListenerAuthenticationOAuth.DEFAULT_JWKS_EXPIRY_SECONDS < oAuth.getJwksRefreshSeconds() + 60) ||
-                    (hasJwksExpirySecondsValidInput && !hasJwksRefreshSecondsValidInput && oAuth.getJwksExpirySeconds() < KafkaListenerAuthenticationOAuth.DEFAULT_JWKS_REFRESH_SECONDS + 60)) {
-                errors.add("listener " + listenerName + ": The refresh interval has to be at least 60 seconds shorter then the expiry interval specified in `jwksExpirySeconds`");
-            }
-
-            if (!oAuth.isAccessTokenIsJwt()) {
-                if (oAuth.getJwksEndpointUri() != null) {
-                    errors.add("listener " + listenerName + ": 'accessTokenIsJwt' can not be 'false' when 'jwksEndpointUri' is set");
-                }
-                if (!oAuth.isCheckAccessTokenType()) {
-                    errors.add("listener " + listenerName + ": 'checkAccessTokenType' can not be set to 'false' when 'accessTokenIsJwt' is 'false'");
-                }
-            }
-
-            if (!oAuth.isCheckAccessTokenType() && oAuth.getIntrospectionEndpointUri() != null) {
-                errors.add("listener " + listenerName + ": 'checkAccessTokenType' can not be set to 'false' when 'introspectionEndpointUri' is set");
-            }
-
-            if (oAuth.getValidTokenType() != null && oAuth.getIntrospectionEndpointUri() == null) {
-                errors.add("listener " + listenerName + ": 'validTokenType' can only be used when 'introspectionEndpointUri' is set");
-            }
-
-            String groupsQuery = oAuth.getGroupsClaim();
-            if (groupsQuery != null) {
-                try {
-                    JsonPathQuery.parse(groupsQuery);
-                } catch (Exception e) {
-                    errors.add("listener " + listenerName + ": 'groupsClaim' value not a valid JsonPath query - " + e.getMessage());
-                }
-            }
-        }
     }
 
     /**

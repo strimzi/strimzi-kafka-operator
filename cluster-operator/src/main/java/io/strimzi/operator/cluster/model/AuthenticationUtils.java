@@ -7,7 +7,6 @@ package io.strimzi.operator.cluster.model;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
-import io.strimzi.api.kafka.model.common.GenericSecretSource;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthentication;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationOAuth;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationPlain;
@@ -17,7 +16,6 @@ import io.strimzi.kafka.oauth.client.ClientConfig;
 import io.strimzi.operator.common.model.InvalidResourceException;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -428,57 +426,6 @@ public class AuthenticationUtils {
         if (value != null) {
             options.put(name, value);
         }
-    }
-
-    /**
-     * Generates volumes needed for generic secrets needed for custom authentication.
-     *
-     * @param volumeNamePrefix    Prefix for naming the secret volumes
-     * @param genericSecretSources   List of generic secrets which should be mounted
-     * @param isOpenShift   Flag whether we are on OpenShift or not
-     *
-     * @return List of new Volumes
-     */
-    public static List<Volume> configureGenericSecretVolumes(String volumeNamePrefix, List<GenericSecretSource> genericSecretSources, boolean isOpenShift)   {
-        List<Volume> newVolumes = new ArrayList<>();
-
-        if (genericSecretSources != null && genericSecretSources.size() > 0) {
-            int i = 0;
-
-            for (GenericSecretSource genericSecretSource : genericSecretSources) {
-                Map<String, String> items = Collections.singletonMap(genericSecretSource.getKey(), genericSecretSource.getKey());
-                String volumeName = String.format("%s-%d", volumeNamePrefix, i);
-                Volume vol = VolumeUtils.createSecretVolume(volumeName, genericSecretSource.getSecretName(), items, isOpenShift);
-                newVolumes.add(vol);
-                i++;
-            }
-        }
-
-        return newVolumes;
-    }
-
-    /**
-     * Generates volume mounts needed for generic secrets that are being mounted.
-     *
-     * @param volumeNamePrefix   Prefix which was used to name the secret volumes
-     * @param genericSecretSources   List of generic secrets that should be mounted
-     * @param baseVolumeMount   The Base volume into which the certificates should be mounted
-     *
-     * @return List of new VolumeMounts
-     */
-    public static List<VolumeMount> configureGenericSecretVolumeMounts(String volumeNamePrefix, List<GenericSecretSource> genericSecretSources, String baseVolumeMount)   {
-        List<VolumeMount> newVolumeMounts = new ArrayList<>();
-
-        if (genericSecretSources != null && genericSecretSources.size() > 0) {
-            int i = 0;
-
-            for (GenericSecretSource genericSecretSource : genericSecretSources) {
-                String volumeName = String.format("%s-%d", volumeNamePrefix, i);
-                newVolumeMounts.add(VolumeUtils.createVolumeMount(volumeName, String.format("%s/%s", baseVolumeMount, genericSecretSource.getSecretName())));
-                i++;
-            }
-        }
-        return newVolumeMounts;
     }
 
     /**

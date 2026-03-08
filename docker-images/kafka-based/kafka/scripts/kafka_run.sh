@@ -44,9 +44,6 @@ export CERTS_STORE_PASSWORD
 
 mkdir -p /tmp/kafka
 
-# Import certificates into keystore and truststore
-./kafka_tls_prepare_certificates.sh
-
 # Generate and print the config file
 echo "Starting Kafka with configuration:"
 tee /tmp/strimzi.properties < "$KAFKA_HOME/custom-config/server.config" | sed -e 's/sasl.jaas.config=.*/sasl.jaas.config=[hidden]/g' -e 's/password=.*/password=[hidden]/g'
