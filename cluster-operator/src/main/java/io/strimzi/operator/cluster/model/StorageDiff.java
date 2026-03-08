@@ -28,7 +28,7 @@ public class StorageDiff extends AbstractJsonDiff {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(StorageDiff.class.getName());
 
     private static final Pattern IGNORABLE_PATHS = Pattern.compile(
-            "^(/deleteClaim|/kraftMetadata|/overrides.*|/volumeAttributesClass|)$");
+            "^(/deleteClaim|/kraftMetadata|/volumeAttributesClass|)$");
 
     private final boolean isEmpty;
     private final boolean changesType;
@@ -38,8 +38,8 @@ public class StorageDiff extends AbstractJsonDiff {
     private final boolean duplicateVolumeIds;
 
     /**
-     * Diffs the storage for allowed or not allowed changes. Examples of allowed changes is increasing volume size or
-     * adding overrides for nodes before scale-up / removing them after scale-down.
+     * Diffs the storage for allowed or not allowed changes. Examples of allowed changes are increasing volume size or
+     * volumeAttributesClass changes.
      *
      * @param reconciliation    The reconciliation
      * @param current           Current Storage configuration
@@ -52,9 +52,8 @@ public class StorageDiff extends AbstractJsonDiff {
     }
 
     /**
-     * Diffs the storage for allowed or not allowed changes. Examples of allowed changes is increasing volume size or
-     * adding overrides for nodes before scale-up / removing them after scale-down. This constructor is used internally
-     * only.
+     * Diffs the storage for allowed or not allowed changes. Example of allowed changes are increasing volume size or
+     * volumeAttributesClass changes. This constructor is used internally only.
      *
      * @param reconciliation    The reconciliation
      * @param current           Current Storage configuration

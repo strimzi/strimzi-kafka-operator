@@ -13,7 +13,6 @@ import io.strimzi.api.kafka.model.kafka.JbodStorage;
 import io.strimzi.api.kafka.model.kafka.JbodStorageBuilder;
 import io.strimzi.api.kafka.model.kafka.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.kafka.PersistentClaimStorageBuilder;
-import io.strimzi.api.kafka.model.kafka.PersistentClaimStorageOverrideBuilder;
 import io.strimzi.api.kafka.model.kafka.Storage;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.common.model.Labels;
@@ -232,85 +231,5 @@ public class PersistentVolumeClaimUtilsTest {
         assertThat(pvcs.get(0).getSpec().getSelector(), is(nullValue()));
         assertThat(pvcs.get(0).getSpec().getResources().getRequests(), is(Map.of("storage", new Quantity("100Gi", null))));
         assertThat(pvcs.get(0).getSpec().getStorageClassName(), is("my-storage-class"));
-    }
-
-    @Test
-    public void testWithStorageClassOverrides()  {
-        JbodStorage jbod = new JbodStorageBuilder()
-                .withVolumes(new PersistentClaimStorageBuilder()
-                        .withId(0)
-                        .withStorageClass("my-storage-class")
-                        .withSize("100Gi")
-                        .withOverrides(new PersistentClaimStorageOverrideBuilder().withBroker(0).withStorageClass("special-storage-class").build()) // The override is set, but the test checks that it is ignored
-                        .build())
-                .build();
-
-        List<PersistentVolumeClaim> pvcs = PersistentVolumeClaimUtils
-                .createPersistentVolumeClaims(NAMESPACE, SINGLE_NODE, jbod, false, LABELS, ResourceUtils.DUMMY_OWNER_REFERENCE, null);
-
-        assertThat(pvcs.size(), is(1));
-
-        assertThat(pvcs.get(0).getMetadata().getName(), is("data-0-my-cluster-kafka-0"));
-        assertThat(pvcs.get(0).getMetadata().getNamespace(), is(NAMESPACE));
-        assertThat(pvcs.get(0).getMetadata().getLabels(), is(LABELS.toMap()));
-        assertThat(pvcs.get(0).getMetadata().getAnnotations(), is(Map.of("strimzi.io/delete-claim", "false")));
-        assertThat(pvcs.get(0).getMetadata().getOwnerReferences(), is(List.of()));
-        assertThat(pvcs.get(0).getSpec().getVolumeMode(), is("Filesystem"));
-        assertThat(pvcs.get(0).getSpec().getAccessModes(), is(List.of("ReadWriteOnce")));
-        assertThat(pvcs.get(0).getSpec().getSelector(), is(nullValue()));
-        assertThat(pvcs.get(0).getSpec().getResources().getRequests(), is(Map.of("storage", new Quantity("100Gi", null))));
-        assertThat(pvcs.get(0).getSpec().getStorageClassName(), is("my-storage-class"));
-    }
-
-    @Test
-    public void testJbodWithClassOverridesAndDeleteClaims()  {
-        JbodStorage jbod = new JbodStorageBuilder()
-                .withVolumes(
-                        new PersistentClaimStorageBuilder()
-                                .withId(0)
-                                .withStorageClass("my-storage-class")
-                                .withSize("100Gi")
-                                .withDeleteClaim(false)
-                                .withOverrides(new PersistentClaimStorageOverrideBuilder().withBroker(0).withStorageClass("special-storage-class").build()) // The override is set, but the test checks that it is ignored
-                                .build(),
-                        new PersistentClaimStorageBuilder()
-                                .withId(1)
-                                .withStorageClass("my-storage-class2")
-                                .withSize("200Gi")
-                                .withDeleteClaim(true)
-                                .build(),
-                        new EphemeralStorage())
-                .build();
-
-        List<PersistentVolumeClaim> pvcs = PersistentVolumeClaimUtils
-                .createPersistentVolumeClaims(NAMESPACE, THREE_NODES, jbod, false, LABELS, ResourceUtils.DUMMY_OWNER_REFERENCE, null);
-
-        assertThat(pvcs.size(), is(6));
-
-        for (int i = 0; i < 3; i++)  {
-            assertThat(pvcs.get(i).getMetadata().getName(), is("data-0-my-cluster-kafka-" + i));
-            assertThat(pvcs.get(i).getMetadata().getNamespace(), is(NAMESPACE));
-            assertThat(pvcs.get(i).getMetadata().getLabels(), is(LABELS.toMap()));
-            assertThat(pvcs.get(i).getMetadata().getAnnotations(), is(Map.of("strimzi.io/delete-claim", "false")));
-            assertThat(pvcs.get(i).getMetadata().getOwnerReferences(), is(List.of()));
-            assertThat(pvcs.get(i).getSpec().getVolumeMode(), is("Filesystem"));
-            assertThat(pvcs.get(i).getSpec().getAccessModes(), is(List.of("ReadWriteOnce")));
-            assertThat(pvcs.get(i).getSpec().getSelector(), is(nullValue()));
-            assertThat(pvcs.get(i).getSpec().getResources().getRequests(), is(Map.of("storage", new Quantity("100Gi", null))));
-            assertThat(pvcs.get(i).getSpec().getStorageClassName(), is("my-storage-class"));
-        }
-
-        for (int i = 3; i < 6; i++)  {
-            assertThat(pvcs.get(i).getMetadata().getName(), is("data-1-my-cluster-kafka-" + i % 3));
-            assertThat(pvcs.get(i).getMetadata().getNamespace(), is(NAMESPACE));
-            assertThat(pvcs.get(i).getMetadata().getLabels(), is(LABELS.toMap()));
-            assertThat(pvcs.get(i).getMetadata().getAnnotations(), is(Map.of("strimzi.io/delete-claim", "true")));
-            assertThat(pvcs.get(i).getMetadata().getOwnerReferences(), is(List.of(ResourceUtils.DUMMY_OWNER_REFERENCE)));
-            assertThat(pvcs.get(i).getSpec().getVolumeMode(), is("Filesystem"));
-            assertThat(pvcs.get(i).getSpec().getAccessModes(), is(List.of("ReadWriteOnce")));
-            assertThat(pvcs.get(i).getSpec().getSelector(), is(nullValue()));
-            assertThat(pvcs.get(i).getSpec().getResources().getRequests(), is(Map.of("storage", new Quantity("200Gi", null))));
-            assertThat(pvcs.get(i).getSpec().getStorageClassName(), is("my-storage-class2"));
-        }
     }
 }
