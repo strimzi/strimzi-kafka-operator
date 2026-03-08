@@ -44,7 +44,6 @@ import io.strimzi.api.kafka.model.common.template.InternalServiceTemplate;
 import io.strimzi.api.kafka.model.common.template.PodDisruptionBudgetTemplate;
 import io.strimzi.api.kafka.model.common.template.PodTemplate;
 import io.strimzi.api.kafka.model.common.template.ResourceTemplate;
-import io.strimzi.api.kafka.model.common.tracing.JaegerTracing;
 import io.strimzi.api.kafka.model.common.tracing.OpenTelemetryTracing;
 import io.strimzi.api.kafka.model.common.tracing.Tracing;
 import io.strimzi.api.kafka.model.connect.ImageArtifact;
@@ -258,13 +257,10 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
 
         // Tracing configuration
         result.tracing = spec.getTracing();
-        if (result.tracing != null)   {
-            if (JaegerTracing.TYPE_JAEGER.equals(result.tracing.getType())) {
-                LOGGER.warnCr(reconciliation, "Tracing type \"{}\" is not supported anymore and will be ignored", JaegerTracing.TYPE_JAEGER);
-            } else if (OpenTelemetryTracing.TYPE_OPENTELEMETRY.equals(result.tracing.getType())) {
-                config.setConfigOption("consumer.interceptor.classes", OpenTelemetryTracing.CONSUMER_INTERCEPTOR_CLASS_NAME);
-                config.setConfigOption("producer.interceptor.classes", OpenTelemetryTracing.PRODUCER_INTERCEPTOR_CLASS_NAME);
-            }
+        if (result.tracing != null
+                && OpenTelemetryTracing.TYPE_OPENTELEMETRY.equals(result.tracing.getType()))   {
+            config.setConfigOption("consumer.interceptor.classes", OpenTelemetryTracing.CONSUMER_INTERCEPTOR_CLASS_NAME);
+            config.setConfigOption("producer.interceptor.classes", OpenTelemetryTracing.PRODUCER_INTERCEPTOR_CLASS_NAME);
         }
 
         if (result.getImage() == null) {
