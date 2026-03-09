@@ -1682,7 +1682,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
 
     /**
      * Generates the individual Kafka broker configuration. This configuration uses only minimum of placeholders - for
-     * values which are known only inside the pod such as secret values (e.g. OAuth client secrets), NodePort addresses
+     * values which are known only inside the pod such as secret values (e.g. passwords), NodePort addresses
      * or Rack IDs. All other values such as broker IDs, advertised ports or hostnames are already prefilled in the
      * configuration. This method is normally used with StrimziPodSets.
      *

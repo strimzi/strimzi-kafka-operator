@@ -94,7 +94,6 @@
         <opentelemetry-alpha.version>${opentelemetry.version}-alpha</opentelemetry-alpha.version>
         <jetty.version>12.0.22</jetty.version>
         <javax-servlet.version>3.1.0</javax-servlet.version>
-        <strimzi-oauth.version>0.17.1</strimzi-oauth.version>
         <netty.version>4.2.10.Final</netty.version>
         <micrometer.version>1.14.5</micrometer.version>
         <commons-codec.version>1.13</commons-codec.version>
@@ -204,16 +203,6 @@
                 <groupId>io.strimzi</groupId>
                 <artifactId>certificate-manager</artifactId>
                 <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.strimzi</groupId>
-                <artifactId>kafka-oauth-client</artifactId>
-                <version>${strimzi-oauth.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.strimzi</groupId>
-                <artifactId>kafka-oauth-keycloak-authorizer</artifactId>
-                <version>${strimzi-oauth.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.fabric8</groupId>

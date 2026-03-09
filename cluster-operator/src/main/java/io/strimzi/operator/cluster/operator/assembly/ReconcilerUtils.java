@@ -12,9 +12,7 @@ import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.strimzi.api.kafka.model.common.CertAndKeySecretSource;
 import io.strimzi.api.kafka.model.common.CertSecretSource;
-import io.strimzi.api.kafka.model.common.GenericSecretSource;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthentication;
-import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationOAuth;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationPlain;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationScram;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationTls;
@@ -468,7 +466,6 @@ public class ReconcilerUtils {
      * @param certSecretSources TLS trusted certificates whose hashes are joined to result
      * @return Future computing hash from TLS + Auth
      */
-    @SuppressWarnings("deprecation") // OAuth authentication is deprecated
     public static Future<Integer> authTlsHash(SecretOperator secretOperations, String namespace, KafkaClientAuthentication auth, List<CertSecretSource> certSecretSources) {
         Future<Integer> tlsFuture;
         if (certSecretSources == null || certSecretSources.isEmpty()) {
@@ -497,17 +494,6 @@ public class ReconcilerUtils {
                 // custom cert can be used (and changed)
                 return authTls.getCertificateAndKey() == null ? tlsFuture : tlsFuture.compose(tlsHash -> getCertificateAndKeyAsync(secretOperations, namespace, authTls.getCertificateAndKey())
                                 .compose(crtAndKey -> Future.succeededFuture(crtAndKey.certAsBase64String().hashCode() + crtAndKey.keyAsBase64String().hashCode() + tlsHash)));
-            } else if (auth instanceof KafkaClientAuthenticationOAuth) {
-                List<Future<Integer>> futureList = ((KafkaClientAuthenticationOAuth) auth).getTlsTrustedCertificates() == null ?
-                        new ArrayList<>() : ((KafkaClientAuthenticationOAuth) auth).getTlsTrustedCertificates().stream().map(certSecretSource ->
-                        getTrustedCertificateAsync(secretOperations, namespace, certSecretSource)
-                                .compose(cert -> Future.succeededFuture(cert.hashCode()))).collect(Collectors.toList());
-                futureList.add(tlsFuture);
-                futureList.add(addSecretHash(secretOperations, namespace, ((KafkaClientAuthenticationOAuth) auth).getAccessToken()));
-                futureList.add(addSecretHash(secretOperations, namespace, ((KafkaClientAuthenticationOAuth) auth).getClientSecret()));
-                futureList.add(addSecretHash(secretOperations, namespace, ((KafkaClientAuthenticationOAuth) auth).getRefreshToken()));
-                return Future.join(futureList)
-                        .compose(hashes -> Future.succeededFuture(hashes.list().stream().mapToInt(e -> (int) e).sum()));
             } else {
                 // unknown Auth type
                 return tlsFuture;
@@ -541,20 +527,6 @@ public class ReconcilerUtils {
             // No trusted certificates to extract.
             return Future.succeededFuture();
         }
-    }
-
-    private static Future<Integer> addSecretHash(SecretOperator secretOperations, String namespace, GenericSecretSource genericSecretSource) {
-        if (genericSecretSource != null) {
-            return secretOperations.getAsync(namespace, genericSecretSource.getSecretName())
-                    .compose(secret -> {
-                        if (secret == null) {
-                            return Future.failedFuture("Secret " + genericSecretSource.getSecretName() + " not found");
-                        } else {
-                            return Future.succeededFuture(secret.getData().get(genericSecretSource.getKey()).hashCode());
-                        }
-                    });
-        }
-        return Future.succeededFuture(0);
     }
 
     /**

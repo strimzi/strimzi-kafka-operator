@@ -41,12 +41,10 @@ import io.strimzi.api.kafka.model.bridge.KafkaBridgeBuilder;
 import io.strimzi.api.kafka.model.bridge.KafkaBridgeConsumerSpecBuilder;
 import io.strimzi.api.kafka.model.bridge.KafkaBridgeProducerSpecBuilder;
 import io.strimzi.api.kafka.model.bridge.KafkaBridgeResources;
-import io.strimzi.api.kafka.model.common.CertSecretSource;
 import io.strimzi.api.kafka.model.common.CertSecretSourceBuilder;
 import io.strimzi.api.kafka.model.common.JvmOptions;
 import io.strimzi.api.kafka.model.common.JvmOptionsBuilder;
 import io.strimzi.api.kafka.model.common.SystemPropertyBuilder;
-import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationOAuthBuilder;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationTlsBuilder;
 import io.strimzi.api.kafka.model.common.template.AdditionalVolume;
 import io.strimzi.api.kafka.model.common.template.AdditionalVolumeBuilder;
@@ -61,7 +59,6 @@ import io.strimzi.operator.cluster.model.logging.LoggingModel;
 import io.strimzi.operator.cluster.model.metrics.JmxPrometheusExporterModel;
 import io.strimzi.operator.cluster.model.metrics.StrimziMetricsReporterModel;
 import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.platform.KubernetesVersion;
 import io.strimzi.test.TestUtils;
@@ -73,7 +70,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.TreeMap;
 
 import static io.strimzi.operator.cluster.model.KafkaBridgeCluster.BRIDGE_CONFIGURATION_FILENAME;
 import static io.strimzi.operator.cluster.model.KafkaBridgeCluster.ENV_VAR_KAFKA_INIT_INIT_FOLDER_KEY;
@@ -90,7 +86,6 @@ import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.hasSize;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "checkstyle:ClassFanOutComplexity"})
 public class KafkaBridgeClusterTest {
@@ -1004,343 +999,6 @@ public class KafkaBridgeClusterTest {
         assertThat("Failed to prevent over writing existing container environment variable: " + testEnvKey,
                 kafkaEnvVars.stream().filter(env -> testEnvKey.equals(env.getName()))
                         .map(EnvVar::getValue).findFirst().orElse("").equals(testEnvValue), is(false));
-    }
-
-    @Test
-    public void testGenerateDeploymentWithOAuthWithAccessToken() {
-        KafkaBridge resource = new KafkaBridgeBuilder(RESOURCE)
-                .editSpec()
-                .withAuthentication(
-                        new KafkaClientAuthenticationOAuthBuilder()
-                                .withNewAccessToken()
-                                    .withSecretName("my-token-secret")
-                                    .withKey("my-token-key")
-                                .endAccessToken()
-                                .build())
-                .endSpec()
-                .build();
-
-        KafkaBridgeCluster kb = KafkaBridgeCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, SHARED_ENV_PROVIDER);
-        ConfigMap configMap = kb.generateBridgeConfigMap(METRICS_AND_LOGGING);
-        String bridgeConfigurations = configMap.getData().get(BRIDGE_CONFIGURATION_FILENAME);
-        assertThat(bridgeConfigurations, containsString("kafka.sasl.mechanism=OAUTHBEARER"));
-        assertThat(bridgeConfigurations, containsString("kafka.sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required " +
-                "oauth.access.token=\"${strimzidir:/opt/strimzi/oauth/my-token-secret:my-token-key}\";"));
-        assertThat(bridgeConfigurations, containsString("kafka.sasl.login.callback.handler.class=io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler"));
-    }
-
-    @Test
-    public void testGenerateDeploymentWithOAuthWithAccessTokenLocation() {
-        KafkaBridge resource = new KafkaBridgeBuilder(RESOURCE)
-                .editSpec()
-                .withAuthentication(
-                        new KafkaClientAuthenticationOAuthBuilder()
-                                .withAccessTokenLocation("/var/run/secrets/kubernetes.io/serviceaccount/token")
-                                .build())
-                .endSpec()
-                .build();
-
-        KafkaBridgeCluster kb = KafkaBridgeCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, SHARED_ENV_PROVIDER);
-        ConfigMap configMap = kb.generateBridgeConfigMap(METRICS_AND_LOGGING);
-        String bridgeConfigurations = configMap.getData().get(BRIDGE_CONFIGURATION_FILENAME);
-        assertThat(bridgeConfigurations, containsString("kafka.sasl.mechanism=OAUTHBEARER"));
-        assertThat(bridgeConfigurations, containsString("kafka.sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required " +
-                "oauth.access.token.location=\"/var/run/secrets/kubernetes.io/serviceaccount/token\";"));
-    }
-
-    @Test
-    public void testGenerateDeploymentWithOAuthWithRefreshToken() {
-        KafkaBridge resource = new KafkaBridgeBuilder(RESOURCE)
-                .editSpec()
-                .withAuthentication(
-                        new KafkaClientAuthenticationOAuthBuilder()
-                                .withClientId("my-client-id")
-                                .withTokenEndpointUri("http://my-oauth-server")
-                                .withNewRefreshToken()
-                                    .withSecretName("my-token-secret")
-                                    .withKey("my-token-key")
-                                .endRefreshToken()
-                                .build())
-                .endSpec()
-                .build();
-
-        KafkaBridgeCluster kb = KafkaBridgeCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, SHARED_ENV_PROVIDER);
-        ConfigMap configMap = kb.generateBridgeConfigMap(METRICS_AND_LOGGING);
-        String bridgeConfigurations = configMap.getData().get(BRIDGE_CONFIGURATION_FILENAME);
-        assertThat(bridgeConfigurations, containsString("kafka.sasl.mechanism=OAUTHBEARER"));
-        assertThat(bridgeConfigurations, containsString("kafka.sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required " +
-                "oauth.client.id=\"my-client-id\" " +
-                "oauth.token.endpoint.uri=\"http://my-oauth-server\" " +
-                "oauth.refresh.token=\"${strimzidir:/opt/strimzi/oauth/my-token-secret:my-token-key}\";"));
-        assertThat(bridgeConfigurations, containsString("kafka.sasl.login.callback.handler.class=io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler"));
-    }
-
-    @Test
-    public void testGenerateDeploymentWithOAuthWithClientSecret() {
-        KafkaBridge resource = new KafkaBridgeBuilder(RESOURCE)
-                .editSpec()
-                .withAuthentication(
-                        new KafkaClientAuthenticationOAuthBuilder()
-                                .withClientId("my-client-id")
-                                .withTokenEndpointUri("http://my-oauth-server")
-                                .withAudience("kafka")
-                                .withScope("all")
-                                .withGrantType("custom_client_credentials")
-                                .withNewClientSecret()
-                                    .withSecretName("my-secret-secret")
-                                    .withKey("my-secret-key")
-                                .endClientSecret()
-                                .build())
-                .endSpec()
-                .build();
-
-        KafkaBridgeCluster kb = KafkaBridgeCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, SHARED_ENV_PROVIDER);
-        ConfigMap configMap = kb.generateBridgeConfigMap(METRICS_AND_LOGGING);
-        String bridgeConfigurations = configMap.getData().get(BRIDGE_CONFIGURATION_FILENAME);
-        assertThat(bridgeConfigurations, containsString("kafka.sasl.mechanism=OAUTHBEARER"));
-        assertThat(bridgeConfigurations, containsString("kafka.sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required " +
-                "oauth.client.id=\"my-client-id\" " +
-                "oauth.token.endpoint.uri=\"http://my-oauth-server\" " +
-                "oauth.client.credentials.grant.type=\"custom_client_credentials\" " +
-                "oauth.scope=\"all\" " +
-                "oauth.audience=\"kafka\" " +
-                "oauth.client.secret=\"${strimzidir:/opt/strimzi/oauth/my-secret-secret:my-secret-key}\";"));
-        assertThat(bridgeConfigurations, containsString("kafka.sasl.login.callback.handler.class=io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler"));
-    }
-
-    @Test
-    public void testGenerateDeploymentWithOAuthWithClientSecretAndSaslExtensions() {
-        KafkaBridge resource = new KafkaBridgeBuilder(RESOURCE)
-                .editSpec()
-                .withAuthentication(
-                        new KafkaClientAuthenticationOAuthBuilder()
-                                .withClientId("my-client-id")
-                                .withTokenEndpointUri("http://my-oauth-server")
-                                .withAudience("kafka")
-                                .withScope("all")
-                                .withNewClientSecret()
-                                    .withSecretName("my-secret-secret")
-                                    .withKey("my-secret-key")
-                                .endClientSecret()
-                                .withSaslExtensions(new TreeMap<>(Map.of("key1", "value1", "key2", "value2")))
-                                .build())
-                .endSpec()
-                .build();
-
-        KafkaBridgeCluster kb = KafkaBridgeCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, SHARED_ENV_PROVIDER);
-        ConfigMap configMap = kb.generateBridgeConfigMap(METRICS_AND_LOGGING);
-        String bridgeConfigurations = configMap.getData().get(BRIDGE_CONFIGURATION_FILENAME);
-        assertThat(bridgeConfigurations, containsString("kafka.sasl.mechanism=OAUTHBEARER"));
-        assertThat(bridgeConfigurations, containsString("kafka.sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required " +
-                "oauth.client.id=\"my-client-id\" " +
-                "oauth.token.endpoint.uri=\"http://my-oauth-server\" " +
-                "oauth.scope=\"all\" " +
-                "oauth.audience=\"kafka\" " +
-                "oauth.sasl.extension.key1=\"value1\" " +
-                "oauth.sasl.extension.key2=\"value2\" " +
-                "oauth.client.secret=\"${strimzidir:/opt/strimzi/oauth/my-secret-secret:my-secret-key}\";"));
-        assertThat(bridgeConfigurations, containsString("kafka.sasl.login.callback.handler.class=io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler"));
-    }
-
-    @Test
-    public void testGenerateDeploymentWithOAuthWithClientAssertion() {
-        KafkaBridge resource = new KafkaBridgeBuilder(RESOURCE)
-                .editSpec()
-                .withAuthentication(
-                        new KafkaClientAuthenticationOAuthBuilder()
-                                .withClientId("my-client-id")
-                                .withTokenEndpointUri("http://my-oauth-server")
-                                .withAudience("kafka")
-                                .withScope("all")
-                                .withNewClientAssertion()
-                                    .withSecretName("my-secret-secret")
-                                    .withKey("my-secret-key")
-                                .endClientAssertion()
-                                .build())
-                .endSpec()
-                .build();
-
-        KafkaBridgeCluster kb = KafkaBridgeCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, SHARED_ENV_PROVIDER);
-        ConfigMap configMap = kb.generateBridgeConfigMap(METRICS_AND_LOGGING);
-        String bridgeConfigurations = configMap.getData().get(BRIDGE_CONFIGURATION_FILENAME);
-        assertThat(bridgeConfigurations, containsString("kafka.sasl.mechanism=OAUTHBEARER"));
-        assertThat(bridgeConfigurations, containsString("kafka.sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required " +
-                "oauth.client.id=\"my-client-id\" " +
-                "oauth.token.endpoint.uri=\"http://my-oauth-server\" " +
-                "oauth.scope=\"all\" " +
-                "oauth.audience=\"kafka\" " +
-                "oauth.client.assertion=\"${strimzidir:/opt/strimzi/oauth/my-secret-secret:my-secret-key}\";"));
-    }
-
-    @Test
-    public void testGenerateDeploymentWithOAuthWithUsernameAndPassword() {
-        KafkaBridge resource = new KafkaBridgeBuilder(RESOURCE)
-                .editSpec()
-                .withAuthentication(
-                        new KafkaClientAuthenticationOAuthBuilder()
-                                .withTokenEndpointUri("http://my-oauth-server")
-                                .withClientId("my-client-id")
-                                .withUsername("user1")
-                                .withNewPasswordSecret()
-                                    .withSecretName("my-password-secret")
-                                    .withPassword("user1.password")
-                                .endPasswordSecret()
-                                .withNewClientSecret()
-                                    .withSecretName("my-secret-secret")
-                                    .withKey("my-secret-key")
-                                .endClientSecret()
-                                .build())
-                .endSpec()
-                .build();
-
-        KafkaBridgeCluster kc = KafkaBridgeCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, SHARED_ENV_PROVIDER);
-        ConfigMap configMap = kc.generateBridgeConfigMap(METRICS_AND_LOGGING);
-        String bridgeConfigurations = configMap.getData().get(BRIDGE_CONFIGURATION_FILENAME);
-        assertThat(bridgeConfigurations, containsString("kafka.sasl.mechanism=OAUTHBEARER"));
-        assertThat(bridgeConfigurations, containsString("kafka.sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required " +
-                "oauth.client.id=\"my-client-id\" " +
-                "oauth.password.grant.username=\"user1\" " +
-                "oauth.token.endpoint.uri=\"http://my-oauth-server\" " +
-                "oauth.client.secret=\"${strimzidir:/opt/strimzi/oauth/my-secret-secret:my-secret-key}\" " +
-                "oauth.password.grant.password=\"${strimzidir:/opt/strimzi/oauth/my-password-secret:user1.password}\";"));
-    }
-
-    @Test
-    public void testGenerateDeploymentWithOAuthWithMissingClientSecret() {
-        assertThrows(InvalidResourceException.class, () -> {
-            KafkaBridge resource = new KafkaBridgeBuilder(RESOURCE)
-                    .editSpec()
-                        .withAuthentication(
-                                new KafkaClientAuthenticationOAuthBuilder()
-                                        .withClientId("my-client-id")
-                                        .withTokenEndpointUri("http://my-oauth-server")
-                                        .build())
-                    .endSpec()
-                    .build();
-
-            KafkaBridgeCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, SHARED_ENV_PROVIDER);
-        });
-    }
-
-    @Test
-    public void testGenerateDeploymentWithOAuthWithMissingUri() {
-        assertThrows(InvalidResourceException.class, () -> {
-            KafkaBridge resource = new KafkaBridgeBuilder(RESOURCE)
-                    .editSpec()
-                    .withAuthentication(
-                            new KafkaClientAuthenticationOAuthBuilder()
-                                    .withClientId("my-client-id")
-                                    .withNewClientSecret()
-                                        .withSecretName("my-secret-secret")
-                                        .withKey("my-secret-key")
-                                    .endClientSecret()
-                                    .build())
-                    .endSpec()
-                    .build();
-
-            KafkaBridgeCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, SHARED_ENV_PROVIDER);
-        });
-    }
-
-
-    @Test
-    public void testGenerateDeploymentWithOAuthWithTls() {
-        CertSecretSource cert1 = new CertSecretSourceBuilder()
-                .withSecretName("first-certificate")
-                .withCertificate("ca.crt")
-                .build();
-
-        CertSecretSource cert2 = new CertSecretSourceBuilder()
-                .withSecretName("second-certificate")
-                .withCertificate("tls.crt")
-                .build();
-
-        CertSecretSource cert3 = new CertSecretSourceBuilder()
-                .withSecretName("first-certificate")
-                .withCertificate("ca2.crt")
-                .build();
-
-        KafkaBridge resource = new KafkaBridgeBuilder(RESOURCE)
-                .editSpec()
-                .withAuthentication(
-                        new KafkaClientAuthenticationOAuthBuilder()
-                                .withClientId("my-client-id")
-                                .withTokenEndpointUri("http://my-oauth-server")
-                                .withNewClientSecret()
-                                    .withSecretName("my-secret-secret")
-                                    .withKey("my-secret-key")
-                                .endClientSecret()
-                                .withDisableTlsHostnameVerification(true)
-                                .withTlsTrustedCertificates(cert1, cert2, cert3)
-                                .build())
-                .endSpec()
-                .build();
-
-        KafkaBridgeCluster kb = KafkaBridgeCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, SHARED_ENV_PROVIDER);
-        Deployment dep = kb.generateDeployment(emptyMap(), true, null, null);
-        Container cont = dep.getSpec().getTemplate().getSpec().getContainers().get(0);
-
-        // Volume mounts
-        assertThat(cont.getVolumeMounts().stream().filter(mount -> "oauth-certs-first-certificate".equals(mount.getName())).findFirst().orElseThrow().getMountPath(), is(KafkaBridgeCluster.OAUTH_TLS_CERTS_BASE_VOLUME_MOUNT + "first-certificate"));
-        assertThat(cont.getVolumeMounts().stream().filter(mount -> "oauth-certs-second-certificate".equals(mount.getName())).findFirst().orElseThrow().getMountPath(), is(KafkaBridgeCluster.OAUTH_TLS_CERTS_BASE_VOLUME_MOUNT + "second-certificate"));
-
-        // Volumes
-        assertThat(dep.getSpec().getTemplate().getSpec().getVolumes().stream().filter(vol -> "oauth-certs-first-certificate".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().isEmpty(), is(true));
-        assertThat(dep.getSpec().getTemplate().getSpec().getVolumes().stream().filter(vol -> "oauth-certs-second-certificate".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().isEmpty(), is(true));
-
-        ConfigMap configMap = kb.generateBridgeConfigMap(METRICS_AND_LOGGING);
-        String bridgeConfigurations = configMap.getData().get(BRIDGE_CONFIGURATION_FILENAME);
-        assertThat(bridgeConfigurations, containsString("kafka.sasl.mechanism=OAUTHBEARER"));
-        assertThat(bridgeConfigurations, containsString("kafka.sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required " +
-                "oauth.client.id=\"my-client-id\" " +
-                "oauth.token.endpoint.uri=\"http://my-oauth-server\" " +
-                "oauth.ssl.endpoint.identification.algorithm=\"\" " +
-                "oauth.client.secret=\"${strimzidir:/opt/strimzi/oauth/my-secret-secret:my-secret-key}\" " +
-                "oauth.ssl.truststore.location=\"/tmp/strimzi/oauth.truststore.p12\" " +
-                "oauth.ssl.truststore.password=\"${strimzienv:CERTS_STORE_PASSWORD}\" " +
-                "oauth.ssl.truststore.type=\"PKCS12\";"));
-    }
-
-    @Test
-    public void testGenerateDeploymentWithOAuthUsingOpaqueTokensAndTimeouts() {
-        KafkaBridge resource = new KafkaBridgeBuilder(RESOURCE)
-                .editSpec()
-                .withAuthentication(
-                        new KafkaClientAuthenticationOAuthBuilder()
-                                .withClientId("my-client-id")
-                                .withTokenEndpointUri("http://my-oauth-server")
-                                .withConnectTimeoutSeconds(15)
-                                .withReadTimeoutSeconds(15)
-                                .withHttpRetries(2)
-                                .withHttpRetryPauseMs(500)
-                                .withNewClientSecret()
-                                .withSecretName("my-secret-secret")
-                                .withKey("my-secret-key")
-                                .endClientSecret()
-                                .withAccessTokenIsJwt(false)
-                                .withMaxTokenExpirySeconds(600)
-                                .withEnableMetrics(true)
-                                .withIncludeAcceptHeader(false)
-                                .build())
-                .endSpec()
-                .build();
-
-        KafkaBridgeCluster kb = KafkaBridgeCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, SHARED_ENV_PROVIDER);
-        ConfigMap configMap = kb.generateBridgeConfigMap(METRICS_AND_LOGGING);
-        String bridgeConfigurations = configMap.getData().get(BRIDGE_CONFIGURATION_FILENAME);
-        assertThat(bridgeConfigurations, containsString("kafka.sasl.mechanism=OAUTHBEARER"));
-        assertThat(bridgeConfigurations, containsString("kafka.sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required " +
-                "oauth.client.id=\"my-client-id\" " +
-                "oauth.token.endpoint.uri=\"http://my-oauth-server\" " +
-                "oauth.access.token.is.jwt=\"false\" " +
-                "oauth.max.token.expiry.seconds=\"600\" " +
-                "oauth.connect.timeout.seconds=\"15\" " +
-                "oauth.read.timeout.seconds=\"15\" " +
-                "oauth.http.retries=\"2\" " +
-                "oauth.http.retry.pause.millis=\"500\" " +
-                "oauth.enable.metrics=\"true\" " +
-                "oauth.include.accept.header=\"false\" " +
-                "oauth.client.secret=\"${strimzidir:/opt/strimzi/oauth/my-secret-secret:my-secret-key}\";"));
     }
 
     @Test

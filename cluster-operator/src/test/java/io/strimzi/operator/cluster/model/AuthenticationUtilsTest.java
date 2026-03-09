@@ -121,15 +121,6 @@ public class AuthenticationUtilsTest {
         assertEquals(expectedOutput, result);
     }
 
-    //used for testing what keys and values does kafka accept.
-    public static void main(String[] a) {
-        String jaasConfig = "modulename required oauth.groups.claim.delimiter=\"value;1\";";
-        AppConfigurationEntry configEntry = parseJaasConfig(jaasConfig);
-        configEntry.getLoginModuleName();
-        configEntry.getControlFlag();
-        configEntry.getOptions();
-    }
-
     /**
      * Parses a JAAS config string into a AppConfigurationEntry using the same code used by the Kafka broker.
      * This is effectively the inverse operation of {@link AuthenticationUtils#jaasConfig(String, Map)}.

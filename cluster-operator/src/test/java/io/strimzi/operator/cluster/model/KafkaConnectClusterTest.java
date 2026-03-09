@@ -46,11 +46,9 @@ import io.fabric8.kubernetes.api.model.policy.v1.PodDisruptionBudget;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.Role;
 import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
-import io.strimzi.api.kafka.model.common.CertSecretSource;
 import io.strimzi.api.kafka.model.common.CertSecretSourceBuilder;
 import io.strimzi.api.kafka.model.common.JvmOptions;
 import io.strimzi.api.kafka.model.common.Probe;
-import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationOAuthBuilder;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationTlsBuilder;
 import io.strimzi.api.kafka.model.common.jmx.KafkaJmxAuthenticationPasswordBuilder;
 import io.strimzi.api.kafka.model.common.jmx.KafkaJmxOptionsBuilder;
@@ -81,7 +79,6 @@ import io.strimzi.operator.cluster.model.metrics.JmxPrometheusExporterModel;
 import io.strimzi.operator.cluster.model.metrics.MetricsModel;
 import io.strimzi.operator.cluster.model.metrics.StrimziMetricsReporterModel;
 import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.platform.KubernetesVersion;
 import io.strimzi.test.TestUtils;
@@ -92,7 +89,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
 
 import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.containsString;
@@ -108,7 +104,6 @@ import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasProperty;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "checkstyle:ClassFanOutComplexity"})
 public class KafkaConnectClusterTest {
@@ -1452,307 +1447,6 @@ public class KafkaConnectClusterTest {
         PodSetUtils.podSetToPods(podSet).forEach(pod -> {
             Container cont = pod.getSpec().getContainers().get(0);
             assertThat(cont.getEnv().stream().filter(env -> KafkaConnectCluster.ENV_VAR_STRIMZI_TRACING.equals(env.getName())).map(EnvVar::getValue).findFirst().orElse("").equals(OpenTelemetryTracing.TYPE_OPENTELEMETRY), is(true));
-        });
-    }
-
-    @Test
-    public void testPodSetWithOAuthWithAccessToken() {
-        KafkaConnect resource = new KafkaConnectBuilder(RESOURCE)
-                .editSpec()
-                    .withAuthentication(
-                            new KafkaClientAuthenticationOAuthBuilder()
-                                    .withNewAccessToken()
-                                        .withSecretName("my-token-secret")
-                                        .withKey("my-token-key")
-                                    .endAccessToken()
-                                    .build())
-                .endSpec()
-                .build();
-
-        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
-
-        // Check config map
-        ConfigMap configMap = kc.generateConnectConfigMap(new MetricsAndLogging(null, null));
-        String connectConfigurations = configMap.getData().get(KafkaConnectCluster.KAFKA_CONNECT_CONFIGURATION_FILENAME);
-        assertThat(connectConfigurations, containsString("security.protocol=SASL_PLAINTEXT"));
-        assertThat(connectConfigurations, containsString("sasl.mechanism=OAUTHBEARER"));
-        assertThat(connectConfigurations, containsString("sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required oauth.access.token=\"${strimzidir:/opt/kafka/oauth/my-token-secret:my-token-key}\";"));
-        assertThat(connectConfigurations, containsString("sasl.login.callback.handler.class=io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler"));
-
-    }
-
-    @Test
-    public void testPodSetWithOAuthWithRefreshToken() {
-        KafkaConnect resource = new KafkaConnectBuilder(RESOURCE)
-                .editSpec()
-                .withAuthentication(
-                        new KafkaClientAuthenticationOAuthBuilder()
-                                .withClientId("my-client-id")
-                                .withTokenEndpointUri("http://my-oauth-server")
-                                .withConnectTimeoutSeconds(15)
-                                .withReadTimeoutSeconds(15)
-                                .withHttpRetries(2)
-                                .withHttpRetryPauseMs(500)
-                                .withEnableMetrics(true)
-                                .withIncludeAcceptHeader(false)
-                                .withNewRefreshToken()
-                                    .withSecretName("my-token-secret")
-                                    .withKey("my-token-key")
-                                .endRefreshToken()
-                                .build())
-                .endSpec()
-                .build();
-
-        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
-
-        // Check config map
-        ConfigMap configMap = kc.generateConnectConfigMap(new MetricsAndLogging(null, null));
-        String connectConfigurations = configMap.getData().get(KafkaConnectCluster.KAFKA_CONNECT_CONFIGURATION_FILENAME);
-        assertThat(connectConfigurations, containsString("security.protocol=SASL_PLAINTEXT"));
-        assertThat(connectConfigurations, containsString("sasl.mechanism=OAUTHBEARER"));
-        assertThat(connectConfigurations, containsString("sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required " +
-                "oauth.client.id=\"my-client-id\" " +
-                "oauth.token.endpoint.uri=\"http://my-oauth-server\" " +
-                "oauth.connect.timeout.seconds=\"15\" " +
-                "oauth.read.timeout.seconds=\"15\" " +
-                "oauth.http.retries=\"2\" " +
-                "oauth.http.retry.pause.millis=\"500\" " +
-                "oauth.enable.metrics=\"true\" " +
-                "oauth.include.accept.header=\"false\" " +
-                "oauth.refresh.token=\"${strimzidir:/opt/kafka/oauth/my-token-secret:my-token-key}\";"));
-        assertThat(connectConfigurations, containsString("sasl.login.callback.handler.class=io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler"));
-    }
-
-    @Test
-    public void testPodSetWithOAuthWithClientSecret() {
-        KafkaConnect resource = new KafkaConnectBuilder(RESOURCE)
-                .editSpec()
-                .withAuthentication(
-                        new KafkaClientAuthenticationOAuthBuilder()
-                                .withClientId("my-client-id")
-                                .withTokenEndpointUri("http://my-oauth-server")
-                                .withAudience("kafka")
-                                .withScope("all")
-                                .withGrantType("custom-client-credentials")
-                                .withNewClientSecret()
-                                    .withSecretName("my-secret-secret")
-                                    .withKey("my-secret-key")
-                                .endClientSecret()
-                                .build())
-                .endSpec()
-                .build();
-
-        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
-
-        // Check config map
-        ConfigMap configMap = kc.generateConnectConfigMap(new MetricsAndLogging(null, null));
-        String connectConfigurations = configMap.getData().get(KafkaConnectCluster.KAFKA_CONNECT_CONFIGURATION_FILENAME);
-        assertThat(connectConfigurations, containsString("security.protocol=SASL_PLAINTEXT"));
-        assertThat(connectConfigurations, containsString("sasl.mechanism=OAUTHBEARER"));
-        assertThat(connectConfigurations, containsString("sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required oauth.client.id=\"my-client-id\" oauth.token.endpoint.uri=\"http://my-oauth-server\" oauth.client.credentials.grant.type=\"custom-client-credentials\" oauth.scope=\"all\" oauth.audience=\"kafka\" oauth.client.secret=\"${strimzidir:/opt/kafka/oauth/my-secret-secret:my-secret-key}\";"));
-        assertThat(connectConfigurations, containsString("sasl.login.callback.handler.class=io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler"));
-    }
-
-    @Test
-    public void testPodSetWithOAuthWithClientSecretAndSaslExtensions() {
-        KafkaConnect resource = new KafkaConnectBuilder(RESOURCE)
-                .editSpec()
-                .withAuthentication(
-                        new KafkaClientAuthenticationOAuthBuilder()
-                                .withClientId("my-client-id")
-                                .withTokenEndpointUri("http://my-oauth-server")
-                                .withAudience("kafka")
-                                .withScope("all")
-                                .withNewClientSecret()
-                                    .withSecretName("my-secret-secret")
-                                    .withKey("my-secret-key")
-                                .endClientSecret()
-                                .withSaslExtensions(new TreeMap<>(Map.of("key1", "value1", "key2", "value2")))
-                                .build())
-                .endSpec()
-                .build();
-
-        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
-
-        // Check config map
-        ConfigMap configMap = kc.generateConnectConfigMap(new MetricsAndLogging(null, null));
-        String connectConfigurations = configMap.getData().get(KafkaConnectCluster.KAFKA_CONNECT_CONFIGURATION_FILENAME);
-        assertThat(connectConfigurations, containsString("security.protocol=SASL_PLAINTEXT"));
-        assertThat(connectConfigurations, containsString("sasl.mechanism=OAUTHBEARER"));
-        assertThat(connectConfigurations, containsString("sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required oauth.client.id=\"my-client-id\" " +
-                "oauth.token.endpoint.uri=\"http://my-oauth-server\" " +
-                "oauth.scope=\"all\" oauth.audience=\"kafka\" " +
-                "oauth.sasl.extension.key1=\"value1\" " +
-                "oauth.sasl.extension.key2=\"value2\" " +
-                "oauth.client.secret=\"${strimzidir:/opt/kafka/oauth/my-secret-secret:my-secret-key}\";"));
-        assertThat(connectConfigurations, containsString("sasl.login.callback.handler.class=io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler"));
-
-    }
-
-    @Test
-    public void testPodSetWithOAuthWithClientAssertion() {
-        KafkaConnect resource = new KafkaConnectBuilder(RESOURCE)
-                .editSpec()
-                .withAuthentication(
-                        new KafkaClientAuthenticationOAuthBuilder()
-                                .withClientId("my-client-id")
-                                .withTokenEndpointUri("http://my-oauth-server")
-                                .withAudience("kafka")
-                                .withScope("all")
-                                .withNewClientAssertion()
-                                    .withSecretName("my-secret-secret")
-                                    .withKey("my-secret-key")
-                                .endClientAssertion()
-                                .build())
-                .endSpec()
-                .build();
-
-        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
-
-        // Check config map
-        ConfigMap configMap = kc.generateConnectConfigMap(new MetricsAndLogging(null, null));
-        String connectConfigurations = configMap.getData().get(KafkaConnectCluster.KAFKA_CONNECT_CONFIGURATION_FILENAME);
-        assertThat(connectConfigurations, containsString("security.protocol=SASL_PLAINTEXT"));
-        assertThat(connectConfigurations, containsString("sasl.mechanism=OAUTHBEARER"));
-        assertThat(connectConfigurations, containsString("sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required oauth.client.id=\"my-client-id\" " +
-                "oauth.token.endpoint.uri=\"http://my-oauth-server\" " +
-                "oauth.scope=\"all\" " +
-                "oauth.audience=\"kafka\" " +
-                "oauth.client.assertion=\"${strimzidir:/opt/kafka/oauth/my-secret-secret:my-secret-key}\";"));
-        assertThat(connectConfigurations, containsString("sasl.login.callback.handler.class=io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler"));
-    }
-
-    @Test
-    public void testPodSetWithOAuthWithUsernameAndPassword() {
-        KafkaConnect resource = new KafkaConnectBuilder(RESOURCE)
-                .editSpec()
-                .withAuthentication(
-                        new KafkaClientAuthenticationOAuthBuilder()
-                                .withTokenEndpointUri("http://my-oauth-server")
-                                .withClientId("my-client-id")
-                                .withUsername("user1")
-                                .withNewPasswordSecret()
-                                .withSecretName("my-password-secret")
-                                .withPassword("user1.password")
-                                .endPasswordSecret()
-                                .withNewClientSecret()
-                                .withSecretName("my-secret-secret")
-                                .withKey("my-secret-key")
-                                .endClientSecret()
-                                .build())
-                .endSpec()
-                .build();
-
-        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
-
-        // Check config map
-        ConfigMap configMap = kc.generateConnectConfigMap(new MetricsAndLogging(null, null));
-        String connectConfigurations = configMap.getData().get(KafkaConnectCluster.KAFKA_CONNECT_CONFIGURATION_FILENAME);
-        assertThat(connectConfigurations, containsString("security.protocol=SASL_PLAINTEXT"));
-        assertThat(connectConfigurations, containsString("sasl.mechanism=OAUTHBEARER"));
-        assertThat(connectConfigurations, containsString("sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required " +
-                "oauth.client.id=\"my-client-id\" " +
-                "oauth.password.grant.username=\"user1\" " +
-                "oauth.token.endpoint.uri=\"http://my-oauth-server\" " +
-                "oauth.client.secret=\"${strimzidir:/opt/kafka/oauth/my-secret-secret:my-secret-key}\" " +
-                "oauth.password.grant.password=\"${strimzidir:/opt/kafka/oauth/my-password-secret:user1.password}\";"));
-        assertThat(connectConfigurations, containsString("sasl.login.callback.handler.class=io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler"));
-    }
-
-    @Test
-    public void testPodSetWithOAuthWithMissingClientSecret() {
-        assertThrows(InvalidResourceException.class, () -> {
-            KafkaConnect resource = new KafkaConnectBuilder(RESOURCE)
-                    .editSpec()
-                    .withAuthentication(
-                            new KafkaClientAuthenticationOAuthBuilder()
-                                    .withClientId("my-client-id")
-                                    .withTokenEndpointUri("http://my-oauth-server")
-                                    .build())
-                    .endSpec()
-                    .build();
-
-            KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
-        });
-    }
-
-    @Test
-    public void testPodSetWithOAuthWithMissingUri() {
-        assertThrows(InvalidResourceException.class, () -> {
-            KafkaConnect resource = new KafkaConnectBuilder(RESOURCE)
-                    .editSpec()
-                    .withAuthentication(
-                            new KafkaClientAuthenticationOAuthBuilder()
-                                    .withClientId("my-client-id")
-                                    .withNewClientSecret()
-                                        .withSecretName("my-secret-secret")
-                                        .withKey("my-secret-key")
-                                    .endClientSecret()
-                                    .build())
-                    .endSpec()
-                    .build();
-
-            KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
-        });
-    }
-
-    @Test
-    public void testPodSetWithOAuthWithTls() {
-        CertSecretSource cert1 = new CertSecretSourceBuilder()
-                .withSecretName("first-certificate")
-                .withCertificate("ca.crt")
-                .build();
-
-        CertSecretSource cert2 = new CertSecretSourceBuilder()
-                .withSecretName("second-certificate")
-                .withCertificate("tls.crt")
-                .build();
-
-        CertSecretSource cert3 = new CertSecretSourceBuilder()
-                .withSecretName("first-certificate")
-                .withCertificate("ca2.crt")
-                .build();
-
-        KafkaConnect resource = new KafkaConnectBuilder(RESOURCE)
-                .editSpec()
-                .withAuthentication(
-                        new KafkaClientAuthenticationOAuthBuilder()
-                                .withClientId("my-client-id")
-                                .withTokenEndpointUri("http://my-oauth-server")
-                                .withNewClientSecret()
-                                    .withSecretName("my-secret-secret")
-                                    .withKey("my-secret-key")
-                                .endClientSecret()
-                                .withDisableTlsHostnameVerification(true)
-                                .withTlsTrustedCertificates(cert1, cert2, cert3)
-                                .build())
-                .endSpec()
-                .build();
-
-        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
-
-        String oauthSecret = KafkaConnectResources.internalOauthTrustedCertsSecretName(NAME);
-        // Check config map
-        ConfigMap configMap = kc.generateConnectConfigMap(new MetricsAndLogging(null, null));
-        String connectConfigurations = configMap.getData().get(KafkaConnectCluster.KAFKA_CONNECT_CONFIGURATION_FILENAME);
-        assertThat(connectConfigurations, containsString("sasl.mechanism=OAUTHBEARER"));
-        assertThat(connectConfigurations, containsString("sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required oauth.client.id=\"my-client-id\" " +
-                "oauth.token.endpoint.uri=\"http://my-oauth-server\" " +
-                "oauth.ssl.endpoint.identification.algorithm=\"\" " +
-                "oauth.client.secret=\"${strimzidir:/opt/kafka/oauth/my-secret-secret:my-secret-key}\" " +
-                "oauth.ssl.truststore.location=\"/opt/kafka/oauth-certs/" + oauthSecret + "/ca.crt\" " +
-                "oauth.ssl.truststore.type=\"PEM\";"));
-        assertThat(connectConfigurations, containsString("sasl.login.callback.handler.class=io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler"));
-
-        // Check PodSet
-        StrimziPodSet podSet = kc.generatePodSet(3, Map.of(), Map.of(), false, null, null, null);
-        PodSetUtils.podSetToPods(podSet).forEach(pod -> {
-            Container cont = pod.getSpec().getContainers().get(0);
-
-            // Volume mounts
-            assertThat(cont.getVolumeMounts().stream().filter(mount -> oauthSecret.equals(mount.getName())).findFirst().orElseThrow().getMountPath(), is(KafkaConnectCluster.OAUTH_TLS_CERTS_BASE_VOLUME_MOUNT + oauthSecret));
-            // Volumes
-            assertThat(pod.getSpec().getVolumes().stream().filter(vol -> oauthSecret.equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().isEmpty(), is(true));
         });
     }
 

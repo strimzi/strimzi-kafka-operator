@@ -125,26 +125,26 @@ public class VolumeUtilsTest {
 
     @Test
     public void testCreateSecretVolumeWithValidName() {
-        Volume volume = VolumeUtils.createSecretVolume("oauth-my-secret", "my-secret", true);
-        assertThat(volume.getName(), is("oauth-my-secret"));
+        Volume volume = VolumeUtils.createSecretVolume("auth-my-secret", "my-secret", true);
+        assertThat(volume.getName(), is("auth-my-secret"));
     }
 
     @Test
     public void testCreateSecretVolumeWithInvalidName() {
-        Volume volume = VolumeUtils.createSecretVolume("oauth-my.secret", "my.secret", true);
-        assertThat(volume.getName(), is("oauth-my-secret-b744ae5a"));
+        Volume volume = VolumeUtils.createSecretVolume("auth-my.secret", "my.secret", true);
+        assertThat(volume.getName(), is("auth-my-secret-729fd436"));
     }
 
     @Test
     public void testCreateConfigMapVolumeWithValidName() {
-        Volume volume = VolumeUtils.createConfigMapVolume("oauth-my-cm", "my-cm");
-        assertThat(volume.getName(), is("oauth-my-cm"));
+        Volume volume = VolumeUtils.createConfigMapVolume("auth-my-cm", "my-cm");
+        assertThat(volume.getName(), is("auth-my-cm"));
     }
 
     @Test
     public void testCreateConfigMapVolumeWithInvalidName() {
-        Volume volume = VolumeUtils.createConfigMapVolume("oauth-my.cm", "my.cm");
-        assertThat(volume.getName(), is("oauth-my-cm-62fdd747"));
+        Volume volume = VolumeUtils.createConfigMapVolume("auth-my.cm", "my.cm");
+        assertThat(volume.getName(), is("auth-my-cm-2bc9952c"));
     }
 
     @Test

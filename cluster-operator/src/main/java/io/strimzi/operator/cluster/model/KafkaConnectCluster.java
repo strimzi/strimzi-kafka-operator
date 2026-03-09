@@ -35,7 +35,6 @@ import io.strimzi.api.kafka.model.common.Probe;
 import io.strimzi.api.kafka.model.common.ProbeBuilder;
 import io.strimzi.api.kafka.model.common.Rack;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthentication;
-import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationOAuth;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationTls;
 import io.strimzi.api.kafka.model.common.metrics.JmxPrometheusExporterMetrics;
 import io.strimzi.api.kafka.model.common.metrics.StrimziMetricsReporter;
@@ -119,10 +118,6 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
     protected static final String REST_API_PORT_NAME = "rest-api";
     protected static final String TLS_CERTS_BASE_VOLUME_MOUNT = "/opt/kafka/connect-certs/";
     protected static final String PASSWORD_VOLUME_MOUNT = "/opt/kafka/connect-password/";
-    protected static final String EXTERNAL_CONFIGURATION_VOLUME_MOUNT_BASE_PATH = "/opt/kafka/external-configuration/";
-    protected static final String EXTERNAL_CONFIGURATION_VOLUME_NAME_PREFIX = "ext-conf-";
-    protected static final String OAUTH_TLS_CERTS_BASE_VOLUME_MOUNT = "/opt/kafka/oauth-certs/";
-    protected static final String OAUTH_SECRETS_BASE_VOLUME_MOUNT = "/opt/kafka/oauth/";
     protected static final String KAFKA_CONNECT_CONFIG_VOLUME_NAME = "kafka-connect-configurations";
     protected static final String KAFKA_CONNECT_CONFIG_VOLUME_MOUNT = "/opt/kafka/custom-config/";
 
@@ -234,7 +229,7 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
      *
      * @param <C>   Type of the Kafka Connect cluster
      */
-    @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:NPathComplexity", "deprecation"})
+    @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:NPathComplexity"})
     protected static <C extends KafkaConnectCluster> C fromSpec(Reconciliation reconciliation,
                                                                 KafkaConnectSpec spec,
                                                                 KafkaVersion.Lookup versions,
@@ -426,7 +421,7 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
             volumeList.add(VolumeUtils.createEmptyDirVolume(INIT_VOLUME_NAME, "1Mi", "Memory"));
         }
 
-        AuthenticationUtils.configureClientAuthenticationVolumes(authentication, volumeList, KafkaConnectResources.internalOauthTrustedCertsSecretName(cluster), isOpenShift, "", true);
+        AuthenticationUtils.configureClientAuthenticationVolumes(authentication, volumeList, isOpenShift, "");
         volumeList.addAll(getMountedPluginVolumes());
         
         TemplateUtils.addAdditionalVolumes(templatePod, volumeList);
@@ -469,7 +464,7 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
             volumeMountList.add(VolumeUtils.createVolumeMount(INIT_VOLUME_NAME, INIT_VOLUME_MOUNT));
         }
 
-        AuthenticationUtils.configureClientAuthenticationVolumeMounts(authentication, volumeMountList, TLS_CERTS_BASE_VOLUME_MOUNT, PASSWORD_VOLUME_MOUNT, OAUTH_TLS_CERTS_BASE_VOLUME_MOUNT, KafkaConnectResources.internalOauthTrustedCertsSecretName(cluster), "", true, OAUTH_SECRETS_BASE_VOLUME_MOUNT);
+        AuthenticationUtils.configureClientAuthenticationVolumeMounts(authentication, volumeMountList, TLS_CERTS_BASE_VOLUME_MOUNT, PASSWORD_VOLUME_MOUNT, "");
         volumeMountList.addAll(getMountedPluginVolumeMounts());
 
         TemplateUtils.addAdditionalVolumeMounts(volumeMountList, templateContainer);
@@ -789,20 +784,14 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
      * @return  The list of Secrets the Pods will need access to through Kubernetes API to load their values using
      *          configuration providers.
      */
-    @SuppressWarnings("deprecation") // OAuth authentication is deprecated
     private List<String> secretsToAllowAccessTo() {
         List<String> certSecretNames = new ArrayList<>();
         if (tls != null && tls.getTrustedCertificates() != null && !tls.getTrustedCertificates().isEmpty()) {
             certSecretNames.add(KafkaConnectResources.internalTlsTrustedCertsSecretName(cluster));
         }
 
-        if (authentication != null) {
-            if (authentication instanceof KafkaClientAuthenticationTls tlsAuth && tlsAuth.getCertificateAndKey() != null) {
-                certSecretNames.add(tlsAuth.getCertificateAndKey().getSecretName());
-            } else if (authentication instanceof KafkaClientAuthenticationOAuth oauth && oauth.getTlsTrustedCertificates() != null
-                    && !oauth.getTlsTrustedCertificates().isEmpty()) {
-                certSecretNames.add(KafkaConnectResources.internalOauthTrustedCertsSecretName(cluster));
-            }
+        if (authentication != null && authentication instanceof KafkaClientAuthenticationTls tlsAuth && tlsAuth.getCertificateAndKey() != null) {
+            certSecretNames.add(tlsAuth.getCertificateAndKey().getSecretName());
         }
 
         return certSecretNames;
@@ -910,7 +899,7 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
                         .withRestListeners(REST_API_PORT)
                         .withPluginPath()
                         .withTls(tls, cluster)
-                        .withAuthentication(authentication, cluster)
+                        .withAuthentication(authentication)
                         .withRackId()
                         .withStrimziMetricsReporter(metrics)
                         .withUserConfiguration(

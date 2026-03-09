@@ -17,8 +17,6 @@ import io.strimzi.api.kafka.model.common.ClientTls;
 import io.strimzi.api.kafka.model.common.ClientTlsBuilder;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationCustom;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationCustomBuilder;
-import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationOAuth;
-import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationOAuthBuilder;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationPlain;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationPlainBuilder;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationScramSha256;
@@ -261,55 +259,6 @@ public class KafkaBridgeConfigurationBuilderTest {
                 "kafka.security.protocol=SASL_PLAINTEXT",
                 "kafka.sasl.mechanism=SCRAM-SHA-512",
                 "kafka.sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required username=\"user1\" password=\"${strimzidir:/opt/strimzi/bridge-password/my-auth-secret:my-password-key}\";"
-        ));
-
-        // test oauth authentication
-        @SuppressWarnings("deprecation") // OAuth authentication is deprecated
-        KafkaClientAuthenticationOAuth authOAuth = new KafkaClientAuthenticationOAuthBuilder()
-                .withClientId("oauth-client-id")
-                .withTokenEndpointUri("http://token-endpoint-uri")
-                .withUsername("oauth-username")
-                .withNewClientSecret()
-                    .withSecretName("my-client-secret-secret")
-                    .withKey("my-client-secret-key")
-                .endClientSecret()
-                .withNewRefreshToken()
-                    .withSecretName("my-refresh-token-secret")
-                    .withKey("my-refresh-token-key")
-                .endRefreshToken()
-                .withNewAccessToken()
-                    .withSecretName("my-access-token-secret")
-                    .withKey("my-access-token-key")
-                .endAccessToken()
-                .withNewPasswordSecret()
-                    .withSecretName("my-password-secret-secret")
-                    .withPassword("my-password-key")
-                .endPasswordSecret()
-                .addNewTlsTrustedCertificate()
-                    .withSecretName("my-tls-trusted-certificate")
-                    .withCertificate("pem-content")
-                .endTlsTrustedCertificate()
-                .build();
-        configuration = new KafkaBridgeConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, BRIDGE_CLUSTER, BRIDGE_BOOTSTRAP_SERVERS)
-                .withAuthentication(authOAuth)
-                .build();
-        assertThat(configuration, isEquivalent(
-                "bridge.id=my-bridge",
-                "kafka.bootstrap.servers=my-cluster-kafka-bootstrap:9092",
-                "kafka.security.protocol=SASL_PLAINTEXT",
-                "kafka.sasl.mechanism=OAUTHBEARER",
-                "kafka.sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required " +
-                        "oauth.client.id=\"oauth-client-id\" " +
-                        "oauth.password.grant.username=\"oauth-username\" " +
-                        "oauth.token.endpoint.uri=\"http://token-endpoint-uri\" " +
-                        "oauth.client.secret=\"${strimzidir:/opt/strimzi/oauth/my-client-secret-secret:my-client-secret-key}\" " +
-                        "oauth.refresh.token=\"${strimzidir:/opt/strimzi/oauth/my-refresh-token-secret:my-refresh-token-key}\" " +
-                        "oauth.access.token=\"${strimzidir:/opt/strimzi/oauth/my-access-token-secret:my-access-token-key}\" " +
-                        "oauth.password.grant.password=\"${strimzidir:/opt/strimzi/oauth/my-password-secret-secret:my-password-key}\" " +
-                        "oauth.ssl.truststore.location=\"/tmp/strimzi/oauth.truststore.p12\" " +
-                        "oauth.ssl.truststore.password=\"${strimzienv:CERTS_STORE_PASSWORD}\" " +
-                        "oauth.ssl.truststore.type=\"PKCS12\";",
-                "kafka.sasl.login.callback.handler.class=io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler"
         ));
 
         // test custom authentication
