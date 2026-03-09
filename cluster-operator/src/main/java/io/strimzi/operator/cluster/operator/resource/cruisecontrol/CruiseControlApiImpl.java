@@ -145,7 +145,7 @@ public class CruiseControlApiImpl implements CruiseControlApi {
             if (apiSslEnabled) {
                 String trustManagerFactoryAlgorithm = TrustManagerFactory.getDefaultAlgorithm();
                 TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(trustManagerFactoryAlgorithm);
-                trustManagerFactory.init(pemTrustSet.jksTrustStore());
+                trustManagerFactory.init(pemTrustSet.trustStore());
 
                 SSLContext sslContext = SSLContext.getInstance("TLS");
                 sslContext.init(null, trustManagerFactory.getTrustManagers(), null);
