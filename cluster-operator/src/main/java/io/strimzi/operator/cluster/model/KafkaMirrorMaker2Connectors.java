@@ -11,7 +11,6 @@ import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticatio
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationScramSha256;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationTls;
 import io.strimzi.api.kafka.model.common.metrics.StrimziMetricsReporter;
-import io.strimzi.api.kafka.model.common.tracing.JaegerTracing;
 import io.strimzi.api.kafka.model.common.tracing.OpenTelemetryTracing;
 import io.strimzi.api.kafka.model.common.tracing.Tracing;
 import io.strimzi.api.kafka.model.connector.KafkaConnector;
@@ -170,16 +169,10 @@ public class KafkaMirrorMaker2Connectors {
         }
 
         // Tracing
-        if (tracing != null)   {
-            @SuppressWarnings("deprecation") // JaegerTracing is deprecated
-            String jaegerType = JaegerTracing.TYPE_JAEGER;
-
-            if (jaegerType.equals(tracing.getType())) {
-                LOGGER.warnCr(reconciliation, "Tracing type \"{}\" is not supported anymore and will be ignored", jaegerType);
-            } else if (OpenTelemetryTracing.TYPE_OPENTELEMETRY.equals(tracing.getType())) {
-                config.put("consumer.interceptor.classes", OpenTelemetryTracing.CONSUMER_INTERCEPTOR_CLASS_NAME);
-                config.put("producer.interceptor.classes", OpenTelemetryTracing.PRODUCER_INTERCEPTOR_CLASS_NAME);
-            }
+        if (tracing != null
+                && OpenTelemetryTracing.TYPE_OPENTELEMETRY.equals(tracing.getType()))   {
+            config.put("consumer.interceptor.classes", OpenTelemetryTracing.CONSUMER_INTERCEPTOR_CLASS_NAME);
+            config.put("producer.interceptor.classes", OpenTelemetryTracing.PRODUCER_INTERCEPTOR_CLASS_NAME);
         }
 
         // Rack awareness (client.rack has to be configured in the connector because the consumer is created by the connector)
