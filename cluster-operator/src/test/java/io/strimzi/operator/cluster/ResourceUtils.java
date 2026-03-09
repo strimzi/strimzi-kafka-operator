@@ -5,7 +5,6 @@
 package io.strimzi.operator.cluster;
 
 import io.fabric8.kubernetes.api.model.LoadBalancerIngressBuilder;
-import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.OwnerReferenceBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
@@ -15,8 +14,6 @@ import io.fabric8.kubernetes.api.model.ServicePortBuilder;
 import io.fabric8.openshift.api.model.RouteBuilder;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import io.strimzi.api.kafka.model.kafka.Kafka;
-import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2;
-import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2Builder;
 import io.strimzi.operator.cluster.ClusterOperatorConfig.ClusterOperatorConfigBuilder;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.MockSharedEnvironmentProvider;
@@ -143,36 +140,6 @@ public class ResourceUtils {
                 .endMetadata()
                 .addToData("ca.key", caKey)
                 .build();
-    }
-
-    /**
-     * Create an empty Kafka MirrorMaker 2 custom resource
-     */
-    public static KafkaMirrorMaker2 createEmptyKafkaMirrorMaker2(String namespace, String name, Integer replicas) {
-        KafkaMirrorMaker2Builder kafkaMirrorMaker2Builder = new KafkaMirrorMaker2Builder()
-                .withMetadata(new ObjectMetaBuilder()
-                        .withName(name)
-                        .withNamespace(namespace)
-                        .withLabels(Map.of(Labels.KUBERNETES_DOMAIN + "part-of", "tests",
-                                "my-user-label", "cromulent"))
-                        .build())
-                .withNewSpec()
-                    .withClusters(List.of())
-                    .withMirrors(List.of())
-                .endSpec();
-
-        if (replicas != null) {
-            kafkaMirrorMaker2Builder
-                    .editOrNewSpec()
-                        .withReplicas(replicas)
-                    .endSpec();
-        }
-
-        return kafkaMirrorMaker2Builder.build();
-    }
-
-    public static KafkaMirrorMaker2 createEmptyKafkaMirrorMaker2(String namespace, String name) {
-        return createEmptyKafkaMirrorMaker2(namespace, name, null);
     }
 
     public static void cleanUpTemporaryTLSFiles() {

@@ -17,7 +17,6 @@ import io.strimzi.api.kafka.model.connector.ListOffsets;
 import io.strimzi.api.kafka.model.connector.ListOffsetsBuilder;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2Builder;
-import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2ClusterSpecBuilder;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2MirrorSpecBuilder;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
@@ -1110,24 +1109,30 @@ public class KafkaMirrorMaker2AssemblyOperatorConnectorOffsetsTest {
                     .withNamespace(NAMESPACE)
                 .endMetadata()
                 .withNewSpec()
-                .withReplicas(1)
-                .withConnectCluster("target")
-                .withClusters(
-                        new KafkaMirrorMaker2ClusterSpecBuilder().withAlias("source").withBootstrapServers("source:9092").build(),
-                        new KafkaMirrorMaker2ClusterSpecBuilder().withAlias("target").withBootstrapServers("target:9092").build()
-                ).withMirrors(
-                        new KafkaMirrorMaker2MirrorSpecBuilder()
-                                .withSourceCluster("source")
-                                .withTargetCluster("target")
-                                .withNewSourceConnector()
-                                    .withTasksMax(1)
-                                    .withConfig(Map.of("replication.factor", "-1"))
-                                .endSourceConnector()
-                                .withNewCheckpointConnector()
-                                    .withTasksMax(1)
-                                    .withConfig(Map.of("replication.factor", "-1"))
-                                .endCheckpointConnector()
-                                .build()
+                    .withReplicas(1)
+                    .withNewTarget()
+                        .withAlias("target")
+                        .withGroupId("my-mm2-group")
+                        .withConfigStorageTopic("my-mm2-config")
+                        .withOffsetStorageTopic("my-mm2-offset")
+                        .withStatusStorageTopic("my-mm2-status")
+                        .withBootstrapServers("target:9092")
+                    .endTarget()
+                    .withMirrors(
+                            new KafkaMirrorMaker2MirrorSpecBuilder()
+                                    .withNewSource()
+                                        .withAlias("source")
+                                        .withBootstrapServers("source:9092")
+                                    .endSource()
+                                    .withNewSourceConnector()
+                                        .withTasksMax(1)
+                                        .withConfig(Map.of("replication.factor", "-1"))
+                                    .endSourceConnector()
+                                    .withNewCheckpointConnector()
+                                        .withTasksMax(1)
+                                        .withConfig(Map.of("replication.factor", "-1"))
+                                    .endCheckpointConnector()
+                                    .build()
                 ).endSpec();
     }
 
