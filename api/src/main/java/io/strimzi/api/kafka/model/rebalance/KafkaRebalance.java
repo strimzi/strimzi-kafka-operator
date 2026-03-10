@@ -39,8 +39,8 @@ import java.util.function.Predicate;
         group = KafkaRebalance.RESOURCE_GROUP,
         scope = KafkaRebalance.SCOPE,
         versions = {
-            @Crd.Spec.Version(name = Constants.V1, served = true, storage = false),
-            @Crd.Spec.Version(name = Constants.V1BETA2, served = true, storage = true, deprecated = true, deprecationWarning = "Version v1beta2 of the KafkaRebalance API is deprecated. Please use the v1 version instead.")
+            @Crd.Spec.Version(name = Constants.V1, served = true, storage = true),
+            @Crd.Spec.Version(name = Constants.V1BETA2, served = true, storage = false, deprecated = true, deprecationWarning = "Version v1beta2 of the KafkaRebalance API is deprecated. Please use the v1 version instead.")
         },
         subresources = @Crd.Spec.Subresources(
             status = @Crd.Spec.Subresources.Status()
@@ -73,7 +73,7 @@ import java.util.function.Predicate;
 @JsonPropertyOrder({"apiVersion", "kind", "metadata", "spec", "status"})
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
-@Version(Constants.V1BETA2)
+@Version(Constants.V1)
 @Group(Constants.RESOURCE_GROUP_NAME)
 public class KafkaRebalance extends CustomResource<KafkaRebalanceSpec, KafkaRebalanceStatus> implements Namespaced, UnknownPropertyPreserving {
     private static final long serialVersionUID = 1L;

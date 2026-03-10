@@ -19,6 +19,8 @@ public class KafkaRebalanceConverter extends AbstractConverter<KafkaRebalance> {
      */
     public KafkaRebalanceConverter() {
         super(List.of(toVersionConversion(ApiVersion.V1BETA2, ApiVersion.V1,
+                        SharedConversions.enforceSpec()),
+                toVersionConversion(ApiVersion.V1, ApiVersion.V1,
                         SharedConversions.enforceSpec())));
     }
 

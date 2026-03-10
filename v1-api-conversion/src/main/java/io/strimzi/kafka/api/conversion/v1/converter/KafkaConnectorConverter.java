@@ -21,6 +21,9 @@ public class KafkaConnectorConverter extends AbstractConverter<KafkaConnector> {
     public KafkaConnectorConverter() {
         super(List.of(toVersionConversion(ApiVersion.V1BETA2, ApiVersion.V1,
                         SharedConversions.enforceSpec(),
+                        ConnectAndConnectorConversions.connectorPauseToState()),
+                toVersionConversion(ApiVersion.V1, ApiVersion.V1,
+                        SharedConversions.enforceSpec(),
                         ConnectAndConnectorConversions.connectorPauseToState())));
     }
 

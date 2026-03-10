@@ -28,6 +28,15 @@ public class KafkaConnectConverter extends AbstractConverter<KafkaConnect> {
                         Conversion.move("/spec/build/output/additionalKanikoOptions", "/spec/build/output/additionalBuildOptions"),
                         Conversion.delete("/spec/template/deployment"),
                         SharedConversions.deleteJaegerTracing(),
+                        ConnectAndConnectorConversions.connectSpecRestructuring()),
+                toVersionConversion(ApiVersion.V1, ApiVersion.V1,
+                        SharedConversions.enforceSpec(),
+                        SharedConversions.enforceOAuthClientAuthentication(),
+                        SharedConversions.enforceExternalConfiguration(),
+                        SharedConversions.defaultReplicas(3),
+                        Conversion.move("/spec/build/output/additionalKanikoOptions", "/spec/build/output/additionalBuildOptions"),
+                        Conversion.delete("/spec/template/deployment"),
+                        SharedConversions.deleteJaegerTracing(),
                         ConnectAndConnectorConversions.connectSpecRestructuring())
         ));
     }

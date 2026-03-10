@@ -22,6 +22,8 @@ public class StrimziPodSetConverter extends AbstractConverter<StrimziPodSet> {
                 toVersionConversion(ApiVersion.V1BETA2, ApiVersion.V1BETA2,
                         SharedConversions.enforceSpec()),
                 toVersionConversion(ApiVersion.V1BETA2, ApiVersion.V1,
+                        SharedConversions.enforceSpec()),
+                toVersionConversion(ApiVersion.V1, ApiVersion.V1,
                         SharedConversions.enforceSpec())
         ));
     }

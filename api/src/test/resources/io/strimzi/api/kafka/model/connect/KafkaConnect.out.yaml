@@ -1,5 +1,5 @@
 ---
-apiVersion: "kafka.strimzi.io/v1beta2"
+apiVersion: "kafka.strimzi.io/v1"
 kind: "KafkaConnect"
 metadata:
   name: "test-kafka-connect"
@@ -7,6 +7,10 @@ spec:
   replicas: 6
   image: "foo"
   bootstrapServers: "kafka:9092"
+  groupId: "my-connect-group"
+  configStorageTopic: "my-connect-configs"
+  statusStorageTopic: "my-connect-status"
+  offsetStorageTopic: "my-connect-offsets"
   config:
     name: "bar"
   template:
@@ -20,34 +24,3 @@ spec:
         key: "key2"
         operator: "Equal"
         value: "value2"
-  externalConfiguration:
-    env:
-    - name: "SOME_VARIABLE"
-      valueFrom:
-        secretKeyRef:
-          key: "access-key"
-          name: "mysecret"
-    - name: "SOME_OTHER_VARIABLE"
-      valueFrom:
-        configMapKeyRef:
-          key: "secret-access-key"
-          name: "mysecret"
-    volumes:
-    - name: "secret-volume"
-      secret:
-        secretName: "ssh-key-secret"
-    - name: "foo"
-      secret:
-        items:
-        - key: "username"
-          path: "my-group/my-username"
-        secretName: "mysecret"
-    - name: "config-map-volume"
-      configMap:
-        name: "my-config-map"
-    - name: "config-vol"
-      configMap:
-        items:
-        - key: "log_level"
-          path: "log_level"
-        name: "log-config"

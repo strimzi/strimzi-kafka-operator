@@ -148,6 +148,10 @@ public class KafkaConnectAssemblyOperatorMockTest {
                 .withNewSpec()
                     .withReplicas(REPLICAS)
                     .withBootstrapServers("my-kafka:9092")
+                    .withGroupId("my-group")
+                    .withConfigStorageTopic("my-config-topic")
+                    .withOffsetStorageTopic("my-offset-topic")
+                    .withStatusStorageTopic("my-status-topic")
                 .endSpec()
             .build()).create();
         KafkaConnectApi mock = mock(KafkaConnectApi.class);
@@ -177,6 +181,10 @@ public class KafkaConnectAssemblyOperatorMockTest {
                 .withNewSpec()
                     .withReplicas(REPLICAS)
                     .withBootstrapServers("my-kafka:9092")
+                    .withGroupId("my-group")
+                    .withConfigStorageTopic("my-config-topic")
+                    .withOffsetStorageTopic("my-offset-topic")
+                    .withStatusStorageTopic("my-status-topic")
                 .endSpec()
                 .build()).create();
         KafkaConnectApi mock = mock(KafkaConnectApi.class);
@@ -218,6 +226,10 @@ public class KafkaConnectAssemblyOperatorMockTest {
                             .withNewSpec()
                                 .withReplicas(REPLICAS)
                                 .withBootstrapServers("my-kafka:9092")
+                                .withGroupId("my-group")
+                                .withConfigStorageTopic("my-config-topic")
+                                .withOffsetStorageTopic("my-offset-topic")
+                                .withStatusStorageTopic("my-status-topic")
                             .endSpec()
                             .build()).update();
                     LOGGER.info("Reconciling again -> update");

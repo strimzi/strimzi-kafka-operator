@@ -155,9 +155,12 @@ public class ConversionTestUtils {
         return JSON_MAPPER.convertValue(genericResourceJson, type);
     }
 
-    public static GenericKubernetesResource typedToGeneric(Object resource)    {
+    public static GenericKubernetesResource typedToGeneric(Object resource, String apiVersion)    {
         JsonNode genericResourceJson = JSON_MAPPER.valueToTree(resource);
-        return JSON_MAPPER.convertValue(genericResourceJson, GenericKubernetesResource.class);
+        GenericKubernetesResource genericResource = JSON_MAPPER.convertValue(genericResourceJson, GenericKubernetesResource.class);
+        genericResource.setApiVersion(apiVersion);
+
+        return genericResource;
     }
 
     /**

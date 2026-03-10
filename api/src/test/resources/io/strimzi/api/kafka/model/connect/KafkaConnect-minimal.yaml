@@ -1,6 +1,11 @@
-apiVersion: kafka.strimzi.io/v1beta2
+apiVersion: kafka.strimzi.io/v1
 kind: KafkaConnect
 metadata:
   name: test-kafka-connect
 spec:
+  replicas: 1
   bootstrapServers: kafka:9092
+  groupId: my-connect-group
+  configStorageTopic: my-connect-configs
+  statusStorageTopic: my-connect-status
+  offsetStorageTopic: my-connect-offsets

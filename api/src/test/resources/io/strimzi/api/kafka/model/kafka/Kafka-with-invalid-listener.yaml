@@ -1,4 +1,4 @@
-apiVersion: kafka.strimzi.io/v1beta2
+apiVersion: kafka.strimzi.io/v1
 kind: Kafka
 metadata:
   name: strimzi-ephemeral
@@ -13,6 +13,6 @@ spec:
         tls: false
         port: 9092
       - name: tls
-        type: internal
+        type: foobar
         tls: true
         port: 9093

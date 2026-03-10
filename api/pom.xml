@@ -175,7 +175,7 @@
                                 <argument>--target-kube</argument><argument>1.16+</argument>
                                 <argument>--crd-api-version</argument><argument>v1</argument>
                                 <argument>--api-versions</argument><argument>v1beta2,v1</argument>
-                                <argument>--storage-version</argument><argument>v1beta2</argument>
+                                <argument>--storage-version</argument><argument>v1</argument>
                                 <argument>--yaml</argument>
                                 <argument>io.strimzi.api.kafka.model.connect.KafkaConnect=${project.basedir}${file.separator}..${file.separator}packaging${file.separator}install${file.separator}cluster-operator${file.separator}041-Crd-kafkaconnect.yaml</argument>
                                 <argument>io.strimzi.api.kafka.model.bridge.KafkaBridge=${project.basedir}${file.separator}..${file.separator}packaging${file.separator}install${file.separator}cluster-operator${file.separator}046-Crd-kafkabridge.yaml</argument>
@@ -207,7 +207,7 @@
                                 <argument>--api-versions</argument><argument>v1beta2,v1</argument>
                                 <!-- Uses v1alpha1 to actually not get any descriptions - nor for v1 and neither for v1beta2 -->
                                 <argument>--describe-api-versions</argument><argument>v1alpha1</argument>
-                                <argument>--storage-version</argument><argument>v1beta2</argument>
+                                <argument>--storage-version</argument><argument>v1</argument>
                                 <argument>--yaml</argument>
                                 <argument>io.strimzi.api.kafka.model.kafka.Kafka=${project.basedir}${file.separator}..${file.separator}packaging${file.separator}install${file.separator}cluster-operator${file.separator}040-Crd-kafka.yaml</argument>
                             </arguments>
@@ -235,7 +235,7 @@
                                 <argument>--target-kube</argument><argument>1.16+</argument>
                                 <argument>--crd-api-version</argument><argument>v1</argument>
                                 <argument>--api-versions</argument><argument>v1alpha1,v1beta1,v1beta2,v1</argument>
-                                <argument>--storage-version</argument><argument>v1beta2</argument>
+                                <argument>--storage-version</argument><argument>v1</argument>
                                 <argument>--yaml</argument>
                                 <argument>io.strimzi.api.kafka.model.topic.KafkaTopic=${project.basedir}${file.separator}..${file.separator}packaging${file.separator}install${file.separator}cluster-operator${file.separator}043-Crd-kafkatopic.yaml</argument>
                                 <argument>io.strimzi.api.kafka.model.user.KafkaUser=${project.basedir}${file.separator}..${file.separator}packaging${file.separator}install${file.separator}cluster-operator${file.separator}044-Crd-kafkauser.yaml</argument>

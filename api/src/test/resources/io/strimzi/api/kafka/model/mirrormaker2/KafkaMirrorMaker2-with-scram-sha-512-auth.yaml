@@ -1,22 +1,17 @@
-apiVersion: kafka.strimzi.io/v1beta2
+apiVersion: kafka.strimzi.io/v1
 kind: KafkaMirrorMaker2
 metadata:
   name: test-kafka-mirror-maker-2
 spec:
   image: foo
   replicas: 6
-  connectCluster: target
-  clusters:
-  - alias: source
-    bootstrapServers: my-source-kafka:9092
-    authentication:
-      type: scram-sha-512
-      username: johndoe
-      passwordSecret:
-        secretName: my-user-secret
-        password: password
-  - alias: target
+  target:
+    alias: my-target
     bootstrapServers: my-target-kafka:9092
+    groupId: my-mirror-maker-2-group
+    configStorageTopic: my-mirror-maker-2-config
+    offsetStorageTopic: my-mirror-maker-2-offset
+    statusStorageTopic: my-mirror-maker-2-status
     authentication:
       type: scram-sha-512
       username: johndoe
@@ -24,8 +19,14 @@ spec:
         secretName: my-user-secret
         password: password
   mirrors:
-  - sourceCluster: source
-    targetCluster: target
-    sourceConnector: {}
-    topicsPattern: my-topic
-  
+    - source:
+        alias: my-source
+        bootstrapServers: my-source-kafka:9092
+        authentication:
+          type: scram-sha-512
+          username: johndoe
+          passwordSecret:
+            secretName: my-user-secret
+            password: password
+      sourceConnector: {}
+      topicsPattern: my-topic

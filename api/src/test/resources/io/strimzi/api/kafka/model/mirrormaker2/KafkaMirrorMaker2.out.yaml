@@ -1,20 +1,22 @@
 ---
-apiVersion: "kafka.strimzi.io/v1beta2"
+apiVersion: "kafka.strimzi.io/v1"
 kind: "KafkaMirrorMaker2"
 metadata:
   name: "test-kafka-mirror-maker-2"
 spec:
   replicas: 6
   image: "foo"
-  connectCluster: "target"
-  clusters:
-  - alias: "source"
-    bootstrapServers: "my-source-kafka:9092"
-  - alias: "target"
+  target:
+    alias: "my-target"
     bootstrapServers: "my-target-kafka:9092"
+    groupId: "my-mirror-maker-2-group"
+    configStorageTopic: "my-mirror-maker-2-config"
+    statusStorageTopic: "my-mirror-maker-2-status"
+    offsetStorageTopic: "my-mirror-maker-2-offset"
   mirrors:
-  - sourceCluster: "source"
-    targetCluster: "target"
+  - source:
+      alias: "my-source"
+      bootstrapServers: "my-source-kafka:9092"
     sourceConnector:
       tasksMax: 2
       config:
@@ -41,34 +43,3 @@ spec:
         key: "key2"
         operator: "Equal"
         value: "value2"
-  externalConfiguration:
-    env:
-    - name: "SOME_VARIABLE"
-      valueFrom:
-        secretKeyRef:
-          key: "access-key"
-          name: "mysecret"
-    - name: "SOME_OTHER_VARIABLE"
-      valueFrom:
-        configMapKeyRef:
-          key: "secret-access-key"
-          name: "mysecret"
-    volumes:
-    - name: "secret-volume"
-      secret:
-        secretName: "ssh-key-secret"
-    - name: "foo"
-      secret:
-        items:
-        - key: "username"
-          path: "my-group/my-username"
-        secretName: "mysecret"
-    - name: "config-map-volume"
-      configMap:
-        name: "my-config-map"
-    - name: "config-vol"
-      configMap:
-        items:
-        - key: "log_level"
-          path: "log_level"
-        name: "log-config"

@@ -96,12 +96,12 @@ public class KafkaCrdIT extends AbstractCrdIT {
     }
 
     @Test
-    public void testKafkaWithInvalidStorage() {
+    public void testKafkaWithInvalidListener() {
         Throwable exception = assertThrows(
                 KubernetesClientException.class,
-                () -> createDeleteCustomResource("Kafka-with-invalid-storage.yaml"));
+                () -> createDeleteCustomResource("Kafka-with-invalid-listener.yaml"));
 
-        assertThat(exception.getMessage(), containsStringIgnoringCase("spec.kafka.storage.type: Unsupported value: \"foobar\": supported values: \"ephemeral\", \"persistent-claim\", \"jbod\""));
+        assertThat(exception.getMessage(), containsStringIgnoringCase("spec.kafka.listeners[1].type: Unsupported value: \"foobar\": supported values: \"internal\", \"route\", \"loadbalancer\", \"nodeport\", \"ingress\", \"cluster-ip\""));
     }
 
     @Test

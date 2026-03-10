@@ -54,6 +54,7 @@ class BridgeMetricsConversionTest {
                     .withEnableMetrics(true)
                 .endSpec()
                 .build();
+        kb.setApiVersion("kafka.strimzi.io/v1beta2");
 
         verify(crConversion(new KafkaBridgeConverter(), kb, ApiVersion.V1));
         verify(jsonConversion(new KafkaBridgeConverter(), kb, ApiVersion.V1));

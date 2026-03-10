@@ -41,10 +41,10 @@ class VersionConversionTest {
         converter.convertTo(node, toApiVersion);
         T converted = JSON_MAPPER.readerFor(converter.crClass()).readValue(node);
         String apiVersion = converted.getApiVersion();
-        Assertions.assertEquals("kafka.strimzi.io/v1beta2", apiVersion);
+        Assertions.assertEquals("kafka.strimzi.io/v1", apiVersion);
 
         converter.convertTo(cr, toApiVersion);
         apiVersion = converted.getApiVersion();
-        Assertions.assertEquals("kafka.strimzi.io/v1beta2", apiVersion);
+        Assertions.assertEquals("kafka.strimzi.io/v1", apiVersion);
     }
 }

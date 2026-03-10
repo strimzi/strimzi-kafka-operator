@@ -105,8 +105,8 @@ public class ConvertResourceCommandIT {
 
             Kafka kafka2 = new KafkaBuilder(kafka1).editMetadata().withName("kafka2").endMetadata().build();
 
-            op.inNamespace(NAMESPACE).resource(ConversionTestUtils.typedToGeneric(kafka1)).create();
-            op.inNamespace(NAMESPACE).resource(ConversionTestUtils.typedToGeneric(kafka2)).create();
+            op.inNamespace(NAMESPACE).resource(ConversionTestUtils.typedToGeneric(kafka1, "kafka.strimzi.io/v1beta2")).create();
+            op.inNamespace(NAMESPACE).resource(ConversionTestUtils.typedToGeneric(kafka2, "kafka.strimzi.io/v1beta2")).create();
 
             CommandLine cmd = new CommandLine(new EntryCommand());
             StringWriter sw = new StringWriter();
@@ -151,7 +151,7 @@ public class ConvertResourceCommandIT {
                     .endSpec()
                     .build();
 
-            op.inNamespace(NAMESPACE).resource(ConversionTestUtils.typedToGeneric(bridge)).create();
+            op.inNamespace(NAMESPACE).resource(ConversionTestUtils.typedToGeneric(bridge, "kafka.strimzi.io/v1beta2")).create();
 
             CommandLine cmd = new CommandLine(new EntryCommand());
             StringWriter sw = new StringWriter();
@@ -225,8 +225,8 @@ public class ConvertResourceCommandIT {
                     .endMetadata()
                     .build();
 
-            op.inNamespace(NAMESPACE).resource(ConversionTestUtils.typedToGeneric(kafka1)).create();
-            op.inNamespace(NAMESPACE).resource(ConversionTestUtils.typedToGeneric(kafka2)).create();
+            op.inNamespace(NAMESPACE).resource(ConversionTestUtils.typedToGeneric(kafka1, "kafka.strimzi.io/v1beta2")).create();
+            op.inNamespace(NAMESPACE).resource(ConversionTestUtils.typedToGeneric(kafka2, "kafka.strimzi.io/v1beta2")).create();
 
             CommandLine cmd = new CommandLine(new EntryCommand());
             StringWriter sw = new StringWriter();
@@ -307,8 +307,8 @@ public class ConvertResourceCommandIT {
                     .endSpec()
                     .build();
 
-            kafkaOp.inNamespace(NAMESPACE).resource(ConversionTestUtils.typedToGeneric(kafka1)).create();
-            bridgeOp.inNamespace(NAMESPACE).resource(ConversionTestUtils.typedToGeneric(bridge)).create();
+            kafkaOp.inNamespace(NAMESPACE).resource(ConversionTestUtils.typedToGeneric(kafka1, "kafka.strimzi.io/v1beta2")).create();
+            bridgeOp.inNamespace(NAMESPACE).resource(ConversionTestUtils.typedToGeneric(bridge, "kafka.strimzi.io/v1beta2")).create();
 
             CommandLine cmd = new CommandLine(new EntryCommand());
             StringWriter sw = new StringWriter();
@@ -390,8 +390,8 @@ public class ConvertResourceCommandIT {
                     .endSpec()
                     .build();
 
-            op.inNamespace(NAMESPACE).resource(ConversionTestUtils.typedToGeneric(kafka1)).create();
-            op.inNamespace(NAMESPACE).resource(ConversionTestUtils.typedToGeneric(kafka2)).create();
+            op.inNamespace(NAMESPACE).resource(ConversionTestUtils.typedToGeneric(kafka1, "kafka.strimzi.io/v1beta2")).create();
+            op.inNamespace(NAMESPACE).resource(ConversionTestUtils.typedToGeneric(kafka2, "kafka.strimzi.io/v1beta2")).create();
 
             CommandLine cmd = new CommandLine(new EntryCommand());
             StringWriter sw = new StringWriter();
@@ -474,8 +474,8 @@ public class ConvertResourceCommandIT {
                     .endSpec()
                     .build();
 
-            kafkaOp.inNamespace(NAMESPACE).resource(ConversionTestUtils.typedToGeneric(kafka1)).create();
-            bridgeOp.inNamespace(NAMESPACE).resource(ConversionTestUtils.typedToGeneric(bridge)).create();
+            kafkaOp.inNamespace(NAMESPACE).resource(ConversionTestUtils.typedToGeneric(kafka1, "kafka.strimzi.io/v1beta2")).create();
+            bridgeOp.inNamespace(NAMESPACE).resource(ConversionTestUtils.typedToGeneric(bridge, "kafka.strimzi.io/v1beta2")).create();
 
             CommandLine cmd = new CommandLine(new EntryCommand());
             StringWriter sw = new StringWriter();
@@ -557,8 +557,8 @@ public class ConvertResourceCommandIT {
                     .endMetadata()
                     .build();
 
-            op.inNamespace(NAMESPACE).resource(ConversionTestUtils.typedToGeneric(kafka1)).create();
-            op.inNamespace(namespace2).resource(ConversionTestUtils.typedToGeneric(kafka2)).create();
+            op.inNamespace(NAMESPACE).resource(ConversionTestUtils.typedToGeneric(kafka1, "kafka.strimzi.io/v1beta2")).create();
+            op.inNamespace(namespace2).resource(ConversionTestUtils.typedToGeneric(kafka2, "kafka.strimzi.io/v1beta2")).create();
 
             CommandLine cmd = new CommandLine(new EntryCommand());
             StringWriter sw = new StringWriter();
@@ -637,8 +637,8 @@ public class ConvertResourceCommandIT {
                     .endMetadata()
                     .build();
 
-            op.inNamespace(NAMESPACE).resource(ConversionTestUtils.typedToGeneric(kafka1)).create();
-            op.inNamespace(NAMESPACE).resource(ConversionTestUtils.typedToGeneric(kafka2)).create();
+            op.inNamespace(NAMESPACE).resource(ConversionTestUtils.typedToGeneric(kafka1, "kafka.strimzi.io/v1beta2")).create();
+            op.inNamespace(NAMESPACE).resource(ConversionTestUtils.typedToGeneric(kafka2, "kafka.strimzi.io/v1beta2")).create();
 
             CommandLine cmd = new CommandLine(new EntryCommand());
             StringWriter sw = new StringWriter();

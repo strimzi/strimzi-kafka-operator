@@ -183,6 +183,10 @@ public class StrimziPodSetControllerMockTest {
                     .withNewSpec()
                         .withReplicas(3)
                         .withBootstrapServers("my-kafka:9092")
+                        .withGroupId("my-group")
+                        .withConfigStorageTopic("my-config-topic")
+                        .withOffsetStorageTopic("my-offset-topic")
+                        .withStatusStorageTopic("my-status-topic")
                     .endSpec()
                     .build();
     }
@@ -241,7 +245,7 @@ public class StrimziPodSetControllerMockTest {
 
         assertThat(owner, is(notNullValue()));
         assertThat(owner.getKind(), is("StrimziPodSet"));
-        assertThat(owner.getApiVersion(), is(StrimziPodSet.RESOURCE_GROUP + "/" + Constants.V1BETA2));
+        assertThat(owner.getApiVersion(), is(StrimziPodSet.RESOURCE_GROUP + "/" + Constants.V1));
         assertThat(owner.getName(), is(podSetName));
     }
 
