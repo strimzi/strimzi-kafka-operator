@@ -1624,6 +1624,10 @@ class ConnectST extends AbstractST {
         KubeResourceManager.get().createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getTopicName(), testStorage.getClusterName()).build());
         KubeResourceManager.get().createResourceWithWait(KafkaConnectTemplates.kafkaConnect(testStorage.getNamespaceName(), testStorage.getClusterName(), 1)
                 .withNewSpec()
+                    .withGroupId(KafkaConnectResources.componentName(testStorage.getClusterName()))
+                    .withConfigStorageTopic(KafkaConnectResources.configMapName(testStorage.getClusterName()))
+                    .withOffsetStorageTopic(KafkaConnectResources.configStorageTopicOffsets(testStorage.getClusterName()))
+                    .withStatusStorageTopic(KafkaConnectResources.configStorageTopicStatus(testStorage.getClusterName()))
                     .withBootstrapServers(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
                     .withNewKafkaClientAuthenticationScramSha512()
                         .withUsername(testStorage.getKafkaUsername())
