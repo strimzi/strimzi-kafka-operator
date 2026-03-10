@@ -361,7 +361,7 @@ public class CaReconciler {
 
                     CertAndKey oldCertAndKey = CertUtils.keyStoreCertAndKey(oldSecret, componentName, Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION);
 
-                    CertAndKey updatedCert = clusterCa.maybeCopyOrGenerateCert(reconciliation, componentName, oldCertAndKey, Util.isMaintenanceTimeWindowsSatisfied(reconciliation, maintenanceWindows, clock.instant()));
+                    CertAndKey updatedCert = clusterCa.maybeCopyOrGenerateClientCert(reconciliation, componentName, oldCertAndKey, Util.isMaintenanceTimeWindowsSatisfied(reconciliation, maintenanceWindows, clock.instant()));
 
                     Map<String, String> secretData = CertUtils.buildSecretData(componentName, updatedCert);
                     coSecret = ModelUtils.createSecret(
@@ -370,7 +370,7 @@ public class CaReconciler {
                             clusterOperatorSecretLabels,
                             ownerRef,
                             secretData,
-                            Map.ofEntries(clusterCa.caCertGenerationFullAnnotation()),
+                            Map.of(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, String.valueOf(updatedCert.caCertGeneration())),
                             Map.of()
                     );
 

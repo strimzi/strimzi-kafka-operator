@@ -105,7 +105,7 @@ public class ClusterCa extends Ca {
      *
      * @param namespace                             Namespace of the Kafka cluster
      * @param clusterName                           Name of the Kafka cluster
-     * @param existingCertificate                   Existing certificates (or null if they do not exist yet)
+     * @param existingCertificate                   Existing certificate (or null if they do not exist yet)
      * @param ccNode                                Cruise Control node reference
      * @param isMaintenanceTimeWindowsSatisfied     Flag indicating whether we can do maintenance tasks or not
      *
@@ -137,7 +137,7 @@ public class ClusterCa extends Ca {
         };
 
         LOGGER.debugCr(reconciliation, "{}: Reconciling Cruise Control certificates", this);
-        return maybeCopyOrGenerateCerts(
+        return maybeCopyOrGenerateServerCerts(
             reconciliation,
             Set.of(ccNode),
             subjectFn,
@@ -212,7 +212,7 @@ public class ClusterCa extends Ca {
 
         LOGGER.debugCr(reconciliation, "{}: Reconciling kafka broker certificates", this);
 
-        return maybeCopyOrGenerateCerts(
+        return maybeCopyOrGenerateServerCerts(
             reconciliation,
             nodes,
             subjectFn,
@@ -241,7 +241,7 @@ public class ClusterCa extends Ca {
      *
      * @throws IOException Throws IOException when working with files fails
      */
-    /* test */ Map<String, CertAndKey> maybeCopyOrGenerateCerts(
+    /* test */ Map<String, CertAndKey> maybeCopyOrGenerateServerCerts(
             Reconciliation reconciliation,
             Set<NodeRef> nodes,
             Function<NodeRef, Subject> subjectFn,
@@ -325,7 +325,7 @@ public class ClusterCa extends Ca {
      *
      * @return CertAndKey object containing the certificate and key with CA generation set
      */
-    public CertAndKey maybeCopyOrGenerateCert(
+    public CertAndKey maybeCopyOrGenerateClientCert(
             Reconciliation reconciliation,
             String commonName,
             CertAndKey existingCertAndKey,

@@ -45,7 +45,7 @@ public class ClusterCaRenewalTest {
 
         boolean isMaintenanceTimeWindowsSatisfied = true;
 
-        Map<String, CertAndKey> newCerts = mockedCa.maybeCopyOrGenerateCerts(
+        Map<String, CertAndKey> newCerts = mockedCa.maybeCopyOrGenerateServerCerts(
                 Reconciliation.DUMMY_RECONCILIATION,
                 NODES,
                 SUBJECT_FN,
@@ -82,7 +82,7 @@ public class ClusterCaRenewalTest {
 
         boolean isMaintenanceTimeWindowsSatisfied = true;
 
-        Map<String, CertAndKey> newCerts = mockedCa.maybeCopyOrGenerateCerts(
+        Map<String, CertAndKey> newCerts = mockedCa.maybeCopyOrGenerateServerCerts(
                 Reconciliation.DUMMY_RECONCILIATION,
                 NODES,
                 SUBJECT_FN,
@@ -122,7 +122,7 @@ public class ClusterCaRenewalTest {
 
         boolean isMaintenanceTimeWindowsSatisfied = true;
 
-        Map<String, CertAndKey> newCerts = mockedCa.maybeCopyOrGenerateCerts(
+        Map<String, CertAndKey> newCerts = mockedCa.maybeCopyOrGenerateServerCerts(
                 Reconciliation.DUMMY_RECONCILIATION,
                 NODES,
                 SUBJECT_FN,
@@ -165,7 +165,7 @@ public class ClusterCaRenewalTest {
         
         boolean isMaintenanceTimeWindowsSatisfied = false;
 
-        Map<String, CertAndKey> newCerts = mockedCa.maybeCopyOrGenerateCerts(
+        Map<String, CertAndKey> newCerts = mockedCa.maybeCopyOrGenerateServerCerts(
                 Reconciliation.DUMMY_RECONCILIATION,
                 NODES,
                 SUBJECT_FN,
@@ -201,7 +201,7 @@ public class ClusterCaRenewalTest {
 
         boolean isMaintenanceTimeWindowsSatisfied = false;
 
-        Map<String, CertAndKey> newCerts = mockedCa.maybeCopyOrGenerateCerts(
+        Map<String, CertAndKey> newCerts = mockedCa.maybeCopyOrGenerateServerCerts(
                 Reconciliation.DUMMY_RECONCILIATION,
                 NODES,
                 SUBJECT_FN,
@@ -229,7 +229,7 @@ public class ClusterCaRenewalTest {
         initialCerts.put("pod1", new CertAndKey("old-key".getBytes(), "old-cert".getBytes()));
         initialCerts.put("pod2", new CertAndKey("old-key".getBytes(), "old-cert".getBytes()));
 
-        Map<String, CertAndKey> newCerts = mockedCa.maybeCopyOrGenerateCerts(
+        Map<String, CertAndKey> newCerts = mockedCa.maybeCopyOrGenerateServerCerts(
                 Reconciliation.DUMMY_RECONCILIATION,
                 NODES,
                 SUBJECT_FN,
@@ -255,7 +255,7 @@ public class ClusterCaRenewalTest {
         Map<String, CertAndKey> initialCerts = new HashMap<>();
         initialCerts.put("pod0", new CertAndKey("old-key".getBytes(), "old-cert".getBytes()));
 
-        Map<String, CertAndKey> newCerts = mockedCa.maybeCopyOrGenerateCerts(
+        Map<String, CertAndKey> newCerts = mockedCa.maybeCopyOrGenerateServerCerts(
                 Reconciliation.DUMMY_RECONCILIATION,
                 NODES,
                 SUBJECT_FN,
@@ -282,7 +282,7 @@ public class ClusterCaRenewalTest {
         initialCerts.put("pod0", new CertAndKey("old-key".getBytes(), "old-cert".getBytes()));
         initialCerts.put("pod2", new CertAndKey("old-key".getBytes(), "old-cert".getBytes()));
 
-        Map<String, CertAndKey> newCerts = mockedCa.maybeCopyOrGenerateCerts(
+        Map<String, CertAndKey> newCerts = mockedCa.maybeCopyOrGenerateServerCerts(
                 Reconciliation.DUMMY_RECONCILIATION,
                 NODES,
                 SUBJECT_FN,
@@ -310,7 +310,7 @@ public class ClusterCaRenewalTest {
         initialCerts.put("pod1", new CertAndKey("old-key".getBytes(), "old-cert".getBytes()));
         initialCerts.put("pod2", new CertAndKey("old-key".getBytes(), "old-cert".getBytes()));
 
-        Map<String, CertAndKey> newCerts = mockedCa.maybeCopyOrGenerateCerts(
+        Map<String, CertAndKey> newCerts = mockedCa.maybeCopyOrGenerateServerCerts(
                 Reconciliation.DUMMY_RECONCILIATION,
                 Set.of(new NodeRef("pod1", 1, null, false, true)),
                 SUBJECT_FN,
@@ -339,7 +339,7 @@ public class ClusterCaRenewalTest {
 
         boolean isMaintenanceTimeWindowsSatisfied = true;
 
-        Map<String, CertAndKey> newCerts = mockedCa.maybeCopyOrGenerateCerts(
+        Map<String, CertAndKey> newCerts = mockedCa.maybeCopyOrGenerateServerCerts(
                 Reconciliation.DUMMY_RECONCILIATION,
                 NODES,
                 node -> new Subject.Builder().withCommonName(node.podName()).build(),
@@ -363,7 +363,7 @@ public class ClusterCaRenewalTest {
     public void certificatesIncludeCaChain() throws IOException {
         MockedClusterCa mockedCa = new MockedClusterCa(Reconciliation.DUMMY_RECONCILIATION, null, null, null, null, null, 2, 1, true, null);
 
-        Map<String, CertAndKey> newCerts = mockedCa.maybeCopyOrGenerateCerts(
+        Map<String, CertAndKey> newCerts = mockedCa.maybeCopyOrGenerateServerCerts(
                 Reconciliation.DUMMY_RECONCILIATION,
                 NODES,
                 SUBJECT_FN,
@@ -386,7 +386,7 @@ public class ClusterCaRenewalTest {
         initialCerts.put("pod1", new CertAndKey("new-key1".getBytes(), "new-cert1".getBytes()));
         initialCerts.put("pod2", new CertAndKey("new-key2".getBytes(), "new-cert2".getBytes()));
 
-        Map<String, CertAndKey> newCerts = mockedCa.maybeCopyOrGenerateCerts(
+        Map<String, CertAndKey> newCerts = mockedCa.maybeCopyOrGenerateServerCerts(
                 Reconciliation.DUMMY_RECONCILIATION,
                 NODES,
                 SUBJECT_FN,
@@ -404,7 +404,7 @@ public class ClusterCaRenewalTest {
     public void testRenewalOfDeploymentCertificateWithNullCertAndKey() {
         MockedClusterCa mockedCa = new MockedClusterCa(Reconciliation.DUMMY_RECONCILIATION, null, null, null, null, null, 2, 1, true, null);
 
-        CertAndKey newCert = mockedCa.maybeCopyOrGenerateCert(
+        CertAndKey newCert = mockedCa.maybeCopyOrGenerateClientCert(
                 Reconciliation.DUMMY_RECONCILIATION,
                 "deployment",
                 null,
@@ -423,7 +423,7 @@ public class ClusterCaRenewalTest {
 
         CertAndKey initialCert = new CertAndKey("old-key".getBytes(), "old-cert".getBytes());
 
-        CertAndKey newCert = mockedCa.maybeCopyOrGenerateCert(
+        CertAndKey newCert = mockedCa.maybeCopyOrGenerateClientCert(
                 Reconciliation.DUMMY_RECONCILIATION,
                 "deployment",
                 initialCert,
@@ -442,7 +442,7 @@ public class ClusterCaRenewalTest {
 
         CertAndKey initialCert = new CertAndKey("old-key".getBytes(), "old-cert".getBytes());
 
-        CertAndKey newCert = mockedCa.maybeCopyOrGenerateCert(
+        CertAndKey newCert = mockedCa.maybeCopyOrGenerateClientCert(
                 Reconciliation.DUMMY_RECONCILIATION,
                 "deployment",
                 initialCert,
@@ -461,7 +461,7 @@ public class ClusterCaRenewalTest {
 
         CertAndKey initialCert = new CertAndKey("old-key".getBytes(), "old-cert".getBytes());
 
-        CertAndKey newCert = mockedCa.maybeCopyOrGenerateCert(
+        CertAndKey newCert = mockedCa.maybeCopyOrGenerateClientCert(
                 Reconciliation.DUMMY_RECONCILIATION,
                 "deployment",
                 initialCert,
@@ -479,7 +479,7 @@ public class ClusterCaRenewalTest {
 
         CertAndKey initialCert = new CertAndKey("old-key".getBytes(), "old-cert".getBytes(), null, "old-keystore".getBytes(), "old-password");
 
-        CertAndKey newCert = mockedCa.maybeCopyOrGenerateCert(
+        CertAndKey newCert = mockedCa.maybeCopyOrGenerateClientCert(
                 Reconciliation.DUMMY_RECONCILIATION,
                 "deployment",
                 initialCert,

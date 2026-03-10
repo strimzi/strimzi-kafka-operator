@@ -459,7 +459,9 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
         LOGGER.debugCr(reconciliation, "End generating certificates");
 
         return ModelUtils.createSecret(CruiseControlResources.secretName(cluster), namespace, labels, ownerReference,
-                CertUtils.buildSecretData(ccCerts), Map.ofEntries(clusterCa.caCertGenerationFullAnnotation()), Map.of());
+                CertUtils.buildSecretData(ccCerts),
+                Map.of(clusterCa.caCertGenerationAnnotation(), String.valueOf(ccCerts.get(CruiseControl.COMPONENT_TYPE).caCertGeneration())),
+                Map.of());
     }
 
     /**

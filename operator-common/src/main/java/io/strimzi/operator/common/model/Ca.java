@@ -546,13 +546,8 @@ public abstract class Ca {
      * @return  True when the certificate should be renewed. False otherwise.
      */
     public boolean isExpiring(Secret secret, String certKey)  {
-        try {
-            X509Certificate currentCert = cert(secret, certKey);
-            return certNeedsRenewal(currentCert);
-        } catch (RuntimeException e) {
-            LOGGER.debugCr(reconciliation, "Failed to parse existing certificate", e);
-            throw new RuntimeException(e);
-        }
+        X509Certificate currentCert = cert(secret, certKey);
+        return certNeedsRenewal(currentCert);
     }
 
     /**
