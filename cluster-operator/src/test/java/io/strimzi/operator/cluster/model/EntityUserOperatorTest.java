@@ -286,7 +286,6 @@ public class EntityUserOperatorTest {
         assertThat(binding.getRoleRef().getName(), is("my-cluster-entity-operator"));
     }
 
-    @SuppressWarnings("deprecation") // Keycloak Authorization is deprecated
     @Test
     public void testAclsAdminApiSupported() {
         testAclsAdminApiSupported(new KafkaAuthorizationSimple());
