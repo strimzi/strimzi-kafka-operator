@@ -5,7 +5,6 @@
 package io.strimzi.operator.cluster.model;
 
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationCustom;
-import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationOAuth;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationPlain;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationScram;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationScramSha256;
@@ -22,29 +21,24 @@ import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2MirrorSpec;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2TargetClusterSpec;
 import io.strimzi.operator.cluster.model.metrics.StrimziMetricsReporterConfig;
 import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.operator.common.ReconciliationLogger;
 import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.common.config.SaslConfigs;
 import org.apache.kafka.common.config.SslConfigs;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static io.strimzi.operator.cluster.model.KafkaMirrorMaker2Cluster.MIRRORMAKER_2_OAUTH_SECRETS_BASE_VOLUME_MOUNT;
 import static io.strimzi.operator.cluster.model.KafkaMirrorMaker2Cluster.MIRRORMAKER_2_PASSWORD_VOLUME_MOUNT;
 
 /**
  * Kafka Mirror Maker 2 Connectors model
  */
 public class KafkaMirrorMaker2Connectors {
-    private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(KafkaMirrorMaker2Connectors.class.getName());
-
     private static final String CONNECTOR_JAVA_PACKAGE = "org.apache.kafka.connect.mirror";
     private static final String TARGET_CLUSTER_PREFIX = "target.cluster.";
     private static final String SOURCE_CLUSTER_PREFIX = "source.cluster.";
@@ -196,7 +190,6 @@ public class KafkaMirrorMaker2Connectors {
         return config;
     }
 
-    @SuppressWarnings("deprecation") // OAuth authentication is deprecated
     /* test */ static void addClusterToMirrorMaker2ConnectorConfig(Reconciliation reconciliation, Map<String, Object> config, KafkaMirrorMaker2ClusterSpec cluster, String configPrefix) {
         config.put(configPrefix + "alias", cluster.getAlias());
         config.put(configPrefix + AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, cluster.getBootstrapServers());
@@ -224,12 +217,6 @@ public class KafkaMirrorMaker2Connectors {
                         AuthenticationUtils.jaasConfig("org.apache.kafka.common.security.scram.ScramLoginModule",
                                 Map.of("username", scramAuthentication.getUsername(),
                                         "password", passwordFilePath)));
-            } else if (cluster.getAuthentication() instanceof KafkaClientAuthenticationOAuth oauthAuthentication) {
-                securityProtocol = cluster.getTls() != null ? "SASL_SSL" : "SASL_PLAINTEXT";
-                config.put(configPrefix + SaslConfigs.SASL_MECHANISM, "OAUTHBEARER");
-                config.put(configPrefix + SaslConfigs.SASL_JAAS_CONFIG,
-                        oauthJaasConfig(cluster, oauthAuthentication));
-                config.put(configPrefix + SaslConfigs.SASL_LOGIN_CALLBACK_HANDLER_CLASS, "io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler");
             } else if (cluster.getAuthentication() instanceof KafkaClientAuthenticationCustom customAuth) { // Configure custom authentication
                 if (customAuth.isSasl()) {
                     // If this authentication uses SASL, we need to update the security protocol to combine the SASL
@@ -253,39 +240,6 @@ public class KafkaMirrorMaker2Connectors {
         config.putAll(cluster.getConfig().entrySet().stream()
                 .collect(Collectors.toMap(entry -> configPrefix + entry.getKey(), Map.Entry::getValue)));
         config.putAll(cluster.getAdditionalProperties());
-    }
-
-    @SuppressWarnings("deprecation") // OAuth authentication is deprecated
-    private static String oauthJaasConfig(KafkaMirrorMaker2ClusterSpec cluster, KafkaClientAuthenticationOAuth oauth) {
-        Map<String, String> jaasOptions = cluster.getAuthentication() instanceof KafkaClientAuthenticationOAuth ? AuthenticationUtils.oauthJaasOptions((KafkaClientAuthenticationOAuth) cluster.getAuthentication()) : new LinkedHashMap<>();
-
-        if (oauth.getClientSecret() != null) {
-            jaasOptions.put("oauth.client.secret", String.format(PLACEHOLDER_MIRRORMAKER2_CONNECTOR_CONFIGS_TEMPLATE_CONFIG_PROVIDER_DIR, MIRRORMAKER_2_OAUTH_SECRETS_BASE_VOLUME_MOUNT, cluster.getAlias(), oauth.getClientSecret().getSecretName(), oauth.getClientSecret().getKey()));
-        }
-
-        if (oauth.getAccessToken() != null) {
-            jaasOptions.put("oauth.access.token", String.format(PLACEHOLDER_MIRRORMAKER2_CONNECTOR_CONFIGS_TEMPLATE_CONFIG_PROVIDER_DIR, MIRRORMAKER_2_OAUTH_SECRETS_BASE_VOLUME_MOUNT, cluster.getAlias(), oauth.getAccessToken().getSecretName(), oauth.getAccessToken().getKey()));
-        }
-
-        if (oauth.getRefreshToken() != null) {
-            jaasOptions.put("oauth.refresh.token", String.format(PLACEHOLDER_MIRRORMAKER2_CONNECTOR_CONFIGS_TEMPLATE_CONFIG_PROVIDER_DIR, MIRRORMAKER_2_OAUTH_SECRETS_BASE_VOLUME_MOUNT, cluster.getAlias(), oauth.getRefreshToken().getSecretName(), oauth.getRefreshToken().getKey()));
-        }
-
-        if (oauth.getPasswordSecret() != null) {
-            jaasOptions.put("oauth.password.grant.password", String.format(PLACEHOLDER_MIRRORMAKER2_CONNECTOR_CONFIGS_TEMPLATE_CONFIG_PROVIDER_DIR, MIRRORMAKER_2_OAUTH_SECRETS_BASE_VOLUME_MOUNT, cluster.getAlias(), oauth.getPasswordSecret().getSecretName(), oauth.getPasswordSecret().getPassword()));
-        }
-
-        if (oauth.getClientAssertion() != null) {
-            jaasOptions.put("oauth.client.assertion", String.format(PLACEHOLDER_MIRRORMAKER2_CONNECTOR_CONFIGS_TEMPLATE_CONFIG_PROVIDER_DIR, MIRRORMAKER_2_OAUTH_SECRETS_BASE_VOLUME_MOUNT, cluster.getAlias(), oauth.getClientAssertion().getSecretName(), oauth.getClientAssertion().getKey()));
-        }
-
-        if (oauth.getTlsTrustedCertificates() != null && !oauth.getTlsTrustedCertificates().isEmpty()) {
-            jaasOptions.put("oauth.ssl.truststore.location", "/tmp/kafka/clusters/" + cluster.getAlias() + "-oauth.truststore.p12");
-            jaasOptions.put("oauth.ssl.truststore.password", PLACEHOLDER_CERT_STORE_PASSWORD_CONFIG_PROVIDER_ENV_VAR);
-            jaasOptions.put("oauth.ssl.truststore.type", "PKCS12");
-        }
-
-        return AuthenticationUtils.jaasConfig("org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule", jaasOptions);
     }
 
     /**

@@ -9,11 +9,9 @@ import io.strimzi.api.kafka.model.bridge.KafkaBridgeConsumerSpec;
 import io.strimzi.api.kafka.model.bridge.KafkaBridgeHttpConfig;
 import io.strimzi.api.kafka.model.bridge.KafkaBridgeProducerSpec;
 import io.strimzi.api.kafka.model.common.ClientTls;
-import io.strimzi.api.kafka.model.common.GenericSecretSource;
 import io.strimzi.api.kafka.model.common.PasswordSecretSource;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthentication;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationCustom;
-import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationOAuth;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationPlain;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationScram;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationScramSha256;
@@ -29,11 +27,9 @@ import io.strimzi.operator.common.Reconciliation;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import static io.strimzi.api.kafka.model.common.metrics.StrimziMetricsReporter.TYPE_STRIMZI_METRICS_REPORTER;
 import static io.strimzi.operator.cluster.model.KafkaBridgeCluster.KAFKA_BRIDGE_CONFIG_VOLUME_MOUNT;
-import static io.strimzi.operator.cluster.model.KafkaBridgeCluster.OAUTH_SECRETS_BASE_VOLUME_MOUNT;
 
 /**
  * This class is used to generate the bridge configuration template. The template is later passed using a ConfigMap to
@@ -144,7 +140,6 @@ public class KafkaBridgeConfigurationBuilder {
      * @param authentication authentication configuration
      * @return  the builder instance
      */
-    @SuppressWarnings("deprecation") // OAuth authentication is deprecated
     public KafkaBridgeConfigurationBuilder withAuthentication(KafkaClientAuthentication authentication) {
         if (authentication != null) {
             printSectionHeader("Authentication configuration");
@@ -168,7 +163,7 @@ public class KafkaBridgeConfigurationBuilder {
                 KafkaClientAuthenticationCustomConfiguration config = new KafkaClientAuthenticationCustomConfiguration(reconciliation, customConfig.entrySet());
                 config.asOrderedProperties().asMap().forEach((key, value) -> writer.println(String.format("kafka.%s=%s", key, value)));
                 writer.println();
-            } else { // otherwise SASL or OAuth is going to be used for authentication
+            } else { // otherwise SASL is going to be used for authentication
                 securityProtocol = securityProtocol.equals("SSL") ? "SASL_SSL" : "SASL_PLAINTEXT";
                 String saslMechanism = null;
                 StringBuilder jaasConfig = new StringBuilder();
@@ -185,45 +180,8 @@ public class KafkaBridgeConfigurationBuilder {
                     }
 
                     jaasConfig.append("org.apache.kafka.common.security.scram.ScramLoginModule required username=\"" + scramAuth.getUsername() + "\" password=\"" + formatPasswordTemplate(scramAuth.getPasswordSecret(), PASSWORD_VOLUME_MOUNT) + "\";");
-                } else if (authentication instanceof KafkaClientAuthenticationOAuth oauth) {
-                    saslMechanism = "OAUTHBEARER";
-                    String oauthConfig = AuthenticationUtils.oauthJaasOptions(oauth).entrySet().stream()
-                            .map(e -> e.getKey() + "=\"" + e.getValue() + "\"")
-                            .collect(Collectors.joining(" "));
-
-                    if (!oauthConfig.isEmpty()) {
-                        jaasConfig.append("org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required " + oauthConfig);
-                    } else {
-                        jaasConfig.append("org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required");
-                    }
-
-                    if (oauth.getClientSecret() != null) {
-                        jaasConfig.append(" oauth.client.secret=\"" + formatOauthSecretTemplate(oauth.getClientSecret()) + "\"");
-                    }
-
-                    if (oauth.getRefreshToken() != null) {
-                        jaasConfig.append(" oauth.refresh.token=\"" + formatOauthSecretTemplate(oauth.getRefreshToken()) + "\"");
-                    }
-
-                    if (oauth.getAccessToken() != null) {
-                        jaasConfig.append(" oauth.access.token=\"" + formatOauthSecretTemplate(oauth.getAccessToken()) + "\"");
-                    }
-
-                    if (oauth.getPasswordSecret() != null) {
-                        jaasConfig.append(" oauth.password.grant.password=\"" + formatPasswordTemplate(oauth.getPasswordSecret(), OAUTH_SECRETS_BASE_VOLUME_MOUNT) + "\"");
-                    }
-
-                    if (oauth.getClientAssertion() != null) {
-                        jaasConfig.append(" oauth.client.assertion=\"" + formatOauthSecretTemplate(oauth.getClientAssertion()) + "\"");
-                    }
-
-                    if (oauth.getTlsTrustedCertificates() != null && !oauth.getTlsTrustedCertificates().isEmpty()) {
-                        jaasConfig.append(" oauth.ssl.truststore.location=\"/tmp/strimzi/oauth.truststore.p12\" oauth.ssl.truststore.password=\"" + PLACEHOLDER_CERT_STORE_PASSWORD_CONFIG_PROVIDER_ENV_VAR + "\" oauth.ssl.truststore.type=\"PKCS12\"");
-                    }
-
-                    jaasConfig.append(";");
-                    writer.println("kafka.sasl.login.callback.handler.class=io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler");
                 }
+
                 writer.println("kafka.sasl.mechanism=" + saslMechanism);
                 writer.println("kafka.sasl.jaas.config=" + jaasConfig);
                 writer.println();
@@ -231,10 +189,6 @@ public class KafkaBridgeConfigurationBuilder {
         }
 
         return this;
-    }
-
-    private String formatOauthSecretTemplate(GenericSecretSource secret) {
-        return String.format(PLACEHOLDER_VOLUME_MOUNTED_SECRET_TEMPLATE_CONFIG_PROVIDER_DIR, OAUTH_SECRETS_BASE_VOLUME_MOUNT, secret.getSecretName(), secret.getKey());
     }
 
     private String formatPasswordTemplate(PasswordSecretSource secret, String volumeMountPath) {

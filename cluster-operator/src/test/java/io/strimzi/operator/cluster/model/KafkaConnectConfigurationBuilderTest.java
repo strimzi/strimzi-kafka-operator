@@ -8,8 +8,6 @@ import io.strimzi.api.kafka.model.common.ClientTls;
 import io.strimzi.api.kafka.model.common.ClientTlsBuilder;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationCustom;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationCustomBuilder;
-import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationOAuth;
-import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationOAuthBuilder;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationPlain;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationPlainBuilder;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationScramSha256;
@@ -119,7 +117,7 @@ class KafkaConnectConfigurationBuilderTest {
 
         String configuration = new KafkaConnectConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, BOOTSTRAP_SERVERS)
                 .withTls(clientTls, "my-cluster")
-                .withAuthentication(tlsAuth, "my-cluster")
+                .withAuthentication(tlsAuth)
                 .build();
 
         assertThat(configuration, isEquivalent(
@@ -162,7 +160,7 @@ class KafkaConnectConfigurationBuilderTest {
                 .build();
 
         String configuration = new KafkaConnectConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, BOOTSTRAP_SERVERS)
-                .withAuthentication(authPlain, "my-cluster")
+                .withAuthentication(authPlain)
                 .build();
 
         assertThat(configuration, isEquivalent(
@@ -201,7 +199,7 @@ class KafkaConnectConfigurationBuilderTest {
 
         String configuration = new KafkaConnectConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, BOOTSTRAP_SERVERS)
                 .withTls(clientTls, "my-cluster")
-                .withAuthentication(authPlain, "my-cluster")
+                .withAuthentication(authPlain)
                 .build();
 
         assertThat(configuration, isEquivalent(
@@ -240,7 +238,7 @@ class KafkaConnectConfigurationBuilderTest {
                 .build();
 
         String configuration = new KafkaConnectConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, BOOTSTRAP_SERVERS)
-                .withAuthentication(authScramSha256, "my-cluster")
+                .withAuthentication(authScramSha256)
                 .build();
 
         assertThat(configuration, isEquivalent(
@@ -279,7 +277,7 @@ class KafkaConnectConfigurationBuilderTest {
 
         String configuration = new KafkaConnectConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, BOOTSTRAP_SERVERS)
                 .withTls(clientTls, "my-cluster")
-                .withAuthentication(authScramSha256, "my-cluster")
+                .withAuthentication(authScramSha256)
                 .build();
 
         assertThat(configuration, isEquivalent(
@@ -318,7 +316,7 @@ class KafkaConnectConfigurationBuilderTest {
                 .build();
 
         String configuration = new KafkaConnectConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, BOOTSTRAP_SERVERS)
-                .withAuthentication(authScramSha512, "my-cluster")
+                .withAuthentication(authScramSha512)
                 .build();
 
         assertThat(configuration, isEquivalent(
@@ -338,72 +336,6 @@ class KafkaConnectConfigurationBuilderTest {
         ));
     }
 
-    @SuppressWarnings("deprecation") // OAuth authentication is deprecated
-    @Test
-    public void testWithAuthOauth() {
-        KafkaClientAuthenticationOAuth authOAuth = new KafkaClientAuthenticationOAuthBuilder()
-                .withClientId("oauth-client-id")
-                .withTokenEndpointUri("http://token-endpoint-uri")
-                .withUsername("oauth-username")
-                .withNewClientSecret()
-                    .withSecretName("my-client-secret-secret")
-                    .withKey("my-client-secret-key")
-                .endClientSecret()
-                .withNewRefreshToken()
-                    .withSecretName("my-refresh-token-secret")
-                    .withKey("my-refresh-token-key")
-                .endRefreshToken()
-                .withNewAccessToken()
-                    .withSecretName("my-refresh-token-secret")
-                    .withKey("my-access-token-key")
-                .endAccessToken()
-                .withNewPasswordSecret()
-                    .withSecretName("my-password-secret-secret")
-                    .withPassword("my-password-key")
-                .endPasswordSecret()
-                .addNewTlsTrustedCertificate()
-                    .withSecretName("my-tls-trusted-certificate")
-                    .withCertificate("pem-content")
-                .endTlsTrustedCertificate()
-                .build();
-
-        String configuration = new KafkaConnectConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, BOOTSTRAP_SERVERS)
-                .withAuthentication(authOAuth, "my-cluster")
-                .build();
-
-        String saslJaasConfig = "sasl.jaas.config=" +
-                "org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required" +
-                " oauth.client.id=\"oauth-client-id\"" +
-                " oauth.password.grant.username=\"oauth-username\"" +
-                " oauth.token.endpoint.uri=\"http://token-endpoint-uri\"" +
-                " oauth.client.secret=\"${strimzidir:/opt/kafka/oauth/my-client-secret-secret:my-client-secret-key}\"" +
-                " oauth.refresh.token=\"${strimzidir:/opt/kafka/oauth/my-refresh-token-secret:my-refresh-token-key}\"" +
-                " oauth.access.token=\"${strimzidir:/opt/kafka/oauth/my-refresh-token-secret:my-access-token-key}\"" +
-                " oauth.password.grant.password=\"${strimzidir:/opt/kafka/oauth/my-password-secret-secret:my-password-key}\"" +
-                " oauth.ssl.truststore.location=\"/opt/kafka/oauth-certs/my-cluster-connect-oauth-trusted-certs/ca.crt\"" +
-                " oauth.ssl.truststore.type=\"PEM\";";
-
-        assertThat(configuration, isEquivalent(
-                "bootstrap.servers=my-cluster-kafka-bootstrap:9092",
-                "security.protocol=SASL_PLAINTEXT",
-                "producer.security.protocol=SASL_PLAINTEXT",
-                "consumer.security.protocol=SASL_PLAINTEXT",
-                "admin.security.protocol=SASL_PLAINTEXT",
-                "sasl.mechanism=OAUTHBEARER",
-                saslJaasConfig,
-                "sasl.login.callback.handler.class=io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler",
-                "producer.sasl.mechanism=OAUTHBEARER",
-                "producer." + saslJaasConfig,
-                "producer.sasl.login.callback.handler.class=io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler",
-                "consumer.sasl.mechanism=OAUTHBEARER",
-                "consumer." + saslJaasConfig,
-                "consumer.sasl.login.callback.handler.class=io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler",
-                "admin.sasl.mechanism=OAUTHBEARER",
-                "admin." + saslJaasConfig,
-                "admin.sasl.login.callback.handler.class=io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler"
-                ));
-    }
-
     @Test
     public void testWithTlsAndCustomAuthMechanismWithSASL() {
         ClientTls clientTls = new ClientTlsBuilder()
@@ -420,7 +352,7 @@ class KafkaConnectConfigurationBuilderTest {
 
         String configuration = new KafkaConnectConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, BOOTSTRAP_SERVERS)
                 .withTls(clientTls, "my-cluster")
-                .withAuthentication(authCustom, "my-cluster")
+                .withAuthentication(authCustom)
                 .build();
 
         assertThat(configuration, isEquivalent(
@@ -468,7 +400,7 @@ class KafkaConnectConfigurationBuilderTest {
 
         String configuration = new KafkaConnectConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, BOOTSTRAP_SERVERS)
                 .withTls(clientTls, "my-cluster")
-                .withAuthentication(authCustom, "my-cluster")
+                .withAuthentication(authCustom)
                 .build();
 
         assertThat(configuration, isEquivalent(

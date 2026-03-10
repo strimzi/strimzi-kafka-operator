@@ -17,7 +17,6 @@ import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.model.common.Condition;
 import io.strimzi.api.kafka.model.common.ConnectorState;
-import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationOAuth;
 import io.strimzi.api.kafka.model.connect.AbstractKafkaConnectSpec;
 import io.strimzi.api.kafka.model.connect.KafkaConnectResources;
 import io.strimzi.api.kafka.model.connect.KafkaConnectStatus;
@@ -287,34 +286,6 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                                             namespace,
                                             KafkaConnectResources.internalTlsTrustedCertsSecretName(connect.getCluster()),
                                             connect.generateTlsTrustedCertsSecret(Map.of("ca.crt", Util.encodeToBase64(certificates)), KafkaConnectResources.internalTlsTrustedCertsSecretName(connect.getCluster())))
-                                    .mapEmpty();
-                        } else {
-                            return Future.succeededFuture();
-                        }
-                    });
-        } else {
-            return Future.succeededFuture();
-        }
-    }
-
-    /**
-     * Generates or reconciles the secret that combines secrets and certificates
-     * provided for trusted certificates for TLS connection to the OAuth server
-     * if OAuth authorization is enabled.
-     *
-     * @return  Future which completes when the reconciliation is done
-     */
-    @SuppressWarnings("deprecation") // OAuth authentication is deprecated
-    protected Future<Void> oauthTrustedCertsSecret(Reconciliation reconciliation, String namespace, KafkaConnectCluster connect) {
-        if (connect.getAuthentication() instanceof KafkaClientAuthenticationOAuth oauth) {
-            return ReconcilerUtils.trustedCertificates(reconciliation, secretOperations, oauth.getTlsTrustedCertificates())
-                    .compose(certificates -> {
-                        if (certificates != null) {
-                            return secretOperations.reconcile(
-                                            reconciliation,
-                                            namespace,
-                                            KafkaConnectResources.internalOauthTrustedCertsSecretName(connect.getCluster()),
-                                            connect.generateTlsTrustedCertsSecret(Map.of("ca.crt", Util.encodeToBase64(certificates)), KafkaConnectResources.internalOauthTrustedCertsSecretName(connect.getCluster())))
                                     .mapEmpty();
                         } else {
                             return Future.succeededFuture();

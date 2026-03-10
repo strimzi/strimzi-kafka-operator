@@ -266,7 +266,7 @@ public class KafkaBrokerConfigurationBuilderTest {
     }
 
     @Test
-    public void testNoAuthorization()  {
+    public void testNullAuthorization()  {
         String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
                 .withAuthorization("my-cluster", null)
                 .build();

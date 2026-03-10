@@ -12,13 +12,12 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.strimzi.api.kafka.model.common.CertSecretSource;
 import io.strimzi.api.kafka.model.common.CertSecretSourceBuilder;
-import io.strimzi.api.kafka.model.common.GenericSecretSource;
-import io.strimzi.api.kafka.model.common.GenericSecretSourceBuilder;
 import io.strimzi.api.kafka.model.common.PasswordSecretSource;
+import io.strimzi.api.kafka.model.common.PasswordSecretSourceBuilder;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthentication;
-import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationOAuthBuilder;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationPlain;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationScramSha512;
+import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationScramSha512Builder;
 import io.strimzi.api.kafka.model.kafka.KafkaClusterSpec;
 import io.strimzi.api.kafka.model.kafka.KafkaClusterSpecBuilder;
 import io.strimzi.operator.cluster.ResourceUtils;
@@ -398,24 +397,14 @@ public class ReconcilerUtilsTest {
     void getHashOk() {
         String namespace = "ns";
 
-        GenericSecretSource at = new GenericSecretSourceBuilder()
-                .withSecretName("top-secret-at")
-                .withKey("key")
+        PasswordSecretSource pwd = new PasswordSecretSourceBuilder()
+                .withSecretName("top-secret-pwd")
+                .withPassword("key")
                 .build();
 
-        GenericSecretSource cs = new GenericSecretSourceBuilder()
-                .withSecretName("top-secret-cs")
-                .withKey("key")
-                .build();
-
-        GenericSecretSource rt = new GenericSecretSourceBuilder()
-                .withSecretName("top-secret-rt")
-                .withKey("key")
-                .build();
-        KafkaClientAuthentication kcu = new KafkaClientAuthenticationOAuthBuilder()
-                .withAccessToken(at)
-                .withRefreshToken(rt)
-                .withClientSecret(cs)
+        KafkaClientAuthentication kcu = new KafkaClientAuthenticationScramSha512Builder()
+                .withUsername("my-username")
+                .withPasswordSecret(pwd)
                 .build();
 
         CertSecretSource css = new CertSecretSourceBuilder()
@@ -432,16 +421,14 @@ public class ReconcilerUtilsTest {
                 .build();
 
         SecretOperator secretOps = mock(SecretOperator.class);
-        when(secretOps.getAsync(eq(namespace), eq("top-secret-at"))).thenReturn(Future.succeededFuture(secret));
-        when(secretOps.getAsync(eq(namespace), eq("top-secret-rt"))).thenReturn(Future.succeededFuture(secret));
-        when(secretOps.getAsync(eq(namespace), eq("top-secret-cs"))).thenReturn(Future.succeededFuture(secret));
+        when(secretOps.getAsync(eq(namespace), eq("top-secret-pwd"))).thenReturn(Future.succeededFuture(secret));
         when(secretOps.getAsync(eq(namespace), eq("css-secret"))).thenReturn(Future.succeededFuture(cssSecret));
 
         Future<Integer> res = ReconcilerUtils.authTlsHash(secretOps, "ns", kcu, singletonList(css));
         res.onComplete(v -> {
             assertThat(v.succeeded(), is(true));
             // we are summing "value" hash four times
-            assertThat(v.result(), is(DUMMY_CERT.hashCode() + "dmFsdWU=".hashCode() * 3));
+            assertThat(v.result(), is(DUMMY_CERT.hashCode() + "dmFsdWU=".hashCode()));
         });
     }
 
@@ -449,39 +436,22 @@ public class ReconcilerUtilsTest {
     void getHashFailure() {
         String namespace = "ns";
 
-        GenericSecretSource at = new GenericSecretSourceBuilder()
-                .withSecretName("top-secret-at")
-                .withKey("key")
+        PasswordSecretSource pwd = new PasswordSecretSourceBuilder()
+                .withSecretName("top-secret-pwd")
+                .withPassword("key")
                 .build();
-
-        GenericSecretSource cs = new GenericSecretSourceBuilder()
-                .withSecretName("top-secret-cs")
-                .withKey("key")
-                .build();
-
-        GenericSecretSource rt = new GenericSecretSourceBuilder()
-                .withSecretName("top-secret-rt")
-                .withKey("key")
-                .build();
-        KafkaClientAuthentication kcu = new KafkaClientAuthenticationOAuthBuilder()
-                .withAccessToken(at)
-                .withRefreshToken(rt)
-                .withClientSecret(cs)
-                .build();
-
-        Secret secret = new SecretBuilder()
-                .withData(Map.of("key", "dmFsdWU="))
+        KafkaClientAuthentication kcu = new KafkaClientAuthenticationScramSha512Builder()
+                .withUsername("my-username")
+                .withPasswordSecret(pwd)
                 .build();
 
         SecretOperator secretOps = mock(SecretOperator.class);
-        when(secretOps.getAsync(eq(namespace), eq("top-secret-at"))).thenReturn(Future.succeededFuture(secret));
-        when(secretOps.getAsync(eq(namespace), eq("top-secret-rt"))).thenReturn(Future.succeededFuture(secret));
-        when(secretOps.getAsync(eq(namespace), eq("top-secret-cs"))).thenReturn(Future.succeededFuture(null));
+        when(secretOps.getAsync(eq(namespace), eq("top-secret-pwd"))).thenReturn(Future.succeededFuture(null));
 
         Future<Integer> res = ReconcilerUtils.authTlsHash(secretOps, "ns", kcu, List.of());
         res.onComplete(v -> {
             assertThat(v.succeeded(), is(false));
-            assertThat(v.cause().getMessage(), is("Secret top-secret-cs not found"));
+            assertThat(v.cause().getMessage(), is("Secret top-secret-pwd not found in namespace ns"));
         });
     }
 

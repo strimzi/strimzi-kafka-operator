@@ -100,8 +100,6 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
     // Kafka Bridge configuration keys (EnvVariables)
     protected static final String ENV_VAR_PREFIX = "KAFKA_BRIDGE_";
     protected static final String ENV_VAR_KAFKA_BRIDGE_TRUSTED_CERTS = "KAFKA_BRIDGE_TRUSTED_CERTS";
-    protected static final String OAUTH_TLS_CERTS_BASE_VOLUME_MOUNT = "/opt/strimzi/oauth-certs/";
-    protected static final String OAUTH_SECRETS_BASE_VOLUME_MOUNT = "/opt/strimzi/oauth/";
     protected static final String KAFKA_BRIDGE_CONFIG_VOLUME_MOUNT = "/opt/strimzi/custom-config/";
     protected static final String CO_ENV_VAR_CUSTOM_BRIDGE_POD_LABELS = "STRIMZI_CUSTOM_KAFKA_BRIDGE_LABELS";
     protected static final String INIT_VOLUME_MOUNT = "/opt/strimzi/init";
@@ -305,7 +303,7 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
             volumeList.add(VolumeUtils.createEmptyDirVolume(INIT_VOLUME_NAME, "1Mi", "Memory"));
         }
 
-        AuthenticationUtils.configurePKCS12ClientAuthenticationVolumes(authentication, volumeList, "oauth-certs", isOpenShift, "", true);
+        AuthenticationUtils.configureClientAuthenticationVolumes(authentication, volumeList, isOpenShift, "");
 
         TemplateUtils.addAdditionalVolumes(templatePod, volumeList);
 
@@ -326,7 +324,7 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
             volumeMountList.add(VolumeUtils.createVolumeMount(INIT_VOLUME_NAME, INIT_VOLUME_MOUNT));
         }
 
-        AuthenticationUtils.configurePKCS12ClientAuthenticationVolumeMounts(authentication, volumeMountList, TLS_CERTS_BASE_VOLUME_MOUNT, PASSWORD_VOLUME_MOUNT, OAUTH_TLS_CERTS_BASE_VOLUME_MOUNT, "oauth-certs", "", true, OAUTH_SECRETS_BASE_VOLUME_MOUNT);
+        AuthenticationUtils.configureClientAuthenticationVolumeMounts(authentication, volumeMountList, TLS_CERTS_BASE_VOLUME_MOUNT, PASSWORD_VOLUME_MOUNT, "");
 
         TemplateUtils.addAdditionalVolumeMounts(volumeMountList, templateContainer);
 
@@ -425,7 +423,7 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
             varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_BRIDGE_TRUSTED_CERTS, CertUtils.trustedCertsEnvVar(tls.getTrustedCertificates())));
         }
 
-        // Client authentication env var is needed to generate oauth truststore certificates in PKCS12 format in container script
+        // Client authentication env var is needed to generate truststore certificates in PKCS12 format in container script
         AuthenticationUtils.configureClientAuthenticationEnvVars(authentication, varList, name -> ENV_VAR_PREFIX + name);
 
         // Add shared environment variables used for all containers

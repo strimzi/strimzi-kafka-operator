@@ -186,7 +186,6 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
                 .compose(i -> serviceOperations.reconcile(reconciliation, namespace, connect.getServiceName(), connect.generateService()))
                 .compose(i -> serviceOperations.reconcile(reconciliation, namespace, connect.getComponentName(), connect.generateHeadlessService()))
                 .compose(i -> tlsTrustedCertsSecret(reconciliation, namespace, connect))
-                .compose(i -> oauthTrustedCertsSecret(reconciliation, namespace, connect))
                 .compose(i -> generateMetricsAndLoggingConfigMap(reconciliation, connect))
                 .compose(logAndMetricsConfigMap -> {
                     String logging = logAndMetricsConfigMap.getData().get(LoggingModel.LOG4J2_CONFIG_MAP_KEY);
@@ -683,7 +682,6 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
      *
      * @return True if the provided resource has argument onlyFailedTasks in restart annotation. False otherwise.
      */
-    @SuppressWarnings({ "rawtypes" })
     @Override
     protected boolean restartAnnotationHasOnlyFailedTasksArg(HasMetadata resource) {
         return Annotations.stringAnnotation(resource, ANNO_STRIMZI_IO_RESTART, "")
