@@ -9,6 +9,7 @@ import io.strimzi.api.kafka.model.bridge.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.common.tracing.OpenTelemetryTracing;
 import io.strimzi.api.kafka.model.common.tracing.Tracing;
 import io.strimzi.api.kafka.model.connect.KafkaConnectBuilder;
+import io.strimzi.api.kafka.model.connect.KafkaConnectResources;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.systemtest.AbstractST;
@@ -208,6 +209,10 @@ public class OpenTelemetryST extends AbstractST {
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata()
             .withNewSpec()
+                .withGroupId(KafkaConnectResources.componentName(testStorage.getClusterName()))
+                .withConfigStorageTopic(KafkaConnectResources.configMapName(testStorage.getClusterName()))
+                .withOffsetStorageTopic(KafkaConnectResources.configStorageTopicOffsets(testStorage.getClusterName()))
+                .withStatusStorageTopic(KafkaConnectResources.configStorageTopicStatus(testStorage.getClusterName()))
                 .withConfig(configOfKafkaConnect)
                 .withTracing(otelTracing)
                 .withBootstrapServers(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))

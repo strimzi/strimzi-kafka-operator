@@ -31,7 +31,7 @@ import java.util.Map;
 @EqualsAndHashCode
 @ToString
 public class KafkaMirrorMaker2ClusterSpec implements UnknownPropertyPreserving {
-    public static final String FORBIDDEN_PREFIXES = "ssl., sasl., security., listeners, plugin.path, rest., bootstrap.servers, consumer.interceptor.classes, producer.interceptor.classes";
+    public static final String FORBIDDEN_PREFIXES = "group.id, config.storage.topic, offset.storage.topic, status.storage.topic, ssl., sasl., security., listeners, plugin.path, rest., bootstrap.servers, consumer.interceptor.classes, producer.interceptor.classes";
     public static final String FORBIDDEN_PREFIX_EXCEPTIONS = "ssl.endpoint.identification.algorithm, ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols";
 
     private String alias;

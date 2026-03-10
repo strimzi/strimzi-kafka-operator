@@ -245,10 +245,10 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
         }
 
         // Internal Connect configurations
-        result.groupId = extractAndRemoveValueFromConfig(result.configuration, "group.id", spec.getGroupId(), "connect-cluster");
-        result.configStorageTopic = extractAndRemoveValueFromConfig(result.configuration, "config.storage.topic", spec.getConfigStorageTopic(), "connect-cluster-configs");
-        result.statusStorageTopic = extractAndRemoveValueFromConfig(result.configuration, "status.storage.topic", spec.getStatusStorageTopic(), "connect-cluster-status");
-        result.offsetStorageTopic = extractAndRemoveValueFromConfig(result.configuration, "offset.storage.topic", spec.getOffsetStorageTopic(), "connect-cluster-offsets");
+        result.groupId = spec.getGroupId();
+        result.configStorageTopic = spec.getConfigStorageTopic();
+        result.statusStorageTopic = spec.getStatusStorageTopic();
+        result.offsetStorageTopic = spec.getOffsetStorageTopic();
 
         // Tracing configuration
         result.tracing = spec.getTracing();
@@ -320,36 +320,6 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
         result.mountedPlugins = spec.getPlugins();
 
         return result;
-    }
-
-    /**
-     * Utility method to help with backward compatibility between the old Connect configuration and a new Connect
-     * configuration. This should be removed once v1beta2 API is dropped, and we use only v1.
-     *      - We always use the new dedicated field if set (newConfig)
-     *      - If the new field is not set, we try to use the user values from .spec.config
-     *      - And if those are not set either, we use the defaults that were used from Strimzi beginnings.
-     *
-     * @param configuration     Kafka Connect configuration
-     * @param configKey         Kafka Connect configuration key
-     * @param newConfig         Configuration value from the new field or null if not set
-     * @param defaultConfig     Default configuration value
-     *
-     * @return  String with the value that should be used.
-     */
-    private static String extractAndRemoveValueFromConfig(AbstractConfiguration configuration, String configKey, String newConfig, String defaultConfig) {
-        if (newConfig != null) {
-            configuration.removeConfigOption(configKey);
-            return newConfig;
-        } else {
-            String oldConfig = configuration.getConfigOption(configKey);
-
-            if (oldConfig != null) {
-                configuration.removeConfigOption(configKey);
-                return oldConfig;
-            } else {
-                return defaultConfig;
-            }
-        }
     }
 
     /**
