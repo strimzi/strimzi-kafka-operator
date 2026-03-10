@@ -52,7 +52,6 @@ import io.strimzi.operator.common.model.Ca;
 import io.strimzi.operator.common.model.Labels;
 import io.vertx.core.Future;
 import org.apache.kafka.clients.admin.Admin;
-import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.DescribeClientQuotasResult;
 import org.apache.kafka.clients.admin.DescribeClusterOptions;
 import org.apache.kafka.clients.admin.DescribeClusterResult;
@@ -158,7 +157,7 @@ public class ResourceUtils {
     }
 
     public static Admin adminClient()   {
-        Admin mock = mock(AdminClient.class);
+        Admin mock = mock(Admin.class);
         DescribeClusterResult dcr;
         try {
             Constructor<DescribeClusterResult> declaredConstructor = DescribeClusterResult.class.getDeclaredConstructor(KafkaFuture.class, KafkaFuture.class, KafkaFuture.class, KafkaFuture.class);
