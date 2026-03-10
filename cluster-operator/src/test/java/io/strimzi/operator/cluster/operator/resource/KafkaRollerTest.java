@@ -21,7 +21,6 @@ import io.strimzi.operator.common.DefaultAdminClientProvider;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.auth.TlsPemIdentity;
 import org.apache.kafka.clients.admin.Admin;
-import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.Config;
 import org.apache.kafka.clients.admin.DescribeMetadataQuorumResult;
 import org.apache.kafka.clients.admin.QuorumInfo;
@@ -936,7 +935,7 @@ public class KafkaRollerTest {
             if (exception != null) {
                 throw new ForceableProblem("An error while try to create the admin client", exception);
             }
-            Admin ac = mock(AdminClient.class, invocation -> {
+            Admin ac = mock(Admin.class, invocation -> {
                 if ("close".equals(invocation.getMethod().getName())) {
                     Admin mock = (Admin) invocation.getMock();
                     unclosedAdminClients.remove(mock);

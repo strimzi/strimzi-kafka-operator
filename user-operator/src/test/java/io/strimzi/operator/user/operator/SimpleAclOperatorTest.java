@@ -15,7 +15,6 @@ import io.strimzi.operator.user.model.acl.SimpleAclRule;
 import io.strimzi.operator.user.model.acl.SimpleAclRuleResource;
 import io.strimzi.operator.user.model.acl.SimpleAclRuleResourceType;
 import org.apache.kafka.clients.admin.Admin;
-import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.CreateAclsResult;
 import org.apache.kafka.clients.admin.DeleteAclsResult;
 import org.apache.kafka.clients.admin.DescribeAclsResult;
@@ -109,7 +108,7 @@ public class SimpleAclOperatorTest {
 
     @Test
     public void testReconcileInternalCreateAddsAclsToAuthorizer() throws ExecutionException, InterruptedException {
-        Admin mockAdminClient = mock(AdminClient.class);
+        Admin mockAdminClient = mock(Admin.class);
 
         ResourcePattern resource1 = new ResourcePattern(ResourceType.CLUSTER, "kafka-cluster", PatternType.LITERAL);
         ResourcePattern resource2 = new ResourcePattern(ResourceType.TOPIC, "my-topic", PatternType.LITERAL);
@@ -159,7 +158,7 @@ public class SimpleAclOperatorTest {
 
     @Test
     public void testReconcileInternalUpdateCreatesNewAclsAndDeletesOldAcls() throws ExecutionException, InterruptedException {
-        Admin mockAdminClient = mock(AdminClient.class);
+        Admin mockAdminClient = mock(Admin.class);
 
         ResourcePattern resource1 = new ResourcePattern(ResourceType.TOPIC, "my-topic", PatternType.LITERAL);
         ResourcePattern resource2 = new ResourcePattern(ResourceType.TOPIC, "my-topic2", PatternType.LITERAL);
@@ -214,7 +213,7 @@ public class SimpleAclOperatorTest {
 
     @Test
     public void testReconcileInternalDelete() throws ExecutionException, InterruptedException {
-        Admin mockAdminClient = mock(AdminClient.class);
+        Admin mockAdminClient = mock(Admin.class);
 
         ResourcePattern resource = new ResourcePattern(ResourceType.TOPIC, "my-topic", PatternType.LITERAL);
 
@@ -278,7 +277,7 @@ public class SimpleAclOperatorTest {
     }
 
     private static Admin mockAclsForVariousUsers() throws ExecutionException, InterruptedException, TimeoutException  {
-        Admin mockAdminClient = mock(AdminClient.class);
+        Admin mockAdminClient = mock(Admin.class);
 
         ResourcePattern res1 = new ResourcePattern(ResourceType.TOPIC, "my-topic", PatternType.LITERAL);
         ResourcePattern res2 = new ResourcePattern(ResourceType.GROUP, "my-group", PatternType.LITERAL);

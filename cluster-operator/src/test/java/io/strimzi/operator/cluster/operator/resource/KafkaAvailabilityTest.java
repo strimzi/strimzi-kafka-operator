@@ -6,7 +6,6 @@ package io.strimzi.operator.cluster.operator.resource;
 
 import io.strimzi.operator.common.Reconciliation;
 import org.apache.kafka.clients.admin.Admin;
-import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.Config;
 import org.apache.kafka.clients.admin.ConfigEntry;
 import org.apache.kafka.clients.admin.DescribeConfigsResult;
@@ -245,7 +244,7 @@ public class KafkaAvailabilityTest {
         }
 
         Admin ac() {
-            Admin ac = mock(AdminClient.class);
+            Admin ac = mock(Admin.class);
 
             ListTopicsResult ltr = mockListTopics();
             when(ac.listTopics(any())).thenReturn(ltr);

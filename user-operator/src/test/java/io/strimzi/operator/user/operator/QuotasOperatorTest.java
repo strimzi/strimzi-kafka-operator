@@ -7,7 +7,6 @@ package io.strimzi.operator.user.operator;
 import io.strimzi.operator.user.ResourceUtils;
 import io.strimzi.operator.user.UserOperatorConfig;
 import org.apache.kafka.clients.admin.Admin;
-import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.DescribeClientQuotasResult;
 import org.apache.kafka.common.KafkaFuture;
 import org.apache.kafka.common.quota.ClientQuotaEntity;
@@ -64,7 +63,7 @@ public class QuotasOperatorTest {
     }
 
     private static Admin mockQuotasForVariousUsers() throws ExecutionException, InterruptedException, TimeoutException  {
-        Admin mockAdminClient = mock(AdminClient.class);
+        Admin mockAdminClient = mock(Admin.class);
 
         // Mock result
         @SuppressWarnings("unchecked")

@@ -7,7 +7,6 @@ package io.strimzi.operator.user.operator;
 import io.strimzi.operator.user.ResourceUtils;
 import io.strimzi.operator.user.UserOperatorConfig;
 import org.apache.kafka.clients.admin.Admin;
-import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.DescribeUserScramCredentialsResult;
 import org.apache.kafka.common.KafkaFuture;
 import org.junit.jupiter.api.Test;
@@ -60,7 +59,7 @@ public class ScramCredentialOperatorTest {
     }
 
     private static Admin mockCredentialsForVariousUsers() throws ExecutionException, InterruptedException, TimeoutException  {
-        Admin mockAdminClient = mock(AdminClient.class);
+        Admin mockAdminClient = mock(Admin.class);
 
         // Mock result
         @SuppressWarnings("unchecked")
