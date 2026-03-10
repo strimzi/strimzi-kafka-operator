@@ -6,6 +6,11 @@ package io.strimzi.systemtest.security.custom;
 
 import io.fabric8.kubernetes.api.model.SecretVolumeSourceBuilder;
 import io.fabric8.kubernetes.api.model.VolumeMountBuilder;
+import io.skodjob.annotations.Desc;
+import io.skodjob.annotations.Label;
+import io.skodjob.annotations.Step;
+import io.skodjob.annotations.SuiteDoc;
+import io.skodjob.annotations.TestDoc;
 import io.skodjob.kubetest4j.resources.KubeResourceManager;
 import io.skodjob.kubetest4j.security.CertAndKey;
 import io.skodjob.kubetest4j.security.CertAndKeyFiles;
@@ -17,6 +22,7 @@ import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
+import io.strimzi.systemtest.docs.TestDocsLabels;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.security.SystemTestCertBundle;
@@ -53,13 +59,33 @@ import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.is;
 
 @Tag(REGRESSION)
-// TODO: add suite doc
+@SuiteDoc(
+    description = @Desc("Test suite for verifying custom CA chain trust establishment, user certificate authentication with multi-stage CA hierarchies, and KafkaConnect trust chain configurations."),
+    labels = {
+        @Label(value = TestDocsLabels.SECURITY)
+    }
+)
 public class CustomCaChainST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(CustomCaChainST.class);
 
     @ParallelNamespaceTest
-        // TODO: add test doc
+    @TestDoc(
+        description = @Desc("Verifies that only users with certificates signed by the designated Leaf CA can connect to Kafka. " +
+            "Users with certificates signed by Intermediate CA, Root CA, or a foreign CA are rejected."),
+        steps = {
+            @Step(value = "Generate a custom CA chain: Root -> Intermediate -> Leaf.", expected = "CA chain is generated."),
+            @Step(value = "Generate a separate foreign Root CA.", expected = "Foreign CA is generated."),
+            @Step(value = "Generate four user certificates signed by Leaf CA, Intermediate CA, Root CA, and foreign CA respectively.", expected = "User certificates are generated."),
+            @Step(value = "Deploy user cert secrets and a CA trust secret containing only the Leaf CA cert.", expected = "Secrets are created in the namespace."),
+            @Step(value = "Deploy Kafka with a custom listener (port 9122) configured with ssl.client.auth=required and PEM truststore pointing to the Leaf CA.", expected = "Kafka cluster is ready with custom listener."),
+            @Step(value = "Verify that the user with a Leaf-CA-signed cert can produce and consume messages.", expected = "Messages are transmitted successfully."),
+            @Step(value = "Verify that users with Intermediate-CA, Root-CA, and foreign-CA-signed certs are rejected.", expected = "Producer/consumer time out due to TLS handshake failure.")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.SECURITY)
+        }
+    )
     void testMultistageCustomCaUserCertificateAuthentication() {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
@@ -195,7 +221,22 @@ public class CustomCaChainST extends AbstractST {
     }
 
     @ParallelNamespaceTest
-        // TODO: add test doc
+    @TestDoc(
+        description = @Desc("Verifies that clients can establish trust using any certificate from the CA chain (i.e.,  Leaf CA, Intermediate CA, or Root CA), when the broker presents the full certificate chain. A foreign CA that is not part of the chain should fail to establish trust."),
+        steps = {
+            @Step(value = "Generate a custom CA chain: Root -> Intermediate -> Leaf.", expected = "CA chain is generated."),
+            @Step(value = "Deploy the full chain as Cluster CA using SystemTestCertBundle.", expected = "Cluster CA secrets are deployed."),
+            @Step(value = "Deploy Kafka cluster with custom Cluster CA.", expected = "Kafka cluster is ready."),
+            @Step(value = "Verify the broker certificate chain contains all certificates.", expected = "Chain contains Root, Intermediate, and Leaf certs."),
+            @Step(value = "Create three trust secrets with different chain levels: full chain, root+intermediate, root only.", expected = "Trust secrets are created."),
+            @Step(value = "For each trust secret, verify that clients can successfully produce and consume messages.", expected = "All three trust configurations succeed."),
+            @Step(value = "Create a trust secret with only a foreign Root CA.", expected = "Foreign trust secret is created."),
+            @Step(value = "Verify that clients using the foreign CA trust secret cannot connect.", expected = "Producer/consumer time out due to trust failure.")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.SECURITY)
+        }
+    )
     void testMultistageCustomCaTrustChainEstablishment() {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
@@ -288,7 +329,21 @@ public class CustomCaChainST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(CONNECT)
     @Tag(CONNECT_COMPONENTS)
-        // TODO: add test doc
+    @TestDoc(
+        description = @Desc("Verifies that KafkaConnect properly establishes trust when connecting to Kafka using various CA chain configurations."),
+        steps = {
+            @Step(value = "Generate a custom CA chain: Root -> Intermediate -> Leaf.", expected = "CA chain is generated."),
+            @Step(value = "Generate a Subleaf CA signed by Leaf (Root -> Intermediate -> Leaf -> Subleaf).", expected = "Subleaf CA is generated."),
+            @Step(value = "Deploy the Leaf CA as Cluster CA using SystemTestCertBundle.", expected = "Cluster CA secrets are deployed."),
+            @Step(value = "Deploy Kafka cluster with custom Cluster CA.", expected = "Kafka cluster is ready."),
+            @Step(value = "Create four trust secrets for KafkaConnect: full chain, root+intermediate, root only, and subleaf chain.", expected = "Trust secrets are created."),
+            @Step(value = "For each positive trust config, deploy KafkaConnect and verify it becomes ready.", expected = "KafkaConnect connects successfully."),
+            @Step(value = "Deploy KafkaConnect with the Subleaf trust secret and verify it does not become ready.", expected = "KafkaConnect fails to connect.")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.SECURITY)
+        }
+    )
     void testKafkaConnectTrustWithCustomCaChain() {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
