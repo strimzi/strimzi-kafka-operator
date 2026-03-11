@@ -67,7 +67,6 @@ data:
                 ready: [ status, conditions, "[type=Ready]", status ]
                 deprecated: [ status, conditions, "[reason=DeprecatedFields]", type ]
                 kafka_version: [ status, kafkaVersion ]
-                kafka_metadata_state: [ status, kafkaMetadataState ]
                 kafka_metadata_version: [ status, kafkaMetadataVersion ]
                 cluster_id: [ status, clusterId ]
                 operator_last_successful_version: [ status, operatorLastSuccessfulVersion ]
