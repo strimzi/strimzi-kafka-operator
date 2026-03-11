@@ -2,7 +2,8 @@
 
 ## 1.0.0
 
-* Nothing here yet, but we will surely develop something new pretty soon 😉
+* Use the `v1` API in the Cluster Operator
+* Use the `v1` API as the _stored_ API version
 
 ### Major changes, deprecations, and removals
 

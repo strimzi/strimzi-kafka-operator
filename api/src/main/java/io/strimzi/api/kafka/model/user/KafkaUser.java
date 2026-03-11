@@ -39,8 +39,8 @@ import java.util.function.Predicate;
         group = KafkaUser.RESOURCE_GROUP,
         scope = KafkaUser.SCOPE,
         versions = {
-            @Crd.Spec.Version(name = Constants.V1, served = true, storage = false),
-            @Crd.Spec.Version(name = Constants.V1BETA2, served = true, storage = true, deprecated = true, deprecationWarning = "Version v1beta2 of the KafkaUser API is deprecated. Please use the v1 version instead."),
+            @Crd.Spec.Version(name = Constants.V1, served = true, storage = true),
+            @Crd.Spec.Version(name = Constants.V1BETA2, served = true, storage = false, deprecated = true, deprecationWarning = "Version v1beta2 of the KafkaUser API is deprecated. Please use the v1 version instead."),
             @Crd.Spec.Version(name = Constants.V1BETA1, served = true, storage = false, deprecated = true, deprecationWarning = "Version v1beta1 of the KafkaUser API is deprecated. Please use the v1 version instead."),
             @Crd.Spec.Version(name = Constants.V1ALPHA1, served = true, storage = false, deprecated = true, deprecationWarning = "Version v1alpha1 of the KafkaUser API is deprecated. Please use the v1 version instead.")
         },

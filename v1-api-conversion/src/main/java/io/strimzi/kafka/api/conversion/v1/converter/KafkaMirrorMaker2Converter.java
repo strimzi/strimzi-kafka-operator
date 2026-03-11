@@ -30,6 +30,17 @@ public class KafkaMirrorMaker2Converter extends AbstractConverter<KafkaMirrorMak
                         MirrorMaker2Conversions.removeHeartbeatConnector(),
                         MirrorMaker2Conversions.pauseToState(),
                         MirrorMaker2Conversions.excludedFields(),
+                        MirrorMaker2Conversions.mm2SpecRestructuring()),
+                toVersionConversion(ApiVersion.V1, ApiVersion.V1,
+                        SharedConversions.enforceSpec(),
+                        SharedConversions.enforceExternalConfiguration(),
+                        MirrorMaker2Conversions.enforceOauth(),
+                        SharedConversions.defaultReplicas(3),
+                        Conversion.delete("/spec/template/deployment"),
+                        SharedConversions.deleteJaegerTracing(),
+                        MirrorMaker2Conversions.removeHeartbeatConnector(),
+                        MirrorMaker2Conversions.pauseToState(),
+                        MirrorMaker2Conversions.excludedFields(),
                         MirrorMaker2Conversions.mm2SpecRestructuring())
         ));
     }

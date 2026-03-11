@@ -50,7 +50,7 @@ public class KafkaMirrorMaker2CrdIT extends AbstractCrdIT {
                 KubernetesClientException.class,
                 () -> createDeleteCustomResource("KafkaMirrorMaker2-with-missing-required-property.yaml"));
 
-        assertMissingRequiredPropertiesMessage(exception.getMessage(), "clusters.alias");
+        assertMissingRequiredPropertiesMessage(exception.getMessage(), "spec.mirrors[1].source", "spec.target.configStorageTopic", "spec.target.statusStorageTopic", "spec.target.offsetStorageTopic", "spec.source.groupId");
     }
 
     @Test

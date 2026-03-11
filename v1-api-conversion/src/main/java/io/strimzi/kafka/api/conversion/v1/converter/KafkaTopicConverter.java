@@ -22,6 +22,8 @@ public class KafkaTopicConverter extends AbstractConverter<KafkaTopic> {
                 toVersionConversion(ApiVersion.V1ALPHA1, ApiVersion.V1BETA1),
                 toVersionConversion(ApiVersion.V1BETA1, ApiVersion.V1BETA2),
                 toVersionConversion(ApiVersion.V1BETA2, ApiVersion.V1,
+                        SharedConversions.enforceSpec()),
+                toVersionConversion(ApiVersion.V1, ApiVersion.V1,
                         SharedConversions.enforceSpec())
         ));
     }

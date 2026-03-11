@@ -104,7 +104,7 @@ public class FullUpgradeLifecycleIT {
                     .endSpec()
                     .build();
 
-            op.inNamespace(NAMESPACE).resource(ConversionTestUtils.typedToGeneric(kafka1)).create();
+            op.inNamespace(NAMESPACE).resource(ConversionTestUtils.typedToGeneric(kafka1, "kafka.strimzi.io/v1beta2")).create();
 
             CommandLine cmd = new CommandLine(new EntryCommand());
             StringWriter sw = new StringWriter();
@@ -169,7 +169,7 @@ public class FullUpgradeLifecycleIT {
                     .endSpec()
                     .build();
 
-            op.inNamespace(NAMESPACE).resource(ConversionTestUtils.typedToGeneric(connect1)).create();
+            op.inNamespace(NAMESPACE).resource(ConversionTestUtils.typedToGeneric(connect1, "kafka.strimzi.io/v1beta2")).create();
 
             // First try with unconverted resources => should fail
             CommandLine cmd = new CommandLine(new EntryCommand());

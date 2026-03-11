@@ -24,6 +24,12 @@ public class KafkaBridgeConverter extends AbstractConverter<KafkaBridge> {
                         SharedConversions.enforceOAuthClientAuthentication(),
                         SharedConversions.defaultReplicas(1),
                         SharedConversions.deleteJaegerTracing(),
+                        new BridgeMetricsConversion()),
+                toVersionConversion(ApiVersion.V1, ApiVersion.V1,
+                        SharedConversions.enforceSpec(),
+                        SharedConversions.enforceOAuthClientAuthentication(),
+                        SharedConversions.defaultReplicas(1),
+                        SharedConversions.deleteJaegerTracing(),
                         new BridgeMetricsConversion())));
     }
 

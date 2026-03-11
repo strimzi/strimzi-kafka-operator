@@ -1,4 +1,4 @@
-apiVersion: kafka.strimzi.io/v1beta2
+apiVersion: kafka.strimzi.io/v1
 kind: KafkaConnect
 metadata:
   name: test-kafka-connect
@@ -6,6 +6,10 @@ spec:
   image: foo
   replicas: 6
   bootstrapServers: kafka:9092
+  groupId: my-connect-group
+  configStorageTopic: my-connect-configs
+  statusStorageTopic: my-connect-status
+  offsetStorageTopic: my-connect-offsets
   config:
     name: bar
   template:
@@ -19,34 +23,3 @@ spec:
           operator: "Equal"
           value: "value2"
           effect: "NoSchedule"
-  externalConfiguration:
-    env:
-    - name: SOME_VARIABLE
-      valueFrom:
-        secretKeyRef:
-          name: mysecret
-          key: access-key
-    - name: SOME_OTHER_VARIABLE
-      valueFrom:
-        configMapKeyRef:
-          name: mysecret
-          key: secret-access-key
-    volumes:
-    - name: secret-volume
-      secret:
-        secretName: ssh-key-secret
-    - name: foo
-      secret:
-        secretName: mysecret
-        items:
-        - key: username
-          path: my-group/my-username
-    - name: config-map-volume
-      configMap:
-        name: my-config-map
-    - name: config-vol
-      configMap:
-        name: log-config
-        items:
-        - key: log_level
-          path: log_level

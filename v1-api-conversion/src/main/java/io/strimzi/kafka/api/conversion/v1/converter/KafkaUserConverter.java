@@ -27,8 +27,10 @@ public class KafkaUserConverter extends AbstractConverter<KafkaUser> {
                         UserConversions.operationToOperations()),
                 toVersionConversion(ApiVersion.V1BETA2, ApiVersion.V1,
                         SharedConversions.enforceSpec(),
-                        UserConversions.operationToOperations()
-                )
+                        UserConversions.operationToOperations()),
+                toVersionConversion(ApiVersion.V1, ApiVersion.V1,
+                        SharedConversions.enforceSpec(),
+                        UserConversions.operationToOperations())
         ));
     }
 

@@ -570,20 +570,6 @@ public class ConnectorMockTest {
     }
 
     @Test
-    public void testConnectNotReadyWithoutSpec() {
-        String connectName = "cluster";
-        KafkaConnect connect = new KafkaConnectBuilder()
-                .withNewMetadata()
-                    .withNamespace(namespace)
-                    .withName(connectName)
-                .endMetadata()
-                .build();
-        Crds.kafkaConnectOperation(client).inNamespace(namespace).resource(connect).create();
-
-        waitForConnectNotReady(connectName, "InvalidResourceException", "Spec cannot be null");
-    }
-
-    @Test
     public void testConnectorNotReadyWithoutStrimziClusterLabel() {
         String connectorName = "connector";
 
@@ -624,36 +610,6 @@ public class ConnectorMockTest {
     }
 
     @Test
-    public void testConnectorNotReadyWithoutSpec() {
-        String connectName = "cluster";
-        String connectorName = "connector";
-
-        KafkaConnect connect = new KafkaConnectBuilder()
-                .withNewMetadata()
-                    .withNamespace(namespace)
-                    .withName(connectName)
-                    .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
-                .endMetadata()
-                .withNewSpec()
-                    .withReplicas(1)
-                    .withBootstrapServers("my-kafka:9092")
-                .endSpec()
-                .build();
-        Crds.kafkaConnectOperation(client).inNamespace(namespace).resource(connect).create();
-        waitForConnectReady(connectName);
-
-        KafkaConnector connector = new KafkaConnectorBuilder()
-                .withNewMetadata()
-                    .withNamespace(namespace)
-                    .withName(connectorName)
-                    .addToLabels(Labels.STRIMZI_CLUSTER_LABEL, connectName)
-                .endMetadata()
-                .build();
-        Crds.kafkaConnectorOperation(client).inNamespace(namespace).resource(connector).create();
-        waitForConnectorNotReady(connectorName, "InvalidResourceException", "spec property is required");
-    }
-
-    @Test
     public void testConnectorNotReadyWhenConnectNotConfiguredForConnectors() {
         String connectName = "cluster";
         String connectorName = "connector";
@@ -667,6 +623,10 @@ public class ConnectorMockTest {
                 .withNewSpec()
                     .withReplicas(3)
                     .withBootstrapServers("my-kafka:9092")
+                    .withGroupId("my-group")
+                    .withConfigStorageTopic("my-config-topic")
+                    .withOffsetStorageTopic("my-offset-topic")
+                    .withStatusStorageTopic("my-status-topic")
                 .endSpec()
                 .build();
         Crds.kafkaConnectOperation(client).inNamespace(namespace).resource(connect).create();
@@ -704,6 +664,10 @@ public class ConnectorMockTest {
                 .withNewSpec()
                     .withReplicas(1)
                     .withBootstrapServers("my-kafka:9092")
+                    .withGroupId("my-group")
+                    .withConfigStorageTopic("my-config-topic")
+                    .withOffsetStorageTopic("my-offset-topic")
+                    .withStatusStorageTopic("my-status-topic")
                 .endSpec()
             .build();
         Crds.kafkaConnectOperation(client).inNamespace(namespace).resource(connect).create();
@@ -792,6 +756,10 @@ public class ConnectorMockTest {
                 .withNewSpec()
                     .withReplicas(1)
                     .withBootstrapServers("my-kafka:9092")
+                    .withGroupId("my-group")
+                    .withConfigStorageTopic("my-config-topic")
+                    .withOffsetStorageTopic("my-offset-topic")
+                    .withStatusStorageTopic("my-status-topic")
                 .endSpec()
                 .build();
         Crds.kafkaConnectOperation(client).inNamespace(namespace).resource(connect).create();
@@ -835,6 +803,10 @@ public class ConnectorMockTest {
                 .withNewSpec()
                     .withReplicas(1)
                     .withBootstrapServers("my-kafka:9092")
+                    .withGroupId("my-group")
+                    .withConfigStorageTopic("my-config-topic")
+                    .withOffsetStorageTopic("my-offset-topic")
+                    .withStatusStorageTopic("my-status-topic")
                 .endSpec()
                 .build();
         Crds.kafkaConnectOperation(client).inNamespace(namespace).resource(connect).create();
@@ -924,6 +896,10 @@ public class ConnectorMockTest {
                 .withNewSpec()
                     .withReplicas(1)
                     .withBootstrapServers("my-kafka:9092")
+                    .withGroupId("my-group")
+                    .withConfigStorageTopic("my-config-topic")
+                    .withOffsetStorageTopic("my-offset-topic")
+                    .withStatusStorageTopic("my-status-topic")
                 .endSpec()
                 .build();
         Crds.kafkaConnectOperation(client).inNamespace(namespace).resource(connect).create();
@@ -973,6 +949,10 @@ public class ConnectorMockTest {
                 .withNewSpec()
                     .withReplicas(1)
                     .withBootstrapServers("my-kafka:9092")
+                    .withGroupId("my-group")
+                    .withConfigStorageTopic("my-config-topic")
+                    .withOffsetStorageTopic("my-offset-topic")
+                    .withStatusStorageTopic("my-status-topic")
                 .endSpec()
                 .build();
         Crds.kafkaConnectOperation(client).inNamespace(namespace).resource(connect).create();
@@ -987,6 +967,10 @@ public class ConnectorMockTest {
                 .withNewSpec()
                     .withReplicas(1)
                     .withBootstrapServers("my-kafka:9092")
+                    .withGroupId("my-group")
+                    .withConfigStorageTopic("my-config-topic")
+                    .withOffsetStorageTopic("my-offset-topic")
+                    .withStatusStorageTopic("my-status-topic")
                 .endSpec()
                 .build();
         Crds.kafkaConnectOperation(client).inNamespace(namespace).resource(connect2).create();
@@ -1071,6 +1055,10 @@ public class ConnectorMockTest {
                 .withNewSpec()
                     .withReplicas(1)
                     .withBootstrapServers("my-kafka:9092")
+                    .withGroupId("my-group")
+                    .withConfigStorageTopic("my-config-topic")
+                    .withOffsetStorageTopic("my-offset-topic")
+                    .withStatusStorageTopic("my-status-topic")
                 .endSpec()
                 .build();
         Crds.kafkaConnectOperation(client).inNamespace(namespace).resource(connect).create();
@@ -1124,6 +1112,10 @@ public class ConnectorMockTest {
                 .withNewSpec()
                     .withReplicas(1)
                     .withBootstrapServers("my-kafka:9092")
+                    .withGroupId("my-group")
+                    .withConfigStorageTopic("my-config-topic")
+                    .withOffsetStorageTopic("my-offset-topic")
+                    .withStatusStorageTopic("my-status-topic")
                 .endSpec()
                 .build();
         Crds.kafkaConnectOperation(client).inNamespace(namespace).resource(connect).create();
@@ -1213,6 +1205,10 @@ public class ConnectorMockTest {
                 .withNewSpec()
                     .withReplicas(1)
                     .withBootstrapServers("my-kafka:9092")
+                    .withGroupId("my-group")
+                    .withConfigStorageTopic("my-config-topic")
+                    .withOffsetStorageTopic("my-offset-topic")
+                    .withStatusStorageTopic("my-status-topic")
                 .endSpec()
                 .build();
         Crds.kafkaConnectOperation(client).inNamespace(namespace).resource(connect).create();
@@ -1302,6 +1298,10 @@ public class ConnectorMockTest {
                         .withNewSpec()
                             .withReplicas(1)
                             .withBootstrapServers("my-kafka:9092")
+                            .withGroupId("my-group")
+                            .withConfigStorageTopic("my-config-topic")
+                            .withOffsetStorageTopic("my-offset-topic")
+                            .withStatusStorageTopic("my-status-topic")
                         .endSpec()
                         .build())
                 .create();
@@ -1386,6 +1386,10 @@ public class ConnectorMockTest {
                         .withNewSpec()
                             .withReplicas(1)
                             .withBootstrapServers("my-kafka:9092")
+                            .withGroupId("my-group")
+                            .withConfigStorageTopic("my-config-topic")
+                            .withOffsetStorageTopic("my-offset-topic")
+                            .withStatusStorageTopic("my-status-topic")
                         .endSpec()
                         .build())
                 .create();
@@ -1468,6 +1472,10 @@ public class ConnectorMockTest {
                         .withNewSpec()
                             .withReplicas(1)
                             .withBootstrapServers("my-kafka:9092")
+                            .withGroupId("my-group")
+                            .withConfigStorageTopic("my-config-topic")
+                            .withOffsetStorageTopic("my-offset-topic")
+                            .withStatusStorageTopic("my-status-topic")
                         .endSpec()
                         .build())
                 .create();
@@ -1551,6 +1559,10 @@ public class ConnectorMockTest {
                         .withNewSpec()
                             .withReplicas(1)
                             .withBootstrapServers("my-kafka:9092")
+                            .withGroupId("my-group")
+                            .withConfigStorageTopic("my-config-topic")
+                            .withOffsetStorageTopic("my-offset-topic")
+                            .withStatusStorageTopic("my-status-topic")
                         .endSpec()
                         .build())
                 .create();
@@ -1633,6 +1645,10 @@ public class ConnectorMockTest {
                 .withNewSpec()
                     .withReplicas(1)
                     .withBootstrapServers("my-kafka:9092")
+                    .withGroupId("my-group")
+                    .withConfigStorageTopic("my-config-topic")
+                    .withOffsetStorageTopic("my-offset-topic")
+                    .withStatusStorageTopic("my-status-topic")
                 .endSpec()
                 .build();
         Crds.kafkaConnectOperation(client).inNamespace(namespace).resource(connect).create();
@@ -1700,6 +1716,10 @@ public class ConnectorMockTest {
                 .withNewSpec()
                     .withReplicas(1)
                     .withBootstrapServers("my-kafka:9092")
+                    .withGroupId("my-group")
+                    .withConfigStorageTopic("my-config-topic")
+                    .withOffsetStorageTopic("my-offset-topic")
+                    .withStatusStorageTopic("my-status-topic")
                 .endSpec()
                 .build();
         Crds.kafkaConnectOperation(client).inNamespace(namespace).resource(connect).create();
@@ -1768,6 +1788,10 @@ public class ConnectorMockTest {
                         .withNewSpec()
                             .withReplicas(1)
                             .withBootstrapServers("my-kafka:9092")
+                            .withGroupId("my-group")
+                            .withConfigStorageTopic("my-config-topic")
+                            .withOffsetStorageTopic("my-offset-topic")
+                            .withStatusStorageTopic("my-status-topic")
                         .endSpec()
                         .build())
                 .create();
@@ -1819,6 +1843,10 @@ public class ConnectorMockTest {
                 .withNewSpec()
                     .withReplicas(1)
                     .withBootstrapServers("my-kafka:9092")
+                    .withGroupId("my-group")
+                    .withConfigStorageTopic("my-config-topic")
+                    .withOffsetStorageTopic("my-offset-topic")
+                    .withStatusStorageTopic("my-status-topic")
                 .endSpec()
                 .build();
         Crds.kafkaConnectOperation(client).inNamespace(namespace).resource(kafkaConnect).create();
@@ -1841,6 +1869,10 @@ public class ConnectorMockTest {
                 .withNewSpec()
                     .withReplicas(1)
                     .withBootstrapServers("my-kafka:9092")
+                    .withGroupId("my-group")
+                    .withConfigStorageTopic("my-config-topic")
+                    .withOffsetStorageTopic("my-offset-topic")
+                    .withStatusStorageTopic("my-status-topic")
                 .endSpec()
                 .build();
 
@@ -1920,6 +1952,10 @@ public class ConnectorMockTest {
                 .withNewSpec()
                     .withReplicas(1)
                     .withBootstrapServers("my-kafka:9092")
+                    .withGroupId("my-group")
+                    .withConfigStorageTopic("my-config-topic")
+                    .withOffsetStorageTopic("my-offset-topic")
+                    .withStatusStorageTopic("my-status-topic")
                 .endSpec()
                 .build();
         Crds.kafkaConnectOperation(client).inNamespace(namespace).resource(kafkaConnect).create();
@@ -1977,6 +2013,10 @@ public class ConnectorMockTest {
             .withNewSpec()
                 .withReplicas(0)
                 .withBootstrapServers("my-kafka:9092")
+                .withGroupId("my-group")
+                .withConfigStorageTopic("my-config-topic")
+                .withOffsetStorageTopic("my-offset-topic")
+                .withStatusStorageTopic("my-status-topic")
             .endSpec()
             .build();
 
@@ -2025,6 +2065,10 @@ public class ConnectorMockTest {
                 .withNewSpec()
                     .withReplicas(1)
                     .withBootstrapServers("my-kafka:9092")
+                    .withGroupId("my-group")
+                    .withConfigStorageTopic("my-config-topic")
+                    .withOffsetStorageTopic("my-offset-topic")
+                    .withStatusStorageTopic("my-status-topic")
                 .endSpec()
                 .build();
 
@@ -2077,6 +2121,10 @@ public class ConnectorMockTest {
                 .withNewSpec()
                     .withReplicas(1)
                     .withBootstrapServers("my-kafka:9092")
+                    .withGroupId("my-group")
+                    .withConfigStorageTopic("my-config-topic")
+                    .withOffsetStorageTopic("my-offset-topic")
+                    .withStatusStorageTopic("my-status-topic")
                 .endSpec()
                 .build();
 
@@ -2145,6 +2193,10 @@ public class ConnectorMockTest {
                 .withNewSpec()
                     .withReplicas(1)
                     .withBootstrapServers("my-kafka:9092")
+                    .withGroupId("my-group")
+                    .withConfigStorageTopic("my-config-topic")
+                    .withOffsetStorageTopic("my-offset-topic")
+                    .withStatusStorageTopic("my-status-topic")
                 .endSpec()
                 .build();
 
@@ -2231,6 +2283,10 @@ public class ConnectorMockTest {
                 .withNewSpec()
                     .withReplicas(1)
                     .withBootstrapServers("my-kafka:9092")
+                    .withGroupId("my-group")
+                    .withConfigStorageTopic("my-config-topic")
+                    .withOffsetStorageTopic("my-offset-topic")
+                    .withStatusStorageTopic("my-status-topic")
                 .endSpec()
                 .build();
         Crds.kafkaConnectOperation(client).inNamespace(namespace).resource(connect).create();
@@ -2297,6 +2353,10 @@ public class ConnectorMockTest {
                 .withNewSpec()
                     .withReplicas(1)
                     .withBootstrapServers("my-kafka:9092")
+                    .withGroupId("my-group")
+                    .withConfigStorageTopic("my-config-topic")
+                    .withOffsetStorageTopic("my-offset-topic")
+                    .withStatusStorageTopic("my-status-topic")
                 .endSpec()
                 .build();
         Crds.kafkaConnectOperation(client).inNamespace(namespace).resource(connect).create();
@@ -2365,6 +2425,10 @@ public class ConnectorMockTest {
                 .withNewSpec()
                     .withReplicas(1)
                     .withBootstrapServers("my-kafka:9092")
+                    .withGroupId("my-group")
+                    .withConfigStorageTopic("my-config-topic")
+                    .withOffsetStorageTopic("my-offset-topic")
+                    .withStatusStorageTopic("my-status-topic")
                 .endSpec()
                 .build();
         Crds.kafkaConnectOperation(client).inNamespace(namespace).resource(connect).create();
@@ -2418,6 +2482,10 @@ public class ConnectorMockTest {
                 .withNewSpec()
                     .withReplicas(1)
                     .withBootstrapServers("my-kafka:9092")
+                    .withGroupId("my-group")
+                    .withConfigStorageTopic("my-config-topic")
+                    .withOffsetStorageTopic("my-offset-topic")
+                    .withStatusStorageTopic("my-status-topic")
                 .endSpec()
                 .build();
         Crds.kafkaConnectOperation(client).inNamespace(namespace).resource(connect).create();
@@ -2476,6 +2544,10 @@ public class ConnectorMockTest {
                 .withNewSpec()
                     .withReplicas(1)
                     .withBootstrapServers("my-kafka:9092")
+                    .withGroupId("my-group")
+                    .withConfigStorageTopic("my-config-topic")
+                    .withOffsetStorageTopic("my-offset-topic")
+                    .withStatusStorageTopic("my-status-topic")
                 .endSpec()
                 .build();
         Crds.kafkaConnectOperation(client).inNamespace(namespace).resource(connect).create();

@@ -208,7 +208,7 @@ public class StrimziPodSetControllerIT {
 
         assertThat(owner, is(notNullValue()));
         assertThat(owner.getKind(), is("StrimziPodSet"));
-        assertThat(owner.getApiVersion(), is(StrimziPodSet.RESOURCE_GROUP + "/" + Constants.V1BETA2));
+        assertThat(owner.getApiVersion(), is(StrimziPodSet.RESOURCE_GROUP + "/" + Constants.V1));
         assertThat(owner.getName(), is(podSetName));
     }
 

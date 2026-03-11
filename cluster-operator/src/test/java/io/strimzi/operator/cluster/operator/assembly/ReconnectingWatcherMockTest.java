@@ -119,8 +119,8 @@ public class ReconnectingWatcherMockTest {
         boolean latched = addedLatch.await(5_000, TimeUnit.MILLISECONDS);
         assertThat(latched, is(true));
 
-        Crds.kafkaOperation(client).inNamespace(NAMESPACE).withName(CLUSTER_NAME).edit(k -> new KafkaBuilder(k).editSpec().editKafka().withReplicas(3).endKafka().endSpec().build());
-        Crds.kafkaOperation(client).inNamespace(NAMESPACE2).withName(CLUSTER_NAME).edit(k -> new KafkaBuilder(k).editSpec().editKafka().withReplicas(3).endKafka().endSpec().build());
+        Crds.kafkaOperation(client).inNamespace(NAMESPACE).withName(CLUSTER_NAME).edit(k -> new KafkaBuilder(k).editSpec().editKafka().withVersion("6.6.6").endKafka().endSpec().build());
+        Crds.kafkaOperation(client).inNamespace(NAMESPACE2).withName(CLUSTER_NAME).edit(k -> new KafkaBuilder(k).editSpec().editKafka().withVersion("6.6.6").endKafka().endSpec().build());
         latched = modifiedLatch.await(5_000, TimeUnit.MILLISECONDS);
         assertThat(latched, is(true));
 
@@ -183,8 +183,8 @@ public class ReconnectingWatcherMockTest {
         boolean latched = addedLatch.await(5_000, TimeUnit.MILLISECONDS);
         assertThat(latched, is(true));
 
-        Crds.kafkaOperation(client).inNamespace(NAMESPACE).withName(CLUSTER_NAME).edit(k -> new KafkaBuilder(k).editSpec().editKafka().withReplicas(3).endKafka().endSpec().build());
-        Crds.kafkaOperation(client).inNamespace(NAMESPACE2).withName(CLUSTER_NAME).edit(k -> new KafkaBuilder(k).editSpec().editKafka().withReplicas(3).endKafka().endSpec().build());
+        Crds.kafkaOperation(client).inNamespace(NAMESPACE).withName(CLUSTER_NAME).edit(k -> new KafkaBuilder(k).editSpec().editKafka().withVersion("6.6.6").endKafka().endSpec().build());
+        Crds.kafkaOperation(client).inNamespace(NAMESPACE2).withName(CLUSTER_NAME).edit(k -> new KafkaBuilder(k).editSpec().editKafka().withVersion("6.6.6").endKafka().endSpec().build());
         latched = modifiedLatch.await(5_000, TimeUnit.MILLISECONDS);
         assertThat(latched, is(true));
 
@@ -267,8 +267,8 @@ public class ReconnectingWatcherMockTest {
         boolean latched = addedLatch.await(5_000, TimeUnit.MILLISECONDS);
         assertThat(latched, is(true));
 
-        Crds.kafkaOperation(client).inNamespace(NAMESPACE).withName(CLUSTER_NAME).edit(k -> new KafkaBuilder(k).editSpec().editKafka().withReplicas(3).endKafka().endSpec().build());
-        Crds.kafkaOperation(client).inNamespace(NAMESPACE).withName(CLUSTER_NAME2).edit(k -> new KafkaBuilder(k).editSpec().editKafka().withReplicas(3).endKafka().endSpec().build());
+        Crds.kafkaOperation(client).inNamespace(NAMESPACE).withName(CLUSTER_NAME).edit(k -> new KafkaBuilder(k).editSpec().editKafka().withVersion("6.6.6").endKafka().endSpec().build());
+        Crds.kafkaOperation(client).inNamespace(NAMESPACE).withName(CLUSTER_NAME2).edit(k -> new KafkaBuilder(k).editSpec().editKafka().withVersion("6.6.6").endKafka().endSpec().build());
         latched = modifiedLatch.await(5_000, TimeUnit.MILLISECONDS);
         assertThat(latched, is(true));
 

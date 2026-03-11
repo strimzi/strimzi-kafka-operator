@@ -22,7 +22,7 @@ spec:
   versions:
   - name: v1
     served: true
-    storage: false
+    storage: true
     subresources:
       status: {}
     additionalPrinterColumns:
@@ -4968,7 +4968,7 @@ spec:
         - spec
   - name: v1beta2
     served: true
-    storage: true
+    storage: false
     deprecated: true
     deprecationWarning: Version v1beta2 of the Kafka API is deprecated. Please use the v1 version instead.
     subresources:

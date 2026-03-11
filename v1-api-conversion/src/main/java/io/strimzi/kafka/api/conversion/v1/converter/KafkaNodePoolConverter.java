@@ -21,6 +21,9 @@ public class KafkaNodePoolConverter extends AbstractConverter<KafkaNodePool> {
     public KafkaNodePoolConverter() {
         super(List.of(toVersionConversion(ApiVersion.V1BETA2, ApiVersion.V1,
                         SharedConversions.enforceSpec(),
+                        NodePoolConversions.storageOverrides()),
+                toVersionConversion(ApiVersion.V1, ApiVersion.V1,
+                        SharedConversions.enforceSpec(),
                         NodePoolConversions.storageOverrides())));
     }
 

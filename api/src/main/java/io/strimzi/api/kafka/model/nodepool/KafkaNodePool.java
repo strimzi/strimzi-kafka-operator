@@ -40,8 +40,8 @@ import java.util.Map;
                 group = io.strimzi.api.kafka.model.nodepool.KafkaNodePool.RESOURCE_GROUP,
                 scope = io.strimzi.api.kafka.model.nodepool.KafkaNodePool.SCOPE,
                 versions = {
-                    @Crd.Spec.Version(name = Constants.V1, served = true, storage = false),
-                    @Crd.Spec.Version(name = Constants.V1BETA2, served = true, storage = true, deprecated = true, deprecationWarning = "Version v1beta2 of the KafkaNodePool API is deprecated. Please use the v1 version instead.")
+                    @Crd.Spec.Version(name = Constants.V1, served = true, storage = true),
+                    @Crd.Spec.Version(name = Constants.V1BETA2, served = true, storage = false, deprecated = true, deprecationWarning = "Version v1beta2 of the KafkaNodePool API is deprecated. Please use the v1 version instead.")
                 },
                 subresources = @Crd.Spec.Subresources(
                         status = @Crd.Spec.Subresources.Status(),
@@ -79,7 +79,7 @@ import java.util.Map;
 @JsonPropertyOrder({"apiVersion", "kind", "metadata", "spec", "status"})
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
-@Version(Constants.V1BETA2)
+@Version(Constants.V1)
 @Group(Constants.RESOURCE_GROUP_NAME)
 public class KafkaNodePool extends CustomResource<KafkaNodePoolSpec, KafkaNodePoolStatus> implements Namespaced, UnknownPropertyPreserving {
     private static final long serialVersionUID = 1L;

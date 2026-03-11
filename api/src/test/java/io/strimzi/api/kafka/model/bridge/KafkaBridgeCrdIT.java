@@ -107,7 +107,7 @@ public class KafkaBridgeCrdIT extends AbstractCrdIT {
                 KubernetesClientException.class,
                 () -> createDeleteCustomResource("KafkaBridge-with-wrong-tracing-type.yaml"));
 
-        assertThat(exception.getMessage(), containsStringIgnoringCase("spec.tracing.type: Unsupported value: \"wrongtype\": supported values: \"jaeger\", \"opentelemetry\""));
+        assertThat(exception.getMessage(), containsStringIgnoringCase("spec.tracing.type: Unsupported value: \"wrongtype\": supported values: \"opentelemetry\""));
     }
 
     @Test
