@@ -16,8 +16,6 @@ import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticatio
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationPlain;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationScram;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationTls;
-import io.strimzi.api.kafka.model.kafka.Kafka;
-import io.strimzi.api.kafka.model.kafka.KafkaMetadataState;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.podset.StrimziPodSet;
 import io.strimzi.certs.CertAndKey;
@@ -381,23 +379,6 @@ public class ReconcilerUtils {
         var currentCertHash = Annotations.stringAnnotation(pod, ANNO_STRIMZI_SERVER_CERT_HASH, null);
         var desiredCertHash = certHashCache.get(ReconcilerUtils.getPodIndexFromPodName(pod.getMetadata().getName()));
         return currentCertHash != null && desiredCertHash != null && !currentCertHash.equals(desiredCertHash);
-    }
-
-    /**
-     * Checks whether the metadata state is still in ZooKeeper or whether migration is still in progress
-     *
-     * @param kafka     The Kafka custom resource where we check the state
-     *
-     * @return      True ZooKeeper metadata are in use or when the cluster is in migration. False otherwise.
-     */
-    @SuppressWarnings("deprecation") // KafkaMetadataState is deprecated, but we still use it to check for clusters not migrated to KRaft
-    public static boolean nonMigratedCluster(Kafka kafka) {
-        // When the Kafka status or the metadata state are null, we cannot decide anything about KRaft (it can be a new
-        // cluster or a cluster that is still doing the first deployment). Only when it is set to one of the non-KRaft
-        // states we know that the cluster is ZooKeeper based or non-migrated.
-        return kafka.getStatus() != null
-                && kafka.getStatus().getKafkaMetadataState() != null
-                && kafka.getStatus().getKafkaMetadataState() != KafkaMetadataState.KRaft;
     }
 
     /**

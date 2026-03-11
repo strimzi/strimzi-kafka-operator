@@ -143,7 +143,6 @@ public class KafkaReconcilerStatusTest {
     }
 
     @Test
-    @SuppressWarnings("deprecation") // .status.kafkaMetadataState is deprecated
     public void testKafkaReconcilerStatus(VertxTestContext context) {
         KafkaNodePool kafkaNodePool = new KafkaNodePoolBuilder(KAFKA_NODE_POOL)
                 .editSpec()
