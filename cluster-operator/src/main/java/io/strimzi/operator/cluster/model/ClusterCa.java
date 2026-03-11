@@ -316,7 +316,7 @@ public class ClusterCa extends Ca {
 
     /**
      * Generates or reuses a single certificate signed by this Cluster CA.
-     * Used for single-instance components like Entity Operators and Kafka Exporter.
+     * Used for components that only act as clients, like Entity Operators and Kafka Exporter.
      *
      * @param reconciliation                        Reconciliation marker
      * @param commonName                            Common Name for the certificate
