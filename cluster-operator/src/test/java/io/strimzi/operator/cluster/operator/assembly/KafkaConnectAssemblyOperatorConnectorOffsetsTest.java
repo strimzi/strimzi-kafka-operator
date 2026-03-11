@@ -17,6 +17,7 @@ import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.model.KafkaConnectCluster;
 import io.strimzi.operator.cluster.model.KafkaConnectorOffsetsAnnotation;
+import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
@@ -319,7 +320,7 @@ public class KafkaConnectAssemblyOperatorConnectorOffsetsTest {
                 .withNewMetadata()
                     .withName(CONFIGMAP_NAME)
                     .withNamespace(NAMESPACE)
-                    .withOwnerReferences(ResourceUtils.DUMMY_OWNER_REFERENCE)
+                    .withOwnerReferences(ResourceUtils.DUMMY_OWNER_REFERENCE, ModelUtils.createOwnerReference(connector, false))
                 .endMetadata()
                 .withData(existingData)
                 .build();
@@ -343,11 +344,14 @@ public class KafkaConnectAssemblyOperatorConnectorOffsetsTest {
                     assertThat(configMap.getMetadata().getName(), is(CONFIGMAP_NAME));
 
                     List<OwnerReference> ownerReferenceList = configMap.getMetadata().getOwnerReferences();
-                    assertThat(ownerReferenceList, hasSize(1));
-                    assertThat(ownerReferenceList.get(0).getName(), is(connector.getMetadata().getName()));
-                    assertThat(ownerReferenceList.get(0).getKind(), is(connector.getKind()));
-                    assertThat(configMap.getMetadata().getLabels(), hasEntry("connector-label", "custom"));
+                    assertThat(ownerReferenceList, hasSize(2));
+                    assertThat(ownerReferenceList.get(0).getName(), is(ResourceUtils.DUMMY_OWNER_REFERENCE.getName()));
+                    assertThat(ownerReferenceList.get(0).getKind(), is(ResourceUtils.DUMMY_OWNER_REFERENCE.getKind()));
 
+                    assertThat(ownerReferenceList.get(1).getName(), is(connector.getMetadata().getName()));
+                    assertThat(ownerReferenceList.get(1).getKind(), is(connector.getKind()));
+
+                    assertThat(configMap.getMetadata().getLabels(), hasEntry("connector-label", "custom"));
                     assertThat(configMap.getMetadata().getLabels(), hasEntry(Labels.STRIMZI_NAME_LABEL, connector.getMetadata().getName()));
                     assertThat(configMap.getMetadata().getLabels(), hasEntry(Labels.STRIMZI_KIND_LABEL, connector.getKind()));
                     assertThat(configMap.getMetadata().getLabels(), hasEntry(Labels.STRIMZI_CLUSTER_LABEL, connector.getMetadata().getName()));

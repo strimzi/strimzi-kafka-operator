@@ -15,6 +15,7 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -29,8 +30,35 @@ public class ConfigMapUtils {
      * @param name              Name of the Config Map
      * @param namespace         Namespace of the Config Map
      * @param labels            Labels of the Config Map
-     * @param ownerReference    OwnerReference of the Config Map
+     * @param ownerReference    OwnerReferences of the Config Map
      * @param data              Data which will be stored in the Config Map
+     *
+     * @return  New Config Map
+     */
+    public static ConfigMap createConfigMap(
+        String name,
+        String namespace,
+        Labels labels,
+        OwnerReference ownerReference,
+        Map<String, String> data
+    ) {
+        return createConfigMap(
+            name,
+            namespace,
+            labels,
+            List.of(ownerReference),
+            data
+        );
+    }
+
+    /**
+     * Creates a Config Map
+     *
+     * @param name               Name of the Config Map
+     * @param namespace          Namespace of the Config Map
+     * @param labels             Labels of the Config Map
+     * @param ownerReferences    List of OwnerReferences of the Config Map
+     * @param data               Data which will be stored in the Config Map
      *
      * @return  New Config Map
      */
@@ -38,7 +66,7 @@ public class ConfigMapUtils {
             String name,
             String namespace,
             Labels labels,
-            OwnerReference ownerReference,
+            List<OwnerReference> ownerReferences,
             Map<String, String> data
     ) {
         return new ConfigMapBuilder()
@@ -46,7 +74,7 @@ public class ConfigMapUtils {
                     .withName(name)
                     .withNamespace(namespace)
                     .withLabels(labels.toMap())
-                    .withOwnerReferences(ownerReference)
+                    .withOwnerReferences(ownerReferences)
                 .endMetadata()
                 .withData(data)
                 .build();

@@ -27,6 +27,7 @@ import io.strimzi.operator.cluster.model.KafkaConnectorOffsetsAnnotation;
 import io.strimzi.operator.cluster.model.KafkaMirrorMaker2Cluster;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.MockSharedEnvironmentProvider;
+import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.cluster.model.SharedEnvironmentProvider;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.Reconciliation;
@@ -491,7 +492,7 @@ public class KafkaMirrorMaker2AssemblyOperatorConnectorOffsetsTest {
                 .withNewMetadata()
                     .withName(CONFIGMAP_NAME)
                     .withNamespace(NAMESPACE)
-                    .withOwnerReferences(ResourceUtils.DUMMY_OWNER_REFERENCE)
+                    .withOwnerReferences(ResourceUtils.DUMMY_OWNER_REFERENCE, ModelUtils.createOwnerReference(kafkaMirrorMaker2, false))
                 .endMetadata()
                 .withData(existingData)
                 .build();
@@ -526,9 +527,11 @@ public class KafkaMirrorMaker2AssemblyOperatorConnectorOffsetsTest {
                     assertThat(configMap.getMetadata().getLabels(), hasEntry(Labels.KUBERNETES_INSTANCE_LABEL, MM2_NAME));
 
                     List<OwnerReference> ownerReferenceList = configMap.getMetadata().getOwnerReferences();
-                    assertThat(ownerReferenceList, hasSize(1));
-                    assertThat(ownerReferenceList.get(0).getName(), is(MM2_NAME));
-                    assertThat(ownerReferenceList.get(0).getKind(), is(Crds.kind(KafkaMirrorMaker2.class)));
+                    assertThat(ownerReferenceList, hasSize(2));
+                    assertThat(ownerReferenceList.get(0).getName(), is(ResourceUtils.DUMMY_OWNER_REFERENCE.getName()));
+                    assertThat(ownerReferenceList.get(0).getKind(), is(ResourceUtils.DUMMY_OWNER_REFERENCE.getKind()));
+                    assertThat(ownerReferenceList.get(1).getName(), is(MM2_NAME));
+                    assertThat(ownerReferenceList.get(1).getKind(), is(Crds.kind(KafkaMirrorMaker2.class)));
 
                     Map<String, String> configMapData = configMap.getData();
                     assertThat(configMapData, hasEntry(getConfigmapEntryName(connector), OFFSETS_JSON));

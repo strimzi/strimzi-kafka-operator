@@ -9,6 +9,7 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.DefaultKubernetesResourceList;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
+import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.ServiceAccount;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
@@ -821,11 +822,23 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         String configMapNamespace = resource.getMetadata().getNamespace();
         return configMapOperations.getAsync(configMapNamespace, configMapName)
                 .compose(existingConfigMap -> {
+                    List<OwnerReference> ownerReferences = existingConfigMap != null
+                        ? new ArrayList<>(existingConfigMap.getMetadata().getOwnerReferences())
+                        : new ArrayList<>();
+
+                    OwnerReference ownerReference = ModelUtils.createOwnerReference(resource, false);
+                    // Check if our OwnerReference already exists in the list, if not, add it there
+                    if (ownerReferences.stream().noneMatch(or ->
+                        or.getName().equals(ownerReference.getName()) && or.getKind().equals(ownerReference.getKind()))) {
+                        ownerReferences.add(ownerReference);
+                    }
+
                     Map<String, String> data;
 
                     if (existingConfigMap == null) {
                         data = offsetsData;
                     } else {
+                        // get data from the existing ConfigMap
                         data = existingConfigMap.getData();
                         data.putAll(offsetsData);
                     }
@@ -834,7 +847,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                         configMapName,
                         configMapNamespace,
                         Labels.generateDefaultLabels(resource, resource.getMetadata().getName(), "kafka-connector", AbstractModel.STRIMZI_CLUSTER_OPERATOR_NAME),
-                        ModelUtils.createOwnerReference(resource, false),
+                        ownerReferences,
                         data
                     ));
                 });
