@@ -26,18 +26,8 @@ public class KafkaTopicCrdIT extends AbstractCrdIT {
     public static final String NAMESPACE = "topiccrd-it";
 
     @Test
-    void testKafkaTopicV1alpha1() {
-        createDeleteCustomResource("KafkaTopicV1alpha1.yaml");
-    }
-
-    @Test
     void testKafkaTopicIsNotScaling() {
         assertThrows(KubernetesClientException.class, () -> createScaleDelete(KafkaTopic.class, "KafkaTopic.yaml"));
-    }
-
-    @Test
-    void testKafkaTopicV1beta1() {
-        createDeleteCustomResource("KafkaTopicV1beta1.yaml");
     }
 
     @Test
