@@ -826,11 +826,11 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                         ? new ArrayList<>(existingConfigMap.getMetadata().getOwnerReferences())
                         : new ArrayList<>();
 
-                    OwnerReference ownerReference = ModelUtils.createOwnerReference(resource, false);
+                    OwnerReference strimziOwnerReference = ModelUtils.createOwnerReference(resource, false);
                     // Check if our OwnerReference already exists in the list, if not, add it there
                     if (ownerReferences.stream().noneMatch(or ->
-                        or.getName().equals(ownerReference.getName()) && or.getKind().equals(ownerReference.getKind()))) {
-                        ownerReferences.add(ownerReference);
+                        or.getName().equals(strimziOwnerReference.getName()) && or.getKind().equals(strimziOwnerReference.getKind()))) {
+                        ownerReferences.add(strimziOwnerReference);
                     }
 
                     Map<String, String> data;
