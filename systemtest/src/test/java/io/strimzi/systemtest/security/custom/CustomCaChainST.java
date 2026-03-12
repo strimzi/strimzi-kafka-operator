@@ -102,7 +102,7 @@ public class CustomCaChainST extends AbstractST {
         final String userIntermediateSignedName = "user-intermediate-signed";
         final String userRootSignedName = "user-root-signed";
         final String userForeignSignedName = "user-foreign-signed";
-        final String usedKeyInSecret = "user";
+        final String userKeyInSecret = "user";
 
         final CertAndKey userLeafSigned = generateEndEntityCertAndKey(leafCa,
             SystemTestCertGenerator.retrieveKafkaBrokerSANs(testStorage),
@@ -127,10 +127,10 @@ public class CustomCaChainST extends AbstractST {
         final String customCaCertName = "custom-leaf-ca";
         final CertAndKeyFiles leafCaCertFiles = exportToPemFiles(leafCa);
 
-        SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(), userLeafSignedName, leafSignedFiles, usedKeyInSecret);
-        SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(), userIntermediateSignedName, intermediateSignedFiles, usedKeyInSecret);
-        SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(), userRootSignedName, rootSignedFiles, usedKeyInSecret);
-        SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(), userForeignSignedName, foreignSignedFiles, usedKeyInSecret);
+        SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(), userLeafSignedName, leafSignedFiles, userKeyInSecret);
+        SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(), userIntermediateSignedName, intermediateSignedFiles, userKeyInSecret);
+        SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(), userRootSignedName, rootSignedFiles, userKeyInSecret);
+        SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(), userForeignSignedName, foreignSignedFiles, userKeyInSecret);
         SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(), customCaCertName, leafCaCertFiles);
 
         // Deploy Kafka with custom listener
@@ -222,14 +222,14 @@ public class CustomCaChainST extends AbstractST {
 
     @ParallelNamespaceTest
     @TestDoc(
-        description = @Desc("Verifies that clients can establish trust using any certificate from the CA chain (i.e.,  Leaf CA, Intermediate CA, or Root CA), when the broker presents the full certificate chain. A foreign CA that is not part of the chain should fail to establish trust."),
+        description = @Desc("Verifies that clients can establish trust based on any issuer from the custom CA chain the Leaf CA, Intermediate CA, or the Root CA when the broker presents the full certificate chain. A foreign CA that is not part of the chain should fail to establish trust."),
         steps = {
             @Step(value = "Generate a custom CA chain: Root -> Intermediate -> Leaf.", expected = "CA chain is generated."),
-            @Step(value = "Deploy the full chain as Cluster CA using SystemTestCertBundle.", expected = "Cluster CA secrets are deployed."),
-            @Step(value = "Deploy Kafka cluster with custom Cluster CA.", expected = "Kafka cluster is ready."),
-            @Step(value = "Verify the broker certificate chain contains all certificates.", expected = "Chain contains Root, Intermediate, and Leaf certs."),
-            @Step(value = "Create three trust secrets with different chain levels: full chain, root+intermediate, root only.", expected = "Trust secrets are created."),
-            @Step(value = "For each trust secret, verify that clients can successfully produce and consume messages.", expected = "All three trust configurations succeed."),
+            @Step(value = "Deploy the full chain as Cluster CA and Clients CA secrets.", expected = "CA secrets are deployed."),
+            @Step(value = "Deploy Kafka cluster with custom CAs.", expected = "Kafka cluster is ready."),
+            @Step(value = "Verify the broker certificate chain contains 4 certificates and validate the issuer chain: broker cert -> Leaf CA -> Intermediate CA -> Root CA (self-signed).", expected = "Chain contains 4 certs with correct issuer relationships and CA basic constraints."),
+            @Step(value = "Create five trust secrets with different levels: Root + Intermediate + Leaf, Root + Intermediate, Root only, Intermediate only, Leaf only.", expected = "Trust secrets are created."),
+            @Step(value = "For each trust secret, verify that clients can successfully produce and consume messages.", expected = "All five trust configurations succeed."),
             @Step(value = "Create a trust secret with only a foreign Root CA.", expected = "Foreign trust secret is created."),
             @Step(value = "Verify that clients using the foreign CA trust secret cannot connect.", expected = "Producer/consumer time out due to trust failure.")
         },
@@ -268,14 +268,28 @@ public class CustomCaChainST extends AbstractST {
             .endSpec()
             .build());
 
-        //  Verify broker certificate chain
+        //  Verify broker certificate chain: broker cert -> Leaf CA -> Intermediate CA -> Root CA
         LOGGER.info("Verifying broker certificate chain contains all certificates");
         final String brokerPodName = KubeResourceManager.get().kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getBrokerSelector()).get(0).getMetadata().getName();
         final List<X509Certificate> brokerChain = SecretUtils.getCertificatesFromSecret(
             KubeResourceManager.get().kubeClient().getClient().secrets().inNamespace(testStorage.getNamespaceName()).withName(brokerPodName).get(),
             brokerPodName + ".crt");
         LOGGER.info("Broker certificate chain contains {} certificates", brokerChain.size());
-        assertThat("Broker certificate chain should contain at least the leaf cert", brokerChain.size(), is(greaterThanOrEqualTo(1)));
+        assertThat("Broker certificate chain should contain 4 certs: broker cert, Leaf CA, Intermediate CA, Root CA",
+            brokerChain.size(), is(4));
+
+        final X509Certificate brokerCert = brokerChain.get(0);
+        final X509Certificate leafCaCert = brokerChain.get(1);
+        final X509Certificate intermediateCaCert = brokerChain.get(2);
+        final X509Certificate rootCaCert = brokerChain.get(3);
+
+        assertThat("Broker cert should be issued by Leaf CA", brokerCert.getIssuerX500Principal(), is(leafCaCert.getSubjectX500Principal()));
+        assertThat("Leaf CA cert should be issued by Intermediate CA", leafCaCert.getIssuerX500Principal(), is(intermediateCaCert.getSubjectX500Principal()));
+        assertThat("Leaf CA cert should be a CA", leafCaCert.getBasicConstraints(), is(greaterThanOrEqualTo(0)));
+        assertThat("Intermediate CA cert should be issued by Root CA", intermediateCaCert.getIssuerX500Principal(), is(rootCaCert.getSubjectX500Principal()));
+        assertThat("Intermediate CA cert should be a CA", intermediateCaCert.getBasicConstraints(), is(greaterThanOrEqualTo(0)));
+        assertThat("Root CA cert should be self-signed", rootCaCert.getIssuerX500Principal(), is(rootCaCert.getSubjectX500Principal()));
+        assertThat("Root CA cert should be a CA", rootCaCert.getBasicConstraints(), is(greaterThanOrEqualTo(0)));
 
         //  Create KafkaUser and Topic
         KubeResourceManager.get().createResourceWithWait(KafkaTopicTemplates.topic(testStorage).build());
@@ -285,15 +299,21 @@ public class CustomCaChainST extends AbstractST {
         final String trustFullChainName = "trust-full-chain";
         final String trustRootIntermediateName = "trust-root-intermediate";
         final String trustRootOnlyName = "trust-root-only";
+        final String trustIntermediateOnlyName = "trust-intermediate-only";
+        final String trustLeafOnlyName = "trust-leaf-only";
         final String trustForeignName = "trust-foreign";
 
         final CertAndKeyFiles fullChainFiles = exportToPemFiles(clusterCa.getSystemTestCa(), clusterCa.getIntermediateCa(), clusterCa.getStrimziRootCa());
         final CertAndKeyFiles rootIntermediateFiles = exportToPemFiles(clusterCa.getIntermediateCa(), clusterCa.getStrimziRootCa());
         final CertAndKeyFiles rootOnlyFiles = exportToPemFiles(clusterCa.getStrimziRootCa());
+        final CertAndKeyFiles intermediateOnlyFiles = exportToPemFiles(clusterCa.getIntermediateCa());
+        final CertAndKeyFiles leafOnlyFiles = exportToPemFiles(clusterCa.getSystemTestCa());
 
         SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(), trustFullChainName, fullChainFiles);
         SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(), trustRootIntermediateName, rootIntermediateFiles);
         SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(), trustRootOnlyName, rootOnlyFiles);
+        SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(), trustIntermediateOnlyName, intermediateOnlyFiles);
+        SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(), trustLeafOnlyName, leafOnlyFiles);
 
         // Generate foreign Root CA
         final CertAndKey foreignRootCa = generateRootCaCertAndKey("C=CZ, L=Prague, O=Foreign, CN=ForeignRootCA", null);
@@ -301,7 +321,7 @@ public class CustomCaChainST extends AbstractST {
         SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(), trustForeignName, foreignCaFiles);
 
         //  Verify trust with each chain level
-        final String[] trustSecretNames = {trustFullChainName, trustRootIntermediateName, trustRootOnlyName};
+        final String[] trustSecretNames = {trustFullChainName, trustRootIntermediateName, trustRootOnlyName, trustIntermediateOnlyName, trustLeafOnlyName};
         for (String trustSecretName : trustSecretNames) {
             LOGGER.info("Testing trust establishment with trust secret: {}", trustSecretName);
             final KafkaClients kafkaClients = ClientUtils.getInstantTlsClientBuilder(testStorage)
@@ -330,14 +350,14 @@ public class CustomCaChainST extends AbstractST {
     @Tag(CONNECT)
     @Tag(CONNECT_COMPONENTS)
     @TestDoc(
-        description = @Desc("Verifies that KafkaConnect properly establishes trust when connecting to Kafka using various CA chain configurations."),
+        description = @Desc("Verifies that KafkaConnect properly establishes trust when connecting to Kafka using various custom CA configurations."),
         steps = {
             @Step(value = "Generate a custom CA chain: Root -> Intermediate -> Leaf.", expected = "CA chain is generated."),
             @Step(value = "Generate a Subleaf CA signed by Leaf (Root -> Intermediate -> Leaf -> Subleaf).", expected = "Subleaf CA is generated."),
-            @Step(value = "Deploy the Leaf CA as Cluster CA using SystemTestCertBundle.", expected = "Cluster CA secrets are deployed."),
+            @Step(value = "Deploy the full chain as Cluster CA secrets.", expected = "Cluster CA secrets are deployed."),
             @Step(value = "Deploy Kafka cluster with custom Cluster CA.", expected = "Kafka cluster is ready."),
-            @Step(value = "Create four trust secrets for KafkaConnect: full chain, root+intermediate, root only, and subleaf chain.", expected = "Trust secrets are created."),
-            @Step(value = "For each positive trust config, deploy KafkaConnect and verify it becomes ready.", expected = "KafkaConnect connects successfully."),
+            @Step(value = "Create six trust secrets for KafkaConnect: Root + Intermediate + Leaf, Root + Intermediate, Root only, Intermediate only, Leaf only, and Subleaf chain.", expected = "Trust secrets are created."),
+            @Step(value = "For each valid trust secret (Root + Intermediate + Leaf, Root + Intermediate, Root only, Intermediate only, Leaf only), deploy KafkaConnect and verify it becomes ready.", expected = "KafkaConnect connects successfully."),
             @Step(value = "Deploy KafkaConnect with the Subleaf trust secret and verify it does not become ready.", expected = "KafkaConnect fails to connect.")
         },
         labels = {
@@ -382,21 +402,27 @@ public class CustomCaChainST extends AbstractST {
         final String connectTrustFullName = "trust-full";
         final String connectTrustRootIntermediateName = "trust-root-im";
         final String connectTrustRootName = "trust-root";
+        final String connectTrustIntermediateOnlyName = "trust-im-only";
+        final String connectTrustLeafOnlyName = "trust-leaf-only";
         final String connectTrustSubleafName = "trust-subleaf";
 
         final CertAndKeyFiles fullChainFiles = exportToPemFiles(clusterCa.getSystemTestCa(), clusterCa.getIntermediateCa(), clusterCa.getStrimziRootCa());
         final CertAndKeyFiles rootIntermediateFiles = exportToPemFiles(clusterCa.getIntermediateCa(), clusterCa.getStrimziRootCa());
         final CertAndKeyFiles rootOnlyFiles = exportToPemFiles(clusterCa.getStrimziRootCa());
+        final CertAndKeyFiles intermediateOnlyFiles = exportToPemFiles(clusterCa.getIntermediateCa());
+        final CertAndKeyFiles leafOnlyFiles = exportToPemFiles(clusterCa.getSystemTestCa());
         final CertAndKeyFiles subleafChainFiles = exportToPemFiles(subleafCa, clusterCa.getSystemTestCa(), clusterCa.getIntermediateCa(), clusterCa.getStrimziRootCa());
 
         SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(), connectTrustFullName, fullChainFiles);
         SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(), connectTrustRootIntermediateName, rootIntermediateFiles);
         SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(), connectTrustRootName, rootOnlyFiles);
+        SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(), connectTrustIntermediateOnlyName, intermediateOnlyFiles);
+        SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(), connectTrustLeafOnlyName, leafOnlyFiles);
         SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(), connectTrustSubleafName, subleafChainFiles);
 
         // Positive cases: KafkaConnect should become ready
         // Deploy one at a time to avoid multiple KafkaConnect instances in the same namespace
-        final String[] positiveSecrets = {connectTrustFullName, connectTrustRootIntermediateName, connectTrustRootName};
+        final String[] positiveSecrets = {connectTrustFullName, connectTrustRootIntermediateName, connectTrustRootName, connectTrustIntermediateOnlyName, connectTrustLeafOnlyName};
         for (String trustSecretName : positiveSecrets) {
 
             final String connectClusterName = testStorage.getClusterName() + "-connect-" + trustSecretName;
