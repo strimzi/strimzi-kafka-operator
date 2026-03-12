@@ -21,14 +21,17 @@ import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2MirrorSpecBuilde
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ResourceUtils;
+import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.model.KafkaConnectCluster;
 import io.strimzi.operator.cluster.model.KafkaConnectorOffsetsAnnotation;
 import io.strimzi.operator.cluster.model.KafkaMirrorMaker2Cluster;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.MockSharedEnvironmentProvider;
+import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.cluster.model.SharedEnvironmentProvider;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.model.Labels;
 import io.strimzi.platform.KubernetesVersion;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
@@ -439,6 +442,16 @@ public class KafkaMirrorMaker2AssemblyOperatorConnectorOffsetsTest {
                     assertThat(configMap.getMetadata().getName(), is(CONFIGMAP_NAME));
                     assertThat(configMap.getMetadata().getLabels(), hasEntry("mm2-label", "custom"));
 
+                    assertThat(configMap.getMetadata().getLabels(), hasEntry(Labels.STRIMZI_NAME_LABEL, MM2_NAME));
+                    assertThat(configMap.getMetadata().getLabels(), hasEntry(Labels.STRIMZI_KIND_LABEL, KafkaMirrorMaker2.RESOURCE_KIND));
+                    assertThat(configMap.getMetadata().getLabels(), hasEntry(Labels.STRIMZI_CLUSTER_LABEL, MM2_NAME));
+                    assertThat(configMap.getMetadata().getLabels(), hasEntry(Labels.STRIMZI_COMPONENT_TYPE_LABEL, "kafka-connector"));
+
+                    assertThat(configMap.getMetadata().getLabels(), hasEntry(Labels.KUBERNETES_PART_OF_LABEL, "strimzi-" + MM2_NAME));
+                    assertThat(configMap.getMetadata().getLabels(), hasEntry(Labels.KUBERNETES_MANAGED_BY_LABEL, AbstractModel.STRIMZI_CLUSTER_OPERATOR_NAME));
+                    assertThat(configMap.getMetadata().getLabels(), hasEntry(Labels.KUBERNETES_NAME_LABEL, "kafka-connector"));
+                    assertThat(configMap.getMetadata().getLabels(), hasEntry(Labels.KUBERNETES_INSTANCE_LABEL, MM2_NAME));
+
                     List<OwnerReference> ownerReferenceList = configMap.getMetadata().getOwnerReferences();
                     assertThat(ownerReferenceList, hasSize(1));
                     assertThat(ownerReferenceList.get(0).getName(), is(MM2_NAME));
@@ -473,16 +486,13 @@ public class KafkaMirrorMaker2AssemblyOperatorConnectorOffsetsTest {
                 supplier, ResourceUtils.dummyClusterOperatorConfig(), (vertx) -> mockConnectApi);
         Reconciliation reconciliation = Reconciliation.DUMMY_RECONCILIATION;
 
-        Map<String, String> existingCMLabels = new HashMap<>();
-        existingCMLabels.put("label1", "value1");
         Map<String, String> existingData = new HashMap<>();
         existingData.put("data1", "value1");
         ConfigMap existingCM = new ConfigMapBuilder()
                 .withNewMetadata()
-                .withName(CONFIGMAP_NAME)
-                .withNamespace(NAMESPACE)
-                .withLabels(existingCMLabels)
-                .withOwnerReferences(ResourceUtils.DUMMY_OWNER_REFERENCE)
+                    .withName(CONFIGMAP_NAME)
+                    .withNamespace(NAMESPACE)
+                    .withOwnerReferences(ResourceUtils.DUMMY_OWNER_REFERENCE, ModelUtils.createOwnerReference(kafkaMirrorMaker2, false))
                 .endMetadata()
                 .withData(existingData)
                 .build();
@@ -504,12 +514,25 @@ public class KafkaMirrorMaker2AssemblyOperatorConnectorOffsetsTest {
                     ConfigMap configMap = configMapArgumentCaptor.getValue();
                     assertThat(configMap.getMetadata().getNamespace(), is(NAMESPACE));
                     assertThat(configMap.getMetadata().getName(), is(CONFIGMAP_NAME));
-                    assertThat(configMap.getMetadata().getLabels(), hasEntry("label1", "value1"));
                     assertThat(configMap.getMetadata().getLabels(), hasEntry("mm2-label", "custom"));
 
+                    assertThat(configMap.getMetadata().getLabels(), hasEntry(Labels.STRIMZI_NAME_LABEL, MM2_NAME));
+                    assertThat(configMap.getMetadata().getLabels(), hasEntry(Labels.STRIMZI_KIND_LABEL, KafkaMirrorMaker2.RESOURCE_KIND));
+                    assertThat(configMap.getMetadata().getLabels(), hasEntry(Labels.STRIMZI_CLUSTER_LABEL, MM2_NAME));
+                    assertThat(configMap.getMetadata().getLabels(), hasEntry(Labels.STRIMZI_COMPONENT_TYPE_LABEL, "kafka-connector"));
+
+                    assertThat(configMap.getMetadata().getLabels(), hasEntry(Labels.KUBERNETES_PART_OF_LABEL, "strimzi-" + MM2_NAME));
+                    assertThat(configMap.getMetadata().getLabels(), hasEntry(Labels.KUBERNETES_MANAGED_BY_LABEL, AbstractModel.STRIMZI_CLUSTER_OPERATOR_NAME));
+                    assertThat(configMap.getMetadata().getLabels(), hasEntry(Labels.KUBERNETES_NAME_LABEL, "kafka-connector"));
+                    assertThat(configMap.getMetadata().getLabels(), hasEntry(Labels.KUBERNETES_INSTANCE_LABEL, MM2_NAME));
+
                     List<OwnerReference> ownerReferenceList = configMap.getMetadata().getOwnerReferences();
-                    assertThat(ownerReferenceList, hasSize(1));
-                    assertThat(ownerReferenceList.get(0).getName(), is("my-name"));
+                    assertThat(ownerReferenceList, hasSize(2));
+                    assertThat(ownerReferenceList.get(0).getName(), is(ResourceUtils.DUMMY_OWNER_REFERENCE.getName()));
+                    assertThat(ownerReferenceList.get(0).getKind(), is(ResourceUtils.DUMMY_OWNER_REFERENCE.getKind()));
+                    assertThat(ownerReferenceList.get(1).getName(), is(MM2_NAME));
+                    assertThat(ownerReferenceList.get(1).getKind(), is(Crds.kind(KafkaMirrorMaker2.class)));
+
                     Map<String, String> configMapData = configMap.getData();
                     assertThat(configMapData, hasEntry(getConfigmapEntryName(connector), OFFSETS_JSON));
                     assertThat(configMapData, hasEntry("data1", "value1"));
