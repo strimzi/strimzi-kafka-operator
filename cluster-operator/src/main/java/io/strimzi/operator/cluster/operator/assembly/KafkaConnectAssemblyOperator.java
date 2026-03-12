@@ -33,7 +33,6 @@ import io.strimzi.operator.cluster.model.KafkaConnectBuild;
 import io.strimzi.operator.cluster.model.KafkaConnectCluster;
 import io.strimzi.operator.cluster.model.KafkaConnectorOffsetsAnnotation;
 import io.strimzi.operator.cluster.model.NoSuchResourceException;
-import io.strimzi.operator.cluster.model.logging.LoggingModel;
 import io.strimzi.operator.cluster.operator.VertxUtil;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.CrdOperator;
@@ -160,7 +159,6 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
         final boolean hasZeroReplicas = connect.getReplicas() == 0;
         final boolean useConnectorResources = isUseResources(kafkaConnect);
         final AtomicReference<String> image = new AtomicReference<>();
-        final AtomicReference<String> desiredLogging = new AtomicReference<>();
         String initCrbName = KafkaConnectResources.initContainerClusterRoleBindingName(kafkaConnect.getMetadata().getName(), namespace);
         ClusterRoleBinding initCrb = connect.generateClusterRoleBinding();
 
@@ -188,12 +186,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
                 .compose(i -> tlsTrustedCertsSecret(reconciliation, namespace, connect))
                 .compose(i -> generateMetricsAndLoggingConfigMap(reconciliation, connect))
                 .compose(logAndMetricsConfigMap -> {
-                    String logging = logAndMetricsConfigMap.getData().get(LoggingModel.LOG4J2_CONFIG_MAP_KEY);
-
-                    desiredLogging.set(logging);
-
                     podAnnotations.put(Annotations.ANNO_STRIMZI_IO_CONFIGURATION_HASH, Util.hashStub(logAndMetricsConfigMap.getData().get(KafkaConnectCluster.KAFKA_CONNECT_CONFIGURATION_FILENAME)));
-
                     return configMapOperations.reconcile(reconciliation, namespace, logAndMetricsConfigMap.getMetadata().getName(), logAndMetricsConfigMap);
                 })
                 .compose(i -> ReconcilerUtils.reconcileJmxSecret(reconciliation, secretOperations, connect))
