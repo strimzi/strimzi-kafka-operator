@@ -27,6 +27,7 @@ import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.exporter.KafkaExporterResources;
 import io.strimzi.api.kafka.model.kafka.exporter.KafkaExporterSpec;
 import io.strimzi.api.kafka.model.kafka.exporter.KafkaExporterTemplate;
+import io.strimzi.certs.CertAndKey;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.model.metrics.MetricsModel;
 import io.strimzi.operator.cluster.model.securityprofiles.ContainerSecurityProviderContextImpl;
@@ -295,8 +296,20 @@ public class KafkaExporter extends AbstractModel {
      * @return The generated Secret.
      */
     public Secret generateCertificatesSecret(ClusterCa clusterCa, Secret existingSecret, boolean isMaintenanceTimeWindowsSatisfied) {
-        return CertUtils.buildTrustedCertificateSecret(reconciliation, clusterCa, existingSecret, namespace, KafkaExporterResources.secretName(cluster), componentName,
-                COMPONENT_TYPE, labels, ownerReference, isMaintenanceTimeWindowsSatisfied);
+        CertAndKey existingCertAndKey = CertUtils.keyStoreCertAndKey(existingSecret, COMPONENT_TYPE, clusterCa.caCertGenerationAnnotation());
+
+        CertAndKey updatedCert = clusterCa.maybeCopyOrGenerateClientCert(reconciliation, componentName, existingCertAndKey, isMaintenanceTimeWindowsSatisfied);
+
+        Map<String, String> secretData = CertUtils.buildSecretData(COMPONENT_TYPE, updatedCert);
+        return ModelUtils.createSecret(
+                KafkaExporterResources.secretName(cluster),
+                namespace,
+                labels,
+                ownerReference,
+                secretData,
+                Map.of(clusterCa.caCertGenerationAnnotation(), String.valueOf(updatedCert.caCertGeneration())),
+                Map.of()
+        );
     }
 
     /**

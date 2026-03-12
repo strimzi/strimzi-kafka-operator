@@ -1215,13 +1215,11 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
         Map<String, CertAndKey> existingCerts = new HashMap<>();
         for (NodeRef node : nodes) {
             String podName = node.podName();
-            // Reuse existing certificate if it exists and the CA cert generation hasn't changed since they were generated
+            // Reuse existing certificate if it exists
             if (existingSecretWithName.get(podName) != null) {
-                if (clusterCa.hasCaCertGenerationChanged(existingSecretWithName.get(podName))) {
-                    LOGGER.debugCr(reconciliation, "Certificate for pod {}/{} has old cert generation", namespace, podName);
-                } else {
-                    existingCerts.put(podName, CertUtils.keyStoreCertAndKey(existingSecretWithName.get(podName), podName));
-                }
+                Secret existingSecret = existingSecretWithName.get(podName);
+                CertAndKey nodeCertAndKey = CertUtils.keyStoreCertAndKey(existingSecret, podName, clusterCa.caCertGenerationAnnotation());
+                existingCerts.put(podName, nodeCertAndKey);
             } else {
                 LOGGER.debugCr(reconciliation, "No existing certificate found for pod {}/{}", namespace, podName);
             }

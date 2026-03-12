@@ -11,6 +11,7 @@ import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
+import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
@@ -82,6 +83,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 
 import java.time.Clock;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -229,6 +231,42 @@ public class KafkaAssemblyOperatorWithKRaftTest {
     }
 
     /**
+     * Helper method to create an empty Secret with metadata (in Kubernetes, metadata is never null)
+     */
+    private static Secret mockOperatorSecret() {
+        // Dummy cert valid until 2126 for testing purposes
+        String dummyCert = """
+                -----BEGIN CERTIFICATE-----
+                MIIDlzCCAn+gAwIBAgIUemVt2M8YnfYLntb16p2/oSFQVHEwDQYJKoZIhvcNAQEL
+                BQAwWjELMAkGA1UEBhMCQVUxEzARBgNVBAgMClNvbWUtU3RhdGUxITAfBgNVBAoM
+                GEludGVybmV0IFdpZGdpdHMgUHR5IEx0ZDETMBEGA1UEAwwKY2x1c3Rlci1jYTAg
+                Fw0yNjAyMTYxNTI1MzhaGA8yMTI2MDEyMzE1MjUzOFowWjELMAkGA1UEBhMCQVUx
+                EzARBgNVBAgMClNvbWUtU3RhdGUxITAfBgNVBAoMGEludGVybmV0IFdpZGdpdHMg
+                UHR5IEx0ZDETMBEGA1UEAwwKY2x1c3Rlci1jYTCCASIwDQYJKoZIhvcNAQEBBQAD
+                ggEPADCCAQoCggEBALulA0Z4vXwcQw9BD1ZehrAJPVg6o9ok7WxM6vbSEHc8ptV1
+                97dXy0EoIcaJKnwzbwzqBL0KDVa/ZXpiHnWN/o7eq3ZBXxTv/1SGcgwx4vDN99ui
+                qwyQ+eGBjdiuJ4NbRdD5rM59SOxTvL890RELrRAEW6Cx3v0A0kJkxxKLsxpwfgOY
+                KpY3B46Y+LNx41upA6sLKzWxgATAeXJK5TPtr5Es8wYPYuQR0JGYJJCv2pPABHTr
+                aWGQHkdDjf+YV+VISVtD3yK5uZopKZzy3qv6mhKSP5ZOv9zVFJffHrAyMjSQMiTT
+                iuGZ1bJtz/f+BPxU0JlC18ZORXN7iJLHhErM+hkCAwEAAaNTMFEwHQYDVR0OBBYE
+                FOCa9ssHAazYsg4eCeXJwpVaEWbcMB8GA1UdIwQYMBaAFOCa9ssHAazYsg4eCeXJ
+                wpVaEWbcMA8GA1UdEwEB/wQFMAMBAf8wDQYJKoZIhvcNAQELBQADggEBAI7tgXgb
+                PKrT/0mLDK1qeIC/kCXoeAfv0WvQ8LKlGeaHG8IwXvbZS4ZVkiMIb3dN/A+taY4M
+                3GvYn5O1z0v6BJhDZKVLKQXI0zYW+8w4wjoquELyz7EHR8+8tUNAN6bWoUpo6npO
+                vuP+weaGjg1FHiyxmuMmqC0WqBOl71uyzUxsV4d1iOPNosdBahONQ36BafgUT4CU
+                Vl47oh7M7k/idihozfse+qBWyXR8yqdhunrn6arV0aqtJ0htfXaBNFGfESvl6qhd
+                UEkhEUgk/J/NUrZfq4hmnU0MwPxodua8b8gvl58n9O3f9lbmNc6k9xbt44coZEOx
+                gs5WXXBDclPQMjg=
+                -----END CERTIFICATE-----
+                """;
+        return new SecretBuilder()
+                .withNewMetadata().withName(KafkaResources.clusterOperatorCertsSecretName(CLUSTER_NAME)).endMetadata()
+                .addToData("cluster-operator.key", "key")
+                .addToData("cluster-operator.crt", Base64.getEncoder().encodeToString(dummyCert.getBytes()))
+                .build();
+    }
+
+    /**
      * Tests the regular reconciliation of the Kafka cluster when the UseStrimziPodsSet is already enabled for some time
      *
      * @param context   Test context
@@ -242,6 +280,7 @@ public class KafkaAssemblyOperatorWithKRaftTest {
         SecretOperator secretOps = supplier.secretOperations;
         when(secretOps.reconcile(any(), any(), any(), any())).thenReturn(Future.succeededFuture());
         when(secretOps.listAsync(any(), any(Labels.class))).thenReturn(Future.succeededFuture(List.of()));
+        when(secretOps.getAsync(any(), any())).thenReturn(Future.succeededFuture());
 
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
         when(mockCmOps.listAsync(any(), eq(KAFKA_CLUSTER.getSelectorLabels()))).thenReturn(Future.succeededFuture(List.of()));
@@ -350,6 +389,7 @@ public class KafkaAssemblyOperatorWithKRaftTest {
         SecretOperator secretOps = supplier.secretOperations;
         when(secretOps.reconcile(any(), any(), any(), any())).thenReturn(Future.succeededFuture());
         when(secretOps.listAsync(any(), any(Labels.class))).thenReturn(Future.succeededFuture(List.of()));
+        when(secretOps.getAsync(any(), any())).thenReturn(Future.succeededFuture());
 
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
         when(mockCmOps.listAsync(any(), eq(KAFKA_CLUSTER.getSelectorLabels()))).thenReturn(Future.succeededFuture(KAFKA_CLUSTER.generatePerBrokerConfigurationConfigMaps(new MetricsAndLogging(null, null), ADVERTISED_HOSTNAMES, ADVERTISED_PORTS)));
@@ -453,6 +493,7 @@ public class KafkaAssemblyOperatorWithKRaftTest {
         SecretOperator secretOps = supplier.secretOperations;
         when(secretOps.reconcile(any(), any(), any(), any())).thenReturn(Future.succeededFuture());
         when(secretOps.listAsync(any(), any(Labels.class))).thenReturn(Future.succeededFuture(List.of()));
+        when(secretOps.getAsync(any(), any())).thenReturn(Future.succeededFuture());
 
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
         when(mockCmOps.listAsync(any(), eq(oldKafkaCluster.getSelectorLabels()))).thenReturn(Future.succeededFuture(oldKafkaCluster.generatePerBrokerConfigurationConfigMaps(new MetricsAndLogging(null, null), ADVERTISED_HOSTNAMES, ADVERTISED_PORTS)));
@@ -546,7 +587,7 @@ public class KafkaAssemblyOperatorWithKRaftTest {
 
         SecretOperator secretOps = supplier.secretOperations;
         when(secretOps.reconcile(any(), any(), any(), any())).thenReturn(Future.succeededFuture());
-        when(secretOps.getAsync(any(), any())).thenReturn(Future.succeededFuture(new Secret()));
+        when(secretOps.getAsync(any(), any())).thenReturn(Future.succeededFuture(mockOperatorSecret()));
         when(secretOps.listAsync(any(), any(Labels.class))).thenReturn(Future.succeededFuture(List.of()));
 
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
@@ -674,7 +715,7 @@ public class KafkaAssemblyOperatorWithKRaftTest {
 
         SecretOperator secretOps = supplier.secretOperations;
         when(secretOps.reconcile(any(), any(), any(), any())).thenReturn(Future.succeededFuture());
-        when(secretOps.getAsync(any(), any())).thenReturn(Future.succeededFuture(new Secret()));
+        when(secretOps.getAsync(any(), any())).thenReturn(Future.succeededFuture(mockOperatorSecret()));
         when(secretOps.listAsync(any(), any(Labels.class))).thenReturn(Future.succeededFuture(List.of()));
 
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
@@ -828,7 +869,7 @@ public class KafkaAssemblyOperatorWithKRaftTest {
 
         SecretOperator secretOps = supplier.secretOperations;
         when(secretOps.reconcile(any(), any(), any(), any())).thenReturn(Future.succeededFuture());
-        when(secretOps.getAsync(any(), any())).thenReturn(Future.succeededFuture(new Secret()));
+        when(secretOps.getAsync(any(), any())).thenReturn(Future.succeededFuture(mockOperatorSecret()));
         when(secretOps.listAsync(any(), any(Labels.class))).thenReturn(Future.succeededFuture(List.of()));
 
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
@@ -991,7 +1032,7 @@ public class KafkaAssemblyOperatorWithKRaftTest {
 
         SecretOperator secretOps = supplier.secretOperations;
         when(secretOps.reconcile(any(), any(), any(), any())).thenReturn(Future.succeededFuture());
-        when(secretOps.getAsync(any(), any())).thenReturn(Future.succeededFuture(new Secret()));
+        when(secretOps.getAsync(any(), any())).thenReturn(Future.succeededFuture(mockOperatorSecret()));
         when(secretOps.listAsync(any(), any(Labels.class))).thenReturn(Future.succeededFuture(List.of()));
 
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
@@ -1157,7 +1198,7 @@ public class KafkaAssemblyOperatorWithKRaftTest {
 
         SecretOperator secretOps = supplier.secretOperations;
         when(secretOps.reconcile(any(), any(), any(), any())).thenReturn(Future.succeededFuture());
-        when(secretOps.getAsync(any(), any())).thenReturn(Future.succeededFuture(new Secret()));
+        when(secretOps.getAsync(any(), any())).thenReturn(Future.succeededFuture(mockOperatorSecret()));
         when(secretOps.listAsync(any(), any(Labels.class))).thenReturn(Future.succeededFuture(List.of()));
 
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
@@ -1298,7 +1339,7 @@ public class KafkaAssemblyOperatorWithKRaftTest {
 
         SecretOperator secretOps = supplier.secretOperations;
         when(secretOps.reconcile(any(), any(), any(), any())).thenReturn(Future.succeededFuture());
-        when(secretOps.getAsync(any(), any())).thenReturn(Future.succeededFuture(new Secret()));
+        when(secretOps.getAsync(any(), any())).thenReturn(Future.succeededFuture(mockOperatorSecret()));
         when(secretOps.listAsync(any(), any(Labels.class))).thenReturn(Future.succeededFuture(List.of()));
 
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
@@ -1439,6 +1480,7 @@ public class KafkaAssemblyOperatorWithKRaftTest {
         SecretOperator secretOps = supplier.secretOperations;
         when(secretOps.reconcile(any(), any(), any(), any())).thenReturn(Future.succeededFuture());
         when(secretOps.listAsync(any(), any(Labels.class))).thenReturn(Future.succeededFuture(List.of()));
+        when(secretOps.getAsync(eq(NAMESPACE), eq(KafkaResources.clusterOperatorCertsSecretName(CLUSTER_NAME)))).thenReturn(Future.succeededFuture(mockOperatorSecret()));
 
         PodOperator mockPodOps = supplier.podOperations;
         when(mockPodOps.listAsync(any(), any(Labels.class))).thenReturn(Future.succeededFuture(Collections.emptyList()));
@@ -1639,6 +1681,7 @@ public class KafkaAssemblyOperatorWithKRaftTest {
         SecretOperator secretOps = supplier.secretOperations;
         when(secretOps.reconcile(any(), any(), any(), any())).thenReturn(Future.succeededFuture());
         when(secretOps.listAsync(any(), any(Labels.class))).thenReturn(Future.succeededFuture(List.of()));
+        when(secretOps.getAsync(any(), any())).thenReturn(Future.succeededFuture());
 
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
         when(mockCmOps.listAsync(any(), eq(KAFKA_CLUSTER.getSelectorLabels()))).thenReturn(Future.succeededFuture(List.of()));

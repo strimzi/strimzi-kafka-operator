@@ -448,18 +448,20 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
         Map<String, CertAndKey> ccCerts = new HashMap<>(4);
         LOGGER.debugCr(reconciliation, "Generating certificates");
         try {
-            Set<NodeRef> nodes = Set.of(new NodeRef(CruiseControl.COMPONENT_TYPE, 0, null, false, false));
-            ccCerts = clusterCa.generateCcCerts(namespace, clusterName,
-                    // Only pass existing certificates if the CA cert generation hasn't changed since they were generated
-                    clusterCa.hasCaCertGenerationChanged(existingSecret) ? Map.of() : CertUtils.extractCertsAndKeysFromSecret(existingSecret, nodes),
-                    nodes, isMaintenanceTimeWindowsSatisfied);
+            CertAndKey existingCertAndKey = CertUtils.keyStoreCertAndKey(existingSecret, CruiseControl.COMPONENT_TYPE, clusterCa.caCertGenerationAnnotation());
+
+            ccCerts = clusterCa.generateCcCerts(namespace, clusterName, existingCertAndKey,
+                    new NodeRef(CruiseControl.COMPONENT_TYPE, 0, null, false, false),
+                    isMaintenanceTimeWindowsSatisfied);
         } catch (IOException e) {
             LOGGER.warnCr(reconciliation, "Error while generating certificates", e);
         }
         LOGGER.debugCr(reconciliation, "End generating certificates");
 
         return ModelUtils.createSecret(CruiseControlResources.secretName(cluster), namespace, labels, ownerReference,
-                CertUtils.buildSecretData(ccCerts), Map.ofEntries(clusterCa.caCertGenerationFullAnnotation()), Map.of());
+                CertUtils.buildSecretData(ccCerts),
+                Map.of(clusterCa.caCertGenerationAnnotation(), String.valueOf(ccCerts.get(CruiseControl.COMPONENT_TYPE).caCertGeneration())),
+                Map.of());
     }
 
     /**

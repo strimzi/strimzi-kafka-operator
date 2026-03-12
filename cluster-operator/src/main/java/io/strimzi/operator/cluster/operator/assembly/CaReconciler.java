@@ -16,6 +16,7 @@ import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlResources;
 import io.strimzi.api.kafka.model.kafka.exporter.KafkaExporterResources;
 import io.strimzi.api.kafka.model.podset.StrimziPodSet;
+import io.strimzi.certs.CertAndKey;
 import io.strimzi.certs.CertManager;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.model.AbstractModel;
@@ -352,22 +353,25 @@ public class CaReconciler {
         return secretOperator.getAsync(reconciliation.namespace(), KafkaResources.clusterOperatorCertsSecretName(reconciliation.name()))
                 .compose(oldSecret -> {
                     coSecret = oldSecret;
+                    String componentName = "cluster-operator";
                     if (oldSecret != null && this.isClusterCaNeedFullTrust) {
                         LOGGER.warnCr(reconciliation, "Cluster CA needs to be fully trusted across the cluster, keeping current CO secret and certs");
                         return Future.succeededFuture();
                     }
 
-                    coSecret = CertUtils.buildTrustedCertificateSecret(
-                            reconciliation,
-                            clusterCa,
-                            coSecret,
-                            reconciliation.namespace(),
+                    CertAndKey oldCertAndKey = CertUtils.keyStoreCertAndKey(oldSecret, componentName, Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION);
+
+                    CertAndKey updatedCert = clusterCa.maybeCopyOrGenerateClientCert(reconciliation, componentName, oldCertAndKey, Util.isMaintenanceTimeWindowsSatisfied(reconciliation, maintenanceWindows, clock.instant()));
+
+                    Map<String, String> secretData = CertUtils.buildSecretData(componentName, updatedCert);
+                    coSecret = ModelUtils.createSecret(
                             KafkaResources.clusterOperatorCertsSecretName(reconciliation.name()),
-                            "cluster-operator",
-                            "cluster-operator",
+                            reconciliation.namespace(),
                             clusterOperatorSecretLabels,
                             ownerRef,
-                            Util.isMaintenanceTimeWindowsSatisfied(reconciliation, maintenanceWindows, clock.instant())
+                            secretData,
+                            Map.of(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, String.valueOf(updatedCert.caCertGeneration())),
+                            Map.of()
                     );
 
                     return secretOperator.reconcile(reconciliation, reconciliation.namespace(), KafkaResources.clusterOperatorCertsSecretName(reconciliation.name()), coSecret)
