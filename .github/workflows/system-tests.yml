@@ -63,7 +63,7 @@ jobs:
       - name: Determine checkout ref
         id: determine_ref
         if: steps.should_run.outputs.shouldRun == 'true'
-        uses: strimzi/github-actions/.github/actions/utils/determine-ref@main
+        uses: frawless/github-actions/.github/actions/utils/determine-ref@v6.7
       - name: Parse Comment
         id: parse
         if: steps.should_run.outputs.shouldRun == 'true'
@@ -85,7 +85,7 @@ jobs:
       pull-requests: write
       statuses: write
     steps:
-      - uses: strimzi/github-actions/.github/actions/utils/check-permissions@main
+      - uses: frawless/github-actions/.github/actions/utils/check-permissions@v6
 
   check-build:
     needs:
@@ -221,7 +221,7 @@ jobs:
           ref: ${{ needs.parse-params.outputs.ref }}
 
       - name: Setup Java and Maven
-        uses: strimzi/github-actions/.github/actions/dependencies/setup-java@main
+        uses: frawless/github-actions/.github/actions/dependencies/setup-java@v6.1
         with:
           javaVersion: "21"
 
