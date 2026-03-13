@@ -52,16 +52,21 @@ jobs:
       kafkaVersion: ${{ steps.parse.outputs.kafkaVersion }}
       releaseVersion: ${{ steps.parse.outputs.releaseVersion }}
       parallel: ${{ steps.parse.outputs.parallel }}
-      shouldRun: ${{ steps.parse.outputs.shouldRun }}
+      shouldRun: ${{ steps.should_run.outputs.shouldRun }}
       kubeVersion: ${{ steps.parse.outputs.kubeVersion }}
       ref: ${{ steps.determine_ref.outputs.ref }}
       sha: ${{ steps.determine_ref.outputs.sha }}
     steps:
+      - name: Should Run
+        id: should_run
+        uses: strimzi/github-actions/.github/actions/utils/should-run@main
       - name: Determine checkout ref
         id: determine_ref
-        uses: strimzi/strimzi-kafka-operator/.github/actions/utils/determine-ref@main
+        if: steps.should_run.outputs.shouldRun == 'true'
+        uses: strimzi/github-actions/.github/actions/utils/determine-ref@main
       - name: Parse Comment
         id: parse
+        if: steps.should_run.outputs.shouldRun == 'true'
         uses: strimzi/strimzi-kafka-operator/.github/actions/systemtests/parse-comment@main
         with:
           # Parameters from manual trigger via UI
@@ -80,11 +85,7 @@ jobs:
       pull-requests: write
       statuses: write
     steps:
-      - uses: strimzi/strimzi-kafka-operator/.github/actions/utils/check-permissions@main
-      # In case the user has proper rights, print comment with build link and set status
-      - uses: actions/checkout@v6
-        with:
-          ref: ${{ needs.parse-params.outputs.ref }}
+      - uses: strimzi/github-actions/.github/actions/utils/check-permissions@main
 
   check-build:
     needs:
