@@ -354,8 +354,8 @@ public class CustomCaChainST extends AbstractST {
         steps = {
             @Step(value = "Generate a custom CA chain: Root -> Intermediate -> Leaf.", expected = "CA chain is generated."),
             @Step(value = "Generate a Subleaf CA signed by Leaf (Root -> Intermediate -> Leaf -> Subleaf).", expected = "Subleaf CA is generated."),
-            @Step(value = "Deploy the full chain as Cluster CA secrets.", expected = "Cluster CA secrets are deployed."),
-            @Step(value = "Deploy Kafka cluster with custom Cluster CA.", expected = "Kafka cluster is ready."),
+            @Step(value = "Deploy the full custom CA chain as Cluster CA secrets.", expected = "Cluster CA secrets are deployed."),
+            @Step(value = "Deploy Kafka cluster with custom Cluster CA so that broker certificates are signed by the Leaf CA.", expected = "Kafka cluster is ready."),
             @Step(value = "Create six trust secrets for KafkaConnect: Root + Intermediate + Leaf, Root + Intermediate, Root only, Intermediate only, Leaf only, and Subleaf chain.", expected = "Trust secrets are created."),
             @Step(value = "For each valid trust secret (Root + Intermediate + Leaf, Root + Intermediate, Root only, Intermediate only, Leaf only), deploy KafkaConnect and verify it becomes ready.", expected = "KafkaConnect connects successfully."),
             @Step(value = "Deploy KafkaConnect with the Subleaf trust secret and verify it does not become ready.", expected = "KafkaConnect fails to connect.")

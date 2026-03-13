@@ -18,8 +18,8 @@
 | - | - | - |
 | 1. | Generate a custom CA chain: Root -> Intermediate -> Leaf. | CA chain is generated. |
 | 2. | Generate a Subleaf CA signed by Leaf (Root -> Intermediate -> Leaf -> Subleaf). | Subleaf CA is generated. |
-| 3. | Deploy the full chain as Cluster CA secrets. | Cluster CA secrets are deployed. |
-| 4. | Deploy Kafka cluster with custom Cluster CA. | Kafka cluster is ready. |
+| 3. | Deploy the full custom CA chain as Cluster CA secrets. | Cluster CA secrets are deployed. |
+| 4. | Deploy Kafka cluster with custom Cluster CA so that broker certificates are signed by the Leaf CA. | Kafka cluster is ready. |
 | 5. | Create six trust secrets for KafkaConnect: Root + Intermediate + Leaf, Root + Intermediate, Root only, Intermediate only, Leaf only, and Subleaf chain. | Trust secrets are created. |
 | 6. | For each valid trust secret (Root + Intermediate + Leaf, Root + Intermediate, Root only, Intermediate only, Leaf only), deploy KafkaConnect and verify it becomes ready. | KafkaConnect connects successfully. |
 | 7. | Deploy KafkaConnect with the Subleaf trust secret and verify it does not become ready. | KafkaConnect fails to connect. |
