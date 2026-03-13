@@ -154,7 +154,14 @@ public class KRaftVersionChangeCreator {
             versionTo = versionFromCr;
         } else {
             // Highest Kafka version used by the brokers is equal or lower than desired => suspected upgrade
-            versionFrom = versions.version(lowestKafkaVersion);
+            try {
+                versionFrom = versions.version(lowestKafkaVersion);
+            } catch (KafkaUpgradeException exception) {
+                // From version is unknown but we try to handle it
+                LOGGER.warnCr(reconciliation, "Upgrading from unknown Kafka version {}", lowestKafkaVersion);
+                versionFrom = new KafkaVersion(lowestKafkaVersion, currentMetadataVersion, false, false, null);
+            }
+
             versionTo = versionFromCr;
         }
 
