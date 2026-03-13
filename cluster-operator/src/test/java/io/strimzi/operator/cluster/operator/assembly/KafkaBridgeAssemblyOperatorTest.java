@@ -63,6 +63,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 
+import static io.strimzi.operator.cluster.ResourceUtils.DUMMY_CERT;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static org.hamcrest.CoreMatchers.is;
@@ -830,8 +831,8 @@ public class KafkaBridgeAssemblyOperatorTest {
         Secret tlsSecret = new SecretBuilder()
                 .withNewMetadata().withName("shared-tls-secret").endMetadata()
                 .withData(Map.of(
-                        "ca.crt", Util.encodeToBase64("-----BEGIN CERTIFICATE-----\ntest-cert\n-----END CERTIFICATE-----"),
-                        "ca2.crt", Util.encodeToBase64("-----BEGIN CERTIFICATE-----\ntest-cert-2\n-----END CERTIFICATE-----")))
+                        "ca.crt", Util.encodeToBase64(DUMMY_CERT),
+                        "ca2.crt", Util.encodeToBase64(DUMMY_CERT)))
                 .build();
         when(mockSecretOps.getAsync(eq(kbNamespace), eq("shared-tls-secret"))).thenReturn(Future.succeededFuture(tlsSecret));
 
