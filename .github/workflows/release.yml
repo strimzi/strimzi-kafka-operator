@@ -140,6 +140,7 @@ jobs:
           containerTag: "${{ inputs.releaseVersion }}-${{ inputs.releaseSuffix }}"
           architectures: "amd64,arm64,ppc64le,s390x"
           artifactSuffix: "operators"
+          buildRunId: ${{ inputs.sourceBuildRunId }}
 
   # Push containers without suffix (e.g., 0.49.0)
   push-containers:
