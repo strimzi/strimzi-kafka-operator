@@ -43,13 +43,13 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
+import static io.strimzi.operator.cluster.ResourceUtils.DUMMY_CERT;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.contains;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -77,30 +77,6 @@ public class ReconcilerUtilsTest {
             .endMetadata()
             .withData(Map.of("jmx-username", "username", "jmx-password", "password"))
             .build();
-    // This certificate is used for testing purposes only and is not a real certificate. It is valid until 2118,
-    // so it should not cause any issues with the tests.
-    private final static String DUMMY_CERT = """
-            -----BEGIN CERTIFICATE-----
-            MIIDhjCCAm6gAwIBAgIJANzx2pPcYgmlMA0GCSqGSIb3DQEBCwUAMFcxCzAJBgNV
-            BAYTAlhYMRUwEwYDVQQHDAxEZWZhdWx0IENpdHkxHDAaBgNVBAoME0RlZmF1bHQg
-            Q29tcGFueSBMdGQxEzARBgNVBAMMCmNsdXN0ZXItY2EwIBcNMTgwODIzMTYxOTU0
-            WhgPMjExODA3MzAxNjE5NTRaMFcxCzAJBgNVBAYTAlhYMRUwEwYDVQQHDAxEZWZh
-            dWx0IENpdHkxHDAaBgNVBAoME0RlZmF1bHQgQ29tcGFueSBMdGQxEzARBgNVBAMM
-            CmNsdXN0ZXItY2EwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDbFnJj
-            90sKoM35VszJsfwNvO5dshoeFIb2idf7h+l0h3GMv29j+1XtmLJGzxiYy320KFZr
-            3IKWbq+DabqdlqEqZm9NZ1Kq9d7mB10zulQce5JwVZ3FqpCmLku2jHCaDXzTKC3T
-            /Xp0O9Oe8+42ysSMCTd8p8aZ4vAyJMCKcoyVCGHrUWVba40D7cQNOlhJplSzHZdL
-            FYZ13kwzpT5GpDEPhGVmtF8qV918lSxvdpuepyeFdOSYY88FEMMLLrlZG4QCPyES
-            4FpcUXMzzvZeLIlZnKNIYbao3Kx+yZv//wjC80/pqdyoZ5+K5hDxjby2+f+2dh0T
-            adKRZC2pp+j3/z63AgMBAAGjUzBRMB0GA1UdDgQWBBThuvddCb/5TPSKYNOHkCTL
-            VghhRzAfBgNVHSMEGDAWgBThuvddCb/5TPSKYNOHkCTLVghhRzAPBgNVHRMBAf8E
-            BTADAQH/MA0GCSqGSIb3DQEBCwUAA4IBAQBA6oTI27dJgbVtyWxQWznKrkznZ9+t
-            mQQGbpfl9zEg7/0X7fFb+m84QHro+aNnQ4kTgZ6QBvusIpwfx1F6lQrraVrPr142
-            4DqGmY9xReNu/fj+C+8lTI5PA+mE7tMrLpQvKxI+AMttvlz8eo1SITUA+kJEiWZX
-            mjvyHXmhic4K8SnnB0gnFzHN4y09wLqRMNCRH+aI+sa9Wu8cqvpTqlelVcYV83zu
-            ydx4VZkC+zTzjI418znN/NU2CMpxLZNl0/zCrspID7v34NRmJ1AHFcrn7/XhsSvz
-            D0z+vgrfionoRhyWUDh7POlWwdUOWiBDBOFrkgeKNphSC0glYFN+2IW7
-            -----END CERTIFICATE-----""";
 
     @Test
     public void testControllerNameFromPodName() {
@@ -408,11 +384,6 @@ public class ReconcilerUtilsTest {
                 .withPasswordSecret(pwd)
                 .build();
 
-        CertSecretSource css = new CertSecretSourceBuilder()
-                .withCertificate("key")
-                .withSecretName("css-secret")
-                .build();
-
         Secret secret = new SecretBuilder()
                 .withData(Map.of("key", "dmFsdWU="))
                 .build();
@@ -425,7 +396,7 @@ public class ReconcilerUtilsTest {
         when(secretOps.getAsync(eq(namespace), eq("top-secret-pwd"))).thenReturn(Future.succeededFuture(secret));
         when(secretOps.getAsync(eq(namespace), eq("css-secret"))).thenReturn(Future.succeededFuture(cssSecret));
 
-        Future<Integer> res = ReconcilerUtils.authTlsHash(secretOps, "ns", kcu, singletonList(css));
+        Future<Integer> res = ReconcilerUtils.authTlsHash(secretOps, "ns", kcu, singletonList(DUMMY_CERT));
         res.onComplete(v -> {
             assertThat(v.succeeded(), is(true));
             // we are summing "value" hash four times
@@ -454,68 +425,6 @@ public class ReconcilerUtilsTest {
             assertThat(v.succeeded(), is(false));
             assertThat(v.cause().getMessage(), is("Secret top-secret-pwd not found in namespace ns"));
         });
-    }
-
-    @Test
-    void getHashForPattern(VertxTestContext context) {
-        String namespace = "ns";
-
-        CertSecretSource cert1 = new CertSecretSourceBuilder()
-                .withSecretName("cert-secret")
-                .withPattern("*.crt")
-                .build();
-        CertSecretSource cert2 = new CertSecretSourceBuilder()
-                .withSecretName("cert-secret2")
-                .withPattern("*.crt")
-                .build();
-        CertSecretSource cert3 = new CertSecretSourceBuilder()
-                .withSecretName("cert-secret3")
-                .withCertificate("my.crt")
-                .build();
-
-        Secret secret = new SecretBuilder()
-                .withData(Map.of("ca.crt", Util.encodeToBase64(DUMMY_CERT), "ca2.crt", Util.encodeToBase64(DUMMY_CERT)))
-                .build();
-        Secret secret2 = new SecretBuilder()
-                .withData(Map.of("ca3.key", Util.encodeToBase64(DUMMY_CERT), "ca3.crt", Util.encodeToBase64(DUMMY_CERT)))
-                .build();
-        Secret secret3 = new SecretBuilder()
-                .withData(Map.of("my.crt", Util.encodeToBase64(DUMMY_CERT)))
-                .build();
-
-        SecretOperator secretOps = mock(SecretOperator.class);
-        when(secretOps.getAsync(eq(namespace), eq("cert-secret"))).thenReturn(Future.succeededFuture(secret));
-        when(secretOps.getAsync(eq(namespace), eq("cert-secret2"))).thenReturn(Future.succeededFuture(secret2));
-        when(secretOps.getAsync(eq(namespace), eq("cert-secret3"))).thenReturn(Future.succeededFuture(secret3));
-
-        Checkpoint async = context.checkpoint();
-        ReconcilerUtils.authTlsHash(secretOps, "ns", null, List.of(cert1, cert2, cert3)).onComplete(context.succeeding(res -> {
-            assertThat(res, is((DUMMY_CERT + "\n" + DUMMY_CERT).hashCode() + DUMMY_CERT.hashCode() + DUMMY_CERT.hashCode())); // The certs from cert-secret are merged, the other two are separate
-            async.flag();
-        }));
-    }
-
-    @Test
-    void getHashPatternNotMatching(VertxTestContext context) {
-        String namespace = "ns";
-
-        CertSecretSource cert1 = new CertSecretSourceBuilder()
-                .withSecretName("cert-secret")
-                .withPattern("*.pem")
-                .build();
-
-        Secret secret = new SecretBuilder()
-                .withData(Map.of("ca.crt", "value", "ca2.crt", "value2"))
-                .build();
-
-        SecretOperator secretOps = mock(SecretOperator.class);
-        when(secretOps.getAsync(eq(namespace), eq("cert-secret"))).thenReturn(Future.succeededFuture(secret));
-
-        Checkpoint async = context.checkpoint();
-        ReconcilerUtils.authTlsHash(secretOps, "ns", null, singletonList(cert1)).onComplete(context.succeeding(res -> {
-            assertThat(res, is(0));
-            async.flag();
-        }));
     }
 
     @Test
@@ -695,7 +604,7 @@ public class ReconcilerUtilsTest {
 
         Checkpoint async = context.checkpoint();
         ReconcilerUtils.trustedCertificates(Reconciliation.DUMMY_RECONCILIATION, secretOps, List.of(cert1, cert2, cert3)).onComplete(context.succeeding(res -> {
-            assertThat(res, is(DUMMY_CERT + "\n" + DUMMY_CERT + "\n" + DUMMY_CERT));
+            assertThat(res, is(List.of(DUMMY_CERT, DUMMY_CERT, DUMMY_CERT)));
             async.flag();
         }));
     }

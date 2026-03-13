@@ -70,6 +70,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static io.strimzi.operator.cluster.ResourceUtils.DUMMY_CERT;
 import static java.util.Collections.emptyList;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
@@ -1407,7 +1408,7 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
         // Mock Secrets - the shared TLS secret used by both source and target clusters
         Secret tlsSecret = new SecretBuilder()
                 .withNewMetadata().withName("shared-tls-secret").endMetadata()
-                .withData(Map.of("ca.crt", Util.encodeToBase64("-----BEGIN CERTIFICATE-----\ntest-cert\n-----END CERTIFICATE-----")))
+                .withData(Map.of("ca.crt", Util.encodeToBase64(DUMMY_CERT)))
                 .build();
 
         SecretOperator mockSecretOps = supplier.secretOperations;

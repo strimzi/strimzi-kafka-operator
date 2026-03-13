@@ -19,7 +19,6 @@ import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.strimzi.api.kafka.model.common.CertSecretSourceBuilder;
-import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationOAuthBuilder;
 import io.strimzi.api.kafka.model.connect.ConnectorPlugin;
 import io.strimzi.api.kafka.model.connect.ConnectorPluginBuilder;
 import io.strimzi.api.kafka.model.connect.KafkaConnect;
@@ -81,6 +80,7 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiPredicate;
 
+import static io.strimzi.operator.cluster.ResourceUtils.DUMMY_CERT;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.hamcrest.CoreMatchers.containsString;
@@ -2146,18 +2146,6 @@ public class KafkaConnectAssemblyOperatorPodSetTest {
                                     .build()
                         ))
                     .endTls()
-                    .withAuthentication(new KafkaClientAuthenticationOAuthBuilder()
-                            .withTlsTrustedCertificates(List.of(
-                                new CertSecretSourceBuilder()
-                                    .withSecretName("oauth-shared-secret")
-                                    .withCertificate("ca.crt")
-                                    .build()
-                            ))
-                            .withNewAccessToken()
-                                .withSecretName("oauth-shared-secret")
-                                .withKey("accessToken")
-                            .endAccessToken()
-                        .build())
                 .endSpec()
                 .build();
 
@@ -2196,21 +2184,13 @@ public class KafkaConnectAssemblyOperatorPodSetTest {
         Secret tlsSecret = new SecretBuilder()
             .withNewMetadata().withName("shared-tls-secret").endMetadata()
             .withData(Map.of(
-                "ca.crt", Util.encodeToBase64("-----BEGIN CERTIFICATE-----\ntest-cert\n-----END CERTIFICATE-----"),
-                "ca2.crt", Util.encodeToBase64("-----BEGIN CERTIFICATE-----\ntest-cert-2\n-----END CERTIFICATE-----")))
-            .build();
-
-        Secret oauthSecret = new SecretBuilder()
-            .withNewMetadata().withName("oauth-shared-secret").endMetadata()
-            .withData(Map.of(
-                "accessToken", Util.encodeToBase64("test-token"),
-                "ca.crt", Util.encodeToBase64("-----BEGIN CERTIFICATE-----\ntest-cert\n-----END CERTIFICATE-----")))
+                "ca.crt", Util.encodeToBase64(DUMMY_CERT),
+                "ca2.crt", Util.encodeToBase64(DUMMY_CERT)))
             .build();
 
         SecretOperator mockSecretOps = supplier.secretOperations;
         when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaConnectResources.jmxSecretName(NAME)))).thenReturn(Future.succeededFuture());
         when(mockSecretOps.getAsync(eq(NAMESPACE), eq("shared-tls-secret"))).thenReturn(Future.succeededFuture(tlsSecret));
-        when(mockSecretOps.getAsync(eq(NAMESPACE), eq("oauth-shared-secret"))).thenReturn(Future.succeededFuture(oauthSecret));
         when(mockSecretOps.reconcile(any(), eq(NAMESPACE), any(), any())).thenReturn(Future.succeededFuture());
 
         // Mock Connect CRs
