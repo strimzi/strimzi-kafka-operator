@@ -145,10 +145,7 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
             }
 
             if (result == null) {
-                throw new KafkaUpgradeException(String.format(
-                        "Unsupported Kafka.spec.kafka.version: %s. " +
-                                "Supported versions are: %s",
-                        version, map.keySet()));
+                throw new KafkaUpgradeException(String.format("Unknown Kafka.spec.kafka.version: %s. Known versions are: %s", version, map.keySet()));
             }
 
             return result;

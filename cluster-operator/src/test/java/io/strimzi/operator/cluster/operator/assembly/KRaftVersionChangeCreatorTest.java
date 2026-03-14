@@ -31,6 +31,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -444,7 +445,7 @@ public class KRaftVersionChangeCreatorTest {
     
     @Test
     public void testDowngradeFromUnknownVersion(VertxTestContext context) {
-        String unknownVersion = KafkaVersionTestUtils.UNKNOWN_KAFKA_VERSION;
+        String unknownVersion = KafkaVersionTestUtils.HIGH_UNKNOWN_KAFKA_VERSION;
         KRaftVersionChangeCreator vcc = mockVersionChangeCreator(
                 mockKafka(VERSIONS.version(KafkaVersionTestUtils.LATEST_KAFKA_VERSION).version(), VERSIONS.version(KafkaVersionTestUtils.LATEST_KAFKA_VERSION).metadataVersion(), VERSIONS.version(KafkaVersionTestUtils.LATEST_KAFKA_VERSION).metadataVersion()),
                 mockRos(mockUniformPods(unknownVersion))
@@ -458,6 +459,29 @@ public class KRaftVersionChangeCreatorTest {
 
             async.flag();
         })));
+    }
+
+    @Test
+    public void testUpgradeFromUnknownVersion(VertxTestContext context) {
+        KRaftVersionChangeCreator vcc = mockVersionChangeCreator(
+                mockKafka(VERSIONS.version(KafkaVersionTestUtils.LATEST_KAFKA_VERSION).version(), VERSIONS.version(KafkaVersionTestUtils.LATEST_KAFKA_VERSION).metadataVersion(), "3.9-IV99"),
+                mockRos(mockUniformPods(KafkaVersionTestUtils.LOW_UNKNOWN_KAFKA_VERSION))
+        );
+
+        Checkpoint async = context.checkpoint();
+        vcc.reconcile().onComplete(context.succeeding(c -> context.verify(() -> {
+            assertThat(c.from().version(), is(KafkaVersionTestUtils.LOW_UNKNOWN_KAFKA_VERSION));
+            assertThat(c.to(), is(VERSIONS.version(KafkaVersionTestUtils.LATEST_KAFKA_VERSION)));
+            assertThat(c.metadataVersion(), is(VERSIONS.version(KafkaVersionTestUtils.LATEST_KAFKA_VERSION).metadataVersion()));
+
+            async.flag();
+        })));
+    }
+
+    @Test
+    public void testStickToUnknownVersion() {
+        KafkaVersion.UnsupportedKafkaVersionException kue = assertThrows(KafkaVersion.UnsupportedKafkaVersionException.class, () -> mockVersionChangeCreator(mockKafka(KafkaVersionTestUtils.LOW_UNKNOWN_KAFKA_VERSION, "3.9-IV99", "3.9-IV99"), mockRos(mockUniformPods(KafkaVersionTestUtils.LOW_UNKNOWN_KAFKA_VERSION))));
+        assertThat(kue.getMessage(), containsString("Unsupported Kafka.spec.kafka.version: 3.99.0."));
     }
 
     @Test
