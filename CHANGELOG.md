@@ -4,6 +4,7 @@
 
 * Use the `v1` API in the Cluster Operator
 * Use the `v1` API as the _stored_ API version
+* Remove the `v1beta2` API (and `v1alpha1` and `v1beta2` for `KafkaTopic` and `KafkaUser`) from the CRDs and fully move to the `v1` API
 
 ### Major changes, deprecations, and removals
 

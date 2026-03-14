@@ -53,7 +53,7 @@ public class StructuralCrdIT extends AbstractCrdIT {
     @Test
     public void v1Beta2IsStructuralWithCrdV1() {
         for (Map.Entry<String, String> crd : CRD_FILES.entrySet()) {
-            assertApiVersionsAreStructural(crd.getKey(), TestUtils.USER_PATH + "/../packaging/install/cluster-operator/" + crd.getValue(), ApiVersion.parseRange("v1beta2+"));
+            assertApiVersionsAreStructural(crd.getKey(), TestUtils.USER_PATH + "/../packaging/install/cluster-operator/" + crd.getValue(), ApiVersion.parseRange("v1+"));
         }
     }
 
