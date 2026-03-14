@@ -275,23 +275,34 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
      * Generates or reconciles the secret that combines secrets and certificates
      * provided for Kafka Connect truststore if TLS is enabled.
      *
-     * @return  Future which completes when the reconciliation is done
+     * @return Future which completes when the reconciliation is done.
      */
-    protected Future<Void> tlsTrustedCertsSecret(Reconciliation reconciliation, String namespace, KafkaConnectCluster connect) {
+    protected Future<String> tlsTrustedCertsSecret(Reconciliation reconciliation, String namespace, KafkaConnectCluster connect) {
         if (connect.getTls() != null) {
             return ReconcilerUtils.trustedCertificates(reconciliation, secretOperations, connect.getTls().getTrustedCertificates())
-                    .compose(certificates -> {
-                        if (certificates != null) {
-                            return secretOperations.reconcile(
-                                            reconciliation,
-                                            namespace,
-                                            KafkaConnectResources.internalTlsTrustedCertsSecretName(connect.getCluster()),
-                                            connect.generateTlsTrustedCertsSecret(Map.of("ca.crt", Util.encodeToBase64(certificates)), KafkaConnectResources.internalTlsTrustedCertsSecretName(connect.getCluster())))
-                                    .mapEmpty();
-                        } else {
-                            return Future.succeededFuture();
-                        }
-                    });
+                    .compose(certificates -> tlsTrustedCertsSecret(reconciliation, namespace, connect, certificates));
+        } else {
+            return Future.succeededFuture();
+        }
+    }
+
+    /**
+     * Generates or reconciles the secret that combines secrets and certificates
+     * provided for Kafka Connect truststore if TLS is enabled. Uses
+     * {@code certificates} instead of fetching secrets in {@code connect}.
+     *
+     * @return Future which completes when the reconciliation is done
+     */
+    protected Future<String> tlsTrustedCertsSecret(Reconciliation reconciliation, String namespace, KafkaConnectCluster connect, String certificates) {
+        if (certificates != null) {
+            return secretOperations.reconcile(
+                    reconciliation,
+                    namespace,
+                    KafkaConnectResources.internalTlsTrustedCertsSecretName(connect.getCluster()),
+                    connect.generateTlsTrustedCertsSecret(
+                        Map.of("ca.crt", Util.encodeToBase64(certificates)),
+                        KafkaConnectResources.internalTlsTrustedCertsSecretName(connect.getCluster())))
+                .map(certificates);
         } else {
             return Future.succeededFuture();
         }

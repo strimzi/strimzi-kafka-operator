@@ -80,6 +80,7 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiPredicate;
 
+import static io.strimzi.operator.cluster.ResourceUtils.DUMMY_CERT;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.hamcrest.CoreMatchers.containsString;
@@ -271,7 +272,7 @@ public class KafkaConnectAssemblyOperatorPodSetTest {
                         assertThat(pod.getMetadata().getAnnotations().size(), is(3));
                         assertThat(pod.getMetadata().getAnnotations().get(PodRevision.STRIMZI_REVISION_ANNOTATION), is(notNullValue())); // We do not check the exact value -> it just describes the exact pod configuration which might change with too many unrelated code or dependency changes
                         assertThat(pod.getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_IO_CONFIGURATION_HASH), is("bf2e4dfa"));
-                        assertThat(pod.getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_AUTH_HASH), is("445157059")); // We do not use any security in this test, so it is set but as 0
+                        assertThat(pod.getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_AUTH_HASH), is("-1364636231")); // We do not use any security in this test, so it is set but as 0
                     }
 
                     // Verify Secret with trusted certificates
@@ -2124,6 +2125,101 @@ public class KafkaConnectAssemblyOperatorPodSetTest {
                     // Verify CR status
                     List<KafkaConnect> capturedConnects = connectCaptor.getAllValues();
                     assertThat(capturedConnects, hasSize(1));
+
+                    async.flag();
+                })));
+    }
+
+    @Test
+    public void testTlsSecretsFetchedOnlyOncePerReference(VertxTestContext context) {
+        KafkaConnect connectWithTls = new KafkaConnectBuilder(CONNECT)
+                .editSpec()
+                    .withNewTls()
+                        .withTrustedCertificates(List.of(
+                                new CertSecretSourceBuilder()
+                                    .withSecretName("shared-tls-secret")
+                                    .withCertificate("ca.crt")
+                                    .build(),
+                                new CertSecretSourceBuilder()
+                                    .withSecretName("shared-tls-secret")
+                                    .withCertificate("ca2.crt")
+                                    .build()
+                        ))
+                    .endTls()
+                .endSpec()
+                .build();
+
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
+
+        // Mock PodSets
+        StrimziPodSetOperator mockPodSetOps = supplier.strimziPodSetOperator;
+        when(mockPodSetOps.getAsync(eq(NAMESPACE), eq(COMPONENT_NAME))).thenReturn(Future.succeededFuture());
+        when(mockPodSetOps.readiness(any(), eq(NAMESPACE), eq(COMPONENT_NAME), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockPodSetOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), any())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(3))));
+
+        // Mock PDBs
+        PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
+        when(mockPdbOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), any())).thenReturn(Future.succeededFuture());
+
+        // Mock Config Maps
+        ConfigMapOperator mockCmOps = supplier.configMapOperations;
+        when(mockCmOps.reconcile(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), any())).thenReturn(Future.succeededFuture());
+
+        // Mock Services
+        ServiceOperator mockServiceOps = supplier.serviceOperations;
+        when(mockServiceOps.reconcile(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), any())).thenReturn(Future.succeededFuture());
+
+        // Mock Network Policies
+        NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
+        when(mockNetPolOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), any())).thenReturn(Future.succeededFuture());
+
+        // Mock Pods
+        PodOperator mockPodOps = supplier.podOperations;
+        when(mockPodOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(Future.succeededFuture(List.of()));
+        when(mockPodOps.getAsync(eq(NAMESPACE), startsWith(COMPONENT_NAME))).thenReturn(Future.succeededFuture());
+        when(mockPodOps.reconcile(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), any())).thenReturn(Future.succeededFuture());
+        when(mockPodOps.readiness(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+
+        // Mock Secrets - the shared TLS secret referenced multiple times
+        Secret tlsSecret = new SecretBuilder()
+            .withNewMetadata().withName("shared-tls-secret").endMetadata()
+            .withData(Map.of(
+                "ca.crt", Util.encodeToBase64(DUMMY_CERT),
+                "ca2.crt", Util.encodeToBase64(DUMMY_CERT)))
+            .build();
+
+        SecretOperator mockSecretOps = supplier.secretOperations;
+        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaConnectResources.jmxSecretName(NAME)))).thenReturn(Future.succeededFuture());
+        when(mockSecretOps.getAsync(eq(NAMESPACE), eq("shared-tls-secret"))).thenReturn(Future.succeededFuture(tlsSecret));
+        when(mockSecretOps.reconcile(any(), eq(NAMESPACE), any(), any())).thenReturn(Future.succeededFuture());
+
+        // Mock Connect CRs
+        CrdOperator<KubernetesClient, KafkaConnect, KafkaConnectList> mockConnectOps = supplier.connectOperator;
+        when(mockConnectOps.get(eq(NAMESPACE), eq(NAME))).thenReturn(connectWithTls);
+        when(mockConnectOps.getAsync(eq(NAMESPACE), eq(NAME))).thenReturn(Future.succeededFuture(connectWithTls));
+        when(mockConnectOps.updateStatusAsync(any(), any())).thenReturn(Future.succeededFuture());
+
+        // Mock Connect REST API
+        KafkaConnectApi mockConnectClient = mock(KafkaConnectApi.class);
+        when(mockConnectClient.list(any(), anyString(), anyInt())).thenReturn(CompletableFuture.completedFuture(emptyList()));
+        ConnectorPlugin plugin1 = new ConnectorPluginBuilder()
+                .withConnectorClass("io.strimzi.MyClass")
+                .withType("sink")
+                .withVersion("1.0.0")
+                .build();
+        when(mockConnectClient.listConnectorPlugins(any(), anyString(), anyInt())).thenReturn(CompletableFuture.completedFuture(singletonList(plugin1)));
+
+        KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(
+                vertx,
+                new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
+                supplier,
+                ResourceUtils.dummyClusterOperatorConfig()
+        );
+
+        Checkpoint async = context.checkpoint();
+        ops.reconcile(new Reconciliation("test-trigger", KafkaConnect.RESOURCE_KIND, NAMESPACE, NAME))
+                .onComplete(context.succeeding(v -> context.verify(() -> {
+                    verify(mockSecretOps, times(2)).getAsync(eq(NAMESPACE), eq("shared-tls-secret"));
 
                     async.flag();
                 })));
