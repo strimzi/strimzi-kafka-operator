@@ -298,7 +298,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
      * @param certificates       List of trusted certificates
      * @return                   Future for tracking the asynchronous result of generating the TLS auth hash
      */
-    private Future<Integer> generateAuthHash(String namespace, KafkaClientAuthentication authentication, List<String> certificates) {
+    private Future<Integer> generateAuthHash(String namespace, KafkaClientAuthentication authentication, String certificates) {
         return ReconcilerUtils.authTlsHash(secretOperations, namespace, authentication, certificates);
     }
 

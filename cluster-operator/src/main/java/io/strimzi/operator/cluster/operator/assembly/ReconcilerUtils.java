@@ -444,18 +444,17 @@ public class ReconcilerUtils {
      * @param secretOperations Secret operator
      * @param namespace namespace to get Secrets in
      * @param auth Authentication object to compute hash from
-     * @param certificates List of certificates to compute hash from
+     * @param certsBundle certificates bundle String to compute hash from.
+     *                    It is all the certs concatenated.
      * @return Future computing hash from TLS + Auth
      */
-    public static Future<Integer> authTlsHash(SecretOperator secretOperations, String namespace, KafkaClientAuthentication auth, List<String> certificates) {
+    public static Future<Integer> authTlsHash(SecretOperator secretOperations, String namespace, KafkaClientAuthentication auth, String certsBundle) {
         Future<Integer> tlsFuture;
-        if (certificates == null) {
+        if (certsBundle == null) {
             tlsFuture = Future.succeededFuture(0);
         } else {
             // get all TLS trusted certs, compute hash from them
-            tlsFuture = Future.succeededFuture(certificates.stream()
-                    .mapToInt(String::hashCode)
-                    .sum());
+            tlsFuture = Future.succeededFuture(certsBundle.hashCode());
         }
 
         if (auth == null) {
@@ -490,7 +489,7 @@ public class ReconcilerUtils {
      *
      * @return  Certificates extracted from the Secrets
      */
-    public static Future<List<String>> trustedCertificates(Reconciliation reconciliation, SecretOperator secretOperations, List<CertSecretSource> certificateSources)   {
+    public static Future<String> trustedCertificates(Reconciliation reconciliation, SecretOperator secretOperations, List<CertSecretSource> certificateSources)   {
         if (certificateSources != null && !certificateSources.isEmpty()) {
             return Future.join(certificateSources
                             .stream()
@@ -500,7 +499,7 @@ public class ReconcilerUtils {
                         if (certificates.list().isEmpty()) {
                             return Future.succeededFuture();
                         } else {
-                            return Future.succeededFuture(certificates.list());
+                            return Future.succeededFuture(String.join("\n", certificates.list()));
                         }
                     });
         } else {

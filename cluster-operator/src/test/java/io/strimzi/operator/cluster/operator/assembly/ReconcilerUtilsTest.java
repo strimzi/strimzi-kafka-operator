@@ -45,7 +45,6 @@ import java.util.concurrent.CompletionStage;
 
 import static io.strimzi.operator.cluster.ResourceUtils.DUMMY_CERT;
 import static java.util.Collections.emptyMap;
-import static java.util.Collections.singletonList;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -396,7 +395,7 @@ public class ReconcilerUtilsTest {
         when(secretOps.getAsync(eq(namespace), eq("top-secret-pwd"))).thenReturn(Future.succeededFuture(secret));
         when(secretOps.getAsync(eq(namespace), eq("css-secret"))).thenReturn(Future.succeededFuture(cssSecret));
 
-        Future<Integer> res = ReconcilerUtils.authTlsHash(secretOps, "ns", kcu, singletonList(DUMMY_CERT));
+        Future<Integer> res = ReconcilerUtils.authTlsHash(secretOps, "ns", kcu, DUMMY_CERT);
         res.onComplete(v -> {
             assertThat(v.succeeded(), is(true));
             // we are summing "value" hash four times
@@ -420,7 +419,7 @@ public class ReconcilerUtilsTest {
         SecretOperator secretOps = mock(SecretOperator.class);
         when(secretOps.getAsync(eq(namespace), eq("top-secret-pwd"))).thenReturn(Future.succeededFuture(null));
 
-        Future<Integer> res = ReconcilerUtils.authTlsHash(secretOps, "ns", kcu, List.of());
+        Future<Integer> res = ReconcilerUtils.authTlsHash(secretOps, "ns", kcu, null);
         res.onComplete(v -> {
             assertThat(v.succeeded(), is(false));
             assertThat(v.cause().getMessage(), is("Secret top-secret-pwd not found in namespace ns"));
@@ -441,7 +440,7 @@ public class ReconcilerUtilsTest {
         passwordSecretSource.setSecretName("my-secret");
         passwordSecretSource.setPassword("password1");
         auth.setPasswordSecret(passwordSecretSource);
-        Future<Integer> result = ReconcilerUtils.authTlsHash(secretOperator, "anyNamespace", auth, List.of());
+        Future<Integer> result = ReconcilerUtils.authTlsHash(secretOperator, "anyNamespace", auth, null);
         result.onComplete(handler -> {
             assertTrue(handler.failed());
             assertEquals("Items with key(s) [password1] are missing in Secret my-secret", handler.cause().getMessage());
@@ -462,7 +461,7 @@ public class ReconcilerUtilsTest {
         passwordSecretSource.setSecretName("my-secret");
         passwordSecretSource.setPassword("passwordKey");
         auth.setPasswordSecret(passwordSecretSource);
-        Future<Integer> result = ReconcilerUtils.authTlsHash(secretOperator, "anyNamespace", auth, List.of());
+        Future<Integer> result = ReconcilerUtils.authTlsHash(secretOperator, "anyNamespace", auth, null);
         result.onComplete(handler -> {
             assertTrue(handler.succeeded());
             assertEquals("my-password".hashCode(), handler.result());
@@ -483,7 +482,7 @@ public class ReconcilerUtilsTest {
         passwordSecretSource.setSecretName("my-secret");
         passwordSecretSource.setPassword("password1");
         auth.setPasswordSecret(passwordSecretSource);
-        Future<Integer> result = ReconcilerUtils.authTlsHash(secretOperator, "anyNamespace", auth, List.of());
+        Future<Integer> result = ReconcilerUtils.authTlsHash(secretOperator, "anyNamespace", auth, null);
         result.onComplete(handler -> {
             assertTrue(handler.failed());
             assertEquals("Items with key(s) [password1] are missing in Secret my-secret", handler.cause().getMessage());
@@ -504,7 +503,7 @@ public class ReconcilerUtilsTest {
         passwordSecretSource.setSecretName("my-secret");
         passwordSecretSource.setPassword("passwordKey");
         auth.setPasswordSecret(passwordSecretSource);
-        Future<Integer> result = ReconcilerUtils.authTlsHash(secretOperator, "anyNamespace", auth, List.of());
+        Future<Integer> result = ReconcilerUtils.authTlsHash(secretOperator, "anyNamespace", auth, null);
         result.onComplete(handler -> {
             assertTrue(handler.succeeded());
             assertEquals("my-password".hashCode(), handler.result());
@@ -604,7 +603,7 @@ public class ReconcilerUtilsTest {
 
         Checkpoint async = context.checkpoint();
         ReconcilerUtils.trustedCertificates(Reconciliation.DUMMY_RECONCILIATION, secretOps, List.of(cert1, cert2, cert3)).onComplete(context.succeeding(res -> {
-            assertThat(res, is(List.of(DUMMY_CERT, DUMMY_CERT, DUMMY_CERT)));
+            assertThat(res, is(String.join("\n", List.of(DUMMY_CERT, DUMMY_CERT, DUMMY_CERT))));
             async.flag();
         }));
     }

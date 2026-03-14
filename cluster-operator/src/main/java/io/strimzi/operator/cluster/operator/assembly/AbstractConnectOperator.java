@@ -274,9 +274,9 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
      * Generates or reconciles the secret that combines secrets and certificates
      * provided for Kafka Connect truststore if TLS is enabled.
      *
-     * @return List of trusted certificates as a Future.
+     * @return Future which completes when the reconciliation is done.
      */
-    protected Future<List<String>> tlsTrustedCertsSecret(Reconciliation reconciliation, String namespace, KafkaConnectCluster connect) {
+    protected Future<String> tlsTrustedCertsSecret(Reconciliation reconciliation, String namespace, KafkaConnectCluster connect) {
         if (connect.getTls() != null) {
             return ReconcilerUtils.trustedCertificates(reconciliation, secretOperations, connect.getTls().getTrustedCertificates())
                     .compose(certificates -> tlsTrustedCertsSecret(reconciliation, namespace, connect, certificates));
@@ -292,14 +292,14 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
      *
      * @return Future which completes when the reconciliation is done
      */
-    protected Future<List<String>> tlsTrustedCertsSecret(Reconciliation reconciliation, String namespace, KafkaConnectCluster connect, List<String> certificates) {
+    protected Future<String> tlsTrustedCertsSecret(Reconciliation reconciliation, String namespace, KafkaConnectCluster connect, String certificates) {
         if (certificates != null) {
             return secretOperations.reconcile(
                     reconciliation,
                     namespace,
                     KafkaConnectResources.internalTlsTrustedCertsSecretName(connect.getCluster()),
                     connect.generateTlsTrustedCertsSecret(
-                        Map.of("ca.crt", Util.encodeToBase64(String.join("\n", certificates))),
+                        Map.of("ca.crt", Util.encodeToBase64(certificates)),
                         KafkaConnectResources.internalTlsTrustedCertsSecretName(connect.getCluster())))
                 .map(certificates);
         } else {
