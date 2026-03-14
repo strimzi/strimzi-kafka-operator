@@ -450,7 +450,7 @@ public class ReconcilerUtils {
      */
     public static Future<Integer> authTlsHash(SecretOperator secretOperations, String namespace, KafkaClientAuthentication auth, String certsBundle) {
         Future<Integer> tlsFuture;
-        if (certsBundle == null) {
+        if (certsBundle == null || certsBundle.isBlank()) {
             tlsFuture = Future.succeededFuture(0);
         } else {
             // get all TLS trusted certs, compute hash from them
