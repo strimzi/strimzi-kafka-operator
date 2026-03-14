@@ -792,4 +792,38 @@ public class ListenersUtilsTest {
         assertThat(ListenersUtils.allocateLoadBalancerNodePorts(lbListenerWithoutConfiguration), is(nullValue()));
         assertThat(ListenersUtils.allocateLoadBalancerNodePorts(newLoadBalancer2), is(nullValue()));
     }
+
+    @Test
+    public void testRenderPortTemplates() {
+        assertThat(ListenersUtils.renderPortTemplate("9000", 7), is(9000));
+        assertThat(ListenersUtils.renderPortTemplate("9000+{nodeId}", 7), is(9007));
+        assertThat(ListenersUtils.renderPortTemplate("9000 + {nodeId}", 7), is(9007));
+        assertThat(ListenersUtils.renderPortTemplate("{nodeId} + 10000", 7), is(10007));
+        assertThat(ListenersUtils.renderPortTemplate("9000 + ({nodeId} * 10)", 7), is(9070));
+
+        // Disabled operators
+        assertThrows(IllegalArgumentException.class, () -> ListenersUtils.renderPortTemplate("9000 + ({nodeId} / 10)", 7));
+    }
+
+    @Test
+    public void testBrokerAdvertisedPortFromTemplate() {
+        GenericKafkaListener listenerWithTemplate = new GenericKafkaListenerBuilder()
+                .withName("plain2")
+                .withPort(9900)
+                .withType(KafkaListenerType.INTERNAL)
+                .withTls(false)
+                .withNewConfiguration()
+                    .withUseServiceDnsDomain(true)
+                    .withBrokers(new GenericKafkaListenerConfigurationBrokerBuilder()
+                                    .withBroker(0)
+                                    .withAdvertisedHost("advertised-host")
+                                    .withAdvertisedPort(10000)
+                                    .build())
+                    .withAdvertisedPortTemplate("20000 + {nodeId}")
+                .endConfiguration()
+                .build();
+
+        assertThat(ListenersUtils.brokerAdvertisedPort(listenerWithTemplate, 0), is(10000));
+        assertThat(ListenersUtils.brokerAdvertisedPort(listenerWithTemplate, 5), is(20005));
+    }
 }

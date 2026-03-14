@@ -4,6 +4,9 @@
  */
 package io.strimzi.operator.cluster.model;
 
+import com.fathzer.soft.javaluator.BracketPair;
+import com.fathzer.soft.javaluator.DoubleEvaluator;
+import com.fathzer.soft.javaluator.Parameters;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.strimzi.api.kafka.model.common.template.ExternalTrafficPolicy;
 import io.strimzi.api.kafka.model.common.template.IpFamily;
@@ -525,20 +528,68 @@ public class ListenersUtils {
     }
 
     /**
+     * Replaces the port template fields in the template string with the corresponding values and evaluates
+     * the template formula.
+     *
+     * @param template  Template with the placeholders
+     * @param nodeId    Node ID of the Kafka node for which should this template be rendered
+     *
+     * @return  The rendered template
+     */
+    /* test */ static Integer renderPortTemplate(String template, int nodeId) {
+        String renderedTemplate = template.replace("{nodeId}", Integer.toString(nodeId));
+
+        // Restrict the operations we support in the template to only basic math operations to what makes sense in our
+        // context and to prevent any possible security issues.
+        Parameters params = new Parameters();
+        params.add(DoubleEvaluator.PLUS);
+        params.add(DoubleEvaluator.MINUS);
+        params.add(DoubleEvaluator.MULTIPLY);
+        params.addExpressionBracket(BracketPair.PARENTHESES);
+
+        // Evaluate the template
+        return new DoubleEvaluator(params).evaluate(renderedTemplate).intValue();
+    }
+
+    /**
      * Finds broker advertised port configuration
      *
-     * @param listener  Listener for which the advertised port should be found
-     * @param pod       Pod ID for which we should get the configuration option
-     * @return          Advertised port or null if not specified
+     * @param listenerConfiguration     Listener configuration for which the advertised port should be found
+     * @param nodeId                    Node ID for which we should get the configuration option
+     *
+     * @return  Advertised port or null if not specified
      */
-    public static Integer brokerAdvertisedPort(GenericKafkaListener listener, int pod)    {
-        if (listener.getConfiguration() != null
-                && listener.getConfiguration().getBrokers() != null) {
-            return listener.getConfiguration().getBrokers().stream()
-                    .filter(broker -> broker != null && broker.getBroker() != null && broker.getBroker() == pod && broker.getAdvertisedPort() != null)
+    private static Integer brokerAdvertisedPort(GenericKafkaListenerConfiguration listenerConfiguration, int nodeId)    {
+        if (listenerConfiguration.getBrokers() != null) {
+            return listenerConfiguration.getBrokers().stream()
+                    .filter(broker -> broker != null && broker.getBroker() != null && broker.getBroker() == nodeId && broker.getAdvertisedPort() != null)
                     .map(GenericKafkaListenerConfigurationBroker::getAdvertisedPort)
                     .findAny()
                     .orElse(null);
+        } else {
+            return null;
+        }
+    }
+
+    /**
+     * Finds broker advertised port configuration either in the per-broker configuration or renders it from the template. If no
+     * per-broker value and no template are set, it returns null.
+     *
+     * @param listener  Listener for which the advertised host should be found
+     * @param nodeId    The node id for which the advertised port should be obtained
+     *
+     * @return  Advertised port or null if not specified
+     */
+    /* test */ static Integer brokerAdvertisedPort(GenericKafkaListener listener, int nodeId)    {
+        if (listener.getConfiguration() != null)    {
+            Integer advertisedPort = brokerAdvertisedPort(listener.getConfiguration(), nodeId);
+
+            if (advertisedPort == null && listener.getConfiguration().getAdvertisedPortTemplate() != null)   {
+                // There is no advertised port defined specifically for given broker, so we try to use the template
+                advertisedPort = renderPortTemplate(listener.getConfiguration().getAdvertisedPortTemplate(), nodeId);
+            }
+
+            return advertisedPort;
         } else {
             return null;
         }

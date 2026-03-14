@@ -30,7 +30,7 @@ import java.util.Map;
 @JsonPropertyOrder({"brokerCertChainAndKey", "class", "externalTrafficPolicy", "loadBalancerSourceRanges", "bootstrap",
     "brokers", "ipFamilyPolicy", "ipFamilies", "createBootstrapService", "finalizers", "useServiceDnsDomain",
     "maxConnections", "maxConnectionCreationRate", "preferredNodePortAddressType", "publishNotReadyAddresses",
-    "hostTemplate", "advertisedHostTemplate", "allocateLoadBalancerNodePorts"})
+    "hostTemplate", "advertisedHostTemplate", "advertisedPortTemplate", "allocateLoadBalancerNodePorts"})
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Buildable(
     editableEnabled = false,
@@ -56,6 +56,7 @@ public class GenericKafkaListenerConfiguration implements UnknownPropertyPreserv
     private Boolean publishNotReadyAddresses;
     private String hostTemplate;
     private String advertisedHostTemplate;
+    private String advertisedPortTemplate;
     private Map<String, Object> additionalProperties;
     private Boolean allocateLoadBalancerNodePorts;
 
@@ -277,6 +278,21 @@ public class GenericKafkaListenerConfiguration implements UnknownPropertyPreserv
 
     public void setAdvertisedHostTemplate(String advertisedHostTemplate) {
         this.advertisedHostTemplate = advertisedHostTemplate;
+    }
+
+    @Description("Configures the template for generating the advertised ports of the individual brokers. " +
+            "It allows to specify a simple mathematics formula that will be used to calculate the port. " +
+            "Valid placeholders that you can use in the template is `{nodeId}`. " +
+            "Supported operations are `+`, `-`, and `*`. " +
+            "For example, `9000 + {nodeId}` will generate ports `9000`, `9001`, `9002`, and so on for the individual brokers. " +
+            "You can also use a fixed port number in the template, for example `9000`, which will generate the same port for all brokers.")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public String getAdvertisedPortTemplate() {
+        return advertisedPortTemplate;
+    }
+
+    public void setAdvertisedPortTemplate(String advertisedPortTemplate) {
+        this.advertisedPortTemplate = advertisedPortTemplate;
     }
 
     @Description("Configures whether to allocate NodePort automatically for the `Service` with type `LoadBalancer`.\n" +

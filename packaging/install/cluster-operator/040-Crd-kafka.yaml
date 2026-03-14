@@ -308,6 +308,9 @@ spec:
                             advertisedHostTemplate:
                               type: string
                               description: "Configures the template for generating the advertised hostnames of the individual brokers. Valid placeholders that you can use in the template are `{nodeId}` and `{nodePodName}`."
+                            advertisedPortTemplate:
+                              type: string
+                              description: "Configures the template for generating the advertised ports of the individual brokers. It allows to specify a simple mathematics formula that will be used to calculate the port. Valid placeholders that you can use in the template is `{nodeId}`. Supported operations are `+`, `-`, and `*`. For example, `9000 + {nodeId}` will generate ports `9000`, `9001`, `9002`, and so on for the individual brokers. You can also use a fixed port number in the template, for example `9000`, which will generate the same port for all brokers."
                             allocateLoadBalancerNodePorts:
                               type: boolean
                               description: |-

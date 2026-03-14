@@ -350,6 +350,92 @@ public class KafkaListenerReconcilerTest {
     }
 
     @Test
+    public void testClusterIpWithCustomBrokerHostsAndPortTemplate(VertxTestContext context) {
+        GenericKafkaListenerConfigurationBroker broker0 = new GenericKafkaListenerConfigurationBrokerBuilder()
+                .withBroker(10)
+                .withAdvertisedHost("my-special-address-10")
+                .withAdvertisedPort(13000)
+                .build();
+
+        Kafka kafka = new KafkaBuilder(KAFKA)
+                .editSpec()
+                    .editKafka()
+                        .withListeners(new GenericKafkaListenerBuilder()
+                                .withName("external")
+                                .withPort(LISTENER_PORT)
+                                .withTls(true)
+                                .withType(KafkaListenerType.CLUSTER_IP)
+                                .withNewConfiguration()
+                                    .withCreateBootstrapService(true)
+                                    .withBrokers(broker0)
+                                    .withAdvertisedHostTemplate("my-address-{nodeId}")
+                                    .withAdvertisedPortTemplate("10000 + {nodeId}")
+                                .endConfiguration()
+                                .build())
+                    .endKafka()
+                .endSpec()
+                .build();
+
+        ResourceOperatorSupplier supplier = prepareResourceOperatorSupplier();
+        Reconciliation reconciliation = new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME);
+
+        KafkaCluster kafkaCluster = KafkaClusterCreator.createKafkaCluster(
+                reconciliation,
+                kafka,
+                List.of(POOL_CONTROLLERS, POOL_BROKERS),
+                Map.of(),
+                KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE,
+                VERSIONS,
+                supplier.sharedEnvironmentProvider
+        );
+
+        MockKafkaListenersReconciler reconciler = new MockKafkaListenersReconciler(
+                reconciliation,
+                kafkaCluster,
+                new PlatformFeaturesAvailability(false, KubernetesVersion.MINIMAL_SUPPORTED_VERSION),
+                supplier.secretOperations,
+                supplier.serviceOperations,
+                supplier.routeOperations,
+                supplier.ingressOperations
+        );
+
+        Checkpoint async = context.checkpoint();
+        reconciler.reconcile()
+                .onComplete(context.succeeding(res -> context.verify(() -> {
+                    // Check status
+                    assertThat(res.listenerStatuses.size(), is(1));
+                    ListenerStatus listenerStatus = res.listenerStatuses.get(0);
+                    assertThat(listenerStatus.getBootstrapServers(), is("my-kafka-kafka-external-bootstrap.test.svc:9094"));
+                    assertThat(listenerStatus.getAddresses().size(), is(1));
+                    assertThat(listenerStatus.getAddresses().get(0).getHost(), is("my-kafka-kafka-external-bootstrap.test.svc"));
+                    assertThat(listenerStatus.getAddresses().get(0).getPort(), is(LISTENER_PORT));
+
+                    // Check hostnames and ports
+                    assertThat(res.bootstrapDnsNames.size(), is(4));
+                    assertThat(res.bootstrapDnsNames, hasItems("my-kafka-kafka-external-bootstrap", "my-kafka-kafka-external-bootstrap.test", "my-kafka-kafka-external-bootstrap.test.svc", "my-kafka-kafka-external-bootstrap.test.svc.cluster.local"));
+                    Set<String> allBrokersDnsNames = res.brokerDnsNames.values().stream().flatMap(Collection::stream).collect(Collectors.toSet());
+                    assertThat(allBrokersDnsNames.size(), is(6));
+                    assertThat(allBrokersDnsNames, hasItems("my-special-address-10", "my-address-11", "my-address-12", "my-kafka-brokers-11.test.svc", "my-kafka-brokers-12.test.svc", "my-kafka-brokers-10.test.svc"));
+
+                    assertThat(res.advertisedHostnames.size(), is(3));
+                    assertThat(res.advertisedHostnames.get(10).get("EXTERNAL_9094"), is("my-special-address-10"));
+                    assertThat(res.advertisedHostnames.get(11).get("EXTERNAL_9094"), is("my-address-11"));
+                    assertThat(res.advertisedHostnames.get(12).get("EXTERNAL_9094"), is("my-address-12"));
+
+                    Set<String> allBrokersAdvertisedHostNames = res.advertisedHostnames.values().stream().flatMap(s -> s.values().stream()).collect(Collectors.toSet());
+                    assertThat(allBrokersAdvertisedHostNames.size(), is(3));
+                    assertThat(allBrokersAdvertisedHostNames, hasItems("my-special-address-10", "my-address-11", "my-address-12"));
+
+                    assertThat(res.advertisedPorts.size(), is(3));
+                    assertThat(res.advertisedPorts.get(10).get("EXTERNAL_9094"), is("13000"));
+                    assertThat(res.advertisedPorts.get(11).get("EXTERNAL_9094"), is("10011"));
+                    assertThat(res.advertisedPorts.get(12).get("EXTERNAL_9094"), is("10012"));
+
+                    async.flag();
+                })));
+    }
+
+    @Test
     public void testLoadBalancerSkipBootstrapService(VertxTestContext context) {
         Kafka kafka = new KafkaBuilder(KAFKA)
                 .editSpec()

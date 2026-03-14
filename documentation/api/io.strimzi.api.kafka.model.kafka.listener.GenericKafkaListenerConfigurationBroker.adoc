@@ -37,11 +37,17 @@ listeners:
 # ...
 ----
 
-Instead of specifying the `advertisedHost` field for every broker, you can also use an `advertisedHostTemplate` to generate them automatically.
-The `advertisedHostTemplate` supports the following variables:
+Instead of specifying the `advertisedHost` and `advertisedPort` fields for every broker, you can also use an `advertisedHostTemplate` and `advertisedPortTemplate` to generate them automatically.
+
+The `advertisedHostTemplate` supports the following variables which are replaced with the actual values when the configuration is applied to the Kafka cluster:
 
 * The `{nodeId}` variable is replaced with the ID of the Kafka node to which the template is applied.
 * The `{nodePodName}` variable is replaced with the Kubernetes pod name for the Kafka node where the template is applied.
+
+The `advertisedPortTemplate` works as a simple mathematical formula where you can use the `{nodeId}` variable to calculate the port number for each broker.
+The supported operations are addition (`+`), subtraction (`-`), multiplication (`*`), and brackets (`(`, `)`).
+For example, if you set `advertisedPortTemplate` to `12340 + {nodeId}`, the broker with the node ID `0` will have the advertised port `12340`, the broker with node ID `2` will have advertised port `12342`, and so on.
+You can also set `advertisedPortTemplate` to a simple number without using the `nodeId` variable, in which case all brokers will have the same advertised port.
 
 .Example `route` listener with `advertisedHostTemplate` configuration
 [source,yaml,subs="attributes+"]
@@ -54,5 +60,6 @@ listeners:
     tls: true
     configuration:
       advertisedHostTemplate: example.hostname.{nodeId}
+      advertisedPortTemplate: 12340 + {nodeId}
 # ...
 ----
