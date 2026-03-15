@@ -268,13 +268,13 @@ public class KafkaAgent {
 
     static SslContextFactory.Server getSSLContextFactory(Secret caCertSecret, Secret nodeCertSecret) throws GeneralSecurityException, IOException {
         SslContextFactory.Server sslContextFactory = new SslContextFactory.Server();
-        sslContextFactory.setTrustStore(KafkaAgentUtils.jksTrustStore(caCertSecret));
+        sslContextFactory.setTrustStore(KafkaAgentUtils.trustStore(caCertSecret));
 
         byte[] random = new byte[24];
         RANDOM.nextBytes(random);
         String password = Base64.getUrlEncoder().withoutPadding().encodeToString(random).substring(0, 32);
 
-        sslContextFactory.setKeyStore(KafkaAgentUtils.jksKeyStore(nodeCertSecret, password.toCharArray()));
+        sslContextFactory.setKeyStore(KafkaAgentUtils.keyStore(nodeCertSecret, password.toCharArray()));
         sslContextFactory.setKeyStorePassword(password);
         sslContextFactory.setNeedClientAuth(true);
         return  sslContextFactory;

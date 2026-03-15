@@ -61,15 +61,15 @@ public class PemTrustSet {
      * TrustStore to use for TLS connections. This also validates each one is a valid certificate and
      * throws an exception if it is not.
      *
-     * @return  TrustStore file in JKS format
+     * @return  In-memory TrustStore using the JVM's default keystore type
      *
      * @throws GeneralSecurityException     If something goes wrong when creating the truststore
      *
      * @throws IOException  If there is an I/O or format problem with the data used to load the truststore.
      *                      This is not expected as the truststore is loaded with null parameter.
      */
-    public KeyStore jksTrustStore() throws GeneralSecurityException, IOException {
-        KeyStore trustStore = KeyStore.getInstance("JKS");
+    public KeyStore trustStore() throws GeneralSecurityException, IOException {
+        KeyStore trustStore = KeyStore.getInstance(KeyStore.getDefaultType());
         trustStore.load(null);
         int aliasIndex = 0;
         for (X509Certificate certificate : asX509Certificates()) {

@@ -80,14 +80,14 @@ public class KafkaAgentClient {
             }
             String trustManagerFactoryAlgorithm = TrustManagerFactory.getDefaultAlgorithm();
             TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(trustManagerFactoryAlgorithm);
-            trustManagerFactory.init(tlsPemIdentity.pemTrustSet().jksTrustStore());
+            trustManagerFactory.init(tlsPemIdentity.pemTrustSet().trustStore());
 
             if (tlsPemIdentity.pemAuthIdentity() == null) {
                 throw new RuntimeException("Missing cluster operator authentication identity certificates required to create connection to Kafka Agent");
             }
             String keyManagerFactoryAlgorithm = KeyManagerFactory.getDefaultAlgorithm();
             KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(keyManagerFactoryAlgorithm);
-            keyManagerFactory.init(tlsPemIdentity.pemAuthIdentity().jksKeyStore(KEYSTORE_PASSWORD), KEYSTORE_PASSWORD);
+            keyManagerFactory.init(tlsPemIdentity.pemAuthIdentity().keyStore(KEYSTORE_PASSWORD), KEYSTORE_PASSWORD);
 
             SSLContext sslContext = SSLContext.getInstance("TLS");
             sslContext.init(keyManagerFactory.getKeyManagers(), trustManagerFactory.getTrustManagers(), null);

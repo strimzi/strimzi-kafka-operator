@@ -34,7 +34,7 @@ public class PemTrustSetTest {
                 .withData(Map.of("ca.crt", "notacert"))
                 .build();
         PemTrustSet pemTrustSet = new PemTrustSet(secretWithBadCertificate);
-        Exception e = assertThrows(RuntimeException.class, pemTrustSet::jksTrustStore);
+        Exception e = assertThrows(RuntimeException.class, pemTrustSet::trustStore);
         assertThat(e.getMessage(), is("Bad/corrupt certificate found in data.ca.crt of Secret testcluster-cluster-operator-certs in namespace testns"));
     }
 
@@ -149,10 +149,10 @@ public class PemTrustSetTest {
 
         PemTrustSet pemTrustSet = new PemTrustSet(secretWithCAChain);
 
-        // Test JKS conversion
-        KeyStore jks = pemTrustSet.jksTrustStore();
-        assertThat(jks.size(), is(1));
-        X509Certificate cert = (X509Certificate) jks.getCertificate(jks.aliases().nextElement());
+        // Test KeyStore conversion
+        KeyStore trustStore = pemTrustSet.trustStore();
+        assertThat(trustStore.size(), is(1));
+        X509Certificate cert = (X509Certificate) trustStore.getCertificate(trustStore.aliases().nextElement());
         assertThat(cert.getSubjectX500Principal().getName(), is("CN=ClusterCA,O=Strimzi\\, Inc.,L=Prague,C=CZ"));
 
         // Test PEM conversion

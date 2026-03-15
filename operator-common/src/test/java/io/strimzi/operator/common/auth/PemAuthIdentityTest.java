@@ -60,7 +60,7 @@ public class PemAuthIdentityTest {
                         "cluster-operator.password", "bm90YXBhc3N3b3Jk")) //notapassword
                 .build();
         PemAuthIdentity pemAuthIdentity = PemAuthIdentity.clusterOperator(secretWithBadCertificate);
-        Exception e = assertThrows(RuntimeException.class, () -> pemAuthIdentity.jksKeyStore(new char[]{}));
+        Exception e = assertThrows(RuntimeException.class, () -> pemAuthIdentity.keyStore(new char[]{}));
         assertThat(e.getMessage(), is("Bad/corrupt certificate found in data.cluster-operator.crt of Secret testcluster-cluster-operator-certs in namespace testns"));
     }
 

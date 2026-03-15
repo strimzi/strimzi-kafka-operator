@@ -96,13 +96,13 @@ public class KafkaAgentTest {
 
     private SSLContext getClientSSLContext(Secret caCertSecret, Secret nodeCertSecret) throws GeneralSecurityException, IOException {
         TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
-        tmf.init(KafkaAgentUtils.jksTrustStore(caCertSecret));
+        tmf.init(KafkaAgentUtils.trustStore(caCertSecret));
 
         KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
         byte[] random = new byte[24];
         RANDOM.nextBytes(random);
         String password = Base64.getUrlEncoder().withoutPadding().encodeToString(random).substring(0, 32);
-        kmf.init(KafkaAgentUtils.jksKeyStore(nodeCertSecret, password.toCharArray()), password.toCharArray());
+        kmf.init(KafkaAgentUtils.keyStore(nodeCertSecret, password.toCharArray()), password.toCharArray());
 
         SSLContext sslContext = SSLContext.getInstance("TLS");
         sslContext.init(kmf.getKeyManagers(), tmf.getTrustManagers(), RANDOM);
