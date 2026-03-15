@@ -1,17 +1,26 @@
 name: "Test Strimzi"
 description: "Runs Strimzi unit and integration tests with Maven"
 
-inputs:
-  runnerArch:
-    description: "Runner architecture (amd64, arm64)"
-    required: false
-    default: "amd64"
-
 runs:
   using: "composite"
   steps:
     - name: Setup Java and Maven
-      uses: ./.github/actions/dependencies/setup-java
+      uses: strimzi/github-actions/.github/actions/dependencies/setup-java@main
+      with:
+        javaVersion: "21"
+
+    - name: Install Docker
+      uses: strimzi/github-actions/.github/actions/dependencies/install-docker@main
+
+    - name: Install yq
+      uses: strimzi/github-actions/.github/actions/dependencies/install-yq@main
+      with:
+        version: "v4.6.3"
+
+    - name: Install Helm
+      uses: strimzi/github-actions/.github/actions/dependencies/install-helm@main
+      with:
+        helmVersion: "v3.16.0"
 
     - name: Restore Maven cache
       uses: actions/cache/restore@v5
@@ -21,18 +30,14 @@ runs:
         restore-keys: |
           maven-
 
-    - name: Install yq
-      uses: ./.github/actions/dependencies/install-yq
-      with:
-        architecture: ${{ inputs.runnerArch }}
-      
-    - name: Install Docker
-      uses: ./.github/actions/dependencies/install-docker
-      
     - name: Setup Kind cluster
-      uses: ./.github/actions/dependencies/setup-kind
+      uses: strimzi/github-actions/.github/actions/dependencies/setup-kind@main
       with:
-        architecture: ${{ inputs.runnerArch }}
+        controlNodes: 1
+        workerNodes: 3
+        kindVersion: 0.31.0
+      env:
+        KIND_NODE_IMAGE: "oldest"
         
     - name: Run unit and integration tests
       shell: bash

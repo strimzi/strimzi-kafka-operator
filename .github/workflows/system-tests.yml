@@ -52,16 +52,21 @@ jobs:
       kafkaVersion: ${{ steps.parse.outputs.kafkaVersion }}
       releaseVersion: ${{ steps.parse.outputs.releaseVersion }}
       parallel: ${{ steps.parse.outputs.parallel }}
-      shouldRun: ${{ steps.parse.outputs.shouldRun }}
+      shouldRun: ${{ steps.should_run.outputs.shouldRun }}
       kubeVersion: ${{ steps.parse.outputs.kubeVersion }}
       ref: ${{ steps.determine_ref.outputs.ref }}
       sha: ${{ steps.determine_ref.outputs.sha }}
     steps:
+      - name: Should Run
+        id: should_run
+        uses: strimzi/github-actions/.github/actions/utils/should-run@main
       - name: Determine checkout ref
         id: determine_ref
-        uses: strimzi/strimzi-kafka-operator/.github/actions/utils/determine-ref@main
+        if: steps.should_run.outputs.shouldRun == 'true'
+        uses: frawless/github-actions/.github/actions/utils/determine-ref@v6.7
       - name: Parse Comment
         id: parse
+        if: steps.should_run.outputs.shouldRun == 'true'
         uses: strimzi/strimzi-kafka-operator/.github/actions/systemtests/parse-comment@main
         with:
           # Parameters from manual trigger via UI
@@ -80,11 +85,7 @@ jobs:
       pull-requests: write
       statuses: write
     steps:
-      - uses: strimzi/strimzi-kafka-operator/.github/actions/utils/check-permissions@main
-      # In case the user has proper rights, print comment with build link and set status
-      - uses: actions/checkout@v6
-        with:
-          ref: ${{ needs.parse-params.outputs.ref }}
+      - uses: frawless/github-actions/.github/actions/utils/check-permissions@v6
 
   check-build:
     needs:
@@ -218,10 +219,35 @@ jobs:
       - uses: actions/checkout@v6
         with:
           ref: ${{ needs.parse-params.outputs.ref }}
-      - uses: ./.github/actions/build/build-strimzi-binaries
+
+      - name: Setup Java and Maven
+        uses: frawless/github-actions/.github/actions/dependencies/setup-java@v6.1
         with:
-          mvnArgs: "-B -DskipTests -Dmaven.javadoc.skip=true"
-          runnerArch: "amd64"
+          javaVersion: "21"
+
+      - name: Install yq
+        uses: strimzi/github-actions/.github/actions/dependencies/install-yq@main
+        with:
+          version: "v4.6.3"
+
+      - name: Install Shellcheck
+        uses: strimzi/github-actions/.github/actions/dependencies/install-shellcheck@main
+        with:
+          version: "0.11.0"
+
+      - name: Install Helm
+        uses: strimzi/github-actions/.github/actions/dependencies/install-helm@main
+        with:
+          helmVersion: "v3.16.0"
+
+      - name: Build binaries using build-binaries action
+        uses: strimzi/github-actions/.github/actions/build/build-binaries@main
+        with:
+          mainJavaBuild: "true"
+          artifactSuffix: "operators"
+          clusterOperatorBuild: "true"
+        env:
+          MVN_ARGS: "-DskipTests -Dmaven.javadoc.skip=true"
 
   build-images:
     name: build-images
@@ -250,10 +276,25 @@ jobs:
       - uses: actions/checkout@v6
         with:
           ref: ${{ needs.parse-params.outputs.ref }}
-      - uses: ./.github/actions/build/build-containers
+
+      - name: Install Docker
+        uses: strimzi/github-actions/.github/actions/dependencies/install-docker@main
+
+      - name: Install yq
+        uses: strimzi/github-actions/.github/actions/dependencies/install-yq@main
+        with:
+          version: "v4.6.3"
+
+      - name: Install Shellcheck
+        uses: strimzi/github-actions/.github/actions/dependencies/install-shellcheck@main
+        with:
+          version: "0.11.0"
+
+      - uses: strimzi/github-actions/.github/actions/build/build-containers@main
         with:
           architecture: ${{ matrix.architecture }}
-          runnerArch: "arm64"
+          imagesDir: "./docker-images/container-archives"
+          artifactSuffix: "operators"
 
   run-tests:
     name: run-tests

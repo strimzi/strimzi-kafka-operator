@@ -61,7 +61,7 @@ jobs:
       KAFKA_VERSION: ${{ inputs.kafkaVersion }}
       DOCKER_TAG: ${{ inputs.releaseVersion }}
       PROFILE: ${{ matrix.config.profile }}
-      ARCH: ${{ matrix.config.architecture }}
+      ARCH: ${{ matrix.config.arch }}
       STRIMZI_RBAC_SCOPE: ${{ matrix.config.strimzi_rbac_scope }}
       CLUSTER_OPERATOR_INSTALL_TYPE: ${{ matrix.config.cluster_operator_install_type }}
       STRIMZI_FEATURE_GATES: ${{ matrix.config.strimzi_feature_gates }}
@@ -88,30 +88,35 @@ jobs:
           checkDescription: "Test run for ${{ matrix.config.jobName }}"
 
       - name: Setup Java and Maven
-        uses: ./.github/actions/dependencies/setup-java
+        uses: strimzi/github-actions/.github/actions/dependencies/setup-java@main
+        with:
+          javaVersion: "21"
 
-      - name: Install Helm
-        uses: ./.github/actions/dependencies/install-helm
+      - name: Install yq
+        uses: strimzi/github-actions/.github/actions/dependencies/install-yq@main
+        with:
+          version: "v4.6.3"
+          architecture: ${{ matrix.config.arch }}
 
       - name: Install Shellcheck
-        uses: ./.github/actions/dependencies/install-shellcheck
+        uses: strimzi/github-actions/.github/actions/dependencies/install-shellcheck@main
         with:
-          architecture: ${{ matrix.config.arch }}
-      - name: Install yq
-        uses: ./.github/actions/dependencies/install-yq
-        with:
-          architecture: ${{ matrix.config.arch }}
+          version: "0.11.0"
 
-      - name: Install Docker
-        uses: ./.github/actions/dependencies/install-docker
+      - name: Install Helm
+        uses: strimzi/github-actions/.github/actions/dependencies/install-helm@main
+        with:
+          helmVersion: "v3.16.0"
 
-      - name: Install Kind
-        uses: ./.github/actions/dependencies/setup-kind
+      - name: Setup Kind cluster
+        uses: strimzi/github-actions/.github/actions/dependencies/setup-kind@main
         with:
           architecture: ${{ matrix.config.arch }}
-          # Could be overriden per pipeline
           controlNodes: 1
-          workerNodes: 1
+          workerNodes: 3
+          kindVersion: 0.31.0
+        env:
+          KIND_NODE_IMAGE: "latest"
 
       - name: Set default environment variables
         uses: ./.github/actions/utils/set-defaults
@@ -146,7 +151,7 @@ jobs:
         if: ${{ inputs.buildRunId != '' }}
         uses: actions/download-artifact@v7
         with:
-          name: "containers-${{ matrix.config.arch }}.tar"
+          name: "containers-operators-${{ matrix.config.arch }}.tar"
           run-id: ${{ inputs.buildRunId }}
           github-token: ${{ github.token }}
 
@@ -155,7 +160,7 @@ jobs:
         if: ${{ inputs.buildRunId == '' }}
         uses: actions/download-artifact@v7
         with:
-          name: "containers-${{ matrix.config.arch }}.tar"
+          name: "containers-operators-${{ matrix.config.arch }}.tar"
 
       # Load Strimzi images from Build workflow
       - name: Load Strimzi images

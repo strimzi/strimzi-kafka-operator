@@ -39,10 +39,39 @@ jobs:
           name: commit-sha.txt
           path: commit-sha.txt
 
-      - uses: ./.github/actions/build/build-strimzi-binaries
+      - name: Remove commit-sha.txt
+        run: |
+          rm -rf commit-sha.txt
+
+      - name: Setup Java and Maven
+        uses: strimzi/github-actions/.github/actions/dependencies/setup-java@main
         with:
-          mvnArgs: "-B -DskipTests -Dmaven.javadoc.skip=true"
-          runnerArch: "amd64"
+          javaVersion: "21"
+
+      - name: Install yq
+        uses: strimzi/github-actions/.github/actions/dependencies/install-yq@main
+        with:
+          version: "v4.6.3"
+
+      - name: Install Shellcheck
+        uses: strimzi/github-actions/.github/actions/dependencies/install-shellcheck@main
+        with:
+          version: "0.11.0"
+
+      - name: Install Helm
+        uses: strimzi/github-actions/.github/actions/dependencies/install-helm@main
+        with:
+          helmVersion: "v3.16.0"
+
+      - name: Build binaries using build-binaries action
+        uses: strimzi/github-actions/.github/actions/build/build-binaries@main
+        with:
+          mainJavaBuild: "true"
+          artifactSuffix: "operators"
+          clusterOperatorBuild: "true"
+        env:
+          # Skip tests for both runs as we will run tests in parallel
+          MVN_ARGS: "-B -DskipTests -Dmaven.javadoc.skip=true"
 
   # Runs Strimzi unit and integration tests
   test-strimzi:
@@ -54,11 +83,6 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - uses: ./.github/actions/build/test-strimzi
-        with:
-          runnerArch: "amd64"
-        env:
-          # Use the oldest supported kubernetes version within Kind
-          KIND_NODE_IMAGE: "oldest"
 
   # Builds Strimzi docs
   build-docs:
@@ -90,10 +114,25 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v6
-      - uses: ./.github/actions/build/build-containers
+
+      - name: Install Docker
+        uses: strimzi/github-actions/.github/actions/dependencies/install-docker@main
+
+      - name: Install yq
+        uses: strimzi/github-actions/.github/actions/dependencies/install-yq@main
+        with:
+          version: "v4.6.3"
+
+      - name: Install Shellcheck
+        uses: strimzi/github-actions/.github/actions/dependencies/install-shellcheck@main
+        with:
+          version: "0.11.0"
+
+      - uses: strimzi/github-actions/.github/actions/build/build-containers@main
         with:
           architecture: ${{ matrix.architecture }}
-          runnerArch: "amd64"
+          imagesDir: "./docker-images/container-archives"
+          artifactSuffix: "operators"
 
   # Push Strimzi containers - run only on main branch
   push-containers:
@@ -110,18 +149,32 @@ jobs:
       contents: read
       # Required for keyless signing with GitHub OIDC
       id-token: write
-    env:
-      DOCKER_REGISTRY: "quay.io"
-      DOCKER_ORG: "strimzi"
-      DOCKER_TAG: "latest"
     steps:
       - uses: actions/checkout@v6
-      - uses: ./.github/actions/build/push-containers
+
+      - name: Install Docker
+        uses: strimzi/github-actions/.github/actions/dependencies/install-docker@main
+
+      - name: Install yq
+        uses: strimzi/github-actions/.github/actions/dependencies/install-yq@main
         with:
+          version: "v4.6.3"
+
+      - name: Install Syft
+        uses: strimzi/github-actions/.github/actions/dependencies/install-syft@main
+        with:
+          version: "v1.20.0"
+
+      - name: Push containers using push-containers action
+        uses: strimzi/github-actions/.github/actions/build/push-containers@main
+        with:
+          registryUser: ${{ secrets.QUAY_USER }}
+          registryPassword: ${{ secrets.QUAY_PASS }}
+          containerRegistry: "quay.io"
+          containerOrg: "strimzi"
+          containerTag: "latest"
           architectures: "amd64,arm64,ppc64le,s390x"
-          runnerArch: "amd64"
-          quayUser: ${{ secrets.QUAY_USER }}
-          quayPass: ${{ secrets.QUAY_PASS }}
+          artifactSuffix: "operators"
 
   # Publish Strimzi docs to the website - run only on main branch
   publish-docs:
@@ -154,9 +207,21 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v6
-      - uses: ./.github/actions/build/deploy-java
+
+      - name: Setup Java and Maven
+        uses: strimzi/github-actions/.github/actions/dependencies/setup-java@main
         with:
-          runnerArch: "amd64"
+          javaVersion: "21"
+
+      - name: Install yq
+        uses: strimzi/github-actions/.github/actions/dependencies/install-yq@main
+        with:
+          version: "v4.6.3"
+
+      - name: Deploy to Maven Central
+        uses: strimzi/github-actions/.github/actions/build/deploy-java@main
+        with:
+          modules: "./,crd-annotations,crd-generator,test,api,v1-api-conversion"
           gpgPassphrase: ${{ secrets.GPG_PASSPHRASE }}
           gpgSigningKey: ${{ secrets.GPG_SIGNING_KEY }}
           centralUsername: ${{ secrets.CENTRAL_USERNAME }}

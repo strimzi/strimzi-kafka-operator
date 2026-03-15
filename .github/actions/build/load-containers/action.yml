@@ -15,11 +15,11 @@ runs:
   steps:
     - name: "Untar the ${{ inputs.architecture }} containers"
       shell: bash
-      run: tar -xvf containers-${{ inputs.architecture }}.tar
+      run: tar -xvf containers-operators-${{ inputs.architecture }}.tar
 
     - name: "Delete the original archive with the ${{ inputs.architecture }} containers"
       shell: bash
-      run: rm containers-${{ inputs.architecture }}.tar
+      run: rm containers-operators-${{ inputs.architecture }}.tar
 
     # This is for loading images into minikube registry
     - name: Load & push Strimzi images into minikube registry
