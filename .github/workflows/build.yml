@@ -93,10 +93,20 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v6
+
+      - name: Install yq
+        uses: strimzi/github-actions/.github/actions/dependencies/install-yq@main
+        with:
+          version: "v4.6.3"
+
+      - name: Install AsciiDoctor
+        uses: strimzi/github-actions/.github/actions/dependencies/install-ascii-doctor@main
+        with:
+          rubyVersion: "3.2"
+
       - uses: ./.github/actions/build/build-docs
         with:
           artifactName: "documentation.tar"
-          runnerArch: "amd64"
 
   # Builds Strimzi containers
   build-containers:

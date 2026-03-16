@@ -18,7 +18,7 @@ Usage example can be like this:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - uses: ./.github/actions/build/build-strimzi-binaries
+      - uses: strimzi/github-actions/.github/actions/build/build-binaries@v1
         with:
           mvnArgs: "-B -DskipTests -Dmaven.javadoc.skip=true"
 ```
@@ -37,7 +37,7 @@ This actions has to be called separately for each architecture with matrix strat
     runs-on: oracle-vm-2cpu-8gb-arm64
     steps:
       - uses: actions/checkout@v6
-      - uses: ./.github/actions/build/build-containers
+      - uses: strimzi/github-actions/.github/actions/build/build-containers@v1
         with:
           architecture: ${{ matrix.architecture }}
 ```
@@ -46,28 +46,17 @@ As a runner we use `oracle-vm-2cpu-8gb-arm64` which is basically a small arm-bas
 This runner allows us to build multi-arch images without any tweaks in our build mechanism (container runners from oracle cloud doesn't allow it).
 
 ## Supporting actions
-In [actions](../actions) folder you can find a couple of supporting actions.
+The most of the actions that are used across the whole Strimzi org can be found at [strimzi/github-actions](https://github.com/strimzi/github-actions).
+For more details check the repo.
+Here we mention only actions used within operators repository.
+
+In [actions](../actions) folder you can find a couple of supporting actions that are not relevant to other Strimzi repositories.
 All of them are used to prepare the environment or do a specific task as part of the build or test workflow.
 
-Environment preparation actions:
-- [install-docker](../actions/dependencies/install-docker)
-- [install-helm](../actions/dependencies/install-helm)
-- [install-shellcheck](../actions/dependencies/install-shellcheck)
-- [install-yq](../actions/dependencies/install-yq)
-- [setup-java](../actions/dependencies/setup-java)
-- [setup-kind](../actions/dependencies/setup-kind)
-- [setup-minikube](../actions/dependencies/setup-minikube)
-
 Build process actions:
-- [build-strimzi-binaries](../actions/build/build-strimzi-binaries)
-- [build-containers](../actions/build/build-containers)
 - [load-containers](../actions/build/load-containers)
-- [push-containers](../actions/build/push-containers)
 - [build-docs](../actions/build/build-docs)
 - [publish-docs](../actions/build/publish-docs)
-- [publish-helm-chart](../actions/build/publish-helm-chart)
-- [deploy-java](../actions/build/deploy-java)
-- [release-artifacts](../actions/build/release-artifacts)
 - [test-strimzi](../actions/build/test-strimzi)
 
 System tests execution actions:
@@ -77,13 +66,14 @@ System tests execution actions:
 - [run-perf-report](../actions/systemtests/run-perf-report)
 
 Utils actions:
-- [check-permissions](../actions/utils/check-permissions)
 - [add-comment](../actions/utils/add-comment)
 - [check-and-status](../actions/utils/check-and-status)
 - [set-defaults](../actions/utils/set-defaults)
 - [log-variables](../actions/utils/log-variables)
-- [determine-ref](../actions/utils/determine-ref)
 - [compare-merge-commit](../actions/utils/compare-merge-commit)
+
+> [!WARNING]
+> All the actions from [.github/actions/dependencies](/.github/actions/dependencies) should be used from [strimzi/github-actions](https://github.com/strimzi/github-actions) repo.
 
 ## Workflows
 The repository contains several GitHub Actions workflows for different purposes:
@@ -168,7 +158,7 @@ Every generated `GITHUB_TOKEN` has only read access to the repo/org without acce
 ## Testing workflows and actions
 Unit and integration tests invoked via [actions-tests.yml](../workflows/actions-tests.yml) workflow.
 It uses files specified within [tests](../tests) folder and via [act](https://github.com/nektos/act) it tries to execute the actions and check the outputs.
-Currently, we tests `check-permissions`, `generate-matrix`, and `parse-comment` actions.
+Currently, we tests `generate-matrix` and `parse-comment` actions.
 
 ### Performance Report Tests
 The performance report generation workflow has test scenarios defined in [tests/scenarios/perf-report.yaml](../tests/scenarios/perf-report.yaml).
