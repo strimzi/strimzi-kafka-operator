@@ -71,6 +71,11 @@ jobs:
           centralUsername: ${{ secrets.CENTRAL_USERNAME }}
           centralPassword: ${{ secrets.CENTRAL_PASSWORD }}
 
+      - name: "Build documentation"
+        uses: ./.github/actions/build/build-docs
+        with:
+          artifactName: "documentation.tar"
+
   # Push Java artifacts to GHCR for long-term storage (for CVE rebuilds)
   push-java-artifacts-to-ghcr:
     name: Push Java artifacts to GHCR
