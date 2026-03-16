@@ -165,7 +165,7 @@ jobs:
       # Load Strimzi images from Build workflow
       - name: Load Strimzi images
         if: ${{ env.DOCKER_TAG == 'latest' && inputs.ref != 'refs/heads/main' }}
-        uses: strimzi/github-actions/.github/actions/build/load-containers@v1
+        uses: ./.github/actions/build/load-containers
         with:
           architecture: ${{ matrix.config.arch }}
           registry: "kind"
