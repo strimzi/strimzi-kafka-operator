@@ -39,15 +39,6 @@
         </developer>
     </developers>
 
-    <!-- TODO: Remove 4.1.2 once GA -->
-    <repositories>
-        <repository>
-            <id>apache-staging</id>
-            <name>Apache Staging Repository</name>
-            <url>https://repository.apache.org/content/groups/staging/</url>
-        </repository>
-    </repositories>
-
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.release>21</maven.compiler.release>
