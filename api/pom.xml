@@ -18,8 +18,6 @@
     </licenses>
 
     <properties>
-        <maven.compiler.release>11</maven.compiler.release>
-
         <!-- Points to the root directory of the Strimzi project directory and can be used for fixed location to configuration files -->
         <strimziRootDirectory>${basedir}${file.separator}..</strimziRootDirectory>
     </properties>

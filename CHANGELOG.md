@@ -8,6 +8,8 @@
 
 ### Major changes, deprecations, and removals
 
+* The `api`, `test`, `crd-annotations`, and `crd-generator` modules now use Java 21 as their Java language level.
+  If you use one of these modules as a dependency in your Java project, you will need to upgrade to Java 21 as well.
 * Open Policy Agent (OPA) authorizer plugin is not bundled as part of the Strimzi Container images anymore.
   If you want to continue use the OPA Authorizer, you have to add it as a custom plugin by building a custom Kafka container image or using additional volumes.
   Once added, you can continue to use OPA using the `type: custom` authorization.
