@@ -60,6 +60,11 @@ jobs:
       - name: Determine checkout ref
         id: determine_ref
         uses: strimzi/github-actions/.github/actions/utils/determine-ref@v1
+
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ steps.determine_ref.outputs.ref }}
+
       - name: Parse Comment
         id: parse
         uses: ./.github/actions/systemtests/parse-comment
