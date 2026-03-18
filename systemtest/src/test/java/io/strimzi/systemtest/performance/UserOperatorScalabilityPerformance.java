@@ -39,6 +39,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -254,7 +255,8 @@ public class UserOperatorScalabilityPerformance extends AbstractST {
                 LOGGER.info("Cleaning namespace: {}", testStorage.getNamespaceName());
                 List<KafkaUser> kafkaUsers = CrdClients.kafkaUserClient().inNamespace(testStorage.getNamespaceName()).list().getItems();
                 KubeResourceManager.get().deleteResourceWithoutWait(kafkaUsers.toArray(new KafkaUser[0]));
-                KafkaUserUtils.waitForUserWithPrefixDeletion(testStorage.getNamespaceName(), testStorage.getUsername());
+                final long deletionTimeoutMs = TestConstants.GLOBAL_TIMEOUT + (numberOfExistingUsers / 500) * Duration.ofMinutes(2).toMillis();
+                KafkaUserUtils.waitForUserWithPrefixDeletion(testStorage.getNamespaceName(), testStorage.getUsername(), deletionTimeoutMs);
 
                 if (latencyMetrics != null) {
                     final Map<String, Object> performanceAttributes = new LinkedHashMap<>();

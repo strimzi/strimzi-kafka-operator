@@ -246,7 +246,18 @@ public class KafkaUserUtils {
      * @param userPrefix The prefix of the KafkaUser resources to be deleted.
      */
     public static void waitForUserWithPrefixDeletion(String namespaceName, String userPrefix) {
-        TestUtils.waitFor("deletion of all users with prefix: " + userPrefix, TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT,
+        waitForUserWithPrefixDeletion(namespaceName, userPrefix, TestConstants.GLOBAL_TIMEOUT);
+    }
+
+    /**
+     * Waits for the deletion of all KafkaUser resources with a specific prefix in a namespace.
+     *
+     * @param namespaceName The namespace where the KafkaUser resources are located.
+     * @param userPrefix    The prefix of the KafkaUser resources to be deleted.
+     * @param timeoutMs     The maximum time in milliseconds to wait for the deletion.
+     */
+    public static void waitForUserWithPrefixDeletion(String namespaceName, String userPrefix, long timeoutMs) {
+        TestUtils.waitFor("deletion of all users with prefix: " + userPrefix, TestConstants.GLOBAL_POLL_INTERVAL, timeoutMs,
             () -> {
                 try {
                     return getAllKafkaUsersWithPrefix(namespaceName, userPrefix).size() == 0;
