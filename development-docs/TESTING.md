@@ -421,10 +421,9 @@ You can skip them by adding the `-Dskip.surefire.tests` option to the mvn comman
 
 When a GitHub Actions (GHA) job fails, you can examine the logs to debug the issue:
 
-1. Click **View details** next to the failed check on the pull request. This redirects you to the workflow run page (e.g., `https://github.com/strimzi/strimzi-kafka-operator/actions/runs/<run-id>`).
-2. Navigate to the failed job in the left sidebar.
-3. Find the **Archive systemtest logs** step in the job output. It contains a line like `Artifact download URL: <url>`.
-4. Use that URL to download the archived logs artifact, which you can then extract and examine to find details about the failure.
+1. Click **View details** next to the failed check on the pull request. This redirects you to the workflow run page (e.g., `https://github.com/strimzi/strimzi-kafka-operator/actions/runs/<run-id>/`).
+2. Scroll down to the **Artifacts** section at the bottom of the page, labeled _Produced during runtime_. Each artifact has a direct download link on the right side.
+3. Download the relevant artifact and extract it to examine the logs for that specific run.
 
 ## Testing Cluster Operator deployment via OLM
 
