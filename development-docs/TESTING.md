@@ -15,6 +15,7 @@ For more information about the build process, see [Dev guide document](DEV_GUIDE
 - [Helper Script](#helper-script)
 - [Running single test class](#running-single-test-class)
 - [Skip Teardown](#skip-teardown)
+- [Accessing GitHub Actions logs](#accessing-github-actions-logs)
 - [Testing-farm](../systemtest/tmt/README.md)
 - [Running tests with custom images](#running-tests-with-custom-images)
 - [Performance testing](#performance-testing)
@@ -415,6 +416,14 @@ Unfortunately, this approach is not applicable for tests where component configu
 There are several tests, which are executed via Maven Surefire plugin.
 Those tests are some unit tests for internal systemtest package tooling.
 You can skip them by adding the `-Dskip.surefire.tests` option to the mvn command.
+
+## Accessing GitHub Actions logs
+
+When a GitHub Actions (GHA) job fails, you can examine the logs to debug the issue:
+
+1. Click **View details** next to the failed check on the pull request. This redirects you to the workflow run page (e.g., `https://github.com/strimzi/strimzi-kafka-operator/actions/runs/<run-id>/`).
+2. Scroll down to the **Artifacts** section at the bottom of the page, labeled _Produced during runtime_. Each artifact has a direct download link on the right side.
+3. Download the relevant artifact and extract it to examine the logs for that specific run.
 
 ## Testing Cluster Operator deployment via OLM
 
