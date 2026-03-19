@@ -59,10 +59,15 @@ jobs:
     steps:
       - name: Determine checkout ref
         id: determine_ref
-        uses: strimzi/strimzi-kafka-operator/.github/actions/utils/determine-ref@main
+        uses: strimzi/github-actions/.github/actions/utils/determine-ref@v1
+
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ steps.determine_ref.outputs.ref }}
+
       - name: Parse Comment
         id: parse
-        uses: strimzi/strimzi-kafka-operator/.github/actions/systemtests/parse-comment@main
+        uses: ./.github/actions/systemtests/parse-comment
         with:
           # Parameters from manual trigger via UI
           releaseVersion: ${{ github.event.inputs.releaseVersion }}
@@ -80,7 +85,7 @@ jobs:
       pull-requests: write
       statuses: write
     steps:
-      - uses: strimzi/strimzi-kafka-operator/.github/actions/utils/check-permissions@main
+      - uses: strimzi/github-actions/.github/actions/utils/check-permissions@v1
       # In case the user has proper rights, print comment with build link and set status
       - uses: actions/checkout@v6
         with:
