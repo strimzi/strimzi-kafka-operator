@@ -63,6 +63,19 @@ public class KRaftStrimziUpgradeST extends AbstractKRaftUpgradeST {
     }
 
     @IsolatedTest
+    void testUpgradeWithCrAndCrdConversion() throws IOException {
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
+        BundleVersionModificationData crdUpgradeData = acrossUpgradeData;
+        crdUpgradeData.setConvertCrsAndCrds(true);
+
+        UpgradeKafkaVersion upgradeKafkaVersion = new UpgradeKafkaVersion(crdUpgradeData.getDeployKafkaVersion());
+        // setting metadata version to null, similarly to the examples, which are not configuring metadataVersion
+        upgradeKafkaVersion.setMetadataVersion(null);
+
+        doKafkaConnectAndKafkaConnectorUpgradeOrDowngradeProcedure(CO_NAMESPACE, testStorage, crdUpgradeData, upgradeKafkaVersion);
+    }
+
+    @IsolatedTest
     void testUpgradeKafkaWithoutVersion() throws IOException {
         UpgradeKafkaVersion upgradeKafkaVersion = UpgradeKafkaVersion.getKafkaWithVersionFromUrl(acrossUpgradeData.getFromKafkaVersionsUrl(), acrossUpgradeData.getStartingKafkaVersion());
         upgradeKafkaVersion.setVersion(null);

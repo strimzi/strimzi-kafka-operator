@@ -7,6 +7,7 @@ package io.strimzi.systemtest.utils.kafkaUtils;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.PodCondition;
 import io.skodjob.kubetest4j.resources.KubeResourceManager;
+import io.skodjob.kubetest4j.utils.ResourceUtils;
 import io.strimzi.api.kafka.model.common.Condition;
 import io.strimzi.api.kafka.model.connect.KafkaConnect;
 import io.strimzi.api.kafka.model.connect.KafkaConnectResources;
@@ -65,6 +66,16 @@ public class KafkaConnectUtils {
 
     public static void waitForConnectNotReady(String namespaceName, String clusterName) {
         waitForConnectStatus(namespaceName, clusterName, NotReady);
+    }
+
+    public static void waitForKafkaConnectReadyForV1Beta2(String namespaceName, String clusterName) {
+        KafkaConnect kafkaConnect = ResourceUtils.getGenericResourceReturnSpecific(namespaceName, clusterName, TestConstants.V1_BETA_2_API_VERSION, KafkaConnect.RESOURCE_KIND, KafkaConnect.class);
+        KubeResourceManager.get().waitResourceCondition(
+            kafkaConnect,
+            ResourceConditions.resourceHasDesiredState(Ready),
+            ResourceOperation.getTimeoutForResourceReadiness(kafkaConnect.getKind()),
+            () -> ResourceUtils.getGenericResourceReturnSpecific(namespaceName, clusterName, TestConstants.V1_BETA_2_API_VERSION, KafkaConnect.RESOURCE_KIND, KafkaConnect.class)
+        );
     }
 
     public static void waitUntilKafkaConnectRestApiIsAvailable(String namespaceName, String podNamePrefix) {

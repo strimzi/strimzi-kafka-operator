@@ -1,0 +1,16 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: strimzi-v1-api-conversion
+spec:
+  template:
+    spec:
+      serviceAccountName: strimzi-v1-api-conversion
+      containers:
+        - name: strimzi-v1-api-conversion
+          # Use an image that includes the conversion tool
+          image: quay.io/strimzi/operator:0.51.0
+          command:
+            - /opt/v1-api-conversion/bin/v1-api-conversion.sh
+            - convert-resource
+      restartPolicy: OnFailure
