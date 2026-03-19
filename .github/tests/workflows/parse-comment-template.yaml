@@ -49,7 +49,6 @@ jobs:
           EXPECT_STRIMZI_RBAC_SCOPE: ${{ env.EXPECT_STRIMZI_RBAC_SCOPE }}
           EXPECT_CLUSTER_OPERATOR_INSTALL_TYPE: ${{ env.EXPECT_CLUSTER_OPERATOR_INSTALL_TYPE }}
           EXPECT_PARALLEL: ${{ env.EXPECT_PARALLEL }}
-          EXPECT_SHOULD_RUN: ${{ env.EXPECT_SHOULD_RUN }}
           EXPECT_RELEASE: ${{ env.EXPECT_RELEASE }}
         run: |
           set -euo pipefail
@@ -66,7 +65,6 @@ jobs:
           ACTUAL_STRIMZI_RBAC_SCOPE='${{ steps.parse.outputs.strimzi_rbac_scope }}'
           ACTUAL_CLUSTER_OPERATOR_INSTALL_TYPE='${{ steps.parse.outputs.cluster_operator_install_type }}'
           ACTUAL_PARALLEL='${{ steps.parse.outputs.parallel }}'
-          ACTUAL_SHOULD_RUN='${{ steps.parse.outputs.shouldRun }}'
           ACTUAL_RELEASE='${{ steps.parse.outputs.releaseVersion }}'
           
           echo "::group::Assertion details"
@@ -94,8 +92,6 @@ jobs:
           printf 'EXPECT_CLUSTER_OPERATOR_INSTALL_TYPE=%q\n'  "$EXPECT_CLUSTER_OPERATOR_INSTALL_TYPE"
           printf 'ACTUAL_PARALLEL=%q\n'  "$ACTUAL_PARALLEL"
           printf 'EXPECT_PARALLEL=%q\n'  "$EXPECT_PARALLEL"
-          printf 'ACTUAL_SHOULD_RUN=%q\n'  "$ACTUAL_SHOULD_RUN"
-          printf 'EXPECT_SHOULD_RUN=%q\n'  "$EXPECT_SHOULD_RUN"
           printf 'ACTUAL_RELEASE=%q\n'  "$ACTUAL_RELEASE"
           printf 'EXPECT_RELEASE=%q\n'  "$EXPECT_RELEASE"
           echo "::endgroup::"
@@ -133,9 +129,6 @@ jobs:
           fi
           if [[ "${EXPECT_CLUSTER_OPERATOR_INSTALL_TYPE+defined}" == "defined" && "$ACTUAL_CLUSTER_OPERATOR_INSTALL_TYPE"  != "$EXPECT_CLUSTER_OPERATOR_INSTALL_TYPE" ]]; then
             echo "❌ cluster_operator_install_type mismatch";  exit 1
-          fi
-          if [[ "${EXPECT_SHOULD_RUN+defined}" == "defined" && "$ACTUAL_SHOULD_RUN"  != "$EXPECT_SHOULD_RUN" ]]; then
-            echo "❌ shouldRun mismatch";  exit 1
           fi
           if [[ "${EXPECT_RELEASE+defined}" == "defined" && "$ACTUAL_RELEASE"  != "$EXPECT_RELEASE" ]]; then
             echo "❌ releaseVersion mismatch";  exit 1
