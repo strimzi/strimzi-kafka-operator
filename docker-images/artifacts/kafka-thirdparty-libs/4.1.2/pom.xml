@@ -8,6 +8,12 @@
     <artifactId>kafka-thirdparty-libs</artifactId>
     <packaging>pom</packaging>
 
+    <!--
+    Changes compared to 4.1.x:
+      - Log4j2: 2.24.3 -> 2.25.3
+      - Jackson (jackson-dataformat-yaml, jackson-datatype-jsr310): 2.19.0 -> 2.19.4
+    -->
+
     <licenses>
         <license>
             <name>Apache License, Version 2.0</name>
@@ -20,14 +26,12 @@
         <strimzi-metrics-reporter.version>0.3.0</strimzi-metrics-reporter.version>
         <prometheus.version>1.3.6</prometheus.version>
         <cruise-control.version>2.5.146</cruise-control.version>
-        <opa-authorizer.version>1.5.1</opa-authorizer.version>
         <kafka-quotas-plugin.version>0.4.0</kafka-quotas-plugin.version>
         <kafka-kubernetes-config-provider.version>1.2.2</kafka-kubernetes-config-provider.version>
         <opentelemetry.version>1.34.1</opentelemetry.version>
         <opentelemetry-alpha.version>1.34.1-alpha</opentelemetry-alpha.version>
         <opentelemetry.instrumentation.version>1.32.0-alpha</opentelemetry.instrumentation.version>
         <grpc-netty-shaded.version>1.75.0</grpc-netty-shaded.version>
-        <guava.version>32.1.3-jre</guava.version>
         <log4j.version>2.25.3</log4j.version>
     </properties>
 
@@ -37,19 +41,6 @@
             <url>https://linkedin.jfrog.io/artifactory/cruise-control/</url>
         </repository>
     </repositories>
-
-    <dependencyManagement>
-        <dependencies>
-            <!--
-            Override guava version coming from org.openpolicyagent.kafka:opa-authorizer
-            -->
-            <dependency>
-                <groupId>com.google.guava</groupId>
-                <artifactId>guava</artifactId>
-                <version>${guava.version}</version>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
 
     <dependencies>
         <!-- Support for the new JsonTemplateLayout as appender type -->
@@ -290,37 +281,6 @@
             <groupId>io.prometheus</groupId>
             <artifactId>prometheus-metrics-exporter-httpserver</artifactId>
             <version>${prometheus.version}</version>
-        </dependency>
-        <!-- Open Policy Authorization plugin -->
-        <dependency>
-            <groupId>org.openpolicyagent.kafka</groupId>
-            <artifactId>opa-authorizer</artifactId>
-            <version>${opa-authorizer.version}</version>
-        </dependency>
-        <dependency>
-            <!-- Jackson Scala is not included in Kafka anymore from Kafka 4.0.0.
-                 So we need to include it explicitly, but we exclude its dependencies that are in Kafka already. -->
-            <groupId>com.fasterxml.jackson.module</groupId>
-            <artifactId>jackson-module-scala_2.13</artifactId>
-            <version>2.19.4</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.scala-lang</groupId>
-                    <artifactId>scala-library</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.fasterxml.jackson.core</groupId>
-                    <artifactId>jackson-core</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.fasterxml.jackson.core</groupId>
-                    <artifactId>jackson-annotations</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.fasterxml.jackson.core</groupId>
-                    <artifactId>jackson-databind</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <!-- Kafka Quotas Plugin -->
         <dependency>
