@@ -119,6 +119,7 @@ public class KafkaConnectBuild extends AbstractModel {
 
         if (spec.getBuild() != null)    {
             validateBuildConfiguration(spec.getBuild());
+            ModelUtils.validateComputeResources(spec.getBuild().getResources(), "KafkaConnect.spec.build.resources");
 
             if (spec.getBuild().getOutput() != null
                     && spec.getBuild().getOutput() instanceof DockerOutput dockerOutput) {

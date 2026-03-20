@@ -138,6 +138,7 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
         if (kafkaAssembly.getSpec().getEntityOperator() != null
                 && kafkaAssembly.getSpec().getEntityOperator().getTopicOperator() != null) {
             EntityTopicOperatorSpec topicOperatorSpec = kafkaAssembly.getSpec().getEntityOperator().getTopicOperator();
+            ModelUtils.validateComputeResources(topicOperatorSpec.getResources(), "Kafka.spec.entityOperator.topicOperator.resources");
             EntityTopicOperator result = new EntityTopicOperator(reconciliation, kafkaAssembly, sharedEnvironmentProvider);
 
             String image = topicOperatorSpec.getImage();

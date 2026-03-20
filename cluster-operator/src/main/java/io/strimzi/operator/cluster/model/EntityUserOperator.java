@@ -122,6 +122,7 @@ public class EntityUserOperator extends AbstractModel implements SupportsLogging
         if (kafkaAssembly.getSpec().getEntityOperator() != null
                 && kafkaAssembly.getSpec().getEntityOperator().getUserOperator() != null) {
             EntityUserOperatorSpec userOperatorSpec = kafkaAssembly.getSpec().getEntityOperator().getUserOperator();
+            ModelUtils.validateComputeResources(userOperatorSpec.getResources(), "Kafka.spec.entityOperator.userOperator.resources");
             EntityUserOperator result = new EntityUserOperator(reconciliation, kafkaAssembly, sharedEnvironmentProvider);
 
             String image = userOperatorSpec.getImage();
