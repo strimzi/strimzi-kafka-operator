@@ -173,7 +173,7 @@ jobs:
       - name: Install Syft
         uses: strimzi/github-actions/.github/actions/dependencies/install-syft@main
         with:
-          version: "v1.20.0"
+          version: "1.20.0"
 
       - name: Push containers using push-containers action
         uses: strimzi/github-actions/.github/actions/build/push-containers@main
