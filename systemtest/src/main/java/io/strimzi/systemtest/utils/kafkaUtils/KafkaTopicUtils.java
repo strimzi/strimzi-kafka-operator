@@ -4,7 +4,6 @@
  */
 package io.strimzi.systemtest.utils.kafkaUtils;
 
-import io.fabric8.kubernetes.api.model.GenericKubernetesResource;
 import io.skodjob.kubetest4j.executor.ExecResult;
 import io.skodjob.kubetest4j.resources.KubeResourceManager;
 import io.skodjob.kubetest4j.utils.ResourceUtils;
@@ -141,11 +140,11 @@ public class KafkaTopicUtils {
         );
     }
 
-    public static void deleteAllKafkaTopicsWithV1Beta2(String namespaceName) {
-        List<GenericKubernetesResource> kafkaTopics = kafkaTopicV1Beta2Client().inNamespace(namespaceName).list().getItems();
+    public static void deleteAllKafkaTopics(String namespaceName) {
+        List<KafkaTopic> kafkaTopics = kafkaTopicClient().inNamespace(namespaceName).list().getItems();
         kafkaTopics.forEach(kafkaTopic -> {
-            kafkaTopicV1Beta2Client().inNamespace(namespaceName).resource(kafkaTopic).delete();
-            waitForKafkaTopicDeletionWithV1Beta2(namespaceName, kafkaTopic.getMetadata().getName());
+            kafkaTopicClient().inNamespace(namespaceName).resource(kafkaTopic).delete();
+            waitForKafkaTopicDeletion(namespaceName, kafkaTopic.getMetadata().getName());
         });
     }
 

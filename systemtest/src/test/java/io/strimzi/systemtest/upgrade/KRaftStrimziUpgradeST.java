@@ -92,6 +92,9 @@ public class KRaftStrimziUpgradeST extends AbstractKRaftUpgradeST {
         // Make snapshots of all Pods
         makeComponentsSnapshots(testStorage.getNamespaceName());
 
+        // Convert CRDs before upgrade
+        convertCrdsOnly(testStorage.getNamespaceName());
+
         // Upgrade CO
         changeClusterOperator(CO_NAMESPACE, testStorage.getNamespaceName(), acrossUpgradeData);
         logClusterOperatorPodImage(CO_NAMESPACE);
@@ -125,6 +128,9 @@ public class KRaftStrimziUpgradeST extends AbstractKRaftUpgradeST {
         // Make snapshots of all Pods
         makeComponentsSnapshots(testStorage.getNamespaceName());
 
+        // Convert CRDs before upgrade
+        convertCrdsOnly(testStorage.getNamespaceName());
+
         // Upgrade CO
         changeClusterOperator(CO_NAMESPACE, testStorage.getNamespaceName(), acrossUpgradeData);
 
@@ -152,6 +158,9 @@ public class KRaftStrimziUpgradeST extends AbstractKRaftUpgradeST {
 
         // Setup env
         setupEnvAndUpgradeClusterOperator(CO_NAMESPACE, testStorage, acrossUpgradeData, null);
+
+        // Convert CRDs before upgrade
+        convertCrdsOnly(testStorage.getNamespaceName());
 
         // Upgrade CO
         changeClusterOperator(CO_NAMESPACE, testStorage.getNamespaceName(), acrossUpgradeData);

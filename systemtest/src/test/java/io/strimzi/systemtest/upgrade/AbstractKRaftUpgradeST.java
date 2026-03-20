@@ -165,6 +165,9 @@ public class AbstractKRaftUpgradeST extends AbstractST {
         if (upgradeDowngradeData.getConvertCrsAndCrds()) {
             // convert CRs and CRDs to v1
             convertCrsAndCrds(testStorage.getNamespaceName());
+        } else if (!upgradeDowngradeData.getFromVersion().equals("HEAD")) {
+            // convert just CRDs to v1 as we are upgrading from storage being v1beta2
+            convertCrdsOnly(testStorage.getNamespaceName());
         }
 
         // 5. Upgrade CO to HEAD and wait for readiness of ClusterOperator
@@ -288,7 +291,8 @@ public class AbstractKRaftUpgradeST extends AbstractST {
             // Attach clients which will continuously produce/consume messages to/from Kafka brokers during rolling update
             // ##############################
             // Setup topic, which has 3 replicas and 2 min.isr to see if producer will be able to work during rolling update
-            if (!KubeResourceManager.get().kubeCmdClient().inNamespace(testStorage.getNamespaceName()).getResourcesAsYaml(getResourceApiVersion(KafkaTopic.RESOURCE_PLURAL)).contains(testStorage.getTopicName())) {
+            if (!KubeResourceManager.get().kubeCmdClient().inNamespace(testStorage.getNamespaceName())
+                .getResourcesAsYaml(getResourceApiVersion(KafkaTopic.RESOURCE_PLURAL, upgradeData.getConvertCrsAndCrds())).contains(testStorage.getTopicName())) {
                 String pathToTopicExamples = upgradeData.getFromExamples().equals("HEAD") ? PATH_TO_KAFKA_TOPIC_CONFIG : upgradeData.getFromExamples() + "/examples/topic/kafka-topic.yaml";
 
                 kafkaTopicYaml = new File(dir, pathToTopicExamples);
@@ -298,7 +302,11 @@ public class AbstractKRaftUpgradeST extends AbstractST {
                     .replace("replicas: 1", "replicas: 3") +
                     "    min.insync.replicas: 2");
 
-                KafkaTopicUtils.waitForKafkaTopicReadyForV1Beta2(testStorage.getNamespaceName(), testStorage.getTopicName());
+                if (upgradeData.getConvertCrsAndCrds()) {
+                    KafkaTopicUtils.waitForKafkaTopicReadyForV1Beta2(testStorage.getNamespaceName(), testStorage.getTopicName());
+                } else {
+                    KafkaTopicUtils.waitForKafkaTopicReady(testStorage.getNamespaceName(), testStorage.getTopicName());
+                }
             }
 
             // 40s is used within TF environment to make upgrade/downgrade more stable on slow env
@@ -345,7 +353,8 @@ public class AbstractKRaftUpgradeST extends AbstractST {
                                                           final UpgradeKafkaVersion upgradeKafkaVersion) {
         LOGGER.info("Deploying Kafka: {}/{}", componentsNamespaceName, CLUSTER_NAME);
 
-        if (!KubeResourceManager.get().kubeCmdClient().inNamespace(componentsNamespaceName).getResourcesAsYaml(getResourceApiVersion(Kafka.RESOURCE_PLURAL)).contains(CLUSTER_NAME)) {
+        if (!KubeResourceManager.get().kubeCmdClient().inNamespace(componentsNamespaceName)
+            .getResourcesAsYaml(getResourceApiVersion(Kafka.RESOURCE_PLURAL, upgradeData.getConvertCrsAndCrds())).contains(CLUSTER_NAME)) {
             // Deploy a Kafka cluster
             if (upgradeData.getFromExamples().equals("HEAD")) {
                 KubeResourceManager.get().createResourceWithWait(
@@ -386,7 +395,8 @@ public class AbstractKRaftUpgradeST extends AbstractST {
     protected void deployKafkaUserWithWaitForReadiness(final String componentsNamespaceName, final BundleVersionModificationData upgradeData) {
         LOGGER.info("Deploying KafkaUser: {}/{}", componentsNamespaceName, USER_NAME);
 
-        if (!KubeResourceManager.get().kubeCmdClient().inNamespace(componentsNamespaceName).getResourcesAsYaml(getResourceApiVersion(KafkaUser.RESOURCE_PLURAL)).contains(USER_NAME)) {
+        if (!KubeResourceManager.get().kubeCmdClient().inNamespace(componentsNamespaceName)
+            .getResourcesAsYaml(getResourceApiVersion(KafkaUser.RESOURCE_PLURAL, upgradeData.getConvertCrsAndCrds())).contains(USER_NAME)) {
             if (upgradeData.getFromVersion().equals("HEAD")) {
                 KubeResourceManager.get().createResourceWithWait(KafkaUserTemplates.tlsUser(componentsNamespaceName, USER_NAME, CLUSTER_NAME).build());
             } else {
@@ -405,7 +415,8 @@ public class AbstractKRaftUpgradeST extends AbstractST {
     protected void deployKafkaTopicWithWaitForReadiness(final String componentsNamespaceName, final BundleVersionModificationData upgradeData) {
         LOGGER.info("Deploying KafkaTopic: {}/{}", componentsNamespaceName, TOPIC_NAME);
 
-        if (!KubeResourceManager.get().kubeCmdClient().inNamespace(componentsNamespaceName).getResourcesAsYaml(getResourceApiVersion(KafkaTopic.RESOURCE_PLURAL)).contains(TOPIC_NAME)) {
+        if (!KubeResourceManager.get().kubeCmdClient().inNamespace(componentsNamespaceName)
+            .getResourcesAsYaml(getResourceApiVersion(KafkaTopic.RESOURCE_PLURAL, upgradeData.getConvertCrsAndCrds())).contains(TOPIC_NAME)) {
             if (upgradeData.getFromVersion().equals("HEAD")) {
                 kafkaTopicYaml = new File(dir, PATH_TO_PACKAGING_EXAMPLES + "/topic/kafka-topic.yaml");
             } else if (upgradeData.getConvertCrsAndCrds()) {
@@ -415,7 +426,11 @@ public class AbstractKRaftUpgradeST extends AbstractST {
             }
             LOGGER.info("Deploying KafkaTopic from: {}", kafkaTopicYaml.getPath());
             KubeResourceManager.get().kubeCmdClient().inNamespace(componentsNamespaceName).create(kafkaTopicYaml);
-            KafkaTopicUtils.waitForKafkaTopicReadyForV1Beta2(componentsNamespaceName, TOPIC_NAME);
+            if (upgradeData.getConvertCrsAndCrds()) {
+                KafkaTopicUtils.waitForKafkaTopicReadyForV1Beta2(componentsNamespaceName, TOPIC_NAME);
+            } else {
+                KafkaTopicUtils.waitForKafkaTopicReady(componentsNamespaceName, TOPIC_NAME);
+            }
         }
     }
 
@@ -425,7 +440,8 @@ public class AbstractKRaftUpgradeST extends AbstractST {
         final UpgradeKafkaVersion upgradeKafkaVersion
     ) {
         // setup KafkaConnect + KafkaConnector
-        if (!KubeResourceManager.get().kubeCmdClient().inNamespace(testStorage.getNamespaceName()).getResourcesAsYaml(getResourceApiVersion(KafkaConnect.RESOURCE_PLURAL)).contains(CLUSTER_NAME)) {
+        if (!KubeResourceManager.get().kubeCmdClient().inNamespace(testStorage.getNamespaceName())
+            .getResourcesAsYaml(getResourceApiVersion(KafkaConnect.RESOURCE_PLURAL, acrossUpgradeData.getConvertCrsAndCrds())).contains(CLUSTER_NAME)) {
             if (acrossUpgradeData.getFromVersion().equals("HEAD")) {
                 KubeResourceManager.get().createResourceWithWait(KafkaConnectTemplates.kafkaConnectWithFilePlugin(testStorage.getNamespaceName(), CLUSTER_NAME, 1)
                     .editMetadata()
@@ -764,7 +780,7 @@ public class AbstractKRaftUpgradeST extends AbstractST {
 
         if (upgradeData.getAdditionalTopics() != null) {
             // Check that topics weren't deleted/duplicated during upgrade procedures
-            String listedTopics = KubeResourceManager.get().kubeCmdClient().inNamespace(componentsNamespaceNames).getResourcesAsYaml(getResourceApiVersion(KafkaTopic.RESOURCE_PLURAL));
+            String listedTopics = KubeResourceManager.get().kubeCmdClient().inNamespace(componentsNamespaceNames).getResourcesAsYaml(getResourceApiVersion(KafkaTopic.RESOURCE_PLURAL, false));
             int additionalTopics = upgradeData.getAdditionalTopics();
             assertThat("KafkaTopic list doesn't have expected size", Long.valueOf(listedTopics.lines().count() - 1).intValue(), greaterThanOrEqualTo(UPGRADE_TOPIC_COUNT + additionalTopics));
             assertThat("KafkaTopic " + TOPIC_NAME + " is not in expected Topic list",
@@ -783,8 +799,11 @@ public class AbstractKRaftUpgradeST extends AbstractST {
         }
     }
 
-    protected String getResourceApiVersion(String resourcePlural) {
-        return resourcePlural + "." + Constants.V1BETA2 + "." + Constants.RESOURCE_GROUP_NAME;
+    protected String getResourceApiVersion(String resourcePlural, boolean useOlderApiVersion) {
+        if (useOlderApiVersion) {
+            return resourcePlural + "." + Constants.V1BETA2 + "." + Constants.RESOURCE_GROUP_NAME;
+        }
+        return resourcePlural + "." + Constants.V1 + "." + Constants.RESOURCE_GROUP_NAME;
     }
 
     protected String downloadExamplesAndGetPath(CommonVersionModificationData versionModificationData) throws IOException {
@@ -818,7 +837,7 @@ public class AbstractKRaftUpgradeST extends AbstractST {
     protected void cleanUpKafkaTopics(String componentsNamespaceName) {
         if (CrdUtils.isCrdPresent(KafkaTopic.RESOURCE_PLURAL, KafkaTopic.RESOURCE_GROUP)) {
             // delete all topics created in test
-            KafkaTopicUtils.deleteAllKafkaTopicsWithV1Beta2(componentsNamespaceName);
+            KafkaTopicUtils.deleteAllKafkaTopics(componentsNamespaceName);
         } else {
             LOGGER.info("Kafka Topic CustomResource Definition does not exist, no KafkaTopic is being deleted");
         }
@@ -831,7 +850,7 @@ public class AbstractKRaftUpgradeST extends AbstractST {
         }
         if (kafkaTopicYaml != null) {
             LOGGER.info("Deleting KafkaTopic configuration files");
-            KafkaTopicUtils.setFinalizersInAllV1Beta2TopicsToNull(componentsNamespaceName);
+            KafkaTopicUtils.setFinalizersInAllTopicsToNull(componentsNamespaceName);
             KubeResourceManager.get().kubeCmdClient().inNamespace(componentsNamespaceName).delete(kafkaTopicYaml);
         }
         if (kafkaYaml != null) {
@@ -873,6 +892,20 @@ public class AbstractKRaftUpgradeST extends AbstractST {
 
         // convert all CRs to v1 and check that they are successfully converted to v1
         convertCrs(componentsNamespaceName);
+
+        // convert all CRDs to have storage version set to v1 and check that the conversion was successful
+        convertCrds(componentsNamespaceName);
+    }
+
+    /**
+     * Step for creating RBACs needed for the conversion tool and then running conversion of CRDs together
+     * with checks of Jobs success and if CRDs were really converted.
+     *
+     * @param componentsNamespaceName   Namespace where the conversion tool will run and where are all the operands.
+     */
+    protected void convertCrdsOnly(String componentsNamespaceName) {
+        // create RBAC resources needed for running the conversion Job
+        createConversionToolRbacResources(componentsNamespaceName);
 
         // convert all CRDs to have storage version set to v1 and check that the conversion was successful
         convertCrds(componentsNamespaceName);
