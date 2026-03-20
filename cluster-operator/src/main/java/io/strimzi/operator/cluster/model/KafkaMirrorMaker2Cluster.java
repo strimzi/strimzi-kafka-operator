@@ -96,6 +96,7 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
                                                    KafkaMirrorMaker2 kafkaMirrorMaker2,
                                                    KafkaVersion.Lookup versions,
                                                    SharedEnvironmentProvider sharedEnvironmentProvider) {
+        ModelUtils.validateComputeResources(kafkaMirrorMaker2.getSpec().getResources(), "KafkaMirrorMaker2.spec.resources");
         KafkaMirrorMaker2Cluster result = new KafkaMirrorMaker2Cluster(reconciliation, kafkaMirrorMaker2, sharedEnvironmentProvider);
 
         result.clusters = clusters(kafkaMirrorMaker2);

@@ -215,6 +215,7 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
                                               KafkaConnect kafkaConnect,
                                               KafkaVersion.Lookup versions,
                                               SharedEnvironmentProvider sharedEnvironmentProvider) {
+        ModelUtils.validateComputeResources(kafkaConnect.getSpec().getResources(), "KafkaConnect.spec.resources");
         return fromSpec(reconciliation, kafkaConnect.getSpec(), versions, new KafkaConnectCluster(reconciliation, kafkaConnect, sharedEnvironmentProvider));
     }
 
@@ -234,7 +235,6 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
                                                                 KafkaConnectSpec spec,
                                                                 KafkaVersion.Lookup versions,
                                                                 C result) {
-        ModelUtils.validateComputeResources(spec.getResources(), "KafkaConnect.spec.resources");
         result.replicas = spec.getReplicas();
 
         // Might already contain configuration from Mirror Maker 2 which extends Connect
