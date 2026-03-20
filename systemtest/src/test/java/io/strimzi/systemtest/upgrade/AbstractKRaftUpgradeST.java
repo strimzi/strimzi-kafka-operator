@@ -498,7 +498,7 @@ public class AbstractKRaftUpgradeST extends AbstractST {
                     connectSpec.put("version", upgradeKafkaVersion.getVersion());
 
                     KubeResourceManager.get().kubeCmdClient().inNamespace(testStorage.getNamespaceName()).applyContent(KubeResourceManager.get().kubeClient().getClient().getKubernetesSerialization().asYaml(genericConnect));
-                    KafkaConnectUtils.waitForKafkaConnectReadyForV1Beta2(testStorage.getNamespaceName(), CLUSTER_NAME);
+                    KafkaConnectUtils.waitForConnectReady(testStorage.getNamespaceName(), CLUSTER_NAME);
                 } else {
                     kafkaConnectYaml = new File(dir, acrossUpgradeData.getFromExamples() + "/examples/connect/kafka-connect.yaml");
 
