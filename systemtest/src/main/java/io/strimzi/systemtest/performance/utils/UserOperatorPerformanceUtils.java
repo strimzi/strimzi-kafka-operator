@@ -8,7 +8,6 @@ import io.skodjob.kubetest4j.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.user.KafkaUser;
 import io.strimzi.api.kafka.model.user.KafkaUserAuthorizationSimple;
 import io.strimzi.api.kafka.model.user.KafkaUserAuthorizationSimpleBuilder;
-import io.strimzi.api.kafka.model.user.KafkaUserBuilder;
 import io.strimzi.api.kafka.model.user.KafkaUserQuotas;
 import io.strimzi.api.kafka.model.user.KafkaUserQuotasBuilder;
 import io.strimzi.api.kafka.model.user.acl.AclOperation;
@@ -60,14 +59,12 @@ public class UserOperatorPerformanceUtils {
             .endAcl()
             .build();
 
-        listOfUsers.replaceAll(kafkaUser -> new KafkaUserBuilder(kafkaUser)
-            .editSpec()
-                .withAuthorization(updatedAcl)
-                .withQuotas(kafkaUserQuotas)
-            .endSpec()
-            .build());
-
-        KubeResourceManager.get().updateResource(listOfUsers.toArray(new KafkaUser[listOfUsers.size()]));
+        for (KafkaUser kafkaUser : listOfUsers) {
+            KafkaUserUtils.replace(testStorage.getNamespaceName(), kafkaUser.getMetadata().getName(), ku -> {
+                ku.getSpec().setAuthorization(updatedAcl);
+                ku.getSpec().setQuotas(kafkaUserQuotas);
+            });
+        }
 
         // Wait for each specific user in the list to be updated and ready
         listOfUsers.forEach(kafkaUser ->
@@ -337,14 +334,10 @@ public class UserOperatorPerformanceUtils {
                 .endAcl()
                 .build();
 
-            final KafkaUser modifiedUser = new KafkaUserBuilder(userToModify)
-                .editSpec()
-                    .withAuthorization(updatedAcl)
-                    .withQuotas(kafkaUserQuotas)
-                .endSpec()
-                .build();
-
-            KubeResourceManager.get().updateResource(modifiedUser);
+            KafkaUserUtils.replace(testStorage.getNamespaceName(), userToModify.getMetadata().getName(), ku -> {
+                ku.getSpec().setAuthorization(updatedAcl);
+                ku.getSpec().setQuotas(kafkaUserQuotas);
+            });
             KafkaUserUtils.waitForKafkaUserReady(testStorage.getNamespaceName(), userToModify.getMetadata().getName());
 
             final long latencyMs = Duration.ofNanos(System.nanoTime() - startTime).toMillis();
