@@ -12,6 +12,7 @@ import io.skodjob.annotations.Step;
 import io.skodjob.annotations.SuiteDoc;
 import io.skodjob.annotations.TestDoc;
 import io.skodjob.kubetest4j.resources.KubeResourceManager;
+import io.strimzi.api.kafka.model.user.KafkaUser;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
@@ -24,11 +25,13 @@ import io.strimzi.systemtest.performance.report.UserOperatorPerformanceReporter;
 import io.strimzi.systemtest.performance.report.parser.BasePerformanceMetricsParser;
 import io.strimzi.systemtest.performance.utils.UserOperatorPerformanceUtils;
 import io.strimzi.systemtest.performance.utils.UserOperatorPerformanceUtils.LatencyMetrics;
+import io.strimzi.systemtest.resources.CrdClients;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.specific.ScraperTemplates;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterAll;
@@ -135,7 +138,10 @@ public class UserOperatorScalabilityPerformance extends AbstractST {
                 // number of KafkaUsers to test (each goes through full lifecycle: create, modify, delete)
                 reconciliationTimeMs = UserOperatorPerformanceUtils.processAllUsersConcurrently(testStorage, numberOfKafkaUsers, 0, 0);
             } finally {
-                UserOperatorPerformanceUtils.cleanupKafkaUsers(testStorage);
+                LOGGER.info("Cleaning namespace: {}", testStorage.getNamespaceName());
+                List<KafkaUser> kafkaUsers = CrdClients.kafkaUserClient().inNamespace(testStorage.getNamespaceName()).list().getItems();
+                KubeResourceManager.get().deleteResourceAsyncWait(kafkaUsers.toArray(new KafkaUser[0]));
+                KafkaUserUtils.waitForUserWithPrefixDeletion(testStorage.getNamespaceName(), testStorage.getUsername());
 
                 final Map<String, Object> performanceAttributes = new LinkedHashMap<>();
 
@@ -245,7 +251,10 @@ public class UserOperatorScalabilityPerformance extends AbstractST {
                 LOGGER.info("Measuring single-user modification latency with {} existing users in the system", numberOfExistingUsers);
                 latencyMetrics = UserOperatorPerformanceUtils.measureLatencyUnderLoad(testStorage, numberOfExistingUsers, numberOfModifications);
             } finally {
-                UserOperatorPerformanceUtils.cleanupKafkaUsers(testStorage);
+                LOGGER.info("Cleaning namespace: {}", testStorage.getNamespaceName());
+                List<KafkaUser> kafkaUsers = CrdClients.kafkaUserClient().inNamespace(testStorage.getNamespaceName()).list().getItems();
+                KubeResourceManager.get().deleteResourceAsyncWait(kafkaUsers.toArray(new KafkaUser[0]));
+                KafkaUserUtils.waitForUserWithPrefixDeletion(testStorage.getNamespaceName(), testStorage.getUsername());
 
                 if (latencyMetrics != null) {
                     final Map<String, Object> performanceAttributes = new LinkedHashMap<>();
