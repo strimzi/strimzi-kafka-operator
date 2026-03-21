@@ -26,18 +26,8 @@ public class KafkaUserCrdIT extends AbstractCrdIT {
     public static final String NAMESPACE = "kafkausercrd-it";
 
     @Test
-    void testKafkaUserV1alpha1() {
-        createDeleteCustomResource("KafkaUserV1alpha1.yaml");
-    }
-
-    @Test
     void testKafkaUserIsNotScaling() {
         assertThrows(KubernetesClientException.class, () -> createScaleDelete(KafkaUser.class, "KafkaUser.yaml"));
-    }
-
-    @Test
-    void testKafkaUserV1beta1() {
-        createDeleteCustomResource("KafkaUserV1beta1.yaml");
     }
 
     @Test
