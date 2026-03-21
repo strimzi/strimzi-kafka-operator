@@ -23,6 +23,7 @@ data:
               labelsFromPath:
                 exported_namespace: [ metadata, namespace ]
                 ready: [ status, conditions, "[type=Ready]", status ]
+                warnings: [ status, conditions, "[type=Warning]", status ]
                 deprecated: [ status, conditions, "[reason=DeprecatedFields]", type ]
                 partitions: [ spec, partitions ]
                 replicas: [ spec, replicas ]
@@ -45,6 +46,7 @@ data:
               labelsFromPath:
                 exported_namespace: [ metadata, namespace ]
                 ready: [ status, conditions, "[type=Ready]", status ]
+                warnings: [ status, conditions, "[type=Warning]", status ]
                 deprecated: [ status, conditions, "[reason=DeprecatedFields]", type ]
                 secret: [ status, secret ]
                 generation: [ status, observedGeneration ]
@@ -65,6 +67,7 @@ data:
               labelsFromPath:
                 exported_namespace: [ metadata, namespace ]
                 ready: [ status, conditions, "[type=Ready]", status ]
+                warnings: [ status, conditions, "[type=Warning]", status ]
                 deprecated: [ status, conditions, "[reason=DeprecatedFields]", type ]
                 kafka_version: [ status, kafkaVersion ]
                 kafka_metadata_version: [ status, kafkaMetadataVersion ]
@@ -88,6 +91,7 @@ data:
                 exported_namespace: [ metadata, namespace ]
                 # KafkaNodePool is not having a ready status as this is implemented via Kafka resource
                 # ready: [ status, conditions, "[type=Ready]", status ]
+                warnings: [ status, conditions, "[type=Warning]", status ]
                 deprecated: [ status, conditions, "[reason=DeprecatedFields]", type ]
                 node_ids: [ status, nodeIds ]
                 roles: [ status, roles ]
@@ -130,9 +134,10 @@ data:
               labelsFromPath:
                 exported_namespace: [ metadata, namespace ]
                 ready: [ status, conditions, "[type=Ready]", status ]
+                warnings: [ status, conditions, "[type=Warning]", status ]
+                deprecated: [ status, conditions, "[reason=DeprecatedFields]", type ]
                 proposal_ready: [ status, conditions, "[type=ProposalReady]", status ]
                 rebalancing: [ status, conditions, "[type=Rebalancing]", status ]
-                deprecated: [ status, conditions, "[reason=DeprecatedFields]", type ]
                 template: [ metadata, annotations, "strimzi.io/rebalance-template" ]
         - groupVersionKind:
             group: kafka.strimzi.io
@@ -149,8 +154,9 @@ data:
                     name: [ metadata, name ]
               labelsFromPath:
                 exported_namespace: [ metadata, namespace ]
-                deprecated: [ status, conditions, "[reason=DeprecatedFields]", type ]
                 ready: [ status, conditions, "[type=Ready]", status ]
+                warnings: [ status, conditions, "[type=Warning]", status ]
+                deprecated: [ status, conditions, "[reason=DeprecatedFields]", type ]
                 generation: [ status, observedGeneration ]
                 connectorPluginsClass: [ status, connectorPlugins, class ]
                 connectorPluginsType: [ status, connectorPlugins, type ]
@@ -172,8 +178,9 @@ data:
                     name: [ metadata, name ]
               labelsFromPath:
                 exported_namespace: [ metadata, namespace ]
-                deprecated: [ status, conditions, "[reason=DeprecatedFields]", type ]
                 ready: [ status, conditions, "[type=Ready]", status ]
+                warnings: [ status, conditions, "[type=Warning]", status ]
+                deprecated: [ status, conditions, "[reason=DeprecatedFields]", type ]
                 generation: [ status, observedGeneration ]
                 autoRestartCount: [ status, autoRestart, count ]
                 autoRestartConnectorName: [ status, autoRestart, connectorName ]
@@ -194,8 +201,9 @@ data:
                     name: [ metadata, name ]
               labelsFromPath:
                 exported_namespace: [ metadata, namespace ]
-                deprecated: [ status, conditions, "[reason=DeprecatedFields]", type ]
                 ready: [ status, conditions, "[type=Ready]", status ]
+                warnings: [ status, conditions, "[type=Warning]", status ]
+                deprecated: [ status, conditions, "[reason=DeprecatedFields]", type ]
                 generation: [ status, observedGeneration ]
                 autoRestartCount: [ status, autoRestartStatuses, count ]
                 autoRestartConnectorName: [ status, autoRestartStatuses, connectorName ]
@@ -220,5 +228,6 @@ data:
               labelsFromPath:
                 exported_namespace: [ metadata, namespace ]
                 ready: [ status, conditions, "[type=Ready]", status ]
+                warnings: [ status, conditions, "[type=Warning]", status ]
                 deprecated: [ status, conditions, "[reason=DeprecatedFields]", type ]
                 generation: [ status, observedGeneration ]
