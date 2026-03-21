@@ -166,9 +166,10 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
     public static KafkaBridgeCluster fromCrd(Reconciliation reconciliation,
                                              KafkaBridge kafkaBridge,
                                              SharedEnvironmentProvider sharedEnvironmentProvider) {
+        KafkaBridgeSpec spec = kafkaBridge.getSpec();
+        ModelUtils.validateComputeResources(spec.getResources(), "KafkaBridge.spec.resources");
         KafkaBridgeCluster result = new KafkaBridgeCluster(reconciliation, kafkaBridge, sharedEnvironmentProvider);
 
-        KafkaBridgeSpec spec = kafkaBridge.getSpec();
         result.tracing = spec.getTracing();
         result.resources = spec.getResources();
         result.logging = new LoggingModel(spec, result.getClass().getSimpleName());

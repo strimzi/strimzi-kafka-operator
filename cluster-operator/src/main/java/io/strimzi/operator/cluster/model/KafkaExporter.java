@@ -123,6 +123,7 @@ public class KafkaExporter extends AbstractModel {
         KafkaExporterSpec spec = kafkaAssembly.getSpec().getKafkaExporter();
 
         if (spec != null) {
+            ModelUtils.validateComputeResources(spec.getResources(), "Kafka.spec.kafkaExporter.resources");
             KafkaExporter result = new KafkaExporter(reconciliation, kafkaAssembly, sharedEnvironmentProvider);
 
             result.resources = spec.getResources();

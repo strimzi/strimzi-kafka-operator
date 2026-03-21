@@ -142,12 +142,12 @@ public class KafkaConnectBuildTest {
     @Test
     public void testKanikoDeployment()   {
         Map<String, Quantity> limit = new HashMap<>();
-        limit.put("cpu", new Quantity("500m"));
-        limit.put("memory", new Quantity("512Mi"));
+        limit.put("cpu", new Quantity("1000m"));
+        limit.put("memory", new Quantity("1Gi"));
 
         Map<String, Quantity> request = new HashMap<>();
-        request.put("cpu", new Quantity("1000m"));
-        request.put("memory", new Quantity("1Gi"));
+        request.put("cpu", new Quantity("500m"));
+        request.put("memory", new Quantity("512Mi"));
 
         KafkaConnect kc = new KafkaConnectBuilder(RESOURCE)
                 .editSpec()
@@ -200,12 +200,12 @@ public class KafkaConnectBuildTest {
     @Test
     public void testBuildahDeployment() {
         Map<String, Quantity> limit = new HashMap<>();
-        limit.put("cpu", new Quantity("500m"));
-        limit.put("memory", new Quantity("512Mi"));
+        limit.put("cpu", new Quantity("1000m"));
+        limit.put("memory", new Quantity("1Gi"));
 
         Map<String, Quantity> request = new HashMap<>();
-        request.put("cpu", new Quantity("1000m"));
-        request.put("memory", new Quantity("1Gi"));
+        request.put("cpu", new Quantity("500m"));
+        request.put("memory", new Quantity("512Mi"));
 
         KafkaConnect kc = new KafkaConnectBuilder(RESOURCE)
                 .editSpec()
@@ -329,12 +329,12 @@ public class KafkaConnectBuildTest {
     @Test
     public void testBuildconfigWithDockerOutput()   {
         Map<String, Quantity> limit = new HashMap<>();
-        limit.put("cpu", new Quantity("500m"));
-        limit.put("memory", new Quantity("512Mi"));
+        limit.put("cpu", new Quantity("1000m"));
+        limit.put("memory", new Quantity("1Gi"));
 
         Map<String, Quantity> request = new HashMap<>();
-        request.put("cpu", new Quantity("1000m"));
-        request.put("memory", new Quantity("1Gi"));
+        request.put("cpu", new Quantity("500m"));
+        request.put("memory", new Quantity("512Mi"));
 
         KafkaConnect kc = new KafkaConnectBuilder(RESOURCE)
                 .editSpec()

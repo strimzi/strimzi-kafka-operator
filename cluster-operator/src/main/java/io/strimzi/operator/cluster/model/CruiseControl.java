@@ -192,6 +192,7 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
         KafkaClusterSpec kafkaClusterSpec = kafkaCr.getSpec().getKafka();
 
         if (ccSpec != null) {
+            ModelUtils.validateComputeResources(ccSpec.getResources(), "Kafka.spec.cruiseControl.resources");
             CruiseControl result = new CruiseControl(reconciliation, kafkaCr, sharedEnvironmentProvider);
 
             String image = ccSpec.getImage();

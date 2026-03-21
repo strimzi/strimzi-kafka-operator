@@ -215,6 +215,7 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
                                               KafkaConnect kafkaConnect,
                                               KafkaVersion.Lookup versions,
                                               SharedEnvironmentProvider sharedEnvironmentProvider) {
+        ModelUtils.validateComputeResources(kafkaConnect.getSpec().getResources(), "KafkaConnect.spec.resources");
         return fromSpec(reconciliation, kafkaConnect.getSpec(), versions, new KafkaConnectCluster(reconciliation, kafkaConnect, sharedEnvironmentProvider));
     }
 
