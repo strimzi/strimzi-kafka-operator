@@ -9,7 +9,6 @@ import io.skodjob.annotations.Label;
 import io.skodjob.annotations.Step;
 import io.skodjob.annotations.SuiteDoc;
 import io.skodjob.annotations.TestDoc;
-import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.docs.TestDocsLabels;
 import io.strimzi.systemtest.resources.operator.ClusterOperatorConfigurationBuilder;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
@@ -38,10 +37,22 @@ import static io.strimzi.systemtest.TestTags.OLM;
 )
 public class OlmAllNamespaceST extends OlmAbstractST {
 
-    public static final String NAMESPACE = "olm-namespace";
-
     @Test
     @Order(1)
+    @TestDoc(
+        description = @Desc("Verifies the deployment of a KafkaNodePools - for broker and controller roles - using the OLM example" +
+            " when the oeprator watches all namespaces."),
+        steps = {
+            @Step(value = "Create two KafkaNodePool CRs - one for broker and one for controller role - using the OLM example.",
+                expected = "KafkaNodePools are created.")
+        }
+    )
+    void testDeployExampleNodePools() {
+        doTestDeployExampleNodePools();
+    }
+
+    @Test
+    @Order(2)
     @TestDoc(
         description = @Desc("Verifies the deployment of a Kafka cluster using the OLM example when the operator watches all namespaces."),
         steps = {
@@ -57,7 +68,7 @@ public class OlmAllNamespaceST extends OlmAbstractST {
     }
 
     @Test
-    @Order(2)
+    @Order(3)
     @TestDoc(
         description = @Desc("Verifies the deployment of a KafkaUser using the OLM example when the operator watches all namespaces."),
         steps = {
@@ -74,7 +85,7 @@ public class OlmAllNamespaceST extends OlmAbstractST {
     }
 
     @Test
-    @Order(3)
+    @Order(4)
     @TestDoc(
         description = @Desc("Verifies the deployment of a KafkaTopic using the OLM example when the operator watches all namespaces."),
         steps = {
@@ -90,7 +101,7 @@ public class OlmAllNamespaceST extends OlmAbstractST {
     }
 
     @Test
-    @Order(4)
+    @Order(5)
     @Tag(CONNECT)
     @TestDoc(
         description = @Desc("Verifies the deployment of a KafkaConnect cluster using the OLM example when the operator watches all namespaces."),
@@ -107,7 +118,7 @@ public class OlmAllNamespaceST extends OlmAbstractST {
     }
 
     @Test
-    @Order(5)
+    @Order(6)
     @Tag(BRIDGE)
     @TestDoc(
         description = @Desc("Verifies the deployment of a KafkaBridge using the OLM example when the operator watches all namespaces."),
@@ -168,10 +179,8 @@ public class OlmAllNamespaceST extends OlmAbstractST {
             .installUsingOlm();
 
         exampleResources = OlmUtils.getExamplesFromCsv(
-            SetupClusterOperator.getInstance().getOperatorNamespace(),
+            SetupClusterOperator.getInstance().getOlmClusterOperatorConfiguration().getNamespaceName(),
             SetupClusterOperator.getInstance().getOlmClusterOperatorConfiguration().getOlmAppBundlePrefix()
         );
-
-        cluster.setNamespace(Environment.TEST_SUITE_NAMESPACE);
     }
 }

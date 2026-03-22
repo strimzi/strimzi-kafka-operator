@@ -9,14 +9,16 @@ import io.strimzi.api.kafka.model.bridge.KafkaBridge;
 import io.strimzi.api.kafka.model.connect.KafkaConnect;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2;
+import io.strimzi.api.kafka.model.nodepool.KafkaNodePool;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalance;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceState;
 import io.strimzi.api.kafka.model.topic.KafkaTopic;
 import io.strimzi.api.kafka.model.user.KafkaUser;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
-import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
+import io.strimzi.systemtest.resources.crd.KafkaComponents;
+import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaBridgeUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
@@ -25,10 +27,15 @@ import io.strimzi.systemtest.utils.kafkaUtils.KafkaRebalanceUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
+import io.strimzi.systemtest.utils.kubeUtils.NamespaceUtils;
 import io.vertx.core.json.JsonObject;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 
+import java.util.List;
 import java.util.Map;
+
+import static io.strimzi.systemtest.resources.CrdClients.kafkaTopicClient;
 
 /**
  * Provides an abstract base for OLM (Operator Lifecycle Manager) system tests
@@ -38,6 +45,27 @@ import java.util.Map;
 public class OlmAbstractST extends AbstractST {
     // Examples are assigned in respective test classes -> OlmAllNamespaceST and OlmSingleNamespaceST
     Map<String, JsonObject> exampleResources;
+    public static final String NAMESPACE = "olm-namespace";
+
+    /**
+     * Deploys an example KafkaNodePools CRs - for broker and controller roles.
+     */
+    void doTestDeployExampleNodePools() {
+        JsonObject brokerNodePoolResource = exampleResources.get(KafkaNodePool.RESOURCE_KIND);
+        brokerNodePoolResource.getJsonObject("metadata").put("name", "broker");
+        brokerNodePoolResource.getJsonObject("spec").getJsonObject("storage").put("type", "ephemeral");
+        brokerNodePoolResource.getJsonObject("spec").getJsonObject("storage").remove("volumes");
+
+        // We need to copy it to String because otherwise the `brokerNodePoolResource` will be overridden with controller stuff
+        String brokerResourceInString = brokerNodePoolResource.toString();
+
+        JsonObject controllerNodePoolResource = new JsonObject(brokerResourceInString);
+        controllerNodePoolResource.getJsonObject("metadata").put("name", "controller");
+        controllerNodePoolResource.getJsonObject("spec").put("roles", List.of("controller"));
+
+        KubeResourceManager.get().kubeCmdClient().inNamespace(NAMESPACE).applyContent(brokerNodePoolResource.toString());
+        KubeResourceManager.get().kubeCmdClient().inNamespace(NAMESPACE).applyContent(controllerNodePoolResource.toString());
+    }
 
     /**
      * Deploys an example Kafka custom resource.
@@ -45,8 +73,8 @@ public class OlmAbstractST extends AbstractST {
      */
     void doTestDeployExampleKafka() {
         JsonObject kafkaResource = exampleResources.get(Kafka.RESOURCE_KIND);
-        KubeResourceManager.get().kubeCmdClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).applyContent(kafkaResource.toString());
-        KafkaUtils.waitForKafkaReady(Environment.TEST_SUITE_NAMESPACE, kafkaResource.getJsonObject("metadata").getString("name"));
+        KubeResourceManager.get().kubeCmdClient().inNamespace(NAMESPACE).applyContent(kafkaResource.toString());
+        KafkaUtils.waitForKafkaReady(NAMESPACE, kafkaResource.getJsonObject("metadata").getString("name"));
     }
 
     /**
@@ -58,7 +86,11 @@ public class OlmAbstractST extends AbstractST {
     void doTestDeployExampleKafkaUser() {
         String userKafkaName = "user-kafka";
         // KafkaUser example needs Kafka with authorization
-        KubeResourceManager.get().createResourceWithWait(KafkaTemplates.kafka(Environment.TEST_SUITE_NAMESPACE, userKafkaName, 1)
+        KubeResourceManager.get().createResourceWithWait(
+            KafkaNodePoolTemplates.brokerPool(NAMESPACE, KafkaComponents.getBrokerPoolName(userKafkaName), userKafkaName, 1).build(),
+            KafkaNodePoolTemplates.controllerPool(NAMESPACE, KafkaComponents.getControllerPoolName(userKafkaName), userKafkaName, 1).build()
+        );
+        KubeResourceManager.get().createResourceWithWait(KafkaTemplates.kafka(NAMESPACE, userKafkaName, 1)
             .editSpec()
                 .editKafka()
                     .withNewKafkaAuthorizationSimple()
@@ -68,8 +100,8 @@ public class OlmAbstractST extends AbstractST {
             .build());
         JsonObject kafkaUserResource = exampleResources.get(KafkaUser.RESOURCE_KIND);
         kafkaUserResource.getJsonObject("metadata").getJsonObject("labels").put(Labels.STRIMZI_CLUSTER_LABEL, userKafkaName);
-        KubeResourceManager.get().kubeCmdClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).applyContent(kafkaUserResource.toString());
-        KafkaUserUtils.waitForKafkaUserCreation(Environment.TEST_SUITE_NAMESPACE, kafkaUserResource.getJsonObject("metadata").getString("name"));
+        KubeResourceManager.get().kubeCmdClient().inNamespace(NAMESPACE).applyContent(kafkaUserResource.toString());
+        KafkaUserUtils.waitForKafkaUserCreation(NAMESPACE, kafkaUserResource.getJsonObject("metadata").getString("name"));
     }
 
     /**
@@ -78,8 +110,12 @@ public class OlmAbstractST extends AbstractST {
      */
     void doTestDeployExampleKafkaTopic() {
         JsonObject kafkaTopicResource = exampleResources.get(KafkaTopic.RESOURCE_KIND);
-        KubeResourceManager.get().kubeCmdClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).applyContent(kafkaTopicResource.toString());
-        KafkaTopicUtils.waitForKafkaTopicCreation(Environment.TEST_SUITE_NAMESPACE, kafkaTopicResource.getJsonObject("metadata").getString("name"));
+        String topicName = kafkaTopicResource.getJsonObject("metadata").getString("name");
+
+        KubeResourceManager.get().kubeCmdClient().inNamespace(NAMESPACE).applyContent(kafkaTopicResource.toString());
+        KafkaTopicUtils.waitForKafkaTopicCreation(NAMESPACE, topicName);
+        kafkaTopicClient().inNamespace(NAMESPACE).withName(topicName).delete();
+        KafkaTopicUtils.waitForKafkaTopicDeletion(NAMESPACE, topicName);
     }
 
     /**
@@ -88,8 +124,8 @@ public class OlmAbstractST extends AbstractST {
      */
     void doTestDeployExampleKafkaConnect() {
         JsonObject kafkaConnectResource = exampleResources.get(KafkaConnect.RESOURCE_KIND);
-        KubeResourceManager.get().kubeCmdClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).applyContent(kafkaConnectResource.toString());
-        KafkaConnectUtils.waitForConnectReady(Environment.TEST_SUITE_NAMESPACE, kafkaConnectResource.getJsonObject("metadata").getString("name"));
+        KubeResourceManager.get().kubeCmdClient().inNamespace(NAMESPACE).applyContent(kafkaConnectResource.toString());
+        KafkaConnectUtils.waitForConnectReady(NAMESPACE, kafkaConnectResource.getJsonObject("metadata").getString("name"));
     }
 
     /**
@@ -98,8 +134,8 @@ public class OlmAbstractST extends AbstractST {
      */
     void doTestDeployExampleKafkaBridge() {
         JsonObject kafkaBridgeResource = exampleResources.get(KafkaBridge.RESOURCE_KIND);
-        KubeResourceManager.get().kubeCmdClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).applyContent(kafkaBridgeResource.toString());
-        KafkaBridgeUtils.waitForKafkaBridgeReady(Environment.TEST_SUITE_NAMESPACE, kafkaBridgeResource.getJsonObject("metadata").getString("name"));
+        KubeResourceManager.get().kubeCmdClient().inNamespace(NAMESPACE).applyContent(kafkaBridgeResource.toString());
+        KafkaBridgeUtils.waitForKafkaBridgeReady(NAMESPACE, kafkaBridgeResource.getJsonObject("metadata").getString("name"));
     }
 
     /**
@@ -109,10 +145,10 @@ public class OlmAbstractST extends AbstractST {
      */
     void doTestDeployExampleKafkaMirrorMaker2() {
         JsonObject kafkaMirrorMaker2Resource = exampleResources.get(KafkaMirrorMaker2.RESOURCE_KIND);
-        KubeResourceManager.get().kubeCmdClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).applyContent(kafkaMirrorMaker2Resource.toString()
+        KubeResourceManager.get().kubeCmdClient().inNamespace(NAMESPACE).applyContent(kafkaMirrorMaker2Resource.toString()
                 .replace("cluster-a-kafka-bootstrap", "my-cluster-kafka-bootstrap")
                 .replace("cluster-b-kafka-bootstrap", "my-cluster-kafka-bootstrap"));
-        KafkaMirrorMaker2Utils.waitForKafkaMirrorMaker2Ready(Environment.TEST_SUITE_NAMESPACE, kafkaMirrorMaker2Resource.getJsonObject("metadata").getString("name"));
+        KafkaMirrorMaker2Utils.waitForKafkaMirrorMaker2Ready(NAMESPACE, kafkaMirrorMaker2Resource.getJsonObject("metadata").getString("name"));
     }
 
     /**
@@ -123,28 +159,37 @@ public class OlmAbstractST extends AbstractST {
      */
     void doTestDeployExampleKafkaRebalance() {
         String cruiseControlClusterName = "cruise-control";
-        KubeResourceManager.get().createResourceWithWait(KafkaTemplates.kafkaWithCruiseControl(Environment.TEST_SUITE_NAMESPACE, cruiseControlClusterName, 3).build());
+        KubeResourceManager.get().createResourceWithWait(
+            KafkaNodePoolTemplates.brokerPool(NAMESPACE, KafkaComponents.getBrokerPoolName(cruiseControlClusterName), cruiseControlClusterName, 3).build(),
+            KafkaNodePoolTemplates.controllerPool(NAMESPACE, KafkaComponents.getControllerPoolName(cruiseControlClusterName), cruiseControlClusterName, 3).build()
+        );
+        KubeResourceManager.get().createResourceWithWait(KafkaTemplates.kafkaWithCruiseControl(NAMESPACE, cruiseControlClusterName, 3).build());
         JsonObject kafkaRebalanceResource = exampleResources.get(KafkaRebalance.RESOURCE_KIND);
         kafkaRebalanceResource.getJsonObject("metadata").getJsonObject("labels").put(Labels.STRIMZI_CLUSTER_LABEL, cruiseControlClusterName);
-        KubeResourceManager.get().kubeCmdClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).applyContent(kafkaRebalanceResource.toString());
-        KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState(Environment.TEST_SUITE_NAMESPACE, "my-rebalance", KafkaRebalanceState.PendingProposal);
+        KubeResourceManager.get().kubeCmdClient().inNamespace(NAMESPACE).applyContent(kafkaRebalanceResource.toString());
+        KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState(NAMESPACE, "my-rebalance", KafkaRebalanceState.PendingProposal);
+    }
+
+    @BeforeAll
+    void createNamespace() {
+        NamespaceUtils.createNamespaceAndPrepare(NAMESPACE);
     }
 
     @AfterAll
     void teardown() {
-        KubeResourceManager.get().kubeCmdClient().inNamespace(Environment.TEST_SUITE_NAMESPACE)
+        KubeResourceManager.get().kubeCmdClient().inNamespace(NAMESPACE)
             .withTimeout(TestConstants.GLOBAL_TIMEOUT_SHORT).deleteContent(exampleResources.get(KafkaRebalance.RESOURCE_KIND).toString());
-        KubeResourceManager.get().kubeCmdClient().inNamespace(Environment.TEST_SUITE_NAMESPACE)
+        KubeResourceManager.get().kubeCmdClient().inNamespace(NAMESPACE)
             .withTimeout(TestConstants.GLOBAL_TIMEOUT_SHORT).deleteContent(exampleResources.get(KafkaMirrorMaker2.RESOURCE_KIND).toString());
-        KubeResourceManager.get().kubeCmdClient().inNamespace(Environment.TEST_SUITE_NAMESPACE)
+        KubeResourceManager.get().kubeCmdClient().inNamespace(NAMESPACE)
             .withTimeout(TestConstants.GLOBAL_TIMEOUT_SHORT).deleteContent(exampleResources.get(KafkaBridge.RESOURCE_KIND).toString());
-        KubeResourceManager.get().kubeCmdClient().inNamespace(Environment.TEST_SUITE_NAMESPACE)
+        KubeResourceManager.get().kubeCmdClient().inNamespace(NAMESPACE)
             .withTimeout(TestConstants.GLOBAL_TIMEOUT_SHORT).deleteContent(exampleResources.get(KafkaConnect.RESOURCE_KIND).toString());
-        KubeResourceManager.get().kubeCmdClient().inNamespace(Environment.TEST_SUITE_NAMESPACE)
+        KubeResourceManager.get().kubeCmdClient().inNamespace(NAMESPACE)
             .withTimeout(TestConstants.GLOBAL_TIMEOUT_SHORT).deleteContent(exampleResources.get(KafkaTopic.RESOURCE_KIND).toString());
-        KubeResourceManager.get().kubeCmdClient().inNamespace(Environment.TEST_SUITE_NAMESPACE)
+        KubeResourceManager.get().kubeCmdClient().inNamespace(NAMESPACE)
             .withTimeout(TestConstants.GLOBAL_TIMEOUT_SHORT).deleteContent(exampleResources.get(KafkaUser.RESOURCE_KIND).toString());
-        KubeResourceManager.get().kubeCmdClient().inNamespace(Environment.TEST_SUITE_NAMESPACE)
+        KubeResourceManager.get().kubeCmdClient().inNamespace(NAMESPACE)
             .withTimeout(TestConstants.GLOBAL_TIMEOUT_SHORT).deleteContent(exampleResources.get(Kafka.RESOURCE_KIND).toString());
     }
 }

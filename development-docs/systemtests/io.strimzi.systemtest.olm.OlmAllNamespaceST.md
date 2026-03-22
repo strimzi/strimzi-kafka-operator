@@ -120,3 +120,14 @@
 
 * [olm](labels/olm.md)
 
+
+## testDeployExampleNodePools
+
+**Description:** Verifies the deployment of a KafkaNodePools - for broker and controller roles - using the OLM example when the oeprator watches all namespaces.
+
+**Steps:**
+
+| Step | Action | Result |
+| - | - | - |
+| 1. | Create two KafkaNodePool CRs - one for broker and one for controller role - using the OLM example. | KafkaNodePools are created. |
+
