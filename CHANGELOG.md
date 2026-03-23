@@ -7,6 +7,7 @@
 * Remove the `v1beta2` API (and `v1alpha1` and `v1beta2` for `KafkaTopic` and `KafkaUser`) from the CRDs and fully move to the `v1` API
 * Allow upgrading from unknown Apache Kafka versions (that might be used in Strimzi patch releases)
 * Add support for Kafka 4.1.2
+* Remove PreferredLeaderElectionGoal from Cruise Control's default.goals list
 
 ### Major changes, deprecations, and removals
 

@@ -43,8 +43,7 @@ public class CruiseControlConfiguration extends AbstractConfiguration {
             CruiseControlGoals.CPU_USAGE_DISTRIBUTION_GOAL.toString(),
             CruiseControlGoals.TOPIC_REPLICA_DISTRIBUTION_GOAL.toString(),
             CruiseControlGoals.LEADER_REPLICA_DISTRIBUTION_GOAL.toString(),
-            CruiseControlGoals.LEADER_BYTES_IN_DISTRIBUTION_GOAL.toString(),
-            CruiseControlGoals.PREFERRED_LEADER_ELECTION_GOAL.toString()
+            CruiseControlGoals.LEADER_BYTES_IN_DISTRIBUTION_GOAL.toString()
     );
 
     /**
