@@ -40,7 +40,7 @@ public class OlmSingleNamespaceST extends OlmAbstractST {
     @Order(1)
     @TestDoc(
         description = @Desc("Verifies the deployment of a KafkaNodePools - for broker and controller roles - using the OLM example" +
-            " when the oeprator watches all namespaces."),
+            " when the operator watches single namespace."),
         steps = {
             @Step(value = "Create two KafkaNodePool CRs - one for broker and one for controller role - using the OLM example.",
                 expected = "KafkaNodePools are created.")

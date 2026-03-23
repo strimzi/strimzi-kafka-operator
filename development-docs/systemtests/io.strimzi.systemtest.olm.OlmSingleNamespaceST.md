@@ -123,7 +123,7 @@
 
 ## testDeployExampleNodePools
 
-**Description:** Verifies the deployment of a KafkaNodePools - for broker and controller roles - using the OLM example when the oeprator watches all namespaces.
+**Description:** Verifies the deployment of a KafkaNodePools - for broker and controller roles - using the OLM example when the operator watches single namespace.
 
 **Steps:**
 
