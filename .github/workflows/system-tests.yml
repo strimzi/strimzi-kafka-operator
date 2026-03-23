@@ -126,7 +126,7 @@ jobs:
         uses: ./.github/actions/utils/compare-merge-commit
         with:
           waitForBuild: "true"
-          maxWaitMinutes: "60"
+          maxWaitMinutes: "120"
           mergeCommitSha: ${{ steps.get-merge-sha.outputs.sha }}
           commitSha: ${{ needs.parse-params.outputs.sha }}
 
