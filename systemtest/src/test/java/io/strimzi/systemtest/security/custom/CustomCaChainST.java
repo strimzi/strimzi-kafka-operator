@@ -4,8 +4,6 @@
  */
 package io.strimzi.systemtest.security.custom;
 
-import io.fabric8.kubernetes.api.model.SecretVolumeSourceBuilder;
-import io.fabric8.kubernetes.api.model.VolumeMountBuilder;
 import io.skodjob.annotations.Desc;
 import io.skodjob.annotations.Label;
 import io.skodjob.annotations.Step;
@@ -15,11 +13,8 @@ import io.skodjob.kubetest4j.resources.KubeResourceManager;
 import io.skodjob.kubetest4j.security.CertAndKey;
 import io.skodjob.kubetest4j.security.CertAndKeyFiles;
 import io.strimzi.api.kafka.model.common.CertSecretSourceBuilder;
-import io.strimzi.api.kafka.model.common.template.AdditionalVolumeBuilder;
 import io.strimzi.api.kafka.model.connect.KafkaConnect;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
-import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
-import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.docs.TestDocsLabels;
@@ -37,8 +32,6 @@ import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.NetworkPolicyUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
-import org.apache.kafka.common.config.SslClientAuth;
-import org.apache.kafka.common.config.SslConfigs;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
@@ -52,7 +45,6 @@ import static io.strimzi.systemtest.TestTags.CONNECT_COMPONENTS;
 import static io.strimzi.systemtest.TestTags.REGRESSION;
 import static io.strimzi.systemtest.security.SystemTestCertGenerator.exportToPemFiles;
 import static io.strimzi.systemtest.security.SystemTestCertGenerator.generateEndEntityCertAndKey;
-import static io.strimzi.systemtest.security.SystemTestCertGenerator.generateIntermediateCaCertAndKey;
 import static io.strimzi.systemtest.security.SystemTestCertGenerator.generateRootCaCertAndKey;
 import static io.strimzi.systemtest.security.SystemTestCertGenerator.generateStrimziCaCertAndKey;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -72,16 +64,14 @@ public class CustomCaChainST extends AbstractST {
 
     @ParallelNamespaceTest
     @TestDoc(
-        description = @Desc("Verifies that only users with certificates signed by the designated Leaf CA can connect to Kafka. " +
-            "Users with certificates signed by Intermediate CA, Root CA, or a foreign CA are rejected."),
+        description = @Desc("Verifies that only client certificates signed by the Clients CA Leaf are accepted by the operator-managed broker. Client certificates signed by Root CA or Intermediate CA are rejected even though they belong to the same Clients CA chain. This tests how the operator builds the brokers client-auth truststore from the custom Clients CA secret."),
         steps = {
             @Step(value = "Generate a custom CA chain: Root -> Intermediate -> Leaf.", expected = "CA chain is generated."),
-            @Step(value = "Generate a separate foreign Root CA.", expected = "Foreign CA is generated."),
-            @Step(value = "Generate four user certificates signed by Leaf CA, Intermediate CA, Root CA, and foreign CA respectively.", expected = "User certificates are generated."),
-            @Step(value = "Deploy external client certificate secrets (each signed by a different CA) and a broker-side CA trust secret containing only the Leaf CA cert.", expected = "Secrets are created in the namespace."),
-            @Step(value = "Deploy Kafka with an internal TLS listener using Custom TLS client authentication, with the broker truststore containing only the Leaf CA cert.", expected = "Kafka cluster is ready with the configured listener."),
-            @Step(value = "Verify that the user with a Leaf-CA-signed cert can produce and consume messages.", expected = "Messages are transmitted successfully."),
-            @Step(value = "Verify that users with Intermediate-CA, Root-CA, and foreign-CA-signed certs are rejected.", expected = "Producer/consumer time out due to TLS handshake failure.")
+            @Step(value = "Deploy the full chain as Cluster CA and Clients CA secrets.", expected = "CA secrets are deployed."),
+            @Step(value = "Deploy Kafka cluster with custom CAs (generateCertificateAuthority: false).", expected = "Kafka cluster is ready."),
+            @Step(value = "Create a KafkaTopic and a client certificate signed by the Clients CA Leaf. Verify that the client can produce and consume messages.", expected = "Messages are transmitted successfully."),
+            @Step(value = "Create a client certificate signed by the Clients CA Root and verify it is rejected.", expected = "Producer/consumer time out due to TLS handshake failure."),
+            @Step(value = "Create a client certificate signed by the Clients CA Intermediate and verify it is rejected.", expected = "Producer/consumer time out due to TLS handshake failure.")
         },
         labels = {
             @Label(value = TestDocsLabels.SECURITY)
@@ -90,52 +80,18 @@ public class CustomCaChainST extends AbstractST {
     void testMultistageCustomCaUserCertificateAuthentication() {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
-        //  Generate CA chain: Root -> Intermediate -> Leaf
-        final CertAndKey rootCa = generateRootCaCertAndKey();
-        final CertAndKey intermediateCa = generateIntermediateCaCertAndKey(rootCa);
-        final CertAndKey leafCa = generateStrimziCaCertAndKey(intermediateCa, "C=CZ, L=Prague, O=StrimziTest, CN=LeafCA");
+        final SystemTestCertBundle clusterCa = new SystemTestCertBundle(
+            "CN=" + testStorage.getTestName() + "ClusterCA",
+            KafkaResources.clusterCaCertificateSecretName(testStorage.getClusterName()),
+            KafkaResources.clusterCaKeySecretName(testStorage.getClusterName()));
 
-        // Generate a foreign (unrelated) Root CA
-        final CertAndKey foreignRootCa = generateRootCaCertAndKey("C=CZ, L=Prague, O=Foreign, CN=ForeignRootCA", null);
+        final SystemTestCertBundle clientsCa = new SystemTestCertBundle(
+            "CN=" + testStorage.getTestName() + "ClientsCA",
+            KafkaResources.clientsCaCertificateSecretName(testStorage.getClusterName()),
+            KafkaResources.clientsCaKeySecretName(testStorage.getClusterName()));
 
-        //  Generate user certificates signed by different CAs
-        final String userLeafSignedName = "user-leaf-signed";
-        final String userIntermediateSignedName = "user-intermediate-signed";
-        final String userRootSignedName = "user-root-signed";
-        final String userForeignSignedName = "user-foreign-signed";
-        final String userKeyInSecret = "user";
-
-        final CertAndKey userLeafSigned = generateEndEntityCertAndKey(leafCa,
-            SystemTestCertGenerator.retrieveKafkaBrokerSANs(testStorage),
-            "C=CZ, L=Prague, O=Strimzi, CN=" + userLeafSignedName);
-        final CertAndKey userIntermediateSigned = generateEndEntityCertAndKey(intermediateCa,
-            SystemTestCertGenerator.retrieveKafkaBrokerSANs(testStorage),
-            "C=CZ, L=Prague, O=Strimzi, CN=" + userIntermediateSignedName);
-        final CertAndKey userRootSigned = generateEndEntityCertAndKey(rootCa,
-            SystemTestCertGenerator.retrieveKafkaBrokerSANs(testStorage),
-            "C=CZ, L=Prague, O=Strimzi, CN=" + userRootSignedName);
-        final CertAndKey userForeignSigned = generateEndEntityCertAndKey(foreignRootCa,
-            SystemTestCertGenerator.retrieveKafkaBrokerSANs(testStorage),
-            "C=CZ, L=Prague, O=Strimzi, CN=" + userForeignSignedName);
-
-        //  Export to PEM files and create K8s secrets
-        final CertAndKeyFiles leafSignedFiles = exportToPemFiles(userLeafSigned);
-        final CertAndKeyFiles intermediateSignedFiles = exportToPemFiles(userIntermediateSigned);
-        final CertAndKeyFiles rootSignedFiles = exportToPemFiles(userRootSigned);
-        final CertAndKeyFiles foreignSignedFiles = exportToPemFiles(userForeignSigned);
-
-        // CA trust secret containing only the Leaf CA cert
-        final String customCaCertName = "custom-leaf-ca";
-        final CertAndKeyFiles leafCaCertFiles = exportToPemFiles(leafCa);
-
-        SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(), userLeafSignedName, leafSignedFiles, userKeyInSecret);
-        SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(), userIntermediateSignedName, intermediateSignedFiles, userKeyInSecret);
-        SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(), userRootSignedName, rootSignedFiles, userKeyInSecret);
-        SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(), userForeignSignedName, foreignSignedFiles, userKeyInSecret);
-        SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(), customCaCertName, leafCaCertFiles);
-
-        // Deploy Kafka with custom listener
-        final String mountPath = "/mnt/kafka/custom-authn-secrets/my-listener";
+        clusterCa.createCustomSecretsFromBundles(testStorage.getNamespaceName(), testStorage.getClusterName());
+        clientsCa.createCustomSecretsFromBundles(testStorage.getNamespaceName(), testStorage.getClusterName());
 
         KubeResourceManager.get().createResourceWithWait(
             KafkaNodePoolTemplates.brokerPool(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
@@ -143,80 +99,71 @@ public class CustomCaChainST extends AbstractST {
         );
         KubeResourceManager.get().createResourceWithWait(KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getClusterName(), 3)
             .editSpec()
-                .editKafka()
-                    .editTemplate()
-                        .editPod()
-                            .addToVolumes(new AdditionalVolumeBuilder()
-                                .withName(customCaCertName)
-                                .withSecret(new SecretVolumeSourceBuilder()
-                                    .withSecretName(customCaCertName)
-                                    .build())
-                                .build())
-                        .endPod()
-                        .editKafkaContainer()
-                            .addToVolumeMounts(new VolumeMountBuilder()
-                                .withName(customCaCertName)
-                                .withMountPath(mountPath + "/" + customCaCertName)
-                                .build())
-                        .endKafkaContainer()
-                    .endTemplate()
-                    .withListeners(new GenericKafkaListenerBuilder()
-                        .withType(KafkaListenerType.INTERNAL)
-                        .withName("custom")
-                        .withPort(9122)
-                        .withTls(true)
-                        .withNewKafkaListenerAuthenticationCustomAuth()
-                            .withSasl(false)
-                            .addToListenerConfig("ssl.client.auth", SslClientAuth.REQUIRED.toString())
-                            .addToListenerConfig(SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG, mountPath + "/" + customCaCertName + "/ca.crt")
-                            .addToListenerConfig(SslConfigs.SSL_TRUSTSTORE_TYPE_CONFIG, "PEM")
-                        .endKafkaListenerAuthenticationCustomAuth()
-                        .build())
-                .endKafka()
+                .withNewClusterCa()
+                    .withGenerateCertificateAuthority(false)
+                .endClusterCa()
+                .withNewClientsCa()
+                    .withGenerateCertificateAuthority(false)
+                .endClientsCa()
             .endSpec()
             .build());
 
         KubeResourceManager.get().createResourceWithWait(KafkaTopicTemplates.topic(testStorage).build());
 
-        final String bootstrapAddress = KafkaResources.bootstrapServiceName(testStorage.getClusterName()) + ":9122";
+        // i.) Create a client certificate signed by the Clients CA Leaf and verify it can connect
+        LOGGER.info("Testing that client with Clients-CA-Leaf-signed certificate can connect");
+        final String leafSignedClientName = "leaf-ca-signed-client";
+        final CertAndKey leafSignedClient = generateEndEntityCertAndKey(clientsCa.getSystemTestCa(),
+            SystemTestCertGenerator.retrieveKafkaBrokerSANs(testStorage),
+            "C=CZ, L=Prague, O=Strimzi, CN=" + leafSignedClientName);
+        final CertAndKeyFiles leafSignedClientFiles = exportToPemFiles(leafSignedClient);
+        SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(),
+            leafSignedClientName, leafSignedClientFiles, "user");
 
-        // i.) Leaf-CA-signed user should succeed
-        LOGGER.info("Testing that user with Leaf-CA-signed certificate can connect");
-        final KafkaClients kafkaClients = ClientUtils.getInstantTlsClients(testStorage, bootstrapAddress);
-        kafkaClients.setUsername(userLeafSignedName);
+        final KafkaClients leafSignedClients = ClientUtils.getInstantTlsClientBuilder(testStorage)
+            .withUsername(leafSignedClientName)
+            .build();
         KubeResourceManager.get().createResourceWithWait(
-            kafkaClients.producerTlsStrimzi(testStorage.getClusterName()),
-            kafkaClients.consumerTlsStrimzi(testStorage.getClusterName())
+            leafSignedClients.producerTlsStrimzi(testStorage.getClusterName()),
+            leafSignedClients.consumerTlsStrimzi(testStorage.getClusterName())
         );
         ClientUtils.waitForInstantClientSuccess(testStorage);
 
-        // ii.) Intermediate-CA-signed user should be rejected
-        // i.e.,
-        // org.apache.kafka.common.errors.SslAuthenticationException: Failed to process post-handshake messages                                       │
-        // Caused by: javax.net.ssl.SSLHandshakeException: Received fatal alert: certificate_required
-        LOGGER.info("Testing that user with Intermediate-CA-signed certificate is rejected");
-        kafkaClients.setUsername(userIntermediateSignedName);
+        // ii.) Create a client certificate signed by the Clients CA Root and verify it is rejected
+        LOGGER.info("Testing that client with Root-CA-signed certificate is rejected");
+        final String rootSignedClientName = "root-ca-signed-client";
+        final CertAndKey rootSignedClient = generateEndEntityCertAndKey(clientsCa.getStrimziRootCa(),
+            SystemTestCertGenerator.retrieveKafkaBrokerSANs(testStorage),
+            "C=CZ, L=Prague, O=Strimzi, CN=" + rootSignedClientName);
+        final CertAndKeyFiles rootSignedClientFiles = exportToPemFiles(rootSignedClient);
+        SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(),
+            rootSignedClientName, rootSignedClientFiles, "user");
+
+        final KafkaClients rootSignedClients = ClientUtils.getInstantTlsClientBuilder(testStorage)
+            .withUsername(rootSignedClientName)
+            .build();
         KubeResourceManager.get().createResourceWithWait(
-            kafkaClients.producerTlsStrimzi(testStorage.getClusterName()),
-            kafkaClients.consumerTlsStrimzi(testStorage.getClusterName())
+            rootSignedClients.producerTlsStrimzi(testStorage.getClusterName()),
+            rootSignedClients.consumerTlsStrimzi(testStorage.getClusterName())
         );
         ClientUtils.waitForInstantClientsTimeout(testStorage);
 
-        // iii.) Root-CA-signed user should be rejected
-        LOGGER.info("Testing that user with Root-CA-signed certificate is rejected");
-        kafkaClients.setUsername(userRootSignedName);
-        KubeResourceManager.get().createResourceWithWait(
-            kafkaClients.producerTlsStrimzi(testStorage.getClusterName()),
-            kafkaClients.consumerTlsStrimzi(testStorage.getClusterName())
-        );
-        ClientUtils.waitForInstantClientsTimeout(testStorage);
+        // iii.) Create a client certificate signed by the Clients CA Intermediate and verify it is rejected
+        LOGGER.info("Testing that client with Intermediate-CA-signed certificate is rejected");
+        final String intermediateSignedClientName = "intermediate-ca-signed-client";
+        final CertAndKey intermediateSignedClient = generateEndEntityCertAndKey(clientsCa.getIntermediateCa(),
+            SystemTestCertGenerator.retrieveKafkaBrokerSANs(testStorage),
+            "C=CZ, L=Prague, O=Strimzi, CN=" + intermediateSignedClientName);
+        final CertAndKeyFiles intermediateSignedClientFiles = exportToPemFiles(intermediateSignedClient);
+        SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(),
+            intermediateSignedClientName, intermediateSignedClientFiles, "user");
 
-        // iv.) Foreign-CA-signed user should be rejected
-        LOGGER.info("Testing that user with foreign-CA-signed certificate is rejected");
-        kafkaClients.setUsername(userForeignSignedName);
+        final KafkaClients intermediateSignedClients = ClientUtils.getInstantTlsClientBuilder(testStorage)
+            .withUsername(intermediateSignedClientName)
+            .build();
         KubeResourceManager.get().createResourceWithWait(
-            kafkaClients.producerTlsStrimzi(testStorage.getClusterName()),
-            kafkaClients.consumerTlsStrimzi(testStorage.getClusterName())
+            intermediateSignedClients.producerTlsStrimzi(testStorage.getClusterName()),
+            intermediateSignedClients.consumerTlsStrimzi(testStorage.getClusterName())
         );
         ClientUtils.waitForInstantClientsTimeout(testStorage);
     }
@@ -349,17 +296,15 @@ public class CustomCaChainST extends AbstractST {
 
     @ParallelNamespaceTest
     @TestDoc(
-        description = @Desc("Verifies trust chain validation on the internal listener (port 9091) used for inter-broker communication. " +
-            "Clients connect directly to the internal port with different trust secrets to verify that PKIX path building works correctly."),
+        description = @Desc("Verifies that only client certificates signed by the Leaf CA are accepted on the internal listener (port 9091). Client certificates signed by Root CA or Intermediate CA are rejected even though they belong to the same CA chain."),
         steps = {
             @Step(value = "Generate a custom CA chain: Root -> Intermediate -> Leaf.", expected = "CA chain is generated."),
             @Step(value = "Deploy the full custom CA chain as Cluster CA and Clients CA secrets.", expected = "CA secrets are deployed."),
             @Step(value = "Deploy Kafka cluster with custom CAs (generateCertificateAuthority: false) so that broker certificates are signed by the Leaf CA.", expected = "Kafka cluster is ready."),
             @Step(value = "Create a NetworkPolicy allowing all ingress to Kafka broker pods so that test clients can reach port 9091.", expected = "NetworkPolicy is created."),
-            @Step(value = "Generate a client certificate signed by the Cluster CA Leaf and create a KafkaTopic.", expected = "Client certificate and KafkaTopic are created."),
-            @Step(value = "Create trust secrets with different chain levels: Root + Intermediate + Leaf, Root + Intermediate, Root only, Intermediate only, Leaf only.", expected = "Trust secrets are created."),
-            @Step(value = "For each trust secret, verify that clients can produce and consume messages on port 9091.", expected = "All five trust configurations succeed."),
-            @Step(value = "Create a trust secret with only a foreign Root CA and verify that clients cannot connect on port 9091.", expected = "Producer/consumer time out due to trust failure.")
+            @Step(value = "Create a KafkaTopic and a client certificate signed by the Leaf CA. Verify that the client can produce and consume messages on port 9091.", expected = "Messages are transmitted successfully."),
+            @Step(value = "Create a client certificate signed by the Root CA and verify it is rejected on port 9091.", expected = "Producer/consumer time out due to TLS handshake failure."),
+            @Step(value = "Create a client certificate signed by the Intermediate CA and verify it is rejected on port 9091.", expected = "Producer/consumer time out due to TLS handshake failure.")
         },
         labels = {
             @Label(value = TestDocsLabels.SECURITY)
@@ -404,66 +349,72 @@ public class CustomCaChainST extends AbstractST {
 
         KubeResourceManager.get().createResourceWithWait(KafkaTopicTemplates.topic(testStorage).build());
 
-        // Port 9091 (replication listener) trusts only the Cluster CA for client authentication,
-        // not the Clients CA. We must generate a client certificate signed by the Cluster CA leaf.
-        final String clusterCaSignedClientName = "cluster-ca-signed-client";
-        final CertAndKey clusterCaSignedClient = generateEndEntityCertAndKey(clusterCa.getSystemTestCa(),
-            SystemTestCertGenerator.retrieveKafkaBrokerSANs(testStorage),
-            "C=CZ, L=Prague, O=Strimzi, CN=" + clusterCaSignedClientName);
-        final CertAndKeyFiles clusterCaSignedClientFiles = exportToPemFiles(clusterCaSignedClient);
-        SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(),
-            clusterCaSignedClientName, clusterCaSignedClientFiles, "user");
-
+        // Client-side trust secret with full chain so that test clients can verify the broker's certificate
         final String trustFullChainName = "trust-full-chain";
-        final String trustRootIntermediateName = "trust-root-intermediate";
-        final String trustRootOnlyName = "trust-root-only";
-        final String trustIntermediateOnlyName = "trust-intermediate-only";
-        final String trustLeafOnlyName = "trust-leaf-only";
-        final String trustForeignName = "trust-foreign";
-
         final CertAndKeyFiles fullChainFiles = exportToPemFiles(clusterCa.getSystemTestCa(), clusterCa.getIntermediateCa(), clusterCa.getStrimziRootCa());
-        final CertAndKeyFiles rootIntermediateFiles = exportToPemFiles(clusterCa.getIntermediateCa(), clusterCa.getStrimziRootCa());
-        final CertAndKeyFiles rootOnlyFiles = exportToPemFiles(clusterCa.getStrimziRootCa());
-        final CertAndKeyFiles intermediateOnlyFiles = exportToPemFiles(clusterCa.getIntermediateCa());
-        final CertAndKeyFiles leafOnlyFiles = exportToPemFiles(clusterCa.getSystemTestCa());
-
         SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(), trustFullChainName, fullChainFiles);
-        SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(), trustRootIntermediateName, rootIntermediateFiles);
-        SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(), trustRootOnlyName, rootOnlyFiles);
-        SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(), trustIntermediateOnlyName, intermediateOnlyFiles);
-        SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(), trustLeafOnlyName, leafOnlyFiles);
-
-        // Generate foreign Root CA
-        final CertAndKey foreignRootCa = generateRootCaCertAndKey("C=CZ, L=Prague, O=Foreign, CN=ForeignRootCA", null);
-        final CertAndKeyFiles foreignCaFiles = exportToPemFiles(foreignRootCa);
-        SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(), trustForeignName, foreignCaFiles);
 
         final String internalBootstrapAddress = KafkaResources.brokersServiceName(testStorage.getClusterName()) + ":9091";
 
-        // Positive cases: verify trust works with different chain levels on port 9091
-        final String[] trustSecretNames = {trustFullChainName, trustRootIntermediateName, trustRootOnlyName, trustIntermediateOnlyName, trustLeafOnlyName};
-        for (String trustSecretName : trustSecretNames) {
-            LOGGER.info("Testing trust establishment on internal port 9091 with trust secret: {}", trustSecretName);
-            final KafkaClients kafkaClients = ClientUtils.getInstantTlsClientBuilder(testStorage, internalBootstrapAddress)
-                .withUsername(clusterCaSignedClientName)
-                .withCaCertSecretName(trustSecretName)
-                .build();
-            KubeResourceManager.get().createResourceWithWait(
-                kafkaClients.producerTlsStrimzi(testStorage.getClusterName()),
-                kafkaClients.consumerTlsStrimzi(testStorage.getClusterName())
-            );
-            ClientUtils.waitForInstantClientSuccess(testStorage);
-        }
+        // i.) Create a client certificate signed by the Leaf CA and verify it can connect on port 9091
+        //     Port 9091 (replication listener) trusts only the Cluster CA for client authentication,
+        //     not the Clients CA. We must generate a client certificate signed by the Cluster CA leaf.
+        LOGGER.info("Testing that client with Leaf-CA-signed certificate can connect on port 9091");
+        final String leafSignedClientName = "leaf-ca-signed-client";
+        final CertAndKey leafSignedClient = generateEndEntityCertAndKey(clusterCa.getSystemTestCa(),
+            SystemTestCertGenerator.retrieveKafkaBrokerSANs(testStorage),
+            "C=CZ, L=Prague, O=Strimzi, CN=" + leafSignedClientName);
+        final CertAndKeyFiles leafSignedClientFiles = exportToPemFiles(leafSignedClient);
+        SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(),
+            leafSignedClientName, leafSignedClientFiles, "user");
 
-        // Negative case: foreign CA trust should fail on port 9091
-        LOGGER.info("Testing that foreign CA trust secret fails on internal port 9091");
-        final KafkaClients foreignClients = ClientUtils.getInstantTlsClientBuilder(testStorage, internalBootstrapAddress)
-            .withUsername(clusterCaSignedClientName)
-            .withCaCertSecretName(trustForeignName)
+        final KafkaClients leafSignedClients = ClientUtils.getInstantTlsClientBuilder(testStorage, internalBootstrapAddress)
+            .withUsername(leafSignedClientName)
+            .withCaCertSecretName(trustFullChainName)
             .build();
         KubeResourceManager.get().createResourceWithWait(
-            foreignClients.producerTlsStrimzi(testStorage.getClusterName()),
-            foreignClients.consumerTlsStrimzi(testStorage.getClusterName())
+            leafSignedClients.producerTlsStrimzi(testStorage.getClusterName()),
+            leafSignedClients.consumerTlsStrimzi(testStorage.getClusterName())
+        );
+        ClientUtils.waitForInstantClientSuccess(testStorage);
+
+        // ii.) Create a client certificate signed by the Root CA and verify it is rejected on port 9091
+        LOGGER.info("Testing that client with Root-CA-signed certificate is rejected on port 9091");
+        final String rootSignedClientName = "root-ca-signed-client";
+        final CertAndKey rootSignedClient = generateEndEntityCertAndKey(clusterCa.getStrimziRootCa(),
+            SystemTestCertGenerator.retrieveKafkaBrokerSANs(testStorage),
+            "C=CZ, L=Prague, O=Strimzi, CN=" + rootSignedClientName);
+        final CertAndKeyFiles rootSignedClientFiles = exportToPemFiles(rootSignedClient);
+        SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(),
+            rootSignedClientName, rootSignedClientFiles, "user");
+
+        final KafkaClients rootSignedClients = ClientUtils.getInstantTlsClientBuilder(testStorage, internalBootstrapAddress)
+            .withUsername(rootSignedClientName)
+            .withCaCertSecretName(trustFullChainName)
+            .build();
+        KubeResourceManager.get().createResourceWithWait(
+            rootSignedClients.producerTlsStrimzi(testStorage.getClusterName()),
+            rootSignedClients.consumerTlsStrimzi(testStorage.getClusterName())
+        );
+        ClientUtils.waitForInstantClientsTimeout(testStorage);
+
+        // iii.) Create a client certificate signed by the Intermediate CA and verify it is rejected on port 9091
+        LOGGER.info("Testing that client with Intermediate-CA-signed certificate is rejected on port 9091");
+        final String intermediateSignedClientName = "intermediate-ca-signed-client";
+        final CertAndKey intermediateSignedClient = generateEndEntityCertAndKey(clusterCa.getIntermediateCa(),
+            SystemTestCertGenerator.retrieveKafkaBrokerSANs(testStorage),
+            "C=CZ, L=Prague, O=Strimzi, CN=" + intermediateSignedClientName);
+        final CertAndKeyFiles intermediateSignedClientFiles = exportToPemFiles(intermediateSignedClient);
+        SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(),
+            intermediateSignedClientName, intermediateSignedClientFiles, "user");
+
+        final KafkaClients intermediateSignedClients = ClientUtils.getInstantTlsClientBuilder(testStorage, internalBootstrapAddress)
+            .withUsername(intermediateSignedClientName)
+            .withCaCertSecretName(trustFullChainName)
+            .build();
+        KubeResourceManager.get().createResourceWithWait(
+            intermediateSignedClients.producerTlsStrimzi(testStorage.getClusterName()),
+            intermediateSignedClients.consumerTlsStrimzi(testStorage.getClusterName())
         );
         ClientUtils.waitForInstantClientsTimeout(testStorage);
     }
