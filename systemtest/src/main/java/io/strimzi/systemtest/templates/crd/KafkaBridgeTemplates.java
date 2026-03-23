@@ -90,7 +90,7 @@ public class KafkaBridgeTemplates {
                 .withBootstrapServers(bootstrap)
                 .withReplicas(kafkaBridgeReplicas)
                 .withNewInlineLogging()
-                    .addToLoggers("bridge.root.logger", "DEBUG")
+                    .addToLoggers("rootLogger.level", "DEBUG")
                 .endInlineLogging()
                 .withNewHttp()
                     .withPort(DEFAULT_HTTP_PORT)
