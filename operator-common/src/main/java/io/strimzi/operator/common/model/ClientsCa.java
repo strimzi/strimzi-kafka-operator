@@ -13,7 +13,6 @@ import io.strimzi.operator.common.Reconciliation;
  * Represents the Strimzi Clients CA
  */
 public class ClientsCa extends Ca {
-
     /**
      * Creates a ClientsCA instance
      *
