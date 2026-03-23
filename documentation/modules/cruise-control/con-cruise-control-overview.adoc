@@ -128,7 +128,6 @@ Goals labeled as hard are mandatory constraints that must be satisfied for optim
 * `TopicReplicaDistributionGoal`
 * `LeaderReplicaDistributionGoal`
 * `LeaderBytesInDistributionGoal`
-* `PreferredLeaderElectionGoal`
 * `IntraBrokerDiskCapacityGoal` (hard)
 * `IntraBrokerDiskUsageDistributionGoal`
 
