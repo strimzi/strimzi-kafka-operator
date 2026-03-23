@@ -173,7 +173,7 @@ public class UserOperatorScalabilityPerformance extends AbstractST {
     @Tag(SCALABILITY)
     void testLatencyUnderLoad() {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
-        final List<Integer> loadLevels = List.of(2000);
+        final List<Integer> loadLevels = List.of(1000, 1500, 2000);
         final int numberOfModifications = 100;
         // default configuration of UO
         final int maxBatchSize = 100;
@@ -205,15 +205,6 @@ public class UserOperatorScalabilityPerformance extends AbstractST {
                                     .addToLimits("cpu", new Quantity("2"))
                                     .addToRequests("memory", new Quantity("1Gi"))
                                     .addToRequests("cpu", new Quantity("2"))
-                                    .build())
-                                .withLogging(new InlineLoggingBuilder()
-                                    .withLoggers(Map.of(
-                                        "rootLogger.level", "DEBUG",
-                                        "logger.batching.name", "io.strimzi.operator.user.operator.batching",
-                                        "logger.batching.level", "TRACE",
-                                        "logger.controller.name", "io.strimzi.operator.common.controller",
-                                        "logger.controller.level", "DEBUG"
-                                    ))
                                     .build())
                             .endUserOperator()
                             .editOrNewTemplate()
