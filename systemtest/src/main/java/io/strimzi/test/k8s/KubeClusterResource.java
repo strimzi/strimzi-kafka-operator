@@ -4,6 +4,7 @@
  */
 package io.strimzi.test.k8s;
 
+import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.skodjob.kubetest4j.resources.KubeResourceManager;
 import io.strimzi.test.k8s.cluster.Kind;
 import io.strimzi.test.k8s.cluster.KubeCluster;
@@ -99,8 +100,15 @@ public class KubeClusterResource {
 
     public boolean fipsEnabled() {
         if (isOpenShift()) {
-            return KubeResourceManager.get().kubeClient().getClient().configMaps()
-                .inNamespace("kube-system").withName("cluster-config-v1").get().getData().get("install-config").contains("fips: true");
+            ConfigMap configMap = KubeResourceManager.get().kubeClient().getClient().configMaps()
+                .inNamespace("kube-system").withName("cluster-config-v1").get();
+
+            if (configMap != null) {
+                return configMap.getData().get("install-config").contains("fips: true");
+            } else {
+                LOGGER.warn("No 'cluster-config-v1' ConfigMap found in 'kube-system' Namespace, going to assume it's not FIPS enabled cluster");
+                return false;
+            }
         }
         return false;
     }
