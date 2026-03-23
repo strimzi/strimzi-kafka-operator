@@ -105,6 +105,9 @@ public class KubeClusterResource {
 
             if (configMap != null) {
                 return configMap.getData().get("install-config").contains("fips: true");
+            } else {
+                LOGGER.warn("No 'cluster-config-v1' ConfigMap found in 'kube-system' Namespace, going to assume it's not FIPS enabled cluster");
+                return false;
             }
         }
         return false;
