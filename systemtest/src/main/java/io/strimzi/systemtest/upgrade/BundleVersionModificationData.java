@@ -19,8 +19,6 @@ public class BundleVersionModificationData extends CommonVersionModificationData
     private String defaultKafka;
     private String deployKafkaVersion;
     private String startingKafkaVersion;
-    private String fromFeatureGates;
-    private String toFeatureGates;
     private Map<String, String> imagesAfterOperations;
     private Map<String, Object> client;
     private Map<String, String> environmentInfo;
@@ -41,14 +39,6 @@ public class BundleVersionModificationData extends CommonVersionModificationData
 
     public String getStartingKafkaVersion() {
         return startingKafkaVersion;
-    }
-
-    public String getFromFeatureGates() {
-        return fromFeatureGates;
-    }
-
-    public String getToFeatureGates() {
-        return toFeatureGates;
     }
 
     public Map<String, String> getImagesAfterOperations() {
@@ -111,14 +101,6 @@ public class BundleVersionModificationData extends CommonVersionModificationData
         this.startingKafkaVersion = startingKafkaVersion;
     }
 
-    public void setFromFeatureGates(String fromFeatureGates) {
-        this.fromFeatureGates = fromFeatureGates;
-    }
-
-    public void setToFeatureGates(String toFeatureGates) {
-        this.toFeatureGates = toFeatureGates;
-    }
-
     public void setClient(Map<String, Object> client) {
         this.client = client;
     }
@@ -158,8 +140,6 @@ public class BundleVersionModificationData extends CommonVersionModificationData
             ", defaultKafka='" + defaultKafka + '\'' +
             ", deployKafkaVersion='" + deployKafkaVersion + '\'' +
             ", startingKafkaVersion='" + startingKafkaVersion + '\'' +
-            ", fromFeatureGates='" + fromFeatureGates + '\'' +
-            ", toFeatureGates='" + toFeatureGates + '\'' +
             ", imagesAfterOperations=" + imagesAfterOperations +
             ", client=" + client +
             ", environmentInfo=" + environmentInfo +

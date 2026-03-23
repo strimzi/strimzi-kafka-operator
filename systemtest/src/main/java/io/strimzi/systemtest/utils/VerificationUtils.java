@@ -8,10 +8,10 @@ import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.Pod;
+import io.fabric8.kubernetes.api.model.PodTemplateSpec;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServiceAccount;
-import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.skodjob.kubetest4j.enums.LogLevel;
 import io.skodjob.kubetest4j.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.connect.KafkaConnect;
@@ -35,6 +35,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
@@ -52,6 +54,8 @@ import static org.junit.jupiter.api.Assertions.fail;
 public class VerificationUtils {
 
     private static final Logger LOGGER = LogManager.getLogger(VerificationUtils.class);
+    private static final String ANNOTATION_FIELD_PATH_REGEX = "metadata.annotations\\['([^']+)'\\]";
+    private static final Pattern ANNOTATION_FIELD_PATH_PATTERN = Pattern.compile(ANNOTATION_FIELD_PATH_REGEX);
 
     private VerificationUtils() { }
 
@@ -405,18 +409,36 @@ public class VerificationUtils {
      */
     public static Map<String, String> getClusterOperatorDeploymentImages(String clusterOperatorNamespace) {
         Map<String, String> images = new HashMap<>();
-        Deployment clusterOperator = KubeResourceManager.get().kubeClient().getClient()
+        PodTemplateSpec coDeploymentPodTemplate = KubeResourceManager.get()
+            .kubeClient()
+            .getClient()
             .apps()
             .deployments()
             .inNamespace(clusterOperatorNamespace)
             .withName(SetupClusterOperator.getInstance().getOperatorDeploymentName())
-            .get();
+            .get()
+            .getSpec()
+            .getTemplate();
 
-        for (Container container : clusterOperator.getSpec().getTemplate().getSpec().getContainers()) {
+        for (Container container : coDeploymentPodTemplate.getSpec().getContainers()) {
             for (EnvVar envVar : container.getEnv()) {
-                images.put(envVar.getName(), envVar.getValue());
+                if (envVar.getName().contains("_IMAGE")) {
+                    if (envVar.getValue() != null) {
+                        images.put(envVar.getName(), envVar.getValue());
+                    } else if (envVar.getValueFrom() != null) {
+                        String valueFromFieldPath = envVar.getValueFrom().getFieldRef().getFieldPath();
+                        Matcher matcher = ANNOTATION_FIELD_PATH_PATTERN.matcher(valueFromFieldPath);
+
+                        if (matcher.find()) {
+                            String parsedAnnoName = matcher.group(1);
+                            String annotationValue = coDeploymentPodTemplate.getMetadata().getAnnotations().get(parsedAnnoName);
+                            images.put(envVar.getName(), annotationValue);
+                        }
+                    }
+                }
             }
         }
         return images;
+
     }
 }

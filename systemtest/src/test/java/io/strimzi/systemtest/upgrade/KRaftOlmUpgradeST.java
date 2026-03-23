@@ -62,6 +62,7 @@ public class KRaftOlmUpgradeST extends AbstractKRaftUpgradeST {
             .withOlmChannelName(olmUpgradeData.getFromOlmChannelName())
             .withOlmOperatorVersion(fromVersion)
             .withOlmInstallationStrategy(OlmInstallationStrategy.Manual)
+            .withFeatureGates(olmUpgradeData.getFromFeatureGates())
             .build();
 
         LOGGER.info("====================================================================================");
@@ -126,6 +127,7 @@ public class KRaftOlmUpgradeST extends AbstractKRaftUpgradeST {
 
         clusterOperatorConfiguration = new ClusterOperatorConfigurationBuilder(clusterOperatorConfiguration)
             .withOlmChannelName("stable")
+            .withFeatureGates(olmUpgradeData.getToFeatureGates())
             .build();
 
         // Perform upgrade of the Cluster Operator
