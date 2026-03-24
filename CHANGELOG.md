@@ -8,6 +8,8 @@
 * Allow upgrading from unknown Apache Kafka versions (that might be used in Strimzi patch releases)
 * Add support for Kafka 4.1.2
 * Remove PreferredLeaderElectionGoal from Cruise Control's default.goals list
+* The `UseConnectBuildWithBuildah` feature gate moves to beta stage and is enabled by default.
+  If needed, `UseConnectBuildWithBuildah` can be disabled in the feature gates configuration in the Cluster Operator.
 
 ### Major changes, deprecations, and removals
 
