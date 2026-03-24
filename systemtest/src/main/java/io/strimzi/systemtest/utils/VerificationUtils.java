@@ -403,6 +403,8 @@ public class VerificationUtils {
 
     /**
      * Retrieves a map of container names and their corresponding image from the CO deployment in a namespace.
+     * It either takes the images from the `.value` field directly (inside the env variable block), or it takes the annotation from the `.valueFrom`
+     * field and takes it from the particular annotation's value.
      *
      * @param clusterOperatorNamespace The name of the namespace from which images should be retrieved - must be cluster operator namespace
      * @return A map where keys are container names and values are image URLs.
@@ -423,9 +425,12 @@ public class VerificationUtils {
         for (Container container : coDeploymentPodTemplate.getSpec().getContainers()) {
             for (EnvVar envVar : container.getEnv()) {
                 if (envVar.getName().contains("_IMAGE")) {
+                    // check if the value is present
+                    // if yes, take the image directly and put it in the Map
                     if (envVar.getValue() != null) {
                         images.put(envVar.getName(), envVar.getValue());
                     } else if (envVar.getValueFrom() != null) {
+                        // if not, we need to take the image from the annotation, referenced inside the valueFrom field
                         String valueFromFieldPath = envVar.getValueFrom().getFieldRef().getFieldPath();
                         Matcher matcher = ANNOTATION_FIELD_PATH_PATTERN.matcher(valueFromFieldPath);
 
