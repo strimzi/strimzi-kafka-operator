@@ -214,7 +214,12 @@ the documentation for more details.
 | `labelsExclusionPattern`                         | Override the exclude pattern for exclude some labels                            | `""`                         |
 | `operatorNetworkPolicy.enabled`                  | Generate a networkPolicy for the strimzi-operator (operator not Kafka)          | `false`                      |
 | `generateNetworkPolicy`                          | Controls whether Strimzi generates network policy resources                     | `true`                       |
-| `connectBuildTimeoutMs`                          | Overrides the default timeout value for building new Kafka Connect              | `300000`                     |
+| 
+| `podMonitor.enabled`    | Create a PodMonitor for the operator (requires Prometheus Operator) | `false` |
+| `podMonitor.labels`     | Additional labels to add to the PodMonitor                          | `{}`    |
+| `podMonitor.interval`   | Metrics scrape interval                                             | `30s`   |
+| `podMonitor.scrapeTimeout` | Metrics scrape timeout                                           | `10s`   | 
+`connectBuildTimeoutMs`                          | Overrides the default timeout value for building new Kafka Connect              | `300000`                     |
 | `mavenBuilder.image.registry`                    | Override default Maven Builder image registry                                   | `nil`                        |
 | `mavenBuilder.image.repository`                  | Maven Builder image repository                                                  | `nil`                        |
 | `mavenBuilder.image.name`                        | Override default Maven Builder image name                                       | `maven-builder`              |

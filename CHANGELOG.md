@@ -8,6 +8,7 @@
 * Allow upgrading from unknown Apache Kafka versions (that might be used in Strimzi patch releases)
 * Add support for Kafka 4.1.2
 * Remove PreferredLeaderElectionGoal from Cruise Control's default.goals list
+* Add opt-in PodMonitor for Prometheus Operator scraping of the Strimzi Cluster Operator metrics
 
 ### Major changes, deprecations, and removals
 
