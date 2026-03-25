@@ -66,7 +66,6 @@ public class KafkaExporterReconcilerTest {
             Reconciliation.DUMMY_RECONCILIATION,
             new MockCertManager(),
             new PasswordGenerator(10, "a", "a"),
-            NAME,
             ResourceUtils.createInitialCaCertSecret(NAMESPACE, NAME, AbstractModel.clusterCaCertSecretName(NAME), MockCertManager.clusterCaCert(), MockCertManager.clusterCaCertStore(), "123456"),
             ResourceUtils.createInitialCaKeySecret(NAMESPACE, NAME, AbstractModel.clusterCaKeySecretName(NAME), MockCertManager.clusterCaKey())
     );

@@ -514,7 +514,6 @@ public class KubernetesRestartEventsMockTest {
                 Reconciliation.DUMMY_RECONCILIATION,
                 new OpenSslCertManager(),
                 passwordGenerator,
-                CLUSTER_NAME,
                 createInitialCaCertSecret(namespace, CLUSTER_NAME, clusterCaCertSecretName(CLUSTER_NAME), MockCertManager.clusterCaCert(), MockCertManager.clusterCaCertStore(), "123456"),
                 createInitialCaKeySecret(namespace, CLUSTER_NAME, clusterCaKeySecretName(CLUSTER_NAME), MockCertManager.clusterCaKey())
         );
@@ -663,7 +662,6 @@ public class KubernetesRestartEventsMockTest {
                 Reconciliation.DUMMY_RECONCILIATION,
                 mockCertManager,
                 passwordGenerator,
-                CLUSTER_NAME,
                 caCertSecret != null ? caCertSecret : createInitialCaCertSecret(namespace, CLUSTER_NAME, clusterCaCertSecretName(CLUSTER_NAME), MockCertManager.clusterCaCert(), MockCertManager.clusterCaCertStore(), "123456"),
                 createInitialCaKeySecret(namespace, CLUSTER_NAME, clusterCaKeySecretName(CLUSTER_NAME), MockCertManager.clusterCaKey())
         );
@@ -674,9 +672,7 @@ public class KubernetesRestartEventsMockTest {
                 Reconciliation.DUMMY_RECONCILIATION,
                 mockCertManager,
                 passwordGenerator,
-                KafkaResources.clientsCaCertificateSecretName(CLUSTER_NAME),
                 createInitialCaCertSecret(namespace, CLUSTER_NAME, clusterCaCertSecretName(CLUSTER_NAME), MockCertManager.clusterCaCert(), MockCertManager.clusterCaCertStore(), "123456"),
-                KafkaResources.clientsCaKeySecretName(CLUSTER_NAME),
                 createInitialCaKeySecret(namespace, CLUSTER_NAME, clusterCaKeySecretName(CLUSTER_NAME), MockCertManager.clusterCaKey()),
                 365,
                 30,
@@ -713,7 +709,6 @@ public class KubernetesRestartEventsMockTest {
             super(Reconciliation.DUMMY_RECONCILIATION,
                     mockCertManager,
                     passwordGenerator,
-                    CLUSTER_NAME,
                     createInitialCaCertSecret(namespace, CLUSTER_NAME, clusterCaCertSecretName(CLUSTER_NAME), MockCertManager.clusterCaCert(), MockCertManager.clusterCaCertStore(), "123456"),
                     createInitialCaKeySecret(namespace, CLUSTER_NAME, clusterCaKeySecretName(CLUSTER_NAME), MockCertManager.clusterCaKey()));
         }

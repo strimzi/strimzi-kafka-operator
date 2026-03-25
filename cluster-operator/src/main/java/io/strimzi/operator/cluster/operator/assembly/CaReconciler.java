@@ -259,7 +259,6 @@ public class CaReconciler {
                     boolean generateClientsCa = clientsCaConfig == null || clientsCaConfig.isGenerateCertificateAuthority();
 
                     clusterCa = new ClusterCa(reconciliation, certManager, passwordGenerator,
-                            reconciliation.name(),
                             existingClusterCaCertSecret,
                             existingClusterCaKeySecret,
                             ModelUtils.getCertificateValidity(clusterCaConfig),
@@ -269,8 +268,8 @@ public class CaReconciler {
 
 
                     clientsCa = new ClientsCa(reconciliation, certManager, passwordGenerator,
-                            clientsCaCertName, existingClientsCaCertSecret,
-                            clientsCaKeyName, existingClientsCaKeySecret,
+                            existingClientsCaCertSecret,
+                            existingClientsCaKeySecret,
                             ModelUtils.getCertificateValidity(clientsCaConfig),
                             ModelUtils.getRenewalDays(clientsCaConfig),
                             generateClientsCa,

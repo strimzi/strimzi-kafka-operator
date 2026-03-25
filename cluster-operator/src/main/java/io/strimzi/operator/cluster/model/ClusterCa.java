@@ -50,12 +50,11 @@ public class ClusterCa extends Ca {
      * @param reconciliation        Reconciliation marker
      * @param certManager           Certificate manager instance
      * @param passwordGenerator     Password generator instance
-     * @param clusterName           Name of the Kafka cluster
      * @param caCertSecret          Name of the CA public key secret
      * @param caKeySecret           Name of the CA private key secret
      */
-    public ClusterCa(Reconciliation reconciliation, CertManager certManager, PasswordGenerator passwordGenerator, String clusterName, Secret caCertSecret, Secret caKeySecret) {
-        this(reconciliation, certManager, passwordGenerator, clusterName, caCertSecret, caKeySecret, CertificateAuthority.DEFAULT_CERTS_VALIDITY_DAYS, CertificateAuthority.DEFAULT_CERTS_RENEWAL_DAYS, true, null);
+    public ClusterCa(Reconciliation reconciliation, CertManager certManager, PasswordGenerator passwordGenerator, Secret caCertSecret, Secret caKeySecret) {
+        this(reconciliation, certManager, passwordGenerator, caCertSecret, caKeySecret, CertificateAuthority.DEFAULT_CERTS_VALIDITY_DAYS, CertificateAuthority.DEFAULT_CERTS_RENEWAL_DAYS, true, null);
     }
 
     /**
@@ -64,7 +63,6 @@ public class ClusterCa extends Ca {
      * @param reconciliation        Reconciliation marker
      * @param certManager           Certificate manager instance
      * @param passwordGenerator     Password generator instance
-     * @param clusterName           Name of the Kafka cluster
      * @param clusterCaCert         Secret with the public key
      * @param clusterCaKey          Secret with the private key
      * @param validityDays          Validity days
@@ -74,7 +72,6 @@ public class ClusterCa extends Ca {
      */
     public ClusterCa(Reconciliation reconciliation, CertManager certManager,
                      PasswordGenerator passwordGenerator,
-                     String clusterName,
                      Secret clusterCaCert,
                      Secret clusterCaKey,
                      int validityDays,
@@ -83,9 +80,7 @@ public class ClusterCa extends Ca {
                      CertificateExpirationPolicy policy) {
         super(reconciliation, certManager, passwordGenerator,
                 "cluster-ca",
-                AbstractModel.clusterCaCertSecretName(clusterName),
                 clusterCaCert,
-                AbstractModel.clusterCaKeySecretName(clusterName),
                 clusterCaKey, validityDays, renewalDays, generateCa, policy);
     }
 

@@ -57,7 +57,7 @@ class CaTest {
          * @param caKeySecret       Kubernetes Secret where the CA private key will be stored
          */
         public MockCa(Reconciliation reconciliation, CertManager certManager, PasswordGenerator passwordGenerator, Secret caCertSecret, Secret caKeySecret, boolean generateCa) {
-            super(reconciliation, certManager, passwordGenerator, "mock", "mock-ca-secret", caCertSecret, "mock-key-secret", caKeySecret, CertificateAuthority.DEFAULT_CERTS_VALIDITY_DAYS, CertificateAuthority.DEFAULT_CERTS_RENEWAL_DAYS, generateCa, null);
+            super(reconciliation, certManager, passwordGenerator, "mock", caCertSecret, caKeySecret, CertificateAuthority.DEFAULT_CERTS_VALIDITY_DAYS, CertificateAuthority.DEFAULT_CERTS_RENEWAL_DAYS, generateCa, null);
         }
 
         @Override
@@ -97,7 +97,7 @@ class CaTest {
     @DisplayName("Should raise RuntimeException when certificate is not present")
     void shouldReturnZeroWhenCertificateNotPresent() {
         Exception exception = assertThrows(RuntimeException.class, () -> ca.getCertificateExpirationDateEpoch());
-        assertEquals("ca.crt does not exist in the secret mock-ca-secret", exception.getMessage());
+        assertEquals("ca.crt does not exist in the secret for Mock CA", exception.getMessage());
     }
 
     @Test

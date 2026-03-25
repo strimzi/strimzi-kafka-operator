@@ -196,7 +196,6 @@ public class KafkaAssemblyOperatorWithKRaftTest {
             Reconciliation.DUMMY_RECONCILIATION,
             CERT_MANAGER,
             PASSWORD_GENERATOR,
-            CLUSTER_NAME,
             ResourceUtils.createInitialCaCertSecret(NAMESPACE, CLUSTER_NAME, AbstractModel.clusterCaCertSecretName(CLUSTER_NAME), MockCertManager.clusterCaCert(), MockCertManager.clusterCaCertStore(), "123456"),
             ResourceUtils.createInitialCaKeySecret(NAMESPACE, CLUSTER_NAME, AbstractModel.clusterCaKeySecretName(CLUSTER_NAME), MockCertManager.clusterCaKey())
     );
@@ -205,9 +204,7 @@ public class KafkaAssemblyOperatorWithKRaftTest {
             Reconciliation.DUMMY_RECONCILIATION,
             CERT_MANAGER,
             PASSWORD_GENERATOR,
-            KafkaResources.clientsCaCertificateSecretName(CLUSTER_NAME),
             ResourceUtils.createInitialCaCertSecret(NAMESPACE, CLUSTER_NAME, AbstractModel.clusterCaCertSecretName(CLUSTER_NAME), MockCertManager.clusterCaCert(), MockCertManager.clusterCaCertStore(), "123456"),
-            KafkaResources.clientsCaKeySecretName(CLUSTER_NAME),
             ResourceUtils.createInitialCaKeySecret(NAMESPACE, CLUSTER_NAME, AbstractModel.clusterCaKeySecretName(CLUSTER_NAME), MockCertManager.clusterCaKey()),
             365,
             30,
