@@ -1,16 +1,27 @@
 # Default values for strimzi-kafka-operator.
 
-# Default replicas for the cluster operator
+# -- Number of cluster operator replicas. Use more than one replica together
+# with `leaderElection.enable=true` for high availability. Only one replica
+# is active at a time; others are hot standbys.
 replicas: 1
 
-# Contains `.Release.Namespace` by default
+# -- List of namespaces the operator watches for Kafka CRs. The release
+# namespace is always included. Ignored when `watchAnyNamespace` is true.
 watchNamespaces: []
+# -- Watch all namespaces for Kafka CRs. When true, `watchNamespaces` is ignored.
 watchAnyNamespace: false
 
+# -- Default container image registry for all component images.
+# Per-component `image.registry` overrides this.
 defaultImageRegistry: quay.io
+# -- Default container image repository for all component images.
+# Per-component `image.repository` overrides this.
 defaultImageRepository: strimzi
+# -- Default container image tag for all component images.
+# Per-component `image.tag` overrides this.
 defaultImageTag: latest
 
+# -- Operator container image configuration.
 image:
   registry: ""
   repository: ""
@@ -18,100 +29,119 @@ image:
   tag: ""
   # imagePullSecrets:
   #   - name: secretname
+# -- Name of the ConfigMap volume used for operator logging configuration.
 logVolume: co-config-volume
+# -- Name of the ConfigMap containing the operator logging configuration.
 logConfigMap: strimzi-cluster-operator
+# -- Inline logging configuration (Log4j2 format). Takes precedence over `logConfigMap` when set.
 logConfiguration: ""
+# -- Operator log level. Overrides the value in the log ConfigMap when set via the environment variable.
 logLevel: ${env:STRIMZI_LOG_LEVEL:-INFO}
+# -- Interval (in milliseconds) at which the operator runs a full reconciliation of all watched resources.
 fullReconciliationIntervalMs: 120000
+# -- Timeout (in milliseconds) for a single operator API call or operation.
 operationTimeoutMs: 300000
+# -- DNS domain used to build internal Kubernetes service FQDNs.
 kubernetesServiceDnsDomain: cluster.local
+# -- Comma-separated list of feature gates to enable or disable. See Strimzi docs for available gates.
 featureGates: ""
+# -- Size limit for the in-memory tmpfs volume mounted at /tmp in the operator container.
 tmpDirSizeLimit: 1Mi
 
-# Example on how to configure extraEnvs
+# -- Additional environment variables injected into the operator container.
+# @default -- `[]`
+# Example:
 # extraEnvs:
 #   - name: JAVA_OPTS
 #     value: "-Xms256m -Xmx256m"
-
 extraEnvs: []
 
+# -- Tolerations applied to the operator pod.
 tolerations: []
+# -- Affinity rules applied to the operator pod.
 affinity: {}
+# -- Annotations added to the operator pod template.
 annotations: {}
+# -- Labels added to the operator pod template.
 labels: {}
+# -- Node selector applied to the operator pod.
 nodeSelector: {}
+# -- Annotations added to the operator Deployment resource.
 deploymentAnnotations: {}
+# -- Labels added to the operator Deployment resource.
 deploymentLabels: {}
+# -- Update strategy for the operator Deployment.
 deploymentStrategy: {}
+# -- Priority class name assigned to the operator pod.
 priorityClassName: ""
 
+# -- Controls whether the pod may use the host user namespace. Accepts `true`, `false`, or `null` (unset).
 hostUsers: NULL
+# -- Pod-level security context applied to the operator pod.
 podSecurityContext: {}
+# -- Container-level security context applied to the operator container.
 securityContext: {}
+# -- RBAC resource creation settings.
 rbac:
+  # -- Whether to create RBAC resources (ClusterRoles, ClusterRoleBindings, RoleBindings).
   create: yes
+# -- Whether to create the operator ServiceAccount.
 serviceAccountCreate: yes
+# -- Name of the ServiceAccount used by the operator.
 serviceAccount: strimzi-cluster-operator
 
+# -- Leader election settings. Required when running more than one replica.
 leaderElection:
+  # -- Enable leader election. Must be true when replicas > 1.
   enable: true
 
-# https://kubernetes.io/docs/tasks/run-application/configure-pdb/
+# -- PodDisruptionBudget for the operator Deployment.
+# Ref: https://kubernetes.io/docs/tasks/run-application/configure-pdb/
 podDisruptionBudget:
+  # -- Enable the PodDisruptionBudget. Meaningful only when replicas > 1.
   enabled: false
-  # The PDB definition three attributes to control the availability requirements:
-  # minAvailable or maxUnavailable (mutually exclusive).
-  # unhealthyPodEvictionPolicy
-  #
-  # Field maxUnavailable tells how many pods can be down and minAvailable tells how many pods must be running in a cluster.
-
-  # The pdb template will check values according to below order
-  #
-  #  {{- if .Values.podDisruptionBudget.minAvailable }}
-  #     minAvailable: {{ .Values.podDisruptionBudget.minAvailable }}
-  #  {{- end  }}
-  #  {{- if .Values.podDisruptionBudget.maxUnavailable }}
-  #     maxUnavailable: {{ .Values.podDisruptionBudget.maxUnavailable }}
-  #  {{- end }}
-  #
-  # If both values are set, the template will use the first one and ignore the second one. currently by default minAvailable is set to 1
+  # -- Minimum number of operator pods that must be available during voluntary disruptions.
+  # Mutually exclusive with `maxUnavailable`.
   minAvailable: 1
+  # -- Maximum number of operator pods that may be unavailable during voluntary disruptions.
+  # Mutually exclusive with `minAvailable`.
   maxUnavailable:
+  # -- Unhealthy pod eviction policy for the PDB.
   unhealthyPodEvictionPolicy: IfHealthyBudget
 
+# -- NetworkPolicy for the operator pod generated by this chart.
+# This flag DOES NOT control Strimzi-generated NetworkPolicies for Kafka components.
 operatorNetworkPolicy:
-  # If enabled, this will generate a networkPolicy for the strimzi-operator.
-  # This flag DOES NOT control operator generated networkPolicies!
-  # This flag ONLY controls access for the strimzi-operator deployment.
+  # -- Enable the operator NetworkPolicy.
   enabled: false
-  # For ingress we permit access to the metrics endpoint
+  # -- Ingress rules. By default allows access to the metrics endpoint.
   ingress:
   - ports:
     - protocol: TCP
       port: http
-  # The operator must communicate with DNS, the Kubernetes API server,
-  # and all managed Kafka components.
-  #
-  # The operands use numerous ports that differ per component and may exist in
-  # "arbitrary" namespaces. This makes a generic egress NetworkPolicy
-  # impractical to define. Thus we set `{}` an unrestrictred value.
-  #
-  # Any meaningful network restrictions must be defined per cluster,
-  # with a full knowledge of the Kafka topology and port configuration.
+  # -- Egress rules. Defaults to unrestricted (`{}`) because Kafka operands
+  # use numerous ports across arbitrary namespaces, making a generic policy
+  # impractical without full knowledge of the Kafka topology.
   egress: {}
 
-# If you are using the grafana dashboard sidecar,
-# you can import some default dashboards here
+# -- Grafana dashboard ConfigMaps. Uses the grafana sidecar pattern.
 dashboards:
+  # -- Enable Grafana dashboard ConfigMaps.
   enabled: false
+  # -- Namespace in which to create dashboard ConfigMaps. Defaults to the release namespace.
   namespace: ~
-  label: grafana_dashboard # this is the default value from the grafana chart
-  labelValue: "1" # this is the default value from the grafana chart
+  # -- Label key used to identify dashboard ConfigMaps for the Grafana sidecar.
+  label: grafana_dashboard
+  # -- Label value for the dashboard discovery label.
+  labelValue: "1"
+  # -- Annotations added to each dashboard ConfigMap.
   annotations: {}
+  # -- Additional labels added to each dashboard ConfigMap.
   extraLabels: {}
 
-# Docker images that operator uses to provision various components of Strimzi.
-# To use your own registry or repository, define them for each component below or generally via defaultImageRegistry and defaultImageRepository above
+# -- Docker images used by the operator to provision Kafka components.
+# Set `defaultImageRegistry` and `defaultImageRepository` above to change all images at once.
+# Override individual components here only when they need a different path.
 kafka:
   image:
     registry: ""
@@ -184,6 +214,7 @@ mavenBuilder:
     repository: ""
     name: maven-builder
     tag: ""
+# -- CPU and memory resource requests and limits for the operator container.
 resources:
   limits:
     memory: 384Mi
@@ -191,22 +222,25 @@ resources:
   requests:
     memory: 384Mi
     cpu: 200m
+# -- Liveness probe configuration for the operator container.
 livenessProbe:
   initialDelaySeconds: 10
   periodSeconds: 30
+# -- Readiness probe configuration for the operator container.
 readinessProbe:
   initialDelaySeconds: 10
   periodSeconds: 30
 
+# -- Create global (cluster-scoped) RBAC resources.
 createGlobalResources: true
-# Create clusterroles that extend existing clusterroles to interact with strimzi crds
+# -- Create aggregate ClusterRoles that extend existing roles to interact with Strimzi CRDs.
 # Ref: https://kubernetes.io/docs/reference/access-authn-authz/rbac/#aggregated-clusterroles
 createAggregateRoles: false
-# Override the exclude pattern for exclude some labels
+# -- Regex pattern for label keys to exclude from operator-managed resources.
 labelsExclusionPattern: ""
-# Controls whether Strimzi generates network policy resources (By default true)
+# -- Controls whether Strimzi generates NetworkPolicy resources for Kafka component pods.
 generateNetworkPolicy: true
-# Override the value for Connect build timeout
+# -- Timeout (in milliseconds) for Kafka Connect build operations.
 connectBuildTimeoutMs: 300000
-# Controls whether Strimzi generates pod disruption budget resources (By default true)
+# -- Controls whether Strimzi generates PodDisruptionBudget resources for Kafka component pods.
 generatePodDisruptionBudget: true
