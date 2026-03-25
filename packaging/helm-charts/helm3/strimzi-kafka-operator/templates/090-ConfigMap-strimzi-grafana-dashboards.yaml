@@ -10,6 +10,7 @@ metadata:
   namespace: {{ $.Values.dashboards.namespace | default $.Release.Namespace }}
   labels:
     component: grafana-dashboards
+    {{- include "strimzi.labels" $ | nindent 4 }}
     {{- if $.Values.dashboards.label }}
     {{ $.Values.dashboards.label }}: {{ ternary $.Values.dashboards.labelValue "1" (not (empty $.Values.dashboards.labelValue)) | quote }}
     {{- end }}

@@ -9,6 +9,7 @@ metadata:
     component: logging-config-map
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
+    {{- include "strimzi.labels" . | nindent 4 }}
 data:
   log4j2.properties: |
     {{- if .Values.logConfiguration }}

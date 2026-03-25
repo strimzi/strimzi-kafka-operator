@@ -63,6 +63,18 @@ To use, add the following key/value pairs to the scope:
 {{- end -}}
 
 {{/*
+Standard Kubernetes recommended labels.
+These are added alongside existing labels and never replace them.
+Ref: https://kubernetes.io/docs/concepts/overview/working-with-objects/common-labels/
+*/}}
+{{- define "strimzi.labels" -}}
+app.kubernetes.io/name: {{ template "strimzi.name" . }}
+app.kubernetes.io/instance: {{ .Release.Name }}
+app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
+app.kubernetes.io/managed-by: {{ .Release.Service }}
+{{- end -}}
+
+{{/*
  Create a list of comma-separated namespaces the operators should watch.
 */}}
 {{- define "strimzi.watchNamespacesList" -}}

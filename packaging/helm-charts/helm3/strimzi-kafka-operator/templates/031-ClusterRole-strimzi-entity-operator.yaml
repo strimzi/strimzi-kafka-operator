@@ -9,6 +9,7 @@ metadata:
     component: entity-operator-role
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
+    {{- include "strimzi.labels" . | nindent 4 }}
 rules:
 - apiGroups:
   - "kafka.strimzi.io"

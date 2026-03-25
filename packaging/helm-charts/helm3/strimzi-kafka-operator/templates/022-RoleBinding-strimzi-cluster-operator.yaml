@@ -10,6 +10,7 @@ metadata:
     component: role-binding
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
+    {{- include "strimzi.labels" . | nindent 4 }}
 subjects:
   - kind: ServiceAccount
     name: {{ .Values.serviceAccount }}

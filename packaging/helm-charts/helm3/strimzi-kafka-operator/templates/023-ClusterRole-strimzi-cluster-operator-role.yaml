@@ -9,6 +9,7 @@ metadata:
     component: role
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
+    {{- include "strimzi.labels" . | nindent 4 }}
 rules:
 # Resources in this role are being watched by the operator. When operator is deployed as cluster-wide, these permissions
 # need to be granted to the operator on a cluster wide level as well, even if the operands will be deployed only in

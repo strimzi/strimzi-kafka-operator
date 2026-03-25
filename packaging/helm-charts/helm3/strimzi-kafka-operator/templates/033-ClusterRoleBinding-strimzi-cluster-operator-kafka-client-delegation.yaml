@@ -9,6 +9,7 @@ metadata:
     component: client-role-binding
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
+    {{- include "strimzi.labels" . | nindent 4 }}
 # The Kafka clients cluster role must be bound to the cluster operator service account so that it can delegate the
 # cluster role to the Kafka clients using it for consuming from closest replica.
 # This must be done to avoid escalating privileges which would be blocked by Kubernetes.

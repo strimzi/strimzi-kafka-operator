@@ -9,6 +9,7 @@ metadata:
     component: role
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
+    {{- include "strimzi.labels" . | nindent 4 }}
 rules:
 # Resources in this role are used by the operator based on an operand being deployed in some namespace. When needed, you
 # can deploy the operator as a cluster-wide operator. But grant the rights listed in this role only on the namespaces
