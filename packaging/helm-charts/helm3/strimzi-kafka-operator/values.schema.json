@@ -1,0 +1,299 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "additionalProperties": true,
+  "definitions": {
+    "imageConfig": {
+      "type": "object",
+      "properties": {
+        "registry": { "oneOf": [{ "type": "string" }, { "type": "null" }] },
+        "repository": { "oneOf": [{ "type": "string" }, { "type": "null" }] },
+        "name": { "type": "string" },
+        "tag": { "oneOf": [{ "type": "string" }, { "type": "null" }] },
+        "tagPrefix": { "oneOf": [{ "type": "string" }, { "type": "null" }] },
+        "digest": { "oneOf": [{ "type": "string" }, { "type": "null" }] }
+      },
+      "additionalProperties": false
+    },
+    "probeConfig": {
+      "type": "object",
+      "properties": {
+        "initialDelaySeconds": { "type": "integer", "minimum": 0 },
+        "periodSeconds": { "type": "integer", "minimum": 1 }
+      },
+      "additionalProperties": false
+    }
+  },
+  "properties": {
+    "replicas": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Number of cluster operator replicas. Use >1 with leaderElection.enable=true for high availability."
+    },
+    "watchNamespaces": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "List of namespaces the operator watches for Kafka CRs. The release namespace is always included. Ignored when watchAnyNamespace is true."
+    },
+    "watchAnyNamespace": {
+      "type": "boolean",
+      "description": "Watch all namespaces for Kafka CRs. When true, watchNamespaces is ignored."
+    },
+    "defaultImageRegistry": {
+      "type": "string",
+      "description": "Default registry for all component images. Per-component registry overrides this."
+    },
+    "defaultImageRepository": {
+      "type": "string",
+      "description": "Default repository for all component images. Per-component repository overrides this."
+    },
+    "defaultImageTag": {
+      "type": "string",
+      "description": "Default tag for all component images. Per-component tag overrides this."
+    },
+    "image": {
+      "type": "object",
+      "description": "Operator image configuration.",
+      "properties": {
+        "registry": { "type": "string" },
+        "repository": { "type": "string" },
+        "name": { "type": "string" },
+        "tag": { "type": "string" },
+        "digest": { "type": "string" },
+        "imagePullPolicy": {
+          "type": "string",
+          "enum": ["Always", "IfNotPresent", "Never"]
+        },
+        "imagePullSecrets": {
+          "oneOf": [
+            { "type": "string" },
+            {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": { "name": { "type": "string" } },
+                "required": ["name"]
+              }
+            }
+          ],
+          "description": "Image pull secrets. Accepts a secret name string (legacy) or a list of {name: secretName} objects."
+        },
+        "operatorNamespaceLabels": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "logVolume": { "type": "string" },
+    "logConfigMap": { "type": "string" },
+    "logConfiguration": { "type": "string" },
+    "logLevel": { "type": "string" },
+    "fullReconciliationIntervalMs": { "type": "integer", "minimum": 0 },
+    "operationTimeoutMs": { "type": "integer", "minimum": 0 },
+    "kubernetesServiceDnsDomain": { "type": "string" },
+    "featureGates": { "type": "string" },
+    "tmpDirSizeLimit": { "type": "string" },
+    "extraEnvs": {
+      "type": "array",
+      "items": { "type": "object" },
+      "description": "Additional environment variables injected into the operator container."
+    },
+    "tolerations": {
+      "type": "array",
+      "items": { "type": "object" }
+    },
+    "topologySpreadConstraints": {
+      "type": "array",
+      "items": { "type": "object" },
+      "description": "TopologySpreadConstraints for the operator pod spec."
+    },
+    "affinity": { "type": "object" },
+    "annotations": {
+      "type": "object",
+      "additionalProperties": { "type": "string" },
+      "description": "Annotations added to the operator pod template."
+    },
+    "labels": {
+      "type": "object",
+      "additionalProperties": { "type": "string" },
+      "description": "Labels added to the operator pod template."
+    },
+    "nodeSelector": {
+      "type": "object",
+      "additionalProperties": { "type": "string" }
+    },
+    "deploymentAnnotations": {
+      "type": "object",
+      "additionalProperties": { "type": "string" }
+    },
+    "deploymentLabels": {
+      "type": "object",
+      "additionalProperties": { "type": "string" }
+    },
+    "deploymentStrategy": { "type": "object" },
+    "revisionHistoryLimit": { "type": "integer", "minimum": 0 },
+    "priorityClassName": { "type": "string" },
+    "hostUsers": {
+      "oneOf": [
+        { "type": "boolean" },
+        { "type": "null" }
+      ]
+    },
+    "podSecurityContext": { "type": "object" },
+    "securityContext": { "type": "object" },
+    "nameOverride": { "type": "string" },
+    "fullnameOverride": { "type": "string" },
+    "rbac": {
+      "type": "object",
+      "properties": {
+        "create": { "type": "boolean" }
+      },
+      "additionalProperties": false
+    },
+    "serviceAccountCreate": { "type": "boolean" },
+    "serviceAccount": { "type": "string" },
+    "leaderElection": {
+      "type": "object",
+      "properties": {
+        "enable": { "type": "boolean" }
+      },
+      "additionalProperties": false
+    },
+    "podDisruptionBudget": {
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "minAvailable": {
+          "oneOf": [
+            { "type": "integer", "minimum": 0 },
+            { "type": "string" },
+            { "type": "null" }
+          ]
+        },
+        "maxUnavailable": {
+          "oneOf": [
+            { "type": "integer", "minimum": 0 },
+            { "type": "string" },
+            { "type": "null" }
+          ]
+        },
+        "unhealthyPodEvictionPolicy": {
+          "type": "string",
+          "enum": ["IfHealthyBudget", "AlwaysAllow"]
+        }
+      },
+      "additionalProperties": false
+    },
+    "operatorNetworkPolicy": {
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "ingress": {
+          "oneOf": [
+            { "type": "array", "items": { "type": "object" } },
+            { "type": "null" }
+          ]
+        },
+        "egress": {
+          "oneOf": [
+            { "type": "object" },
+            { "type": "array", "items": { "type": "object" } },
+            { "type": "null" }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "dashboards": {
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "namespace": {
+          "oneOf": [
+            { "type": "string" },
+            { "type": "null" }
+          ]
+        },
+        "label": { "type": "string" },
+        "labelValue": { "type": "string" },
+        "annotations": { "type": "object", "additionalProperties": { "type": "string" } },
+        "extraLabels": { "type": "object", "additionalProperties": { "type": "string" } }
+      },
+      "additionalProperties": false
+    },
+    "kafka": {
+      "type": "object",
+      "properties": { "image": { "$ref": "#/definitions/imageConfig" } },
+      "additionalProperties": false
+    },
+    "kafkaConnect": {
+      "type": "object",
+      "properties": { "image": { "$ref": "#/definitions/imageConfig" } },
+      "additionalProperties": false
+    },
+    "topicOperator": {
+      "type": "object",
+      "properties": { "image": { "$ref": "#/definitions/imageConfig" } },
+      "additionalProperties": false
+    },
+    "userOperator": {
+      "type": "object",
+      "properties": { "image": { "$ref": "#/definitions/imageConfig" } },
+      "additionalProperties": false
+    },
+    "kafkaInit": {
+      "type": "object",
+      "properties": { "image": { "$ref": "#/definitions/imageConfig" } },
+      "additionalProperties": false
+    },
+    "kafkaBridge": {
+      "type": "object",
+      "properties": { "image": { "$ref": "#/definitions/imageConfig" } },
+      "additionalProperties": false
+    },
+    "kafkaExporter": {
+      "type": "object",
+      "properties": { "image": { "$ref": "#/definitions/imageConfig" } },
+      "additionalProperties": false
+    },
+    "kafkaMirrorMaker2": {
+      "type": "object",
+      "properties": { "image": { "$ref": "#/definitions/imageConfig" } },
+      "additionalProperties": false
+    },
+    "cruiseControl": {
+      "type": "object",
+      "properties": { "image": { "$ref": "#/definitions/imageConfig" } },
+      "additionalProperties": false
+    },
+    "kanikoExecutor": {
+      "type": "object",
+      "properties": { "image": { "$ref": "#/definitions/imageConfig" } },
+      "additionalProperties": false
+    },
+    "buildah": {
+      "type": "object",
+      "properties": { "image": { "$ref": "#/definitions/imageConfig" } },
+      "additionalProperties": false
+    },
+    "mavenBuilder": {
+      "type": "object",
+      "properties": { "image": { "$ref": "#/definitions/imageConfig" } },
+      "additionalProperties": false
+    },
+    "resources": {
+      "type": "object",
+      "properties": {
+        "limits": { "type": "object" },
+        "requests": { "type": "object" }
+      },
+      "additionalProperties": false
+    },
+    "livenessProbe": { "$ref": "#/definitions/probeConfig" },
+    "readinessProbe": { "$ref": "#/definitions/probeConfig" },
+    "createGlobalResources": { "type": "boolean" },
+    "createAggregateRoles": { "type": "boolean" },
+    "labelsExclusionPattern": { "type": "string" },
+    "generateNetworkPolicy": { "type": "boolean" },
+    "connectBuildTimeoutMs": { "type": "integer", "minimum": 0 },
+    "generatePodDisruptionBudget": { "type": "boolean" }
+  }
+}
