@@ -37,6 +37,18 @@ extraEnvs: []
 
 tolerations: []
 affinity: {}
+
+podMonitor:
+  enabled: false
+  labels: {}
+  interval: 30s
+  scrapeTimeout: 10s
+
+serviceMonitor:
+  enabled: false
+  labels: {}
+  interval: 30s
+  scrapeTimeout: 10s
 annotations: {}
 labels: {}
 nodeSelector: {}
