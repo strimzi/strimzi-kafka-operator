@@ -1,0 +1,99 @@
+{{- if .Values.prometheusRule.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: strimzi-cluster-operator
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ template "strimzi.name" . }}
+    chart: {{ template "strimzi.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    {{- with .Values.prometheusRule.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  groups:
+    - name: strimzi-cluster-operator
+      rules:
+        # Alert when the Strimzi Cluster Operator Deployment has no available
+        # replicas. Uses kube-state-metrics which is available in all standard
+        # Kubernetes distributions, unlike the cAdvisor-based container_last_seen
+        # metric used in the standalone example rules.
+        - alert: StrimziClusterOperatorDown
+          expr: |
+            kube_deployment_status_replicas_available{deployment="strimzi-cluster-operator"} == 0
+          for: 2m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Strimzi Cluster Operator is down"
+            description: >-
+              The Strimzi Cluster Operator Deployment has no available replicas
+              in namespace {{ "{{" }} $labels.namespace {{ "}}" }}.
+              No Kafka resources will be reconciled until the operator is restored.
+
+        # Alert when the operator is producing sustained reconciliation failures.
+        # strimzi_reconciliations_failed_total is exposed on the operator metrics
+        # endpoint (port 8080 / /metrics) and increments on every failed
+        # reconciliation attempt for any resource type.
+        - alert: StrimziClusterOperatorReconciliationErrors
+          expr: |
+            rate(strimzi_reconciliations_failed_total[5m]) > 0
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Strimzi Cluster Operator reconciliation errors"
+            description: >-
+              The Strimzi Cluster Operator is failing to reconcile
+              {{ "{{" }} $labels.kind {{ "}}" }} resources at a rate of
+              {{ "{{" }} printf "%.2f" $value {{ "}}" }} failures/s in
+              namespace {{ "{{" }} $labels.namespace {{ "}}" }}.
+
+        # Alert when Strimzi-managed TLS certificates are approaching expiry.
+        # strimzi_certificate_expiration_timestamp_ms is exposed per certificate
+        # type and cluster. The warning threshold gives time to investigate before
+        # the critical window.
+        - alert: StrimziCertificateExpiringSoon
+          expr: |
+            (strimzi_certificate_expiration_timestamp_ms / 1000) - time() < 14 * 24 * 60 * 60
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Strimzi-managed certificate expiring within 14 days"
+            description: >-
+              The {{ "{{" }} $labels.type {{ "}}" }} certificate for Kafka cluster
+              {{ "{{" }} $labels.cluster {{ "}}" }} in namespace
+              {{ "{{" }} $labels.resource_namespace {{ "}}" }} will expire in less than 14 days.
+
+        - alert: StrimziCertificateExpiringCritical
+          expr: |
+            (strimzi_certificate_expiration_timestamp_ms / 1000) - time() < 7 * 24 * 60 * 60
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Strimzi-managed certificate expiring within 7 days"
+            description: >-
+              The {{ "{{" }} $labels.type {{ "}}" }} certificate for Kafka cluster
+              {{ "{{" }} $labels.cluster {{ "}}" }} in namespace
+              {{ "{{" }} $labels.resource_namespace {{ "}}" }} will expire in less than 7 days.
+
+        # Alert when resources have been paused for an extended period.
+        # Pausing reconciliation is a valid maintenance operation, but leaving
+        # resources paused indefinitely means changes are silently not applied.
+        - alert: StrimziResourcesPaused
+          expr: |
+            strimzi_resources_paused > 0
+          for: 1h
+          labels:
+            severity: warning
+          annotations:
+            summary: "Strimzi resources have been paused for over 1 hour"
+            description: >-
+              {{ "{{" }} $value {{ "}}" }} {{ "{{" }} $labels.kind {{ "}}" }} resource(s)
+              in namespace {{ "{{" }} $labels.namespace {{ "}}" }} have had reconciliation
+              paused for more than 1 hour. Ensure this is intentional.
+{{- end }}

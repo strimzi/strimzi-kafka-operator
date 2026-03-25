@@ -79,6 +79,10 @@ podDisruptionBudget:
   maxUnavailable:
   unhealthyPodEvictionPolicy: IfHealthyBudget
 
+prometheusRule:
+  enabled: false
+  labels: {}
+
 operatorNetworkPolicy:
   # If enabled, this will generate a networkPolicy for the strimzi-operator.
   # This flag DOES NOT control operator generated networkPolicies!
