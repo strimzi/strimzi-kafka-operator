@@ -1,0 +1,26 @@
+{{- if .Values.verticalPodAutoscaler.enabled }}
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: strimzi-cluster-operator
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ template "strimzi.name" . }}
+    chart: {{ template "strimzi.chart" . }}
+    component: vertical-pod-autoscaler
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: strimzi-cluster-operator
+  updatePolicy:
+    updateMode: {{ .Values.verticalPodAutoscaler.updateMode | quote }}
+  resourcePolicy:
+    containerPolicies:
+      - containerName: strimzi-cluster-operator
+        controlledResources:
+          - cpu
+          - memory
+{{- end }}
