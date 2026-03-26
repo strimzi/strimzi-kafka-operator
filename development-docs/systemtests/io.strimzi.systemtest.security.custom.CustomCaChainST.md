@@ -31,7 +31,7 @@
 
 ## testKafkaConnectTrustWithCustomCaChain
 
-**Description:** Verifies that KafkaConnect properly establishes trust when connecting to Kafka using various custom CA configurations.
+**Description:** Verifies that KafkaConnect properly establishes trust when connecting to Kafka using valid custom CA configurations, and fails to connect when an untrusted (Subleaf) CA is used.
 
 **Steps:**
 

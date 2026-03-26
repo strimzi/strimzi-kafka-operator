@@ -423,7 +423,7 @@ public class CustomCaChainST extends AbstractST {
     @Tag(CONNECT)
     @Tag(CONNECT_COMPONENTS)
     @TestDoc(
-        description = @Desc("Verifies that KafkaConnect properly establishes trust when connecting to Kafka using various custom CA configurations."),
+        description = @Desc("Verifies that KafkaConnect properly establishes trust when connecting to Kafka using valid custom CA configurations, and fails to connect when an untrusted (Subleaf) CA is used."),
         steps = {
             @Step(value = "Generate a custom CA chain: Root -> Intermediate -> Leaf.", expected = "CA chain is generated."),
             @Step(value = "Generate a Subleaf CA signed by Leaf (Root -> Intermediate -> Leaf -> Subleaf).", expected = "Subleaf CA is generated."),
@@ -474,7 +474,7 @@ public class CustomCaChainST extends AbstractST {
         //  Create trust secrets for KafkaConnect
         final String connectTrustFullName = "trust-full";
         final String connectTrustRootIntermediateName = "trust-root-im";
-        final String connectTrustRootName = "trust-root";
+        final String connectTrustRootOnlyName = "trust-root-only";
         final String connectTrustIntermediateOnlyName = "trust-im-only";
         final String connectTrustLeafOnlyName = "trust-leaf-only";
         final String connectTrustSubleafName = "trust-subleaf";
@@ -491,11 +491,11 @@ public class CustomCaChainST extends AbstractST {
         SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(), connectTrustRootOnlyName, rootOnlyFiles);
         SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(), connectTrustIntermediateOnlyName, intermediateOnlyFiles);
         SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(), connectTrustLeafOnlyName, leafOnlyFiles);
-        SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(), connectTrustSubleafOnlyName, subleafChainFiles);
+        SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(), connectTrustSubleafName, subleafChainFiles);
 
         // Positive cases: KafkaConnect should become ready
         // Deploy one at a time to avoid multiple KafkaConnect instances in the same namespace
-        final String[] positiveSecrets = {connectTrustFullName, connectTrustRootIntermediateName, connectTrustRootName, connectTrustIntermediateOnlyName, connectTrustLeafOnlyName};
+        final String[] positiveSecrets = {connectTrustFullName, connectTrustRootIntermediateName, connectTrustRootOnlyName, connectTrustIntermediateOnlyName, connectTrustLeafOnlyName};
         for (String trustSecretName : positiveSecrets) {
 
             final String connectClusterName = testStorage.getClusterName() + "-connect-" + trustSecretName;
