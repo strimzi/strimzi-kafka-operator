@@ -488,10 +488,10 @@ public class CustomCaChainST extends AbstractST {
 
         SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(), connectTrustFullName, fullChainFiles);
         SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(), connectTrustRootIntermediateName, rootIntermediateFiles);
-        SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(), connectTrustRootName, rootOnlyFiles);
+        SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(), connectTrustRootOnlyName, rootOnlyFiles);
         SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(), connectTrustIntermediateOnlyName, intermediateOnlyFiles);
         SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(), connectTrustLeafOnlyName, leafOnlyFiles);
-        SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(), connectTrustSubleafName, subleafChainFiles);
+        SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(), connectTrustSubleafOnlyName, subleafChainFiles);
 
         // Positive cases: KafkaConnect should become ready
         // Deploy one at a time to avoid multiple KafkaConnect instances in the same namespace
