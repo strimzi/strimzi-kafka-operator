@@ -18,6 +18,8 @@ public class CommonVersionModificationData {
     private String toVersion;
     private String toExamples;
     private String toUrl;
+    private String fromFeatureGates;
+    private String toFeatureGates;
     private UpgradeKafkaVersion procedures;
     private Map<String, String> filePaths;
 
@@ -77,6 +79,22 @@ public class CommonVersionModificationData {
         this.toUrl = toUrl;
     }
 
+    public String getFromFeatureGates() {
+        return fromFeatureGates;
+    }
+
+    public String getToFeatureGates() {
+        return toFeatureGates;
+    }
+
+    public void setFromFeatureGates(String fromFeatureGates) {
+        this.fromFeatureGates = fromFeatureGates;
+    }
+
+    public void setToFeatureGates(String toFeatureGates) {
+        this.toFeatureGates = toFeatureGates;
+    }
+
     public UpgradeKafkaVersion getProcedures() {
         return procedures;
     }
@@ -112,6 +130,8 @@ public class CommonVersionModificationData {
             ", toVersion='" + toVersion + '\'' +
             ", toExamples='" + toExamples + '\'' +
             ", toUrl='" + toUrl + '\'' +
+            ", fromFeatureGates='" + fromFeatureGates + '\'' +
+            ", toFeatureGates='" + toFeatureGates + '\'' +
             "\n}";
     }
 
