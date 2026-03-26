@@ -205,6 +205,7 @@ the documentation for more details.
 | `createGlobalResources`                          | Allow creation of cluster-scoped resources                                      | `true`                       |
 | `createAggregateRoles`                           | Create cluster roles that extend aggregated roles to use Strimzi CRDs           | `false`                      |
 | `tolerations`                                    | Add tolerations to Operator Pod                                                 | `[]`                         |
+| `topologySpreadConstraints`                      | Add topology spread constraints to Operator Pod                                 | `[]`                         |
 | `affinity`                                       | Add affinities to Operator Pod                                                  | `{}`                         |
 | `annotations`                                    | Add annotations to Operator Pod                                                 | `{}`                         |
 | `labels`                                         | Add labels to Operator Pod                                                      | `{}`                         |

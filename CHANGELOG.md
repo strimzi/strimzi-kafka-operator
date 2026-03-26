@@ -8,6 +8,8 @@
 * Allow upgrading from unknown Apache Kafka versions (that might be used in Strimzi patch releases)
 * Add support for Kafka 4.1.2
 * Remove PreferredLeaderElectionGoal from Cruise Control's default.goals list
+* Add `topologySpreadConstraints` support to the Strimzi Helm chart operator Deployment
+
 
 ### Major changes, deprecations, and removals
 

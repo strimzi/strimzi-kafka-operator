@@ -36,6 +36,7 @@ tmpDirSizeLimit: 1Mi
 extraEnvs: []
 
 tolerations: []
+topologySpreadConstraints: []
 affinity: {}
 annotations: {}
 labels: {}
