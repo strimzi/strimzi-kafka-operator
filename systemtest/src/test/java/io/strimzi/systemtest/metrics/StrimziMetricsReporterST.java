@@ -11,15 +11,18 @@ import io.skodjob.annotations.SuiteDoc;
 import io.skodjob.annotations.TestDoc;
 import io.skodjob.kubetest4j.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.bridge.KafkaBridgeResources;
+import io.strimzi.api.kafka.model.common.metrics.StrimziMetricsReporter;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
+import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.docs.TestDocsLabels;
 import io.strimzi.systemtest.kafkaclients.internalClients.BridgeClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.BridgeClientsBuilder;
+import io.strimzi.systemtest.labels.LabelSelectors;
 import io.strimzi.systemtest.performance.gather.collectors.BaseMetricsCollector;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.storage.TestStorage;
@@ -31,12 +34,18 @@ import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.templates.specific.ScraperTemplates;
+import io.strimzi.systemtest.utils.RollingUpdateUtils;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.NetworkPolicyUtils;
+import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
+import io.strimzi.systemtest.utils.specific.MetricsUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
 
@@ -51,6 +60,8 @@ import static io.strimzi.systemtest.TestTags.SANITY;
 import static io.strimzi.systemtest.utils.specific.MetricsUtils.assertMetricValue;
 import static io.strimzi.systemtest.utils.specific.MetricsUtils.assertMetricValueHigherThanOrEqualTo;
 import static io.strimzi.systemtest.utils.specific.MetricsUtils.assertMetricValueNotNull;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 @Tag(SANITY)
@@ -269,6 +280,70 @@ public class StrimziMetricsReporterST extends AbstractST {
 
         assertMetricValueNotNull(bridgeCollector, "kafka_producer_kafka_metrics_count_count\\{.*}");
         assertMetricValueNotNull(bridgeCollector, "kafka_consumer_consumer_metrics_connection_count\\{.*}");
+    }
+
+    @IsolatedTest
+    @TestDoc(
+        description = @Desc("Test checking that `prometheus.metrics.reporter.allowlist` configuration is dynamically updatable using the .spec.kafka.metricsConfig.allowList."),
+        steps = {
+            @Step(value = "Check that `kafka_server_replicamanager_leadercount` is present and `kafka_log_log_logendoffset` not - in already deployed Kafka cluster", expected = "`kafka_server_replicamanager_leadercount` is present and `kafka_log_log_logendoffset` not."),
+            @Step(value = "In already deployed Kafka cluster, change the configuration of the allowList to have just `kafka_log.*` metrics allowed.", expected = "The configuration of allowList is changed."),
+            @Step(value = "Wait some time to verify that there will be no rolling update because of the change - verification of dynamic reconfiguration.", expected = "No Pods were rolled."),
+            @Step(value = "Collect metrics and check that there is no metric like `kafka_server_replicamanager_leadercount` (because of removal of `kafka_server.*` metrics from allowList).", expected = "No metric has been found."),
+            @Step(value = "Check that collected metrics contain `kafka_log_log_logstartoffset` metric for the `__cluster_metadata` topic.", expected = "Metric is present."),
+            @Step(value = "Change the allowList back to previous state - allowing just `kafka_server.*`", expected = "The configuration of allowList is changed."),
+            @Step(value = "Wait some time to verify that there will be no rolling update because of the change - verification of dynamic reconfiguration.", expected = "No Pods were rolled."),
+            @Step(value = "Check that `kafka_server_replicamanager_leadercount` is present and `kafka_log_log_logendoffset` not - configuration change was successful", expected = "`kafka_server_replicamanager_leadercount` is present and `kafka_log_log_logendoffset` not."),
+        },
+        labels = {
+            @Label(value = TestDocsLabels.KAFKA),
+            @Label(value = TestDocsLabels.METRICS),
+            @Label(value = TestDocsLabels.DYNAMIC_CONFIGURATION)
+        }
+    )
+    void testDynamicReconfigurationAllowList() {
+        LOGGER.info("Checking that `kafka_server_replicamanager_leadercount` metrics contains some value and `kafka_log_log_logendoffset` doesn't exist");
+        // Firstly check that before the change, there is `kafka_server_replicamanager_leadercount` metric present
+        assertMetricValueHigherThanOrEqualTo(kafkaCollector, "kafka_server_replicamanager_leadercount", 1.0);
+        // And check that `kafka_log_log_logendoffset` is not present
+        assertThat(MetricsUtils.createPatternAndCollectWithoutWait(kafkaCollector, "kafka_log_log_logendoffset").isEmpty(), is(true));
+
+        Map<String, String> kafkaPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), LabelSelectors.allKafkaPodsLabelSelector(testStorage.getClusterName()));
+
+        // change configuration to disable kafka_server.* metrics and add kafka_controller.* metrics
+        LOGGER.info("Change the allowList to allow `kafka_log.*`.");
+        KafkaUtils.replace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> {
+                StrimziMetricsReporter config = (StrimziMetricsReporter) kafka.getSpec().getKafka().getMetricsConfig();
+                config.getValues().setAllowList(List.of("kafka_log.*"));
+
+                kafka.getSpec().getKafka().setMetricsConfig(config);
+            }
+        );
+
+        RollingUpdateUtils.waitForNoRollingUpdate(testStorage.getNamespaceName(), LabelSelectors.allKafkaPodsLabelSelector(testStorage.getClusterName()), kafkaPods);
+
+        LOGGER.info("Check if Kafka Pods are missing the 'kafka_server_' metrics");
+        kafkaCollector.collectMetricsFromPods(TestConstants.METRICS_COLLECT_TIMEOUT);
+        assertThat(MetricsUtils.createPatternAndCollectWithoutWait(kafkaCollector, "kafka_server_replicamanager_leadercount").isEmpty(), is(true));
+
+        LOGGER.info("Now check if Kafka Pods contain 'kafka_log.*' metrics");
+        assertMetricValueNotNull(kafkaCollector, "kafka_log_log_logstartoffset\\{partition=\"0\",topic=\"__cluster_metadata\"\\}");
+
+        LOGGER.info("Changing back to previous state - allowing `kafka_server.*` metrics");
+        KafkaUtils.replace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> {
+                StrimziMetricsReporter config = (StrimziMetricsReporter) kafka.getSpec().getKafka().getMetricsConfig();
+                config.getValues().setAllowList(List.of("kafka_server.*"));
+
+                kafka.getSpec().getKafka().setMetricsConfig(config);
+            }
+        );
+
+        RollingUpdateUtils.waitForNoRollingUpdate(testStorage.getNamespaceName(), LabelSelectors.allKafkaPodsLabelSelector(testStorage.getClusterName()), kafkaPods);
+
+        LOGGER.info("Check if Kafka Pods are not missing the 'kafka_server_' metrics");
+        kafkaCollector.collectMetricsFromPods(TestConstants.METRICS_COLLECT_TIMEOUT);
+
+        assertMetricValueHigherThanOrEqualTo(kafkaCollector, "kafka_server_replicamanager_leadercount", 1.0);
     }
 
     @BeforeAll

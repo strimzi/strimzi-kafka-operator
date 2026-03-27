@@ -187,7 +187,7 @@ public class RollingUpdateUtils {
         // not need to be final because reference to the array does not get another array assigned
         int[] i = {0};
 
-        LOGGER.debug("Waiting for Pods {}/{} to remain stable for {} second(s)", namespaceName, pods.toString(),
+        LOGGER.info("Waiting for Pods {}/{} to remain stable for {} second(s)", namespaceName, pods.toString(),
             TestConstants.GLOBAL_STABILIZATION_TIME);
 
         TestUtils.waitFor("Pods to remain stable and rolling update not to be triggered", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT,

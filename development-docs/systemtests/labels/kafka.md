@@ -32,6 +32,7 @@ These tests are crucial to ensure that Kafka clusters can handle production work
 - [testCustomSoloCertificatesForRoute](../io.strimzi.systemtest.kafka.listeners.ListenersST.md)
 - [testDeployUnsupportedKafka](../io.strimzi.systemtest.kafka.KafkaST.md)
 - [testDynamicConfiguration](../io.strimzi.systemtest.kafka.dynamicconfiguration.DynamicConfSharedST.md)
+- [testDynamicReconfigurationAllowList](../io.strimzi.systemtest.metrics.StrimziMetricsReporterST.md)
 - [testDynamicallyAndNonDynamicSetConnectLoggingLevels](../io.strimzi.systemtest.log.LoggingChangeST.md)
 - [testDynamicallySetBridgeLoggingLevels](../io.strimzi.systemtest.log.LoggingChangeST.md)
 - [testDynamicallySetClusterOperatorLoggingLevels](../io.strimzi.systemtest.log.LoggingChangeST.md)

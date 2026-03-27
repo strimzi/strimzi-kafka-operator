@@ -25,6 +25,30 @@
 
 <hr style="border:1px solid">
 
+## testDynamicReconfigurationAllowList
+
+**Description:** Test checking that `prometheus.metrics.reporter.allowlist` configuration is dynamically updatable using the .spec.kafka.metricsConfig.allowList.
+
+**Steps:**
+
+| Step | Action | Result |
+| - | - | - |
+| 1. | Check that `kafka_server_replicamanager_leadercount` is present and `kafka_log_log_logendoffset` not - in already deployed Kafka cluster | `kafka_server_replicamanager_leadercount` is present and `kafka_log_log_logendoffset` not. |
+| 2. | In already deployed Kafka cluster, change the configuration of the allowList to have just `kafka_log.*` metrics allowed. | The configuration of allowList is changed. |
+| 3. | Wait some time to verify that there will be no rolling update because of the change - verification of dynamic reconfiguration. | No Pods were rolled. |
+| 4. | Collect metrics and check that there is no metric like `kafka_server_replicamanager_leadercount` (because of removal of `kafka_server.*` metrics from allowList). | No metric has been found. |
+| 5. | Check that collected metrics contain `kafka_log_log_logstartoffset` metric for the `__cluster_metadata` topic. | Metric is present. |
+| 6. | Change the allowList back to previous state - allowing just `kafka_server.*` | The configuration of allowList is changed. |
+| 7. | Wait some time to verify that there will be no rolling update because of the change - verification of dynamic reconfiguration. | No Pods were rolled. |
+| 8. | Check that `kafka_server_replicamanager_leadercount` is present and `kafka_log_log_logendoffset` not - configuration change was successful | `kafka_server_replicamanager_leadercount` is present and `kafka_log_log_logendoffset` not. |
+
+**Labels:**
+
+* [kafka](labels/kafka.md)
+* [metrics](labels/metrics.md)
+* `dynamic-configuration` (description file doesn't exist)
+
+
 ## testKafkaBridgeMetrics
 
 **Description:** This test case checks several metrics exposed by KafkaBridge.

@@ -11,6 +11,7 @@
 * Remove PreferredLeaderElectionGoal from Cruise Control's default.goals list
 * Add `topologySpreadConstraints` support to the Strimzi Helm chart operator Deployment
 * Update HTTP bridge to 1.0.0.
+* Enable configuring `allowList` of Strimzi Metrics Reporter dynamically
 
 ### Major changes, deprecations, and removals
 
