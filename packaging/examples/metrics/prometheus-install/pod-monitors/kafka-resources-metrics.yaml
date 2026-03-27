@@ -46,3 +46,9 @@ spec:
       targetLabel: node_ip
       replacement: $1
       action: replace
+    - sourceLabels: [__meta_kubernetes_pod_container_name]
+      separator: ;
+      regex: (.*)
+      targetLabel: container
+      replacement: $1
+      action: replace
