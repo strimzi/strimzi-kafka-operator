@@ -16,6 +16,7 @@ import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerConfigurati
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerConfigurationBroker;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.api.kafka.model.kafka.listener.NodeAddressType;
+import io.strimzi.operator.common.InvalidConfigurationException;
 
 import java.util.Collections;
 import java.util.List;
@@ -548,7 +549,11 @@ public class ListenersUtils {
         params.addExpressionBracket(BracketPair.PARENTHESES);
 
         // Evaluate the template
-        return new DoubleEvaluator(params).evaluate(renderedTemplate).intValue();
+        try {
+            return new DoubleEvaluator(params).evaluate(renderedTemplate).intValue();
+        } catch (IllegalArgumentException e) {
+            throw new InvalidConfigurationException("Invalid advertised port template: " + template, e);
+        }
     }
 
     /**
