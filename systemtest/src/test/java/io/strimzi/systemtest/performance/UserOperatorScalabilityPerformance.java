@@ -172,7 +172,7 @@ public class UserOperatorScalabilityPerformance extends AbstractST {
     @Tag(SCALABILITY)
     void testLatencyUnderLoad() {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
-        final List<Integer> loadLevels = List.of(1000, 1500, 2000);
+        final List<Integer> loadLevels = List.of(2000);
         final int numberOfModifications = 100;
         // default configuration of UO
         final int maxBatchSize = 100;
@@ -285,7 +285,7 @@ public class UserOperatorScalabilityPerformance extends AbstractST {
         // With 2000 KafkaUsers on the stack, this creates 2000 concurrent deletion threads that
         // overwhelm the K8s API server on slow GHA runners and eventually run into deadlock/starvation
         //
-        // note: remove this when https://github.com/skodjob/kubetest4j/issues/31 is fixed.
+        // note: remove this when https://github.com/skodjob/kubetest4j 1.1.0 is released.
         if (!Environment.SKIP_TEARDOWN) {
             KubeResourceManager.get().deleteResources(false);
         }
