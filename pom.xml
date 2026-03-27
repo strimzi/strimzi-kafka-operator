@@ -82,8 +82,8 @@
         <fasterxml.jackson-annotations.version>2.18.6</fasterxml.jackson-annotations.version>
         <fasterxml.jackson-datatype.version>2.18.6</fasterxml.jackson-datatype.version>
         <fasterxml.jackson-jaxrs.version>2.18.6</fasterxml.jackson-jaxrs.version>
-        <vertx.version>5.0.9</vertx.version>
-        <vertx-junit5.version>5.0.9</vertx-junit5.version>
+        <vertx.version>5.0.10</vertx.version>
+        <vertx-junit5.version>5.0.10</vertx-junit5.version>
         <kafka.version>4.2.0</kafka.version>
         <yammer-metrics.version>2.2.0</yammer-metrics.version>
         <snappy.version>1.1.10.5</snappy.version>
@@ -94,7 +94,7 @@
         <opentelemetry-alpha.version>${opentelemetry.version}-alpha</opentelemetry-alpha.version>
         <jetty.version>12.0.22</jetty.version>
         <javax-servlet.version>3.1.0</javax-servlet.version>
-        <netty.version>4.2.11.Final</netty.version>
+        <netty.version>4.2.12.Final</netty.version>
         <micrometer.version>1.14.5</micrometer.version>
         <commons-codec.version>1.13</commons-codec.version>
         <commons-io.version>2.18.0</commons-io.version>
