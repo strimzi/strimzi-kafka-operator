@@ -325,7 +325,7 @@ public class Environment {
     }
 
     public static boolean isConnectBuildWithBuildahEnabled() {
-        return STRIMZI_FEATURE_GATES.contains("+UseConnectBuildWithBuildah");
+        return !STRIMZI_FEATURE_GATES.contains("-UseConnectBuildWithBuildah");
     }
 
     private static String getOrDefault(String varName, String defaultValue) {

@@ -64,9 +64,7 @@ import static org.junit.jupiter.api.Assumptions.assumeFalse;
 )
 public class FeatureGatesST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(FeatureGatesST.class);
-    private static final String SERVER_SIDE_APPLY_PHASE_1_ENABLED = "+ServerSideApplyPhase1";
     private static final String SERVER_SIDE_APPLY_PHASE_1_DISABLED = "-ServerSideApplyPhase1";
-    private static final String USE_CONNECT_BUILD_WITH_BUILDAH_ENABLED = "+UseConnectBuildWithBuildah";
 
     @IsolatedTest("Creates ClusterOperator with Server Side Apply FG enabled")
     @TestDoc(
@@ -125,7 +123,7 @@ public class FeatureGatesST extends AbstractST {
 
         LOGGER.info("Deploying CO with UseConnectBuildWithBuildah disabled");
 
-        setupClusterOperatorWithFeatureGate(USE_CONNECT_BUILD_WITH_BUILDAH_ENABLED);
+        setupClusterOperatorWithFeatureGate("");
 
         KubeResourceManager.get().createResourceWithWait(
             KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),

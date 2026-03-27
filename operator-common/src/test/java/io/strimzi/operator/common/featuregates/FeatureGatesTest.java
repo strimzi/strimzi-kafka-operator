@@ -120,5 +120,8 @@ public class FeatureGatesTest {
         assertThat(new FeatureGates("").toEnvironmentVariable(), is(""));
         assertThat(new FeatureGates("+ServerSideApplyPhase1").toEnvironmentVariable(), is(""));
         assertThat(new FeatureGates("-ServerSideApplyPhase1").toEnvironmentVariable(), is("-ServerSideApplyPhase1"));
+
+        assertThat(new FeatureGates("+UseConnectBuildWithBuildah").toEnvironmentVariable(), is(""));
+        assertThat(new FeatureGates("-UseConnectBuildWithBuildah").toEnvironmentVariable(), is("-UseConnectBuildWithBuildah"));
     }
 }

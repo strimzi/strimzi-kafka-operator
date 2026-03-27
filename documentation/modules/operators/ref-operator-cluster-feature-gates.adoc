@@ -98,8 +98,8 @@ The following table shows the maturity of the feature gates introduced across St
 ifdef::Section[]
 ¦`UseConnectBuildWithBuildah`
 ¦0.49
-¦0.52 (planned)
-¦0.55 (planned)
+¦1.0
+¦1.3 (planned)
 endif::Section[]
 |===
 
@@ -141,30 +141,31 @@ Ownership of individual fields is tracked through the `.metadata.managedFields` 
 
 To disable the `ServerSideApplyPhase1` feature gate, specify `-ServerSideApplyPhase1` in the `STRIMZI_FEATURE_GATES` environment variable in the Cluster Operator configuration.
 
-== Early access feature gates (Alpha)
-
-Early access feature gates have not yet reached the beta stage, and are disabled by default. 
-An early access feature gate provides an opportunity for assessment before its functionality is permanently incorporated into Strimzi.
-
 ifdef::Section[]
 [id='ref-operator-use-connect-build-with-buildah-feature-gate-{context}']
 === `UseConnectBuildWithBuildah` feature gate
 
-The `UseConnectBuildWithBuildah` feature gate has a default state of _disabled_.
+The `UseConnectBuildWithBuildah` feature gate has a default state of _enabled_.
 
 When enabled, the Connect Build feature uses Buildah instead of Kaniko to build Kafka Connect container images.
 On Kubernetes, either Kaniko or Buildah is used depending on this feature gate.
 On OpenShift, the build mechanism remains unchanged.
 Builds continue to use the OpenShift Build API.
-Using Buildah does not change the overall build behavior. 
-The difference is that you can specify additional options in the `build` section of the `KafkaConnect` custom resource.  
+Using Buildah does not change the overall build behavior.
+The difference is that you can specify additional options in the `build` section of the `KafkaConnect` custom resource.
 These options are grouped as follows:
 
-* Build phase options (`additionalBuildOptions`)  
+* Build phase options (`additionalBuildOptions`)
 * Push phase options (`additionalPushOptions`)
 
-To enable the `UseConnectBuildWithBuildah` feature gate, specify `+UseConnectBuildWithBuildah` in the `STRIMZI_FEATURE_GATES` environment variable in the Cluster Operator configuration.
+To disable the `UseConnectBuildWithBuildah` feature gate, specify `-UseConnectBuildWithBuildah` in the `STRIMZI_FEATURE_GATES` environment variable in the Cluster Operator configuration.
 endif::Section[]
+
+== Early access feature gates (Alpha)
+
+Early access feature gates have not yet reached the beta stage, and are disabled by default. 
+An early access feature gate provides an opportunity for assessment before its functionality is permanently incorporated into Strimzi.
+Currently, there are no alpha level feature gates.
 
 == Enabling feature gates
 
