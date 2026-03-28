@@ -347,7 +347,7 @@ public class KafkaUserOperator {
 
         secretOperator.getAsync(namespace, name).whenComplete((secret, error) -> {
             if (error != null) {
-                secretPromise.completeExceptionally(Util.unwrap(error));
+                secretPromise.completeExceptionally(Util.maybeUnwrapCompletionException(error));
             } else if (secret == null) {
                 String msg = String.format("Secret %s in namespace %s not found", name, namespace);
                 secretPromise.completeExceptionally(missingSecretError.apply(msg));

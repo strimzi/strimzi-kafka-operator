@@ -12,7 +12,6 @@ import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.model.NodeRef;
 import io.strimzi.operator.cluster.model.RestartReason;
 import io.strimzi.operator.cluster.model.RestartReasons;
-import io.strimzi.operator.cluster.operator.VertxUtil;
 import io.strimzi.operator.cluster.operator.resource.events.KubernetesRestartEventPublisher;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.PodOperator;
 import io.strimzi.operator.common.AdminClientProvider;
@@ -20,6 +19,7 @@ import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.DefaultAdminClientProvider;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.auth.TlsPemIdentity;
+import io.vertx.core.Future;
 import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.Config;
 import org.apache.kafka.clients.admin.DescribeMetadataQuorumResult;
@@ -46,7 +46,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static io.strimzi.operator.common.Util.unwrap;
+import static io.strimzi.operator.common.Util.maybeUnwrapCompletionException;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
@@ -809,7 +809,7 @@ public class KafkaRollerTest {
                 }).join();
             throw new AssertionError("Expected exception " + exception.getName() + " but none was thrown");
         } catch (Exception e) {
-            Throwable cause = unwrap(e);
+            Throwable cause = maybeUnwrapCompletionException(e);
             assertThat(cause.getClass() + " is not a subclass of " + exception.getName(), cause, instanceOf(exception));
             assertThat("The exception message was not as expected", cause.getMessage(), is(message));
             assertThat("The restarted pods were not as expected", restarted(), is(expectedRestart));
@@ -839,7 +839,7 @@ public class KafkaRollerTest {
 
         when(podOps.readiness(any(), any(), any(), anyLong(), anyLong())).thenAnswer(invocationOnMock -> {
             String podName = invocationOnMock.getArgument(2);
-            return VertxUtil.completableFutureToVertxFuture(readiness.apply(podName2Number(podName)));
+            return Future.fromCompletionStage(readiness.apply(podName2Number(podName)));
         });
 
         when(podOps.isReady(anyString(), anyString())).thenAnswer(invocationOnMock -> {
@@ -848,7 +848,7 @@ public class KafkaRollerTest {
                 readiness.apply(podName2Number(podName)).join();
                 return true;
             } catch (Exception e) {
-                Throwable cause = unwrap(e);
+                Throwable cause = maybeUnwrapCompletionException(e);
                 if (cause instanceof TimeoutException) {
                     return false;
                 } else {

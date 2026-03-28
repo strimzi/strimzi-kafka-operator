@@ -612,7 +612,7 @@ public class KafkaUserOperatorMockTest {
 
         // Assert reconciliation failed with exception
         ExecutionException thrown = assertThrows(ExecutionException.class, futureResult.toCompletableFuture()::get);
-        Throwable rootCause = Util.unwrap(thrown.getCause());
+        Throwable rootCause = Util.maybeUnwrapCompletionException(thrown.getCause());
         assertInstanceOf(InvalidResourceException.class, rootCause);
     }
 
@@ -1563,7 +1563,7 @@ public class KafkaUserOperatorMockTest {
         CompletionStage<KafkaUserStatus> futureResult = op.reconcile(new Reconciliation("test-trigger", KafkaUser.RESOURCE_KIND, namespace, ResourceUtils.NAME), user, null);
 
         ExecutionException thrown = assertThrows(ExecutionException.class, futureResult.toCompletableFuture()::get);
-        Throwable rootCause = Util.unwrap(thrown.getCause());
+        Throwable rootCause = Util.maybeUnwrapCompletionException(thrown.getCause());
         assertInstanceOf(InvalidConfigurationException.class, rootCause);
         assertThat(rootCause.getMessage(), containsString(missingSecretName));
     }

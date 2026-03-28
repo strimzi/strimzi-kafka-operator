@@ -7,7 +7,6 @@ package io.strimzi.operator.cluster.operator.assembly;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceState;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceStatus;
-import io.strimzi.operator.cluster.operator.VertxUtil;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlApi;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.ExecutorStatus;
 import io.strimzi.operator.common.Reconciliation;
@@ -125,7 +124,7 @@ public class KafkaRebalanceConfigMapUtils {
                                                              ConfigMap configMap) {
         KafkaRebalanceState state = KafkaRebalanceUtils.rebalanceState(status);
         if (state == KafkaRebalanceState.Rebalancing) {
-            return VertxUtil.completableFutureToVertxFuture(
+            return Future.fromCompletionStage(
                     apiClient.getCruiseControlState(reconciliation, host, port, false))
                     .compose(response -> {
                         ExecutorStatus executorStatus = response.getExecutorStatus();

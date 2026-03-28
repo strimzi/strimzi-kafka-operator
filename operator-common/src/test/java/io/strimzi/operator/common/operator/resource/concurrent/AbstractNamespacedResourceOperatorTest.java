@@ -206,7 +206,7 @@ public abstract class AbstractNamespacedResourceOperatorTest<C extends Kubernete
 
         TestUtils.await(op.createOrUpdate(Reconciliation.DUMMY_RECONCILIATION, resource)
             .<Void>handle((rr, error) -> {
-                assertSame(Util.unwrap(error), ex);
+                assertSame(Util.maybeUnwrapCompletionException(error), ex);
                 return null;
             }));
     }
@@ -264,7 +264,7 @@ public abstract class AbstractNamespacedResourceOperatorTest<C extends Kubernete
         AbstractNamespacedResourceOperator<C, T, L, R> op = createResourceOperations(mockClient);
         TestUtils.await(op.createOrUpdate(Reconciliation.DUMMY_RECONCILIATION, resource)
             .<Void>handle((rr, error) -> {
-                assertSame(Util.unwrap(error), ex);
+                assertSame(Util.maybeUnwrapCompletionException(error), ex);
                 return null;
             }));
     }
@@ -409,7 +409,7 @@ public abstract class AbstractNamespacedResourceOperatorTest<C extends Kubernete
 
         TestUtils.await(op.reconcile(Reconciliation.DUMMY_RECONCILIATION, resource.getMetadata().getNamespace(), resource.getMetadata().getName(), null)
             .<Void>handle((rr, error) -> {
-                assertThat(Util.unwrap(error), is(ex));
+                assertThat(Util.maybeUnwrapCompletionException(error), is(ex));
                 return null;
             }));
     }

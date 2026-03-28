@@ -55,7 +55,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import static io.strimzi.operator.common.Util.unwrap;
+import static io.strimzi.operator.common.Util.maybeUnwrapCompletionException;
 import static java.util.Collections.singletonList;
 
 /**
@@ -274,7 +274,7 @@ public class KafkaRoller {
                             }
 
                             if (error != null) {
-                                result.completeExceptionally(unwrap(error));
+                                result.completeExceptionally(maybeUnwrapCompletionException(error));
                             } else {
                                 result.complete(null);
                             }
@@ -831,7 +831,7 @@ public class KafkaRoller {
             if (error == null) {
                 cf.complete(ar);
             } else {
-                cf.completeExceptionally(unwrap(error));
+                cf.completeExceptionally(maybeUnwrapCompletionException(error));
             }
         });
         try {

@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
-import static io.strimzi.operator.common.Util.unwrap;
+import static io.strimzi.operator.common.Util.maybeUnwrapCompletionException;
 
 /**
  * Contains utility methods for unregistering KRaft nodes from a Kafka cluster after scale-down
@@ -123,7 +123,7 @@ public class KafkaNodeUnregistration {
         return adminClient.unregisterBroker(nodeIdToUnregister).all()
                 .whenComplete((v, t) -> {
                     if (t != null) {
-                        Throwable cause = unwrap(t);
+                        Throwable cause = maybeUnwrapCompletionException(t);
                         LOGGER.warnCr(reconciliation, "Failed to unregister node {} from the Kafka cluster", nodeIdToUnregister, cause);
                     }
                 })

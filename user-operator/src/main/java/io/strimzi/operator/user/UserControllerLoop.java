@@ -164,7 +164,7 @@ public class UserControllerLoop extends AbstractControllerLoop {
 
                 userCrdOperator.updateStatusAsync(reconciliation, updateKafkaUser)
                     .exceptionally(error -> {
-                        if (Util.unwrap(error) instanceof KubernetesClientException kce) {
+                        if (Util.maybeUnwrapCompletionException(error) instanceof KubernetesClientException kce) {
                             switch (kce.getCode()) {
                                 case 409 -> LOGGER.debugCr(reconciliation, "{} {} in namespace {} changed while trying to update status", reconciliation.kind(), reconciliation.name(), reconciliation.namespace());
                                 case 404 -> LOGGER.debugCr(reconciliation, "{} {} in namespace {} was deleted while trying to update status", reconciliation.kind(), reconciliation.name(), reconciliation.namespace());
@@ -172,7 +172,7 @@ public class UserControllerLoop extends AbstractControllerLoop {
                             }
                             return null;
                         } else {
-                            throw new CompletionException(Util.unwrap(error));
+                            throw new CompletionException(Util.maybeUnwrapCompletionException(error));
                         }
                     })
                     .toCompletableFuture()

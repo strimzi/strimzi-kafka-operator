@@ -21,7 +21,7 @@ import org.mockito.ArgumentCaptor;
 import java.util.List;
 import java.util.Set;
 
-import static io.strimzi.operator.common.Util.unwrap;
+import static io.strimzi.operator.common.Util.maybeUnwrapCompletionException;
 import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
@@ -75,7 +75,7 @@ public class KafkaNodeUnregistrationTest {
                     .join();
             throw new AssertionError("Expected TimeoutException but none was thrown");
         } catch (Exception e) {
-            Throwable cause = unwrap(e);
+            Throwable cause = maybeUnwrapCompletionException(e);
             assertThat(cause, instanceOf(TimeoutException.class));
             assertThat(unregisteredNodeIdCaptor.getAllValues().size(), is(2));
             assertThat(unregisteredNodeIdCaptor.getAllValues(), hasItems(1874, 1919));
