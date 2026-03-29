@@ -10,6 +10,9 @@
 * Add support for `advertisedPortTemplate` in listener configuration to add more flexibility when configuring advertised ports.
 * Remove PreferredLeaderElectionGoal from Cruise Control's default.goals list
 * Add `topologySpreadConstraints` support to the Strimzi Helm chart operator Deployment
+* Update HTTP bridge to 1.0.0.
+  * `/metrics` endpoint is no longer available on the regular HTTP interface (port 8080 by default). It is now available on the HTTP management interface, 8081.
+    Users upgrading to Strimzi 1.0.0+ should check all monitoring configurations that scrape Kafka Bridge metrics and update them to use port 8081 instead of 8080 or any other non-default port before or immediately after the upgrade to avoid metrics collection failures.
 
 ### Major changes, deprecations, and removals
 
@@ -28,9 +31,6 @@
 * The `ServerSideApplyPhase1` feature gate moves to beta stage and is enabled by default.
   If needed, `ServerSideApplyPhase1` can be disabled in the feature gates configuration in the Cluster Operator.
 * Fixed auto-rebalancing on scale up not running anymore when Cruise Control is not ready yet on the first attempt.
-* Update HTTP bridge to 1.0.0.
-  * `/metrics` endpoint is no longer available on the regular HTTP interface (port 8080 by default). It is now available on the HTTP management interface, 8081.
-    Users upgrading to Strimzi 0.51.0+ should check all monitoring configurations that scrape Kafka Bridge metrics and update them to use port 8081 instead of 8080 or any other non-default port before or immediately after the upgrade to avoid metrics collection failures.
 
 ### Major changes, deprecations, and removals
 
@@ -587,7 +587,7 @@
   The StatefulSet template properties in the `Kafka` custom resource in `.spec.zookeeper.template.statefulSet` and `.spec.kafka.template.statefulSet` are deprecated and will be ignored.
   You should remove them from your custom resources.
 
-## 1.0.0
+## 0.34.0
 
 * Add support for Kafka 3.4.0 and remove support for Kafka 3.2.x
 * Stable Pod identities for Kafka Connect and MirrorMaker 2 (Feature Gate `StableConnectIdentities`)
