@@ -93,7 +93,7 @@ The following table shows the maturity of the feature gates introduced across St
 ¦`ServerSideApplyPhase1`
 ¦0.48
 ¦0.51
-¦0.54 (planned)
+¦1.2 (planned)
 
 ifdef::Section[]
 ¦`UseConnectBuildWithBuildah`
