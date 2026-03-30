@@ -1386,7 +1386,7 @@ public class KafkaRebalanceAssemblyOperator
         // We check for `CruiseControlRetriableConnectionException` which is thrown if requests are made when CC was not active. Not handling this case will move the KafkaRebalance to `NotReady` state
         // and it will stay in `NotReady` state until we apply `refresh` annotation
         if (rebalanceAnnotation == KafkaRebalanceAnnotation.refresh
-                || kafkaRebalance.getStatus().getConditions().stream().anyMatch(condition -> "CruiseControlRetriableConnectionException".equals(condition.getReason()))) {
+                || kafkaRebalance.getStatus().getConditions().stream().anyMatch(condition -> "CruiseControlRetriableConnectionException".equals(condition.getReason()) || (condition.getMessage() != null && condition.getMessage().contains("CruiseControlRetriableConnectionException")))) {
             return true;
         } else {
             return CruiseControlIssues.checkForMatch(kafkaRebalance.getStatus().getConditions());
