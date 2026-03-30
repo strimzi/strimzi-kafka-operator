@@ -8,15 +8,16 @@ import io.skodjob.kubetest4j.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.user.KafkaUser;
 import io.strimzi.api.kafka.model.user.KafkaUserAuthorizationSimple;
 import io.strimzi.api.kafka.model.user.KafkaUserAuthorizationSimpleBuilder;
-import io.strimzi.api.kafka.model.user.KafkaUserBuilder;
 import io.strimzi.api.kafka.model.user.KafkaUserQuotas;
 import io.strimzi.api.kafka.model.user.KafkaUserQuotasBuilder;
 import io.strimzi.api.kafka.model.user.acl.AclOperation;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.enums.UserAuthType;
 import io.strimzi.systemtest.resources.CrdClients;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaUserTemplates;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
+import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -58,14 +59,12 @@ public class UserOperatorPerformanceUtils {
             .endAcl()
             .build();
 
-        listOfUsers.replaceAll(kafkaUser -> new KafkaUserBuilder(kafkaUser)
-            .editSpec()
-                .withAuthorization(updatedAcl)
-                .withQuotas(kafkaUserQuotas)
-            .endSpec()
-            .build());
-
-        KubeResourceManager.get().updateResource(listOfUsers.toArray(new KafkaUser[listOfUsers.size()]));
+        for (KafkaUser kafkaUser : listOfUsers) {
+            KafkaUserUtils.replace(testStorage.getNamespaceName(), kafkaUser.getMetadata().getName(), ku -> {
+                ku.getSpec().setAuthorization(updatedAcl);
+                ku.getSpec().setQuotas(kafkaUserQuotas);
+            });
+        }
 
         // Wait for each specific user in the list to be updated and ready
         listOfUsers.forEach(kafkaUser ->
@@ -124,6 +123,69 @@ public class UserOperatorPerformanceUtils {
         listOfUsers.forEach(kafkaUser ->
             KafkaUserUtils.waitForKafkaUserReady(testStorage.getNamespaceName(), kafkaUser.getMetadata().getName())
         );
+    }
+
+    public static void cleanupKafkaUsers(TestStorage testStorage) {
+        LOGGER.info("Cleaning namespace: {}", testStorage.getNamespaceName());
+
+        List<KafkaUser> kafkaUsers = CrdClients.kafkaUserClient()
+            .inNamespace(testStorage.getNamespaceName()).list().getItems()
+            .stream()
+            .filter(u -> u.getMetadata().getName().startsWith(testStorage.getUsername()))
+            .toList();
+
+        if (kafkaUsers.isEmpty()) {
+            LOGGER.info("No KafkaUsers with prefix '{}' found in namespace {}",
+                testStorage.getUsername(), testStorage.getNamespaceName());
+            return;
+        }
+
+        final int batchSize = 500;
+        final int totalBatches = (kafkaUsers.size() + batchSize - 1) / batchSize;
+        LOGGER.info("Deleting {} KafkaUsers in {} batch(es) of up to {}",
+            kafkaUsers.size(), totalBatches, batchSize);
+
+        final long cleanupStartTime = System.nanoTime();
+
+        for (int i = 0; i < kafkaUsers.size(); i += batchSize) {
+            final int batchNumber = (i / batchSize) + 1;
+            List<KafkaUser> batch = kafkaUsers.subList(i, Math.min(i + batchSize, kafkaUsers.size()));
+            final int expectedRemaining = kafkaUsers.size() - (i + batch.size());
+
+            LOGGER.info("Submitting deletion batch {}/{} ({} users, expecting {} remaining after)",
+                batchNumber, totalBatches, batch.size(), expectedRemaining);
+
+            final long batchStartTime = System.nanoTime();
+            KubeResourceManager.get().deleteResourceWithoutWait(batch.toArray(new KafkaUser[0]));
+            final long deleteApiCallMs = Duration.ofNanos(System.nanoTime() - batchStartTime).toMillis();
+            LOGGER.info("Batch {}/{} delete API calls took {} ms", batchNumber, totalBatches, deleteApiCallMs);
+
+            TestUtils.waitFor(
+                "deletion of batch " + batchNumber + "/" + totalBatches,
+                TestConstants.GLOBAL_POLL_INTERVAL,
+                TestConstants.GLOBAL_TIMEOUT,
+                () -> {
+                    try {
+                        final int remaining = KafkaUserUtils.getAllKafkaUsersWithPrefix(
+                            testStorage.getNamespaceName(), testStorage.getUsername()).size();
+                        LOGGER.debug("Waiting for batch {}/{} deletion — {} users remaining (expecting <= {})",
+                            batchNumber, totalBatches, remaining, expectedRemaining);
+                        return remaining <= expectedRemaining;
+                    } catch (Exception e) {
+                        return e.getMessage().contains("Not Found")
+                            || e.getMessage().contains("the server doesn't have a resource type");
+                    }
+                });
+
+            final long batchTotalMs = Duration.ofNanos(System.nanoTime() - batchStartTime).toMillis();
+            LOGGER.info("Batch {}/{} completed in {} ms (API calls: {} ms, reconciliation wait: {} ms)",
+                batchNumber, totalBatches, batchTotalMs, deleteApiCallMs, batchTotalMs - deleteApiCallMs);
+        }
+
+        final long totalCleanupMs = Duration.ofNanos(System.nanoTime() - cleanupStartTime).toMillis();
+        LOGGER.info("All {} KafkaUsers with prefix '{}' deleted in {} ms ({} ms/user avg)",
+            kafkaUsers.size(), testStorage.getUsername(), totalCleanupMs,
+            kafkaUsers.size() > 0 ? totalCleanupMs / kafkaUsers.size() : 0);
     }
 
     /**
@@ -286,14 +348,10 @@ public class UserOperatorPerformanceUtils {
                 .endAcl()
                 .build();
 
-            final KafkaUser modifiedUser = new KafkaUserBuilder(userToModify)
-                .editSpec()
-                    .withAuthorization(updatedAcl)
-                    .withQuotas(kafkaUserQuotas)
-                .endSpec()
-                .build();
-
-            KubeResourceManager.get().updateResource(modifiedUser);
+            KafkaUserUtils.replace(testStorage.getNamespaceName(), userToModify.getMetadata().getName(), ku -> {
+                ku.getSpec().setAuthorization(updatedAcl);
+                ku.getSpec().setQuotas(kafkaUserQuotas);
+            });
             KafkaUserUtils.waitForKafkaUserReady(testStorage.getNamespaceName(), userToModify.getMetadata().getName());
 
             final long latencyMs = Duration.ofNanos(System.nanoTime() - startTime).toMillis();
