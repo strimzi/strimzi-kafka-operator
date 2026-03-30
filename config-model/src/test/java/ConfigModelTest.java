@@ -74,6 +74,18 @@ public class ConfigModelTest {
     }
 
     @Test
+    public void testIntPatternValidation() {
+        ConfigModel cm = new ConfigModel();
+        cm.setType(Type.INT);
+        cm.setPattern("1|2|3");
+        assertThat(cm.validate("test", "1"), is(emptyList()));
+        assertThat(cm.validate("test", "2"), is(emptyList()));
+        assertThat(cm.validate("test", "3"), is(emptyList()));
+        assertThat(cm.validate("test", "4"),
+                is(List.of("test has value '4' which does not match the required pattern: 1|2|3")));
+    }
+
+    @Test
     public void testLongValidation() {
         ConfigModel cm = new ConfigModel();
         cm.setType(Type.LONG);
