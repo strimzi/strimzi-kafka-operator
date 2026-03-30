@@ -93,7 +93,7 @@ jobs:
       - name: Download strimzi binaries from source build
         uses: actions/download-artifact@v7
         with:
-          name: strimzi-binaries.tar
+          name: binaries-operators.tar
           run-id: ${{ inputs.sourceBuildRunId }}
           github-token: ${{ github.token }}
 
@@ -102,7 +102,7 @@ jobs:
 
       - name: Push Java artifacts to GHCR
         run: |
-          oras push ghcr.io/${{ env.REPOSITORY }}/strimzi-binaries:${{ env.TAG }} strimzi-binaries.tar:application/x-tar
+          oras push ghcr.io/${{ env.REPOSITORY }}/binaries-operators:${{ env.TAG }} binaries-operators.tar:application/x-tar
         env:
           TAG: ${{ inputs.releaseVersion }}-${{ inputs.sourceBuildRunId }}
           REPOSITORY: "strimzi"
