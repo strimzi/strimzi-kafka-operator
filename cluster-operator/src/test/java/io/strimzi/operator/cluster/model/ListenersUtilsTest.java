@@ -13,6 +13,7 @@ import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerConfigurati
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerConfigurationBrokerBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.api.kafka.model.kafka.listener.NodeAddressType;
+import io.strimzi.operator.common.InvalidConfigurationException;
 import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
@@ -21,6 +22,7 @@ import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyMap;
+import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -791,5 +793,46 @@ public class ListenersUtilsTest {
         assertThat(ListenersUtils.allocateLoadBalancerNodePorts(lbListenerWithoutNodePorts), is(false));
         assertThat(ListenersUtils.allocateLoadBalancerNodePorts(lbListenerWithoutConfiguration), is(nullValue()));
         assertThat(ListenersUtils.allocateLoadBalancerNodePorts(newLoadBalancer2), is(nullValue()));
+    }
+
+    @Test
+    public void testRenderPortTemplates() {
+        assertThat(ListenersUtils.renderPortTemplate("9000", 7), is(9000));
+        assertThat(ListenersUtils.renderPortTemplate("9000+{nodeId}", 7), is(9007));
+        assertThat(ListenersUtils.renderPortTemplate("9000 + {nodeId}", 7), is(9007));
+        assertThat(ListenersUtils.renderPortTemplate("{nodeId} + 10000", 7), is(10007));
+        assertThat(ListenersUtils.renderPortTemplate("9000 + ({nodeId} * 10)", 7), is(9070));
+
+        // Disabled operators
+        InvalidConfigurationException e = assertThrows(InvalidConfigurationException.class, () -> ListenersUtils.renderPortTemplate("9000 + ({nodeId} / 10)", 7));
+        assertThat(e.getCause(), is(instanceOf(IllegalArgumentException.class)));
+        assertThat(e.getMessage(), is("Invalid advertised port template: 9000 + ({nodeId} / 10)"));
+
+        // Unknown variable
+        e = assertThrows(InvalidConfigurationException.class, () -> ListenersUtils.renderPortTemplate("9000 + {podId}", 7));
+        assertThat(e.getCause(), is(instanceOf(IllegalArgumentException.class)));
+        assertThat(e.getMessage(), is("Invalid advertised port template: 9000 + {podId}"));
+    }
+
+    @Test
+    public void testBrokerAdvertisedPortFromTemplate() {
+        GenericKafkaListener listenerWithTemplate = new GenericKafkaListenerBuilder()
+                .withName("plain2")
+                .withPort(9900)
+                .withType(KafkaListenerType.INTERNAL)
+                .withTls(false)
+                .withNewConfiguration()
+                    .withUseServiceDnsDomain(true)
+                    .withBrokers(new GenericKafkaListenerConfigurationBrokerBuilder()
+                                    .withBroker(0)
+                                    .withAdvertisedHost("advertised-host")
+                                    .withAdvertisedPort(10000)
+                                    .build())
+                    .withAdvertisedPortTemplate("20000 + {nodeId}")
+                .endConfiguration()
+                .build();
+
+        assertThat(ListenersUtils.brokerAdvertisedPort(listenerWithTemplate, 0), is(10000));
+        assertThat(ListenersUtils.brokerAdvertisedPort(listenerWithTemplate, 5), is(20005));
     }
 }

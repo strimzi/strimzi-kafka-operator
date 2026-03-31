@@ -242,6 +242,11 @@
             <artifactId>vertx-micrometer-metrics</artifactId>
         </dependency>
         <dependency>
+            <!-- Javaluator is mathematical expression evaluator used for the advertised port template -->
+            <groupId>com.fathzer</groupId>
+            <artifactId>javaluator</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.wiremock</groupId>
             <artifactId>wiremock-standalone</artifactId>
             <version>${wiremock.version}</version>

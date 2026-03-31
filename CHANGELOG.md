@@ -7,9 +7,9 @@
 * Remove the `v1beta2` API (and `v1alpha1` and `v1beta2` for `KafkaTopic` and `KafkaUser`) from the CRDs and fully move to the `v1` API
 * Allow upgrading from unknown Apache Kafka versions (that might be used in Strimzi patch releases)
 * Add support for Kafka 4.1.2
+* Add support for `advertisedPortTemplate` in listener configuration to add more flexibility when configuring advertised ports.
 * Remove PreferredLeaderElectionGoal from Cruise Control's default.goals list
 * Add `topologySpreadConstraints` support to the Strimzi Helm chart operator Deployment
-
 
 ### Major changes, deprecations, and removals
 

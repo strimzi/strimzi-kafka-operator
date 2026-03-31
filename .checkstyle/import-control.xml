@@ -60,6 +60,7 @@ We also control imports only in production classes and not in tests. This is con
         <allow pkg="io.fabric8.openshift.api.model" />
         <allow pkg="io.fabric8.kubernetes.api.model" />
         <allow pkg="io.vertx.core.json" />
+        <allow pkg="com.fathzer.soft.javaluator" />
         <allow class="edu.umd.cs.findbugs.annotations.SuppressFBWarnings" />
 
         <!-- Strimzi Operators classes -->

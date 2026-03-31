@@ -227,6 +227,8 @@ spec:
                               type: string
                             advertisedHostTemplate:
                               type: string
+                            advertisedPortTemplate:
+                              type: string
                             allocateLoadBalancerNodePorts:
                               type: boolean
                         networkPolicyPeers:
@@ -5301,6 +5303,8 @@ spec:
                             hostTemplate:
                               type: string
                             advertisedHostTemplate:
+                              type: string
+                            advertisedPortTemplate:
                               type: string
                             allocateLoadBalancerNodePorts:
                               type: boolean

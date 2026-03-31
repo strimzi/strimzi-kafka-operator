@@ -101,6 +101,7 @@
         <commons-lang3.version>3.18.0</commons-lang3.version>
         <picocli.version>4.7.7</picocli.version>
         <snakeyaml.version>2.5</snakeyaml.version>
+        <javaluator.version>3.0.6</javaluator.version>
 
         <!-- Test only dependencies -->
         <hamcrest.version>2.2</hamcrest.version>
@@ -603,6 +604,12 @@
                 <groupId>org.yaml</groupId>
                 <artifactId>snakeyaml</artifactId>
                 <version>${snakeyaml.version}</version>
+            </dependency>
+            <dependency>
+                <!-- Javaluator is mathematical expression evaluator used for the advertised port template -->
+                <groupId>com.fathzer</groupId>
+                <artifactId>javaluator</artifactId>
+                <version>${javaluator.version}</version>
             </dependency>
             <!-- The skodjob dependency is required at compile time, not solely in the test scope, due to the creation of custom metrics components. -->
             <dependency>
