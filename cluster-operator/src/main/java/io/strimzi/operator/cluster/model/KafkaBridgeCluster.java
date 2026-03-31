@@ -284,10 +284,10 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
         anno.add(discovery);
 
         JsonObject managementDiscovery = new JsonObject();
-        discovery.put("port", REST_API_MANAGEMENT_PORT);
-        discovery.put("tls", false);
-        discovery.put("auth", "none");
-        discovery.put("protocol", "http");
+        managementDiscovery.put("port", REST_API_MANAGEMENT_PORT);
+        managementDiscovery.put("tls", false);
+        managementDiscovery.put("auth", "none");
+        managementDiscovery.put("protocol", "http");
         anno.add(managementDiscovery);
 
         return Collections.singletonMap(Labels.STRIMZI_DISCOVERY_LABEL, anno.encodePrettily());

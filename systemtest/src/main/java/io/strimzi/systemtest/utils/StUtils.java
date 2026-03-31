@@ -215,17 +215,13 @@ public class StUtils {
         return validLines;
     }
 
-    public static JsonArray expectedServiceDiscoveryInfo(int port, String protocol, String auth, boolean tls) {
+    public static JsonObject expectedServiceDiscoveryInfo(int port, String protocol, String auth, boolean tls) {
         JsonObject jsonObject = new JsonObject();
         jsonObject.put("port", port);
         jsonObject.put(TestConstants.TLS_LISTENER_DEFAULT_NAME, tls);
         jsonObject.put("protocol", protocol);
         jsonObject.put("auth", auth);
-
-        JsonArray jsonArray = new JsonArray();
-        jsonArray.add(jsonObject);
-
-        return jsonArray;
+        return jsonObject;
     }
 
     /**
@@ -238,8 +234,8 @@ public class StUtils {
      */
     public static JsonArray expectedServiceDiscoveryInfo(String plainEncryption, String tlsEncryption, boolean plainTlsAuth, boolean tlsTlsAuth) {
         JsonArray jsonArray = new JsonArray();
-        jsonArray.add(expectedServiceDiscoveryInfo(9092, "kafka", plainEncryption, plainTlsAuth).getValue(0));
-        jsonArray.add(expectedServiceDiscoveryInfo(9093, "kafka", tlsEncryption, tlsTlsAuth).getValue(0));
+        jsonArray.add(expectedServiceDiscoveryInfo(9092, "kafka", plainEncryption, plainTlsAuth));
+        jsonArray.add(expectedServiceDiscoveryInfo(9093, "kafka", tlsEncryption, tlsTlsAuth));
         return jsonArray;
     }
 
