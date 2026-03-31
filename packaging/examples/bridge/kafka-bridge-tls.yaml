@@ -7,7 +7,8 @@ spec:
   bootstrapServers: my-cluster-kafka-bootstrap:9092
   http:
     port: 8443
-    certificateAndKey:
-      secretName: my-bridge-cert-secret
-      certificate: cert.crt
-      key: key.key
+    tls:
+      certificateAndKey:
+        secretName: my-bridge-cert-secret
+        certificate: cert.crt
+        key: key.key

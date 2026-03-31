@@ -300,8 +300,8 @@ public class KafkaBridgeConfigurationBuilder {
             writer.println("http.ssl.enable=true");
 
             if (http.getTls().getCertificateAndKey() != null) {
-                writer.println("http.ssl.keystore.location=" + HTTP_SERVER_CERTS_BASE_VOLUME_MOUNT + http.getTls().getCertificateAndKey().getSecretName() + "/" + http.getTls().getCertificateAndKey().getCertificate());
-                writer.println("http.ssl.keystore.key.location=" + HTTP_SERVER_CERTS_BASE_VOLUME_MOUNT + http.getTls().getCertificateAndKey().getSecretName() + "/" + http.getTls().getCertificateAndKey().getKey());
+                writer.println("http.ssl.certificate.location=" + HTTP_SERVER_CERTS_BASE_VOLUME_MOUNT + http.getTls().getCertificateAndKey().getSecretName() + "/" + http.getTls().getCertificateAndKey().getCertificate());
+                writer.println("http.ssl.key.location=" + HTTP_SERVER_CERTS_BASE_VOLUME_MOUNT + http.getTls().getCertificateAndKey().getSecretName() + "/" + http.getTls().getCertificateAndKey().getKey());
             }
 
             if (!http.getTls().getConfig().isEmpty()) {
