@@ -452,8 +452,8 @@ public class KafkaBridgeClusterTest {
 
         assertThat(bridgeConfigurations, containsString("http.port=8443"));
         assertThat(bridgeConfigurations, containsString("http.ssl.enable=true"));
-        assertThat(bridgeConfigurations, containsString("http.ssl.keystore.location=/opt/strimzi/bridge-server-certs/my-secret/my-secret"));
-        assertThat(bridgeConfigurations, containsString("http.ssl.keystore.key.location=/opt/strimzi/bridge-server-certs/my-secret/private.key"));
+        assertThat(bridgeConfigurations, containsString("http.ssl.certificate.location=/opt/strimzi/bridge-server-certs/my-secret/my-secret"));
+        assertThat(bridgeConfigurations, containsString("http.ssl.key.location=/opt/strimzi/bridge-server-certs/my-secret/private.key"));
     }
 
     @Test
