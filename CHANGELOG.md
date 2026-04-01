@@ -13,6 +13,9 @@
 
 ### Major changes, deprecations, and removals
 
+* **The Strimzi Access Operator 0.2.0 does not support the Strimzi `v1` CRD API and is not compatible with Strimzi 1.0.0.**
+  The Strimzi `v1` CRD API will be supported in Strimzi Access Operator 0.3.0 release that will follow shortly after the Strimzi 1.0.0 release.
+  Please check the [Access Operator repository](https://github.com/strimzi/kafka-access-operator) for the latest updates on the Access Operator releases and compatibility with Strimzi 1.0.0.
 * The `api`, `test`, `crd-annotations`, and `crd-generator` modules now use Java 21 as their Java language level.
   If you use one of these modules as a dependency in your Java project, you will need to upgrade to Java 21 as well.
 * Open Policy Agent (OPA) authorizer plugin is not bundled as part of the Strimzi Container images anymore.

@@ -7,17 +7,7 @@
 [id='assembly-access-operator-{context}']
 = Using the Access Operator to manage client connections
 
-[role="_abstract"]
-The Strimzi Access Operator is an optional feature that simplifies the sharing of Kafka connection information and credentials between namespaces
-The Access Operator is deployed separately and manages the distribution of connection details, which are stored as a `Secret` resource. 
-The secret contains cluster connection details and optional user credentials, and can be referenced by applications across different namespaces.
-
-The `KafkaAccess` resource configures Kafka cluster connection information and credentials. 
-When you create, modify, or delete connection information using a `KafkaAccess` resource, the Access Operator updates a service binding secret. 
-This secret stores the details in multiple formats, allowing applications across different namespaces to connect to the clusters.
-
-//Procedure for deployment of Access Operator
-include::../../modules/deploying/proc-deploy-access-operator.adoc[leveloffset=+1]
-//Procedure for running the Access Operator
-include::../../modules/deploying/proc-using-access-operator.adoc[leveloffset=+1]
-
+// This is a temporary note that is expected to be removed after Access Operator 0.3.0 release.
+NOTE: The Strimzi Access Operator version 0.2.0 does not support the Strimzi `v1` CRD API and is not compatible with Strimzi {ProductVersion}.
+The Strimzi `v1` CRD API will be supported in Strimzi Access Operator 0.3.0 release that will follow the Strimzi {ProductVersion} release.
+Please check the link:https://github.com/strimzi/kafka-access-operator[Access Operator repository^] for the latest updates on the Access Operator releases and compatibility with Strimzi {ProductVersion}.
