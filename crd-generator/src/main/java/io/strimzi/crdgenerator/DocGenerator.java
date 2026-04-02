@@ -13,6 +13,7 @@ import io.strimzi.crdgenerator.annotations.AddedIn;
 import io.strimzi.crdgenerator.annotations.Crd;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.DescriptionFile;
+import io.strimzi.crdgenerator.annotations.ExternalLink;
 import io.strimzi.crdgenerator.annotations.KubeLink;
 import io.strimzi.crdgenerator.annotations.PresentInVersions;
 
@@ -89,7 +90,7 @@ class DocGenerator {
         Set<Property> memorableProperties = new HashSet<>();
 
         for (Property property : properties(crApiVersion, cls).values()) {
-            if (property.isAnnotationPresent(KubeLink.class)) {
+            if (property.isAnnotationPresent(KubeLink.class) || property.isAnnotationPresent(ExternalLink.class)) {
                 continue;
             }
 
@@ -151,9 +152,8 @@ class DocGenerator {
             final Property property = entry.getValue();
             PropertyType propertyType = property.getType();
         
-            // Set the external link to Kubernetes docs or the link for fields distinguished by `type`
-            KubeLink kubeLink = property.getAnnotation(KubeLink.class);
-            String externalUrl = linker != null && kubeLink != null ? linker.link(kubeLink) : null;
+            // Set the external link to some other docs
+            String externalUrl = linker.link(property);
         
             // Add the property name
             out.append("|").append(propertyName);
@@ -497,18 +497,8 @@ class DocGenerator {
         for (int i = 0; i < args.length; i++) {
             String arg = args[i];
             if (arg.startsWith("-")) {
-                if ("--linker".equals(arg)) {
-                    String className = args[++i];
-                    Class<? extends Linker> linkerClass = classInherits(Class.forName(className), Linker.class);
-                    if (linkerClass != null) {
-                        try {
-                            linker = linkerClass.getConstructor(String.class).newInstance(args[++i]);
-                        } catch (ReflectiveOperationException e) {
-                            throw new RuntimeException("--linker option can't be handled", e);
-                        }
-                    } else {
-                        System.err.println(className + " is not a subclass of " + Linker.class.getName());
-                    }
+                if ("--kubernetes-base-url".equals(arg)) {
+                    linker = new Linker(args[++i]);
                 } else {
                     throw new RuntimeException("Unsupported option " + arg);
                 }

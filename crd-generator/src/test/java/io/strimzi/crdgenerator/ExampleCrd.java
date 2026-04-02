@@ -18,6 +18,7 @@ import io.strimzi.crdgenerator.annotations.CelValidation;
 import io.strimzi.crdgenerator.annotations.Crd;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.Example;
+import io.strimzi.crdgenerator.annotations.ExternalLink;
 import io.strimzi.crdgenerator.annotations.KubeLink;
 import io.strimzi.crdgenerator.annotations.Minimum;
 import io.strimzi.crdgenerator.annotations.MinimumItems;
@@ -66,7 +67,7 @@ import java.util.Map;
     "rawList", "listOfRawList", "arrayOfList", "arrayOfRawList", "listOfArray", "arrayOfTypeVar", "listOfTypeVar",
     "arrayOfBoundTypeVar", "listOfBoundTypeVar", "arrayOfBoundTypeVar2", "listOfBoundTypeVar2",
     "listOfWildcardTypeVar1", "listOfWildcardTypeVar2", "listOfWildcardTypeVar3", "listOfWildcardTypeVar4",
-    "listOfCustomizedEnum", "listOfNormalEnum", "listOfMaps", "either", "or", "status", "spec"})
+    "listOfCustomizedEnum", "listOfNormalEnum", "listOfMaps", "either", "or", "status", "spec", "external"})
 public class ExampleCrd<T, U extends Number, V extends U> extends CustomResource {
 
     private String ignored;
@@ -142,6 +143,8 @@ public class ExampleCrd<T, U extends Number, V extends U> extends CustomResource
     public String either;
 
     public String or;
+
+    private String external;
 
     @Description("Example of complex type.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -352,5 +355,14 @@ public class ExampleCrd<T, U extends Number, V extends U> extends CustomResource
 
     public void setAffinity(Affinity affinity) {
         this.affinity = affinity;
+    }
+
+    @ExternalLink(url = "https://gateway-api.sigs.k8s.io/reference/spec/#parentreference")
+    public String getExternal() {
+        return external;
+    }
+
+    public void setExternal(String external) {
+        this.external = external;
     }
 }

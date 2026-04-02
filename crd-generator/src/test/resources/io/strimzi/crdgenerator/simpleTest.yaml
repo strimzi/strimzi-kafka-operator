@@ -607,6 +607,8 @@ spec:
           spec:
             type: object
             properties: {}
+          external:
+            type: string
         oneOf:
         - properties:
             either: {}
@@ -1214,6 +1216,8 @@ spec:
           spec:
             type: object
             properties: {}
+          external:
+            type: string
         oneOf:
         - properties:
             either: {}
