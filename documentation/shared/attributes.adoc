@@ -30,7 +30,7 @@
 :ExampleImageTagUpgrades: quay.io/strimzi/kafka:{ProductVersion}-kafka-{KafkaVersionHigher}
 
 // Bridge version
-:BridgeVersion: 0.33.1
+:BridgeVersion: 1.0.0
 
 // Drain Cleaner Version
 :DrainCleanerVersion: 1.5.0

@@ -12,6 +12,7 @@ import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.Service;
+import io.fabric8.kubernetes.api.model.ServicePort;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
@@ -88,6 +89,8 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
 
     /* test */ static final String COMPONENT_TYPE = "kafka-bridge";
     protected static final String REST_API_PORT_NAME = "rest-api";
+    /* test */ static final String REST_API_MANAGEMENT_PORT_NAME = "rest-api-mgmt";
+    /* test */ static final int REST_API_MANAGEMENT_PORT = 8081;
     protected static final String TLS_CERTS_BASE_VOLUME_MOUNT = "/opt/strimzi/bridge-certs/";
     protected static final String PASSWORD_VOLUME_MOUNT = "/opt/strimzi/bridge-password/";
     protected static final String ENV_VAR_KAFKA_INIT_INIT_FOLDER_KEY = "INIT_FOLDER";
@@ -247,13 +250,17 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
             port = http.getPort();
         }
 
+        List<ServicePort> ports = new ArrayList<>();
+        ports.add(ServiceUtils.createServicePort(REST_API_PORT_NAME, port, REST_API_PORT_NAME, "TCP"));
+        ports.add(ServiceUtils.createServicePort(REST_API_MANAGEMENT_PORT_NAME, REST_API_MANAGEMENT_PORT, REST_API_MANAGEMENT_PORT_NAME, "TCP"));
+
         return ServiceUtils.createDiscoverableClusterIpService(
                 KafkaBridgeResources.serviceName(cluster),
                 namespace,
                 labels,
                 ownerReference,
                 templateService,
-                List.of(ServiceUtils.createServicePort(REST_API_PORT_NAME, port, REST_API_PORT_NAME, "TCP")),
+                ports,
                 labels.strimziSelectorLabels(),
                 ModelUtils.getCustomLabelsOrAnnotations(CO_ENV_VAR_CUSTOM_SERVICE_LABELS),
                 Util.mergeLabelsOrAnnotations(getDiscoveryAnnotation(port), ModelUtils.getCustomLabelsOrAnnotations(CO_ENV_VAR_CUSTOM_SERVICE_ANNOTATIONS))
@@ -266,14 +273,22 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
      * @return  JSON with discovery annotation
      */
     /*test*/ Map<String, String> getDiscoveryAnnotation(int port) {
+        JsonArray anno = new JsonArray();
+
         JsonObject discovery = new JsonObject();
         discovery.put("port", port);
         discovery.put("tls", false);
         discovery.put("auth", "none");
         discovery.put("protocol", "http");
 
-        JsonArray anno = new JsonArray();
         anno.add(discovery);
+
+        JsonObject managementDiscovery = new JsonObject();
+        managementDiscovery.put("port", REST_API_MANAGEMENT_PORT);
+        managementDiscovery.put("tls", false);
+        managementDiscovery.put("auth", "none");
+        managementDiscovery.put("protocol", "http");
+        anno.add(managementDiscovery);
 
         return Collections.singletonMap(Labels.STRIMZI_DISCOVERY_LABEL, anno.encodePrettily());
     }
@@ -287,6 +302,7 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
         }
 
         portList.add(ContainerUtils.createContainerPort(REST_API_PORT_NAME, port));
+        portList.add(ContainerUtils.createContainerPort(REST_API_MANAGEMENT_PORT_NAME, REST_API_MANAGEMENT_PORT));
 
         return portList;
     }
@@ -409,8 +425,8 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
                 getEnvVars(),
                 getContainerPortList(),
                 getVolumeMounts(),
-                ProbeUtils.httpProbe(livenessProbeOptions, "/healthy", REST_API_PORT_NAME),
-                ProbeUtils.httpProbe(readinessProbeOptions, "/ready", REST_API_PORT_NAME),
+                ProbeUtils.httpProbe(livenessProbeOptions, "/healthy", REST_API_MANAGEMENT_PORT_NAME),
+                ProbeUtils.httpProbe(readinessProbeOptions, "/ready", REST_API_MANAGEMENT_PORT_NAME),
                 imagePullPolicy
         );
     }

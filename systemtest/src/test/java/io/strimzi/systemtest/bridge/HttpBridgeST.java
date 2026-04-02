@@ -292,7 +292,11 @@ class HttpBridgeST extends AbstractST {
         Service bridgeService = KubeResourceManager.get().kubeClient().getClient().services().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName(KafkaBridgeResources.serviceName(suiteTestStorage.getClusterName())).get();
         String bridgeServiceDiscoveryAnnotation = bridgeService.getMetadata().getAnnotations().get("strimzi.io/discovery");
         JsonArray serviceDiscoveryArray = new JsonArray(bridgeServiceDiscoveryAnnotation);
-        assertThat(serviceDiscoveryArray, is(StUtils.expectedServiceDiscoveryInfo(8080, "http", "none", false)));
+        assertThat(serviceDiscoveryArray, is(
+                new JsonArray(List.of(
+                        StUtils.expectedServiceDiscoveryInfo(8080, "http", "none", false),
+                        StUtils.expectedServiceDiscoveryInfo(8081, "http", "none", false)))
+        ));
     }
 
     @ParallelTest

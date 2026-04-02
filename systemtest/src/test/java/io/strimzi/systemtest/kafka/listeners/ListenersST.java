@@ -283,7 +283,7 @@ public class ListenersST extends AbstractST {
         Service kafkaService = KubeResourceManager.get().kubeClient().getClient().services().inNamespace(testStorage.getNamespaceName()).withName(KafkaResources.bootstrapServiceName(testStorage.getClusterName())).get();
         String kafkaServiceDiscoveryAnnotation = kafkaService.getMetadata().getAnnotations().get("strimzi.io/discovery");
         JsonArray serviceDiscoveryArray = new JsonArray(kafkaServiceDiscoveryAnnotation);
-        assertThat(serviceDiscoveryArray, is(StUtils.expectedServiceDiscoveryInfo(9095, "kafka", "scram-sha-512", false)));
+        assertThat(serviceDiscoveryArray, is(new JsonArray(List.of(StUtils.expectedServiceDiscoveryInfo(9095, "kafka", "scram-sha-512", false)))));
     }
 
     /**
@@ -363,7 +363,7 @@ public class ListenersST extends AbstractST {
         Service kafkaService = KubeResourceManager.get().kubeClient().getClient().services().inNamespace(testStorage.getNamespaceName()).withName(KafkaResources.bootstrapServiceName(testStorage.getClusterName())).get();
         String kafkaServiceDiscoveryAnnotation = kafkaService.getMetadata().getAnnotations().get("strimzi.io/discovery");
         JsonArray serviceDiscoveryArray = new JsonArray(kafkaServiceDiscoveryAnnotation);
-        assertThat(serviceDiscoveryArray, is(StUtils.expectedServiceDiscoveryInfo(9096, "kafka", "scram-sha-512", true)));
+        assertThat(serviceDiscoveryArray, is(new JsonArray(List.of(StUtils.expectedServiceDiscoveryInfo(9096, "kafka", "scram-sha-512", true)))));
     }
 
     /**

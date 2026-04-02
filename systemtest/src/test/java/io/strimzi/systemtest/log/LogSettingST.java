@@ -199,7 +199,8 @@ class LogSettingST extends AbstractST {
             put("logger.ready.level", WARN);
             put("logger.openapi.name", "http.openapi.operation.openapi");
             put("logger.openapi.level", TRACE);
-            put("test.logger.bridge.level", ERROR);
+            put("logger.test.name", "test.bridge");
+            put("logger.test.level", ERROR);
         }
     };
 
