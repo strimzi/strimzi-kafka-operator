@@ -321,8 +321,7 @@
                                 <argument>-classpath</argument>
                                 <argument>${project.basedir}${file.separator}target${file.separator}classes${path.separator}${project.basedir}${file.separator}..${file.separator}crd-generator${file.separator}target${file.separator}crd-generator-${project.version}.jar</argument>
                                 <argument>io.strimzi.crdgenerator.DocGenerator</argument>
-                                <argument>--linker</argument>
-                                <argument>io.strimzi.crdgenerator.KubeLinker</argument>
+                                <argument>--kubernetes-base-url</argument>
                                 <argument>https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/</argument>
                                 <argument>modules/appendix_crds.adoc</argument>
                                 <argument>io.strimzi.api.kafka.model.kafka.Kafka</argument>

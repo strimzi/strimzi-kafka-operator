@@ -128,6 +128,9 @@
 |spec
 |object
 |
+|external
+|https://gateway-api.sigs.k8s.io/reference/spec/#parentreference[String]
+|
 |====
 
 [id='type-ObjectProperty-{context}']
