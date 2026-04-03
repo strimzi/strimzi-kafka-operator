@@ -305,7 +305,8 @@ public class KafkaBridgeConfigurationBuilder {
             }
 
             if (!http.getTls().getConfig().isEmpty()) {
-                http.getTls().getConfig().forEach((key, value) -> writer.println("http." + key + "=" + value));
+                KafkaBridgeHttpTlsConfiguration tlsConfig = new KafkaBridgeHttpTlsConfiguration(reconciliation, http.getTls().getConfig().entrySet());
+                tlsConfig.asOrderedProperties().asMap().forEach((key, value) -> writer.println("http." + key + "=" + value));
             }
         }
 

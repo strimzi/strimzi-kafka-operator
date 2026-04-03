@@ -158,6 +158,8 @@ spec:
                       config:
                         x-kubernetes-preserve-unknown-fields: true
                         type: object
+                    required:
+                    - certificateAndKey
                   cors:
                     type: object
                     properties:
@@ -1615,6 +1617,8 @@ spec:
                       config:
                         x-kubernetes-preserve-unknown-fields: true
                         type: object
+                    required:
+                    - certificateAndKey
                   cors:
                     type: object
                     properties:

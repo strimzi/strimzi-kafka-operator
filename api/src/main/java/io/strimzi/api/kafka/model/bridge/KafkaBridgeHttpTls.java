@@ -5,6 +5,7 @@
 package io.strimzi.api.kafka.model.bridge;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.strimzi.api.kafka.model.common.CertAndKeySecretSource;
 import io.strimzi.api.kafka.model.common.Constants;
@@ -16,6 +17,7 @@ import lombok.ToString;
 
 import java.util.HashMap;
 import java.util.Map;
+
 /**
  * A representation of the TLS configuration for the HTTP.
  */
@@ -28,12 +30,16 @@ import java.util.Map;
 @EqualsAndHashCode
 @ToString
 public class KafkaBridgeHttpTls implements UnknownPropertyPreserving {
+    public static final String FORBIDDEN_PREFIXES = "ssl.";
+    public static final String FORBIDDEN_PREFIX_EXCEPTIONS = "ssl.enabled.cipher.suites, ssl.enabled.protocols";
+
     private CertAndKeySecretSource certificateAndKey = null;
     private Map<String, Object> config = new HashMap<>(0);
     private Map<String, Object> additionalProperties;
 
     @Description("Reference to the `Secret` which holds the certificate and private key pair.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonProperty(required = true)
     public CertAndKeySecretSource getCertificateAndKey() {
         return certificateAndKey;
     }
@@ -42,7 +48,7 @@ public class KafkaBridgeHttpTls implements UnknownPropertyPreserving {
         this.certificateAndKey = certificateAndKey;
     }
 
-    @Description("Configurations for HTTP server enabled with TLS")
+    @Description("Additional configuration for the HTTP server TLS. Properties with the following prefixes cannot be set: " + FORBIDDEN_PREFIXES + " (with the exception of: " + FORBIDDEN_PREFIX_EXCEPTIONS + ").")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public Map<String, Object> getConfig() {
         return config;

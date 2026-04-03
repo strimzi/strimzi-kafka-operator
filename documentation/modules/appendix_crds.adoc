@@ -3031,7 +3031,7 @@ Used in: xref:type-KafkaBridgeHttpConfig-{context}[`KafkaBridgeHttpConfig`]
 |Reference to the `Secret` which holds the certificate and private key pair.
 |config
 |map
-|Configurations for HTTP server enabled with TLS.
+|Additional configuration for the HTTP server TLS. Properties with the following prefixes cannot be set: ssl. (with the exception of: ssl.enabled.cipher.suites, ssl.enabled.protocols).
 |====
 
 [id='type-KafkaBridgeHttpCors-{context}']

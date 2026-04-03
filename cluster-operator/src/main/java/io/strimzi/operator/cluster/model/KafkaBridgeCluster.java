@@ -91,7 +91,7 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
     /* test */ static final String REST_API_MANAGEMENT_PORT_NAME = "rest-api-mgmt";
     /* test */ static final int REST_API_MANAGEMENT_PORT = 8081;
     protected static final String TLS_CERTS_BASE_VOLUME_MOUNT = "/opt/strimzi/bridge-certs/";
-    protected static final String HTTP_SERVER_CERTS_BASE_VOLUME_MOUNT = "/opt/strimzi/bridge-server-certs/";
+    protected static final String HTTP_SERVER_CERTS_BASE_VOLUME_MOUNT = "/opt/strimzi/bridge-http-certs/";
     protected static final String PASSWORD_VOLUME_MOUNT = "/opt/strimzi/bridge-password/";
     protected static final String ENV_VAR_KAFKA_INIT_INIT_FOLDER_KEY = "INIT_FOLDER";
     private static final String KAFKA_BRIDGE_CONFIG_VOLUME_NAME = "kafka-bridge-configurations";
@@ -354,11 +354,7 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
         if (http != null && http.getTls() != null) {
             if (http.getTls().getCertificateAndKey() != null) {
                 String secretName = http.getTls().getCertificateAndKey().getSecretName();
-                // skipping if a volume mount with same Secret name was already added
-                if (volumeMountList.stream().noneMatch(vm -> vm.getName().equals(secretName))) {
-                    volumeMountList.add(VolumeUtils.createVolumeMount(secretName,
-                            HTTP_SERVER_CERTS_BASE_VOLUME_MOUNT + secretName));
-                }
+                volumeMountList.add(VolumeUtils.createVolumeMount(secretName, HTTP_SERVER_CERTS_BASE_VOLUME_MOUNT + secretName));
             } else {
                 LOGGER.warnCr(reconciliation, "The spec.http.tls.certificateAndKey property is missing. This is required when TLS is enabled for HTTP Bridge.");
                 throw new InvalidResourceException("The TLS configuration for the HTTP is not specified.");

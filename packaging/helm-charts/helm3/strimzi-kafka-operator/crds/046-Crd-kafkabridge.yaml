@@ -184,7 +184,9 @@ spec:
                         config:
                           x-kubernetes-preserve-unknown-fields: true
                           type: object
-                          description: Configurations for HTTP server enabled with TLS.
+                          description: "Additional configuration for the HTTP server TLS. Properties with the following prefixes cannot be set: ssl. (with the exception of: ssl.enabled.cipher.suites, ssl.enabled.protocols)."
+                      required:
+                        - certificateAndKey
                       description: TLS configuration for clients connections to the HTTP Bridge.
                     cors:
                       type: object
