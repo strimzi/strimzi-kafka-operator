@@ -1,0 +1,18 @@
+apiVersion: kafka.strimzi.io/v1
+kind: Kafka
+metadata:
+  name: strimzi-minimal
+spec:
+  kafka:
+    rack:
+      type: topology-label
+      topologyKey: topology.kubernetes.io/zone
+    listeners:
+      - name: plain
+        type: internal
+        tls: false
+        port: 9092
+      - name: tls
+        type: internal
+        tls: true
+        port: 9093

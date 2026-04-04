@@ -33,6 +33,7 @@ import io.strimzi.api.kafka.model.bridge.KafkaBridgeTemplate;
 import io.strimzi.api.kafka.model.common.ClientTls;
 import io.strimzi.api.kafka.model.common.JvmOptions;
 import io.strimzi.api.kafka.model.common.Rack;
+import io.strimzi.api.kafka.model.common.TopologyLabelRack;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthentication;
 import io.strimzi.api.kafka.model.common.metrics.JmxPrometheusExporterMetrics;
 import io.strimzi.api.kafka.model.common.metrics.StrimziMetricsReporter;
@@ -335,7 +336,7 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
             }
         }
 
-        if (rack != null) {
+        if (rack instanceof TopologyLabelRack) {
             volumeList.add(VolumeUtils.createEmptyDirVolume(INIT_VOLUME_NAME, "1Mi", "Memory"));
         }
 
@@ -366,7 +367,7 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
             }
         }
 
-        if (rack != null) {
+        if (rack instanceof TopologyLabelRack) {
             volumeMountList.add(VolumeUtils.createVolumeMount(INIT_VOLUME_NAME, INIT_VOLUME_MOUNT));
         }
 
@@ -425,14 +426,14 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
     }
 
     private Container createInitContainer(ImagePullPolicy imagePullPolicy) {
-        if (rack != null) {
+        if (rack instanceof TopologyLabelRack topologyLabelRack) {
             return ContainerUtils.createContainer(
                     INIT_NAME,
                     initImage,
                     List.of("/opt/strimzi/bin/kafka_init_run.sh"),
                     securityProvider.bridgeInitContainerSecurityContext(new ContainerSecurityProviderContextImpl(templateInitContainer)),
                     resources,
-                    getInitContainerEnvVars(),
+                    getInitContainerEnvVars(topologyLabelRack),
                     null,
                     getInitContainerVolumeMounts(),
                     null,
@@ -563,7 +564,7 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
      * @return The cluster role binding.
      */
     public ClusterRoleBinding generateClusterRoleBinding() {
-        if (rack != null) {
+        if (rack instanceof TopologyLabelRack) {
             Subject subject = new SubjectBuilder()
                     .withKind("ServiceAccount")
                     .withName(componentName)
@@ -583,10 +584,10 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
         }
     }
 
-    protected List<EnvVar> getInitContainerEnvVars() {
+    protected List<EnvVar> getInitContainerEnvVars(TopologyLabelRack topologyLabelRack) {
         List<EnvVar> varList = new ArrayList<>();
         varList.add(ContainerUtils.createEnvVarFromFieldRef(ENV_VAR_KAFKA_INIT_NODE_NAME, "spec.nodeName"));
-        varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_INIT_RACK_TOPOLOGY_KEY, rack.getTopologyKey()));
+        varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_INIT_RACK_TOPOLOGY_KEY, topologyLabelRack.getTopologyKey()));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_INIT_INIT_FOLDER_KEY, INIT_VOLUME_MOUNT));
 
         // Add shared environment variables used for all containers
@@ -617,7 +618,7 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
                         .withAuthentication(authentication)
                         .withKafkaAdminClient(kafkaBridgeAdminClient)
                         .withKafkaProducer(kafkaBridgeProducer)
-                        .withKafkaConsumer(kafkaBridgeConsumer)
+                        .withKafkaConsumer(kafkaBridgeConsumer, rack)
                         .withHttp(http, kafkaBridgeProducer, kafkaBridgeConsumer)
                         .withUserConfiguration(configuration);
 

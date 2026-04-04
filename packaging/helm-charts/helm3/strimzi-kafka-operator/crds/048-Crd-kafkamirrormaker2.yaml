@@ -578,13 +578,25 @@ spec:
                 rack:
                   type: object
                   properties:
+                    envVarName:
+                      type: string
+                      description: "A key that matches labels assigned to the Kubernetes cluster nodes. The value of the label is used to set a broker's `broker.rack` config, and the `client.rack` config for Kafka Connect or MirrorMaker 2."
                     topologyKey:
                       type: string
                       example: topology.kubernetes.io/zone
                       description: "A key that matches labels assigned to the Kubernetes cluster nodes. The value of the label is used to set a broker's `broker.rack` config, and the `client.rack` config for Kafka Connect or MirrorMaker 2."
-                  required:
-                    - topologyKey
+                    type:
+                      type: string
+                      enum:
+                        - topology-label
+                        - environment-variable
+                      description: "Specifies the Rack awareness type. Supported types are `topology-label` and `env-var`. `topology-label` uses a Kubernetes worker node label to set a broker's `broker.rack` config, and the `client.rack` config for Kafka Connect or MirrorMaker 2. `env-var` uses a environment variable to set a broker's `broker.rack` config, and the `client.rack` config for Kafka Connect or MirrorMaker 2. When not specified, `topology-label` type is used by default."
                   description: Configuration of the node label which will be used as the `client.rack` consumer configuration.
+                  x-kubernetes-validations:
+                    - rule: (has(self.type) && self.type != "topology-label") || self.topologyKey != ""
+                      message: topologyKey property is required
+                    - rule: has(self.type) == false || self.type != "environment-variable" || self.envVarName != ""
+                      message: envVarName property is required
                 metricsConfig:
                   type: object
                   properties:

@@ -489,6 +489,20 @@ spec:
                   type: string
               required:
               - discrim
+          polymorphicWithOptionalType:
+            type: object
+            properties:
+              commonProperty:
+                type: string
+              discrim:
+                type: string
+                enum:
+                - left
+                - right
+              leftProperty:
+                type: string
+              rightProperty:
+                type: string
           rawList:
             type: array
             items:
@@ -1093,6 +1107,17 @@ spec:
                   type: string
               required:
               - discrim
+          polymorphicWithOptionalType:
+            type: object
+            properties:
+              commonProperty:
+                type: string
+              discrim:
+                type: string
+                enum:
+                - left
+              leftProperty:
+                type: string
           rawList:
             type: array
             items:

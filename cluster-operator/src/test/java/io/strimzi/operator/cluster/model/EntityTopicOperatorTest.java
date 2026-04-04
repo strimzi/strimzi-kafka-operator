@@ -12,8 +12,8 @@ import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
 import io.strimzi.api.kafka.model.common.InlineLogging;
 import io.strimzi.api.kafka.model.common.JvmOptions;
-import io.strimzi.api.kafka.model.common.RackBuilder;
 import io.strimzi.api.kafka.model.common.SystemPropertyBuilder;
+import io.strimzi.api.kafka.model.common.TopologyLabelRackBuilder;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
@@ -276,7 +276,7 @@ public class EntityTopicOperatorTest {
         Kafka resource = new KafkaBuilder(KAFKA)
                 .editSpec()
                     .editKafka()
-                        .withRack(new RackBuilder().withTopologyKey("foo").build())
+                        .withRack(new TopologyLabelRackBuilder().withTopologyKey("foo").build())
                     .endKafka()
                     .withNewEntityOperator()
                         .withNewTopicOperator()

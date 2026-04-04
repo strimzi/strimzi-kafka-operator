@@ -4,7 +4,8 @@
  */
 package io.strimzi.operator.cluster.model;
 
-import io.strimzi.api.kafka.model.common.Rack;
+import io.strimzi.api.kafka.model.common.EnvironmentVariableRackBuilder;
+import io.strimzi.api.kafka.model.common.TopologyLabelRackBuilder;
 import io.strimzi.api.kafka.model.common.metrics.StrimziMetricsReporterBuilder;
 import io.strimzi.api.kafka.model.kafka.EphemeralStorageBuilder;
 import io.strimzi.api.kafka.model.kafka.JbodStorageBuilder;
@@ -237,9 +238,9 @@ public class KafkaBrokerConfigurationBuilderTest {
     }
 
     @Test
-    public void testRackIdInKRaftBrokers()  {
+    public void testTopologyLabelRackIdInKRaftBrokers()  {
         String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
-                .withRackId(new Rack("failure-domain.kubernetes.io/zone"))
+                .withRackId(new TopologyLabelRackBuilder().withTopologyKey("failure-domain.kubernetes.io/zone").build())
                 .build();
 
         assertThat(configuration, isEquivalent("node.id=2",
@@ -247,9 +248,9 @@ public class KafkaBrokerConfigurationBuilderTest {
     }
 
     @Test
-    public void testRackIdInKRaftMixedNode()  {
+    public void testTopologyLabelRackIdInKRaftMixedNode()  {
         String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, new NodeRef("my-cluster-kafka-1", 1, "kafka", true, true))
-                .withRackId(new Rack("failure-domain.kubernetes.io/zone"))
+                .withRackId(new TopologyLabelRackBuilder().withTopologyKey("failure-domain.kubernetes.io/zone").build())
                 .build();
 
         assertThat(configuration, isEquivalent("node.id=1",
@@ -257,9 +258,38 @@ public class KafkaBrokerConfigurationBuilderTest {
     }
 
     @Test
-    public void testRackIdInKRaftControllers()  {
+    public void testTopologyLabelRackIdInKRaftControllers()  {
         String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, new NodeRef("my-cluster-controllers-1", 1, "controllers", true, false))
-                .withRackId(new Rack("failure-domain.kubernetes.io/zone"))
+                .withRackId(new TopologyLabelRackBuilder().withTopologyKey("failure-domain.kubernetes.io/zone").build())
+                .build();
+
+        assertThat(configuration, isEquivalent("node.id=1"));
+    }
+
+    @Test
+    public void testEnvironmentVariableRackIdInKRaftBrokers()  {
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
+                .withRackId(new EnvironmentVariableRackBuilder().withEnvVarName("MY_RACK_ID").build())
+                .build();
+
+        assertThat(configuration, isEquivalent("node.id=2",
+                "broker.rack=${strimzienv:MY_RACK_ID}"));
+    }
+
+    @Test
+    public void testEnvironmentVariableRackIdInKRaftMixedNode()  {
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, new NodeRef("my-cluster-kafka-1", 1, "kafka", true, true))
+                .withRackId(new EnvironmentVariableRackBuilder().withEnvVarName("MY_RACK_ID").build())
+                .build();
+
+        assertThat(configuration, isEquivalent("node.id=1",
+                "broker.rack=${strimzienv:MY_RACK_ID}"));
+    }
+
+    @Test
+    public void testEnvironmentVariableRackIdInKRaftControllers()  {
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, new NodeRef("my-cluster-controllers-1", 1, "controllers", true, false))
+                .withRackId(new EnvironmentVariableRackBuilder().withEnvVarName("MY_RACK_ID").build())
                 .build();
 
         assertThat(configuration, isEquivalent("node.id=1"));

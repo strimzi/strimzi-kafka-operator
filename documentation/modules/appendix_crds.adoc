@@ -85,7 +85,7 @@ include::../api/io.strimzi.api.kafka.model.kafka.KafkaClusterSpec.adoc[leveloffs
 |xref:type-KafkaAuthorizationSimple-{context}[`KafkaAuthorizationSimple`], xref:type-KafkaAuthorizationCustom-{context}[`KafkaAuthorizationCustom`]
 |Authorization configuration for Kafka brokers.
 |rack
-|xref:type-Rack-{context}[`Rack`]
+|xref:type-TopologyLabelRack-{context}[`TopologyLabelRack`], xref:type-EnvironmentVariableRack-{context}[`EnvironmentVariableRack`]
 |Configuration of the `broker.rack` broker config.
 |brokerRackInitImage
 |string
@@ -495,23 +495,40 @@ It must have the value `custom` for the type `KafkaAuthorizationCustom`.
 |Indicates whether the custom authorizer supports the APIs for managing ACLs using the Kafka Admin API. Defaults to `false`.
 |====
 
-[id='type-Rack-{context}']
-= `Rack` schema reference
+[id='type-TopologyLabelRack-{context}']
+= `TopologyLabelRack` schema reference
 
 Used in: xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaMirrorMaker2Spec-{context}[`KafkaMirrorMaker2Spec`]
 
-xref:type-Rack-schema-{context}[Full list of `Rack` schema properties]
 
-include::../api/io.strimzi.api.kafka.model.common.Rack.adoc[leveloffset=+1]
-
-[id='type-Rack-schema-{context}']
-== `Rack` schema properties
-
-
+The `type` property is a discriminator that distinguishes use of the `TopologyLabelRack` type from xref:type-EnvironmentVariableRack-{context}[`EnvironmentVariableRack`].
+It must have the value `topology-label` for the type `TopologyLabelRack`.
 [cols="2,2,3a",options="header"]
 |====
 |Property |Property type |Description
+|type
+|string
+|Must be `topology-label`.
 |topologyKey
+|string
+|A key that matches labels assigned to the Kubernetes cluster nodes. The value of the label is used to set a broker's `broker.rack` config, and the `client.rack` config for Kafka Connect or MirrorMaker 2.
+|====
+
+[id='type-EnvironmentVariableRack-{context}']
+= `EnvironmentVariableRack` schema reference
+
+Used in: xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaMirrorMaker2Spec-{context}[`KafkaMirrorMaker2Spec`]
+
+
+The `type` property is a discriminator that distinguishes use of the `EnvironmentVariableRack` type from xref:type-TopologyLabelRack-{context}[`TopologyLabelRack`].
+It must have the value `environment-variable` for the type `EnvironmentVariableRack`.
+[cols="2,2,3a",options="header"]
+|====
+|Property |Property type |Description
+|type
+|string
+|Must be `environment-variable`.
+|envVarName
 |string
 |A key that matches labels assigned to the Kubernetes cluster nodes. The value of the label is used to set a broker's `broker.rack` config, and the `client.rack` config for Kafka Connect or MirrorMaker 2.
 |====
@@ -1877,7 +1894,7 @@ include::../api/io.strimzi.api.kafka.model.connect.KafkaConnectSpec.adoc[levelof
 |string
 |The image of the init container used for initializing the `client.rack`.
 |rack
-|xref:type-Rack-{context}[`Rack`]
+|xref:type-TopologyLabelRack-{context}[`TopologyLabelRack`], xref:type-EnvironmentVariableRack-{context}[`EnvironmentVariableRack`]
 |Configuration of the node label which will be used as the `client.rack` consumer configuration.
 |metricsConfig
 |xref:type-JmxPrometheusExporterMetrics-{context}[`JmxPrometheusExporterMetrics`], xref:type-StrimziMetricsReporter-{context}[`StrimziMetricsReporter`]
@@ -2971,7 +2988,7 @@ include::../api/io.strimzi.api.kafka.model.bridge.KafkaBridgeSpec.adoc[leveloffs
 |string
 |The image of the init container used for initializing the `client.rack`.
 |rack
-|xref:type-Rack-{context}[`Rack`]
+|xref:type-TopologyLabelRack-{context}[`TopologyLabelRack`], xref:type-EnvironmentVariableRack-{context}[`EnvironmentVariableRack`]
 |Configuration of the node label which will be used as the client.rack consumer configuration.
 |metricsConfig
 |xref:type-JmxPrometheusExporterMetrics-{context}[`JmxPrometheusExporterMetrics`], xref:type-StrimziMetricsReporter-{context}[`StrimziMetricsReporter`]
@@ -3392,7 +3409,7 @@ Used in: xref:type-KafkaMirrorMaker2-{context}[`KafkaMirrorMaker2`]
 |string
 |The image of the init container used for initializing the `client.rack`.
 |rack
-|xref:type-Rack-{context}[`Rack`]
+|xref:type-TopologyLabelRack-{context}[`TopologyLabelRack`], xref:type-EnvironmentVariableRack-{context}[`EnvironmentVariableRack`]
 |Configuration of the node label which will be used as the `client.rack` consumer configuration.
 |metricsConfig
 |xref:type-JmxPrometheusExporterMetrics-{context}[`JmxPrometheusExporterMetrics`], xref:type-StrimziMetricsReporter-{context}[`StrimziMetricsReporter`]

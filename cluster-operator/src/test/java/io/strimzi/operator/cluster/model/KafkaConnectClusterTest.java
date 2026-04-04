@@ -274,28 +274,6 @@ public class KafkaConnectClusterTest {
     }
 
     @Test
-    public void testPodSetWithRack() {
-        KafkaConnect resource = new KafkaConnectBuilder(RESOURCE)
-                .editOrNewSpec()
-                    .withNewRack()
-                        .withTopologyKey("topology-key")
-                    .endRack()
-                .endSpec()
-                .build();
-        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
-
-        // Check PodSet
-        StrimziPodSet podSet = kc.generatePodSet(3, Map.of(), Map.of(), false, null, null, null);
-        PodSetUtils.podSetToPods(podSet).forEach(pod -> {
-            // check that pod spec contains the init Kafka container
-            List<Container> initContainers = pod.getSpec().getInitContainers();
-            assertThat(initContainers, is(notNullValue()));
-            assertThat(!initContainers.isEmpty(), is(true));
-            assertThat(initContainers.stream().anyMatch(container -> container.getName().equals(KafkaConnectCluster.INIT_NAME)), is(true));
-        });
-    }
-
-    @Test
     public void testWithAffinityAndToleration() {
         Affinity affinity = new AffinityBuilder()
                 .withNewNodeAffinity()
@@ -861,7 +839,9 @@ public class KafkaConnectClusterTest {
 
         KafkaConnect resource = new KafkaConnectBuilder(RESOURCE)
                 .editSpec()
-                    .withNewRack("my-topology-key")
+                    .withNewTopologyLabelRack()
+                        .withTopologyKey("my-topology-key")
+                    .endTopologyLabelRack()
                     .withNewTemplate()
                         .withNewPodSet()
                             .withNewMetadata()
@@ -1437,23 +1417,6 @@ public class KafkaConnectClusterTest {
     }
 
     @Test
-    public void testClusterRoleBindingRack() {
-        KafkaConnect resource = new KafkaConnectBuilder(RESOURCE)
-                    .editOrNewSpec()
-                        .withNewRack("topology-key")
-                    .endSpec()
-                .build();
-
-        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
-        ClusterRoleBinding crb = kc.generateClusterRoleBinding();
-
-        assertThat(crb.getMetadata().getName(), is(KafkaConnectResources.initContainerClusterRoleBindingName(NAME, NAMESPACE)));
-        assertThat(crb.getMetadata().getNamespace(), is(nullValue()));
-        assertThat(crb.getSubjects().get(0).getNamespace(), is(NAMESPACE));
-        assertThat(crb.getSubjects().get(0).getName(), is(kc.componentName));
-    }
-
-    @Test
     public void testNullClusterRoleBindingWithoutRackAwareness() {
         ClusterRoleBinding crb = KC.generateClusterRoleBinding();
         assertThat(crb, is(nullValue()));
@@ -1568,9 +1531,9 @@ public class KafkaConnectClusterTest {
         KafkaConnect kafkaConnect = new KafkaConnectBuilder(RESOURCE)
             .editSpec()
                 .withResources(resourceReq)
-                .withNewRack()
+                .withNewTopologyLabelRack()
                     .withTopologyKey("rack-key")
-                .endRack()
+                .endTopologyLabelRack()
             .endSpec()
             .build();
 
@@ -1739,5 +1702,94 @@ public class KafkaConnectClusterTest {
         // Check PodSet
         ps = kc.generatePodSet(3, new HashMap<>(), new HashMap<>(), false, null, null, null);
         assertThat(ps.getMetadata().getAnnotations(), is(Map.of(Annotations.ANNO_STRIMZI_IO_IN_PLACE_RESIZING_WAIT_FOR_DEFERRED, "true")));
+    }
+
+    @Test
+    public void testTopologyLabelRack() {
+        KafkaConnect resource = new KafkaConnectBuilder(RESOURCE)
+                .editOrNewSpec()
+                    .withNewTopologyLabelRack()
+                        .withTopologyKey("topology-key")
+                    .endTopologyLabelRack()
+                .endSpec()
+                .build();
+        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
+
+        // Check PodSet
+        StrimziPodSet podSet = kc.generatePodSet(3, Map.of(), Map.of(), false, null, null, null);
+        PodSetUtils.podSetToPods(podSet).forEach(pod -> {
+            // Check Init container
+            List<Container> initContainers = pod.getSpec().getInitContainers();
+            assertThat(initContainers, is(notNullValue()));
+            assertThat(!initContainers.isEmpty(), is(true));
+            assertThat(initContainers.stream().anyMatch(container -> container.getName().equals(KafkaConnectCluster.INIT_NAME)), is(true));
+
+            // Check container volumes
+            assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().size(), is(3));
+            assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(0).getName(), is(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME));
+            assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(0).getMountPath(), is(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_MOUNT_PATH));
+            assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(1).getName(), is("kafka-connect-configurations"));
+            assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(1).getMountPath(), is("/opt/kafka/custom-config/"));
+            assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(2).getName(), is("rack-volume"));
+            assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(2).getMountPath(), is("/opt/kafka/init"));
+
+            // Check the init container volumes
+            assertThat(pod.getSpec().getInitContainers().get(0).getVolumeMounts().size(), is(1));
+            assertThat(pod.getSpec().getInitContainers().get(0).getVolumeMounts().get(0).getName(), is("rack-volume"));
+            assertThat(pod.getSpec().getInitContainers().get(0).getVolumeMounts().get(0).getMountPath(), is("/opt/kafka/init"));
+
+            // Check volumes
+            assertThat(pod.getSpec().getVolumes().size(), is(3));
+            assertThat(pod.getSpec().getVolumes().get(0).getName(), is(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME));
+            assertThat(pod.getSpec().getVolumes().get(0).getEmptyDir(), is(notNullValue()));
+            assertThat(pod.getSpec().getVolumes().get(1).getName(), is("kafka-connect-configurations"));
+            assertThat(pod.getSpec().getVolumes().get(1).getConfigMap().getName(), is("foo-connect-config"));
+            assertThat(pod.getSpec().getVolumes().get(2).getName(), is("rack-volume"));
+            assertThat(pod.getSpec().getVolumes().get(2).getEmptyDir(), is(notNullValue()));
+            assertThat(pod.getSpec().getVolumes().get(2).getEmptyDir().getSizeLimit(), is(new Quantity("1Mi")));
+        });
+
+        // Check ClusterRoleBinding
+        ClusterRoleBinding crb = kc.generateClusterRoleBinding();
+        assertThat(crb.getMetadata().getName(), is(KafkaConnectResources.initContainerClusterRoleBindingName(NAME, NAMESPACE)));
+        assertThat(crb.getMetadata().getNamespace(), is(nullValue()));
+        assertThat(crb.getSubjects().get(0).getNamespace(), is(NAMESPACE));
+        assertThat(crb.getSubjects().get(0).getName(), is(kc.componentName));
+    }
+
+    @Test
+    public void testEnvironmentVariableRack() {
+        KafkaConnect resource = new KafkaConnectBuilder(RESOURCE)
+                .editOrNewSpec()
+                    .withNewEnvironmentVariableRack()
+                        .withEnvVarName("MY_RACK_ID")
+                    .endEnvironmentVariableRack()
+                .endSpec()
+                .build();
+        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
+
+        // Check PodSet
+        StrimziPodSet podSet = kc.generatePodSet(3, Map.of(), Map.of(), false, null, null, null);
+        PodSetUtils.podSetToPods(podSet).forEach(pod -> {
+            // Check init container
+            assertThat(pod.getSpec().getInitContainers().size(), is(0));
+
+            // Check container volumes
+            assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().size(), is(2));
+            assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(0).getName(), is(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME));
+            assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(0).getMountPath(), is(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_MOUNT_PATH));
+            assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(1).getName(), is("kafka-connect-configurations"));
+            assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(1).getMountPath(), is("/opt/kafka/custom-config/"));
+
+            // Check volumes
+            assertThat(pod.getSpec().getVolumes().size(), is(2));
+            assertThat(pod.getSpec().getVolumes().get(0).getName(), is(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME));
+            assertThat(pod.getSpec().getVolumes().get(0).getEmptyDir(), is(notNullValue()));
+            assertThat(pod.getSpec().getVolumes().get(1).getName(), is("kafka-connect-configurations"));
+            assertThat(pod.getSpec().getVolumes().get(1).getConfigMap().getName(), is("foo-connect-config"));
+        });
+
+        // Check ClusterRoleBinding
+        assertThat(kc.generateClusterRoleBinding(), is(nullValue()));
     }
 }

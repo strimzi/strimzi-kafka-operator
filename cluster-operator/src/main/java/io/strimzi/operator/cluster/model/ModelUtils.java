@@ -21,6 +21,7 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.strimzi.api.kafka.model.common.CertificateAuthority;
 import io.strimzi.api.kafka.model.common.Rack;
+import io.strimzi.api.kafka.model.common.TopologyLabelRack;
 import io.strimzi.api.kafka.model.common.template.PodTemplate;
 import io.strimzi.api.kafka.model.kafka.Storage;
 import io.strimzi.operator.common.ReconciliationLogger;
@@ -200,11 +201,11 @@ public class ModelUtils {
         // Extract the user-defined affinity if set
         Affinity userAffinity = podTemplate != null && podTemplate.getAffinity() != null ? podTemplate.getAffinity() : null;
 
-        if (rack != null) {
+        if (rack instanceof TopologyLabelRack topologyLabelRack) {
             // When rack-awareness is used, we need to add node affinity to make sure the pods are scheduled only on nodes with the rack label
             NodeSelectorRequirement rackAwareSelector = new NodeSelectorRequirementBuilder()
                     .withOperator("Exists")
-                    .withKey(rack.getTopologyKey())
+                    .withKey(topologyLabelRack.getTopologyKey())
                     .build();
 
             AffinityBuilder affinityBuilder = new AffinityBuilder(userAffinity);

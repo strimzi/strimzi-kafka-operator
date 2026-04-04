@@ -9,6 +9,7 @@ import io.fabric8.kubernetes.api.model.NodeAffinity;
 import io.fabric8.kubernetes.api.model.NodeSelectorRequirement;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.skodjob.kubetest4j.resources.KubeResourceManager;
+import io.strimzi.api.kafka.model.common.template.ContainerEnvVarBuilder;
 import io.strimzi.api.kafka.model.connect.KafkaConnectResources;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2Resources;
@@ -83,7 +84,9 @@ class RackAwarenessST extends AbstractST {
         KubeResourceManager.get().createResourceWithWait(KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getClusterName(), 1)
                 .editSpec()
                     .editKafka()
-                        .withNewRack(TOPOLOGY_KEY)
+                        .withNewTopologyLabelRack()
+                            .withTopologyKey(TOPOLOGY_KEY)
+                        .endTopologyLabelRack()
                         .addToConfig("replica.selector.class", "org.apache.kafka.common.replica.RackAwareReplicaSelector")
                     .endKafka()
                 .endSpec()
@@ -158,7 +161,9 @@ class RackAwarenessST extends AbstractST {
         LOGGER.info("Deploying unschedulable KafkaConnect: {}/{} with an invalid topology key: {}", testStorage.getNamespaceName(), invalidConnectClusterName, invalidTopologyKey);
         KubeResourceManager.get().createResourceWithoutWait(KafkaConnectTemplates.kafkaConnect(testStorage.getNamespaceName(), invalidConnectClusterName, testStorage.getClusterName(), 1)
                 .editSpec()
-                    .withNewRack(invalidTopologyKey)
+                    .withNewTopologyLabelRack()
+                        .withTopologyKey(invalidTopologyKey)
+                    .endTopologyLabelRack()
                 .endSpec()
                 .build());
 
@@ -168,7 +173,9 @@ class RackAwarenessST extends AbstractST {
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata()
             .editSpec()
-                .withNewRack(TOPOLOGY_KEY)
+                .withNewTopologyLabelRack()
+                    .withTopologyKey(TOPOLOGY_KEY)
+                .endTopologyLabelRack()
             .endSpec()
             .build());
 
@@ -242,7 +249,9 @@ class RackAwarenessST extends AbstractST {
         KubeResourceManager.get().createResourceWithWait(
                 KafkaMirrorMaker2Templates.kafkaMirrorMaker2(testStorage.getNamespaceName(), testStorage.getClusterName(), testStorage.getSourceClusterName(), testStorage.getTargetClusterName(), 1, false)
                         .editSpec()
-                            .withNewRack(TOPOLOGY_KEY)
+                            .withNewTopologyLabelRack()
+                                .withTopologyKey(TOPOLOGY_KEY)
+                            .endTopologyLabelRack()
                             .editFirstMirror()
                                 .editSourceConnector()
                                     .addToConfig("refresh.topics.interval.seconds", "1")
@@ -308,6 +317,73 @@ class RackAwarenessST extends AbstractST {
         KafkaConnectUtils.waitUntilKafkaConnectRestApiIsAvailable(namespaceName, kafkaConnectPodName);
 
         KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(namespaceName, kafkaConnectPodName, TestConstants.DEFAULT_SINK_FILE_PATH, msgCount);
+    }
+
+    /**
+     * @description     This test case verifies that environment variable-based Rack awareness configuration works as
+     *                  expected in Kafka Cluster.
+     *
+     * @steps
+     *  1. - Deploy Kafka Clusters with environment variable-based rack and also 'replica.selector.class' configured to rack-aware value.
+     *     - Kafka Cluster is deployed with according configuration in pod affinity, consumer client rack, and additional expected labels.
+     *  2. - Make sure Kafka works as expected by producing and consuming data.
+     *     - Data is successfully produced and consumed from Kafka Cluster.
+     *
+     * @usecase
+     *  - rack-awareness
+     *  - configuration
+     *  - kafka
+     *  - labels
+     */
+    @ParallelNamespaceTest
+    void testKafkaEnvironmentVariableRackAwareness() {
+        Assumptions.assumeFalse(Environment.isNamespaceRbacScope());
+
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
+
+        KubeResourceManager.get().createResourceWithWait(
+            KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 1)
+                    .editSpec()
+                        .editOrNewTemplate()
+                            .withNewKafkaContainer()
+                                .withEnv(new ContainerEnvVarBuilder().withName("MY_RACK_ID").withValue("rack-a").build())
+                            .endKafkaContainer()
+                        .endTemplate()
+                    .endSpec()
+                    .build(),
+            KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 1)
+                    .editSpec()
+                        .editOrNewTemplate()
+                            .withNewKafkaContainer()
+                                .withEnv(new ContainerEnvVarBuilder().withName("MY_RACK_ID").withValue("rack-a").build())
+                            .endKafkaContainer()
+                        .endTemplate()
+                    .endSpec()
+                    .build()
+        );
+        KubeResourceManager.get().createResourceWithWait(KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getClusterName(), 1)
+                .editSpec()
+                    .editKafka()
+                        .withNewEnvironmentVariableRack()
+                            .withEnvVarName("MY_RACK_ID")
+                        .endEnvironmentVariableRack()
+                    .endKafka()
+                .endSpec()
+                .build());
+        LOGGER.info("Kafka cluster deployed successfully");
+
+        KubeResourceManager.get().createResourceWithWait(
+            AdminClientTemplates.plainAdminClient(testStorage.getNamespaceName(), testStorage.getAdminName(), KafkaResources.plainBootstrapAddress(testStorage.getClusterName())).build()
+        );
+        final AdminClient adminClient = AdminClientUtils.getConfiguredAdminClient(testStorage.getNamespaceName(), testStorage.getAdminName());
+
+        String nodeDescription = adminClient.describeNodes("all");
+        assertThat(AdminClientUtils.getRack(nodeDescription, "0").contains("rack-a"), is(true));
+
+        LOGGER.info("Producing and Consuming data in the Kafka cluster: {}/{}", testStorage.getNamespaceName(), testStorage.getClusterName());
+        KafkaClients kafkaClients = ClientUtils.getInstantPlainClients(testStorage);
+        KubeResourceManager.get().createResourceWithWait(kafkaClients.producerStrimzi(), kafkaClients.consumerStrimzi());
+        ClientUtils.waitForInstantClientSuccess(testStorage);
     }
 
     @BeforeAll

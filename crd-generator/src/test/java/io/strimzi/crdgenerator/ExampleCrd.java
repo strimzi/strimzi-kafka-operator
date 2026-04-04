@@ -63,7 +63,7 @@ import java.util.Map;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({"ignored", "stringProperty", "intProperty", "longProperty", "booleanProperty", "normalEnum", "customisedEnum",
     "objectProperty", "mapStringObject", "mapStringString", "mapStringQuantity", "polymorphicProperty", "affinity", "fieldProperty",
-    "arrayProperty", "arrayProperty2", "listOfInts", "listOfInts2", "listOfObjects", "listOfPolymorphic",
+    "arrayProperty", "arrayProperty2", "listOfInts", "listOfInts2", "listOfObjects", "listOfPolymorphic", "polymorphicWithOptionalType",
     "rawList", "listOfRawList", "arrayOfList", "arrayOfRawList", "listOfArray", "arrayOfTypeVar", "listOfTypeVar",
     "arrayOfBoundTypeVar", "listOfBoundTypeVar", "arrayOfBoundTypeVar2", "listOfBoundTypeVar2",
     "listOfWildcardTypeVar1", "listOfWildcardTypeVar2", "listOfWildcardTypeVar3", "listOfWildcardTypeVar4",
@@ -253,6 +253,28 @@ public class ExampleCrd<T, U extends Number, V extends U> extends CustomResource
         }
     }
 
+    private PolymorphicWithOptionalDiscrim polymorphicWithOptionalType;
+
+    @Description("Example of a polymorphic type with optional discriminator")
+    @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "discrim", defaultImpl = PolymorphicLeft.class)
+    @JsonSubTypes({
+        @JsonSubTypes.Type(value = PolymorphicLeft.class, name = "left"),
+        @JsonSubTypes.Type(value = PolymorphicRight.class, name = "right")
+    })
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public abstract static class PolymorphicWithOptionalDiscrim {
+        private String discrim;
+        private String commonProperty;
+
+        public String getDiscrim() {
+            return discrim;
+        }
+
+        public void setDiscrim(String discrim) {
+            this.discrim = discrim;
+        }
+    }
+
     @JsonIgnore
     public String getIgnored() {
         return ignored;
@@ -346,6 +368,14 @@ public class ExampleCrd<T, U extends Number, V extends U> extends CustomResource
 
     public void setPolymorphicProperty(PolymorphicTop polymorphicProperty) {
         this.polymorphicProperty = polymorphicProperty;
+    }
+
+    public PolymorphicWithOptionalDiscrim getPolymorphicWithOptionalType() {
+        return polymorphicWithOptionalType;
+    }
+
+    public void setPolymorphicWithOptionalType(PolymorphicWithOptionalDiscrim polymorphicWithOptionalType) {
+        this.polymorphicWithOptionalType = polymorphicWithOptionalType;
     }
 
     @KubeLink(group = "core", version = "v1", kind = "affinity")

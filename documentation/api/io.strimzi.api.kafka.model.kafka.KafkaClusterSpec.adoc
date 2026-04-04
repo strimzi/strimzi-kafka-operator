@@ -92,10 +92,13 @@ All other supported options are forwarded to Kafka, including the following exce
 ** `max.connection.creation.rate`
 
 [id='property-kafka-brokerRackInitImage-{context}']
-= Configuring rack awareness and init container images
+= Configuring topology-label-based rack awareness and init container images
 
 Rack awareness is enabled using the `rack` property.
-When rack awareness is enabled, Kafka broker pods use init container to collect the labels from the Kubernetes cluster nodes.
+When topology-label-based rack awareness is enabled, Kafka broker pods use init container to collect the labels from the Kubernetes cluster nodes.
+
+NOTE: Environment-variable-based rack awareness does not require an init container, and therefore does not use the `brokerRackInitImage` image.
+
 The container image for this init container can be specified using the `brokerRackInitImage` property. 
 If the `brokerRackInitImage` field is not provided, the images used are prioritized as follows:
 
@@ -113,6 +116,7 @@ spec:
   kafka:
     # ...
     rack:
+      type: topology-label
       topologyKey: topology.kubernetes.io/zone
     brokerRackInitImage: my-org/my-image:latest
     # ...

@@ -6,7 +6,9 @@ package io.strimzi.operator.cluster.model;
 
 import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.strimzi.api.kafka.model.common.CertAndKeySecretSource;
+import io.strimzi.api.kafka.model.common.EnvironmentVariableRack;
 import io.strimzi.api.kafka.model.common.Rack;
+import io.strimzi.api.kafka.model.common.TopologyLabelRack;
 import io.strimzi.api.kafka.model.kafka.KafkaAuthorization;
 import io.strimzi.api.kafka.model.kafka.KafkaAuthorizationCustom;
 import io.strimzi.api.kafka.model.kafka.KafkaAuthorizationSimple;
@@ -158,10 +160,16 @@ public class KafkaBrokerConfigurationBuilder {
      * @return Returns the builder instance
      */
     public KafkaBrokerConfigurationBuilder withRackId(Rack rack)   {
-        if (node.broker() && rack != null) {
-            printSectionHeader("Rack ID");
-            writer.println("broker.rack=${strimzidir:/opt/kafka/init:rack.id}");
-            writer.println();
+        if (node.broker())  {
+            if (rack instanceof TopologyLabelRack) {
+                printSectionHeader("Rack ID (Topology label)");
+                writer.println("broker.rack=${strimzidir:/opt/kafka/init:rack.id}");
+                writer.println();
+            } else if (rack instanceof EnvironmentVariableRack environmentVariableRack) {
+                printSectionHeader("Rack ID (Environment variable)");
+                writer.println("broker.rack=${strimzienv:" + environmentVariableRack.getEnvVarName() + "}");
+                writer.println();
+            }
         }
 
         return this;
