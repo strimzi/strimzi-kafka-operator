@@ -7,11 +7,10 @@ package io.strimzi.api.kafka.model.bridge;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import io.strimzi.api.kafka.model.common.CertAndKeySecretSource;
 import io.strimzi.api.kafka.model.common.Constants;
 import io.strimzi.api.kafka.model.common.UnknownPropertyPreserving;
 import io.strimzi.crdgenerator.annotations.Description;
-import io.strimzi.crdgenerator.annotations.DescriptionFile;
-import io.strimzi.crdgenerator.annotations.Minimum;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -20,60 +19,43 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * A representation of the HTTP configuration.
+ * A representation of the TLS configuration for the HTTP.
  */
-@DescriptionFile
 @Buildable(
         editableEnabled = false,
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({"port", "tls", "cors"})
+@JsonPropertyOrder({"certificateAndKey", "config"})
 @EqualsAndHashCode
 @ToString
-public class KafkaBridgeHttpConfig implements UnknownPropertyPreserving {
-    public static final int HTTP_DEFAULT_PORT = 8080;
-    public static final String HTTP_DEFAULT_HOST = "0.0.0.0";
-    private int port = HTTP_DEFAULT_PORT;
-    private KafkaBridgeHttpTls tls;
-    private KafkaBridgeHttpCors cors;
+public class KafkaBridgeHttpTls implements UnknownPropertyPreserving {
+    public static final String FORBIDDEN_PREFIXES = "ssl.";
+    public static final String FORBIDDEN_PREFIX_EXCEPTIONS = "ssl.enabled.cipher.suites, ssl.enabled.protocols";
+
+    private CertAndKeySecretSource certificateAndKey = null;
+    private Map<String, Object> config = new HashMap<>(0);
     private Map<String, Object> additionalProperties;
 
-    public KafkaBridgeHttpConfig() { }
-
-    public KafkaBridgeHttpConfig(int port) {
-        this.port = port;
-    }
-
-    @Description("Port the server listens on.")
-    @JsonProperty(defaultValue = "8080")
-    @Minimum(1023)
-    public int getPort() {
-        return port;
-    }
-
-    public void setPort(int port) {
-        this.port = port;
-    }
-
-    @Description("TLS configuration for clients connections to the HTTP Bridge.")
+    @Description("Reference to the `Secret` which holds the certificate and private key pair.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    public KafkaBridgeHttpTls getTls() {
-        return tls;
+    @JsonProperty(required = true)
+    public CertAndKeySecretSource getCertificateAndKey() {
+        return certificateAndKey;
     }
 
-    public void setTls(KafkaBridgeHttpTls tls) {
-        this.tls = tls;
+    public void setCertificateAndKey(CertAndKeySecretSource certificateAndKey) {
+        this.certificateAndKey = certificateAndKey;
     }
 
-    @Description("CORS configuration for the HTTP Bridge.")
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    public KafkaBridgeHttpCors getCors() {
-        return cors;
+    @Description("Additional configuration for the HTTP server TLS. Properties with the following prefixes cannot be set: " + FORBIDDEN_PREFIXES + " (with the exception of: " + FORBIDDEN_PREFIX_EXCEPTIONS + ").")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public Map<String, Object> getConfig() {
+        return config;
     }
 
-    public void setCors(KafkaBridgeHttpCors cors) {
-        this.cors = cors;
+    public void setConfig(Map<String, Object> config) {
+        this.config = config;
     }
 
     @Override

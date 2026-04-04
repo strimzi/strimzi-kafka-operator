@@ -29,6 +29,7 @@ import java.io.StringWriter;
 import java.util.Map;
 
 import static io.strimzi.api.kafka.model.common.metrics.StrimziMetricsReporter.TYPE_STRIMZI_METRICS_REPORTER;
+import static io.strimzi.operator.cluster.model.KafkaBridgeCluster.HTTP_SERVER_CERTS_BASE_VOLUME_MOUNT;
 import static io.strimzi.operator.cluster.model.KafkaBridgeCluster.KAFKA_BRIDGE_CONFIG_VOLUME_MOUNT;
 
 /**
@@ -294,6 +295,21 @@ public class KafkaBridgeConfigurationBuilder {
         printSectionHeader("HTTP configuration");
         writer.println("http.host=" + KafkaBridgeHttpConfig.HTTP_DEFAULT_HOST);
         writer.println("http.port=" + (http != null ? http.getPort() : KafkaBridgeHttpConfig.HTTP_DEFAULT_PORT));
+
+        if (http != null && http.getTls() != null) {
+            writer.println("http.ssl.enable=true");
+
+            if (http.getTls().getCertificateAndKey() != null) {
+                writer.println("http.ssl.certificate.location=" + HTTP_SERVER_CERTS_BASE_VOLUME_MOUNT + http.getTls().getCertificateAndKey().getSecretName() + "/" + http.getTls().getCertificateAndKey().getCertificate());
+                writer.println("http.ssl.key.location=" + HTTP_SERVER_CERTS_BASE_VOLUME_MOUNT + http.getTls().getCertificateAndKey().getSecretName() + "/" + http.getTls().getCertificateAndKey().getKey());
+            }
+
+            if (!http.getTls().getConfig().isEmpty()) {
+                KafkaBridgeHttpTlsConfiguration tlsConfig = new KafkaBridgeHttpTlsConfiguration(reconciliation, http.getTls().getConfig().entrySet());
+                tlsConfig.asOrderedProperties().asMap().forEach((key, value) -> writer.println("http." + key + "=" + value));
+            }
+        }
+
         if (http != null && http.getCors() != null) {
             writer.println("http.cors.enabled=true");
 
