@@ -24,7 +24,7 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
-import static io.strimzi.operator.common.Util.unwrap;
+import static io.strimzi.operator.common.Util.maybeUnwrapCompletionException;
 import static java.lang.Integer.parseInt;
 
 /**
@@ -67,7 +67,7 @@ class KafkaAvailability {
         CompletableFuture<Set<TopicDescription>> topicsOnGivenBroker = descriptions
                 .whenComplete((r, error) -> {
                     if (error != null) {
-                        Throwable cause = unwrap(error);
+                        Throwable cause = maybeUnwrapCompletionException(error);
                         LOGGER.warnCr(reconciliation, "failed to get topic descriptions", cause);
                     }
                 }).thenApply(topicDescriptions -> {
@@ -89,7 +89,7 @@ class KafkaAvailability {
             return canRoll;
         }).whenComplete((r, error) -> {
             if (error != null) {
-                Throwable cause = unwrap(error);
+                Throwable cause = maybeUnwrapCompletionException(error);
                 LOGGER.warnCr(reconciliation, "Error determining whether it is safe to restart pod {}", podId, cause);
             }
         });
@@ -168,7 +168,7 @@ class KafkaAvailability {
         CompletableFuture<Map<String, Config>> result = new CompletableFuture<>();
         ac.describeConfigs(configs).all().whenComplete((topicNameToConfig, error) -> {
             if (error != null) {
-                result.completeExceptionally(unwrap(error));
+                result.completeExceptionally(maybeUnwrapCompletionException(error));
             } else {
                 LOGGER.debugCr(reconciliation, "Got topic configs for {} topics", topicNames.size());
                 result.complete(topicNameToConfig.entrySet().stream()
@@ -200,7 +200,7 @@ class KafkaAvailability {
         ac.describeTopics(names).allTopicNames()
                 .whenComplete((tds, error) -> {
                     if (error != null) {
-                        descFuture.completeExceptionally(unwrap(error));
+                        descFuture.completeExceptionally(maybeUnwrapCompletionException(error));
                     } else {
                         LOGGER.debugCr(reconciliation, "Got topic descriptions for {} topics", tds.size());
                         descFuture.complete(tds.values());
@@ -214,7 +214,7 @@ class KafkaAvailability {
         ac.listTopics(new ListTopicsOptions().listInternal(true)).names()
                 .whenComplete((names, error) -> {
                     if (error != null) {
-                        namesFuture.completeExceptionally(unwrap(error));
+                        namesFuture.completeExceptionally(maybeUnwrapCompletionException(error));
                     } else {
                         LOGGER.debugCr(reconciliation, "Got {} topic names", names.size());
                         namesFuture.complete(names);

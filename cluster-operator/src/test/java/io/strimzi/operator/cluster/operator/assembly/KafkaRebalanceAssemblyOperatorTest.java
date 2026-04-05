@@ -25,12 +25,9 @@ import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.NoSuchResourceException;
-import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlRestException;
-import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlRetriableConnectionException;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.MockCruiseControl;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.operator.common.TimeoutException;
 import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlEndpoints;
@@ -45,6 +42,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.Collections;
 import java.util.Map;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -172,7 +170,7 @@ public class KafkaRebalanceAssemblyOperatorTest extends AbstractKafkaRebalanceAs
                     KafkaRebalance kr1 = Crds.kafkaRebalanceOperation(client).inNamespace(namespace).withName(kr.getMetadata().getName()).get();
                     assertThat(kr1, StateMatchers.hasState());
                     Condition condition = KafkaRebalanceUtils.rebalanceStateCondition(kr1.getStatus());
-                    assertThat(condition, StateMatchers.hasStateInCondition(KafkaRebalanceState.NotReady, CruiseControlRestException.class,
+                    assertThat(condition, StateMatchers.hasStateInCondition(KafkaRebalanceState.NotReady, CompletionException.class,
                             "Error processing POST request '/rebalance' due to: " +
                                     "'java.lang.IllegalArgumentException: Missing hard goals [NetworkInboundCapacityGoal, DiskCapacityGoal, RackAwareGoal, NetworkOutboundCapacityGoal, CpuCapacityGoal, ReplicaCapacityGoal] " +
                                     "in the provided goals: [RackAwareGoal, ReplicaCapacityGoal]. " +
@@ -898,7 +896,7 @@ public class KafkaRebalanceAssemblyOperatorTest extends AbstractKafkaRebalanceAs
                     KafkaRebalance kr1 = Crds.kafkaRebalanceOperation(client).inNamespace(namespace).withName(kr.getMetadata().getName()).get();
                     assertThat(kr1, StateMatchers.hasState());
                     Condition condition = KafkaRebalanceUtils.rebalanceStateCondition(kr1.getStatus());
-                    assertThat(condition, StateMatchers.hasStateInCondition(KafkaRebalanceState.NotReady, CruiseControlRestException.class,
+                    assertThat(condition, StateMatchers.hasStateInCondition(KafkaRebalanceState.NotReady, CompletionException.class,
                             "Error processing POST request '/rebalance' due to: " +
                                     "'java.lang.IllegalArgumentException: Missing hard goals [NetworkInboundCapacityGoal, DiskCapacityGoal, RackAwareGoal, NetworkOutboundCapacityGoal, CpuCapacityGoal, ReplicaCapacityGoal] " +
                                     "in the provided goals: [RackAwareGoal, ReplicaCapacityGoal]. " +
@@ -1043,7 +1041,7 @@ public class KafkaRebalanceAssemblyOperatorTest extends AbstractKafkaRebalanceAs
                     KafkaRebalance kr1 = Crds.kafkaRebalanceOperation(client).inNamespace(namespace).withName(kr.getMetadata().getName()).get();
                     assertThat(kr1, StateMatchers.hasState());
                     Condition condition = KafkaRebalanceUtils.rebalanceStateCondition(kr1.getStatus());
-                    assertThat(condition, StateMatchers.hasStateInCondition(KafkaRebalanceState.NotReady, CruiseControlRestException.class,
+                    assertThat(condition, StateMatchers.hasStateInCondition(KafkaRebalanceState.NotReady, CompletionException.class,
                             "Error processing POST request '/rebalance' due to: " +
                                     "'java.lang.IllegalArgumentException: Missing hard goals [NetworkInboundCapacityGoal, DiskCapacityGoal, RackAwareGoal, NetworkOutboundCapacityGoal, CpuCapacityGoal, ReplicaCapacityGoal] " +
                                     "in the provided goals: [RackAwareGoal, ReplicaCapacityGoal]. " +
@@ -1258,7 +1256,7 @@ public class KafkaRebalanceAssemblyOperatorTest extends AbstractKafkaRebalanceAs
                     KafkaRebalance kr1 = Crds.kafkaRebalanceOperation(client).inNamespace(namespace).withName(kr.getMetadata().getName()).get();
                     assertThat(kr1, StateMatchers.hasState());
                     Condition condition = KafkaRebalanceUtils.rebalanceStateCondition(kr1.getStatus());
-                    assertThat(condition, StateMatchers.hasStateInCondition(KafkaRebalanceState.NotReady, IllegalArgumentException.class,
+                    assertThat(condition, StateMatchers.hasStateInCondition(KafkaRebalanceState.NotReady, CompletionException.class,
                             "Some/all brokers specified don't exist"));
                     checkpoint.flag();
                 })));
@@ -1726,7 +1724,7 @@ public class KafkaRebalanceAssemblyOperatorTest extends AbstractKafkaRebalanceAs
             .onComplete(context.succeeding(v -> {
                 // the resource moved from New to NotReady (mocked Cruise Control didn't reply on time)
                 assertState(context, client, namespace, RESOURCE_NAME,
-                        KafkaRebalanceState.NotReady, TimeoutException.class,
+                        KafkaRebalanceState.NotReady, CompletionException.class,
                         "The timeout period of 1000ms has been exceeded while executing POST");
                 checkpoint.flag();
             }));
@@ -1760,7 +1758,7 @@ public class KafkaRebalanceAssemblyOperatorTest extends AbstractKafkaRebalanceAs
                 }
                 // the resource moved from 'New' to 'NotReady' (mocked Cruise Control not reachable)
                 assertState(context, client, namespace, RESOURCE_NAME,
-                        KafkaRebalanceState.NotReady, CruiseControlRetriableConnectionException.class,
+                        KafkaRebalanceState.NotReady, CompletionException.class,
                         "java.net.ConnectException");
                 checkpoint.flag();
             }));

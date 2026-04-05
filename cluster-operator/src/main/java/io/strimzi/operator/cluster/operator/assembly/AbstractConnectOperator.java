@@ -42,7 +42,6 @@ import io.strimzi.operator.cluster.model.PodSetUtils;
 import io.strimzi.operator.cluster.model.RestartReason;
 import io.strimzi.operator.cluster.model.RestartReasons;
 import io.strimzi.operator.cluster.model.SharedEnvironmentProvider;
-import io.strimzi.operator.cluster.operator.VertxUtil;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.ClusterRoleBindingOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.ConfigMapOperator;
@@ -408,16 +407,16 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                                                                                 String connectorName, KafkaConnectorSpec connectorSpec, CustomResource resource) {
         KafkaConnectorConfiguration desiredConfig = new KafkaConnectorConfiguration(reconciliation, connectorSpec.getConfig().entrySet());
 
-        return VertxUtil.completableFutureToVertxFuture(apiClient.getConnectorConfig(reconciliation, new BackOff(200L, 2, 6), host, port, connectorName)).compose(
+        return Future.fromCompletionStage(apiClient.getConnectorConfig(reconciliation, new BackOff(200L, 2, 6), host, port, connectorName)).compose(
             currentConfig -> {
                 if (!needsReconfiguring(reconciliation, connectorName, connectorSpec, desiredConfig.asOrderedProperties().asMap(), currentConfig)) {
                     LOGGER.debugCr(reconciliation, "Connector {} exists and has desired config, {}=={}", connectorName, desiredConfig.asOrderedProperties().asMap(), currentConfig);
-                    return VertxUtil.completableFutureToVertxFuture(apiClient.status(reconciliation, host, port, connectorName))
+                    return Future.fromCompletionStage(apiClient.status(reconciliation, host, port, connectorName))
                         .compose(status -> updateState(reconciliation, host, apiClient, connectorName, connectorSpec, status, new ArrayList<>()))
                         .compose(conditions -> manageConnectorOffsets(reconciliation, host, apiClient, connectorName, resource, connectorSpec, conditions))
                         .compose(conditions -> maybeRestartConnector(reconciliation, host, apiClient, connectorName, resource, conditions))
                         .compose(conditions -> maybeRestartConnectorTask(reconciliation, host, apiClient, connectorName, resource, conditions))
-                        .compose(conditions -> VertxUtil.completableFutureToVertxFuture(apiClient.statusWithBackOff(reconciliation, new BackOff(200L, 2, 10), host, port, connectorName))
+                        .compose(conditions -> Future.fromCompletionStage(apiClient.statusWithBackOff(reconciliation, new BackOff(200L, 2, 10), host, port, connectorName))
                                 .compose(createConnectorStatusAndConditions(conditions)))
                         .compose(status -> autoRestartFailedConnectorAndTasks(reconciliation, host, apiClient, connectorName, connectorSpec, status, resource))
                         .compose(status -> updateConnectorTopics(reconciliation, host, apiClient, connectorName, status));
@@ -429,8 +428,8 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                 }
             },
             error -> {
-                if (error instanceof ConnectRestException
-                        && ((ConnectRestException) error).getStatusCode() == 404) {
+                if (error instanceof ConnectRestException connectRestException
+                        && connectRestException.getStatusCode() == 404) {
                     LOGGER.debugCr(reconciliation, "Connector {} does not exist", connectorName);
                     return createOrUpdateConnector(reconciliation, host, apiClient, connectorName, connectorSpec, desiredConfig)
                         .compose(createConnectorStatusAndConditions())
@@ -467,11 +466,11 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
 
     private Future<Map<String, Object>> createOrUpdateConnector(Reconciliation reconciliation, String host, KafkaConnectApi apiClient,
                                                                   String connectorName, KafkaConnectorSpec connectorSpec, KafkaConnectorConfiguration desiredConfig) {
-        return VertxUtil.completableFutureToVertxFuture(apiClient.createOrUpdatePutRequest(reconciliation, host, port, connectorName, asJson(connectorSpec, desiredConfig)))
-            .compose(ignored -> VertxUtil.completableFutureToVertxFuture(apiClient.statusWithBackOff(reconciliation, new BackOff(200L, 2, 10), host, port,
+        return Future.fromCompletionStage(apiClient.createOrUpdatePutRequest(reconciliation, host, port, connectorName, asJson(connectorSpec, desiredConfig)))
+            .compose(ignored -> Future.fromCompletionStage(apiClient.statusWithBackOff(reconciliation, new BackOff(200L, 2, 10), host, port,
                     connectorName)))
             .compose(status -> updateState(reconciliation, host, apiClient, connectorName, connectorSpec, status, new ArrayList<>()))
-            .compose(ignored ->  VertxUtil.completableFutureToVertxFuture(apiClient.status(reconciliation, host, port, connectorName)));
+            .compose(ignored ->  Future.fromCompletionStage(apiClient.status(reconciliation, host, port, connectorName)));
     }
 
     private Future<List<Condition>> updateState(Reconciliation reconciliation, String host, KafkaConnectApi apiClient, String connectorName, KafkaConnectorSpec connectorSpec, Map<String, Object> status, List<Condition> conditions) {
@@ -487,28 +486,28 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                 case "RUNNING" -> {
                     if (targetState == ConnectorState.PAUSED) {
                         LOGGER.infoCr(reconciliation, "Pausing connector {}", connectorName);
-                        future = VertxUtil.completableFutureToVertxFuture(apiClient.pause(reconciliation, host, port, connectorName));
+                        future = Future.fromCompletionStage(apiClient.pause(reconciliation, host, port, connectorName));
                     } else if (targetState == ConnectorState.STOPPED) {
                         LOGGER.infoCr(reconciliation, "Stopping connector {}", connectorName);
-                        future = VertxUtil.completableFutureToVertxFuture(apiClient.stop(reconciliation, host, port, connectorName));
+                        future = Future.fromCompletionStage(apiClient.stop(reconciliation, host, port, connectorName));
                     }
                 }
                 case "PAUSED" -> {
                     if (targetState == ConnectorState.RUNNING) {
                         LOGGER.infoCr(reconciliation, "Resuming connector {}", connectorName);
-                        future = VertxUtil.completableFutureToVertxFuture(apiClient.resume(reconciliation, host, port, connectorName));
+                        future = Future.fromCompletionStage(apiClient.resume(reconciliation, host, port, connectorName));
                     } else if (targetState == ConnectorState.STOPPED) {
                         LOGGER.infoCr(reconciliation, "Stopping connector {}", connectorName);
-                        future = VertxUtil.completableFutureToVertxFuture(apiClient.stop(reconciliation, host, port, connectorName));
+                        future = Future.fromCompletionStage(apiClient.stop(reconciliation, host, port, connectorName));
                     }
                 }
                 case "STOPPED" -> {
                     if (targetState == ConnectorState.RUNNING) {
                         LOGGER.infoCr(reconciliation, "Resuming connector {}", connectorName);
-                        future = VertxUtil.completableFutureToVertxFuture(apiClient.resume(reconciliation, host, port, connectorName));
+                        future = Future.fromCompletionStage(apiClient.resume(reconciliation, host, port, connectorName));
                     } else if (targetState == ConnectorState.PAUSED) {
                         LOGGER.infoCr(reconciliation, "Pausing connector {}", connectorName);
-                        future = VertxUtil.completableFutureToVertxFuture(apiClient.pause(reconciliation, host, port, connectorName));
+                        future = Future.fromCompletionStage(apiClient.pause(reconciliation, host, port, connectorName));
                     }
                 }
                 default -> {
@@ -593,7 +592,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
      */
     private Future<ConnectorStatusAndConditions> autoRestartConnector(Reconciliation reconciliation, String host, KafkaConnectApi apiClient, String connectorName, ConnectorStatusAndConditions status, AutoRestartStatus previousAutoRestartStatus) {
         LOGGER.infoCr(reconciliation, "Auto restarting connector {}", connectorName);
-        return VertxUtil.completableFutureToVertxFuture(apiClient.restart(host, port, connectorName, true, true))
+        return Future.fromCompletionStage(apiClient.restart(host, port, connectorName, true, true))
                 .compose(
                         statusResult -> {
                             LOGGER.infoCr(reconciliation, "Restarted connector {} ", connectorName);
@@ -683,7 +682,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
             boolean restartOnlyFailedTasks = restartAnnotationHasOnlyFailedTasksArg(resource);
             LOGGER.infoCr(reconciliation, "Restarting connector {}, IncludeTasks {}, OnlyFailedTasks {}", connectorName, restartIncludeTasks, restartOnlyFailedTasks);
 
-            return VertxUtil.completableFutureToVertxFuture(apiClient.restart(host, port, connectorName, restartIncludeTasks, restartOnlyFailedTasks))
+            return Future.fromCompletionStage(apiClient.restart(host, port, connectorName, restartIncludeTasks, restartOnlyFailedTasks))
                     .compose(ignored -> removeRestartAnnotation(reconciliation, resource)
                         .compose(v -> Future.succeededFuture(conditions)),
                         throwable -> {
@@ -703,7 +702,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         int taskID = getRestartTaskAnnotationTaskID(resource, connectorName);
         if (taskID >= 0) {
             LOGGER.infoCr(reconciliation, "Restarting connector task {}:{}", connectorName, taskID);
-            return VertxUtil.completableFutureToVertxFuture(apiClient.restartTask(host, port, connectorName, taskID))
+            return Future.fromCompletionStage(apiClient.restartTask(host, port, connectorName, taskID))
                     .compose(ignored -> removeRestartTaskAnnotation(reconciliation, resource)
                         .compose(v -> Future.succeededFuture(conditions)),
                         throwable -> {
@@ -789,7 +788,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         }
 
         String configMapName = listOffsetsConfig.get().getToConfigMap().getName();
-        return VertxUtil.completableFutureToVertxFuture(apiClient.getConnectorOffsets(reconciliation, host, port, connectorName))
+        return Future.fromCompletionStage(apiClient.getConnectorOffsets(reconciliation, host, port, connectorName))
                 .compose(offsets -> generateListOffsetsConfigMap(configMapName, connectorName, resource, offsets))
                 .compose(configMap -> configMapOperations.reconcile(reconciliation, resource.getMetadata().getNamespace(), configMapName, configMap))
                 .compose(v -> removeConnectorOffsetsAnnotations(reconciliation, resource))
@@ -885,7 +884,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         String configMapName = alterOffsetsConfig.get().getFromConfigMap().getName();
         return verifyConnectorStopped(reconciliation, host, apiClient, connectorName)
                 .compose(v -> getOffsetsForAlterRequest(configMapNamespace, configMapName, getConnectorOffsetsConfigMapEntryKey(connectorName)))
-                .compose(offsets -> VertxUtil.completableFutureToVertxFuture(apiClient.alterConnectorOffsets(reconciliation, host, port, connectorName, offsets)))
+                .compose(offsets -> Future.fromCompletionStage(apiClient.alterConnectorOffsets(reconciliation, host, port, connectorName, offsets)))
                 .compose(v -> {
                     LOGGER.infoCr(reconciliation, "Offsets of connector {} were altered", connectorName);
                     return Future.succeededFuture();
@@ -949,7 +948,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         LOGGER.infoCr(reconciliation, "Resetting offsets of connector {}", connectorName);
 
         return verifyConnectorStopped(reconciliation, host, apiClient, connectorName)
-                .compose(v -> VertxUtil.completableFutureToVertxFuture(apiClient.resetConnectorOffsets(reconciliation, host, port, connectorName)))
+                .compose(v -> Future.fromCompletionStage(apiClient.resetConnectorOffsets(reconciliation, host, port, connectorName)))
                 .compose(v -> {
                     LOGGER.infoCr(reconciliation, "Offsets of connector {} were reset", connectorName);
                     return Future.succeededFuture();
@@ -966,7 +965,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
     }
 
     private Future<Void> verifyConnectorStopped(Reconciliation reconciliation, String host, KafkaConnectApi apiClient, String connectorName) {
-        return VertxUtil.completableFutureToVertxFuture(apiClient.status(reconciliation, host, port, connectorName))
+        return Future.fromCompletionStage(apiClient.status(reconciliation, host, port, connectorName))
                 .compose(status -> {
                     @SuppressWarnings({ "rawtypes" })
                     Object path = ((Map) status.getOrDefault("connector", emptyMap())).get("state");
@@ -982,7 +981,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
     }
 
     private Future<ConnectorStatusAndConditions> updateConnectorTopics(Reconciliation reconciliation, String host, KafkaConnectApi apiClient, String connectorName, ConnectorStatusAndConditions status) {
-        return VertxUtil.completableFutureToVertxFuture(apiClient.getConnectorTopics(reconciliation, host, port, connectorName))
+        return Future.fromCompletionStage(apiClient.getConnectorTopics(reconciliation, host, port, connectorName))
             .compose(updateConnectorStatusAndConditions(status));
     }
 

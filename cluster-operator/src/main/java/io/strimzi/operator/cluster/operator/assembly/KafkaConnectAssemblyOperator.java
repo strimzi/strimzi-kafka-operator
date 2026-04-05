@@ -308,7 +308,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
      */
     private Future<Void> reconcileAvailableConnectorPlugins(Reconciliation reconciliation, String host, KafkaConnectStatus connectStatus)  {
         KafkaConnectApi apiClient = connectClientProvider.apply(vertx);
-        return VertxUtil.completableFutureToVertxFuture(apiClient.listConnectorPlugins(reconciliation, host, port))
+        return Future.fromCompletionStage(apiClient.listConnectorPlugins(reconciliation, host, port))
                 .compose(connectorPlugins -> {
                     LOGGER.debugCr(reconciliation, "Setting list of connector plugins in Kafka Connect status");
                     connectStatus.setConnectorPlugins(connectorPlugins);
@@ -342,7 +342,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
             KafkaConnectApi apiClient = connectClientProvider.apply(vertx);
 
             return Future.join(
-                    VertxUtil.completableFutureToVertxFuture(apiClient.list(reconciliation, host, port)),
+                    Future.fromCompletionStage(apiClient.list(reconciliation, host, port)),
                     connectorOperator.listAsync(namespace, new LabelSelectorBuilder().addToMatchLabels(Labels.STRIMZI_CLUSTER_LABEL, connectName).build())
             ).compose(cf -> {
                 List<String> runningConnectorNames = cf.resultAt(0);
@@ -356,7 +356,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
 
                 return Future.join(deletionFuture, createOrUpdateFuture).map((Void) null);
             }).recover(error -> {
-                if (error instanceof ConnectTimeoutException) {
+                if (Util.maybeUnwrapCompletionException(error) instanceof ConnectTimeoutException) {
                     Promise<Void> connectorStatuses = Promise.promise();
                     LOGGER.warnCr(reconciliation, "Failed to connect to the REST API => trying to update the connector status");
 
@@ -451,7 +451,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
         if (connector == null) {
             if (useResources) {
                 LOGGER.infoCr(reconciliation, "deleting connector: {}", connectorName);
-                return VertxUtil.completableFutureToVertxFuture(apiClient.delete(reconciliation, host, port, connectorName)).mapEmpty();
+                return Future.fromCompletionStage(apiClient.delete(reconciliation, host, port, connectorName)).mapEmpty();
             } else {
                 return Future.succeededFuture();
             }

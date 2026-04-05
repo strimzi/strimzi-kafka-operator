@@ -42,17 +42,18 @@ public class Util {
     private Util() { }
 
     /**
-     * Returns the cause when the given Throwable is a {@link CompletionException}.
-     * Otherwise, the error is returned unchanged.
+     * Returns the cause when the given Throwable is a {@link CompletionException}. Otherwise, the error is returned
+     * unchanged.
      *
-     * @param error any Throwable
-     * @return the cause when error is a {@link CompletionException}, else the same
-     *         Throwable
+     * @param error     Any Throwable instance
+     *
+     * @return  The cause when error is a {@link CompletionException}, else the same Throwable.
      */
-    public static Throwable unwrap(Throwable error) {
-        if (error instanceof CompletionException wrapped) {
-            return wrapped.getCause();
+    public static Throwable maybeUnwrapCompletionException(Throwable error) {
+        if (error instanceof CompletionException && error.getCause() != null) {
+            return error.getCause();
         }
+
         return error;
     }
 

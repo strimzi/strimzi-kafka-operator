@@ -14,7 +14,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.stream.Collectors;
 
-import static io.strimzi.operator.common.Util.unwrap;
+import static io.strimzi.operator.common.Util.maybeUnwrapCompletionException;
 
 /**
  * Provides methods to determine whether it's safe to restart a KRaft controller and identify the quorum leader id.
@@ -67,7 +67,7 @@ class KafkaQuorumCheck {
         return describeMetadataQuorum()
                 .whenComplete((qrmInfo, error) -> {
                     if (error != null) {
-                        Throwable cause = unwrap(error);
+                        Throwable cause = maybeUnwrapCompletionException(error);
                         LOGGER.warnCr(reconciliation, "Error determining the active controller", cause);
                     }
                 })

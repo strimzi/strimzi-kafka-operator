@@ -138,7 +138,7 @@ public abstract class AbstractCustomResourceOperatorIT<
             })
             .<Void>handle((i, error) -> {
                 LOGGER.info("Checking exception");
-                assertThat(Util.unwrap(error), instanceOf(KubernetesClientException.class));
+                assertThat(Util.maybeUnwrapCompletionException(error), instanceOf(KubernetesClientException.class));
                 return null;
             }),
             1, TimeUnit.MINUTES);
@@ -169,7 +169,7 @@ public abstract class AbstractCustomResourceOperatorIT<
             .<Void>handle((unused, error) -> {
                 assertNotNull(error);
                 LOGGER.info("Failed as expected");
-                Throwable cause = Util.unwrap(error);
+                Throwable cause = Util.maybeUnwrapCompletionException(error);
                 assertThat(cause, instanceOf(KubernetesClientException.class));
                 assertThat(((KubernetesClientException) cause).getCode(), is(409));
                 return null;
