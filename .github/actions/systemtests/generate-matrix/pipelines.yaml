@@ -415,3 +415,27 @@ pipelines:
     strimzi_rbac_scope: "CLUSTER"
     cluster_operator_install_type: "yaml"
     parallel: 1
+  ##############
+  ### Bridge ###
+  ##############
+  # Bridge pipelines can use smaller agents similar to acceptance
+  # x86-64
+  - agent: "oracle-vm-4cpu-16gb-x86-64"
+    arch: "amd64"
+    pipeline: "bridge"
+    profile: "azp_bridge"
+    timeout: 180
+    strimzi_feature_gates: ""
+    strimzi_rbac_scope: "CLUSTER"
+    cluster_operator_install_type: "yaml"
+    parallel: 2
+  # arm64
+  - agent: "oracle-vm-4cpu-16gb-arm64"
+    arch: "arm64"
+    pipeline: "bridge"
+    profile: "azp_bridge"
+    timeout: 180
+    strimzi_feature_gates: ""
+    strimzi_rbac_scope: "CLUSTER"
+    cluster_operator_install_type: "yaml"
+    parallel: 2
