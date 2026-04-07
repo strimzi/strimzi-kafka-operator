@@ -122,6 +122,7 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
     private KafkaBridgeProducerSpec kafkaBridgeProducer;
     private LoggingModel logging;
     private MetricsModel metrics;
+    private KafkaBridgeConfiguration configuration;
 
     // Templates
     private PodDisruptionBudgetTemplate templatePodDisruptionBudget;
@@ -197,6 +198,10 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
 
         result.readinessProbeOptions = ProbeUtils.extractReadinessProbeOptionsOrDefault(spec, ProbeUtils.DEFAULT_HEALTHCHECK_OPTIONS);
         result.livenessProbeOptions = ProbeUtils.extractLivenessProbeOptionsOrDefault(spec, ProbeUtils.DEFAULT_HEALTHCHECK_OPTIONS);
+
+        if (spec.getConfig() != null) {
+            result.configuration = new KafkaBridgeConfiguration(reconciliation, spec.getConfig().entrySet());
+        }
 
         if (spec.getMetricsConfig() instanceof JmxPrometheusExporterMetrics) {
             result.metrics = new JmxPrometheusExporterModel(spec);
@@ -613,7 +618,8 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
                         .withKafkaAdminClient(kafkaBridgeAdminClient)
                         .withKafkaProducer(kafkaBridgeProducer)
                         .withKafkaConsumer(kafkaBridgeConsumer)
-                        .withHttp(http, kafkaBridgeProducer, kafkaBridgeConsumer);
+                        .withHttp(http, kafkaBridgeProducer, kafkaBridgeConsumer)
+                        .withUserConfiguration(configuration);
 
         if (metrics instanceof JmxPrometheusExporterModel jmxPrometheusExporterModel) {
             builder.withJmxPrometheusExporter(jmxPrometheusExporterModel);

@@ -33,6 +33,9 @@ import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
+import java.util.HashMap;
+import java.util.Map;
+
 @DescriptionFile
 @Buildable(
         editableEnabled = false,
@@ -42,10 +45,13 @@ import lombok.ToString;
 @JsonPropertyOrder({
     "replicas", "image", "bootstrapServers", "tls", "authentication", "http", "adminClient", "consumer",
     "producer", "resources", "jvmOptions", "logging", "clientRackInitImage", "rack",
-    "enableMetrics", "metricsConfig", "livenessProbe", "readinessProbe", "template", "tracing"})
+    "enableMetrics", "metricsConfig", "livenessProbe", "readinessProbe", "template", "tracing", "config"})
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class KafkaBridgeSpec extends Spec implements HasConfigurableLogging, HasConfigurableMetrics, HasLivenessProbe, HasReadinessProbe {
+    public static final String FORBIDDEN_PREFIXES = "kafka., http., bridge.metrics.";
+    public static final String FORBIDDEN_OPTIONS = "bridge.id, bridge.tracing, bridge.metrics";
+
     private static final int DEFAULT_REPLICAS = 1;
 
     private int replicas = DEFAULT_REPLICAS;
@@ -69,6 +75,7 @@ public class KafkaBridgeSpec extends Spec implements HasConfigurableLogging, Has
     private Tracing tracing;
     private String clientRackInitImage;
     private Rack rack;
+    private Map<String, Object> config = new HashMap<>(0);
 
     @Description("The number of pods in the `Deployment`. " +
             "Required in the `v1` version of the Strimzi API. " +
@@ -286,5 +293,17 @@ public class KafkaBridgeSpec extends Spec implements HasConfigurableLogging, Has
 
     public void setRack(Rack rack) {
         this.rack = rack;
+    }
+
+    @Description("Additional configuration for the HTTP bridge. " +
+            "The following prefixes cannot be set: " + FORBIDDEN_PREFIXES + " " +
+            "The following options cannot be set: " + FORBIDDEN_OPTIONS)
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public Map<String, Object> getConfig() {
+        return config;
+    }
+
+    public void setConfig(Map<String, Object> config) {
+        this.config = config;
     }
 }

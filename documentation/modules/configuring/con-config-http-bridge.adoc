@@ -17,6 +17,7 @@ Extend it with optional settings to support the following:
 * Configuring HTTP endpoint settings, such as port and CORS
 * Granting the HTTP Bridge access to Kafka resources
 * Tuning consumer and producer behavior
+* Tuning internal bridge configuration (for example, executor service pool and queue sizes)
 * Running multiple HTTP Bridge instances
 * xref:con-common-config-{context}[Common configuration], including resource limits and requests (recommended), JVM options, metrics, and pod scheduling
 * xref:assembly-logging-configuration-{context}[Logging configuration]

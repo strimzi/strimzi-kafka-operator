@@ -381,6 +381,22 @@ public class KafkaBridgeConfigurationBuilder {
     }
 
     /**
+     * Adds the configurations passed by the user in the KafkaBridge CR
+     *
+     * @param userConfig    The Kafka bridge configuration options specified by the user in the KafkaBridge custom resource
+     * @return  Returns the builder instance
+     */
+    public KafkaBridgeConfigurationBuilder withUserConfiguration(KafkaBridgeConfiguration userConfig) {
+        if (userConfig != null && !userConfig.getConfiguration().isEmpty()) {
+            printSectionHeader("User provided configuration");
+            writer.println(userConfig.getConfiguration());
+            writer.println();
+        }
+
+        return this;
+    }
+
+    /**
      * Prints the file header which is on the beginning of the configuration file.
      */
     private void printHeader()   {

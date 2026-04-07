@@ -9,6 +9,4 @@ spec:
     port: 8080
   config:
     bridge.executor.pool.size: "20"
-    bridge.executor.queue.size: "2000"
-    http.port: "8083"
-    kafka.bootstrap.servers: "my-bootstrap"
+    bridge.executor.queue.size: "1000"
