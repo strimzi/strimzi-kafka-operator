@@ -183,12 +183,12 @@ public class MetricsUtils {
         assertThat(String.format("metric '%s' is not present in the list of metrics", metricName), containsMetric, is(true));
     }
 
-    private static List<Double> createPatternAndCollect(BaseMetricsCollector collector, String metric) {
+    public static List<Double> createPatternAndCollect(BaseMetricsCollector collector, String metric) {
         Pattern pattern = Pattern.compile(metric + " ([\\d.^\\n]+)", Pattern.CASE_INSENSITIVE);
         return collector.waitForSpecificMetricAndCollect(pattern);
     }
 
-    private static List<Double> createPatternAndCollectWithoutWait(BaseMetricsCollector collector, String metric) {
+    public static List<Double> createPatternAndCollectWithoutWait(BaseMetricsCollector collector, String metric) {
         Pattern pattern = Pattern.compile(metric + " ([\\d.^\\n]+)", Pattern.CASE_INSENSITIVE);
         return collector.collectSpecificMetric(pattern);
     }

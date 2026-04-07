@@ -11,6 +11,7 @@ Proper verification of metrics is crucial for observability, debugging, and perf
 **Tests:**
 - [testClusterOperatorMetrics](../io.strimzi.systemtest.metrics.MetricsST.md)
 - [testCruiseControlMetrics](../io.strimzi.systemtest.metrics.MetricsST.md)
+- [testDynamicReconfigurationAllowList](../io.strimzi.systemtest.metrics.StrimziMetricsReporterST.md)
 - [testKafkaAndKafkaConnectWithJMX](../io.strimzi.systemtest.metrics.JmxST.md)
 - [testKafkaBridgeMetrics](../io.strimzi.systemtest.metrics.MetricsST.md)
 - [testKafkaConnectAndConnectorMetrics](../io.strimzi.systemtest.metrics.MetricsST.md)

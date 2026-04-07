@@ -397,6 +397,15 @@ public class KafkaConfigurationDiffTest {
     }
 
     @Test
+    public void testPrometheusMetricsReporterAllowList() {
+        List<ConfigEntry> ces = singletonList(new ConfigEntry("prometheus.metrics.reporter.allowlist", "kafka_controller.*"));
+        KafkaConfigurationDiff kcd = new KafkaConfigurationDiff(Reconciliation.DUMMY_RECONCILIATION, getCurrentConfiguration(ces),
+            getDesiredConfiguration(ces), kafkaVersion, brokerNodeRef, false, true);
+        assertThat(kcd.getDiffSize(), is(0));
+        assertThat(kcd.canBeUpdatedDynamically(), is(true));
+    }
+
+    @Test
     public void testAreDoublesEqual() {
         assertThat(KafkaConfigurationDiff.areDoublesEqual("test.option", Map.of(), Map.of("test.option", "0.8")), is(false));
         assertThat(KafkaConfigurationDiff.areDoublesEqual("test.option", Map.of("test.option", "0.8"), Map.of()), is(false));
