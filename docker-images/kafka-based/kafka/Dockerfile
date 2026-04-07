@@ -15,7 +15,22 @@ LABEL name='kafka' \
     summary="Kafka ${KAFKA_VERSION} image of the Strimzi Kafka Operator project." \
     description="Kafka image used by the Strimzi Kafka Operator to run Kafka ${KAFKA_VERSION} clusters."
 
-RUN microdnf --setopt=install_weak_deps=0 --setopt=tsflags=nodocs install -y gettext nmap-ncat net-tools unzip hostname findutils tar \
+RUN microdnf --setopt=install_weak_deps=0 --setopt=tsflags=nodocs install -y \
+            # net-tools are needed for the health check probes (netstat) \
+            net-tools \
+            # hostname is used by Strimzi scripts to determine the Kafka node ID \
+            hostname  \
+            # xargs is used by Kafka's own shell scripts \
+            # find and xargs are also used in our Kafka Connect Build Dockerfiles \
+            findutils \
+            # Tar is used to unpack the downloaded binaries here in the Dockerfile (Should we use Multistage builds?) \
+            # Tar is also used in our Kafka Connect Build Dockerfiles \
+            tar \
+            # gzip is used to unpack the downloaded binaries here in the Dockerfile. (Should we use Multistage builds?) \
+            # gzip is also used in our Kafka Connect Build Dockerfiles \
+            gzip \
+            # unzip is used in our Kafka Connect Build Dockerfiles \
+            unzip \
     && microdnf clean all -y
 
 # Add kafka user with UID 1001
