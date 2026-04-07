@@ -12,6 +12,8 @@
 * Add `topologySpreadConstraints` support to the Strimzi Helm chart operator Deployment
 * Update HTTP bridge to 1.0.0.
 * Enable configuring `allowList` of Strimzi Metrics Reporter dynamically
+* Add support for TLS/SSL on the HTTP Bridge
+  Set `spec.http.tls.certificateAndKey` configuration to enable it and provide the certificate and key via Secret.
 
 ### Major changes, deprecations, and removals
 
@@ -36,8 +38,6 @@
 * The `ServerSideApplyPhase1` feature gate moves to beta stage and is enabled by default.
   If needed, `ServerSideApplyPhase1` can be disabled in the feature gates configuration in the Cluster Operator.
 * Fixed auto-rebalancing on scale up not running anymore when Cruise Control is not ready yet on the first attempt.
-* Add support for TLS/SSL on the HTTP Bridge
-  Set `spec.http.tls.certificateAndKey` configuration to enable it and provide the certificate and key via Secret.
 
 ### Major changes, deprecations, and removals
 
