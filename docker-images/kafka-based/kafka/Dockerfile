@@ -23,10 +23,10 @@ RUN microdnf --setopt=install_weak_deps=0 --setopt=tsflags=nodocs install -y \
             # xargs is used by Kafka's own shell scripts \
             # find and xargs are also used in our Kafka Connect Build Dockerfiles \
             findutils \
-            # Tar is used to unpack the downloaded binaries here in the Dockerfile (Should we use Multistage builds?) \
+            # Tar is used to unpack the downloaded binaries here in the Dockerfile \
             # Tar is also used in our Kafka Connect Build Dockerfiles \
             tar \
-            # gzip is used to unpack the downloaded binaries here in the Dockerfile. (Should we use Multistage builds?) \
+            # gzip is used to unpack the downloaded binaries here in the Dockerfile \
             # gzip is also used in our Kafka Connect Build Dockerfiles \
             gzip \
             # unzip is used in our Kafka Connect Build Dockerfiles \
