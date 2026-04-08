@@ -133,9 +133,6 @@ public abstract class AdminApiOperatorIT<T, S extends Collection<String>> {
             ReconcileResult<T> reconcileResult = reconcile.toCompletableFuture().get();
             assertThat(reconcileResult.getType(), is(createPatches() ? ReconcileResult.Type.PATCHED : ReconcileResult.Type.CREATED));
             assertResource(username, newResource);
-            //T created = get(username);
-            //assertThat(created, is(notNullValue()));
-            //assertResources(newResource, created);
 
             // Get all users => should have the new user listed now
             LOGGER.info("Checking user list => now with a users");
@@ -150,9 +147,6 @@ public abstract class AdminApiOperatorIT<T, S extends Collection<String>> {
             reconcileResult = reconcile.toCompletableFuture().get();
             assertThat(reconcileResult.getType(), is(ReconcileResult.Type.PATCHED));
             assertResource(username, modResource);
-            //T modified = get(username);
-            //assertThat(modified, is(notNullValue()));
-            //assertResources(modResource, modified);
 
             // Delete user => should be deleted
             LOGGER.info("Checking user deletion");
