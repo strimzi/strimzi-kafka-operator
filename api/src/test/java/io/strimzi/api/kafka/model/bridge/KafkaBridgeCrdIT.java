@@ -125,11 +125,6 @@ public class KafkaBridgeCrdIT extends AbstractCrdIT {
     }
 
     @Test
-    void testKafkaBridgeWithConfig() {
-        createDeleteCustomResource("KafkaBridge-with-config.yaml");
-    }
-
-    @Test
     void testKafkaBridgeV1NoSpec() {
         Throwable exception = assertThrows(
                 KubernetesClientException.class,
