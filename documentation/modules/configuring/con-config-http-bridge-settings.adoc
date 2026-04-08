@@ -5,25 +5,25 @@
 // assembly-config.adoc
 
 [id='con-config-http-bridge-settings-{context}']
-= Tuning HTTP Bridge internal settings
+= Tuning internal HTTP Bridge settings
 
 [role="_abstract"]
 Tune how the HTTP Bridge processes requests internally by configuring bridge-specific properties.
 
 The HTTP Bridge uses an internal executor service to handle HTTP requests asynchronously.
 
-You can adjust its behavior by setting properties in the `spec.config` section of the `KafkaBridge` resource.
+You can adjust this behavior by setting properties in the `spec.config` section of the `KafkaBridge` resource.
 
-Certain properties are managed directly by Strimzi and cannot be set in `spec.config`.
+Certain properties are managed directly by Strimzi and cannot be configured in `spec.config`.
 For example, properties with the `kafka.`, `http.`, and `bridge.metrics.` prefixes are configured using other properties in the `KafkaBridge` resource.
-Additionally, the `bridge.id`, `bridge.tracing`, and `bridge.metrics` options cannot be overridden.
+Additionally, the specific `bridge.id`, `bridge.tracing`, and `bridge.metrics` options cannot be overridden.
 For more information, see the link:{BookURLConfiguring}#type-KafkaBridgeSpec-reference[`KafkaBridgeSpec` schema reference^].
 
 == Configuring executor service settings
 
-Configure the executor service behavior using `spec.config`.
+Configure executor service behavior using `spec.config`.
 
-The executor service manages the thread pool used to process HTTP requests.
+The executor service manages the thread pool that processes HTTP requests.
 
 Configuration is defined as key-value pairs under `spec.config`.
 
@@ -38,12 +38,12 @@ spec:
 
 * `spec.config` defines HTTP Bridge properties used to configure internal behavior.
 * `bridge.executor.pool.size` controls the maximum number of threads in the executor service pool.
-If not specified, the default is `max(4, <available CPUs> * 2)`.
+If not specified, the default is twice the number of available CPUs, with a minimum of 4 (`max(4, <available CPUs> * 2)`).
 * `bridge.executor.queue.size` controls the maximum number of requests that can be queued when all threads are busy.
 If not specified, the default is `1000`.
 
 These are example properties.
-You can configure additional HTTP Bridge properties as required.
+You can configure other HTTP Bridge properties as required.
 For the full list of supported options, see the link:{BookURLBridge}#_configuration_properties[HTTP Bridge configuration documentation^].
 
 Choose values that match your expected load and performance requirements.
