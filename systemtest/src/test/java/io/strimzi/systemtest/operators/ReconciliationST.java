@@ -63,7 +63,6 @@ public class ReconciliationST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(CONNECT)
     @Tag(CONNECT_COMPONENTS)
-    @SuppressWarnings("deprecation") // Replicas in Kafka CR are deprecated, but some API methods are still called here
     @TestDoc(
         description = @Desc("This test verifies that pause reconciliation annotation prevents changes from being applied to `Kafka`, `KafkaConnect`, and `KafkaConnector` resources, and that resuming reconciliation applies pending changes."),
         steps = {

@@ -78,7 +78,6 @@ public class KafkaRollerST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(KafkaRollerST.class);
 
     @ParallelNamespaceTest
-    @SuppressWarnings("deprecation") // Replicas in Kafka CR are deprecated, but some API methods are still called here
     void testKafkaDoesNotRollsWhenTopicIsUnderReplicated() {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         Instant startTime = Instant.now();
