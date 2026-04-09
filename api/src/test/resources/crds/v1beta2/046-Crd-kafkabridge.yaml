@@ -1345,6 +1345,9 @@ spec:
                     - opentelemetry
                 required:
                 - type
+              config:
+                x-kubernetes-preserve-unknown-fields: true
+                type: object
             required:
             - replicas
             - bootstrapServers
@@ -2807,6 +2810,9 @@ spec:
                     - opentelemetry
                 required:
                 - type
+              config:
+                x-kubernetes-preserve-unknown-fields: true
+                type: object
             required:
             - bootstrapServers
           status:

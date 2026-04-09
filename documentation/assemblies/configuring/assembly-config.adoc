@@ -168,6 +168,8 @@ include::../../modules/configuring/proc-config-http-bridge-user-authorization.ad
 include::../../modules/configuring/con-config-http-bridge-http-endpoints.adoc[leveloffset=+2]
 // Tuning consumer and producer settings
 include::../../modules/configuring/con-config-http-bridge-client-settings.adoc[leveloffset=+2]
+// Tuning internal bridge configuration
+include::../../modules/configuring/con-config-http-bridge-settings.adoc[leveloffset=+2]
 // Running multiple HTTP Bridge instances
 include::../../modules/configuring/con-config-http-bridge-multiple-instances.adoc[leveloffset=+2]
 

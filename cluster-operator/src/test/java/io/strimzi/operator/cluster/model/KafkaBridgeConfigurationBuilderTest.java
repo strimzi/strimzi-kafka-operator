@@ -717,4 +717,104 @@ public class KafkaBridgeConfigurationBuilderTest {
                 "kafka.security.protocol=PLAINTEXT"
         ));
     }
+
+    @Test
+    public void testUserConfigurationEmpty() {
+        // test with null user configuration
+        String configuration = new KafkaBridgeConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, BRIDGE_CLUSTER, BRIDGE_BOOTSTRAP_SERVERS)
+                .withUserConfiguration(null)
+                .build();
+        assertThat(configuration, isEquivalent(
+                "bridge.id=my-bridge",
+                "kafka.bootstrap.servers=my-cluster-kafka-bootstrap:9092",
+                "kafka.security.protocol=PLAINTEXT"
+        ));
+
+        // test with empty user configuration
+        KafkaBridgeConfiguration userConfig = new KafkaBridgeConfiguration(Reconciliation.DUMMY_RECONCILIATION, Map.<String, Object>of().entrySet());
+        configuration = new KafkaBridgeConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, BRIDGE_CLUSTER, BRIDGE_BOOTSTRAP_SERVERS)
+                .withUserConfiguration(userConfig)
+                .build();
+        assertThat(configuration, isEquivalent(
+                "bridge.id=my-bridge",
+                "kafka.bootstrap.servers=my-cluster-kafka-bootstrap:9092",
+                "kafka.security.protocol=PLAINTEXT"
+        ));
+    }
+
+    @Test
+    public void testUserConfigurationValid() {
+        // test with valid custom user configuration
+        Map<String, Object> map = Map.of(
+                "bridge.executor.pool.size", "20",
+                "bridge.executor.queue.size", "1000"
+        );
+        KafkaBridgeConfiguration userConfig = new KafkaBridgeConfiguration(Reconciliation.DUMMY_RECONCILIATION, map.entrySet());
+
+        String configuration = new KafkaBridgeConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, BRIDGE_CLUSTER, BRIDGE_BOOTSTRAP_SERVERS)
+                .withUserConfiguration(userConfig)
+                .build();
+
+        assertThat(configuration, isEquivalent(
+                "bridge.id=my-bridge",
+                "kafka.bootstrap.servers=my-cluster-kafka-bootstrap:9092",
+                "kafka.security.protocol=PLAINTEXT",
+                "bridge.executor.pool.size=20",
+                "bridge.executor.queue.size=1000"
+        ));
+    }
+
+    @Test
+    public void testUserConfigurationForbiddenPrefixes() {
+        // test forbidden prefixes kafka.*, http.*, bridge.metrics.* are filtered out
+        Map<String, Object> map = Map.of(
+                "bridge.executor.pool.size", "20",
+                "kafka.bootstrap.servers", "should-be-filtered",
+                "http.port", "9999",
+                "bridge.metrics.enabled", "true"
+        );
+        KafkaBridgeConfiguration userConfig = new KafkaBridgeConfiguration(Reconciliation.DUMMY_RECONCILIATION, map.entrySet());
+
+        String configuration = new KafkaBridgeConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, BRIDGE_CLUSTER, BRIDGE_BOOTSTRAP_SERVERS)
+                .withUserConfiguration(userConfig)
+                .build();
+
+        assertThat(configuration, isEquivalent(
+                "bridge.id=my-bridge",
+                "kafka.bootstrap.servers=my-cluster-kafka-bootstrap:9092",
+                "kafka.security.protocol=PLAINTEXT",
+                "bridge.executor.pool.size=20"
+        ));
+        // verify forbidden properties are not in the configuration
+        assertThat(configuration, not(containsString("kafka.bootstrap.servers=should-be-filtered")));
+        assertThat(configuration, not(containsString("http.port=9999")));
+        assertThat(configuration, not(containsString("bridge.metrics.enabled=true")));
+    }
+
+    @Test
+    public void testUserConfigurationForbiddenExactOptions() {
+        // test forbidden exact options are filtered out but similar properties are allowed
+        Map<String, Object> map = Map.of(
+                "bridge.executor.pool.size", "20",
+                "bridge.id", "should-be-filtered",
+                "bridge.tracing", "should-be-filtered",
+                "bridge.metrics", "should-be-filtered"
+        );
+        KafkaBridgeConfiguration userConfig = new KafkaBridgeConfiguration(Reconciliation.DUMMY_RECONCILIATION, map.entrySet());
+
+        String configuration = new KafkaBridgeConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, BRIDGE_CLUSTER, BRIDGE_BOOTSTRAP_SERVERS)
+                .withUserConfiguration(userConfig)
+                .build();
+
+        assertThat(configuration, isEquivalent(
+                "bridge.id=my-bridge",
+                "kafka.bootstrap.servers=my-cluster-kafka-bootstrap:9092",
+                "kafka.security.protocol=PLAINTEXT",
+                "bridge.executor.pool.size=20"
+        ));
+        // verify forbidden exact options are not in the configuration
+        assertThat(configuration, not(containsString("bridge.id=should-be-filtered")));
+        assertThat(configuration, not(containsString("bridge.tracing=should-be-filtered")));
+        assertThat(configuration, not(containsString("bridge.metrics=should-be-filtered")));
+    }
 }

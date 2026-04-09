@@ -2988,6 +2988,9 @@ include::../api/io.strimzi.api.kafka.model.bridge.KafkaBridgeSpec.adoc[leveloffs
 |tracing
 |xref:type-OpenTelemetryTracing-{context}[`OpenTelemetryTracing`]
 |The configuration of tracing in HTTP Bridge.
+|config
+|map
+|Additional configuration for the HTTP bridge. The following prefixes cannot be set: kafka., http., bridge.metrics. The following options cannot be set: bridge.id, bridge.tracing, bridge.metrics.
 |====
 
 [id='type-KafkaBridgeHttpConfig-{context}']

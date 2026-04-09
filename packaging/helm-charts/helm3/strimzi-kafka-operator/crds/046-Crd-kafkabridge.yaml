@@ -1494,6 +1494,10 @@ spec:
                   required:
                     - type
                   description: The configuration of tracing in HTTP Bridge.
+                config:
+                  x-kubernetes-preserve-unknown-fields: true
+                  type: object
+                  description: "Additional configuration for the HTTP bridge. The following prefixes cannot be set: kafka., http., bridge.metrics. The following options cannot be set: bridge.id, bridge.tracing, bridge.metrics."
               required:
                 - replicas
                 - bootstrapServers
