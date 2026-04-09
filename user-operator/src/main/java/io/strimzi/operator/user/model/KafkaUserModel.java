@@ -61,7 +61,19 @@ public class KafkaUserModel {
     public static final String KEY_SASL_JAAS_CONFIG = "sasl.jaas.config";
 
     protected final String namespace;
+
+    /**
+     * The Kafka username. This is either spec.userName (if set) or metadata.name.
+     * Used for authentication (CN=..., SCRAM username, ACLs, certificates).
+     */
     protected final String name;
+
+    /**
+     * The Kubernetes resource name, always equal to metadata.name.
+     * Used for the Secret name, owner references, and Kubernetes labels.
+     */
+    protected final String resourceName;
+
     protected final Labels labels;
 
     protected KafkaUserAuthentication authentication;
@@ -71,7 +83,7 @@ public class KafkaUserModel {
     protected Set<SimpleAclRule> simpleAclRules = null;
 
     /**
-     * Name of the USer Operator used for the Kubernetes labels
+     * Name of the User Operator used for the Kubernetes labels
      */
     public static final String KAFKA_USER_OPERATOR_NAME = "strimzi-user-operator";
 
@@ -90,16 +102,19 @@ public class KafkaUserModel {
      * Constructor
      *
      * @param namespace Kubernetes namespace where Kafka Connect cluster resources are going to be created
-     * @param name   User name
+     * @param name         Kafka username (spec.userName if set, otherwise metadata.name)
+     * @param resourceName Kubernetes resource name (always metadata.name); used for Secret name, labels, owner references
      * @param labels   Labels
+     * @param secretPrefix Secret name prefix
      */
-    protected KafkaUserModel(String namespace, String name, Labels labels, String secretPrefix) {
+    protected KafkaUserModel(String namespace, String name, String resourceName, Labels labels, String secretPrefix) {
         this.namespace = namespace;
         this.name = name;
+        this.resourceName = resourceName;
         this.labels = labels.withKubernetesName(KAFKA_USER_OPERATOR_NAME)
-            .withKubernetesInstance(name)
-            .withKubernetesPartOf(name)
-            .withKubernetesManagedBy(KAFKA_USER_OPERATOR_NAME);
+                .withKubernetesInstance(resourceName)
+                .withKubernetesPartOf(resourceName)
+                .withKubernetesManagedBy(KAFKA_USER_OPERATOR_NAME);
         this.secretPrefix = secretPrefix;
     }
 
@@ -115,8 +130,13 @@ public class KafkaUserModel {
     public static KafkaUserModel fromCrd(KafkaUser kafkaUser,
                                          String secretPrefix,
                                          boolean aclsAdminApiSupported) {
-        KafkaUserModel result = new KafkaUserModel(kafkaUser.getMetadata().getNamespace(),
-                kafkaUser.getMetadata().getName(),
+        String kafkaUsername = KafkaUserUtils.userName(kafkaUser);
+        String k8sResourceName = kafkaUser.getMetadata().getName();
+
+        KafkaUserModel result = new KafkaUserModel(
+                kafkaUser.getMetadata().getNamespace(),
+                kafkaUsername,
+                k8sResourceName,
                 Labels.fromResource(kafkaUser).withStrimziKind(kafkaUser.getKind()),
                 secretPrefix);
 
@@ -150,12 +170,13 @@ public class KafkaUserModel {
     /**
      * Validates if a user with TLS authentication doesn't have too long name. This has to be done because OpenSSL has
      * a limit how long the CN of a certificate can be.
+     * The effective Kafka username (spec.userName if set, otherwise metadata.name) is validated.
      *
      * @param user  The KafkaUser which should be validated
      */
-    private static void validateTlsUsername(KafkaUser user)  {
+    private static void validateTlsUsername(KafkaUser user) {
         if (user.getSpec().getAuthentication() instanceof KafkaUserTlsClientAuthentication) {
-            if (user.getMetadata().getName().length() > OpenSslCertManager.MAXIMUM_CN_LENGTH)    {
+            if (KafkaUserUtils.userName(user).length() > OpenSslCertManager.MAXIMUM_CN_LENGTH) {
                 throw new InvalidResourceException("Users with TLS client authentication can have a username (name of the KafkaUser custom resource) only up to 64 characters long.");
             }
         }
@@ -401,6 +422,7 @@ public class KafkaUserModel {
 
     /**
      * Generate the OwnerReference object to link newly created objects to their parent (the custom resource)
+     * Always uses the Kubernetes resource name (metadata.name), not the Kafka username.
      *
      * @return The owner reference.
      */
@@ -408,7 +430,7 @@ public class KafkaUserModel {
         return new OwnerReferenceBuilder()
                 .withApiVersion(ownerApiVersion)
                 .withKind(ownerKind)
-                .withName(name)
+                .withName(resourceName)
                 .withUid(ownerUid)
                 .withBlockOwnerDeletion(true)
                 .withController(false)
@@ -482,7 +504,7 @@ public class KafkaUserModel {
     }
 
     /**
-     * Gets the name of the user.
+     * Gets the Kafka username (spec.userName if set, otherwise metadata.name).
      *
      * @return The name of the user.
      */
@@ -491,14 +513,24 @@ public class KafkaUserModel {
     }
 
     /**
-     * Generates the name of the User secret based on the username.
+     * Gets the Kubernetes resource name (always metadata.name).
+     * Used for Secret name, owner references, and Kubernetes labels.
+     *
+     * @return The Kubernetes resource name.
+     */
+    public String getResourceName() {
+        return resourceName;
+    }
+
+    /**
+     * Generates the name of the User Secret based on the K8s resource name and prefix.
      *
      * @param secretPrefix The secret prefix
-     * @param username The username.
-     * @return The name of the user.
+     * @param resourceName The Kubernetes resource name (metadata.name).
+     * @return The Secret name.
      */
-    public static String getSecretName(String secretPrefix, String username)    {
-        return secretPrefix + username;
+    public static String getSecretName(String secretPrefix, String resourceName) {
+        return secretPrefix + resourceName;
     }
 
     /**
@@ -513,7 +545,8 @@ public class KafkaUserModel {
     }
 
     /**
-     * Gets the name of the User secret.
+     * Gets the name of the User Secret.
+     * Always based on the Kubernetes resource name (metadata.name), not the Kafka username.
      *
      * @return The name of the user secret.
      */

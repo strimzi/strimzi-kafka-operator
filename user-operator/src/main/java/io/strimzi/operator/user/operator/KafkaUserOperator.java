@@ -27,6 +27,7 @@ import io.strimzi.operator.common.operator.resource.concurrent.CrdOperator;
 import io.strimzi.operator.common.operator.resource.concurrent.SecretOperator;
 import io.strimzi.operator.user.UserOperatorConfig;
 import io.strimzi.operator.user.model.KafkaUserModel;
+import io.strimzi.operator.user.model.KafkaUserUtils;
 import io.strimzi.operator.user.model.acl.SimpleAclRule;
 
 import java.time.Clock;
@@ -156,7 +157,7 @@ public class KafkaUserOperator {
     private CompletionStage<Set<String>> getAllKafkaUserUsernames(String namespace)  {
         return kafkaUserCrdOperator.listAsync(namespace, Labels.fromMap(selector.getMatchLabels()))
             .thenApply(users -> users.stream()
-                    .map(resource -> resource.getMetadata().getName())
+                    .map(KafkaUserUtils::userName)
                     .collect(Collectors.toSet()));
     }
 

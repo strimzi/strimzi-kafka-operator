@@ -61,6 +61,83 @@ public class KafkaUserModelTest {
     }
 
     @Test
+    public void testFromCrdTlsUserWithCustomUserName() {
+        KafkaUser userWithCustomName = new KafkaUserBuilder(tlsUser)
+                .editSpec()
+                .withUserName("my-custom-username")
+                .endSpec()
+                .build();
+
+        KafkaUserModel model = KafkaUserModel.fromCrd(userWithCustomName, UserOperatorConfig.SECRET_PREFIX.defaultValue(), Boolean.parseBoolean(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.defaultValue()));
+
+        // model.name should be the custom username, not metadata.name
+        assertThat(model.name, is("my-custom-username"));
+        assertThat(model.getUserName(), is("CN=my-custom-username"));
+    }
+
+    @Test
+    public void testFromCrdScramShaUserWithCustomUserName() {
+        KafkaUser userWithCustomName = new KafkaUserBuilder(scramShaUser)
+                .editSpec()
+                .withUserName("my-custom-scram-username")
+                .endSpec()
+                .build();
+
+        KafkaUserModel model = KafkaUserModel.fromCrd(userWithCustomName, UserOperatorConfig.SECRET_PREFIX.defaultValue(), Boolean.parseBoolean(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.defaultValue()));
+
+        assertThat(model.name, is("my-custom-scram-username"));
+        assertThat(model.getUserName(), is("my-custom-scram-username"));
+    }
+
+    @Test
+    public void testFromCrdUserWithNullUserNameFallsBackToMetadataName() {
+        KafkaUser userWithNullCustomName = new KafkaUserBuilder(tlsUser)
+                .editSpec()
+                .withUserName(null)
+                .endSpec()
+                .build();
+
+        KafkaUserModel model = KafkaUserModel.fromCrd(userWithNullCustomName, UserOperatorConfig.SECRET_PREFIX.defaultValue(), Boolean.parseBoolean(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.defaultValue()));
+
+        // Should fall back to metadata.name
+        assertThat(model.name, is(ResourceUtils.NAME));
+        assertThat(model.getUserName(), is("CN=" + ResourceUtils.NAME));
+    }
+
+    @Test
+    public void testFromCrdUserWithCustomUserNameSecretNameUsesMetadataName() {
+        // The secret name should always be based on metadata.name (+ prefix), not the custom userName
+        KafkaUser userWithCustomName = new KafkaUserBuilder(tlsUser)
+                .editSpec()
+                .withUserName("my-custom-username")
+                .endSpec()
+                .build();
+
+        KafkaUserModel model = KafkaUserModel.fromCrd(userWithCustomName, UserOperatorConfig.SECRET_PREFIX.defaultValue(), Boolean.parseBoolean(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.defaultValue()));
+
+        // Secret name is based on metadata.name, not the custom userName
+        assertThat(model.getSecretName(), is(ResourceUtils.NAME));
+    }
+
+    @Test
+    public void testFromCrdTlsUserWithCustomUserNameGeneratesCorrectSecret() {
+        KafkaUser userWithCustomName = new KafkaUserBuilder(tlsUser)
+                .editSpec()
+                .withUserName("my-custom-username")
+                .endSpec()
+                .build();
+
+        KafkaUserModel model = KafkaUserModel.fromCrd(userWithCustomName, UserOperatorConfig.SECRET_PREFIX.defaultValue(), Boolean.parseBoolean(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.defaultValue()));
+        model.maybeGenerateCertificates(Reconciliation.DUMMY_RECONCILIATION, mockCertManager, passwordGenerator, clientsCaCert, clientsCaKey, null, 365, 30, null, Clock.systemUTC());
+        Secret generatedSecret = model.generateSecret();
+
+        // Secret name still based on metadata.name
+        assertThat(generatedSecret.getMetadata().getName(), is(ResourceUtils.NAME));
+        assertThat(generatedSecret.getMetadata().getNamespace(), is(ResourceUtils.NAMESPACE));
+        assertThat(generatedSecret.getData().keySet(), is(Set.of("ca.crt", "user.crt", "user.key", "user.p12", "user.password")));
+    }
+
+    @Test
     public void testFromCrdTlsUser() {
         KafkaUserModel model = KafkaUserModel.fromCrd(tlsUser, UserOperatorConfig.SECRET_PREFIX.defaultValue(), Boolean.parseBoolean(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.defaultValue()));
 

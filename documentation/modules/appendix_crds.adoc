@@ -2609,6 +2609,9 @@ Used in: xref:type-KafkaUser-{context}[`KafkaUser`]
 [cols="2,2,3a",options="header"]
 |====
 |Property |Property type |Description
+|userName
+|string
+|The name of the user. When absent this will default to the metadata.name of the user. It is recommended to not set this unless the user name is not a valid Kubernetes resource name.
 |authentication
 |xref:type-KafkaUserTlsClientAuthentication-{context}[`KafkaUserTlsClientAuthentication`], xref:type-KafkaUserTlsExternalClientAuthentication-{context}[`KafkaUserTlsExternalClientAuthentication`], xref:type-KafkaUserScramSha512ClientAuthentication-{context}[`KafkaUserScramSha512ClientAuthentication`]
 |Authentication mechanism enabled for this Kafka user. The supported authentication mechanisms are `scram-sha-512`, `tls`, and `tls-external`. 

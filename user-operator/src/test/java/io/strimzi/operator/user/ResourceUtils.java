@@ -34,6 +34,7 @@ public class ResourceUtils {
     public static final Map<String, String> LABELS = Collections.singletonMap("foo", "bar");
     public static final String NAMESPACE = "namespace";
     public static final String NAME = "user";
+    public static final String CUSTOM_NAME = "custom-user";
     public static final String CA_CERT_NAME = "ca-cert";
     public static final String CA_KEY_NAME = "ca-key";
     public static final String PASSWORD = "my-password";
