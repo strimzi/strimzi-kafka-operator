@@ -376,7 +376,6 @@ class KafkaST extends AbstractST {
             @Label(value = TestDocsLabels.KAFKA)
         }
     )
-    @SuppressWarnings("deprecation") // Storage is deprecated, but some API methods are still called here
     void testKafkaJBODDeleteClaimsTrueFalse() {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         final int kafkaReplicas = 2;
@@ -398,13 +397,7 @@ class KafkaST extends AbstractST {
             KafkaNodePoolTemplates.controllerPool(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), kafkaReplicas).build()
         );
 
-        KubeResourceManager.get().createResourceWithWait(KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getClusterName(), kafkaReplicas)
-            .editSpec()
-                .editKafka()
-                    .withStorage(jbodStorage)
-                .endKafka()
-            .endSpec()
-            .build());
+        KubeResourceManager.get().createResourceWithWait(KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getClusterName(), kafkaReplicas).build());
 
         Map<String, String> brokerPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getBrokerSelector());
         // kafka cluster already deployed
@@ -1041,7 +1034,6 @@ class KafkaST extends AbstractST {
             @Label(value = TestDocsLabels.KAFKA)
         }
     )
-    @SuppressWarnings("deprecation") // Storage is deprecated, but some API methods are still called here
     void testResizeJbodVolumes() {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         final int numberOfKafkaReplicas = 3;
@@ -1065,17 +1057,7 @@ class KafkaST extends AbstractST {
                 .build(),
             KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 3).build()
         );
-        KubeResourceManager.get().createResourceWithWait(KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getClusterName(), numberOfKafkaReplicas)
-            .editSpec()
-                .editKafka()
-                    .withStorage(
-                        new JbodStorageBuilder()
-                            // add two small volumes
-                            .addToVolumes(vol0, vol1)
-                            .build())
-                .endKafka()
-            .endSpec()
-            .build());
+        KubeResourceManager.get().createResourceWithWait(KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getClusterName(), numberOfKafkaReplicas).build());
 
         KubeResourceManager.get().createResourceWithWait(KafkaTopicTemplates.topic(testStorage).build());
 
