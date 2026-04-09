@@ -26,6 +26,9 @@ import java.util.concurrent.Executors;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
 
 public class SimpleAclOperatorIT extends AdminApiOperatorIT<Set<SimpleAclRule>, Set<String>> {
     @Override
@@ -90,7 +93,18 @@ public class SimpleAclOperatorIT extends AdminApiOperatorIT<Set<SimpleAclRule>, 
     }
 
     @Override
-    Set<SimpleAclRule> get(String username) {
+    void assertDoesNotExist(String username) {
+        assertThat(get(username), is(nullValue()));
+    }
+
+    @Override
+    void assertResource(String username, Set<SimpleAclRule> expected) {
+        Set<SimpleAclRule> actual = get(username);
+        assertThat(actual, is(notNullValue()));
+        assertThat(actual, containsInAnyOrder(expected.toArray()));
+    }
+
+    private Set<SimpleAclRule> get(String username) {
         KafkaPrincipal principal = new KafkaPrincipal("User", username);
         AclBindingFilter aclBindingFilter = new AclBindingFilter(ResourcePatternFilter.ANY,
                 new AccessControlEntryFilter(principal.toString(), null, org.apache.kafka.common.acl.AclOperation.ANY, AclPermissionType.ANY));
@@ -109,10 +123,5 @@ public class SimpleAclOperatorIT extends AdminApiOperatorIT<Set<SimpleAclRule>, 
         }
 
         return result.isEmpty() ? null : result;
-    }
-
-    @Override
-    void assertResources(Set<SimpleAclRule> expected, Set<SimpleAclRule> actual) {
-        assertThat(actual, containsInAnyOrder(expected.toArray()));
     }
 }

@@ -10,14 +10,12 @@ import io.strimzi.operator.user.model.QuotaUtils;
 import org.apache.kafka.common.quota.ClientQuotaEntity;
 import org.apache.kafka.common.quota.ClientQuotaFilter;
 import org.apache.kafka.common.quota.ClientQuotaFilterComponent;
+import org.junit.jupiter.api.Assertions;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Executors;
-
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
 
 public class QuotasOperatorIT extends AdminApiOperatorIT<KafkaUserQuotas, Set<String>> {
     @Override
@@ -49,9 +47,44 @@ public class QuotasOperatorIT extends AdminApiOperatorIT<KafkaUserQuotas, Set<St
     }
 
     @Override
-    KafkaUserQuotas get(String username) {
-        final int retries = 3;
-        final long delay = 500L;
+    void assertDoesNotExist(String username) {
+        final int retries = 10;
+        final long delay = 250L;
+
+        for (int i = 0; i < retries; i++) {
+            ClientQuotaFilterComponent clientQuotaFilterComponent = ClientQuotaFilterComponent.ofEntity(ClientQuotaEntity.USER, username);
+            ClientQuotaFilter clientQuotaFilter = ClientQuotaFilter.contains(List.of(clientQuotaFilterComponent));
+
+            try {
+                Map<ClientQuotaEntity, Map<String, Double>> entities = adminClient.describeClientQuotas(clientQuotaFilter).entities().get();
+                KafkaUserQuotas userQuotas = null;
+
+                for (var entry : entities.entrySet()) {
+                    if (username.equals(entry.getKey().entries().get(ClientQuotaEntity.USER))) {
+                        userQuotas = QuotaUtils.fromClientQuota(entry.getValue());
+                    }
+                }
+
+                if (userQuotas == null) {
+                    return;
+                } else {
+                    Thread.sleep(delay);
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new RuntimeException("Interrupted while retrying to get quotas", e);
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to fetch quotas for user " + username, e);
+            }
+        }
+
+        Assertions.fail("User " + username + " still exists after " + retries + " retries");
+    }
+
+    @Override
+    void assertResource(String username, KafkaUserQuotas expected) {
+        final int retries = 10;
+        final long delay = 250L;
 
         for (int i = 0; i < retries; i++) {
             ClientQuotaFilterComponent clientQuotaFilterComponent = ClientQuotaFilterComponent.ofEntity(ClientQuotaEntity.USER, username);
@@ -62,7 +95,9 @@ public class QuotasOperatorIT extends AdminApiOperatorIT<KafkaUserQuotas, Set<St
 
                 for (var entry : entities.entrySet()) {
                     if (username.equals(entry.getKey().entries().get(ClientQuotaEntity.USER))) {
-                        return QuotaUtils.fromClientQuota(entry.getValue());
+                        if (QuotaUtils.quotasEquals(expected, QuotaUtils.fromClientQuota(entry.getValue())))    {
+                            return;
+                        }
                     }
                 }
 
@@ -74,12 +109,8 @@ public class QuotasOperatorIT extends AdminApiOperatorIT<KafkaUserQuotas, Set<St
                 throw new RuntimeException("Failed to fetch quotas for user " + username, e);
             }
         }
-        return null;
-    }
 
-    @Override
-    void assertResources(KafkaUserQuotas expected, KafkaUserQuotas actual) {
-        assertThat(QuotaUtils.quotasEquals(expected, actual), is(true));
+        Assertions.fail("Quotas for user " + username + " do not match expected values after " + retries + " retries");
     }
 
     // With quotas, we always patch the credentials regardless whether they exist or not

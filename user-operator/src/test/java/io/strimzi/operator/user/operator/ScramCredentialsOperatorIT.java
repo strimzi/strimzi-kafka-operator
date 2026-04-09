@@ -14,6 +14,11 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
+
 public class ScramCredentialsOperatorIT extends AdminApiOperatorIT<String, Set<String>> {
     @Override
     AdminApiOperator<String, Set<String>> operator() {
@@ -31,7 +36,18 @@ public class ScramCredentialsOperatorIT extends AdminApiOperatorIT<String, Set<S
     }
 
     @Override
-    String get(String username) {
+    void assertDoesNotExist(String username) {
+        assertThat(get(username), is(nullValue()));
+    }
+
+    @Override
+    void assertResource(String username, String expected) {
+        String actual = get(username);
+        assertThat(actual, is(notNullValue()));
+        // The password can be never obtained again from Kafka. So there is nothing more to assert here
+    }
+
+    private String get(String username) {
         try {
             UserScramCredentialsDescription result = adminClient.describeUserScramCredentials(List.of(username)).description(username).get();
             // The SCRAM-SHA credentials never return a password. So we return a dummy empty String
@@ -49,11 +65,6 @@ public class ScramCredentialsOperatorIT extends AdminApiOperatorIT<String, Set<S
         } catch (InterruptedException e) {
             throw new RuntimeException("Failed to get Scram credentials", e);
         }
-    }
-
-    @Override
-    void assertResources(String expected, String actual) {
-        // The password can be never obtained again from Kafka. So there is nothing to do here
     }
 
     /**
