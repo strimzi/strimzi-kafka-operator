@@ -115,8 +115,6 @@ jobs:
           controlNodes: 1
           workerNodes: 3
           kindVersion: 0.31.0
-        env:
-          KIND_NODE_IMAGE: "latest"
 
       - name: Set default environment variables
         uses: ./.github/actions/utils/set-defaults

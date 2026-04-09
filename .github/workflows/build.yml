@@ -63,6 +63,14 @@ jobs:
         with:
           helmVersion: "v3.16.0"
 
+      - name: Restore Kafka binaries cache
+        uses: actions/cache/restore@v5
+        with:
+          path: docker-images/artifacts/binaries/kafka/archives
+          key: kafka-binaries-${{ hashFiles('kafka-versions.yaml') }}
+          restore-keys: |
+            kafka-binaries-
+
       - name: Build binaries using build-binaries action
         uses: strimzi/github-actions/.github/actions/build/build-binaries@main
         with:
@@ -72,6 +80,12 @@ jobs:
         env:
           # Skip tests for both runs as we will run tests in parallel
           MVN_ARGS: "-B -DskipTests -Dmaven.javadoc.skip=true"
+
+      - name: Save Kafka binaries cache
+        uses: actions/cache/save@v5
+        with:
+          path: docker-images/artifacts/binaries/kafka/archives
+          key: kafka-binaries-${{ hashFiles('kafka-versions.yaml') }}
 
   # Runs Strimzi unit and integration tests
   test-strimzi:
