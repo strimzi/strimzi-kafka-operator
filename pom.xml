@@ -76,12 +76,12 @@
         <fabric8.openshift-client.version>7.6.1</fabric8.openshift-client.version>
         <fabric8.kubernetes-model.version>7.6.1</fabric8.kubernetes-model.version>
         <fabric8.zjsonpatch.version>7.6.1</fabric8.zjsonpatch.version>
-        <fasterxml.jackson-core.version>2.18.6</fasterxml.jackson-core.version>
-        <fasterxml.jackson-databind.version>2.18.6</fasterxml.jackson-databind.version>
-        <fasterxml.jackson-dataformat.version>2.18.6</fasterxml.jackson-dataformat.version>
-        <fasterxml.jackson-annotations.version>2.18.6</fasterxml.jackson-annotations.version>
-        <fasterxml.jackson-datatype.version>2.18.6</fasterxml.jackson-datatype.version>
-        <fasterxml.jackson-jaxrs.version>2.18.6</fasterxml.jackson-jaxrs.version>
+        <fasterxml.jackson-core.version>2.21.2</fasterxml.jackson-core.version>
+        <fasterxml.jackson-databind.version>2.21.2</fasterxml.jackson-databind.version>
+        <fasterxml.jackson-dataformat.version>2.21.2</fasterxml.jackson-dataformat.version>
+        <fasterxml.jackson-annotations.version>2.21</fasterxml.jackson-annotations.version>
+        <fasterxml.jackson-datatype.version>2.21.2</fasterxml.jackson-datatype.version>
+        <fasterxml.jackson-jaxrs.version>2.21.2</fasterxml.jackson-jaxrs.version>
         <vertx.version>5.0.10</vertx.version>
         <vertx-junit5.version>5.0.10</vertx-junit5.version>
         <kafka.version>4.2.0</kafka.version>
