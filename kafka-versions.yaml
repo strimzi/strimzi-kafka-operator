@@ -284,7 +284,7 @@
   metadata: 4.1
   url: https://archive.apache.org/dist/kafka/4.1.2/kafka_2.13-4.1.2.tgz
   checksum: 78AC6E488B1071122F9608DFDB363F6FE50E1DBBC492347002C0398DFBF77E0D8CAA5BF794C5937379721004DFE92025937D238B0FAF4EB715529417FD43B491
-  third-party-libs: 4.1.2 # we need to use a separate 3rd party libs directory cause Kafka 4.1.2 is using log4j 2.25.4 and Jackson 2.19.4 rather than log4j 2.24.3 and Jackson 2.19.0 used by previous Kafka 4.1.x versions
+  third-party-libs: 4.1.2 # we need to use a separate 3rd party libs directory cause Kafka 4.1.2 is using log4j 2.25.3 and Jackson 2.19.4 rather than log4j 2.24.3 and Jackson 2.19.0 used by previous Kafka 4.1.x versions
   supported: true
   default: false
 - version: 4.2.0
