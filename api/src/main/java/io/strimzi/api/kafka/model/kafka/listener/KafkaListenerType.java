@@ -10,6 +10,7 @@ import com.fasterxml.jackson.annotation.JsonValue;
 public enum KafkaListenerType {
     INTERNAL,
     ROUTE,
+    TLSROUTE,
     LOADBALANCER,
     NODEPORT,
     INGRESS,
@@ -17,41 +18,28 @@ public enum KafkaListenerType {
 
     @JsonCreator
     public static KafkaListenerType forValue(String value) {
-        switch (value) {
-            case "internal":
-                return INTERNAL;
-            case "route":
-                return ROUTE;
-            case "loadbalancer":
-                return LOADBALANCER;
-            case "nodeport":
-                return NODEPORT;
-            case "ingress":
-                return INGRESS;
-            case "cluster-ip":
-                return CLUSTER_IP;
-            default:
-                return null;
-        }
+        return switch (value) {
+            case "internal" -> INTERNAL;
+            case "route" -> ROUTE;
+            case "tlsroute" -> TLSROUTE;
+            case "loadbalancer" -> LOADBALANCER;
+            case "nodeport" -> NODEPORT;
+            case "ingress" -> INGRESS;
+            case "cluster-ip" -> CLUSTER_IP;
+            default -> null;
+        };
     }
 
     @JsonValue
     public String toValue() {
-        switch (this) {
-            case INTERNAL:
-                return "internal";
-            case ROUTE:
-                return "route";
-            case LOADBALANCER:
-                return "loadbalancer";
-            case NODEPORT:
-                return "nodeport";
-            case INGRESS:
-                return "ingress";
-            case CLUSTER_IP:
-                return "cluster-ip";
-            default:
-                return null;
-        }
+        return switch (this) {
+            case INTERNAL -> "internal";
+            case ROUTE -> "route";
+            case TLSROUTE -> "tlsroute";
+            case LOADBALANCER -> "loadbalancer";
+            case NODEPORT -> "nodeport";
+            case INGRESS -> "ingress";
+            case CLUSTER_IP -> "cluster-ip";
+        };
     }
 }

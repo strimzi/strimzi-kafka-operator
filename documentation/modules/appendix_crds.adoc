@@ -142,7 +142,7 @@ include::../api/io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListener.a
 |integer
 |Port number used by the listener inside Kafka. The port number has to be unique within a given Kafka cluster. Allowed port numbers are 9092 and higher with the exception of ports 9404 and 9999, which are already used for Prometheus and JMX. Depending on the listener type, the port number might not be the same as the port number that connects Kafka clients.
 |type
-|string (one of [ingress, internal, route, loadbalancer, cluster-ip, nodeport])
+|string (one of [ingress, internal, route, loadbalancer, cluster-ip, nodeport, tlsroute])
 |Type of the listener. The supported types are as follows: 
 
 * `internal` type exposes Kafka internally only within the Kubernetes cluster.
@@ -337,6 +337,11 @@ This property is used to select the preferred address type, which is checked fir
 |Configures whether to allocate NodePort automatically for the `Service` with type `LoadBalancer`.
 This is a one to one with the `spec.allocateLoadBalancerNodePorts` configuration in the `Service` type
 For `loadbalancer` listeners only.
+|parentRefs
+|xref:type-ParentReference-{context}[`ParentReference`] array
+|Configures the resource(s) TLSRoutes created by this listener will be attached to.
+Typically this would be Gateway resource.
+For `tlsroute` listeners only.
 |====
 
 [id='type-CertAndKeySecretSource-{context}']
@@ -441,6 +446,35 @@ include::../api/io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerCo
 |externalIPs
 |string array
 |External IPs associated to the nodeport service. These IPs are used by clients external to the Kubernetes cluster to access the Kafka brokers. This field is helpful when `nodeport` without `externalIP` is not sufficient. For example on bare-metal Kubernetes clusters that do not support Loadbalancer service types. This field can only be used with `nodeport` type listener.
+|====
+
+[id='type-ParentReference-{context}']
+= `ParentReference` schema reference
+
+Used in: xref:type-GenericKafkaListenerConfiguration-{context}[`GenericKafkaListenerConfiguration`]
+
+
+[cols="2,2,3a",options="header"]
+|====
+|Property |Property type |Description
+|kind
+|string
+|
+|group
+|string
+|
+|name
+|string
+|
+|namespace
+|string
+|
+|port
+|integer
+|
+|sectionName
+|string
+|
 |====
 
 [id='type-KafkaAuthorizationSimple-{context}']

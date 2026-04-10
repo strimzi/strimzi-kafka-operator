@@ -7,6 +7,7 @@ package io.strimzi.api.kafka.model.kafka.listener;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import io.fabric8.kubernetes.api.model.gatewayapi.v1.ParentReference;
 import io.strimzi.api.kafka.model.common.CertAndKeySecretSource;
 import io.strimzi.api.kafka.model.common.Constants;
 import io.strimzi.api.kafka.model.common.UnknownPropertyPreserving;
@@ -30,7 +31,8 @@ import java.util.Map;
 @JsonPropertyOrder({"brokerCertChainAndKey", "class", "externalTrafficPolicy", "loadBalancerSourceRanges", "bootstrap",
     "brokers", "ipFamilyPolicy", "ipFamilies", "createBootstrapService", "finalizers", "useServiceDnsDomain",
     "maxConnections", "maxConnectionCreationRate", "preferredNodePortAddressType", "publishNotReadyAddresses",
-    "perBrokerAnnotationsTemplate", "perBrokerLabelsTemplate", "hostTemplate", "advertisedHostTemplate", "advertisedPortTemplate", "allocateLoadBalancerNodePorts"})
+    "perBrokerAnnotationsTemplate", "perBrokerLabelsTemplate", "hostTemplate", "advertisedHostTemplate",
+    "advertisedPortTemplate", "allocateLoadBalancerNodePorts", "parentRefs"})
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Buildable(
     editableEnabled = false,
@@ -61,6 +63,7 @@ public class GenericKafkaListenerConfiguration implements UnknownPropertyPreserv
     private String advertisedPortTemplate;
     private Map<String, Object> additionalProperties;
     private Boolean allocateLoadBalancerNodePorts;
+    private List<ParentReference> parentRefs;
 
     @Description("Reference to the `Secret` which holds the certificate and private key pair which will be used for this listener. " +
             "The certificate can optionally contain the whole chain. " +
@@ -333,6 +336,17 @@ public class GenericKafkaListenerConfiguration implements UnknownPropertyPreserv
         this.allocateLoadBalancerNodePorts = allocateLoadBalancerNodePorts;
     }
 
+    @Description("Configures the resource(s) TLSRoutes created by this listener will be attached to.\n" +
+            "Typically this would be Gateway resource.\n" +
+            "For `tlsroute` listeners only.")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public List<ParentReference> getParentRefs() {
+        return parentRefs;
+    }
+
+    public void setParentRefs(List<ParentReference> parentRefs) {
+        this.parentRefs = parentRefs;
+    }
 
     @Override
     public Map<String, Object> getAdditionalProperties() {

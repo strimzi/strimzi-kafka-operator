@@ -67,6 +67,7 @@ import io.strimzi.operator.cluster.operator.resource.kubernetes.ServiceAccountOp
 import io.strimzi.operator.cluster.operator.resource.kubernetes.ServiceOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.StorageClassOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.StrimziPodSetOperator;
+import io.strimzi.operator.cluster.operator.resource.kubernetes.TLSRouteOperator;
 import io.strimzi.operator.common.AdminClientProvider;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.BackOff;
@@ -148,6 +149,7 @@ public class KafkaReconciler {
     private final RoleOperator roleOperator;
     private final RoleBindingOperator roleBindingOperator;
     private final RouteOperator routeOperator;
+    private final TLSRouteOperator tlsRouteOperator;
     private final IngressOperator ingressOperator;
     private final NodeOperator nodeOperator;
     private final CrdOperator<KubernetesClient, KafkaNodePool, KafkaNodePoolList> kafkaNodePoolOperator;
@@ -225,6 +227,7 @@ public class KafkaReconciler {
         this.roleBindingOperator = supplier.roleBindingOperations;
         this.roleOperator = supplier.roleOperations;
         this.routeOperator = supplier.routeOperations;
+        this.tlsRouteOperator = supplier.tlsRouteOperations;
         this.ingressOperator = supplier.ingressOperations;
         this.nodeOperator = supplier.nodeOperator;
         this.kafkaNodePoolOperator = supplier.kafkaNodePoolOperator;
@@ -639,6 +642,7 @@ public class KafkaReconciler {
                 secretOperator,
                 serviceOperator,
                 routeOperator,
+                tlsRouteOperator,
                 ingressOperator
         );
     }

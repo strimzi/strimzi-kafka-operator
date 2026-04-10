@@ -1,0 +1,179 @@
+:_mod-docs-content-type: PROCEDURE
+
+// Module included in the following assemblies:
+//
+// assembly-deploy-client-access.adoc
+
+[id='proc-accessing-kafka-using-tlsroutes-{context}']
+= Accessing Kafka using Gateway API TLSRoutes
+
+[role="_abstract"]
+Use Gateway API `TLSRoute` resources to access a Kafka cluster from clients outside the Kubernetes cluster.
+
+To use TLSRoutes, add configuration for a `tlsroute` type listener in the `Kafka` custom resource.
+When applied, the configuration creates a dedicated `ClusterIP` service and `TLSRoute` resource for an external bootstrap and each broker in the cluster.
+Clients connect to the bootstrap hostname, which routes them through the bootstrap service to connect to a broker.
+Per-broker connections are then established using DNS names, which route traffic from the client to the broker through the broker-specific TLSRoutes and services.
+
+Strimzi manages the `TLSRoute` resources, but it does not manage the Gateway API `Gateway` resource.
+You must provide a Gateway API implementation and a `Gateway` that accepts the `TLSRoute` resources created by Strimzi.
+
+NOTE: Strimzi uses and supports the `gateway.networking.k8s.io/v1` API version of the `TLSRoute` resource.
+
+To connect to a broker, you specify a hostname for the TLSRoute bootstrap address.
+For access using TLSRoutes, the port used in the Kafka client is typically 443.
+
+The procedure shows basic `tlsroute` listener configuration using TLS passthrough.
+Use the `parentRefs` configuration property to attach the generated TLSRoutes to a Gateway API resource, such as a `Gateway`.
+Use the `bootstrap.host` configuration property to specify the hostname used by the bootstrap TLSRoute.
+Use the `hostTemplate` or the `brokers[].host` fields to specify the hostname for each broker TLSRoute.
+
+For more information on listener configuration, see the link:{BookURLConfiguring}#type-GenericKafkaListener-reference[`GenericKafkaListener` schema reference^].
+
+.TLS passthrough and termination
+
+`TLSRoute` resources use Server Name Indication (SNI) to route TLS traffic.
+The TLS mode is configured in the Gateway API `Gateway` listener, not in the Strimzi `TLSRoute` resource.
+
+With TLS passthrough, the Gateway forwards the TLS connection to the Kafka brokers.
+The Kafka listener must have TLS encryption enabled (`tls: true`).
+The connection uses the TLS certificates from the Kafka brokers, and you can use TLS client authentication.
+To configure listeners to use your own listener certificates, xref:proc-installing-certs-per-listener-{context}[use the `brokerCertChainAndKey` property].
+
+With TLS termination, the Gateway terminates the TLS connection and forwards unencrypted traffic to the Kafka brokers.
+Configure the Kafka listener without TLS encryption (`tls: false`).
+The client uses the Gateway certificate, and TLS client authentication in the Strimzi listener is not available.
+
+.Prerequisites
+
+* A Gateway API implementation that supports `gateway.networking.k8s.io/v1` `TLSRoute` resources is installed
+* A Gateway API `Gateway` is configured for Kafka traffic and accepts TLSRoutes from the Kafka namespace
+* DNS records for the bootstrap and per-broker hostnames resolve to the Gateway address
+* A running Cluster Operator
+
+In this procedure, the Kafka cluster name is `my-cluster`.
+The name of the listener is `external`.
+
+.Procedure
+
+. Configure a `Kafka` resource with an external listener set to the `tlsroute` type.
++
+Specify a bootstrap hostname, per-broker hostnames, and the Gateway API parent references for the generated TLSRoutes.
++
+For example:
++
+[source,yaml,subs=attributes+]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+  labels:
+    app: my-cluster
+  name: my-cluster
+  namespace: myproject
+spec:
+  kafka:
+    # ...
+    listeners:
+      - name: external
+        port: 9094
+        type: tlsroute
+        tls: true # <1>
+        authentication:
+          type: tls
+        configuration:
+          parentRefs:
+            - name: kafka-gateway # <2>
+              kind: Gateway # <3>
+              group: gateway.networking.k8s.io # <4>
+              namespace: myproject # <5>
+              sectionName: kafka # <6>
+          bootstrap:
+            host: bootstrap.example.com # <7>
+          hostTemplate: broker-{nodeId}.example.com # <8>
+    # ...
+----
+<1> Enables TLS encryption in the Kafka brokers for TLS passthrough. For TLS termination at the Gateway, set this property to `false` and do not use `tls` authentication.
+<2> Name of the Gateway API parent resource that the generated TLSRoutes attach to.
+<3> Kind of the Gateway API parent resource.
+<4> API group of the Gateway API parent resource.
+<5> Namespace of the Gateway API parent resource.
+<6> (Optional) Gateway listener name to attach the TLSRoutes to.
+<7> Hostname used by the bootstrap TLSRoute. The hostname must resolve to the Gateway address.
+<8> Template used to generate the hostnames for the per-broker TLSRoutes. The hostnames must resolve to the Gateway address.
+
+. Create or update the resource.
++
+[source,shell,subs=+quotes]
+----
+kubectl apply -f _<kafka_configuration_file>_
+----
++
+If TLS encryption is enabled, a cluster CA certificate to verify the identity of the Kafka brokers is created in the secret `my-cluster-cluster-ca-cert`.
++
+`ClusterIP` type services are created for each Kafka broker, as well as an external bootstrap service.
++
+A `TLSRoute` is also created for each service, with a hostname to expose it using the Gateway API implementation.
++
+.TLSRoutes created for the bootstrap and brokers
+[source,shell]
+----
+NAME                                  HOSTNAMES                 AGE
+my-cluster-kafka-external-0          broker-0.example.com      1m
+my-cluster-kafka-external-1          broker-1.example.com      1m
+my-cluster-kafka-external-2          broker-2.example.com      1m
+my-cluster-kafka-external-bootstrap  bootstrap.example.com     1m
+----
++
+Strimzi waits for each TLSRoute status to contain at least one parent reference.
+If a TLSRoute status is not updated with a parent reference before the Cluster Operator reconciliation timeout, the reconciliation fails.
+
+. Retrieve the address of the bootstrap service from the status of the `Kafka` resource.
++
+[source,shell,subs=+quotes]
+----
+kubectl get kafka my-cluster -o=jsonpath='{.status.listeners[?(@.name=="external")].bootstrapServers}{"\n"}'
+
+bootstrap.example.com:443
+----
+
+. If you are using TLS passthrough, use a target broker to check the client-server TLS connection on port 443 using the OpenSSL `s_client`.
++
+[source,shell]
+----
+openssl s_client -connect broker-0.example.com:443 -servername broker-0.example.com -showcerts
+----
++
+The server name is the Server Name Indication (SNI) for passing the connection to the broker.
++
+If the connection is successful, the certificates for the broker are returned.
++
+.Certificates for the broker
+[source,shell,subs=attributes+]
+----
+Certificate chain
+ 0 s:O = io.strimzi, CN = my-cluster-kafka
+   i:O = io.strimzi, CN = cluster-ca v0
+----
+
+. If you are using TLS passthrough, extract the cluster CA certificate.
++
+[source,shell]
+----
+kubectl get secret my-cluster-cluster-ca-cert -o jsonpath='{.data.ca\.crt}' | base64 -d > ca.crt
+----
+
+. Configure your client to connect to the brokers.
+
+.. Specify the address for the bootstrap service and port 443 in your Kafka client as the bootstrap address to connect to the Kafka cluster.
++
+If your Gateway uses a different external port, use that port in the client bootstrap address and configure per-broker `advertisedPort` entries or the `advertisedPortTemplate` property for the per-broker advertised ports.
+
+.. If you are using TLS passthrough, add the extracted certificate to the truststore of your Kafka client to configure a TLS connection.
++
+If you enabled a client authentication mechanism, you will also need to configure it in your client.
++
+For TLS termination at the Gateway, configure the client to trust the Gateway certificate instead.
+
+NOTE: If you are using your own listener certificates with TLS passthrough, check whether you need to add the CA certificate to the client's truststore configuration.
+If it is a public (external) CA, you usually won't need to add it.

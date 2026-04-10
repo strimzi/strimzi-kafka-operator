@@ -80,6 +80,17 @@ public class ListenersUtils {
     }
 
     /**
+     * Returns list of all TLSRoute type listeners
+     *
+     * @param listeners List of all listeners
+     *
+     * @return          List of route listeners
+     */
+    public static List<GenericKafkaListener> tlsRouteListeners(List<GenericKafkaListener> listeners)    {
+        return listenersByType(listeners, KafkaListenerType.TLSROUTE);
+    }
+
+    /**
      * Returns list of all LoadBalancer type listeners
      *
      * @param listeners List of all listeners

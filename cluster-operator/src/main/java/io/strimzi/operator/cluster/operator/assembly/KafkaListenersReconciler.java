@@ -6,6 +6,7 @@ package io.strimzi.operator.cluster.operator.assembly;
 
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.Service;
+import io.fabric8.kubernetes.api.model.gatewayapi.v1.TLSRoute;
 import io.fabric8.kubernetes.api.model.networking.v1.Ingress;
 import io.fabric8.openshift.api.model.Route;
 import io.strimzi.api.kafka.model.common.CertAndKeySecretSource;
@@ -27,6 +28,7 @@ import io.strimzi.operator.cluster.operator.resource.kubernetes.IngressOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.RouteOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.SecretOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.ServiceOperator;
+import io.strimzi.operator.cluster.operator.resource.kubernetes.TLSRouteOperator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
@@ -61,6 +63,7 @@ public class KafkaListenersReconciler {
     private final SecretOperator secretOperator;
     private final ServiceOperator serviceOperator;
     private final RouteOperator routeOperator;
+    private final TLSRouteOperator tlsRouteOperator;
     private final IngressOperator ingressOperator;
 
     /* test */ final ReconciliationResult result;
@@ -75,7 +78,8 @@ public class KafkaListenersReconciler {
      * @param operationTimeoutMs        Timeout for Kubernetes operations
      * @param secretOperator            The Secret operator for working with Kubernetes Secrets
      * @param serviceOperator           The Service operator for working with Kubernetes Services
-     * @param routeOperator             The Route operator for working with Kubernetes Route
+     * @param routeOperator             The Route operator for working with OpenShift Route
+     * @param tlsRouteOperator          The TLSRoute operator for working with Gateway API TLSRoute
      * @param ingressOperator           The Ingress operator for working with Kubernetes Ingress
      */
     public KafkaListenersReconciler(
@@ -89,6 +93,7 @@ public class KafkaListenersReconciler {
             SecretOperator secretOperator,
             ServiceOperator serviceOperator,
             RouteOperator routeOperator,
+            TLSRouteOperator tlsRouteOperator,
             IngressOperator ingressOperator
     ) {
         this.reconciliation = reconciliation;
@@ -102,6 +107,7 @@ public class KafkaListenersReconciler {
         this.serviceOperator = serviceOperator;
         this.routeOperator = routeOperator;
         this.ingressOperator = ingressOperator;
+        this.tlsRouteOperator = tlsRouteOperator;
 
         // Initialize the result object
         this.result = new ReconciliationResult();
@@ -119,11 +125,13 @@ public class KafkaListenersReconciler {
     public Future<ReconciliationResult> reconcile()    {
         return services()
                 .compose(i -> routes())
+                .compose(i -> tlsRoutes())
                 .compose(i -> ingresses())
                 .compose(i -> internalServicesReady())
                 .compose(i -> loadBalancerServicesReady())
                 .compose(i -> nodePortServicesReady())
                 .compose(i -> routesReady())
+                .compose(i -> tlsRoutesReady())
                 .compose(i -> ingressesReady())
                 .compose(i -> clusterIPServicesReady())
                 .compose(i -> customListenerCertificates())
@@ -163,6 +171,27 @@ public class KafkaListenersReconciler {
             if (!routes.isEmpty()) {
                 LOGGER.warnCr(reconciliation, "The OpenShift route API is not available in this Kubernetes cluster. Exposing Kafka cluster {} using routes is not possible.", reconciliation.name());
                 return Future.failedFuture("The OpenShift route API is not available in this Kubernetes cluster. Exposing Kafka cluster " + reconciliation.name() + " using routes is not possible.");
+            } else {
+                return Future.succeededFuture();
+            }
+        }
+    }
+
+    /**
+     * Makes sure all desired routes are updated and the rest is deleted.
+     *
+     * @return Future which completes when all routes are created or deleted.
+     */
+    protected Future<Void> tlsRoutes() {
+        List<TLSRoute> routes = new ArrayList<>(kafka.generateExternalBootstrapTlsRoutes());
+        routes.addAll(kafka.generateExternalTlsRoutes());
+
+        if (pfa.hasTLSRoutes()) {
+            return tlsRouteOperator.batchReconcile(reconciliation, reconciliation.namespace(), routes, kafka.getSelectorLabels()).mapEmpty();
+        } else {
+            if (!routes.isEmpty()) {
+                LOGGER.warnCr(reconciliation, "The Gateway API TLSRoute resource is not available in this Kubernetes cluster. Exposing Kafka cluster {} using TLSRoutes is not possible.", reconciliation.name());
+                return Future.failedFuture("The Gateway API TLSRoute resource is not available in this Kubernetes cluster. Exposing Kafka cluster " + reconciliation.name() + " using TLSRoutes is not possible.");
             } else {
                 return Future.succeededFuture();
             }
@@ -612,6 +641,80 @@ public class KafkaListenersReconciler {
                         }
 
                         return Future.join(perPodFutures);
+                    });
+
+            listenerFutures.add(perListenerFut);
+        }
+
+        return Future
+                .join(listenerFutures)
+                .mapEmpty();
+    }
+
+    /**
+     * Makes sure all routes are ready and collects their addresses for Statuses,
+     * certificates and advertised addresses. This method for all routes:
+     *      1) Checks if the bootstrap route has been provisioned and has at least one parent
+     *      2) Collects the relevant addresses and stores them for use in certificates and in CR status
+     *      3) Checks it the broker routes have been provisioned and have at least one parent
+     *      4) Collects the route addresses for certificates and advertised hostnames
+     *
+     * @return  Future which completes when all TLSRoutes are ready and their addresses are collected
+     */
+    protected Future<Void> tlsRoutesReady() {
+        List<GenericKafkaListener> routeListeners = ListenersUtils.tlsRouteListeners(kafka.getListeners());
+        List<Future<?>> listenerFutures = new ArrayList<>(routeListeners.size());
+
+        for (GenericKafkaListener listener : routeListeners) {
+            String bootstrapRouteName = ListenersUtils.backwardsCompatibleBootstrapRouteOrIngressName(reconciliation.name(), listener);
+
+            @SuppressWarnings({ "rawtypes" }) // Has to use Raw type because of the CompositeFuture
+            Future perListenerFut = tlsRouteOperator.hasParents(reconciliation, reconciliation.namespace(), bootstrapRouteName, 1_000, operationTimeoutMs)
+                    .compose(i -> {
+                        String bootstrapAddress = listener.getConfiguration().getBootstrap().getHost();
+                        LOGGER.debugCr(reconciliation, "Using address {} for TLSRoute {}", bootstrapAddress, bootstrapRouteName);
+
+                        result.bootstrapDnsNames.add(bootstrapAddress);
+
+                        ListenerStatus ls = new ListenerStatusBuilder()
+                                .withName(listener.getName())
+                                .withAddresses(new ListenerAddressBuilder()
+                                        .withHost(bootstrapAddress)
+                                        .withPort(KafkaCluster.TLSROUTE_PORT)
+                                        .build())
+                                .build();
+                        result.listenerStatuses.add(ls);
+
+                        return Future.succeededFuture();
+                    })
+                    .compose(res -> {
+                        List<Future<Void>> perPodFutures = new ArrayList<>();
+
+                        for (NodeRef node : kafka.brokerNodes()) {
+                            perPodFutures.add(
+                                    tlsRouteOperator.hasParents(reconciliation, reconciliation.namespace(), ListenersUtils.backwardsCompatiblePerBrokerServiceName(ReconcilerUtils.getControllerNameFromPodName(node.podName()), node.nodeId(), listener), 1_000, operationTimeoutMs)
+                            );
+                        }
+
+                        return Future.join(perPodFutures);
+                    })
+                    .compose(res -> {
+                        for (NodeRef node : kafka.brokerNodes()) {
+                            String brokerAddress = ListenersUtils.brokerHost(listener, node);
+                            LOGGER.debugCr(reconciliation, "Using address {} for TLSRoute {}", brokerAddress, ListenersUtils.backwardsCompatiblePerBrokerServiceName(ReconcilerUtils.getControllerNameFromPodName(node.podName()), node.nodeId(), listener));
+
+                            result.brokerDnsNames.computeIfAbsent(node.nodeId(), k -> new HashSet<>(2)).add(brokerAddress);
+
+                            String advertisedHostname = ListenersUtils.brokerAdvertisedHost(listener, node);
+                            if (advertisedHostname != null) {
+                                result.brokerDnsNames.get(node.nodeId()).add(advertisedHostname);
+                            }
+
+                            registerAdvertisedHostname(node.nodeId(), listener, advertisedHostname, brokerAddress);
+                            registerAdvertisedPort(node.nodeId(), listener, KafkaCluster.TLSROUTE_PORT);
+                        }
+
+                        return Future.succeededFuture();
                     });
 
             listenerFutures.add(perListenerFut);
