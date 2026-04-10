@@ -54,6 +54,10 @@
             <artifactId>kubernetes-model-apiextensions</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.fabric8</groupId>
+            <artifactId>kubernetes-model-gatewayapi</artifactId>
+        </dependency>
+        <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-annotations</artifactId>
         </dependency>

@@ -21,6 +21,7 @@ include::../../modules/overview/con-configuration-points-listener-names.adoc[lev
 //access through external listeners
 include::../../modules/security/proc-accessing-kafka-using-nodeports.adoc[leveloffset=+1]
 include::../../modules/security/proc-accessing-kafka-using-loadbalancers.adoc[leveloffset=+1]
+include::../../modules/security/proc-accessing-kafka-using-tlsroutes.adoc[leveloffset=+1]
 //Kubernetes only
 ifdef::Section[]
 include::../../modules/security/proc-accessing-kafka-using-ingress.adoc[leveloffset=+1]

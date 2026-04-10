@@ -46,6 +46,7 @@ import io.strimzi.operator.cluster.operator.resource.kubernetes.ServiceAccountOp
 import io.strimzi.operator.cluster.operator.resource.kubernetes.ServiceOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.StorageClassOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.StrimziPodSetOperator;
+import io.strimzi.operator.cluster.operator.resource.kubernetes.TLSRouteOperator;
 import io.strimzi.operator.common.AdminClientProvider;
 import io.strimzi.operator.common.DefaultAdminClientProvider;
 import io.strimzi.operator.common.MetricsProvider;
@@ -162,7 +163,6 @@ public class ResourceOperatorSupplier {
      */
     public final PodDisruptionBudgetOperator podDisruptionBudgetOperator;
 
-
     /**
      * Pod operator
      */
@@ -192,6 +192,11 @@ public class ResourceOperatorSupplier {
      * Node operator
      */
     public final NodeOperator nodeOperator;
+
+    /**
+     * TLSRoute operator
+     */
+    public final TLSRouteOperator tlsRouteOperations;
 
     /**
      * Metrics provider
@@ -324,6 +329,7 @@ public class ResourceOperatorSupplier {
                 new StrimziPodSetOperator(vertx, client),
                 new StorageClassOperator(vertx, client),
                 new NodeOperator(vertx, client),
+                new TLSRouteOperator(vertx, client),
                 kafkaAgentClientProvider,
                 metricsProvider,
                 adminClientProvider,
@@ -362,6 +368,7 @@ public class ResourceOperatorSupplier {
      * @param strimziPodSetOperator                 StrimziPodSet operator
      * @param storageClassOperator                  StorageClass operator
      * @param nodeOperator                          Node operator
+     * @param tlsRouteOperator                      TLSRoute operator
      * @param kafkaAgentClientProvider              Kafka Agent client provider
      * @param metricsProvider                       Metrics provider
      * @param adminClientProvider                   Kafka Admin client provider
@@ -397,6 +404,7 @@ public class ResourceOperatorSupplier {
                                     StrimziPodSetOperator strimziPodSetOperator,
                                     StorageClassOperator storageClassOperator,
                                     NodeOperator nodeOperator,
+                                    TLSRouteOperator tlsRouteOperator,
                                     KafkaAgentClientProvider kafkaAgentClientProvider,
                                     MetricsProvider metricsProvider,
                                     AdminClientProvider adminClientProvider,
@@ -430,6 +438,7 @@ public class ResourceOperatorSupplier {
         this.kafkaNodePoolOperator = kafkaNodePoolOperator;
         this.strimziPodSetOperator = strimziPodSetOperator;
         this.nodeOperator = nodeOperator;
+        this.tlsRouteOperations = tlsRouteOperator;
         this.kafkaAgentClientProvider = kafkaAgentClientProvider;
         this.metricsProvider = metricsProvider;
         this.adminClientProvider = adminClientProvider;
