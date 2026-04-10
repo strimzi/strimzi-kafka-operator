@@ -40,6 +40,16 @@
             <artifactId>log4j-layout-template-json</artifactId>
             <version>${log4j.version}</version>
             <scope>runtime</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.apache.logging.log4j</groupId>
+                    <artifactId>log4j-api</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.logging.log4j</groupId>
+                    <artifactId>log4j-core</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <!-- Cruise Control overrides the Beanutils dependency to 1.11.0 to avoid CVE-2025-48734 in its Gradle build.
              But this change is incorrectly propagated into the Maven pom.xml. So we have to workaround it here and add
