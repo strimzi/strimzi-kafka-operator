@@ -97,7 +97,7 @@ public class GenericKafkaListenerConfiguration implements UnknownPropertyPreserv
             "* `Hostname`\n" +
             "\n" +
             "This property is used to select the preferred address type, which is checked first. " +
-            "If no address is found for this address type, the other types are checked in the default order." +
+            "If no address is found for this address type, the other types are checked in the default order. " +
             "For `nodeport` listeners only.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public NodeAddressType getPreferredNodePortAddressType() {
