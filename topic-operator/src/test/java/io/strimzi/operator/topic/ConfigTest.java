@@ -7,7 +7,6 @@ package io.strimzi.operator.topic;
 import io.strimzi.operator.common.InvalidConfigurationException;
 import io.strimzi.operator.common.featuregates.FeatureGates;
 import io.strimzi.test.ReadWriteUtils;
-import org.apache.kafka.common.config.SslConfigs;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -31,43 +30,16 @@ class ConfigTest {
         // given
         var config = TopicOperatorConfig.buildFromMap(Map.of(
                 TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "my-kafka:9092",
-                TopicOperatorConfig.NAMESPACE.key(), NAMESPACE));
+                TopicOperatorConfig.WATCHED_NAMESPACE.key(), NAMESPACE));
 
         // then
-        assertEquals(NAMESPACE, config.namespace());
+        assertEquals(NAMESPACE, config.watchedNamespace());
 
         var adminConfig = config.adminClientConfig();
         // client.id is random, so check it's there then remove for an easier assertion on the rest of the map
         assertFalse(adminConfig.get("client.id").toString().isEmpty());
         adminConfig.remove("client.id");
-        assertEquals(Map.of(
-                "security.protocol", "PLAINTEXT",
-                "bootstrap.servers", "my-kafka:9092"), adminConfig);
-    }
-
-    @Test
-    void shouldConnectWithTls() {
-        // given
-        var config = TopicOperatorConfig.buildFromMap(Map.of(
-                TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "my-kafka:9092",
-                TopicOperatorConfig.NAMESPACE.key(), NAMESPACE,
-                TopicOperatorConfig.TLS_ENABLED.key(), "true",
-                TopicOperatorConfig.TRUSTSTORE_LOCATION.key(), "my/truststore.p12",
-                TopicOperatorConfig.TRUSTSTORE_PASSWORD.key(), "123456"));
-
-        // then
-        assertEquals(NAMESPACE, config.namespace());
-
-        var adminConfig = config.adminClientConfig();
-        // client.id is random, so check it's there then remove for an easier assertion on the rest of the map
-        assertFalse(adminConfig.get("client.id").toString().isEmpty());
-        adminConfig.remove("client.id");
-        assertEquals(Map.of(
-                "security.protocol", "SSL",
-                "bootstrap.servers", "my-kafka:9092",
-                "ssl.truststore.location", "my/truststore.p12",
-                "ssl.truststore.password", "123456",
-                "ssl.endpoint.identification.algorithm", "HTTPS"), adminConfig);
+        assertEquals(Map.of(), adminConfig);
     }
 
     @Test
@@ -75,7 +47,7 @@ class ConfigTest {
         // given
         var config = TopicOperatorConfig.buildFromMap(Map.of(
                 TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "my-kafka:9092",
-                TopicOperatorConfig.NAMESPACE.key(), NAMESPACE,
+                TopicOperatorConfig.WATCHED_NAMESPACE.key(), NAMESPACE,
                 TopicOperatorConfig.SECURITY_PROTOCOL.key(), "SASL_PLAINTEXT",
                 TopicOperatorConfig.SASL_ENABLED.key(), "true",
                 TopicOperatorConfig.SASL_MECHANISM.key(), "plain",
@@ -84,7 +56,7 @@ class ConfigTest {
         ));
 
         // then
-        assertEquals(NAMESPACE, config.namespace());
+        assertEquals(NAMESPACE, config.watchedNamespace());
 
         var adminConfig = config.adminClientConfig();
         // client.id is random, so check it's there then remove for an easier assertion on the rest of the map
@@ -92,7 +64,6 @@ class ConfigTest {
         adminConfig.remove("client.id");
         assertEquals(Map.of(
                 "security.protocol", "SASL_PLAINTEXT",
-                "bootstrap.servers", "my-kafka:9092",
                 "sasl.mechanism", "PLAIN",
                 "sasl.jaas.config", "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"foo\" password=\"foo\";"), adminConfig);
     }
@@ -102,11 +73,8 @@ class ConfigTest {
         // given
         var config = TopicOperatorConfig.buildFromMap(Map.of(
                 TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "my-kafka:9092",
-                TopicOperatorConfig.NAMESPACE.key(), NAMESPACE,
+                TopicOperatorConfig.WATCHED_NAMESPACE.key(), NAMESPACE,
                 TopicOperatorConfig.SECURITY_PROTOCOL.key(), "SASL_SSL",
-                TopicOperatorConfig.TLS_ENABLED.key(), "true",
-                TopicOperatorConfig.TRUSTSTORE_LOCATION.key(), "my/truststore.p12",
-                TopicOperatorConfig.TRUSTSTORE_PASSWORD.key(), "123456",
                 TopicOperatorConfig.SASL_ENABLED.key(), "true",
                 TopicOperatorConfig.SASL_MECHANISM.key(), "plain",
                 TopicOperatorConfig.SASL_USERNAME.key(), "foo",
@@ -114,7 +82,7 @@ class ConfigTest {
         ));
 
         // then
-        assertEquals(NAMESPACE, config.namespace());
+        assertEquals(NAMESPACE, config.watchedNamespace());
 
         var adminConfig = config.adminClientConfig();
         // client.id is random, so check it's there then remove for an easier assertion on the rest of the map
@@ -122,11 +90,8 @@ class ConfigTest {
         adminConfig.remove("client.id");
         assertEquals(Map.of(
                 "security.protocol", "SASL_SSL",
-                "bootstrap.servers", "my-kafka:9092",
                 "sasl.mechanism", "PLAIN",
                 "sasl.jaas.config", "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"foo\" password=\"foo\";",
-                "ssl.truststore.location", "my/truststore.p12",
-                "ssl.truststore.password", "123456",
                 "ssl.endpoint.identification.algorithm", "HTTPS"), adminConfig);
     }
 
@@ -146,7 +111,7 @@ class ConfigTest {
             () -> TopicOperatorConfig.buildFromMap(Map.of(
                 TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "my-kafka:9092",
                 TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "my-kafka:9093",
-                TopicOperatorConfig.NAMESPACE.key(), NAMESPACE
+                TopicOperatorConfig.WATCHED_NAMESPACE.key(), NAMESPACE
             )));
         assertEquals("duplicate key: STRIMZI_KAFKA_BOOTSTRAP_SERVERS", thrown.getMessage());
     }
@@ -155,7 +120,7 @@ class ConfigTest {
     void shouldThrowWithMissingRequired() {
         var thrown1 =  assertThrows(InvalidConfigurationException.class,
             () -> TopicOperatorConfig.buildFromMap(Map.of(
-                TopicOperatorConfig.NAMESPACE.key(), NAMESPACE
+                TopicOperatorConfig.WATCHED_NAMESPACE.key(), NAMESPACE
             )));
         assertEquals("Config value: STRIMZI_KAFKA_BOOTSTRAP_SERVERS is mandatory", thrown1.getMessage());
 
@@ -176,7 +141,7 @@ class ConfigTest {
         // given
         var config = TopicOperatorConfig.buildFromMap(Map.of(
                 TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:1234",
-                TopicOperatorConfig.NAMESPACE.key(), NAMESPACE,
+                TopicOperatorConfig.WATCHED_NAMESPACE.key(), NAMESPACE,
                 TopicOperatorConfig.SASL_ENABLED.key(), "true",
                 TopicOperatorConfig.SASL_MECHANISM.key(), "scram-sha-"  + bits,
                 TopicOperatorConfig.SASL_USERNAME.key(), "foo",
@@ -184,31 +149,15 @@ class ConfigTest {
                 ));
 
         // then
-        assertEquals(NAMESPACE, config.namespace());
+        assertEquals(NAMESPACE, config.watchedNamespace());
 
         var adminConfig = config.adminClientConfig();
         // client.id is random, so check it's there then remove for an easier assertion on the rest of the map
         assertFalse(adminConfig.get("client.id").toString().isEmpty());
         adminConfig.remove("client.id");
         assertEquals(Map.of(
-                "security.protocol", "PLAINTEXT",
-                "bootstrap.servers", "localhost:1234",
                 "sasl.mechanism", "SCRAM-SHA-" + bits,
                 "sasl.jaas.config", "org.apache.kafka.common.security.scram.ScramLoginModule required username=\"foo\" password=\"pa55word\";"), adminConfig);
-    }
-    
-    @Test
-    void shouldThrowIfSecurityProtocolInconsistentWithTls() {
-        // given
-        var config = TopicOperatorConfig.buildFromMap(Map.of(
-                TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:1234",
-                TopicOperatorConfig.NAMESPACE.key(), NAMESPACE,
-                TopicOperatorConfig.TLS_ENABLED.key(), "true",
-                TopicOperatorConfig.SECURITY_PROTOCOL.key(), "PLAINTEXT"));
-
-        // then
-        var e = assertThrows(InvalidConfigurationException.class, config::adminClientConfig);
-        assertEquals("TLS is enabled but the security protocol does not match SSL or SASL_SSL", e.getMessage());
     }
 
     @Test
@@ -216,7 +165,7 @@ class ConfigTest {
         // given
         var config = TopicOperatorConfig.buildFromMap(Map.of(
                 TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:1234",
-                TopicOperatorConfig.NAMESPACE.key(), NAMESPACE,
+                TopicOperatorConfig.WATCHED_NAMESPACE.key(), NAMESPACE,
                 TopicOperatorConfig.SECURITY_PROTOCOL.key(), "SASL_PLAINTEXT",
                 TopicOperatorConfig.SASL_ENABLED.key(), "true",
                 TopicOperatorConfig.SASL_MECHANISM.key(), "plain"
@@ -228,52 +177,11 @@ class ConfigTest {
     }
 
     @Test
-    void shouldThrowIfTrustStorePasswordButNoLocation() {
-        // given
-        var config = TopicOperatorConfig.buildFromMap(Map.of(
-                TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:1234",
-                TopicOperatorConfig.NAMESPACE.key(), NAMESPACE,
-                TopicOperatorConfig.TLS_ENABLED.key(), "true",
-                TopicOperatorConfig.TRUSTSTORE_PASSWORD.key(), "some_password"));
-
-        // then
-        assertEquals(NAMESPACE, config.namespace());
-
-        var e = assertThrows(InvalidConfigurationException.class, config::adminClientConfig);
-        assertEquals("TLS_TRUSTSTORE_PASSWORD was supplied but TLS_TRUSTSTORE_LOCATION was not supplied", e.getMessage());
-    }
-
-    @Test
-    void shouldThrowIfKeyStorePasswordButNoLocation() {
-        // given
-        var config = TopicOperatorConfig.buildFromMap(Map.of(
-                TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:1234",
-                TopicOperatorConfig.NAMESPACE.key(), NAMESPACE,
-                TopicOperatorConfig.TLS_ENABLED.key(), "true",
-                TopicOperatorConfig.TRUSTSTORE_LOCATION.key(), "/path/to/truststore",
-                TopicOperatorConfig.TRUSTSTORE_PASSWORD.key(), "password_from_truststore",
-                TopicOperatorConfig.KEYSTORE_LOCATION.key(), "/path/to/keystore",
-                TopicOperatorConfig.KEYSTORE_PASSWORD.key(), "password_for_keystore"));
-
-        // then
-        assertEquals(NAMESPACE, config.namespace());
-
-        var adminConfig = config.adminClientConfig();
-        assertEquals("/path/to/keystore", adminConfig.get(SslConfigs.SSL_KEYSTORE_LOCATION_CONFIG));
-        assertEquals("password_for_keystore", adminConfig.get(SslConfigs.SSL_KEYSTORE_PASSWORD_CONFIG));
-    }
-
-    @Test
     void shouldMaskSecuritySensitiveConfigsInToString() {
         var config = TopicOperatorConfig.buildFromMap(Map.ofEntries(
                 Map.entry(TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:1234"),
-                Map.entry(TopicOperatorConfig.NAMESPACE.key(), NAMESPACE),
+                Map.entry(TopicOperatorConfig.WATCHED_NAMESPACE.key(), NAMESPACE),
                 Map.entry(TopicOperatorConfig.SECURITY_PROTOCOL.key(), "SASL_SSL"),
-                Map.entry(TopicOperatorConfig.TLS_ENABLED.key(), "true"),
-                Map.entry(TopicOperatorConfig.TRUSTSTORE_LOCATION.key(), "/some/path"),
-                Map.entry(TopicOperatorConfig.TRUSTSTORE_PASSWORD.key(), "FORBIDDEN"),
-                Map.entry(TopicOperatorConfig.KEYSTORE_LOCATION.key(), "/some/path"),
-                Map.entry(TopicOperatorConfig.KEYSTORE_PASSWORD.key(), "FORBIDDEN"),
                 Map.entry(TopicOperatorConfig.SASL_ENABLED.key(), "true"),
                 Map.entry(TopicOperatorConfig.SASL_MECHANISM.key(), "plain"),
                 Map.entry(TopicOperatorConfig.SASL_USERNAME.key(), "foo"),
@@ -288,7 +196,7 @@ class ConfigTest {
         // given
         var config = TopicOperatorConfig.buildFromMap(Map.of(
               TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:1234",
-              TopicOperatorConfig.NAMESPACE.key(), NAMESPACE,
+              TopicOperatorConfig.WATCHED_NAMESPACE.key(), NAMESPACE,
               TopicOperatorConfig.SASL_ENABLED.key(), "true",
               TopicOperatorConfig.SASL_CUSTOM_CONFIG_JSON.key(), """
                     {
@@ -300,14 +208,12 @@ class ConfigTest {
         ));
 
         // then
-        assertEquals(NAMESPACE, config.namespace());
+        assertEquals(NAMESPACE, config.watchedNamespace());
 
         var adminConfig = config.adminClientConfig();
         adminConfig.put("client.id", "foo");
         assertEquals(Map.of(
               "client.id", "foo",
-              "security.protocol", "PLAINTEXT",
-              "bootstrap.servers", "localhost:1234",
               "sasl.mechanism", "WAS_SMK_IAM",
               "sasl.jaas.config", "some.custom.auth.iam.IAMLoginModule required;",
               "sasl.client.callback.handler.class", "some.other.nonstandard.iam.IAMClientCallbackHandler"), adminConfig);
@@ -317,7 +223,7 @@ class ConfigTest {
     void shouldThrowIfCustomConfigPropertyEmpty() {
         var config = TopicOperatorConfig.buildFromMap(Map.of(
               TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:1234",
-              TopicOperatorConfig.NAMESPACE.key(), NAMESPACE,
+              TopicOperatorConfig.WATCHED_NAMESPACE.key(), NAMESPACE,
               TopicOperatorConfig.SASL_ENABLED.key(), "true",
               TopicOperatorConfig.SASL_CUSTOM_CONFIG_JSON.key(), "{}"
         ));
@@ -330,7 +236,7 @@ class ConfigTest {
     void shouldThrowIfCustomConfigInvalid() {
         var config = TopicOperatorConfig.buildFromMap(Map.of(
               TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:1234",
-              TopicOperatorConfig.NAMESPACE.key(), NAMESPACE,
+              TopicOperatorConfig.WATCHED_NAMESPACE.key(), NAMESPACE,
               TopicOperatorConfig.SASL_ENABLED.key(), "true",
               TopicOperatorConfig.SASL_CUSTOM_CONFIG_JSON.key(), "{"
         ));
@@ -343,7 +249,7 @@ class ConfigTest {
     void shouldThrowIfCustomConfigHasNonSaslProperties() {
         var config = TopicOperatorConfig.buildFromMap(Map.of(
               TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:1234",
-              TopicOperatorConfig.NAMESPACE.key(), NAMESPACE,
+              TopicOperatorConfig.WATCHED_NAMESPACE.key(), NAMESPACE,
               TopicOperatorConfig.SASL_ENABLED.key(), "true",
               TopicOperatorConfig.SASL_CUSTOM_CONFIG_JSON.key(), "{ \"a\": \"b\" }"
         ));
@@ -356,7 +262,7 @@ class ConfigTest {
     void shouldThrowIfCustomConfigHasEmptyProperties() {
         var config = TopicOperatorConfig.buildFromMap(Map.of(
               TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:1234",
-              TopicOperatorConfig.NAMESPACE.key(), NAMESPACE,
+              TopicOperatorConfig.WATCHED_NAMESPACE.key(), NAMESPACE,
               TopicOperatorConfig.SASL_ENABLED.key(), "true",
               TopicOperatorConfig.SASL_CUSTOM_CONFIG_JSON.key(), "{ \"\": \"b\" }"
         ));
@@ -369,7 +275,7 @@ class ConfigTest {
     void shouldDefaultToFalseForSkipClusterConfigCheck() {
         var config = TopicOperatorConfig.buildFromMap(Map.of(
               TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:1234",
-              TopicOperatorConfig.NAMESPACE.key(), NAMESPACE
+              TopicOperatorConfig.WATCHED_NAMESPACE.key(), NAMESPACE
         ));
 
         assertFalse(config.skipClusterConfigReview());
@@ -379,7 +285,7 @@ class ConfigTest {
     void shouldDefaultToAllForAlterableTopicConfig() {
         var config = TopicOperatorConfig.buildFromMap(Map.of(
               TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:1234",
-              TopicOperatorConfig.NAMESPACE.key(), NAMESPACE
+              TopicOperatorConfig.WATCHED_NAMESPACE.key(), NAMESPACE
         ));
 
         assertEquals("ALL", config.alterableTopicConfig());
@@ -387,7 +293,7 @@ class ConfigTest {
 
     @Test
     public void testDefaultFeatureGates()    {
-        TopicOperatorConfig config = TopicOperatorConfig.buildFromMap(Map.of(TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:1234", TopicOperatorConfig.NAMESPACE.key(), NAMESPACE));
+        TopicOperatorConfig config = TopicOperatorConfig.buildFromMap(Map.of(TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:1234", TopicOperatorConfig.WATCHED_NAMESPACE.key(), NAMESPACE));
         assertEquals(new FeatureGates(""), config.featureGates());
     }
 
@@ -411,7 +317,7 @@ class ConfigTest {
         
         var config = TopicOperatorConfig.buildFromMap(Map.of(
             TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:1234",
-            TopicOperatorConfig.NAMESPACE.key(), NAMESPACE,
+            TopicOperatorConfig.WATCHED_NAMESPACE.key(), NAMESPACE,
             TopicOperatorConfig.CRUISE_CONTROL_ENABLED.key(), "true",
             TopicOperatorConfig.CRUISE_CONTROL_HOSTNAME.key(), "my-cruise-control",
             TopicOperatorConfig.CRUISE_CONTROL_PORT.key(), "9090",
@@ -436,7 +342,7 @@ class ConfigTest {
     public void shouldThrowIfCruiseControlConfigHasNonExistentCertificate() {
         var config = TopicOperatorConfig.buildFromMap(Map.of(
             TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:1234",
-            TopicOperatorConfig.NAMESPACE.key(), NAMESPACE,
+            TopicOperatorConfig.WATCHED_NAMESPACE.key(), NAMESPACE,
             TopicOperatorConfig.CRUISE_CONTROL_ENABLED.key(), "true",
             TopicOperatorConfig.CRUISE_CONTROL_HOSTNAME.key(), "my-cruise-control",
             TopicOperatorConfig.CRUISE_CONTROL_PORT.key(), "9090",
@@ -454,7 +360,7 @@ class ConfigTest {
         var thrown = assertThrows(InvalidConfigurationException.class,
             () -> TopicOperatorConfig.buildFromMap(Map.of(
                 TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:1234",
-                TopicOperatorConfig.NAMESPACE.key(), NAMESPACE,
+                TopicOperatorConfig.WATCHED_NAMESPACE.key(), NAMESPACE,
                 TopicOperatorConfig.CRUISE_CONTROL_ENABLED.key(), "true",
                 TopicOperatorConfig.CRUISE_CONTROL_HOSTNAME.key(), "my-cruise-control",
                 TopicOperatorConfig.CRUISE_CONTROL_PORT.key(), "-7000"
@@ -466,7 +372,7 @@ class ConfigTest {
     public void shouldThrowIfCruiseControlConfigHasNonExistentUsernamePath() {
         var config = TopicOperatorConfig.buildFromMap(Map.of(
             TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:1234",
-            TopicOperatorConfig.NAMESPACE.key(), NAMESPACE,
+            TopicOperatorConfig.WATCHED_NAMESPACE.key(), NAMESPACE,
             TopicOperatorConfig.CRUISE_CONTROL_ENABLED.key(), "true",
             TopicOperatorConfig.CRUISE_CONTROL_HOSTNAME.key(), "my-cruise-control",
             TopicOperatorConfig.CRUISE_CONTROL_PORT.key(), "9090",
@@ -485,7 +391,7 @@ class ConfigTest {
         
         var config = TopicOperatorConfig.buildFromMap(Map.of(
             TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:1234",
-            TopicOperatorConfig.NAMESPACE.key(), NAMESPACE,
+            TopicOperatorConfig.WATCHED_NAMESPACE.key(), NAMESPACE,
             TopicOperatorConfig.CRUISE_CONTROL_ENABLED.key(), "true",
             TopicOperatorConfig.CRUISE_CONTROL_HOSTNAME.key(), "my-cruise-control",
             TopicOperatorConfig.CRUISE_CONTROL_PORT.key(), "9090",

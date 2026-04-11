@@ -31,6 +31,7 @@ import io.strimzi.operator.cluster.model.logging.SupportsLogging;
 import io.strimzi.operator.cluster.model.securityprofiles.ContainerSecurityProviderContextImpl;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
+import io.strimzi.operator.common.model.Ca;
 import io.strimzi.operator.common.model.PasswordGenerator;
 
 import java.util.ArrayList;
@@ -74,10 +75,14 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
     /* test */ static final String ENV_VAR_RESOURCE_LABELS = "STRIMZI_RESOURCE_LABELS";
     /* test */ static final String ENV_VAR_KAFKA_BOOTSTRAP_SERVERS = "STRIMZI_KAFKA_BOOTSTRAP_SERVERS";
     /* test */ static final String ENV_VAR_WATCHED_NAMESPACE = "STRIMZI_NAMESPACE";
+    /* test */ static final String ENV_VAR_CLUSTER_NAMESPACE = "STRIMZI_CLUSTER_NAMESPACE";
     /* test */ static final String ENV_VAR_FULL_RECONCILIATION_INTERVAL_MS = "STRIMZI_FULL_RECONCILIATION_INTERVAL_MS";
     /* test */ static final String ENV_VAR_SECURITY_PROTOCOL = "STRIMZI_SECURITY_PROTOCOL";
 
-    /* test */ static final String ENV_VAR_TLS_ENABLED = "STRIMZI_TLS_ENABLED";
+    /* test */ static final String ENV_VAR_TLS_TRUSTSTORE_SECRET_NAME = "STRIMZI_TRUSTSTORE_SECRET_NAME";
+    /* test */ static final String ENV_VAR_TLS_KEYSTORE_SECRET_NAME = "STRIMZI_KEYSTORE_SECRET_NAME";
+    /* test */ static final String ENV_VAR_TLS_KEYSTORE_KEY_NAME = "STRIMZI_KEYSTORE_KEY_NAME";
+    /* test */ static final String ENV_VAR_TLS_KEYSTORE_CERTIFICATE_NAME = "STRIMZI_KEYSTORE_CERTIFICATE_NAME";
 
     // Volume name of the temporary volume used by the TO container
     // Because the container shares the pod with other containers, it needs to have a unique name
@@ -193,11 +198,17 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_RESOURCE_LABELS, resourceLabels));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_BOOTSTRAP_SERVERS, kafkaBootstrapServers));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_WATCHED_NAMESPACE, watchedNamespace));
+        varList.add(ContainerUtils.createEnvVar(ENV_VAR_CLUSTER_NAMESPACE, namespace));
         if (reconciliationIntervalMs != null) {
             varList.add(ContainerUtils.createEnvVar(ENV_VAR_FULL_RECONCILIATION_INTERVAL_MS, Long.toString(reconciliationIntervalMs)));
         }
+
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_SECURITY_PROTOCOL, EntityTopicOperatorSpec.DEFAULT_SECURITY_PROTOCOL));
-        varList.add(ContainerUtils.createEnvVar(ENV_VAR_TLS_ENABLED, Boolean.toString(true)));
+        varList.add(ContainerUtils.createEnvVar(ENV_VAR_TLS_TRUSTSTORE_SECRET_NAME, AbstractModel.clusterCaCertSecretName(cluster)));
+        varList.add(ContainerUtils.createEnvVar(ENV_VAR_TLS_KEYSTORE_SECRET_NAME, KafkaResources.entityTopicOperatorSecretName(cluster)));
+        varList.add(ContainerUtils.createEnvVar(ENV_VAR_TLS_KEYSTORE_KEY_NAME, Ca.SecretEntry.KEY.asKey(EntityOperator.COMPONENT_TYPE)));
+        varList.add(ContainerUtils.createEnvVar(ENV_VAR_TLS_KEYSTORE_CERTIFICATE_NAME, Ca.SecretEntry.CRT.asKey(EntityOperator.COMPONENT_TYPE)));
+
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_STRIMZI_GC_LOG_ENABLED, Boolean.toString(gcLoggingEnabled)));
 
         // Add feature gates configuration if not empty
@@ -231,10 +242,9 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
 
         volumeList.add(VolumeUtils.createTempDirVolume(TOPIC_OPERATOR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME, templatePod));
         volumeList.add(VolumeUtils.createConfigMapVolume(LOG_AND_METRICS_CONFIG_VOLUME_NAME, KafkaResources.entityTopicOperatorLoggingConfigMapName(cluster)));
-        volumeList.add(VolumeUtils.createSecretVolume(ETO_CA_CERTS_VOLUME_NAME, AbstractModel.clusterCaCertSecretName(cluster), isOpenShift));
-        volumeList.add(VolumeUtils.createSecretVolume(ETO_CERTS_VOLUME_NAME, KafkaResources.entityTopicOperatorSecretName(cluster), isOpenShift));
 
         if (cruiseControlEnabled) {
+            volumeList.add(VolumeUtils.createSecretVolume(ETO_CA_CERTS_VOLUME_NAME, AbstractModel.clusterCaCertSecretName(cluster), isOpenShift));
             volumeList.add(VolumeUtils.createSecretVolume(ETO_CC_API_VOLUME_NAME, KafkaResources.entityTopicOperatorCcApiSecretName(cluster), isOpenShift));
         }
 
@@ -245,11 +255,12 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
         List<VolumeMount> result = new ArrayList<>();
         result.add(VolumeUtils.createTempDirVolumeMount(TOPIC_OPERATOR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME));
         result.add(VolumeUtils.createVolumeMount(LOG_AND_METRICS_CONFIG_VOLUME_NAME, LOG_AND_METRICS_CONFIG_VOLUME_MOUNT));
-        result.add(VolumeUtils.createVolumeMount(ETO_CERTS_VOLUME_NAME, ETO_CERTS_VOLUME_MOUNT));
-        result.add(VolumeUtils.createVolumeMount(ETO_CA_CERTS_VOLUME_NAME, ETO_CA_CERTS_VOLUME_MOUNT));
+
         if (this.cruiseControlEnabled) {
+            result.add(VolumeUtils.createVolumeMount(ETO_CA_CERTS_VOLUME_NAME, ETO_CA_CERTS_VOLUME_MOUNT));
             result.add(VolumeUtils.createVolumeMount(ETO_CC_API_VOLUME_NAME, ETO_CC_API_VOLUME_MOUNT));
         }
+
         TemplateUtils.addAdditionalVolumeMounts(result, templateContainer);
 
         return Collections.unmodifiableList(result);

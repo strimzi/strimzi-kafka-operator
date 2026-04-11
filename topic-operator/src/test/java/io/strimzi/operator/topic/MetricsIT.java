@@ -91,7 +91,7 @@ public class MetricsIT implements TestSeparator {
     public void eventHandlerMetrics() throws InterruptedException {
         var config = TopicOperatorConfig.buildFromMap(Map.of(
             TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:9092",
-            TopicOperatorConfig.NAMESPACE.key(), NAMESPACE)
+            TopicOperatorConfig.WATCHED_NAMESPACE.key(), NAMESPACE)
         );
         var metricsHolder = new TopicOperatorMetricsHolder(KafkaTopic.RESOURCE_KIND, null, new TopicOperatorMetricsProvider(new SimpleMeterRegistry()));
         var eventHandler = new TopicEventHandler(config, mock(BatchingLoop.class), metricsHolder);
@@ -125,7 +125,7 @@ public class MetricsIT implements TestSeparator {
     public void batchingLoopMetrics() throws InterruptedException {
         var config = TopicOperatorConfig.buildFromMap(Map.of(
             TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:9092",
-            TopicOperatorConfig.NAMESPACE.key(), NAMESPACE,
+            TopicOperatorConfig.WATCHED_NAMESPACE.key(), NAMESPACE,
             TopicOperatorConfig.MAX_QUEUE_SIZE.key(), String.valueOf(MAX_QUEUE_SIZE),
             TopicOperatorConfig.MAX_BATCH_SIZE.key(), String.valueOf(MAX_BATCH_SIZE),
             TopicOperatorConfig.MAX_BATCH_LINGER_MS.key(), String.valueOf(MAX_BATCH_LINGER_MS)
@@ -157,7 +157,7 @@ public class MetricsIT implements TestSeparator {
         try (var kafkaAdminClient = Admin.create(Map.of(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaCluster.getBootstrapServers()))) {
             var config = TopicOperatorConfig.buildFromMap(Map.of(
                     TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:9092",
-                    TopicOperatorConfig.NAMESPACE.key(), NAMESPACE,
+                    TopicOperatorConfig.WATCHED_NAMESPACE.key(), NAMESPACE,
                     TopicOperatorConfig.USE_FINALIZERS.key(), "true",
                     TopicOperatorConfig.ENABLE_ADDITIONAL_METRICS.key(), "true",
                     TopicOperatorConfig.CRUISE_CONTROL_ENABLED.key(), "true"

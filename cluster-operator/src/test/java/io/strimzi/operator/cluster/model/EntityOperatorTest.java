@@ -150,9 +150,9 @@ public class EntityOperatorTest {
         List<Volume> volumes = dep.getSpec().getTemplate().getSpec().getVolumes();
         assertThat(volumes.stream().filter(volume -> volume.getName().equals(EntityUserOperator.USER_OPERATOR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME)).findFirst().orElseThrow().getEmptyDir().getSizeLimit(), is(new Quantity("100", "Mi")));
         assertThat(volumes.stream().filter(volume -> volume.getName().equals(EntityTopicOperator.TOPIC_OPERATOR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME)).findFirst().orElseThrow().getEmptyDir().getSizeLimit(), is(new Quantity("100", "Mi")));
-        assertThat(volumes.stream().filter(volume -> volume.getName().equals(EntityTopicOperator.ETO_CA_CERTS_VOLUME_NAME)).findFirst().isEmpty(), is(false));
         
         if (cruiseControlEnabled) {
+            assertThat(volumes.stream().filter(volume -> volume.getName().equals(EntityTopicOperator.ETO_CA_CERTS_VOLUME_NAME)).findFirst().isEmpty(), is(false));
             assertThat(volumes.stream().filter(volume -> volume.getName().equals(EntityTopicOperator.ETO_CC_API_VOLUME_NAME)).findFirst().isEmpty(), is(false));
         }
     }

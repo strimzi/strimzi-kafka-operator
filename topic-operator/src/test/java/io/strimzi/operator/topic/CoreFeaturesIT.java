@@ -72,6 +72,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Properties;
 import java.util.Set;
 import java.util.Stack;
 import java.util.UUID;
@@ -117,7 +118,7 @@ class CoreFeaturesIT implements TestSeparator {
     private static MockKube3 mockKube;
     private static KubernetesClient kubernetesClient;
     
-    TopicOperatorMain operator;
+    TopicOperator operator;
     Stack<String> namespaces = new Stack<>();
     private TopicOperatorConfig operatorConfig;
     private StrimziKafkaCluster kafkaCluster;
@@ -310,19 +311,21 @@ class CoreFeaturesIT implements TestSeparator {
     
     private void maybeStartOperator(TopicOperatorConfig config) {
         if (kafkaAdminClient == null) {
-            Map<String, Object> testConfig = config.adminClientConfig();
+            Properties testConfig = config.adminClientConfig();
             testConfig.replace(AdminClientConfig.CLIENT_ID_CONFIG, config.clientId() + "-test");
+            testConfig.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, config.bootstrapServers());
             kafkaAdminClient = Admin.create(testConfig);
         }
         if (kafkaAdminClientOp == null) {
-            Map<String, Object> adminConfig = config.adminClientConfig();
+            Properties adminConfig = config.adminClientConfig();
             adminConfig.replace(AdminClientConfig.CLIENT_ID_CONFIG, config.clientId() + "-operator");
+            adminConfig.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, config.bootstrapServers());
             kafkaAdminClientOp = Admin.create(adminConfig);
         }
         if (operator == null) {
             operatorConfig = config;
             var kubernetesClientOp = new KubernetesClientBuilder().withConfig(kubernetesClient.getConfiguration()).build();
-            operator = new TopicOperatorMain(config, kubernetesClientOp, kafkaAdminClientOp);
+            operator = new TopicOperator(config, kubernetesClientOp, kafkaAdminClientOp);
             assertFalse(operator.queue.isAlive());
             assertFalse(operator.queue.isReady());
             operator.start();
@@ -1023,7 +1026,9 @@ class CoreFeaturesIT implements TestSeparator {
                 new AlterConfigOp(new ConfigEntry("log.segment.delete.delay.ms", "" + (1000L * 60 * 60)), AlterConfigOp.OpType.SET)))).all().get();
 
         var config = topicOperatorConfig(NAMESPACE, kafkaCluster, true, 500);
-        kafkaAdminClientOp = Mockito.spy(Admin.create(config.adminClientConfig()));
+        Properties adminConfig = config.adminClientConfig();
+        adminConfig.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, config.bootstrapServers());
+        kafkaAdminClientOp = Mockito.spy(Admin.create(adminConfig));
         maybeStartOperator(config);
 
         KafkaTopic kt = kafkaTopic(NAMESPACE, "bar", SELECTOR, null, null, null, 1, 1,
@@ -1285,7 +1290,7 @@ class CoreFeaturesIT implements TestSeparator {
 
     private static TopicOperatorConfig topicOperatorConfig(String ns, StrimziKafkaCluster kafkaCluster, boolean useFinalizer, long fullReconciliationIntervalMs) {
         return TopicOperatorConfig.buildFromMap(Map.of(
-            TopicOperatorConfig.NAMESPACE.key(), ns,
+            TopicOperatorConfig.WATCHED_NAMESPACE.key(), ns,
             TopicOperatorConfig.RESOURCE_LABELS.key(), Labels.fromMap(SELECTOR).toSelectorString(),
             TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), kafkaCluster.getBootstrapServers(),
             TopicOperatorConfig.CLIENT_ID.key(), CoreFeaturesIT.class.getSimpleName(),
@@ -1781,7 +1786,9 @@ class CoreFeaturesIT implements TestSeparator {
                                                        String expectedReason) {
         // given
         var config = topicOperatorConfig(NAMESPACE, kafkaCluster);
-        kafkaAdminClientOp = Mockito.spy(Admin.create(config.adminClientConfig()));
+        Properties adminConfig = config.adminClientConfig();
+        adminConfig.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, config.bootstrapServers());
+        kafkaAdminClientOp = Mockito.spy(Admin.create(adminConfig));
         var ctr = mock(CreateTopicsResult.class);
         Mockito.doReturn(failedFuture(exception)).when(ctr).all();
         Mockito.doReturn(Map.of(TopicOperatorUtil.topicName(kt), failedFuture(exception))).when(ctr).values();
@@ -1804,7 +1811,9 @@ class CoreFeaturesIT implements TestSeparator {
         KafkaTopic kt = kafkaTopic(NAMESPACE, "fail-after-config-if-no-topic-authz", true, "fail-after-config-if-no-topic-authz", 2, 1);
 
         var config = topicOperatorConfig(NAMESPACE, kafkaCluster);
-        kafkaAdminClientOp = Mockito.spy(Admin.create(config.adminClientConfig()));
+        Properties adminConfig = config.adminClientConfig();
+        adminConfig.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, config.bootstrapServers());
+        kafkaAdminClientOp = Mockito.spy(Admin.create(adminConfig));
         var ctr = mock(AlterConfigsResult.class);
         Mockito.doReturn(failedFuture(new TopicAuthorizationException("not allowed"))).when(ctr).all();
         Mockito.doReturn(Map.of(new ConfigResource(ConfigResource.Type.TOPIC, TopicOperatorUtil.topicName(kt)), 
@@ -1886,7 +1895,9 @@ class CoreFeaturesIT implements TestSeparator {
         KafkaTopic kt = kafkaTopic(NAMESPACE, "fail-add-partitions-if-no-topic-authz", true, "fail-add-partitions-if-no-topic-authz", 2, 1);
 
         var config = topicOperatorConfig(NAMESPACE, kafkaCluster);
-        kafkaAdminClientOp = Mockito.spy(Admin.create(config.adminClientConfig()));
+        Properties adminConfig = config.adminClientConfig();
+        adminConfig.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, config.bootstrapServers());
+        kafkaAdminClientOp = Mockito.spy(Admin.create(adminConfig));
         var ctr = mock(CreatePartitionsResult.class);
         Mockito.doReturn(failedFuture(new TopicAuthorizationException("not allowed"))).when(ctr).all();
         Mockito.doReturn(Map.of(TopicOperatorUtil.topicName(kt), failedFuture(new TopicAuthorizationException("not allowed")))).when(ctr).values();
@@ -1915,7 +1926,9 @@ class CoreFeaturesIT implements TestSeparator {
 
         // given
         var config = topicOperatorConfig(NAMESPACE, kafkaCluster);
-        kafkaAdminClientOp = Mockito.spy(Admin.create(config.adminClientConfig()));
+        Properties adminConfig = config.adminClientConfig();
+        adminConfig.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, config.bootstrapServers());
+        kafkaAdminClientOp = Mockito.spy(Admin.create(adminConfig));
         var ctr = mock(DeleteTopicsResult.class);
         Mockito.doReturn(failedFuture(new TopicAuthorizationException("not allowed"))).when(ctr).all();
         Mockito.doReturn(Map.of(TopicOperatorUtil.topicName(kt), failedFuture(new TopicAuthorizationException("not allowed")))).when(ctr).topicNameValues();
@@ -2058,7 +2071,7 @@ class CoreFeaturesIT implements TestSeparator {
         // given
         var ns = createNamespace(NAMESPACE);
         var config = TopicOperatorConfig.buildFromMap(Map.of(
-            TopicOperatorConfig.NAMESPACE.key(), ns,
+            TopicOperatorConfig.WATCHED_NAMESPACE.key(), ns,
             TopicOperatorConfig.RESOURCE_LABELS.key(), Labels.fromMap(SELECTOR).toSelectorString(),
             TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), kafkaCluster.getBootstrapServers(),
             TopicOperatorConfig.CLIENT_ID.key(), CoreFeaturesIT.class.getSimpleName(),
@@ -2259,7 +2272,9 @@ class CoreFeaturesIT implements TestSeparator {
         var existsException = new TopicExistsException(String.format("Topic '%s' already exists.", topicName));
         Mockito.doReturn(failedFuture(existsException)).when(creteTopicResult).all();
         Mockito.doReturn(Map.of(topicName, failedFuture(existsException))).when(creteTopicResult).values();
-        kafkaAdminClientOp = Mockito.spy(Admin.create(config.adminClientConfig()));
+        Properties adminConfig = config.adminClientConfig();
+        adminConfig.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, config.bootstrapServers());
+        kafkaAdminClientOp = Mockito.spy(Admin.create(adminConfig));
         Mockito.doReturn(creteTopicResult).when(kafkaAdminClientOp).createTopics(any());
 
         KafkaTopic kafkaTopic = createTopic(kafkaCluster, kafkaTopic(NAMESPACE, topicName, true, topicName, 2, 1));
@@ -2329,7 +2344,9 @@ class CoreFeaturesIT implements TestSeparator {
         startKafkaCluster(1, 1, Map.of("auto.create.topics.enable", "false"));
 
         TopicOperatorConfig config = topicOperatorConfig(NAMESPACE, kafkaCluster, true, 500);
-        kafkaAdminClientOp = Mockito.spy(Admin.create(config.adminClientConfig()));
+        Properties adminConfig = config.adminClientConfig();
+        adminConfig.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, config.bootstrapServers());
+        kafkaAdminClientOp = Mockito.spy(Admin.create(adminConfig));
 
         var created = createTopic(kafkaCluster,
             kafkaTopic(NAMESPACE, "my-topic", SELECTOR, null, true, "my-topic", 1, 1, Map.of()));
@@ -2349,7 +2366,9 @@ class CoreFeaturesIT implements TestSeparator {
         startKafkaCluster(1, 1, Map.of("auto.create.topics.enable", "false"));
 
         TopicOperatorConfig config = topicOperatorConfig(NAMESPACE, kafkaCluster, true, 500);
-        kafkaAdminClientOp = Mockito.spy(Admin.create(config.adminClientConfig()));
+        Properties adminConfig = config.adminClientConfig();
+        adminConfig.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, config.bootstrapServers());
+        kafkaAdminClientOp = Mockito.spy(Admin.create(adminConfig));
 
         var created = createTopic(kafkaCluster,
             kafkaTopic(NAMESPACE, "my-topic", SELECTOR, null, true, "my-topic", 1, 1, Map.of()));

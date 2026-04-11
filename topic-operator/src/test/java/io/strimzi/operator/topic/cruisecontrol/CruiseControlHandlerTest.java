@@ -112,7 +112,7 @@ public class CruiseControlHandlerTest {
     public void replicasChangeShouldFailWhenCruiseControlEndpointNotReachable() {
         var config = TopicOperatorConfig.buildFromMap(Map.ofEntries(
             entry(TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:9092"),
-            entry(TopicOperatorConfig.NAMESPACE.key(), NAMESPACE),
+            entry(TopicOperatorConfig.WATCHED_NAMESPACE.key(), NAMESPACE),
             entry(TopicOperatorConfig.CRUISE_CONTROL_HOSTNAME.key(), "invalid"),
             entry(TopicOperatorConfig.CRUISE_CONTROL_PORT.key(), String.valueOf(serverPort))
         ));
@@ -132,7 +132,7 @@ public class CruiseControlHandlerTest {
     public void replicasChangeShouldFailWhenCruiseControlReturnsErrorResponse() {
         var config = TopicOperatorConfig.buildFromMap(Map.ofEntries(
             entry(TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:9092"),
-            entry(TopicOperatorConfig.NAMESPACE.key(), NAMESPACE),
+            entry(TopicOperatorConfig.WATCHED_NAMESPACE.key(), NAMESPACE),
             entry(TopicOperatorConfig.CRUISE_CONTROL_HOSTNAME.key(), "localhost"),
             entry(TopicOperatorConfig.CRUISE_CONTROL_PORT.key(), String.valueOf(httpsPort)),
             entry(TopicOperatorConfig.CRUISE_CONTROL_SSL_ENABLED.key(), "true"),
@@ -160,7 +160,7 @@ public class CruiseControlHandlerTest {
     public void replicasChangeShouldFailWhenTheRequestTimesOut() {
         var config = TopicOperatorConfig.buildFromMap(Map.ofEntries(
             entry(TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:9092"),
-            entry(TopicOperatorConfig.NAMESPACE.key(), NAMESPACE),
+            entry(TopicOperatorConfig.WATCHED_NAMESPACE.key(), NAMESPACE),
             entry(TopicOperatorConfig.CRUISE_CONTROL_HOSTNAME.key(), "localhost"),
             entry(TopicOperatorConfig.CRUISE_CONTROL_PORT.key(), String.valueOf(httpsPort)),
             entry(TopicOperatorConfig.CRUISE_CONTROL_SSL_ENABLED.key(), "true"),
@@ -187,7 +187,7 @@ public class CruiseControlHandlerTest {
     public void replicasChangeShouldFailWhenTheRequestIsUnauthorized() {
         var config = TopicOperatorConfig.buildFromMap(Map.ofEntries(
             entry(TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:9092"),
-            entry(TopicOperatorConfig.NAMESPACE.key(), NAMESPACE),
+            entry(TopicOperatorConfig.WATCHED_NAMESPACE.key(), NAMESPACE),
             entry(TopicOperatorConfig.CRUISE_CONTROL_HOSTNAME.key(), "localhost"),
             entry(TopicOperatorConfig.CRUISE_CONTROL_PORT.key(), String.valueOf(httpsPort)),
             entry(TopicOperatorConfig.CRUISE_CONTROL_SSL_ENABLED.key(), "true"),
@@ -301,7 +301,7 @@ public class CruiseControlHandlerTest {
             // encryption and authentication disabled
             TopicOperatorConfig.buildFromMap(Map.ofEntries(
                 entry(TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:9092"),
-                entry(TopicOperatorConfig.NAMESPACE.key(), NAMESPACE),
+                entry(TopicOperatorConfig.WATCHED_NAMESPACE.key(), NAMESPACE),
                 entry(TopicOperatorConfig.CRUISE_CONTROL_HOSTNAME.key(), "localhost"),
                 entry(TopicOperatorConfig.CRUISE_CONTROL_PORT.key(), String.valueOf(serverPort)),
                 entry(TopicOperatorConfig.CRUISE_CONTROL_SSL_ENABLED.key(), "false"),
@@ -311,7 +311,7 @@ public class CruiseControlHandlerTest {
             // encryption and authentication enabled
             TopicOperatorConfig.buildFromMap(Map.ofEntries(
                 entry(TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:9092"),
-                entry(TopicOperatorConfig.NAMESPACE.key(), NAMESPACE),
+                entry(TopicOperatorConfig.WATCHED_NAMESPACE.key(), NAMESPACE),
                 entry(TopicOperatorConfig.CRUISE_CONTROL_HOSTNAME.key(), "localhost"),
                 entry(TopicOperatorConfig.CRUISE_CONTROL_PORT.key(), String.valueOf(httpsPort)),
                 entry(TopicOperatorConfig.CRUISE_CONTROL_SSL_ENABLED.key(), "true"),
@@ -324,7 +324,7 @@ public class CruiseControlHandlerTest {
             // rack enabled
             TopicOperatorConfig.buildFromMap(Map.ofEntries(
                 entry(TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:9092"),
-                entry(TopicOperatorConfig.NAMESPACE.key(), NAMESPACE),
+                entry(TopicOperatorConfig.WATCHED_NAMESPACE.key(), NAMESPACE),
                 entry(TopicOperatorConfig.CRUISE_CONTROL_RACK_ENABLED.key(), "true"),
                 entry(TopicOperatorConfig.CRUISE_CONTROL_HOSTNAME.key(), "localhost"),
                 entry(TopicOperatorConfig.CRUISE_CONTROL_PORT.key(), String.valueOf(serverPort))
@@ -333,7 +333,7 @@ public class CruiseControlHandlerTest {
             // encryption only
             TopicOperatorConfig.buildFromMap(Map.ofEntries(
                 entry(TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:9092"),
-                entry(TopicOperatorConfig.NAMESPACE.key(), NAMESPACE),
+                entry(TopicOperatorConfig.WATCHED_NAMESPACE.key(), NAMESPACE),
                 entry(TopicOperatorConfig.CRUISE_CONTROL_HOSTNAME.key(), "localhost"),
                 entry(TopicOperatorConfig.CRUISE_CONTROL_PORT.key(), String.valueOf(httpsPort)),
                 entry(TopicOperatorConfig.CRUISE_CONTROL_SSL_ENABLED.key(), "true"),
@@ -344,7 +344,7 @@ public class CruiseControlHandlerTest {
             // authentication only
             TopicOperatorConfig.buildFromMap(Map.ofEntries(
                 entry(TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:9092"),
-                entry(TopicOperatorConfig.NAMESPACE.key(), NAMESPACE),
+                entry(TopicOperatorConfig.WATCHED_NAMESPACE.key(), NAMESPACE),
                 entry(TopicOperatorConfig.CRUISE_CONTROL_HOSTNAME.key(), "localhost"),
                 entry(TopicOperatorConfig.CRUISE_CONTROL_PORT.key(), String.valueOf(serverPort)),
                 entry(TopicOperatorConfig.CRUISE_CONTROL_SSL_ENABLED.key(), "false"),

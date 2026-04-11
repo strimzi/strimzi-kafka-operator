@@ -106,7 +106,7 @@ class ReplicasChangeIT implements TestSeparator {
         // setup: .spec.replicas != replicationFactor
         var config = TopicOperatorConfig.buildFromMap(Map.of(
             TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:1234",
-            TopicOperatorConfig.NAMESPACE.key(), NAMESPACE,
+            TopicOperatorConfig.WATCHED_NAMESPACE.key(), NAMESPACE,
             TopicOperatorConfig.USE_FINALIZERS.key(), "true",
             TopicOperatorConfig.ENABLE_ADDITIONAL_METRICS.key(), "false",
             TopicOperatorConfig.CRUISE_CONTROL_ENABLED.key(), Boolean.toString(cruiseControlEnabled)
@@ -192,7 +192,7 @@ class ReplicasChangeIT implements TestSeparator {
         // setup: pending with error and .spec.replicas == replicationFactor
         var config = TopicOperatorConfig.buildFromMap(Map.of(
             TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:1234",
-            TopicOperatorConfig.NAMESPACE.key(), NAMESPACE,
+            TopicOperatorConfig.WATCHED_NAMESPACE.key(), NAMESPACE,
             TopicOperatorConfig.USE_FINALIZERS.key(), "true",
             TopicOperatorConfig.ENABLE_ADDITIONAL_METRICS.key(), "false",
             TopicOperatorConfig.CRUISE_CONTROL_ENABLED.key(), "true"
@@ -273,7 +273,7 @@ class ReplicasChangeIT implements TestSeparator {
         // setup: pending with .spec.replicas == replicationFactor
         var config = TopicOperatorConfig.buildFromMap(Map.of(
             TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:1234",
-            TopicOperatorConfig.NAMESPACE.key(), NAMESPACE,
+            TopicOperatorConfig.WATCHED_NAMESPACE.key(), NAMESPACE,
             TopicOperatorConfig.USE_FINALIZERS.key(), "true",
             TopicOperatorConfig.ENABLE_ADDITIONAL_METRICS.key(), "false",
             TopicOperatorConfig.CRUISE_CONTROL_ENABLED.key(), "true"

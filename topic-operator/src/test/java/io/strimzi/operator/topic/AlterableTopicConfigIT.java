@@ -86,7 +86,7 @@ class AlterableTopicConfigIT implements TestSeparator {
         var kafkaAdmin = Mockito.mock(Admin.class);
         var config = TopicOperatorConfig.buildFromMap(Map.of(
               TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:1234",
-              TopicOperatorConfig.NAMESPACE.key(), NAMESPACE,
+              TopicOperatorConfig.WATCHED_NAMESPACE.key(), NAMESPACE,
               TopicOperatorConfig.SASL_ENABLED.key(), "true",
               TopicOperatorConfig.SKIP_CLUSTER_CONFIG_REVIEW.key(), "true"
         ));
@@ -105,7 +105,7 @@ class AlterableTopicConfigIT implements TestSeparator {
         var kafkaAdminClientSpy = Mockito.spy(kafkaAdminClient);
         var config = TopicOperatorConfig.buildFromMap(Map.of(
             TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:1234",
-            TopicOperatorConfig.NAMESPACE.key(), NAMESPACE,
+            TopicOperatorConfig.WATCHED_NAMESPACE.key(), NAMESPACE,
             TopicOperatorConfig.CRUISE_CONTROL_ENABLED.key(), "true",
             TopicOperatorConfig.CRUISE_CONTROL_HOSTNAME.key(), "my-cruise-control",
             TopicOperatorConfig.CRUISE_CONTROL_PORT.key(), "9090"
@@ -152,7 +152,7 @@ class AlterableTopicConfigIT implements TestSeparator {
         var kafkaAdminClientSpy = Mockito.spy(kafkaAdminClient);
         var config = TopicOperatorConfig.buildFromMap(Map.of(
             TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:1234",
-            TopicOperatorConfig.NAMESPACE.key(), NAMESPACE,
+            TopicOperatorConfig.WATCHED_NAMESPACE.key(), NAMESPACE,
             TopicOperatorConfig.CRUISE_CONTROL_ENABLED.key(), "true",
             TopicOperatorConfig.CRUISE_CONTROL_HOSTNAME.key(), "my-cruise-control",
             TopicOperatorConfig.CRUISE_CONTROL_PORT.key(), "9090"
@@ -234,7 +234,7 @@ class AlterableTopicConfigIT implements TestSeparator {
         var kafkaAdminClientSpy = Mockito.spy(kafkaAdminClient);
         var config = TopicOperatorConfig.buildFromMap(Map.of(
             TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:1234",
-            TopicOperatorConfig.NAMESPACE.key(), NAMESPACE,
+            TopicOperatorConfig.WATCHED_NAMESPACE.key(), NAMESPACE,
             TopicOperatorConfig.ALTERABLE_TOPIC_CONFIG.key(), alterableConfig
         ));
 
@@ -287,7 +287,7 @@ class AlterableTopicConfigIT implements TestSeparator {
         var kafkaAdminClientSpy = Mockito.spy(kafkaAdminClient);
         var config = TopicOperatorConfig.buildFromMap(Map.of(
             TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:1234",
-            TopicOperatorConfig.NAMESPACE.key(), NAMESPACE,
+            TopicOperatorConfig.WATCHED_NAMESPACE.key(), NAMESPACE,
             TopicOperatorConfig.ALTERABLE_TOPIC_CONFIG.key(), alterableConfig
         ));
 
@@ -367,7 +367,7 @@ class AlterableTopicConfigIT implements TestSeparator {
         var kafkaAdminClientSpy = Mockito.spy(kafkaAdminClient);
         var config = TopicOperatorConfig.buildFromMap(Map.of(
             TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:1234",
-            TopicOperatorConfig.NAMESPACE.key(), NAMESPACE,
+            TopicOperatorConfig.WATCHED_NAMESPACE.key(), NAMESPACE,
             TopicOperatorConfig.ALTERABLE_TOPIC_CONFIG.key(), alterableConfig
         ));
 
@@ -414,7 +414,7 @@ class AlterableTopicConfigIT implements TestSeparator {
         var kafkaAdminClientSpy = Mockito.spy(kafkaAdminClient);
         var config = TopicOperatorConfig.buildFromMap(Map.of(
             TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:1234",
-            TopicOperatorConfig.NAMESPACE.key(), NAMESPACE,
+            TopicOperatorConfig.WATCHED_NAMESPACE.key(), NAMESPACE,
             TopicOperatorConfig.ALTERABLE_TOPIC_CONFIG.key(), alterableConfig
         ));
 
@@ -471,7 +471,7 @@ class AlterableTopicConfigIT implements TestSeparator {
         var kafkaAdminClientSpy = Mockito.spy(kafkaAdminClient);
         var config = TopicOperatorConfig.buildFromMap(Map.of(
             TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:1234",
-            TopicOperatorConfig.NAMESPACE.key(), NAMESPACE,
+            TopicOperatorConfig.WATCHED_NAMESPACE.key(), NAMESPACE,
             TopicOperatorConfig.ALTERABLE_TOPIC_CONFIG.key(), alterableConfig
         ));
 

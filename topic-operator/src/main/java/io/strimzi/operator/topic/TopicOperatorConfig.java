@@ -9,7 +9,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.strimzi.operator.common.InvalidConfigurationException;
-import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.config.ConfigParameter;
 import io.strimzi.operator.common.config.ConfigParameterParser;
 import io.strimzi.operator.common.featuregates.FeatureGates;
@@ -22,19 +21,23 @@ import org.apache.kafka.common.config.SslConfigs;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 import java.util.UUID;
+
+import static io.strimzi.operator.common.config.ConfigParameterParser.INTEGER;
 
 /**
  * Topic Operator configuration.
  */
 public class TopicOperatorConfig {
-    private final static ReconciliationLogger LOGGER = ReconciliationLogger.create(TopicOperatorConfig.class);
     private static final Map<String, ConfigParameter<?>> CONFIG_VALUES = new HashMap<>();
     private static final TypeReference<HashMap<String, String>> STRING_HASH_MAP_TYPE_REFERENCE = new TypeReference<>() { };
 
     /** Namespace in which the operator will run and create resources. */
-    public static final ConfigParameter<String> NAMESPACE = new ConfigParameter<>("STRIMZI_NAMESPACE", ConfigParameterParser.NON_EMPTY_STRING, CONFIG_VALUES);
+    public static final ConfigParameter<String> WATCHED_NAMESPACE = new ConfigParameter<>("STRIMZI_NAMESPACE", ConfigParameterParser.NON_EMPTY_STRING, CONFIG_VALUES);
+    /** Namespace of the Kafka cluster where the TLS Secrets are located. */
+    public static final ConfigParameter<String> CLUSTER_NAMESPACE = new ConfigParameter<>("STRIMZI_CLUSTER_NAMESPACE", ConfigParameterParser.NON_EMPTY_STRING, null, CONFIG_VALUES);
     /** Labels used to filter the custom resources seen by the cluster operator. */
     public static final ConfigParameter<Labels> RESOURCE_LABELS = new ConfigParameter<>("STRIMZI_RESOURCE_LABELS", ConfigParameterParser.LABEL_PREDICATE, "", CONFIG_VALUES);
     /** Kafka bootstrap address for the target Kafka cluster used by the internal admin client. */
@@ -43,16 +46,14 @@ public class TopicOperatorConfig {
     public static final ConfigParameter<String> CLIENT_ID = new ConfigParameter<>("STRIMZI_CLIENT_ID", ConfigParameterParser.NON_EMPTY_STRING, "strimzi-topic-operator-" + UUID.randomUUID(), CONFIG_VALUES);
     /** Periodic reconciliation interval in milliseconds. */
     public static final ConfigParameter<Long> FULL_RECONCILIATION_INTERVAL_MS = new ConfigParameter<>("STRIMZI_FULL_RECONCILIATION_INTERVAL_MS", ConfigParameterParser.strictlyPositive(ConfigParameterParser.LONG), "120000", CONFIG_VALUES);
-    /** TLS: whether to enable configuration. */
-    public static final ConfigParameter<Boolean> TLS_ENABLED = new ConfigParameter<>("STRIMZI_TLS_ENABLED", ConfigParameterParser.BOOLEAN, "false", CONFIG_VALUES);
-    /** TLS: truststore location. */
-    public static final ConfigParameter<String> TRUSTSTORE_LOCATION = new ConfigParameter<>("STRIMZI_TRUSTSTORE_LOCATION", ConfigParameterParser.STRING, "", CONFIG_VALUES);
-    /** TLS: truststore password. */
-    public static final ConfigParameter<String> TRUSTSTORE_PASSWORD = new ConfigParameter<>("STRIMZI_TRUSTSTORE_PASSWORD", ConfigParameterParser.STRING, "", CONFIG_VALUES);
-    /** TLS: keystore location. */
-    public static final ConfigParameter<String> KEYSTORE_LOCATION = new ConfigParameter<>("STRIMZI_KEYSTORE_LOCATION", ConfigParameterParser.STRING, "", CONFIG_VALUES);
-    /** TLS: keystore location. */
-    public static final ConfigParameter<String> KEYSTORE_PASSWORD = new ConfigParameter<>("STRIMZI_KEYSTORE_PASSWORD", ConfigParameterParser.STRING, "", CONFIG_VALUES);
+    /** TLS: truststore Secret name. */
+    public static final ConfigParameter<String> TRUSTSTORE_SECRET_NAME = new ConfigParameter<>("STRIMZI_TRUSTSTORE_SECRET_NAME", ConfigParameterParser.STRING, "", CONFIG_VALUES);
+    /** TLS: keystore Secret name. */
+    public static final ConfigParameter<String> KEYSTORE_SECRET_NAME = new ConfigParameter<>("STRIMZI_KEYSTORE_SECRET_NAME", ConfigParameterParser.STRING, "", CONFIG_VALUES);
+    /** TLS: keystore key name. */
+    public static final ConfigParameter<String> KEYSTORE_KEY_NAME = new ConfigParameter<>("STRIMZI_KEYSTORE_KEY_NAME", ConfigParameterParser.STRING, "", CONFIG_VALUES);
+    /** TLS: keystore certificate name. */
+    public static final ConfigParameter<String> KEYSTORE_CERTIFICATE_NAME = new ConfigParameter<>("STRIMZI_KEYSTORE_CERTIFICATE_NAME", ConfigParameterParser.STRING, "", CONFIG_VALUES);
     /** TLS: endpoint identification algorithm. */
     public static final ConfigParameter<String> SSL_ENDPOINT_IDENTIFICATION_ALGORITHM = new ConfigParameter<>("STRIMZI_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM", ConfigParameterParser.STRING, "HTTPS", CONFIG_VALUES);
     /** SASL: whether to enable configuration. */
@@ -101,6 +102,8 @@ public class TopicOperatorConfig {
     public static final ConfigParameter<String> CRUISE_CONTROL_API_USER_PATH = new ConfigParameter<>("STRIMZI_CRUISE_CONTROL_API_USER_PATH", ConfigParameterParser.STRING, "/etc/eto-cc-api/" + CruiseControlApiProperties.TOPIC_OPERATOR_USERNAME_KEY, CONFIG_VALUES);
     /** Cruise Control: password file location. */
     public static final ConfigParameter<String> CRUISE_CONTROL_API_PASS_PATH = new ConfigParameter<>("STRIMZI_CRUISE_CONTROL_API_PASS_PATH", ConfigParameterParser.STRING, "/etc/eto-cc-api/" + CruiseControlApiProperties.TOPIC_OPERATOR_PASSWORD_KEY, CONFIG_VALUES);
+    /** Size of the thread pool for user operations done by KafkaUserOperator and the classes used by it */
+    public static final ConfigParameter<Integer> TOPIC_OPERATIONS_THREAD_POOL_SIZE = new ConfigParameter<>("STRIMZI_TOPIC_OPERATIONS_THREAD_POOL_SIZE", INTEGER, "4", CONFIG_VALUES);
 
     private final Map<String, Object> map;
 
@@ -123,9 +126,7 @@ public class TopicOperatorConfig {
         Map<String, String> envMap = new HashMap<>(map);
         envMap.keySet().retainAll(TopicOperatorConfig.keyNames());
         Map<String, Object> generatedMap = ConfigParameter.define(envMap, CONFIG_VALUES);
-        TopicOperatorConfig topicOperatorConfig = new TopicOperatorConfig(generatedMap);
-        LOGGER.infoOp("TopicOperator configuration is {}", topicOperatorConfig);
-        return topicOperatorConfig;
+        return new TopicOperatorConfig(generatedMap);
     }
 
     private static Set<String> keyNames() {
@@ -140,10 +141,19 @@ public class TopicOperatorConfig {
     /**
      * Gets the namespace configuration value.
      *
-     * @return Value of {@link #NAMESPACE} configuration.
+     * @return Value of {@link #WATCHED_NAMESPACE} configuration.
      */
-    public String namespace() {
-        return get(NAMESPACE);
+    public String watchedNamespace() {
+        return get(WATCHED_NAMESPACE);
+    }
+
+    /**
+     * Namespace of the Kafka cluster where the TLS secrets are located.
+     *
+     * @return Value of {@link #CLUSTER_NAMESPACE} configuration.
+     */
+    public String clusterNamespace() {
+        return get(CLUSTER_NAMESPACE);
     }
 
     /**
@@ -183,48 +193,39 @@ public class TopicOperatorConfig {
     }
 
     /**
-     * Gets the TLS enabled configuration value.
+     * Gets the truststore Secret name configuration value.
      *
-     * @return Value of {@link #TLS_ENABLED} configuration.
+     * @return Value of {@link #TRUSTSTORE_SECRET_NAME} configuration.
      */
-    public boolean tlsEnabled() {
-        return get(TLS_ENABLED);
+    public String truststoreSecretName() {
+        return get(TRUSTSTORE_SECRET_NAME);
     }
 
     /**
-     * Gets the truststore location configuration value.
+     * Gets the keystore Secret name configuration value.
      *
-     * @return Value of {@link #TRUSTSTORE_LOCATION} configuration.
+     * @return Value of {@link #KEYSTORE_SECRET_NAME} configuration.
      */
-    public String truststoreLocation() {
-        return get(TRUSTSTORE_LOCATION);
+    public String keystoreSecretName() {
+        return get(KEYSTORE_SECRET_NAME);
     }
 
     /**
-     * Gets the truststore password configuration value.
+     * Gets the keystore key name configuration value.
      *
-     * @return Value of {@link #TRUSTSTORE_PASSWORD} configuration.
+     * @return Value of {@link #KEYSTORE_KEY_NAME} configuration.
      */
-    public String truststorePassword() {
-        return get(TRUSTSTORE_PASSWORD);
+    public String keystoreKeyName() {
+        return get(KEYSTORE_KEY_NAME);
     }
 
     /**
-     * Gets the keystore location configuration value.
+     * Gets the keystore certificate name configuration value.
      *
-     * @return Value of {@link #KEYSTORE_LOCATION} configuration.
+     * @return Value of {@link #KEYSTORE_CERTIFICATE_NAME} configuration.
      */
-    public String keystoreLocation() {
-        return get(KEYSTORE_LOCATION);
-    }
-
-    /**
-     * Gets the keystore password configuration value.
-     *
-     * @return Value of {@link #KEYSTORE_PASSWORD} configuration.
-     */
-    public String keystorePassword() {
-        return get(KEYSTORE_PASSWORD);
+    public String keystoreCertificateName() {
+        return get(KEYSTORE_CERTIFICATE_NAME);
     }
 
     /**
@@ -443,42 +444,25 @@ public class TopicOperatorConfig {
         return get(CRUISE_CONTROL_API_PASS_PATH);
     }
 
-    Map<String, Object> adminClientConfig() {
-        var kafkaClientProps = new HashMap<String, Object>();
-        kafkaClientProps.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers());
-        kafkaClientProps.put(AdminClientConfig.CLIENT_ID_CONFIG, clientId());
+    /**
+     * Gets the size of the hread pool used for Kubernetes operations.
+     *
+     * @return Value of {@link #TOPIC_OPERATIONS_THREAD_POOL_SIZE} configuration.
+     */
+    public int topicOperationsThreadPoolSize() {
+        return get(TOPIC_OPERATIONS_THREAD_POOL_SIZE);
+    }
 
-        if (tlsEnabled() && !securityProtocol().isEmpty()) {
-            if (!securityProtocol().equals("SSL") && !securityProtocol().equals("SASL_SSL")) {
-                throw new InvalidConfigurationException("TLS is enabled but the security protocol does not match SSL or SASL_SSL");
-            }
-        }
+    Properties adminClientConfig() {
+        Properties kafkaClientProps = new Properties();
+
+        kafkaClientProps.put(AdminClientConfig.CLIENT_ID_CONFIG, clientId());
 
         if (!securityProtocol().isEmpty()) {
             kafkaClientProps.put(AdminClientConfig.SECURITY_PROTOCOL_CONFIG, securityProtocol());
-        } else if (tlsEnabled()) {
-            kafkaClientProps.put(AdminClientConfig.SECURITY_PROTOCOL_CONFIG, "SSL");
-        } else {
-            kafkaClientProps.put(AdminClientConfig.SECURITY_PROTOCOL_CONFIG, "PLAINTEXT");
-        }
 
-        if (securityProtocol().equals("SASL_SSL") || securityProtocol().equals("SSL") || tlsEnabled()) {
-            kafkaClientProps.put(SslConfigs.SSL_ENDPOINT_IDENTIFICATION_ALGORITHM_CONFIG, sslEndpointIdentificationAlgorithm());
-
-            if (!truststoreLocation().isEmpty()) {
-                kafkaClientProps.put(SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG, truststoreLocation());
-            }
-
-            if (!truststorePassword().isEmpty()) {
-                if (truststoreLocation().isEmpty()) {
-                    throw new InvalidConfigurationException("TLS_TRUSTSTORE_PASSWORD was supplied but TLS_TRUSTSTORE_LOCATION was not supplied");
-                }
-                kafkaClientProps.put(SslConfigs.SSL_TRUSTSTORE_PASSWORD_CONFIG, truststorePassword());
-            }
-
-            if (!keystoreLocation().isEmpty() && !keystorePassword().isEmpty()) {
-                kafkaClientProps.put(SslConfigs.SSL_KEYSTORE_LOCATION_CONFIG, keystoreLocation());
-                kafkaClientProps.put(SslConfigs.SSL_KEYSTORE_PASSWORD_CONFIG, keystorePassword());
+            if (securityProtocol().equals("SASL_SSL") || securityProtocol().equals("SSL")) {
+                kafkaClientProps.put(SslConfigs.SSL_ENDPOINT_IDENTIFICATION_ALGORITHM_CONFIG, sslEndpointIdentificationAlgorithm());
             }
         }
 
@@ -489,7 +473,7 @@ public class TopicOperatorConfig {
         return kafkaClientProps;
     }
 
-    private void putSaslConfigs(Map<String, Object> kafkaClientProps) {
+    private void putSaslConfigs(Properties kafkaClientProps) {
         if (saslCustomConfigJson().isBlank()) {
             setStandardSaslConfigs(kafkaClientProps);
         } else {
@@ -497,7 +481,7 @@ public class TopicOperatorConfig {
         }
     }
 
-    private void setCustomSaslConfigs(Map<String, Object> kafkaClientProps) {
+    private void setCustomSaslConfigs(Properties kafkaClientProps) {
         if (saslCustomConfigJson().isEmpty()) {
             throw new InvalidConfigurationException("Custom SASL config properties are not set");
         }
@@ -527,7 +511,7 @@ public class TopicOperatorConfig {
         }
     }
 
-    private void setStandardSaslConfigs(Map<String, Object> kafkaClientProps) {
+    private void setStandardSaslConfigs(Properties kafkaClientProps) {
         String saslMechanism;
         String jaasConfig;
 
@@ -558,16 +542,16 @@ public class TopicOperatorConfig {
     public String toString() {
         String mask = "********";
         return "TopicOperatorConfig{" +
-            "\n\tnamespace='" + namespace() + '\'' +
+            "\n\twatchedNamespace='" + watchedNamespace() + '\'' +
+            "\n\tclusterNamespace='" + clusterNamespace() + '\'' +
             "\n\tresourceLabels=" + resourceLabels() +
             "\n\tbootstrapServers='" + bootstrapServers() + '\'' +
             "\n\tclientId='" + clientId() + '\'' +
             "\n\tfullReconciliationIntervalMs=" + fullReconciliationIntervalMs() +
-            "\n\ttlsEnabled=" + tlsEnabled() +
-            "\n\ttruststoreLocation='" + truststoreLocation() + '\'' +
-            "\n\ttruststorePassword='" + mask + '\'' +
-            "\n\tkeystoreLocation='" + keystoreLocation() + '\'' +
-            "\n\tkeystorePassword='" + mask + '\'' +
+            "\n\ttruststoreSecretName='" + truststoreSecretName() + '\'' +
+            "\n\tkeystoreSecretName='" + keystoreSecretName() + '\'' +
+            "\n\tkeystoreKeyName='" + keystoreKeyName() + '\'' +
+            "\n\tkeystoreCertificateName='" + keystoreCertificateName() + '\'' +
             "\n\tsslEndpointIdentificationAlgorithm='" + sslEndpointIdentificationAlgorithm() + '\'' +
             "\n\tsaslEnabled=" + saslEnabled() +
             "\n\tsaslMechanism='" + saslMechanism() + '\'' +
@@ -592,6 +576,7 @@ public class TopicOperatorConfig {
             "\n\tcruiseControlCrtFilePath=" + cruiseControlCrtFilePath() +
             "\n\tcruiseControlApiUserPath=" + cruiseControlApiUserPath() +
             "\n\tcruiseControlApiPassPath=" + cruiseControlApiPassPath() +
+            "\n\ttopicOperationsThreadPoolSize=" + topicOperationsThreadPoolSize() +
             '}';
     }
 }

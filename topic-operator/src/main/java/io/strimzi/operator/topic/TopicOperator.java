@@ -19,7 +19,6 @@ import io.micrometer.prometheusmetrics.PrometheusConfig;
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.topic.KafkaTopic;
-import io.strimzi.operator.common.OperatorKubernetesClientBuilder;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.http.HealthCheckAndMetricsServer;
 import io.strimzi.operator.common.http.Liveness;
@@ -36,8 +35,8 @@ import java.util.Objects;
 /**
  * The Topic Operator.
  */
-public class TopicOperatorMain implements Liveness, Readiness {
-    private final static ReconciliationLogger LOGGER = ReconciliationLogger.create(TopicOperatorMain.class);
+public class TopicOperator implements Liveness, Readiness {
+    private final static ReconciliationLogger LOGGER = ReconciliationLogger.create(TopicOperator.class);
     private final static long INFORMER_RESYNC_CHECK_PERIOD_MS = 30_000;
     private final static int HEALTH_CHECK_PORT = 8080;
 
@@ -56,17 +55,15 @@ public class TopicOperatorMain implements Liveness, Readiness {
     private final ResourceEventHandler<KafkaTopic> resourceEventHandler;
     private final HealthCheckAndMetricsServer healthAndMetricsServer;
 
-    TopicOperatorMain(TopicOperatorConfig config) {
-        this(config,
-            new OperatorKubernetesClientBuilder(
-                "strimzi-topic-operator",
-                TopicOperatorMain.class.getPackage().getImplementationVersion()
-            ).build(), 
-            Admin.create(config.adminClientConfig()));
-    }
-
-    /* test */ TopicOperatorMain(TopicOperatorConfig config, KubernetesClient kubernetesClient, Admin kafkaAdminClient) {
-        Objects.requireNonNull(config.namespace());
+    /**
+     * Constructs the Topic Operator
+     *
+     * @param config            Topic Operator configuration
+     * @param kubernetesClient  Kubernetes client
+     * @param kafkaAdminClient  Kafka admin client
+     */
+    public TopicOperator(TopicOperatorConfig config, KubernetesClient kubernetesClient, Admin kafkaAdminClient) {
+        Objects.requireNonNull(config.watchedNamespace());
         Objects.requireNonNull(config.resourceLabels());
         this.config = config;
         var selector = config.resourceLabels().toMap();
@@ -88,7 +85,7 @@ public class TopicOperatorMain implements Liveness, Readiness {
     }
 
     synchronized void start() {
-        LOGGER.infoOp("TopicOperator {} is starting", TopicOperatorMain.class.getPackage().getImplementationVersion());
+        LOGGER.infoOp("TopicOperator {} is starting", TopicOperator.class.getPackage().getImplementationVersion());
         if (shutdownHook != null) {
             throw new IllegalStateException();
         }
@@ -101,7 +98,7 @@ public class TopicOperatorMain implements Liveness, Readiness {
         LOGGER.infoOp("Starting queue");
         queue.start();
         informer = Crds.topicOperation(kubernetesClient)
-                .inNamespace(config.namespace())
+                .inNamespace(config.watchedNamespace())
                 // Do NOT use withLabels to filter the informer, since the controller is stateful
                 // (topics need to be added to removed from TopicController.topics if KafkaTopics transition between
                 // selected and unselected).
@@ -145,17 +142,6 @@ public class TopicOperatorMain implements Liveness, Readiness {
             LOGGER.infoOp("Interrupted during shutdown");
             throw new RuntimeException(e);
         }
-    }
-
-    /**
-     * Main entry point for the Topic Operator.
-     *
-     * @param args Command line args.
-     */
-    public static void main(String[] args) {
-        var config = TopicOperatorConfig.buildFromMap(System.getenv());
-        var operator = new TopicOperatorMain(config);
-        operator.start();
     }
 
     @Override

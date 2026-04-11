@@ -72,7 +72,7 @@ public class BatchingLoop {
         this.maxQueueSize = config.maxQueueSize();
         this.maxBatchSize = config.maxBatchSize();
         this.maxBatchLingerMs = config.maxBatchLingerMs();
-        this.namespace = config.namespace();
+        this.namespace = config.watchedNamespace();
 
         this.controller = controller;
         this.itemStore = itemStore;

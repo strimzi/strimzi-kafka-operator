@@ -52,7 +52,7 @@ public class KubernetesHandler {
             var timerSample = TopicOperatorUtil.startExternalRequestTimer(metricsHolder, config.enableAdditionalMetrics());
             var withFinalizer = Crds.topicOperation(kubernetesClient).resource(reconcilableTopic.kt()).edit(old ->
                 new KafkaTopicBuilder(old).editOrNewMetadata().addToFinalizers(FINALIZER_STRIMZI_IO_TO).endMetadata().build());
-            TopicOperatorUtil.stopExternalRequestTimer(timerSample, metricsHolder::addFinalizerTimer, config.enableAdditionalMetrics(), config.namespace());
+            TopicOperatorUtil.stopExternalRequestTimer(timerSample, metricsHolder::addFinalizerTimer, config.enableAdditionalMetrics(), config.watchedNamespace());
             LOGGER.traceCr(reconcilableTopic.reconciliation(), "Added finalizer {}, resourceVersion now {}", FINALIZER_STRIMZI_IO_TO, TopicOperatorUtil.resourceVersion(withFinalizer));
             return withFinalizer;
         }
@@ -71,7 +71,7 @@ public class KubernetesHandler {
             var timerSample = TopicOperatorUtil.startExternalRequestTimer(metricsHolder, config.enableAdditionalMetrics());
             var withoutFinalizer = Crds.topicOperation(kubernetesClient).resource(reconcilableTopic.kt()).edit(old ->
                 new KafkaTopicBuilder(old).editOrNewMetadata().removeFromFinalizers(FINALIZER_STRIMZI_IO_TO).endMetadata().build());
-            TopicOperatorUtil.stopExternalRequestTimer(timerSample, metricsHolder::removeFinalizerTimer, config.enableAdditionalMetrics(), config.namespace());
+            TopicOperatorUtil.stopExternalRequestTimer(timerSample, metricsHolder::removeFinalizerTimer, config.enableAdditionalMetrics(), config.watchedNamespace());
             LOGGER.traceCr(reconcilableTopic.reconciliation(), "Removed finalizer {}, resourceVersion now {}", FINALIZER_STRIMZI_IO_TO, TopicOperatorUtil.resourceVersion(withoutFinalizer));
             return withoutFinalizer;
         } else {
@@ -109,10 +109,10 @@ public class KubernetesHandler {
                 LOGGER.traceCr(reconcilableTopic.reconciliation(), "Updated status to observedGeneration {}, resourceVersion {}",
                     got.getStatus().getObservedGeneration(), got.getMetadata().getResourceVersion());
             } catch (Throwable e) {
-                TopicOperatorUtil.stopExternalRequestTimer(timerSample, metricsHolder::updateStatusTimer, config.enableAdditionalMetrics(), config.namespace());
+                TopicOperatorUtil.stopExternalRequestTimer(timerSample, metricsHolder::updateStatusTimer, config.enableAdditionalMetrics(), config.watchedNamespace());
                 LOGGER.errorOp("Status update failed: {}", e.getMessage());
             }
-            TopicOperatorUtil.stopExternalRequestTimer(timerSample, metricsHolder::updateStatusTimer, config.enableAdditionalMetrics(), config.namespace());
+            TopicOperatorUtil.stopExternalRequestTimer(timerSample, metricsHolder::updateStatusTimer, config.enableAdditionalMetrics(), config.watchedNamespace());
         }
         return reconcilableTopic.kt();
     }

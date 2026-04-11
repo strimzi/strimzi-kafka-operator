@@ -68,28 +68,22 @@ spec:
               value: "120000"
             - name: STRIMZI_LOG_LEVEL # <5>
               value: INFO
-            - name: STRIMZI_TLS_ENABLED # <6>
-              value: "false"
-            - name: STRIMZI_JAVA_OPTS # <7>
+            - name: STRIMZI_JAVA_OPTS # <6>
               value: "-Xmx=512M -Xms=256M"
-            - name: STRIMZI_JAVA_SYSTEM_PROPERTIES # <8>
+            - name: STRIMZI_JAVA_SYSTEM_PROPERTIES # <7>
               value: "-Djavax.net.debug=verbose -DpropertyName=value"
-            - name: STRIMZI_PUBLIC_CA # <9>
+            - name: STRIMZI_SASL_ENABLED # <8>
               value: "false"
-            - name: STRIMZI_TLS_AUTH_ENABLED # <10>
-              value: "false"
-            - name: STRIMZI_SASL_ENABLED # <11>
-              value: "false"
-            - name: STRIMZI_SASL_USERNAME # <12>
+            - name: STRIMZI_SASL_USERNAME # <9>
               value: "admin"
-            - name: STRIMZI_SASL_PASSWORD # <13>
+            - name: STRIMZI_SASL_PASSWORD # <10>
               value: "password"
-            - name: STRIMZI_SASL_MECHANISM # <14>
+            - name: STRIMZI_SASL_MECHANISM # <11>
               value: "scram-sha-512"
-            - name: STRIMZI_SECURITY_PROTOCOL # <15>
+            - name: STRIMZI_SECURITY_PROTOCOL # <12>
               value: "SSL"
-            - name: STRIMZI_USE_FINALIZERS
-              value: "false" # <16>
+            - name: STRIMZI_USE_FINALIZERS # <13>
+              value: "false"
 ----
 <1> The Kubernetes namespace for the Topic Operator to watch for `KafkaTopic` resources. Specify the namespace of the Kafka cluster.
 <2> The host and port pair of the bootstrap broker address to discover and connect to all brokers in the Kafka cluster.
@@ -103,54 +97,52 @@ That is, the operators cannot manage the same resources.
 The default is `120000` (2 minutes).
 <5> The level for printing logging messages.
 You can set the level to `ERROR`, `WARNING`, `INFO`, `DEBUG`, or `TRACE`.
-<6> Enables TLS support for encrypted communication with the Kafka brokers.
-<7> (Optional) The Java options used by the JVM running the Topic Operator.
-<8> (Optional) The debugging (`-D`) options set for the Topic Operator.
-<9> (Optional) Skips the generation of trust store certificates if TLS is enabled through `STRIMZI_TLS_ENABLED`. If this environment variable is enabled, the brokers must use a public trusted certificate authority for their TLS certificates.
+<6> (Optional) The Java options used by the JVM running the Topic Operator.
+<7> (Optional) The debugging (`-D`) options set for the Topic Operator.
+<8> (Optional) Enables SASL support for client authentication when connecting to Kafka brokers.
 The default is `false`.
-<10> (Optional) Generates key store certificates for mTLS authentication. Setting this to `false` disables client authentication with mTLS to the Kafka brokers.
-The default is `true`.
-<11> (Optional) Enables SASL support for client authentication when connecting to Kafka brokers.
-The default is `false`.
-<12> (Optional) The SASL username for client authentication.
+<9> (Optional) The SASL username for client authentication.
 Mandatory only if SASL is enabled through `STRIMZI_SASL_ENABLED`.
-<13> (Optional) The SASL password for client authentication.
+<10> (Optional) The SASL password for client authentication.
 Mandatory only if SASL is enabled through `STRIMZI_SASL_ENABLED`.
-<14> (Optional) The SASL mechanism for client authentication.
+<11> (Optional) The SASL mechanism for client authentication.
 Mandatory only if SASL is enabled through `STRIMZI_SASL_ENABLED`.
 You can set the value to `plain`, `scram-sha-256`, or `scram-sha-512`.
-<15> (Optional) The security protocol used for communication with Kafka brokers.
+<12> (Optional) The security protocol used for communication with Kafka brokers.
 The default value is "PLAINTEXT".
 You can set the value to `PLAINTEXT`, `SSL`, `SASL_PLAINTEXT`, or `SASL_SSL`.
-<16> Set `STRIMZI_USE_FINALIZERS` to `false` if you do not want to use finalizers to control xref:con-deleting-managed-topics-{context}[topic deletion].
+<13> Set `STRIMZI_USE_FINALIZERS` to `false` if you do not want to use finalizers to control xref:con-deleting-managed-topics-{context}[topic deletion].
 
-. If you want to connect to Kafka brokers that are using certificates from a public certificate authority, set `STRIMZI_PUBLIC_CA` to `true`. Set this property to `true`, for example, if you are using Amazon AWS MSK service.
-. If you enabled mTLS with the `STRIMZI_TLS_ENABLED` environment variable, specify the keystore and truststore used to authenticate connection to the Kafka cluster.
+. If you want to connect to Kafka brokers that are using certificates from a public certificate authority, set `STRIMZI_SECURITY_PROTOCOL` to `SSL` or `SSL_SASL`. Use this property, for example, if you are using Amazon AWS MSK service.
+. To enable TLS encryption and mTLS authentication for connections to the Kafka cluster, specify the trusted CAs and the client certificate using the following environment variables:
 +
 .Example mTLS configuration
 [source,shell,subs=+quotes]
 ----
 # ....
 env:
-  - name: STRIMZI_TRUSTSTORE_LOCATION # <1>
-    value: "/path/to/truststore.p12"
-  - name: STRIMZI_TRUSTSTORE_PASSWORD # <2>
-    value: "__TRUSTSTORE-PASSWORD__"
-  - name: STRIMZI_KEYSTORE_LOCATION # <3>
-    value: "/path/to/keystore.p12"
-  - name: STRIMZI_KEYSTORE_PASSWORD # <4>
-    value: "__KEYSTORE-PASSWORD__"
+  - name: STRIMZI_TRUSTSTORE_SECRET_NAME # <1>
+    value: "kafka-ca"
+  - name: STRIMZI_KEYSTORE_SECRET_NAME # <2>
+    value: "topic-operator-user-tls"
+  - name: STRIMZI_KEYSTORE_KEY_NAME # <3>
+    value: "tls.key"
+  - name: STRIMZI_KEYSTORE_CERTIFICATE_NAME # <4>
+    value: "tls.crt"
+  - name: STRIMZI_CLUSTER_NAMESPACE # <5>
+    value: "my-kafka-namespace"
 # ...
 ----
-<1> The truststore contains the public keys of the Certificate Authorities used to sign the Kafka server certificates.
-<2> The password for accessing the truststore.
-<3> The keystore contains the private key for mTLS authentication.
-<4> The password for accessing the keystore.
+<1> The name of the Secret with the public keys of the Certificate Authorities used to sign the Kafka server certificates as `.crt` entries.
+<2> The name of the Secret with the private and public keys for mTLS client authentication.
+<3> The key under which the mTLS client authentication private key is stored in the Secret.
+<4> The key under which the mTLS client authentication public key is stored in the Secret.
+<5> The Kubernetes namespace where the TLS Secrets are located.
 
 . If you need to configure custom SASL authentication, you can define the necessary authentication properties using the `STRIMZI_SASL_CUSTOM_CONFIG_JSON` environment variable for the standalone operator.
 For example, this configuration may be used for accessing a Kafka cluster in a cloud provider with a custom login module like the link:https://github.com/aws/aws-msk-iam-auth[Amazon MSK Library for AWS Identity and Access Management^] (`aws-msk_iam-auth`).
 +
-The property `STRIMZI_ALTERABLE_TOPIC_CONFIG` defaults to `ALL`, allowing all `.spec.config` properties to be set in the `KafkaTopic` resource.  
+The property `STRIMZI_ALTERABLE_TOPIC_CONFIG` defaults to `ALL`, allowing all `.spec.config` properties to be set in the `KafkaTopic` resource.
 If this setting is not suitable for a managed Kafka service, do as follows:
 +
 --
@@ -180,12 +172,8 @@ env:
         "sasl.jaas.config": "software.amazon.msk.auth.iam.IAMLoginModule required;",
         "sasl.client.callback.handler.class": "software.amazon.msk.auth.iam.IAMClientCallbackHandler"
       }
-  - name: STRIMZI_PUBLIC_CA
-    value: "true"
-  - name: STRIMZI_TRUSTSTORE_LOCATION
-    value: /etc/pki/java/cacerts
-  - name: STRIMZI_TRUSTSTORE_PASSWORD
-    value: changeit
+  - name: STRIMZI_TRUSTSTORE_SECRET_NAME
+    value: kafka-ca
   - name: STRIMZI_KAFKA_BOOTSTRAP_SERVERS
     value: my-kafka-cluster-.kafka-serverless.us-east-1.amazonaws.com:9098
 # ...
