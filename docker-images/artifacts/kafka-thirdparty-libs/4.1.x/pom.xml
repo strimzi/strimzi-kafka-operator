@@ -26,7 +26,7 @@
         <opentelemetry-alpha.version>1.34.1-alpha</opentelemetry-alpha.version>
         <opentelemetry.instrumentation.version>1.32.0-alpha</opentelemetry.instrumentation.version>
         <grpc-netty-shaded.version>1.75.0</grpc-netty-shaded.version>
-        <log4j.version>2.25.4</log4j.version>
+        <log4j.version>2.24.3</log4j.version>
     </properties>
 
     <repositories>
@@ -42,16 +42,6 @@
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-layout-template-json</artifactId>
             <version>${log4j.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.apache.logging.log4j</groupId>
-                    <artifactId>log4j-api</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.apache.logging.log4j</groupId>
-                    <artifactId>log4j-core</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
 
         <!-- Tracing -->
