@@ -42,6 +42,7 @@ These tests are crucial to ensure that Kafka clusters can handle production work
 - [testDynamicallySetMM2LoggingLevels](../io.strimzi.systemtest.log.LoggingChangeST.md)
 - [testDynamicallySetUnknownKafkaLogger](../io.strimzi.systemtest.log.LoggingChangeST.md)
 - [testDynamicallySetUnknownKafkaLoggerValue](../io.strimzi.systemtest.log.LoggingChangeST.md)
+- [testInPlaceResourceUpdates](../io.strimzi.systemtest.rollingupdate.InPlacePodResizingST.md)
 - [testJSONFormatLogging](../io.strimzi.systemtest.log.LoggingChangeST.md)
 - [testJsonTemplateLayoutFormatLogging](../io.strimzi.systemtest.log.LoggingChangeST.md)
 - [testJvmAndResources](../io.strimzi.systemtest.kafka.KafkaST.md)

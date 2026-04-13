@@ -344,7 +344,7 @@ When you increase the memory of the Kafka pod, JVM will not use the additional r
 But the additional memory might be used, for example, for the disk page cache.
 Similarly, when you decrease the memory resources below the maximal Java heap size, you might out-of-memory errors are possible.
 
-To learn more about in-place pod resizing, see the Kubernetes documentation on {K8sInPlaceResizing}.
+To learn more about in-place pod resizing, see the Kubernetes documentation on link:https://kubernetes.io/docs/tasks/configure-pod-container/resize-container-resources/[resizing CPU and memory resources assigned to containers^].
 
 [id='con-common-configuration-images-{context}']
 == `image`

@@ -134,9 +134,9 @@ public class InPlacePodResizingUtils {
                         && "True".equals(condition.getStatus())
                         && "Deferred".equals(condition.getReason())) {
                     if (waitForDeferred) {
-                        LOGGER.warnCr(reconciliation, "Pod {} in namespace {} resizing has been deferred. Use manual rolling update if you want to roll the Pod.", pod.getMetadata().getName(), reconciliation.namespace());
+                        LOGGER.warnCr(reconciliation, "Pod {} in namespace {} resizing has been deferred by Kubernetes. Use manual rolling update if you want to roll the Pod immediately.", pod.getMetadata().getName(), reconciliation.namespace());
                     } else {
-                        LOGGER.infoCr(reconciliation, "Pod {} in namespace {} resizing has been deferred. Pod will be restarted.", pod.getMetadata().getName(), reconciliation.namespace());
+                        LOGGER.infoCr(reconciliation, "Pod {} in namespace {} resizing has been deferred by Kubernetes. Pod will be restarted.", pod.getMetadata().getName(), reconciliation.namespace());
                         return true;
                     }
                 } else if ("PodResizePending".equals(condition.getType())
@@ -168,11 +168,11 @@ public class InPlacePodResizingUtils {
      * @param pod               The current definition of the Pod
      */
     public static void reasonsToRestart(Reconciliation reconciliation, RestartReasons restartReasons, StrimziPodSet podSet, Pod pod) {
-        if (InPlacePodResizingUtils.inPlaceResizingEnabled(podSet))   {
+        if (inPlaceResizingEnabled(podSet))   {
             // In-place resizing is enabled -> we still might need to restart it in some cases
 
             if (PodRevision.hasChanged(pod, podSet, PodRevision.STRIMZI_RESOURCE_REVISION_ANNOTATION)
-                    && !InPlacePodResizingUtils.canResourcesBeUpdatedInPlace(pod, PodSetUtils.findPodByName(pod.getMetadata().getName(), podSet)))  {
+                    && !canResourcesBeUpdatedInPlace(pod, PodSetUtils.findPodByName(pod.getMetadata().getName(), podSet)))  {
                 // The resources changed and the change is not valid for in-place update
                 restartReasons.add(RestartReason.POD_HAS_OLD_RESOURCE_REVISION);
             }
@@ -190,7 +190,7 @@ public class InPlacePodResizingUtils {
         // We check this regardless whether the in-place resizing is enabled or not as it might have been enabled in the
         // past and the in-place resizing already failed. But normally, this restart reason should not happen when
         // in-place resizing is not used.
-        if (InPlacePodResizingUtils.restartForResourceResizingNeeded(reconciliation, pod, InPlacePodResizingUtils.inPlaceResizingWaitForDeferred(podSet))) {
+        if (restartForResourceResizingNeeded(reconciliation, pod, inPlaceResizingWaitForDeferred(podSet))) {
             restartReasons.add(RestartReason.POD_RESOURCES_CHANGED);
         }
     }

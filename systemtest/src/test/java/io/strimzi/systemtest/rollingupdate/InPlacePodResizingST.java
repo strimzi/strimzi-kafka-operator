@@ -6,12 +6,18 @@ package io.strimzi.systemtest.rollingupdate;
 
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
+import io.skodjob.annotations.Desc;
+import io.skodjob.annotations.Label;
+import io.skodjob.annotations.Step;
+import io.skodjob.annotations.SuiteDoc;
+import io.skodjob.annotations.TestDoc;
 import io.skodjob.kubetest4j.resources.KubeResourceManager;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.annotations.RequiredMinKubeApiVersion;
+import io.strimzi.systemtest.docs.TestDocsLabels;
 import io.strimzi.systemtest.resources.crd.KafkaComponents;
 import io.strimzi.systemtest.resources.operator.ClusterOperatorConfigurationBuilder;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
@@ -35,9 +41,30 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 @Tag(REGRESSION)
 @Tag(ROLLING_UPDATE)
+@SuiteDoc(
+        description = @Desc("Test suite for testing Kubernetes in-place resource updates (changing of Pod resources dynamically, without restart). In-place resource updates require Kubernetes 1.35 and newer."),
+        beforeTestSteps = {
+            @Step(value = "Deploy Cluster Operator with default installation.", expected = "Cluster Operator is deployed.")
+        },
+        labels = {
+            @Label(TestDocsLabels.KAFKA)
+        }
+)
 public class InPlacePodResizingST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(InPlacePodResizingST.class);
 
+    @TestDoc(
+            description = @Desc("Checks the in-place resource updates for Kafka nodes."),
+            steps = {
+                @Step(value = "Deploy Kafka with single mixed-role node pool and enabled in-place resizing.", expected = "Kafka cluster is deployed without any issue."),
+                @Step(value = "Slightly increase the resource request and limits in the `KafkaNodePool`.", expected = "The resources are updated dynamically without any rolling updates."),
+                @Step(value = "Update resource request and limits in the `KafkaNodePool` to values higher then the total capacity of the node.", expected = "Dynamic resource update is infeasible and the Cluster Operator rolls the first broker Pod that becomes `Pending`."),
+                @Step(value = "Update the resources again back to the original value.", expected = "The Cluster Operator recovers the `Pending` Kafka node.")
+            },
+            labels = {
+                @Label(value = TestDocsLabels.KAFKA)
+            }
+    )
     @ParallelNamespaceTest
     @RequiredMinKubeApiVersion(version = 1.35)
     void testInPlaceResourceUpdates() {
