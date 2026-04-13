@@ -9,7 +9,6 @@ import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import io.strimzi.crdgenerator.annotations.CelValidation;
 import io.strimzi.crdgenerator.annotations.Description;
-import io.strimzi.crdgenerator.annotations.DescriptionFile;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -20,7 +19,6 @@ import java.util.Map;
 /**
  * Representation of the rack configuration.
  */
-@DescriptionFile
 @Buildable(
     editableEnabled = false,
     builderPackage = Constants.FABRIC8_KUBERNETES_API
@@ -53,10 +51,10 @@ import java.util.Map;
 public abstract class Rack implements UnknownPropertyPreserving {
     private Map<String, Object> additionalProperties;
 
-    @Description("Specifies the Rack awareness type. " +
-            "Supported types are `topology-label` and `env-var`. " +
-            "`topology-label` uses a Kubernetes worker node label to set a broker's `broker.rack` config, and the `client.rack` config for Kafka Connect or MirrorMaker 2. " +
-            "`env-var` uses a environment variable to set a broker's `broker.rack` config, and the `client.rack` config for Kafka Connect or MirrorMaker 2. " +
+    @Description("Specifies the rack awareness type. " +
+            "Supported types are `topology-label` and `environment-variable`. " +
+            "`topology-label` uses a Kubernetes worker node label to set the `broker.rack` configuration for Kafka brokers and the `client.rack` configuration for Kafka Connect and MirrorMaker 2. " +
+            "`environment-variable` uses an environment variable to set the `broker.rack` configuration for Kafka brokers and the `client.rack` configuration for Kafka Connect and MirrorMaker 2. " +
             "When not specified, `topology-label` type is used by default.")
     public abstract String getType();
 

@@ -165,7 +165,7 @@ rack:
 # ...
 ----
 
-For more information see xref:type-Rack-reference[Rack schema reference].
+For more information see link:{BookURLConfiguring}#type-TopologyLabelRack-reference[`TopologyLabelRack` schema reference^] and link:{BookURLConfiguring}#type-EnvironmentVariableRack-reference[`EnvironmentVariableRack` schema reference^].
 
 == Distributed tracing configuration
 

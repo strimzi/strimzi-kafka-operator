@@ -7,6 +7,7 @@ package io.strimzi.api.kafka.model.common;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.strimzi.crdgenerator.annotations.Description;
+import io.strimzi.crdgenerator.annotations.DescriptionFile;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -15,8 +16,9 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Representation of the rack configuration.
+ * Representation of the rack awareness configuration based on an environment variable configured on the Pod.
  */
+@DescriptionFile
 @Buildable(
         editableEnabled = false,
         builderPackage = Constants.FABRIC8_KUBERNETES_API
@@ -38,8 +40,8 @@ public class EnvironmentVariableRack extends Rack {
         return TYPE_ENVIRONMENT_VARIABLE;
     }
 
-    @Description("A key that matches labels assigned to the Kubernetes cluster nodes. " +
-            "The value of the label is used to set a broker's `broker.rack` config, and the `client.rack` config for Kafka Connect or MirrorMaker 2.")
+    @Description("The name of the environment variable that defines the rack ID. " +
+            "Its value sets the `broker.rack` configuration for Kafka brokers and the `client.rack` configuration for Kafka Connect or MirrorMaker 2.")
     public String getEnvVarName() {
         return envVarName;
     }

@@ -1,0 +1,69 @@
+:_mod-docs-content-type: CONCEPT
+
+= Environment-variable-based rack awareness
+
+Environment-variable-based rack awareness (`type: environment-variable`) is configured using `envVarName`.
+`envVarName` identifies the environment variable that contains the name of the topology in its value.
+You must configure this environment variable yourself, for example by setting it in the node pool `template` configuration or by applying a mutating webhook or similar tooling.
+
+.Example `type: environment-variable` `rack` configuration for Kafka custom resource and per-node pool environment variables
+[source,yaml,subs=attributes+]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+  kafka:
+    # ...
+    rack:
+      type: environment-variable
+      envVarName: MY_RACK_ID
+    # ...
+---
+apiVersion: kafka.strimzi.io/v1
+kind: KafkaNodePool
+metadata:
+  name: zone-1
+  labels:
+    strimzi.io/cluster: my-cluster
+spec:
+  # ...
+  template:
+    kafkaContainer:
+      env:
+        - name: MY_RACK_ID
+          value: zone-1
+---
+apiVersion: kafka.strimzi.io/v1
+kind: KafkaNodePool
+metadata:
+  name: zone-2
+  labels:
+    strimzi.io/cluster: my-cluster
+spec:
+  # ...
+  template:
+    kafkaContainer:
+      env:
+        - name: MY_RACK_ID
+          value: zone-2
+---
+apiVersion: kafka.strimzi.io/v1
+kind: KafkaNodePool
+metadata:
+  name: zone-3
+  labels:
+    strimzi.io/cluster: my-cluster
+spec:
+  # ...
+  template:
+    kafkaContainer:
+      env:
+        - name: MY_RACK_ID
+          value: zone-3
+----
+
+When rack awareness based on an environment variable is enabled, Strimzi does not add affinity rules.
+You must configure your own  `affinity` or `topologySpreadConstraints` rules to make sure that nodes are properly distributed across racks.
+For more information see link:{BookURLDeploying}#assembly-scheduling-str[Configuring pod scheduling^].

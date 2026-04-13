@@ -500,6 +500,13 @@ It must have the value `custom` for the type `KafkaAuthorizationCustom`.
 
 Used in: xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaMirrorMaker2Spec-{context}[`KafkaMirrorMaker2Spec`]
 
+xref:type-TopologyLabelRack-schema-{context}[Full list of `TopologyLabelRack` schema properties]
+
+include::../api/io.strimzi.api.kafka.model.common.TopologyLabelRack.adoc[leveloffset=+1]
+
+[id='type-TopologyLabelRack-schema-{context}']
+== `TopologyLabelRack` schema properties
+
 
 The `type` property is a discriminator that distinguishes use of the `TopologyLabelRack` type from xref:type-EnvironmentVariableRack-{context}[`EnvironmentVariableRack`].
 It must have the value `topology-label` for the type `TopologyLabelRack`.
@@ -519,6 +526,13 @@ It must have the value `topology-label` for the type `TopologyLabelRack`.
 
 Used in: xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaMirrorMaker2Spec-{context}[`KafkaMirrorMaker2Spec`]
 
+xref:type-EnvironmentVariableRack-schema-{context}[Full list of `EnvironmentVariableRack` schema properties]
+
+include::../api/io.strimzi.api.kafka.model.common.EnvironmentVariableRack.adoc[leveloffset=+1]
+
+[id='type-EnvironmentVariableRack-schema-{context}']
+== `EnvironmentVariableRack` schema properties
+
 
 The `type` property is a discriminator that distinguishes use of the `EnvironmentVariableRack` type from xref:type-TopologyLabelRack-{context}[`TopologyLabelRack`].
 It must have the value `environment-variable` for the type `EnvironmentVariableRack`.
@@ -530,7 +544,7 @@ It must have the value `environment-variable` for the type `EnvironmentVariableR
 |Must be `environment-variable`.
 |envVarName
 |string
-|A key that matches labels assigned to the Kubernetes cluster nodes. The value of the label is used to set a broker's `broker.rack` config, and the `client.rack` config for Kafka Connect or MirrorMaker 2.
+|The name of the environment variable that defines the rack ID. Its value sets the `broker.rack` configuration for Kafka brokers and the `client.rack` configuration for Kafka Connect or MirrorMaker 2.
 |====
 
 [id='type-Probe-{context}']
