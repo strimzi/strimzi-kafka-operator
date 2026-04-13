@@ -288,7 +288,7 @@ For more information on CPU specification, see {K8sMeaningOfCpu}.
 [id='con-common-configuration-resources-in-place-updates-{context}']
 === In-place updates of resource requests and limits
 
-The following components support in-place updates of the resource requests and limits:
+The following components support in-place updates of resource requests and limits:
 
 * Kafka controllers and brokers
 * Kafka Connect nodes
@@ -296,7 +296,7 @@ The following components support in-place updates of the resource requests and l
 
 NOTE: Support for in-place resource updates is currently _experimental_ and might change in the future.
 
-To enable in-place resource updates, you should set the `strimzi.io/in-place-resizing` annotation to `"true"` in the corresponding custom resource (`Kafka`, `KafkaConnect`, or `KafkaMirrorMaker2`).
+To enable in-place resource updates, set the `strimzi.io/in-place-resizing` annotation to `"true"` in the corresponding custom resource (`Kafka`, `KafkaConnect`, or `KafkaMirrorMaker2`).
 
 .Example `Kafka` resource with enabled in-place resource updates enabled
 [source,yaml,subs="attributes+"]
@@ -311,20 +311,21 @@ spec:
   # ...
 ----
 
-When in-place resource updates are enabled, Strimzi will try to use it when you change the resource requests and limits in the corresponding custom resources (`KafkaNodePool` resources for Kafka clusters, or `KafkaConnect` and `KafkaMirrorMaker2` resources for Connect and MirrorMaker 2).
+When enabled, Strimzi applies in-place resource updates when you change resource requests and limits in the corresponding custom resources (`KafkaNodePool` resources for Kafka clusters, or `KafkaConnect` and `KafkaMirrorMaker2` resources for Connect and MirrorMaker 2).
 
-However, in the following situation, the in-place resource updates are not possible and Strimzi will automatically use a rolling update:
+In the following situations, in-place resource updates are not possible. 
+Strimzi uses a rolling update instead:
 
 * Removing resource limits.
-* Shrinking memory limits and request below the current memory usage.
-* Infeasible resource updates (when the new resource requests and limits are bigger than the total node capacity).
-* Deferred resource updates (when the new resource requests and limits are bigger than the available node capacity).
+* Reducing memory requests and limits below current usage.
+* Resource updates that exceed total node capacity.
+* Resource updates that exceed available node capacity (deferred updates).
 
-User can use an additional annotation `strimzi.io/in-place-resizing-wait-for-deferred` to tell Strimzi to not roll the Pods when the in-place resize is deferred.
-When waiting for deferred resizing is enabled, Strimzi will wait for unlimited time for Kubernetes to be able to resize the Pods.
-Manual rolling update can be used to force the resource update through a Pod restart.
+Use the additional `strimzi.io/in-place-resizing-wait-for-deferred` annotation to prevent pods rolling when in-place resizing is deferred.
+When enabled, Strimzi waits indefinitely for Kubernetes to be able to complete the pod resize.
+To force the update, perform a manual rolling update by restarting a pod.
 
-.Example `KafkaConnect` resource with enabled in-place resource updates and waiting for deferred resizing enabled
+..Example `KafkaConnect` resource with in-place resizing and deferred waiting
 [source,yaml,subs="attributes+"]
 ----
 apiVersion: {KafkaConnectApiVersion}
@@ -340,10 +341,10 @@ spec:
 
 IMPORTANT: Java Virtual Machine (JVM) does not register the in-place memory request and limit updates.
 When you increase the memory of the Kafka pod, JVM will not use the additional resources for its heap memory.
-But the additional memory might be used for example for the disk page cache.
-Similarly, when you decrease the memory resources below the maximal Java heap size, you might encounter OutOfMemory errors.
+But the additional memory might be used, for example, for the disk page cache.
+Similarly, when you decrease the memory resources below the maximal Java heap size, you might out-of-memory errors are possible.
 
-To learn more about Kubernetes in-place Pod resizing, check {K8sInPlaceResizing}.
+To learn more about in-place pod resizing, see the Kubernetes documentation on {K8sInPlaceResizing}.
 
 [id='con-common-configuration-images-{context}']
 == `image`

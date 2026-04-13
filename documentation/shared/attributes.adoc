@@ -121,7 +121,7 @@
 :K8sDockerSecret: link:https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/#registry-secret-existing-credentials[Create a Secret based on existing Docker credentials^]
 
 // Kubernetes in-place resource updates
-:K8sInPlaceResizing: link:https://kubernetes.io/docs/tasks/configure-pod-container/resize-container-resources/[Resize CPU and Memory Resources assigned to Containers^]
+:K8sInPlaceResizing: link:https://kubernetes.io/docs/tasks/configure-pod-container/resize-container-resources/[resizing CPU and memory resources assigned to containers^]
 
 // Ingress and DNS
 :NginxIngressController: link:https://github.com/kubernetes/ingress-nginx[Ingress NGINX Controller for Kubernetes^]
