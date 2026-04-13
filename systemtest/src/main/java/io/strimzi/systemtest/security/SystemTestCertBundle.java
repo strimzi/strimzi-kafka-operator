@@ -61,6 +61,29 @@ public class SystemTestCertBundle {
         this.caKeySecretName = caKeySecretName;
     }
 
+    private SystemTestCertBundle(final TestStorage testStorage) {
+        this.strimziRootCa = SystemTestCertGenerator.generateRootCaCertAndKey();
+        this.intermediateCa = SystemTestCertGenerator.generateIntermediateCaCertAndKey(this.strimziRootCa);
+        this.subjectDn = SystemTestCertGenerator.STRIMZI_END_SUBJECT;
+        this.systemTestCa = SystemTestCertGenerator.generateEndEntityCertAndKey(
+            this.intermediateCa, SystemTestCertGenerator.retrieveKafkaBrokerSANs(testStorage));
+        this.bundle = SystemTestCertGenerator.exportToPemFiles(
+            this.systemTestCa, this.intermediateCa, this.strimziRootCa);
+        this.caCertSecretName = null;
+        this.caKeySecretName = null;
+    }
+
+    /**
+     * Creates a certificate bundle with a broker end-entity certificate (with broker SANs)
+     * as the leaf, instead of a CA certificate. Useful for custom broker cert chain tests.
+     *
+     * @param testStorage the test storage providing broker SAN information
+     * @return a new SystemTestCertBundle with root → intermediate → end-entity hierarchy
+     */
+    public static SystemTestCertBundle forBrokerCert(final TestStorage testStorage) {
+        return new SystemTestCertBundle(testStorage);
+    }
+
     /**
      * Prepares custom Cluster and Clients key-pair and creates related Secrets with initialization of annotation
      * {@code Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION} and {@code Ca.ANNO_STRIMZI_IO_CA_KEY_GENERATION}.

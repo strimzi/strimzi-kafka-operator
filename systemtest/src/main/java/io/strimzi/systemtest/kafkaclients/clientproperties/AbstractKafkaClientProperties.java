@@ -31,6 +31,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
+import java.util.Collection;
 import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -162,21 +163,20 @@ abstract public class AbstractKafkaClientProperties<C extends AbstractKafkaClien
                     Secret clusterCaCertSecret = KubeResourceManager.get().kubeClient().getClient().secrets().inNamespace(namespaceName).withName(caSecretName).get();
                     File tsFile = Files.createTempFile(AbstractKafkaClientProperties.class.getName(), ".truststore").toFile();
                     tsFile.deleteOnExit();
+                    // Build truststore from PEM ca.crt i.e., works for both standard Strimzi CA secrets
+                    // and custom certificate secrets (e.g., those created by TrustChainSecrets).
                     KeyStore ts = KeyStore.getInstance(TRUSTSTORE_TYPE_CONFIG);
                     String tsPassword = "foo";
-                    if (caSecretName.contains("custom-certificate")) {
-                        ts.load(null, tsPassword.toCharArray());
-                        CertificateFactory cf = CertificateFactory.getInstance("X.509");
-                        String clusterCaCert = KubeResourceManager.get().kubeClient().getClient().secrets().inNamespace(namespaceName).withName(caSecretName).get().getData().get("ca.crt");
-                        Certificate cert = cf.generateCertificate(new ByteArrayInputStream(Util.decodeBytesFromBase64(clusterCaCert)));
-                        ts.setCertificateEntry("ca.crt", cert);
-                        try (FileOutputStream tsOs = new FileOutputStream(tsFile)) {
-                            ts.store(tsOs, tsPassword.toCharArray());
-                        }
-                    } else {
-                        tsPassword = Util.decodeFromBase64(clusterCaCertSecret.getData().get("ca.password"));
-                        String truststore = clusterCaCertSecret.getData().get("ca.p12");
-                        Files.write(tsFile.toPath(), Util.decodeBytesFromBase64(truststore));
+                    ts.load(null, tsPassword.toCharArray());
+                    CertificateFactory cf = CertificateFactory.getInstance("X.509");
+                    String clusterCaCert = clusterCaCertSecret.getData().get("ca.crt");
+                    Collection<? extends Certificate> certs = cf.generateCertificates(new ByteArrayInputStream(Util.decodeBytesFromBase64(clusterCaCert)));
+                    int i = 0;
+                    for (Certificate cert : certs) {
+                        ts.setCertificateEntry("ca-" + i++, cert);
+                    }
+                    try (FileOutputStream tsOs = new FileOutputStream(tsFile)) {
+                        ts.store(tsOs, tsPassword.toCharArray());
                     }
                     properties.setProperty(SslConfigs.SSL_TRUSTSTORE_TYPE_CONFIG, ts.getType());
                     properties.setProperty(SslConfigs.SSL_TRUSTSTORE_PASSWORD_CONFIG, tsPassword);
