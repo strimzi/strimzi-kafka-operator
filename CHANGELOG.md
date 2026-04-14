@@ -8,6 +8,7 @@
 * Allow upgrading from unknown Apache Kafka versions (that might be used in Strimzi patch releases)
 * Add support for Kafka 4.1.2
 * Add support for `advertisedPortTemplate` in listener configuration to add more flexibility when configuring advertised ports.
+* In-place Pod resizing support for Kafka brokers and controllers, Connect nodes, and MirrorMaker 2 nodes
 * Remove PreferredLeaderElectionGoal from Cruise Control's default.goals list
 * Add `topologySpreadConstraints` support to the Strimzi Helm chart operator Deployment
 * Update HTTP bridge to 1.0.0.

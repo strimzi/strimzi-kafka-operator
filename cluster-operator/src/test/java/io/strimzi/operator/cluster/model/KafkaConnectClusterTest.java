@@ -78,6 +78,7 @@ import io.strimzi.operator.cluster.model.logging.LoggingModel;
 import io.strimzi.operator.cluster.model.metrics.JmxPrometheusExporterModel;
 import io.strimzi.operator.cluster.model.metrics.MetricsModel;
 import io.strimzi.operator.cluster.model.metrics.StrimziMetricsReporterModel;
+import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.platform.KubernetesVersion;
@@ -719,8 +720,9 @@ public class KafkaConnectClusterTest {
         List<Pod> pods = PodSetUtils.podSetToPods(ps);
         for (Pod pod : pods)  {
             assertThat(pod.getMetadata().getLabels().entrySet().containsAll(kc.labels.withStrimziPodName(pod.getMetadata().getName()).withStrimziPodSetController(kc.getComponentName()).toMap().entrySet()), is(true));
-            assertThat(pod.getMetadata().getAnnotations().size(), is(2));
+            assertThat(pod.getMetadata().getAnnotations().size(), is(3));
             assertThat(pod.getMetadata().getAnnotations().get(PodRevision.STRIMZI_REVISION_ANNOTATION), is(notNullValue()));
+            assertThat(pod.getMetadata().getAnnotations().get(PodRevision.STRIMZI_RESOURCE_REVISION_ANNOTATION), is(notNullValue()));
             assertThat(pod.getMetadata().getAnnotations().get("anno3"), is("anno-value3"));
 
             assertThat(pod.getSpec().getHostname(), is(pod.getMetadata().getName()));
@@ -1710,5 +1712,32 @@ public class KafkaConnectClusterTest {
         // Verify Connect metrics ARE included
         assertThat(allowList, containsString("kafka_connect_connector_metrics"));
         assertThat(allowList, containsString("kafka_connect_connect_worker_metrics_"));
+    }
+
+    @Test
+    public void testResourceResizingPodSetAnnotations()   {
+        KafkaConnect resource = new KafkaConnectBuilder(RESOURCE)
+                .editMetadata()
+                    .addToAnnotations(Annotations.ANNO_STRIMZI_IO_IN_PLACE_RESIZING, "true")
+                    .addToAnnotations(Annotations.ANNO_STRIMZI_IO_IN_PLACE_RESIZING_WAIT_FOR_DEFERRED, "false")
+                .endMetadata()
+                .build();
+        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
+
+        // Check PodSet
+        StrimziPodSet ps = kc.generatePodSet(3, new HashMap<>(), new HashMap<>(), false, null, null, null);
+        assertThat(ps.getMetadata().getAnnotations(), is(Map.of(Annotations.ANNO_STRIMZI_IO_IN_PLACE_RESIZING, "true")));
+
+        resource = new KafkaConnectBuilder(RESOURCE)
+                .editMetadata()
+                    .addToAnnotations(Annotations.ANNO_STRIMZI_IO_IN_PLACE_RESIZING, "false")
+                    .addToAnnotations(Annotations.ANNO_STRIMZI_IO_IN_PLACE_RESIZING_WAIT_FOR_DEFERRED, "true")
+                .endMetadata()
+                .build();
+        kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
+
+        // Check PodSet
+        ps = kc.generatePodSet(3, new HashMap<>(), new HashMap<>(), false, null, null, null);
+        assertThat(ps.getMetadata().getAnnotations(), is(Map.of(Annotations.ANNO_STRIMZI_IO_IN_PLACE_RESIZING_WAIT_FOR_DEFERRED, "true")));
     }
 }

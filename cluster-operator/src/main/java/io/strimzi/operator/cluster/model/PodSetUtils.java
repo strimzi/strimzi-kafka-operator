@@ -9,6 +9,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import io.fabric8.kubernetes.api.model.Pod;
+import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.strimzi.api.kafka.model.podset.StrimziPodSet;
 
 import java.util.List;
@@ -50,6 +51,19 @@ public class PodSetUtils {
      */
     public static String podToString(Pod pod) throws JsonProcessingException {
         return MAPPER.writeValueAsString(pod);
+    }
+
+    /**
+     * Converts List of resource definitions to String
+     *
+     * @param resources   List of resources to be converted
+     *
+     * @throws JsonProcessingException  Throws JsonProcessingException when the conversion to String fails
+     *
+     * @return      String with the resource definitions
+     */
+    public static String resourcesToString(List<ResourceRequirements> resources) throws JsonProcessingException {
+        return MAPPER.writeValueAsString(resources);
     }
 
     /**
@@ -113,5 +127,30 @@ public class PodSetUtils {
     public static boolean isInTerminalState(Pod pod)   {
         return pod.getStatus() != null
                 && ("Failed".equals(pod.getStatus().getPhase()) || "Succeeded".equals(pod.getStatus().getPhase()));
+    }
+
+    /**
+     * Finds a Pod with a given name in the PodSet and returns it.
+     *
+     * @param podName   Name of the Pod to look for
+     * @param podSet The StrimziPodSet resource with the desired Pods
+     *
+     * @return  Find a pod with the matching name in the PodSet
+     */
+    public static Pod findPodByName(String podName, StrimziPodSet podSet)   {
+        Pod foundPod = podSet
+                .getSpec()
+                .getPods()
+                .stream()
+                .map(PodSetUtils::mapToPod)
+                .filter(pod -> podName.equals(pod.getMetadata().getName()))
+                .findFirst()
+                .orElse(null);
+
+        if (foundPod != null) {
+            return foundPod;
+        } else {
+            throw new RuntimeException("Pod " + podName + " was not found in the StrimziPodSet");
+        }
     }
 }

@@ -27,6 +27,7 @@ import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2List;
 import io.strimzi.api.kafka.model.podset.StrimziPodSet;
 import io.strimzi.api.kafka.model.podset.StrimziPodSetBuilder;
 import io.strimzi.api.kafka.model.podset.StrimziPodSetStatus;
+import io.strimzi.operator.cluster.model.InPlacePodResizingUtils;
 import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.cluster.model.PodRevision;
 import io.strimzi.operator.cluster.model.PodSetUtils;
@@ -361,14 +362,16 @@ public class StrimziPodSetController implements Runnable {
                     PodCounter podCounter = new PodCounter();
                     podCounter.pods = podSet.getSpec().getPods().size();
 
+                    boolean inPlaceResizing = InPlacePodResizingUtils.inPlaceResizingEnabled(podSet);
+
                     for (Map<String, Object> desiredPod : podSet.getSpec().getPods()) {
                         Pod pod = PodSetUtils.mapToPod(desiredPod);
                         desiredPods.add(pod.getMetadata().getName());
 
-                        maybeCreateOrPatchPod(reconciliation, pod, ModelUtils.createOwnerReference(podSet, true), podCounter);
+                        maybeCreateOrPatchPod(reconciliation, pod, ModelUtils.createOwnerReference(podSet, true), podCounter, inPlaceResizing);
                     }
 
-                    // Check if any pods needs to be deleted
+                    // Check if any pods need to be deleted
                     removeDeletedPods(reconciliation, podSet.getSpec().getSelector(), desiredPods, podCounter);
 
                     status.setPods(podCounter.pods);
@@ -426,18 +429,19 @@ public class StrimziPodSetController implements Runnable {
      * needed adds it to the Pod.
      *
      * @param reconciliation    Reconciliation in which this is executed
-     * @param pod               Pod which should be checked and created if needed
+     * @param desiredPod        Pod which should be checked and created if needed
      * @param owner             The OwnerReference which should be set to the pod
      * @param podCounter        Pod Counter used to count pods for the status
+     * @param inPlaceResizing   Indicates whether in-place resizing is enabled or not
      */
-    private void maybeCreateOrPatchPod(Reconciliation reconciliation, Pod pod, OwnerReference owner, PodCounter podCounter)    {
-        Pod currentPod = podInformer.get(reconciliation.namespace(), pod.getMetadata().getName());
+    private void maybeCreateOrPatchPod(Reconciliation reconciliation, Pod desiredPod, OwnerReference owner, PodCounter podCounter, boolean inPlaceResizing)    {
+        Pod currentPod = podInformer.get(reconciliation.namespace(), desiredPod.getMetadata().getName());
 
         if (currentPod == null) {
             // Pod does not exist => we create it
-            LOGGER.debugCr(reconciliation, "Creating pod {} in namespace {}", pod.getMetadata().getName(), reconciliation.namespace());
-            pod.getMetadata().setOwnerReferences(List.of(owner));
-            podOperator.client().inNamespace(reconciliation.namespace()).resource(pod).create();
+            LOGGER.debugCr(reconciliation, "Creating pod {} in namespace {}", desiredPod.getMetadata().getName(), reconciliation.namespace());
+            desiredPod.getMetadata().setOwnerReferences(List.of(owner));
+            podOperator.client().inNamespace(reconciliation.namespace()).resource(desiredPod).create();
         } else {
             if (PodSetUtils.isInTerminalState(currentPod))  {
                 // The Pods might reach a terminal state of Succeeded or Failed in some situations such as node failures
@@ -446,21 +450,36 @@ public class StrimziPodSetController implements Runnable {
                 LOGGER.debugCr(reconciliation, "Pod {} in namespace {} reached terminal phase {} => deleting it", currentPod.getMetadata().getName(), reconciliation.namespace(), currentPod.getStatus().getPhase());
                 podOperator.client().inNamespace(reconciliation.namespace()).resource(currentPod).withPropagationPolicy(DeletionPropagation.BACKGROUND).delete();
             } else if (ModelUtils.hasOwnerReference(currentPod, owner))    {
-                LOGGER.debugCr(reconciliation, "Pod {} in namespace {} already exists => nothing to do right now", pod.getMetadata().getName(), reconciliation.namespace());
+                LOGGER.debugCr(reconciliation, "Pod {} in namespace {} already exists => nothing to do right now", desiredPod.getMetadata().getName(), reconciliation.namespace());
             } else  {
                 LOGGER.debugCr(reconciliation, "Pod {} in namespace {} is missing owner reference => patching it", currentPod.getMetadata().getName(), reconciliation.namespace());
                 Pod podWithOwnerReference = new PodBuilder(currentPod).build();
                 ModelUtils.patchOwnerReferenceThroughDifferentVersions(podWithOwnerReference, owner);
                 
-                podOperator.client().inNamespace(reconciliation.namespace()).withName(pod.getMetadata().getName()).patch(PatchContext.of(PatchType.JSON), podWithOwnerReference);
+                podOperator.client().inNamespace(reconciliation.namespace()).withName(desiredPod.getMetadata().getName()).patch(PatchContext.of(PatchType.JSON), podWithOwnerReference);
             }
 
             if (Readiness.isPodReady(currentPod))   {
                 podCounter.readyPods++;
             }
 
-            if (!PodRevision.hasChanged(currentPod, pod))    {
-                podCounter.currentPods++;
+            if (!PodRevision.hasChanged(currentPod, desiredPod, PodRevision.STRIMZI_REVISION_ANNOTATION))    {
+                // If the standard pod revision changed, we do not need to do anything as the Pod will be anyway rolled.
+                // We do the in-place update only when the only change is resources.
+                if (PodRevision.hasChanged(currentPod, desiredPod, PodRevision.STRIMZI_RESOURCE_REVISION_ANNOTATION)) {
+                    if (inPlaceResizing
+                            && "Running".equals(currentPod.getStatus().getPhase())
+                            && InPlacePodResizingUtils.canResourcesBeUpdatedInPlace(currentPod, desiredPod))    {
+                        LOGGER.infoCr(reconciliation, "Pod {} in namespace {} has changed only in resources => resizing it", desiredPod.getMetadata().getName(), reconciliation.namespace());
+                        podOperator.client().inNamespace(reconciliation.namespace()).resource(InPlacePodResizingUtils.patchPodResources(currentPod, desiredPod)).subresource("resize").update();
+                        LOGGER.infoCr(reconciliation, "Pod {} in namespace {} has changed only in resources => updating the resource annotation", desiredPod.getMetadata().getName(), reconciliation.namespace());
+                        // Patch is used to avoid conflicts with the Pod status updates related to the resizing
+                        podOperator.client().inNamespace(reconciliation.namespace()).withName(currentPod.getMetadata().getName()).patch(PatchContext.of(PatchType.STRATEGIC_MERGE), "{\"metadata\":{\"annotations\":{\"" + PodRevision.STRIMZI_RESOURCE_REVISION_ANNOTATION + "\":\"" + desiredPod.getMetadata().getAnnotations().get(PodRevision.STRIMZI_RESOURCE_REVISION_ANNOTATION) + "\"}}}");
+                        podCounter.currentPods++;
+                    }
+                } else {
+                    podCounter.currentPods++;
+                }
             }
 
             // TODO: Add patching of exiting pods => to be done in the future to handle selected changes to the Pods

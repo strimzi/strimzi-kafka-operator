@@ -562,7 +562,7 @@ public class KafkaRoller {
     @SuppressWarnings("checkstyle:CyclomaticComplexity")
     private void checkIfRestartOrReconfigureRequired(NodeRef nodeRef, boolean isController, boolean isBroker, RestartContext restartContext) throws ForceableProblem, InterruptedException, FatalProblem {
         RestartReasons reasonToRestartPod = restartContext.restartReasons;
-        if (restartContext.podStuck && !reasonToRestartPod.contains(RestartReason.POD_HAS_OLD_REVISION)) {
+        if (restartContext.podStuck && !reasonToRestartPod.contains(RestartReason.POD_HAS_OLD_REVISION) && !reasonToRestartPod.contains(RestartReason.POD_HAS_OLD_RESOURCE_REVISION)) {
             // If the pod is unschedulable then deleting it, or trying to open an Admin client to it will make no difference
             // Treat this as fatal because if it's not possible to schedule one pod then it's likely that proceeding
             // and deleting a different pod in the meantime will likely result in another unschedulable pod.

@@ -285,6 +285,67 @@ The computing power of 1 CPU core may differ depending on the platform where Kub
 For more information on CPU specification, see {K8sMeaningOfCpu}.
 --
 
+[id='con-common-configuration-resources-in-place-updates-{context}']
+=== In-place updates of resource requests and limits
+
+The following components support in-place updates of resource requests and limits:
+
+* Kafka controllers and brokers
+* Kafka Connect nodes
+* Kafka MirrorMaker 2 nodes
+
+NOTE: Support for in-place resource updates is currently _experimental_ and might change in the future.
+
+To enable in-place resource updates, set the `strimzi.io/in-place-resizing` annotation to `"true"` in the corresponding custom resource (`Kafka`, `KafkaConnect`, or `KafkaMirrorMaker2`).
+
+.Example `Kafka` resource with enabled in-place resource updates enabled
+[source,yaml,subs="attributes+"]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+  name: my-cluster
+  annotations:
+    strimzi.io/in-place-resizing: "true"
+spec:
+  # ...
+----
+
+When enabled, Strimzi applies in-place resource updates when you change resource requests and limits in the corresponding custom resources (`KafkaNodePool` resources for Kafka clusters, or `KafkaConnect` and `KafkaMirrorMaker2` resources for Connect and MirrorMaker 2).
+
+In the following situations, in-place resource updates are not possible. 
+Strimzi uses a rolling update instead:
+
+* Removing resource limits.
+* Reducing memory requests and limits below current usage.
+* Resource updates that exceed total node capacity.
+* Resource updates that exceed available node capacity (deferred updates).
+
+Use the additional `strimzi.io/in-place-resizing-wait-for-deferred` annotation to prevent pods rolling when in-place resizing is deferred.
+When enabled, Strimzi waits indefinitely for Kubernetes to be able to complete the pod resize.
+To force the update, perform a manual rolling update by restarting a pod.
+
+..Example `KafkaConnect` resource with in-place resizing and deferred waiting
+[source,yaml,subs="attributes+"]
+----
+apiVersion: {KafkaConnectApiVersion}
+kind: KafkaConnect
+metadata:
+  name: my-cluster
+  annotations:
+    strimzi.io/in-place-resizing: "true"
+    strimzi.io/in-place-resizing-wait-for-deferred: "true"
+spec:
+  # ...
+----
+
+IMPORTANT: Java Virtual Machine (JVM) does not register the in-place memory request and limit updates.
+When you increase the memory of the Kafka pod, JVM will not use the additional resources for its heap memory.
+But the additional memory might be used, for example, for the disk page cache.
+Similarly, when you decrease the memory resources below the maximal Java heap size, you might out-of-memory errors are possible.
+
+To learn more about in-place pod resizing, see the Kubernetes documentation on link:https://kubernetes.io/docs/tasks/configure-pod-container/resize-container-resources/[resizing CPU and memory resources assigned to containers^].
+
 [id='con-common-configuration-images-{context}']
 == `image`
 
