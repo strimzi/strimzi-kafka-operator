@@ -14,7 +14,6 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.Watcher;
 import io.micrometer.core.instrument.Timer;
 import io.netty.channel.ConnectTimeoutException;
-import io.strimzi.api.kafka.model.common.CertSecretSource;
 import io.strimzi.api.kafka.model.common.Condition;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthentication;
 import io.strimzi.api.kafka.model.connect.KafkaConnect;
@@ -184,6 +183,11 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
                 .compose(i -> serviceOperations.reconcile(reconciliation, namespace, connect.getServiceName(), connect.generateService()))
                 .compose(i -> serviceOperations.reconcile(reconciliation, namespace, connect.getComponentName(), connect.generateHeadlessService()))
                 .compose(i -> tlsTrustedCertsSecret(reconciliation, namespace, connect))
+                .compose(certs -> generateAuthHash(namespace, kafkaConnect.getSpec().getAuthentication(), certs))
+                .compose(hash -> {
+                    podAnnotations.put(Annotations.ANNO_STRIMZI_AUTH_HASH, Integer.toString(hash));
+                    return Future.succeededFuture();
+                })
                 .compose(i -> generateMetricsAndLoggingConfigMap(reconciliation, connect))
                 .compose(logAndMetricsConfigMap -> {
                     podAnnotations.put(Annotations.ANNO_STRIMZI_IO_CONFIGURATION_HASH, Util.hashStub(logAndMetricsConfigMap.getData().get(KafkaConnectCluster.KAFKA_CONNECT_CONFIGURATION_FILENAME)));
@@ -191,11 +195,6 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
                 })
                 .compose(i -> ReconcilerUtils.reconcileJmxSecret(reconciliation, secretOperations, connect))
                 .compose(i -> connectPodDisruptionBudget(reconciliation, namespace, connect))
-                .compose(i -> generateAuthHash(namespace, kafkaConnect.getSpec()))
-                .compose(hash -> {
-                    podAnnotations.put(Annotations.ANNO_STRIMZI_AUTH_HASH, Integer.toString(hash));
-                    return Future.succeededFuture();
-                })
                 .compose(i -> reconcilePodSet(reconciliation, connect, podAnnotations, controllerAnnotations, image.get()))
                 .compose(i -> useConnectorResources && !hasZeroReplicas ? reconcileAvailableConnectorPlugins(reconciliation, KafkaConnectResources.qualifiedServiceName(reconciliation.name(), namespace), kafkaConnectStatus) : Future.succeededFuture())
                 .compose(i -> useConnectorResources ? reconcileConnectors(reconciliation, kafkaConnect, hasZeroReplicas) : Future.succeededFuture())
@@ -288,13 +287,12 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
      * Generates a hash from the trusted TLS certificates that can be used to spot if it has changed.
      *
      * @param namespace          Namespace of the Connect cluster
-     * @param kafkaConnectSpec   KafkaConnectSpec object
+     * @param authentication     KafkaClientAuthentication object
+     * @param certificates       List of trusted certificates
      * @return                   Future for tracking the asynchronous result of generating the TLS auth hash
      */
-    private Future<Integer> generateAuthHash(String namespace, KafkaConnectSpec kafkaConnectSpec) {
-        KafkaClientAuthentication auth = kafkaConnectSpec.getAuthentication();
-        List<CertSecretSource> trustedCertificates = kafkaConnectSpec.getTls() == null ? Collections.emptyList() : kafkaConnectSpec.getTls().getTrustedCertificates();
-        return ReconcilerUtils.authTlsHash(secretOperations, namespace, auth, trustedCertificates);
+    private Future<Integer> generateAuthHash(String namespace, KafkaClientAuthentication authentication, String certificates) {
+        return ReconcilerUtils.authTlsHash(secretOperations, namespace, authentication, certificates);
     }
 
     /**

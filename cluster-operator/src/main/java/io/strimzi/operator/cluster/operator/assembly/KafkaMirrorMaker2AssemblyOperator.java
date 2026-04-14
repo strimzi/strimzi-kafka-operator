@@ -10,6 +10,7 @@ import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.model.common.CertSecretSource;
 import io.strimzi.api.kafka.model.common.Condition;
+import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthentication;
 import io.strimzi.api.kafka.model.connector.AutoRestartStatus;
 import io.strimzi.api.kafka.model.connector.KafkaConnector;
 import io.strimzi.api.kafka.model.connector.KafkaConnectorSpec;
@@ -36,6 +37,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -108,6 +110,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
         String namespace = reconciliation.namespace();
 
         Map<String, String> podAnnotations = new HashMap<>(1);
+        Map<String, String> clusterCerts = new HashMap<>(mirrorMaker2Cluster.clusters().size());
 
         boolean hasZeroReplicas = mirrorMaker2Cluster.getReplicas() == 0;
         String initCrbName = KafkaMirrorMaker2Resources.initContainerClusterRoleBindingName(kafkaMirrorMaker2.getMetadata().getName(), namespace);
@@ -123,7 +126,15 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
                 .compose(i -> manualRollingUpdate(reconciliation, mirrorMaker2Cluster))
                 .compose(i -> serviceOperations.reconcile(reconciliation, namespace, mirrorMaker2Cluster.getServiceName(), mirrorMaker2Cluster.generateService()))
                 .compose(i -> serviceOperations.reconcile(reconciliation, namespace, mirrorMaker2Cluster.getComponentName(), mirrorMaker2Cluster.generateHeadlessService()))
-                .compose(i -> tlsTrustedCertsSecret(reconciliation, namespace, mirrorMaker2Cluster))
+                .compose(i -> updateMM2ClusterCertificateMap(reconciliation, mirrorMaker2Cluster, clusterCerts))
+                .compose(i -> {
+                    if (kafkaMirrorMaker2.getSpec().getTarget() != null) {
+                        String targetClusterCerts = clusterCerts.get(kafkaMirrorMaker2.getSpec().getTarget().getAlias());
+                        return tlsTrustedCertsSecret(reconciliation, namespace, mirrorMaker2Cluster, targetClusterCerts);
+                    } else {
+                        return Future.succeededFuture();
+                    }
+                })
                 .compose(i -> generateMetricsAndLoggingConfigMap(reconciliation, mirrorMaker2Cluster))
                 .compose(logAndMetricsConfigMap -> {
                     podAnnotations.put(Annotations.ANNO_STRIMZI_IO_CONFIGURATION_HASH, Util.hashStub(logAndMetricsConfigMap.getData().get(KafkaMirrorMaker2Cluster.KAFKA_CONNECT_CONFIGURATION_FILENAME)));
@@ -131,7 +142,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
                 })
                 .compose(i -> ReconcilerUtils.reconcileJmxSecret(reconciliation, secretOperations, mirrorMaker2Cluster))
                 .compose(i -> connectPodDisruptionBudget(reconciliation, namespace, mirrorMaker2Cluster))
-                .compose(i -> generateAuthHash(namespace, mirrorMaker2Cluster))
+                .compose(i -> generateAuthHash(namespace, mirrorMaker2Cluster, clusterCerts))
                 .compose(hash -> {
                     podAnnotations.put(Annotations.ANNO_STRIMZI_AUTH_HASH, Integer.toString(hash));
                     return Future.succeededFuture();
@@ -184,19 +195,22 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
      *
      * @param namespace               Namespace of the MirrorMaker2 cluster
      * @param mirrorMaker2Cluster     KafkaMirrorMaker2 cluster model
+     * @param clusterCert             Map of certificates for all clusters
      *
      * @return                        Future for tracking the asynchronous result of generating the TLS auth hash
      */
-    private Future<Integer> generateAuthHash(String namespace, KafkaMirrorMaker2Cluster mirrorMaker2Cluster) {
+    private Future<Integer> generateAuthHash(String namespace, KafkaMirrorMaker2Cluster mirrorMaker2Cluster, Map<String, String> clusterCert) {
         Promise<Integer> authHash = Promise.promise();
 
         Future.join(mirrorMaker2Cluster
                         .clusters()
                         .stream()
                         .map(cluster -> {
-                            List<CertSecretSource> trustedCertificates = cluster.getTls() == null ? List.of() : cluster.getTls().getTrustedCertificates();
-                            return ReconcilerUtils.authTlsHash(secretOperations, namespace, cluster.getAuthentication(), trustedCertificates);
-                        }).collect(Collectors.toList())
+                            KafkaClientAuthentication auth = cluster.getAuthentication();
+                            String certificates = clusterCert.get(cluster.getAlias());
+                            return ReconcilerUtils.authTlsHash(secretOperations, namespace, auth, certificates);
+                        })
+                        .collect(Collectors.toList())
                 )
                 .onSuccess(hashes -> {
                     int hash = hashes.<Integer>list()
@@ -293,6 +307,20 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
         StatusUtils.setStatusConditionAndObservedGeneration(mirrorMaker2, status, error);
         return maybeUpdateStatusCommon(resourceOperator, mirrorMaker2, reconciliation, status,
             (mirror1, status2) -> new KafkaMirrorMaker2Builder(mirror1).withStatus(status2).build());
+    }
+
+    private Future<?> updateMM2ClusterCertificateMap(Reconciliation reconciliation, KafkaMirrorMaker2Cluster mirrorMaker2, Map<String, String> clusterCerts) {
+        return Future.join(mirrorMaker2.clusters().stream().map(cluster -> {
+            List<CertSecretSource> trustedCerts = cluster.getTls() != null ? cluster.getTls().getTrustedCertificates() : Collections.emptyList();
+            return ReconcilerUtils.trustedCertificates(reconciliation, secretOperations, trustedCerts)
+                .compose(certs -> {
+                    if (certs != null) {
+                        // Duplicate check is done in KafkaMirrorMaker2Cluster::validateAndUpdateToNewAPI
+                        clusterCerts.put(cluster.getAlias(), certs);
+                    }
+                    return Future.succeededFuture();
+                });
+        }).toList());
     }
 
     // Methods for working with connector restarts
