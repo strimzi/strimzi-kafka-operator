@@ -118,6 +118,7 @@ Currently, we have these parameters that can be passed through the comment:
 | groups                        | Which Junit5 groups will be executed                                                                                                                 | all                                                                                  |
 | tests                         | Which Junit5 tests will be executed                                                                                                                  | all                                                                                  |
 | kubeVersion                   | Used Kubernetes version as part of Kind/Minikube setup                                                                                               | The one set as default in setup scripts                                              |
+| kindVersion                   | Version of Kind binary to install for cluster setup (e.g. `0.29.0`)                                                                                  | The one set as default in setup scripts (currently 0.31.0)                           |
 | kafkaVersion                  | Which Kafka version will be used in the tests                                                                                                        | Default one from STs config                                                          |
 
 The process of parameter usage is as follows:
@@ -132,6 +133,7 @@ The process of parameter usage is as follows:
 - `groups` are passed directly to `mvn` command. It should be used mostly only with `custom` pipeline as otherwise a specific `pipeline` could have the `groups` excluded.
 - `tests` are passed directly to `mvn` command. It should be used mostly only with `custom` pipeline as otherwise a specific `pipeline` could have the `tests` excluded.
 - `kubeVersion` is used for setup `kind` for every running jobs.
+- `kindVersion` is used for every running job to set the Kind CLI binary version.
 - `kafkaVersion` is used for every running job.
 
 ### Matrix generation

@@ -52,6 +52,9 @@ outputs:
   kubeVersion:
     description: "Version of Kubernetes used for tests"
     value: ${{ steps.parse_comment.outputs.kubeVersion }}
+  kindVersion:
+    description: "Version of Kind binary used for cluster setup (e.g. '0.29.0')"
+    value: ${{ steps.parse_comment.outputs.kindVersion }}
   parallel:
     description: "How many tests will be executed in parallel"
     value: ${{ steps.parse_comment.outputs.parallel }}
@@ -116,6 +119,7 @@ runs:
             parallel:     '1',
             kafkaVersion: 'latest',
             kubeVersion:  'latest',
+            kindVersion:  '',
           };
 
           let pipelineList = '', profileList = '';
@@ -142,6 +146,7 @@ runs:
             tests:                         getParameter('tests', sanitized),
             kafkaVersion:                  getParameter('kafkaversion', lower) || DEFAULTS.kafkaVersion,
             kubeVersion:                   getParameter('kubeversion',  lower) || DEFAULTS.kubeVersion,
+            kindVersion:                   getParameter('kindversion',  lower) || DEFAULTS.kindVersion,
             releaseVersion:                process.env.INPUT_RELEASE_VERSION || 'latest',
           };
 

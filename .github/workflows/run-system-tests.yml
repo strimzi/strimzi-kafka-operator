@@ -25,6 +25,11 @@ on:
         # Empty string means it will use default from setup scripts
         default: ""
         type: string
+      kindVersion:
+        description: "Version of Kind binary to install (e.g. '0.29.0'). Defaults to '0.31.0' if empty."
+        required: false
+        default: ""
+        type: string
       # Checkout ref params
       ref:
         description: "Repository ref that will be checkout"
@@ -114,7 +119,7 @@ jobs:
           architecture: ${{ matrix.config.arch }}
           controlNodes: 1
           workerNodes: 3
-          kindVersion: 0.31.0
+          kindVersion: ${{ inputs.kindVersion || '0.31.0' }}
 
       - name: Set default environment variables
         uses: ./.github/actions/utils/set-defaults
