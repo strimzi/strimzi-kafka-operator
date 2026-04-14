@@ -30,6 +30,7 @@
 * Update HTTP bridge to 1.0.0.
   * `/metrics` endpoint is no longer available on the regular HTTP interface (port 8080 by default). It is now available on the HTTP management interface, 8081.
     Users upgrading to Strimzi 1.0.0+ should check all monitoring configurations that scrape Kafka Bridge metrics and update them to use port 8081 instead of 8080 or any other non-default port before or immediately after the upgrade to avoid metrics collection failures.
+* Support force-renewal of KafkaUser certificates via `strimzi.io/force-renew` annotation
 
 ## 0.51.0
 
