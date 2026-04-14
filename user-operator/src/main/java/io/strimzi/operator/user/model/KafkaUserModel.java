@@ -9,7 +9,6 @@ import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.OwnerReferenceBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
-import io.strimzi.api.ResourceAnnotations;
 import io.strimzi.api.kafka.model.user.KafkaUser;
 import io.strimzi.api.kafka.model.user.KafkaUserAuthentication;
 import io.strimzi.api.kafka.model.user.KafkaUserAuthorizationSimple;
@@ -247,8 +246,9 @@ public class KafkaUserModel {
             String userKey = userSecret.getData().get("user.key");
 
             if (userSecret.getMetadata() != null
-                    && Annotations.booleanAnnotation(userSecret, ResourceAnnotations.ANNO_STRIMZI_IO_FORCE_RENEW, false)) {
+                    && Annotations.booleanAnnotation(userSecret, Annotations.ANNO_STRIMZI_IO_FORCE_RENEW, false)) {
                 // The user secret has the annotation which forces replacement => we have to generate a new user certificate
+                LOGGER.infoCr(reconciliation, "Certificate for user {} in namespace {} will be renewed due to force-renew annotation", name, namespace);
                 this.userCertAndKey = generateNewCertificate(reconciliation, clientsCa);
             } else if (originalCaCrt != null
                     && originalCaCrt.equals(caCrt)

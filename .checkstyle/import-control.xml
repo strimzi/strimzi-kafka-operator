@@ -98,7 +98,6 @@ We also control imports only in production classes and not in tests. This is con
         <allow pkg="io.strimzi.certs" />
         <allow pkg="io.strimzi.operator.common.model" />
         <allow pkg="io.strimzi.operator.user.model" />
-        <allow class="io.strimzi.api.ResourceAnnotations" />
         <allow class="io.strimzi.operator.common.Annotations" />
         <allow class="io.strimzi.operator.common.Reconciliation" />
         <allow class="io.strimzi.operator.common.ReconciliationLogger" />
