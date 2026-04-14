@@ -2,8 +2,11 @@
 set -e
 set +x
 
+# Clean-up /tmp directory from files which might have remained from previous container restart
+# We ignore any errors which might be caused by files injected by different agents which we do not have the rights to delete
+rm -rfv /tmp/cruise-control/* || true
+
 export CLASSPATH="$CLASSPATH:/opt/cruise-control/libs/*"
-export SCALA_VERSION="2.11.11"
 
 # Generate temporary keystore password
 CERTS_STORE_PASSWORD=$(< /dev/urandom tr -dc _A-Z-a-z-0-9 | head -c32)
@@ -13,12 +16,6 @@ mkdir -p /tmp/cruise-control
 
 # Import certificates into keystore and truststore
 "$CRUISE_CONTROL_HOME"/cruise_control_tls_prepare_certificates.sh
-
-export STRIMZI_TRUSTSTORE_LOCATION=/tmp/cruise-control/replication.truststore.p12
-export STRIMZI_TRUSTSTORE_PASSWORD="$CERTS_STORE_PASSWORD"
-
-export STRIMZI_KEYSTORE_LOCATION=/tmp/cruise-control/cruise-control.keystore.p12
-export STRIMZI_KEYSTORE_PASSWORD="$CERTS_STORE_PASSWORD"
 
 if [ -z "$KAFKA_LOG4J_OPTS" ]; then
   export KAFKA_LOG4J_OPTS="-Dlog4j2.configurationFile=file:$CRUISE_CONTROL_HOME/custom-config/log4j2.properties"
