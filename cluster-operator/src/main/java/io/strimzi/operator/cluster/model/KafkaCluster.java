@@ -42,6 +42,7 @@ import io.fabric8.openshift.api.model.Route;
 import io.fabric8.openshift.api.model.RouteBuilder;
 import io.strimzi.api.kafka.model.common.Condition;
 import io.strimzi.api.kafka.model.common.Rack;
+import io.strimzi.api.kafka.model.common.TopologyLabelRack;
 import io.strimzi.api.kafka.model.common.metrics.JmxPrometheusExporterMetrics;
 import io.strimzi.api.kafka.model.common.metrics.StrimziMetricsReporter;
 import io.strimzi.api.kafka.model.common.template.ContainerTemplate;
@@ -1358,7 +1359,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
         // Some volumes are used only on nodes with broker role and are not needed on controller-only nodes
         if (node.broker()) {
             // Volume for sharing data with init container for rack awareness and node port listeners
-            if (rack != null || isExposedWithNodePort()) {
+            if (rack instanceof TopologyLabelRack || isExposedWithNodePort()) {
                 volumeList.add(VolumeUtils.createEmptyDirVolume(INIT_VOLUME_NAME, "1Mi", "Memory"));
             }
         }
@@ -1405,7 +1406,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
         // Some volumes are used only on nodes with broker role and are not needed on controller-only nodes
         if (isBroker)   {
             // Volume for sharing data with init container for rack awareness and node port listeners
-            if (rack != null || isExposedWithNodePort()) {
+            if (rack instanceof TopologyLabelRack || isExposedWithNodePort()) {
                 volumeMountList.add(VolumeUtils.createVolumeMount(INIT_VOLUME_NAME, INIT_VOLUME_MOUNT));
             }
         }
@@ -1426,8 +1427,8 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
         List<EnvVar> varList = new ArrayList<>();
         varList.add(ContainerUtils.createEnvVarFromFieldRef(ENV_VAR_KAFKA_INIT_NODE_NAME, "spec.nodeName"));
 
-        if (rack != null) {
-            varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_INIT_RACK_TOPOLOGY_KEY, rack.getTopologyKey()));
+        if (rack instanceof TopologyLabelRack topologyLabelRack) {
+            varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_INIT_RACK_TOPOLOGY_KEY, topologyLabelRack.getTopologyKey()));
         }
 
         if (pool.isBroker() && !ListenersUtils.nodePortListeners(listeners).isEmpty()) {
@@ -1444,7 +1445,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
 
     private Container createInitContainer(ImagePullPolicy imagePullPolicy, KafkaPool pool) {
         if (pool.isBroker()
-                && (rack != null || !ListenersUtils.nodePortListeners(listeners).isEmpty())) {
+                && (rack instanceof TopologyLabelRack || !ListenersUtils.nodePortListeners(listeners).isEmpty())) {
             return ContainerUtils.createContainer(
                     INIT_NAME,
                     initImage,
@@ -1524,7 +1525,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
      * @return The cluster role binding.
      */
     public ClusterRoleBinding generateClusterRoleBinding(String assemblyNamespace) {
-        if (rack != null || isExposedWithNodePort()) {
+        if (rack instanceof TopologyLabelRack || isExposedWithNodePort()) {
             Subject subject = new SubjectBuilder()
                     .withKind("ServiceAccount")
                     .withName(componentName)

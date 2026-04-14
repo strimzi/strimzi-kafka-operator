@@ -15,7 +15,7 @@ import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodAffinityTermBuilder;
 import io.fabric8.kubernetes.api.model.PodBuilder;
 import io.fabric8.kubernetes.api.model.PreferredSchedulingTermBuilder;
-import io.strimzi.api.kafka.model.common.RackBuilder;
+import io.strimzi.api.kafka.model.common.TopologyLabelRackBuilder;
 import io.strimzi.api.kafka.model.common.template.PodTemplate;
 import io.strimzi.api.kafka.model.common.template.PodTemplateBuilder;
 import io.strimzi.api.kafka.model.kafka.EphemeralStorageBuilder;
@@ -206,7 +206,7 @@ public class ModelUtilsTest {
                 .endNodeAffinity()
                 .build();
 
-        assertThat(ModelUtils.affinityWithRackLabelSelector(null, new RackBuilder().withTopologyKey("topology.key/my").build()), is(expectedAffinity));
+        assertThat(ModelUtils.affinityWithRackLabelSelector(null, new TopologyLabelRackBuilder().withTopologyKey("topology.key/my").build()), is(expectedAffinity));
     }
 
     @Test
@@ -228,7 +228,7 @@ public class ModelUtilsTest {
                 .endPodAntiAffinity()
                 .build();
 
-        assertThat(ModelUtils.affinityWithRackLabelSelector(new PodTemplateBuilder().withAffinity(userAffinity).build(), new RackBuilder().withTopologyKey("topology.key/my").build()), is(expectedAffinity));
+        assertThat(ModelUtils.affinityWithRackLabelSelector(new PodTemplateBuilder().withAffinity(userAffinity).build(), new TopologyLabelRackBuilder().withTopologyKey("topology.key/my").build()), is(expectedAffinity));
     }
 
     @Test
@@ -254,7 +254,7 @@ public class ModelUtilsTest {
                 .endPodAntiAffinity()
                 .build();
 
-        assertThat(ModelUtils.affinityWithRackLabelSelector(new PodTemplateBuilder().withAffinity(userAffinity).build(), new RackBuilder().withTopologyKey("topology.key/my").build()), is(expectedAffinity));
+        assertThat(ModelUtils.affinityWithRackLabelSelector(new PodTemplateBuilder().withAffinity(userAffinity).build(), new TopologyLabelRackBuilder().withTopologyKey("topology.key/my").build()), is(expectedAffinity));
     }
 
     @Test
@@ -284,6 +284,6 @@ public class ModelUtilsTest {
                 .endPodAntiAffinity()
                 .build();
 
-        assertThat(ModelUtils.affinityWithRackLabelSelector(new PodTemplateBuilder().withAffinity(userAffinity).build(), new RackBuilder().withTopologyKey("topology.key/my").build()), is(expectedAffinity));
+        assertThat(ModelUtils.affinityWithRackLabelSelector(new PodTemplateBuilder().withAffinity(userAffinity).build(), new TopologyLabelRackBuilder().withTopologyKey("topology.key/my").build()), is(expectedAffinity));
     }
 }

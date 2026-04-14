@@ -62,6 +62,9 @@
 |listOfPolymorphic
 |xref:type-PolymorphicLeft-{context}[`PolymorphicLeft`] array
 |
+|polymorphicWithOptionalType
+|xref:type-PolymorphicLeft-{context}[`PolymorphicLeft`]
+|
 |rawList
 |object array
 |

@@ -6,6 +6,7 @@ package io.strimzi.api.kafka.model.kafka;
 
 import io.strimzi.api.kafka.model.AbstractCrdTest;
 import io.strimzi.api.kafka.model.common.ConditionBuilder;
+import io.strimzi.api.kafka.model.common.TopologyLabelRack;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListener;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
@@ -20,6 +21,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
+import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -177,5 +179,14 @@ public class KafkaTest extends AbstractCrdTest<Kafka> {
 
         assertThat(listeners.get(0).getName(), is("plain"));
         assertThat(listeners.get(1).getName(), is("external"));
+    }
+
+    @Test
+    public void testUntypedRackAwareness()    {
+        Kafka model = ReadWriteUtils.readObjectFromYamlFileInResources("Kafka-untyped-topology-label-rack.yaml", Kafka.class);
+
+        assertThat(model.getSpec().getKafka().getRack(), is(notNullValue()));
+        assertThat(model.getSpec().getKafka().getRack(), is(instanceOf(TopologyLabelRack.class)));
+        assertThat(((TopologyLabelRack) model.getSpec().getKafka().getRack()).getTopologyKey(), is("topology.kubernetes.io/zone"));
     }
 }

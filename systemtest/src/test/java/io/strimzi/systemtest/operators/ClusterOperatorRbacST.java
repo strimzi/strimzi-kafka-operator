@@ -143,9 +143,9 @@ public class ClusterOperatorRbacST extends AbstractST {
         KubeResourceManager.get().createResourceWithoutWait(KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getClusterName(), 3)
             .editOrNewSpec()
                 .editOrNewKafka()
-                    .withNewRack()
+                    .withNewTopologyLabelRack()
                         .withTopologyKey(rackKey)
-                    .endRack()
+                    .endTopologyLabelRack()
                 .endKafka()
             .endSpec()
             .build());
@@ -157,7 +157,9 @@ public class ClusterOperatorRbacST extends AbstractST {
 
         KubeResourceManager.get().createResourceWithoutWait(KafkaConnectTemplates.kafkaConnect(Environment.TEST_SUITE_NAMESPACE, testStorage.getClusterName(), testStorage.getClusterName(), 1)
             .editSpec()
-                .withNewRack(rackKey)
+                .withNewTopologyLabelRack()
+                    .withTopologyKey(rackKey)
+                .endTopologyLabelRack()
             .endSpec()
             .build());
 

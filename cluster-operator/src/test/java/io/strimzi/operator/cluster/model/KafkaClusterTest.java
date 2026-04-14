@@ -459,9 +459,9 @@ public class KafkaClusterTest {
                     .editKafka()
                         .withImage("my-image:my-tag")
                         .withBrokerRackInitImage("my-init-image:my-init-tag")
-                        .withNewRack()
+                        .withNewTopologyLabelRack()
                             .withTopologyKey("rack-key")
-                        .endRack()
+                        .endTopologyLabelRack()
                     .endKafka()
                 .endSpec()
                 .build();
@@ -1793,7 +1793,9 @@ public class KafkaClusterTest {
                 .endMetadata()
                 .editSpec()
                     .editKafka()
-                        .withNewRack("my-topology-label")
+                        .withNewTopologyLabelRack()
+                            .withTopologyKey("my-topology-label")
+                        .endTopologyLabelRack()
                     .endKafka()
                 .endSpec()
                 .build();
@@ -2155,9 +2157,9 @@ public class KafkaClusterTest {
                 .editSpec()
                     .editKafka()
                         .withListeners(new GenericKafkaListenerBuilder().withName("external").withPort(9094).withType(KafkaListenerType.NODEPORT).withTls().build())
-                        .withNewRack()
+                        .withNewTopologyLabelRack()
                             .withTopologyKey("my-topology-key")
-                        .endRack()
+                        .endTopologyLabelRack()
                     .endKafka()
                 .endSpec()
                 .build();
@@ -2200,9 +2202,9 @@ public class KafkaClusterTest {
         Kafka kafka = new KafkaBuilder(KAFKA)
             .editSpec()
                 .editKafka()
-                    .withNewRack()
+                    .withNewTopologyLabelRack()
                         .withTopologyKey("rack-key")
-                    .endRack()
+                    .endTopologyLabelRack()
                 .endKafka()
             .endSpec()
             .build();
@@ -2247,9 +2249,9 @@ public class KafkaClusterTest {
         Kafka kafka = new KafkaBuilder(KAFKA)
             .editSpec()
                 .editKafka()
-                    .withNewRack()
+                    .withNewTopologyLabelRack()
                         .withTopologyKey("rack-key")
-                    .endRack()
+                    .endTopologyLabelRack()
                 .endKafka()
             .endSpec()
             .build();
@@ -2418,9 +2420,9 @@ public class KafkaClusterTest {
         Kafka kafka = new KafkaBuilder(KAFKA)
                 .editSpec()
                     .editKafka()
-                        .withNewRack()
+                        .withNewTopologyLabelRack()
                             .withTopologyKey("failure-domain.beta.kubernetes.io/zone")
-                        .endRack()
+                        .endTopologyLabelRack()
                     .endKafka()
                 .endSpec()
                 .build();
@@ -2702,9 +2704,9 @@ public class KafkaClusterTest {
         Kafka kafka = new KafkaBuilder(KAFKA)
                 .editSpec()
                     .editKafka()
-                        .withNewRack()
+                        .withNewTopologyLabelRack()
                             .withTopologyKey("failure-domain.beta.kubernetes.io/zone")
-                        .endRack()
+                        .endTopologyLabelRack()
                         .withNewTemplate()
                             .withNewPod()
                                 .withAffinity(affinity)
@@ -2855,9 +2857,9 @@ public class KafkaClusterTest {
         Kafka kafka = new KafkaBuilder(KAFKA)
                 .editSpec()
                     .editKafka()
-                        .withNewRack()
+                        .withNewTopologyLabelRack()
                             .withTopologyKey("failure-domain.beta.kubernetes.io/zone")
-                        .endRack()
+                        .endTopologyLabelRack()
                         .withNewTemplate()
                             .withNewPod()
                                 .withAffinity(affinity)
@@ -2974,9 +2976,9 @@ public class KafkaClusterTest {
         Kafka kafka = new KafkaBuilder(KAFKA)
                 .editSpec()
                     .editKafka()
-                        .withNewRack()
+                        .withNewTopologyLabelRack()
                             .withTopologyKey("failure-domain.beta.kubernetes.io/zone")
-                        .endRack()
+                        .endTopologyLabelRack()
                     .endKafka()
                 .endSpec()
                 .build();
@@ -4451,7 +4453,7 @@ public class KafkaClusterTest {
     }
 
     @Test
-    public void testResourceResizingPodSetAnnotations()   {
+    public void testResourceResizingPodSetAnnotations() {
         Kafka kafka = new KafkaBuilder(KAFKA)
                 .editMetadata()
                     .addToAnnotations(Annotations.ANNO_STRIMZI_IO_IN_PLACE_RESIZING, "true")
@@ -4479,5 +4481,63 @@ public class KafkaClusterTest {
             assertThat(podSet.getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_IO_IN_PLACE_RESIZING), is(nullValue()));
             assertThat(podSet.getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_IO_IN_PLACE_RESIZING_WAIT_FOR_DEFERRED), is("true"));
         });
+    }
+
+    @Test
+    public void testEnvironmentVariableRack()   {
+        Kafka kafka = new KafkaBuilder(KAFKA)
+                .editSpec()
+                    .editKafka()
+                        .withNewEnvironmentVariableRack()
+                            .withEnvVarName("MY_RACK_ID")
+                        .endEnvironmentVariableRack()
+                    .endKafka()
+                .endSpec()
+                .build();
+
+        // Test the resources
+        List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafka, List.of(POOL_CONTROLLERS, POOL_BROKERS), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, SHARED_ENV_PROVIDER);
+        KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, null, SHARED_ENV_PROVIDER);
+
+        // Test generated SPS
+        List<StrimziPodSet> podSets = kc.generatePodSets(null, null, node -> Map.of("special", "annotation"));
+        assertThat(podSets.size(), is(2));
+
+        for (StrimziPodSet podSet : podSets)    {
+            // We need to loop through the pods to make sure they have the right values
+            List<Pod> pods = PodSetUtils.podSetToPods(podSet);
+
+            for (Pod pod : pods) {
+                // Check init containers
+                assertThat(pod.getSpec().getInitContainers().size(), is(0));
+
+                // Check volumes
+                assertThat(pod.getSpec().getVolumes().size(), is(4));
+                assertThat(pod.getSpec().getVolumes().get(0).getName(), is("data-0"));
+                assertThat(pod.getSpec().getVolumes().get(0).getPersistentVolumeClaim(), is(notNullValue()));
+                assertThat(pod.getSpec().getVolumes().get(1).getName(), is(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME));
+                assertThat(pod.getSpec().getVolumes().get(1).getEmptyDir(), is(notNullValue()));
+                assertThat(pod.getSpec().getVolumes().get(1).getEmptyDir().getSizeLimit(), is(new Quantity("5Mi")));
+                assertThat(pod.getSpec().getVolumes().get(2).getName(), is("kafka-metrics-and-logging"));
+                assertThat(pod.getSpec().getVolumes().get(2).getConfigMap().getName(), is(pod.getMetadata().getName()));
+                assertThat(pod.getSpec().getVolumes().get(3).getName(), is("ready-files"));
+                assertThat(pod.getSpec().getVolumes().get(3).getEmptyDir(), is(notNullValue()));
+
+                // Check volume mounts
+                assertThat(pod.getSpec().getContainers().size(), is(1));
+                assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().size(), is(4));
+                assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(0).getName(), is("data-0"));
+                assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(0).getMountPath(), is("/var/lib/kafka/data-0"));
+                assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(1).getName(), is(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME));
+                assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(1).getMountPath(), is(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_MOUNT_PATH));
+                assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(2).getName(), is("kafka-metrics-and-logging"));
+                assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(2).getMountPath(), is("/opt/kafka/custom-config/"));
+                assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(3).getName(), is("ready-files"));
+                assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(3).getMountPath(), is("/var/opt/kafka"));
+            }
+        }
+
+        // Test Cluster Role Binding
+        assertThat(kc.generateClusterRoleBinding(NAMESPACE), is(nullValue()));
     }
 }

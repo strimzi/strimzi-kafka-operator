@@ -5,11 +5,10 @@
 package io.strimzi.api.kafka.model.common;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import io.strimzi.crdgenerator.annotations.CelValidation;
 import io.strimzi.crdgenerator.annotations.Description;
-import io.strimzi.crdgenerator.annotations.DescriptionFile;
-import io.strimzi.crdgenerator.annotations.Example;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -20,32 +19,44 @@ import java.util.Map;
 /**
  * Representation of the rack configuration.
  */
-@DescriptionFile
 @Buildable(
-        editableEnabled = false,
-        builderPackage = Constants.FABRIC8_KUBERNETES_API
+    editableEnabled = false,
+    builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
+@JsonTypeInfo(
+    use = JsonTypeInfo.Id.NAME,
+    include = JsonTypeInfo.As.EXISTING_PROPERTY,
+    defaultImpl = TopologyLabelRack.class,
+    property = "type"
+)
+@JsonSubTypes({
+    @JsonSubTypes.Type(name = TopologyLabelRack.TYPE_TOPOLOGY_LABEL, value = TopologyLabelRack.class),
+    @JsonSubTypes.Type(name = EnvironmentVariableRack.TYPE_ENVIRONMENT_VARIABLE, value = EnvironmentVariableRack.class),
+})
+@CelValidation(rules = {
+    @CelValidation.CelValidationRule(
+        // When type is not specified or is set to topology-label, topologyKey is required
+        rule = "(has(self.type) && self.type != \"topology-label\") || self.topologyKey != \"\"",
+        message = "topologyKey property is required"
+        ),
+    @CelValidation.CelValidationRule(
+        // When type is set to environment variable, envVarName is required
+        rule = "has(self.type) == false || self.type != \"environment-variable\" || self.envVarName != \"\"",
+        message = "envVarName property is required"
+        )
+})
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({"topologyKey"})
 @EqualsAndHashCode
 @ToString
-public class Rack implements UnknownPropertyPreserving {
-    private String topologyKey;
+public abstract class Rack implements UnknownPropertyPreserving {
     private Map<String, Object> additionalProperties;
 
-    public Rack() { }
-
-    public Rack(String topologyKey) {
-        this.topologyKey = topologyKey;
-    }
-
-    @Description("A key that matches labels assigned to the Kubernetes cluster nodes. " +
-            "The value of the label is used to set a broker's `broker.rack` config, and the `client.rack` config for Kafka Connect or MirrorMaker 2.")
-    @Example("topology.kubernetes.io/zone")
-    @JsonProperty(required = true)
-    public String getTopologyKey() {
-        return topologyKey;
-    }
+    @Description("Specifies the rack awareness type. " +
+            "Supported types are `topology-label` and `environment-variable`. " +
+            "`topology-label` uses a Kubernetes worker node label to set the `broker.rack` configuration for Kafka brokers and the `client.rack` configuration for Kafka Connect and MirrorMaker 2. " +
+            "`environment-variable` uses an environment variable to set the `broker.rack` configuration for Kafka brokers and the `client.rack` configuration for Kafka Connect and MirrorMaker 2. " +
+            "When not specified, `topology-label` type is used by default.")
+    public abstract String getType();
 
     @Override
     public Map<String, Object> getAdditionalProperties() {

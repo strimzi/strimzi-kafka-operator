@@ -860,12 +860,12 @@ public class KafkaBridgeClusterTest {
     }
 
     @Test
-    public void testGenerateDeploymentWithRack() {
+    public void testGenerateDeploymentWithTopologyLabelRack() {
         KafkaBridge resource = new KafkaBridgeBuilder(RESOURCE)
                 .editOrNewSpec()
-                .withNewRack()
-                .withTopologyKey("topology-key")
-                .endRack()
+                    .withNewTopologyLabelRack()
+                        .withTopologyKey("topology-key")
+                    .endTopologyLabelRack()
                 .endSpec()
                 .build();
 
@@ -873,14 +873,14 @@ public class KafkaBridgeClusterTest {
     }
 
     @Test
-    public void testGenerateDeploymentWithRackAndCustomInitImage() {
+    public void testGenerateDeploymentWithTopologyLabelRackAndCustomInitImage() {
         final String customImage = "quay.io/strimzi/operator:custom";
         KafkaBridge resource = new KafkaBridgeBuilder(RESOURCE)
                 .editOrNewSpec()
                 .withClientRackInitImage(customImage)
-                .withNewRack()
-                .withTopologyKey("topology-key")
-                .endRack()
+                    .withNewTopologyLabelRack()
+                        .withTopologyKey("topology-key")
+                    .endTopologyLabelRack()
                 .endSpec()
                 .build();
 
@@ -888,7 +888,7 @@ public class KafkaBridgeClusterTest {
     }
 
     @Test
-    public void testGenerateDeploymentWithRackAndInitVolumeMounts() {
+    public void testGenerateDeploymentWithTopologyLabelRackAndInitVolumeMounts() {
 
         ConfigMapVolumeSource configMap = new ConfigMapVolumeSourceBuilder()
                 .withName("config-map-name")
@@ -907,17 +907,17 @@ public class KafkaBridgeClusterTest {
 
         KafkaBridge resource = new KafkaBridgeBuilder(RESOURCE)
                 .editOrNewSpec()
-                .withNewRack()
-                .withTopologyKey("topology-key")
-                .endRack()
-                .withNewTemplate()
-                .withNewPod()
-                    .withVolumes(singletonList(additionalVolume))
-                .endPod()
-                    .withNewInitContainer()
-                        .withVolumeMounts(singletonList(additionalVolumeMount))
-                    .endInitContainer()
-                .endTemplate()
+                    .withNewTopologyLabelRack()
+                        .withTopologyKey("topology-key")
+                    .endTopologyLabelRack()
+                    .withNewTemplate()
+                    .withNewPod()
+                        .withVolumes(singletonList(additionalVolume))
+                    .endPod()
+                        .withNewInitContainer()
+                            .withVolumeMounts(singletonList(additionalVolumeMount))
+                        .endInitContainer()
+                    .endTemplate()
                 .endSpec()
                 .build();
 
@@ -969,6 +969,35 @@ public class KafkaBridgeClusterTest {
     }
 
     @Test
+    public void testEnvironmentVariableRack() {
+        KafkaBridge resource = new KafkaBridgeBuilder(RESOURCE)
+                .editOrNewSpec()
+                    .withNewEnvironmentVariableRack()
+                        .withEnvVarName("MY_RACK_ID")
+                    .endEnvironmentVariableRack()
+                .endSpec()
+                .build();
+        KafkaBridgeCluster bridgeCluster = KafkaBridgeCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, SHARED_ENV_PROVIDER);
+
+        // Test deployment
+        Deployment deployment = bridgeCluster.generateDeployment(new HashMap<>(), false, null, null);
+        PodSpec podSpec = deployment.getSpec().getTemplate().getSpec();
+        assertThat(podSpec.getContainers(), is(notNullValue()));
+        assertThat(podSpec.getContainers(), hasSize(1));
+        assertThat(podSpec.getContainers().get(0).getVolumeMounts(), hasSize(2));
+        assertThat(podSpec.getContainers().get(0).getVolumeMounts().get(0).getName(), is("strimzi-tmp"));
+        assertThat(podSpec.getContainers().get(0).getVolumeMounts().get(1).getName(), is("kafka-bridge-configurations"));
+        assertThat(podSpec.getVolumes(), hasSize(2));
+        assertThat(podSpec.getVolumes().get(0).getName(), is("strimzi-tmp"));
+        assertThat(podSpec.getVolumes().get(1).getName(), is("kafka-bridge-configurations"));
+        assertThat(podSpec.getInitContainers(), is(nullValue()));
+
+        // Test ClusterRoleBinding
+        ClusterRoleBinding crb = bridgeCluster.generateClusterRoleBinding();
+        assertThat(crb, is(nullValue()));
+    }
+
+    @Test
     public void testClusterRoleBindingRack() {
         String testNamespace = "other-namespace";
         String topologyKey = "topology-key";
@@ -978,7 +1007,9 @@ public class KafkaBridgeClusterTest {
                 .withNamespace(testNamespace)
                 .endMetadata()
                 .editOrNewSpec()
-                .withNewRack(topologyKey)
+                    .withNewTopologyLabelRack()
+                        .withTopologyKey(topologyKey)
+                    .endTopologyLabelRack()
                 .endSpec()
                 .build();
 

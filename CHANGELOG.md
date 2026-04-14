@@ -10,6 +10,7 @@
 * Add support for `advertisedPortTemplate` in listener configuration to add more flexibility when configuring advertised ports.
 * In-place Pod resizing support for Kafka brokers and controllers, Connect nodes, and MirrorMaker 2 nodes
 * Remove PreferredLeaderElectionGoal from Cruise Control's default.goals list
+* Support for `type: environment-variable` rack awareness based on environment variables that do not require ClusterRoleBindings
 * Add `topologySpreadConstraints` support to the Strimzi Helm chart operator Deployment
 * Update HTTP bridge to 1.0.0.
 * Enable configuring `allowList` of Strimzi Metrics Reporter dynamically

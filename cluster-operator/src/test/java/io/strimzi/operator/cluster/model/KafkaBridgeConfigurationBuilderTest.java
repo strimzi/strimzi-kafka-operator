@@ -15,6 +15,8 @@ import io.strimzi.api.kafka.model.bridge.KafkaBridgeProducerSpecBuilder;
 import io.strimzi.api.kafka.model.bridge.KafkaBridgeSpecBuilder;
 import io.strimzi.api.kafka.model.common.ClientTls;
 import io.strimzi.api.kafka.model.common.ClientTlsBuilder;
+import io.strimzi.api.kafka.model.common.EnvironmentVariableRackBuilder;
+import io.strimzi.api.kafka.model.common.TopologyLabelRackBuilder;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationCustom;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationCustomBuilder;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationPlain;
@@ -64,7 +66,7 @@ public class KafkaBridgeConfigurationBuilderTest {
         String configuration = new KafkaBridgeConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, BRIDGE_CLUSTER, BRIDGE_BOOTSTRAP_SERVERS)
                 .withKafkaAdminClient(null)
                 .withKafkaProducer(null)
-                .withKafkaConsumer(null)
+                .withKafkaConsumer(null, null)
                 .build();
         assertThat(configuration, isEquivalent(
                 "bridge.id=my-bridge",
@@ -367,7 +369,7 @@ public class KafkaBridgeConfigurationBuilderTest {
                         ))
                 .build();
         configuration = new KafkaBridgeConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, BRIDGE_CLUSTER, BRIDGE_BOOTSTRAP_SERVERS)
-                .withKafkaConsumer(kafkaBridgeConsumer)
+                .withKafkaConsumer(kafkaBridgeConsumer, null)
                 .build();
         assertThat(configuration, isEquivalent(
                 "bridge.id=my-bridge",
@@ -376,7 +378,6 @@ public class KafkaBridgeConfigurationBuilderTest {
                 "kafka.consumer.auto.offset.reset=earliest",
                 "kafka.consumer.key.deserializer=my-consumer-key-deserializer",
                 "kafka.consumer.value.deserializer=my-consumer-value-deserializer",
-                "kafka.consumer.client.rack=${strimzidir:/opt/strimzi/init:rack.id}",
                 "kafka.consumer.config.providers=strimzienv,strimzifile,strimzidir",
                 "kafka.consumer.config.providers.strimzienv.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider",
                 "kafka.consumer.config.providers.strimzienv.param.allowlist.pattern=.*",
@@ -398,7 +399,7 @@ public class KafkaBridgeConfigurationBuilderTest {
                         ))
                 .build();
         configuration = new KafkaBridgeConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, BRIDGE_CLUSTER, BRIDGE_BOOTSTRAP_SERVERS)
-                .withKafkaConsumer(kafkaBridgeConsumer)
+                .withKafkaConsumer(kafkaBridgeConsumer, null)
                 .build();
         assertThat(configuration, isEquivalent(
                 "bridge.id=my-bridge",
@@ -407,7 +408,6 @@ public class KafkaBridgeConfigurationBuilderTest {
                 "kafka.consumer.auto.offset.reset=earliest",
                 "kafka.consumer.key.deserializer=my-consumer-key-deserializer",
                 "kafka.consumer.value.deserializer=my-consumer-value-deserializer",
-                "kafka.consumer.client.rack=${strimzidir:/opt/strimzi/init:rack.id}",
                 "kafka.consumer.config.providers=env,strimzienv,strimzifile,strimzidir",
                 "kafka.consumer.config.providers.strimzienv.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider",
                 "kafka.consumer.config.providers.strimzienv.param.allowlist.pattern=.*",
@@ -416,6 +416,48 @@ public class KafkaBridgeConfigurationBuilderTest {
                 "kafka.consumer.config.providers.strimzidir.class=org.apache.kafka.common.config.provider.DirectoryConfigProvider",
                 "kafka.consumer.config.providers.strimzidir.param.allowed.paths=/opt/strimzi",
                 "kafka.consumer.config.providers.env.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider"
+        ));
+
+        // Kafka Consumer with topology-label-based rack
+        kafkaBridgeConsumer = new KafkaBridgeConsumerSpecBuilder()
+                .withConfig(Map.of())
+                .build();
+        configuration = new KafkaBridgeConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, BRIDGE_CLUSTER, BRIDGE_BOOTSTRAP_SERVERS)
+                .withKafkaConsumer(kafkaBridgeConsumer, new TopologyLabelRackBuilder().withTopologyKey("rack-label").build())
+                .build();
+        assertThat(configuration, isEquivalent(
+                "bridge.id=my-bridge",
+                "kafka.bootstrap.servers=my-cluster-kafka-bootstrap:9092",
+                "kafka.security.protocol=PLAINTEXT",
+                "kafka.consumer.client.rack=${strimzidir:/opt/strimzi/init:rack.id}",
+                "kafka.consumer.config.providers=strimzienv,strimzifile,strimzidir",
+                "kafka.consumer.config.providers.strimzienv.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider",
+                "kafka.consumer.config.providers.strimzienv.param.allowlist.pattern=.*",
+                "kafka.consumer.config.providers.strimzifile.class=org.apache.kafka.common.config.provider.FileConfigProvider",
+                "kafka.consumer.config.providers.strimzifile.param.allowed.paths=/opt/strimzi",
+                "kafka.consumer.config.providers.strimzidir.class=org.apache.kafka.common.config.provider.DirectoryConfigProvider",
+                "kafka.consumer.config.providers.strimzidir.param.allowed.paths=/opt/strimzi"
+        ));
+
+        // Kafka Consumer with envvar-based rack
+        kafkaBridgeConsumer = new KafkaBridgeConsumerSpecBuilder()
+                .withConfig(Map.of())
+                .build();
+        configuration = new KafkaBridgeConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, BRIDGE_CLUSTER, BRIDGE_BOOTSTRAP_SERVERS)
+                .withKafkaConsumer(kafkaBridgeConsumer, new EnvironmentVariableRackBuilder().withEnvVarName("MY_RACK_ID").build())
+                .build();
+        assertThat(configuration, isEquivalent(
+                "bridge.id=my-bridge",
+                "kafka.bootstrap.servers=my-cluster-kafka-bootstrap:9092",
+                "kafka.security.protocol=PLAINTEXT",
+                "kafka.consumer.client.rack=${strimzienv:MY_RACK_ID}",
+                "kafka.consumer.config.providers=strimzienv,strimzifile,strimzidir",
+                "kafka.consumer.config.providers.strimzienv.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider",
+                "kafka.consumer.config.providers.strimzienv.param.allowlist.pattern=.*",
+                "kafka.consumer.config.providers.strimzifile.class=org.apache.kafka.common.config.provider.FileConfigProvider",
+                "kafka.consumer.config.providers.strimzifile.param.allowed.paths=/opt/strimzi",
+                "kafka.consumer.config.providers.strimzidir.class=org.apache.kafka.common.config.provider.DirectoryConfigProvider",
+                "kafka.consumer.config.providers.strimzidir.param.allowed.paths=/opt/strimzi"
         ));
     }
 

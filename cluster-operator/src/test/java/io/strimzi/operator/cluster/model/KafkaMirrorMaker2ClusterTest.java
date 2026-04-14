@@ -84,7 +84,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.containsString;
@@ -1049,7 +1048,9 @@ public class KafkaMirrorMaker2ClusterTest {
 
         KafkaMirrorMaker2 resource = new KafkaMirrorMaker2Builder(RESOURCE)
                 .editSpec()
-                    .withNewRack("my-topology-key")
+                    .withNewTopologyLabelRack()
+                        .withTopologyKey("my-topology-key")
+                    .endTopologyLabelRack()
                     .withNewTemplate()
                         .withNewPodSet()
                             .withNewMetadata()
@@ -1671,58 +1672,6 @@ public class KafkaMirrorMaker2ClusterTest {
     }
 
     @Test
-    public void testPodSetWithRack() {
-        String clientRackInitImage = "client-rack-init-image";
-        
-        KafkaMirrorMaker2 resource = new KafkaMirrorMaker2Builder(RESOURCE)
-                .editOrNewSpec()
-                    .withNewRack()
-                        .withTopologyKey("topology-key")
-                    .endRack()
-                    .withClientRackInitImage(clientRackInitImage)
-                .endSpec()
-                .build();
-
-        KafkaMirrorMaker2Cluster cluster = KafkaMirrorMaker2Cluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
-
-        // Check PodSet
-        StrimziPodSet podSet = cluster.generatePodSet(3, Map.of(), Map.of(), false, null, null, null);
-        PodSetUtils.podSetToPods(podSet).forEach(pod -> {
-            // check that pod spec contains the init Kafka container
-            List<Container> initContainers = pod.getSpec().getInitContainers();
-            assertThat(initContainers, is(notNullValue()));
-            assertThat(!initContainers.isEmpty(), is(true));
-
-            Optional<Container> matchedKafkaInitContainer = initContainers.stream().filter(container -> container.getName().equals(KafkaConnectCluster.INIT_NAME)).findAny();
-            assertThat(matchedKafkaInitContainer.isPresent(), is(true));
-            assertThat(matchedKafkaInitContainer.get().getImage(), is(clientRackInitImage));
-        });
-    }
-
-    @Test
-    public void testClusterRoleBindingRack() {
-        String testNamespace = "other-namespace";
-        String topologyKey = "topology-key";
-
-        KafkaMirrorMaker2 resource = new KafkaMirrorMaker2Builder(RESOURCE)
-                .editOrNewMetadata()
-                    .withNamespace(testNamespace)
-                .endMetadata()
-                .editOrNewSpec()
-                    .withNewRack(topologyKey)
-                .endSpec()
-                .build();
-
-        KafkaMirrorMaker2Cluster cluster = KafkaMirrorMaker2Cluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
-        ClusterRoleBinding crb = cluster.generateClusterRoleBinding();
-
-        assertThat(crb.getMetadata().getName(), is(KafkaMirrorMaker2Resources.initContainerClusterRoleBindingName(NAME, testNamespace)));
-        assertThat(crb.getMetadata().getNamespace(), is(nullValue()));
-        assertThat(crb.getSubjects().get(0).getNamespace(), is(testNamespace));
-        assertThat(crb.getSubjects().get(0).getName(), is(cluster.componentName));
-    }
-
-    @Test
     public void testNullClusterRoleBinding() {
         String testNamespace = "other-namespace";
 
@@ -1842,5 +1791,97 @@ public class KafkaMirrorMaker2ClusterTest {
         // Check PodSet
         ps = kmm2.generatePodSet(3, new HashMap<>(), new HashMap<>(), false, null, null, null);
         assertThat(ps.getMetadata().getAnnotations(), is(Map.of(Annotations.ANNO_STRIMZI_IO_IN_PLACE_RESIZING_WAIT_FOR_DEFERRED, "true")));
+    }
+
+    @Test
+    public void testTopologyLabelRack() {
+        KafkaMirrorMaker2 resource = new KafkaMirrorMaker2Builder(RESOURCE)
+                .editOrNewSpec()
+                    .withNewTopologyLabelRack()
+                        .withTopologyKey("topology-key")
+                    .endTopologyLabelRack()
+                    .withClientRackInitImage("client-rack-init-image")
+                .endSpec()
+                .build();
+        KafkaMirrorMaker2Cluster kmm2 = KafkaMirrorMaker2Cluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
+
+        // Check PodSet
+        StrimziPodSet podSet = kmm2.generatePodSet(3, Map.of(), Map.of(), false, null, null, null);
+        PodSetUtils.podSetToPods(podSet).forEach(pod -> {
+            // Check Init container
+            List<Container> initContainers = pod.getSpec().getInitContainers();
+            assertThat(initContainers, is(notNullValue()));
+            assertThat(!initContainers.isEmpty(), is(true));
+            assertThat(initContainers.get(0).getName(), is(KafkaConnectCluster.INIT_NAME));
+            assertThat(initContainers.get(0).getImage(), is("client-rack-init-image"));
+
+            // Check container volumes
+            assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().size(), is(3));
+            assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(0).getName(), is(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME));
+            assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(0).getMountPath(), is(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_MOUNT_PATH));
+            assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(1).getName(), is("kafka-connect-configurations"));
+            assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(1).getMountPath(), is("/opt/kafka/custom-config/"));
+            assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(2).getName(), is("rack-volume"));
+            assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(2).getMountPath(), is("/opt/kafka/init"));
+
+            // Check the init container volumes
+            assertThat(pod.getSpec().getInitContainers().get(0).getVolumeMounts().size(), is(1));
+            assertThat(pod.getSpec().getInitContainers().get(0).getVolumeMounts().get(0).getName(), is("rack-volume"));
+            assertThat(pod.getSpec().getInitContainers().get(0).getVolumeMounts().get(0).getMountPath(), is("/opt/kafka/init"));
+
+            // Check volumes
+            assertThat(pod.getSpec().getVolumes().size(), is(3));
+            assertThat(pod.getSpec().getVolumes().get(0).getName(), is(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME));
+            assertThat(pod.getSpec().getVolumes().get(0).getEmptyDir(), is(notNullValue()));
+            assertThat(pod.getSpec().getVolumes().get(1).getName(), is("kafka-connect-configurations"));
+            assertThat(pod.getSpec().getVolumes().get(1).getConfigMap().getName(), is("foo-mirrormaker2-config"));
+            assertThat(pod.getSpec().getVolumes().get(2).getName(), is("rack-volume"));
+            assertThat(pod.getSpec().getVolumes().get(2).getEmptyDir(), is(notNullValue()));
+            assertThat(pod.getSpec().getVolumes().get(2).getEmptyDir().getSizeLimit(), is(new Quantity("1Mi")));
+        });
+
+        // Check ClusterRoleBinding
+        ClusterRoleBinding crb = kmm2.generateClusterRoleBinding();
+        assertThat(crb.getMetadata().getName(), is(KafkaMirrorMaker2Resources.initContainerClusterRoleBindingName(NAME, NAMESPACE)));
+        assertThat(crb.getMetadata().getNamespace(), is(nullValue()));
+        assertThat(crb.getSubjects().get(0).getNamespace(), is(NAMESPACE));
+        assertThat(crb.getSubjects().get(0).getName(), is(kmm2.componentName));
+    }
+
+    @Test
+    public void testEnvironmentVariableRack() {
+        KafkaMirrorMaker2 resource = new KafkaMirrorMaker2Builder(RESOURCE)
+                .editOrNewSpec()
+                    .withNewEnvironmentVariableRack()
+                        .withEnvVarName("MY_RACK_ID")
+                    .endEnvironmentVariableRack()
+                    .withClientRackInitImage("client-rack-init-image")
+                .endSpec()
+                .build();
+        KafkaMirrorMaker2Cluster kmm2 = KafkaMirrorMaker2Cluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
+
+        // Check PodSet
+        StrimziPodSet podSet = kmm2.generatePodSet(3, Map.of(), Map.of(), false, null, null, null);
+        PodSetUtils.podSetToPods(podSet).forEach(pod -> {
+            // Check init container
+            assertThat(pod.getSpec().getInitContainers().size(), is(0));
+
+            // Check container volumes
+            assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().size(), is(2));
+            assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(0).getName(), is(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME));
+            assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(0).getMountPath(), is(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_MOUNT_PATH));
+            assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(1).getName(), is("kafka-connect-configurations"));
+            assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(1).getMountPath(), is("/opt/kafka/custom-config/"));
+
+            // Check volumes
+            assertThat(pod.getSpec().getVolumes().size(), is(2));
+            assertThat(pod.getSpec().getVolumes().get(0).getName(), is(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME));
+            assertThat(pod.getSpec().getVolumes().get(0).getEmptyDir(), is(notNullValue()));
+            assertThat(pod.getSpec().getVolumes().get(1).getName(), is("kafka-connect-configurations"));
+            assertThat(pod.getSpec().getVolumes().get(1).getConfigMap().getName(), is("foo-mirrormaker2-config"));
+        });
+
+        // Check ClusterRoleBinding
+        assertThat(kmm2.generateClusterRoleBinding(), is(nullValue()));
     }
 }

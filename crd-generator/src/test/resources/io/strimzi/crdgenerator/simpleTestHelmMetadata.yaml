@@ -502,6 +502,22 @@ spec:
                   description: "when descrim=right, the right-hand property."
               required:
               - discrim
+          polymorphicWithOptionalType:
+            type: object
+            properties:
+              commonProperty:
+                type: string
+              discrim:
+                type: string
+                enum:
+                - left
+                - right
+              leftProperty:
+                type: string
+                description: "when descrim=left, the left-hand property."
+              rightProperty:
+                type: string
+                description: "when descrim=right, the right-hand property."
           rawList:
             type: array
             items:
@@ -1111,6 +1127,18 @@ spec:
                   description: "when descrim=left, the left-hand property."
               required:
               - discrim
+          polymorphicWithOptionalType:
+            type: object
+            properties:
+              commonProperty:
+                type: string
+              discrim:
+                type: string
+                enum:
+                - left
+              leftProperty:
+                type: string
+                description: "when descrim=left, the left-hand property."
           rawList:
             type: array
             items:

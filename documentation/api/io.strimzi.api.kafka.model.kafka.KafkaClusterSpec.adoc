@@ -92,10 +92,13 @@ All other supported options are forwarded to Kafka, including the following exce
 ** `max.connection.creation.rate`
 
 [id='property-kafka-brokerRackInitImage-{context}']
-= Configuring rack awareness and init container images
+= Configuring topology-label-based rack awareness and init container images
 
 Rack awareness is enabled using the `rack` property.
-When rack awareness is enabled, Kafka broker pods use init container to collect the labels from the Kubernetes cluster nodes.
+When topology-label-based rack awareness is enabled, Kafka broker pods use an init container to collect labels from Kubernetes nodes.
+
+NOTE: Environment-variable-based rack awareness does not require an init container, and therefore does not use the `brokerRackInitImage` image.
+
 The container image for this init container can be specified using the `brokerRackInitImage` property. 
 If the `brokerRackInitImage` field is not provided, the images used are prioritized as follows:
 
@@ -113,6 +116,7 @@ spec:
   kafka:
     # ...
     rack:
+      type: topology-label
       topologyKey: topology.kubernetes.io/zone
     brokerRackInitImage: my-org/my-image:latest
     # ...
@@ -203,3 +207,118 @@ spec:
 .Garbage collector (GC)
 
 Garbage collector logging can also be enabled (or disabled) using the xref:con-common-configuration-garbage-collection-reference[`jvmOptions` property].
+
+[id='property-kafka-rack-awarness-{context}']
+= Rack awareness
+
+The `rack` option configures rack awareness.
+A _rack_ can represent an availability zone, data center, or an actual rack in your data center.
+The _rack_ can be configured in two different ways:
+
+* Based on a topology label of the Kubernetes worker node
+* Based on a user-configured environment variable
+
+== Spreading partition replicas across racks
+
+When rack awareness is configured, Strimzi will set `broker.rack` configuration for each Kafka broker.
+The `broker.rack` configuration assigns a rack ID to each broker.
+When `broker.rack` is configured, Kafka brokers will spread partition replicas across as many different racks as possible.
+When replicas are spread across multiple racks, the probability that multiple replicas will fail at the same time is lower than if they would be in the same rack.
+Spreading replicas improves resiliency, and is important for availability and reliability.
+To enable rack awareness in Kafka, add the `rack` option to the `.spec.kafka` section of the `Kafka` custom resource as shown in the example below.
+
+NOTE: The _rack_ in which brokers run can change when pods are deleted or restarted.
+As a result, replicas that were running in different racks might then share the same rack.
+Use Cruise Control and the `KafkaRebalance` resource and the `RackAwareGoal` to make sure that replicas remain distributed across different racks.
+
+== Consuming messages from the closest replicas
+
+Rack awareness can also be used in consumers to fetch data from the closest replica.
+This is useful for reducing the load on your network when a Kafka cluster spans multiple datacenters and can also reduce costs when running Kafka in public clouds.
+However, it can lead to increased latency.
+
+In order to be able to consume from the closest replica, rack awareness has to be configured in the Kafka cluster, and the `RackAwareReplicaSelector` has to be enabled.
+The replica selector plugin provides the logic that enables clients to consume from the nearest replica.
+The default implementation uses `LeaderSelector` to always select the leader replica for the client.
+Specify `RackAwareReplicaSelector` for the `replica.selector.class` to switch from the default implementation.
+
+.Example `rack` configuration with enabled replica-aware selector
+[source,yaml,subs=attributes+]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+  kafka:
+    # ...
+    rack:
+      type: topology-label
+      topologyKey: topology.kubernetes.io/zone
+    config:
+      # ...
+      replica.selector.class: org.apache.kafka.common.replica.RackAwareReplicaSelector
+    # ...
+----
+
+In addition to the Kafka broker configuration, you also need to specify the `client.rack` option in your consumers.
+The `client.rack` option should specify the _rack ID_ in which the consumer is running.
+`RackAwareReplicaSelector` associates matching `broker.rack` and `client.rack` IDs, to find the nearest replica and consume from it.
+If there are multiple replicas in the same rack, `RackAwareReplicaSelector` always selects the most up-to-date replica.
+If the rack ID is not specified, or if it cannot find a replica with the same rack ID, it will fall back to the leader replica.
+
+.Example showing client consuming from replicas in the same availability zone
+image::rack-config-availability-zones.png[consuming from replicas in the same availability zone]
+
+You can also configure Kafka Connect, MirrorMaker 2 and HTTP Bridge so that connectors consume messages from the closest replicas.
+You enable rack awareness in the `KafkaConnect`, `KafkaMirrorMaker2`, and `KafkaBridge` custom resources.
+The configuration does does not set affinity rules, but you can also configure `affinity` or `topologySpreadConstraints`.
+For more information see link:{BookURLDeploying}#assembly-scheduling-str[Configuring pod scheduling^].
+
+When deploying Kafka Connect using Strimzi, you can use the `rack` section in the `KafkaConnect` custom resource to automatically configure the `client.rack` option.
+
+.Example `rack` configuration for Kafka Connect
+[source,yaml,subs=attributes+]
+----
+apiVersion: {KafkaConnectApiVersion}
+kind: KafkaConnect
+# ...
+spec:
+  # ...
+  rack:
+    type: topology-label
+    topologyKey: topology.kubernetes.io/zone
+  # ...
+----
+
+When deploying MirrorMaker 2 using Strimzi, you can use the `rack` section in the `KafkaMirrorMaker2` custom resource to automatically configure the `client.rack` option.
+
+.Example `rack` configuration for MirrorMaker 2
+[source,yaml,subs=attributes+]
+----
+apiVersion: {KafkaMirrorMaker2ApiVersion}
+kind: KafkaMirrorMaker2
+# ...
+spec:
+  # ...
+  rack:
+    type: topology-label
+    topologyKey: topology.kubernetes.io/zone
+  # ...
+----
+
+When deploying HTTP Bridge using Strimzi, you can use the `rack` section in the `KafkaBridge` custom resource to automatically configure the `client.rack` option.
+
+.Example `rack` configuration for HTTP Bridge
+[source,yaml,subs=attributes+]
+----
+apiVersion: {KafkaBridgeApiVersion}
+kind: KafkaBridge
+# ...
+spec:
+  # ...
+  rack:
+    type: topology-label
+    topologyKey: topology.kubernetes.io/zone
+  # ...
+----

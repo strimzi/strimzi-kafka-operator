@@ -271,7 +271,7 @@ public class KafkaConnectAssemblyOperatorPodSetTest {
                         assertThat(pod.getMetadata().getAnnotations().size(), is(4));
                         assertThat(pod.getMetadata().getAnnotations().get(PodRevision.STRIMZI_REVISION_ANNOTATION), is(notNullValue())); // We do not check the exact value -> it just describes the exact pod configuration which might change with too many unrelated code or dependency changes
                         assertThat(pod.getMetadata().getAnnotations().get(PodRevision.STRIMZI_RESOURCE_REVISION_ANNOTATION), is(notNullValue())); // We do not check the exact value -> it just describes the exact pod configuration which might change with too many unrelated code or dependency changes
-                        assertThat(pod.getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_IO_CONFIGURATION_HASH), is("bf2e4dfa"));
+                        assertThat(pod.getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_IO_CONFIGURATION_HASH), is("69afcef9"));
                         assertThat(pod.getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_AUTH_HASH), is("445157059")); // We do not use any security in this test, so it is set but as 0
                     }
 
@@ -1352,9 +1352,9 @@ public class KafkaConnectAssemblyOperatorPodSetTest {
     public void testUpdateClusterWithoutRequiredRBACRights(VertxTestContext context)  {
         KafkaConnect connect = new KafkaConnectBuilder(CONNECT)
                 .editSpec()
-                    .withNewRack()
+                    .withNewTopologyLabelRack()
                         .withTopologyKey("my-zone-key")
-                    .endRack()
+                    .endTopologyLabelRack()
                 .endSpec()
                 .build();
         StrimziPodSet oldPodSet = CLUSTER.generatePodSet(3, null, null, false, null, null, null);

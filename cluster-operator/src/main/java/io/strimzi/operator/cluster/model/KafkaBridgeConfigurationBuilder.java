@@ -9,7 +9,10 @@ import io.strimzi.api.kafka.model.bridge.KafkaBridgeConsumerSpec;
 import io.strimzi.api.kafka.model.bridge.KafkaBridgeHttpConfig;
 import io.strimzi.api.kafka.model.bridge.KafkaBridgeProducerSpec;
 import io.strimzi.api.kafka.model.common.ClientTls;
+import io.strimzi.api.kafka.model.common.EnvironmentVariableRack;
 import io.strimzi.api.kafka.model.common.PasswordSecretSource;
+import io.strimzi.api.kafka.model.common.Rack;
+import io.strimzi.api.kafka.model.common.TopologyLabelRack;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthentication;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationCustom;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationPlain;
@@ -265,10 +268,12 @@ public class KafkaBridgeConfigurationBuilder {
     /**
      * Adds the bridge Kafka consumer specific configuration
      *
-     * @param kafkaBridgeConsumer   the Kafka consumer configuration
+     * @param kafkaBridgeConsumer   The Kafka consumer configuration
+     * @param rack                  Rack awareness configuration
+     *
      * @return  the builder instance
      */
-    public KafkaBridgeConfigurationBuilder withKafkaConsumer(KafkaBridgeConsumerSpec kafkaBridgeConsumer) {
+    public KafkaBridgeConfigurationBuilder withKafkaConsumer(KafkaBridgeConsumerSpec kafkaBridgeConsumer, Rack rack) {
         printSectionHeader("Apache Kafka Consumer");
         KafkaBridgeConsumerConfiguration config = kafkaBridgeConsumer != null ?
                 new KafkaBridgeConsumerConfiguration(reconciliation, kafkaBridgeConsumer.getConfig().entrySet()) :
@@ -276,9 +281,18 @@ public class KafkaBridgeConfigurationBuilder {
         configProvider(config, "kafka.consumer");
         if (config != null) {
             config.asOrderedProperties().asMap().forEach((key, value) -> writer.println("kafka.consumer." + key + "=" + value));
-            writer.println("kafka.consumer.client.rack=${strimzidir:/opt/strimzi/init:rack.id}");
         }
         writer.println();
+
+        // Configure consumer rack awareness
+        if (rack instanceof TopologyLabelRack) {
+            writer.println("kafka.consumer.client.rack=${strimzidir:/opt/strimzi/init:rack.id}");
+            writer.println();
+        } else if (rack instanceof EnvironmentVariableRack environmentVariableRack) {
+            writer.println("kafka.consumer.client.rack=${strimzienv:" + environmentVariableRack.getEnvVarName() + "}");
+            writer.println();
+        }
+
         return this;
     }
 

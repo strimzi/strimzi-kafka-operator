@@ -753,8 +753,9 @@ class CrdGenerator {
 
         for (Property property : unionOfSubclassProperties(crApiVersion, crdClass)) {
             if (property.isAnnotationPresent(JsonProperty.class)
-                    && property.getAnnotation(JsonProperty.class).required()
-                || property.isDiscriminator()) {
+                    && property.getAnnotation(JsonProperty.class).required()) {
+                result.add(property.getName());
+            } else if (property.isDiscriminator() && property.isDiscriminatorRequired()) {
                 result.add(property.getName());
             } else if (property.isAnnotationPresent(RequiredInVersions.class)
                     && ApiVersion.parseRange(property.getAnnotation(RequiredInVersions.class).value()).contains(crApiVersion)) {

@@ -154,6 +154,39 @@ public class KafkaCrdIT extends AbstractCrdIT {
         );
     }
 
+    @Test
+    public void testKafkaWithUntypedTopologyLabelRack() {
+        createDeleteCustomResource("Kafka-untyped-topology-label-rack.yaml");
+    }
+
+    @Test
+    public void testKafkaWithTypedTopologyLabelRack() {
+        createDeleteCustomResource("Kafka-typed-topology-label-rack.yaml");
+    }
+
+    @Test
+    public void testKafkaWithTypedTopologyLabelRackMissingField() {
+        Throwable exception = assertThrows(
+                KubernetesClientException.class,
+                () -> createDeleteCustomResource("Kafka-typed-topology-label-rack-missing-field.yaml"));
+
+        assertThat(exception.getMessage(), CoreMatchers.containsStringIgnoringCase("topologyKey property is required"));
+    }
+
+    @Test
+    public void testKafkaWithEnvironmentVariableRack() {
+        createDeleteCustomResource("Kafka-typed-environment-variable-rack.yaml");
+    }
+
+    @Test
+    public void testKafkaWithEnvironmentVariableRackMissingField() {
+        Throwable exception = assertThrows(
+                KubernetesClientException.class,
+                () -> createDeleteCustomResource("Kafka-typed-environment-variable-rack-missing-field.yaml"));
+
+        assertThat(exception.getMessage(), CoreMatchers.containsStringIgnoringCase("envVarName property is required"));
+    }
+
     @BeforeAll
     void setupEnvironment() {
         client = new KubernetesClientBuilder().withConfig(new ConfigBuilder().withNamespace(NAMESPACE).build()).build();

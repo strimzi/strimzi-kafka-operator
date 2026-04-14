@@ -355,6 +355,27 @@ class Property implements AnnotatedElement {
         return getName().equals(discriminator(m.getDeclaringClass()));
     }
 
+    /**
+     * Returns true when the type discriminator is required. Returns false when the type discriminator is not required
+     * because we have a default value. The default value might be used for backward compatibility reasons such as with
+     * rack-awareness.
+     *
+     * @return  True if the discriminator should be required. False otherwise.
+     */
+    boolean isDiscriminatorRequired() {
+        if (m.getDeclaringClass() != null) {
+            JsonTypeInfo annotation = m.getDeclaringClass().getAnnotation(JsonTypeInfo.class);
+
+            if (annotation != null) {
+                return annotation.defaultImpl() == JsonTypeInfo.class;
+            } else {
+                return false;
+            }
+        }
+
+        return false;
+    }
+
     @Override
     public <T extends Annotation> T getAnnotation(Class<T> annotationClass) {
         return a.getAnnotation(annotationClass);

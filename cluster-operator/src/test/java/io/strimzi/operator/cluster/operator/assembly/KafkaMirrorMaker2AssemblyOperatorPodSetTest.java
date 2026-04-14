@@ -210,7 +210,7 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
                         assertThat(pod.getMetadata().getAnnotations().size(), is(4));
                         assertThat(pod.getMetadata().getAnnotations().get(PodRevision.STRIMZI_REVISION_ANNOTATION), is(notNullValue())); // We do not check the exact value -> it just describes the exact pod configuration which might change with too many unrelated code or dependency changes
                         assertThat(pod.getMetadata().getAnnotations().get(PodRevision.STRIMZI_RESOURCE_REVISION_ANNOTATION), is(notNullValue())); // We do not check the exact value -> it just describes the exact pod configuration which might change with too many unrelated code or dependency changes
-                        assertThat(pod.getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_IO_CONFIGURATION_HASH), is("97e8b518"));
+                        assertThat(pod.getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_IO_CONFIGURATION_HASH), is("e98db07a"));
                         assertThat(pod.getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_AUTH_HASH), is("0")); // We do not use any security in this test, so it is set but as 0
                     }
 

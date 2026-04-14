@@ -281,11 +281,21 @@ spec:
               rack:
                 type: object
                 properties:
+                  envVarName:
+                    type: string
                   topologyKey:
                     type: string
                     example: topology.kubernetes.io/zone
-                required:
-                - topologyKey
+                  type:
+                    type: string
+                    enum:
+                    - topology-label
+                    - environment-variable
+                x-kubernetes-validations:
+                - rule: (has(self.type) && self.type != "topology-label") || self.topologyKey != ""
+                  message: topologyKey property is required
+                - rule: has(self.type) == false || self.type != "environment-variable" || self.envVarName != ""
+                  message: envVarName property is required
               metricsConfig:
                 type: object
                 properties:
@@ -1743,11 +1753,21 @@ spec:
               rack:
                 type: object
                 properties:
+                  envVarName:
+                    type: string
                   topologyKey:
                     type: string
                     example: topology.kubernetes.io/zone
-                required:
-                - topologyKey
+                  type:
+                    type: string
+                    enum:
+                    - topology-label
+                    - environment-variable
+                x-kubernetes-validations:
+                - rule: (has(self.type) && self.type != "topology-label") || self.topologyKey != ""
+                  message: topologyKey property is required
+                - rule: has(self.type) == false || self.type != "environment-variable" || self.envVarName != ""
+                  message: envVarName property is required
               enableMetrics:
                 type: boolean
               metricsConfig:

@@ -6,6 +6,8 @@ package io.strimzi.operator.cluster.model;
 
 import io.strimzi.api.kafka.model.common.ClientTls;
 import io.strimzi.api.kafka.model.common.ClientTlsBuilder;
+import io.strimzi.api.kafka.model.common.EnvironmentVariableRackBuilder;
+import io.strimzi.api.kafka.model.common.TopologyLabelRackBuilder;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationCustom;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationCustomBuilder;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationPlain;
@@ -429,9 +431,9 @@ class KafkaConnectConfigurationBuilderTest {
     }
 
     @Test
-    public void testWithRackId() {
+    public void testWithTopologyLabelRackId() {
         String configuration = new KafkaConnectConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, BOOTSTRAP_SERVERS)
-                .withRackId()
+                .withRackId(new TopologyLabelRackBuilder().withTopologyKey("rack-label").build())
                 .build();
 
         assertThat(configuration, isEquivalent(
@@ -442,7 +444,22 @@ class KafkaConnectConfigurationBuilderTest {
                 "admin.security.protocol=PLAINTEXT",
                 "consumer.client.rack=${strimzidir:/opt/kafka/init:rack.id}"
         ));
+    }
 
+    @Test
+    public void testWithEnvironmentVariableRackId() {
+        String configuration = new KafkaConnectConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, BOOTSTRAP_SERVERS)
+                .withRackId(new EnvironmentVariableRackBuilder().withEnvVarName("MY_RACK_ID").build())
+                .build();
+
+        assertThat(configuration, isEquivalent(
+                "bootstrap.servers=my-cluster-kafka-bootstrap:9092",
+                "security.protocol=PLAINTEXT",
+                "producer.security.protocol=PLAINTEXT",
+                "consumer.security.protocol=PLAINTEXT",
+                "admin.security.protocol=PLAINTEXT",
+                "consumer.client.rack=${strimzienv:MY_RACK_ID}"
+        ));
     }
 
     @Test

@@ -321,14 +321,43 @@ public class KafkaMirrorMaker2ConnectorsTest {
     }
 
     @Test
-    public void testConnectorConfigurationOnlyWithRackAndTracing() {
+    public void testConnectorConfigurationWithTracing() {
         KafkaMirrorMaker2 kmm2 = new KafkaMirrorMaker2Builder(KMM2)
                 .editSpec()
-                .withNewRack()
-                    .withTopologyKey("my-topology-key")
-                .endRack()
-                .withNewOpenTelemetryTracing()
-                .endOpenTelemetryTracing()
+                    .withNewOpenTelemetryTracing()
+                    .endOpenTelemetryTracing()
+                .endSpec()
+                .build();
+
+        KafkaMirrorMaker2Connectors connectors = KafkaMirrorMaker2Connectors.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kmm2);
+        Map<String, Object> config = connectors.prepareMirrorMaker2ConnectorConfig(KMM2.getSpec().getMirrors().get(0),
+                KMM2.getSpec().getMirrors().get(0).getSourceConnector());
+
+        Map<String, Object> expected = new TreeMap<>();
+        expected.put("source.cluster.alias", "source");
+        expected.put("source.cluster.bootstrap.servers", "source:9092");
+        expected.put("source.cluster.security.protocol", "PLAINTEXT");
+        expected.put("target.cluster.alias", "target");
+        expected.put("target.cluster.bootstrap.servers", "target:9092");
+        expected.put("target.cluster.security.protocol", "PLAINTEXT");
+        expected.put("sync.topic.acls.enabled", "false");
+        expected.put("topics", "my-topic-.*");
+        expected.put("topics.exclude", "exclude-topic-.*");
+        expected.put("groups", "my-group-.*");
+        expected.put("groups.exclude", "exclude-group-.*");
+        expected.put("consumer.interceptor.classes", "io.opentelemetry.instrumentation.kafkaclients.v2_6.TracingConsumerInterceptor");
+        expected.put("producer.interceptor.classes", "io.opentelemetry.instrumentation.kafkaclients.v2_6.TracingProducerInterceptor");
+
+        assertThat(new TreeMap<>(config), is(expected));
+    }
+
+    @Test
+    public void testConnectorConfigurationWithTopologyLabelRack() {
+        KafkaMirrorMaker2 kmm2 = new KafkaMirrorMaker2Builder(KMM2)
+                .editSpec()
+                    .withNewTopologyLabelRack()
+                        .withTopologyKey("my-topology-key")
+                    .endTopologyLabelRack()
                 .endSpec()
                 .build();
 
@@ -349,8 +378,37 @@ public class KafkaMirrorMaker2ConnectorsTest {
         expected.put("groups", "my-group-.*");
         expected.put("groups.exclude", "exclude-group-.*");
         expected.put("consumer.client.rack", "${strimzifile:/tmp/strimzi-connect.properties:consumer.client.rack}");
-        expected.put("consumer.interceptor.classes", "io.opentelemetry.instrumentation.kafkaclients.v2_6.TracingConsumerInterceptor");
-        expected.put("producer.interceptor.classes", "io.opentelemetry.instrumentation.kafkaclients.v2_6.TracingProducerInterceptor");
+
+        assertThat(new TreeMap<>(config), is(expected));
+    }
+
+    @Test
+    public void testConnectorConfigurationWithEnvironmentVariableRack() {
+        KafkaMirrorMaker2 kmm2 = new KafkaMirrorMaker2Builder(KMM2)
+                .editSpec()
+                    .withNewEnvironmentVariableRack()
+                        .withEnvVarName("MY_RACK_ID")
+                    .endEnvironmentVariableRack()
+                .endSpec()
+                .build();
+
+        KafkaMirrorMaker2Connectors connectors = KafkaMirrorMaker2Connectors.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kmm2);
+        Map<String, Object> config = connectors.prepareMirrorMaker2ConnectorConfig(KMM2.getSpec().getMirrors().get(0),
+                KMM2.getSpec().getMirrors().get(0).getSourceConnector());
+
+        Map<String, Object> expected = new TreeMap<>();
+        expected.put("source.cluster.alias", "source");
+        expected.put("source.cluster.bootstrap.servers", "source:9092");
+        expected.put("source.cluster.security.protocol", "PLAINTEXT");
+        expected.put("target.cluster.alias", "target");
+        expected.put("target.cluster.bootstrap.servers", "target:9092");
+        expected.put("target.cluster.security.protocol", "PLAINTEXT");
+        expected.put("sync.topic.acls.enabled", "false");
+        expected.put("topics", "my-topic-.*");
+        expected.put("topics.exclude", "exclude-topic-.*");
+        expected.put("groups", "my-group-.*");
+        expected.put("groups.exclude", "exclude-group-.*");
+        expected.put("consumer.client.rack", "${strimzifile:/tmp/strimzi-connect.properties:consumer.client.rack}");
 
         assertThat(new TreeMap<>(config), is(expected));
     }
