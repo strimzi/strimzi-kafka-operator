@@ -61,5 +61,4 @@ hs_err_pid*
 
 # Claude configuration
 .claude/
-CLAUDE.md
 .mcp.json
