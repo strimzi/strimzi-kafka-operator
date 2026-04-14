@@ -1109,7 +1109,7 @@ public class ListenersST extends AbstractST {
     )
     void testCustomSoloCertificatesForNodePort() {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
-        TrustChainSecrets.fromBundle(SystemTestCertBundle.forBrokerCert(testStorage))
+        TrustChainSecrets.fromBundle(SystemTestCertBundle.forBrokerEndEntityCertificate(testStorage))
             .withLeafOnly(TrustChainSecrets.TRUST_LEAF_ONLY)
             .build(testStorage.getNamespaceName(), testStorage.getClusterName());
 
@@ -1206,7 +1206,7 @@ public class ListenersST extends AbstractST {
     )
     void testCustomChainCertificatesForNodePort() {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
-        final SystemTestCertBundle brokerBundle = SystemTestCertBundle.forBrokerCert(testStorage);
+        final SystemTestCertBundle brokerBundle = SystemTestCertBundle.forBrokerEndEntityCertificate(testStorage);
 
         TrustChainSecrets.fromBundle(brokerBundle)
             .withFullChain(TrustChainSecrets.TRUST_FULL_CHAIN)
@@ -1305,7 +1305,7 @@ public class ListenersST extends AbstractST {
     )
     void testCustomSoloCertificatesForLoadBalancer() {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
-        TrustChainSecrets.fromBundle(SystemTestCertBundle.forBrokerCert(testStorage))
+        TrustChainSecrets.fromBundle(SystemTestCertBundle.forBrokerEndEntityCertificate(testStorage))
             .withLeafOnly(TrustChainSecrets.TRUST_LEAF_ONLY)
             .build(testStorage.getNamespaceName(), testStorage.getClusterName());
 
@@ -1404,7 +1404,7 @@ public class ListenersST extends AbstractST {
     void testCustomChainCertificatesForLoadBalancer() {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
-        final SystemTestCertBundle brokerBundle = SystemTestCertBundle.forBrokerCert(testStorage);
+        final SystemTestCertBundle brokerBundle = SystemTestCertBundle.forBrokerEndEntityCertificate(testStorage);
 
         TrustChainSecrets.fromBundle(brokerBundle)
             .withFullChain(TrustChainSecrets.TRUST_FULL_CHAIN)
@@ -1512,7 +1512,7 @@ public class ListenersST extends AbstractST {
     )
     void testCustomSoloCertificatesForRoute() {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
-        TrustChainSecrets.fromBundle(SystemTestCertBundle.forBrokerCert(testStorage))
+        TrustChainSecrets.fromBundle(SystemTestCertBundle.forBrokerEndEntityCertificate(testStorage))
             .withLeafOnly(TrustChainSecrets.TRUST_LEAF_ONLY)
             .build(testStorage.getNamespaceName(), testStorage.getClusterName());
 
@@ -1610,7 +1610,7 @@ public class ListenersST extends AbstractST {
     void testCustomChainCertificatesForRoute() {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
-        final SystemTestCertBundle brokerBundle = SystemTestCertBundle.forBrokerCert(testStorage);
+        final SystemTestCertBundle brokerBundle = SystemTestCertBundle.forBrokerEndEntityCertificate(testStorage);
 
         TrustChainSecrets.fromBundle(brokerBundle)
             .withFullChain(TrustChainSecrets.TRUST_FULL_CHAIN)
@@ -1711,8 +1711,8 @@ public class ListenersST extends AbstractST {
     )
     void testCustomCertLoadBalancerAndTlsRollingUpdate() {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
-        final SystemTestCertBundle brokerBundle1 = SystemTestCertBundle.forBrokerCert(testStorage);
-        final SystemTestCertBundle brokerBundle2 = SystemTestCertBundle.forBrokerCert(testStorage);
+        final SystemTestCertBundle brokerBundle1 = SystemTestCertBundle.forBrokerEndEntityCertificate(testStorage);
+        final SystemTestCertBundle brokerBundle2 = SystemTestCertBundle.forBrokerEndEntityCertificate(testStorage);
 
         TrustChainSecrets.withoutBundle()
             .withCustom(customCertServer1, brokerBundle1.getSystemTestCa())
@@ -1970,8 +1970,8 @@ public class ListenersST extends AbstractST {
     )
     void testCustomCertNodePortAndTlsRollingUpdate() {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
-        final SystemTestCertBundle brokerBundle1 = SystemTestCertBundle.forBrokerCert(testStorage);
-        final SystemTestCertBundle brokerBundle2 = SystemTestCertBundle.forBrokerCert(testStorage);
+        final SystemTestCertBundle brokerBundle1 = SystemTestCertBundle.forBrokerEndEntityCertificate(testStorage);
+        final SystemTestCertBundle brokerBundle2 = SystemTestCertBundle.forBrokerEndEntityCertificate(testStorage);
 
         TrustChainSecrets.withoutBundle()
             .withCustom(customCertServer1, brokerBundle1.getSystemTestCa())
@@ -2227,8 +2227,8 @@ public class ListenersST extends AbstractST {
     )
     void testCustomCertRouteAndTlsRollingUpdate() {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
-        final SystemTestCertBundle brokerBundle1 = SystemTestCertBundle.forBrokerCert(testStorage);
-        final SystemTestCertBundle brokerBundle2 = SystemTestCertBundle.forBrokerCert(testStorage);
+        final SystemTestCertBundle brokerBundle1 = SystemTestCertBundle.forBrokerEndEntityCertificate(testStorage);
+        final SystemTestCertBundle brokerBundle2 = SystemTestCertBundle.forBrokerEndEntityCertificate(testStorage);
 
         TrustChainSecrets.withoutBundle()
             .withCustom(customCertServer1, brokerBundle1.getSystemTestCa())
@@ -2542,7 +2542,7 @@ public class ListenersST extends AbstractST {
     void testCertificateWithNonExistingDataCrt() {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         final String nonExistingCertName = "non-existing-crt";
-        TrustChainSecrets.fromBundle(SystemTestCertBundle.forBrokerCert(testStorage))
+        TrustChainSecrets.fromBundle(SystemTestCertBundle.forBrokerEndEntityCertificate(testStorage))
             .withLeafOnly(TrustChainSecrets.TRUST_LEAF_ONLY)
             .build(testStorage.getNamespaceName(), testStorage.getClusterName());
 
@@ -2592,7 +2592,7 @@ public class ListenersST extends AbstractST {
     void testCertificateWithNonExistingDataKey() {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         final String nonExistingCertKey = "non-existing-key";
-        TrustChainSecrets.fromBundle(SystemTestCertBundle.forBrokerCert(testStorage))
+        TrustChainSecrets.fromBundle(SystemTestCertBundle.forBrokerEndEntityCertificate(testStorage))
             .withLeafOnly(TrustChainSecrets.TRUST_LEAF_ONLY)
             .build(testStorage.getNamespaceName(), testStorage.getClusterName());
 

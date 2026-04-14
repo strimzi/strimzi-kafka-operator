@@ -75,12 +75,14 @@ public class SystemTestCertBundle {
 
     /**
      * Creates a certificate bundle with a broker end-entity certificate (with broker SANs)
-     * as the leaf, instead of a CA certificate. Useful for custom broker cert chain tests.
+     * as the leaf, instead of a CA certificate. The end-entity certificate is not a CA
+     * (i.e., it has no CA basic constraint), so it cannot be used to sign further certificates.
+     * Useful for custom broker cert chain tests.
      *
      * @param testStorage the test storage providing broker SAN information
-     * @return a new SystemTestCertBundle with root → intermediate → end-entity hierarchy
+     * @return a new SystemTestCertBundle with root → intermediate → end-entity (non-CA) hierarchy
      */
-    public static SystemTestCertBundle forBrokerCert(final TestStorage testStorage) {
+    public static SystemTestCertBundle forBrokerEndEntityCertificate(final TestStorage testStorage) {
         return new SystemTestCertBundle(testStorage);
     }
 
