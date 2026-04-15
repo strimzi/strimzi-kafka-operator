@@ -424,9 +424,22 @@ class RackAwarenessST extends AbstractST {
         assertThat(AdminClientUtils.getRack(nodeDescription, "0").contains("rack-a"), is(true));
 
         LOGGER.info("Producing and Consuming data in the Kafka cluster: {}/{}", testStorage.getNamespaceName(), testStorage.getClusterName());
-        KafkaClients kafkaClients = ClientUtils.getInstantPlainClients(testStorage);
-        KubeResourceManager.get().createResourceWithWait(kafkaClients.producerStrimzi(), kafkaClients.consumerStrimzi());
-        ClientUtils.waitForInstantClientSuccess(testStorage);
+        final KafkaProducerConsumer kafkaProducerConsumer = new KafkaProducerConsumerBuilder()
+            .withProducerName(testStorage.getProducerName())
+            .withConsumerName(testStorage.getConsumerName())
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withTopicName(testStorage.getTopicName())
+            .withConsumerGroup(ClientUtils.generateRandomConsumerGroup())
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
+            .withMessageCount(testStorage.getMessageCount())
+            .build();
+
+        KubeResourceManager.get().createResourceWithWait(
+            kafkaProducerConsumer.getProducer().getJob(),
+            kafkaProducerConsumer.getConsumer().getJob()
+        );
+
+        ClientUtils.waitForClientsSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getProducerName(), testStorage.getMessageCount());
     }
 
     @BeforeAll
