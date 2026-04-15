@@ -23,7 +23,7 @@ import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.SkipDefaultNetworkPolicyCreation;
-import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
+import io.strimzi.systemtest.kafkaclients.ClientsAuthentication;
 import io.strimzi.systemtest.metrics.KafkaExporterMetricsComponent;
 import io.strimzi.systemtest.resources.CrdClients;
 import io.strimzi.systemtest.resources.operator.ClusterOperatorConfigurationBuilder;
@@ -38,6 +38,8 @@ import io.strimzi.systemtest.templates.specific.ScraperTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.specific.MetricsUtils;
+import io.strimzi.testclients.clients.kafka.KafkaProducerConsumer;
+import io.strimzi.testclients.clients.kafka.KafkaProducerConsumerBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.Tag;
@@ -176,39 +178,61 @@ public class NetworkPoliciesST extends AbstractST {
         );
 
         LOGGER.info("Initialize producers and consumers with access to the Kafka using plain and tls listeners");
-        final KafkaClients kafkaClientsWithAccessPlain = ClientUtils.getInstantScramShaOverPlainClientBuilder(testStorage)
+        final KafkaProducerConsumer kafkaProducerConsumerWithAccessPlain = new KafkaProducerConsumerBuilder()
             .withProducerName(producerNameAccessedPlain)
             .withConsumerName(consumerNameAccessedPlain)
+            .withNamespaceName(testStorage.getNamespaceName())
             .withTopicName(topicNameAccessedPlain)
+            .withConsumerGroup(ClientUtils.generateRandomConsumerGroup())
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
+            .withMessageCount(testStorage.getMessageCount())
+            .withAuthentication(ClientsAuthentication.configurePlainScramSha(testStorage.getNamespaceName(), testStorage.getUsername()))
             .build();
-        final KafkaClients kafkaClientsWithAccessTls = ClientUtils.getInstantScramShaOverTlsClientBuilder(testStorage)
+
+        final KafkaProducerConsumer kafkaProducerConsumerWithAccessTls = new KafkaProducerConsumerBuilder()
             .withProducerName(producerNameAccessedTls)
             .withConsumerName(consumerNameAccessedTls)
+            .withNamespaceName(testStorage.getNamespaceName())
             .withTopicName(topicNameAccessedTls)
+            .withConsumerGroup(ClientUtils.generateRandomConsumerGroup())
+            .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(testStorage.getClusterName()))
+            .withMessageCount(testStorage.getMessageCount())
+            .withAuthentication(ClientsAuthentication.configureTlsScramSha(testStorage.getNamespaceName(), testStorage.getUsername(), testStorage.getClusterName()))
             .build();
 
         LOGGER.info("Initialize producers and consumers without access (denied) to the Kafka using plain and tls listeners");
-        final KafkaClients kafkaClientsWithoutAccessPlain = ClientUtils.getInstantScramShaOverPlainClientBuilder(testStorage)
+        final KafkaProducerConsumer kafkaProducerConsumerWithoutAccessPlain = new KafkaProducerConsumerBuilder()
             .withProducerName(producerNameDeniedPlain)
             .withConsumerName(consumerNameDeniedPlain)
+            .withNamespaceName(testStorage.getNamespaceName())
             .withTopicName(topicNameDeniedPlain)
+            .withConsumerGroup(ClientUtils.generateRandomConsumerGroup())
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
+            .withMessageCount(testStorage.getMessageCount())
+            .withAuthentication(ClientsAuthentication.configurePlainScramSha(testStorage.getNamespaceName(), testStorage.getUsername()))
             .build();
-        final KafkaClients kafkaClientsWithoutAccessTls = ClientUtils.getInstantScramShaOverTlsClientBuilder(testStorage)
+
+        final KafkaProducerConsumer kafkaProducerConsumerWithoutAccessTls = new KafkaProducerConsumerBuilder()
             .withProducerName(producerNameDeniedTls)
             .withConsumerName(consumerNameDeniedTls)
+            .withNamespaceName(testStorage.getNamespaceName())
             .withTopicName(topicNameDeniedTls)
+            .withConsumerGroup(ClientUtils.generateRandomConsumerGroup())
+            .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(testStorage.getClusterName()))
+            .withMessageCount(testStorage.getMessageCount())
+            .withAuthentication(ClientsAuthentication.configureTlsScramSha(testStorage.getNamespaceName(), testStorage.getUsername(), testStorage.getClusterName()))
             .build();
 
         LOGGER.info("Deploy all initialized clients");
         KubeResourceManager.get().createResourceWithWait(
-            kafkaClientsWithAccessPlain.producerScramShaPlainStrimzi(),
-            kafkaClientsWithAccessPlain.consumerScramShaPlainStrimzi(),
-            kafkaClientsWithAccessTls.producerScramShaTlsStrimzi(testStorage.getClusterName()),
-            kafkaClientsWithAccessTls.consumerScramShaTlsStrimzi(testStorage.getClusterName()),
-            kafkaClientsWithoutAccessPlain.producerScramShaPlainStrimzi(),
-            kafkaClientsWithoutAccessPlain.consumerScramShaPlainStrimzi(),
-            kafkaClientsWithoutAccessTls.producerScramShaTlsStrimzi(testStorage.getClusterName()),
-            kafkaClientsWithoutAccessTls.consumerScramShaTlsStrimzi(testStorage.getClusterName())
+            kafkaProducerConsumerWithAccessPlain.getProducer().getJob(),
+            kafkaProducerConsumerWithAccessPlain.getConsumer().getJob(),
+            kafkaProducerConsumerWithAccessTls.getProducer().getJob(),
+            kafkaProducerConsumerWithAccessTls.getConsumer().getJob(),
+            kafkaProducerConsumerWithoutAccessPlain.getProducer().getJob(),
+            kafkaProducerConsumerWithoutAccessPlain.getConsumer().getJob(),
+            kafkaProducerConsumerWithoutAccessTls.getProducer().getJob(),
+            kafkaProducerConsumerWithoutAccessTls.getConsumer().getJob()
         );
 
         LOGGER.info("Verifying that clients: {}, {}, {}, {} are all allowed to communicate", producerNameAccessedPlain, consumerNameAccessedPlain, producerNameAccessedTls, consumerNameAccessedTls);

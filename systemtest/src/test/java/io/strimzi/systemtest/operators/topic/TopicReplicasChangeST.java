@@ -21,8 +21,6 @@ import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.docs.TestDocsLabels;
-import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
-import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.labels.LabelSelectors;
 import io.strimzi.systemtest.resources.CrdClients;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
@@ -35,6 +33,8 @@ import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.specific.ScraperUtils;
+import io.strimzi.testclients.clients.kafka.KafkaProducerConsumer;
+import io.strimzi.testclients.clients.kafka.KafkaProducerConsumerBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
@@ -399,20 +399,21 @@ public class TopicReplicasChangeST extends AbstractST {
      * @param testStorage The test storage instance providing details for message exchange, including topic and client information.
      */
     private void sendAndRecvMessages(final TestStorage testStorage) {
-        KafkaClients kafkaClients = new KafkaClientsBuilder()
-                .withTopicName(testStorage.getTopicName())
-                .withBootstrapAddress(KafkaResources.plainBootstrapAddress(sharedTestStorage.getClusterName()))
-                .withNamespaceName(sharedTestStorage.getNamespaceName())
-                .withProducerName(testStorage.getProducerName())
-                .withConsumerName(testStorage.getConsumerName())
-                .withMessageCount(testStorage.getMessageCount())
-                .build();
+        KafkaProducerConsumer kafkaProducerConsumer = new KafkaProducerConsumerBuilder()
+            .withTopicName(testStorage.getTopicName())
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(sharedTestStorage.getClusterName()))
+            .withNamespaceName(sharedTestStorage.getNamespaceName())
+            .withProducerName(testStorage.getProducerName())
+            .withConsumerName(testStorage.getConsumerName())
+            .withMessageCount(testStorage.getMessageCount())
+            .withConsumerGroup(ClientUtils.generateRandomConsumerGroup())
+            .build();
 
         KubeResourceManager.get().createResourceWithWait(
-                kafkaClients.producerStrimzi(),
-                kafkaClients.consumerStrimzi()
+            kafkaProducerConsumer.getProducer().getJob(),
+            kafkaProducerConsumer.getConsumer().getJob()
         );
-        ClientUtils.waitForInstantClientSuccess(testStorage);
+        ClientUtils.waitForClientsSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getProducerName(), testStorage.getMessageCount());
     }
 
     @BeforeAll

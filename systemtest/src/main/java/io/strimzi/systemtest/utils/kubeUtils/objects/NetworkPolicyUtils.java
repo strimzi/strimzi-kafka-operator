@@ -12,6 +12,7 @@ import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyBuilder;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.skodjob.kubetest4j.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.bridge.KafkaBridge;
+import io.strimzi.api.kafka.model.bridge.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.common.Spec;
 import io.strimzi.api.kafka.model.kafka.Status;
 import io.strimzi.systemtest.Environment;
@@ -62,7 +63,35 @@ public class NetworkPolicyUtils {
         LOGGER.info("Network policy for LabelSelector {} successfully created", labelSelector);
     }
 
-    public static void allowNetworkPolicySettingsForBridgeClients(String namespace, String clientName, LabelSelector clientLabelSelector, String componentName) {
+    /**
+     * Creates NetworkPolicies for allowing access to Bridge HTTP server for HTTP clients - both producer and consumer.
+     *
+     * @param namespaceName         Namespace where the NetworkPolicies should be created.
+     * @param bridgeClusterName     Name of the Bridge cluster.
+     * @param producerName          Name of the HTTP producer.
+     * @param consumerName          Name of the HTTP consumer.
+     */
+    public static void allowNetworkPoliciesForBridgeClients(String namespaceName, String bridgeClusterName, String producerName, String consumerName) {
+        allowNetworkPolicyForBridgeClient(namespaceName, bridgeClusterName, producerName);
+        allowNetworkPolicyForBridgeClient(namespaceName, bridgeClusterName, consumerName);
+    }
+
+    /**
+     * Creates NetworkPolicy for allowing access to Bridge HTTP server for specified HTTP client.
+     *
+     * @param namespaceName         Namespace where the NetworkPolicy should be created.
+     * @param bridgeClusterName     Name of the Bridge cluster.
+     * @param clientName            Name of the HTTP client.
+     */
+    public static void allowNetworkPolicyForBridgeClient(String namespaceName, String bridgeClusterName, String clientName) {
+        LabelSelector clientLabelSelector = new LabelSelectorBuilder()
+            .addToMatchLabels("app", clientName)
+            .build();
+
+        allowNetworkPolicySettingsForBridgeClients(namespaceName, clientName, clientLabelSelector, KafkaBridgeResources.componentName(bridgeClusterName));
+    }
+
+    private static void allowNetworkPolicySettingsForBridgeClients(String namespace, String clientName, LabelSelector clientLabelSelector, String componentName) {
         LOGGER.info("Apply NetworkPolicy access to Kafka Bridge {} from client Pods with LabelSelector {}", componentName, clientLabelSelector);
 
         NetworkPolicy networkPolicy = NetworkPolicyTemplates.networkPolicyBuilder(namespace, clientName, clientLabelSelector)

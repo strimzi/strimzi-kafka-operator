@@ -18,7 +18,7 @@ import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.docs.TestDocsLabels;
-import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
+import io.strimzi.systemtest.kafkaclients.ClientsAuthentication;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
@@ -28,6 +28,8 @@ import io.strimzi.systemtest.templates.crd.KafkaUserTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.JobUtils;
+import io.strimzi.testclients.clients.kafka.KafkaProducerClient;
+import io.strimzi.testclients.clients.kafka.KafkaProducerClientBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hamcrest.Matchers;
@@ -116,14 +118,19 @@ public class QuotasST extends AbstractST {
             KafkaUserTemplates.scramShaUser(testStorage).build()
         );
 
-        KafkaClients clients = ClientUtils.getInstantPlainClientBuilder(testStorage, KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
+        final KafkaProducerClient kafkaProducerClient = new KafkaProducerClientBuilder()
+            .withName(testStorage.getProducerName())
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withTopicName(testStorage.getTopicName())
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
             .withMessageCount(100000)
+            .withDelayMs(0)
             .withMessage(String.join("", Collections.nCopies(10000, "#")))
-            .withAdditionalConfig("delivery.timeout.ms=10000\nrequest.timeout.ms=10000\n")
+            .withAdditionalConfig("delivery.timeout.ms=10005\nrequest.timeout.ms=10000\nlinger.ms=5")
             .build();
 
         LOGGER.info("Sending messages without any user, we should hit the quota");
-        KubeResourceManager.get().createResourceWithWait(clients.producerStrimzi());
+        KubeResourceManager.get().createResourceWithWait(kafkaProducerClient.getJob());
         // Kafka Quotas Plugin should stop producer after it reaches the minimum available bytes
         JobUtils.waitForJobContainingLogMessage(testStorage.getNamespaceName(), testStorage.getProducerName(), "Failed to send messages");
         JobUtils.deleteJobWithWait(testStorage.getNamespaceName(), testStorage.getProducerName());
@@ -137,10 +144,11 @@ public class QuotasST extends AbstractST {
 
         LOGGER.info("Sending messages with user that is specified in list of excluded principals, we should be able to send the messages without problem");
 
-        clients = ClientUtils.getInstantScramShaClientBuilder(testStorage, KafkaResources.bootstrapServiceName(testStorage.getClusterName()) + ":9095").build();
+        kafkaProducerClient.setBootstrapAddress(KafkaResources.bootstrapServiceName(testStorage.getClusterName()) + ":9095");
+        kafkaProducerClient.setAuthentication(ClientsAuthentication.configurePlainScramSha(testStorage.getNamespaceName(), testStorage.getUsername()));
 
-        KubeResourceManager.get().createResourceWithWait(clients.producerScramShaPlainStrimzi());
-        ClientUtils.waitForInstantProducerClientSuccess(testStorage);
+        KubeResourceManager.get().createResourceWithWait(kafkaProducerClient.getJob());
+        ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getProducerName(), testStorage.getMessageCount());
     }
 
     @ParallelNamespaceTest
@@ -202,26 +210,34 @@ public class QuotasST extends AbstractST {
             KafkaUserTemplates.scramShaUser(testStorage).build()
         );
 
-        KafkaClients clients = ClientUtils.getInstantPlainClientBuilder(testStorage, KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
+        final KafkaProducerClient kafkaProducerClient = new KafkaProducerClientBuilder()
+            .withName(testStorage.getProducerName())
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withTopicName(testStorage.getTopicName())
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
             .withMessageCount(100)
             .withMessage(String.join("", Collections.nCopies(2000, "#")))
             .build();
 
         LOGGER.info("Sending messages with normal user, quota applies");
         long startTimeNormal = System.currentTimeMillis();
-        KubeResourceManager.get().createResourceWithWait(clients.producerStrimzi());
-        ClientUtils.waitForInstantProducerClientSuccess(testStorage);
+
+        KubeResourceManager.get().createResourceWithWait(kafkaProducerClient.getJob());
+        ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getProducerName(), testStorage.getMessageCount());
+
         long endTimeNormal = System.currentTimeMillis();
         long durationNormal = endTimeNormal - startTimeNormal;
         LOGGER.info("Time taken for normal user: {} ms", durationNormal);
 
         // Measure time for excluded user
         LOGGER.info("Sending messages with excluded user, no quota applies");
-        clients = ClientUtils.getInstantScramShaClientBuilder(testStorage, KafkaResources.bootstrapServiceName(testStorage.getClusterName()) + ":9095").build();
+        kafkaProducerClient.setBootstrapAddress(KafkaResources.bootstrapServiceName(testStorage.getClusterName()) + ":9095");
+        kafkaProducerClient.setAuthentication(ClientsAuthentication.configurePlainScramSha(testStorage.getNamespaceName(), testStorage.getUsername()));
 
         long startTimeExcluded = System.currentTimeMillis();
-        KubeResourceManager.get().createResourceWithWait(clients.producerScramShaPlainStrimzi());
-        ClientUtils.waitForInstantProducerClientSuccess(testStorage);
+        KubeResourceManager.get().createResourceWithWait(kafkaProducerClient.getJob());
+        ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getProducerName(), testStorage.getMessageCount());
+
         long endTimeExcluded = System.currentTimeMillis();
         long durationExcluded = endTimeExcluded - startTimeExcluded;
         LOGGER.info("Time taken for excluded user: {} ms", durationExcluded);

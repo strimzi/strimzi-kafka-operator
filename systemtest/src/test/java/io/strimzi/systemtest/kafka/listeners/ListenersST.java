@@ -36,9 +36,8 @@ import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.docs.TestDocsLabels;
+import io.strimzi.systemtest.kafkaclients.ClientsAuthentication;
 import io.strimzi.systemtest.kafkaclients.externalClients.ExternalKafkaClient;
-import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
-import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.resources.CrdClients;
 import io.strimzi.systemtest.resources.crd.KafkaComponents;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
@@ -58,6 +57,8 @@ import io.strimzi.systemtest.utils.kubeUtils.controllers.JobUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.ServiceUtils;
+import io.strimzi.testclients.clients.kafka.KafkaProducerConsumer;
+import io.strimzi.testclients.clients.kafka.KafkaProducerConsumerBuilder;
 import io.vertx.core.json.JsonArray;
 import org.apache.kafka.common.config.SslClientAuth;
 import org.apache.kafka.common.config.SslConfigs;
@@ -141,9 +142,22 @@ public class ListenersST extends AbstractST {
         KubeResourceManager.get().createResourceWithWait(KafkaTopicTemplates.topic(testStorage).build());
 
         LOGGER.info("Transmitting messages over plain transport and without auth.Bootstrap address: {}", KafkaResources.plainBootstrapAddress(testStorage.getClusterName()));
-        final KafkaClients kafkaClients = ClientUtils.getInstantPlainClients(testStorage);
-        KubeResourceManager.get().createResourceWithWait(kafkaClients.producerStrimzi(), kafkaClients.consumerStrimzi());
-        ClientUtils.waitForInstantClientSuccess(testStorage);
+        final KafkaProducerConsumer kafkaProducerConsumer = new KafkaProducerConsumerBuilder()
+            .withProducerName(testStorage.getProducerName())
+            .withConsumerName(testStorage.getConsumerName())
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withTopicName(testStorage.getTopicName())
+            .withConsumerGroup(ClientUtils.generateRandomConsumerGroup())
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
+            .withMessageCount(testStorage.getMessageCount())
+            .build();
+
+        KubeResourceManager.get().createResourceWithWait(
+            kafkaProducerConsumer.getProducer().getJob(),
+            kafkaProducerConsumer.getConsumer().getJob()
+        );
+
+        ClientUtils.waitForClientsSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getProducerName(), testStorage.getMessageCount());
 
         Service kafkaService = KubeResourceManager.get().kubeClient().getClient().services().inNamespace(testStorage.getNamespaceName()).withName(KafkaResources.bootstrapServiceName(testStorage.getClusterName())).get();
         String kafkaServiceDiscoveryAnnotation = kafkaService.getMetadata().getAnnotations().get("strimzi.io/discovery");
@@ -205,21 +219,23 @@ public class ListenersST extends AbstractST {
             KafkaUserTemplates.tlsUser(testStorage).build()
         );
 
-        KafkaClients kafkaClients = new KafkaClientsBuilder()
+        final KafkaProducerConsumer kafkaProducerConsumer = new KafkaProducerConsumerBuilder()
             .withProducerName(testStorage.getProducerName())
             .withConsumerName(testStorage.getConsumerName())
             .withNamespaceName(testStorage.getNamespaceName())
-            .withMessageCount(testStorage.getMessageCount())
-            .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(testStorage.getClusterName()))
-            .withUsername(testStorage.getUsername())
             .withTopicName(testStorage.getTopicName())
+            .withConsumerGroup(ClientUtils.generateRandomConsumerGroup())
+            .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(testStorage.getClusterName()))
+            .withMessageCount(testStorage.getMessageCount())
+            .withAuthentication(ClientsAuthentication.configureTls(testStorage.getClusterName(), testStorage.getUsername()))
             .build();
 
         KubeResourceManager.get().createResourceWithWait(
-            kafkaClients.producerTlsStrimzi(testStorage.getClusterName()),
-            kafkaClients.consumerTlsStrimzi(testStorage.getClusterName())
+            kafkaProducerConsumer.getProducer().getJob(),
+            kafkaProducerConsumer.getConsumer().getJob()
         );
-        ClientUtils.waitForInstantClientSuccess(testStorage);
+
+        ClientUtils.waitForClientsSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getProducerName(), testStorage.getMessageCount());
 
         Service kafkaService = KubeResourceManager.get().kubeClient().getClient().services().inNamespace(testStorage.getNamespaceName()).withName(KafkaResources.bootstrapServiceName(testStorage.getClusterName())).get();
         String kafkaServiceDiscoveryAnnotation = kafkaService.getMetadata().getAnnotations().get("strimzi.io/discovery");
@@ -275,9 +291,23 @@ public class ListenersST extends AbstractST {
 
         final String boostrapAddress = KafkaResources.bootstrapServiceName(testStorage.getClusterName()) + ":9095";
         LOGGER.info("Transmitting messages over plain transport using scram sha auth with bootstrap address: {}", boostrapAddress);
-        final KafkaClients kafkaClients = ClientUtils.getInstantScramShaClients(testStorage, boostrapAddress);
-        KubeResourceManager.get().createResourceWithWait(kafkaClients.producerScramShaPlainStrimzi(), kafkaClients.consumerScramShaPlainStrimzi());
-        ClientUtils.waitForInstantClientSuccess(testStorage);
+        final KafkaProducerConsumer kafkaProducerConsumer = new KafkaProducerConsumerBuilder()
+            .withProducerName(testStorage.getProducerName())
+            .withConsumerName(testStorage.getConsumerName())
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withTopicName(testStorage.getTopicName())
+            .withConsumerGroup(ClientUtils.generateRandomConsumerGroup())
+            .withBootstrapAddress(boostrapAddress)
+            .withMessageCount(testStorage.getMessageCount())
+            .withAuthentication(ClientsAuthentication.configurePlainScramSha(testStorage.getNamespaceName(), testStorage.getUsername()))
+            .build();
+
+        KubeResourceManager.get().createResourceWithWait(
+            kafkaProducerConsumer.getProducer().getJob(),
+            kafkaProducerConsumer.getConsumer().getJob()
+        );
+
+        ClientUtils.waitForClientsSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getProducerName(), testStorage.getMessageCount());
 
         Service kafkaService = KubeResourceManager.get().kubeClient().getClient().services().inNamespace(testStorage.getNamespaceName()).withName(KafkaResources.bootstrapServiceName(testStorage.getClusterName())).get();
         String kafkaServiceDiscoveryAnnotation = kafkaService.getMetadata().getAnnotations().get("strimzi.io/discovery");
@@ -346,12 +376,24 @@ public class ListenersST extends AbstractST {
 
         final String boostrapAddress = KafkaResources.bootstrapServiceName(testStorage.getClusterName()) + ":9096";
         LOGGER.info("Transmitting messages over tls using scram sha auth with bootstrap address: {}", boostrapAddress);
-        KafkaClients kafkaClients = ClientUtils.getInstantScramShaClients(testStorage, boostrapAddress);
+        final KafkaProducerConsumer kafkaProducerConsumer = new KafkaProducerConsumerBuilder()
+            .withProducerName(testStorage.getProducerName())
+            .withConsumerName(testStorage.getConsumerName())
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withTopicName(testStorage.getTopicName())
+            .withConsumerGroup(ClientUtils.generateRandomConsumerGroup())
+            .withBootstrapAddress(boostrapAddress)
+            .withAuthentication(ClientsAuthentication.configureTlsScramSha(testStorage.getNamespaceName(), testStorage.getUsername(), testStorage.getClusterName()))
+            .withMessageCount(testStorage.getMessageCount())
+            .build();
+
         KubeResourceManager.get().createResourceWithWait(
-            kafkaClients.producerScramShaTlsStrimzi(testStorage.getClusterName()),
-            kafkaClients.consumerScramShaTlsStrimzi(testStorage.getClusterName())
+            kafkaProducerConsumer.getProducer().getJob(),
+            kafkaProducerConsumer.getConsumer().getJob()
         );
-        ClientUtils.waitForInstantClientSuccess(testStorage);
+
+        ClientUtils.waitForClientsSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getProducerName(), testStorage.getMessageCount());
+
 
         LOGGER.info("Checking if generated password has {} characters", passwordLength);
         String password = KubeResourceManager.get().kubeClient().getClient().secrets().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getUsername()).get().getData().get("password");
@@ -415,12 +457,23 @@ public class ListenersST extends AbstractST {
 
         final String boostrapAddress = KafkaResources.bootstrapServiceName(testStorage.getClusterName()) + ":9122";
         LOGGER.info("Transmitting messages over tls using scram sha auth with bootstrap address: {}", boostrapAddress);
-        final KafkaClients kafkaClients = ClientUtils.getInstantScramShaClients(testStorage, boostrapAddress);
+        final KafkaProducerConsumer kafkaProducerConsumer = new KafkaProducerConsumerBuilder()
+            .withProducerName(testStorage.getProducerName())
+            .withConsumerName(testStorage.getConsumerName())
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withTopicName(testStorage.getTopicName())
+            .withConsumerGroup(ClientUtils.generateRandomConsumerGroup())
+            .withBootstrapAddress(boostrapAddress)
+            .withMessageCount(testStorage.getMessageCount())
+            .withAuthentication(ClientsAuthentication.configureTlsScramSha(testStorage.getNamespaceName(), testStorage.getUsername(), testStorage.getClusterName()))
+            .build();
+
         KubeResourceManager.get().createResourceWithWait(
-            kafkaClients.producerScramShaTlsStrimzi(testStorage.getClusterName()),
-            kafkaClients.consumerScramShaTlsStrimzi(testStorage.getClusterName())
+            kafkaProducerConsumer.getProducer().getJob(),
+            kafkaProducerConsumer.getConsumer().getJob()
         );
-        ClientUtils.waitForInstantClientSuccess(testStorage);
+
+        ClientUtils.waitForClientsSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getProducerName(), testStorage.getMessageCount());
     }
 
     /**
@@ -549,47 +602,53 @@ public class ListenersST extends AbstractST {
 
         final String boostrapAddress = KafkaResources.bootstrapServiceName(testStorage.getClusterName()) + ":9122";
         LOGGER.info("Transmitting messages over tls using tls auth with bootstrap address: {}", boostrapAddress);
-        final KafkaClients kafkaClients = ClientUtils.getInstantTlsClients(testStorage, boostrapAddress);
+        final KafkaProducerConsumer kafkaProducerConsumer = new KafkaProducerConsumerBuilder()
+            .withProducerName(testStorage.getProducerName())
+            .withConsumerName(testStorage.getConsumerName())
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withTopicName(testStorage.getTopicName())
+            .withConsumerGroup(ClientUtils.generateRandomConsumerGroup())
+            .withBootstrapAddress(boostrapAddress)
+            .withMessageCount(testStorage.getMessageCount())
+            .withAuthentication(ClientsAuthentication.configureTls(testStorage.getClusterName(), customUserCertName1))
+            .build();
 
         // ###########################################################
         // Check that KafkaUser with ACLs can produce/consume to Kafka
         // Use user certs signed by custom root CA 1
         // ###########################################################
-        kafkaClients.setUsername(customUserCertName1);
         KubeResourceManager.get().createResourceWithWait(
-            kafkaClients.producerTlsStrimzi(testStorage.getClusterName()),
-            kafkaClients.consumerTlsStrimzi(testStorage.getClusterName())
+            kafkaProducerConsumer.getProducer().getJob(),
+            kafkaProducerConsumer.getConsumer().getJob()
         );
 
-        ClientUtils.waitForInstantClientSuccess(testStorage);
-        JobUtils.deleteJobsWithWait(testStorage.getNamespaceName(), testStorage.getProducerName(), testStorage.getConsumerName());
+        ClientUtils.waitForClientsSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getProducerName(), testStorage.getMessageCount());
 
         // ###########################################################
         // Check that KafkaUser with ACLs cannot produce/consume to Kafka
         // due to wrong user certs signed by Strimzi CA
         // ###########################################################
-        kafkaClients.setUsername(testStorage.getUsername());
+        kafkaProducerConsumer.setAuthentication(ClientsAuthentication.configureTls(testStorage.getClusterName(), testStorage.getUsername()));
         KubeResourceManager.get().createResourceWithWait(
-            kafkaClients.producerTlsStrimzi(testStorage.getClusterName()),
-            kafkaClients.consumerTlsStrimzi(testStorage.getClusterName())
+            kafkaProducerConsumer.getProducer().getJob(),
+            kafkaProducerConsumer.getConsumer().getJob()
         );
 
         // TODO - we should rework this to allow timeout specification as this is not efficient
-        ClientUtils.waitForInstantClientsTimeout(testStorage);
+        ClientUtils.waitForClientsTimeout(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getProducerName(), testStorage.getMessageCount());
         JobUtils.deleteJobsWithWait(testStorage.getNamespaceName(), testStorage.getProducerName(), testStorage.getConsumerName());
 
         // ###########################################################
         // Check that KafkaUser with superuser right can produce/consume to Kafka
         // Use user certs signed by custom root CA 2
         // ###########################################################
-        kafkaClients.setUsername(customUserCertName2);
+        kafkaProducerConsumer.setAuthentication(ClientsAuthentication.configureTls(testStorage.getClusterName(), customUserCertName2));
         KubeResourceManager.get().createResourceWithWait(
-            kafkaClients.producerTlsStrimzi(testStorage.getClusterName()),
-            kafkaClients.consumerTlsStrimzi(testStorage.getClusterName())
+            kafkaProducerConsumer.getProducer().getJob(),
+            kafkaProducerConsumer.getConsumer().getJob()
         );
 
-        ClientUtils.waitForInstantClientSuccess(testStorage);
-        JobUtils.deleteJobsWithWait(testStorage.getNamespaceName(), testStorage.getProducerName(), testStorage.getConsumerName());
+        ClientUtils.waitForClientsSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getProducerName(), testStorage.getMessageCount());
 
         // ###########################################################
         // Remove ssl.principal.mapping.rules config from Kafka listener
@@ -621,12 +680,12 @@ public class ListenersST extends AbstractST {
         RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), 3, kafkaSnapshot);
 
         // Check that KafkaUser with ACL rights cannot produce/consume to/from Kafka
-        kafkaClients.setUsername(testStorage.getUsername());
+        kafkaProducerConsumer.setAuthentication(ClientsAuthentication.configureTls(testStorage.getClusterName(), testStorage.getUsername()));
         KubeResourceManager.get().createResourceWithWait(
-            kafkaClients.producerTlsStrimzi(testStorage.getClusterName()),
-            kafkaClients.consumerTlsStrimzi(testStorage.getClusterName())
+            kafkaProducerConsumer.getProducer().getJob(),
+            kafkaProducerConsumer.getConsumer().getJob()
         );
-        ClientUtils.waitForInstantClientsTimeout(testStorage);
+        ClientUtils.waitForClientsTimeout(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getProducerName(), testStorage.getMessageCount());
     }
 
     @ParallelNamespaceTest
@@ -1031,9 +1090,22 @@ public class ListenersST extends AbstractST {
             .build());
 
         final String clusterIPBoostrapAddress = KafkaUtils.bootstrapAddressFromStatus(testStorage.getNamespaceName(), testStorage.getClusterName(), TestConstants.CLUSTER_IP_LISTENER_DEFAULT_NAME);
-        final KafkaClients kafkaClients = ClientUtils.getInstantPlainClients(testStorage, clusterIPBoostrapAddress);
-        KubeResourceManager.get().createResourceWithWait(kafkaClients.producerStrimzi(), kafkaClients.consumerStrimzi());
-        ClientUtils.waitForInstantClientSuccess(testStorage);
+        final KafkaProducerConsumer kafkaProducerConsumer = new KafkaProducerConsumerBuilder()
+            .withProducerName(testStorage.getProducerName())
+            .withConsumerName(testStorage.getConsumerName())
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withTopicName(testStorage.getTopicName())
+            .withConsumerGroup(ClientUtils.generateRandomConsumerGroup())
+            .withBootstrapAddress(clusterIPBoostrapAddress)
+            .withMessageCount(testStorage.getMessageCount())
+            .build();
+
+        KubeResourceManager.get().createResourceWithWait(
+            kafkaProducerConsumer.getProducer().getJob(),
+            kafkaProducerConsumer.getConsumer().getJob()
+        );
+
+        ClientUtils.waitForClientsSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getProducerName(), testStorage.getMessageCount());
     }
 
     @ParallelNamespaceTest
@@ -1075,12 +1147,23 @@ public class ListenersST extends AbstractST {
         KubeResourceManager.get().createResourceWithWait(KafkaUserTemplates.tlsUser(testStorage).build());
 
         final String clusterIPBoostrapAddress = KafkaUtils.bootstrapAddressFromStatus(testStorage.getNamespaceName(), testStorage.getClusterName(), TestConstants.CLUSTER_IP_LISTENER_DEFAULT_NAME);
-        final KafkaClients kafkaClients = ClientUtils.getInstantTlsClients(testStorage, clusterIPBoostrapAddress);
+        final KafkaProducerConsumer kafkaProducerConsumer = new KafkaProducerConsumerBuilder()
+            .withProducerName(testStorage.getProducerName())
+            .withConsumerName(testStorage.getConsumerName())
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withTopicName(testStorage.getTopicName())
+            .withConsumerGroup(ClientUtils.generateRandomConsumerGroup())
+            .withBootstrapAddress(clusterIPBoostrapAddress)
+            .withMessageCount(testStorage.getMessageCount())
+            .withAuthentication(ClientsAuthentication.configureTls(testStorage.getClusterName(), testStorage.getUsername()))
+            .build();
+
         KubeResourceManager.get().createResourceWithWait(
-            kafkaClients.producerTlsStrimzi(testStorage.getClusterName()),
-            kafkaClients.consumerTlsStrimzi(testStorage.getClusterName())
+            kafkaProducerConsumer.getProducer().getJob(),
+            kafkaProducerConsumer.getConsumer().getJob()
         );
-        ClientUtils.waitForInstantClientSuccess(testStorage);
+
+        ClientUtils.waitForClientsSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getProducerName(), testStorage.getMessageCount());
     }
 
 //    ##########################################
@@ -1168,20 +1251,24 @@ public class ListenersST extends AbstractST {
             externalKafkaClient.receiveMessagesTls()
         );
 
-        KafkaClients kafkaClients = ClientUtils.getInstantTlsClientBuilder(testStorage, KafkaResources.bootstrapServiceName(testStorage.getClusterName()) + ":9104")
+        final KafkaProducerConsumer kafkaProducerConsumer = new KafkaProducerConsumerBuilder()
+            .withProducerName(testStorage.getProducerName())
+            .withConsumerName(testStorage.getConsumerName())
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withTopicName(testStorage.getTopicName())
             .withConsumerGroup("consumer-group-certs-1")
-            .withCaCertSecretName(TrustChainSecrets.TRUST_LEAF_ONLY)
+            .withBootstrapAddress(KafkaResources.bootstrapServiceName(testStorage.getClusterName()) + ":9104")
+            .withMessageCount(testStorage.getMessageCount())
+            .withAuthentication(ClientsAuthentication.configureTlsCustomCerts(TrustChainSecrets.TRUST_LEAF_ONLY, testStorage.getUsername()))
             .build();
 
-        KubeResourceManager.get().createResourceWithWait(kafkaClients.producerTlsStrimzi(testStorage.getClusterName()));
-        ClientUtils.waitForInstantProducerClientSuccess(testStorage);
+        KubeResourceManager.get().createResourceWithWait(kafkaProducerConsumer.getProducer().getJob());
+        ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getProducerName(), testStorage.getMessageCount());
 
-        kafkaClients = new KafkaClientsBuilder(kafkaClients)
-            .withMessageCount(2 * testStorage.getMessageCount())
-            .build();
+        kafkaProducerConsumer.setMessageCount(2 * testStorage.getMessageCount());
 
-        KubeResourceManager.get().createResourceWithWait(kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
-        ClientUtils.waitForInstantConsumerClientSuccess(testStorage);
+        KubeResourceManager.get().createResourceWithWait(kafkaProducerConsumer.getConsumer().getJob());
+        ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getMessageCount());
     }
 
     @ParallelNamespaceTest
@@ -1268,21 +1355,24 @@ public class ListenersST extends AbstractST {
             externalKafkaClient.receiveMessagesTls()
         );
 
-        KafkaClients kafkaClients = ClientUtils.getInstantPlainClientBuilder(testStorage, KafkaResources.bootstrapServiceName(testStorage.getClusterName()) + ":9106")
-            .withUsername(testStorage.getUsername())
-            .withCaCertSecretName(TrustChainSecrets.TRUST_FULL_CHAIN)
+        final KafkaProducerConsumer kafkaProducerConsumer = new KafkaProducerConsumerBuilder()
+            .withProducerName(testStorage.getProducerName())
+            .withConsumerName(testStorage.getConsumerName())
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withTopicName(testStorage.getTopicName())
             .withConsumerGroup("consumer-group-certs-2")
+            .withBootstrapAddress(KafkaResources.bootstrapServiceName(testStorage.getClusterName()) + ":9106")
+            .withMessageCount(testStorage.getMessageCount())
+            .withAuthentication(ClientsAuthentication.configureTlsCustomCerts(TrustChainSecrets.TRUST_FULL_CHAIN, testStorage.getUsername()))
             .build();
 
-        KubeResourceManager.get().createResourceWithWait(kafkaClients.producerTlsStrimzi(testStorage.getClusterName()));
-        ClientUtils.waitForInstantProducerClientSuccess(testStorage);
+        KubeResourceManager.get().createResourceWithWait(kafkaProducerConsumer.getProducer().getJob());
+        ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getProducerName(), testStorage.getMessageCount());
 
-        kafkaClients = new KafkaClientsBuilder(kafkaClients)
-            .withMessageCount(2 * testStorage.getMessageCount())
-            .build();
+        kafkaProducerConsumer.setMessageCount(2 * testStorage.getMessageCount());
 
-        KubeResourceManager.get().createResourceWithWait(kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
-        ClientUtils.waitForInstantConsumerClientSuccess(testStorage);
+        KubeResourceManager.get().createResourceWithWait(kafkaProducerConsumer.getConsumer().getJob());
+        ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getMessageCount());
     }
 
     @ParallelNamespaceTest
@@ -1366,20 +1456,24 @@ public class ListenersST extends AbstractST {
             externalKafkaClient.receiveMessagesTls()
         );
 
-        KafkaClients kafkaClients = ClientUtils.getInstantTlsClientBuilder(testStorage, KafkaResources.bootstrapServiceName(testStorage.getClusterName()) + ":9107")
+        final KafkaProducerConsumer kafkaProducerConsumer = new KafkaProducerConsumerBuilder()
+            .withProducerName(testStorage.getProducerName())
+            .withConsumerName(testStorage.getConsumerName())
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withTopicName(testStorage.getTopicName())
             .withConsumerGroup("consumer-group-certs-3")
-            .withCaCertSecretName(TrustChainSecrets.TRUST_LEAF_ONLY)
+            .withBootstrapAddress(KafkaResources.bootstrapServiceName(testStorage.getClusterName()) + ":9107")
+            .withMessageCount(testStorage.getMessageCount())
+            .withAuthentication(ClientsAuthentication.configureTlsCustomCerts(TrustChainSecrets.TRUST_LEAF_ONLY, testStorage.getUsername()))
             .build();
 
-        KubeResourceManager.get().createResourceWithWait(kafkaClients.producerTlsStrimzi(testStorage.getClusterName()));
-        ClientUtils.waitForInstantProducerClientSuccess(testStorage);
+        KubeResourceManager.get().createResourceWithWait(kafkaProducerConsumer.getProducer().getJob());
+        ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getProducerName(), testStorage.getMessageCount());
 
-        kafkaClients = new KafkaClientsBuilder(kafkaClients)
-            .withMessageCount(2 * testStorage.getMessageCount())
-            .build();
+        kafkaProducerConsumer.setMessageCount(2 * testStorage.getMessageCount());
 
-        KubeResourceManager.get().createResourceWithWait(kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
-        ClientUtils.waitForInstantConsumerClientSuccess(testStorage);
+        KubeResourceManager.get().createResourceWithWait(kafkaProducerConsumer.getConsumer().getJob());
+        ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getMessageCount());
     }
 
     @ParallelNamespaceTest
@@ -1470,20 +1564,24 @@ public class ListenersST extends AbstractST {
             externalKafkaClient.receiveMessagesTls()
         );
 
-        KafkaClients kafkaClients = ClientUtils.getInstantTlsClientBuilder(testStorage, KafkaResources.bootstrapServiceName(testStorage.getClusterName()) + ":9109")
+        final KafkaProducerConsumer kafkaProducerConsumer = new KafkaProducerConsumerBuilder()
+            .withProducerName(testStorage.getProducerName())
+            .withConsumerName(testStorage.getConsumerName())
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withTopicName(testStorage.getTopicName())
             .withConsumerGroup("consumer-group-certs-4")
-            .withCaCertSecretName(TrustChainSecrets.TRUST_FULL_CHAIN)
+            .withBootstrapAddress(KafkaResources.bootstrapServiceName(testStorage.getClusterName()) + ":9109")
+            .withMessageCount(testStorage.getMessageCount())
+            .withAuthentication(ClientsAuthentication.configureTlsCustomCerts(TrustChainSecrets.TRUST_FULL_CHAIN, testStorage.getUsername()))
             .build();
 
-        KubeResourceManager.get().createResourceWithWait(kafkaClients.producerTlsStrimzi(testStorage.getClusterName()));
-        ClientUtils.waitForInstantProducerClientSuccess(testStorage);
+        KubeResourceManager.get().createResourceWithWait(kafkaProducerConsumer.getProducer().getJob());
+        ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getProducerName(), testStorage.getMessageCount());
 
-        kafkaClients = new KafkaClientsBuilder(kafkaClients)
-            .withMessageCount(2 * testStorage.getMessageCount())
-            .build();
+        kafkaProducerConsumer.setMessageCount(2 * testStorage.getMessageCount());
 
-        KubeResourceManager.get().createResourceWithWait(kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
-        ClientUtils.waitForInstantConsumerClientSuccess(testStorage);
+        KubeResourceManager.get().createResourceWithWait(kafkaProducerConsumer.getConsumer().getJob());
+        ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getMessageCount());
     }
 
     @ParallelNamespaceTest
@@ -1571,20 +1669,24 @@ public class ListenersST extends AbstractST {
             externalKafkaClient.receiveMessagesTls()
         );
 
-        KafkaClients kafkaClients = ClientUtils.getInstantTlsClientBuilder(testStorage, KafkaResources.bootstrapServiceName(testStorage.getClusterName()) + ":9111")
+        final KafkaProducerConsumer kafkaProducerConsumer = new KafkaProducerConsumerBuilder()
+            .withProducerName(testStorage.getProducerName())
+            .withConsumerName(testStorage.getConsumerName())
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withTopicName(testStorage.getTopicName())
             .withConsumerGroup("consumer-group-certs-5")
-            .withCaCertSecretName(TrustChainSecrets.TRUST_LEAF_ONLY)
+            .withBootstrapAddress(KafkaResources.bootstrapServiceName(testStorage.getClusterName()) + ":9111")
+            .withMessageCount(testStorage.getMessageCount())
+            .withAuthentication(ClientsAuthentication.configureTlsCustomCerts(TrustChainSecrets.TRUST_LEAF_ONLY, testStorage.getUsername()))
             .build();
 
-        KubeResourceManager.get().createResourceWithWait(kafkaClients.producerTlsStrimzi(testStorage.getClusterName()));
-        ClientUtils.waitForInstantProducerClientSuccess(testStorage);
+        KubeResourceManager.get().createResourceWithWait(kafkaProducerConsumer.getProducer().getJob());
+        ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getProducerName(), testStorage.getMessageCount());
 
-        kafkaClients = new KafkaClientsBuilder(kafkaClients)
-            .withMessageCount(2 * testStorage.getMessageCount())
-            .build();
+        kafkaProducerConsumer.setMessageCount(2 * testStorage.getMessageCount());
 
-        KubeResourceManager.get().createResourceWithWait(kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
-        ClientUtils.waitForInstantConsumerClientSuccess(testStorage);
+        KubeResourceManager.get().createResourceWithWait(kafkaProducerConsumer.getConsumer().getJob());
+        ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getMessageCount());
     }
 
     @ParallelNamespaceTest
@@ -1672,20 +1774,24 @@ public class ListenersST extends AbstractST {
             externalKafkaClient.receiveMessagesTls()
         );
 
-        KafkaClients kafkaClients = ClientUtils.getInstantTlsClientBuilder(testStorage, KafkaResources.bootstrapServiceName(testStorage.getClusterName()) + ":9112")
+        final KafkaProducerConsumer kafkaProducerConsumer = new KafkaProducerConsumerBuilder()
+            .withProducerName(testStorage.getProducerName())
+            .withConsumerName(testStorage.getConsumerName())
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withTopicName(testStorage.getTopicName())
             .withConsumerGroup("consumer-group-certs-6")
-            .withCaCertSecretName(TrustChainSecrets.TRUST_FULL_CHAIN)
+            .withBootstrapAddress(KafkaResources.bootstrapServiceName(testStorage.getClusterName()) + ":9112")
+            .withMessageCount(testStorage.getMessageCount())
+            .withAuthentication(ClientsAuthentication.configureTlsCustomCerts(TrustChainSecrets.TRUST_FULL_CHAIN, testStorage.getUsername()))
             .build();
 
-        KubeResourceManager.get().createResourceWithWait(kafkaClients.producerTlsStrimzi(testStorage.getClusterName()));
-        ClientUtils.waitForInstantProducerClientSuccess(testStorage);
+        KubeResourceManager.get().createResourceWithWait(kafkaProducerConsumer.getProducer().getJob());
+        ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getProducerName(), testStorage.getMessageCount());
 
-        kafkaClients = new KafkaClientsBuilder(kafkaClients)
-            .withMessageCount(2 * testStorage.getMessageCount())
-            .build();
+        kafkaProducerConsumer.setMessageCount(2 * testStorage.getMessageCount());
 
-        KubeResourceManager.get().createResourceWithWait(kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
-        ClientUtils.waitForInstantConsumerClientSuccess(testStorage);
+        KubeResourceManager.get().createResourceWithWait(kafkaProducerConsumer.getConsumer().getJob());
+        ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getMessageCount());
     }
 
     @ParallelNamespaceTest
@@ -1832,20 +1938,24 @@ public class ListenersST extends AbstractST {
             externalKafkaClient.receiveMessagesTls()
         );
 
-        KafkaClients kafkaClients = ClientUtils.getInstantTlsClientBuilder(testStorage, KafkaResources.bootstrapServiceName(testStorage.getClusterName()) + ":9113")
+        KafkaProducerConsumer kafkaProducerConsumer = new KafkaProducerConsumerBuilder()
+            .withProducerName(testStorage.getProducerName())
+            .withConsumerName(testStorage.getConsumerName())
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withTopicName(testStorage.getTopicName())
             .withConsumerGroup("consumer-group-certs-6")
-            .withCaCertSecretName(customCertServer2)
+            .withBootstrapAddress(KafkaResources.bootstrapServiceName(testStorage.getClusterName()) + ":9113")
+            .withMessageCount(testStorage.getMessageCount())
+            .withAuthentication(ClientsAuthentication.configureTlsCustomCerts(customCertServer2, testStorage.getUsername()))
             .build();
 
-        KubeResourceManager.get().createResourceWithWait(kafkaClients.producerTlsStrimzi(testStorage.getClusterName()));
-        ClientUtils.waitForInstantProducerClientSuccess(testStorage);
+        KubeResourceManager.get().createResourceWithWait(kafkaProducerConsumer.getProducer().getJob());
+        ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getProducerName(), testStorage.getMessageCount());
 
-        kafkaClients = new KafkaClientsBuilder(kafkaClients)
-            .withMessageCount(3 * testStorage.getMessageCount())
-            .build();
+        kafkaProducerConsumer.setMessageCount(3 * testStorage.getMessageCount());
 
-        KubeResourceManager.get().createResourceWithWait(kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
-        ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getMessageCount() * 3);
+        KubeResourceManager.get().createResourceWithWait(kafkaProducerConsumer.getConsumer().getJob());
+        ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), 3 * testStorage.getMessageCount());
 
         externalCerts = getKafkaStatusCertificates(testStorage.getNamespaceName(), TestConstants.EXTERNAL_LISTENER_DEFAULT_NAME, testStorage.getClusterName());
         externalSecretCerts = getKafkaSecretCertificates(testStorage.getNamespaceName(), customCertServer1, "ca.crt");
@@ -1867,19 +1977,19 @@ public class ListenersST extends AbstractST {
             externalKafkaClient.receiveMessagesTls()
         );
 
-        kafkaClients = new KafkaClientsBuilder(kafkaClients)
+        kafkaProducerConsumer = new KafkaProducerConsumerBuilder(kafkaProducerConsumer)
             .withConsumerGroup("consumer-group-certs-71")
             .withMessageCount(testStorage.getMessageCount())
             .build();
 
-        KubeResourceManager.get().createResourceWithWait(kafkaClients.producerTlsStrimzi(testStorage.getClusterName()));
-        ClientUtils.waitForInstantProducerClientSuccess(testStorage);
+        KubeResourceManager.get().createResourceWithWait(kafkaProducerConsumer.getProducer().getJob());
+        ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getProducerName(), testStorage.getMessageCount());
 
-        kafkaClients = new KafkaClientsBuilder(kafkaClients)
+        kafkaProducerConsumer = new KafkaProducerConsumerBuilder(kafkaProducerConsumer)
             .withMessageCount(testStorage.getMessageCount() * 5)
             .build();
 
-        KubeResourceManager.get().createResourceWithWait(kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
+        KubeResourceManager.get().createResourceWithWait(kafkaProducerConsumer.getConsumer().getJob());
         ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getMessageCount() * 5);
 
         KafkaUtils.replace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> {
@@ -1938,12 +2048,12 @@ public class ListenersST extends AbstractST {
             externalKafkaClient.receiveMessagesTls()
         );
 
-        kafkaClients = new KafkaClientsBuilder(kafkaClients)
+        kafkaProducerConsumer = new KafkaProducerConsumerBuilder(kafkaProducerConsumer)
             .withConsumerGroup("consumer-group-certs-83")
             .withMessageCount(testStorage.getMessageCount() * 6)
             .build();
 
-        KubeResourceManager.get().createResourceWithWait(kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
+        KubeResourceManager.get().createResourceWithWait(kafkaProducerConsumer.getConsumer().getJob());
         ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getMessageCount() * 6);
     }
 
@@ -2091,21 +2201,25 @@ public class ListenersST extends AbstractST {
 
         int expectedMessageCountForNewGroup = testStorage.getMessageCount() * 3;
 
-        KafkaClients kafkaClients = ClientUtils.getInstantTlsClientBuilder(testStorage, KafkaResources.bootstrapServiceName(testStorage.getClusterName()) + ":9115")
+        KafkaProducerConsumer kafkaProducerConsumer = new KafkaProducerConsumerBuilder()
+            .withProducerName(testStorage.getProducerName())
+            .withConsumerName(testStorage.getConsumerName())
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withTopicName(testStorage.getTopicName())
             .withConsumerGroup("consumer-group-certs-71")
-            .withCaCertSecretName(customCertServer2)
+            .withBootstrapAddress(KafkaResources.bootstrapServiceName(testStorage.getClusterName()) + ":9115")
+            .withMessageCount(testStorage.getMessageCount())
+            .withAuthentication(ClientsAuthentication.configureTlsCustomCerts(customCertServer2, testStorage.getUsername()))
             .build();
 
-        KubeResourceManager.get().createResourceWithWait(kafkaClients.producerTlsStrimzi(testStorage.getClusterName()));
-        ClientUtils.waitForInstantProducerClientSuccess(testStorage);
+        KubeResourceManager.get().createResourceWithWait(kafkaProducerConsumer.getProducer().getJob());
+        ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getProducerName(), testStorage.getMessageCount());
 
         int expectedMessageCountForExternalClient = testStorage.getMessageCount();
 
-        kafkaClients = new KafkaClientsBuilder(kafkaClients)
-            .withMessageCount(expectedMessageCountForNewGroup)
-            .build();
+        kafkaProducerConsumer.setMessageCount(expectedMessageCountForExternalClient);
 
-        KubeResourceManager.get().createResourceWithWait(kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
+        KubeResourceManager.get().createResourceWithWait(kafkaProducerConsumer.getConsumer().getJob());
         ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getMessageCount() * 3);
 
         SecretUtils.updateCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(), customCertServer1, exportToPemFiles(brokerBundle2.getSystemTestCa()));
@@ -2130,22 +2244,22 @@ public class ListenersST extends AbstractST {
             externalKafkaClient.receiveMessagesTls()
         );
 
-        kafkaClients = new KafkaClientsBuilder(kafkaClients)
+        kafkaProducerConsumer = new KafkaProducerConsumerBuilder(kafkaProducerConsumer)
             .withConsumerGroup("consumer-group-certs-72")
             .withMessageCount(testStorage.getMessageCount())
             .build();
 
-        KubeResourceManager.get().createResourceWithWait(kafkaClients.producerTlsStrimzi(testStorage.getClusterName()));
-        ClientUtils.waitForInstantProducerClientSuccess(testStorage);
+        KubeResourceManager.get().createResourceWithWait(kafkaProducerConsumer.getProducer().getJob());
+        ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getProducerName(), testStorage.getMessageCount());
 
         expectedMessageCountForNewGroup += testStorage.getMessageCount();
 
-        kafkaClients = new KafkaClientsBuilder(kafkaClients)
+        kafkaProducerConsumer = new KafkaProducerConsumerBuilder(kafkaProducerConsumer)
             .withMessageCount(expectedMessageCountForNewGroup)
             .build();
 
-        KubeResourceManager.get().createResourceWithWait(kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
-        ClientUtils.waitForInstantConsumerClientSuccess(testStorage);
+        KubeResourceManager.get().createResourceWithWait(kafkaProducerConsumer.getConsumer().getJob());
+        ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getMessageCount());
 
         KafkaUtils.replace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> {
             kafka.getSpec().getKafka().setListeners(asList(
@@ -2195,13 +2309,13 @@ public class ListenersST extends AbstractST {
             externalKafkaClient.receiveMessagesTls()
         );
 
-        kafkaClients = new KafkaClientsBuilder(kafkaClients)
+        kafkaProducerConsumer = new KafkaProducerConsumerBuilder(kafkaProducerConsumer)
             .withConsumerGroup("consumer-group-certs-73")
             .withMessageCount(expectedMessageCountForNewGroup)
             .build();
 
-        KubeResourceManager.get().createResourceWithWait(kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
-        ClientUtils.waitForInstantConsumerClientSuccess(testStorage);
+        KubeResourceManager.get().createResourceWithWait(kafkaProducerConsumer.getConsumer().getJob());
+        ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getMessageCount());
     }
 
     @ParallelNamespaceTest
@@ -2351,20 +2465,24 @@ public class ListenersST extends AbstractST {
             externalKafkaClient.receiveMessagesTls()
         );
 
-        KafkaClients kafkaClients = ClientUtils.getInstantTlsClientBuilder(testStorage, KafkaResources.bootstrapServiceName(testStorage.getClusterName()) + ":9117")
-            .withCaCertSecretName(customCertServer2)
+        KafkaProducerConsumer kafkaProducerConsumer = new KafkaProducerConsumerBuilder()
+            .withProducerName(testStorage.getProducerName())
+            .withConsumerName(testStorage.getConsumerName())
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withTopicName(testStorage.getTopicName())
             .withConsumerGroup("consumer-group-certs-91")
+            .withBootstrapAddress(KafkaResources.bootstrapServiceName(testStorage.getClusterName()) + ":9117")
+            .withMessageCount(testStorage.getMessageCount())
+            .withAuthentication(ClientsAuthentication.configureTlsCustomCerts(customCertServer2, testStorage.getUsername()))
             .build();
 
-        KubeResourceManager.get().createResourceWithWait(kafkaClients.producerTlsStrimzi(testStorage.getClusterName()));
-        ClientUtils.waitForInstantProducerClientSuccess(testStorage);
+        KubeResourceManager.get().createResourceWithWait(kafkaProducerConsumer.getProducer().getJob());
+        ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getProducerName(), testStorage.getMessageCount());
 
-        kafkaClients = new KafkaClientsBuilder(kafkaClients)
-            .withMessageCount(testStorage.getMessageCount() * 3)
-            .build();
+        kafkaProducerConsumer.setMessageCount(3 * testStorage.getMessageCount());
 
-        KubeResourceManager.get().createResourceWithWait(kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
-        ClientUtils.waitForInstantConsumerClientSuccess(testStorage);
+        KubeResourceManager.get().createResourceWithWait(kafkaProducerConsumer.getConsumer().getJob());
+        ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getMessageCount());
 
         // Delete already existing secrets
         SecretUtils.deleteSecretWithWait(testStorage.getNamespaceName(), customCertServer1);
@@ -2396,20 +2514,20 @@ public class ListenersST extends AbstractST {
             externalKafkaClient.receiveMessagesTls()
         );
 
-        kafkaClients = new KafkaClientsBuilder(kafkaClients)
+        kafkaProducerConsumer = new KafkaProducerConsumerBuilder(kafkaProducerConsumer)
             .withConsumerGroup("consumer-group-certs-92")
             .withMessageCount(testStorage.getMessageCount())
             .build();
 
-        KubeResourceManager.get().createResourceWithWait(kafkaClients.producerTlsStrimzi(testStorage.getClusterName()));
-        ClientUtils.waitForInstantProducerClientSuccess(testStorage);
+        KubeResourceManager.get().createResourceWithWait(kafkaProducerConsumer.getProducer().getJob());
+        ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getProducerName(), testStorage.getMessageCount());
 
-        kafkaClients = new KafkaClientsBuilder(kafkaClients)
+        kafkaProducerConsumer = new KafkaProducerConsumerBuilder(kafkaProducerConsumer)
             .withMessageCount(testStorage.getMessageCount() * 5)
             .build();
 
-        KubeResourceManager.get().createResourceWithWait(kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
-        ClientUtils.waitForInstantConsumerClientSuccess(testStorage);
+        KubeResourceManager.get().createResourceWithWait(kafkaProducerConsumer.getConsumer().getJob());
+        ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getMessageCount());
 
         KafkaUtils.replace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> {
             kafka.getSpec().getKafka().setListeners(asList(
@@ -2471,13 +2589,13 @@ public class ListenersST extends AbstractST {
             externalKafkaClient.receiveMessagesTls()
         );
 
-        kafkaClients = new KafkaClientsBuilder(kafkaClients)
+        kafkaProducerConsumer = new KafkaProducerConsumerBuilder(kafkaProducerConsumer)
             .withMessageCount(testStorage.getMessageCount() * 6)
             .withConsumerGroup("consumer-group-certs-93")
             .build();
 
-        KubeResourceManager.get().createResourceWithWait(kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
-        ClientUtils.waitForInstantConsumerClientSuccess(testStorage);
+        KubeResourceManager.get().createResourceWithWait(kafkaProducerConsumer.getConsumer().getJob());
+        ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getMessageCount());
     }
 
     @ParallelNamespaceTest
@@ -2702,12 +2820,23 @@ public class ListenersST extends AbstractST {
 
         final String boostrapAddress = KafkaResources.bootstrapServiceName(testStorage.getClusterName()) + ":9096";
         LOGGER.info("Transmitting messages over tls using scram sha auth with bootstrap address: {} with predefined password", boostrapAddress);
-        KafkaClients kafkaClients = ClientUtils.getInstantScramShaClients(testStorage, boostrapAddress);
+        final KafkaProducerConsumer kafkaProducerConsumer = new KafkaProducerConsumerBuilder()
+            .withProducerName(testStorage.getProducerName())
+            .withConsumerName(testStorage.getConsumerName())
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withTopicName(testStorage.getTopicName())
+            .withConsumerGroup(ClientUtils.generateRandomConsumerGroup())
+            .withBootstrapAddress(boostrapAddress)
+            .withMessageCount(testStorage.getMessageCount())
+            .withAuthentication(ClientsAuthentication.configureTlsScramSha(testStorage.getNamespaceName(), testStorage.getUsername(), testStorage.getClusterName()))
+            .build();
+
         KubeResourceManager.get().createResourceWithWait(
-            kafkaClients.producerScramShaTlsStrimzi(testStorage.getClusterName()),
-            kafkaClients.consumerScramShaTlsStrimzi(testStorage.getClusterName())
+            kafkaProducerConsumer.getProducer().getJob(),
+            kafkaProducerConsumer.getConsumer().getJob()
         );
-        ClientUtils.waitForInstantClientSuccess(testStorage);
+
+        ClientUtils.waitForClientsSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getProducerName(), testStorage.getMessageCount());
 
         LOGGER.info("Changing password in Secret: {}/{}, we should be able to send/receive messages", testStorage.getNamespaceName(), secretName);
 
@@ -2720,13 +2849,16 @@ public class ListenersST extends AbstractST {
 
         LOGGER.info("Receiving messages with new password");
 
-        kafkaClients.generateNewConsumerGroup();
+        kafkaProducerConsumer.setConsumerGroup(ClientUtils.generateRandomConsumerGroup());
+        // we need to take the updated password from the Secret again
+        kafkaProducerConsumer.setAuthentication(ClientsAuthentication.configureTlsScramSha(testStorage.getNamespaceName(), testStorage.getUsername(), testStorage.getClusterName()));
 
         KubeResourceManager.get().createResourceWithWait(
-            kafkaClients.producerScramShaTlsStrimzi(testStorage.getClusterName()),
-            kafkaClients.consumerScramShaTlsStrimzi(testStorage.getClusterName())
+            kafkaProducerConsumer.getProducer().getJob(),
+            kafkaProducerConsumer.getConsumer().getJob()
         );
-        ClientUtils.waitForInstantClientSuccess(testStorage);
+
+        ClientUtils.waitForClientsSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getProducerName(), testStorage.getMessageCount());
     }
 
     @Tag(NODEPORT_SUPPORTED)

@@ -21,9 +21,8 @@ import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
 import io.strimzi.systemtest.docs.TestDocsLabels;
+import io.strimzi.systemtest.kafkaclients.ClientsAuthentication;
 import io.strimzi.systemtest.kafkaclients.externalClients.ExternalKafkaClient;
-import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
-import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
@@ -33,6 +32,8 @@ import io.strimzi.systemtest.templates.crd.KafkaUserTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
+import io.strimzi.testclients.clients.kafka.KafkaProducerConsumer;
+import io.strimzi.testclients.clients.kafka.KafkaProducerConsumerBuilder;
 import org.apache.kafka.common.security.auth.SecurityProtocol;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -307,28 +308,23 @@ public class MultipleListenersST extends AbstractST {
                     }
                 } else {
                     // using internal clients
-                    KafkaClients kafkaClients = new KafkaClientsBuilder()
+                    KafkaProducerConsumer kafkaProducerConsumer = new KafkaProducerConsumerBuilder()
                         .withTopicName(topicName)
                         .withMessageCount(testStorage.getMessageCount())
                         .withProducerName(producerName)
                         .withConsumerName(consumerName)
-                        .withUsername(kafkaUsername)
                         .withNamespaceName(Environment.TEST_SUITE_NAMESPACE)
                         .withBootstrapAddress(KafkaResources.bootstrapServiceName(clusterName) + ":" + listener.getPort())
                         .build();
 
                     if (isTlsEnabled) {
-                        // verify phase
-                        KubeResourceManager.get().createResourceWithWait(
-                            kafkaClients.producerTlsStrimzi(clusterName),
-                            kafkaClients.consumerTlsStrimzi(clusterName)
-                        );
-                    } else {
-                        KubeResourceManager.get().createResourceWithWait(
-                            kafkaClients.producerStrimzi(),
-                            kafkaClients.consumerStrimzi()
-                        );
+                        kafkaProducerConsumer.setAuthentication(ClientsAuthentication.configureTls(clusterName, kafkaUsername));
                     }
+
+                    KubeResourceManager.get().createResourceWithWait(
+                        kafkaProducerConsumer.getProducer().getJob(),
+                        kafkaProducerConsumer.getConsumer().getJob()
+                    );
                     ClientUtils.waitForClientsSuccess(Environment.TEST_SUITE_NAMESPACE, consumerName, producerName, testStorage.getMessageCount());
                 }
             }

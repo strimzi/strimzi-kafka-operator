@@ -20,6 +20,7 @@ import io.skodjob.kubetest4j.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.common.ProbeBuilder;
 import io.strimzi.api.kafka.model.common.metrics.JmxPrometheusExporterMetrics;
 import io.strimzi.api.kafka.model.common.metrics.JmxPrometheusExporterMetricsBuilder;
+import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.topic.KafkaTopic;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.systemtest.AbstractST;
@@ -27,7 +28,7 @@ import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
-import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
+import io.strimzi.systemtest.kafkaclients.ClientsAuthentication;
 import io.strimzi.systemtest.metrics.KafkaMetricsComponent;
 import io.strimzi.systemtest.resources.crd.KafkaComponents;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
@@ -46,6 +47,8 @@ import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PersistentVolumeClaimUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
+import io.strimzi.testclients.clients.kafka.KafkaProducerConsumer;
+import io.strimzi.testclients.clients.kafka.KafkaProducerConsumerBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
@@ -105,9 +108,22 @@ class RollingUpdateST extends AbstractST {
             KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getTopicName(), testStorage.getClusterName(), 2, 2).build()
         );
 
-        final KafkaClients clients = ClientUtils.getInstantPlainClients(testStorage);
-        KubeResourceManager.get().createResourceWithWait(clients.producerStrimzi(), clients.consumerStrimzi());
-        ClientUtils.waitForInstantClientSuccess(testStorage);
+        final KafkaProducerConsumer kafkaProducerConsumer = new KafkaProducerConsumerBuilder()
+            .withProducerName(testStorage.getProducerName())
+            .withConsumerName(testStorage.getConsumerName())
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withTopicName(testStorage.getTopicName())
+            .withConsumerGroup(ClientUtils.generateRandomConsumerGroup())
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
+            .withMessageCount(testStorage.getMessageCount())
+            .build();
+
+        KubeResourceManager.get().createResourceWithWait(
+            kafkaProducerConsumer.getProducer().getJob(),
+            kafkaProducerConsumer.getConsumer().getJob()
+        );
+
+        ClientUtils.waitForClientsSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getProducerName(), testStorage.getMessageCount());
 
         // change controller knp to unreasonable CPU request causing trigger of Rolling update and recover by second modification
         modifyNodePoolToUnscheduledAndRecover(testStorage.getControllerPoolName(), testStorage.getControllerSelector(), testStorage);
@@ -115,9 +131,9 @@ class RollingUpdateST extends AbstractST {
         // change broker knp to unreasonable CPU request causing trigger of Rolling update
         modifyNodePoolToUnscheduledAndRecover(testStorage.getBrokerPoolName(), testStorage.getBrokerSelector(), testStorage);
 
-        clients.generateNewConsumerGroup();
-        KubeResourceManager.get().createResourceWithWait(clients.consumerStrimzi());
-        ClientUtils.waitForInstantConsumerClientSuccess(testStorage);
+        kafkaProducerConsumer.setConsumerGroup(ClientUtils.generateRandomConsumerGroup());
+        KubeResourceManager.get().createResourceWithWait(kafkaProducerConsumer.getConsumer().getJob());
+        ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getMessageCount());
     }
 
     /**
@@ -180,12 +196,23 @@ class RollingUpdateST extends AbstractST {
         // communicate with topic before scaling up/down
 
         KubeResourceManager.get().createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getTopicName(), testStorage.getClusterName(), 3, initialReplicas, initialReplicas).build());
-        final KafkaClients clientsBeforeScale = ClientUtils.getInstantTlsClients(testStorage);
+        final KafkaProducerConsumer kafkaProducerConsumer = new KafkaProducerConsumerBuilder()
+            .withProducerName(testStorage.getProducerName())
+            .withConsumerName(testStorage.getConsumerName())
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withTopicName(testStorage.getTopicName())
+            .withConsumerGroup(ClientUtils.generateRandomConsumerGroup())
+            .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(testStorage.getClusterName()))
+            .withMessageCount(testStorage.getMessageCount())
+            .withAuthentication(ClientsAuthentication.configureTls(testStorage.getClusterName(), testStorage.getUsername()))
+            .build();
+
         KubeResourceManager.get().createResourceWithWait(
-            clientsBeforeScale.producerTlsStrimzi(testStorage.getClusterName()),
-            clientsBeforeScale.consumerTlsStrimzi(testStorage.getClusterName())
+            kafkaProducerConsumer.getProducer().getJob(),
+            kafkaProducerConsumer.getConsumer().getJob()
         );
-        ClientUtils.waitForInstantClientSuccess(testStorage);
+
+        ClientUtils.waitForClientsSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getProducerName(), testStorage.getMessageCount());
 
         // scale up
         final int scaleTo = initialReplicas + 2;
@@ -201,9 +228,9 @@ class RollingUpdateST extends AbstractST {
         // consuming data from original topic after scaling up
 
         LOGGER.info("Consume data produced before scaling up");
-        clientsBeforeScale.generateNewConsumerGroup();
-        KubeResourceManager.get().createResourceWithWait(clientsBeforeScale.consumerTlsStrimzi(testStorage.getClusterName()));
-        ClientUtils.waitForInstantConsumerClientSuccess(testStorage);
+        kafkaProducerConsumer.setConsumerGroup(ClientUtils.generateRandomConsumerGroup());
+        KubeResourceManager.get().createResourceWithWait(kafkaProducerConsumer.getConsumer().getJob());
+        ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getMessageCount());
 
         // new topic has more replicas than there was available Kafka brokers before scaling up
         LOGGER.info("Create new KafkaTopic with replica count requiring existence of brokers added by scaling up");
@@ -215,14 +242,15 @@ class RollingUpdateST extends AbstractST {
         KubeResourceManager.get().createResourceWithWait(scaledUpKafkaTopicResource);
 
         LOGGER.info("Produce and consume messages into KafkaTopic {}/{}", testStorage.getNamespaceName(), topicNameScaledUp);
-        final KafkaClients clientsAfterScaleUp = ClientUtils.getInstantTlsClientBuilder(testStorage)
-            .withTopicName(topicNameScaledUp)
-            .build();
+        kafkaProducerConsumer.setTopicName(topicNameScaledUp);
+        kafkaProducerConsumer.setConsumerGroup(ClientUtils.generateRandomConsumerGroup());
+
         KubeResourceManager.get().createResourceWithWait(
-            clientsAfterScaleUp.producerTlsStrimzi(testStorage.getClusterName()),
-            clientsAfterScaleUp.consumerTlsStrimzi(testStorage.getClusterName())
+            kafkaProducerConsumer.getProducer().getJob(),
+            kafkaProducerConsumer.getConsumer().getJob()
         );
-        ClientUtils.waitForInstantClientSuccess(testStorage);
+
+        ClientUtils.waitForClientsSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getProducerName(), testStorage.getMessageCount());
 
         LOGGER.info("Verify number of PVCs is increased to 5 after scaling Kafka: {}/{} Up to 5 replicas", testStorage.getNamespaceName(), testStorage.getClusterName());
         assertThat((int) PersistentVolumeClaimUtils.listPVCsByNameSubstring(testStorage.getNamespaceName(), testStorage.getClusterName()).stream().filter(
@@ -240,9 +268,9 @@ class RollingUpdateST extends AbstractST {
         // consuming from original topic (i.e. created before scaling)
 
         LOGGER.info("Consume data from topic {}/{} where data were produced before scaling up and down", testStorage.getNamespaceName(), testStorage.getTopicName());
-        clientsBeforeScale.generateNewConsumerGroup();
-        KubeResourceManager.get().createResourceWithWait(clientsBeforeScale.consumerTlsStrimzi(testStorage.getClusterName()));
-        ClientUtils.waitForInstantConsumerClientSuccess(testStorage);
+        kafkaProducerConsumer.setConsumerGroup(ClientUtils.generateRandomConsumerGroup());
+        KubeResourceManager.get().createResourceWithWait(kafkaProducerConsumer.getConsumer().getJob());
+        ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getMessageCount());
 
         PersistentVolumeClaimUtils.waitForPersistentVolumeClaimDeletion(testStorage, initialReplicas);
 
@@ -250,14 +278,16 @@ class RollingUpdateST extends AbstractST {
         LOGGER.info("Creating new KafkaTopic: {}/{} and producing consuming data", testStorage.getNamespaceName(), topicNameScaledBackDown);
 
         KubeResourceManager.get().createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getNamespaceName(), topicNameScaledBackDown, testStorage.getClusterName()).build());
-        final KafkaClients clientsTopicAfterScaleDown = ClientUtils.getInstantTlsClientBuilder(testStorage)
-            .withTopicName(topicNameScaledBackDown)
-            .build();
+
+        kafkaProducerConsumer.setTopicName(topicNameScaledBackDown);
+        kafkaProducerConsumer.setConsumerGroup(ClientUtils.generateRandomConsumerGroup());
 
         KubeResourceManager.get().createResourceWithWait(
-            clientsTopicAfterScaleDown.producerTlsStrimzi(testStorage.getClusterName()),
-            clientsTopicAfterScaleDown.consumerTlsStrimzi(testStorage.getClusterName()));
-        ClientUtils.waitForInstantClientSuccess(testStorage);
+            kafkaProducerConsumer.getProducer().getJob(),
+            kafkaProducerConsumer.getConsumer().getJob()
+        );
+
+        ClientUtils.waitForClientsSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getProducerName(), testStorage.getMessageCount());
     }
 
     /**

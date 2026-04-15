@@ -261,6 +261,10 @@
             <groupId>com.marcnuri.helm-java</groupId>
             <artifactId>helm-java</artifactId>
         </dependency>
+        <dependency>
+            <groupId>io.strimzi.test-clients</groupId>
+            <artifactId>builders</artifactId>
+        </dependency>
     </dependencies>
 
     <build>

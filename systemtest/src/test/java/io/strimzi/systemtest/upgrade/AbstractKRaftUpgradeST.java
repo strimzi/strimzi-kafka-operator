@@ -36,7 +36,7 @@ import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
-import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
+import io.strimzi.systemtest.kafkaclients.ClientsAuthentication;
 import io.strimzi.systemtest.labels.LabelSelectors;
 import io.strimzi.systemtest.resources.CrdClients;
 import io.strimzi.systemtest.resources.operator.ClusterOperatorConfiguration;
@@ -64,6 +64,10 @@ import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.ReadWriteUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.KubeClusterResource;
+import io.strimzi.testclients.clients.kafka.KafkaProducerClient;
+import io.strimzi.testclients.clients.kafka.KafkaProducerClientBuilder;
+import io.strimzi.testclients.clients.kafka.KafkaProducerConsumer;
+import io.strimzi.testclients.clients.kafka.KafkaProducerConsumerBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -194,14 +198,20 @@ public class AbstractKRaftUpgradeST extends AbstractST {
      */
     private void verifyPostUpgradeOrDowngradeProcedure(final TestStorage testStorage,
                                                        final BundleVersionModificationData upgradeDowngradeData) {
-        final KafkaClients clients = ClientUtils.getInstantTlsClientBuilder(testStorage, KafkaResources.tlsBootstrapAddress(CLUSTER_NAME))
-            .withUsername(USER_NAME)
+        final KafkaProducerClient kafkaProducer = new KafkaProducerClientBuilder()
+            .withName(testStorage.getProducerName())
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withTopicName(testStorage.getTopicName())
+            .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(CLUSTER_NAME))
+            .withMessageCount(testStorage.getMessageCount())
+            .withAuthentication(ClientsAuthentication.configureTls(CLUSTER_NAME, USER_NAME))
             .build();
+
         // send again new messages
-        KubeResourceManager.get().createResourceWithWait(clients.producerTlsStrimzi(CLUSTER_NAME));
+        KubeResourceManager.get().createResourceWithWait(kafkaProducer.getJob());
 
         // Verify that Producer finish successfully
-        ClientUtils.waitForInstantProducerClientSuccess(testStorage.getNamespaceName(), testStorage);
+        ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getProducerName(), testStorage.getMessageCount());
 
         // Verify FileSink KafkaConnector
         verifyKafkaConnectorFileSink(testStorage);
@@ -256,13 +266,18 @@ public class AbstractKRaftUpgradeST extends AbstractST {
      * @param testStorage Test-related configuration and storage
      */
     private void produceMessagesAndVerify(TestStorage testStorage) {
-        final KafkaClients clients = ClientUtils.getInstantTlsClientBuilder(testStorage, KafkaResources.tlsBootstrapAddress(CLUSTER_NAME))
+        final KafkaProducerClient kafkaProducer = new KafkaProducerClientBuilder()
+            .withName(testStorage.getProducerName())
             .withNamespaceName(testStorage.getNamespaceName())
-            .withUsername(USER_NAME)
+            .withTopicName(testStorage.getTopicName())
+            .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(CLUSTER_NAME))
+            .withMessageCount(testStorage.getMessageCount())
+            .withAuthentication(ClientsAuthentication.configureTls(CLUSTER_NAME, USER_NAME))
             .build();
 
-        KubeResourceManager.get().createResourceWithWait(clients.producerTlsStrimzi(CLUSTER_NAME));
-        ClientUtils.waitForInstantProducerClientSuccess(testStorage);
+        KubeResourceManager.get().createResourceWithWait(kafkaProducer.getJob());
+
+        ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getProducerName(), testStorage.getMessageCount());
     }
 
     protected void setupEnvAndUpgradeClusterOperator(String clusterOperatorNamespaceName, TestStorage testStorage, BundleVersionModificationData upgradeData, UpgradeKafkaVersion upgradeKafkaVersion) throws IOException {
@@ -318,16 +333,21 @@ public class AbstractKRaftUpgradeST extends AbstractST {
             // 40s is used within TF environment to make upgrade/downgrade more stable on slow env
             String producerAdditionConfiguration = "delivery.timeout.ms=40000\nrequest.timeout.ms=5000";
 
-            KafkaClients kafkaBasicClientJob = ClientUtils.getContinuousPlainClientBuilder(testStorage)
-                .withBootstrapAddress(KafkaResources.plainBootstrapAddress(CLUSTER_NAME))
-                .withMessageCount(upgradeData.getContinuousClientsMessages())
-                .withAdditionalConfig(producerAdditionConfiguration)
+            final KafkaProducerConsumer continuousKafkaProducerConsumer = new KafkaProducerConsumerBuilder()
+                .withProducerName(testStorage.getContinuousProducerName())
+                .withConsumerName(testStorage.getContinuousConsumerName())
                 .withNamespaceName(testStorage.getNamespaceName())
+                .withTopicName(testStorage.getContinuousTopicName())
+                .withConsumerGroup(ClientUtils.generateRandomConsumerGroup())
+                .withBootstrapAddress(KafkaResources.plainBootstrapAddress(CLUSTER_NAME))
+                .withMessageCount(testStorage.getContinuousMessageCount())
+                .withDelayMs(1000)
+                .withAdditionalConfig(producerAdditionConfiguration)
                 .build();
 
             KubeResourceManager.get().createResourceWithWait(
-                kafkaBasicClientJob.producerStrimzi(),
-                kafkaBasicClientJob.consumerStrimzi()
+                continuousKafkaProducerConsumer.getProducer().getJob(),
+                continuousKafkaProducerConsumer.getConsumer().getJob()
             );
             // ##############################
         }

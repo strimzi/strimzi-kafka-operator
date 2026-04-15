@@ -18,7 +18,7 @@ import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.docs.TestDocsLabels;
-import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
+import io.strimzi.systemtest.kafkaclients.ClientsAuthentication;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.security.SystemTestCertBundle;
 import io.strimzi.systemtest.security.SystemTestCertGenerator;
@@ -33,6 +33,8 @@ import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.NetworkPolicyUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
+import io.strimzi.testclients.clients.kafka.KafkaProducerConsumer;
+import io.strimzi.testclients.clients.kafka.KafkaProducerConsumerBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
@@ -115,14 +117,25 @@ public class CustomCaChainST extends AbstractST {
         SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(),
             leafSignedClientName, leafSignedClientFiles, "user");
 
-        final KafkaClients leafSignedClients = ClientUtils.getInstantTlsClientBuilder(testStorage)
-            .withUsername(leafSignedClientName)
+        final KafkaProducerConsumerBuilder kafkaProducerConsumerBaseline = new KafkaProducerConsumerBuilder()
+            .withProducerName(testStorage.getProducerName())
+            .withConsumerName(testStorage.getConsumerName())
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withTopicName(testStorage.getTopicName())
+            .withConsumerGroup(ClientUtils.generateRandomConsumerGroup())
+            .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(testStorage.getClusterName()))
+            .withMessageCount(testStorage.getMessageCount());
+
+        final KafkaProducerConsumer leafSignedLafkaProducerConsumer = kafkaProducerConsumerBaseline
+            .withAuthentication(ClientsAuthentication.configureTls(testStorage.getClusterName(), leafSignedClientName))
             .build();
+
         KubeResourceManager.get().createResourceWithWait(
-            leafSignedClients.producerTlsStrimzi(testStorage.getClusterName()),
-            leafSignedClients.consumerTlsStrimzi(testStorage.getClusterName())
+            leafSignedLafkaProducerConsumer.getProducer().getJob(),
+            leafSignedLafkaProducerConsumer.getConsumer().getJob()
         );
-        ClientUtils.waitForInstantClientSuccess(testStorage);
+
+        ClientUtils.waitForClientsSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getProducerName(), testStorage.getMessageCount());
 
         // ii.) Create a client certificate signed by the Clients CA Root and verify it is rejected
         LOGGER.info("Testing that client with Root-CA-signed certificate is rejected");
@@ -134,14 +147,16 @@ public class CustomCaChainST extends AbstractST {
         SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(),
             rootSignedClientName, rootSignedClientFiles, "user");
 
-        final KafkaClients rootSignedClients = ClientUtils.getInstantTlsClientBuilder(testStorage)
-            .withUsername(rootSignedClientName)
+        final KafkaProducerConsumer rootSignedKafkaProducerConsumer = kafkaProducerConsumerBaseline
+            .withAuthentication(ClientsAuthentication.configureTls(testStorage.getClusterName(), rootSignedClientName))
             .build();
+
         KubeResourceManager.get().createResourceWithWait(
-            rootSignedClients.producerTlsStrimzi(testStorage.getClusterName()),
-            rootSignedClients.consumerTlsStrimzi(testStorage.getClusterName())
+            rootSignedKafkaProducerConsumer.getProducer().getJob(),
+            rootSignedKafkaProducerConsumer.getConsumer().getJob()
         );
-        ClientUtils.waitForInstantClientsTimeout(testStorage);
+
+        ClientUtils.waitForClientsTimeout(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getProducerName(), testStorage.getMessageCount());
 
         // iii.) Create a client certificate signed by the Clients CA Intermediate and verify it is rejected
         LOGGER.info("Testing that client with Intermediate-CA-signed certificate is rejected");
@@ -153,14 +168,16 @@ public class CustomCaChainST extends AbstractST {
         SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(),
             intermediateSignedClientName, intermediateSignedClientFiles, "user");
 
-        final KafkaClients intermediateSignedClients = ClientUtils.getInstantTlsClientBuilder(testStorage)
-            .withUsername(intermediateSignedClientName)
+        final KafkaProducerConsumer intermediateSignedKafkaProducerConsumer = kafkaProducerConsumerBaseline
+            .withAuthentication(ClientsAuthentication.configureTls(testStorage.getClusterName(), intermediateSignedClientName))
             .build();
+
         KubeResourceManager.get().createResourceWithWait(
-            intermediateSignedClients.producerTlsStrimzi(testStorage.getClusterName()),
-            intermediateSignedClients.consumerTlsStrimzi(testStorage.getClusterName())
+            intermediateSignedKafkaProducerConsumer.getProducer().getJob(),
+            intermediateSignedKafkaProducerConsumer.getConsumer().getJob()
         );
-        ClientUtils.waitForInstantClientsTimeout(testStorage);
+
+        ClientUtils.waitForClientsTimeout(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getProducerName(), testStorage.getMessageCount());
     }
 
     @ParallelNamespaceTest
@@ -248,26 +265,44 @@ public class CustomCaChainST extends AbstractST {
         for (String trustSecretName : List.of(TrustChainSecrets.TRUST_FULL_CHAIN, TrustChainSecrets.TRUST_ROOT_INTERMEDIATE,
                 TrustChainSecrets.TRUST_ROOT_ONLY, TrustChainSecrets.TRUST_INTERMEDIATE_ONLY, TrustChainSecrets.TRUST_LEAF_ONLY)) {
             LOGGER.info("Testing trust establishment with trust secret: {}", trustSecretName);
-            final KafkaClients kafkaClients = ClientUtils.getInstantTlsClientBuilder(testStorage)
-                .withCaCertSecretName(trustSecretName)
+            final KafkaProducerConsumer kafkaProducerConsumer = new KafkaProducerConsumerBuilder()
+                .withProducerName(testStorage.getProducerName())
+                .withConsumerName(testStorage.getConsumerName())
+                .withNamespaceName(testStorage.getNamespaceName())
+                .withTopicName(testStorage.getTopicName())
+                .withConsumerGroup(ClientUtils.generateRandomConsumerGroup())
+                .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(testStorage.getClusterName()))
+                .withMessageCount(testStorage.getMessageCount())
+                .withAuthentication(ClientsAuthentication.configureTlsCustomCerts(trustSecretName, testStorage.getUsername()))
                 .build();
+
             KubeResourceManager.get().createResourceWithWait(
-                kafkaClients.producerTlsStrimzi(testStorage.getClusterName()),
-                kafkaClients.consumerTlsStrimzi(testStorage.getClusterName())
+                kafkaProducerConsumer.getProducer().getJob(),
+                kafkaProducerConsumer.getConsumer().getJob()
             );
-            ClientUtils.waitForInstantClientSuccess(testStorage);
+
+            ClientUtils.waitForClientsSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getProducerName(), testStorage.getMessageCount());
         }
 
         //  Verify foreign CA trust fails
         LOGGER.info("Testing that foreign CA trust secret fails to establish trust");
-        final KafkaClients foreignClients = ClientUtils.getInstantTlsClientBuilder(testStorage)
-            .withCaCertSecretName(TrustChainSecrets.TRUST_FOREIGN)
+        final KafkaProducerConsumer foreignKafkaProducerConsumer = new KafkaProducerConsumerBuilder()
+            .withProducerName(testStorage.getProducerName())
+            .withConsumerName(testStorage.getConsumerName())
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withTopicName(testStorage.getTopicName())
+            .withConsumerGroup(ClientUtils.generateRandomConsumerGroup())
+            .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(testStorage.getClusterName()))
+            .withMessageCount(testStorage.getMessageCount())
+            .withAuthentication(ClientsAuthentication.configureTlsCustomCerts(TrustChainSecrets.TRUST_FOREIGN, testStorage.getUsername()))
             .build();
+
         KubeResourceManager.get().createResourceWithWait(
-            foreignClients.producerTlsStrimzi(testStorage.getClusterName()),
-            foreignClients.consumerTlsStrimzi(testStorage.getClusterName())
+            foreignKafkaProducerConsumer.getProducer().getJob(),
+            foreignKafkaProducerConsumer.getConsumer().getJob()
         );
-        ClientUtils.waitForInstantClientsTimeout(testStorage);
+
+        ClientUtils.waitForClientsTimeout(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getProducerName(), testStorage.getMessageCount());
     }
 
     @ParallelNamespaceTest
@@ -338,15 +373,24 @@ public class CustomCaChainST extends AbstractST {
         SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(),
             leafSignedClientName, leafSignedClientFiles, "user");
 
-        final KafkaClients leafSignedClients = ClientUtils.getInstantTlsClientBuilder(testStorage, internalBootstrapAddress)
-            .withUsername(leafSignedClientName)
-            .withCaCertSecretName(TrustChainSecrets.TRUST_FULL_CHAIN)
+        final KafkaProducerConsumerBuilder kafkaProducerConsumerBaseline = new KafkaProducerConsumerBuilder()
+            .withProducerName(testStorage.getProducerName())
+            .withConsumerName(testStorage.getConsumerName())
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withTopicName(testStorage.getTopicName())
+            .withConsumerGroup(ClientUtils.generateRandomConsumerGroup())
+            .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(testStorage.getClusterName()))
+            .withMessageCount(testStorage.getMessageCount());
+
+        final KafkaProducerConsumer leafSignedClients = kafkaProducerConsumerBaseline
+            .withAuthentication(ClientsAuthentication.configureTlsCustomCerts(TrustChainSecrets.TRUST_FULL_CHAIN, leafSignedClientName))
             .build();
+
         KubeResourceManager.get().createResourceWithWait(
-            leafSignedClients.producerTlsStrimzi(testStorage.getClusterName()),
-            leafSignedClients.consumerTlsStrimzi(testStorage.getClusterName())
+            leafSignedClients.getProducer().getJob(),
+            leafSignedClients.getConsumer().getJob()
         );
-        ClientUtils.waitForInstantClientSuccess(testStorage);
+        ClientUtils.waitForClientsSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getProducerName(), testStorage.getMessageCount());
 
         // ii.) Create a client certificate signed by the Root CA and verify it is rejected on port 9091
         LOGGER.info("Testing that client with Root-CA-signed certificate is rejected on port 9091");
@@ -358,15 +402,17 @@ public class CustomCaChainST extends AbstractST {
         SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(),
             rootSignedClientName, rootSignedClientFiles, "user");
 
-        final KafkaClients rootSignedClients = ClientUtils.getInstantTlsClientBuilder(testStorage, internalBootstrapAddress)
-            .withUsername(rootSignedClientName)
-            .withCaCertSecretName(TrustChainSecrets.TRUST_FULL_CHAIN)
+        final KafkaProducerConsumer rootSignedClients = kafkaProducerConsumerBaseline
+            .withBootstrapAddress(internalBootstrapAddress)
+            .withAuthentication(ClientsAuthentication.configureTlsCustomCerts(TrustChainSecrets.TRUST_FULL_CHAIN, rootSignedClientName))
             .build();
+
         KubeResourceManager.get().createResourceWithWait(
-            rootSignedClients.producerTlsStrimzi(testStorage.getClusterName()),
-            rootSignedClients.consumerTlsStrimzi(testStorage.getClusterName())
+            rootSignedClients.getProducer().getJob(),
+            rootSignedClients.getConsumer().getJob()
         );
-        ClientUtils.waitForInstantClientsTimeout(testStorage);
+
+        ClientUtils.waitForClientsTimeout(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getProducerName(), testStorage.getMessageCount());
 
         // iii.) Create a client certificate signed by the Intermediate CA and verify it is rejected on port 9091
         LOGGER.info("Testing that client with Intermediate-CA-signed certificate is rejected on port 9091");
@@ -378,15 +424,17 @@ public class CustomCaChainST extends AbstractST {
         SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(),
             intermediateSignedClientName, intermediateSignedClientFiles, "user");
 
-        final KafkaClients intermediateSignedClients = ClientUtils.getInstantTlsClientBuilder(testStorage, internalBootstrapAddress)
-            .withUsername(intermediateSignedClientName)
-            .withCaCertSecretName(TrustChainSecrets.TRUST_FULL_CHAIN)
+        final KafkaProducerConsumer intermediateSignedClients = kafkaProducerConsumerBaseline
+            .withBootstrapAddress(internalBootstrapAddress)
+            .withAuthentication(ClientsAuthentication.configureTlsCustomCerts(TrustChainSecrets.TRUST_FULL_CHAIN, intermediateSignedClientName))
             .build();
+
         KubeResourceManager.get().createResourceWithWait(
-            intermediateSignedClients.producerTlsStrimzi(testStorage.getClusterName()),
-            intermediateSignedClients.consumerTlsStrimzi(testStorage.getClusterName())
+            intermediateSignedClients.getProducer().getJob(),
+            intermediateSignedClients.getConsumer().getJob()
         );
-        ClientUtils.waitForInstantClientsTimeout(testStorage);
+
+        ClientUtils.waitForClientsTimeout(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getProducerName(), testStorage.getMessageCount());
     }
 
     @ParallelNamespaceTest

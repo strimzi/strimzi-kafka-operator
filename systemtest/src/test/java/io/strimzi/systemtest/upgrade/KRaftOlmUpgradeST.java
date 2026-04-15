@@ -13,8 +13,6 @@ import io.strimzi.api.kafka.model.topic.KafkaTopicBuilder;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.enums.OlmInstallationStrategy;
-import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
-import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.resources.operator.ClusterOperatorConfiguration;
 import io.strimzi.systemtest.resources.operator.ClusterOperatorConfigurationBuilder;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
@@ -26,6 +24,8 @@ import io.strimzi.systemtest.utils.FileUtils;
 import io.strimzi.systemtest.utils.RollingUpdateUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.specific.OlmUtils;
+import io.strimzi.testclients.clients.kafka.KafkaProducerConsumer;
+import io.strimzi.testclients.clients.kafka.KafkaProducerConsumerBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.Tag;
@@ -107,7 +107,7 @@ public class KRaftOlmUpgradeST extends AbstractKRaftUpgradeST {
 
         KubeResourceManager.get().createResourceWithWait(kafkaUpgradeTopic);
 
-        KafkaClients kafkaBasicClientJob = new KafkaClientsBuilder()
+        final KafkaProducerConsumer kafkaProducerConsumer = new KafkaProducerConsumerBuilder()
             .withProducerName(testStorage.getProducerName())
             .withConsumerName(testStorage.getConsumerName())
             .withNamespaceName(CO_NAMESPACE)
@@ -115,9 +115,13 @@ public class KRaftOlmUpgradeST extends AbstractKRaftUpgradeST {
             .withTopicName(topicUpgradeName)
             .withMessageCount(testStorage.getMessageCount())
             .withDelayMs(1000)
+            .withConsumerGroup(ClientUtils.generateRandomConsumerGroup())
             .build();
 
-        KubeResourceManager.get().createResourceWithWait(kafkaBasicClientJob.producerStrimzi(), kafkaBasicClientJob.consumerStrimzi());
+        KubeResourceManager.get().createResourceWithWait(
+            kafkaProducerConsumer.getProducer().getJob(),
+            kafkaProducerConsumer.getConsumer().getJob()
+        );
 
         clusterOperatorConfiguration.setOperatorDeploymentName(KubeResourceManager.get().kubeClient().getDeploymentNameByPrefix(CO_NAMESPACE, Environment.OLM_OPERATOR_DEPLOYMENT_NAME));
         LOGGER.info("Old deployment name of Cluster Operator is {}", clusterOperatorConfiguration.getOperatorDeploymentName());

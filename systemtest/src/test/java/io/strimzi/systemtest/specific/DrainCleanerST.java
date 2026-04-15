@@ -6,11 +6,11 @@ package io.strimzi.systemtest.specific;
 
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.skodjob.kubetest4j.resources.KubeResourceManager;
+import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.MicroShiftNotSupported;
-import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.resources.draincleaner.SetupDrainCleaner;
 import io.strimzi.systemtest.resources.operator.ClusterOperatorConfigurationBuilder;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
@@ -22,6 +22,8 @@ import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.RollingUpdateUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.NetworkPolicyUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
+import io.strimzi.testclients.clients.kafka.KafkaProducerConsumer;
+import io.strimzi.testclients.clients.kafka.KafkaProducerConsumerBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
@@ -59,13 +61,21 @@ public class DrainCleanerST extends AbstractST {
         // allow NetworkPolicies for the webhook in case that we have "default to deny all" mode enabled
         NetworkPolicyUtils.allowNetworkPolicySettingsForWebhook(TestConstants.DRAIN_CLEANER_NAMESPACE, TestConstants.DRAIN_CLEANER_DEPLOYMENT_NAME, Map.of(TestConstants.APP_POD_LABEL, TestConstants.DRAIN_CLEANER_DEPLOYMENT_NAME));
 
-        final KafkaClients continuousClients = ClientUtils.getContinuousPlainClientBuilder(testStorage)
+        final KafkaProducerConsumer continuousKafkaProducerConsumer = new KafkaProducerConsumerBuilder()
+            .withProducerName(testStorage.getContinuousProducerName())
+            .withConsumerName(testStorage.getContinuousConsumerName())
             .withNamespaceName(TestConstants.DRAIN_CLEANER_NAMESPACE)
+            .withTopicName(testStorage.getContinuousTopicName())
+            .withConsumerGroup(ClientUtils.generateRandomConsumerGroup())
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
+            .withMessageCount(testStorage.getContinuousMessageCount())
+            .withDelayMs(1000)
             .build();
 
         KubeResourceManager.get().createResourceWithWait(
-            continuousClients.producerStrimzi(),
-            continuousClients.consumerStrimzi());
+            continuousKafkaProducerConsumer.getProducer().getJob(),
+            continuousKafkaProducerConsumer.getConsumer().getJob()
+        );
 
         List<String> brokerPods = PodUtils.listPodNames(TestConstants.DRAIN_CLEANER_NAMESPACE, testStorage.getBrokerSelector());
 
@@ -77,7 +87,7 @@ public class DrainCleanerST extends AbstractST {
         evictPodWithName(kafkaPodName);
         RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(TestConstants.DRAIN_CLEANER_NAMESPACE, testStorage.getBrokerSelector(), replicas, kafkaPod);
 
-        ClientUtils.waitForClientsSuccess(TestConstants.DRAIN_CLEANER_NAMESPACE, testStorage.getContinuousConsumerName(), testStorage.getContinuousProducerName(), 200);
+        ClientUtils.waitForClientsSuccess(TestConstants.DRAIN_CLEANER_NAMESPACE, testStorage.getContinuousConsumerName(), testStorage.getContinuousProducerName(), testStorage.getContinuousMessageCount());
     }
 
     private void evictPodWithName(String podName) {
