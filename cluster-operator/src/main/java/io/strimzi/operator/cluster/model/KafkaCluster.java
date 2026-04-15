@@ -1195,7 +1195,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
                             DEFAULT_POD_LABELS,
                             podAnnotationsProvider.apply(node),
                             KafkaResources.brokersServiceName(cluster),
-                            ModelUtils.affinityWithRackLabelSelector(pool.templatePod, rack),
+                            ModelUtils.affinityWithRackLabelSelector(pool.templatePod, node.broker() ? rack : null), // Only nodes with broker role have rack awareness
                             ContainerUtils.listOrNull(createInitContainer(imagePullPolicy, pool)),
                             List.of(createContainer(imagePullPolicy, pool)),
                             getPodSetVolumes(node, pool.storage, pool.templatePod),
