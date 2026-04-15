@@ -26,7 +26,7 @@ on:
         default: ""
         type: string
       kindVersion:
-        description: "Version of Kind binary to install (e.g. '0.29.0'). Defaults to '0.31.0' if empty."
+        description: "Version of Kind binary to install (e.g. '0.29.0'). Defaults to '0.31.0' if empty. In case you use different from default version of Kind, you should reference full image via `kindVersion` parameter to achieve supported configuration"
         required: false
         default: ""
         type: string

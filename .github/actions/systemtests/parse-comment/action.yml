@@ -50,10 +50,10 @@ outputs:
     description: "Release version a.k.a docker tag of released images"
     value: ${{ steps.parse_comment.outputs.releaseVersion }}
   kubeVersion:
-    description: "Version of Kubernetes used for tests"
+    description: "Used Kubernetes version for Kind/Minikube. Note that for Kind you have to use whole image with sha digest!"
     value: ${{ steps.parse_comment.outputs.kubeVersion }}
   kindVersion:
-    description: "Version of Kind binary used for cluster setup (e.g. '0.29.0')"
+    description: "Version of Kind binary to install (e.g. '0.29.0'). Defaults to '0.31.0' if empty. In case you use different from default version of Kind, you should reference full image via `kindVersion` parameter to achieve supported configuration"
     value: ${{ steps.parse_comment.outputs.kindVersion }}
   parallel:
     description: "How many tests will be executed in parallel"
