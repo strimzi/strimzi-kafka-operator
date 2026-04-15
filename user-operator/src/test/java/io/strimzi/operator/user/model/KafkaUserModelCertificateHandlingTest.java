@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.certs.CertManager;
+import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Ca;
 import io.strimzi.operator.common.model.Labels;
@@ -63,6 +64,23 @@ public class KafkaUserModelCertificateHandlingTest {
     public void testNewUser() {
         MockKafkaUserModel model = new MockKafkaUserModel();
         model.maybeGenerateCertificates(Reconciliation.DUMMY_RECONCILIATION, mockCertManager, passwordGenerator, clientsCaCert, clientsCaKey, null, 365, 30, null, Clock.systemUTC());
+
+        assertThat(model.generateNewCertificateCalled, is(1));
+        assertThat(model.reuseCertificateCalled, is(0));
+    }
+
+    @Test
+    public void testExistingUserWithForceRenewAnnotation() {
+        Secret userSecret = new SecretBuilder()
+                .withNewMetadata()
+                    .withName(ResourceUtils.NAME)
+                    .withNamespace(ResourceUtils.NAMESPACE)
+                    .addToAnnotations(Annotations.ANNO_STRIMZI_IO_FORCE_RENEW, "true")
+                .endMetadata()
+                .build();
+
+        MockKafkaUserModel model = new MockKafkaUserModel();
+        model.maybeGenerateCertificates(Reconciliation.DUMMY_RECONCILIATION, mockCertManager, passwordGenerator, clientsCaCert, clientsCaKey, userSecret, 365, 30, null, Clock.systemUTC());
 
         assertThat(model.generateNewCertificateCalled, is(1));
         assertThat(model.reuseCertificateCalled, is(0));

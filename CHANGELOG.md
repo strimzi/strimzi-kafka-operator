@@ -16,6 +16,7 @@
 * Enable configuring `allowList` of Strimzi Metrics Reporter dynamically
 * Add support for TLS/SSL on the HTTP Bridge
   Set `spec.http.tls.certificateAndKey` configuration to enable it and provide the certificate and key via Secret.
+* Add support force-renewal of KafkaUser certificates via `strimzi.io/force-renew` annotation
 
 ### Major changes, deprecations, and removals
 

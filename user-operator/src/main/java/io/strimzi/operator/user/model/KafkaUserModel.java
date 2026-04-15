@@ -20,6 +20,7 @@ import io.strimzi.api.kafka.model.user.acl.AclRule;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.certs.CertManager;
 import io.strimzi.certs.OpenSslCertManager;
+import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
@@ -244,7 +245,12 @@ public class KafkaUserModel {
             String userCrt = userSecret.getData().get("user.crt");
             String userKey = userSecret.getData().get("user.key");
 
-            if (originalCaCrt != null
+            if (userSecret.getMetadata() != null
+                    && Annotations.booleanAnnotation(userSecret, Annotations.ANNO_STRIMZI_IO_FORCE_RENEW, false)) {
+                // The user secret has the annotation which forces replacement => we have to generate a new user certificate
+                LOGGER.infoCr(reconciliation, "Certificate for user {} in namespace {} will be renewed due to force-renew annotation", name, namespace);
+                this.userCertAndKey = generateNewCertificate(reconciliation, clientsCa);
+            } else if (originalCaCrt != null
                     && originalCaCrt.equals(caCrt)
                     && userCrt != null
                     && !userCrt.isEmpty()

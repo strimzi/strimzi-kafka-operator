@@ -103,6 +103,22 @@ ssl.keystore.password=<keystore_password> # <6>
 <5> The keystore location contains the public key certificate (`user.p12`) for the Kafka user.
 <6> The password (`user.password`) for accessing the keystore.
 
+=== Manually renewing KafkaUser certificates
+
+You can force the User Operator to renew a user certificate on demand by adding the `strimzi.io/force-renew: "true"` annotation to the user secret.
+
+.Annotating the user secret to force certificate renewal
+[source,shell]
+----
+kubectl annotate secret my-user -n my-project strimzi.io/force-renew="true"
+----
+
+At the next reconciliation, the User Operator generates a new certificate and updates the secret. The annotation is then automatically removed.
+
+IMPORTANT: Renewing the certificate does not invalidate the previous certificate.
+The old certificate remains valid until it expires naturally.
+Clients using the old certificate will continue to connect successfully until they are updated to use the new one.
+
 == mTLS authentication using a certificate issued outside the User Operator
 
 To use mTLS authentication using a certificate issued outside the User Operator, you set the `type` field in the `KafkaUser` resource to `tls-external`.
