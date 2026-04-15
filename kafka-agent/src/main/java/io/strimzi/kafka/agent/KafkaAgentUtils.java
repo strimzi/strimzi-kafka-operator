@@ -35,13 +35,13 @@ public class KafkaAgentUtils {
      * throws an exception if it is not.
      *
      * @param secret Secret containing the TrustStore certificates
-     * @return TrustStore file in JKS format
+     * @return In-memory TrustStore using the JVM's default keystore type
      * @throws GeneralSecurityException if something goes wrong when creating the truststore
      * @throws IOException if there is an I/O or format problem with the data used to load the truststore.
      * This is not expected as the truststore is loaded with null parameter.
      */
-    static KeyStore jksTrustStore(Secret secret) throws GeneralSecurityException, IOException {
-        KeyStore trustStore = KeyStore.getInstance("JKS");
+    static KeyStore trustStore(Secret secret) throws GeneralSecurityException, IOException {
+        KeyStore trustStore = KeyStore.getInstance(KeyStore.getDefaultType());
         trustStore.load(null);
         int aliasIndex = 0;
         for (X509Certificate certificate : asX509Certificates(extractCerts(secret), secret.getMetadata().getName(), secret.getMetadata().getNamespace()).values()) {
@@ -56,11 +56,11 @@ public class KafkaAgentUtils {
      *
      * @param secret Secret containing private key and certificate
      *
-     * @return KeyStore file in JKS format
+     * @return In-memory KeyStore using the JVM's default keystore type
      * @throws GeneralSecurityException if something goes wrong when creating the truststore
      * @throws IOException if there is an I/O or format problem with the data used to load the truststore.
      */
-    static KeyStore jksKeyStore(Secret secret, char[] password) throws GeneralSecurityException, IOException {
+    static KeyStore keyStore(Secret secret, char[] password) throws GeneralSecurityException, IOException {
         String secretName = secret.getMetadata().getName();
         String strippedPrivateKey = new String(decodeBase64FieldFromSecret(secret, secretName + ".key"), StandardCharsets.US_ASCII)
                 .replace("-----BEGIN PRIVATE KEY-----", "")
@@ -72,7 +72,7 @@ public class KafkaAgentUtils {
         final PrivateKey key = keyFactory.generatePrivate(keySpec);
 
         X509Certificate certificateChain = x509Certificate(decodeBase64FieldFromSecret(secret, secretName + ".crt"));
-        KeyStore nodeKeyStore = KeyStore.getInstance("JKS");
+        KeyStore nodeKeyStore = KeyStore.getInstance(KeyStore.getDefaultType());
         nodeKeyStore.load(null);
         nodeKeyStore.setKeyEntry(secret.getMetadata().getName(), key, password, new Certificate[]{certificateChain});
         return nodeKeyStore;

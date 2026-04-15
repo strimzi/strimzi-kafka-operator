@@ -127,11 +127,11 @@ public class PemAuthIdentity {
      *
      * @param password to use to secure the KeyStore
      *
-     * @return KeyStore file in JKS format
+     * @return In-memory KeyStore using the JVM's default keystore type
      * @throws GeneralSecurityException if something goes wrong when creating the truststore
      * @throws IOException if there is an I/O or format problem with the data used to load the truststore.
      */
-    public KeyStore jksKeyStore(char[] password) throws GeneralSecurityException, IOException {
+    public KeyStore keyStore(char[] password) throws GeneralSecurityException, IOException {
         String strippedPrivateKey = privateKeyAsPem()
                 .replace("-----BEGIN PRIVATE KEY-----", "")
                 .replaceAll(System.lineSeparator(), "")
@@ -141,7 +141,7 @@ public class PemAuthIdentity {
         final KeyFactory keyFactory = KeyFactory.getInstance("RSA");
         final PrivateKey key = keyFactory.generatePrivate(keySpec);
 
-        KeyStore coKeyStore = KeyStore.getInstance("JKS");
+        KeyStore coKeyStore = KeyStore.getInstance(KeyStore.getDefaultType());
         coKeyStore.load(null);
         coKeyStore.setKeyEntry("cluster-operator", key, password, new Certificate[]{certificateChain()});
         return coKeyStore;
