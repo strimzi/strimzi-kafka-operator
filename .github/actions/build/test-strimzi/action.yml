@@ -54,7 +54,7 @@ runs:
         STRIMZI_TEST_CONTAINER_LOGGING_ENABLED: false
         
     - name: Publish test results
-      uses: dorny/test-reporter@v2
+      uses: dorny/test-reporter@v3
       if: always()
       with:
         name: 'Unit & Integration Tests'

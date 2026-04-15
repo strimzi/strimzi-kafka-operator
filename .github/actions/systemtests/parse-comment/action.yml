@@ -64,7 +64,7 @@ runs:
   steps:
     - name: Build Comment
       id: build_comment
-      uses: actions/github-script@v8
+      uses: actions/actions/upload-artifact@v9
       env:
         INPUT_PIPELINE: ${{ inputs.pipeline }}
         INPUT_KAFKA_VERSION: ${{ inputs.kafkaVersion }}
@@ -80,7 +80,7 @@ runs:
 
     - name: Parse Comment
       id: parse_comment
-      uses: actions/github-script@v8
+      uses: actions/actions/upload-artifact@v9
       env:
         INPUT_RELEASE_VERSION: ${{ inputs.releaseVersion }}
         BUILT_COMMENT: ${{ steps.build_comment.outputs.builtComment }}

@@ -38,7 +38,7 @@ runs:
   steps:
     - name: Find Build Workflow Run
       id: find-build
-      uses: actions/github-script@v8
+      uses: actions/actions/upload-artifact@v9
       env:
         INPUT_SHA: ${{ inputs.commitSha }}
         WAIT_FOR_BUILD: ${{ inputs.waitForBuild }}
@@ -148,7 +148,7 @@ runs:
 
     - name: Compare commit SHA
       id: compare-sha
-      uses: actions/github-script@v8
+      uses: actions/actions/upload-artifact@v9
       env:
         BUILD_RUN_ID: ${{ steps.find-build.outputs.run_id }}
         MERGE_COMMIT_SHA: ${{ inputs.mergeCommitSha }}
