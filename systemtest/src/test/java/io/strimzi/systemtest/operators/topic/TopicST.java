@@ -25,7 +25,6 @@ import io.strimzi.systemtest.cli.KafkaCmdClient;
 import io.strimzi.systemtest.docs.TestDocsLabels;
 import io.strimzi.systemtest.enums.ConditionStatus;
 import io.strimzi.systemtest.enums.CustomResourceStatus;
-import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.admin.AdminClient;
 import io.strimzi.systemtest.metrics.TopicOperatorMetricsComponent;
 import io.strimzi.systemtest.performance.gather.collectors.BaseMetricsCollector;
@@ -35,7 +34,6 @@ import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
-import io.strimzi.systemtest.templates.specific.AdminClientTemplates;
 import io.strimzi.systemtest.templates.specific.ScraperTemplates;
 import io.strimzi.systemtest.utils.AdminClientUtils;
 import io.strimzi.systemtest.utils.ClientUtils;
@@ -44,6 +42,10 @@ import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.systemtest.utils.specific.ScraperUtils;
+import io.strimzi.testclients.clients.kafka.KafkaAdminClient;
+import io.strimzi.testclients.clients.kafka.KafkaAdminClientBuilder;
+import io.strimzi.testclients.clients.kafka.KafkaProducerConsumer;
+import io.strimzi.testclients.clients.kafka.KafkaProducerConsumerBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hamcrest.CoreMatchers;
@@ -197,9 +199,22 @@ public class TopicST extends AbstractST {
         LOGGER.info("Topic with name {} is not created yet", testStorage.getTopicName());
 
         LOGGER.info("Sending messages to non-existing Topic: {}, with auto.topic.creation configuration enabled", testStorage.getTopicName());
-        final KafkaClients clients = ClientUtils.getInstantPlainClients(testStorage, KafkaResources.plainBootstrapAddress(sharedTestStorage.getClusterName()));
-        KubeResourceManager.get().createResourceWithWait(clients.producerStrimzi(), clients.consumerStrimzi());
-        ClientUtils.waitForInstantClientSuccess(testStorage);
+        final KafkaProducerConsumer kafkaProducerConsumer = new KafkaProducerConsumerBuilder()
+            .withProducerName(testStorage.getProducerName())
+            .withConsumerName(testStorage.getConsumerName())
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withTopicName(testStorage.getTopicName())
+            .withConsumerGroup(ClientUtils.generateRandomConsumerGroup())
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(sharedTestStorage.getClusterName()))
+            .withMessageCount(testStorage.getMessageCount())
+            .build();
+
+        KubeResourceManager.get().createResourceWithWait(
+            kafkaProducerConsumer.getProducer().getJob(),
+            kafkaProducerConsumer.getConsumer().getJob()
+        );
+
+        ClientUtils.waitForClientsSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getProducerName(), testStorage.getMessageCount());
 
         LOGGER.info("Checking if topic {} is present in Kafka", testStorage.getTopicName());
         assertTrue(AdminClientUtils.isTopicPresent(adminClient, testStorage.getTopicName()));
@@ -246,27 +261,41 @@ public class TopicST extends AbstractST {
         // create Kafka Topic CR and wait for its presence in Kafka cluster.
         KubeResourceManager.get().createResourceWithWait(KafkaTopicTemplates.topic(testStorage).build());
 
-        KubeResourceManager.get().createResourceWithWait(
-            AdminClientTemplates.plainAdminClient(
-                testStorage.getNamespaceName(),
-                testStorage.getAdminName(),
-                KafkaResources.plainBootstrapAddress(testStorage.getClusterName())
-            ).build()
-        );
+        final KafkaAdminClient kafkaAdminClient = new KafkaAdminClientBuilder()
+            .withName(testStorage.getAdminName())
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
+            .withNamespaceName(testStorage.getNamespaceName())
+            .build();
+
+        KubeResourceManager.get().createResourceWithWait(kafkaAdminClient.getDeployment());
         final AdminClient localKafkaAdminClient = AdminClientUtils.getConfiguredAdminClient(testStorage.getNamespaceName(), testStorage.getAdminName());
 
         AdminClientUtils.waitForTopicPresence(localKafkaAdminClient, testStorage.getTopicName());
 
-        final KafkaClients clients = ClientUtils.getInstantPlainClients(testStorage);
-        KubeResourceManager.get().createResourceWithWait(clients.producerStrimzi());
-        ClientUtils.waitForInstantProducerClientSuccess(testStorage);
+        final KafkaProducerConsumer kafkaProducerConsumer = new KafkaProducerConsumerBuilder()
+            .withProducerName(testStorage.getProducerName())
+            .withConsumerName(testStorage.getConsumerName())
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withTopicName(testStorage.getTopicName())
+            .withConsumerGroup(ClientUtils.generateRandomConsumerGroup())
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
+            .withMessageCount(testStorage.getMessageCount())
+            .build();
+
+        KubeResourceManager.get().createResourceWithWait(
+            kafkaProducerConsumer.getProducer().getJob(),
+            kafkaProducerConsumer.getConsumer().getJob()
+        );
+
+        ClientUtils.waitForClientsSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getProducerName(), testStorage.getMessageCount());
 
         LOGGER.info("Try to delete KafkaTopic: {}/{}", testStorage.getNamespaceName(), testStorage.getTopicName());
         CrdClients.kafkaTopicClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getTopicName()).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
         KafkaTopicUtils.waitForTopicStatusMessage(testStorage.getNamespaceName(), testStorage.getTopicName(), "TopicDeletionDisabledException");
 
-        KubeResourceManager.get().createResourceWithWait(clients.consumerStrimzi());
-        ClientUtils.waitForInstantConsumerClientSuccess(testStorage);
+        kafkaProducerConsumer.setConsumerGroup(ClientUtils.generateRandomConsumerGroup());
+        KubeResourceManager.get().createResourceWithWait(kafkaProducerConsumer.getConsumer().getJob());
+        ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getMessageCount());
 
         LOGGER.info("Enable automatic topic deletion");
         Map<String, String> kafkaPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getBrokerSelector());
@@ -591,13 +620,14 @@ public class TopicST extends AbstractST {
         );
 
         LOGGER.info("Deploying admin client across all test cases for namespace: {}", sharedTestStorage.getClusterName());
-        KubeResourceManager.get().createResourceWithWait(
-            AdminClientTemplates.plainAdminClient(
-                sharedTestStorage.getNamespaceName(),
-                sharedTestStorage.getAdminName(),
-                KafkaResources.plainBootstrapAddress(sharedTestStorage.getClusterName())
-            ).build()
-        );
+        final KafkaAdminClient kafkaAdminClient = new KafkaAdminClientBuilder()
+            .withName(sharedTestStorage.getAdminName())
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(sharedTestStorage.getClusterName()))
+            .withNamespaceName(sharedTestStorage.getNamespaceName())
+            .build();
+
+        KubeResourceManager.get().createResourceWithWait(kafkaAdminClient.getDeployment());
+
         adminClient = AdminClientUtils.getConfiguredAdminClient(sharedTestStorage.getNamespaceName(), sharedTestStorage.getAdminName());
 
         scraperPodName = ScraperUtils.getScraperPod(Environment.TEST_SUITE_NAMESPACE).getMetadata().getName();

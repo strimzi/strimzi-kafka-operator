@@ -11,6 +11,7 @@ import io.skodjob.kubetest4j.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.kafka.JbodStorage;
 import io.strimzi.api.kafka.model.kafka.JbodStorageBuilder;
 import io.strimzi.api.kafka.model.kafka.KRaftMetadataStorage;
+import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.kafka.PersistentClaimStorageBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
@@ -21,8 +22,7 @@ import io.strimzi.operator.common.Util;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
-import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
-import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
+import io.strimzi.systemtest.kafkaclients.ClientsAuthentication;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
@@ -40,6 +40,8 @@ import io.strimzi.systemtest.utils.kubeUtils.objects.PersistentVolumeClaimUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PersistentVolumeUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
+import io.strimzi.testclients.clients.kafka.KafkaProducerConsumer;
+import io.strimzi.testclients.clients.kafka.KafkaProducerConsumerBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
@@ -97,17 +99,39 @@ class AlternativeReconcileTriggersST extends AbstractST {
         producerAdditionConfiguration = producerAdditionConfiguration.concat("\ntransactional.id=" + testStorage.getContinuousTopicName() + ".1");
         producerAdditionConfiguration = producerAdditionConfiguration.concat("\nenable.idempotence=true");
 
-        final KafkaClients continuousClients = ClientUtils.getContinuousPlainClientBuilder(testStorage)
+        final KafkaProducerConsumer continuousKafkaProducerConsumer = new KafkaProducerConsumerBuilder()
+            .withProducerName(testStorage.getContinuousProducerName())
+            .withConsumerName(testStorage.getContinuousConsumerName())
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withTopicName(testStorage.getContinuousTopicName())
+            .withConsumerGroup(ClientUtils.generateRandomConsumerGroup())
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
             .withMessageCount(continuousClientsMessageCount)
             .withAdditionalConfig(producerAdditionConfiguration)
+            .withDelayMs(1000)
+            .withAcks("all")
             .build();
 
-        KubeResourceManager.get().createResourceWithWait(continuousClients.producerStrimzi(), continuousClients.consumerStrimzi());
+        KubeResourceManager.get().createResourceWithWait(
+            continuousKafkaProducerConsumer.getProducer().getJob(),
+            continuousKafkaProducerConsumer.getConsumer().getJob()
+        );
         KubeResourceManager.get().createResourceWithWait(KafkaUserTemplates.tlsUser(testStorage).build());
 
-        KafkaClients instantClients = ClientUtils.getInstantTlsClientBuilder(testStorage).build();
-        KubeResourceManager.get().createResourceWithWait(instantClients.producerTlsStrimzi(testStorage.getClusterName()));
-        ClientUtils.waitForInstantProducerClientSuccess(testStorage);
+        final KafkaProducerConsumer kafkaProducerConsumer = new KafkaProducerConsumerBuilder()
+            .withProducerName(testStorage.getProducerName())
+            .withConsumerName(testStorage.getConsumerName())
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withTopicName(testStorage.getTopicName())
+            .withConsumerGroup(ClientUtils.generateRandomConsumerGroup())
+            .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(testStorage.getClusterName()))
+            .withMessageCount(testStorage.getMessageCount())
+            .withAuthentication(ClientsAuthentication.configureTls(testStorage.getClusterName(), testStorage.getUsername()))
+            .build();
+
+        KubeResourceManager.get().createResourceWithWait(kafkaProducerConsumer.getProducer().getJob());
+
+        ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getProducerName(), testStorage.getMessageCount());
 
         // rolling update for kafka
         // set annotation to trigger Kafka rolling update
@@ -126,8 +150,8 @@ class AlternativeReconcileTriggersST extends AbstractST {
                 () -> StrimziPodSetUtils.getAnnotationsOfStrimziPodSet(testStorage.getNamespaceName(), testStorage.getBrokerComponentName()) == null
                         || !StrimziPodSetUtils.getAnnotationsOfStrimziPodSet(testStorage.getNamespaceName(), testStorage.getBrokerComponentName()).containsKey(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE));
 
-        KubeResourceManager.get().createResourceWithWait(instantClients.consumerTlsStrimzi(testStorage.getClusterName()));
-        ClientUtils.waitForInstantConsumerClientSuccess(testStorage);
+        KubeResourceManager.get().createResourceWithWait(kafkaProducerConsumer.getConsumer().getJob());
+        ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getMessageCount());
 
         // rolling update for controller pods
         // set annotation to trigger controller rolling update
@@ -146,27 +170,30 @@ class AlternativeReconcileTriggersST extends AbstractST {
                 () -> StrimziPodSetUtils.getAnnotationsOfStrimziPodSet(testStorage.getNamespaceName(), testStorage.getControllerComponentName()) == null
                         || !StrimziPodSetUtils.getAnnotationsOfStrimziPodSet(testStorage.getNamespaceName(), testStorage.getControllerComponentName()).containsKey(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE));
 
-        instantClients.generateNewConsumerGroup();
-        KubeResourceManager.get().createResourceWithWait(instantClients.consumerTlsStrimzi(testStorage.getClusterName()));
-        ClientUtils.waitForInstantConsumerClientSuccess(testStorage);
+        kafkaProducerConsumer.setConsumerGroup(ClientUtils.generateRandomConsumerGroup());
+        KubeResourceManager.get().createResourceWithWait(kafkaProducerConsumer.getConsumer().getJob());
+        ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getMessageCount());
 
         // Create new topic to ensure, that controller is working properly
         String newTopicName = KafkaTopicUtils.generateRandomNameOfTopic();
 
         KubeResourceManager.get().createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getNamespaceName(), newTopicName, testStorage.getClusterName(), 1, 1).build());
 
-        instantClients = new KafkaClientsBuilder(instantClients)
-            .withTopicName(newTopicName)
-            .withConsumerGroup(ClientUtils.generateRandomConsumerGroup())
-            .build();
+        kafkaProducerConsumer.setTopicName(newTopicName);
+        kafkaProducerConsumer.setConsumerGroup(ClientUtils.generateRandomConsumerGroup());
 
         KubeResourceManager.get().createResourceWithWait(
-            instantClients.producerTlsStrimzi(testStorage.getClusterName()),
-            instantClients.consumerTlsStrimzi(testStorage.getClusterName())
+            kafkaProducerConsumer.getProducer().getJob(),
+            kafkaProducerConsumer.getConsumer().getJob()
         );
-        ClientUtils.waitForInstantClientSuccess(testStorage);
 
-        ClientUtils.waitForContinuousClientSuccess(testStorage, continuousClientsMessageCount);
+        ClientUtils.waitForClientsSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getProducerName(), continuousClientsMessageCount);
+
+        // ##############################
+        // Validate that continuous clients finished successfully
+        // ##############################
+        ClientUtils.waitForClientsSuccess(testStorage.getNamespaceName(), testStorage.getContinuousConsumerName(), testStorage.getContinuousProducerName(), continuousClientsMessageCount);
+        // ##############################
     }
 
     // This test is affected by https://github.com/strimzi/strimzi-kafka-operator/issues/3913 so it needs longer operation timeout set in CO
@@ -369,17 +396,38 @@ class AlternativeReconcileTriggersST extends AbstractST {
         producerAdditionConfiguration = producerAdditionConfiguration.concat("\ntransactional.id=" + testStorage.getContinuousTopicName() + ".1");
         producerAdditionConfiguration = producerAdditionConfiguration.concat("\nenable.idempotence=true");
 
-        KafkaClients kafkaBasicClientJob = ClientUtils.getContinuousPlainClientBuilder(testStorage)
+        final KafkaProducerConsumer continuousKafkaProducerConsumer = new KafkaProducerConsumerBuilder()
+            .withProducerName(testStorage.getContinuousProducerName())
+            .withConsumerName(testStorage.getContinuousConsumerName())
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withTopicName(testStorage.getContinuousTopicName())
+            .withConsumerGroup(ClientUtils.generateRandomConsumerGroup())
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
             .withMessageCount(continuousClientsMessageCount)
             .withAdditionalConfig(producerAdditionConfiguration)
+            .withDelayMs(1000)
+            .withAcks("all")
             .build();
 
-        KubeResourceManager.get().createResourceWithWait(kafkaBasicClientJob.producerStrimzi(), kafkaBasicClientJob.consumerStrimzi());
+        KubeResourceManager.get().createResourceWithWait(
+            continuousKafkaProducerConsumer.getProducer().getJob(),
+            continuousKafkaProducerConsumer.getConsumer().getJob()
+        );
 
         // ##############################
-        KafkaClients clients = ClientUtils.getInstantPlainClientBuilder(testStorage).build();
-        KubeResourceManager.get().createResourceWithWait(clients.producerStrimzi());
-        ClientUtils.waitForInstantProducerClientSuccess(testStorage);
+        final KafkaProducerConsumer kafkaProducerConsumer = new KafkaProducerConsumerBuilder()
+            .withProducerName(testStorage.getProducerName())
+            .withConsumerName(testStorage.getConsumerName())
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withTopicName(testStorage.getTopicName())
+            .withConsumerGroup(ClientUtils.generateRandomConsumerGroup())
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
+            .withMessageCount(testStorage.getMessageCount())
+            .build();
+
+        KubeResourceManager.get().createResourceWithWait(kafkaProducerConsumer.getProducer().getJob());
+
+        ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getProducerName(), testStorage.getMessageCount());
 
         // Add Jbod volume to Kafka => triggers RU
         LOGGER.info("Add JBOD volume to the Kafka cluster {}", testStorage.getBrokerComponentName());
@@ -421,13 +469,13 @@ class AlternativeReconcileTriggersST extends AbstractST {
         });
 
 
-        KubeResourceManager.get().createResourceWithWait(clients.consumerStrimzi());
-        ClientUtils.waitForInstantConsumerClientSuccess(testStorage);
+        KubeResourceManager.get().createResourceWithWait(kafkaProducerConsumer.getConsumer().getJob());
+        ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getMessageCount());
 
         // ##############################
         // Validate that continuous clients finished successfully
         // ##############################
-        ClientUtils.waitForContinuousClientSuccess(testStorage, continuousClientsMessageCount);
+        ClientUtils.waitForClientsSuccess(testStorage.getNamespaceName(), testStorage.getContinuousConsumerName(), testStorage.getContinuousProducerName(), continuousClientsMessageCount);
         // ##############################
     }
 
@@ -500,17 +548,38 @@ class AlternativeReconcileTriggersST extends AbstractST {
         producerAdditionConfiguration = producerAdditionConfiguration.concat("\ntransactional.id=" + testStorage.getContinuousTopicName() + ".1");
         producerAdditionConfiguration = producerAdditionConfiguration.concat("\nenable.idempotence=true");
 
-        KafkaClients kafkaBasicClientJob = ClientUtils.getContinuousPlainClientBuilder(testStorage)
+        final KafkaProducerConsumer continuousKafkaProducerConsumer = new KafkaProducerConsumerBuilder()
+            .withProducerName(testStorage.getContinuousProducerName())
+            .withConsumerName(testStorage.getContinuousConsumerName())
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withTopicName(testStorage.getContinuousTopicName())
+            .withConsumerGroup(ClientUtils.generateRandomConsumerGroup())
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
             .withMessageCount(continuousClientsMessageCount)
             .withAdditionalConfig(producerAdditionConfiguration)
+            .withDelayMs(1000)
+            .withAcks("all")
             .build();
 
-        KubeResourceManager.get().createResourceWithWait(kafkaBasicClientJob.producerStrimzi(), kafkaBasicClientJob.consumerStrimzi());
+        KubeResourceManager.get().createResourceWithWait(
+            continuousKafkaProducerConsumer.getProducer().getJob(),
+            continuousKafkaProducerConsumer.getConsumer().getJob()
+        );
 
         // ##############################
-        KafkaClients clients = ClientUtils.getInstantPlainClientBuilder(testStorage).build();
-        KubeResourceManager.get().createResourceWithWait(clients.producerStrimzi());
-        ClientUtils.waitForInstantProducerClientSuccess(testStorage);
+        final KafkaProducerConsumer kafkaProducerConsumer = new KafkaProducerConsumerBuilder()
+            .withProducerName(testStorage.getProducerName())
+            .withConsumerName(testStorage.getConsumerName())
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withTopicName(testStorage.getTopicName())
+            .withConsumerGroup(ClientUtils.generateRandomConsumerGroup())
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
+            .withMessageCount(testStorage.getMessageCount())
+            .build();
+
+        KubeResourceManager.get().createResourceWithWait(kafkaProducerConsumer.getProducer().getJob());
+
+        ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getProducerName(), testStorage.getMessageCount());
 
         Map<String, String> brokerPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getBrokerSelector());
 
@@ -530,13 +599,13 @@ class AlternativeReconcileTriggersST extends AbstractST {
         // verify that Kraft metadata log will be re-assigned to another volume (the minimum id, which is 0 now that's why data-0)
         KafkaUtils.verifyKafkaKraftMetadataLog(testStorage, 0, 2);
 
-        KubeResourceManager.get().createResourceWithWait(clients.consumerStrimzi());
-        ClientUtils.waitForInstantConsumerClientSuccess(testStorage);
+        KubeResourceManager.get().createResourceWithWait(kafkaProducerConsumer.getConsumer().getJob());
+        ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getMessageCount());
 
         // ##############################
         // Validate that continuous clients finished successfully
         // ##############################
-        ClientUtils.waitForContinuousClientSuccess(testStorage, continuousClientsMessageCount);
+        ClientUtils.waitForClientsSuccess(testStorage.getNamespaceName(), testStorage.getContinuousConsumerName(), testStorage.getContinuousProducerName(), continuousClientsMessageCount);
         // ##############################
     }
 

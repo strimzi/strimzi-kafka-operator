@@ -121,6 +121,7 @@
         <skodjob-doc.version>0.6.0</skodjob-doc.version>
         <helm-client.version>0.0.15</helm-client.version>
         <access-operator.version>0.2.0</access-operator.version>
+        <test-clients.version>0.13.0</test-clients.version>
         <!-- properties to skip surefire tests during failsafe execution -->
         <skipTests>false</skipTests>
         <skip.surefire.tests>${skipTests}</skip.surefire.tests>
@@ -792,6 +793,12 @@
                 <groupId>io.strimzi.access-operator</groupId>
                 <artifactId>api</artifactId>
                 <version>${access-operator.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.strimzi.test-clients</groupId>
+                <artifactId>builders</artifactId>
+                <version>0.14.0-SNAPSHOT</version>
+                <scope>provided</scope>
             </dependency>
         </dependencies>
     </dependencyManagement>

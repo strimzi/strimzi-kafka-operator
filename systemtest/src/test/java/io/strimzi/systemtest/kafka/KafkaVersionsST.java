@@ -10,6 +10,7 @@ import io.skodjob.annotations.Step;
 import io.skodjob.annotations.SuiteDoc;
 import io.skodjob.annotations.TestDoc;
 import io.skodjob.kubetest4j.resources.KubeResourceManager;
+import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.api.kafka.model.user.KafkaUser;
@@ -17,7 +18,7 @@ import io.strimzi.api.kafka.model.user.acl.AclOperation;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.docs.TestDocsLabels;
-import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
+import io.strimzi.systemtest.kafkaclients.ClientsAuthentication;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
@@ -26,6 +27,12 @@ import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaUserTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.TestKafkaVersion;
+import io.strimzi.testclients.clients.kafka.KafkaConsumerClient;
+import io.strimzi.testclients.clients.kafka.KafkaConsumerClientBuilder;
+import io.strimzi.testclients.clients.kafka.KafkaProducerClient;
+import io.strimzi.testclients.clients.kafka.KafkaProducerClientBuilder;
+import io.strimzi.testclients.clients.kafka.KafkaProducerConsumer;
+import io.strimzi.testclients.clients.kafka.KafkaProducerConsumerBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
@@ -168,33 +175,51 @@ public class KafkaVersionsST extends AbstractST {
         );
 
         LOGGER.info("Sending and receiving messages via PLAIN -> SCRAM-SHA");
-        final KafkaClients kafkaClientsPlainScramShaWrite = ClientUtils.getInstantScramShaOverPlainClientBuilder(testStorage)
-            .withUsername(kafkaUserWrite)
+
+        final KafkaProducerClient kafkaProducerPlainScramShaWrite = new KafkaProducerClientBuilder()
+            .withName(testStorage.getProducerName())
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withTopicName(testStorage.getTopicName())
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
+            .withMessageCount(testStorage.getMessageCount())
+            .withAuthentication(ClientsAuthentication.configurePlainScramSha(testStorage.getNamespaceName(), kafkaUserWrite))
             .build();
 
-        KubeResourceManager.get().createResourceWithWait(kafkaClientsPlainScramShaWrite.producerScramShaPlainStrimzi());
-        ClientUtils.waitForInstantProducerClientSuccess(testStorage);
+        KubeResourceManager.get().createResourceWithWait(kafkaProducerPlainScramShaWrite.getJob());
+        ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getProducerName(), testStorage.getMessageCount());
 
-        final KafkaClients kafkaClientsPlainScramShaRead = ClientUtils.getInstantScramShaOverPlainClientBuilder(testStorage)
+        final KafkaConsumerClient kafkaConsumerPlainScramShaRead = new KafkaConsumerClientBuilder()
+            .withName(testStorage.getConsumerName())
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withTopicName(testStorage.getTopicName())
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
+            .withMessageCount(testStorage.getMessageCount())
             .withConsumerGroup(readConsumerGroup)
-            .withUsername(kafkaUserRead)
+            .withAuthentication(ClientsAuthentication.configurePlainScramSha(testStorage.getNamespaceName(), kafkaUserRead))
             .build();
 
-        KubeResourceManager.get().createResourceWithWait(kafkaClientsPlainScramShaRead.consumerScramShaPlainStrimzi());
-        ClientUtils.waitForInstantConsumerClientSuccess(testStorage);
+        KubeResourceManager.get().createResourceWithWait(kafkaConsumerPlainScramShaRead.getJob());
+        ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getMessageCount());
 
         LOGGER.info("Sending and receiving messages via TLS");
 
-        final KafkaClients kafkaClientsTlsScramShaRead = ClientUtils.getInstantTlsClientBuilder(testStorage)
+        final KafkaProducerConsumer kafkaProducerConsumerTls = new KafkaProducerConsumerBuilder()
+            .withProducerName(testStorage.getProducerName())
+            .withConsumerName(testStorage.getConsumerName())
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withTopicName(testStorage.getTopicName())
             .withConsumerGroup(readConsumerGroup)
-            .withUsername(kafkaUserReadWriteTls)
+            .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(testStorage.getClusterName()))
+            .withMessageCount(testStorage.getMessageCount())
+            .withAuthentication(ClientsAuthentication.configureTls(testStorage.getClusterName(), kafkaUserReadWriteTls))
             .build();
 
         KubeResourceManager.get().createResourceWithWait(
-            kafkaClientsTlsScramShaRead.producerTlsStrimzi(testStorage.getClusterName()),
-            kafkaClientsTlsScramShaRead.consumerTlsStrimzi(testStorage.getClusterName())
+            kafkaProducerConsumerTls.getProducer().getJob(),
+            kafkaProducerConsumerTls.getConsumer().getJob()
         );
-        ClientUtils.waitForInstantClientSuccess(testStorage);
+
+        ClientUtils.waitForClientsSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getProducerName(), testStorage.getMessageCount());
     }
 
     @BeforeAll

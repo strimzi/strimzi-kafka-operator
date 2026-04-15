@@ -12,7 +12,6 @@ import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2Resources;
 import io.strimzi.api.kafka.model.nodepool.ProcessRoles;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
-import io.strimzi.systemtest.kafkaclients.internalClients.KafkaTracingClients;
 import io.strimzi.systemtest.labels.LabelSelectors;
 import io.strimzi.systemtest.resources.crd.KafkaComponents;
 import io.strimzi.systemtest.utils.StUtils;
@@ -380,10 +379,6 @@ final public class TestStorage {
 
     public long getTestExecutionTimeInSeconds() {
         return Duration.ofMillis(System.currentTimeMillis() - getTestExecutionStartTime()).getSeconds();
-    }
-
-    public KafkaTracingClients getTracingClients() {
-        return (KafkaTracingClients) extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(TestConstants.KAFKA_TRACING_CLIENT_KEY);
     }
 
     public String getScraperPodName() {

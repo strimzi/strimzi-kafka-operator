@@ -9,7 +9,6 @@ import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.IsolatedTest;
-import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.resources.CrdClients;
 import io.strimzi.systemtest.resources.crd.KafkaComponents;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
@@ -23,6 +22,8 @@ import io.strimzi.systemtest.utils.TestKafkaVersion;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
+import io.strimzi.testclients.clients.kafka.KafkaProducerConsumer;
+import io.strimzi.testclients.clients.kafka.KafkaProducerConsumerBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
@@ -158,15 +159,22 @@ public class KRaftKafkaUpgradeDowngradeST extends AbstractKRaftUpgradeST {
             // 40s is used within TF environment to make upgrade/downgrade more stable on slow env
             String producerAdditionConfiguration = "delivery.timeout.ms=300000\nrequest.timeout.ms=20000";
 
-            KafkaClients kafkaBasicClientJob = ClientUtils.getContinuousPlainClientBuilder(testStorage)
+            final KafkaProducerConsumer continuousKafkaProducerConsumer = new KafkaProducerConsumerBuilder()
+                .withProducerName(testStorage.getContinuousProducerName())
+                .withConsumerName(testStorage.getContinuousConsumerName())
                 .withNamespaceName(testStorage.getNamespaceName())
+                .withTopicName(testStorage.getContinuousTopicName())
+                .withConsumerGroup(ClientUtils.generateRandomConsumerGroup())
                 .withBootstrapAddress(KafkaResources.plainBootstrapAddress(CLUSTER_NAME))
                 .withMessageCount(continuousClientsMessageCount)
                 .withAdditionalConfig(producerAdditionConfiguration)
+                .withDelayMs(1000)
                 .build();
 
-            KubeResourceManager.get().createResourceWithWait(kafkaBasicClientJob.producerStrimzi());
-            KubeResourceManager.get().createResourceWithWait(kafkaBasicClientJob.consumerStrimzi());
+            KubeResourceManager.get().createResourceWithWait(
+                continuousKafkaProducerConsumer.getProducer().getJob(),
+                continuousKafkaProducerConsumer.getConsumer().getJob()
+            );
             // ##############################
         }
 

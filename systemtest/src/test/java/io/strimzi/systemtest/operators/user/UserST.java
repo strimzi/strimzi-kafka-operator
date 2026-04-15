@@ -31,8 +31,7 @@ import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
 import io.strimzi.systemtest.docs.TestDocsLabels;
-import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
-import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
+import io.strimzi.systemtest.kafkaclients.ClientsAuthentication;
 import io.strimzi.systemtest.resources.CrdClients;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.storage.TestStorage;
@@ -47,6 +46,8 @@ import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import io.strimzi.test.ReadWriteUtils;
 import io.strimzi.test.TestUtils;
+import io.strimzi.testclients.clients.kafka.KafkaProducerConsumer;
+import io.strimzi.testclients.clients.kafka.KafkaProducerConsumerBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hamcrest.CoreMatchers;
@@ -162,12 +163,23 @@ class UserST extends AbstractST {
         final long observedGeneration = CrdClients.kafkaUserClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName(testStorage.getKafkaUsername()).get().getStatus().getObservedGeneration();
 
         // Send and receive messages
-        KafkaClients kafkaClients = ClientUtils.getInstantTlsClientBuilder(testStorage, KafkaResources.tlsBootstrapAddress(sharedTestStorage.getClusterName()))
-            .withUsername(testStorage.getKafkaUsername())
+        final KafkaProducerConsumer kafkaProducerConsumer = new KafkaProducerConsumerBuilder()
+            .withProducerName(testStorage.getProducerName())
+            .withConsumerName(testStorage.getConsumerName())
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withTopicName(testStorage.getTopicName())
+            .withConsumerGroup(ClientUtils.generateRandomConsumerGroup())
+            .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(sharedTestStorage.getClusterName()))
+            .withAuthentication(ClientsAuthentication.configureTls(sharedTestStorage.getClusterName(), testStorage.getKafkaUsername()))
+            .withMessageCount(testStorage.getMessageCount())
             .build();
 
-        KubeResourceManager.get().createResourceWithWait(kafkaClients.producerTlsStrimzi(sharedTestStorage.getClusterName()), kafkaClients.consumerTlsStrimzi(sharedTestStorage.getClusterName()));
-        ClientUtils.waitForInstantClientSuccess(testStorage);
+        KubeResourceManager.get().createResourceWithWait(
+            kafkaProducerConsumer.getProducer().getJob(),
+            kafkaProducerConsumer.getConsumer().getJob()
+        );
+
+        ClientUtils.waitForClientsSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getProducerName(), testStorage.getMessageCount());
 
         KafkaUserUtils.replace(Environment.TEST_SUITE_NAMESPACE, testStorage.getKafkaUsername(), ku -> {
             ku.getSpec().setAuthentication(new KafkaUserScramSha512ClientAuthentication());
@@ -186,12 +198,15 @@ class UserST extends AbstractST {
         assertThat(kafkaUserAsJson, hasJsonPath("$.metadata.namespace", equalTo(Environment.TEST_SUITE_NAMESPACE)));
         assertThat(kafkaUserAsJson, hasJsonPath("$.spec.authentication.type", equalTo("scram-sha-512")));
 
-        kafkaClients = new KafkaClientsBuilder(kafkaClients)
-            .withBootstrapAddress(KafkaResources.bootstrapServiceName(sharedTestStorage.getClusterName()) + ":9095")
-            .build();
+        kafkaProducerConsumer.setBootstrapAddress(KafkaResources.bootstrapServiceName(sharedTestStorage.getClusterName()) + ":9095");
+        kafkaProducerConsumer.setAuthentication(ClientsAuthentication.configureTlsScramSha(testStorage.getNamespaceName(), testStorage.getKafkaUsername(), sharedTestStorage.getClusterName()));
 
-        KubeResourceManager.get().createResourceWithWait(kafkaClients.producerScramShaTlsStrimzi(sharedTestStorage.getClusterName()), kafkaClients.consumerScramShaTlsStrimzi(sharedTestStorage.getClusterName()));
-        ClientUtils.waitForInstantClientSuccess(testStorage);
+        KubeResourceManager.get().createResourceWithWait(
+            kafkaProducerConsumer.getProducer().getJob(),
+            kafkaProducerConsumer.getConsumer().getJob()
+        );
+
+        ClientUtils.waitForClientsSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getProducerName(), testStorage.getMessageCount());
     }
 
     @TestDoc(
@@ -278,28 +293,33 @@ class UserST extends AbstractST {
                     result.contains("controller_mutation_rate=" + mutRate);
             });
 
-        final KafkaClients kafkaClients = ClientUtils.getInstantScramShaClientBuilder(testStorage, KafkaResources.tlsBootstrapAddress(sharedTestStorage.getClusterName()))
-            .withUsername(userName)
+        final KafkaProducerConsumer kafkaProducerConsumer = new KafkaProducerConsumerBuilder()
+            .withProducerName(testStorage.getProducerName())
+            .withConsumerName(testStorage.getConsumerName())
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withTopicName(testStorage.getTopicName())
+            .withConsumerGroup(ClientUtils.generateRandomConsumerGroup())
+            .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(sharedTestStorage.getClusterName()))
+            .withMessageCount(testStorage.getMessageCount())
             .build();
 
+
         if (user.getSpec().getAuthentication() instanceof KafkaUserScramSha512ClientAuthentication) {
-            kafkaClients.setBootstrapAddress(KafkaResources.bootstrapServiceName(sharedTestStorage.getClusterName()) + ":9095");
-
-            KubeResourceManager.get().createResourceWithWait(kafkaClients.producerScramShaTlsStrimzi(sharedTestStorage.getClusterName()),
-                                                                     kafkaClients.consumerScramShaTlsStrimzi(sharedTestStorage.getClusterName()));
-
+            kafkaProducerConsumer.setBootstrapAddress(KafkaResources.bootstrapServiceName(sharedTestStorage.getClusterName()) + ":9095");
+            kafkaProducerConsumer.setAuthentication(ClientsAuthentication.configureTlsScramSha(testStorage.getNamespaceName(), userName, sharedTestStorage.getClusterName()));
         } else if (user.getSpec().getAuthentication() instanceof KafkaUserTlsClientAuthentication) {
-            KubeResourceManager.get().createResourceWithWait(kafkaClients.producerTlsStrimzi(sharedTestStorage.getClusterName()),
-                                                                     kafkaClients.consumerTlsStrimzi(sharedTestStorage.getClusterName()));
-
+            kafkaProducerConsumer.setAuthentication(ClientsAuthentication.configureTls(sharedTestStorage.getClusterName(), userName));
         } else if (user.getSpec().getAuthentication() instanceof KafkaUserTlsExternalClientAuthentication) {
             SecretUtils.createExternalTlsUserSecret(testStorage.getNamespaceName(), userName, sharedTestStorage.getClusterName());
-
-            KubeResourceManager.get().createResourceWithWait(kafkaClients.producerTlsStrimzi(sharedTestStorage.getClusterName()),
-                                                                     kafkaClients.consumerTlsStrimzi(sharedTestStorage.getClusterName()));
+            kafkaProducerConsumer.setAuthentication(ClientsAuthentication.configureTls(sharedTestStorage.getClusterName(), userName));
         }
 
-        ClientUtils.waitForInstantClientSuccess(testStorage);
+        KubeResourceManager.get().createResourceWithWait(
+            kafkaProducerConsumer.getProducer().getJob(),
+            kafkaProducerConsumer.getConsumer().getJob()
+        );
+
+        ClientUtils.waitForClientsSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getProducerName(), testStorage.getMessageCount());
 
         // delete user
         CrdClients.kafkaUserClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName(userName).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
@@ -385,22 +405,35 @@ class UserST extends AbstractST {
         assertNotNull(tlsSecret);
         assertNotNull(scramShaSecret);
 
-        KafkaClients clients = ClientUtils.getInstantTlsClientBuilder(testStorage)
-            .withUsername(secretPrefix + tlsUserName)
+        final KafkaProducerConsumer kafkaProducerConsumer = new KafkaProducerConsumerBuilder()
+            .withProducerName(testStorage.getProducerName())
+            .withConsumerName(testStorage.getConsumerName())
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withTopicName(testStorage.getTopicName())
+            .withConsumerGroup(ClientUtils.generateRandomConsumerGroup())
+            .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(testStorage.getClusterName()))
+            .withAuthentication(ClientsAuthentication.configureTls(testStorage.getClusterName(), secretPrefix + tlsUserName))
+            .withMessageCount(testStorage.getMessageCount())
             .build();
 
         LOGGER.info("Checking if TLS user is able to send messages");
-        KubeResourceManager.get().createResourceWithWait(clients.producerTlsStrimzi(testStorage.getClusterName()), clients.consumerTlsStrimzi(testStorage.getClusterName()));
-        ClientUtils.waitForInstantClientSuccess(testStorage);
+        KubeResourceManager.get().createResourceWithWait(
+            kafkaProducerConsumer.getProducer().getJob(),
+            kafkaProducerConsumer.getConsumer().getJob()
+        );
 
-
-        clients = ClientUtils.getInstantScramShaOverPlainClientBuilder(testStorage)
-            .withUsername(secretPrefix + scramShaUserName)
-            .build();
+        ClientUtils.waitForClientsSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getProducerName(), testStorage.getMessageCount());
 
         LOGGER.info("Checking if SCRAM-SHA-512 user is able to send messages");
-        KubeResourceManager.get().createResourceWithWait(clients.producerScramShaPlainStrimzi(), clients.consumerScramShaPlainStrimzi());
-        ClientUtils.waitForInstantClientSuccess(testStorage);
+        kafkaProducerConsumer.setBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()));
+        kafkaProducerConsumer.setAuthentication(ClientsAuthentication.configurePlainScramSha(testStorage.getNamespaceName(), secretPrefix + scramShaUserName));
+
+        KubeResourceManager.get().createResourceWithWait(
+            kafkaProducerConsumer.getProducer().getJob(),
+            kafkaProducerConsumer.getConsumer().getJob()
+        );
+
+        ClientUtils.waitForClientsSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getProducerName(), testStorage.getMessageCount());
 
         LOGGER.info("Checking owner reference - if the Secret will be deleted when we delete KafkaUser");
 
@@ -487,13 +520,23 @@ class UserST extends AbstractST {
 
         SecretUtils.createExternalTlsUserSecret(testStorage.getNamespaceName(), testStorage.getKafkaUsername(), testStorage.getClusterName());
 
-        KafkaClients kafkaClients = ClientUtils.getInstantTlsClientBuilder(testStorage)
-            .withUsername(testStorage.getKafkaUsername())
+        final KafkaProducerConsumer kafkaProducerConsumer = new KafkaProducerConsumerBuilder()
+            .withProducerName(testStorage.getProducerName())
+            .withConsumerName(testStorage.getConsumerName())
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withTopicName(testStorage.getTopicName())
             .withConsumerGroup(consumerGroupName)
+            .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(testStorage.getClusterName()))
+            .withMessageCount(testStorage.getMessageCount())
+            .withAuthentication(ClientsAuthentication.configureTls(testStorage.getClusterName(), testStorage.getKafkaUsername()))
             .build();
 
-        KubeResourceManager.get().createResourceWithWait(kafkaClients.producerTlsStrimzi(testStorage.getClusterName()), kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
-        ClientUtils.waitForInstantClientSuccess(testStorage);
+        KubeResourceManager.get().createResourceWithWait(
+            kafkaProducerConsumer.getProducer().getJob(),
+            kafkaProducerConsumer.getConsumer().getJob()
+        );
+
+        ClientUtils.waitForClientsSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getProducerName(), testStorage.getMessageCount());
 
         KafkaUserUtils.replace(testStorage.getNamespaceName(), testStorage.getKafkaUsername(), user -> {
             user.getSpec().setAuthorization(new KafkaUserAuthorizationSimpleBuilder()
@@ -510,14 +553,12 @@ class UserST extends AbstractST {
 
         // Change the producer name in order to sure that we will not pick old Pod (race condition)
         String newProducerName = testStorage.getProducerName() + "-authz";
-        kafkaClients = new KafkaClientsBuilder(kafkaClients)
-            .withProducerName(newProducerName)
-            .build();
 
-        KubeResourceManager.get().createResourceWithWait(kafkaClients.producerTlsStrimzi(testStorage.getClusterName()));
+        kafkaProducerConsumer.setProducerName(newProducerName);
+        KubeResourceManager.get().createResourceWithWait(kafkaProducerConsumer.getProducer().getJob());
 
         PodUtils.waitUntilMessageIsInPodLogs(testStorage.getNamespaceName(),
-            PodUtils.getPodNameByPrefix(testStorage.getNamespaceName(), newProducerName), "authorization failed");
+            PodUtils.getPodNameByPrefix(testStorage.getNamespaceName(), newProducerName), "Not authorized");
 
         ClientUtils.waitForClientTimeout(testStorage.getNamespaceName(), newProducerName, testStorage.getMessageCount());
     }

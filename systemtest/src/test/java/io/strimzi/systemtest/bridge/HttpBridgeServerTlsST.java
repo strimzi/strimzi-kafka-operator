@@ -17,9 +17,6 @@ import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.docs.TestDocsLabels;
-import io.strimzi.systemtest.kafkaclients.internalClients.BridgeClients;
-import io.strimzi.systemtest.kafkaclients.internalClients.BridgeClientsBuilder;
-import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaBridgeTemplates;
@@ -28,6 +25,10 @@ import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaUserTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
+import io.strimzi.testclients.clients.http.HttpProducerConsumer;
+import io.strimzi.testclients.clients.http.HttpProducerConsumerBuilder;
+import io.strimzi.testclients.clients.kafka.KafkaProducerConsumer;
+import io.strimzi.testclients.clients.kafka.KafkaProducerConsumerBuilder;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -55,7 +56,8 @@ import static io.strimzi.systemtest.TestTags.REGRESSION;
 )
 class HttpBridgeServerTlsST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(HttpBridgeServerTlsST.class);
-    private BridgeClients kafkaBridgeClientJob;
+    private HttpProducerConsumerBuilder httpProducerConsumerBuilder;
+    private KafkaProducerConsumerBuilder kafkaProducerConsumerBuilder;
     private TestStorage suiteTestStorage;
 
     @ParallelTest
@@ -76,18 +78,23 @@ class HttpBridgeServerTlsST extends AbstractST {
     void testSendSimpleMessageTls() {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
-        BridgeClients kafkaBridgeClientJobProduce = new BridgeClientsBuilder(kafkaBridgeClientJob)
+        HttpProducerConsumer bridgeProducerConsumer = httpProducerConsumerBuilder
             .withTopicName(testStorage.getTopicName())
             .withProducerName(testStorage.getProducerName())
             .build();
 
         KubeResourceManager.get().createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getTopicName(), suiteTestStorage.getClusterName()).build());
 
-        KubeResourceManager.get().createResourceWithWait(kafkaBridgeClientJobProduce.producerTlsStrimziBridge(suiteTestStorage.getClusterName()));
+        KubeResourceManager.get().createResourceWithWait(bridgeProducerConsumer.getProducer().getJob());
         ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getProducerName(), testStorage.getMessageCount());
 
-        final KafkaClients kafkaClients = ClientUtils.getInstantPlainClients(testStorage, KafkaResources.plainBootstrapAddress(suiteTestStorage.getClusterName()));
-        KubeResourceManager.get().createResourceWithWait(kafkaClients.consumerStrimzi());
+        final KafkaProducerConsumer producerConsumer = kafkaProducerConsumerBuilder
+            .withConsumerName(testStorage.getConsumerName())
+            .withTopicName(testStorage.getTopicName())
+            .withConsumerGroup(ClientUtils.generateRandomConsumerGroup())
+            .build();
+
+        KubeResourceManager.get().createResourceWithWait(producerConsumer.getConsumer().getJob());
 
         ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getMessageCount());
     }
@@ -110,19 +117,24 @@ class HttpBridgeServerTlsST extends AbstractST {
     void testReceiveSimpleMessageTls() {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
-        BridgeClients kafkaBridgeClientJobConsume = new BridgeClientsBuilder(kafkaBridgeClientJob)
+        HttpProducerConsumer bridgeProducerConsumer = httpProducerConsumerBuilder
             .withTopicName(testStorage.getTopicName())
             .withConsumerName(testStorage.getConsumerName())
+            .withConsumerGroup(ClientUtils.generateRandomConsumerGroup())
             .build();
 
         KubeResourceManager.get().createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getTopicName(), suiteTestStorage.getClusterName()).build());
 
         // Start receiving messages with bridge
-        KubeResourceManager.get().createResourceWithWait(kafkaBridgeClientJobConsume.consumerTlsStrimziBridge(suiteTestStorage.getClusterName()));
+        KubeResourceManager.get().createResourceWithWait(bridgeProducerConsumer.getConsumer().getJob());
 
         // Send messages to Kafka
-        final KafkaClients kafkaClients = ClientUtils.getInstantPlainClients(testStorage, KafkaResources.plainBootstrapAddress(suiteTestStorage.getClusterName()));
-        KubeResourceManager.get().createResourceWithWait(kafkaClients.producerStrimzi());
+        final KafkaProducerConsumer producerConsumer = kafkaProducerConsumerBuilder
+            .withProducerName(testStorage.getProducerName())
+            .withTopicName(testStorage.getTopicName())
+            .build();
+
+        KubeResourceManager.get().createResourceWithWait(producerConsumer.getProducer().getJob());
 
         ClientUtils.waitForClientsSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getProducerName(), testStorage.getMessageCount());
     }
@@ -139,8 +151,8 @@ class HttpBridgeServerTlsST extends AbstractST {
         LOGGER.info("Deploying Kafka and KafkaBridge before tests");
 
         KubeResourceManager.get().createResourceWithWait(
-                KafkaNodePoolTemplates.brokerPoolPersistentStorage(suiteTestStorage.getNamespaceName(), suiteTestStorage.getBrokerPoolName(), suiteTestStorage.getClusterName(), 1).build(),
-                KafkaNodePoolTemplates.controllerPoolPersistentStorage(suiteTestStorage.getNamespaceName(), suiteTestStorage.getControllerPoolName(), suiteTestStorage.getClusterName(), 1).build()
+            KafkaNodePoolTemplates.brokerPoolPersistentStorage(suiteTestStorage.getNamespaceName(), suiteTestStorage.getBrokerPoolName(), suiteTestStorage.getClusterName(), 1).build(),
+            KafkaNodePoolTemplates.controllerPoolPersistentStorage(suiteTestStorage.getNamespaceName(), suiteTestStorage.getControllerPoolName(), suiteTestStorage.getClusterName(), 1).build()
         );
         KubeResourceManager.get().createResourceWithWait(KafkaTemplates.kafka(suiteTestStorage.getNamespaceName(), suiteTestStorage.getClusterName(), 1).build());
 
@@ -151,31 +163,36 @@ class HttpBridgeServerTlsST extends AbstractST {
 
         // Deploy http bridge
         KubeResourceManager.get().createResourceWithWait(KafkaBridgeTemplates.kafkaBridge(suiteTestStorage.getNamespaceName(), suiteTestStorage.getClusterName(),
-                        KafkaResources.plainBootstrapAddress(suiteTestStorage.getClusterName()), 1)
-                .editSpec()
-                    .withNewConsumer()
-                        .addToConfig(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest")
-                    .endConsumer()
-                        .withNewHttp()
-                            .withPort(8443)
-                            .withNewTls()
-                                .withNewCertificateAndKey()
-                                    .withSecretName(KafkaBridgeResources.serviceName(suiteTestStorage.getClusterName()))
-                                    .withCertificate("user.crt")
-                                    .withKey("user.key")
-                                .endCertificateAndKey()
-                            .endTls()
-                        .endHttp()
-                .endSpec()
-                .build());
+                KafkaResources.plainBootstrapAddress(suiteTestStorage.getClusterName()), 1)
+            .editSpec()
+                .withNewConsumer()
+                    .addToConfig(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest")
+                .endConsumer()
+                    .withNewHttp()
+                        .withPort(8443)
+                        .withNewTls()
+                            .withNewCertificateAndKey()
+                                .withSecretName(KafkaBridgeResources.serviceName(suiteTestStorage.getClusterName()))
+                                .withCertificate("user.crt")
+                                .withKey("user.key")
+                            .endCertificateAndKey()
+                        .endTls()
+                    .endHttp()
+            .endSpec()
+            .build());
 
-        kafkaBridgeClientJob = new BridgeClientsBuilder()
-            .withBootstrapAddress(KafkaBridgeResources.serviceName(suiteTestStorage.getClusterName()))
-            .withComponentName(KafkaBridgeResources.componentName(suiteTestStorage.getClusterName()))
+        kafkaProducerConsumerBuilder = new KafkaProducerConsumerBuilder()
+            .withNamespaceName(suiteTestStorage.getNamespaceName())
+            .withMessageCount(suiteTestStorage.getMessageCount())
+            .withTopicName(suiteTestStorage.getTopicName())
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(suiteTestStorage.getClusterName()));
+
+        httpProducerConsumerBuilder = new HttpProducerConsumerBuilder()
+            .withHostname(KafkaBridgeResources.serviceName(suiteTestStorage.getClusterName()))
             .withTopicName(suiteTestStorage.getTopicName())
             .withMessageCount(suiteTestStorage.getMessageCount())
             .withPort(8443)
             .withNamespaceName(Environment.TEST_SUITE_NAMESPACE)
-            .build();
+            .withSslTruststoreCertificate(KafkaBridgeResources.serviceName(suiteTestStorage.getClusterName()));
     }
 }

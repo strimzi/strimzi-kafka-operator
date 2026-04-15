@@ -20,8 +20,6 @@ import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.docs.TestDocsLabels;
-import io.strimzi.systemtest.kafkaclients.internalClients.BridgeClients;
-import io.strimzi.systemtest.kafkaclients.internalClients.BridgeClientsBuilder;
 import io.strimzi.systemtest.labels.LabelSelectors;
 import io.strimzi.systemtest.performance.gather.collectors.BaseMetricsCollector;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
@@ -39,6 +37,8 @@ import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.NetworkPolicyUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.systemtest.utils.specific.MetricsUtils;
+import io.strimzi.testclients.clients.http.HttpProducerConsumer;
+import io.strimzi.testclients.clients.http.HttpProducerConsumerBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
@@ -254,22 +254,22 @@ public class StrimziMetricsReporterST extends AbstractST {
         NetworkPolicyUtils.allowNetworkPolicySettingsForBridgeScraper(testStorage.getNamespaceName(),
             testStorage.getScraperName(), KafkaBridgeResources.componentName(BRIDGE_NAME));
 
-        BridgeClients kafkaBridgeClientJob = new BridgeClientsBuilder()
+        // Attach consumer before producer
+        HttpProducerConsumer httpProducerConsumer = new HttpProducerConsumerBuilder()
             .withNamespaceName(testStorage.getNamespaceName())
             .withProducerName(testStorage.getProducerName())
             .withConsumerName(testStorage.getConsumerName())
-            .withBootstrapAddress(KafkaBridgeResources.serviceName(BRIDGE_NAME))
-            .withComponentName(KafkaBridgeResources.componentName(BRIDGE_NAME))
+            .withHostname(KafkaBridgeResources.serviceName(BRIDGE_NAME))
             .withTopicName(testStorage.getTopicName())
             .withMessageCount(testStorage.getMessageCount())
             .withPort(TestConstants.HTTP_BRIDGE_DEFAULT_PORT)
             .withDelayMs(200)
-            .withPollInterval(200)
             .build();
 
-        KubeResourceManager.get().createResourceWithoutWait(
-                kafkaBridgeClientJob.producerStrimziBridge(),
-                kafkaBridgeClientJob.consumerStrimziBridge()
+        // we cannot wait for producer and consumer to complete to see all needed metrics - especially `strimzi_bridge_kafka_producer_count`
+        KubeResourceManager.get().createResourceWithWait(
+            httpProducerConsumer.getProducer().getJob(),
+            httpProducerConsumer.getConsumer().getJob()
         );
 
         BaseMetricsCollector bridgeCollector = kafkaCollector.toBuilder()
