@@ -278,19 +278,6 @@ public class UserOperatorScalabilityPerformance extends AbstractST {
         });
     }
 
-    @Override
-    protected void afterEachMayOverride() {
-        // Override to use sequential (non-async) resource cleanup.
-        // The default `deleteResources(true)` spawns a CompletableFuture per tracked resource.
-        // With 2000 KafkaUsers on the stack, this creates 2000 concurrent deletion threads that
-        // overwhelm the K8s API server on slow GHA runners and eventually run into deadlock/starvation
-        //
-        // note: remove this when https://github.com/skodjob/kubetest4j 1.1.0 is released.
-        if (!Environment.SKIP_TEARDOWN) {
-            KubeResourceManager.get().deleteResources(false);
-        }
-    }
-
     @BeforeAll
     void setUp() {
         SetupClusterOperator
