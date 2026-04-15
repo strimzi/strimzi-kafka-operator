@@ -102,7 +102,7 @@ public class TopicOperatorConfig {
     public static final ConfigParameter<String> CRUISE_CONTROL_API_USER_PATH = new ConfigParameter<>("STRIMZI_CRUISE_CONTROL_API_USER_PATH", ConfigParameterParser.STRING, "/etc/eto-cc-api/" + CruiseControlApiProperties.TOPIC_OPERATOR_USERNAME_KEY, CONFIG_VALUES);
     /** Cruise Control: password file location. */
     public static final ConfigParameter<String> CRUISE_CONTROL_API_PASS_PATH = new ConfigParameter<>("STRIMZI_CRUISE_CONTROL_API_PASS_PATH", ConfigParameterParser.STRING, "/etc/eto-cc-api/" + CruiseControlApiProperties.TOPIC_OPERATOR_PASSWORD_KEY, CONFIG_VALUES);
-    /** Size of the thread pool for user operations done by KafkaUserOperator and the classes used by it */
+    /** Size of the thread pool for user operations done by Topic Operator and the classes used by it */
     public static final ConfigParameter<Integer> TOPIC_OPERATIONS_THREAD_POOL_SIZE = new ConfigParameter<>("STRIMZI_TOPIC_OPERATIONS_THREAD_POOL_SIZE", INTEGER, "4", CONFIG_VALUES);
 
     private final Map<String, Object> map;
