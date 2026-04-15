@@ -43,14 +43,14 @@ Multi-module Maven project.
 ## Developer Notes
 
 ### Common Development Tasks
-- **CRD Changes**: After modifying `api/` module, run `make crd_install` to regenerate CRDs in:
+- **CRD Changes**: After modifying `api/` module, need to build to regenerate CRDs in:
    - `api/src/test/resources/crds/`
    - `packaging/install/cluster-operator/`
    - `packaging/helm-charts/helm3/strimzi-kafka-operator/crds/`
 - **Kafka Version Updates**: See [KAFKA_VERSIONS.md](development-docs/KAFKA_VERSIONS.md)
-- **Generated Code**: Never edit directly:
+- **Generated Code** (Never edit directly):
    - Sundrio builders/fluent classes (from annotations)
-   - Config model classes (from Kafka source)
+   - Config Model JSONs (from Kafka source)
    - Files in `target/` or marked `@Generated`
 - **Container Images**: Built via `docker-images/` Makefiles, based on `docker-images/base/`
 - **Debugging**: See [DEBUGGING.md](development-docs/DEBUGGING.md) for remote debugging setup
