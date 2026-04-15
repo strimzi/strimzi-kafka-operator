@@ -9,7 +9,17 @@ See [README.md](README.md) for project overview, quick starts, and community inf
 
 Multi-module Maven project.
 
-- Java runtime, Kafka client and Fabric8 Kubernetes client versions: See `pom.xml`
+### Requirements
+
+- **Java**: Java 21
+- **Build tools**: Maven 3.5+, make, bash
+- **Helm**: Helm 3 (for Helm chart packaging and testing)
+- **Container runtime**: Docker or Podman (use `DOCKER_CMD=podman` for Podman)
+- **Kubernetes cluster**: Required for integration/system tests (minikube, kind, or remote cluster)
+
+### Key Dependencies
+
+- Kafka client and Fabric8 Kubernetes client versions: See `pom.xml`
 - Supported Kafka versions (for cluster deployment): See `kafka-versions.yaml`
 
 ### Modules
@@ -36,45 +46,59 @@ Multi-module Maven project.
 
 ## Contributing
 
-- **Commit sign-off (DCO)**: Required on all commits. See [CONTRIBUTING.md](CONTRIBUTING.md)
-- **Code style**: Enforced by checkstyle. Config: `.checkstyle/checkstyle.xml`
-- **Development setup**: See [DEV_GUIDE.md](development-docs/DEV_GUIDE.md)
+- **Commit sign-off (DCO)** (REQUIRED on all commits): always use `git commit -s`
+  - If forgotten: `git commit --amend -s` to fix last commit
+  - CI will fail without sign-off
+  - More info: [CONTRIBUTING.md](CONTRIBUTING.md)
+
+- **Code style**: Enforced by checkstyle (runs in CI on all PRs)
+  - Config: `.checkstyle/checkstyle.xml`
+  - Run locally: `mvn checkstyle:check`
+  - CI will fail if checkstyle errors are found
 
 ## Developer Notes
 
 ### Common Development Tasks
-- **CRD Changes**: After modifying `api/` module, need to build to regenerate CRDs in:
+
+**Building:**
+- Build project: `make all` (compiles Java, runs tests, builds Docker images)
+- Clean build artifacts: `make clean`
+- Customize Maven behavior: Use `MVN_ARGS` environment variable
+  - Skip all tests: `MVN_ARGS=-DskipTests make all`
+  - Skip integration tests only: `MVN_ARGS=-DskipITs make all`
+- Build specific module: Run `make all` or `make clean` from module directory (`MVN_ARGS` works here too)
+
+**Testing:**
+- Unit tests only: `mvn test`
+- Unit + integration tests: `mvn verify`
+- System tests (requires Kubernetes cluster): see [TESTING.md](development-docs/TESTING.md)
+
+**CRD Changes:** If you changed anything in the `api/` module:
+1. Run `make all` in the `api/` module to update generated files
+2. Run `make crd_install` to update derived CRDs in:
    - `api/src/test/resources/crds/`
    - `packaging/install/cluster-operator/`
    - `packaging/helm-charts/helm3/strimzi-kafka-operator/crds/`
-- **Kafka Version Updates**: See [KAFKA_VERSIONS.md](development-docs/KAFKA_VERSIONS.md)
-- **Generated Code** (Never edit directly):
-   - Sundrio builders/fluent classes (from annotations)
-   - Config Model JSONs (from Kafka source)
-   - Files in `target/` or marked `@Generated`
-- **Container Images**: Built via `docker-images/` Makefiles, based on `docker-images/base/`
-- **Debugging**: See [DEBUGGING.md](development-docs/DEBUGGING.md) for remote debugging setup
 
-## Additional Developer Resources
+**Generated Code** (Never edit directly):
+- Sundrio builders/fluent classes (generated from annotations)
+- Config Model JSONs (generated from Kafka source)
+- Files in `target/` directories or marked `@Generated`
 
-- **Debugging**: [DEBUGGING.md](development-docs/DEBUGGING.md) - Remote debugging operators and Kafka brokers
-- **Kafka Versions**: [KAFKA_VERSIONS.md](development-docs/KAFKA_VERSIONS.md) - Adding/removing Kafka versions
-- **Release Process**: [RELEASE.md](development-docs/RELEASE.md) - Release checklist and procedures
-- **Governance**: [GOVERNANCE.md](GOVERNANCE.md) - Project governance structure
-- **Version Support**: [KAFKA_VERSION_SUPPORT.md](KAFKA_VERSION_SUPPORT.md) - Kafka version support policy
-
-## Build & Test
-
-- **Building**: See [DEV_GUIDE.md](development-docs/DEV_GUIDE.md) for build prerequisites, commands, and options.
-- **Testing**: See [TESTING.md](development-docs/TESTING.md) for comprehensive testing guide.
+**Container Images:**
+- Built via `docker-images/` Makefiles
+- Base images in `docker-images/base/`
+- Use `DOCKER_CMD=podman` to use Podman instead of Docker
+- Environment variables for custom registry:
+  - `DOCKER_ORG`: your registry organization/username (e.g., Docker Hub or Quay.io username, default: `$USER`)
+  - `DOCKER_REGISTRY`: registry to use (e.g., `docker.io`, `quay.io`, default: `docker.io`)
+  - `DOCKER_TAG`: image tag (default: `latest`)
 
 ## Documentation
 
 User-facing documentation is in `documentation/` folder (AsciiDoc format):
-- **Overview guide** - Key concepts and features
-- **Deploying and Managing guide** - Deployment instructions and best practices
-- **API Reference** - Detailed configuration reference
+- **Overview guide**: Key concepts and features
+- **Deploying and Managing guide**: Deployment instructions and best practices
+- **API Reference**: Detailed configuration reference
 
-Published documentation available at [strimzi.io/documentation](https://strimzi.io/documentation/).
-
-For contributing to documentation, see the documentation related [README.md](documentation/README.md) and the [Documentation Contributor Guide](https://strimzi.io/contributing/guide/).
+For contributing to documentation, see the documentation related [README.md](documentation/README.md).
