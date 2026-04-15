@@ -1131,34 +1131,35 @@ public class CaReconcilerReconcileCasTest {
         // Generate combined Pem files with CA chain in correct order
         String validCombinedPem;
         try (FileInputStream int2CertFis = new FileInputStream(intermediateCert2);
-             FileInputStream int1CertFis = new FileInputStream(intermediateCert1);
-             FileInputStream rootCertFis = new FileInputStream(rootCert)) {
-            String combinedPem = String.join("\n",
-                    new String(int2CertFis.readAllBytes(), StandardCharsets.US_ASCII),
-                    new String(int1CertFis.readAllBytes(), StandardCharsets.US_ASCII),
-                    new String(rootCertFis.readAllBytes(), StandardCharsets.US_ASCII));
-            validCombinedPem = Base64.getEncoder().encodeToString(combinedPem.getBytes(StandardCharsets.US_ASCII));
-        }
+             try (FileInputStream int1CertFis = new FileInputStream(intermediateCert1)) {
+                 FileInputStream rootCertFis = new FileInputStream(rootCert)) {
+                 String combinedPem = String.join("\n",
+                        new String(int2CertFis.readAllBytes(), StandardCharsets.US_ASCII),
+                        new String(int1CertFis.readAllBytes(), StandardCharsets.US_ASCII),
+                        new String(rootCertFis.readAllBytes(), StandardCharsets.US_ASCII));
+                 validCombinedPem = Base64.getEncoder().encodeToString(combinedPem.getBytes(StandardCharsets.US_ASCII));
+                 }
 
-        Secret initialClusterCaKeySecret = ResourceUtils.createInitialCaKeySecret(NAMESPACE, NAME, AbstractModel.clusterCaKeySecretName(NAME), caKey);
-        Secret initialClusterCaCertSecret = ResourceUtils.createInitialCaCertSecret(NAMESPACE, NAME, AbstractModel.clusterCaCertSecretName(NAME), validCombinedPem, null, null);
-        Secret initialClientsCaKeySecret = ResourceUtils.createInitialCaKeySecret(NAMESPACE, NAME, KafkaResources.clientsCaKeySecretName(NAME), caKey);
-        Secret initialClientsCaCertSecret = ResourceUtils.createInitialCaCertSecret(NAMESPACE, NAME, KafkaResources.clientsCaCertificateSecretName(NAME), validCombinedPem, null, null);
+                 Secret initialClusterCaKeySecret = ResourceUtils.createInitialCaKeySecret(NAMESPACE, NAME, AbstractModel.clusterCaKeySecretName(NAME), caKey);
+                 Secret initialClusterCaCertSecret = ResourceUtils.createInitialCaCertSecret(NAMESPACE, NAME, AbstractModel.clusterCaCertSecretName(NAME), validCombinedPem, null, null);
+                 Secret initialClientsCaKeySecret = ResourceUtils.createInitialCaKeySecret(NAMESPACE, NAME, KafkaResources.clientsCaKeySecretName(NAME), caKey);
+                 Secret initialClientsCaCertSecret = ResourceUtils.createInitialCaCertSecret(NAMESPACE, NAME, KafkaResources.clientsCaCertificateSecretName(NAME), validCombinedPem, null, null);
 
-        secrets.add(initialClusterCaCertSecret);
-        secrets.add(initialClusterCaKeySecret);
-        secrets.add(initialClientsCaCertSecret);
-        secrets.add(initialClientsCaKeySecret);
+                 secrets.add(initialClusterCaCertSecret);
+                 secrets.add(initialClusterCaKeySecret);
+                 secrets.add(initialClientsCaCertSecret);
+                 secrets.add(initialClientsCaKeySecret);
 
-        Checkpoint async = context.checkpoint();
-        reconcileCas(vertx, certificateAuthority, certificateAuthority)
-                .onComplete(context.succeeding(v -> context.verify(() -> {
-                    verify(supplier.secretOperations, times(0)).reconcile(any(), eq(NAMESPACE), eq(AbstractModel.clusterCaCertSecretName(NAME)), any(Secret.class));
-                    verify(supplier.secretOperations, times(0)).reconcile(any(), eq(NAMESPACE), eq(AbstractModel.clusterCaKeySecretName(NAME)), any(Secret.class));
-                    verify(supplier.secretOperations, times(0)).reconcile(any(), eq(NAMESPACE), eq(KafkaResources.clientsCaCertificateSecretName(NAME)), any(Secret.class));
-                    verify(supplier.secretOperations, times(0)).reconcile(any(), eq(NAMESPACE), eq(KafkaResources.clientsCaKeySecretName(NAME)), any(Secret.class));
-                    async.flag();
-                })));
+                 Checkpoint async = context.checkpoint();
+                 reconcileCas(vertx, certificateAuthority, certificateAuthority)
+                    .onComplete(context.succeeding(v -> context.verify(() -> {
+                        verify(supplier.secretOperations, times(0)).reconcile(any(), eq(NAMESPACE), eq(AbstractModel.clusterCaCertSecretName(NAME)), any(Secret.class));
+                        verify(supplier.secretOperations, times(0)).reconcile(any(), eq(NAMESPACE), eq(AbstractModel.clusterCaKeySecretName(NAME)), any(Secret.class));
+                        verify(supplier.secretOperations, times(0)).reconcile(any(), eq(NAMESPACE), eq(KafkaResources.clientsCaCertificateSecretName(NAME)), any(Secret.class));
+                        verify(supplier.secretOperations, times(0)).reconcile(any(), eq(NAMESPACE), eq(KafkaResources.clientsCaKeySecretName(NAME)), any(Secret.class));
+                        async.flag();
+                    })));
+             }
     }
 
     @Test
