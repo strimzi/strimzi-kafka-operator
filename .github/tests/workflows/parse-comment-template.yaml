@@ -43,6 +43,7 @@ jobs:
           EXPECT_GROUPS: ${{ env.EXPECT_GROUPS }}
           EXPECT_KAFKA: ${{ env.EXPECT_KAFKA }}
           EXPECT_KUBE: ${{ env.EXPECT_KUBE }}
+          EXPECT_KIND: ${{ env.EXPECT_KIND }}
           EXPECT_ARCHITECTURE: ${{ env.EXPECT_ARCHITECTURE }}
           EXPECT_AGENT: ${{ env.EXPECT_AGENT }}
           EXPECT_STRIMZI_FEATURE_GATES: ${{ env.EXPECT_STRIMZI_FEATURE_GATES }}
@@ -59,6 +60,7 @@ jobs:
           ACTUAL_GROUPS='${{ steps.parse.outputs.groups }}'
           ACTUAL_KAFKA='${{ steps.parse.outputs.kafkaVersion }}'
           ACTUAL_KUBE='${{ steps.parse.outputs.kubeVersion }}'
+          ACTUAL_KIND='${{ steps.parse.outputs.kindVersion }}'
           ACTUAL_ARCHITECTURE='${{ steps.parse.outputs.architecture }}'
           ACTUAL_AGENT='${{ steps.parse.outputs.agent }}'
           ACTUAL_STRIMZI_FEATURE_GATES='${{ steps.parse.outputs.strimzi_feature_gates }}'
@@ -80,6 +82,8 @@ jobs:
           printf 'EXPECT_KAFKA=%q\n'  "$EXPECT_KAFKA"
           printf 'ACTUAL_KUBE=%q\n'  "$ACTUAL_KUBE"
           printf 'EXPECT_KUBE=%q\n'  "$EXPECT_KUBE"
+          printf 'ACTUAL_KIND=%q\n'  "$ACTUAL_KIND"
+          printf 'EXPECT_KIND=%q\n'  "$EXPECT_KIND"
           printf 'ACTUAL_ARCHITECTURE=%q\n'  "$ACTUAL_ARCHITECTURE"
           printf 'EXPECT_ARCHITECTURE=%q\n'  "$EXPECT_ARCHITECTURE"
           printf 'ACTUAL_AGENT=%q\n'  "$ACTUAL_AGENT"
@@ -114,6 +118,9 @@ jobs:
           fi
           if [[ "${EXPECT_KUBE+defined}" == "defined" && "$ACTUAL_KUBE"  != "$EXPECT_KUBE" ]]; then
             echo "❌ kubeVersion mismatch";  exit 1
+          fi
+          if [[ "${EXPECT_KIND+defined}" == "defined" && "$ACTUAL_KIND"  != "$EXPECT_KIND" ]]; then
+            echo "❌ kindVersion mismatch";  exit 1
           fi
           if [[ "${EXPECT_ARCHITECTURE+defined}" == "defined" && "$ACTUAL_ARCHITECTURE"  != "$EXPECT_ARCHITECTURE" ]]; then
             echo "❌ architecture mismatch";  exit 1

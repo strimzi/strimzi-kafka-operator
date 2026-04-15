@@ -40,39 +40,17 @@ jobs:
       pull-requests: write
       statuses: write
     outputs:
-      pipelineList: ${{ steps.parse.outputs.pipelineList }}
-      profileList: ${{ steps.parse.outputs.profileList }}
-      agent: ${{ steps.parse.outputs.agent }}
-      architecture: ${{ steps.parse.outputs.architecture }}
-      strimzi_feature_gates: ${{ steps.parse.outputs.strimzi_feature_gates }}
-      strimzi_rbac_scope: ${{ steps.parse.outputs.strimzi_rbac_scope }}
-      cluster_operator_install_type: ${{ steps.parse.outputs.cluster_operator_install_type }}
-      groups: ${{ steps.parse.outputs.groups }}
-      tests: ${{ steps.parse.outputs.tests }}
-      kafkaVersion: ${{ steps.parse.outputs.kafkaVersion }}
-      releaseVersion: ${{ steps.parse.outputs.releaseVersion }}
-      parallel: ${{ steps.parse.outputs.parallel }}
-      shouldRun: ${{ steps.should_run.outputs.shouldRun }}
-      kubeVersion: ${{ steps.parse.outputs.kubeVersion }}
       ref: ${{ steps.determine_ref.outputs.ref }}
       sha: ${{ steps.determine_ref.outputs.sha }}
+      shouldRun: ${{ steps.should_run.outputs.shouldRun }}
     steps:
       - name: Should Run
         id: should_run
-        uses: strimzi/github-actions/.github/actions/utils/should-run@main
+        uses: strimzi/github-actions/.github/actions/utils/should-run@v1
       - name: Determine checkout ref
         id: determine_ref
         if: steps.should_run.outputs.shouldRun == 'true'
-        uses: frawless/github-actions/.github/actions/utils/determine-ref@v6.7
-      - name: Parse Comment
-        id: parse
-        if: steps.should_run.outputs.shouldRun == 'true'
-        uses: strimzi/strimzi-kafka-operator/.github/actions/systemtests/parse-comment@main
-        with:
-          # Parameters from manual trigger via UI
-          releaseVersion: ${{ github.event.inputs.releaseVersion }}
-          kafkaVersion: ${{ github.event.inputs.kafkaVersion }}
-          pipeline: ${{ github.event.inputs.pipeline }}
+        uses: strimzi/github-actions/.github/actions/utils/determine-ref@v1
 
   check-rights:
     needs:
@@ -85,7 +63,7 @@ jobs:
       pull-requests: write
       statuses: write
     steps:
-      - uses: frawless/github-actions/.github/actions/utils/check-permissions@v6
+      - uses: strimzi/github-actions/.github/actions/utils/check-permissions@v1
 
   check-build:
     needs:
@@ -149,6 +127,20 @@ jobs:
       pull-requests: write
       statuses: write
     outputs:
+      pipelineList: ${{ steps.parse.outputs.pipelineList }}
+      profileList: ${{ steps.parse.outputs.profileList }}
+      agent: ${{ steps.parse.outputs.agent }}
+      architecture: ${{ steps.parse.outputs.architecture }}
+      strimzi_feature_gates: ${{ steps.parse.outputs.strimzi_feature_gates }}
+      strimzi_rbac_scope: ${{ steps.parse.outputs.strimzi_rbac_scope }}
+      cluster_operator_install_type: ${{ steps.parse.outputs.cluster_operator_install_type }}
+      groups: ${{ steps.parse.outputs.groups }}
+      tests: ${{ steps.parse.outputs.tests }}
+      kafkaVersion: ${{ steps.parse.outputs.kafkaVersion }}
+      releaseVersion: ${{ steps.parse.outputs.releaseVersion }}
+      parallel: ${{ steps.parse.outputs.parallel }}
+      kubeVersion: ${{ steps.parse.outputs.kubeVersion }}
+      kindVersion: ${{ steps.parse.outputs.kindVersion }}
       isValid: ${{ steps.validate.outputs.isValid }}
       message: ${{ steps.validate.outputs.message }}
       matrix: ${{ steps.gen.outputs.matrix }}
@@ -156,20 +148,28 @@ jobs:
       - uses: actions/checkout@v6
         with:
           ref: ${{ needs.parse-params.outputs.ref }}
+      - name: Parse Comment
+        id: parse
+        uses: ./.github/actions/systemtests/parse-comment
+        with:
+          # Parameters from manual trigger via UI
+          releaseVersion: ${{ github.event.inputs.releaseVersion }}
+          kafkaVersion: ${{ github.event.inputs.kafkaVersion }}
+          pipeline: ${{ github.event.inputs.pipeline }}
       - name: Generate Matrix for Validation
         id: gen
         uses: ./.github/actions/systemtests/generate-matrix
         with:
-          pipelines: ${{ needs.parse-params.outputs.pipelineList }}
-          profiles: ${{ needs.parse-params.outputs.profileList }}
-          default_agent: ${{ needs.parse-params.outputs.agent }}
-          default_arch: ${{ needs.parse-params.outputs.architecture }}
-          default_strimzi_feature_gates: ${{ needs.parse-params.outputs.strimzi_feature_gates }}
-          default_strimzi_rbac_scope: ${{ needs.parse-params.outputs.strimzi_rbac_scope }}
-          default_cluster_operator_install_type: ${{ needs.parse-params.outputs.cluster_operator_install_type }}
-          default_parallel: ${{ needs.parse-params.outputs.parallel }}
-          default_tests: ${{ needs.parse-params.outputs.tests }}
-          default_groups: ${{ needs.parse-params.outputs.groups }}
+          pipelines: ${{ steps.parse.outputs.pipelineList }}
+          profiles: ${{ steps.parse.outputs.profileList }}
+          default_agent: ${{ steps.parse.outputs.agent }}
+          default_arch: ${{ steps.parse.outputs.architecture }}
+          default_strimzi_feature_gates: ${{ steps.parse.outputs.strimzi_feature_gates }}
+          default_strimzi_rbac_scope: ${{ steps.parse.outputs.strimzi_rbac_scope }}
+          default_cluster_operator_install_type: ${{ steps.parse.outputs.cluster_operator_install_type }}
+          default_parallel: ${{ steps.parse.outputs.parallel }}
+          default_tests: ${{ steps.parse.outputs.tests }}
+          default_groups: ${{ steps.parse.outputs.groups }}
           runnerArch: "amd64"
       - name: Validate Matrix
         id: validate
@@ -210,7 +210,7 @@ jobs:
         always() &&needs.parse-params.outputs.shouldRun == 'true' && 
         (needs.check-rights.result == 'success' || github.event_name == 'pull_request') && 
         needs.generate-matrix.outputs.isValid == 'true' && 
-        needs.parse-params.outputs.releaseVersion == 'latest' &&
+        needs.generate-matrix.outputs.releaseVersion == 'latest' &&
         needs.check-build.outputs.buildRunId == ''
       }}
     runs-on: ubuntu-latest
@@ -260,10 +260,10 @@ jobs:
     # Run only if properly triggered, permissions check passed, matrix is valid, and the run is not for release (already built images)
     if: |-
       ${{ 
-        always() &&needs.parse-params.outputs.shouldRun == 'true' && 
+        always() && needs.parse-params.outputs.shouldRun == 'true' && 
         (needs.check-rights.result == 'success' || github.event_name == 'pull_request')&& 
         needs.generate-matrix.outputs.isValid == 'true' && 
-        needs.parse-params.outputs.releaseVersion == 'latest' && 
+        needs.generate-matrix.outputs.releaseVersion == 'latest' && 
         needs.build-artifacts.result != 'failure' &&
         needs.check-build.outputs.buildRunId == ''
       }}
@@ -322,9 +322,10 @@ jobs:
       statuses: write
     uses: ./.github/workflows/run-system-tests.yml
     with:
-      releaseVersion: ${{ needs.parse-params.outputs.releaseVersion }}
-      kafkaVersion: ${{ needs.parse-params.outputs.kafkaVersion }}
-      kubeVersion: ${{ needs.parse-params.outputs.kubeVersion }}
+      releaseVersion: ${{ needs.generate-matrix.outputs.releaseVersion }}
+      kafkaVersion: ${{ needs.generate-matrix.outputs.kafkaVersion }}
+      kubeVersion: ${{ needs.generate-matrix.outputs.kubeVersion }}
+      kindVersion: ${{ needs.generate-matrix.outputs.kindVersion }}
       # Checkout ref params
       ref: ${{ needs.parse-params.outputs.ref }}
       sha: ${{ needs.parse-params.outputs.sha }}
@@ -388,7 +389,7 @@ jobs:
         needs.check-rights.result == 'success' &&
         github.event_name != 'pull_request' &&
         needs.generate-matrix.outputs.isValid == 'true' &&
-        (contains(needs.parse-params.outputs.profileList, 'performance') || contains(needs.parse-params.outputs.pipelineList, 'performance'))
+        (contains(needs.generate-matrix.outputs.profileList, 'performance') || contains(needs.generate-matrix.outputs.pipelineList, 'performance'))
       }}
     runs-on: ubuntu-latest
     timeout-minutes: 10

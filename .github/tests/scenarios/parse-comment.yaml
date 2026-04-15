@@ -12,7 +12,6 @@ scenarios:
       strimzi_feature_gates: ""
       strimzi_rbac_scope: ""
       cluster_operator_install_type: "yaml"
-
       kube: "latest"
       release: "latest"
 
@@ -29,7 +28,6 @@ scenarios:
       strimzi_feature_gates: ""
       strimzi_rbac_scope: ""
       cluster_operator_install_type: "yaml"
-
       kube: "latest"
       release: "latest"
 
@@ -46,7 +44,6 @@ scenarios:
       strimzi_feature_gates: ""
       strimzi_rbac_scope: ""
       cluster_operator_install_type: "yaml"
-
       kube: "1.33.1"
       architecture: "arm64"
       agent: "strimzi-agent"
@@ -64,7 +61,6 @@ scenarios:
       strimzi_feature_gates: ""
       strimzi_rbac_scope: ""
       cluster_operator_install_type: "yaml"
-
       kube: "latest"
       release: "latest"
 
@@ -80,7 +76,6 @@ scenarios:
       strimzi_feature_gates: ""
       strimzi_rbac_scope: ""
       cluster_operator_install_type: "yaml"
-
       kube: "latest"
       release: "latest"
 
@@ -97,7 +92,6 @@ scenarios:
       strimzi_feature_gates: "+SomeNewFeatureGate"
       strimzi_rbac_scope: "NAMESPACE"
       cluster_operator_install_type: "helm"
-
       kube: "latest"
       release: "latest"
 
@@ -114,7 +108,6 @@ scenarios:
       strimzi_feature_gates: ""
       strimzi_rbac_scope: ""
       cluster_operator_install_type: "yaml"
-
       kube: "latest"
       release: "latest"
 
@@ -131,7 +124,6 @@ scenarios:
       strimzi_feature_gates: ""
       strimzi_rbac_scope: ""
       cluster_operator_install_type: "yaml"
-
       kube: "latest"
       release: "latest"
 
@@ -148,7 +140,6 @@ scenarios:
       strimzi_feature_gates: ""
       strimzi_rbac_scope: ""
       cluster_operator_install_type: "yaml"
-
       kube: "latest"
       release: "latest"
 
@@ -165,7 +156,6 @@ scenarios:
       strimzi_feature_gates: ""
       strimzi_rbac_scope: ""
       cluster_operator_install_type: "yaml"
-
       kube: "latest"
       release: "latest"
 
@@ -182,7 +172,6 @@ scenarios:
       strimzi_feature_gates: ""
       strimzi_rbac_scope: ""
       cluster_operator_install_type: "yaml"
-
       kube: "latest"
       release: "latest"
 
@@ -198,7 +187,6 @@ scenarios:
       cluster_operator_install_type: "yaml"
       kafka: "4.1.0"
       release: "0.48.0"
-
       kube: "latest"
 
   - id: dispatch-custom
@@ -215,7 +203,6 @@ scenarios:
       groups: ""
       kafka: "3.5.0"
       release: "1.0.0"
-
       kube: "latest"
 
   - id: dispatch-empty
@@ -232,7 +219,6 @@ scenarios:
       groups: ""
       kafka: "latest"
       release: "latest"
-
       kube: "latest"
 
   - id: comment-with-backticks
@@ -248,7 +234,6 @@ scenarios:
       strimzi_feature_gates: ""
       strimzi_rbac_scope: ""
       cluster_operator_install_type: "yaml"
-
       kube: "latest"
       release: "latest"
 
@@ -265,7 +250,6 @@ scenarios:
       strimzi_feature_gates: ""
       strimzi_rbac_scope: ""
       cluster_operator_install_type: "yaml"
-
       kube: "latest"
       release: "latest"
 
@@ -282,7 +266,6 @@ scenarios:
       strimzi_feature_gates: ""
       strimzi_rbac_scope: ""
       cluster_operator_install_type: "yaml"
-
       kube: "latest"
       release: "latest"
 
@@ -299,6 +282,22 @@ scenarios:
       strimzi_feature_gates: ""
       strimzi_rbac_scope: ""
       cluster_operator_install_type: "yaml"
-
       kube: "latest"
+      release: "latest"
+
+  - id: comment-kind-version
+    description: "Comment with kindVersion parameter"
+    event: issue_comment
+    fixture: .github/tests/events/parse-comment/issue_comment_12.json
+    expectations:
+      pipelines: ""
+      profiles: ""
+      tests: ""
+      groups: ""
+      kafka: "latest"
+      strimzi_feature_gates: ""
+      strimzi_rbac_scope: ""
+      cluster_operator_install_type: "yaml"
+      kube: "latest"
+      kind: "0.29.0"
       release: "latest"
