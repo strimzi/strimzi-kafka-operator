@@ -10,6 +10,7 @@ For more information about the build process, see [Dev guide document](DEV_GUIDE
 - [Test Phases](#test-phases)
 - [Cluster Operator log check](#cluster-operator-log-check)
 - [Available Test Groups](#available-test-groups)
+- [System Test Documentation](#system-test-documentation)
 - [Environment Variables](#environment-variables)
 - [Use Remote Cluster](#use-remote-cluster)
 - [Helper Script](#helper-script)
@@ -289,6 +290,19 @@ There is also a mvn profile for the main groups - `acceptance`, `regression`, `s
 If you want to specify the profile, use the `-P` flag - for example `-Psmoke`.
 
 All available test groups are listed in [Constants](systemtest/src/main/java/io/strimzi/systemtest/Constants.java) class.
+
+## System Test Documentation
+
+Each system test suite is documented in a dedicated Markdown file under [development-docs/systemtests](systemtests/).
+These files are auto-generated from `@SuiteDoc` and `@TestDoc` annotations in the test source code and describe:
+
+* The purpose of the test suite
+* Setup steps executed before tests (`@BeforeAll`)
+* Individual test methods with their step-by-step actions and expected results
+* Labels assigned to each test suite and test method
+
+Tests are also organized by label in the [systemtests/labels](systemtests/labels/) directory.
+Each label file groups all test methods sharing that label (e.g., `kafka`, `connect`, `bridge`, `cruise-control`) and links back to the corresponding test suite documentation.
 
 ## Environment variables
 
