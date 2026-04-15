@@ -27,7 +27,7 @@ runs:
 
     - name: Generate performance report
       id: generate_report
-      uses: actions/actions/upload-artifact@v9
+      uses: actions/github-script@v9
       env:
         PERF_DIR: ${{ inputs.artifacts-path }}
       with:
