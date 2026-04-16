@@ -67,7 +67,10 @@ public class KafkaClusterSpec implements HasConfigurableMetrics, HasConfigurable
             + "cruise.control.metrics.topic.num.partitions, cruise.control.metrics.topic.replication.factor, cruise.control.metrics.topic.retention.ms, "
             + "cruise.control.metrics.topic.auto.create.retries, cruise.control.metrics.topic.auto.create.timeout.ms, "
             + "cruise.control.metrics.topic.min.insync.replicas, "
-            + "controller.quorum.election.backoff.max.ms, controller.quorum.election.timeout.ms, controller.quorum.fetch.timeout.ms"; // KRaft options
+            + "controller.quorum.election.backoff.max.ms, controller.quorum.election.timeout.ms, controller.quorum.fetch.timeout.ms, " // KRaft options
+            + "inter.broker.listener.name, control.plane.listener.name, " // cluster-stretching: allow overriding inter-broker and control-plane listener names
+            + "zookeeper.connect, zookeeper.clientCnxnSocket, zookeeper.ssl.client.enable, " // cluster-stretching: allow pointing to external ZooKeeper
+            + "cruise.control.metrics.topic, cruise.control.metrics.reporter.bootstrap.servers"; // cluster-stretching: allow overriding CC metrics topic and bootstrap servers
 
     protected Storage storage;
     private String version;

@@ -1806,9 +1806,11 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
                         .withAuthorization(cluster, authorization)
                         .withCruiseControl(cluster, ccMetricsReporter, node.broker())
                         .withTieredStorage(cluster, tieredStorage)
-                        .withQuotas(cluster, quotas)
-                        .withUserConfiguration(configuration, node.broker() && ccMetricsReporter != null);
+                        .withQuotas(cluster, quotas);
         withZooKeeperOrKRaftConfiguration(pool, node, builder);
+        // User configuration is applied last so that user-provided overrides (e.g. inter.broker.listener.name,
+        // zookeeper.connect, control.plane.listener.name) take precedence via Kafka's last-write-wins semantics.
+        builder.withUserConfiguration(configuration, node.broker() && ccMetricsReporter != null);
         return builder.build().trim();
     }
 

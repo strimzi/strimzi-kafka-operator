@@ -59,6 +59,8 @@ public class KafkaBrokerConfigurationDiff extends AbstractJsonDiff {
             + "|.*-[0-9]{2,5}\\.scram-sha-512\\.sasl\\.jaas\\.config"
             + "|.*-[0-9]{2,5}\\.sasl\\.enabled\\.mechanisms"
             + "|advertised\\.listeners"
+            + "|inter\\.broker\\.listener\\.name"
+            + "|control\\.plane\\.listener\\.name"
             + "|zookeeper\\.connect"
             + "|zookeeper\\.ssl\\..*"
             + "|zookeeper\\.clientCnxnSocket"

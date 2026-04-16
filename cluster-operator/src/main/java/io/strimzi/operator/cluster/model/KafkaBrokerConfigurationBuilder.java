@@ -354,8 +354,10 @@ public class KafkaBrokerConfigurationBuilder {
             }
         }
 
-        // Control plane listener is on all ZooKeeper based brokers, needed during migration as well, when broker still using ZooKeeper but KRaft controllers are ready
-        if (node.broker() && kafkaMetadataConfigState.isZooKeeperToMigration()) {
+        // Control plane listener property is only needed during ZK-to-KRaft migration (PRE_MIGRATION / MIGRATION).
+        // In pure ZK mode, omitting it causes Kafka to default to inter.broker.listener.name,
+        // which is required for cluster stretching where the control plane must use the shared cross-env listener.
+        if (node.broker() && !kafkaMetadataConfigState.isZooKeeper() && kafkaMetadataConfigState.isZooKeeperToMigration()) {
             writer.println("control.plane.listener.name=" + CONTROL_PLANE_LISTENER_NAME);
         }
 
@@ -867,6 +869,16 @@ public class KafkaBrokerConfigurationBuilder {
 
             // Configure the configuration providers => we have to inject the Strimzi ones
             configProviders(userConfig);
+
+            // In POST_MIGRATION or KRAFT states, brokers run in pure KRaft mode and must not
+            // have ZooKeeper configuration. User-provided ZK overrides (used during cluster
+            // stretching) are stripped automatically so they can remain in the CR for rollback
+            // safety without breaking the broker config.
+            if (node.broker() && kafkaMetadataConfigState.isPostMigrationToKRaft()) {
+                userConfig.removeConfigOption("zookeeper.connect");
+                userConfig.removeConfigOption("zookeeper.clientCnxnSocket");
+                userConfig.removeConfigOption("zookeeper.ssl.client.enable");
+            }
 
             if (injectCcMetricsReporter)  {
                 // We configure the Cruise Control Metrics Reporter is needed
