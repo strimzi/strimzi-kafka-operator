@@ -93,6 +93,7 @@ Multi-module Maven project.
   - `DOCKER_ORG`: your registry organization/username (e.g., Docker Hub or Quay.io username, default: `$USER`)
   - `DOCKER_REGISTRY`: registry to use (e.g., `docker.io`, `quay.io`, default: `docker.io`)
   - `DOCKER_TAG`: image tag (default: `latest`)
+  - `DOCKER_ARCHITECTURE`: target architecture for container images (e.g., `amd64`, `arm64`)
 
 ## Documentation
 
