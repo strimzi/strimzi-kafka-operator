@@ -9,7 +9,6 @@ import io.fabric8.kubernetes.api.model.OwnerReferenceBuilder;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
-import io.strimzi.api.ResourceAnnotations;
 import io.strimzi.api.kafka.model.common.CertificateAuthority;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
@@ -577,8 +576,8 @@ public class CaReconciler {
 
     private boolean isForceReplace(Secret caSecret) {
         if (caSecret != null && caSecret.getMetadata() != null &&
-                Annotations.hasAnnotation(caSecret, ResourceAnnotations.ANNO_STRIMZI_IO_FORCE_REPLACE)) {
-            return Annotations.booleanAnnotation(caSecret, ResourceAnnotations.ANNO_STRIMZI_IO_FORCE_REPLACE, false);
+                Annotations.hasAnnotation(caSecret, Annotations.ANNO_STRIMZI_IO_FORCE_REPLACE)) {
+            return Annotations.booleanAnnotation(caSecret, Annotations.ANNO_STRIMZI_IO_FORCE_REPLACE, false);
         } else {
             return false;
         }
@@ -586,8 +585,8 @@ public class CaReconciler {
 
     private boolean isForceRenew(Secret caSecret) {
         if (caSecret != null && caSecret.getMetadata() != null &&
-                Annotations.hasAnnotation(caSecret, ResourceAnnotations.ANNO_STRIMZI_IO_FORCE_RENEW)) {
-            return Annotations.booleanAnnotation(caSecret, ResourceAnnotations.ANNO_STRIMZI_IO_FORCE_RENEW, false);
+                Annotations.hasAnnotation(caSecret, Annotations.ANNO_STRIMZI_IO_FORCE_RENEW)) {
+            return Annotations.booleanAnnotation(caSecret, Annotations.ANNO_STRIMZI_IO_FORCE_RENEW, false);
         } else {
             return false;
         }
