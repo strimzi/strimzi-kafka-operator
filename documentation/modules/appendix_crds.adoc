@@ -2689,6 +2689,12 @@ It must have the value `tls` for the type `KafkaUserTlsClientAuthentication`.
 |type
 |string
 |Must be `tls`.
+|validityDays
+|integer
+|Number of days for which the user certificate should be valid. If not configured, Clients CA configuration is used.
+|renewalDays
+|integer
+|Number of days before certificate expiration when the user certificate should be renewed. If not configured, Clients CA configuration is used.
 |====
 
 [id='type-KafkaUserTlsExternalClientAuthentication-{context}']

@@ -12,6 +12,7 @@
 * Add `UseBackgroundPodDeletion` feature gate (alpha, disabled by default) to use background deletion propagation when deleting pods during rolling updates. 
 * Strimzi Drain Cleaner updated to 1.6.0 (included in the Strimzi installation files)
 * Strimzi Access Operator updated to 0.3.0 - included in Strimzi installation files, examples, and documentation
+* Add possibility to configure mTLS `validityDays` and `renewalDays` for each `KafkaUser`
 
 ### Major changes, deprecations, and removals
 
