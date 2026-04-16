@@ -34,7 +34,7 @@ jobs:
           echo "Stored commit SHA: ${{ github.sha }}"
 
       - name: Upload build metadata
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: commit-sha.txt
           path: commit-sha.txt

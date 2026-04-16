@@ -19,7 +19,7 @@ runs:
       run: tar -cvpf documentation.tar ./documentation/html ./documentation/htmlnoheader ./documentation/pdf
       
     - name: Upload documentation artifact
-      uses: actions/upload-artifact@v5
+      uses: actions/upload-artifact@v7
       with:
         name: ${{ inputs.artifactName }}
         path: documentation.tar

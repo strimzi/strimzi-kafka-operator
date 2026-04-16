@@ -16,7 +16,7 @@ jobs:
 
       # Test the performance report generation step only (mocking download/upload steps)
       - id: perf-report
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         env:
           PERF_DIR: ${{ github.event.inputs.performance_dir }}
         with:
