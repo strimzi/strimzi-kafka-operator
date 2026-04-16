@@ -82,6 +82,8 @@ jobs:
           MVN_ARGS: "-B -DskipTests -Dmaven.javadoc.skip=true"
 
       - name: Save Kafka binaries cache
+        # Save maven cache only after pushes into default branch
+        if: ${{ github.event_name == 'push' && github.ref_name == github.event.repository.default_branch }}
         uses: actions/cache/save@v5
         with:
           path: docker-images/artifacts/binaries/kafka/archives
