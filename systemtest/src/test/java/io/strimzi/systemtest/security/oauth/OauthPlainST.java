@@ -556,6 +556,9 @@ public class OauthPlainST extends OauthAbstractST {
 
         String bridgeProducerName = "bridge-producer-" + testStorage.getClusterName();
 
+        // Create NetworkPolicy for HTTP producer to access Bridge
+        NetworkPolicyUtils.allowNetworkPolicyForBridgeClient(Environment.TEST_SUITE_NAMESPACE, oauthClusterName, bridgeProducerName);
+
         HttpProducerClient httpProducer = new HttpProducerClientBuilder()
             .withNamespaceName(Environment.TEST_SUITE_NAMESPACE)
             .withName(bridgeProducerName)

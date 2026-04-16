@@ -11,7 +11,6 @@ import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.ConfigMapKeySelector;
 import io.fabric8.kubernetes.api.model.ConfigMapKeySelectorBuilder;
 import io.fabric8.kubernetes.api.model.LabelSelector;
-import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.skodjob.annotations.Desc;
 import io.skodjob.annotations.Label;
 import io.skodjob.annotations.Step;
@@ -474,8 +473,9 @@ public class MetricsST extends AbstractST {
             .withComponent(KafkaBridgeMetricsComponent.create(namespaceFirst, bridgeClusterName))
             .build();
 
-        NetworkPolicyUtils.allowNetworkPolicySettingsForBridgeClients(testStorage.getNamespaceName(), testStorage.getProducerName(), new LabelSelectorBuilder().addToMatchLabels("app", testStorage.getProducerName()).build(), KafkaBridgeResources.componentName(bridgeClusterName));
-        NetworkPolicyUtils.allowNetworkPolicySettingsForBridgeClients(testStorage.getNamespaceName(), testStorage.getConsumerName(), new LabelSelectorBuilder().addToMatchLabels("app", testStorage.getConsumerName()).build(), KafkaBridgeResources.componentName(bridgeClusterName));
+        // Create NetworkPolicies for HTTP clients to access Bridge
+        NetworkPolicyUtils.allowNetworkPoliciesForBridgeClients(namespaceFirst, bridgeClusterName, testStorage.getProducerName(), testStorage.getConsumerName());
+
         // Attach consumer before producer
         HttpProducerConsumer httpProducerConsumer = new HttpProducerConsumerBuilder()
             .withNamespaceName(namespaceFirst)

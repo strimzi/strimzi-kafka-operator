@@ -37,6 +37,7 @@ import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.VerificationUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaBridgeUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
+import io.strimzi.systemtest.utils.kubeUtils.objects.NetworkPolicyUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.testclients.clients.http.HttpProducerConsumer;
 import io.strimzi.testclients.clients.http.HttpProducerConsumerBuilder;
@@ -102,6 +103,9 @@ class HttpBridgeST extends AbstractST {
     void testSendSimpleMessage() {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
+        // Create NetworkPolicy for HTTP producer to access Bridge
+        NetworkPolicyUtils.allowNetworkPolicyForBridgeClient(testStorage.getNamespaceName(), suiteTestStorage.getClusterName(), testStorage.getProducerName());
+
         final HttpProducerConsumer httpProducerConsumer = httpProducerConsumerBuilder
             .withProducerName(testStorage.getProducerName())
             .withTopicName(testStorage.getTopicName())
@@ -143,6 +147,9 @@ class HttpBridgeST extends AbstractST {
     )
     void testReceiveSimpleMessage() {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
+
+        // Create NetworkPolicy for HTTP consumer to access Bridge
+        NetworkPolicyUtils.allowNetworkPolicyForBridgeClient(testStorage.getNamespaceName(), suiteTestStorage.getClusterName(), testStorage.getConsumerName());
 
         KubeResourceManager.get().createResourceWithWait(KafkaTopicTemplates.topic(Environment.TEST_SUITE_NAMESPACE, testStorage.getTopicName(), suiteTestStorage.getClusterName()).build());
 

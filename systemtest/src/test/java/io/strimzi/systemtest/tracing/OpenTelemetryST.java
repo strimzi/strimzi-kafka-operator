@@ -27,6 +27,7 @@ import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.templates.specific.ScraperTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
+import io.strimzi.systemtest.utils.kubeUtils.objects.NetworkPolicyUtils;
 import io.strimzi.systemtest.utils.specific.TracingUtils;
 import io.strimzi.testclients.clients.http.HttpProducerClient;
 import io.strimzi.testclients.clients.http.HttpProducerClientBuilder;
@@ -369,6 +370,9 @@ public class OpenTelemetryST extends AbstractST {
         final String bridgeProducer = "bridge-producer";
         KubeResourceManager.get().createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getTopicName(), testStorage.getClusterName()).build());
 
+        // Create NetworkPolicy for HTTP producer to access Bridge
+        NetworkPolicyUtils.allowNetworkPolicyForBridgeClient(testStorage.getNamespaceName(), testStorage.getClusterName(), bridgeProducer);
+
         HttpProducerClient httpProducer = new HttpProducerClientBuilder()
             .withNamespaceName(testStorage.getNamespaceName())
             .withName(bridgeProducer)
@@ -437,6 +441,10 @@ public class OpenTelemetryST extends AbstractST {
         KubeResourceManager.get().createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getTopicName(), testStorage.getClusterName()).build());
 
         final String bridgeProducer = "bridge-producer";
+
+        // Create NetworkPolicy for HTTP producer to access Bridge
+        NetworkPolicyUtils.allowNetworkPolicyForBridgeClient(testStorage.getNamespaceName(), testStorage.getClusterName(), bridgeProducer);
+
         HttpProducerClient httpProducer = new HttpProducerClientBuilder()
             .withNamespaceName(testStorage.getNamespaceName())
             .withName(bridgeProducer)

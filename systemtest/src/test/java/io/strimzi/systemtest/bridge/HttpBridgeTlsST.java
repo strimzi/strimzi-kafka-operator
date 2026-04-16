@@ -37,8 +37,12 @@ import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaUserTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
+import io.strimzi.systemtest.utils.kubeUtils.objects.NetworkPolicyUtils;
+import io.strimzi.testclients.clients.http.HttpConsumerClient;
+import io.strimzi.testclients.clients.http.HttpConsumerClientBuilder;
 import io.strimzi.testclients.clients.http.HttpProducerConsumer;
 import io.strimzi.testclients.clients.http.HttpProducerConsumerBuilder;
+import io.strimzi.testclients.clients.kafka.KafkaProducerClientBuilder;
 import io.strimzi.testclients.clients.kafka.KafkaProducerConsumer;
 import io.strimzi.testclients.clients.kafka.KafkaProducerConsumerBuilder;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
@@ -91,6 +95,9 @@ class HttpBridgeTlsST extends AbstractST {
     void testSendSimpleMessageTls() {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
+        // Create NetworkPolicy for HTTP producer to access Bridge
+        NetworkPolicyUtils.allowNetworkPolicyForBridgeClient(testStorage.getNamespaceName(), suiteTestStorage.getClusterName(), testStorage.getProducerName());
+
         final HttpProducerConsumer httpProducerConsumer = httpProducerConsumerBuilder
             .withTopicName(testStorage.getTopicName())
             .withProducerName(testStorage.getProducerName())
@@ -129,6 +136,9 @@ class HttpBridgeTlsST extends AbstractST {
     )
     void testReceiveSimpleMessageTls() {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
+
+        // Create NetworkPolicy for HTTP consumer to access Bridge
+        NetworkPolicyUtils.allowNetworkPolicyForBridgeClient(testStorage.getNamespaceName(), suiteTestStorage.getClusterName(), testStorage.getConsumerName());
 
         final HttpProducerConsumer httpProducerConsumer = httpProducerConsumerBuilder
             .withTopicName(testStorage.getTopicName())
@@ -208,7 +218,6 @@ class HttpBridgeTlsST extends AbstractST {
 
     private void testWeirdUsername(String weirdUserName, KafkaListenerAuthentication auth,
                                    KafkaBridgeSpec spec, TestStorage testStorage) {
-        String bridgeProducerName = testStorage.getProducerName() + "-" + TestTags.BRIDGE;
         String bridgeConsumerName = testStorage.getConsumerName() + "-" + TestTags.BRIDGE;
 
         KubeResourceManager.get().createResourceWithWait(
@@ -230,9 +239,11 @@ class HttpBridgeTlsST extends AbstractST {
             .endSpec()
             .build());
 
-        HttpProducerConsumer httpProducerConsumer = new HttpProducerConsumerBuilder()
-            .withProducerName(bridgeProducerName)
-            .withConsumerName(bridgeConsumerName)
+        // Create NetworkPolicy for HTTP consumer to access Bridge
+        NetworkPolicyUtils.allowNetworkPolicyForBridgeClient(testStorage.getNamespaceName(), testStorage.getClusterName(), bridgeConsumerName);
+
+        HttpConsumerClient httpConsumer = new HttpConsumerClientBuilder()
+            .withName(bridgeConsumerName)
             .withHostname(KafkaBridgeResources.serviceName(testStorage.getClusterName()))
             .withTopicName(testStorage.getTopicName())
             .withMessageCount(testStorage.getMessageCount())
@@ -262,11 +273,10 @@ class HttpBridgeTlsST extends AbstractST {
             .endSpec()
             .build());
 
-        KubeResourceManager.get().createResourceWithWait(httpProducerConsumer.getConsumer().getJob());
+        KubeResourceManager.get().createResourceWithWait(httpConsumer.getJob());
 
-        final KafkaProducerConsumerBuilder producerConsumerBuilder = new KafkaProducerConsumerBuilder()
-            .withProducerName(testStorage.getProducerName())
-            .withConsumerName(testStorage.getConsumerName())
+        final KafkaProducerClientBuilder kafkaProducerBuilder = new KafkaProducerClientBuilder()
+            .withName(testStorage.getProducerName())
             .withNamespaceName(testStorage.getNamespaceName())
             .withMessageCount(testStorage.getMessageCount())
             .withTopicName(testStorage.getTopicName())
@@ -274,15 +284,15 @@ class HttpBridgeTlsST extends AbstractST {
 
         if (auth.getType().equals(TestConstants.TLS_LISTENER_DEFAULT_NAME)) {
             // tls producer
-            producerConsumerBuilder
+            kafkaProducerBuilder
                 .withAuthentication(ClientsAuthentication.configureTls(testStorage.getClusterName(), weirdUserName));
         } else {
             // scram-sha producer
-            producerConsumerBuilder
+            kafkaProducerBuilder
                 .withAuthentication(ClientsAuthentication.configureTlsScramSha(testStorage.getNamespaceName(), weirdUserName, testStorage.getClusterName()));
         }
 
-        KubeResourceManager.get().createResourceWithWait(producerConsumerBuilder.build().getProducer().getJob());
+        KubeResourceManager.get().createResourceWithWait(kafkaProducerBuilder.build().getJob());
 
         ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getProducerName(), testStorage.getMessageCount());
 

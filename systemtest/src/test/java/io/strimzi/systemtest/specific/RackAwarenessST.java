@@ -28,13 +28,14 @@ import io.strimzi.systemtest.templates.crd.KafkaMirrorMaker2Templates;
 import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
-import io.strimzi.systemtest.templates.specific.AdminClientTemplates;
 import io.strimzi.systemtest.utils.AdminClientUtils;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StrimziPodSetUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
+import io.strimzi.testclients.clients.kafka.KafkaAdminClient;
+import io.strimzi.testclients.clients.kafka.KafkaAdminClientBuilder;
 import io.strimzi.testclients.clients.kafka.KafkaProducerConsumer;
 import io.strimzi.testclients.clients.kafka.KafkaProducerConsumerBuilder;
 import org.apache.logging.log4j.LogManager;
@@ -97,9 +98,14 @@ class RackAwarenessST extends AbstractST {
         String podName = PodUtils.getPodNameByPrefix(testStorage.getNamespaceName(), testStorage.getBrokerComponentName());
         Pod pod = KubeResourceManager.get().kubeClient().getClient().pods().inNamespace(testStorage.getNamespaceName()).withName(podName).get();
 
-        KubeResourceManager.get().createResourceWithWait(
-            AdminClientTemplates.plainAdminClient(testStorage.getNamespaceName(), testStorage.getAdminName(), KafkaResources.plainBootstrapAddress(testStorage.getClusterName())).build()
-        );
+        final KafkaAdminClient kafkaAdminClient = new KafkaAdminClientBuilder()
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
+            .withName(testStorage.getAdminName())
+            .withNamespaceName(testStorage.getNamespaceName())
+            .build();
+
+        KubeResourceManager.get().createResourceWithWait(kafkaAdminClient.getDeployment());
+
         final AdminClient adminClient = AdminClientUtils.getConfiguredAdminClient(testStorage.getNamespaceName(), testStorage.getAdminName());
 
         // check that spec matches the actual pod configuration
@@ -415,9 +421,14 @@ class RackAwarenessST extends AbstractST {
                 .build());
         LOGGER.info("Kafka cluster deployed successfully");
 
-        KubeResourceManager.get().createResourceWithWait(
-            AdminClientTemplates.plainAdminClient(testStorage.getNamespaceName(), testStorage.getAdminName(), KafkaResources.plainBootstrapAddress(testStorage.getClusterName())).build()
-        );
+        final KafkaAdminClient kafkaAdminClient = new KafkaAdminClientBuilder()
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
+            .withName(testStorage.getAdminName())
+            .withNamespaceName(testStorage.getNamespaceName())
+            .build();
+
+        KubeResourceManager.get().createResourceWithWait(kafkaAdminClient.getDeployment());
+
         final AdminClient adminClient = AdminClientUtils.getConfiguredAdminClient(testStorage.getNamespaceName(), testStorage.getAdminName());
 
         String nodeDescription = adminClient.describeNodes("all");

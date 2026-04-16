@@ -311,7 +311,7 @@ class ConnectBuilderST extends AbstractST {
         ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getProducerName(), testStorage.getMessageCount());
 
         String connectPodName = PodUtils.listPodNames(testStorage.getNamespaceName(), testStorage.getKafkaConnectSelector()).get(0);
-        PodUtils.waitUntilMessageIsInPodLogs(testStorage.getNamespaceName(), connectPodName, "Received message with key 'null' and value 'Hello-world - 99'");
+        PodUtils.waitUntilMessageIsInPodLogs(testStorage.getNamespaceName(), connectPodName, "Received message with key 'null' and value 'Hello world - 99'");
     }
 
     @OpenShiftOnly

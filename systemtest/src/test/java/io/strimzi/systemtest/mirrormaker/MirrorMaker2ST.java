@@ -506,7 +506,7 @@ class MirrorMaker2ST extends AbstractST {
             .withConsumerGroup(ClientUtils.generateRandomConsumerGroup())
             .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(testStorage.getSourceClusterName()))
             .withMessageCount(testStorage.getMessageCount())
-            .withAuthentication(ClientsAuthentication.configureTls(testStorage.getSourceClusterName(), testStorage.getSourceUsername()))
+            .withAuthentication(ClientsAuthentication.configureTlsScramSha(testStorage.getNamespaceName(), testStorage.getSourceUsername(), testStorage.getSourceClusterName()))
             .build();
 
         KubeResourceManager.get().createResourceWithWait(
@@ -550,7 +550,7 @@ class MirrorMaker2ST extends AbstractST {
             .withConsumerGroup(ClientUtils.generateRandomConsumerGroup())
             .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(testStorage.getTargetClusterName()))
             .withMessageCount(testStorage.getMessageCount())
-            .withAuthentication(ClientsAuthentication.configureTls(testStorage.getTargetClusterName(), testStorage.getTargetUsername()))
+            .withAuthentication(ClientsAuthentication.configureTlsScramSha(testStorage.getNamespaceName(), testStorage.getTargetUsername(), testStorage.getTargetClusterName()))
             .build();
 
         KubeResourceManager.get().createResourceWithWait(
@@ -567,7 +567,7 @@ class MirrorMaker2ST extends AbstractST {
             .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(testStorage.getTargetClusterName()))
             .withName(testStorage.getAdminName())
             .withNamespaceName(testStorage.getNamespaceName())
-            .withAuthentication(ClientsAuthentication.configureTls(testStorage.getTargetClusterName(), testStorage.getTargetUsername()))
+            .withAuthentication(ClientsAuthentication.configureTlsScramSha(testStorage.getNamespaceName(), testStorage.getTargetUsername(), testStorage.getTargetClusterName()))
             .build();
 
         KubeResourceManager.get().createResourceWithWait(kafkaAdminClient.getDeployment());

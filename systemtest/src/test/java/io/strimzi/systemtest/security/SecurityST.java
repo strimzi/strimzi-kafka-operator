@@ -1073,8 +1073,12 @@ class SecurityST extends AbstractST {
 
         kafkaProducerConsumer.setConsumerGroup(ClientUtils.generateRandomConsumerGroup());
         kafkaProducerConsumer.setTopicName(topicName);
-        KubeResourceManager.get().createResourceWithWait(kafkaProducerConsumer.getConsumer().getJob());
-        ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getMessageCount());
+
+        KubeResourceManager.get().createResourceWithWait(
+            kafkaProducerConsumer.getProducer().getJob(),
+            kafkaProducerConsumer.getConsumer().getJob()
+        );
+        ClientUtils.waitForClientsSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getProducerName(), testStorage.getMessageCount());
     }
 
     @ParallelNamespaceTest
