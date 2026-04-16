@@ -5,7 +5,9 @@
 package io.strimzi.operator.common.operator;
 
 import io.strimzi.certs.CertManager;
+import io.strimzi.certs.OpenSslCertManager;
 import io.strimzi.certs.Subject;
+import io.strimzi.operator.common.Util;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -76,59 +78,9 @@ public class MockCertManager implements CertManager {
             D0z+vgrfionoRhyWUDh7POlWwdUOWiBDBOFrkgeKNphSC0glYFN+2IW7
             -----END CERTIFICATE-----
             """;
-    private static final String CLIENTS_KEY = """
-            -----BEGIN PRIVATE KEY-----
-            MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCWws5FEJOpfZ/s
-            FJWYbYdJVxmZB+5PjCwA2TUZxF/3P4w/5g2KZaXNy89AfBC5vRDRgyDyj/RwcDg8
-            0kDGKobcGhTx5YkWoNvR/2WuTN6KC8DM78bfEREDHDxiXfAXrMIi7Ux2FvUX13l7
-            6Sp9kiG3ETLjFom3n/qhg1ITJqPJSJi3tey0o2Pd5Arv0MIhQyep++URtZfND5fg
-            F5x7hgnSf9Q1P1dJnVadu+ohUmmG7g+zX4rTqjN2jmHcf9V4lLKdPGWwLQEGnP9y
-            Dqlm8x12M/BcIJasRgcciVsKYFuXe09NEYBvUjW8L6gaQ6U9wcYZ2MlKW/8LMGkS
-            FfO4quAJAgMBAAECggEAQ1NdsEQV3UQHrfMHV1naZ6so+EktaILNh9d4OjiTLqRH
-            aqW++EYqhDv3IvIEuh2vrBCmHwygebHzu12dpaGKNjLDlb8OuHc/k4k9jFgxrW5Q
-            PHT719QUR9JNORSASuJQlC5qzfW0oGAOlYJsAkXHHqzkj7sZ51HfKE+v0HOaAyHj
-            8gOeBNk1Mtb3Sj5mXpWFQGpXXuG01Vsjj7Nj/91a4KtWAWOqeagc2Bk+C0aZ7d1p
-            SQcLVWjJYwoejgCc2elZxzbfmDtVSAgFtdTPxwf9uflMducTfp/RyaQbzuYSrSmz
-            rnZq/59i9lYl314rjjkCusDaDSPdK5QziN54tQ+BcQKBgQDE9ulPecHtZhOsI9zT
-            J+xTJtZq1w8kFV5jMqXnL3jAFBXsC3s02KLq36ppvf8kVzUHrHE+DiWnHKEIiy/U
-            luMnPvJb/6qqdQNDpcrF+CE2JevvoPl5hrKdyzAI4TNu96aU+9qVrO2rB7bWBvlA
-            dVwIZ8zkk3pwbdEj9rYpMA1VVQKBgQDD8rJAEd9fLtX53NQh8XWEJ1dEfncmg/ib
-            0vyoYlqSDjPTot85sCunVZNHwUoKUsukzi+Tc9hxaXCjEB6ICVeXqWc4PYnbK79H
-            N+2X6YaO/rKAzbxM1F/Km3IzzvoXFJnPG4hxvBmpdApKgBGOVixnjD7PzNz4jh9u
-            1qhDocdf5QKBgQCDsLqporTgr0Ez9P5uR+Egb3UpFgVPkOH83R5Dhl/rvQIzQjHs
-            UXQMKeNcs+XlPFF+gfNtFDRkmSWp+rXOI9xYnyOYE0belUHLdwwudQpvk8c9/pkO
-            gdrm2bWSGlAzP22nawTo0ihOE+hRDXSVfmI8VHqP0XMpvKL6srd0rmYbyQKBgAYD
-            PXr/0WXfTwuSviOogB2lA2WDp+5ToF5PtBcKpZLTwr1cwxLHGB/TXWiXQslcTwlo
-            lkclB+A7BwzJ4tXzy29I8HTmVoOWLRFnYvAFZ26d3CZdqciFv8a8zF1QnZX1uN6F
-            DsPGrNbpS6OLmH5QoJ4wzICd3a321noVNiaVIUQNAoGAYu4RrGcBKRuy75lfKARD
-            gNxxVlvuI33ieK/3A9nUWc3LXl5D/yiSePCUs4giOwi2gFrGjcmIqLXZE5XUYGEu
-            zXWWQCGbMqyX15/A2/eTuj658F292nkSyU/5U2999WjCm79sfnGJB1zavfv2fzGK
-            g4trXCUkjAVG3Toaq05saGM=
-            -----END PRIVATE KEY-----
-            """;
-    private static final String CLIENTS_CERT = """
-            -----BEGIN CERTIFICATE-----
-            MIIDhjCCAm6gAwIBAgIJAOKzFJgrn+rZMA0GCSqGSIb3DQEBCwUAMFcxCzAJBgNV
-            BAYTAlhYMRUwEwYDVQQHDAxEZWZhdWx0IENpdHkxHDAaBgNVBAoME0RlZmF1bHQg
-            Q29tcGFueSBMdGQxEzARBgNVBAMMCmNsaWVudHMtY2EwIBcNMTgwODIzMTYyMTI1
-            WhgPMjExODA3MzAxNjIxMjVaMFcxCzAJBgNVBAYTAlhYMRUwEwYDVQQHDAxEZWZh
-            dWx0IENpdHkxHDAaBgNVBAoME0RlZmF1bHQgQ29tcGFueSBMdGQxEzARBgNVBAMM
-            CmNsaWVudHMtY2EwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCWws5F
-            EJOpfZ/sFJWYbYdJVxmZB+5PjCwA2TUZxF/3P4w/5g2KZaXNy89AfBC5vRDRgyDy
-            j/RwcDg80kDGKobcGhTx5YkWoNvR/2WuTN6KC8DM78bfEREDHDxiXfAXrMIi7Ux2
-            FvUX13l76Sp9kiG3ETLjFom3n/qhg1ITJqPJSJi3tey0o2Pd5Arv0MIhQyep++UR
-            tZfND5fgF5x7hgnSf9Q1P1dJnVadu+ohUmmG7g+zX4rTqjN2jmHcf9V4lLKdPGWw
-            LQEGnP9yDqlm8x12M/BcIJasRgcciVsKYFuXe09NEYBvUjW8L6gaQ6U9wcYZ2MlK
-            W/8LMGkSFfO4quAJAgMBAAGjUzBRMB0GA1UdDgQWBBQUwNmfsNj+PM240pVPxYx9
-            Q9eQhDAfBgNVHSMEGDAWgBQUwNmfsNj+PM240pVPxYx9Q9eQhDAPBgNVHRMBAf8E
-            BTADAQH/MA0GCSqGSIb3DQEBCwUAA4IBAQAnhbNKwMmnayHsT6kKgyyDV6RUUYs6
-            nYf3nx+GIQWSw4c5TOHDcTWdKpOxVnLNXYKQoSkb1RBoSMLBdQwidZ5K2DB5eXaG
-            rcfEbKNBc5ZCFgFEAyy35pitJOmU/KzCdKyvx+TR5hIgGoKajYX5JZxj+1rTPGKO
-            ePT9iFp1ZbzHjgw6vFeJ+D2ov6HfW6C/KuK9Y6xUpvRQLVjMJYCyzxkxQAxZvu/0
-            0HVYYH6UJ7kuWywFMWoBdZ8US/vuUSBYyCGNL9p6ol+h9rsz3cIWBVBjx8C3qKki
-            QtlIdmFljGSaGGY6aJjUvUdgoPp1yQPa5oS+afr5g9gaEp4lxP6mc+Li
-            -----END CERTIFICATE-----
-            """;
+
+    private static final String CLIENTS_KEY;
+    private static final String CLIENTS_CERT;
 
     private static final String ALTERNATE_CLIENTS_CERT = """
             -----BEGIN CERTIFICATE-----
@@ -269,6 +221,24 @@ public class MockCertManager implements CertManager {
         CLUSTER_CERT_STORE = loadResource(is);
         is = MockCertManager.class.getClassLoader().getResourceAsStream("CLIENTS_CERT.str");
         CLIENTS_CERT_STORE = loadResource(is);
+        // generate clients certificate and key, to satisfy the validity days check mainly in KafkaUser tests
+        OpenSslCertManager openSslCertManager = new OpenSslCertManager();
+        try {
+            File keyFile = Files.createTempFile("tls", "key").toFile();
+            File csrFile = Files.createTempFile("tls", "csr").toFile();
+            File certFile = Files.createTempFile("tls", "cert").toFile();
+
+            Subject.Builder subject = new Subject.Builder();
+            subject.withCommonName("strimzi-client");
+
+            openSslCertManager.generateCsr(keyFile, csrFile, subject.build());
+            openSslCertManager.generateCert(csrFile, Util.decodeBytesFromBase64(clusterCaKey()), Util.decodeBytesFromBase64(clusterCaCert()), certFile, subject.build(), 365);
+
+            CLIENTS_CERT = Base64.getEncoder().encodeToString(Files.readAllBytes(certFile.toPath()));
+            CLIENTS_KEY = Base64.getEncoder().encodeToString(Files.readAllBytes(keyFile.toPath()));
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to create tmp files");
+        }
     }
 
     public static String clusterCaCert() {
@@ -280,7 +250,7 @@ public class MockCertManager implements CertManager {
     }
 
     public static String clientsCaCert() {
-        return Base64.getEncoder().encodeToString(CLIENTS_CERT.getBytes(Charset.defaultCharset()));
+        return CLIENTS_CERT;
     }
 
     public static String alternateClientsCaCert() {
@@ -288,19 +258,11 @@ public class MockCertManager implements CertManager {
     }
 
     public static String clientsCaKey() {
-        return Base64.getEncoder().encodeToString(CLIENTS_KEY.getBytes(Charset.defaultCharset()));
+        return CLIENTS_KEY;
     }
 
     public static String clusterCaCertStore() {
         return Base64.getEncoder().encodeToString(CLUSTER_CERT_STORE);
-    }
-
-    public static String clientsCaCertStore() {
-        return Base64.getEncoder().encodeToString(CLIENTS_CERT_STORE);
-    }
-
-    public static String certStorePassword() {
-        return Base64.getEncoder().encodeToString(CERT_STORE_PASSWORD.getBytes(Charset.defaultCharset()));
     }
 
     private void write(File keyFile, String str) throws IOException {
