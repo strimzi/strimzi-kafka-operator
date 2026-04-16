@@ -19,11 +19,13 @@ import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthenticationTls;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.api.kafka.model.user.KafkaUser;
 import io.strimzi.api.kafka.model.user.KafkaUserAuthorizationSimpleBuilder;
+import io.strimzi.api.kafka.model.user.KafkaUserBuilder;
 import io.strimzi.api.kafka.model.user.KafkaUserScramSha512ClientAuthentication;
 import io.strimzi.api.kafka.model.user.KafkaUserTlsClientAuthentication;
 import io.strimzi.api.kafka.model.user.KafkaUserTlsExternalClientAuthentication;
 import io.strimzi.api.kafka.model.user.acl.AclOperation;
 import io.strimzi.api.kafka.model.user.acl.AclResourcePatternType;
+import io.strimzi.operator.common.Util;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
@@ -83,6 +85,8 @@ class UserST extends AbstractST {
 
     private TestStorage sharedTestStorage;
     private String scraperPodName = "";
+    private final int defaultValidityDays = 200;
+    private final int defaultRenewalDays = 20;
 
     @TestDoc(
         description = @Desc("Verifies that Kafka users with names longer than 64 characters are rejected, while users with valid names are accepted."),
@@ -522,6 +526,86 @@ class UserST extends AbstractST {
         ClientUtils.waitForClientTimeout(testStorage.getNamespaceName(), newProducerName, testStorage.getMessageCount());
     }
 
+    @TestDoc(
+        description = @Desc("Verifies functionality of the mTLS `validityDays` and `renewalDays` configured inside each KafkaUser."),
+        steps = {
+            @Step(value = "Create `KafkaTopic` to which we will send (and from which we will receive) messages - created in existing Kafka cluster.", expected = "`KafkaTopic` is created."),
+            @Step(value = "Create `KafkaUser` with TLS authentication; together with default `validityDays` (200 days) and `renewalDays` (20 days) - configured in User operator.", expected = "`KafkaUser` is created with defaults."),
+            @Step(value = "Obtain the `KafkaUser`'s `Secret` and check validity period of the user certificate.", expected = "Validity period should be default - 200 days."),
+            @Step(value = "Do message transmission to verify, that we are able to connect to Kafka cluster with the TLS `KafkaUser`.", expected = "Messages are successfully sent and received."),
+            @Step(value = "Change the `validityDays` and `renewalDays` in the `KafkaUser` `.spec.authentication` to 60 and 10.", expected = "The `validityDays` and `renewalDays` should be changed in the `KafkaUser`."),
+            @Step(value = "Because the current certificate would exceed the new validity period, `KafkaUser`'s `Secret` and user certificate should be renewed - we are waiting for the certificate change.",
+                expected = "The user certificate was changed."),
+            @Step(value = "Obtain the `KafkaUser`'s `Secret` again and check the validity period of the user certificate.", expected = "Validity period should be 60 days."),
+            @Step(value = "Do message transmission again to verify, that we are able to connect to Kafka cluster with the new user's certificate.", expected = "Messages are successfully sent and received using new certificate."),
+        },
+        labels = {
+            @Label(TestDocsLabels.USER_OPERATOR)
+        }
+    )
+    @ParallelTest
+    void testTlsValidityDays() {
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
+        final int newValidityDays = 60;
+        final int newRenewalDays = 10;
+
+        KubeResourceManager.get().createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getTopicName(), sharedTestStorage.getClusterName()).build());
+
+        LOGGER.info("Creating TLS user with validityDays and renewalDays empty, using defaults from the User Operator");
+        KubeResourceManager.get().createResourceWithWait(KafkaUserTemplates.tlsUser(testStorage.getNamespaceName(), testStorage.getUsername(), sharedTestStorage.getClusterName()).build());
+
+        Secret tlsUserSecret = KubeResourceManager.get().kubeClient().getClient().secrets().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getUsername()).get();
+        String userCertificate = tlsUserSecret.getData().get("user.crt");
+
+        // check that notBefore and notAfter contains really the default value of validityDays
+        assertThat("validity period of the certificate has incorrect value", KafkaUserUtils.getValidityDaysOfCertificate(userCertificate), is(defaultValidityDays));
+
+        LOGGER.info("Produce and consume messages before changing the validity - in order to see that everything works as expected.");
+        final KafkaClients kafkaClients = new KafkaClientsBuilder()
+            .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(sharedTestStorage.getClusterName()))
+            .withProducerName(testStorage.getProducerName())
+            .withConsumerName(testStorage.getConsumerName())
+            .withUsername(testStorage.getUsername())
+            .withMessageCount(testStorage.getMessageCount())
+            .withConsumerGroup(ClientUtils.generateRandomConsumerGroup())
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withTopicName(testStorage.getTopicName())
+            .build();
+
+        KubeResourceManager.get().createResourceWithWait(
+            kafkaClients.producerTlsStrimzi(sharedTestStorage.getClusterName()),
+            kafkaClients.consumerTlsStrimzi(sharedTestStorage.getClusterName())
+        );
+        ClientUtils.waitForClientsSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getProducerName(), testStorage.getMessageCount());
+
+        LOGGER.info("Adding validityDays ({}) and renewalDays ({}) to KafkaUser: {}", newValidityDays, newRenewalDays, testStorage.getUsername());
+        CrdClients.kafkaUserClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getUsername()).edit(ku -> new KafkaUserBuilder(ku)
+            .editOrNewSpec()
+            .withNewKafkaUserTlsClientAuthentication()
+                .withValidityDays(newValidityDays)
+                .withRenewalDays(newRenewalDays)
+            .endKafkaUserTlsClientAuthentication()
+            .endSpec()
+            .build()
+        );
+
+        LOGGER.info("Because we changed validityDays and current validity period would exceed the new validity policy, the certificate should be renewed.");
+        SecretUtils.waitForCertToChange(testStorage.getNamespaceName(), Util.decodeFromBase64(userCertificate), testStorage.getUsername(), "user.crt");
+
+        tlsUserSecret = KubeResourceManager.get().kubeClient().getClient().secrets().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getUsername()).get();
+        userCertificate = tlsUserSecret.getData().get("user.crt");
+
+        // check that notBefore and notAfter contains really the new value of validityDays
+        assertThat("validity period of the certificate has incorrect value", KafkaUserUtils.getValidityDaysOfCertificate(userCertificate), is(newValidityDays));
+
+        LOGGER.info("Produce and consume messages with new user's certificate and verify, that we are able to access Kafka cluster.");
+        KubeResourceManager.get().createResourceWithWait(
+            kafkaClients.producerTlsStrimzi(sharedTestStorage.getClusterName()),
+            kafkaClients.consumerTlsStrimzi(sharedTestStorage.getClusterName())
+        );
+        ClientUtils.waitForClientsSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getProducerName(), testStorage.getMessageCount());
+    }
+
     @BeforeAll
     void setup() {
         sharedTestStorage = new TestStorage(KubeResourceManager.get().getTestContext());
@@ -538,15 +622,21 @@ class UserST extends AbstractST {
         KubeResourceManager.get().createResourceWithWait(KafkaTemplates.kafka(Environment.TEST_SUITE_NAMESPACE, sharedTestStorage.getClusterName(), 1)
             .editSpec()
                 .editKafka()
-                    .addToListeners(new GenericKafkaListenerBuilder()
-                                .withName("scramshatls")
-                                .withPort(9095)
-                                .withType(KafkaListenerType.INTERNAL)
-                                .withTls(true)
-                                .withNewKafkaListenerAuthenticationScramSha512Auth()
-                                .endKafkaListenerAuthenticationScramSha512Auth()
-                                .build())
+                    .addToListeners(
+                        new GenericKafkaListenerBuilder()
+                            .withName("scramshatls")
+                            .withPort(9095)
+                            .withType(KafkaListenerType.INTERNAL)
+                            .withTls(true)
+                            .withNewKafkaListenerAuthenticationScramSha512Auth()
+                            .endKafkaListenerAuthenticationScramSha512Auth()
+                            .build()
+                    )
                 .endKafka()
+                .withNewClientsCa()
+                    .withValidityDays(defaultValidityDays)
+                    .withRenewalDays(defaultRenewalDays)
+                .endClientsCa()
             .endSpec()
             .build(),
             ScraperTemplates.scraperPod(Environment.TEST_SUITE_NAMESPACE, sharedTestStorage.getScraperName()).build()

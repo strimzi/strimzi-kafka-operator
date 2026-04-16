@@ -2,7 +2,7 @@
 
 ## 1.1.0
 
-* _Nothing here yet, but we will surely develop something new pretty soon_ 😉
+* Add possibility to configure mTLS `validityDays` and `renewalDays` for each `KafkaUser`
 
 ### Major changes, deprecations, and removals
 
@@ -42,14 +42,6 @@
 * Update HTTP bridge to 1.0.0.
   * `/metrics` endpoint is no longer available on the regular HTTP interface (port 8080 by default). It is now available on the HTTP management interface, 8081.
     Users upgrading to Strimzi 1.0.0+ should check all monitoring configurations that scrape Kafka Bridge metrics and update them to use port 8081 instead of 8080 or any other non-default port before or immediately after the upgrade to avoid metrics collection failures.
-* Standalone Topic Operator now reads certificates directly from the Kubernetes Secrets in PEM format instead of using JKS/P12 keystore and truststore files.
-  If you use the standalone Topic Operator and you have any custom configuration related to TLS certificates, you might need to update it during the upgrade to Strimzi 1.0.0.
-  * Make sure the Topic Operator has the Kubernetes RBAC rights to read the certificate Secrets
-  * Use the environment variable `STRIMZI_TLS_TRUSTED_CERTS_SECRET_NAME` to configure the CA certificates for TLS encryption when connecting to the Apache Kafka cluster.
-  * Use the environment variables `STRIMZI_TLS_SECRET_NAME`, `STRIMZI_TLS_KEY_NAME`, and `STRIMZI_TLS_CERT_NAME` to configure client certificate for the mTLS authentication when connecting to the Apache Kafka cluster.
-  * Use the environment variable `STRIMZI_CLUSTER_NAMESPACE` to define the namespace where the TLS Secrets are.
-  * If you want to use TLS encryption with an Apache Kafka cluster using server certificates signed by a public CA, you just need to use the `STRIMZI_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM` variable and set it to `TLS`.
-  * The `STRIMZI_TLS_ENABLED`, `STRIMZI_TLS_AUTH_ENABLED`, `STRIMZI_PUBLIC_CA`, `STRIMZI_TRUSTSTORE_LOCATION`, `STRIMZI_TRUSTSTORE_PASSWORD`, `STRIMZI_KEYSTORE_LOCATION`, and `STRIMZI_KEYSTORE_PASSWORD` environment variables are not used anymore and will be ignored if set.
 
 ## 0.51.0
 

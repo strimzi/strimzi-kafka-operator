@@ -2675,6 +2675,12 @@ It must have the value `tls` for the type `KafkaUserTlsClientAuthentication`.
 |type
 |string
 |Must be `tls`.
+|validityDays
+|integer
+|Number of days for which the user certificate should be valid. If not configured, default User Operator value is used. If new validity policy would make the current certificate expired or current certificate's validity period would exceed new policy, the certificate is immediately renewed, without waiting for maintenance window. 
+|renewalDays
+|integer
+|Configures how many days before the certificate expiration should be the user certificate renewed. If not configured, default User Operator value is used.
 |====
 
 [id='type-KafkaUserTlsExternalClientAuthentication-{context}']

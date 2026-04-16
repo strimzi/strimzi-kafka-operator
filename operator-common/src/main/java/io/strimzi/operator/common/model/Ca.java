@@ -543,6 +543,41 @@ public abstract class Ca {
     }
 
     /**
+     * Checks if the validityDays configuration is different from previous state.
+     * If yes, the method checks if the new configuration of validityDays would make the certificate expired
+     * or if the current Certificate's validity period exceeds the new policy.
+     *
+     * @param secret    Secret with the certificate
+     * @param certKey   Key under which is the certificate stored
+     *
+     * @return  True if the certificate should be renewed due to new validity period. False otherwise.
+     */
+    public boolean requiresImmediateRenewalDueToValidityChange(Secret secret, String certKey) {
+        X509Certificate currentCert = cert(secret, certKey);
+
+        Instant notBefore = currentCert.getNotBefore().toInstant();
+        Instant notAfter = currentCert.getNotAfter().toInstant();
+        int currentValidityDays = (int) ChronoUnit.DAYS.between(notBefore, notAfter);
+
+        if (currentValidityDays != validityDays) {
+            Instant wouldExpireUnderNewPolicy = notBefore.plus(validityDays, ChronoUnit.DAYS);
+
+            if (!this.clock.instant().isBefore(wouldExpireUnderNewPolicy)) {
+                LOGGER.infoCr(reconciliation, "Certificate of Secret {}/{} would be expired under new validity policy, it will be renewed",
+                    secret.getMetadata().getNamespace(), secret.getMetadata().getName());
+                return true;
+            }
+            if (currentValidityDays > validityDays) {
+                LOGGER.infoCr(reconciliation, "Certificate's current validity period of Secret {}/{} exceeds new policy, it will be renewed",
+                    secret.getMetadata().getNamespace(), secret.getMetadata().getName());
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * Returns whether the certificate is expiring or not
      *
      * @param certificate Byte array with the certificate
