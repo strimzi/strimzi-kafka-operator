@@ -80,15 +80,9 @@ public class CustomCaChainST extends AbstractST {
     void testMultistageCustomCaUserCertificateAuthentication() {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
-        final SystemTestCertBundle clusterCa = new SystemTestCertBundle(
-            "CN=" + testStorage.getTestName() + "ClusterCA",
-            KafkaResources.clusterCaCertificateSecretName(testStorage.getClusterName()),
-            KafkaResources.clusterCaKeySecretName(testStorage.getClusterName()));
+        final SystemTestCertBundle clusterCa = SystemTestCertBundle.forClusterCa(testStorage);
 
-        final SystemTestCertBundle clientsCa = new SystemTestCertBundle(
-            "CN=" + testStorage.getTestName() + "ClientsCA",
-            KafkaResources.clientsCaCertificateSecretName(testStorage.getClusterName()),
-            KafkaResources.clientsCaKeySecretName(testStorage.getClusterName()));
+        final SystemTestCertBundle clientsCa = SystemTestCertBundle.forClientsCa(testStorage);
 
         clusterCa.createCustomSecretsFromBundles(testStorage.getNamespaceName(), testStorage.getClusterName());
         clientsCa.createCustomSecretsFromBundles(testStorage.getNamespaceName(), testStorage.getClusterName());
@@ -188,15 +182,9 @@ public class CustomCaChainST extends AbstractST {
     void testMultistageCustomCaTrustChainEstablishment() {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
-        final SystemTestCertBundle clusterCa = new SystemTestCertBundle(
-            "CN=" + testStorage.getTestName() + "ClusterCA",
-            KafkaResources.clusterCaCertificateSecretName(testStorage.getClusterName()),
-            KafkaResources.clusterCaKeySecretName(testStorage.getClusterName()));
+        final SystemTestCertBundle clusterCa = SystemTestCertBundle.forClusterCa(testStorage);
 
-        final SystemTestCertBundle clientsCa = new SystemTestCertBundle(
-            "CN=" + testStorage.getTestName() + "ClientsCA",
-            KafkaResources.clientsCaCertificateSecretName(testStorage.getClusterName()),
-            KafkaResources.clientsCaKeySecretName(testStorage.getClusterName()));
+        final SystemTestCertBundle clientsCa = SystemTestCertBundle.forClientsCa(testStorage);
 
         clusterCa.createCustomSecretsFromBundles(testStorage.getNamespaceName(), testStorage.getClusterName());
         clientsCa.createCustomSecretsFromBundles(testStorage.getNamespaceName(), testStorage.getClusterName());
@@ -313,15 +301,9 @@ public class CustomCaChainST extends AbstractST {
     void testCustomCaTrustChainOnInternalPort() {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
-        final SystemTestCertBundle clusterCa = new SystemTestCertBundle(
-            "CN=" + testStorage.getTestName() + "ClusterCA",
-            KafkaResources.clusterCaCertificateSecretName(testStorage.getClusterName()),
-            KafkaResources.clusterCaKeySecretName(testStorage.getClusterName()));
+        final SystemTestCertBundle clusterCa = SystemTestCertBundle.forClusterCa(testStorage);
 
-        final SystemTestCertBundle clientsCa = new SystemTestCertBundle(
-            "CN=" + testStorage.getTestName() + "ClientsCA",
-            KafkaResources.clientsCaCertificateSecretName(testStorage.getClusterName()),
-            KafkaResources.clientsCaKeySecretName(testStorage.getClusterName()));
+        final SystemTestCertBundle clientsCa = SystemTestCertBundle.forClientsCa(testStorage);
 
         clusterCa.createCustomSecretsFromBundles(testStorage.getNamespaceName(), testStorage.getClusterName());
         clientsCa.createCustomSecretsFromBundles(testStorage.getNamespaceName(), testStorage.getClusterName());
@@ -440,15 +422,9 @@ public class CustomCaChainST extends AbstractST {
     void testKafkaConnectTrustWithCustomCaChain() {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
-        final SystemTestCertBundle clusterCa = new SystemTestCertBundle(
-            "CN=" + testStorage.getTestName() + "ClusterCA",
-            KafkaResources.clusterCaCertificateSecretName(testStorage.getClusterName()),
-            KafkaResources.clusterCaKeySecretName(testStorage.getClusterName()));
+        final SystemTestCertBundle clusterCa = SystemTestCertBundle.forClusterCa(testStorage);
 
-        final SystemTestCertBundle clientsCa = new SystemTestCertBundle(
-            "CN=" + testStorage.getTestName() + "ClientsCA",
-            KafkaResources.clientsCaCertificateSecretName(testStorage.getClusterName()),
-            KafkaResources.clientsCaKeySecretName(testStorage.getClusterName()));
+        final SystemTestCertBundle clientsCa = SystemTestCertBundle.forClientsCa(testStorage);
 
         // Generate a Subleaf CA signed by the Leaf CA (one level deeper)
         final CertAndKey subleafCa = generateStrimziCaCertAndKey(clusterCa.getSystemTestCa(), "C=CZ, L=Prague, O=StrimziTest, CN=SubleafCA");
