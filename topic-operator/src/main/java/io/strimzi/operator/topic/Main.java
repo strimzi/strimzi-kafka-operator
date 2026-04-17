@@ -70,13 +70,13 @@ public class Main {
      * @return  An instance of the Admin API client
      */
     /* test */ static Admin createAdminClient(TopicOperatorConfig config, SecretOperator secretOperator, AdminClientProvider adminClientProvider)    {
-        Secret clusterCaCert = getSecret(secretOperator, config.clusterNamespace(), config.truststoreSecretName());
+        Secret clusterCaCert = getSecret(secretOperator, config.clusterNamespace(), config.tlsTrustedCertsSecretName());
         // When the cluster CA secret is not null (i.e. TLS is used), we create a PemTrustSet. Otherwise, we just pass null.
         PemTrustSet pemTrustSet = clusterCaCert != null ? new PemTrustSet(clusterCaCert) : null;
 
-        Secret uoKeyAndCert = getSecret(secretOperator, config.clusterNamespace(), config.keystoreSecretName());
-        // When the UO secret is not null (i.e. mTLS is used), we create a PemAuthIdentity. Otherwise, we just pass null.
-        PemAuthIdentity pemAuthIdentity = uoKeyAndCert != null ? PemAuthIdentity.entityOperator(uoKeyAndCert, config.keystoreKeyName(), config.keystoreCertificateName()) : null;
+        Secret toKeyAndCert = getSecret(secretOperator, config.clusterNamespace(), config.tlsSecretName());
+        // When the TO secret is not null (i.e. mTLS is used), we create a PemAuthIdentity. Otherwise, we just pass null.
+        PemAuthIdentity pemAuthIdentity = toKeyAndCert != null ? PemAuthIdentity.entityOperator(toKeyAndCert, config.tlsKeyName(), config.tlsCertName()) : null;
 
         return adminClientProvider.createAdminClient(
                 config.bootstrapServers(),
@@ -92,7 +92,9 @@ public class Main {
      * @param namespace      Namespace of the secret
      * @param name           Name of the secret
      *
-     * @return the secret or null if not found or the name is not given
+     * @return The secret
+     *
+     * @throws RuntimeException if the Secret name is not null and it is not found
      */
     private static Secret getSecret(SecretOperator secretOperator, String namespace, String name) {
         if (name != null && !name.isEmpty()) {

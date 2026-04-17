@@ -36,8 +36,8 @@
 * Standalone Topic Operator now reads certificates directly from the Kubernetes Secrets in PEM format instead of using JKS/P12 keystore and truststore files.
   If you use the standalone Topic Operator and you have any custom configuration related to TLS certificates, you might need to update it during the upgrade to Strimzi 1.0.0.
   * Make sure the Topic Operator has the Kubernetes RBAC rights to read the certificate Secrets
-  * Use the environment variable `STRIMZI_TRUSTSTORE_SECRET_NAME` to configure the CA certificates for TLS encryption when connecting to the Apache Kafka cluster.
-  * Use the environment variables `STRIMZI_KEYSTORE_SECRET_NAME`, `STRIMZI_KEYSTORE_KEY_NAME`, and `STRIMZI_KEYSTORE_CERTIFICATE_NAME` to configure client certificate for the mTLS authentication when connecting to the Apache Kafka cluster.
+  * Use the environment variable `STRIMZI_TLS_TRUSTED_CERTS_SECRET_NAME` to configure the CA certificates for TLS encryption when connecting to the Apache Kafka cluster.
+  * Use the environment variables `STRIMZI_TLS_SECRET_NAME`, `STRIMZI_TLS_KEY_NAME`, and `STRIMZI_TLS_CERT_NAME` to configure client certificate for the mTLS authentication when connecting to the Apache Kafka cluster.
   * Use the environment variable `STRIMZI_CLUSTER_NAMESPACE` to define the namespace where the TLS Secrets are.
   * If you want to use TLS encryption with an Apache Kafka cluster using server certificates signed by a public CA, you just need to use the `STRIMZI_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM` variable and set it to `TLS`.
   * The `STRIMZI_TLS_ENABLED`, `STRIMZI_TLS_AUTH_ENABLED`, `STRIMZI_PUBLIC_CA`, `STRIMZI_TRUSTSTORE_LOCATION`, `STRIMZI_TRUSTSTORE_PASSWORD`, `STRIMZI_KEYSTORE_LOCATION`, and `STRIMZI_KEYSTORE_PASSWORD` environment variables are not used anymore and will be ignored if set.

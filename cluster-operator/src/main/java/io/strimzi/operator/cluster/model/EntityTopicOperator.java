@@ -79,10 +79,10 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
     /* test */ static final String ENV_VAR_FULL_RECONCILIATION_INTERVAL_MS = "STRIMZI_FULL_RECONCILIATION_INTERVAL_MS";
     /* test */ static final String ENV_VAR_SECURITY_PROTOCOL = "STRIMZI_SECURITY_PROTOCOL";
 
-    /* test */ static final String ENV_VAR_TLS_TRUSTSTORE_SECRET_NAME = "STRIMZI_TRUSTSTORE_SECRET_NAME";
-    /* test */ static final String ENV_VAR_TLS_KEYSTORE_SECRET_NAME = "STRIMZI_KEYSTORE_SECRET_NAME";
-    /* test */ static final String ENV_VAR_TLS_KEYSTORE_KEY_NAME = "STRIMZI_KEYSTORE_KEY_NAME";
-    /* test */ static final String ENV_VAR_TLS_KEYSTORE_CERTIFICATE_NAME = "STRIMZI_KEYSTORE_CERTIFICATE_NAME";
+    /* test */ static final String ENV_VAR_TLS_TRUSTED_CERTS_SECRET_NAME = "STRIMZI_TLS_TRUSTED_CERTS_SECRET_NAME";
+    /* test */ static final String ENV_VAR_TLS_SECRET_NAME = "STRIMZI_TLS_SECRET_NAME";
+    /* test */ static final String ENV_VAR_TLS_KEY_NAME = "STRIMZI_TLS_KEY_NAME";
+    /* test */ static final String ENV_VAR_TLS_CERT_NAME = "STRIMZI_TLS_CERT_NAME";
 
     // Volume name of the temporary volume used by the TO container
     // Because the container shares the pod with other containers, it needs to have a unique name
@@ -204,10 +204,10 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
         }
 
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_SECURITY_PROTOCOL, EntityTopicOperatorSpec.DEFAULT_SECURITY_PROTOCOL));
-        varList.add(ContainerUtils.createEnvVar(ENV_VAR_TLS_TRUSTSTORE_SECRET_NAME, AbstractModel.clusterCaCertSecretName(cluster)));
-        varList.add(ContainerUtils.createEnvVar(ENV_VAR_TLS_KEYSTORE_SECRET_NAME, KafkaResources.entityTopicOperatorSecretName(cluster)));
-        varList.add(ContainerUtils.createEnvVar(ENV_VAR_TLS_KEYSTORE_KEY_NAME, Ca.SecretEntry.KEY.asKey(EntityOperator.COMPONENT_TYPE)));
-        varList.add(ContainerUtils.createEnvVar(ENV_VAR_TLS_KEYSTORE_CERTIFICATE_NAME, Ca.SecretEntry.CRT.asKey(EntityOperator.COMPONENT_TYPE)));
+        varList.add(ContainerUtils.createEnvVar(ENV_VAR_TLS_TRUSTED_CERTS_SECRET_NAME, AbstractModel.clusterCaCertSecretName(cluster)));
+        varList.add(ContainerUtils.createEnvVar(ENV_VAR_TLS_SECRET_NAME, KafkaResources.entityTopicOperatorSecretName(cluster)));
+        varList.add(ContainerUtils.createEnvVar(ENV_VAR_TLS_KEY_NAME, Ca.SecretEntry.KEY.asKey(EntityOperator.COMPONENT_TYPE)));
+        varList.add(ContainerUtils.createEnvVar(ENV_VAR_TLS_CERT_NAME, Ca.SecretEntry.CRT.asKey(EntityOperator.COMPONENT_TYPE)));
 
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_STRIMZI_GC_LOG_ENABLED, Boolean.toString(gcLoggingEnabled)));
 

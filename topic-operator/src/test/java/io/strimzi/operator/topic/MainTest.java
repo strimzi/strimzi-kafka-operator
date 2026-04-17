@@ -37,10 +37,10 @@ class MainTest {
                 TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "my-kafka:9092",
                 TopicOperatorConfig.WATCHED_NAMESPACE.key(), "my-namespace",
                 TopicOperatorConfig.CLUSTER_NAMESPACE.key(), "my-namespace",
-                TopicOperatorConfig.TRUSTSTORE_SECRET_NAME.key(), "cluster-ca-cert",
-                TopicOperatorConfig.KEYSTORE_SECRET_NAME.key(), "topic-operator-cert",
-                TopicOperatorConfig.KEYSTORE_KEY_NAME.key(), "user.key",
-                TopicOperatorConfig.KEYSTORE_CERTIFICATE_NAME.key(), "user.crt"
+                TopicOperatorConfig.TLS_TRUSTED_CERTS_SECRET_NAME.key(), "cluster-ca-cert",
+                TopicOperatorConfig.TLS_SECRET_NAME.key(), "topic-operator-cert",
+                TopicOperatorConfig.TLS_KEY_NAME.key(), "user.key",
+                TopicOperatorConfig.TLS_CERT_NAME.key(), "user.crt"
         ));
 
         SecretOperator secretOperator = mock(SecretOperator.class);
@@ -97,10 +97,10 @@ class MainTest {
                 TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "my-kafka:9092",
                 TopicOperatorConfig.WATCHED_NAMESPACE.key(), "my-namespace",
                 TopicOperatorConfig.CLUSTER_NAMESPACE.key(), "my-namespace",
-                TopicOperatorConfig.TRUSTSTORE_SECRET_NAME.key(), "cluster-ca-cert",
-                TopicOperatorConfig.KEYSTORE_SECRET_NAME.key(), "topic-operator-cert",
-                TopicOperatorConfig.KEYSTORE_KEY_NAME.key(), "user.key",
-                TopicOperatorConfig.KEYSTORE_CERTIFICATE_NAME.key(), "user.crt"
+                TopicOperatorConfig.TLS_TRUSTED_CERTS_SECRET_NAME.key(), "cluster-ca-cert",
+                TopicOperatorConfig.TLS_SECRET_NAME.key(), "topic-operator-cert",
+                TopicOperatorConfig.TLS_KEY_NAME.key(), "user.key",
+                TopicOperatorConfig.TLS_CERT_NAME.key(), "user.crt"
         ));
 
         SecretOperator secretOperator = mock(SecretOperator.class);

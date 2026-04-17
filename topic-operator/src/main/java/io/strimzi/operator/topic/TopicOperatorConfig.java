@@ -47,13 +47,13 @@ public class TopicOperatorConfig {
     /** Periodic reconciliation interval in milliseconds. */
     public static final ConfigParameter<Long> FULL_RECONCILIATION_INTERVAL_MS = new ConfigParameter<>("STRIMZI_FULL_RECONCILIATION_INTERVAL_MS", ConfigParameterParser.strictlyPositive(ConfigParameterParser.LONG), "120000", CONFIG_VALUES);
     /** TLS: truststore Secret name. */
-    public static final ConfigParameter<String> TRUSTSTORE_SECRET_NAME = new ConfigParameter<>("STRIMZI_TRUSTSTORE_SECRET_NAME", ConfigParameterParser.STRING, "", CONFIG_VALUES);
+    public static final ConfigParameter<String> TLS_TRUSTED_CERTS_SECRET_NAME = new ConfigParameter<>("STRIMZI_TLS_TRUSTED_CERTS_SECRET_NAME", ConfigParameterParser.STRING, "", CONFIG_VALUES);
     /** TLS: keystore Secret name. */
-    public static final ConfigParameter<String> KEYSTORE_SECRET_NAME = new ConfigParameter<>("STRIMZI_KEYSTORE_SECRET_NAME", ConfigParameterParser.STRING, "", CONFIG_VALUES);
+    public static final ConfigParameter<String> TLS_SECRET_NAME = new ConfigParameter<>("STRIMZI_TLS_SECRET_NAME", ConfigParameterParser.STRING, "", CONFIG_VALUES);
     /** TLS: keystore key name. */
-    public static final ConfigParameter<String> KEYSTORE_KEY_NAME = new ConfigParameter<>("STRIMZI_KEYSTORE_KEY_NAME", ConfigParameterParser.STRING, "", CONFIG_VALUES);
+    public static final ConfigParameter<String> TLS_KEY_NAME = new ConfigParameter<>("STRIMZI_TLS_KEY_NAME", ConfigParameterParser.STRING, "", CONFIG_VALUES);
     /** TLS: keystore certificate name. */
-    public static final ConfigParameter<String> KEYSTORE_CERTIFICATE_NAME = new ConfigParameter<>("STRIMZI_KEYSTORE_CERTIFICATE_NAME", ConfigParameterParser.STRING, "", CONFIG_VALUES);
+    public static final ConfigParameter<String> TLS_CERT_NAME = new ConfigParameter<>("STRIMZI_TLS_CERT_NAME", ConfigParameterParser.STRING, "", CONFIG_VALUES);
     /** TLS: endpoint identification algorithm. */
     public static final ConfigParameter<String> SSL_ENDPOINT_IDENTIFICATION_ALGORITHM = new ConfigParameter<>("STRIMZI_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM", ConfigParameterParser.STRING, "HTTPS", CONFIG_VALUES);
     /** SASL: whether to enable configuration. */
@@ -193,39 +193,39 @@ public class TopicOperatorConfig {
     }
 
     /**
-     * Gets the truststore Secret name configuration value.
+     * Gets the name of the Secret with the TLS trusted certificates.
      *
-     * @return Value of {@link #TRUSTSTORE_SECRET_NAME} configuration.
+     * @return Value of {@link #TLS_TRUSTED_CERTS_SECRET_NAME} configuration.
      */
-    public String truststoreSecretName() {
-        return get(TRUSTSTORE_SECRET_NAME);
+    public String tlsTrustedCertsSecretName() {
+        return get(TLS_TRUSTED_CERTS_SECRET_NAME);
     }
 
     /**
-     * Gets the keystore Secret name configuration value.
+     * Gets the name of the Secret with the mTLS client certificate.
      *
-     * @return Value of {@link #KEYSTORE_SECRET_NAME} configuration.
+     * @return Value of {@link #TLS_SECRET_NAME} configuration.
      */
-    public String keystoreSecretName() {
-        return get(KEYSTORE_SECRET_NAME);
+    public String tlsSecretName() {
+        return get(TLS_SECRET_NAME);
     }
 
     /**
-     * Gets the keystore key name configuration value.
+     * Gets the key under which the mTLS client private key is stored in the Secret.
      *
-     * @return Value of {@link #KEYSTORE_KEY_NAME} configuration.
+     * @return Value of {@link #TLS_KEY_NAME} configuration.
      */
-    public String keystoreKeyName() {
-        return get(KEYSTORE_KEY_NAME);
+    public String tlsKeyName() {
+        return get(TLS_KEY_NAME);
     }
 
     /**
-     * Gets the keystore certificate name configuration value.
+     * Gets the key under which the mTLS client certificate is stored in the Secret.
      *
-     * @return Value of {@link #KEYSTORE_CERTIFICATE_NAME} configuration.
+     * @return Value of {@link #TLS_CERT_NAME} configuration.
      */
-    public String keystoreCertificateName() {
-        return get(KEYSTORE_CERTIFICATE_NAME);
+    public String tlsCertName() {
+        return get(TLS_CERT_NAME);
     }
 
     /**
@@ -445,7 +445,7 @@ public class TopicOperatorConfig {
     }
 
     /**
-     * Gets the size of the hread pool used for Kubernetes operations.
+     * Gets the size of the thread pool used for Kubernetes operations.
      *
      * @return Value of {@link #TOPIC_OPERATIONS_THREAD_POOL_SIZE} configuration.
      */
@@ -548,10 +548,10 @@ public class TopicOperatorConfig {
             "\n\tbootstrapServers='" + bootstrapServers() + '\'' +
             "\n\tclientId='" + clientId() + '\'' +
             "\n\tfullReconciliationIntervalMs=" + fullReconciliationIntervalMs() +
-            "\n\ttruststoreSecretName='" + truststoreSecretName() + '\'' +
-            "\n\tkeystoreSecretName='" + keystoreSecretName() + '\'' +
-            "\n\tkeystoreKeyName='" + keystoreKeyName() + '\'' +
-            "\n\tkeystoreCertificateName='" + keystoreCertificateName() + '\'' +
+            "\n\ttlsTrustedCertsSecretName='" + tlsTrustedCertsSecretName() + '\'' +
+            "\n\ttlsSecretName='" + tlsSecretName() + '\'' +
+            "\n\ttlsKeyName='" + tlsKeyName() + '\'' +
+            "\n\ttlsCertName='" + tlsCertName() + '\'' +
             "\n\tsslEndpointIdentificationAlgorithm='" + sslEndpointIdentificationAlgorithm() + '\'' +
             "\n\tsaslEnabled=" + saslEnabled() +
             "\n\tsaslMechanism='" + saslMechanism() + '\'' +

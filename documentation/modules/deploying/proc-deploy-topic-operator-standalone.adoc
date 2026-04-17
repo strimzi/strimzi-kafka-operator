@@ -121,22 +121,22 @@ You can set the value to `PLAINTEXT`, `SSL`, `SASL_PLAINTEXT`, or `SASL_SSL`.
 ----
 # ....
 env:
-  - name: STRIMZI_TRUSTSTORE_SECRET_NAME # <1>
+  - name: STRIMZI_TLS_TRUSTED_CERTS_SECRET_NAME # <1>
     value: "kafka-ca"
-  - name: STRIMZI_KEYSTORE_SECRET_NAME # <2>
+  - name: STRIMZI_TLS_SECRET_NAME # <2>
     value: "topic-operator-user-tls"
-  - name: STRIMZI_KEYSTORE_KEY_NAME # <3>
+  - name: STRIMZI_TLS_KEY_NAME # <3>
     value: "tls.key"
-  - name: STRIMZI_KEYSTORE_CERTIFICATE_NAME # <4>
+  - name: STRIMZI_TLS_CERT_NAME # <4>
     value: "tls.crt"
   - name: STRIMZI_CLUSTER_NAMESPACE # <5>
     value: "my-kafka-namespace"
 # ...
 ----
 <1> The name of the `Secret` with the public keys of the Certificate Authorities used to sign the Kafka server certificates as `.crt` entries.
-<2> The name of the `Secret` with the private and public keys for mTLS client authentication.
-<3> The key under which the mTLS client authentication private key is stored in the `Secret`.
-<4> The key under which the mTLS client authentication public key is stored in the `Secret`.
+<2> The name of the `Secret` with the private and certificate for mTLS client authentication.
+<3> The key under which the mTLS private key is stored in the `Secret`.
+<4> The key under which the mTLS client certificate is stored in the `Secret`.
 <5> The Kubernetes namespace where the TLS Secrets are located.
 
 . If you need to configure custom SASL authentication, you can define the necessary authentication properties using the `STRIMZI_SASL_CUSTOM_CONFIG_JSON` environment variable for the standalone operator.
