@@ -90,7 +90,7 @@ public class MavenArtifact extends Artifact {
         this.insecure = insecure;
     }
 
-    @Description("Include scope threshold to configure which dependencies are included for the Maven artifact. " +
+    @Description("Scope threshold for copying dependencies included for the Maven artifact. " +
             "Valid values are `compile`, `provided`, `runtime`, `test`, and `system`. " +
             "Applicable to the `maven` artifact type only.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
