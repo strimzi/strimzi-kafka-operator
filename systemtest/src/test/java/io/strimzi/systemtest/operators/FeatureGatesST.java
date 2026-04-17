@@ -20,7 +20,6 @@ import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.docs.TestDocsLabels;
-import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.resources.operator.ClusterOperatorConfigurationBuilder;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.storage.TestStorage;
@@ -32,6 +31,8 @@ import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.test.k8s.KubeClusterResource;
+import io.strimzi.testclients.clients.kafka.KafkaConsumerClient;
+import io.strimzi.testclients.clients.kafka.KafkaConsumerClientBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.Tag;
@@ -170,9 +171,18 @@ public class FeatureGatesST extends AbstractST {
             .endSpec()
             .build());
 
-        KafkaClients kafkaClient = ClientUtils.getInstantPlainClients(testStorage, KafkaResources.plainBootstrapAddress(testStorage.getClusterName()));
-        KubeResourceManager.get().createResourceWithWait(kafkaClient.consumerStrimzi());
-        ClientUtils.waitForInstantConsumerClientSuccess(testStorage);
+        final KafkaConsumerClient kafkaConsumerClient = new KafkaConsumerClientBuilder()
+            .withName(testStorage.getConsumerName())
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withTopicName(testStorage.getTopicName())
+            .withConsumerGroup(ClientUtils.generateRandomConsumerGroup())
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
+            .withMessageCount(testStorage.getMessageCount())
+            .build();
+
+        KubeResourceManager.get().createResourceWithWait(kafkaConsumerClient.getJob());
+
+        ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getMessageCount());
     }
 
     private static void annotateResourcesAndCheckIfPresent(TestStorage testStorage, boolean shouldBePresent) {

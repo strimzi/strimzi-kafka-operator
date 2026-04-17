@@ -21,7 +21,6 @@ import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.MicroShiftNotSupported;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.docs.TestDocsLabels;
-import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.admin.AdminClient;
 import io.strimzi.systemtest.resources.imageBuild.ImageBuild;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
@@ -30,7 +29,6 @@ import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
-import io.strimzi.systemtest.templates.specific.AdminClientTemplates;
 import io.strimzi.systemtest.utils.AdminClientUtils;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
@@ -40,6 +38,10 @@ import io.strimzi.systemtest.utils.specific.NfsUtils;
 import io.strimzi.systemtest.utils.specific.SeaweedFSUtils;
 import io.strimzi.test.ReadWriteUtils;
 import io.strimzi.test.TestUtils;
+import io.strimzi.testclients.clients.kafka.KafkaAdminClient;
+import io.strimzi.testclients.clients.kafka.KafkaAdminClientBuilder;
+import io.strimzi.testclients.clients.kafka.KafkaProducerConsumer;
+import io.strimzi.testclients.clients.kafka.KafkaProducerConsumerBuilder;
 import org.apache.kafka.common.requests.ListOffsetsRequest;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -165,27 +167,33 @@ public class TieredStorageST extends AbstractST {
             .endSpec()
             .build());
 
-        final KafkaClients clients = ClientUtils.getInstantPlainClientBuilder(testStorage)
+        final KafkaProducerConsumer kafkaProducerConsumer = new KafkaProducerConsumerBuilder()
+            .withProducerName(testStorage.getProducerName())
+            .withConsumerName(testStorage.getConsumerName())
+            .withConsumerGroup(ClientUtils.generateRandomConsumerGroup())
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withTopicName(testStorage.getTopicName())
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
             .withMessageCount(MESSAGE_COUNT)
             .withDelayMs(1)
             .withMessage(String.join("", Collections.nCopies(300, "#")))
             .build();
 
-        KubeResourceManager.get().createResourceWithWait(clients.producerStrimzi());
+        KubeResourceManager.get().createResourceWithWait(kafkaProducerConsumer.getProducer().getJob());
 
         SeaweedFSUtils.waitForDataInSeaweedFS(suiteStorage.getNamespaceName(), BUCKET_NAME);
 
+        final KafkaAdminClient kafkaAdminClient = new KafkaAdminClientBuilder()
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
+            .withName(testStorage.getAdminName())
+            .withNamespaceName(testStorage.getNamespaceName())
+            .build();
+
         // Create admin-client to check offsets
-        KubeResourceManager.get().createResourceWithWait(
-            AdminClientTemplates.plainAdminClient(
-                testStorage.getNamespaceName(),
-                testStorage.getAdminName(),
-                KafkaResources.plainBootstrapAddress(testStorage.getClusterName())
-            ).build()
-        );
+        KubeResourceManager.get().createResourceWithWait(kafkaAdminClient.getDeployment());
         waitForEarliestLocalOffsetGreaterThanZero(testStorage.getNamespaceName(), testStorage.getAdminName(), testStorage.getTopicName());
 
-        KubeResourceManager.get().createResourceWithWait(clients.consumerStrimzi());
+        KubeResourceManager.get().createResourceWithWait(kafkaProducerConsumer.getConsumer().getJob());
         // Verify we can consume messages from (a) remote storage and (b) local storage. Because we have verified earlier
         // that the log segments are moved to remote storage (by SeaweedFS size check) and deleted locally (by earliest-local offset check),
         // we can verify (a) and (b) by checking if we can consume all messages successfully.
@@ -288,29 +296,35 @@ public class TieredStorageST extends AbstractST {
             .endSpec()
             .build());
 
-        final KafkaClients clients = ClientUtils.getInstantPlainClientBuilder(testStorage)
+        final KafkaProducerConsumer kafkaProducerConsumer = new KafkaProducerConsumerBuilder()
+            .withProducerName(testStorage.getProducerName())
+            .withConsumerName(testStorage.getConsumerName())
+            .withConsumerGroup(ClientUtils.generateRandomConsumerGroup())
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withTopicName(testStorage.getTopicName())
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
             .withMessageCount(MESSAGE_COUNT)
             .withDelayMs(1)
             .withMessage(String.join("", Collections.nCopies(300, "#")))
             .build();
 
-        KubeResourceManager.get().createResourceWithWait(clients.producerStrimzi());
+        KubeResourceManager.get().createResourceWithWait(kafkaProducerConsumer.getProducer().getJob());
 
         // wait for logs uploaded to NFS
         NfsUtils.waitForSizeInNfs(testStorage.getNamespaceName(), size -> size > SEGMENT_BYTE);
 
         // Create admin-client to check offsets
-        KubeResourceManager.get().createResourceWithWait(
-            AdminClientTemplates.plainAdminClient(
-                testStorage.getNamespaceName(),
-                testStorage.getAdminName(),
-                KafkaResources.plainBootstrapAddress(testStorage.getClusterName())
-            ).build()
-        );
+        final KafkaAdminClient kafkaAdminClient = new KafkaAdminClientBuilder()
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
+            .withName(testStorage.getAdminName())
+            .withNamespaceName(testStorage.getNamespaceName())
+            .build();
 
+        // Create admin-client to check offsets
+        KubeResourceManager.get().createResourceWithWait(kafkaAdminClient.getDeployment());
         waitForEarliestLocalOffsetGreaterThanZero(testStorage.getNamespaceName(), testStorage.getAdminName(), testStorage.getTopicName());
 
-        KubeResourceManager.get().createResourceWithWait(clients.consumerStrimzi());
+        KubeResourceManager.get().createResourceWithWait(kafkaProducerConsumer.getConsumer().getJob());
         ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), MESSAGE_COUNT);
 
         // Delete data

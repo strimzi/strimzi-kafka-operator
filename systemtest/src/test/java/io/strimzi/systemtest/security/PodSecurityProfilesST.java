@@ -8,6 +8,8 @@ import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.SecurityContext;
+import io.fabric8.kubernetes.api.model.batch.v1.Job;
+import io.fabric8.kubernetes.api.model.batch.v1.JobBuilder;
 import io.skodjob.kubetest4j.resources.KubeResourceManager;
 import io.skodjob.kubetest4j.utils.KubeUtils;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
@@ -16,9 +18,6 @@ import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.annotations.RequiredMinKubeOrOcpBasedKubeVersion;
-import io.strimzi.systemtest.enums.PodSecurityProfile;
-import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
-import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.resources.crd.KafkaComponents;
 import io.strimzi.systemtest.resources.operator.ClusterOperatorConfigurationBuilder;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
@@ -33,6 +32,8 @@ import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
+import io.strimzi.testclients.clients.kafka.KafkaProducerConsumer;
+import io.strimzi.testclients.clients.kafka.KafkaProducerConsumerBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hamcrest.CoreMatchers;
@@ -156,14 +157,22 @@ public class PodSecurityProfilesST extends AbstractST {
 
         // Messages produced to Main Kafka Cluster (source) will be sinked to file, and mirrored into targeted Kafkas to later verify Operands work correctly.
         LOGGER.info("Transmit messages in Cluster: {}/{}", testStorage.getNamespaceName(), testStorage.getClusterName());
-        final KafkaClients kafkaClients = ClientUtils.getInstantPlainClientBuilder(testStorage)
-            .withPodSecurityPolicy(PodSecurityProfile.RESTRICTED)
-            .build();
+        final KafkaProducerConsumerBuilder kafkaProducerConsumerBuilder = new KafkaProducerConsumerBuilder()
+            .withProducerName(testStorage.getProducerName())
+            .withConsumerName(testStorage.getConsumerName())
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withTopicName(testStorage.getTopicName())
+            .withConsumerGroup(ClientUtils.generateRandomConsumerGroup())
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
+            .withMessageCount(testStorage.getMessageCount());
+
+        final KafkaProducerConsumer kafkaProducerConsumer = kafkaProducerConsumerBuilder.build();
+
         KubeResourceManager.get().createResourceWithWait(
-            kafkaClients.producerStrimzi(),
-            kafkaClients.consumerStrimzi()
+            applyRestrictedSecurityProfileToClientJob(kafkaProducerConsumer.getProducer().getJob()),
+            applyRestrictedSecurityProfileToClientJob(kafkaProducerConsumer.getConsumer().getJob())
         );
-        ClientUtils.waitForInstantClientSuccess(testStorage);
+        ClientUtils.waitForClientsSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getProducerName(), testStorage.getMessageCount());
 
         // verifies that Pods and Containers have proper generated SC
         final List<Pod> podsWithProperlyGeneratedSecurityContexts = new ArrayList<>(PodUtils.getKafkaClusterPods(testStorage));
@@ -177,17 +186,16 @@ public class PodSecurityProfilesST extends AbstractST {
         KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(testStorage.getNamespaceName(), kafkaConnectPodName, TestConstants.DEFAULT_SINK_FILE_PATH, testStorage.getMessageCount());
 
         // verify MM2
-        final KafkaClients mm2Client = ClientUtils.getInstantPlainClientBuilder(testStorage, KafkaResources.plainBootstrapAddress(mm2TargetClusterName))
+        final KafkaProducerConsumer mm2Client = kafkaProducerConsumerBuilder
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(mm2TargetClusterName))
             .withTopicName(mm2SourceMirroredTopicName)
-            .withPodSecurityPolicy(PodSecurityProfile.RESTRICTED)
             .build();
-        KubeResourceManager.get().createResourceWithWait(mm2Client.consumerStrimzi());
-        ClientUtils.waitForInstantConsumerClientSuccess(testStorage);
+
+        KubeResourceManager.get().createResourceWithWait(applyRestrictedSecurityProfileToClientJob(mm2Client.getConsumer().getJob()));
+        ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getMessageCount());
 
         // verify that client incorrectly configured Pod Security Profile wont successfully communicate.
-        final KafkaClients incorrectKafkaClients = new KafkaClientsBuilder(kafkaClients)
-            .withPodSecurityPolicy(PodSecurityProfile.DEFAULT)
-            .build();
+        final Job invalidProducerJob = kafkaProducerConsumer.getProducer().getJob();
 
         // excepted failure
         // job_controller.go:1437 pods "..." is forbidden: violates PodSecurity "restricted:latest": allowPrivilegeEscalation != false
@@ -195,8 +203,44 @@ public class PodSecurityProfilesST extends AbstractST {
         // unrestricted capabilities (container "..." must set securityContext.capabilities.drop=["ALL"]),
         // runAsNonRoot != true (pod or container "..." must set securityContext.runAsNonRoot=true),
         // seccompProfile (pod or container "..." must set securityContext.seccompProfile.type to "RuntimeDefault" or "Localhost")
-        KubeResourceManager.get().createResourceWithoutWait(incorrectKafkaClients.producerStrimzi());
-        ClientUtils.waitForInstantProducerClientTimeout(testStorage);
+        KubeResourceManager.get().createResourceWithoutWait(invalidProducerJob);
+        ClientUtils.waitForClientTimeout(testStorage.getNamespaceName(), testStorage.getProducerName(), testStorage.getMessageCount());
+    }
+
+    /**
+     * Method that applies "restricted" Pod Security Profile to every client's Job.
+     *
+     * @param clientJob     Client's Job that should be updated.
+     *
+     * @return  updated client's Job with "restricted" Pod Security Profile.
+     */
+    private Job applyRestrictedSecurityProfileToClientJob(Job clientJob) {
+        return new JobBuilder(clientJob)
+            .editSpec()
+                .editTemplate()
+                    .editSpec()
+                        .withNewSecurityContext()
+                            .withRunAsNonRoot(true)
+                            .withNewSeccompProfile()
+                                .withType("RuntimeDefault")
+                            .endSeccompProfile()
+                        .endSecurityContext()
+                        .editFirstContainer()
+                            .withNewSecurityContext()
+                                .withAllowPrivilegeEscalation(false)
+                                .withNewCapabilities()
+                                    .withDrop("ALL")
+                                .endCapabilities()
+                                .withRunAsNonRoot(true)
+                                .withNewSeccompProfile()
+                                    .withType("RuntimeDefault")
+                                .endSeccompProfile()
+                            .endSecurityContext()
+                        .endContainer()
+                    .endSpec()
+                .endTemplate()
+            .endSpec()
+            .build();
     }
 
     @BeforeAll

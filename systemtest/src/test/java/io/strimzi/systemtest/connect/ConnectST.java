@@ -53,8 +53,7 @@ import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.MicroShiftNotSupported;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.docs.TestDocsLabels;
-import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
-import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
+import io.strimzi.systemtest.kafkaclients.ClientsAuthentication;
 import io.strimzi.systemtest.resources.CrdClients;
 import io.strimzi.systemtest.resources.operator.ClusterOperatorConfigurationBuilder;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
@@ -77,6 +76,12 @@ import io.strimzi.systemtest.utils.kubeUtils.controllers.StrimziPodSetUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.NetworkPolicyUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
+import io.strimzi.testclients.clients.kafka.KafkaConsumerClient;
+import io.strimzi.testclients.clients.kafka.KafkaConsumerClientBuilder;
+import io.strimzi.testclients.clients.kafka.KafkaProducerClient;
+import io.strimzi.testclients.clients.kafka.KafkaProducerClientBuilder;
+import io.strimzi.testclients.clients.kafka.KafkaProducerConsumer;
+import io.strimzi.testclients.clients.kafka.KafkaProducerConsumerBuilder;
 import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -327,11 +332,23 @@ class ConnectST extends AbstractST {
         KafkaConnectorUtils.createFileSinkConnector(testStorage.getNamespaceName(), scraperPodName, testStorage.getTopicName(),
             TestConstants.DEFAULT_SINK_FILE_PATH, KafkaConnectResources.url(testStorage.getClusterName(), testStorage.getNamespaceName(), 8083));
 
-        final KafkaClients plainScramShaClients = ClientUtils.getInstantScramShaOverPlainClients(testStorage);
+        final KafkaProducerConsumer kafkaProducerConsumer = new KafkaProducerConsumerBuilder()
+            .withProducerName(testStorage.getProducerName())
+            .withConsumerName(testStorage.getConsumerName())
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withTopicName(testStorage.getTopicName())
+            .withConsumerGroup(ClientUtils.generateRandomConsumerGroup())
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
+            .withAuthentication(ClientsAuthentication.configurePlainScramSha(testStorage.getNamespaceName(), testStorage.getUsername()))
+            .withMessageCount(testStorage.getMessageCount())
+            .build();
+
         KubeResourceManager.get().createResourceWithWait(
-            plainScramShaClients.producerScramShaPlainStrimzi(),
-            plainScramShaClients.consumerScramShaPlainStrimzi());
-        ClientUtils.waitForInstantClientSuccess(testStorage);
+            kafkaProducerConsumer.getProducer().getJob(),
+            kafkaProducerConsumer.getConsumer().getJob()
+        );
+
+        ClientUtils.waitForClientsSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getProducerName(), testStorage.getMessageCount());
         KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(testStorage.getNamespaceName(), kafkaConnectPodName, TestConstants.DEFAULT_SINK_FILE_PATH, testStorage.getMessageCount());
     }
 
@@ -388,9 +405,19 @@ class ConnectST extends AbstractST {
 
         final String scraperPodName = KubeResourceManager.get().kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), testStorage.getScraperName()).get(0).getMetadata().getName();
 
-        final KafkaClients kafkaClients = ClientUtils.getInstantPlainClients(testStorage);
-        KubeResourceManager.get().createResourceWithWait(kafkaClients.consumerStrimzi());
-        ClientUtils.waitForInstantConsumerClientSuccess(testStorage);
+        final KafkaConsumerClient kafkaConsumerClient = new KafkaConsumerClientBuilder()
+            .withName(testStorage.getConsumerName())
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withTopicName(testStorage.getTopicName())
+            .withConsumerGroup(ClientUtils.generateRandomConsumerGroup())
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
+            .withMessageCount(testStorage.getMessageCount())
+            .build();
+
+        KubeResourceManager.get().createResourceWithWait(
+            kafkaConsumerClient.getJob()
+        );
+        ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getMessageCount());
 
         String service = KafkaConnectResources.url(testStorage.getClusterName(), testStorage.getNamespaceName(), 8083);
         String output = KubeResourceManager.get().kubeCmdClient().inNamespace(testStorage.getNamespaceName()).execInPod(scraperPodName, "/bin/bash", "-c", "curl " + service + "/connectors/" + connectorName).out();
@@ -589,9 +616,23 @@ class ConnectST extends AbstractST {
         KafkaConnectorUtils.createFileSinkConnector(testStorage.getNamespaceName(), scraperPodName, testStorage.getTopicName(),
             TestConstants.DEFAULT_SINK_FILE_PATH, KafkaConnectResources.url(testStorage.getClusterName(), testStorage.getNamespaceName(), 8083));
 
-        final KafkaClients kafkaClients = ClientUtils.getInstantTlsClients(testStorage);
-        KubeResourceManager.get().createResourceWithWait(kafkaClients.producerTlsStrimzi(testStorage.getClusterName()), kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
-        ClientUtils.waitForInstantClientSuccess(testStorage);
+        final KafkaProducerConsumer kafkaProducerConsumer = new KafkaProducerConsumerBuilder()
+            .withProducerName(testStorage.getProducerName())
+            .withConsumerName(testStorage.getConsumerName())
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withTopicName(testStorage.getTopicName())
+            .withConsumerGroup(ClientUtils.generateRandomConsumerGroup())
+            .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(testStorage.getClusterName()))
+            .withAuthentication(ClientsAuthentication.configureTls(testStorage.getClusterName(), testStorage.getUsername()))
+            .withMessageCount(testStorage.getMessageCount())
+            .build();
+
+        KubeResourceManager.get().createResourceWithWait(
+            kafkaProducerConsumer.getProducer().getJob(),
+            kafkaProducerConsumer.getConsumer().getJob()
+        );
+
+        ClientUtils.waitForClientsSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getProducerName(), testStorage.getMessageCount());
 
         KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(testStorage.getNamespaceName(), kafkaConnectPodName, TestConstants.DEFAULT_SINK_FILE_PATH, testStorage.getMessageCount());
     }
@@ -678,9 +719,23 @@ class ConnectST extends AbstractST {
         KafkaConnectorUtils.createFileSinkConnector(testStorage.getNamespaceName(), scraperPodName, testStorage.getTopicName(),
             TestConstants.DEFAULT_SINK_FILE_PATH, KafkaConnectResources.url(testStorage.getClusterName(), testStorage.getNamespaceName(), 8083));
 
-        final KafkaClients kafkaClients = ClientUtils.getInstantScramShaOverTlsClients(testStorage);
-        KubeResourceManager.get().createResourceWithWait(kafkaClients.producerScramShaTlsStrimzi(testStorage.getClusterName()), kafkaClients.consumerScramShaTlsStrimzi(testStorage.getClusterName()));
-        ClientUtils.waitForInstantClientSuccess(testStorage);
+        final KafkaProducerConsumer kafkaProducerConsumer = new KafkaProducerConsumerBuilder()
+            .withProducerName(testStorage.getProducerName())
+            .withConsumerName(testStorage.getConsumerName())
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withTopicName(testStorage.getTopicName())
+            .withConsumerGroup(ClientUtils.generateRandomConsumerGroup())
+            .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(testStorage.getClusterName()))
+            .withAuthentication(ClientsAuthentication.configureTlsScramSha(testStorage.getNamespaceName(), testStorage.getUsername(), testStorage.getClusterName()))
+            .withMessageCount(testStorage.getMessageCount())
+            .build();
+
+        KubeResourceManager.get().createResourceWithWait(
+            kafkaProducerConsumer.getProducer().getJob(),
+            kafkaProducerConsumer.getConsumer().getJob()
+        );
+
+        ClientUtils.waitForClientsSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getProducerName(), testStorage.getMessageCount());
 
         KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(testStorage.getNamespaceName(), kafkaConnectPodName, TestConstants.DEFAULT_SINK_FILE_PATH, testStorage.getMessageCount());
     }
@@ -772,19 +827,24 @@ class ConnectST extends AbstractST {
             .build());
 
         // Send first batch of messages to the topic
-        KafkaClients kafkaClients = ClientUtils.getInstantPlainClientBuilder(testStorage)
+        KafkaProducerClient kafkaProducerClient = new KafkaProducerClientBuilder()
+            .withName(testStorage.getProducerName())
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withTopicName(testStorage.getTopicName())
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
             .withMessageCount(firstBatchMessageCount)
             .build();
-        KubeResourceManager.get().createResourceWithWait(kafkaClients.producerStrimzi());
-        ClientUtils.waitForInstantProducerClientSuccess(testStorage);
+
+        KubeResourceManager.get().createResourceWithWait(kafkaProducerClient.getJob());
+        ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getProducerName(), testStorage.getMessageCount());
 
         // Send second batch of messages to the topic
-        kafkaClients = new KafkaClientsBuilder(kafkaClients)
+        kafkaProducerClient = new KafkaProducerClientBuilder(kafkaProducerClient)
             .withMessageCount(secondBatchMessageCount)
             .build();
 
-        KubeResourceManager.get().createResourceWithWait(kafkaClients.producerStrimzi());
-        ClientUtils.waitForInstantProducerClientSuccess(testStorage);
+        KubeResourceManager.get().createResourceWithWait(kafkaProducerClient.getJob());
+        ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getProducerName(), testStorage.getMessageCount());
 
         // After connector picks up messages from topic it fails task
         // If it's the first time echo-sink task failed - it's immediately restarted and connector adds count to autoRestartCount.
@@ -963,9 +1023,22 @@ class ConnectST extends AbstractST {
         String workerNode = connectStatus.getJsonObject("connector").getString("worker_id").split(":")[0];
         String connectorPodName = workerNode.substring(0, workerNode.indexOf("."));
 
-        final KafkaClients kafkaClients = ClientUtils.getInstantPlainClients(testStorage);
-        KubeResourceManager.get().createResourceWithWait(kafkaClients.producerStrimzi(), kafkaClients.consumerStrimzi());
-        ClientUtils.waitForInstantClientSuccess(testStorage);
+        final KafkaProducerConsumer kafkaProducerConsumer = new KafkaProducerConsumerBuilder()
+            .withProducerName(testStorage.getProducerName())
+            .withConsumerName(testStorage.getConsumerName())
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withTopicName(testStorage.getTopicName())
+            .withConsumerGroup(ClientUtils.generateRandomConsumerGroup())
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
+            .withMessageCount(testStorage.getMessageCount())
+            .build();
+
+        KubeResourceManager.get().createResourceWithWait(
+            kafkaProducerConsumer.getProducer().getJob(),
+            kafkaProducerConsumer.getConsumer().getJob()
+        );
+
+        ClientUtils.waitForClientsSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getProducerName(), testStorage.getMessageCount());
 
         KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(testStorage.getNamespaceName(), connectorPodName, TestConstants.DEFAULT_SINK_FILE_PATH, testStorage.getMessageCount());
     }
@@ -1045,13 +1118,18 @@ class ConnectST extends AbstractST {
             .endSpec()
             .build());
 
-        final KafkaClients clients = ClientUtils.getInstantTlsClientBuilder(testStorage)
-            .withUsername(weirdUserName)
+        KafkaProducerClient kafkaProducerClient = new KafkaProducerClientBuilder()
+            .withName(testStorage.getProducerName())
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withTopicName(testStorage.getTopicName())
+            .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(testStorage.getClusterName()))
+            .withMessageCount(testStorage.getMessageCount())
+            .withAuthentication(ClientsAuthentication.configureTls(testStorage.getClusterName(), weirdUserName))
             .build();
 
         LOGGER.info("Checking if user is able to produce messages");
-        KubeResourceManager.get().createResourceWithWait(clients.producerTlsStrimzi(testStorage.getClusterName()));
-        ClientUtils.waitForInstantProducerClientSuccess(testStorage);
+        KubeResourceManager.get().createResourceWithWait(kafkaProducerClient.getJob());
+        ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getProducerName(), testStorage.getMessageCount());
 
         LOGGER.info("Checking if connector is able to consume messages");
         final String connectorPodName = KubeResourceManager.get().kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getKafkaConnectSelector()).get(0).getMetadata().getName();
@@ -1136,13 +1214,18 @@ class ConnectST extends AbstractST {
             .endSpec()
             .build());
 
-        final KafkaClients clients = ClientUtils.getInstantScramShaOverTlsClientBuilder(testStorage)
-            .withUsername(weirdUserName)
+        KafkaProducerClient kafkaProducerClient = new KafkaProducerClientBuilder()
+            .withName(testStorage.getProducerName())
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withTopicName(testStorage.getTopicName())
+            .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(testStorage.getClusterName()))
+            .withMessageCount(testStorage.getMessageCount())
+            .withAuthentication(ClientsAuthentication.configureTlsScramSha(testStorage.getNamespaceName(), weirdUserName, testStorage.getClusterName()))
             .build();
 
-        LOGGER.info("Checking if user is able to send messages");
-        KubeResourceManager.get().createResourceWithWait(clients.producerScramShaTlsStrimzi(testStorage.getClusterName()));
-        ClientUtils.waitForInstantProducerClientSuccess(testStorage);
+        LOGGER.info("Checking if user is able to produce messages");
+        KubeResourceManager.get().createResourceWithWait(kafkaProducerClient.getJob());
+        ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getProducerName(), testStorage.getMessageCount());
 
         LOGGER.info("Checking if connector is able to consume messages");
         final String connectorPodName = KubeResourceManager.get().kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getKafkaConnectSelector()).get(0).getMetadata().getName();
@@ -1775,9 +1858,20 @@ class ConnectST extends AbstractST {
         NetworkPolicyUtils.deployNetworkPolicyForResource(connect, KafkaConnectResources.componentName(testStorage.getClusterName()));
         final String scraperPodName = PodUtils.getPodsByPrefixInNameWithDynamicWait(testStorage.getNamespaceName(), testStorage.getScraperName()).get(0).getMetadata().getName();
 
-        KafkaClients kafkaClients = ClientUtils.getInstantPlainClients(testStorage);
+        final KafkaProducerConsumer kafkaProducerConsumer = new KafkaProducerConsumerBuilder()
+            .withProducerName(testStorage.getProducerName())
+            .withConsumerName(testStorage.getConsumerName())
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withTopicName(testStorage.getTopicName())
+            .withConsumerGroup(ClientUtils.generateRandomConsumerGroup())
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
+            .withMessageCount(testStorage.getMessageCount())
+            .build();
 
-        KubeResourceManager.get().createResourceWithWait(kafkaClients.producerStrimzi(), kafkaClients.consumerStrimzi());
+        KubeResourceManager.get().createResourceWithWait(
+            kafkaProducerConsumer.getProducer().getJob(),
+            kafkaProducerConsumer.getConsumer().getJob()
+        );
 
         KafkaConnectorUtils.waitForOffsetInFileSinkConnector(testStorage.getNamespaceName(), scraperPodName, testStorage.getClusterName(), testStorage.getClusterName(), TestConstants.MESSAGE_COUNT);
 
@@ -1871,9 +1965,22 @@ class ConnectST extends AbstractST {
 
         // messages need to be produced for each run (although there are more messages in topic eventually, sink will not copy messages it copied previously (before clearing them)
         LOGGER.info("Producing new messages which are to be watched KafkaConnector once it is resumed");
-        final KafkaClients kafkaClients = ClientUtils.getInstantPlainClients(testStorage);
-        KubeResourceManager.get().createResourceWithWait(kafkaClients.producerStrimzi(), kafkaClients.consumerStrimzi());
-        ClientUtils.waitForInstantClientSuccess(testStorage);
+        final KafkaProducerConsumer kafkaProducerConsumer = new KafkaProducerConsumerBuilder()
+            .withProducerName(testStorage.getProducerName())
+            .withConsumerName(testStorage.getConsumerName())
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withTopicName(testStorage.getTopicName())
+            .withConsumerGroup(ClientUtils.generateRandomConsumerGroup())
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
+            .withMessageCount(testStorage.getMessageCount())
+            .build();
+
+        KubeResourceManager.get().createResourceWithWait(
+            kafkaProducerConsumer.getProducer().getJob(),
+            kafkaProducerConsumer.getConsumer().getJob()
+        );
+
+        ClientUtils.waitForClientsSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getProducerName(), testStorage.getMessageCount());
 
         LOGGER.info("Because KafkaConnector is blocked, no messages should appear to FileSink file");
         assertThrows(Exception.class, () -> KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(testStorage.getNamespaceName(), kafkaConnectPodName, TestConstants.DEFAULT_SINK_FILE_PATH, testStorage.getMessageCount()));

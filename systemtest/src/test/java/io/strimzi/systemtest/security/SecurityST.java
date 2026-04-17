@@ -30,9 +30,8 @@ import io.strimzi.operator.common.model.Ca;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
+import io.strimzi.systemtest.kafkaclients.ClientsAuthentication;
 import io.strimzi.systemtest.kafkaclients.externalClients.ExternalKafkaClient;
-import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
-import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.resources.CrdClients;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.storage.TestStorage;
@@ -52,6 +51,8 @@ import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import io.strimzi.test.ReadWriteUtils;
 import io.strimzi.test.TestUtils;
+import io.strimzi.testclients.clients.kafka.KafkaProducerConsumer;
+import io.strimzi.testclients.clients.kafka.KafkaProducerConsumerBuilder;
 import org.apache.kafka.common.config.SslConfigs;
 import org.apache.kafka.common.errors.GroupAuthorizationException;
 import org.apache.kafka.common.security.auth.SecurityProtocol;
@@ -164,9 +165,23 @@ class SecurityST extends AbstractST {
             KafkaTopicTemplates.topic(testStorage).build()
         );
 
-        KafkaClients kafkaClients = ClientUtils.getInstantTlsClients(testStorage);
-        KubeResourceManager.get().createResourceWithWait(kafkaClients.producerTlsStrimzi(testStorage.getClusterName()), kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
-        ClientUtils.waitForInstantClientSuccess(testStorage);
+        final KafkaProducerConsumer kafkaProducerConsumer = new KafkaProducerConsumerBuilder()
+            .withProducerName(testStorage.getProducerName())
+            .withConsumerName(testStorage.getConsumerName())
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withTopicName(testStorage.getTopicName())
+            .withConsumerGroup(ClientUtils.generateRandomConsumerGroup())
+            .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(testStorage.getClusterName()))
+            .withMessageCount(testStorage.getMessageCount())
+            .withAuthentication(ClientsAuthentication.configureTls(testStorage.getClusterName(), testStorage.getUsername()))
+            .build();
+
+        KubeResourceManager.get().createResourceWithWait(
+            kafkaProducerConsumer.getProducer().getJob(),
+            kafkaProducerConsumer.getConsumer().getJob()
+        );
+
+        ClientUtils.waitForClientsSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getProducerName(), testStorage.getMessageCount());
 
         // Get all pods, and their resource versions
         Map<String, String> controllerPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getControllerSelector());
@@ -217,22 +232,21 @@ class SecurityST extends AbstractST {
                 value, is(not(initialCaCerts.get(secretName))));
         }
 
-        kafkaClients.generateNewConsumerGroup();
-        KubeResourceManager.get().createResourceWithWait(kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
-        ClientUtils.waitForInstantConsumerClientSuccess(testStorage);
+        kafkaProducerConsumer.setConsumerGroup(ClientUtils.generateRandomConsumerGroup());
+        KubeResourceManager.get().createResourceWithWait(kafkaProducerConsumer.getConsumer().getJob());
+
+        ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getMessageCount());
 
         // Check a new client (signed by new client key) can consume
         String bobUserName = "bob-" + testStorage.getUsername();
 
         KubeResourceManager.get().createResourceWithWait(KafkaUserTemplates.tlsUser(testStorage.getNamespaceName(), bobUserName, testStorage.getClusterName()).build());
 
-        kafkaClients = new KafkaClientsBuilder(kafkaClients)
-            .withConsumerGroup(ClientUtils.generateRandomConsumerGroup())
-            .withUsername(bobUserName)
-            .build();
+        kafkaProducerConsumer.setConsumerGroup(ClientUtils.generateRandomConsumerGroup());
+        kafkaProducerConsumer.setAuthentication(ClientsAuthentication.configureTls(testStorage.getClusterName(), bobUserName));
 
-        KubeResourceManager.get().createResourceWithWait(kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
-        ClientUtils.waitForInstantConsumerClientSuccess(testStorage);
+        KubeResourceManager.get().createResourceWithWait(kafkaProducerConsumer.getConsumer().getJob());
+        ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getMessageCount());
 
         if (!kafkaShouldRoll) {
             assertThat("Kafka Pods should not roll, but did.", PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getBrokerSelector()), is(brokerPods));
@@ -311,9 +325,23 @@ class SecurityST extends AbstractST {
             KafkaTopicTemplates.topic(testStorage).build()
         );
 
-        KafkaClients kafkaClients = ClientUtils.getInstantTlsClients(testStorage);
-        KubeResourceManager.get().createResourceWithWait(kafkaClients.producerTlsStrimzi(testStorage.getClusterName()), kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
-        ClientUtils.waitForInstantClientSuccess(testStorage);
+        final KafkaProducerConsumer kafkaProducerConsumer = new KafkaProducerConsumerBuilder()
+            .withProducerName(testStorage.getProducerName())
+            .withConsumerName(testStorage.getConsumerName())
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withTopicName(testStorage.getTopicName())
+            .withConsumerGroup(ClientUtils.generateRandomConsumerGroup())
+            .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(testStorage.getClusterName()))
+            .withMessageCount(testStorage.getMessageCount())
+            .withAuthentication(ClientsAuthentication.configureTls(testStorage.getClusterName(), testStorage.getUsername()))
+            .build();
+
+        KubeResourceManager.get().createResourceWithWait(
+            kafkaProducerConsumer.getProducer().getJob(),
+            kafkaProducerConsumer.getConsumer().getJob()
+        );
+
+        ClientUtils.waitForClientsSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getProducerName(), testStorage.getMessageCount());
 
         // Get all pods, and their resource versions
         Map<String, String> controllerPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getControllerSelector());
@@ -387,9 +415,9 @@ class SecurityST extends AbstractST {
                     value, is(not(initialCaKeys.get(secretName))));
         }
 
-        kafkaClients.generateNewConsumerGroup();
-        KubeResourceManager.get().createResourceWithWait(kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
-        ClientUtils.waitForInstantConsumerClientSuccess(testStorage);
+        kafkaProducerConsumer.setConsumerGroup(ClientUtils.generateRandomConsumerGroup());
+        KubeResourceManager.get().createResourceWithWait(kafkaProducerConsumer.getConsumer().getJob());
+        ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getMessageCount());
 
         // Finally check a new client (signed by new client key) can consume
 
@@ -397,13 +425,11 @@ class SecurityST extends AbstractST {
 
         KubeResourceManager.get().createResourceWithWait(KafkaUserTemplates.tlsUser(testStorage.getNamespaceName(), bobUserName, testStorage.getClusterName()).build());
 
-        kafkaClients = new KafkaClientsBuilder(kafkaClients)
-            .withConsumerGroup(ClientUtils.generateRandomConsumerGroup())
-            .withUsername(bobUserName)
-            .build();
+        kafkaProducerConsumer.setConsumerGroup(ClientUtils.generateRandomConsumerGroup());
+        kafkaProducerConsumer.setAuthentication(ClientsAuthentication.configureTls(testStorage.getClusterName(), bobUserName));
 
-        KubeResourceManager.get().createResourceWithWait(kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
-        ClientUtils.waitForInstantConsumerClientSuccess(testStorage);
+        KubeResourceManager.get().createResourceWithWait(kafkaProducerConsumer.getConsumer().getJob());
+        ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getMessageCount());
 
         if (!kafkaShouldRoll) {
             assertThat("Controller Pods should not roll, but did.", PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getControllerSelector()), is(controllerPods));
@@ -493,9 +519,23 @@ class SecurityST extends AbstractST {
             KafkaTopicTemplates.topic(testStorage).build()
         );
 
-        final KafkaClients kafkaClients = ClientUtils.getInstantTlsClients(testStorage);
-        KubeResourceManager.get().createResourceWithWait(kafkaClients.producerTlsStrimzi(testStorage.getClusterName()), kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
-        ClientUtils.waitForInstantClientSuccess(testStorage);
+        final KafkaProducerConsumer kafkaProducerConsumer = new KafkaProducerConsumerBuilder()
+            .withProducerName(testStorage.getProducerName())
+            .withConsumerName(testStorage.getConsumerName())
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withTopicName(testStorage.getTopicName())
+            .withConsumerGroup(ClientUtils.generateRandomConsumerGroup())
+            .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(testStorage.getClusterName()))
+            .withMessageCount(testStorage.getMessageCount())
+            .withAuthentication(ClientsAuthentication.configureTls(testStorage.getClusterName(), testStorage.getUsername()))
+            .build();
+
+        KubeResourceManager.get().createResourceWithWait(
+            kafkaProducerConsumer.getProducer().getJob(),
+            kafkaProducerConsumer.getConsumer().getJob()
+        );
+
+        ClientUtils.waitForClientsSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getProducerName(), testStorage.getMessageCount());
 
         // Wait until the certificates have been replaced
         SecretUtils.waitForCertToChange(testStorage.getNamespaceName(), clusterCaCert, clusterCaCertificateSecretName(testStorage.getClusterName()));
@@ -503,8 +543,12 @@ class SecurityST extends AbstractST {
         // Wait until the pods are all up and ready
         KafkaUtils.waitForClusterStability(testStorage.getNamespaceName(), testStorage.getClusterName());
 
-        KubeResourceManager.get().createResourceWithWait(kafkaClients.producerTlsStrimzi(testStorage.getClusterName()), kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
-        ClientUtils.waitForInstantClientSuccess(testStorage);
+        KubeResourceManager.get().createResourceWithWait(
+            kafkaProducerConsumer.getProducer().getJob(),
+            kafkaProducerConsumer.getConsumer().getJob()
+        );
+
+        ClientUtils.waitForClientsSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getProducerName(), testStorage.getMessageCount());
     }
 
     @ParallelNamespaceTest
@@ -601,9 +645,23 @@ class SecurityST extends AbstractST {
         assertThat("KafkaUser certificate has not been renewed within maintenanceTimeWindows",
                 kafkaUserSecret, not(sameInstance(kafkaUserSecretRolled)));
 
-        final KafkaClients kafkaClients = ClientUtils.getInstantTlsClients(testStorage);
-        KubeResourceManager.get().createResourceWithWait(kafkaClients.producerTlsStrimzi(testStorage.getClusterName()), kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
-        ClientUtils.waitForInstantClientSuccess(testStorage);
+        final KafkaProducerConsumer kafkaProducerConsumer = new KafkaProducerConsumerBuilder()
+            .withProducerName(testStorage.getProducerName())
+            .withConsumerName(testStorage.getConsumerName())
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withTopicName(testStorage.getTopicName())
+            .withConsumerGroup(ClientUtils.generateRandomConsumerGroup())
+            .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(testStorage.getClusterName()))
+            .withMessageCount(testStorage.getMessageCount())
+            .withAuthentication(ClientsAuthentication.configureTls(testStorage.getClusterName(), testStorage.getUsername()))
+            .build();
+
+        KubeResourceManager.get().createResourceWithWait(
+            kafkaProducerConsumer.getProducer().getJob(),
+            kafkaProducerConsumer.getConsumer().getJob()
+        );
+
+        ClientUtils.waitForClientsSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getProducerName(), testStorage.getMessageCount());
     }
 
     @ParallelNamespaceTest
@@ -657,9 +715,23 @@ class SecurityST extends AbstractST {
             assertThat("Certificates has different cert UIDs", !secrets.get(i).getData().get("ca.crt").equals(regeneratedSecrets.get(i).getData().get("ca.crt")));
         }
 
-        final KafkaClients kafkaClients = ClientUtils.getInstantTlsClients(testStorage);
-        KubeResourceManager.get().createResourceWithWait(kafkaClients.producerTlsStrimzi(testStorage.getClusterName()), kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
-        ClientUtils.waitForInstantClientSuccess(testStorage);
+        final KafkaProducerConsumer kafkaProducerConsumer = new KafkaProducerConsumerBuilder()
+            .withProducerName(testStorage.getProducerName())
+            .withConsumerName(testStorage.getConsumerName())
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withTopicName(testStorage.getTopicName())
+            .withConsumerGroup(ClientUtils.generateRandomConsumerGroup())
+            .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(testStorage.getClusterName()))
+            .withMessageCount(testStorage.getMessageCount())
+            .withAuthentication(ClientsAuthentication.configureTls(testStorage.getClusterName(), testStorage.getUsername()))
+            .build();
+
+        KubeResourceManager.get().createResourceWithWait(
+            kafkaProducerConsumer.getProducer().getJob(),
+            kafkaProducerConsumer.getConsumer().getJob()
+        );
+
+        ClientUtils.waitForClientsSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getProducerName(), testStorage.getMessageCount());
     }
 
     @ParallelNamespaceTest
@@ -923,9 +995,23 @@ class SecurityST extends AbstractST {
                 .build()
         );
 
-        KafkaClients kafkaClients = ClientUtils.getInstantTlsClients(testStorage);
-        KubeResourceManager.get().createResourceWithWait(kafkaClients.producerTlsStrimzi(testStorage.getClusterName()), kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
-        ClientUtils.waitForInstantClientSuccess(testStorage);
+        final KafkaProducerConsumer kafkaProducerConsumer = new KafkaProducerConsumerBuilder()
+            .withProducerName(testStorage.getProducerName())
+            .withConsumerName(testStorage.getConsumerName())
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withTopicName(testStorage.getTopicName())
+            .withConsumerGroup(ClientUtils.generateRandomConsumerGroup())
+            .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(testStorage.getClusterName()))
+            .withMessageCount(testStorage.getMessageCount())
+            .withAuthentication(ClientsAuthentication.configureTls(testStorage.getClusterName(), testStorage.getUsername()))
+            .build();
+
+        KubeResourceManager.get().createResourceWithWait(
+            kafkaProducerConsumer.getProducer().getJob(),
+            kafkaProducerConsumer.getConsumer().getJob()
+        );
+
+        ClientUtils.waitForClientsSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getProducerName(), testStorage.getMessageCount());
 
         Map<String, String> controllerPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getControllerSelector());
         Map<String, String> brokerPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getBrokerSelector());
@@ -959,9 +1045,9 @@ class SecurityST extends AbstractST {
             }
         );
 
-        kafkaClients.generateNewConsumerGroup();
-        KubeResourceManager.get().createResourceWithWait(kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
-        ClientUtils.waitForInstantConsumerClientSuccess(testStorage);
+        kafkaProducerConsumer.setConsumerGroup(ClientUtils.generateRandomConsumerGroup());
+        KubeResourceManager.get().createResourceWithWait(kafkaProducerConsumer.getConsumer().getJob());
+        ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getMessageCount());
 
         final ResourceRequirements correctRequirements = new ResourceRequirementsBuilder()
             .addToRequests("cpu", new Quantity("200m"))
@@ -976,22 +1062,23 @@ class SecurityST extends AbstractST {
         RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), 3, brokerPods);
         DeploymentUtils.waitTillDepHasRolled(testStorage.getNamespaceName(), testStorage.getEoDeploymentName(), 1, eoPods);
 
-        kafkaClients.generateNewConsumerGroup();
-        KubeResourceManager.get().createResourceWithWait(kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
-        ClientUtils.waitForInstantConsumerClientSuccess(testStorage);
+        kafkaProducerConsumer.setConsumerGroup(ClientUtils.generateRandomConsumerGroup());
+        KubeResourceManager.get().createResourceWithWait(kafkaProducerConsumer.getConsumer().getJob());
+        ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getMessageCount());
 
         // Try to send and receive messages with new certificates
         String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
 
         KubeResourceManager.get().createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getNamespaceName(), topicName, testStorage.getClusterName()).build());
 
-        kafkaClients = new KafkaClientsBuilder(kafkaClients)
-            .withConsumerGroup(ClientUtils.generateRandomConsumerGroup())
-            .withTopicName(topicName)
-            .build();
+        kafkaProducerConsumer.setConsumerGroup(ClientUtils.generateRandomConsumerGroup());
+        kafkaProducerConsumer.setTopicName(topicName);
 
-        KubeResourceManager.get().createResourceWithWait(kafkaClients.producerTlsStrimzi(testStorage.getClusterName()), kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
-        ClientUtils.waitForInstantClientSuccess(testStorage);
+        KubeResourceManager.get().createResourceWithWait(
+            kafkaProducerConsumer.getProducer().getJob(),
+            kafkaProducerConsumer.getConsumer().getJob()
+        );
+        ClientUtils.waitForClientsSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getProducerName(), testStorage.getMessageCount());
     }
 
     @ParallelNamespaceTest
@@ -1416,9 +1503,23 @@ class SecurityST extends AbstractST {
                 KafkaTopicTemplates.topic(testStorage).build()
         );
 
-        KafkaClients kafkaClients = ClientUtils.getInstantTlsClients(testStorage);
-        KubeResourceManager.get().createResourceWithWait(kafkaClients.producerTlsStrimzi(testStorage.getClusterName()), kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
-        ClientUtils.waitForInstantClientSuccess(testStorage);
+        final KafkaProducerConsumer kafkaProducerConsumer = new KafkaProducerConsumerBuilder()
+            .withProducerName(testStorage.getProducerName())
+            .withConsumerName(testStorage.getConsumerName())
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withTopicName(testStorage.getTopicName())
+            .withConsumerGroup(ClientUtils.generateRandomConsumerGroup())
+            .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(testStorage.getClusterName()))
+            .withMessageCount(testStorage.getMessageCount())
+            .withAuthentication(ClientsAuthentication.configureTls(testStorage.getClusterName(), testStorage.getUsername()))
+            .build();
+
+        KubeResourceManager.get().createResourceWithWait(
+            kafkaProducerConsumer.getProducer().getJob(),
+            kafkaProducerConsumer.getConsumer().getJob()
+        );
+
+        ClientUtils.waitForClientsSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getProducerName(), testStorage.getMessageCount());
     }
 
     @BeforeAll

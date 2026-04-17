@@ -26,7 +26,6 @@ import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
-import io.strimzi.systemtest.templates.specific.AdminClientTemplates;
 import io.strimzi.systemtest.utils.AdminClientUtils;
 import io.strimzi.systemtest.utils.RollingUpdateUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
@@ -34,6 +33,8 @@ import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.systemtest.utils.specific.CruiseControlUtils;
 import io.strimzi.test.WaitException;
+import io.strimzi.testclients.clients.kafka.KafkaAdminClient;
+import io.strimzi.testclients.clients.kafka.KafkaAdminClientBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
@@ -125,13 +126,13 @@ public class CruiseControlConfigurationST extends AbstractST {
         LOGGER.info("Verifying that there is no configuration to CruiseControl metric reporter in Kafka ConfigMap");
         assertThrows(WaitException.class, () -> CruiseControlUtils.verifyCruiseControlMetricReporterConfigurationInKafkaConfigMapIsPresent(testStorage.getClusterName(), testStorage.getNamespaceName(), brokerPodName));
 
-        KubeResourceManager.get().createResourceWithWait(
-            AdminClientTemplates.plainAdminClient(
-                testStorage.getNamespaceName(),
-                testStorage.getAdminName(),
-                KafkaResources.plainBootstrapAddress(testStorage.getClusterName())
-            ).build()
-        );
+        final KafkaAdminClient kafkaAdminClient = new KafkaAdminClientBuilder()
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
+            .withName(testStorage.getAdminName())
+            .withNamespaceName(testStorage.getNamespaceName())
+            .build();
+
+        KubeResourceManager.get().createResourceWithWait(kafkaAdminClient.getDeployment());
         final AdminClient adminClient = AdminClientUtils.getConfiguredAdminClient(testStorage.getNamespaceName(), testStorage.getAdminName());
 
         LOGGER.info("Cruise Control Topics will not be deleted and will stay in the Kafka cluster");

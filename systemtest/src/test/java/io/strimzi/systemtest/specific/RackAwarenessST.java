@@ -18,7 +18,6 @@ import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
-import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.admin.AdminClient;
 import io.strimzi.systemtest.labels.LabelSelectors;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
@@ -29,13 +28,16 @@ import io.strimzi.systemtest.templates.crd.KafkaMirrorMaker2Templates;
 import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
-import io.strimzi.systemtest.templates.specific.AdminClientTemplates;
 import io.strimzi.systemtest.utils.AdminClientUtils;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StrimziPodSetUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
+import io.strimzi.testclients.clients.kafka.KafkaAdminClient;
+import io.strimzi.testclients.clients.kafka.KafkaAdminClientBuilder;
+import io.strimzi.testclients.clients.kafka.KafkaProducerConsumer;
+import io.strimzi.testclients.clients.kafka.KafkaProducerConsumerBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.Assumptions;
@@ -96,9 +98,14 @@ class RackAwarenessST extends AbstractST {
         String podName = PodUtils.getPodNameByPrefix(testStorage.getNamespaceName(), testStorage.getBrokerComponentName());
         Pod pod = KubeResourceManager.get().kubeClient().getClient().pods().inNamespace(testStorage.getNamespaceName()).withName(podName).get();
 
-        KubeResourceManager.get().createResourceWithWait(
-            AdminClientTemplates.plainAdminClient(testStorage.getNamespaceName(), testStorage.getAdminName(), KafkaResources.plainBootstrapAddress(testStorage.getClusterName())).build()
-        );
+        final KafkaAdminClient kafkaAdminClient = new KafkaAdminClientBuilder()
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
+            .withName(testStorage.getAdminName())
+            .withNamespaceName(testStorage.getNamespaceName())
+            .build();
+
+        KubeResourceManager.get().createResourceWithWait(kafkaAdminClient.getDeployment());
+
         final AdminClient adminClient = AdminClientUtils.getConfiguredAdminClient(testStorage.getNamespaceName(), testStorage.getAdminName());
 
         // check that spec matches the actual pod configuration
@@ -118,9 +125,22 @@ class RackAwarenessST extends AbstractST {
         assertThat(AdminClientUtils.getRack(nodeDescription, "0").contains(hostname), is(true));
 
         LOGGER.info("Producing and Consuming data in the Kafka cluster: {}/{}", testStorage.getNamespaceName(), testStorage.getClusterName());
-        KafkaClients kafkaClients = ClientUtils.getInstantPlainClients(testStorage);
-        KubeResourceManager.get().createResourceWithWait(kafkaClients.producerStrimzi(), kafkaClients.consumerStrimzi());
-        ClientUtils.waitForInstantClientSuccess(testStorage);
+        final KafkaProducerConsumer kafkaProducerConsumer = new KafkaProducerConsumerBuilder()
+            .withProducerName(testStorage.getProducerName())
+            .withConsumerName(testStorage.getConsumerName())
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withTopicName(testStorage.getTopicName())
+            .withConsumerGroup(ClientUtils.generateRandomConsumerGroup())
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
+            .withMessageCount(testStorage.getMessageCount())
+            .build();
+
+        KubeResourceManager.get().createResourceWithWait(
+            kafkaProducerConsumer.getProducer().getJob(),
+            kafkaProducerConsumer.getConsumer().getJob()
+        );
+
+        ClientUtils.waitForClientsSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getProducerName(), testStorage.getMessageCount());
     }
 
     /**
@@ -204,9 +224,22 @@ class RackAwarenessST extends AbstractST {
         assertThat(commandOut.contains("consumer.client.rack=${strimzidir:/opt/kafka/init:rack.id}"), is(true));
 
         // produce data which are to be available in the topic
-        final KafkaClients kafkaClients = ClientUtils.getInstantPlainClients(testStorage);
-        KubeResourceManager.get().createResourceWithWait(kafkaClients.producerStrimzi(), kafkaClients.consumerStrimzi());
-        ClientUtils.waitForInstantClientSuccess(testStorage);
+        final KafkaProducerConsumer kafkaProducerConsumer = new KafkaProducerConsumerBuilder()
+            .withProducerName(testStorage.getProducerName())
+            .withConsumerName(testStorage.getConsumerName())
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withTopicName(testStorage.getTopicName())
+            .withConsumerGroup(ClientUtils.generateRandomConsumerGroup())
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
+            .withMessageCount(testStorage.getMessageCount())
+            .build();
+
+        KubeResourceManager.get().createResourceWithWait(
+            kafkaProducerConsumer.getProducer().getJob(),
+            kafkaProducerConsumer.getConsumer().getJob()
+        );
+
+        ClientUtils.waitForClientsSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getProducerName(), testStorage.getMessageCount());
 
         consumeDataWithNewSinkConnector(testStorage.getNamespaceName(), testStorage.getClusterName(), testStorage.getClusterName(), testStorage.getTopicName(), testStorage.getMessageCount());
     }
@@ -283,16 +316,32 @@ class RackAwarenessST extends AbstractST {
         KubeResourceManager.get().createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getTopicName(), testStorage.getSourceClusterName(), 3).build());
 
         LOGGER.info("Producing messages into the source Kafka: {}/{}, Topic: {}", testStorage.getNamespaceName(), testStorage.getSourceClusterName(), testStorage.getTopicName());
-        final KafkaClients sourceClients = ClientUtils.getInstantPlainClients(testStorage, KafkaResources.plainBootstrapAddress(testStorage.getSourceClusterName()));
-        KubeResourceManager.get().createResourceWithWait(sourceClients.producerStrimzi());
-        ClientUtils.waitForInstantProducerClientSuccess(testStorage);
+        final KafkaProducerConsumer sourceKafkaProducerConsumer = new KafkaProducerConsumerBuilder()
+            .withProducerName(testStorage.getProducerName())
+            .withConsumerName(testStorage.getConsumerName())
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withTopicName(testStorage.getTopicName())
+            .withConsumerGroup(ClientUtils.generateRandomConsumerGroup())
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getSourceClusterName()))
+            .withMessageCount(testStorage.getMessageCount())
+            .build();
+
+        KubeResourceManager.get().createResourceWithWait(
+            sourceKafkaProducerConsumer.getProducer().getJob(),
+            sourceKafkaProducerConsumer.getConsumer().getJob()
+        );
+
+        ClientUtils.waitForClientsSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getProducerName(), testStorage.getMessageCount());
 
         LOGGER.info("Consuming messages in the target Kafka: {}/{} mirrored Topic: {}", testStorage.getNamespaceName(), testStorage.getTargetClusterName(), testStorage.getMirroredSourceTopicName());
-        final KafkaClients targetClients = ClientUtils.getInstantPlainClientBuilder(testStorage, KafkaResources.plainBootstrapAddress(testStorage.getTargetClusterName()))
+        final KafkaProducerConsumer targetKafkaProducerConsumer = new KafkaProducerConsumerBuilder(sourceKafkaProducerConsumer)
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getTargetClusterName()))
             .withTopicName(testStorage.getMirroredSourceTopicName())
+            .withConsumerGroup(ClientUtils.generateRandomConsumerGroup())
             .build();
-        KubeResourceManager.get().createResourceWithWait(targetClients.consumerStrimzi());
-        ClientUtils.waitForInstantConsumerClientSuccess(testStorage);
+
+        KubeResourceManager.get().createResourceWithWait(targetKafkaProducerConsumer.getConsumer().getJob());
+        ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getMessageCount());
     }
 
     private void consumeDataWithNewSinkConnector(String namespaceName, String newConnectorName, String connectClusterName, String topicName, int msgCount) {
@@ -372,18 +421,36 @@ class RackAwarenessST extends AbstractST {
                 .build());
         LOGGER.info("Kafka cluster deployed successfully");
 
-        KubeResourceManager.get().createResourceWithWait(
-            AdminClientTemplates.plainAdminClient(testStorage.getNamespaceName(), testStorage.getAdminName(), KafkaResources.plainBootstrapAddress(testStorage.getClusterName())).build()
-        );
+        final KafkaAdminClient kafkaAdminClient = new KafkaAdminClientBuilder()
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
+            .withName(testStorage.getAdminName())
+            .withNamespaceName(testStorage.getNamespaceName())
+            .build();
+
+        KubeResourceManager.get().createResourceWithWait(kafkaAdminClient.getDeployment());
+
         final AdminClient adminClient = AdminClientUtils.getConfiguredAdminClient(testStorage.getNamespaceName(), testStorage.getAdminName());
 
         String nodeDescription = adminClient.describeNodes("all");
         assertThat(AdminClientUtils.getRack(nodeDescription, "0").contains("rack-a"), is(true));
 
         LOGGER.info("Producing and Consuming data in the Kafka cluster: {}/{}", testStorage.getNamespaceName(), testStorage.getClusterName());
-        KafkaClients kafkaClients = ClientUtils.getInstantPlainClients(testStorage);
-        KubeResourceManager.get().createResourceWithWait(kafkaClients.producerStrimzi(), kafkaClients.consumerStrimzi());
-        ClientUtils.waitForInstantClientSuccess(testStorage);
+        final KafkaProducerConsumer kafkaProducerConsumer = new KafkaProducerConsumerBuilder()
+            .withProducerName(testStorage.getProducerName())
+            .withConsumerName(testStorage.getConsumerName())
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withTopicName(testStorage.getTopicName())
+            .withConsumerGroup(ClientUtils.generateRandomConsumerGroup())
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
+            .withMessageCount(testStorage.getMessageCount())
+            .build();
+
+        KubeResourceManager.get().createResourceWithWait(
+            kafkaProducerConsumer.getProducer().getJob(),
+            kafkaProducerConsumer.getConsumer().getJob()
+        );
+
+        ClientUtils.waitForClientsSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getProducerName(), testStorage.getMessageCount());
     }
 
     @BeforeAll

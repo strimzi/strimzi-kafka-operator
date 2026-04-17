@@ -4,10 +4,9 @@
  */
 package io.strimzi.systemtest.tracing;
 
+import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.skodjob.kubetest4j.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.bridge.KafkaBridgeResources;
-import io.strimzi.api.kafka.model.common.tracing.OpenTelemetryTracing;
-import io.strimzi.api.kafka.model.common.tracing.Tracing;
 import io.strimzi.api.kafka.model.connect.KafkaConnectBuilder;
 import io.strimzi.api.kafka.model.connect.KafkaConnectResources;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
@@ -16,10 +15,6 @@ import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
-import io.strimzi.systemtest.kafkaclients.internalClients.BridgeTracingClients;
-import io.strimzi.systemtest.kafkaclients.internalClients.BridgeTracingClientsBuilder;
-import io.strimzi.systemtest.kafkaclients.internalClients.KafkaTracingClients;
-import io.strimzi.systemtest.kafkaclients.internalClients.KafkaTracingClientsBuilder;
 import io.strimzi.systemtest.resources.jaeger.SetupOpenTelemetry;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.storage.TestStorage;
@@ -32,17 +27,26 @@ import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.templates.specific.ScraperTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
+import io.strimzi.systemtest.utils.kubeUtils.objects.NetworkPolicyUtils;
 import io.strimzi.systemtest.utils.specific.TracingUtils;
+import io.strimzi.testclients.clients.http.HttpProducerClient;
+import io.strimzi.testclients.clients.http.HttpProducerClientBuilder;
+import io.strimzi.testclients.clients.kafka.KafkaConsumerClient;
+import io.strimzi.testclients.clients.kafka.KafkaConsumerClientBuilder;
+import io.strimzi.testclients.clients.kafka.KafkaProducerClient;
+import io.strimzi.testclients.clients.kafka.KafkaProducerClientBuilder;
+import io.strimzi.testclients.clients.kafka.KafkaStreamsClient;
+import io.strimzi.testclients.clients.kafka.KafkaStreamsClientBuilder;
+import io.strimzi.testclients.configuration.Tracing;
+import io.strimzi.testclients.configuration.TracingBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.util.HashMap;
 import java.util.Map;
 
-import static io.strimzi.systemtest.TestConstants.KAFKA_TRACING_CLIENT_KEY;
 import static io.strimzi.systemtest.TestTags.BRIDGE;
 import static io.strimzi.systemtest.TestTags.CONNECT;
 import static io.strimzi.systemtest.TestTags.CONNECT_COMPONENTS;
@@ -65,11 +69,10 @@ public class OpenTelemetryST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(OpenTelemetryST.class);
 
-    private final Tracing otelTracing = new OpenTelemetryTracing();
-
     @ParallelNamespaceTest
     void testProducerConsumerStreamsService() {
         final TestStorage testStorage = deployInitialResourcesAndGetTestStorage();
+        final String kafkaStreamsName = testStorage.getClusterName() + "-streams";
 
         KubeResourceManager.get().createResourceWithWait(
             KafkaNodePoolTemplates.brokerPool(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
@@ -81,21 +84,50 @@ public class OpenTelemetryST extends AbstractST {
 
         KubeResourceManager.get().createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getStreamsTopicTargetName(), testStorage.getClusterName(), 12, 3).build());
 
-        KubeResourceManager.get().createResourceWithWait((testStorage.getTracingClients()).producerWithTracing());
+        final KafkaProducerClient tracingKafkaProducer = new KafkaProducerClientBuilder()
+            .withName(testStorage.getProducerName())
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withTopicName(testStorage.getTopicName())
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
+            .withMessageCount(testStorage.getMessageCount())
+            .withTracing(tracingConfiguration(JAEGER_PRODUCER_SERVICE))
+            .build();
+
+        KubeResourceManager.get().createResourceWithWait(tracingKafkaProducer.getJob());
 
         TracingUtils.verify(testStorage.getNamespaceName(),
             JAEGER_PRODUCER_SERVICE,
             testStorage.getScraperPodName(),
             JAEGER_QUERY_SERVICE);
 
-        KubeResourceManager.get().createResourceWithWait((testStorage.getTracingClients()).consumerWithTracing());
+        final KafkaConsumerClient tracingKafkaConsumer = new KafkaConsumerClientBuilder()
+            .withName(testStorage.getConsumerName())
+            .withConsumerGroup(ClientUtils.generateRandomConsumerGroup())
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withTopicName(testStorage.getTopicName())
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
+            .withMessageCount(testStorage.getMessageCount())
+            .withTracing(tracingConfiguration(JAEGER_CONSUMER_SERVICE))
+            .build();
+
+        KubeResourceManager.get().createResourceWithWait(tracingKafkaConsumer.getJob());
 
         TracingUtils.verify(testStorage.getNamespaceName(),
             JAEGER_CONSUMER_SERVICE,
             testStorage.getScraperPodName(),
             JAEGER_QUERY_SERVICE);
 
-        KubeResourceManager.get().createResourceWithWait((testStorage.getTracingClients()).kafkaStreamsWithTracing());
+        final KafkaStreamsClient tracingKafkaStreams = new KafkaStreamsClientBuilder()
+            .withName(kafkaStreamsName)
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withSourceTopicName(testStorage.getTopicName())
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
+            .withTracing(tracingConfiguration(JAEGER_KAFKA_STREAMS_SERVICE))
+            .withTargetTopicName(testStorage.getStreamsTopicTargetName())
+            .withApplicationId(kafkaStreamsName)
+            .build();
+
+        KubeResourceManager.get().createResourceWithWait(tracingKafkaStreams.getJob());
 
         TracingUtils.verify(testStorage.getNamespaceName(),
             JAEGER_KAFKA_STREAMS_SERVICE,
@@ -127,25 +159,35 @@ public class OpenTelemetryST extends AbstractST {
 
         LOGGER.info("Setting for Kafka source plain bootstrap: {}", KafkaResources.plainBootstrapAddress(testStorage.getSourceClusterName()));
 
-        KafkaTracingClients sourceKafkaTracingClient = new KafkaTracingClientsBuilder(testStorage.getTracingClients())
+        final KafkaProducerClient tracingKafkaProducer = new KafkaProducerClientBuilder()
+            .withName(testStorage.getProducerName())
+            .withNamespaceName(testStorage.getNamespaceName())
             .withTopicName(testStorage.getTopicName())
             .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getSourceClusterName()))
+            .withMessageCount(testStorage.getMessageCount())
+            .withTracing(tracingConfiguration(JAEGER_PRODUCER_SERVICE))
             .build();
 
-        KubeResourceManager.get().createResourceWithWait(sourceKafkaTracingClient.producerWithTracing());
+        KubeResourceManager.get().createResourceWithWait(tracingKafkaProducer.getJob());
 
         LOGGER.info("Setting for Kafka target plain bootstrap: {}", KafkaResources.plainBootstrapAddress(testStorage.getTargetClusterName()));
 
-        final KafkaTracingClients targetKafkaTracingClient = new KafkaTracingClientsBuilder(testStorage.getTracingClients())
-            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getTargetClusterName()))
+        final KafkaConsumerClient tracingKafkaConsumer = new KafkaConsumerClientBuilder()
+            .withName(testStorage.getConsumerName())
+            .withConsumerGroup(ClientUtils.generateRandomConsumerGroup())
+            .withNamespaceName(testStorage.getNamespaceName())
             .withTopicName(testStorage.getMirroredSourceTopicName())
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getTargetClusterName()))
+            .withMessageCount(testStorage.getMessageCount())
+            .withTracing(tracingConfiguration(JAEGER_CONSUMER_SERVICE))
             .build();
 
-        KubeResourceManager.get().createResourceWithWait(targetKafkaTracingClient.consumerWithTracing());
+        KubeResourceManager.get().createResourceWithWait(tracingKafkaConsumer.getJob());
 
         KubeResourceManager.get().createResourceWithWait(KafkaMirrorMaker2Templates.kafkaMirrorMaker2(testStorage.getNamespaceName(), testStorage.getClusterName(), testStorage.getSourceClusterName(), testStorage.getTargetClusterName(), 1, false)
             .editSpec()
-                .withTracing(otelTracing)
+                .withNewOpenTelemetryTracing()
+                .endOpenTelemetryTracing()
                 .withNewTemplate()
                         .withNewConnectContainer()
                         .addNewEnv()
@@ -184,6 +226,7 @@ public class OpenTelemetryST extends AbstractST {
     @SuppressWarnings({"checkstyle:MethodLength"})
     void testProducerConsumerStreamsConnectService() {
         final TestStorage testStorage = deployInitialResourcesAndGetTestStorage();
+        final String kafkaStreamsName = testStorage.getClusterName() + "-streams";
 
         KubeResourceManager.get().createResourceWithWait(
             KafkaNodePoolTemplates.brokerPool(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
@@ -214,7 +257,8 @@ public class OpenTelemetryST extends AbstractST {
                 .withOffsetStorageTopic(KafkaConnectResources.configStorageTopicOffsets(testStorage.getClusterName()))
                 .withStatusStorageTopic(KafkaConnectResources.configStorageTopicStatus(testStorage.getClusterName()))
                 .withConfig(configOfKafkaConnect)
-                .withTracing(otelTracing)
+                .withNewOpenTelemetryTracing()
+                .endOpenTelemetryTracing()
                 .withBootstrapServers(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
                 .withReplicas(1)
                 .withNewTemplate()
@@ -243,9 +287,40 @@ public class OpenTelemetryST extends AbstractST {
             .endSpec()
             .build());
 
-        KubeResourceManager.get().createResourceWithWait(((KafkaTracingClients) KubeResourceManager.get().getTestContext().getStore(ExtensionContext.Namespace.GLOBAL).get(KAFKA_TRACING_CLIENT_KEY)).producerWithTracing());
-        KubeResourceManager.get().createResourceWithWait(((KafkaTracingClients) KubeResourceManager.get().getTestContext().getStore(ExtensionContext.Namespace.GLOBAL).get(KAFKA_TRACING_CLIENT_KEY)).consumerWithTracing());
-        KubeResourceManager.get().createResourceWithWait(((KafkaTracingClients) KubeResourceManager.get().getTestContext().getStore(ExtensionContext.Namespace.GLOBAL).get(KAFKA_TRACING_CLIENT_KEY)).kafkaStreamsWithTracing());
+        final KafkaProducerClient tracingKafkaProducer = new KafkaProducerClientBuilder()
+            .withName(testStorage.getProducerName())
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withTopicName(testStorage.getTopicName())
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
+            .withMessageCount(testStorage.getMessageCount())
+            .withTracing(tracingConfiguration(JAEGER_PRODUCER_SERVICE))
+            .build();
+
+        KubeResourceManager.get().createResourceWithWait(tracingKafkaProducer.getJob());
+
+        final KafkaConsumerClient tracingKafkaConsumer = new KafkaConsumerClientBuilder()
+            .withName(testStorage.getConsumerName())
+            .withConsumerGroup(ClientUtils.generateRandomConsumerGroup())
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withTopicName(testStorage.getTopicName())
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
+            .withMessageCount(testStorage.getMessageCount())
+            .withTracing(tracingConfiguration(JAEGER_CONSUMER_SERVICE))
+            .build();
+
+        KubeResourceManager.get().createResourceWithWait(tracingKafkaConsumer.getJob());
+
+        final KafkaStreamsClient tracingKafkaStreams = new KafkaStreamsClientBuilder()
+            .withName(kafkaStreamsName)
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withSourceTopicName(testStorage.getTopicName())
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
+            .withTracing(tracingConfiguration(JAEGER_KAFKA_STREAMS_SERVICE))
+            .withTargetTopicName(testStorage.getStreamsTopicTargetName())
+            .withApplicationId(kafkaStreamsName)
+            .build();
+
+        KubeResourceManager.get().createResourceWithWait(tracingKafkaStreams.getJob());
 
         ClientUtils.waitForClientsSuccess(
             testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getProducerName(),
@@ -271,7 +346,8 @@ public class OpenTelemetryST extends AbstractST {
         // Deploy http bridge
         KubeResourceManager.get().createResourceWithWait(KafkaBridgeTemplates.kafkaBridge(testStorage.getNamespaceName(), testStorage.getClusterName(), KafkaResources.plainBootstrapAddress(testStorage.getClusterName()), 1)
             .editSpec()
-                .withTracing(otelTracing)
+                .withNewOpenTelemetryTracing()
+                .endOpenTelemetryTracing()
                 .withNewTemplate()
                     .withNewBridgeContainer()
                         .addNewEnv()
@@ -294,21 +370,35 @@ public class OpenTelemetryST extends AbstractST {
         final String bridgeProducer = "bridge-producer";
         KubeResourceManager.get().createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getTopicName(), testStorage.getClusterName()).build());
 
-        final BridgeTracingClients kafkaBridgeClientJob = new BridgeTracingClientsBuilder()
-            .withTracingServiceNameEnvVar(TracingConstants.OTEL_SERVICE_ENV)
-            .withProducerName(bridgeProducer)
+        // Create NetworkPolicy for HTTP producer to access Bridge
+        NetworkPolicyUtils.allowNetworkPolicyForBridgeClient(testStorage.getNamespaceName(), testStorage.getClusterName(), bridgeProducer);
+
+        HttpProducerClient httpProducer = new HttpProducerClientBuilder()
             .withNamespaceName(testStorage.getNamespaceName())
-            .withBootstrapAddress(KafkaBridgeResources.serviceName(testStorage.getClusterName()))
+            .withName(bridgeProducer)
+            .withHostname(KafkaBridgeResources.serviceName(testStorage.getClusterName()))
             .withTopicName(testStorage.getTopicName())
             .withMessageCount(testStorage.getMessageCount())
             .withPort(TestConstants.HTTP_BRIDGE_DEFAULT_PORT)
             .withDelayMs(1000)
-            .withPollInterval(1000)
-            .withOpenTelemetry()
+            .withTracing(tracingConfiguration(bridgeProducer))
+            .addToAdditionalEnvVars()
             .build();
 
-        KubeResourceManager.get().createResourceWithWait(kafkaBridgeClientJob.producerStrimziBridgeWithTracing());
-        KubeResourceManager.get().createResourceWithWait((testStorage.getTracingClients()).consumerWithTracing());
+        KubeResourceManager.get().createResourceWithWait(httpProducer.getJob());
+
+        final KafkaConsumerClient tracingKafkaConsumer = new KafkaConsumerClientBuilder()
+            .withName(testStorage.getConsumerName())
+            .withConsumerGroup(ClientUtils.generateRandomConsumerGroup())
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withTopicName(testStorage.getTopicName())
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
+            .withMessageCount(testStorage.getMessageCount())
+            .withTracing(tracingConfiguration(JAEGER_CONSUMER_SERVICE))
+            .build();
+
+        KubeResourceManager.get().createResourceWithWait(tracingKafkaConsumer.getJob());
+
         ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), bridgeProducer, testStorage.getMessageCount());
 
         TracingUtils.verify(testStorage.getNamespaceName(), JAEGER_KAFKA_BRIDGE_SERVICE, testStorage.getScraperPodName(), JAEGER_QUERY_SERVICE);
@@ -327,7 +417,8 @@ public class OpenTelemetryST extends AbstractST {
         // Deploy http bridge
         KubeResourceManager.get().createResourceWithWait(KafkaBridgeTemplates.kafkaBridge(testStorage.getNamespaceName(), testStorage.getClusterName(), KafkaResources.plainBootstrapAddress(testStorage.getClusterName()), 1)
             .editSpec()
-                .withTracing(otelTracing)
+                .withNewOpenTelemetryTracing()
+                .endOpenTelemetryTracing()
                 .withNewTemplate()
                     .withNewBridgeContainer()
                         .addNewEnv()
@@ -350,21 +441,36 @@ public class OpenTelemetryST extends AbstractST {
         KubeResourceManager.get().createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getTopicName(), testStorage.getClusterName()).build());
 
         final String bridgeProducer = "bridge-producer";
-        final BridgeTracingClients kafkaBridgeClientJob = new BridgeTracingClientsBuilder()
-            .withTracingServiceNameEnvVar(TracingConstants.OTEL_SERVICE_ENV)
-            .withProducerName(bridgeProducer)
+
+        // Create NetworkPolicy for HTTP producer to access Bridge
+        NetworkPolicyUtils.allowNetworkPolicyForBridgeClient(testStorage.getNamespaceName(), testStorage.getClusterName(), bridgeProducer);
+
+        HttpProducerClient httpProducer = new HttpProducerClientBuilder()
             .withNamespaceName(testStorage.getNamespaceName())
-            .withBootstrapAddress(KafkaBridgeResources.serviceName(testStorage.getClusterName()))
+            .withName(bridgeProducer)
+            .withHostname(KafkaBridgeResources.serviceName(testStorage.getClusterName()))
             .withTopicName(testStorage.getTopicName())
             .withMessageCount(testStorage.getMessageCount())
             .withPort(TestConstants.HTTP_BRIDGE_DEFAULT_PORT)
             .withDelayMs(1000)
-            .withPollInterval(1000)
-            .withOpenTelemetry()
+            .withTracing(tracingConfiguration(bridgeProducer))
+            .addToAdditionalEnvVars()
             .build();
 
-        KubeResourceManager.get().createResourceWithWait(kafkaBridgeClientJob.producerStrimziBridgeWithTracing());
-        KubeResourceManager.get().createResourceWithWait((testStorage.getTracingClients()).consumerWithTracing());
+        KubeResourceManager.get().createResourceWithWait(httpProducer.getJob());
+
+        final KafkaConsumerClient tracingKafkaConsumer = new KafkaConsumerClientBuilder()
+            .withName(testStorage.getConsumerName())
+            .withConsumerGroup(ClientUtils.generateRandomConsumerGroup())
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withTopicName(testStorage.getTopicName())
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
+            .withMessageCount(testStorage.getMessageCount())
+            .withTracing(tracingConfiguration(JAEGER_CONSUMER_SERVICE))
+            .build();
+
+        KubeResourceManager.get().createResourceWithWait(tracingKafkaConsumer.getJob());
+
         ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), bridgeProducer, testStorage.getMessageCount());
 
         TracingUtils.verify(testStorage.getNamespaceName(), JAEGER_KAFKA_BRIDGE_SERVICE, testStorage.getScraperPodName(), JAEGER_QUERY_SERVICE);
@@ -379,26 +485,27 @@ public class OpenTelemetryST extends AbstractST {
         KubeResourceManager.get().createResourceWithWait(ScraperTemplates.scraperPod(testStorage.getNamespaceName(), testStorage.getScraperName()).build());
         testStorage.addToTestStorage(TestConstants.SCRAPER_POD_KEY, KubeResourceManager.get().kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), testStorage.getScraperName()).get(0).getMetadata().getName());
 
-        final KafkaTracingClients kafkaTracingClients = new KafkaTracingClientsBuilder()
-            .withNamespaceName(testStorage.getNamespaceName())
-            .withProducerName(testStorage.getProducerName())
-            .withConsumerName(testStorage.getConsumerName())
-            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
-            .withTopicName(testStorage.getTopicName())
-            .withStreamsTopicTargetName(testStorage.getStreamsTopicTargetName())
-            .withMessageCount(testStorage.getMessageCount())
-            .withJaegerServiceProducerName(JAEGER_PRODUCER_SERVICE)
-            .withJaegerServiceConsumerName(JAEGER_CONSUMER_SERVICE)
-            .withJaegerServiceStreamsName(JAEGER_KAFKA_STREAMS_SERVICE)
-            .withTracingServiceNameEnvVar(TracingConstants.OTEL_SERVICE_ENV)
-            .withOpenTelemetry()
-            .build();
-
-        LOGGER.info("{}:\n", kafkaTracingClients.toString());
-
-        testStorage.addToTestStorage(TestConstants.KAFKA_TRACING_CLIENT_KEY, kafkaTracingClients);
-
         return testStorage;
+    }
+
+    /**
+     * Method configuring the {@link Tracing} for particular client.
+     *
+     * @param serviceName   Name of the service that should be used for {@link TracingConstants#OTEL_SERVICE_ENV} env.
+     *
+     * @return  configured {@link Tracing}.
+     */
+    private Tracing tracingConfiguration(String serviceName) {
+        return new TracingBuilder()
+            .withServiceNameEnvVar(TracingConstants.OTEL_SERVICE_ENV)
+            .withServiceName(serviceName)
+            .withTracingType(TracingConstants.OPEN_TELEMETRY)
+            .withAdditionalTracingEnvVars(new EnvVarBuilder()
+                .withName("OTEL_EXPORTER_OTLP_ENDPOINT")
+                .withValue(JAEGER_COLLECTOR_OTLP_URL)
+                .build()
+            )
+            .build();
     }
 
     @BeforeAll
