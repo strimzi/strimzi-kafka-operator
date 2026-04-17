@@ -488,6 +488,13 @@ public class OpenTelemetryST extends AbstractST {
         return testStorage;
     }
 
+    /**
+     * Method configuring the {@link Tracing} for particular client.
+     *
+     * @param serviceName   Name of the service that should be used for {@link TracingConstants#OTEL_SERVICE_ENV} env.
+     *
+     * @return  configured {@link Tracing}.
+     */
     private Tracing tracingConfiguration(String serviceName) {
         return new TracingBuilder()
             .withServiceNameEnvVar(TracingConstants.OTEL_SERVICE_ENV)

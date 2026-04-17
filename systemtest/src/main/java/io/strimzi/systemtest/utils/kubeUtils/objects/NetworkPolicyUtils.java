@@ -63,11 +63,26 @@ public class NetworkPolicyUtils {
         LOGGER.info("Network policy for LabelSelector {} successfully created", labelSelector);
     }
 
+    /**
+     * Creates NetworkPolicies for allowing access to Bridge HTTP server for HTTP clients - both producer and consumer.
+     *
+     * @param namespaceName         Namespace where the NetworkPolicies should be created.
+     * @param bridgeClusterName     Name of the Bridge cluster.
+     * @param producerName          Name of the HTTP producer.
+     * @param consumerName          Name of the HTTP consumer.
+     */
     public static void allowNetworkPoliciesForBridgeClients(String namespaceName, String bridgeClusterName, String producerName, String consumerName) {
         allowNetworkPolicyForBridgeClient(namespaceName, bridgeClusterName, producerName);
         allowNetworkPolicyForBridgeClient(namespaceName, bridgeClusterName, consumerName);
     }
 
+    /**
+     * Creates NetworkPolicy for allowing access to Bridge HTTP server for specified HTTP client.
+     *
+     * @param namespaceName         Namespace where the NetworkPolicy should be created.
+     * @param bridgeClusterName     Name of the Bridge cluster.
+     * @param clientName            Name of the HTTP client.
+     */
     public static void allowNetworkPolicyForBridgeClient(String namespaceName, String bridgeClusterName, String clientName) {
         LabelSelector clientLabelSelector = new LabelSelectorBuilder()
             .addToMatchLabels("app", clientName)

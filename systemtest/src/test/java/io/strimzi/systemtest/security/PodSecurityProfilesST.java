@@ -207,6 +207,13 @@ public class PodSecurityProfilesST extends AbstractST {
         ClientUtils.waitForClientTimeout(testStorage.getNamespaceName(), testStorage.getProducerName(), testStorage.getMessageCount());
     }
 
+    /**
+     * Method that applies "restricted" Pod Security Profile to every client's Job.
+     *
+     * @param clientJob     Client's Job that should be updated.
+     *
+     * @return  updated client's Job with "restricted" Pod Security Profile.
+     */
     private Job applyRestrictedSecurityProfileToClientJob(Job clientJob) {
         return new JobBuilder(clientJob)
             .editSpec()
