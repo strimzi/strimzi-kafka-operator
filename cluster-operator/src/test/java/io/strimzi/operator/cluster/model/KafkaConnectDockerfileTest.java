@@ -699,6 +699,7 @@ public class KafkaConnectDockerfileTest {
                 "\n" +
                 "USER 1001\n" +
                 "\n"));
+    }
 
     @Test
     public void testMavenArtifactWithIncludeScope()   {
@@ -742,6 +743,5 @@ public class KafkaConnectDockerfileTest {
                 "\n" +
                 "USER 1001\n" +
                 "\n"));
-    }
     }
 }
