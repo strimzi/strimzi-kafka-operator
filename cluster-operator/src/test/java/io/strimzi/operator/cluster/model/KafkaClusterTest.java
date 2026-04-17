@@ -2438,7 +2438,11 @@ public class KafkaClusterTest {
             List<Pod> pods = PodSetUtils.podSetToPods(podSet);
 
             for (Pod pod : pods) {
-                assertThat(pod.getSpec().getAffinity(), is(rackAffinity));
+                if (pod.getMetadata().getName().contains("-controllers-"))  {
+                    assertThat(pod.getSpec().getAffinity(), is(nullValue()));
+                } else {
+                    assertThat(pod.getSpec().getAffinity(), is(rackAffinity));
+                }
             }
         }
     }
@@ -2727,7 +2731,11 @@ public class KafkaClusterTest {
             List<Pod> pods = PodSetUtils.podSetToPods(podSet);
 
             for (Pod pod : pods) {
-                assertThat(pod.getSpec().getAffinity(), is(mergedRackAffinity));
+                if (pod.getMetadata().getName().contains("-controllers-"))  {
+                    assertThat(pod.getSpec().getAffinity(), is(affinity));
+                } else {
+                    assertThat(pod.getSpec().getAffinity(), is(mergedRackAffinity));
+                }
             }
         }
     }
@@ -2891,6 +2899,8 @@ public class KafkaClusterTest {
             for (Pod pod : pods) {
                 if (pod.getMetadata().getName().contains("brokers"))    {
                     assertThat(pod.getSpec().getAffinity(), is(poolMergedRackAffinity));
+                } else if (pod.getMetadata().getName().contains("-controllers-"))  {
+                    assertThat(pod.getSpec().getAffinity(), is(affinity));
                 } else {
                     assertThat(pod.getSpec().getAffinity(), is(mergedRackAffinity));
                 }
@@ -2993,7 +3003,17 @@ public class KafkaClusterTest {
                 .endSpec()
                 .build();
 
-        List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafka, List.of(POOL_CONTROLLERS, POOL_MIXED, brokers), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, SHARED_ENV_PROVIDER);
+        KafkaNodePool controllers = new KafkaNodePoolBuilder(POOL_CONTROLLERS)
+                .editSpec()
+                    .withNewTemplate()
+                        .withNewPod()
+                            .withAffinity(poolAffinity)
+                        .endPod()
+                    .endTemplate()
+                .endSpec()
+                .build();
+
+        List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafka, List.of(controllers, POOL_MIXED, brokers), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, SHARED_ENV_PROVIDER);
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, null, SHARED_ENV_PROVIDER);
 
         List<StrimziPodSet> podSets = kc.generatePodSets(null, null, node -> Map.of());
@@ -3004,8 +3024,10 @@ public class KafkaClusterTest {
             List<Pod> pods = PodSetUtils.podSetToPods(podSet);
 
             for (Pod pod : pods) {
-                if (pod.getMetadata().getName().contains("brokers"))    {
+                if (pod.getMetadata().getName().contains("brokers")) {
                     assertThat(pod.getSpec().getAffinity(), is(mergedRackAffinity));
+                } else if (pod.getMetadata().getName().contains("-controllers-"))  {
+                    assertThat(pod.getSpec().getAffinity(), is(poolAffinity));
                 } else {
                     assertThat(pod.getSpec().getAffinity(), is(rackAffinity));
                 }
