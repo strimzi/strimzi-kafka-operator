@@ -42,7 +42,9 @@ import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.resources.CrdClients;
 import io.strimzi.systemtest.resources.crd.KafkaComponents;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
+import io.strimzi.systemtest.security.SystemTestCertBundle;
 import io.strimzi.systemtest.security.SystemTestCertGenerator;
+import io.strimzi.systemtest.security.TrustChainSecrets;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
@@ -86,7 +88,6 @@ import static io.strimzi.systemtest.TestTags.ROUTE;
 import static io.strimzi.systemtest.TestTags.SANITY;
 import static io.strimzi.systemtest.security.SystemTestCertGenerator.exportToPemFiles;
 import static io.strimzi.systemtest.security.SystemTestCertGenerator.generateEndEntityCertAndKey;
-import static io.strimzi.systemtest.security.SystemTestCertGenerator.generateIntermediateCaCertAndKey;
 import static io.strimzi.systemtest.security.SystemTestCertGenerator.generateRootCaCertAndKey;
 import static io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils.getKafkaSecretCertificates;
 import static io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils.getKafkaStatusCertificates;
@@ -109,10 +110,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 public class ListenersST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(ListenersST.class);
 
-    private final String customCertChain1 = "custom-certificate-chain-1";
     private final String customCertServer1 = "custom-certificate-server-1";
     private final String customCertServer2 = "custom-certificate-server-2";
-    private final String customRootCA1 = "custom-certificate-root-1";
     private final String customListenerName = "randname";
 
     /**
@@ -1110,10 +1109,9 @@ public class ListenersST extends AbstractST {
     )
     void testCustomSoloCertificatesForNodePort() {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
-        final String clusterCustomCertServer1 = testStorage.getClusterName() + "-" + customCertServer1;
-        final CertAndKeyFiles strimziCertAndKey1 = SystemTestCertGenerator.createBrokerCertChain(testStorage);
-
-        SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(), clusterCustomCertServer1, strimziCertAndKey1);
+        TrustChainSecrets.fromBundle(SystemTestCertBundle.forBrokerEndEntityCertificate(testStorage))
+            .withLeafOnly(TrustChainSecrets.TRUST_LEAF_ONLY)
+            .build(testStorage.getNamespaceName(), testStorage.getClusterName());
 
         KubeResourceManager.get().createResourceWithWait(
             KafkaNodePoolTemplates.brokerPool(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
@@ -1129,7 +1127,7 @@ public class ListenersST extends AbstractST {
                             .withTls(true)
                             .withNewConfiguration()
                                 .withNewBrokerCertChainAndKey()
-                                    .withSecretName(clusterCustomCertServer1)
+                                    .withSecretName(TrustChainSecrets.TRUST_LEAF_ONLY)
                                     .withKey("ca.key")
                                     .withCertificate("ca.crt")
                                 .endBrokerCertChainAndKey()
@@ -1142,7 +1140,7 @@ public class ListenersST extends AbstractST {
                             .withTls(true)
                             .withNewConfiguration()
                                 .withNewBrokerCertChainAndKey()
-                                    .withSecretName(clusterCustomCertServer1)
+                                    .withSecretName(TrustChainSecrets.TRUST_LEAF_ONLY)
                                     .withKey("ca.key")
                                     .withCertificate("ca.crt")
                                 .endBrokerCertChainAndKey()
@@ -1160,7 +1158,7 @@ public class ListenersST extends AbstractST {
             .withClusterName(testStorage.getClusterName())
             .withKafkaUsername(testStorage.getUsername())
             .withMessageCount(testStorage.getMessageCount())
-            .withCertificateAuthorityCertificateName(clusterCustomCertServer1)
+            .withCertificateAuthorityCertificateName(TrustChainSecrets.TRUST_LEAF_ONLY)
             .withSecurityProtocol(SecurityProtocol.SSL)
             .withListenerName(customListenerName)
             .build();
@@ -1172,7 +1170,7 @@ public class ListenersST extends AbstractST {
 
         KafkaClients kafkaClients = ClientUtils.getInstantTlsClientBuilder(testStorage, KafkaResources.bootstrapServiceName(testStorage.getClusterName()) + ":9104")
             .withConsumerGroup("consumer-group-certs-1")
-            .withCaCertSecretName(clusterCustomCertServer1)
+            .withCaCertSecretName(TrustChainSecrets.TRUST_LEAF_ONLY)
             .build();
 
         KubeResourceManager.get().createResourceWithWait(kafkaClients.producerTlsStrimzi(testStorage.getClusterName()));
@@ -1208,18 +1206,12 @@ public class ListenersST extends AbstractST {
     )
     void testCustomChainCertificatesForNodePort() {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
-        final String clusterCustomCertChain1 = testStorage.getClusterName() + "-" + customCertChain1;
-        final String clusterCustomRootCA1 = testStorage.getClusterName() + "-" + customRootCA1;
+        final SystemTestCertBundle brokerBundle = SystemTestCertBundle.forBrokerEndEntityCertificate(testStorage);
 
-        final CertAndKey root1 = generateRootCaCertAndKey();
-        final CertAndKey intermediate1 = generateIntermediateCaCertAndKey(root1);
-        final CertAndKey strimzi1 = generateEndEntityCertAndKey(intermediate1, SystemTestCertGenerator.retrieveKafkaBrokerSANs(testStorage));
-
-        final CertAndKeyFiles rootCertAndKey1 = exportToPemFiles(root1);
-        final CertAndKeyFiles chainCertAndKey1 = exportToPemFiles(strimzi1, intermediate1, root1);
-
-        SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(), clusterCustomCertChain1, chainCertAndKey1);
-        SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(), clusterCustomRootCA1, rootCertAndKey1);
+        TrustChainSecrets.fromBundle(brokerBundle)
+            .withFullChain(TrustChainSecrets.TRUST_FULL_CHAIN)
+            .withRootOnly(TrustChainSecrets.TRUST_ROOT_ONLY)
+            .build(testStorage.getNamespaceName(), testStorage.getClusterName());
 
         KubeResourceManager.get().createResourceWithWait(
             KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 1).build(),
@@ -1235,7 +1227,7 @@ public class ListenersST extends AbstractST {
                             .withTls(true)
                             .withNewConfiguration()
                                 .withNewBrokerCertChainAndKey()
-                                    .withSecretName(clusterCustomCertChain1)
+                                    .withSecretName(TrustChainSecrets.TRUST_FULL_CHAIN)
                                     .withKey("ca.key")
                                     .withCertificate("ca.crt")
                                 .endBrokerCertChainAndKey()
@@ -1248,7 +1240,7 @@ public class ListenersST extends AbstractST {
                             .withTls(true)
                             .withNewConfiguration()
                                 .withNewBrokerCertChainAndKey()
-                                    .withSecretName(clusterCustomCertChain1)
+                                    .withSecretName(TrustChainSecrets.TRUST_FULL_CHAIN)
                                     .withKey("ca.key")
                                     .withCertificate("ca.crt")
                                 .endBrokerCertChainAndKey()
@@ -1266,7 +1258,7 @@ public class ListenersST extends AbstractST {
             .withClusterName(testStorage.getClusterName())
             .withKafkaUsername(testStorage.getUsername())
             .withMessageCount(testStorage.getMessageCount())
-            .withCertificateAuthorityCertificateName(clusterCustomRootCA1)
+            .withCertificateAuthorityCertificateName(TrustChainSecrets.TRUST_ROOT_ONLY)
             .withSecurityProtocol(SecurityProtocol.SSL)
             .withListenerName(TestConstants.EXTERNAL_LISTENER_DEFAULT_NAME)
             .build();
@@ -1278,7 +1270,7 @@ public class ListenersST extends AbstractST {
 
         KafkaClients kafkaClients = ClientUtils.getInstantPlainClientBuilder(testStorage, KafkaResources.bootstrapServiceName(testStorage.getClusterName()) + ":9106")
             .withUsername(testStorage.getUsername())
-            .withCaCertSecretName(clusterCustomCertChain1)
+            .withCaCertSecretName(TrustChainSecrets.TRUST_FULL_CHAIN)
             .withConsumerGroup("consumer-group-certs-2")
             .build();
 
@@ -1313,10 +1305,9 @@ public class ListenersST extends AbstractST {
     )
     void testCustomSoloCertificatesForLoadBalancer() {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
-        final String clusterCustomCertServer1 = testStorage.getClusterName() + "-" + customCertServer1;
-        final CertAndKeyFiles strimziCertAndKey1 = SystemTestCertGenerator.createBrokerCertChain(testStorage);
-
-        SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(), clusterCustomCertServer1, strimziCertAndKey1);
+        TrustChainSecrets.fromBundle(SystemTestCertBundle.forBrokerEndEntityCertificate(testStorage))
+            .withLeafOnly(TrustChainSecrets.TRUST_LEAF_ONLY)
+            .build(testStorage.getNamespaceName(), testStorage.getClusterName());
 
         KubeResourceManager.get().createResourceWithWait(
             KafkaNodePoolTemplates.brokerPool(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
@@ -1332,7 +1323,7 @@ public class ListenersST extends AbstractST {
                             .withTls(true)
                             .withNewConfiguration()
                                 .withNewBrokerCertChainAndKey()
-                                    .withSecretName(clusterCustomCertServer1)
+                                    .withSecretName(TrustChainSecrets.TRUST_LEAF_ONLY)
                                     .withKey("ca.key")
                                     .withCertificate("ca.crt")
                                 .endBrokerCertChainAndKey()
@@ -1345,7 +1336,7 @@ public class ListenersST extends AbstractST {
                             .withTls(true)
                             .withNewConfiguration()
                                 .withNewBrokerCertChainAndKey()
-                                    .withSecretName(clusterCustomCertServer1)
+                                    .withSecretName(TrustChainSecrets.TRUST_LEAF_ONLY)
                                     .withKey("ca.key")
                                     .withCertificate("ca.crt")
                                 .endBrokerCertChainAndKey()
@@ -1365,7 +1356,7 @@ public class ListenersST extends AbstractST {
             .withClusterName(testStorage.getClusterName())
             .withKafkaUsername(testStorage.getUsername())
             .withMessageCount(testStorage.getMessageCount())
-            .withCertificateAuthorityCertificateName(clusterCustomCertServer1)
+            .withCertificateAuthorityCertificateName(TrustChainSecrets.TRUST_LEAF_ONLY)
             .withSecurityProtocol(SecurityProtocol.SSL)
             .withListenerName(TestConstants.EXTERNAL_LISTENER_DEFAULT_NAME)
             .build();
@@ -1377,7 +1368,7 @@ public class ListenersST extends AbstractST {
 
         KafkaClients kafkaClients = ClientUtils.getInstantTlsClientBuilder(testStorage, KafkaResources.bootstrapServiceName(testStorage.getClusterName()) + ":9107")
             .withConsumerGroup("consumer-group-certs-3")
-            .withCaCertSecretName(clusterCustomCertServer1)
+            .withCaCertSecretName(TrustChainSecrets.TRUST_LEAF_ONLY)
             .build();
 
         KubeResourceManager.get().createResourceWithWait(kafkaClients.producerTlsStrimzi(testStorage.getClusterName()));
@@ -1412,17 +1403,13 @@ public class ListenersST extends AbstractST {
     )
     void testCustomChainCertificatesForLoadBalancer() {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
-        final String clusterCustomCertChain1 = testStorage.getClusterName() + "-" + customCertChain1;
-        final String clusterCustomRootCA1 = testStorage.getClusterName() + "-" + customRootCA1;
 
-        final CertAndKey root1 = generateRootCaCertAndKey();
-        final CertAndKey intermediate1 = generateIntermediateCaCertAndKey(root1);
-        final CertAndKey strimzi1 = generateEndEntityCertAndKey(intermediate1, SystemTestCertGenerator.retrieveKafkaBrokerSANs(testStorage));
-        final CertAndKeyFiles rootCertAndKey1 = exportToPemFiles(root1);
-        final CertAndKeyFiles chainCertAndKey1 = exportToPemFiles(strimzi1, intermediate1, root1);
+        final SystemTestCertBundle brokerBundle = SystemTestCertBundle.forBrokerEndEntityCertificate(testStorage);
 
-        SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(), clusterCustomCertChain1, chainCertAndKey1);
-        SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(), clusterCustomRootCA1, rootCertAndKey1);
+        TrustChainSecrets.fromBundle(brokerBundle)
+            .withFullChain(TrustChainSecrets.TRUST_FULL_CHAIN)
+            .withRootOnly(TrustChainSecrets.TRUST_ROOT_ONLY)
+            .build(testStorage.getNamespaceName(), testStorage.getClusterName());
 
         KubeResourceManager.get().createResourceWithWait(
             KafkaNodePoolTemplates.brokerPool(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
@@ -1438,7 +1425,7 @@ public class ListenersST extends AbstractST {
                             .withTls(true)
                             .withNewConfiguration()
                                 .withNewBrokerCertChainAndKey()
-                                    .withSecretName(clusterCustomCertChain1)
+                                    .withSecretName(TrustChainSecrets.TRUST_FULL_CHAIN)
                                     .withKey("ca.key")
                                     .withCertificate("ca.crt")
                                 .endBrokerCertChainAndKey()
@@ -1451,7 +1438,7 @@ public class ListenersST extends AbstractST {
                             .withTls(true)
                             .withNewConfiguration()
                                 .withNewBrokerCertChainAndKey()
-                                    .withSecretName(clusterCustomCertChain1)
+                                    .withSecretName(TrustChainSecrets.TRUST_FULL_CHAIN)
                                     .withKey("ca.key")
                                     .withCertificate("ca.crt")
                                 .endBrokerCertChainAndKey()
@@ -1473,7 +1460,7 @@ public class ListenersST extends AbstractST {
             .withClusterName(testStorage.getClusterName())
             .withKafkaUsername(testStorage.getUsername())
             .withMessageCount(testStorage.getMessageCount())
-            .withCertificateAuthorityCertificateName(clusterCustomRootCA1)
+            .withCertificateAuthorityCertificateName(TrustChainSecrets.TRUST_ROOT_ONLY)
             .withSecurityProtocol(SecurityProtocol.SSL)
             .withListenerName(TestConstants.EXTERNAL_LISTENER_DEFAULT_NAME)
             .build();
@@ -1485,7 +1472,7 @@ public class ListenersST extends AbstractST {
 
         KafkaClients kafkaClients = ClientUtils.getInstantTlsClientBuilder(testStorage, KafkaResources.bootstrapServiceName(testStorage.getClusterName()) + ":9109")
             .withConsumerGroup("consumer-group-certs-4")
-            .withCaCertSecretName(clusterCustomCertChain1)
+            .withCaCertSecretName(TrustChainSecrets.TRUST_FULL_CHAIN)
             .build();
 
         KubeResourceManager.get().createResourceWithWait(kafkaClients.producerTlsStrimzi(testStorage.getClusterName()));
@@ -1525,10 +1512,9 @@ public class ListenersST extends AbstractST {
     )
     void testCustomSoloCertificatesForRoute() {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
-        final String clusterCustomCertServer1 = testStorage.getClusterName() + "-" + customCertServer1;
-        final CertAndKeyFiles strimziCertAndKey1 = SystemTestCertGenerator.createBrokerCertChain(testStorage);
-
-        SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(), clusterCustomCertServer1, strimziCertAndKey1);
+        TrustChainSecrets.fromBundle(SystemTestCertBundle.forBrokerEndEntityCertificate(testStorage))
+            .withLeafOnly(TrustChainSecrets.TRUST_LEAF_ONLY)
+            .build(testStorage.getNamespaceName(), testStorage.getClusterName());
 
         KubeResourceManager.get().createResourceWithWait(
             KafkaNodePoolTemplates.brokerPool(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
@@ -1544,7 +1530,7 @@ public class ListenersST extends AbstractST {
                             .withTls(true)
                             .withNewConfiguration()
                                 .withNewBrokerCertChainAndKey()
-                                    .withSecretName(clusterCustomCertServer1)
+                                    .withSecretName(TrustChainSecrets.TRUST_LEAF_ONLY)
                                     .withKey("ca.key")
                                     .withCertificate("ca.crt")
                                 .endBrokerCertChainAndKey()
@@ -1557,7 +1543,7 @@ public class ListenersST extends AbstractST {
                             .withTls(true)
                             .withNewConfiguration()
                                 .withNewBrokerCertChainAndKey()
-                                    .withSecretName(clusterCustomCertServer1)
+                                    .withSecretName(TrustChainSecrets.TRUST_LEAF_ONLY)
                                     .withKey("ca.key")
                                     .withCertificate("ca.crt")
                                 .endBrokerCertChainAndKey()
@@ -1575,7 +1561,7 @@ public class ListenersST extends AbstractST {
             .withClusterName(testStorage.getClusterName())
             .withKafkaUsername(testStorage.getUsername())
             .withMessageCount(testStorage.getMessageCount())
-            .withCertificateAuthorityCertificateName(clusterCustomCertServer1)
+            .withCertificateAuthorityCertificateName(TrustChainSecrets.TRUST_LEAF_ONLY)
             .withSecurityProtocol(SecurityProtocol.SSL)
             .withListenerName(TestConstants.EXTERNAL_LISTENER_DEFAULT_NAME)
             .build();
@@ -1587,7 +1573,7 @@ public class ListenersST extends AbstractST {
 
         KafkaClients kafkaClients = ClientUtils.getInstantTlsClientBuilder(testStorage, KafkaResources.bootstrapServiceName(testStorage.getClusterName()) + ":9111")
             .withConsumerGroup("consumer-group-certs-5")
-            .withCaCertSecretName(clusterCustomCertServer1)
+            .withCaCertSecretName(TrustChainSecrets.TRUST_LEAF_ONLY)
             .build();
 
         KubeResourceManager.get().createResourceWithWait(kafkaClients.producerTlsStrimzi(testStorage.getClusterName()));
@@ -1624,18 +1610,12 @@ public class ListenersST extends AbstractST {
     void testCustomChainCertificatesForRoute() {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
-        final String clusterCustomCertChain1 = testStorage.getClusterName() + "-" + customCertChain1;
-        final String clusterCustomRootCA1 = testStorage.getClusterName() + "-" + customRootCA1;
+        final SystemTestCertBundle brokerBundle = SystemTestCertBundle.forBrokerEndEntityCertificate(testStorage);
 
-        final CertAndKey root1 = generateRootCaCertAndKey();
-        final CertAndKey intermediate1 = generateIntermediateCaCertAndKey(root1);
-        final CertAndKey strimzi1 = generateEndEntityCertAndKey(intermediate1, SystemTestCertGenerator.retrieveKafkaBrokerSANs(testStorage));
-
-        final CertAndKeyFiles rootCertAndKey1 = exportToPemFiles(root1);
-        final CertAndKeyFiles chainCertAndKey1 = exportToPemFiles(strimzi1, intermediate1, root1);
-
-        SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(), clusterCustomCertChain1, chainCertAndKey1);
-        SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(), clusterCustomRootCA1, rootCertAndKey1);
+        TrustChainSecrets.fromBundle(brokerBundle)
+            .withFullChain(TrustChainSecrets.TRUST_FULL_CHAIN)
+            .withRootOnly(TrustChainSecrets.TRUST_ROOT_ONLY)
+            .build(testStorage.getNamespaceName(), testStorage.getClusterName());
 
         KubeResourceManager.get().createResourceWithWait(
             KafkaNodePoolTemplates.brokerPool(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
@@ -1651,7 +1631,7 @@ public class ListenersST extends AbstractST {
                             .withTls(true)
                             .withNewConfiguration()
                                 .withNewBrokerCertChainAndKey()
-                                    .withSecretName(clusterCustomCertChain1)
+                                    .withSecretName(TrustChainSecrets.TRUST_FULL_CHAIN)
                                     .withKey("ca.key")
                                     .withCertificate("ca.crt")
                                 .endBrokerCertChainAndKey()
@@ -1664,7 +1644,7 @@ public class ListenersST extends AbstractST {
                             .withTls(true)
                             .withNewConfiguration()
                                 .withNewBrokerCertChainAndKey()
-                                    .withSecretName(clusterCustomCertChain1)
+                                    .withSecretName(TrustChainSecrets.TRUST_FULL_CHAIN)
                                     .withKey("ca.key")
                                     .withCertificate("ca.crt")
                                 .endBrokerCertChainAndKey()
@@ -1682,7 +1662,7 @@ public class ListenersST extends AbstractST {
             .withClusterName(testStorage.getClusterName())
             .withKafkaUsername(testStorage.getUsername())
             .withMessageCount(testStorage.getMessageCount())
-            .withCertificateAuthorityCertificateName(clusterCustomRootCA1)
+            .withCertificateAuthorityCertificateName(TrustChainSecrets.TRUST_ROOT_ONLY)
             .withSecurityProtocol(SecurityProtocol.SSL)
             .withListenerName(TestConstants.EXTERNAL_LISTENER_DEFAULT_NAME)
             .build();
@@ -1694,7 +1674,7 @@ public class ListenersST extends AbstractST {
 
         KafkaClients kafkaClients = ClientUtils.getInstantTlsClientBuilder(testStorage, KafkaResources.bootstrapServiceName(testStorage.getClusterName()) + ":9112")
             .withConsumerGroup("consumer-group-certs-6")
-            .withCaCertSecretName(clusterCustomCertChain1)
+            .withCaCertSecretName(TrustChainSecrets.TRUST_FULL_CHAIN)
             .build();
 
         KubeResourceManager.get().createResourceWithWait(kafkaClients.producerTlsStrimzi(testStorage.getClusterName()));
@@ -1731,13 +1711,13 @@ public class ListenersST extends AbstractST {
     )
     void testCustomCertLoadBalancerAndTlsRollingUpdate() {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
-        final String clusterCustomCertServer1 = testStorage.getClusterName() + "-" + customCertServer1;
-        final String clusterCustomCertServer2 = testStorage.getClusterName() + "-" + customCertServer2;
-        final CertAndKeyFiles strimziCertAndKey1 = SystemTestCertGenerator.createBrokerCertChain(testStorage);
-        final CertAndKeyFiles strimziCertAndKey2 = SystemTestCertGenerator.createBrokerCertChain(testStorage);
+        final SystemTestCertBundle brokerBundle1 = SystemTestCertBundle.forBrokerEndEntityCertificate(testStorage);
+        final SystemTestCertBundle brokerBundle2 = SystemTestCertBundle.forBrokerEndEntityCertificate(testStorage);
 
-        SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(), clusterCustomCertServer1, strimziCertAndKey1);
-        SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(), clusterCustomCertServer2, strimziCertAndKey2);
+        TrustChainSecrets.withoutBundle()
+            .withCustom(customCertServer1, brokerBundle1.getSystemTestCa())
+            .withCustom(customCertServer2, brokerBundle2.getSystemTestCa())
+            .build(testStorage.getNamespaceName(), testStorage.getClusterName());
 
         KubeResourceManager.get().createResourceWithWait(
             KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
@@ -1805,7 +1785,7 @@ public class ListenersST extends AbstractST {
                             .withTls(true)
                             .withNewConfiguration()
                                 .withNewBrokerCertChainAndKey()
-                                    .withSecretName(clusterCustomCertServer2)
+                                    .withSecretName(customCertServer2)
                                     .withKey("ca.key")
                                     .withCertificate("ca.crt")
                                 .endBrokerCertChainAndKey()
@@ -1818,7 +1798,7 @@ public class ListenersST extends AbstractST {
                             .withTls(true)
                             .withNewConfiguration()
                                 .withNewBrokerCertChainAndKey()
-                                    .withSecretName(clusterCustomCertServer1)
+                                    .withSecretName(customCertServer1)
                                     .withKey("ca.key")
                                     .withCertificate("ca.crt")
                                 .endBrokerCertChainAndKey()
@@ -1833,10 +1813,10 @@ public class ListenersST extends AbstractST {
         KafkaUtils.waitForKafkaStatusUpdate(testStorage.getNamespaceName(), testStorage.getClusterName());
 
         externalCerts = getKafkaStatusCertificates(testStorage.getNamespaceName(), TestConstants.EXTERNAL_LISTENER_DEFAULT_NAME, testStorage.getClusterName());
-        externalSecretCerts = getKafkaSecretCertificates(testStorage.getNamespaceName(), clusterCustomCertServer1, "ca.crt");
+        externalSecretCerts = getKafkaSecretCertificates(testStorage.getNamespaceName(), customCertServer1, "ca.crt");
 
         internalCerts = getKafkaStatusCertificates(testStorage.getNamespaceName(), TestConstants.TLS_LISTENER_DEFAULT_NAME, testStorage.getClusterName());
-        String internalSecretCerts = getKafkaSecretCertificates(testStorage.getNamespaceName(), clusterCustomCertServer2, "ca.crt");
+        String internalSecretCerts = getKafkaSecretCertificates(testStorage.getNamespaceName(), customCertServer2, "ca.crt");
 
         LOGGER.info("Check if KafkaStatus certificates are the same as Secret certificates");
         assertThat(externalSecretCerts, is(externalCerts));
@@ -1844,7 +1824,7 @@ public class ListenersST extends AbstractST {
         assertThat(internalSecretCerts, is(internalCerts));
 
         externalKafkaClient = externalKafkaClient.toBuilder()
-            .withCertificateAuthorityCertificateName(clusterCustomCertServer1)
+            .withCertificateAuthorityCertificateName(customCertServer1)
             .build();
 
         externalKafkaClient.verifyProducedAndConsumedMessages(
@@ -1854,7 +1834,7 @@ public class ListenersST extends AbstractST {
 
         KafkaClients kafkaClients = ClientUtils.getInstantTlsClientBuilder(testStorage, KafkaResources.bootstrapServiceName(testStorage.getClusterName()) + ":9113")
             .withConsumerGroup("consumer-group-certs-6")
-            .withCaCertSecretName(clusterCustomCertServer2)
+            .withCaCertSecretName(customCertServer2)
             .build();
 
         KubeResourceManager.get().createResourceWithWait(kafkaClients.producerTlsStrimzi(testStorage.getClusterName()));
@@ -1868,10 +1848,10 @@ public class ListenersST extends AbstractST {
         ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getMessageCount() * 3);
 
         externalCerts = getKafkaStatusCertificates(testStorage.getNamespaceName(), TestConstants.EXTERNAL_LISTENER_DEFAULT_NAME, testStorage.getClusterName());
-        externalSecretCerts = getKafkaSecretCertificates(testStorage.getNamespaceName(), clusterCustomCertServer1, "ca.crt");
+        externalSecretCerts = getKafkaSecretCertificates(testStorage.getNamespaceName(), customCertServer1, "ca.crt");
 
         internalCerts = getKafkaStatusCertificates(testStorage.getNamespaceName(), TestConstants.TLS_LISTENER_DEFAULT_NAME, testStorage.getClusterName());
-        internalSecretCerts = getKafkaSecretCertificates(testStorage.getNamespaceName(), clusterCustomCertServer2, "ca.crt");
+        internalSecretCerts = getKafkaSecretCertificates(testStorage.getNamespaceName(), customCertServer2, "ca.crt");
 
         LOGGER.info("Check if KafkaStatus certificates are the same as Secret certificates");
         assertThat(externalSecretCerts, is(externalCerts));
@@ -1911,7 +1891,7 @@ public class ListenersST extends AbstractST {
                             .withTls(true)
                             .withNewConfiguration()
                                 .withNewBrokerCertChainAndKey()
-                                    .withSecretName(clusterCustomCertServer2)
+                                    .withSecretName(customCertServer2)
                                     .withKey("ca.key")
                                     .withCertificate("ca.crt")
                                 .endBrokerCertChainAndKey()
@@ -1937,7 +1917,7 @@ public class ListenersST extends AbstractST {
         externalSecretCerts = getKafkaSecretCertificates(testStorage.getNamespaceName(), testStorage.getClusterName() + "-cluster-ca-cert", "ca.crt");
 
         internalCerts = getKafkaStatusCertificates(testStorage.getNamespaceName(), TestConstants.TLS_LISTENER_DEFAULT_NAME, testStorage.getClusterName());
-        internalSecretCerts = getKafkaSecretCertificates(testStorage.getNamespaceName(), clusterCustomCertServer2, "ca.crt");
+        internalSecretCerts = getKafkaSecretCertificates(testStorage.getNamespaceName(), customCertServer2, "ca.crt");
 
         LOGGER.info("Check if KafkaStatus certificates are the same as Secret certificates");
         assertThat(externalSecretCerts, is(externalCerts));
@@ -1990,13 +1970,13 @@ public class ListenersST extends AbstractST {
     )
     void testCustomCertNodePortAndTlsRollingUpdate() {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
-        final String clusterCustomCertServer1 = testStorage.getClusterName() + "-" + customCertServer1;
-        final String clusterCustomCertServer2 = testStorage.getClusterName() + "-" + customCertServer2;
-        final CertAndKeyFiles strimziCertAndKey1 = SystemTestCertGenerator.createBrokerCertChain(testStorage);
-        final CertAndKeyFiles strimziCertAndKey2 = SystemTestCertGenerator.createBrokerCertChain(testStorage);
+        final SystemTestCertBundle brokerBundle1 = SystemTestCertBundle.forBrokerEndEntityCertificate(testStorage);
+        final SystemTestCertBundle brokerBundle2 = SystemTestCertBundle.forBrokerEndEntityCertificate(testStorage);
 
-        SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(), clusterCustomCertServer1, strimziCertAndKey1);
-        SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(), clusterCustomCertServer2, strimziCertAndKey2);
+        TrustChainSecrets.withoutBundle()
+            .withCustom(customCertServer1, brokerBundle1.getSystemTestCa())
+            .withCustom(customCertServer2, brokerBundle2.getSystemTestCa())
+            .build(testStorage.getNamespaceName(), testStorage.getClusterName());
 
         KubeResourceManager.get().createResourceWithWait(
             KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
@@ -2063,7 +2043,7 @@ public class ListenersST extends AbstractST {
                             .withTls(true)
                             .withNewConfiguration()
                                 .withNewBrokerCertChainAndKey()
-                                    .withSecretName(clusterCustomCertServer2)
+                                    .withSecretName(customCertServer2)
                                     .withKey("ca.key")
                                     .withCertificate("ca.crt")
                                 .endBrokerCertChainAndKey()
@@ -2076,7 +2056,7 @@ public class ListenersST extends AbstractST {
                             .withTls(true)
                             .withNewConfiguration()
                                 .withNewBrokerCertChainAndKey()
-                                    .withSecretName(clusterCustomCertServer1)
+                                    .withSecretName(customCertServer1)
                                     .withKey("ca.key")
                                     .withCertificate("ca.crt")
                                 .endBrokerCertChainAndKey()
@@ -2093,15 +2073,15 @@ public class ListenersST extends AbstractST {
             // external certs
             () -> getKafkaStatusCertificates(testStorage.getNamespaceName(), TestConstants.EXTERNAL_LISTENER_DEFAULT_NAME, testStorage.getClusterName()),
             // external secret certs
-            () -> getKafkaSecretCertificates(testStorage.getNamespaceName(), clusterCustomCertServer1, "ca.crt"));
+            () -> getKafkaSecretCertificates(testStorage.getNamespaceName(), customCertServer1, "ca.crt"));
         StUtils.waitUntilSuppliersAreMatching(
             // internal certs
             () -> getKafkaStatusCertificates(testStorage.getNamespaceName(), TestConstants.TLS_LISTENER_DEFAULT_NAME, testStorage.getClusterName()),
             // internal secret certs
-            () -> getKafkaSecretCertificates(testStorage.getNamespaceName(), clusterCustomCertServer2, "ca.crt"));
+            () -> getKafkaSecretCertificates(testStorage.getNamespaceName(), customCertServer2, "ca.crt"));
 
         externalKafkaClient = externalKafkaClient.toBuilder()
-            .withCertificateAuthorityCertificateName(clusterCustomCertServer1)
+            .withCertificateAuthorityCertificateName(customCertServer1)
             .build();
 
         externalKafkaClient.verifyProducedAndConsumedMessages(
@@ -2113,7 +2093,7 @@ public class ListenersST extends AbstractST {
 
         KafkaClients kafkaClients = ClientUtils.getInstantTlsClientBuilder(testStorage, KafkaResources.bootstrapServiceName(testStorage.getClusterName()) + ":9115")
             .withConsumerGroup("consumer-group-certs-71")
-            .withCaCertSecretName(clusterCustomCertServer2)
+            .withCaCertSecretName(customCertServer2)
             .build();
 
         KubeResourceManager.get().createResourceWithWait(kafkaClients.producerTlsStrimzi(testStorage.getClusterName()));
@@ -2128,8 +2108,8 @@ public class ListenersST extends AbstractST {
         KubeResourceManager.get().createResourceWithWait(kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
         ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getMessageCount() * 3);
 
-        SecretUtils.updateCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(), clusterCustomCertServer1, strimziCertAndKey2);
-        SecretUtils.updateCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(), clusterCustomCertServer2, strimziCertAndKey1);
+        SecretUtils.updateCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(), customCertServer1, exportToPemFiles(brokerBundle2.getSystemTestCa()));
+        SecretUtils.updateCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(), customCertServer2, exportToPemFiles(brokerBundle1.getSystemTestCa()));
 
         kafkaSnapshot = RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), 3, kafkaSnapshot);
 
@@ -2137,12 +2117,12 @@ public class ListenersST extends AbstractST {
                 // external certs
                 () -> getKafkaStatusCertificates(testStorage.getNamespaceName(), TestConstants.EXTERNAL_LISTENER_DEFAULT_NAME, testStorage.getClusterName()),
                 // external secret certs
-                () -> getKafkaSecretCertificates(testStorage.getNamespaceName(), clusterCustomCertServer1, "ca.crt"));
+                () -> getKafkaSecretCertificates(testStorage.getNamespaceName(), customCertServer1, "ca.crt"));
         StUtils.waitUntilSuppliersAreMatching(
                 // internal certs
                 () -> getKafkaStatusCertificates(testStorage.getNamespaceName(), TestConstants.TLS_LISTENER_DEFAULT_NAME, testStorage.getClusterName()),
                 // internal secret certs
-                () -> getKafkaSecretCertificates(testStorage.getNamespaceName(), clusterCustomCertServer2, "ca.crt"));
+                () -> getKafkaSecretCertificates(testStorage.getNamespaceName(), customCertServer2, "ca.crt"));
 
 
         externalKafkaClient.verifyProducedAndConsumedMessages(
@@ -2176,7 +2156,7 @@ public class ListenersST extends AbstractST {
                             .withTls(true)
                             .withNewConfiguration()
                                 .withNewBrokerCertChainAndKey()
-                                    .withSecretName(clusterCustomCertServer2)
+                                    .withSecretName(customCertServer2)
                                     .withKey("ca.key")
                                     .withCertificate("ca.crt")
                                 .endBrokerCertChainAndKey()
@@ -2204,7 +2184,7 @@ public class ListenersST extends AbstractST {
                 // internal certs
                 () -> getKafkaStatusCertificates(testStorage.getNamespaceName(), TestConstants.TLS_LISTENER_DEFAULT_NAME, testStorage.getClusterName()),
                 // internal secret certs
-                () -> getKafkaSecretCertificates(testStorage.getNamespaceName(), clusterCustomCertServer2, "ca.crt"));
+                () -> getKafkaSecretCertificates(testStorage.getNamespaceName(), customCertServer2, "ca.crt"));
 
         externalKafkaClient = externalKafkaClient.toBuilder()
             .withCertificateAuthorityCertificateName(null)
@@ -2247,13 +2227,13 @@ public class ListenersST extends AbstractST {
     )
     void testCustomCertRouteAndTlsRollingUpdate() {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
-        final String clusterCustomCertServer1 = testStorage.getClusterName() + "-" + customCertServer1;
-        final String clusterCustomCertServer2 = testStorage.getClusterName() + "-" + customCertServer2;
-        final CertAndKeyFiles strimziCertAndKey1 = SystemTestCertGenerator.createBrokerCertChain(testStorage);
-        final CertAndKeyFiles strimziCertAndKey2 = SystemTestCertGenerator.createBrokerCertChain(testStorage);
+        final SystemTestCertBundle brokerBundle1 = SystemTestCertBundle.forBrokerEndEntityCertificate(testStorage);
+        final SystemTestCertBundle brokerBundle2 = SystemTestCertBundle.forBrokerEndEntityCertificate(testStorage);
 
-        SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(), clusterCustomCertServer1, strimziCertAndKey1);
-        SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(), clusterCustomCertServer2, strimziCertAndKey2);
+        TrustChainSecrets.withoutBundle()
+            .withCustom(customCertServer1, brokerBundle1.getSystemTestCa())
+            .withCustom(customCertServer2, brokerBundle2.getSystemTestCa())
+            .build(testStorage.getNamespaceName(), testStorage.getClusterName());
 
         KubeResourceManager.get().createResourceWithWait(
             KafkaNodePoolTemplates.brokerPool(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
@@ -2321,7 +2301,7 @@ public class ListenersST extends AbstractST {
                             .withTls(true)
                             .withNewConfiguration()
                                 .withNewBrokerCertChainAndKey()
-                                    .withSecretName(clusterCustomCertServer2)
+                                    .withSecretName(customCertServer2)
                                     .withKey("ca.key")
                                     .withCertificate("ca.crt")
                                 .endBrokerCertChainAndKey()
@@ -2334,7 +2314,7 @@ public class ListenersST extends AbstractST {
                             .withTls(true)
                             .withNewConfiguration()
                                 .withNewBrokerCertChainAndKey()
-                                    .withSecretName(clusterCustomCertServer1)
+                                    .withSecretName(customCertServer1)
                                     .withKey("ca.key")
                                     .withCertificate("ca.crt")
                                 .endBrokerCertChainAndKey()
@@ -2351,18 +2331,18 @@ public class ListenersST extends AbstractST {
 
         KafkaUtils.waitForKafkaSecretAndStatusCertsMatches(
             () -> getKafkaStatusCertificates(testStorage.getNamespaceName(), TestConstants.EXTERNAL_LISTENER_DEFAULT_NAME, testStorage.getClusterName()),
-            () -> getKafkaSecretCertificates(testStorage.getNamespaceName(), clusterCustomCertServer1, "ca.crt")
+            () -> getKafkaSecretCertificates(testStorage.getNamespaceName(), customCertServer1, "ca.crt")
         );
 
         LOGGER.info("Check if KafkaStatus certificates from internal TLS listener are the same as secret certificates");
 
         KafkaUtils.waitForKafkaSecretAndStatusCertsMatches(
             () -> getKafkaStatusCertificates(testStorage.getNamespaceName(), TestConstants.TLS_LISTENER_DEFAULT_NAME, testStorage.getClusterName()),
-            () -> getKafkaSecretCertificates(testStorage.getNamespaceName(), clusterCustomCertServer2, "ca.crt")
+            () -> getKafkaSecretCertificates(testStorage.getNamespaceName(), customCertServer2, "ca.crt")
         );
 
         externalKafkaClient = externalKafkaClient.toBuilder()
-            .withCertificateAuthorityCertificateName(clusterCustomCertServer1)
+            .withCertificateAuthorityCertificateName(customCertServer1)
             .withConsumerGroupName(ClientUtils.generateRandomConsumerGroup())
             .build();
 
@@ -2372,7 +2352,7 @@ public class ListenersST extends AbstractST {
         );
 
         KafkaClients kafkaClients = ClientUtils.getInstantTlsClientBuilder(testStorage, KafkaResources.bootstrapServiceName(testStorage.getClusterName()) + ":9117")
-            .withCaCertSecretName(clusterCustomCertServer2)
+            .withCaCertSecretName(customCertServer2)
             .withConsumerGroup("consumer-group-certs-91")
             .build();
 
@@ -2387,11 +2367,11 @@ public class ListenersST extends AbstractST {
         ClientUtils.waitForInstantConsumerClientSuccess(testStorage);
 
         // Delete already existing secrets
-        SecretUtils.deleteSecretWithWait(testStorage.getNamespaceName(), clusterCustomCertServer1);
-        SecretUtils.deleteSecretWithWait(testStorage.getNamespaceName(), clusterCustomCertServer2);
+        SecretUtils.deleteSecretWithWait(testStorage.getNamespaceName(), customCertServer1);
+        SecretUtils.deleteSecretWithWait(testStorage.getNamespaceName(), customCertServer2);
         // Create Secrets with new values (update)
-        SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(), clusterCustomCertServer1, strimziCertAndKey2);
-        SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(), clusterCustomCertServer2, strimziCertAndKey1);
+        SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(), customCertServer1, exportToPemFiles(brokerBundle2.getSystemTestCa()));
+        SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(), customCertServer2, exportToPemFiles(brokerBundle1.getSystemTestCa()));
 
         kafkaSnapshot = RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), 3, kafkaSnapshot);
 
@@ -2401,14 +2381,14 @@ public class ListenersST extends AbstractST {
 
         KafkaUtils.waitForKafkaSecretAndStatusCertsMatches(
             () -> getKafkaStatusCertificates(testStorage.getNamespaceName(), TestConstants.EXTERNAL_LISTENER_DEFAULT_NAME, testStorage.getClusterName()),
-            () -> getKafkaSecretCertificates(testStorage.getNamespaceName(), clusterCustomCertServer1, "ca.crt")
+            () -> getKafkaSecretCertificates(testStorage.getNamespaceName(), customCertServer1, "ca.crt")
         );
 
         LOGGER.info("Check if KafkaStatus certificates from internal TLS listener are the same as secret certificates");
 
         KafkaUtils.waitForKafkaSecretAndStatusCertsMatches(
             () -> getKafkaStatusCertificates(testStorage.getNamespaceName(), TestConstants.TLS_LISTENER_DEFAULT_NAME, testStorage.getClusterName()),
-            () -> getKafkaSecretCertificates(testStorage.getNamespaceName(), clusterCustomCertServer2, "ca.crt")
+            () -> getKafkaSecretCertificates(testStorage.getNamespaceName(), customCertServer2, "ca.crt")
         );
 
         externalKafkaClient.verifyProducedAndConsumedMessages(
@@ -2440,7 +2420,7 @@ public class ListenersST extends AbstractST {
                             .withTls(true)
                             .withNewConfiguration()
                                 .withNewBrokerCertChainAndKey()
-                                    .withSecretName(clusterCustomCertServer2)
+                                    .withSecretName(customCertServer2)
                                     .withKey("ca.key")
                                     .withCertificate("ca.crt")
                                 .endBrokerCertChainAndKey()
@@ -2470,7 +2450,7 @@ public class ListenersST extends AbstractST {
 
         KafkaUtils.waitForKafkaSecretAndStatusCertsMatches(
             () -> getKafkaStatusCertificates(testStorage.getNamespaceName(), TestConstants.TLS_LISTENER_DEFAULT_NAME, testStorage.getClusterName()),
-            () -> getKafkaSecretCertificates(testStorage.getNamespaceName(),  clusterCustomCertServer2, "ca.crt")
+            () -> getKafkaSecretCertificates(testStorage.getNamespaceName(),  customCertServer2, "ca.crt")
         );
 
         externalKafkaClient = externalKafkaClient.toBuilder()
@@ -2562,10 +2542,9 @@ public class ListenersST extends AbstractST {
     void testCertificateWithNonExistingDataCrt() {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         final String nonExistingCertName = "non-existing-crt";
-        final String clusterCustomCertServer1 = testStorage.getClusterName() + "-" + customCertServer1;
-        final CertAndKeyFiles strimziCertAndKey1 = SystemTestCertGenerator.createBrokerCertChain(testStorage);
-
-        SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(), clusterCustomCertServer1, strimziCertAndKey1);
+        TrustChainSecrets.fromBundle(SystemTestCertBundle.forBrokerEndEntityCertificate(testStorage))
+            .withLeafOnly(TrustChainSecrets.TRUST_LEAF_ONLY)
+            .build(testStorage.getNamespaceName(), testStorage.getClusterName());
 
         KubeResourceManager.get().createResourceWithWait(
             KafkaNodePoolTemplates.brokerPool(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 1).build(),
@@ -2581,7 +2560,7 @@ public class ListenersST extends AbstractST {
                             .withTls(true)
                             .withNewConfiguration()
                                 .withNewBrokerCertChainAndKey()
-                                    .withSecretName(clusterCustomCertServer1)
+                                    .withSecretName(TrustChainSecrets.TRUST_LEAF_ONLY)
                                     .withKey("ca.key")
                                     .withCertificate(nonExistingCertName)
                                 .endBrokerCertChainAndKey()
@@ -2592,7 +2571,7 @@ public class ListenersST extends AbstractST {
             .build());
 
         KafkaUtils.waitUntilKafkaStatusConditionContainsMessage(testStorage.getNamespaceName(), testStorage.getClusterName(),
-            ".*Secret " + clusterCustomCertServer1 + " does not contain certificate under the key " + nonExistingCertName + ".*");
+            ".*Secret " + TrustChainSecrets.TRUST_LEAF_ONLY + " does not contain certificate under the key " + nonExistingCertName + ".*");
     }
 
     @ParallelNamespaceTest
@@ -2613,10 +2592,9 @@ public class ListenersST extends AbstractST {
     void testCertificateWithNonExistingDataKey() {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         final String nonExistingCertKey = "non-existing-key";
-        final String clusterCustomCertServer1 = testStorage.getClusterName() + "-" + customCertServer1;
-        final CertAndKeyFiles strimziCertAndKey1 = SystemTestCertGenerator.createBrokerCertChain(testStorage);
-
-        SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(), clusterCustomCertServer1, strimziCertAndKey1);
+        TrustChainSecrets.fromBundle(SystemTestCertBundle.forBrokerEndEntityCertificate(testStorage))
+            .withLeafOnly(TrustChainSecrets.TRUST_LEAF_ONLY)
+            .build(testStorage.getNamespaceName(), testStorage.getClusterName());
 
         KubeResourceManager.get().createResourceWithWait(
             KafkaNodePoolTemplates.brokerPool(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 1).build(),
@@ -2632,7 +2610,7 @@ public class ListenersST extends AbstractST {
                             .withTls(true)
                             .withNewConfiguration()
                                 .withNewBrokerCertChainAndKey()
-                                    .withSecretName(clusterCustomCertServer1)
+                                    .withSecretName(TrustChainSecrets.TRUST_LEAF_ONLY)
                                     .withKey(nonExistingCertKey)
                                     .withCertificate("ca.crt")
                                 .endBrokerCertChainAndKey()
@@ -2643,7 +2621,7 @@ public class ListenersST extends AbstractST {
             .build());
 
         KafkaUtils.waitUntilKafkaStatusConditionContainsMessage(testStorage.getNamespaceName(), testStorage.getClusterName(),
-            ".*Secret " + clusterCustomCertServer1 + " does not contain custom certificate private key under the key " + nonExistingCertKey + ".*");
+            ".*Secret " + TrustChainSecrets.TRUST_LEAF_ONLY + " does not contain custom certificate private key under the key " + nonExistingCertKey + ".*");
     }
 
     @ParallelNamespaceTest

@@ -22,6 +22,7 @@ import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.security.SystemTestCertBundle;
 import io.strimzi.systemtest.security.SystemTestCertGenerator;
+import io.strimzi.systemtest.security.TrustChainSecrets;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
@@ -244,33 +245,20 @@ public class CustomCaChainST extends AbstractST {
         KubeResourceManager.get().createResourceWithWait(KafkaUserTemplates.tlsUser(testStorage).build());
 
         //  Create trust secrets with different chain levels
-        final String trustFullChainName = "trust-full-chain";
-        final String trustRootIntermediateName = "trust-root-intermediate";
-        final String trustRootOnlyName = "trust-root-only";
-        final String trustIntermediateOnlyName = "trust-intermediate-only";
-        final String trustLeafOnlyName = "trust-leaf-only";
-        final String trustForeignName = "trust-foreign";
-
-        final CertAndKeyFiles fullChainFiles = exportToPemFiles(clusterCa.getSystemTestCa(), clusterCa.getIntermediateCa(), clusterCa.getStrimziRootCa());
-        final CertAndKeyFiles rootIntermediateFiles = exportToPemFiles(clusterCa.getIntermediateCa(), clusterCa.getStrimziRootCa());
-        final CertAndKeyFiles rootOnlyFiles = exportToPemFiles(clusterCa.getStrimziRootCa());
-        final CertAndKeyFiles intermediateOnlyFiles = exportToPemFiles(clusterCa.getIntermediateCa());
-        final CertAndKeyFiles leafOnlyFiles = exportToPemFiles(clusterCa.getSystemTestCa());
-
-        SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(), trustFullChainName, fullChainFiles);
-        SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(), trustRootIntermediateName, rootIntermediateFiles);
-        SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(), trustRootOnlyName, rootOnlyFiles);
-        SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(), trustIntermediateOnlyName, intermediateOnlyFiles);
-        SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(), trustLeafOnlyName, leafOnlyFiles);
-
-        // Generate foreign Root CA
         final CertAndKey foreignRootCa = generateRootCaCertAndKey("C=CZ, L=Prague, O=Foreign, CN=ForeignRootCA", null);
-        final CertAndKeyFiles foreignCaFiles = exportToPemFiles(foreignRootCa);
-        SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(), trustForeignName, foreignCaFiles);
+
+        TrustChainSecrets.fromBundle(clusterCa)
+            .withFullChain(TrustChainSecrets.TRUST_FULL_CHAIN)
+            .withRootAndIntermediate(TrustChainSecrets.TRUST_ROOT_INTERMEDIATE)
+            .withRootOnly(TrustChainSecrets.TRUST_ROOT_ONLY)
+            .withIntermediateOnly(TrustChainSecrets.TRUST_INTERMEDIATE_ONLY)
+            .withLeafOnly(TrustChainSecrets.TRUST_LEAF_ONLY)
+            .withCustom(TrustChainSecrets.TRUST_FOREIGN, foreignRootCa)
+            .build(testStorage.getNamespaceName(), testStorage.getClusterName());
 
         //  Verify trust with each chain level
-        final String[] trustSecretNames = {trustFullChainName, trustRootIntermediateName, trustRootOnlyName, trustIntermediateOnlyName, trustLeafOnlyName};
-        for (String trustSecretName : trustSecretNames) {
+        for (String trustSecretName : List.of(TrustChainSecrets.TRUST_FULL_CHAIN, TrustChainSecrets.TRUST_ROOT_INTERMEDIATE,
+                TrustChainSecrets.TRUST_ROOT_ONLY, TrustChainSecrets.TRUST_INTERMEDIATE_ONLY, TrustChainSecrets.TRUST_LEAF_ONLY)) {
             LOGGER.info("Testing trust establishment with trust secret: {}", trustSecretName);
             final KafkaClients kafkaClients = ClientUtils.getInstantTlsClientBuilder(testStorage)
                 .withCaCertSecretName(trustSecretName)
@@ -285,7 +273,7 @@ public class CustomCaChainST extends AbstractST {
         //  Verify foreign CA trust fails
         LOGGER.info("Testing that foreign CA trust secret fails to establish trust");
         final KafkaClients foreignClients = ClientUtils.getInstantTlsClientBuilder(testStorage)
-            .withCaCertSecretName(trustForeignName)
+            .withCaCertSecretName(TrustChainSecrets.TRUST_FOREIGN)
             .build();
         KubeResourceManager.get().createResourceWithWait(
             foreignClients.producerTlsStrimzi(testStorage.getClusterName()),
@@ -350,9 +338,9 @@ public class CustomCaChainST extends AbstractST {
         KubeResourceManager.get().createResourceWithWait(KafkaTopicTemplates.topic(testStorage).build());
 
         // Client-side trust secret with full chain so that test clients can verify the broker's certificate
-        final String trustFullChainName = "trust-full-chain";
-        final CertAndKeyFiles fullChainFiles = exportToPemFiles(clusterCa.getSystemTestCa(), clusterCa.getIntermediateCa(), clusterCa.getStrimziRootCa());
-        SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(), trustFullChainName, fullChainFiles);
+        TrustChainSecrets.fromBundle(clusterCa)
+            .withFullChain(TrustChainSecrets.TRUST_FULL_CHAIN)
+            .build(testStorage.getNamespaceName(), testStorage.getClusterName());
 
         final String internalBootstrapAddress = KafkaResources.brokersServiceName(testStorage.getClusterName()) + ":9091";
 
@@ -370,7 +358,7 @@ public class CustomCaChainST extends AbstractST {
 
         final KafkaClients leafSignedClients = ClientUtils.getInstantTlsClientBuilder(testStorage, internalBootstrapAddress)
             .withUsername(leafSignedClientName)
-            .withCaCertSecretName(trustFullChainName)
+            .withCaCertSecretName(TrustChainSecrets.TRUST_FULL_CHAIN)
             .build();
         KubeResourceManager.get().createResourceWithWait(
             leafSignedClients.producerTlsStrimzi(testStorage.getClusterName()),
@@ -390,7 +378,7 @@ public class CustomCaChainST extends AbstractST {
 
         final KafkaClients rootSignedClients = ClientUtils.getInstantTlsClientBuilder(testStorage, internalBootstrapAddress)
             .withUsername(rootSignedClientName)
-            .withCaCertSecretName(trustFullChainName)
+            .withCaCertSecretName(TrustChainSecrets.TRUST_FULL_CHAIN)
             .build();
         KubeResourceManager.get().createResourceWithWait(
             rootSignedClients.producerTlsStrimzi(testStorage.getClusterName()),
@@ -410,7 +398,7 @@ public class CustomCaChainST extends AbstractST {
 
         final KafkaClients intermediateSignedClients = ClientUtils.getInstantTlsClientBuilder(testStorage, internalBootstrapAddress)
             .withUsername(intermediateSignedClientName)
-            .withCaCertSecretName(trustFullChainName)
+            .withCaCertSecretName(TrustChainSecrets.TRUST_FULL_CHAIN)
             .build();
         KubeResourceManager.get().createResourceWithWait(
             intermediateSignedClients.producerTlsStrimzi(testStorage.getClusterName()),
@@ -472,31 +460,19 @@ public class CustomCaChainST extends AbstractST {
             .build());
 
         //  Create trust secrets for KafkaConnect
-        final String connectTrustFullName = "trust-full";
-        final String connectTrustRootIntermediateName = "trust-root-im";
-        final String connectTrustRootOnlyName = "trust-root-only";
-        final String connectTrustIntermediateOnlyName = "trust-im-only";
-        final String connectTrustLeafOnlyName = "trust-leaf-only";
-        final String connectTrustSubleafName = "trust-subleaf";
-
-        final CertAndKeyFiles fullChainFiles = exportToPemFiles(clusterCa.getSystemTestCa(), clusterCa.getIntermediateCa(), clusterCa.getStrimziRootCa());
-        final CertAndKeyFiles rootIntermediateFiles = exportToPemFiles(clusterCa.getIntermediateCa(), clusterCa.getStrimziRootCa());
-        final CertAndKeyFiles rootOnlyFiles = exportToPemFiles(clusterCa.getStrimziRootCa());
-        final CertAndKeyFiles intermediateOnlyFiles = exportToPemFiles(clusterCa.getIntermediateCa());
-        final CertAndKeyFiles leafOnlyFiles = exportToPemFiles(clusterCa.getSystemTestCa());
-        final CertAndKeyFiles subleafChainFiles = exportToPemFiles(subleafCa, clusterCa.getSystemTestCa(), clusterCa.getIntermediateCa(), clusterCa.getStrimziRootCa());
-
-        SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(), connectTrustFullName, fullChainFiles);
-        SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(), connectTrustRootIntermediateName, rootIntermediateFiles);
-        SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(), connectTrustRootOnlyName, rootOnlyFiles);
-        SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(), connectTrustIntermediateOnlyName, intermediateOnlyFiles);
-        SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(), connectTrustLeafOnlyName, leafOnlyFiles);
-        SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(), connectTrustSubleafName, subleafChainFiles);
+        TrustChainSecrets.fromBundle(clusterCa)
+            .withFullChain(TrustChainSecrets.TRUST_FULL_CHAIN)
+            .withRootAndIntermediate(TrustChainSecrets.TRUST_ROOT_INTERMEDIATE)
+            .withRootOnly(TrustChainSecrets.TRUST_ROOT_ONLY)
+            .withIntermediateOnly(TrustChainSecrets.TRUST_INTERMEDIATE_ONLY)
+            .withLeafOnly(TrustChainSecrets.TRUST_LEAF_ONLY)
+            .withCustom(TrustChainSecrets.TRUST_SUBLEAF, subleafCa, clusterCa.getSystemTestCa(), clusterCa.getIntermediateCa(), clusterCa.getStrimziRootCa())
+            .build(testStorage.getNamespaceName(), testStorage.getClusterName());
 
         // Positive cases: KafkaConnect should become ready
         // Deploy one at a time to avoid multiple KafkaConnect instances in the same namespace
-        final String[] positiveSecrets = {connectTrustFullName, connectTrustRootIntermediateName, connectTrustRootOnlyName, connectTrustIntermediateOnlyName, connectTrustLeafOnlyName};
-        for (String trustSecretName : positiveSecrets) {
+        for (String trustSecretName : List.of(TrustChainSecrets.TRUST_FULL_CHAIN, TrustChainSecrets.TRUST_ROOT_INTERMEDIATE,
+                TrustChainSecrets.TRUST_ROOT_ONLY, TrustChainSecrets.TRUST_INTERMEDIATE_ONLY, TrustChainSecrets.TRUST_LEAF_ONLY)) {
 
             final String connectClusterName = testStorage.getClusterName() + "-connect-" + trustSecretName;
             LOGGER.info("Deploying KafkaConnect with trust secret: {}", trustSecretName);
@@ -534,7 +510,7 @@ public class CustomCaChainST extends AbstractST {
                     .withNewTls()
                         .withTrustedCertificates(
                             new CertSecretSourceBuilder()
-                                .withSecretName(connectTrustSubleafName)
+                                .withSecretName(TrustChainSecrets.TRUST_SUBLEAF)
                                 .withCertificate("ca.crt")
                                 .build()
                         )
