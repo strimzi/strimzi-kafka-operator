@@ -140,7 +140,7 @@ public class CaReconcilerReconcileCasTest {
         sharedWorkerExecutor.close();
     }
 
-    private Future<Void> reconcileCas(Vertx vertx, CertificateAuthority clusterCa, CertificateAuthority clientsCa) {
+    private Future<Void> reconcileCas(CertificateAuthority clusterCa, CertificateAuthority clientsCa) {
         Kafka kafka = new KafkaBuilder(KAFKA)
                 .editSpec()
                     .withClusterCa(clusterCa)
@@ -148,10 +148,10 @@ public class CaReconcilerReconcileCasTest {
                 .endSpec()
                 .build();
 
-        return reconcileCas(vertx, kafka, Clock.systemUTC());
+        return reconcileCas(kafka, Clock.systemUTC());
     }
 
-    private Future<Void> reconcileCas(Vertx vertx, Kafka kafka, Clock clock) {
+    private Future<Void> reconcileCas(Kafka kafka, Clock clock) {
         SecretOperator secretOps = supplier.secretOperations;
 
         when(secretOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenAnswer(invocation -> {
@@ -173,7 +173,7 @@ public class CaReconcilerReconcileCasTest {
         Promise<Void> reconcileCasComplete = Promise.promise();
 
         new CaReconciler(reconciliation, kafka, new ClusterOperatorConfig.ClusterOperatorConfigBuilder(ResourceUtils.dummyClusterOperatorConfig(), KafkaVersionTestUtils.getKafkaVersionLookup()).with(ClusterOperatorConfig.OPERATION_TIMEOUT_MS.key(), "1").build(),
-                supplier, vertx, CERT_MANAGER, PASSWORD_GENERATOR)
+                supplier, CERT_MANAGER, PASSWORD_GENERATOR)
                 .reconcileCas(clock)
                 .onComplete(ar -> {
                     if (ar.succeeded()) {
@@ -305,7 +305,7 @@ public class CaReconcilerReconcileCasTest {
     //////////
 
     @Test
-    public void testReconcileCasGeneratesCertsInitially(Vertx vertx, VertxTestContext context) {
+    public void testReconcileCasGeneratesCertsInitially(VertxTestContext context) {
         CertificateAuthority certificateAuthority = new CertificateAuthorityBuilder()
                 .withValidityDays(100)
                 .withRenewalDays(10)
@@ -313,7 +313,7 @@ public class CaReconcilerReconcileCasTest {
                 .build();
 
         Checkpoint async = context.checkpoint();
-        reconcileCas(vertx, certificateAuthority, certificateAuthority)
+        reconcileCas(certificateAuthority, certificateAuthority)
             .onComplete(context.succeeding(v -> context.verify(() -> {
                 CaptorSecrets captorSecrets = verifyCaSecretReconcileCalls(supplier.secretOperations);
                 assertCaptorSecretsNotNull(captorSecrets);
@@ -333,7 +333,7 @@ public class CaReconcilerReconcileCasTest {
     }
 
     @Test
-    public void testReconcileCasNoCertsGetGeneratedOutsideRenewalPeriod(Vertx vertx, VertxTestContext context)
+    public void testReconcileCasNoCertsGetGeneratedOutsideRenewalPeriod(VertxTestContext context)
             throws IOException, CertificateException, KeyStoreException, NoSuchAlgorithmException {
         CertificateAuthority certificateAuthority = new CertificateAuthorityBuilder()
                 .withValidityDays(100)
@@ -356,7 +356,7 @@ public class CaReconcilerReconcileCasTest {
 
         Checkpoint async = context.checkpoint();
 
-        reconcileCas(vertx, certificateAuthority, certificateAuthority)
+        reconcileCas(certificateAuthority, certificateAuthority)
             .onComplete(context.succeeding(v -> context.verify(() -> {
                 CaptorSecrets captorSecrets = verifyCaSecretReconcileCalls(supplier.secretOperations);
                 assertCaptorSecretsNotNull(captorSecrets);
@@ -379,7 +379,7 @@ public class CaReconcilerReconcileCasTest {
     }
 
     @Test
-    public void testGenerateTruststoreFromOldSecrets(Vertx vertx, VertxTestContext context)
+    public void testGenerateTruststoreFromOldSecrets(VertxTestContext context)
             throws IOException, CertificateException, KeyStoreException, NoSuchAlgorithmException {
         CertificateAuthority certificateAuthority = new CertificateAuthorityBuilder()
                 .withValidityDays(100)
@@ -407,7 +407,7 @@ public class CaReconcilerReconcileCasTest {
         secrets.add(initialClientsCaKeySecret);
 
         Checkpoint async = context.checkpoint();
-        reconcileCas(vertx, certificateAuthority, certificateAuthority)
+        reconcileCas(certificateAuthority, certificateAuthority)
             .onComplete(context.succeeding(v -> context.verify(() -> {
                 CaptorSecrets captorSecrets = verifyCaSecretReconcileCalls(supplier.secretOperations);
                 assertCaptorSecretsNotNull(captorSecrets);
@@ -436,7 +436,7 @@ public class CaReconcilerReconcileCasTest {
     }
 
     @Test
-    public void testNewCertsGetGeneratedWhenInRenewalPeriodAuto(Vertx vertx, VertxTestContext context)
+    public void testNewCertsGetGeneratedWhenInRenewalPeriodAuto(VertxTestContext context)
             throws IOException, CertificateException, KeyStoreException, NoSuchAlgorithmException {
         CertificateAuthority certificateAuthority = new CertificateAuthorityBuilder()
                 .withValidityDays(2)
@@ -457,7 +457,7 @@ public class CaReconcilerReconcileCasTest {
         secrets.add(initialClientsCaKeySecret);
 
         Checkpoint async = context.checkpoint();
-        reconcileCas(vertx, certificateAuthority, certificateAuthority)
+        reconcileCas(certificateAuthority, certificateAuthority)
             .onComplete(context.succeeding(v -> context.verify(() -> {
                 CaptorSecrets captorSecrets = verifyCaSecretReconcileCalls(supplier.secretOperations);
                 assertCaptorSecretsNotNull(captorSecrets);
@@ -488,7 +488,7 @@ public class CaReconcilerReconcileCasTest {
     }
 
     @Test
-    public void testNewCertsGetGeneratedWhenInRenewalPeriodAutoOutsideOfMaintenanceWindow(Vertx vertx, VertxTestContext context)
+    public void testNewCertsGetGeneratedWhenInRenewalPeriodAutoOutsideOfMaintenanceWindow(VertxTestContext context)
             throws IOException, CertificateException, KeyStoreException, NoSuchAlgorithmException {
         CertificateAuthority certificateAuthority = new CertificateAuthorityBuilder()
                 .withValidityDays(2)
@@ -518,7 +518,7 @@ public class CaReconcilerReconcileCasTest {
         secrets.add(initialClientsCaKeySecret);
 
         Checkpoint async = context.checkpoint();
-        reconcileCas(vertx, kafka, Clock.fixed(Instant.parse("2018-11-26T09:00:00Z"), Clock.systemUTC().getZone()))
+        reconcileCas(kafka, Clock.fixed(Instant.parse("2018-11-26T09:00:00Z"), Clock.systemUTC().getZone()))
             .onComplete(context.succeeding(v -> context.verify(() -> {
                 CaptorSecrets captorSecrets = verifyCaSecretReconcileCalls(supplier.secretOperations);
                 assertCaptorSecretsNotNull(captorSecrets);
@@ -554,7 +554,7 @@ public class CaReconcilerReconcileCasTest {
     }
 
     @Test
-    public void testNewCertsGetGeneratedWhenInRenewalPeriodAutoWithinMaintenanceWindow(Vertx vertx, VertxTestContext context)
+    public void testNewCertsGetGeneratedWhenInRenewalPeriodAutoWithinMaintenanceWindow(VertxTestContext context)
             throws IOException, CertificateException, KeyStoreException, NoSuchAlgorithmException {
         CertificateAuthority certificateAuthority = new CertificateAuthorityBuilder()
                 .withValidityDays(2)
@@ -584,7 +584,7 @@ public class CaReconcilerReconcileCasTest {
         secrets.add(initialClientsCaKeySecret);
 
         Checkpoint async = context.checkpoint();
-        reconcileCas(vertx, kafka, Clock.fixed(Instant.parse("2018-11-26T10:12:00Z"), Clock.systemUTC().getZone()))
+        reconcileCas(kafka, Clock.fixed(Instant.parse("2018-11-26T10:12:00Z"), Clock.systemUTC().getZone()))
             .onComplete(context.succeeding(v -> context.verify(() -> {
                 CaptorSecrets captorSecrets = verifyCaSecretReconcileCalls(supplier.secretOperations);
                 assertCaptorSecretsNotNull(captorSecrets);
@@ -622,7 +622,7 @@ public class CaReconcilerReconcileCasTest {
     }
 
     @Test
-    public void testNewKeyGetGeneratedWhenInRenewalPeriodAuto(Vertx vertx, VertxTestContext context)
+    public void testNewKeyGetGeneratedWhenInRenewalPeriodAuto(VertxTestContext context)
             throws IOException, CertificateException, KeyStoreException, NoSuchAlgorithmException {
         CertificateAuthority certificateAuthority = new CertificateAuthorityBuilder()
                 .withValidityDays(2)
@@ -645,7 +645,7 @@ public class CaReconcilerReconcileCasTest {
         secrets.add(initialClientsCaKeySecret);
 
         Checkpoint async = context.checkpoint();
-        reconcileCas(vertx, certificateAuthority, certificateAuthority)
+        reconcileCas(certificateAuthority, certificateAuthority)
             .onComplete(context.succeeding(v -> context.verify(() -> {
                 CaptorSecrets captorSecrets = verifyCaSecretReconcileCalls(supplier.secretOperations);
                 assertCaptorSecretsNotNull(captorSecrets);
@@ -703,7 +703,7 @@ public class CaReconcilerReconcileCasTest {
     }
 
     @Test
-    public void testNewKeyGeneratedWhenInRenewalPeriodAutoOutsideOfTimeWindow(Vertx vertx, VertxTestContext context)
+    public void testNewKeyGeneratedWhenInRenewalPeriodAutoOutsideOfTimeWindow(VertxTestContext context)
             throws IOException, CertificateException, KeyStoreException, NoSuchAlgorithmException {
         CertificateAuthority certificateAuthority = new CertificateAuthorityBuilder()
                 .withValidityDays(2)
@@ -734,7 +734,7 @@ public class CaReconcilerReconcileCasTest {
         secrets.add(initialClientsCaKeySecret);
 
         Checkpoint async = context.checkpoint();
-        reconcileCas(vertx, kafka, Clock.fixed(Instant.parse("2018-11-26T09:00:00Z"), Clock.systemUTC().getZone()))
+        reconcileCas(kafka, Clock.fixed(Instant.parse("2018-11-26T09:00:00Z"), Clock.systemUTC().getZone()))
             .onComplete(context.succeeding(v -> context.verify(() -> {
                 CaptorSecrets captorSecrets = verifyCaSecretReconcileCalls(supplier.secretOperations);
                 assertCaptorSecretsNotNull(captorSecrets);
@@ -774,7 +774,7 @@ public class CaReconcilerReconcileCasTest {
     }
 
     @Test
-    public void testNewKeyGeneratedWhenInRenewalPeriodAutoWithinTimeWindow(Vertx vertx, VertxTestContext context)
+    public void testNewKeyGeneratedWhenInRenewalPeriodAutoWithinTimeWindow(VertxTestContext context)
             throws IOException, CertificateException, KeyStoreException, NoSuchAlgorithmException {
         CertificateAuthority certificateAuthority = new CertificateAuthorityBuilder()
                 .withValidityDays(2)
@@ -805,7 +805,7 @@ public class CaReconcilerReconcileCasTest {
         secrets.add(initialClientsCaKeySecret);
 
         Checkpoint async = context.checkpoint();
-        reconcileCas(vertx, kafka, Clock.fixed(Instant.parse("2018-11-26T09:12:00Z"), Clock.systemUTC().getZone()))
+        reconcileCas(kafka, Clock.fixed(Instant.parse("2018-11-26T09:12:00Z"), Clock.systemUTC().getZone()))
             .onComplete(context.succeeding(v -> context.verify(() -> {
                 CaptorSecrets captorSecrets = verifyCaSecretReconcileCalls(supplier.secretOperations);
                 assertCaptorSecretsNotNull(captorSecrets);
@@ -870,7 +870,7 @@ public class CaReconcilerReconcileCasTest {
     }
 
     @Test
-    public void testExpiredCertsGetRemovedAuto(Vertx vertx, VertxTestContext context)
+    public void testExpiredCertsGetRemovedAuto(VertxTestContext context)
             throws IOException, CertificateException, KeyStoreException, NoSuchAlgorithmException {
         CertificateAuthority certificateAuthority = new CertificateAuthorityBuilder()
                 .withValidityDays(100)
@@ -926,7 +926,7 @@ public class CaReconcilerReconcileCasTest {
         secrets.add(initialClientsCaKeySecret);
 
         Checkpoint async = context.checkpoint();
-        reconcileCas(vertx, certificateAuthority, certificateAuthority)
+        reconcileCas(certificateAuthority, certificateAuthority)
             .onComplete(context.succeeding(v -> context.verify(() -> {
                 CaptorSecrets captorSecrets = verifyCaSecretReconcileCalls(supplier.secretOperations);
                 assertCaptorSecretsNotNull(captorSecrets);
@@ -951,7 +951,7 @@ public class CaReconcilerReconcileCasTest {
     }
 
     @Test
-    public void testCustomLabelsAndAnnotations(Vertx vertx, VertxTestContext context) {
+    public void testCustomLabelsAndAnnotations(VertxTestContext context) {
         Map<String, String> labels = new HashMap<>(2);
         labels.put("label1", "value1");
         labels.put("label2", "value2");
@@ -976,7 +976,7 @@ public class CaReconcilerReconcileCasTest {
                 .build();
 
         Checkpoint async = context.checkpoint();
-        reconcileCas(vertx, kafka, Clock.systemUTC())
+        reconcileCas(kafka, Clock.systemUTC())
                 .onComplete(context.succeeding(v -> context.verify(() -> {
                     CaptorSecrets captorSecrets = verifyCaSecretReconcileCalls(supplier.secretOperations);
                     assertCaptorSecretsNotNull(captorSecrets);
@@ -1005,7 +1005,7 @@ public class CaReconcilerReconcileCasTest {
     }
 
     @Test
-    public void testClusterCASecretsWithoutOwnerReference(Vertx vertx, VertxTestContext context) {
+    public void testClusterCASecretsWithoutOwnerReference(VertxTestContext context) {
         CertificateAuthority caConfig = new CertificateAuthority();
         caConfig.setGenerateSecretOwnerReference(false);
 
@@ -1017,7 +1017,7 @@ public class CaReconcilerReconcileCasTest {
 
         Checkpoint async = context.checkpoint();
 
-        reconcileCas(vertx, kafka, Clock.systemUTC())
+        reconcileCas(kafka, Clock.systemUTC())
                 .onComplete(context.succeeding(v -> context.verify(() -> {
                     CaptorSecrets captorSecrets = verifyCaSecretReconcileCalls(supplier.secretOperations);
                     assertCaptorSecretsNotNull(captorSecrets);
@@ -1040,7 +1040,7 @@ public class CaReconcilerReconcileCasTest {
     }
 
     @Test
-    public void testClientsCASecretsWithoutOwnerReference(Vertx vertx, VertxTestContext context) {
+    public void testClientsCASecretsWithoutOwnerReference(VertxTestContext context) {
         CertificateAuthority caConfig = new CertificateAuthority();
         caConfig.setGenerateSecretOwnerReference(false);
 
@@ -1052,7 +1052,7 @@ public class CaReconcilerReconcileCasTest {
 
         Checkpoint async = context.checkpoint();
 
-        reconcileCas(vertx, kafka, Clock.systemUTC())
+        reconcileCas(kafka, Clock.systemUTC())
                 .onComplete(context.succeeding(v -> context.verify(() -> {
                     CaptorSecrets captorSecrets = verifyCaSecretReconcileCalls(supplier.secretOperations);
 
@@ -1073,7 +1073,7 @@ public class CaReconcilerReconcileCasTest {
     //////////
 
     @Test
-    public void testReconcileCasWhenUserManagedCertsAreMissingThrows(Vertx vertx, VertxTestContext context) {
+    public void testReconcileCasWhenUserManagedCertsAreMissingThrows(VertxTestContext context) {
         CertificateAuthority certificateAuthority = new CertificateAuthorityBuilder()
                 .withValidityDays(100)
                 .withRenewalDays(10)
@@ -1081,7 +1081,7 @@ public class CaReconcilerReconcileCasTest {
                 .build();
 
         Checkpoint async = context.checkpoint();
-        reconcileCas(vertx, certificateAuthority, certificateAuthority)
+        reconcileCas(certificateAuthority, certificateAuthority)
                 .onComplete(context.failing(e -> context.verify(() -> {
                     assertThat(e, instanceOf(InvalidResourceException.class));
                     assertThat(e.getMessage(), is("Cluster CA should not be generated, but the secrets were not found."));
@@ -1090,7 +1090,7 @@ public class CaReconcilerReconcileCasTest {
     }
 
     @Test
-    public void testUserManagedCertsNotReconciled(Vertx vertx, VertxTestContext context) throws IOException {
+    public void testUserManagedCertsNotReconciled(VertxTestContext context) throws IOException {
         CertificateAuthority certificateAuthority = new CertificateAuthorityBuilder()
                 .withValidityDays(100)
                 .withRenewalDays(10)
@@ -1151,7 +1151,7 @@ public class CaReconcilerReconcileCasTest {
         secrets.add(initialClientsCaKeySecret);
 
         Checkpoint async = context.checkpoint();
-        reconcileCas(vertx, certificateAuthority, certificateAuthority)
+        reconcileCas(certificateAuthority, certificateAuthority)
                 .onComplete(context.succeeding(v -> context.verify(() -> {
                     verify(supplier.secretOperations, times(0)).reconcile(any(), eq(NAMESPACE), eq(AbstractModel.clusterCaCertSecretName(NAME)), any(Secret.class));
                     verify(supplier.secretOperations, times(0)).reconcile(any(), eq(NAMESPACE), eq(AbstractModel.clusterCaKeySecretName(NAME)), any(Secret.class));
@@ -1162,7 +1162,7 @@ public class CaReconcilerReconcileCasTest {
     }
 
     @Test
-    public void testUserManagedCasWithInvalidCa(Vertx vertx, VertxTestContext context) throws IOException {
+    public void testUserManagedCasWithInvalidCa(VertxTestContext context) throws IOException {
         CertificateAuthority certificateAuthority = new CertificateAuthorityBuilder()
                 .withValidityDays(100)
                 .withRenewalDays(10)
@@ -1223,7 +1223,7 @@ public class CaReconcilerReconcileCasTest {
         secrets.add(initialClientsCaKeySecret);
 
         Checkpoint async = context.checkpoint();
-        reconcileCas(vertx, certificateAuthority, certificateAuthority)
+        reconcileCas(certificateAuthority, certificateAuthority)
                 .onComplete(context.failing(e -> context.verify(() -> {
                     assertThat(e, instanceOf(RuntimeException.class));
                     assertThat(e.getMessage(), is("User supplied Cluster CA cert chain ca.crt is not valid. Certificates must be provided in the correct order."));

@@ -51,7 +51,6 @@ import io.strimzi.operator.common.model.PasswordGenerator;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
-import io.vertx.core.Vertx;
 
 import java.time.Clock;
 import java.util.ArrayList;
@@ -113,7 +112,6 @@ public class CaReconciler {
      * @param kafkaCr           The Kafka custom resource
      * @param config            Cluster Operator Configuration
      * @param supplier          Supplier with Kubernetes Resource Operators
-     * @param vertx             Vert.x instance
      * @param certManager       Certificate Manager for managing certificates
      * @param passwordGenerator Password generator for generating passwords
      */
@@ -122,7 +120,6 @@ public class CaReconciler {
             Kafka kafkaCr,
             ClusterOperatorConfig config,
             ResourceOperatorSupplier supplier,
-            Vertx vertx,
             CertManager certManager,
             PasswordGenerator passwordGenerator
     ) {
