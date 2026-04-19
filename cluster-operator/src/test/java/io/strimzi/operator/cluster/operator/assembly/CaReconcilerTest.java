@@ -199,9 +199,8 @@ public class CaReconcilerTest {
     }
 
     @Test
-    public void testOldClusterCaCertsGetsRemovedAuto(Vertx vertx, VertxTestContext context)
+    public void testOldClusterCaCertsGetsRemovedAuto(VertxTestContext context)
             throws IOException, CertificateException, KeyStoreException, NoSuchAlgorithmException {
-        Reconciliation reconciliation = new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, NAME);
         CertificateAuthority certificateAuthority = getCertificateAuthority();
 
         List<Secret> clusterCaSecrets = initialClusterCaSecrets(certificateAuthority);
@@ -271,7 +270,7 @@ public class CaReconcilerTest {
                 List.of(brokerPod));
 
         Checkpoint async = context.checkpoint();
-        MockCaReconciler mockCaReconciler = new MockCaReconciler(KAFKA, supplier, vertx);
+        MockCaReconciler mockCaReconciler = new MockCaReconciler(KAFKA, supplier);
         mockCaReconciler
                 .reconcile(Clock.systemUTC())
                 .onComplete(context.succeeding(c -> context.verify(() -> {
@@ -317,7 +316,7 @@ public class CaReconcilerTest {
     }
 
     @Test
-    public void testStrimziManagedClusterCaKeyReplaced(Vertx vertx, VertxTestContext context) throws CertificateException, IOException, KeyStoreException, NoSuchAlgorithmException {
+    public void testStrimziManagedClusterCaKeyReplaced(VertxTestContext context) throws CertificateException, IOException, KeyStoreException, NoSuchAlgorithmException {
         CertificateAuthority certificateAuthority = getCertificateAuthority();
 
         List<Secret> clusterCaSecrets = initialClusterCaSecrets(certificateAuthority);
@@ -372,7 +371,7 @@ public class CaReconcilerTest {
             return Future.succeededFuture();
         });
 
-        MockCaReconciler mockCaReconciler = new MockCaReconciler(KAFKA, supplier, vertx);
+        MockCaReconciler mockCaReconciler = new MockCaReconciler(KAFKA, supplier);
         mockCaReconciler
                 .reconcile(Clock.systemUTC())
                 .onComplete(context.succeeding(c -> context.verify(() -> {
@@ -390,7 +389,7 @@ public class CaReconcilerTest {
 
     // Strimzi Cluster CA key replaced in previous reconcile and some pods already rolled
     @Test
-    public void testStrimziManagedClusterCaKeyReplacedPreviously(Vertx vertx, VertxTestContext context) throws CertificateException, IOException, KeyStoreException, NoSuchAlgorithmException {
+    public void testStrimziManagedClusterCaKeyReplacedPreviously(VertxTestContext context) throws CertificateException, IOException, KeyStoreException, NoSuchAlgorithmException {
         CertificateAuthority certificateAuthority = getCertificateAuthority();
 
         List<Secret> clusterCaSecrets = initialClusterCaSecrets(certificateAuthority);
@@ -455,7 +454,7 @@ public class CaReconcilerTest {
             return Future.succeededFuture();
         });
 
-        MockCaReconciler mockCaReconciler = new MockCaReconciler(KAFKA, supplier, vertx);
+        MockCaReconciler mockCaReconciler = new MockCaReconciler(KAFKA, supplier);
         mockCaReconciler
                 .reconcile(Clock.systemUTC())
                 .onComplete(context.succeeding(c -> context.verify(() -> {
@@ -476,7 +475,7 @@ public class CaReconcilerTest {
     }
 
     @Test
-    public void testStrimziManagedClusterCaCertRenewed(Vertx vertx, VertxTestContext context) throws CertificateException, IOException, KeyStoreException, NoSuchAlgorithmException {
+    public void testStrimziManagedClusterCaCertRenewed(VertxTestContext context) throws CertificateException, IOException, KeyStoreException, NoSuchAlgorithmException {
         CertificateAuthority certificateAuthority = getCertificateAuthority();
 
         List<Secret> clusterCaSecrets = initialClusterCaSecrets(certificateAuthority);
@@ -512,7 +511,7 @@ public class CaReconcilerTest {
 
         Checkpoint async = context.checkpoint();
 
-        MockCaReconciler mockCaReconciler = new MockCaReconciler(KAFKA, supplier, vertx);
+        MockCaReconciler mockCaReconciler = new MockCaReconciler(KAFKA, supplier);
         mockCaReconciler
                 .reconcile(Clock.systemUTC())
                 .onComplete(context.succeeding(c -> context.verify(() -> {
@@ -523,7 +522,7 @@ public class CaReconcilerTest {
     }
 
     @Test
-    public void testUserManagedClusterCaKeyReplaced(Vertx vertx, VertxTestContext context) throws CertificateException, IOException, KeyStoreException, NoSuchAlgorithmException {
+    public void testUserManagedClusterCaKeyReplaced(VertxTestContext context) throws CertificateException, IOException, KeyStoreException, NoSuchAlgorithmException {
         CertificateAuthority certificateAuthority = getCertificateAuthority();
 
         List<Secret> clusterCaSecrets = initialClusterCaSecrets(certificateAuthority);
@@ -591,7 +590,7 @@ public class CaReconcilerTest {
                     .endClusterCa()
                 .endSpec()
                 .build();
-        MockCaReconciler mockCaReconciler = new MockCaReconciler(kafka, supplier, vertx);
+        MockCaReconciler mockCaReconciler = new MockCaReconciler(kafka, supplier);
         mockCaReconciler
                 .reconcile(Clock.systemUTC())
                 .onComplete(context.succeeding(c -> context.verify(() -> {
@@ -608,7 +607,7 @@ public class CaReconcilerTest {
     }
 
     @Test
-    public void testUserManagedClusterCaCertRenewed(Vertx vertx, VertxTestContext context) throws CertificateException, IOException, KeyStoreException, NoSuchAlgorithmException {
+    public void testUserManagedClusterCaCertRenewed(VertxTestContext context) throws CertificateException, IOException, KeyStoreException, NoSuchAlgorithmException {
         CertificateAuthority certificateAuthority = getCertificateAuthority();
 
         List<Secret> clusterCaSecrets = initialClusterCaSecrets(certificateAuthority);
@@ -652,7 +651,7 @@ public class CaReconcilerTest {
                     .endClusterCa()
                 .endSpec()
                 .build();
-        MockCaReconciler mockCaReconciler = new MockCaReconciler(kafka, supplier, vertx);
+        MockCaReconciler mockCaReconciler = new MockCaReconciler(kafka, supplier);
         mockCaReconciler
                 .reconcile(Clock.systemUTC())
                 .onComplete(context.succeeding(c -> context.verify(() -> {
@@ -663,7 +662,7 @@ public class CaReconcilerTest {
     }
 
     @Test
-    public void testStrimziManagedClientsCaKeyReplaced(Vertx vertx, VertxTestContext context) throws CertificateException, IOException, KeyStoreException, NoSuchAlgorithmException {
+    public void testStrimziManagedClientsCaKeyReplaced(VertxTestContext context) throws CertificateException, IOException, KeyStoreException, NoSuchAlgorithmException {
         CertificateAuthority certificateAuthority = getCertificateAuthority();
 
         List<Secret> clusterCaSecrets = initialClusterCaSecrets(certificateAuthority);
@@ -699,7 +698,7 @@ public class CaReconcilerTest {
 
         Checkpoint async = context.checkpoint();
 
-        MockCaReconciler mockCaReconciler = new MockCaReconciler(KAFKA, supplier, vertx);
+        MockCaReconciler mockCaReconciler = new MockCaReconciler(KAFKA, supplier);
         mockCaReconciler
                 .reconcile(Clock.systemUTC())
                 .onComplete(context.succeeding(c -> context.verify(() -> {
@@ -712,7 +711,7 @@ public class CaReconcilerTest {
 
     // Strimzi Clients CA key replaced in previous reconcile and some pods already rolled
     @Test
-    public void testStrimziManagedClientsCaKeyReplacedPreviously(Vertx vertx, VertxTestContext context) throws CertificateException, IOException, KeyStoreException, NoSuchAlgorithmException {
+    public void testStrimziManagedClientsCaKeyReplacedPreviously(VertxTestContext context) throws CertificateException, IOException, KeyStoreException, NoSuchAlgorithmException {
         CertificateAuthority certificateAuthority = getCertificateAuthority();
 
         List<Secret> clusterCaSecrets = initialClusterCaSecrets(certificateAuthority);
@@ -753,7 +752,7 @@ public class CaReconcilerTest {
 
         Checkpoint async = context.checkpoint();
 
-        MockCaReconciler mockCaReconciler = new MockCaReconciler(KAFKA, supplier, vertx);
+        MockCaReconciler mockCaReconciler = new MockCaReconciler(KAFKA, supplier);
         mockCaReconciler
                 .reconcile(Clock.systemUTC())
                 .onComplete(context.succeeding(c -> context.verify(() -> {
@@ -765,7 +764,7 @@ public class CaReconcilerTest {
     }
 
     @Test
-    public void testStrimziManagedClientsCaCertRenewed(Vertx vertx, VertxTestContext context) throws CertificateException, IOException, KeyStoreException, NoSuchAlgorithmException {
+    public void testStrimziManagedClientsCaCertRenewed(VertxTestContext context) throws CertificateException, IOException, KeyStoreException, NoSuchAlgorithmException {
         CertificateAuthority certificateAuthority = getCertificateAuthority();
 
         List<Secret> clusterCaSecrets = initialClusterCaSecrets(certificateAuthority);
@@ -801,7 +800,7 @@ public class CaReconcilerTest {
 
         Checkpoint async = context.checkpoint();
 
-        MockCaReconciler mockCaReconciler = new MockCaReconciler(KAFKA, supplier, vertx);
+        MockCaReconciler mockCaReconciler = new MockCaReconciler(KAFKA, supplier);
         mockCaReconciler
                 .reconcile(Clock.systemUTC())
                 .onComplete(context.succeeding(c -> context.verify(() -> {
@@ -812,7 +811,7 @@ public class CaReconcilerTest {
     }
 
     @Test
-    public void testUserManagedClientsCaKeyReplaced(Vertx vertx, VertxTestContext context) throws CertificateException, IOException, KeyStoreException, NoSuchAlgorithmException {
+    public void testUserManagedClientsCaKeyReplaced(VertxTestContext context) throws CertificateException, IOException, KeyStoreException, NoSuchAlgorithmException {
         CertificateAuthority certificateAuthority = getCertificateAuthority();
 
         List<Secret> clusterCaSecrets = initialClusterCaSecrets(certificateAuthority);
@@ -861,7 +860,7 @@ public class CaReconcilerTest {
                     .endClientsCa()
                 .endSpec()
                 .build();
-        MockCaReconciler mockCaReconciler = new MockCaReconciler(kafka, supplier, vertx);
+        MockCaReconciler mockCaReconciler = new MockCaReconciler(kafka, supplier);
         mockCaReconciler
                 .reconcile(Clock.systemUTC())
                 .onComplete(context.succeeding(c -> context.verify(() -> {
@@ -873,7 +872,7 @@ public class CaReconcilerTest {
     }
 
     @Test
-    public void testUserManagedClientsCaCertRenewed(Vertx vertx, VertxTestContext context) throws CertificateException, IOException, KeyStoreException, NoSuchAlgorithmException {
+    public void testUserManagedClientsCaCertRenewed(VertxTestContext context) throws CertificateException, IOException, KeyStoreException, NoSuchAlgorithmException {
         CertificateAuthority certificateAuthority = getCertificateAuthority();
 
         List<Secret> clusterCaSecrets = initialClusterCaSecrets(certificateAuthority);
@@ -917,7 +916,7 @@ public class CaReconcilerTest {
                     .endClientsCa()
                 .endSpec()
                 .build();
-        MockCaReconciler mockCaReconciler = new MockCaReconciler(kafka, supplier, vertx);
+        MockCaReconciler mockCaReconciler = new MockCaReconciler(kafka, supplier);
         mockCaReconciler
                 .reconcile(Clock.systemUTC())
                 .onComplete(context.succeeding(c -> context.verify(() -> {
@@ -975,12 +974,11 @@ public class CaReconcilerTest {
         Map<String, RestartReasons> kafkaRestartReasons = new HashMap<>();
         Map<String, String> deploymentRestartReasons = new HashMap<>();
 
-        public MockCaReconciler(Kafka kafkaCr, ResourceOperatorSupplier supplier, Vertx vertx) {
+        public MockCaReconciler(Kafka kafkaCr, ResourceOperatorSupplier supplier) {
             super(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, NAME),
                     kafkaCr,
                     new ClusterOperatorConfig.ClusterOperatorConfigBuilder(ResourceUtils.dummyClusterOperatorConfig(), KafkaVersionTestUtils.getKafkaVersionLookup()).with(ClusterOperatorConfig.OPERATION_TIMEOUT_MS.key(), "1").build(),
                     supplier,
-                    vertx,
                     CERT_MANAGER,
                     PASSWORD_GENERATOR
             );
