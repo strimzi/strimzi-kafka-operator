@@ -88,7 +88,7 @@ public class CruiseControlHandler {
         } catch (Throwable t) {
             results.merge(updateToFailed(reconcilableTopics, String.format("Replicas change failed, %s", Throwables.getRootCause(t).getMessage())));
         }
-        TopicOperatorUtil.stopExternalRequestTimer(timerSample, metricsHolder::cruiseControlTopicConfig, config.enableAdditionalMetrics(), config.namespace());
+        TopicOperatorUtil.stopExternalRequestTimer(timerSample, metricsHolder::cruiseControlTopicConfig, config.enableAdditionalMetrics(), config.watchedNamespace());
         
         return results;
     }
@@ -139,7 +139,7 @@ public class CruiseControlHandler {
         } catch (Throwable t) {
             results.merge(updateToFailed(reconcilableTopics, String.format("Replicas change failed, %s", Throwables.getRootCause(t).getMessage())));
         }
-        TopicOperatorUtil.stopExternalRequestTimer(timerSample, metricsHolder::cruiseControlUserTasks, config.enableAdditionalMetrics(), config.namespace());
+        TopicOperatorUtil.stopExternalRequestTimer(timerSample, metricsHolder::cruiseControlUserTasks, config.enableAdditionalMetrics(), config.watchedNamespace());
         
         return results;
     }

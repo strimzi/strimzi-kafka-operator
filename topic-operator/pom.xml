@@ -160,7 +160,7 @@
                         <manifest>
                             <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
                             <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
-                            <mainClass>io.strimzi.operator.topic.TopicOperatorMain</mainClass>
+                            <mainClass>io.strimzi.operator.topic.Main</mainClass>
                         </manifest>
                     </archive>
                 </configuration>

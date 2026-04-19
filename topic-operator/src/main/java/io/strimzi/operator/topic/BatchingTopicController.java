@@ -131,7 +131,7 @@ public class BatchingTopicController {
     }
 
     private void deleteInternal(List<ReconcilableTopic> reconcilableTopics, boolean onDeletePath) {
-        metricsHolder.reconciliationsCounter(config.namespace()).increment(reconcilableTopics.size());
+        metricsHolder.reconciliationsCounter(config.watchedNamespace()).increment(reconcilableTopics.size());
         var managedToDelete = reconcilableTopics.stream().filter(reconcilableTopic -> {
             if (TopicOperatorUtil.isManaged(reconcilableTopic.kt())) {
                 var e = validate(reconcilableTopic);
@@ -165,8 +165,8 @@ public class BatchingTopicController {
         var timerSample = TopicOperatorUtil.startReconciliationTimer(metricsHolder);
         kubernetesHandler.removeFinalizer(reconcilableTopic);
         forgetReconcilableTopic(reconcilableTopic);
-        TopicOperatorUtil.stopReconciliationTimer(metricsHolder, timerSample, config.namespace());
-        metricsHolder.successfulReconciliationsCounter(config.namespace()).increment();
+        TopicOperatorUtil.stopReconciliationTimer(metricsHolder, timerSample, config.watchedNamespace());
+        metricsHolder.successfulReconciliationsCounter(config.watchedNamespace()).increment();
     }
 
     private void forgetReconcilableTopic(ReconcilableTopic reconcilableTopic) {
@@ -203,7 +203,7 @@ public class BatchingTopicController {
                 }
             }
             forgetReconcilableTopic(pair.getKey());
-            metricsHolder.successfulReconciliationsCounter(config.namespace()).increment();
+            metricsHolder.successfulReconciliationsCounter(config.watchedNamespace()).increment();
         });
 
         // join that to fail
@@ -221,12 +221,12 @@ public class BatchingTopicController {
                         entry.getKey().topicName(),
                         entry.getValue());
                 }
-                metricsHolder.failedReconciliationsCounter(config.namespace()).increment();
+                metricsHolder.failedReconciliationsCounter(config.watchedNamespace()).increment();
             } else {
                 updateStatusForException(entry.getKey(), entry.getValue());
             }
         });
-        timerSamples.keySet().forEach(rt -> TopicOperatorUtil.stopReconciliationTimer(metricsHolder, timerSamples.get(rt), config.namespace()));
+        timerSamples.keySet().forEach(rt -> TopicOperatorUtil.stopReconciliationTimer(metricsHolder, timerSamples.get(rt), config.watchedNamespace()));
     }
 
     /**
@@ -305,8 +305,8 @@ public class BatchingTopicController {
 
         // update status and metrics
         updateStatuses(results);
-        metricsHolder.reconciliationsCounter(config.namespace()).increment(results.size());
-        timerSamples.keySet().forEach(rt -> TopicOperatorUtil.stopReconciliationTimer(metricsHolder, timerSamples.get(rt), config.namespace()));
+        metricsHolder.reconciliationsCounter(config.watchedNamespace()).increment(results.size());
+        timerSamples.keySet().forEach(rt -> TopicOperatorUtil.stopReconciliationTimer(metricsHolder, timerSamples.get(rt), config.watchedNamespace()));
         LOGGER.traceOp("Reconciled batch of {} KafkaTopics", results.size());
     }
 
@@ -897,7 +897,7 @@ public class BatchingTopicController {
                 .build());
         
         kubernetesHandler.updateStatus(reconcilableTopic);
-        metricsHolder.successfulReconciliationsCounter(config.namespace()).increment();
+        metricsHolder.successfulReconciliationsCounter(config.watchedNamespace()).increment();
     }
 
     private void updateStatusForException(ReconcilableTopic reconcilableTopic, Exception e) {
@@ -936,6 +936,6 @@ public class BatchingTopicController {
                 .build());
         
         kubernetesHandler.updateStatus(reconcilableTopic);
-        metricsHolder.failedReconciliationsCounter(config.namespace()).increment();
+        metricsHolder.failedReconciliationsCounter(config.watchedNamespace()).increment();
     }
 }

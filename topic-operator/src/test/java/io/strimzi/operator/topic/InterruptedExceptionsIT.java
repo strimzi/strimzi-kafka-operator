@@ -118,7 +118,7 @@ class InterruptedExceptionsIT implements TestSeparator {
     private void assertOnUpdateThrowsInterruptedException(Admin kafkaAdmin, KafkaTopic kafkaTopic) {
         var config = TopicOperatorConfig.buildFromMap(Map.of(
             TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:1234",
-            TopicOperatorConfig.NAMESPACE.key(), NAMESPACE,
+            TopicOperatorConfig.WATCHED_NAMESPACE.key(), NAMESPACE,
             TopicOperatorConfig.USE_FINALIZERS.key(), "true",
             TopicOperatorConfig.ENABLE_ADDITIONAL_METRICS.key(), "false"
         ));

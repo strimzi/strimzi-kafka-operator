@@ -238,9 +238,7 @@ public class EntityTopicOperatorTest {
         assertThat(container.getPorts().get(0).getProtocol(), is("TCP"));
         assertThat(EntityOperatorTest.volumeMounts(container.getVolumeMounts()), is(Map.of(
                 EntityTopicOperator.TOPIC_OPERATOR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME, VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_MOUNT_PATH,
-                "entity-topic-operator-metrics-and-logging", "/opt/topic-operator/custom-config/",
-                EntityTopicOperator.ETO_CA_CERTS_VOLUME_NAME, EntityTopicOperator.ETO_CA_CERTS_VOLUME_MOUNT,
-                EntityTopicOperator.ETO_CERTS_VOLUME_NAME, EntityTopicOperator.ETO_CERTS_VOLUME_MOUNT)));
+                "entity-topic-operator-metrics-and-logging", "/opt/topic-operator/custom-config/")));
     }
 
     @Test
@@ -292,8 +290,12 @@ public class EntityTopicOperatorTest {
         expectedEnvVars.add(new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_RESOURCE_LABELS).withValue(ModelUtils.defaultResourceLabels(CLUSTER_NAME)).build());
         expectedEnvVars.add(new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_KAFKA_BOOTSTRAP_SERVERS).withValue(KafkaResources.bootstrapServiceName(CLUSTER_NAME) + ":" + KafkaCluster.REPLICATION_PORT).build());
         expectedEnvVars.add(new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_WATCHED_NAMESPACE).withValue(NAMESPACE).build());
+        expectedEnvVars.add(new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_CLUSTER_NAMESPACE).withValue("my-namespace").build());
         expectedEnvVars.add(new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_SECURITY_PROTOCOL).withValue(EntityTopicOperatorSpec.DEFAULT_SECURITY_PROTOCOL).build());
-        expectedEnvVars.add(new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_TLS_ENABLED).withValue(Boolean.toString(true)).build());
+        expectedEnvVars.add(new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_TLS_TRUSTED_CERTS_SECRET_NAME).withValue("my-cluster-cluster-ca-cert").build());
+        expectedEnvVars.add(new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_TLS_SECRET_NAME).withValue("my-cluster-entity-topic-operator-certs").build());
+        expectedEnvVars.add(new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_TLS_KEY_NAME).withValue("entity-operator.key").build());
+        expectedEnvVars.add(new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_TLS_CERT_NAME).withValue("entity-operator.crt").build());
         expectedEnvVars.add(new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_STRIMZI_GC_LOG_ENABLED).withValue(Boolean.toString(JvmOptions.DEFAULT_GC_LOGGING_ENABLED)).build());
         expectedEnvVars.add(new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_CRUISE_CONTROL_ENABLED).withValue(Boolean.toString(true)).build());
         expectedEnvVars.add(new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_CRUISE_CONTROL_RACK_ENABLED).withValue(Boolean.toString(true)).build());
@@ -308,7 +310,6 @@ public class EntityTopicOperatorTest {
             EntityTopicOperator.TOPIC_OPERATOR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME, VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_MOUNT_PATH,
             "entity-topic-operator-metrics-and-logging", "/opt/topic-operator/custom-config/",
             EntityTopicOperator.ETO_CA_CERTS_VOLUME_NAME, EntityTopicOperator.ETO_CA_CERTS_VOLUME_MOUNT,
-            EntityTopicOperator.ETO_CERTS_VOLUME_NAME, EntityTopicOperator.ETO_CERTS_VOLUME_MOUNT,
             EntityTopicOperator.ETO_CC_API_VOLUME_NAME, EntityTopicOperator.ETO_CC_API_VOLUME_MOUNT
         )));
     }
@@ -372,9 +373,13 @@ public class EntityTopicOperatorTest {
         expected.add(new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_RESOURCE_LABELS).withValue(ModelUtils.defaultResourceLabels(CLUSTER_NAME)).build());
         expected.add(new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_KAFKA_BOOTSTRAP_SERVERS).withValue(KafkaResources.bootstrapServiceName(CLUSTER_NAME) + ":" + KafkaCluster.REPLICATION_PORT).build());
         expected.add(new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_WATCHED_NAMESPACE).withValue("my-topic-namespace").build());
+        expected.add(new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_CLUSTER_NAMESPACE).withValue("my-namespace").build());
         expected.add(new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_FULL_RECONCILIATION_INTERVAL_MS).withValue(String.valueOf(60000)).build());
         expected.add(new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_SECURITY_PROTOCOL).withValue(EntityTopicOperatorSpec.DEFAULT_SECURITY_PROTOCOL).build());
-        expected.add(new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_TLS_ENABLED).withValue(Boolean.toString(true)).build());
+        expected.add(new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_TLS_TRUSTED_CERTS_SECRET_NAME).withValue("my-cluster-cluster-ca-cert").build());
+        expected.add(new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_TLS_SECRET_NAME).withValue("my-cluster-entity-topic-operator-certs").build());
+        expected.add(new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_TLS_KEY_NAME).withValue("entity-operator.key").build());
+        expected.add(new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_TLS_CERT_NAME).withValue("entity-operator.crt").build());
         expected.add(new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_STRIMZI_GC_LOG_ENABLED).withValue(Boolean.toString(JvmOptions.DEFAULT_GC_LOGGING_ENABLED)).build());
         expected.add(new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_STRIMZI_JAVA_OPTS).withValue("-Xms128m").build());
         expected.add(new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_STRIMZI_JAVA_SYSTEM_PROPERTIES).withValue("-Djavax.net.debug=verbose -Dsomething.else=42").build());

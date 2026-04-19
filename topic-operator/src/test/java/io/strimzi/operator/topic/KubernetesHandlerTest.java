@@ -56,7 +56,7 @@ class KubernetesHandlerTest {
     public void beforeEach() {
         var config = TopicOperatorConfig.buildFromMap(Map.of(
             TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:9092",
-            TopicOperatorConfig.NAMESPACE.key(), NAMESPACE
+            TopicOperatorConfig.WATCHED_NAMESPACE.key(), NAMESPACE
         ));
         var metricsHolder = new TopicOperatorMetricsHolder(KafkaTopic.RESOURCE_KIND, null, 
             new TopicOperatorMetricsProvider(new SimpleMeterRegistry()));

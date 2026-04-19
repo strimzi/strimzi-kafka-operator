@@ -76,7 +76,7 @@ public class KafkaHandlerIT implements TestSeparator {
         try (var kafkaAdminClientSpy = spy(Admin.create(Map.of(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaCluster.getBootstrapServers())))) {
             var config = TopicOperatorConfig.buildFromMap(Map.of(
                     TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), kafkaCluster.getBootstrapServers(),
-                    TopicOperatorConfig.NAMESPACE.key(), NAMESPACE)
+                    TopicOperatorConfig.WATCHED_NAMESPACE.key(), NAMESPACE)
             );
 
             var kafkaHandler = new KafkaHandler(config,
@@ -97,7 +97,7 @@ public class KafkaHandlerIT implements TestSeparator {
         try (var kafkaAdminClientSpy = spy(Admin.create(Map.of(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaCluster.getBootstrapServers())))) {
             var config = TopicOperatorConfig.buildFromMap(Map.of(
                     TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), kafkaCluster.getBootstrapServers(),
-                    TopicOperatorConfig.NAMESPACE.key(), NAMESPACE)
+                    TopicOperatorConfig.WATCHED_NAMESPACE.key(), NAMESPACE)
             );
 
             var kafkaHandler = new KafkaHandler(config,
@@ -123,7 +123,7 @@ public class KafkaHandlerIT implements TestSeparator {
         try (var kafkaAdminClientSpy = spy(Admin.create(Map.of(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaCluster.getBootstrapServers())))) {
             var config = TopicOperatorConfig.buildFromMap(Map.of(
                     TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), kafkaCluster.getBootstrapServers(),
-                    TopicOperatorConfig.NAMESPACE.key(), NAMESPACE)
+                    TopicOperatorConfig.WATCHED_NAMESPACE.key(), NAMESPACE)
             );
 
             var kafkaHandler = new KafkaHandler(config,
@@ -157,7 +157,7 @@ public class KafkaHandlerIT implements TestSeparator {
         try (var kafkaAdminClientSpy = spy(Admin.create(Map.of(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaCluster.getBootstrapServers())))) {
             var config = TopicOperatorConfig.buildFromMap(Map.of(
                     TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), kafkaCluster.getBootstrapServers(),
-                    TopicOperatorConfig.NAMESPACE.key(), NAMESPACE)
+                    TopicOperatorConfig.WATCHED_NAMESPACE.key(), NAMESPACE)
             );
 
             var kafkaHandler = new KafkaHandler(config,
@@ -191,7 +191,7 @@ public class KafkaHandlerIT implements TestSeparator {
         try (var kafkaAdminClientSpy = spy(Admin.create(Map.of(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaCluster.getBootstrapServers())))) {
             var config = TopicOperatorConfig.buildFromMap(Map.of(
                     TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), kafkaCluster.getBootstrapServers(),
-                    TopicOperatorConfig.NAMESPACE.key(), NAMESPACE)
+                    TopicOperatorConfig.WATCHED_NAMESPACE.key(), NAMESPACE)
             );
 
             var kafkaHandler = new KafkaHandler(config,
@@ -222,7 +222,7 @@ public class KafkaHandlerIT implements TestSeparator {
         try (var kafkaAdminClientSpy = spy(Admin.create(Map.of(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaCluster.getBootstrapServers())))) {
             var config = TopicOperatorConfig.buildFromMap(Map.of(
                     TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), kafkaCluster.getBootstrapServers(),
-                    TopicOperatorConfig.NAMESPACE.key(), NAMESPACE)
+                    TopicOperatorConfig.WATCHED_NAMESPACE.key(), NAMESPACE)
             );
 
             var kafkaHandler = new KafkaHandler(config,
@@ -260,7 +260,7 @@ public class KafkaHandlerIT implements TestSeparator {
         try (var kafkaAdminClientSpy = spy(Admin.create(Map.of(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaCluster.getBootstrapServers())))) {
             var config = TopicOperatorConfig.buildFromMap(Map.of(
                     TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), kafkaCluster.getBootstrapServers(),
-                    TopicOperatorConfig.NAMESPACE.key(), NAMESPACE)
+                    TopicOperatorConfig.WATCHED_NAMESPACE.key(), NAMESPACE)
             );
 
             var kafkaHandler = new KafkaHandler(config,
