@@ -1,10 +1,6 @@
 name: Run System Tests
 
-# Permissions has to have at least the following permissions for the job to work properly
-permissions:
-  contents: read
-  pull-requests: write
-  statuses: write
+permissions: {}
 
 on:
   workflow_call:
@@ -52,6 +48,11 @@ on:
 
 jobs:
   run-tests:
+    # Permissions has to have at least the following permissions for the job to work properly
+    permissions:
+      contents: read
+      pull-requests: write
+      statuses: write
     strategy:
       matrix:
         config: ${{ fromJson(inputs.matrix) }}
