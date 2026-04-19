@@ -134,7 +134,7 @@ env:
 # ...
 ----
 <1> The name of the `Secret` with the public keys of the Certificate Authorities used to sign the Kafka server certificates as `.crt` entries.
-<2> The name of the `Secret` with the private and certificate for mTLS client authentication.
+<2> The name of the `Secret` with the private key and certificate for mTLS client authentication.
 <3> The key under which the mTLS private key is stored in the `Secret`.
 <4> The key under which the mTLS client certificate is stored in the `Secret`.
 <5> The Kubernetes namespace where the TLS Secrets are located.
