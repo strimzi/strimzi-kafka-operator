@@ -401,7 +401,7 @@ public abstract class Ca {
     }
 
     protected static void delete(Reconciliation reconciliation, File file) {
-        if (!file.delete()) {
+        if (file != null && !file.delete()) {
             LOGGER.warnCr(reconciliation, "{} cannot be deleted", file.getName());
         }
     }
@@ -421,21 +421,32 @@ public abstract class Ca {
         try {
             File keyFile = Files.createTempFile("tls", "key").toFile();
             File certFile = Files.createTempFile("tls", "cert").toFile();
-            File keyStoreFile = Files.createTempFile("tls", "p12").toFile();
-
-            Files.write(keyFile.toPath(), key);
-            Files.write(certFile.toPath(), cert);
+            File keyStoreFile = null;
 
             try {
-                String keyStorePassword = passwordGenerator.generate();
-                certManager.addKeyAndCertToKeyStore(keyFile, certFile, alias, keyStoreFile, keyStorePassword);
+                Files.write(keyFile.toPath(), key);
+                Files.write(certFile.toPath(), cert);
 
-                return new CertAndKey(
-                        Files.readAllBytes(keyFile.toPath()),
-                        Files.readAllBytes(certFile.toPath()),
-                        null,
-                        Files.readAllBytes(keyStoreFile.toPath()),
-                        keyStorePassword);
+                if (caConfig.isGeneratePkcs12Stores())   {
+                    keyStoreFile = Files.createTempFile("tls", "p12").toFile();
+
+                    String keyStorePassword = passwordGenerator.generate();
+                    certManager.addKeyAndCertToKeyStore(keyFile, certFile, alias, keyStoreFile, keyStorePassword);
+
+                    return new CertAndKey(
+                            Files.readAllBytes(keyFile.toPath()),
+                            Files.readAllBytes(certFile.toPath()),
+                            null,
+                            Files.readAllBytes(keyStoreFile.toPath()),
+                            keyStorePassword);
+                } else {
+                    return new CertAndKey(
+                            Files.readAllBytes(keyFile.toPath()),
+                            Files.readAllBytes(certFile.toPath()),
+                            null,
+                            null,
+                            null);
+                }
             } finally {
                 delete(reconciliation, keyFile);
                 delete(reconciliation, certFile);
@@ -456,9 +467,6 @@ public abstract class Ca {
             certManager.generateCert(csrFile, currentCaKey(), caCertBytes,
                     certFile, subject, caConfig.getValidityDays());
 
-            String keyStorePassword = passwordGenerator.generate();
-            certManager.addKeyAndCertToKeyStore(keyFile, certFile, subject.commonName(), keyStoreFile, keyStorePassword);
-
             byte[] certChain;
             if (includeCaChain) {
                 byte[] leafCert = Files.readAllBytes(certFile.toPath());
@@ -469,13 +477,26 @@ public abstract class Ca {
                 certChain = Files.readAllBytes(certFile.toPath());
             }
 
-            return new CertAndKey(
-                    Files.readAllBytes(keyFile.toPath()),
-                    certChain,
-                    null,
-                    Files.readAllBytes(keyStoreFile.toPath()),
-                    keyStorePassword,
-                    caCertGeneration);
+            if (caConfig.isGeneratePkcs12Stores())   {
+                String keyStorePassword = passwordGenerator.generate();
+                certManager.addKeyAndCertToKeyStore(keyFile, certFile, subject.commonName(), keyStoreFile, keyStorePassword);
+
+                return new CertAndKey(
+                        Files.readAllBytes(keyFile.toPath()),
+                        certChain,
+                        null,
+                        Files.readAllBytes(keyStoreFile.toPath()),
+                        keyStorePassword,
+                        caCertGeneration);
+            } else {
+                return new CertAndKey(
+                        Files.readAllBytes(keyFile.toPath()),
+                        certChain,
+                        null,
+                        null,
+                        null,
+                        caCertGeneration);
+            }
         } catch (IOException | CertificateException | KeyStoreException | NoSuchAlgorithmException | InvalidKeySpecException e) {
             throw new RuntimeException(e);
         }
@@ -581,7 +602,11 @@ public abstract class Ca {
                     certData = new HashMap<>(caCertData);
                     if (certData.containsKey(CA_CRT)) {
                         String notAfterDate = DATE_TIME_FORMATTER.format(currentCert.getNotAfter().toInstant().atZone(ZoneId.of("Z")));
-                        addCertCaToTrustStore("ca-" + notAfterDate + SecretEntry.CRT.suffix, certData);
+
+                        if (caConfig.isGeneratePkcs12Stores())   {
+                            addCertCaToTrustStore("ca-" + notAfterDate + SecretEntry.CRT.suffix, certData);
+                        }
+
                         certData.put("ca-" + notAfterDate + SecretEntry.CRT.suffix, certData.remove(CA_CRT));
                     }
                     ++caCertGeneration;
@@ -596,9 +621,14 @@ public abstract class Ca {
                 default -> {
                     keyData = new HashMap<>(caKeyData);
                     certData = new HashMap<>(caCertData);
-                    // coming from an older version, the secret could not have the CA truststore
-                    if (!certData.containsKey(CA_STORE)) {
+
+                    if (caConfig.isGeneratePkcs12Stores() && !certData.containsKey(CA_STORE)) {
+                        // If we are generating PKCS12 stores, and it is missing in the Secret, we add it
                         addCertCaToTrustStore(CA_CRT, certData);
+                    } else if (!caConfig.isGeneratePkcs12Stores() && certData.containsKey(CA_STORE))  {
+                        // If we are not generating PKCS12 stores, and it is already present in the Secret, we will remove it
+                        certData.remove(CA_STORE);
+                        certData.remove(CA_STORE_PASSWORD);
                     }
                 }
             }
@@ -937,20 +967,23 @@ public abstract class Ca {
         if (removed.isEmpty()) {
             return false;
         } else {
-            // the certificates removed from the Secret data has to be removed from the store as well
-            try {
-                File trustStoreFile = Files.createTempFile("tls", "-truststore").toFile();
-                Files.write(trustStoreFile.toPath(), Util.decodeBytesFromBase64(newData.get(CA_STORE)));
+            if (caConfig.isGeneratePkcs12Stores())   {
+                // the certificates removed from the Secret data have to be removed from the store as well
                 try {
-                    String trustStorePassword = Util.decodeFromBase64(newData.get(CA_STORE_PASSWORD));
-                    certManager.deleteFromTrustStore(removed, trustStoreFile, trustStorePassword);
-                    newData.put(CA_STORE, Base64.getEncoder().encodeToString(Files.readAllBytes(trustStoreFile.toPath())));
-                } finally {
-                    delete(reconciliation, trustStoreFile);
+                    File trustStoreFile = Files.createTempFile("tls", "-truststore").toFile();
+                    Files.write(trustStoreFile.toPath(), Util.decodeBytesFromBase64(newData.get(CA_STORE)));
+                    try {
+                        String trustStorePassword = Util.decodeFromBase64(newData.get(CA_STORE_PASSWORD));
+                        certManager.deleteFromTrustStore(removed, trustStoreFile, trustStorePassword);
+                        newData.put(CA_STORE, Base64.getEncoder().encodeToString(Files.readAllBytes(trustStoreFile.toPath())));
+                    } finally {
+                        delete(reconciliation, trustStoreFile);
+                    }
+                } catch (IOException | CertificateException | KeyStoreException | NoSuchAlgorithmException e) {
+                    throw new RuntimeException(e);
                 }
-            } catch (IOException | CertificateException | KeyStoreException | NoSuchAlgorithmException e) {
-                throw new RuntimeException(e);
             }
+
             return true;
         }
     }
@@ -1049,10 +1082,15 @@ public abstract class Ca {
     private void generateCaKeyAndCert(Subject subject, Map<String, String> keyData, Map<String, String> certData) {
         try {
             LOGGER.infoCr(reconciliation, "Generating CA with subject={}", subject);
+
             File keyFile = Files.createTempFile("tls", subject.commonName() + "-key").toFile();
+            File certFile = Files.createTempFile("tls", subject.commonName() + "-cert").toFile();
+
             try {
-                File certFile = Files.createTempFile("tls", subject.commonName() + "-cert").toFile();
-                try {
+                certManager.generateSelfSignedCert(keyFile, certFile, subject, caConfig.getValidityDays());
+                CertAndKey ca;
+
+                if (caConfig.isGeneratePkcs12Stores())   {
                     File trustStoreFile = Files.createTempFile("tls", subject.commonName() + "-truststore").toFile();
                     String trustStorePassword;
                     // if secret already contains the truststore, we have to reuse it without changing password
@@ -1063,25 +1101,32 @@ public abstract class Ca {
                         trustStorePassword = passwordGenerator.generate();
                     }
                     try {
-                        certManager.generateSelfSignedCert(keyFile, certFile, subject, caConfig.getValidityDays());
                         certManager.addCertToTrustStore(certFile, CA_CRT, trustStoreFile, trustStorePassword);
-                        CertAndKey ca = new CertAndKey(
+                        ca = new CertAndKey(
                                 Files.readAllBytes(keyFile.toPath()),
                                 Files.readAllBytes(certFile.toPath()),
                                 Files.readAllBytes(trustStoreFile.toPath()),
                                 null,
                                 trustStorePassword);
-                        certData.put(CA_CRT, ca.certAsBase64String());
-                        keyData.put(CA_KEY, ca.keyAsBase64String());
+
                         certData.put(CA_STORE, ca.trustStoreAsBase64String());
                         certData.put(CA_STORE_PASSWORD, ca.storePasswordAsBase64String());
                     } finally {
                         delete(reconciliation, trustStoreFile);
                     }
-                } finally {
-                    delete(reconciliation, certFile);
+                } else {
+                    ca = new CertAndKey(
+                            Files.readAllBytes(keyFile.toPath()),
+                            Files.readAllBytes(certFile.toPath()),
+                            null,
+                            null,
+                            null);
                 }
+
+                certData.put(CA_CRT, ca.certAsBase64String());
+                keyData.put(CA_KEY, ca.keyAsBase64String());
             } finally {
+                delete(reconciliation, certFile);
                 delete(reconciliation, keyFile);
             }
         } catch (IOException | CertificateException | KeyStoreException | NoSuchAlgorithmException e) {
@@ -1095,32 +1140,42 @@ public abstract class Ca {
 
             byte[] bytes = Util.decodeBytesFromBase64(caKeyData.get(CA_KEY));
             File keyFile = Files.createTempFile("tls", subject.commonName() + "-key").toFile();
+            Files.write(keyFile.toPath(), bytes);
+            File certFile = Files.createTempFile("tls", subject.commonName() + "-cert").toFile();
+
             try {
-                Files.write(keyFile.toPath(), bytes);
-                File certFile = Files.createTempFile("tls", subject.commonName() + "-cert").toFile();
-                try {
+                certManager.renewSelfSignedCert(keyFile, certFile, subject, caConfig.getValidityDays());
+                CertAndKey ca;
+
+                if (caConfig.isGeneratePkcs12Stores())    {
                     File trustStoreFile = Files.createTempFile("tls", subject.commonName() + "-truststore").toFile();
                     try {
                         String trustStorePassword = passwordGenerator.generate();
-                        certManager.renewSelfSignedCert(keyFile, certFile, subject, caConfig.getValidityDays());
                         certManager.addCertToTrustStore(certFile, CA_CRT, trustStoreFile, trustStorePassword);
-                        CertAndKey ca = new CertAndKey(
+                        ca = new CertAndKey(
                                 bytes,
                                 Files.readAllBytes(certFile.toPath()),
                                 Files.readAllBytes(trustStoreFile.toPath()),
                                 null,
                                 trustStorePassword);
-                        certData.put(CA_CRT, ca.certAsBase64String());
                         certData.put(CA_STORE, ca.trustStoreAsBase64String());
                         certData.put(CA_STORE_PASSWORD, ca.storePasswordAsBase64String());
                     } finally {
                         delete(reconciliation, trustStoreFile);
                     }
-                } finally {
-                    delete(reconciliation, certFile);
+                } else {
+                    ca = new CertAndKey(
+                            bytes,
+                            Files.readAllBytes(certFile.toPath()),
+                            null,
+                            null,
+                            null);
                 }
+
+                certData.put(CA_CRT, ca.certAsBase64String());
             } finally {
                 delete(reconciliation, keyFile);
+                delete(reconciliation, certFile);
             }
         } catch (IOException | CertificateException | KeyStoreException | NoSuchAlgorithmException e) {
             throw new RuntimeException(e);

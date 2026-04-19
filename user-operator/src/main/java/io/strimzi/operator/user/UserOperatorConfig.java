@@ -147,6 +147,10 @@ public class UserOperatorConfig {
      * Configuration string with ignored users pattern
      */
     public static final ConfigParameter<Pattern> IGNORED_USERS_PATTERN = new ConfigParameter<>("STRIMZI_IGNORED_USERS_PATTERN", PATTERN, null, CONFIG_VALUES);
+    /**
+     * Set true to generate PKCS12 stores in CA and User secrets
+     */
+    public static final ConfigParameter<Boolean> PKCS12_KEYSTORE_GENERATION = new ConfigParameter<>("STRIMZI_PKCS12_KEYSTORE_GENERATION", BOOLEAN, "true", CONFIG_VALUES);
 
     private final Map<String, Object> map;
 
@@ -489,6 +493,15 @@ public class UserOperatorConfig {
         return get(IGNORED_USERS_PATTERN);
     }
 
+    /**
+     * Checks whether PKCS12 stores should be generated in CA and user secrets.
+     *
+     * @return  Indicates PKCS12 stores should be generated in CA and user secrets.
+     */
+    public boolean isPkcs12KeystoreGeneration() {
+        return get(PKCS12_KEYSTORE_GENERATION);
+    }
+
     @Override
     public String toString() {
         return "UserOperatorBuilderConfig{" +
@@ -520,6 +533,7 @@ public class UserOperatorConfig {
                 "\n\tuserOperationsThreadPoolSize=" + getUserOperationsThreadPoolSize() +
                 "\n\tfeatureGates='" + featureGates() + "'" +
                 "\n\tignoredUsersPattern='" + (ignoredUsersPattern() != null ? ignoredUsersPattern().pattern() : null) + "'" +
+                "\n\tisPkcs12KeystoreGeneration='" + isPkcs12KeystoreGeneration() + "'" +
                 '}';
     }
 }

@@ -25,6 +25,7 @@ import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.concurrent.CrdOperator;
 import io.strimzi.operator.common.operator.resource.concurrent.SecretOperator;
 import io.strimzi.operator.user.ResourceUtils;
+import io.strimzi.operator.user.UserOperatorConfig;
 import io.strimzi.operator.user.model.KafkaUserModel;
 import io.strimzi.operator.user.model.acl.SimpleAclRule;
 import io.strimzi.test.mockkube3.MockKube3;
@@ -201,6 +202,8 @@ public class KafkaUserOperatorMockTest {
         assertThat(userSecret.getData().get("ca.crt"), is(MockCertManager.clientsCaCert()));
         assertThat(Util.decodeFromBase64(userSecret.getData().get("user.crt")), is(MockCertManager.userCert()));
         assertThat(Util.decodeFromBase64(userSecret.getData().get("user.key")), is(MockCertManager.userKey()));
+        assertThat(Util.decodeFromBase64(userSecret.getData().get("user.p12")), is(MockCertManager.userKeyStore()));
+        assertThat(userSecret.getData().get("user.password"), is(notNullValue()));
 
         // Assert the mocked Kafka ACLs
         List<String> capturedAclNames = aclNameCaptor.getAllValues();
@@ -234,6 +237,55 @@ public class KafkaUserOperatorMockTest {
         assertThat(capturedQuotas.get(0).getConsumerByteRate(), is(1_024 * 1_024));
         assertThat(capturedQuotas.get(0).getProducerByteRate(), is(1_024 * 1_024));
         assertThat(capturedQuotas.get(1), is(nullValue()));
+    }
+
+    @Test
+    public void testCreateTlsUserWithoutPkcs12() throws ExecutionException, InterruptedException {
+        KafkaUser user = new KafkaUserBuilder()
+                .withNewMetadata()
+                    .withName(ResourceUtils.NAME)
+                    .withNamespace(namespace)
+                .endMetadata()
+                .withNewSpec()
+                    .withNewKafkaUserTlsClientAuthentication()
+                    .endKafkaUserTlsClientAuthentication()
+                .endSpec()
+                .build();
+        user = Crds.kafkaUserOperation(client).resource(user).create();
+
+        UserOperatorConfig config = new UserOperatorConfig.UserOperatorConfigBuilder(ResourceUtils.createUserOperatorConfig(namespace))
+                .with(UserOperatorConfig.PKCS12_KEYSTORE_GENERATION.key(), "false")
+                .build();
+
+        KafkaUserOperator op = new KafkaUserOperator(config, mockCertManager, secretOps, kafkaUserOps, scramOps, quotasOps, aclOps);
+        CompletionStage<KafkaUserStatus> futureResult = op.reconcile(new Reconciliation("test-trigger", KafkaUser.RESOURCE_KIND, namespace, ResourceUtils.NAME), user, null);
+        KafkaUserStatus status = futureResult.toCompletableFuture().get();
+
+        // Assert KafkaUserStatus
+        assertThat(status, is(notNullValue()));
+        assertThat(status.getUsername(), is("CN=" + ResourceUtils.NAME));
+        assertThat(status.getSecret(), is(ResourceUtils.NAME));
+        assertThat(status.getConditions().size(), is(1));
+        assertThat(status.getConditions().get(0).getStatus(), is("True"));
+        assertThat(status.getConditions().get(0).getType(), is("Ready"));
+
+        // Assert the user secret
+        Secret userSecret = secretOps.get(namespace, ResourceUtils.NAME);
+        assertThat(userSecret.getMetadata().getName(), is(user.getMetadata().getName()));
+        assertThat(userSecret.getMetadata().getNamespace(), is(user.getMetadata().getNamespace()));
+        assertThat(userSecret.getMetadata().getLabels(),
+                is(Labels.fromMap(user.getMetadata().getLabels())
+                        .withStrimziKind(KafkaUser.RESOURCE_KIND)
+                        .withKubernetesName(KafkaUserModel.KAFKA_USER_OPERATOR_NAME)
+                        .withKubernetesInstance(ResourceUtils.NAME)
+                        .withKubernetesPartOf(ResourceUtils.NAME)
+                        .withKubernetesManagedBy(KafkaUserModel.KAFKA_USER_OPERATOR_NAME)
+                        .toMap()));
+        assertThat(userSecret.getData().get("ca.crt"), is(MockCertManager.clientsCaCert()));
+        assertThat(Util.decodeFromBase64(userSecret.getData().get("user.crt")), is(MockCertManager.userCert()));
+        assertThat(Util.decodeFromBase64(userSecret.getData().get("user.key")), is(MockCertManager.userKey()));
+        assertThat(userSecret.getData().get("user.p12"), is(nullValue()));
+        assertThat(userSecret.getData().get("user.password"), is(nullValue()));
     }
 
     @Test

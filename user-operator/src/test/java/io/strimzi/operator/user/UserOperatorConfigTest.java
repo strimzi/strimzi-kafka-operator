@@ -33,6 +33,7 @@ public class UserOperatorConfigTest {
         ENV_VARS.put(UserOperatorConfig.CERTS_RENEWAL_DAYS.key(), "10");
         ENV_VARS.put(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.key(), "false");
         ENV_VARS.put(UserOperatorConfig.SCRAM_SHA_PASSWORD_LENGTH.key(), "20");
+        ENV_VARS.put(UserOperatorConfig.PKCS12_KEYSTORE_GENERATION.key(), "false");
 
 
         Map<String, String> labels = new HashMap<>(2);
@@ -43,11 +44,47 @@ public class UserOperatorConfigTest {
     }
 
     @Test
+    public void testDefaults()    {
+        Map<String, String> envVars = new HashMap<>(ENV_VARS);
+        envVars.remove(UserOperatorConfig.RECONCILIATION_INTERVAL_MS.key());
+        envVars.remove(UserOperatorConfig.LABELS.key());
+        envVars.remove(UserOperatorConfig.CA_NAMESPACE.key());
+        envVars.remove(UserOperatorConfig.CERTS_VALIDITY_DAYS.key());
+        envVars.remove(UserOperatorConfig.CERTS_RENEWAL_DAYS.key());
+        envVars.remove(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.key());
+        envVars.remove(UserOperatorConfig.SCRAM_SHA_PASSWORD_LENGTH.key());
+        envVars.remove(UserOperatorConfig.PKCS12_KEYSTORE_GENERATION.key());
+
+        UserOperatorConfig config = UserOperatorConfig.buildFromMap(envVars);
+
+        assertThat(config.getNamespace(), is(ENV_VARS.get(UserOperatorConfig.NAMESPACE.key())));
+        assertThat(config.getReconciliationIntervalMs(), is(120_000L));
+        assertThat(config.getLabels(), is(Labels.EMPTY));
+        assertThat(config.getCaCertSecretName(), is(ENV_VARS.get(UserOperatorConfig.CA_CERT_SECRET_NAME.key())));
+        assertThat(config.getCaNamespaceOrNamespace(), is(ENV_VARS.get(UserOperatorConfig.NAMESPACE.key())));
+        assertThat(config.getClientsCaValidityDays(), is(365));
+        assertThat(config.getClientsCaRenewalDays(), is(30));
+        assertThat(config.isAclsAdminApiSupported(), is(true));
+        assertThat(config.getScramPasswordLength(), is(32));
+        assertThat(config.getMaintenanceWindows(), is(nullValue()));
+        assertThat(config.getOperationTimeoutMs(), is(300_000L));
+        assertThat(config.getWorkQueueSize(), is(1_024));
+        assertThat(config.getControllerThreadPoolSize(), is(50));
+        assertThat(config.getCacheRefresh(), is(15_000L));
+        assertThat(config.getBatchQueueSize(), is(1_024));
+        assertThat(config.getBatchMaxBlockSize(), is(100));
+        assertThat(config.getBatchMaxBlockTime(), is(100));
+        assertThat(config.getUserOperationsThreadPoolSize(), is(4));
+        assertThat(config.featureGates(), is(new FeatureGates("")));
+        assertThat(config.isPkcs12KeystoreGeneration(), is(true));
+    }
+
+    @Test
     public void testFromMap()    {
         UserOperatorConfig config = UserOperatorConfig.buildFromMap(ENV_VARS);
 
         assertThat(config.getNamespace(), is(ENV_VARS.get(UserOperatorConfig.NAMESPACE.key())));
-        assertThat(config.getReconciliationIntervalMs(), is(Long.parseLong(ENV_VARS.get(UserOperatorConfig.RECONCILIATION_INTERVAL_MS.key()))));
+        assertThat(config.getReconciliationIntervalMs(), is(30_000L));
         assertThat(config.getLabels(), is(EXPECTED_LABELS));
         assertThat(config.getCaCertSecretName(), is(ENV_VARS.get(UserOperatorConfig.CA_CERT_SECRET_NAME.key())));
         assertThat(config.getCaNamespaceOrNamespace(), is(ENV_VARS.get(UserOperatorConfig.CA_NAMESPACE.key())));
@@ -65,6 +102,7 @@ public class UserOperatorConfigTest {
         assertThat(config.getBatchMaxBlockTime(), is(100));
         assertThat(config.getUserOperationsThreadPoolSize(), is(4));
         assertThat(config.featureGates(), is(new FeatureGates("")));
+        assertThat(config.isPkcs12KeystoreGeneration(), is(false));
     }
 
     @Test

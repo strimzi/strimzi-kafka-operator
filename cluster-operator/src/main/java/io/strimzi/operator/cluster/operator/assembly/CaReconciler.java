@@ -147,8 +147,8 @@ public class CaReconciler {
                 .withBlockOwnerDeletion(true)
                 .withController(false)
                 .build();
-        this.clusterCaConfig = new CaConfig(kafkaCr.getSpec().getClusterCa());
-        this.clientsCaConfig = new CaConfig(kafkaCr.getSpec().getClientsCa());
+        this.clusterCaConfig = new CaConfig(kafkaCr.getSpec().getClusterCa(), config.isPkcs12KeystoreGeneration());
+        this.clientsCaConfig = new CaConfig(kafkaCr.getSpec().getClientsCa(), config.isPkcs12KeystoreGeneration());
         this.caLabels = Labels.generateDefaultLabels(kafkaCr, Labels.APPLICATION_NAME, "certificate-authority", AbstractModel.STRIMZI_CLUSTER_OPERATOR_NAME).toMap();
         this.clusterOperatorSecretLabels = Labels.generateDefaultLabels(kafkaCr, Labels.APPLICATION_NAME, Labels.APPLICATION_NAME, AbstractModel.STRIMZI_CLUSTER_OPERATOR_NAME);
         this.trustBundleLabels = Labels.generateDefaultLabels(kafkaCr, Labels.APPLICATION_NAME, "trust-bundle", AbstractModel.STRIMZI_CLUSTER_OPERATOR_NAME);
@@ -254,7 +254,6 @@ public class CaReconciler {
                             existingClusterCaCertSecret,
                             existingClusterCaKeySecret,
                             clusterCaConfig);
-
 
                     clientsCa = new ClientsCa(reconciliation, certManager, passwordGenerator,
                             existingClientsCaCertSecret,

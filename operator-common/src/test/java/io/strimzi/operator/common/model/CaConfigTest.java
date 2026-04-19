@@ -32,7 +32,7 @@ public class CaConfigTest {
 
     @Test
     void testConstructorPassingNullCertificateAuthority() {
-        CaConfig caConfig = new CaConfig(null);
+        CaConfig caConfig = new CaConfig(null, true);
 
         assertThat(caConfig.getValidityDays(), is(CertificateAuthority.DEFAULT_CERTS_VALIDITY_DAYS));
         assertThat(caConfig.getRenewalDays(), is(CertificateAuthority.DEFAULT_CERTS_RENEWAL_DAYS));
@@ -50,7 +50,7 @@ public class CaConfigTest {
                 .withGenerateSecretOwnerReference(false)
                 .withCertificateExpirationPolicy(CertificateExpirationPolicy.REPLACE_KEY)
                 .build();
-        CaConfig caConfig = new CaConfig(ca);
+        CaConfig caConfig = new CaConfig(ca, true);
 
         assertThat(caConfig.getValidityDays(), is(6));
         assertThat(caConfig.getRenewalDays(), is(4));
@@ -61,7 +61,7 @@ public class CaConfigTest {
 
     @Test
     void testConstructorPassingSomeVariables() {
-        CaConfig caConfig = new CaConfig(6, 4, false);
+        CaConfig caConfig = new CaConfig(6, 4, false, true);
 
         assertThat(caConfig.getValidityDays(), is(6));
         assertThat(caConfig.getRenewalDays(), is(4));

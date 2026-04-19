@@ -93,7 +93,7 @@ public class KafkaUserModelTest {
         assertThat(model.authentication.getType(), is(KafkaUserTlsExternalClientAuthentication.TYPE_TLS_EXTERNAL));
         assertThat(model.isTlsExternalUser(), is(true));
         assertThat(model.getUserName(), is("CN=" + ResourceUtils.NAME));
-        assertThat(model.generateSecret(), is(nullValue()));
+        assertThat(model.generateSecret(true), is(nullValue()));
     }
 
     @Test
@@ -138,10 +138,34 @@ public class KafkaUserModelTest {
     @Test
     public void testGenerateSecret() {
         KafkaUserModel model = KafkaUserModel.fromCrd(tlsUser, UserOperatorConfig.SECRET_PREFIX.defaultValue(), Boolean.parseBoolean(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.defaultValue()));
-        model.maybeGenerateCertificates(Reconciliation.DUMMY_RECONCILIATION, mockCertManager, passwordGenerator, clientsCaCert, clientsCaKey, null, 365, 30, null, Clock.systemUTC());
-        Secret generatedSecret = model.generateSecret();
+        model.maybeGenerateCertificates(Reconciliation.DUMMY_RECONCILIATION, mockCertManager, passwordGenerator, clientsCaCert, clientsCaKey, null, 365, 30, null, Clock.systemUTC(), true);
+        Secret generatedSecret = model.generateSecret(true);
 
         assertThat(generatedSecret.getData().keySet(), is(Set.of("ca.crt", "user.crt", "user.key", "user.p12", "user.password")));
+
+        assertThat(generatedSecret.getMetadata().getName(), is(ResourceUtils.NAME));
+        assertThat(generatedSecret.getMetadata().getNamespace(), is(ResourceUtils.NAMESPACE));
+        assertThat(generatedSecret.getMetadata().getAnnotations(), is(emptyMap()));
+        assertThat(generatedSecret.getMetadata().getLabels(),
+                is(Labels.fromMap(ResourceUtils.LABELS)
+                        .withStrimziKind(KafkaUser.RESOURCE_KIND)
+                        .withKubernetesName(KafkaUserModel.KAFKA_USER_OPERATOR_NAME)
+                        .withKubernetesInstance(ResourceUtils.NAME)
+                        .withKubernetesPartOf(ResourceUtils.NAME)
+                        .withKubernetesManagedBy(KafkaUserModel.KAFKA_USER_OPERATOR_NAME)
+                        .toMap()));
+        // Check owner reference
+        checkOwnerReference(model.createOwnerReference(), generatedSecret);
+    }
+
+    @Test
+    public void testGenerateSecretWithoutPkcs12() {
+        KafkaUserModel model = KafkaUserModel.fromCrd(tlsUser, UserOperatorConfig.SECRET_PREFIX.defaultValue(), Boolean.parseBoolean(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.defaultValue()));
+        model.maybeGenerateCertificates(Reconciliation.DUMMY_RECONCILIATION, mockCertManager, passwordGenerator, clientsCaCert, clientsCaKey, null, 365, 30, null, Clock.systemUTC(), false);
+        Secret generatedSecret = model.generateSecret(false);
+
+        // Should not contain the PKCS12 store and its password
+        assertThat(generatedSecret.getData().keySet(), is(Set.of("ca.crt", "user.crt", "user.key")));
 
         assertThat(generatedSecret.getMetadata().getName(), is(ResourceUtils.NAME));
         assertThat(generatedSecret.getMetadata().getNamespace(), is(ResourceUtils.NAMESPACE));
@@ -162,8 +186,8 @@ public class KafkaUserModelTest {
     public void testGenerateSecretWithPrefix() {
         String secretPrefix = "strimzi-";
         KafkaUserModel model = KafkaUserModel.fromCrd(tlsUser, secretPrefix, Boolean.parseBoolean(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.defaultValue()));
-        model.maybeGenerateCertificates(Reconciliation.DUMMY_RECONCILIATION, mockCertManager, passwordGenerator, clientsCaCert, clientsCaKey, null, 365, 30, null, Clock.systemUTC());
-        Secret generatedSecret = model.generateSecret();
+        model.maybeGenerateCertificates(Reconciliation.DUMMY_RECONCILIATION, mockCertManager, passwordGenerator, clientsCaCert, clientsCaKey, null, 365, 30, null, Clock.systemUTC(), true);
+        Secret generatedSecret = model.generateSecret(true);
 
         assertThat(generatedSecret.getData().keySet(), is(Set.of("ca.crt", "user.crt", "user.key", "user.p12", "user.password")));
 
@@ -199,8 +223,8 @@ public class KafkaUserModelTest {
                 .build();
 
         KafkaUserModel model = KafkaUserModel.fromCrd(userWithTemplate, UserOperatorConfig.SECRET_PREFIX.defaultValue(), Boolean.parseBoolean(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.defaultValue()));
-        model.maybeGenerateCertificates(Reconciliation.DUMMY_RECONCILIATION, mockCertManager, passwordGenerator, clientsCaCert, clientsCaKey, null, 365, 30, null, Clock.systemUTC());
-        Secret generatedSecret = model.generateSecret();
+        model.maybeGenerateCertificates(Reconciliation.DUMMY_RECONCILIATION, mockCertManager, passwordGenerator, clientsCaCert, clientsCaKey, null, 365, 30, null, Clock.systemUTC(), true);
+        Secret generatedSecret = model.generateSecret(true);
 
         assertThat(generatedSecret.getData().keySet(), is(Set.of("ca.crt", "user.crt", "user.key", "user.p12", "user.password")));
 
@@ -223,8 +247,8 @@ public class KafkaUserModelTest {
     @Test
     public void testGenerateSecretGeneratesCertificateWhenNoSecretExistsProvidedByUser() {
         KafkaUserModel model = KafkaUserModel.fromCrd(tlsUser, UserOperatorConfig.SECRET_PREFIX.defaultValue(), Boolean.parseBoolean(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.defaultValue()));
-        model.maybeGenerateCertificates(Reconciliation.DUMMY_RECONCILIATION, mockCertManager, passwordGenerator, clientsCaCert, clientsCaKey, null, 365, 30, null, Clock.systemUTC());
-        Secret generated = model.generateSecret();
+        model.maybeGenerateCertificates(Reconciliation.DUMMY_RECONCILIATION, mockCertManager, passwordGenerator, clientsCaCert, clientsCaKey, null, 365, 30, null, Clock.systemUTC(), true);
+        Secret generated = model.generateSecret(true);
 
         assertThat(generated.getData().get("ca.crt"),  is(MockCertManager.clientsCaCert()));
         assertThat(Util.decodeFromBase64(generated.getData().get("user.crt")), is(MockCertManager.userCert()));
@@ -248,22 +272,22 @@ public class KafkaUserModelTest {
                 .build();
 
         InvalidCertificateException e = assertThrows(InvalidCertificateException.class, () -> {
-            model.maybeGenerateCertificates(Reconciliation.DUMMY_RECONCILIATION, mockCertManager, passwordGenerator, null, clientsCaKey, null, 365, 30, null, Clock.systemUTC());
+            model.maybeGenerateCertificates(Reconciliation.DUMMY_RECONCILIATION, mockCertManager, passwordGenerator, null, clientsCaKey, null, 365, 30, null, Clock.systemUTC(), true);
         });
         assertThat(e.getMessage(), is("The Clients CA Cert Secret is missing"));
 
         e = assertThrows(InvalidCertificateException.class, () -> {
-            model.maybeGenerateCertificates(Reconciliation.DUMMY_RECONCILIATION, mockCertManager, passwordGenerator, clientsCaCert, null, null, 365, 30, null, Clock.systemUTC());
+            model.maybeGenerateCertificates(Reconciliation.DUMMY_RECONCILIATION, mockCertManager, passwordGenerator, clientsCaCert, null, null, 365, 30, null, Clock.systemUTC(), true);
         });
         assertThat(e.getMessage(), is("The Clients CA Key Secret is missing"));
 
         e = assertThrows(InvalidCertificateException.class, () -> {
-            model.maybeGenerateCertificates(Reconciliation.DUMMY_RECONCILIATION, mockCertManager, passwordGenerator, emptySecret, clientsCaKey, null, 365, 30, null, Clock.systemUTC());
+            model.maybeGenerateCertificates(Reconciliation.DUMMY_RECONCILIATION, mockCertManager, passwordGenerator, emptySecret, clientsCaKey, null, 365, 30, null, Clock.systemUTC(), true);
         });
         assertThat(e.getMessage(), is("The Clients CA Cert Secret is missing the ca.crt file"));
 
         e = assertThrows(InvalidCertificateException.class, () -> {
-            model.maybeGenerateCertificates(Reconciliation.DUMMY_RECONCILIATION, mockCertManager, passwordGenerator, clientsCaCert, emptySecret, null, 365, 30, null, Clock.systemUTC());
+            model.maybeGenerateCertificates(Reconciliation.DUMMY_RECONCILIATION, mockCertManager, passwordGenerator, clientsCaCert, emptySecret, null, 365, 30, null, Clock.systemUTC(), true);
         });
         assertThat(e.getMessage(), is("The Clients CA Key Secret is missing the ca.key file"));
     }
@@ -278,8 +302,8 @@ public class KafkaUserModelTest {
         clientsCaKeySecret.getData().put("ca.key", Base64.getEncoder().encodeToString("different-clients-ca-key".getBytes()));
 
         KafkaUserModel model = KafkaUserModel.fromCrd(tlsUser, UserOperatorConfig.SECRET_PREFIX.defaultValue(), Boolean.parseBoolean(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.defaultValue()));
-        model.maybeGenerateCertificates(Reconciliation.DUMMY_RECONCILIATION, mockCertManager, passwordGenerator, clientsCaCertSecret, clientsCaKeySecret, userCert, 365, 30, null, Clock.systemUTC());
-        Secret generatedSecret = model.generateSecret();
+        model.maybeGenerateCertificates(Reconciliation.DUMMY_RECONCILIATION, mockCertManager, passwordGenerator, clientsCaCertSecret, clientsCaKeySecret, userCert, 365, 30, null, Clock.systemUTC(), true);
+        Secret generatedSecret = model.generateSecret(true);
     
         assertThat(generatedSecret.getData().get("ca.crt"),  is(MockCertManager.alternateClientsCaCert()));
         assertThat(Util.decodeFromBase64(generatedSecret.getData().get("user.crt")), is(MockCertManager.userCert()));
@@ -296,8 +320,8 @@ public class KafkaUserModelTest {
         Secret userCert = ResourceUtils.createUserSecretTls(ResourceUtils.NAMESPACE);
 
         KafkaUserModel model = KafkaUserModel.fromCrd(tlsUser, UserOperatorConfig.SECRET_PREFIX.defaultValue(), Boolean.parseBoolean(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.defaultValue()));
-        model.maybeGenerateCertificates(Reconciliation.DUMMY_RECONCILIATION, mockCertManager, passwordGenerator, clientsCaCert, clientsCaKey, userCert, 365, 30, null, Clock.systemUTC());
-        Secret generatedSecret = model.generateSecret();
+        model.maybeGenerateCertificates(Reconciliation.DUMMY_RECONCILIATION, mockCertManager, passwordGenerator, clientsCaCert, clientsCaKey, userCert, 365, 30, null, Clock.systemUTC(), true);
+        Secret generatedSecret = model.generateSecret(true);
 
         // These values match those in ResourceUtils.createUserSecretTls()
         assertThat(generatedSecret.getData().get("ca.crt"), is(MockCertManager.clientsCaCert()));
@@ -314,8 +338,8 @@ public class KafkaUserModelTest {
     public void testGenerateSecretGeneratesCertificateWithExistingScramSha() {
         Secret userCert = ResourceUtils.createUserSecretScramSha(ResourceUtils.NAMESPACE);
         KafkaUserModel model = KafkaUserModel.fromCrd(tlsUser, UserOperatorConfig.SECRET_PREFIX.defaultValue(), Boolean.parseBoolean(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.defaultValue()));
-        model.maybeGenerateCertificates(Reconciliation.DUMMY_RECONCILIATION, mockCertManager, passwordGenerator, clientsCaCert, clientsCaKey, userCert, 365, 30, null, Clock.systemUTC());
-        Secret generated = model.generateSecret();
+        model.maybeGenerateCertificates(Reconciliation.DUMMY_RECONCILIATION, mockCertManager, passwordGenerator, clientsCaCert, clientsCaKey, userCert, 365, 30, null, Clock.systemUTC(), true);
+        Secret generated = model.generateSecret(true);
 
         assertThat(generated.getData().get("ca.crt"),  is(MockCertManager.clientsCaCert()));
         assertThat(Util.decodeFromBase64(generated.getData().get("user.crt")), is(MockCertManager.userCert()));
@@ -330,16 +354,16 @@ public class KafkaUserModelTest {
     @Test
     public void testGenerateSecretGeneratesKeyStoreWhenOldVersionSecretExists() {
         KafkaUserModel model = KafkaUserModel.fromCrd(tlsUser, UserOperatorConfig.SECRET_PREFIX.defaultValue(), Boolean.parseBoolean(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.defaultValue()));
-        model.maybeGenerateCertificates(Reconciliation.DUMMY_RECONCILIATION, mockCertManager, passwordGenerator, clientsCaCert, clientsCaKey, null, 365, 30, null, Clock.systemUTC());
-        Secret oldSecret = model.generateSecret();
+        model.maybeGenerateCertificates(Reconciliation.DUMMY_RECONCILIATION, mockCertManager, passwordGenerator, clientsCaCert, clientsCaKey, null, 365, 30, null, Clock.systemUTC(), true);
+        Secret oldSecret = model.generateSecret(true);
 
         // remove keystore and password to simulate a Secret from a previous version
         oldSecret.getData().remove("user.p12");
         oldSecret.getData().remove("user.password");
 
         model = KafkaUserModel.fromCrd(tlsUser, UserOperatorConfig.SECRET_PREFIX.defaultValue(), Boolean.parseBoolean(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.defaultValue()));
-        model.maybeGenerateCertificates(Reconciliation.DUMMY_RECONCILIATION, mockCertManager, passwordGenerator, clientsCaCert, clientsCaKey, oldSecret, 365, 30, null, Clock.systemUTC());
-        Secret generatedSecret = model.generateSecret();
+        model.maybeGenerateCertificates(Reconciliation.DUMMY_RECONCILIATION, mockCertManager, passwordGenerator, clientsCaCert, clientsCaKey, oldSecret, 365, 30, null, Clock.systemUTC(), true);
+        Secret generatedSecret = model.generateSecret(true);
 
         assertThat(generatedSecret.getData().keySet(), is(Set.of("ca.crt", "user.crt", "user.key", "user.p12", "user.password")));
 
@@ -358,7 +382,7 @@ public class KafkaUserModelTest {
     public void testGenerateSecretGeneratesPasswordWhenNoUserSecretExists() {
         KafkaUserModel model = KafkaUserModel.fromCrd(scramShaUser, UserOperatorConfig.SECRET_PREFIX.defaultValue(), Boolean.parseBoolean(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.defaultValue()));
         model.maybeGeneratePassword(Reconciliation.DUMMY_RECONCILIATION, passwordGenerator, null, null);
-        Secret generatedSecret = model.generateSecret();
+        Secret generatedSecret = model.generateSecret(true);
 
         assertThat(generatedSecret.getMetadata().getName(), is(ResourceUtils.NAME));
         assertThat(generatedSecret.getMetadata().getNamespace(), is(ResourceUtils.NAMESPACE));
@@ -387,7 +411,7 @@ public class KafkaUserModelTest {
         Secret scramShaSecret = ResourceUtils.createUserSecretScramSha(ResourceUtils.NAMESPACE);
         KafkaUserModel model = KafkaUserModel.fromCrd(scramShaUser, UserOperatorConfig.SECRET_PREFIX.defaultValue(), Boolean.parseBoolean(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.defaultValue()));
         model.maybeGeneratePassword(Reconciliation.DUMMY_RECONCILIATION, passwordGenerator, scramShaSecret, null);
-        Secret generated = model.generateSecret();
+        Secret generated = model.generateSecret(true);
 
         assertThat(generated.getMetadata().getName(), is(ResourceUtils.NAME));
         assertThat(generated.getMetadata().getNamespace(), is(ResourceUtils.NAMESPACE));
@@ -430,7 +454,7 @@ public class KafkaUserModelTest {
 
         KafkaUserModel model = KafkaUserModel.fromCrd(user, UserOperatorConfig.SECRET_PREFIX.defaultValue(), Boolean.parseBoolean(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.defaultValue()));
         model.maybeGeneratePassword(Reconciliation.DUMMY_RECONCILIATION, passwordGenerator, null, desiredPasswordSecret);
-        Secret generatedSecret = model.generateSecret();
+        Secret generatedSecret = model.generateSecret(true);
 
         assertThat(model.getScramSha512Password(), is(DESIRED_PASSWORD));
         assertThat(generatedSecret.getMetadata().getName(), is(ResourceUtils.NAME));
@@ -479,7 +503,7 @@ public class KafkaUserModelTest {
 
         KafkaUserModel model = KafkaUserModel.fromCrd(user, UserOperatorConfig.SECRET_PREFIX.defaultValue(), Boolean.parseBoolean(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.defaultValue()));
         model.maybeGeneratePassword(Reconciliation.DUMMY_RECONCILIATION, passwordGenerator, scramShaSecret, desiredPasswordSecret);
-        Secret generated = model.generateSecret();
+        Secret generated = model.generateSecret(true);
 
         assertThat(model.getScramSha512Password(), is(DESIRED_PASSWORD));
         assertThat(generated.getMetadata().getName(), is(ResourceUtils.NAME));
@@ -588,7 +612,7 @@ public class KafkaUserModelTest {
         Secret userCert = ResourceUtils.createUserSecretTls(ResourceUtils.NAMESPACE);
         KafkaUserModel model = KafkaUserModel.fromCrd(scramShaUser, UserOperatorConfig.SECRET_PREFIX.defaultValue(), Boolean.parseBoolean(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.defaultValue()));
         model.maybeGeneratePassword(Reconciliation.DUMMY_RECONCILIATION, passwordGenerator, userCert, null);
-        Secret generated = model.generateSecret();
+        Secret generated = model.generateSecret(true);
 
 
         assertThat(generated.getMetadata().getName(), is(ResourceUtils.NAME));
@@ -620,7 +644,7 @@ public class KafkaUserModelTest {
 
         KafkaUserModel model = KafkaUserModel.fromCrd(user, UserOperatorConfig.SECRET_PREFIX.defaultValue(), Boolean.parseBoolean(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.defaultValue()));
 
-        assertThat(model.generateSecret(), is(nullValue()));
+        assertThat(model.generateSecret(true), is(nullValue()));
     }
 
     @Test

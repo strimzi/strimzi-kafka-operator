@@ -84,6 +84,7 @@ public class EntityUserOperator extends AbstractModel implements SupportsLogging
     private boolean aclsAdminApiSupported = false;
     private List<String> maintenanceWindows;
     private LoggingModel logging;
+    private boolean generatePkcs12Stores;
 
     /**
      * Constructs a new EntityUserOperator.
@@ -141,6 +142,7 @@ public class EntityUserOperator extends AbstractModel implements SupportsLogging
             result.readinessProbeOptions = ProbeUtils.extractReadinessProbeOptionsOrDefault(userOperatorSpec, EntityOperator.DEFAULT_HEALTHCHECK_OPTIONS);
             result.livenessProbeOptions = ProbeUtils.extractLivenessProbeOptionsOrDefault(userOperatorSpec, EntityOperator.DEFAULT_HEALTHCHECK_OPTIONS);
             result.featureGatesEnvVarValue = config.featureGates().toEnvironmentVariable();
+            result.generatePkcs12Stores = config.isPkcs12KeystoreGeneration();
 
             if (kafkaAssembly.getSpec().getEntityOperator().getTemplate() != null)  {
                 result.templateRoleBinding = kafkaAssembly.getSpec().getEntityOperator().getTemplate().getUserOperatorRoleBinding();
@@ -206,6 +208,7 @@ public class EntityUserOperator extends AbstractModel implements SupportsLogging
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_STRIMZI_GC_LOG_ENABLED, String.valueOf(gcLoggingEnabled)));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_SECRET_PREFIX, secretPrefix));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_ACLS_ADMIN_API_SUPPORTED, String.valueOf(aclsAdminApiSupported)));
+        varList.add(ContainerUtils.createEnvVar(ClusterOperatorConfig.PKCS12_KEYSTORE_GENERATION.key(), String.valueOf(generatePkcs12Stores)));
         JvmOptionUtils.javaOptions(varList, jvmOptions);
 
         // Add feature gates configuration if not empty

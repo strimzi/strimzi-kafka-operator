@@ -250,6 +250,11 @@ public class ClusterOperatorConfig {
     public static final ConfigParameter<Boolean> POD_DISRUPTION_BUDGET_GENERATION = new ConfigParameter<>("STRIMZI_POD_DISRUPTION_BUDGET_GENERATION", BOOLEAN, "true", CONFIG_VALUES);
 
     /**
+     * Set true to generate PKCS12 stores in CA and User secrets
+     */
+    public static final ConfigParameter<Boolean> PKCS12_KEYSTORE_GENERATION = new ConfigParameter<>("STRIMZI_PKCS12_KEYSTORE_GENERATION", BOOLEAN, "true", CONFIG_VALUES);
+
+    /**
      * The configured Kafka versions
      */
     private final KafkaVersion.Lookup versions;
@@ -628,6 +633,15 @@ public class ClusterOperatorConfig {
         return get(POD_DISRUPTION_BUDGET_GENERATION);
     }
 
+    /**
+     * Checks whether PKCS12 stores should be generated in CA and user secrets.
+     *
+     * @return  Indicates PKCS12 stores should be generated in CA and user secrets.
+     */
+    public boolean isPkcs12KeystoreGeneration() {
+        return get(PKCS12_KEYSTORE_GENERATION);
+    }
+
     @Override
     public String toString() {
         return "ClusterOperatorConfig{" +
@@ -649,7 +663,8 @@ public class ClusterOperatorConfig {
                 "\n\toperatorName='" + getOperatorName() + '\'' +
                 "\n\tpodSecurityProviderClass='" + getPodSecurityProviderClass() + '\'' +
                 "\n\tleaderElectionConfig='" + getLeaderElectionConfig() + '\'' +
-                "\n\tpodDisruptionBudgetGeneration=" + isPodDisruptionBudgetGeneration() +
+                "\n\tpodDisruptionBudgetGeneration=" + isPodDisruptionBudgetGeneration() + '\'' +
+                "\n\tisPkcs12KeystoreGeneration='" + isPkcs12KeystoreGeneration() +
                 "}";
     }
 }

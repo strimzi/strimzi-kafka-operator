@@ -338,8 +338,8 @@ public class KafkaUserOperator {
                         config.getClientsCaValidityDays(),
                         config.getClientsCaRenewalDays(),
                         config.getMaintenanceWindows(),
-                        Clock.systemUTC()
-                ));
+                        Clock.systemUTC(),
+                        config.isPkcs12KeystoreGeneration()));
     }
 
     private CompletionStage<Secret> getRequiredSecret(String namespace, String name, Function<String, Throwable> missingSecretError) {
@@ -427,7 +427,7 @@ public class KafkaUserOperator {
      */
     private CompletionStage<ReconcileResult<Secret>> reconcileUserSecret(Reconciliation reconciliation, KafkaUserModel user, Secret currentSecret, KafkaUserStatus userStatus) {
         return secretOperator
-            .reconcile(reconciliation, reconciliation.namespace(), user.getSecretName(), currentSecret, user.generateSecret())
+            .reconcile(reconciliation, reconciliation.namespace(), user.getSecretName(), currentSecret, user.generateSecret(config.isPkcs12KeystoreGeneration()))
             .whenComplete((result, error) -> {
                 if (error == null) {
                     result.resourceOpt().map(secret -> secret.getMetadata().getName())

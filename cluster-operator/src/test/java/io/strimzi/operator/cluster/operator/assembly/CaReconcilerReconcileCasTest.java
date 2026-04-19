@@ -151,6 +151,10 @@ public class CaReconcilerReconcileCasTest {
     }
 
     private Future<Void> reconcileCas(Kafka kafka, Clock clock) {
+        return reconcileCas(kafka, clock, true);
+    }
+
+    private Future<Void> reconcileCas(Kafka kafka, Clock clock, boolean generatePkcs12Stores) {
         SecretOperator secretOps = supplier.secretOperations;
 
         when(secretOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenAnswer(invocation -> {
@@ -171,7 +175,7 @@ public class CaReconcilerReconcileCasTest {
 
         Promise<Void> reconcileCasComplete = Promise.promise();
 
-        new CaReconciler(reconciliation, kafka, new ClusterOperatorConfig.ClusterOperatorConfigBuilder(ResourceUtils.dummyClusterOperatorConfig(), KafkaVersionTestUtils.getKafkaVersionLookup()).with(ClusterOperatorConfig.OPERATION_TIMEOUT_MS.key(), "1").build(),
+        new CaReconciler(reconciliation, kafka, new ClusterOperatorConfig.ClusterOperatorConfigBuilder(ResourceUtils.dummyClusterOperatorConfig(), KafkaVersionTestUtils.getKafkaVersionLookup()).with(ClusterOperatorConfig.PKCS12_KEYSTORE_GENERATION.key(), Boolean.toString(generatePkcs12Stores)).with(ClusterOperatorConfig.OPERATION_TIMEOUT_MS.key(), "1").build(),
                 supplier, CERT_MANAGER, PASSWORD_GENERATOR)
                 .reconcileCas(clock)
                 .onComplete(ar -> {
@@ -373,6 +377,50 @@ public class CaReconcilerReconcileCasTest {
 
                 assertThat(captorSecrets.clientsCaKey().getData().keySet(), is(Set.of(CA_KEY)));
                 assertThat(captorSecrets.clientsCaKey().getData().get(CA_KEY), is(initialClientsCaKeySecret.getData().get(CA_KEY)));
+                async.flag();
+            })));
+    }
+
+    @Test
+    public void testGenerateNewCasWithoutPkcs12(VertxTestContext context)   {
+        Checkpoint async = context.checkpoint();
+        reconcileCas(KAFKA, Clock.systemUTC(), false)
+            .onComplete(context.succeeding(v -> context.verify(() -> {
+                CaptorSecrets captorSecrets = verifyCaSecretReconcileCalls(supplier.secretOperations);
+                assertCaptorSecretsNotNull(captorSecrets);
+
+                assertThat(captorSecrets.clusterCaCert().getData().keySet(), is(Set.of("ca.crt")));
+                assertThat(captorSecrets.clientsCaCert().getData().keySet(), is(Set.of("ca.crt")));
+
+                async.flag();
+            })));
+    }
+
+    @Test
+    public void testExistingCasRemovePkcs12(VertxTestContext context)
+            throws IOException, CertificateException, KeyStoreException, NoSuchAlgorithmException {
+        List<Secret> clusterCaSecrets = initialClusterCaSecrets(new CertificateAuthorityBuilder().withValidityDays(365).withRenewalDays(30).build());
+        Secret initialClusterCaKeySecret = clusterCaSecrets.get(0);
+        Secret initialClusterCaCertSecret = clusterCaSecrets.get(1);
+
+        List<Secret> clientsCaSecrets = initialClientsCaSecrets(new CertificateAuthorityBuilder().withValidityDays(365).withRenewalDays(30).build());
+        Secret initialClientsCaKeySecret = clientsCaSecrets.get(0);
+        Secret initialClientsCaCertSecret = clientsCaSecrets.get(1);
+
+        secrets.add(initialClusterCaCertSecret);
+        secrets.add(initialClusterCaKeySecret);
+        secrets.add(initialClientsCaCertSecret);
+        secrets.add(initialClientsCaKeySecret);
+
+        Checkpoint async = context.checkpoint();
+        reconcileCas(KAFKA, Clock.systemUTC(), false)
+            .onComplete(context.succeeding(v -> context.verify(() -> {
+                CaptorSecrets captorSecrets = verifyCaSecretReconcileCalls(supplier.secretOperations);
+                assertCaptorSecretsNotNull(captorSecrets);
+
+                assertThat(captorSecrets.clusterCaCert().getData().keySet(), is(Set.of("ca.crt")));
+                assertThat(captorSecrets.clientsCaCert().getData().keySet(), is(Set.of("ca.crt")));
+
                 async.flag();
             })));
     }

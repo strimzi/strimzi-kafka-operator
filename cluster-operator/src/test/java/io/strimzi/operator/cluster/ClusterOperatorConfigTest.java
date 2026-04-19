@@ -47,6 +47,7 @@ public class ClusterOperatorConfigTest {
         ENV_VARS.put(ClusterOperatorConfig.DNS_CACHE_TTL.key(), "10");
         ENV_VARS.put(ClusterOperatorConfig.POD_SECURITY_PROVIDER_CLASS.key(), "my.package.CustomPodSecurityProvider");
         ENV_VARS.put(ClusterOperatorConfig.POD_DISRUPTION_BUDGET_GENERATION.key(), "false");
+        ENV_VARS.put(ClusterOperatorConfig.PKCS12_KEYSTORE_GENERATION.key(), "false");
     }
 
     @Test
@@ -58,6 +59,7 @@ public class ClusterOperatorConfigTest {
         envVars.remove(ClusterOperatorConfig.FEATURE_GATES.key());
         envVars.remove(ClusterOperatorConfig.POD_SECURITY_PROVIDER_CLASS.key());
         envVars.remove(ClusterOperatorConfig.POD_DISRUPTION_BUDGET_GENERATION.key());
+        envVars.remove(ClusterOperatorConfig.PKCS12_KEYSTORE_GENERATION.key());
 
         ClusterOperatorConfig config = ClusterOperatorConfig.buildFromMap(envVars, KafkaVersionTestUtils.getKafkaVersionLookup());
 
@@ -73,6 +75,7 @@ public class ClusterOperatorConfigTest {
         assertThat(config.getPodSecurityProviderClass(), is(ClusterOperatorConfig.POD_SECURITY_PROVIDER_CLASS.defaultValue()));
         assertThat(config.getLeaderElectionConfig(), is(nullValue()));
         assertThat(config.isPodDisruptionBudgetGeneration(), is(true));
+        assertThat(config.isPkcs12KeystoreGeneration(), is(true));
     }
 
     @Test
@@ -105,6 +108,7 @@ public class ClusterOperatorConfigTest {
         assertThat(config.getDnsCacheTtlSec(), is(10));
         assertThat(config.getPodSecurityProviderClass(), is("my.package.CustomPodSecurityProvider"));
         assertThat(config.isPodDisruptionBudgetGeneration(), is(false));
+        assertThat(config.isPkcs12KeystoreGeneration(), is(false));
     }
 
     @Test

@@ -187,7 +187,7 @@ public class ClusterCaTest {
                 .withData(clusterCaKeyData)
                 .build();
 
-        ClusterCa clusterCa = new ClusterCa(Reconciliation.DUMMY_RECONCILIATION, new OpenSslCertManager(), new PasswordGenerator(10, "a", "a"), clusterCaCert, clusterCaKey, new CaConfig(new CertificateAuthorityBuilder().withGenerateCertificateAuthority(false).build()));
+        ClusterCa clusterCa = new ClusterCa(Reconciliation.DUMMY_RECONCILIATION, new OpenSslCertManager(), new PasswordGenerator(10, "a", "a"), clusterCaCert, clusterCaKey, new CaConfig(new CertificateAuthorityBuilder().withGenerateCertificateAuthority(false).build(), true));
 
         clusterCa.maybeDeleteOldCerts();
 

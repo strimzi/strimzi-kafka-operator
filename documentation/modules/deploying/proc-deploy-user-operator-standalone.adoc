@@ -102,6 +102,8 @@ spec:
                 request.timeout.ms=60000
             - name: STRIMZI_IGNORED_USERS_PATTERN <20>
               value: "^ANONYMOUS$"
+            - name: STRIMZI_PKCS12_KEYSTORE_GENERATION <21>
+              value: "true"
 ----
 <1> The Kubernetes namespace for the User Operator to watch for `KafkaUser` resources. Only one namespace can be specified.
 <2>  The host and port pair of the bootstrap broker address to discover and connect to all brokers in the Kafka cluster.
@@ -143,6 +145,8 @@ The default is `true`.
 <19> (Optional) Configuration options for configuring the Kafka Admin client used by the User Operator in the properties format.
 <20> (Optional) Regular expression to configure users for which any existing ACLs, Quotas and SCRAM-SHa credentials will be ignored.
 This option is useful when you want to configure the User Operator to ignore users that are managed through another mechanism.
+<21> (Optional) Controls automatic creation of PKCS12 stores in the Kafka User Secrets.
+The default is `true`.
 
 . If you are using mTLS to connect to the Kafka cluster, specify the secrets used to authenticate connection.
 Otherwise, go to the next step.

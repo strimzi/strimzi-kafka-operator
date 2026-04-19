@@ -185,16 +185,22 @@ public class KafkaUserModel {
      * Generates secret containing the certificate for TLS client auth when TLS client auth is enabled for this user.
      * Returns null otherwise.
      *
+     * @param generatePkcs12Stores  Flag indicating whether PKCS12 keystores should be generated for the user certificates
+     *
      * @return The secret.
      */
-    public Secret generateSecret()  {
+    public Secret generateSecret(boolean generatePkcs12Stores)  {
         if (authentication instanceof KafkaUserTlsClientAuthentication) {
             Map<String, String> data = new HashMap<>(5);
             data.put("ca.crt", caCert);
             data.put("user.key", userCertAndKey.keyAsBase64String());
             data.put("user.crt", userCertAndKey.certAsBase64String());
-            data.put("user.p12", userCertAndKey.keyStoreAsBase64String());
-            data.put("user.password", userCertAndKey.storePasswordAsBase64String());
+
+            if (generatePkcs12Stores) {
+                data.put("user.p12", userCertAndKey.keyStoreAsBase64String());
+                data.put("user.password", userCertAndKey.storePasswordAsBase64String());
+            }
+
             return createSecret(data);
         } else if (authentication instanceof KafkaUserScramSha512ClientAuthentication) {
             Map<String, String> data = new HashMap<>(2);
@@ -209,22 +215,23 @@ public class KafkaUserModel {
     /**
      * Manage certificates generation based on those already present in the Secrets
      *
-     * @param reconciliation The reconciliation
-     * @param certManager CertManager instance for handling certificates creation
-     * @param passwordGenerator PasswordGenerator instance for generating passwords
-     * @param clientsCaCertSecret The clients CA certificate Secret.
-     * @param clientsCaKeySecret The clients CA key Secret.
-     * @param userSecret Secret with the user certificate
-     * @param validityDays The number of days the certificate should be valid for.
-     * @param renewalDays The renewal days.
-     * @param maintenanceWindows List of configured maintenance windows
-     * @param clock The clock for supplying the reconciler with the time instant of each reconciliation cycle.
-     *              That time is used for checking maintenance windows
+     * @param reconciliation       The reconciliation
+     * @param certManager          CertManager instance for handling certificates creation
+     * @param passwordGenerator    PasswordGenerator instance for generating passwords
+     * @param clientsCaCertSecret  The clients CA certificate Secret.
+     * @param clientsCaKeySecret   The clients CA key Secret.
+     * @param userSecret           Secret with the user certificate
+     * @param validityDays         The number of days the certificate should be valid for.
+     * @param renewalDays          The renewal days.
+     * @param maintenanceWindows   List of configured maintenance windows
+     * @param clock                The clock for supplying the reconciler with the time instant of each reconciliation cycle.
+     *                             That time is used for checking maintenance windows
+     * @param generatePkcs12Stores Flag indicating whether PKCS12 keystores should be generated for the user certificates
      */
     @SuppressWarnings("checkstyle:BooleanExpressionComplexity")
     public void maybeGenerateCertificates(Reconciliation reconciliation, CertManager certManager, PasswordGenerator passwordGenerator,
                                           Secret clientsCaCertSecret, Secret clientsCaKeySecret, Secret userSecret, int validityDays,
-                                          int renewalDays, List<String> maintenanceWindows, Clock clock) {
+                                          int renewalDays, List<String> maintenanceWindows, Clock clock, boolean generatePkcs12Stores) {
         validateCACertificates(clientsCaCertSecret, clientsCaKeySecret);
 
         ClientsCa clientsCa = new ClientsCa(
@@ -233,7 +240,7 @@ public class KafkaUserModel {
                 passwordGenerator,
                 clientsCaCertSecret,
                 clientsCaKeySecret,
-                new CaConfig(validityDays, renewalDays, false)
+                new CaConfig(validityDays, renewalDays, false, generatePkcs12Stores)
         );
         this.caCert = clientsCa.currentCaCertBase64();
 

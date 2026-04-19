@@ -233,6 +233,9 @@ Enables or disables the features and functionality controlled by xref:ref-operat
 `STRIMZI_POD_SECURITY_PROVIDER_CLASS`:: Optional.
 Configuration for the pluggable `PodSecurityProvider` class, which can be used to provide the security context configuration for Pods and containers.
 
+`STRIMZI_PKCS12_KEYSTORE_GENERATION`:: Optional. Default is `true`.
+Controls automatic creation of PKCS12 stores in the Certificate Authority and Kafka User Secrets.
+
 [id='ref-operator-cluster-network-policy-{context}']
 == Restricting access to the Cluster Operator using network policy
 
