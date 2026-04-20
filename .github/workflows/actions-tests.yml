@@ -35,7 +35,7 @@ jobs:
           sudo install -m 0755 ./bin/act /usr/local/bin/act
           
       - name: Install yq
-        uses: strimzi/github-actions/.github/actions/dependencies/install-yq@main
+        uses: strimzi/github-actions/.github/actions/dependencies/install-yq@v1
         with:
           version: "v4.6.3"
 
@@ -121,7 +121,7 @@ jobs:
           sudo install -m 0755 ./bin/act /usr/local/bin/act
 
       - name: Install yq
-        uses: strimzi/github-actions/.github/actions/dependencies/install-yq@main
+        uses: strimzi/github-actions/.github/actions/dependencies/install-yq@v1
         with:
           version: "v4.6.3"
 
@@ -208,7 +208,7 @@ jobs:
           sudo install -m 0755 ./bin/act /usr/local/bin/act
 
       - name: Install yq
-        uses: strimzi/github-actions/.github/actions/dependencies/install-yq@main
+        uses: strimzi/github-actions/.github/actions/dependencies/install-yq@v1
         with:
           version: "v4.6.3"
 
@@ -305,7 +305,7 @@ jobs:
           sudo install -m 0755 ./bin/act /usr/local/bin/act
 
       - name: Install yq
-        uses: strimzi/github-actions/.github/actions/dependencies/install-yq@main
+        uses: strimzi/github-actions/.github/actions/dependencies/install-yq@v1
         with:
           version: "v4.6.3"
 
