@@ -93,28 +93,28 @@ jobs:
           checkDescription: "Test run for ${{ matrix.config.jobName }}"
 
       - name: Setup Java and Maven
-        uses: strimzi/github-actions/.github/actions/dependencies/setup-java@main
+        uses: strimzi/github-actions/.github/actions/dependencies/setup-java@v1
         with:
           javaVersion: "21"
 
       - name: Install yq
-        uses: strimzi/github-actions/.github/actions/dependencies/install-yq@main
+        uses: strimzi/github-actions/.github/actions/dependencies/install-yq@v1
         with:
           version: "v4.6.3"
           architecture: ${{ matrix.config.arch }}
 
       - name: Install Shellcheck
-        uses: strimzi/github-actions/.github/actions/dependencies/install-shellcheck@main
+        uses: strimzi/github-actions/.github/actions/dependencies/install-shellcheck@v1
         with:
           version: "0.11.0"
 
       - name: Install Helm
-        uses: strimzi/github-actions/.github/actions/dependencies/install-helm@main
+        uses: strimzi/github-actions/.github/actions/dependencies/install-helm@v1
         with:
           helmVersion: "v3.16.0"
 
       - name: Setup Kind cluster
-        uses: strimzi/github-actions/.github/actions/dependencies/setup-kind@main
+        uses: strimzi/github-actions/.github/actions/dependencies/setup-kind@v1
         with:
           architecture: ${{ matrix.config.arch }}
           controlNodes: 1
