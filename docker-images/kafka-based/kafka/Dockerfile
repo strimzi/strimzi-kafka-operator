@@ -7,8 +7,6 @@ ARG TARGETOS
 ARG TARGETARCH
 
 RUN microdnf --setopt=install_weak_deps=0 --setopt=tsflags=nodocs install -y \
-            # find and xargs are also used in our Kafka Connect Build Dockerfiles \
-            findutils \
             # Tar is used to unpack the downloaded binaries here in the Dockerfile \
             tar \
             # gzip is used to unpack the downloaded binaries here in the Dockerfile \
@@ -96,6 +94,7 @@ RUN microdnf --setopt=install_weak_deps=0 --setopt=tsflags=nodocs install -y \
             # hostname is used by Strimzi scripts to determine the Kafka node ID \
             hostname  \
             # xargs is used by Kafka's own shell scripts \
+            # find and xargs are also used in our Kafka Connect Build Dockerfiles \
             findutils \
             # Tar is also used in our Kafka Connect Build Dockerfiles \
             tar \
