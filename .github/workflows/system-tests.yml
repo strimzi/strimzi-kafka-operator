@@ -226,22 +226,22 @@ jobs:
           javaVersion: "21"
 
       - name: Install yq
-        uses: strimzi/github-actions/.github/actions/dependencies/install-yq@main
+        uses: strimzi/github-actions/.github/actions/dependencies/install-yq@v1
         with:
           version: "v4.6.3"
 
       - name: Install Shellcheck
-        uses: strimzi/github-actions/.github/actions/dependencies/install-shellcheck@main
+        uses: strimzi/github-actions/.github/actions/dependencies/install-shellcheck@v1
         with:
           version: "0.11.0"
 
       - name: Install Helm
-        uses: strimzi/github-actions/.github/actions/dependencies/install-helm@main
+        uses: strimzi/github-actions/.github/actions/dependencies/install-helm@v1
         with:
           helmVersion: "v3.16.0"
 
       - name: Build binaries using build-binaries action
-        uses: strimzi/github-actions/.github/actions/build/build-binaries@main
+        uses: strimzi/github-actions/.github/actions/build/build-binaries@v1
         with:
           mainJavaBuild: "true"
           artifactSuffix: "operators"
@@ -278,19 +278,19 @@ jobs:
           ref: ${{ needs.parse-params.outputs.ref }}
 
       - name: Install Docker
-        uses: strimzi/github-actions/.github/actions/dependencies/install-docker@main
+        uses: strimzi/github-actions/.github/actions/dependencies/install-docker@v1
 
       - name: Install yq
-        uses: strimzi/github-actions/.github/actions/dependencies/install-yq@main
+        uses: strimzi/github-actions/.github/actions/dependencies/install-yq@v1
         with:
           version: "v4.6.3"
 
       - name: Install Shellcheck
-        uses: strimzi/github-actions/.github/actions/dependencies/install-shellcheck@main
+        uses: strimzi/github-actions/.github/actions/dependencies/install-shellcheck@v1
         with:
           version: "0.11.0"
 
-      - uses: strimzi/github-actions/.github/actions/build/build-containers@main
+      - uses: strimzi/github-actions/.github/actions/build/build-containers@v1
         with:
           architecture: ${{ matrix.architecture }}
           imagesDir: "./docker-images/container-archives"

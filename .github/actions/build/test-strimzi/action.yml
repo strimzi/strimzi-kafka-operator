@@ -5,20 +5,20 @@ runs:
   using: "composite"
   steps:
     - name: Setup Java and Maven
-      uses: strimzi/github-actions/.github/actions/dependencies/setup-java@main
+      uses: strimzi/github-actions/.github/actions/dependencies/setup-java@v1
       with:
         javaVersion: "21"
 
     - name: Install Docker
-      uses: strimzi/github-actions/.github/actions/dependencies/install-docker@main
+      uses: strimzi/github-actions/.github/actions/dependencies/install-docker@v1
 
     - name: Install yq
-      uses: strimzi/github-actions/.github/actions/dependencies/install-yq@main
+      uses: strimzi/github-actions/.github/actions/dependencies/install-yq@v1
       with:
         version: "v4.6.3"
 
     - name: Install Helm
-      uses: strimzi/github-actions/.github/actions/dependencies/install-helm@main
+      uses: strimzi/github-actions/.github/actions/dependencies/install-helm@v1
       with:
         helmVersion: "v3.16.0"
 
@@ -31,7 +31,7 @@ runs:
           maven-
 
     - name: Setup Kind cluster
-      uses: strimzi/github-actions/.github/actions/dependencies/setup-kind@main
+      uses: strimzi/github-actions/.github/actions/dependencies/setup-kind@v1
       with:
         controlNodes: 1
         workerNodes: 3
