@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## 1.1.0
+
+* _Nothing here yet, but we will surely develop something new pretty soon_ 😉
+
+### Major changes, deprecations, and removals
+
+* n/a
+
+
 ## 1.0.0
 
 * Use the `v1` API in the Cluster Operator
