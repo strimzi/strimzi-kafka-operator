@@ -62,12 +62,12 @@ public class SystemTestCertBundle {
         this.caKeySecretName = caKeySecretName;
     }
 
-    private SystemTestCertBundle(final TestStorage testStorage) {
+    private SystemTestCertBundle(final String namespaceName, final String clusterName) {
         this.strimziRootCa = SystemTestCertGenerator.generateRootCaCertAndKey();
         this.intermediateCa = SystemTestCertGenerator.generateIntermediateCaCertAndKey(this.strimziRootCa);
         this.subjectDn = SystemTestCertGenerator.STRIMZI_END_SUBJECT;
         this.systemTestCa = SystemTestCertGenerator.generateEndEntityCertAndKey(
-            this.intermediateCa, SystemTestCertGenerator.retrieveKafkaBrokerSANs(testStorage));
+            this.intermediateCa, SystemTestCertGenerator.retrieveKafkaBrokerSANs(namespaceName, clusterName));
         this.bundle = SystemTestCertGenerator.exportToPemFiles(
             this.systemTestCa, this.intermediateCa, this.strimziRootCa);
         this.caCertSecretName = null;
@@ -80,11 +80,12 @@ public class SystemTestCertBundle {
      * (i.e., it has no CA basic constraint), so it cannot be used to sign further certificates.
      * Useful for custom broker cert chain tests.
      *
-     * @param testStorage the test storage providing broker SAN information
+     * @param namespaceName the Kubernetes namespace in which the Kafka cluster is deployed
+     * @param clusterName   the name of the Kafka cluster
      * @return a new SystemTestCertBundle with root → intermediate → end-entity (non-CA) hierarchy
      */
-    public static SystemTestCertBundle forBrokerEndEntityCertificate(final TestStorage testStorage) {
-        return new SystemTestCertBundle(testStorage);
+    public static SystemTestCertBundle forBrokerEndEntityCertificate(final String namespaceName, final String clusterName) {
+        return new SystemTestCertBundle(namespaceName, clusterName);
     }
 
     /**

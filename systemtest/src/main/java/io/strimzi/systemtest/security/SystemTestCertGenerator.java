@@ -7,7 +7,6 @@ package io.strimzi.systemtest.security;
 import io.skodjob.kubetest4j.security.CertAndKey;
 import io.skodjob.kubetest4j.security.CertAndKeyBuilder;
 import io.skodjob.kubetest4j.security.CertAndKeyFiles;
-import io.strimzi.systemtest.storage.TestStorage;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.x509.GeneralName;
 import org.bouncycastle.openssl.jcajce.JcaPEMWriter;
@@ -91,16 +90,17 @@ public class SystemTestCertGenerator {
 
     /**
      * Generates a broker certificate chain (root CA, intermediate CA, and broker end-entity cert)
-     * using SANs derived from the provided {@link TestStorage} context. The resulting certificates
+     * using SANs derived from the provided namespace and cluster name. The resulting certificates
      * are exported to PEM files and returned in a {@link CertAndKeyFiles} bundle.
      *
-     * @param testStorage Holds the test context (e.g. cluster name, namespace) used for building SANs.
+     * @param namespaceName the Kubernetes namespace in which the Kafka cluster is deployed
+     * @param clusterName   the name of the Kafka cluster
      * @return A {@link CertAndKeyFiles} object with the broker certificate and key in PEM format.
      */
-    public static CertAndKeyFiles createBrokerCertChain(final TestStorage testStorage) {
+    public static CertAndKeyFiles createBrokerCertChain(final String namespaceName, final String clusterName) {
         final CertAndKey root = generateRootCaCertAndKey();
         final CertAndKey intermediate = generateIntermediateCaCertAndKey(root);
-        final CertAndKey brokerCertAndKey = generateEndEntityCertAndKey(intermediate, retrieveKafkaBrokerSANs(testStorage));
+        final CertAndKey brokerCertAndKey = generateEndEntityCertAndKey(intermediate, retrieveKafkaBrokerSANs(namespaceName, clusterName));
 
         return exportToPemFiles(brokerCertAndKey);
     }
@@ -153,16 +153,17 @@ public class SystemTestCertGenerator {
      * Constructs a list of Subject Alternative Name (SAN) DNS entries commonly used
      * for Kafka broker certificates in tests.
      *
-     * @param testStorage   Holds test-related identifiers such as the cluster name and namespace.
+     * @param namespaceName the Kubernetes namespace in which the Kafka cluster is deployed
+     * @param clusterName   the name of the Kafka cluster
      * @return An array of ASN1Encodable objects representing DNS Subject Alternative Names for Kafka brokers.
      */
-    public static ASN1Encodable[] retrieveKafkaBrokerSANs(final TestStorage testStorage) {
+    public static ASN1Encodable[] retrieveKafkaBrokerSANs(final String namespaceName, final String clusterName) {
         return new ASN1Encodable[] {
             new GeneralName(GeneralName.dNSName, "*.127.0.0.1.nip.io"),
-            new GeneralName(GeneralName.dNSName, "*." + testStorage.getClusterName() + "-kafka-brokers"),
-            new GeneralName(GeneralName.dNSName, "*." + testStorage.getClusterName() + "-kafka-brokers." + testStorage.getNamespaceName() + ".svc"),
-            new GeneralName(GeneralName.dNSName, testStorage.getClusterName() + "-kafka-bootstrap"),
-            new GeneralName(GeneralName.dNSName, testStorage.getClusterName() + "-kafka-bootstrap." + testStorage.getNamespaceName() + ".svc")
+            new GeneralName(GeneralName.dNSName, "*." + clusterName + "-kafka-brokers"),
+            new GeneralName(GeneralName.dNSName, "*." + clusterName + "-kafka-brokers." + namespaceName + ".svc"),
+            new GeneralName(GeneralName.dNSName, clusterName + "-kafka-bootstrap"),
+            new GeneralName(GeneralName.dNSName, clusterName + "-kafka-bootstrap." + namespaceName + ".svc")
         };
     }
 
