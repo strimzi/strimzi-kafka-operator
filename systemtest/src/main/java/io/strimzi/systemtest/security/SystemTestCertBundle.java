@@ -10,6 +10,7 @@ import io.fabric8.kubernetes.client.dsl.base.PatchType;
 import io.skodjob.kubetest4j.resources.KubeResourceManager;
 import io.skodjob.kubetest4j.security.CertAndKey;
 import io.skodjob.kubetest4j.security.CertAndKeyFiles;
+import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.operator.common.model.Ca;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.storage.TestStorage;
@@ -143,6 +144,32 @@ public class SystemTestCertBundle {
         }
         KubeResourceManager.get().kubeClient().getClient()
             .secrets().inNamespace(testStorage.getNamespaceName()).withName(secret.getMetadata().getName()).patch(PatchContext.of(PatchType.JSON), secret);
+    }
+
+    /**
+     * Creates a SystemTestCertBundle for the ClusterCA.
+     *
+     * @param testStorage storage with information about test, which is used to create custom key-pair and related Secrets
+     * @return SystemTestCertBundle with prepared custom key-pair and related Secrets
+     */
+    public static SystemTestCertBundle forClusterCa(final TestStorage testStorage) {
+        return new SystemTestCertBundle(
+            "CN=" + testStorage.getTestName() + "ClusterCA",
+            KafkaResources.clusterCaCertificateSecretName(testStorage.getClusterName()),
+            KafkaResources.clusterCaKeySecretName(testStorage.getClusterName()));
+    }
+
+    /**
+     * Creates a SystemTestCertBundle for the ClientsCA.
+     *
+     * @param testStorage storage with information about test, which is used to create custom key-pair and related Secrets
+     * @return SystemTestCertBundle with prepared custom key-pair and related Secrets
+     */
+    public static SystemTestCertBundle forClientsCa(final TestStorage testStorage) {
+        return new SystemTestCertBundle(
+            "CN=" + testStorage.getTestName() + "ClientsCA",
+            KafkaResources.clientsCaCertificateSecretName(testStorage.getClusterName()),
+            KafkaResources.clientsCaKeySecretName(testStorage.getClusterName()));
     }
 
     public CertAndKey getStrimziRootCa() {
