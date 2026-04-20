@@ -6,14 +6,9 @@ See our [website](https://strimzi.io) for more details about the project.
 
 **!!! IMPORTANT !!!**
 
-**From Strimzi 0.51 on, we support only Kubernetes 1.30 and newer.**
-**Kubernetes 1.27, 1.28, and 1.29 are not supported anymore.**
-
-**Strimzi 0.49.0 introduced new API version `v1` to all Strimzi custom resources.**
-**Make sure to [upgrade the CRDs](#upgrading-your-clusters) as part of the Strimzi upgrade as well.**
-**The old API versions (`v1alpha1`, `v1beta1`, and `v1beta2`) will continue to be supported until Strimzi 1.0.0 / 0.52.0.**
-**Before upgrading to Strimzi 0.49.0 or newer, make sure that you update your `KafkaUser` resources to [use the `.spec.authorization.acls[]operations` field instead of the deprecated `.spec.authorization.acls[]operation`](https://strimzi.io/docs/operators/0.49.0/deploying.html#con-api-conversion-v1-str).**
-For more details about the migration to the `v1` API and CRD upgrades, see the [documentation](https://strimzi.io/docs/operators/0.51.0/deploying.html#assembly-api-conversion-str).
+**From Strimzi 1.0.0 on, we support only the `v1` API version of the Strimzi custom resources.**
+**The old API versions (`v1alpha1`, `v1beta1`, and `v1beta2`) are not supported anymore.**
+**Make sure to [upgrade the CRDs](https://strimzi.io/docs/operators/1.0.0/deploying.html#assembly-api-conversion-str) before upgrading to Strimzi 1.0.0 or newer.**
 
 ## Introduction
 
@@ -43,15 +38,15 @@ To upgrade the Strimzi operator, you can use the `helm upgrade` command.
 **The `helm upgrade` command does not upgrade the [Custom Resource Definitions](https://helm.sh/docs/chart_best_practices/custom_resource_definitions/).**
 **Update the CRDs manually after upgrading the Cluster Operator.**
 You can access the CRDs from our [GitHub release page](https://github.com/strimzi/strimzi-kafka-operator/releases) or find them in the `crd` subdirectory inside the Helm Chart.
-For example, when upgrading to Strimzi 0.51.0, you can do:
+For example, when upgrading to Strimzi 0.50.0, you can do:
 
 ```bash
-kubectl apply -f https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.51.0/strimzi-crds-0.51.0.yaml
+kubectl apply -f https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.50.0/strimzi-crds-0.50.0.yaml
 ```
 
 The Strimzi Operator understands how to run and upgrade between a set of Kafka versions.
 When specifying a new version in your config, check to make sure you aren't using any features that may have been removed.
-See [the upgrade guide](https://strimzi.io/docs/operators/latest/deploying.html#assembly-upgrading-kafka-versions-str) for more information.
+See [the upgrade guide](https://strimzi.io/docs/operators/latest/deploying.html#proc-upgrade-kafka-kraft-str) for more information.
 
 ### Documentation
 
@@ -107,7 +102,7 @@ the documentation for more details.
 | `watchAnyNamespace`                              | Watch the whole Kubernetes cluster (all namespaces)                             | `false`                      |
 | `defaultImageRegistry`                           | Default image registry for all the images                                       | `quay.io`                    |
 | `defaultImageRepository`                         | Default image registry for all the images                                       | `strimzi`                    |
-| `defaultImageTag`                                | Default image tag for all the images except Kafka Bridge                        | `0.51.0`                     |
+| `defaultImageTag`                                | Default image tag for all the images except Kafka Bridge                        | `1.0.0`                     |
 | `deploymentAnnotations`                          | Annotations for the operator deployment                                         | `{}`                         |
 | `deploymentLabels`                               | Labels for the operator deployment                                              | `{}`                         |
 | `image.registry`                                 | Override default Cluster Operator image registry                                | `nil`                        |
@@ -170,7 +165,7 @@ the documentation for more details.
 | `kafkaBridge.image.registry`                     | Override default Kafka Bridge image registry                                    | `quay.io`                    |
 | `kafkaBridge.image.repository`                   | Override default Kafka Bridge image repository                                  | `strimzi`                    |
 | `kafkaBridge.image.name`                         | Kafka Bridge image name                                                         | `kafka-bridge`               |
-| `kafkaBridge.image.tag`                          | Override default Kafka Bridge image tag                                         | `0.33.1`                     |
+| `kafkaBridge.image.tag`                          | Override default Kafka Bridge image tag                                         | `1.0.0`                      |
 | `kafkaBridge.image.digest`                       | Override Kafka Bridge image tag with digest                                     | `nil`                        |
 | `kafkaExporter.image.registry`                   | Override default Kafka Exporter image registry                                  | `nil`                        |
 | `kafkaExporter.image.repository`                 | Override default Kafka Exporter image repository                                | `nil`                        |
@@ -205,6 +200,7 @@ the documentation for more details.
 | `createGlobalResources`                          | Allow creation of cluster-scoped resources                                      | `true`                       |
 | `createAggregateRoles`                           | Create cluster roles that extend aggregated roles to use Strimzi CRDs           | `false`                      |
 | `tolerations`                                    | Add tolerations to Operator Pod                                                 | `[]`                         |
+| `topologySpreadConstraints`                      | Add topology spread constraints to Operator Pod                                 | `[]`                         |
 | `affinity`                                       | Add affinities to Operator Pod                                                  | `{}`                         |
 | `annotations`                                    | Add annotations to Operator Pod                                                 | `{}`                         |
 | `labels`                                         | Add labels to Operator Pod                                                      | `{}`                         |

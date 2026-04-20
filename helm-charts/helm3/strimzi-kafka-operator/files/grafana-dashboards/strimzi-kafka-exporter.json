@@ -1627,6 +1627,7 @@
   },
   "timezone": "browser",
   "title": "Strimzi Kafka Exporter",
+  "uid": "52a9e2042fa225a2",
   "version": 6,
   "weekStart": ""
 }
