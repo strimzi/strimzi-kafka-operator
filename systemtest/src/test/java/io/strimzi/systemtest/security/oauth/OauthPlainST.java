@@ -4,6 +4,11 @@
  */
 package io.strimzi.systemtest.security.oauth;
 
+import io.skodjob.annotations.Desc;
+import io.skodjob.annotations.Label;
+import io.skodjob.annotations.Step;
+import io.skodjob.annotations.SuiteDoc;
+import io.skodjob.annotations.TestDoc;
 import io.skodjob.kubetest4j.MetricsCollector;
 import io.skodjob.kubetest4j.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.bridge.KafkaBridgeResources;
@@ -27,6 +32,7 @@ import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.FIPSNotSupported;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.ParallelTest;
+import io.strimzi.systemtest.docs.TestDocsLabels;
 import io.strimzi.systemtest.kafkaclients.internalClients.BridgeClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.BridgeClientsBuilder;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaOauthClients;
@@ -77,6 +83,17 @@ import static io.strimzi.systemtest.TestTags.REGRESSION;
 @Tag(OAUTH)
 @Tag(REGRESSION)
 @FIPSNotSupported("Keycloak is not customized to run on FIPS env - https://github.com/strimzi/strimzi-kafka-operator/issues/8331")
+@SuiteDoc(
+    description = @Desc("Test suite for verifying OAuth 2.0 authentication using OAUTHBEARER and PLAIN SASL mechanisms over a plain (i.e., non-TLS) listener, including producer, consumer, KafkaConnect, KafkaMirrorMaker2, and KafkaBridge components with OAuth metrics validation."),
+    beforeTestSteps = {
+        @Step(value = "Deploy Cluster Operator, Keycloak, and necessary OAuth secrets.", expected = "Cluster Operator and Keycloak are deployed and ready."),
+        @Step(value = "Deploy Kafka cluster with custom OAuth authentication listener supporting OAUTHBEARER and PLAIN mechanisms, and OAuth metrics enabled.", expected = "Kafka cluster is deployed and ready with OAuth listener configured."),
+        @Step(value = "Verify OAuth listener configuration is propagated to Kafka broker logs.", expected = "Kafka broker logs contain expected OAuth configuration.")
+    },
+    labels = {
+        @Label(value = TestDocsLabels.SECURITY)
+    }
+)
 public class OauthPlainST extends OauthAbstractST {
     protected static final Logger LOGGER = LogManager.getLogger(OauthPlainST.class);
 
@@ -102,10 +119,17 @@ public class OauthPlainST extends OauthAbstractST {
 
     private MetricsCollector metricsCollector;
 
-    /**
-     * As an OAuth producer, I should be able to produce messages to the Kafka Broker,
-     * As an OAuth consumer, I should be able to consumer messages from the Kafka Broker."
-     */
+    @TestDoc(
+        description = @Desc("Test verifying that an OAuth producer can produce and an OAuth consumer can consume messages from Kafka using OAUTHBEARER mechanism, and that OAuth metrics are exposed by the Kafka brokers."),
+        steps = {
+            @Step(value = "Create a topic for the test.", expected = "Topic is created."),
+            @Step(value = "Deploy OAuth producer and consumer using OAUTHBEARER mechanism over plain listener.", expected = "Producer and consumer successfully authenticate and exchange messages."),
+            @Step(value = "Collect and verify OAuth metrics from Kafka broker Pods.", expected = "OAuth metrics are present in the collected metrics data.")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.SECURITY)
+        }
+    )
     @ParallelTest
     @Tag(METRICS)
     void testProducerConsumerWithOauthMetrics() {
@@ -140,6 +164,16 @@ public class OauthPlainST extends OauthAbstractST {
         );
     }
 
+    @TestDoc(
+        description = @Desc("Test verifying that an OAuth producer and consumer can authenticate using SASL PLAIN mechanism backed by OAuth token endpoint."),
+        steps = {
+            @Step(value = "Deploy OAuth producer using SASL PLAIN mechanism with audience credentials.", expected = "Producer successfully authenticates and sends messages."),
+            @Step(value = "Deploy OAuth consumer using SASL PLAIN mechanism with audience credentials.", expected = "Consumer successfully authenticates and receives messages.")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.SECURITY)
+        }
+    )
     @ParallelTest
     void testSaslPlainProducerConsumer() {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
@@ -181,9 +215,19 @@ public class OauthPlainST extends OauthAbstractST {
         ClientUtils.waitForClientSuccess(Environment.TEST_SUITE_NAMESPACE, audienceConsumerName, testStorage.getMessageCount());
     }
 
-    /**
-     * As an OAuth KafkaConnect, I should be able to sink messages from kafka Broker Topic.
-     */
+    @TestDoc(
+        description = @Desc("Test verifying that KafkaConnect with OAuth authentication can sink messages from a Kafka topic, and that OAuth metrics are exposed by the KafkaConnect component."),
+        steps = {
+            @Step(value = "Deploy OAuth producer and consumer and verify message exchange.", expected = "Messages are produced and consumed successfully."),
+            @Step(value = "Deploy KafkaConnect with custom OAuth OAUTHBEARER authentication over plain listener.", expected = "KafkaConnect is deployed and authenticates successfully."),
+            @Step(value = "Create a FileSink connector and verify messages are sinked.", expected = "Messages appear in the KafkaConnect file sink."),
+            @Step(value = "Verify OAuth configuration in KafkaConnect logs.", expected = "OAuth configuration is present in the logs."),
+            @Step(value = "Collect and verify OAuth metrics from KafkaConnect Pods.", expected = "OAuth metrics are present in the collected metrics data.")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.SECURITY)
+        }
+    )
     @ParallelTest
     @Tag(CONNECT)
     @Tag(CONNECT_COMPONENTS)
@@ -273,6 +317,20 @@ public class OauthPlainST extends OauthAbstractST {
         );
     }
 
+    @TestDoc(
+        description = @Desc("Test verifying that KafkaMirrorMaker2 with OAuth authentication can mirror messages between two Kafka clusters, and that OAuth metrics are exposed by the KafkaMirrorMaker2 component."),
+        steps = {
+            @Step(value = "Deploy OAuth producer and consumer and verify message exchange on source cluster.", expected = "Messages are produced and consumed successfully on source cluster."),
+            @Step(value = "Deploy target Kafka cluster with custom OAuth authentication.", expected = "Target Kafka cluster is deployed and ready."),
+            @Step(value = "Deploy KafkaMirrorMaker2 with custom OAuth OAUTHBEARER authentication for both source and target clusters.", expected = "KafkaMirrorMaker2 is deployed and authenticates successfully."),
+            @Step(value = "Verify OAuth configuration in KafkaMirrorMaker2 logs.", expected = "OAuth configuration is present in the logs."),
+            @Step(value = "Wait for messages to be mirrored to the target cluster and verify.", expected = "Messages are mirrored successfully to the target cluster."),
+            @Step(value = "Collect and verify OAuth metrics from KafkaMirrorMaker2 Pods.", expected = "OAuth metrics are present in the collected metrics data.")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.SECURITY)
+        }
+    )
     @IsolatedTest("Using more than one Kafka cluster in one Namespace")
     @Tag(MIRROR_MAKER2)
     @Tag(CONNECT_COMPONENTS)
@@ -466,9 +524,19 @@ public class OauthPlainST extends OauthAbstractST {
         );
     }
 
-    /**
-     * As a OAuth bridge, I should be able to send messages to bridge endpoint.
-     */
+    @TestDoc(
+        description = @Desc("Test verifying that KafkaBridge with OAuth authentication can produce messages to a Kafka topic via the bridge HTTP endpoint, and that OAuth metrics are exposed by the KafkaBridge component."),
+        steps = {
+            @Step(value = "Deploy OAuth producer and consumer and verify message exchange.", expected = "Messages are produced and consumed successfully."),
+            @Step(value = "Deploy KafkaBridge with custom OAuth OAUTHBEARER authentication over plain listener.", expected = "KafkaBridge is deployed and authenticates successfully."),
+            @Step(value = "Verify OAuth configuration in KafkaBridge logs.", expected = "OAuth configuration is present in the logs."),
+            @Step(value = "Produce messages via bridge HTTP endpoint and verify delivery.", expected = "Messages are produced via the bridge and delivered successfully."),
+            @Step(value = "Collect and verify OAuth metrics from KafkaBridge Pods.", expected = "OAuth metrics are present in the collected metrics data.")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.SECURITY)
+        }
+    )
     @ParallelTest
     @Tag(BRIDGE)
     @Tag(METRICS)

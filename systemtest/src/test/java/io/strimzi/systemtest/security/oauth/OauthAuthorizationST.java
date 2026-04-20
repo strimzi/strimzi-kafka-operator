@@ -6,6 +6,11 @@ package io.strimzi.systemtest.security.oauth;
 
 import io.fabric8.kubernetes.api.model.SecretVolumeSourceBuilder;
 import io.fabric8.kubernetes.api.model.VolumeMountBuilder;
+import io.skodjob.annotations.Desc;
+import io.skodjob.annotations.Label;
+import io.skodjob.annotations.Step;
+import io.skodjob.annotations.SuiteDoc;
+import io.skodjob.annotations.TestDoc;
 import io.skodjob.kubetest4j.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.common.template.AdditionalVolumeBuilder;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
@@ -15,6 +20,7 @@ import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.FIPSNotSupported;
 import io.strimzi.systemtest.annotations.ParallelTest;
+import io.strimzi.systemtest.docs.TestDocsLabels;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaOauthClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaOauthClientsBuilder;
 import io.strimzi.systemtest.keycloak.KeycloakInstance;
@@ -43,6 +49,17 @@ import static io.strimzi.systemtest.TestTags.REGRESSION;
 @Tag(REGRESSION)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @FIPSNotSupported("Keycloak is not customized to run on FIPS env - https://github.com/strimzi/strimzi-kafka-operator/issues/8331")
+@SuiteDoc(
+    description = @Desc("Test suite for verifying OAuth 2.0 authorization using Keycloak as an external authorizer with OAUTHBEARER mechanism over a TLS listener, validating topic-level access control policies for different client teams."),
+    beforeTestSteps = {
+        @Step(value = "Deploy Cluster Operator, Keycloak, and necessary OAuth secrets.", expected = "Cluster Operator and Keycloak are deployed and ready."),
+        @Step(value = "Deploy Kafka cluster with custom OAuth authentication and Keycloak authorization over TLS listener.", expected = "Kafka cluster is deployed and ready with OAuth authentication and Keycloak authorization configured."),
+        @Step(value = "Create TLS users for team-a-client and team-b-client.", expected = "TLS users are created and ready.")
+    },
+    labels = {
+        @Label(value = TestDocsLabels.SECURITY)
+    }
+)
 public class OauthAuthorizationST extends OauthAbstractST {
     protected static final Logger LOGGER = LogManager.getLogger(OauthAuthorizationST.class);
 
@@ -65,9 +82,16 @@ public class OauthAuthorizationST extends OauthAbstractST {
 
     private static final String TEST_REALM = "kafka-authz";
 
-    /**
-     * As a member of team A, I should be able to read and write to all topics starting with a-.
-     */
+    @TestDoc(
+        description = @Desc("Test verifying that team A OAuth client can produce and consume messages on topics starting with 'a-' using OAUTHBEARER mechanism over TLS listener."),
+        steps = {
+            @Step(value = "Create a topic starting with 'a-' prefix.", expected = "Topic is created."),
+            @Step(value = "Deploy team A OAuth producer and consumer over TLS.", expected = "Producer and consumer successfully authenticate and exchange messages.")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.SECURITY)
+        }
+    )
     @ParallelTest
     @Order(1)
     void smokeTestForClients() {
@@ -98,10 +122,18 @@ public class OauthAuthorizationST extends OauthAbstractST {
         ClientUtils.waitForClientSuccess(Environment.TEST_SUITE_NAMESPACE, teamAConsumerName, testStorage.getMessageCount());
     }
 
-    /**
-     * As a member of team A, I should be able to write to topics that starts with x- on any cluster and " +
-     * and should also write and read to topics starting with 'a-'.
-     */
+    @TestDoc(
+        description = @Desc("Test verifying that team A OAuth client is denied writing to unauthorized topics, can write to existing topics starting with 'x-', and can write to topics starting with 'a-'."),
+        steps = {
+            @Step(value = "Attempt to produce messages to an unauthorized topic as team A.", expected = "Producer fails due to authorization denial."),
+            @Step(value = "Attempt to produce messages to a non-existent topic starting with 'x-' as team A.", expected = "Producer fails because team A cannot create 'x-' topics."),
+            @Step(value = "Create topic starting with 'x-' and produce messages as team A.", expected = "Producer successfully sends messages to the existing 'x-' topic."),
+            @Step(value = "Produce messages to a topic starting with 'a-' as team A.", expected = "Producer successfully sends messages to the 'a-' topic.")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.SECURITY)
+        }
+    )
     @ParallelTest
     @Order(2)
     void testTeamAWriteToTopic() {
@@ -164,9 +196,17 @@ public class OauthAuthorizationST extends OauthAbstractST {
         ClientUtils.waitForClientSuccess(Environment.TEST_SUITE_NAMESPACE, teamAProducerName, testStorage.getMessageCount());
     }
 
-    /**
-     * As a member of team A, I should be able only read from consumer that starts with a_.
-     */
+    @TestDoc(
+        description = @Desc("Test verifying that team A OAuth client can only consume messages using a consumer group starting with 'a-', and is denied when using an unauthorized consumer group."),
+        steps = {
+            @Step(value = "Produce messages to a topic starting with 'a-' as team A.", expected = "Messages are produced successfully."),
+            @Step(value = "Attempt to consume messages using an unauthorized consumer group.", expected = "Consumer fails due to authorization denial."),
+            @Step(value = "Consume messages using a consumer group starting with 'a-'.", expected = "Consumer successfully receives messages.")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.SECURITY)
+        }
+    )
     @ParallelTest
     @Order(3)
     void testTeamAReadFromTopic() {
@@ -217,9 +257,16 @@ public class OauthAuthorizationST extends OauthAbstractST {
         ClientUtils.waitForClientSuccess(Environment.TEST_SUITE_NAMESPACE, teamAProducerName, testStorage.getMessageCount());
     }
 
-    /**
-     * As a member of team B, I should be able to write and read from topics that starts with b-.
-     */
+    @TestDoc(
+        description = @Desc("Test verifying that team B OAuth client is denied writing to unauthorized topics, and can write and read from topics starting with 'b-'."),
+        steps = {
+            @Step(value = "Attempt to produce messages to an unauthorized topic as team B.", expected = "Producer fails due to authorization denial."),
+            @Step(value = "Produce and consume messages on a topic starting with 'b-' as team B.", expected = "Producer and consumer successfully exchange messages on the 'b-' topic.")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.SECURITY)
+        }
+    )
     @ParallelTest
     @Order(4)
     void testTeamBWriteToTopic() {
@@ -263,9 +310,16 @@ public class OauthAuthorizationST extends OauthAbstractST {
         ClientUtils.waitForClientsSuccess(Environment.TEST_SUITE_NAMESPACE, teamBConsumerName, teamBProducerName, testStorage.getMessageCount());
     }
 
-    /**
-     * As a member of team A, I can write to topics starting with 'x-' and as a member of team B can read from topics starting with 'x-'.
-     */
+    @TestDoc(
+        description = @Desc("Test verifying that team A OAuth client can write to topics starting with 'x-' and team B OAuth client can read from those topics, validating cross-team topic access policies."),
+        steps = {
+            @Step(value = "Create a topic starting with 'x-' and produce messages as team A.", expected = "Producer successfully sends messages to the 'x-' topic."),
+            @Step(value = "Consume messages from the 'x-' topic as team B.", expected = "Consumer successfully receives messages from the 'x-' topic.")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.SECURITY)
+        }
+    )
     @ParallelTest
     @Order(5)
     void testTeamAWriteToTopicStartingWithXAndTeamBReadFromTopicStartingWithX() {
