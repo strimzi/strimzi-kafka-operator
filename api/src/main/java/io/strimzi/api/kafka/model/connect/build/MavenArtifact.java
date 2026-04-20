@@ -92,6 +92,7 @@ public class MavenArtifact extends Artifact {
 
     @Description("Scope threshold for including dependencies for the artifact. " +
             "Valid values are `compile`, `provided`, `runtime`, `test`, and `system`. " +
+            "When not specified, all transitive dependencies are included. " +
             "Applicable to the `maven` artifact type only.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public MavenArtifactIncludeScope getIncludeScope() {
