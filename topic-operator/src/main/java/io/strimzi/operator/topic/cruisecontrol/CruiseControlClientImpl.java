@@ -239,16 +239,16 @@ public class CruiseControlClientImpl implements CruiseControlClient {
                 try (var caInput = new ByteArrayInputStream(sslCertificate)) {
                     ca = cf.generateCertificate(caInput);
                 }
-                
-                // create a P12 keystore containing our trusted chain
-                KeyStore keyStore = KeyStore.getInstance("PKCS12");
+
+                // create an in-memory KeyStore using the JVM's default keystore type containing our trusted chain
+                KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
                 keyStore.load(null, null);
                 keyStore.setCertificateEntry("ca", ca);
-                
+
                 // create a trust manager that trusts the chain in our keystore
                 TrustManagerFactory tmf = TrustManagerFactory.getInstance("PKIX");
                 tmf.init(keyStore);
-                
+
                 // create an SSL context that uses our trust manager
                 SSLContext sslContext = SSLContext.getInstance("TLS");
                 sslContext.init(null, tmf.getTrustManagers(), null);
