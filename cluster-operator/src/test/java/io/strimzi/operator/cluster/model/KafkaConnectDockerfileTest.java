@@ -11,6 +11,7 @@ import io.strimzi.api.kafka.model.connect.build.JarArtifact;
 import io.strimzi.api.kafka.model.connect.build.JarArtifactBuilder;
 import io.strimzi.api.kafka.model.connect.build.MavenArtifact;
 import io.strimzi.api.kafka.model.connect.build.MavenArtifactBuilder;
+import io.strimzi.api.kafka.model.connect.build.MavenArtifactIncludeScope;
 import io.strimzi.api.kafka.model.connect.build.OtherArtifact;
 import io.strimzi.api.kafka.model.connect.build.OtherArtifactBuilder;
 import io.strimzi.api.kafka.model.connect.build.PluginBuilder;
@@ -707,7 +708,7 @@ public class KafkaConnectDockerfileTest {
                 .withGroup("g1")
                 .withArtifact("a1")
                 .withVersion("v1")
-                .withIncludeScope(io.strimzi.api.kafka.model.connect.build.MavenArtifactIncludeScope.RUNTIME)
+                .withIncludeScope(MavenArtifactIncludeScope.RUNTIME)
                 .build();
 
         Build connectBuild = new BuildBuilder()
@@ -753,7 +754,7 @@ public class KafkaConnectDockerfileTest {
                 .withArtifact("a1")
                 .withVersion("v1")
                 .withInsecure(true)
-                .withIncludeScope(io.strimzi.api.kafka.model.connect.build.MavenArtifactIncludeScope.RUNTIME)
+                .withIncludeScope(MavenArtifactIncludeScope.RUNTIME)
                 .build();
 
         Build connectBuild = new BuildBuilder()

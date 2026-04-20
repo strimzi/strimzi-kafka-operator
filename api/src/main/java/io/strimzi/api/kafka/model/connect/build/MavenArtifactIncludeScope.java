@@ -10,8 +10,7 @@ import com.fasterxml.jackson.annotation.JsonValue;
 import java.util.Locale;
 
 /**
- * Enum defining the supported Maven dependency include scopes for dependency
- * inclusion
+ * Enum defining the supported Maven dependency include scopes for dependency inclusion
  */
 public enum MavenArtifactIncludeScope {
     COMPILE,
