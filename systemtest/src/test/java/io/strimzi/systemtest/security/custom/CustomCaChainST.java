@@ -109,7 +109,7 @@ public class CustomCaChainST extends AbstractST {
         LOGGER.info("Testing that client with Clients-CA-Leaf-signed certificate can connect");
         final String leafSignedClientName = "leaf-ca-signed-client";
         final CertAndKey leafSignedClient = generateEndEntityCertAndKey(clientsCa.getSystemTestCa(),
-            SystemTestCertGenerator.retrieveKafkaBrokerSANs(testStorage),
+            SystemTestCertGenerator.retrieveKafkaBrokerSANs(testStorage.getNamespaceName(), testStorage.getClusterName()),
             "C=CZ, L=Prague, O=Strimzi, CN=" + leafSignedClientName);
         final CertAndKeyFiles leafSignedClientFiles = exportToPemFiles(leafSignedClient);
         SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(),
@@ -128,7 +128,7 @@ public class CustomCaChainST extends AbstractST {
         LOGGER.info("Testing that client with Root-CA-signed certificate is rejected");
         final String rootSignedClientName = "root-ca-signed-client";
         final CertAndKey rootSignedClient = generateEndEntityCertAndKey(clientsCa.getStrimziRootCa(),
-            SystemTestCertGenerator.retrieveKafkaBrokerSANs(testStorage),
+            SystemTestCertGenerator.retrieveKafkaBrokerSANs(testStorage.getNamespaceName(), testStorage.getClusterName()),
             "C=CZ, L=Prague, O=Strimzi, CN=" + rootSignedClientName);
         final CertAndKeyFiles rootSignedClientFiles = exportToPemFiles(rootSignedClient);
         SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(),
@@ -147,7 +147,7 @@ public class CustomCaChainST extends AbstractST {
         LOGGER.info("Testing that client with Intermediate-CA-signed certificate is rejected");
         final String intermediateSignedClientName = "intermediate-ca-signed-client";
         final CertAndKey intermediateSignedClient = generateEndEntityCertAndKey(clientsCa.getIntermediateCa(),
-            SystemTestCertGenerator.retrieveKafkaBrokerSANs(testStorage),
+            SystemTestCertGenerator.retrieveKafkaBrokerSANs(testStorage.getNamespaceName(), testStorage.getClusterName()),
             "C=CZ, L=Prague, O=Strimzi, CN=" + intermediateSignedClientName);
         final CertAndKeyFiles intermediateSignedClientFiles = exportToPemFiles(intermediateSignedClient);
         SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(),
@@ -332,7 +332,7 @@ public class CustomCaChainST extends AbstractST {
         LOGGER.info("Testing that client with Leaf-CA-signed certificate can connect on port 9091");
         final String leafSignedClientName = "leaf-ca-signed-client";
         final CertAndKey leafSignedClient = generateEndEntityCertAndKey(clusterCa.getSystemTestCa(),
-            SystemTestCertGenerator.retrieveKafkaBrokerSANs(testStorage),
+            SystemTestCertGenerator.retrieveKafkaBrokerSANs(testStorage.getNamespaceName(), testStorage.getClusterName()),
             "C=CZ, L=Prague, O=Strimzi, CN=" + leafSignedClientName);
         final CertAndKeyFiles leafSignedClientFiles = exportToPemFiles(leafSignedClient);
         SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(),
@@ -352,7 +352,7 @@ public class CustomCaChainST extends AbstractST {
         LOGGER.info("Testing that client with Root-CA-signed certificate is rejected on port 9091");
         final String rootSignedClientName = "root-ca-signed-client";
         final CertAndKey rootSignedClient = generateEndEntityCertAndKey(clusterCa.getStrimziRootCa(),
-            SystemTestCertGenerator.retrieveKafkaBrokerSANs(testStorage),
+            SystemTestCertGenerator.retrieveKafkaBrokerSANs(testStorage.getNamespaceName(), testStorage.getClusterName()),
             "C=CZ, L=Prague, O=Strimzi, CN=" + rootSignedClientName);
         final CertAndKeyFiles rootSignedClientFiles = exportToPemFiles(rootSignedClient);
         SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(),
@@ -372,7 +372,7 @@ public class CustomCaChainST extends AbstractST {
         LOGGER.info("Testing that client with Intermediate-CA-signed certificate is rejected on port 9091");
         final String intermediateSignedClientName = "intermediate-ca-signed-client";
         final CertAndKey intermediateSignedClient = generateEndEntityCertAndKey(clusterCa.getIntermediateCa(),
-            SystemTestCertGenerator.retrieveKafkaBrokerSANs(testStorage),
+            SystemTestCertGenerator.retrieveKafkaBrokerSANs(testStorage.getNamespaceName(), testStorage.getClusterName()),
             "C=CZ, L=Prague, O=Strimzi, CN=" + intermediateSignedClientName);
         final CertAndKeyFiles intermediateSignedClientFiles = exportToPemFiles(intermediateSignedClient);
         SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(),
