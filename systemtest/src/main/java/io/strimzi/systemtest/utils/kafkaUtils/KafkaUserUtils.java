@@ -27,6 +27,7 @@ import org.apache.logging.log4j.Logger;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
@@ -271,7 +272,7 @@ public class KafkaUserUtils {
      */
     public static int getValidityDaysOfCertificate(String certificate) {
         try {
-            byte[] certBytes = Util.decodeFromBase64(certificate).getBytes();
+            byte[] certBytes = Util.decodeFromBase64(certificate).getBytes(StandardCharsets.UTF_8);
             CertificateFactory cf = CertificateFactory.getInstance("X.509");
             X509Certificate cert = (X509Certificate) cf.generateCertificate(new ByteArrayInputStream(certBytes));
 
