@@ -5,6 +5,7 @@
 package io.strimzi.kafka.api.conversion.v1.cli;
 
 import io.strimzi.api.annotations.ApiVersion;
+import io.strimzi.api.kafka.model.common.Constants;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -35,31 +36,31 @@ public abstract class AbstractCommand implements Runnable {
     );
 
     protected static final Map<String, String> STRIMZI_GROUPS = Map.of(
-            "Kafka", "kafka.strimzi.io",
-            "KafkaConnect", "kafka.strimzi.io",
-            "KafkaBridge", "kafka.strimzi.io",
-            "KafkaMirrorMaker2", "kafka.strimzi.io",
-            "KafkaTopic", "kafka.strimzi.io",
-            "KafkaUser", "kafka.strimzi.io",
-            "KafkaConnector", "kafka.strimzi.io",
-            "KafkaRebalance", "kafka.strimzi.io",
-            "KafkaNodePool", "kafka.strimzi.io",
-            "StrimziPodSet", "core.strimzi.io"
+            "Kafka", Constants.RESOURCE_GROUP_NAME,
+            "KafkaConnect", Constants.RESOURCE_GROUP_NAME,
+            "KafkaBridge", Constants.RESOURCE_GROUP_NAME,
+            "KafkaMirrorMaker2", Constants.RESOURCE_GROUP_NAME,
+            "KafkaTopic", Constants.RESOURCE_GROUP_NAME,
+            "KafkaUser", Constants.RESOURCE_GROUP_NAME,
+            "KafkaConnector", Constants.RESOURCE_GROUP_NAME,
+            "KafkaRebalance", Constants.RESOURCE_GROUP_NAME,
+            "KafkaNodePool", Constants.RESOURCE_GROUP_NAME,
+            "StrimziPodSet", Constants.RESOURCE_CORE_GROUP_NAME
     );
 
     // Mapping between kinds and the CRD names used to get the right CRD from the Kubernetes API
     @SuppressWarnings("SpellCheckingInspection")
     protected static final Map<String, String> CRD_NAMES = Map.of(
-            "Kafka", "kafkas.kafka.strimzi.io",
-            "KafkaConnect", "kafkaconnects.kafka.strimzi.io",
-            "KafkaBridge", "kafkabridges.kafka.strimzi.io",
-            "KafkaMirrorMaker2", "kafkamirrormaker2s.kafka.strimzi.io",
-            "KafkaTopic", "kafkatopics.kafka.strimzi.io",
-            "KafkaUser", "kafkausers.kafka.strimzi.io",
-            "KafkaConnector", "kafkaconnectors.kafka.strimzi.io",
-            "KafkaRebalance", "kafkarebalances.kafka.strimzi.io",
-            "KafkaNodePool", "kafkanodepools.kafka.strimzi.io",
-            "StrimziPodSet", "strimzipodsets.core.strimzi.io"
+            "Kafka", "kafkas." + Constants.RESOURCE_GROUP_NAME,
+            "KafkaConnect", "kafkaconnects." + Constants.RESOURCE_GROUP_NAME,
+            "KafkaBridge", "kafkabridges." + Constants.RESOURCE_GROUP_NAME,
+            "KafkaMirrorMaker2", "kafkamirrormaker2s." + Constants.RESOURCE_GROUP_NAME,
+            "KafkaTopic", "kafkatopics." + Constants.RESOURCE_GROUP_NAME,
+            "KafkaUser", "kafkausers." + Constants.RESOURCE_GROUP_NAME,
+            "KafkaConnector", "kafkaconnectors." + Constants.RESOURCE_GROUP_NAME,
+            "KafkaRebalance", "kafkarebalances." + Constants.RESOURCE_GROUP_NAME,
+            "KafkaNodePool", "kafkanodepools." + Constants.RESOURCE_GROUP_NAME,
+            "StrimziPodSet", "strimzipodsets." + Constants.RESOURCE_CORE_GROUP_NAME
     );
 
     @CommandLine.Spec

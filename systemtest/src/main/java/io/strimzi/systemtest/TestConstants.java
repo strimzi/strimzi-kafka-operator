@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest;
 
+import io.strimzi.api.kafka.model.common.Constants;
 import io.strimzi.test.TestUtils;
 
 import java.time.Duration;
@@ -356,5 +357,5 @@ public interface TestConstants {
     /**
      * API version
      */
-    String V1_BETA_2_API_VERSION = "kafka.strimzi.io/v1beta2";
+    String V1_BETA_2_API_VERSION = Constants.RESOURCE_GROUP_NAME + "/v1beta2";
 }

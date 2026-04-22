@@ -17,6 +17,7 @@ import io.skodjob.annotations.TestDoc;
 import io.skodjob.kubetest4j.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.common.CertSecretSource;
 import io.strimzi.api.kafka.model.common.ConnectorState;
+import io.strimzi.api.kafka.model.common.Constants;
 import io.strimzi.api.kafka.model.common.PasswordSecretSource;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
@@ -544,7 +545,7 @@ class MirrorMaker2ST extends AbstractST {
 
         LOGGER.info("Scaling subresource replicas to {}", scaleTo);
 
-        KubeResourceManager.get().kubeCmdClient().inNamespace(testStorage.getNamespaceName()).scaleByName(KafkaMirrorMaker2.RESOURCE_KIND + ".kafka.strimzi.io", testStorage.getClusterName(), scaleTo);
+        KubeResourceManager.get().kubeCmdClient().inNamespace(testStorage.getNamespaceName()).scaleByName(KafkaMirrorMaker2.RESOURCE_KIND + "." + Constants.RESOURCE_GROUP_NAME, testStorage.getClusterName(), scaleTo);
         RollingUpdateUtils.waitForComponentAndPodsReady(testStorage.getNamespaceName(), testStorage.getMM2Selector(), scaleTo);
 
         LOGGER.info("Check if replicas is set to {}, naming prefix should be same and observed generation higher", scaleTo);

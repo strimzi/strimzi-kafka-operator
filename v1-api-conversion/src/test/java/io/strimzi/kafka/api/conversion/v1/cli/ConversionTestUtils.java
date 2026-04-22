@@ -15,6 +15,7 @@ import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.Updatable;
 import io.strimzi.api.annotations.ApiVersion;
+import io.strimzi.api.kafka.model.common.Constants;
 import io.strimzi.test.CrdUtils;
 
 import java.util.List;
@@ -131,23 +132,23 @@ public class ConversionTestUtils {
     }
 
     public static MixedOperation<GenericKubernetesResource, GenericKubernetesResourceList, Resource<GenericKubernetesResource>> kafkaOperation(KubernetesClient client) {
-        return operation(client, "Kafka", "kafka.strimzi.io", ApiVersion.V1BETA2);
+        return operation(client, "Kafka", Constants.RESOURCE_GROUP_NAME, ApiVersion.V1BETA2);
     }
 
     public static MixedOperation<GenericKubernetesResource, GenericKubernetesResourceList, Resource<GenericKubernetesResource>> kafkaV1Operation(KubernetesClient client) {
-        return operation(client, "Kafka", "kafka.strimzi.io", ApiVersion.V1);
+        return operation(client, "Kafka", Constants.RESOURCE_GROUP_NAME, ApiVersion.V1);
     }
 
     public static MixedOperation<GenericKubernetesResource, GenericKubernetesResourceList, Resource<GenericKubernetesResource>> connectOperation(KubernetesClient client) {
-        return operation(client, "KafkaConnect", "kafka.strimzi.io", ApiVersion.V1BETA2);
+        return operation(client, "KafkaConnect", Constants.RESOURCE_GROUP_NAME, ApiVersion.V1BETA2);
     }
 
     public static MixedOperation<GenericKubernetesResource, GenericKubernetesResourceList, Resource<GenericKubernetesResource>> connectV1Operation(KubernetesClient client) {
-        return operation(client, "KafkaConnect", "kafka.strimzi.io", ApiVersion.V1);
+        return operation(client, "KafkaConnect", Constants.RESOURCE_GROUP_NAME, ApiVersion.V1);
     }
 
     public static MixedOperation<GenericKubernetesResource, GenericKubernetesResourceList, Resource<GenericKubernetesResource>> bridgeOperation(KubernetesClient client) {
-        return operation(client, "KafkaBridge", "kafka.strimzi.io", ApiVersion.V1BETA2);
+        return operation(client, "KafkaBridge", Constants.RESOURCE_GROUP_NAME, ApiVersion.V1BETA2);
     }
 
     public static <T> T genericToTyped(GenericKubernetesResource genericResource, Class<T> type)    {

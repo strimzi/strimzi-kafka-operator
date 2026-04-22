@@ -11,6 +11,7 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
+import io.strimzi.api.kafka.model.common.Constants;
 import io.strimzi.api.kafka.model.connect.KafkaConnect;
 import io.strimzi.api.kafka.model.connect.KafkaConnectBuilder;
 import io.strimzi.api.kafka.model.kafka.Kafka;
@@ -88,7 +89,7 @@ public class CrdUpgradeCommandIT {
                     .endSpec()
                     .build();
 
-            op.inNamespace(NAMESPACE).resource(ConversionTestUtils.typedToGeneric(kafka1, "kafka.strimzi.io/v1beta2")).create();
+            op.inNamespace(NAMESPACE).resource(ConversionTestUtils.typedToGeneric(kafka1, Constants.RESOURCE_GROUP_NAME + "/v1beta2")).create();
 
             CommandLine cmd = new CommandLine(new EntryCommand());
             StringWriter sw = new StringWriter();
@@ -152,7 +153,7 @@ public class CrdUpgradeCommandIT {
                     .endSpec()
                     .build();
 
-            op.inNamespace(NAMESPACE).resource(ConversionTestUtils.typedToGeneric(connect1, "kafka.strimzi.io/v1beta2")).create();
+            op.inNamespace(NAMESPACE).resource(ConversionTestUtils.typedToGeneric(connect1, Constants.RESOURCE_GROUP_NAME + "/v1beta2")).create();
 
             CommandLine cmd = new CommandLine(new EntryCommand());
             StringWriter sw = new StringWriter();

@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.client.ConfigBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.strimzi.api.annotations.ApiVersion;
+import io.strimzi.api.kafka.model.common.Constants;
 import io.strimzi.kafka.api.conversion.v1.cli.ConversionTestUtils;
 import io.strimzi.test.CrdUtils;
 import org.junit.jupiter.api.AfterAll;
@@ -37,13 +38,13 @@ public class UtilsIT {
 
     @Test
     public void testMissingVersion() {
-        RuntimeException ex = Assertions.assertThrows(RuntimeException.class, () -> Utils.checkCrdsHaveApiVersions(client, List.of("kafkas.kafka.strimzi.io"), ApiVersion.V1BETA2, ApiVersion.V1));
-        assertThat(ex.getMessage(), containsString("CRD kafkas.kafka.strimzi.io is missing at least one of the required API versions [v1beta2, v1]"));
+        RuntimeException ex = Assertions.assertThrows(RuntimeException.class, () -> Utils.checkCrdsHaveApiVersions(client, List.of("kafkas." + Constants.RESOURCE_GROUP_NAME), ApiVersion.V1BETA2, ApiVersion.V1));
+        assertThat(ex.getMessage(), containsString("CRD kafkas." + Constants.RESOURCE_GROUP_NAME + " is missing at least one of the required API versions [v1beta2, v1]"));
     }
 
     @Test
     public void testMissingCrd() {
-        RuntimeException ex = Assertions.assertThrows(RuntimeException.class, () -> Utils.checkCrdsHaveApiVersions(client, List.of("kafkaconnects.kafka.strimzi.io"), ApiVersion.V1BETA2, ApiVersion.V1));
-        assertThat(ex.getMessage(), containsString("CRD kafkaconnects.kafka.strimzi.io is missing"));
+        RuntimeException ex = Assertions.assertThrows(RuntimeException.class, () -> Utils.checkCrdsHaveApiVersions(client, List.of("kafkaconnects." + Constants.RESOURCE_GROUP_NAME), ApiVersion.V1BETA2, ApiVersion.V1));
+        assertThat(ex.getMessage(), containsString("CRD kafkaconnects." + Constants.RESOURCE_GROUP_NAME + " is missing"));
     }
 }
