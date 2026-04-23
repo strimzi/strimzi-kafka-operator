@@ -158,7 +158,7 @@ public class KafkaConnectDockerfile {
                     if (Boolean.TRUE.equals(mvn.getInsecure()))    {
                         // Insecure download => disables TLS certificate checks in curl and Maven commands
                         cmd = run("curl", "-f", "-k", "-L", "--create-dirs", "--output", "/tmp/" + artifactDir + "/pom.xml", assembleResourceUrl(repo, mvn, "pom"))
-                                .andRun("echo", settingsXml).redirectTo(settingsFile)
+                                .andRun("echo", settingsXml).redirectTo(settingsFile) // Create the settings file
                                 .andRun("mvn", "dependency:copy-dependencies", "-s", settingsFile,
                                         "-DoutputDirectory=/tmp/artifacts/" + artifactDir, includeScopeParam, "-Daether.connector.https.securityMode=insecure",
                                         "-Dmaven.wagon.http.ssl.insecure=true", "-Dmaven.wagon.http.ssl.allowall=true",
@@ -168,7 +168,7 @@ public class KafkaConnectDockerfile {
                                         assembleResourceUrl(repo, mvn, "jar"));
                     } else {
                         cmd = run("curl", "-f", "-L", "--create-dirs", "--output", "/tmp/" + artifactDir + "/pom.xml", assembleResourceUrl(repo, mvn, "pom"))
-                                .andRun("echo", settingsXml).redirectTo(settingsFile)
+                                .andRun("echo", settingsXml).redirectTo(settingsFile) // Create the settings file
                                 .andRun("mvn", "dependency:copy-dependencies", "-s", settingsFile,
                                         "-DoutputDirectory=/tmp/artifacts/" + artifactDir, includeScopeParam, "-f", "/tmp/" + artifactDir + "/pom.xml")
                                 .andRun("curl", "-f", "-L", "--create-dirs", "--output",
