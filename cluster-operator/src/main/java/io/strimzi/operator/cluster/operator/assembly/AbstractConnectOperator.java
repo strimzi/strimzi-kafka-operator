@@ -479,7 +479,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         if (!(path instanceof String state)) {
             return Future.failedFuture("JSON response lacked $.connector.state");
         } else {
-            ConnectorState targetState = connectorSpec.getState();
+            ConnectorState targetState = connectorSpec.getState() != null ? connectorSpec.getState() : ConnectorState.RUNNING;
             Future<Void> future = Future.succeededFuture();
 
             switch (state) {
