@@ -4,7 +4,6 @@
  */
 package io.strimzi.systemtest.performance.utils;
 
-import io.fabric8.kubernetes.api.model.Secret;
 import io.skodjob.kubetest4j.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.user.KafkaUser;
 import io.strimzi.api.kafka.model.user.KafkaUserAuthorizationSimple;
