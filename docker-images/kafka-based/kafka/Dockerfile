@@ -1,55 +1,19 @@
-FROM strimzi/base:latest
+#####
+# Build the helper container image for downloading prerequisites
+#####
+FROM registry.access.redhat.com/ubi9/ubi-minimal:latest AS downloader
 
-LABEL org.opencontainers.image.source='https://github.com/strimzi/strimzi-kafka-operator'
-
-ARG KAFKA_DIST_DIR
-ARG KAFKA_VERSION
-ARG THIRD_PARTY_LIBS
-ARG strimzi_version
 ARG TARGETOS
 ARG TARGETARCH
 
-LABEL name='kafka' \
-    version="${strimzi_version}-${KAFKA_VERSION}" \
-    release="${strimzi_version}" \
-    summary="Kafka ${KAFKA_VERSION} image of the Strimzi Kafka Operator project." \
-    description="Kafka image used by the Strimzi Kafka Operator to run Kafka ${KAFKA_VERSION} clusters."
-
 RUN microdnf --setopt=install_weak_deps=0 --setopt=tsflags=nodocs install -y \
-            # net-tools are needed for the health check probes (netstat) \
-            net-tools \
-            # hostname is used by Strimzi scripts to determine the Kafka node ID \
-            hostname  \
-            # xargs is used by Kafka's own shell scripts \
-            # find and xargs are also used in our Kafka Connect Build Dockerfiles \
-            findutils \
             # Tar is used to unpack the downloaded binaries here in the Dockerfile \
-            # Tar is also used in our Kafka Connect Build Dockerfiles \
             tar \
             # gzip is used to unpack the downloaded binaries here in the Dockerfile \
-            # gzip is also used in our Kafka Connect Build Dockerfiles \
-            gzip \
-            # unzip is used in our Kafka Connect Build Dockerfiles \
-            unzip \
-    && microdnf clean all -y
-
-# Add kafka user with UID 1001
-# The user is in the group 0 to have access to the mounted volumes and storage
-RUN useradd -r -m -u 1001 -g 0 kafka
+            gzip
 
 #####
-# Add Kafka
-#####
-ENV KAFKA_HOME=/opt/kafka
-ENV KAFKA_VERSION=${KAFKA_VERSION}
-ENV STRIMZI_VERSION=${strimzi_version}
-
-COPY $KAFKA_DIST_DIR $KAFKA_HOME
-COPY ./scripts/ $KAFKA_HOME
-RUN mkdir $KAFKA_HOME/plugins
-
-#####
-# Add Kafka Exporter
+# Get Kafka Exporter
 #####
 ENV KAFKA_EXPORTER_HOME=/opt/kafka-exporter
 ENV KAFKA_EXPORTER_VERSION=1.9.0
@@ -89,10 +53,8 @@ RUN set -ex; \
         rm -f kafka_exporter-${KAFKA_EXPORTER_VERSION}.linux-amd64.tar.gz*; \
     fi
 
-COPY ./exporter-scripts $KAFKA_EXPORTER_HOME
-
 #####
-# Add Prometheus JMX Exporter
+# Get Prometheus JMX Exporter
 #####
 ENV JMX_EXPORTER_HOME=/opt/prometheus-jmx-exporter
 ENV JMX_EXPORTER_VERSION=1.5.0
@@ -105,6 +67,70 @@ RUN set -ex; \
     mkdir $JMX_EXPORTER_HOME; \
     mv jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.jar $JMX_EXPORTER_HOME/; \
     rm -f jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.jar.sha512;
+
+#####
+# Build the main container image
+#####
+FROM strimzi/base:latest
+
+LABEL org.opencontainers.image.source='https://github.com/strimzi/strimzi-kafka-operator'
+
+ARG KAFKA_DIST_DIR
+ARG KAFKA_VERSION
+ARG THIRD_PARTY_LIBS
+ARG strimzi_version
+ARG TARGETOS
+ARG TARGETARCH
+
+LABEL name='kafka' \
+    version="${strimzi_version}-${KAFKA_VERSION}" \
+    release="${strimzi_version}" \
+    summary="Kafka ${KAFKA_VERSION} image of the Strimzi Kafka Operator project." \
+    description="Kafka image used by the Strimzi Kafka Operator to run Kafka ${KAFKA_VERSION} clusters."
+
+RUN microdnf --setopt=install_weak_deps=0 --setopt=tsflags=nodocs install -y \
+            # net-tools are needed for the health check probes (netstat) \
+            net-tools \
+            # hostname is used by Strimzi scripts to determine the Kafka node ID \
+            hostname  \
+            # xargs is used by Kafka's own shell scripts \
+            # find and xargs are also used in our Kafka Connect Build Dockerfiles \
+            findutils \
+            # Tar is also used in our Kafka Connect Build Dockerfiles \
+            tar \
+            # gzip is also used in our Kafka Connect Build Dockerfiles \
+            gzip \
+            # unzip is used in our Kafka Connect Build Dockerfiles \
+            unzip \
+    && microdnf clean all -y
+
+# Add kafka user with UID 1001
+# The user is in the group 0 to have access to the mounted volumes and storage
+RUN useradd -r -m -u 1001 -g 0 kafka
+
+#####
+# Add Kafka
+#####
+ENV KAFKA_HOME=/opt/kafka
+ENV KAFKA_VERSION=${KAFKA_VERSION}
+ENV STRIMZI_VERSION=${strimzi_version}
+
+COPY $KAFKA_DIST_DIR $KAFKA_HOME
+COPY ./scripts/ $KAFKA_HOME
+RUN mkdir $KAFKA_HOME/plugins
+
+#####
+# Copy Kafka Experter from the downloader stage and the helper scripts from local filesystem
+#####
+ENV KAFKA_EXPORTER_HOME=/opt/kafka-exporter
+COPY --from=downloader $KAFKA_EXPORTER_HOME/kafka_exporter $KAFKA_EXPORTER_HOME/kafka_exporter
+COPY ./exporter-scripts $KAFKA_EXPORTER_HOME
+
+#####
+# Copy Prometheus JMX Exporter from the donwnloader stage
+#####
+ENV JMX_EXPORTER_HOME=/opt/prometheus-jmx-exporter
+COPY --from=downloader $JMX_EXPORTER_HOME/jmx_prometheus_javaagent*.jar $JMX_EXPORTER_HOME/
 
 #####
 # Add Strimzi agents
