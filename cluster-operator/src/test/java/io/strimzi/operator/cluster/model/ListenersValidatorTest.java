@@ -22,6 +22,7 @@ import org.junit.jupiter.api.Test;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -233,6 +234,8 @@ public class ListenersValidatorTest {
                     .withLoadBalancerSourceRanges(List.of("10.0.0.0/8", "130.211.204.1/32"))
                     .withFinalizers(List.of("service.kubernetes.io/load-balancer-cleanup"))
                     .withPublishNotReadyAddresses(true)
+                    .withPerBrokerAnnotationsTemplate(Map.of("anno", "value-{nodeId}"))
+                    .withPerBrokerLabelsTemplate(Map.of("label", "value-{nodePodName}"))
                     .withHostTemplate("my-host-{nodeId}")
                     .withAdvertisedHostTemplate("my-advertised-host-{nodeId}")
                     .withNewBootstrap()
@@ -274,6 +277,8 @@ public class ListenersValidatorTest {
                 "listener " + name + " cannot configure loadBalancerSourceRanges because it is not LoadBalancer based listener",
                 "listener " + name + " cannot configure finalizers because it is not LoadBalancer based listener",
                 "listener " + name + " cannot configure preferredAddressType because it is not NodePort based listener",
+                "listener " + name + " cannot configure perBrokerAnnotationsTemplate because it is not LoadBalancer, NodePort, Route, Ingress or ClusterIP based listener",
+                "listener " + name + " cannot configure perBrokerLabelsTemplate because it is not LoadBalancer, NodePort, Route, Ingress or ClusterIP based listener",
                 "listener " + name + " cannot configure hostTemplate because it is not Route or Ingress based listener",
                 "listener " + name + " cannot configure bootstrap.host because it is not Route or Ingress based listener",
                 "listener " + name + " cannot configure bootstrap.loadBalancerIP because it is not LoadBalancer based listener",
@@ -312,6 +317,8 @@ public class ListenersValidatorTest {
                     .withAllocateLoadBalancerNodePorts(false)
                     .withFinalizers(List.of("service.kubernetes.io/load-balancer-cleanup"))
                     .withPublishNotReadyAddresses(true)
+                    .withPerBrokerAnnotationsTemplate(Map.of("anno", "value-{nodeId}"))
+                    .withPerBrokerLabelsTemplate(Map.of("label", "value-{nodePodName}"))
                     .withHostTemplate("my-host-{nodeId}")
                     .withAdvertisedHostTemplate("my-advertised-host-{nodeId}")
                     .withNewBootstrap()
@@ -394,6 +401,8 @@ public class ListenersValidatorTest {
                     .withFinalizers(List.of("service.kubernetes.io/load-balancer-cleanup"))
                     .withPublishNotReadyAddresses(true)
                     .withAllocateLoadBalancerNodePorts(false)
+                    .withPerBrokerAnnotationsTemplate(Map.of("anno", "value-{nodeId}"))
+                    .withPerBrokerLabelsTemplate(Map.of("label", "value-{nodePodName}"))
                     .withHostTemplate("my-host-{nodeId}")
                     .withAdvertisedHostTemplate("my-advertised-host-{nodeId}")
                     .withNewBootstrap()
@@ -482,6 +491,8 @@ public class ListenersValidatorTest {
                     .withLoadBalancerSourceRanges(List.of("10.0.0.0/8", "130.211.204.1/32"))
                     .withFinalizers(List.of("service.kubernetes.io/load-balancer-cleanup"))
                     .withPublishNotReadyAddresses(true)
+                    .withPerBrokerAnnotationsTemplate(Map.of("anno", "value-{nodeId}"))
+                    .withPerBrokerLabelsTemplate(Map.of("label", "value-{nodePodName}"))
                     .withHostTemplate("my-host-{nodeId}")
                     .withAdvertisedHostTemplate("my-advertised-host-{nodeId}")
                     .withNewBootstrap()
@@ -587,6 +598,8 @@ public class ListenersValidatorTest {
                     .withFinalizers(List.of("service.kubernetes.io/load-balancer-cleanup"))
                     .withPublishNotReadyAddresses(true)
                     .withAllocateLoadBalancerNodePorts(false)
+                    .withPerBrokerAnnotationsTemplate(Map.of("anno", "value-{nodeId}"))
+                    .withPerBrokerLabelsTemplate(Map.of("label", "value-{nodePodName}"))
                     .withHostTemplate("my-host-{nodeId}")
                     .withAdvertisedHostTemplate("my-advertised-host-{nodeId}")
                     .withNewBootstrap()
@@ -850,6 +863,8 @@ public class ListenersValidatorTest {
                     .withLoadBalancerSourceRanges(List.of("10.0.0.0/8", "130.211.204.1/32"))
                     .withFinalizers(List.of("service.kubernetes.io/load-balancer-cleanup"))
                     .withPublishNotReadyAddresses(true)
+                    .withPerBrokerAnnotationsTemplate(Map.of("anno", "value-{nodeId}"))
+                    .withPerBrokerLabelsTemplate(Map.of("label", "value-{nodePodName}"))
                     .withHostTemplate("my-host-{nodeId}")
                     .withAllocateLoadBalancerNodePorts(false)
                     .withAdvertisedHostTemplate("my-advertised-host-{nodeId}")

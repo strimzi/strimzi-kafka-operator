@@ -819,8 +819,8 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
                                 ports,
                                 pool.labels.strimziSelectorLabels().withStrimziPodName(node.podName()),
                                 ListenersUtils.serviceType(listener),
-                                ListenersUtils.brokerLabels(listener, node.nodeId()),
-                                ListenersUtils.brokerAnnotations(listener, node.nodeId()),
+                                ListenersUtils.brokerLabels(listener, node),
+                                ListenersUtils.brokerAnnotations(listener, node),
                                 ListenersUtils.ipFamilyPolicy(listener),
                                 ListenersUtils.ipFamilies(listener),
                                 ListenersUtils.publishNotReadyAddresses(listener)
@@ -943,8 +943,8 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
                         Route route = new RouteBuilder()
                                 .withNewMetadata()
                                     .withName(routeName)
-                                    .withLabels(pool.labels.withAdditionalLabels(Util.mergeLabelsOrAnnotations(TemplateUtils.labels(pool.templatePerBrokerRoute), ListenersUtils.brokerLabels(listener, node.nodeId()))).toMap())
-                                    .withAnnotations(Util.mergeLabelsOrAnnotations(TemplateUtils.annotations(pool.templatePerBrokerRoute), ListenersUtils.brokerAnnotations(listener, node.nodeId())))
+                                    .withLabels(pool.labels.withAdditionalLabels(Util.mergeLabelsOrAnnotations(TemplateUtils.labels(pool.templatePerBrokerRoute), ListenersUtils.brokerLabels(listener, node))).toMap())
+                                    .withAnnotations(Util.mergeLabelsOrAnnotations(TemplateUtils.annotations(pool.templatePerBrokerRoute), ListenersUtils.brokerAnnotations(listener, node)))
                                     .withNamespace(namespace)
                                     .withOwnerReferences(pool.ownerReference)
                                 .endMetadata()
@@ -1081,8 +1081,8 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
                         Ingress ingress = new IngressBuilder()
                                 .withNewMetadata()
                                     .withName(ingressName)
-                                    .withLabels(pool.labels.withAdditionalLabels(Util.mergeLabelsOrAnnotations(TemplateUtils.labels(pool.templatePerBrokerIngress), ListenersUtils.brokerLabels(listener, node.nodeId()))).toMap())
-                                    .withAnnotations(Util.mergeLabelsOrAnnotations(generateInternalIngressAnnotations(), TemplateUtils.annotations(pool.templatePerBrokerIngress), ListenersUtils.brokerAnnotations(listener, node.nodeId())))
+                                    .withLabels(pool.labels.withAdditionalLabels(Util.mergeLabelsOrAnnotations(TemplateUtils.labels(pool.templatePerBrokerIngress), ListenersUtils.brokerLabels(listener, node))).toMap())
+                                    .withAnnotations(Util.mergeLabelsOrAnnotations(generateInternalIngressAnnotations(), TemplateUtils.annotations(pool.templatePerBrokerIngress), ListenersUtils.brokerAnnotations(listener, node)))
                                     .withNamespace(namespace)
                                     .withOwnerReferences(pool.ownerReference)
                                 .endMetadata()

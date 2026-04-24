@@ -82,6 +82,7 @@ public class ListenersValidator {
                 validatePublishNotReadyAddresses(errors, listener);
                 validateCreateBootstrapService(errors, listener);
                 validateBrokerHostTemplate(errors, listener);
+                validatePerBrokerLabelsAndAnnotationsTemplates(errors, listener);
 
                 if (listener.getConfiguration().getBootstrap() != null) {
                     validateBootstrapHost(errors, listener);
@@ -345,6 +346,24 @@ public class ListenersValidator {
         if ((!KafkaListenerType.ROUTE.equals(listener.getType()) && !KafkaListenerType.INGRESS.equals(listener.getType()))
                 && listener.getConfiguration().getHostTemplate() != null)    {
             errors.add("listener " + listener.getName() + " cannot configure hostTemplate because it is not Route or Ingress based listener");
+        }
+    }
+
+    private static void validatePerBrokerLabelsAndAnnotationsTemplates(Set<String> errors, GenericKafkaListener listener) {
+        if (!KafkaListenerType.LOADBALANCER.equals(listener.getType())
+                && !KafkaListenerType.NODEPORT.equals(listener.getType())
+                && !KafkaListenerType.ROUTE.equals(listener.getType())
+                && !KafkaListenerType.INGRESS.equals(listener.getType())
+                && !KafkaListenerType.CLUSTER_IP.equals(listener.getType())) {
+            if (listener.getConfiguration().getPerBrokerLabelsTemplate() != null
+                    && !listener.getConfiguration().getPerBrokerLabelsTemplate().isEmpty()) {
+                errors.add("listener " + listener.getName() + " cannot configure perBrokerLabelsTemplate because it is not LoadBalancer, NodePort, Route, Ingress or ClusterIP based listener");
+            }
+
+            if (listener.getConfiguration().getPerBrokerAnnotationsTemplate() != null
+                    && !listener.getConfiguration().getPerBrokerAnnotationsTemplate().isEmpty()) {
+                errors.add("listener " + listener.getName() + " cannot configure perBrokerAnnotationsTemplate because it is not LoadBalancer, NodePort, Route, Ingress or ClusterIP based listener");
+            }
         }
     }
 
