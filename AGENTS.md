@@ -39,7 +39,6 @@ Multi-module Maven project.
 | `crd-annotations/` | Annotations for CRD generation                                     |
 | `config-model/` | Kafka configuration models utility classes                         |
 | `config-model-generator/` | Generates Kafka configuration models                               |
-| `v1-api-conversion/` | Conversion tool from v1beta2 to v1 CRDs                    |
 | `mockkube/` | Mock Kubernetes for unit testing                                   |
 | `test/` | Test utilities and helpers                                         |
 | `systemtest/` | End-to-end system tests                                            |

@@ -136,7 +136,6 @@
         <module>crd-generator</module>
         <module>api</module>
         <module>mockkube</module>
-        <module>v1-api-conversion</module>
         <module>config-model</module>
         <module>config-model-generator</module>
         <module>operator-common</module>
@@ -588,16 +587,6 @@
                 <groupId>io.opentelemetry</groupId>
                 <artifactId>opentelemetry-sdk-extension-autoconfigure</artifactId>
                 <version>${opentelemetry.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>info.picocli</groupId>
-                <artifactId>picocli</artifactId>
-                <version>${picocli.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.yaml</groupId>
-                <artifactId>snakeyaml</artifactId>
-                <version>${snakeyaml.version}</version>
             </dependency>
             <dependency>
                 <!-- Javaluator is mathematical expression evaluator used for the advertised port template -->

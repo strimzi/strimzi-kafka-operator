@@ -1,4 +1,0 @@
-apiVersion: kafka.strimzi.io/v1beta2
-kind: KafkaBridge
-metadata:
-  name: my-bridge
