@@ -97,6 +97,28 @@
 * [user-operator](labels/user-operator.md)
 
 
+## testTlsValidityDays
+
+**Description:** Verifies functionality of the mTLS `validityDays` and `renewalDays` configured inside each KafkaUser.
+
+**Steps:**
+
+| Step | Action | Result |
+| - | - | - |
+| 1. | Create `KafkaTopic` to which we will send (and from which we will receive) messages - created in existing Kafka cluster. | `KafkaTopic` is created. |
+| 2. | Create `KafkaUser` with TLS authentication; together with default `validityDays` (200 days) and `renewalDays` (20 days) - configured in User operator. | `KafkaUser` is created with defaults. |
+| 3. | Obtain the `KafkaUser`'s `Secret` and check validity period of the user certificate. | Validity period should be default - 200 days. |
+| 4. | Do message transmission to verify, that we are able to connect to Kafka cluster with the TLS `KafkaUser`. | Messages are successfully sent and received. |
+| 5. | Change the `validityDays` and `renewalDays` in the `KafkaUser` `.spec.authentication` to 60 and 10. | The `validityDays` and `renewalDays` should be changed in the `KafkaUser`. |
+| 6. | Because the current certificate would exceed the new validity period, `KafkaUser`'s `Secret` and user certificate should be renewed - we are waiting for the certificate change. | The user certificate was changed. |
+| 7. | Obtain the `KafkaUser`'s `Secret` again and check the validity period of the user certificate. | Validity period should be 60 days. |
+| 8. | Do message transmission again to verify, that we are able to connect to Kafka cluster with the new user's certificate. | Messages are successfully sent and received using new certificate. |
+
+**Labels:**
+
+* [user-operator](labels/user-operator.md)
+
+
 ## testUpdateUser
 
 **Description:** Verifies updating a Kafka user from TLS to SCRAM-SHA-512 authentication and validates user secret contents.

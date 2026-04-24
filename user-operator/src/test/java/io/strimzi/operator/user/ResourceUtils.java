@@ -171,7 +171,7 @@ public class ResourceUtils {
                     .withName(ResourceUtils.CA_KEY_NAME)
                     .withNamespace(namespace)
                 .endMetadata()
-                .addToData("ca.key", Base64.getEncoder().encodeToString("clients-ca-key".getBytes()))
+                .addToData("ca.key", MockCertManager.clientsCaKey())
                 .build();
     }
 

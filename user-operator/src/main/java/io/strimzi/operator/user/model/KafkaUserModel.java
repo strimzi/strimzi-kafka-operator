@@ -85,8 +85,10 @@ public class KafkaUserModel {
     private Map<String, String> templateSecretLabels;
     private Map<String, String> templateSecretAnnotations;
 
-    private final String secretPrefix;
+    private int validityDays;
+    private int renewalDays;
 
+    private final String secretPrefix;
     /**
      * Constructor
      *
@@ -208,22 +210,24 @@ public class KafkaUserModel {
     /**
      * Manage certificates generation based on those already present in the Secrets
      *
-     * @param reconciliation The reconciliation
-     * @param certManager CertManager instance for handling certificates creation
-     * @param passwordGenerator PasswordGenerator instance for generating passwords
-     * @param clientsCaCertSecret The clients CA certificate Secret.
-     * @param clientsCaKeySecret The clients CA key Secret.
-     * @param userSecret Secret with the user certificate
-     * @param validityDays The number of days the certificate should be valid for.
-     * @param renewalDays The renewal days.
-     * @param maintenanceWindows List of configured maintenance windows
-     * @param clock The clock for supplying the reconciler with the time instant of each reconciliation cycle.
-     *              That time is used for checking maintenance windows
+     * @param reconciliation        The reconciliation
+     * @param certManager           CertManager instance for handling certificates creation
+     * @param passwordGenerator     PasswordGenerator instance for generating passwords
+     * @param clientsCaCertSecret   The clients CA certificate Secret.
+     * @param clientsCaKeySecret    The clients CA key Secret.
+     * @param userSecret            Secret with the user certificate
+     * @param defaultValidityDays   The default number of days (configured in User Operator) the certificate should be valid for.
+     * @param defaultRenewalDays    The default renewal days (configured in User Operator).
+     * @param maintenanceWindows    List of configured maintenance windows
+     * @param clock                 The clock for supplying the reconciler with the time instant of each reconciliation cycle.
+     *                              That time is used for checking maintenance windows
      */
     @SuppressWarnings("checkstyle:BooleanExpressionComplexity")
     public void maybeGenerateCertificates(Reconciliation reconciliation, CertManager certManager, PasswordGenerator passwordGenerator,
-                                          Secret clientsCaCertSecret, Secret clientsCaKeySecret, Secret userSecret, int validityDays,
-                                          int renewalDays, List<String> maintenanceWindows, Clock clock) {
+                                          Secret clientsCaCertSecret, Secret clientsCaKeySecret, Secret userSecret, int defaultValidityDays,
+                                          int defaultRenewalDays, List<String> maintenanceWindows, Clock clock) {
+
+        validateValidityAndRenewalDays(defaultValidityDays, defaultRenewalDays);
         validateCACertificates(clientsCaCertSecret, clientsCaKeySecret);
 
         ClientsCa clientsCa = new ClientsCa(
@@ -232,8 +236,8 @@ public class KafkaUserModel {
                 passwordGenerator,
                 clientsCaCertSecret,
                 clientsCaKeySecret,
-                validityDays,
-                renewalDays,
+                this.validityDays,
+                this.renewalDays,
                 false,
                 null);
         this.caCert = clientsCa.currentCaCertBase64();
@@ -256,7 +260,10 @@ public class KafkaUserModel {
                     && !userCrt.isEmpty()
                     && userKey != null
                     && !userKey.isEmpty()) {
-                if (clientsCa.isExpiring(userSecret, "user.crt"))   {
+                if (clientsCa.requiresImmediateRenewalDueToValidityChange(userSecret, "user.crt")) {
+                    LOGGER.infoCr(reconciliation, "Certificate for user {} in namespace {} exceeds new validity configuration, renewing the certificate immediately", name, namespace);
+                    this.userCertAndKey = generateNewCertificate(reconciliation, clientsCa);
+                } else if (clientsCa.isExpiring(userSecret, "user.crt"))   {
                     // The certificate exists but is expiring
                     if (Util.isMaintenanceTimeWindowsSatisfied(reconciliation, maintenanceWindows, clock.instant()))   {
                         // => if we are in compliance with maintenance window, we renew it
@@ -315,6 +322,43 @@ public class KafkaUserModel {
                 return null;
             }
         }
+    }
+
+    /**
+     * Method that checks the configuration of validityDays - either those configured for the KafkaUser,
+     * combination of defaults and KafkaUser's configuration, or just defaults.
+     * If the `renewalDays` is higher or equal to `validityDays`, it throws {@link InvalidResourceException}.
+     * Otherwise, it configures {@link #validityDays} and {@link #renewalDays}.
+     *
+     * @param defaultValidityDays   Default validity days configured in User Operator.
+     * @param defaultRenewalDays    Default renewal days configured in User Operator.
+     */
+    private void validateValidityAndRenewalDays(
+        int defaultValidityDays,
+        int defaultRenewalDays
+    ) {
+        KafkaUserTlsClientAuthentication tlsAuthentication = (KafkaUserTlsClientAuthentication) authentication;
+
+        int validityDays = defaultValidityDays;
+        int renewalDays = defaultRenewalDays;
+
+        if (tlsAuthentication != null) {
+            // in case that the validityDays and renewalDays are configured in the authentication section, we will use that
+            // otherwise we will keep the defaults from User Operator's configuration
+            if (tlsAuthentication.getValidityDays() != null) {
+                validityDays = tlsAuthentication.getValidityDays();
+            }
+            if (tlsAuthentication.getRenewalDays() != null) {
+                renewalDays = tlsAuthentication.getRenewalDays();
+            }
+        }
+
+        if (renewalDays >= validityDays) {
+            throw new InvalidResourceException("spec.authentication.renewalDays is higher or equal to spec.authentication.validityDays. It should be configured to be lower than spec.authentication.validityDays.");
+        }
+
+        this.validityDays = validityDays;
+        this.renewalDays = renewalDays;
     }
 
     void validateCACertificates(Secret clientsCaCertSecret, Secret clientsCaKeySecret)   {

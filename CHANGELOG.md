@@ -2,7 +2,7 @@
 
 ## 1.1.0
 
-* _Nothing here yet, but we will surely develop something new pretty soon_ 😉
+* Add possibility to configure mTLS `validityDays` and `renewalDays` for each `KafkaUser`
 
 ### Major changes, deprecations, and removals
 

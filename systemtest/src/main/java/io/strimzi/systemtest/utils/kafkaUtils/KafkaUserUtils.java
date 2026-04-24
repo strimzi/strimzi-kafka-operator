@@ -15,6 +15,7 @@ import io.strimzi.api.kafka.model.common.PasswordBuilder;
 import io.strimzi.api.kafka.model.user.KafkaUser;
 import io.strimzi.api.kafka.model.user.KafkaUserScramSha512ClientAuthenticationBuilder;
 import io.strimzi.api.kafka.model.user.KafkaUserSpec;
+import io.strimzi.operator.common.Util;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.resources.ResourceConditions;
 import io.strimzi.systemtest.resources.ResourceOperation;
@@ -23,8 +24,14 @@ import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Random;
 import java.util.function.Consumer;
@@ -254,5 +261,25 @@ public class KafkaUserUtils {
                     return e.getMessage().contains("Not Found") || e.getMessage().contains("the server doesn't have a resource type");
                 }
             });
+    }
+
+    /**
+     * Returns validity period from the user's certificate.
+     *
+     * @param certificate   user's certificate containing `notBefore` and `notAfter` fields.
+     *
+     * @return  validity period from the user's certificate.
+     */
+    public static int getValidityDaysOfCertificate(String certificate) {
+        try {
+            byte[] certBytes = Util.decodeFromBase64(certificate).getBytes(StandardCharsets.UTF_8);
+            CertificateFactory cf = CertificateFactory.getInstance("X.509");
+            X509Certificate cert = (X509Certificate) cf.generateCertificate(new ByteArrayInputStream(certBytes));
+
+            return (int) ChronoUnit.DAYS.between(cert.getNotBefore().toInstant(), cert.getNotAfter().toInstant());
+        } catch (CertificateException e) {
+            LOGGER.error("Failed to parse certificate due to: {}", e.getMessage());
+            throw new RuntimeException(e);
+        }
     }
 }
