@@ -30,12 +30,16 @@ import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
+import io.strimzi.systemtest.utils.RollingUpdateUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
+import io.strimzi.systemtest.utils.kubeUtils.controllers.StrimziPodSetUtils;
+import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.k8s.KubeClusterResource;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.Tag;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
@@ -65,6 +69,7 @@ import static org.junit.jupiter.api.Assumptions.assumeFalse;
 public class FeatureGatesST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(FeatureGatesST.class);
     private static final String SERVER_SIDE_APPLY_PHASE_1_DISABLED = "-ServerSideApplyPhase1";
+    private static final String USE_BACKGROUND_POD_DELETION_ENABLED = "+UseBackgroundPodDeletion";
 
     @IsolatedTest("Creates ClusterOperator with Server Side Apply FG enabled")
     @TestDoc(
@@ -173,6 +178,46 @@ public class FeatureGatesST extends AbstractST {
         KafkaClients kafkaClient = ClientUtils.getInstantPlainClients(testStorage, KafkaResources.plainBootstrapAddress(testStorage.getClusterName()));
         KubeResourceManager.get().createResourceWithWait(kafkaClient.consumerStrimzi());
         ClientUtils.waitForInstantConsumerClientSuccess(testStorage);
+    }
+
+
+    @IsolatedTest("Enables UseBackgroundPodDeletion feature gate in CO")
+    @TestDoc(
+        description = @Desc("This test verifies that the UseBackgroundPodDeletion feature gate works correctly. When enabled, Kafka broker pods are deleted with BACKGROUND propagation during rolling restarts, and the rolling restart completes successfully."),
+        steps = {
+            @Step(value = "Deploy Cluster Operator with UseBackgroundPodDeletion enabled.", expected = "Cluster Operator is deployed with background pod deletion feature gate."),
+            @Step(value = "Create Kafka cluster with broker and controller node pools.", expected = "Kafka cluster is deployed and ready."),
+            @Step(value = "Trigger manual rolling update of broker pods.", expected = "Rolling update is triggered via manual-rolling-update annotation."),
+            @Step(value = "Wait for broker pods to finish rolling.", expected = "All broker pods are rolled and ready, confirming background deletion works correctly.")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.KAFKA)
+        }
+    )
+    void testUseBackgroundPodDeletion() {
+        TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
+
+        LOGGER.info("Deploying CO with UseBackgroundPodDeletion enabled");
+        setupClusterOperatorWithFeatureGate(USE_BACKGROUND_POD_DELETION_ENABLED);
+
+        KubeResourceManager.get().createResourceWithWait(
+            KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
+            KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 3).build()
+        );
+        KubeResourceManager.get().createResourceWithWait(KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getClusterName(), 3).build());
+
+        Map<String, String> brokerPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getBrokerSelector());
+
+        LOGGER.info("Triggering manual rolling update of broker pods");
+        StrimziPodSetUtils.annotateStrimziPodSet(testStorage.getNamespaceName(), testStorage.getBrokerComponentName(),
+            Collections.singletonMap(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true"));
+
+        brokerPods = RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), 3, brokerPods);
+
+        LOGGER.info("Verifying all broker pods are ready after rolling update with background pod deletion");
+        RollingUpdateUtils.waitForComponentAndPodsReady(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), 3);
+
+        assertThat("Broker pods were rolled successfully with UseBackgroundPodDeletion enabled", brokerPods.size(), is(3));
     }
 
     private static void annotateResourcesAndCheckIfPresent(TestStorage testStorage, boolean shouldBePresent) {

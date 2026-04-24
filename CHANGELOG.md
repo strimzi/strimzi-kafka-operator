@@ -2,7 +2,7 @@
 
 ## 1.1.0
 
-* _Nothing here yet, but we will surely develop something new pretty soon_ 😉
+* Add `UseBackgroundPodDeletion` feature gate (alpha, disabled by default) to use background deletion propagation when deleting pods during rolling updates. 
 
 ### Major changes, deprecations, and removals
 

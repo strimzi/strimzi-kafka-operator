@@ -238,9 +238,21 @@ public abstract class AbstractNamespacedResourceOperator<C extends KubernetesCli
                 }
             });
 
-        Future<Void> deleteFuture = resourceSupport.deleteAsync(resourceOp.withPropagationPolicy(cascading ? DeletionPropagation.FOREGROUND : DeletionPropagation.ORPHAN).withGracePeriod(-1L));
+        Future<Void> deleteFuture = resourceSupport.deleteAsync(resourceOp.withPropagationPolicy(getDeletionPropagation(cascading)).withGracePeriod(-1L));
 
         return Future.join(watchForDeleteFuture, deleteFuture).map(ReconcileResult.deleted());
+    }
+
+    /**
+     * Returns the deletion propagation policy to use when deleting a resource.
+     * Subclasses can override this to customize the propagation behavior.
+     *
+     * @param cascading  Whether the deletion should be cascading or not
+     *
+     * @return  The DeletionPropagation policy to use
+     */
+    protected DeletionPropagation getDeletionPropagation(boolean cascading) {
+        return cascading ? DeletionPropagation.FOREGROUND : DeletionPropagation.ORPHAN;
     }
 
     /**

@@ -101,6 +101,12 @@ ifdef::Section[]
 ¦1.0
 ¦1.3 (planned)
 endif::Section[]
+
+¦`UseBackgroundPodDeletion`
+¦1.1
+¦1.3 (planned)
+¦1.7 (planned)
+
 |===
 
 
@@ -163,9 +169,26 @@ endif::Section[]
 
 == Early access feature gates (Alpha)
 
-Early access feature gates have not yet reached the beta stage, and are disabled by default. 
+Early access feature gates have not yet reached the beta stage, and are disabled by default.
 An early access feature gate provides an opportunity for assessment before its functionality is permanently incorporated into Strimzi.
-Currently, there are no alpha level feature gates.
+
+[id='ref-operator-use-background-pod-deletion-feature-gate-{context}']
+=== `UseBackgroundPodDeletion` feature gate
+
+The `UseBackgroundPodDeletion` feature gate has a default state of _disabled_.
+
+When enabled, the Cluster Operator uses background deletion propagation when deleting pods during rolling updates, instead of the default foreground deletion propagation.
+
+With foreground deletion, certain CNI plugins (such as Cilium) remove network endpoints immediately when a pod object is deleted.
+This can cut off network access before broker containers complete their graceful shutdown, preventing them from communicating leadership relinquishment to controllers, sending final heartbeats, and completing other shutdown sequences.
+The result is prolonged recovery times as the cluster re-establishes quorum.
+
+With background deletion, the pod object is removed from the Kubernetes API immediately, but the underlying container runtime keeps the pod's network interfaces intact until all containers have fully exited.
+This allows Kafka brokers to complete their graceful shutdown before network connectivity is removed.
+
+Enable this feature gate if you are using a CNI plugin that aggressively removes network endpoints on foreground pod deletion and you are experiencing extended recovery times after rolling restarts.
+
+To enable the `UseBackgroundPodDeletion` feature gate, specify `+UseBackgroundPodDeletion` in the `STRIMZI_FEATURE_GATES` environment variable in the Cluster Operator configuration.
 
 == Enabling feature gates
 
