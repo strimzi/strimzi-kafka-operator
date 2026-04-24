@@ -34,3 +34,21 @@
 
 * [kafka](labels/kafka.md)
 
+
+## testUseBackgroundPodDeletion
+
+**Description:** This test verifies that the UseBackgroundPodDeletion feature gate works correctly. When enabled, Kafka broker pods are deleted with BACKGROUND propagation during rolling restarts, and the rolling restart completes successfully.
+
+**Steps:**
+
+| Step | Action | Result |
+| - | - | - |
+| 1. | Deploy Cluster Operator with UseBackgroundPodDeletion enabled. | Cluster Operator is deployed with background pod deletion feature gate. |
+| 2. | Create Kafka cluster with broker and controller node pools. | Kafka cluster is deployed and ready. |
+| 3. | Trigger manual rolling update of broker pods. | Rolling update is triggered via manual-rolling-update annotation. |
+| 4. | Wait for broker pods to finish rolling. | All broker pods are rolled and ready, confirming background deletion works correctly. |
+
+**Labels:**
+
+* [kafka](labels/kafka.md)
+

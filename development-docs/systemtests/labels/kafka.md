@@ -116,4 +116,5 @@ These tests are crucial to ensure that Kafka clusters can handle production work
 - [testTopicNotAvailable](../io.strimzi.systemtest.operators.NamespaceDeletionRecoveryST.md)
 - [testUpdateToExternalListenerCausesRollingRestart](../io.strimzi.systemtest.kafka.dynamicconfiguration.DynamicConfST.md)
 - [testUpdateToExternalListenerCausesRollingRestartUsingExternalClients](../io.strimzi.systemtest.kafka.dynamicconfiguration.DynamicConfST.md)
+- [testUseBackgroundPodDeletion](../io.strimzi.systemtest.operators.FeatureGatesST.md)
 - [testUserOperatorMetrics](../io.strimzi.systemtest.metrics.MetricsST.md)
