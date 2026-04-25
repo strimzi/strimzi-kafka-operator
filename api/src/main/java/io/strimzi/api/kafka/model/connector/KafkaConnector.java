@@ -37,8 +37,7 @@ import java.util.function.Predicate;
         group = KafkaConnector.RESOURCE_GROUP,
         scope = KafkaConnector.SCOPE,
         versions = {
-            @Crd.Spec.Version(name = Constants.V1, served = true, storage = true),
-            @Crd.Spec.Version(name = Constants.V1BETA2, served = true, storage = false, deprecated = true, deprecationWarning = "Version v1beta2 of the KafkaConnector API is deprecated. Please use the v1 version instead.")
+            @Crd.Spec.Version(name = Constants.V1, served = true, storage = true)
         },
         subresources = @Crd.Spec.Subresources(
             status = @Crd.Spec.Subresources.Status(),
@@ -85,7 +84,7 @@ import java.util.function.Predicate;
 public class KafkaConnector extends CustomResource<KafkaConnectorSpec, KafkaConnectorStatus> implements Namespaced, UnknownPropertyPreserving {
     private static final long serialVersionUID = 1L;
 
-    public static final List<String> VERSIONS = List.of(Constants.V1, Constants.V1BETA2);
+    public static final List<String> VERSIONS = List.of(Constants.V1);
     public static final String SCOPE = Constants.SCOPE_NAMESPACED;
     public static final String RESOURCE_PLURAL = "kafkaconnectors";
     public static final String RESOURCE_SINGULAR = "kafkaconnector";

@@ -7,7 +7,6 @@ package io.strimzi.api.kafka.model.kafka.entityoperator;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
-import io.strimzi.api.annotations.DeprecatedProperty;
 import io.strimzi.api.kafka.model.common.Constants;
 import io.strimzi.api.kafka.model.common.HasConfigurableLogging;
 import io.strimzi.api.kafka.model.common.HasLivenessProbe;
@@ -20,7 +19,6 @@ import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.DescriptionFile;
 import io.strimzi.crdgenerator.annotations.KubeLink;
 import io.strimzi.crdgenerator.annotations.Minimum;
-import io.strimzi.crdgenerator.annotations.PresentInVersions;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -37,10 +35,8 @@ import java.util.Map;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
-@JsonPropertyOrder({"watchedNamespace", "image",
-    "reconciliationIntervalSeconds", "reconciliationIntervalMs", "zookeeperSessionTimeoutSeconds",
-    "secretPrefix", "livenessProbe", "readinessProbe",
-    "resources", "logging", "jvmOptions"})
+@JsonPropertyOrder({"watchedNamespace", "image", "reconciliationIntervalMs", "secretPrefix", "livenessProbe",
+    "readinessProbe", "resources", "logging", "jvmOptions"})
 @EqualsAndHashCode
 @ToString
 public class EntityUserOperatorSpec implements HasConfigurableLogging, HasLivenessProbe, HasReadinessProbe, UnknownPropertyPreserving {
@@ -50,9 +46,7 @@ public class EntityUserOperatorSpec implements HasConfigurableLogging, HasLivene
     private String watchedNamespace;
     private String image;
     private String secretPrefix;
-    private Long reconciliationIntervalSeconds;
     private Long reconciliationIntervalMs;
-    private Long zookeeperSessionTimeoutSeconds;
     private Probe livenessProbe;
     private Probe readinessProbe;
     private ResourceRequirements resources;
@@ -78,24 +72,6 @@ public class EntityUserOperatorSpec implements HasConfigurableLogging, HasLivene
         this.image = image;
     }
 
-    @Description("Interval between periodic reconciliations in seconds. Ignored if reconciliationIntervalMs is set.")
-    @Minimum(0)
-    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
-    @DeprecatedProperty(movedToPath = ".spec.entityOperator.userOperator.reconciliationIntervalMs")
-    @PresentInVersions("v1beta2")
-    @Deprecated
-    public Long getReconciliationIntervalSeconds() {
-        return reconciliationIntervalSeconds;
-    }
-
-    public void setReconciliationIntervalSeconds(long reconciliationIntervalSeconds) {
-        this.reconciliationIntervalSeconds = reconciliationIntervalSeconds;
-    }
-    
-    public void setReconciliationIntervalSeconds(Long reconciliationIntervalSeconds) {
-        this.reconciliationIntervalSeconds = reconciliationIntervalSeconds;
-    }
-
     @Description("Interval between periodic reconciliations in milliseconds.")
     @Minimum(0)
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
@@ -105,20 +81,6 @@ public class EntityUserOperatorSpec implements HasConfigurableLogging, HasLivene
 
     public void setReconciliationIntervalMs(Long reconciliationIntervalMs) {
         this.reconciliationIntervalMs = reconciliationIntervalMs;
-    }
-
-    @Description("Timeout for the ZooKeeper session")
-    @Minimum(0)
-    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
-    @DeprecatedProperty(description = "This property has been deprecated because ZooKeeper is not used anymore by the User Operator.")
-    @PresentInVersions("v1beta2")
-    @Deprecated
-    public Long getZookeeperSessionTimeoutSeconds() {
-        return zookeeperSessionTimeoutSeconds;
-    }
-
-    public void setZookeeperSessionTimeoutSeconds(Long zookeeperSessionTimeoutSeconds) {
-        this.zookeeperSessionTimeoutSeconds = zookeeperSessionTimeoutSeconds;
     }
 
     @Description("CPU and memory resources to reserve.")

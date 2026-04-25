@@ -113,7 +113,7 @@ spec:
                                   - tls
                                   - scram-sha-512
                                   - custom
-                                description: "Authentication type. `oauth` type uses SASL OAUTHBEARER Authentication. `scram-sha-512` type uses SASL SCRAM-SHA-512 Authentication. `tls` type uses TLS Client Authentication. `tls` type is supported only on TLS listeners. `custom` type allows for any authentication type to be used. As of Strimzi 0.49.0, `oauth` type is deprecated and will be removed in the `v1` API version. Please use `custom` type instead."
+                                description: Authentication type. `scram-sha-512` type uses SASL SCRAM-SHA-512 Authentication. `tls` type uses TLS Client Authentication. `tls` type is supported only on TLS listeners. `custom` type allows for any authentication type to be used.
                             required:
                               - type
                             description: Authentication configuration for this listener.
@@ -403,7 +403,7 @@ spec:
                           enum:
                             - simple
                             - custom
-                          description: "Authorization type. Currently, the supported types are `simple`, `keycloak`, `opa` and `custom`. `simple` authorization type uses Kafka's built-in authorizer for authorization. `keycloak` authorization type uses Keycloak Authorization Services for authorization. `opa` authorization type uses Open Policy Agent based authorization. `custom` authorization type uses user-provided implementation for authorization. `opa` (as of Strimzi 0.46.0) and `keycloak` (as of Strimzi 0.49.0) types are deprecated and will be removed in the `v1` API version. Please use `custom` type instead."
+                          description: "Authorization type. Currently, the supported types are `simple` and `custom`. `simple` authorization type uses Kafka's built-in authorizer for authorization. `custom` authorization type uses user-provided implementation for authorization."
                       required:
                         - type
                       description: Authorization configuration for Kafka brokers.

@@ -7,17 +7,13 @@ package io.strimzi.api.kafka.model.kafka;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import io.strimzi.api.annotations.DeprecatedProperty;
 import io.strimzi.api.kafka.model.common.CertificateAuthority;
 import io.strimzi.api.kafka.model.common.Constants;
 import io.strimzi.api.kafka.model.common.Spec;
-import io.strimzi.api.kafka.model.jmxtrans.JmxTransSpec;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlSpec;
 import io.strimzi.api.kafka.model.kafka.entityoperator.EntityOperatorSpec;
 import io.strimzi.api.kafka.model.kafka.exporter.KafkaExporterSpec;
-import io.strimzi.api.kafka.model.zookeeper.ZookeeperClusterSpec;
 import io.strimzi.crdgenerator.annotations.Description;
-import io.strimzi.crdgenerator.annotations.PresentInVersions;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -32,21 +28,15 @@ import java.util.List;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({ "kafka", "zookeeper", "entityOperator", "clusterCa", "clientsCa", "cruiseControl", "jmxTrans",
-    "kafkaExporter", "maintenanceTimeWindows"})
+@JsonPropertyOrder({ "kafka", "entityOperator", "clusterCa", "clientsCa", "cruiseControl", "kafkaExporter", "maintenanceTimeWindows"})
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class KafkaSpec extends Spec {
     private KafkaClusterSpec kafka;
-    @SuppressWarnings("deprecation")
-    private ZookeeperClusterSpec zookeeper;
     private EntityOperatorSpec entityOperator;
     private CertificateAuthority clusterCa;
-    @SuppressWarnings("deprecation")
-    private JmxTransSpec jmxTrans;
     private KafkaExporterSpec kafkaExporter;
     private CruiseControlSpec cruiseControl;
-
     private CertificateAuthority clientsCa;
     private List<String> maintenanceTimeWindows;
 
@@ -58,19 +48,6 @@ public class KafkaSpec extends Spec {
 
     public void setKafka(KafkaClusterSpec kafka) {
         this.kafka = kafka;
-    }
-
-    @Deprecated
-    @DeprecatedProperty(description = "ZooKeeper-based Apache Kafka clusters are not supported anymore since Strimzi 0.46.0.")
-    @PresentInVersions("v1beta2")
-    @Description("As of Strimzi 0.46.0, ZooKeeper-based Apache Kafka clusters are not supported anymore and this option is ignored.")
-    public ZookeeperClusterSpec getZookeeper() {
-        return zookeeper;
-    }
-
-    @Deprecated
-    public void setZookeeper(ZookeeperClusterSpec zookeeper) {
-        this.zookeeper = zookeeper;
     }
 
     @Description("Configuration of the Entity Operator")
@@ -103,19 +80,6 @@ public class KafkaSpec extends Spec {
     @Description("A list of time windows for maintenance tasks (that is, certificates renewal). Each time window is defined by a cron expression.")
     public List<String> getMaintenanceTimeWindows() {
         return maintenanceTimeWindows;
-    }
-
-    @Deprecated
-    @DeprecatedProperty(description = "JMXTrans is deprecated and related resources removed in Strimzi 0.35.0.")
-    @PresentInVersions("v1beta2")
-    @Description("As of Strimzi 0.35.0, JMXTrans is not supported anymore and this option is ignored.")
-    public JmxTransSpec getJmxTrans() {
-        return jmxTrans;
-    }
-
-    @Deprecated
-    public void setJmxTrans(JmxTransSpec jmxTrans) {
-        this.jmxTrans = jmxTrans;
     }
 
     public void setMaintenanceTimeWindows(List<String> maintenanceTimeWindows) {

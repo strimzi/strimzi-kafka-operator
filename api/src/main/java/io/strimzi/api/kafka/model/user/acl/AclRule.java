@@ -7,13 +7,11 @@ package io.strimzi.api.kafka.model.user.acl;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import io.strimzi.api.annotations.DeprecatedProperty;
 import io.strimzi.api.kafka.model.common.Constants;
 import io.strimzi.api.kafka.model.common.UnknownPropertyPreserving;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.DescriptionFile;
 import io.strimzi.crdgenerator.annotations.Example;
-import io.strimzi.crdgenerator.annotations.PresentInVersions;
 import io.strimzi.crdgenerator.annotations.RequiredInVersions;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
@@ -32,14 +30,13 @@ import java.util.Map;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
-@JsonPropertyOrder({"type", "resource", "host", "operation", "operations"})
+@JsonPropertyOrder({"type", "resource", "host", "operations"})
 @EqualsAndHashCode
 @ToString
 public class AclRule implements UnknownPropertyPreserving {
     private AclRuleType type = AclRuleType.ALLOW;
     private AclRuleResource resource;
     private String host = "*";
-    private AclOperation operation;
     private List<AclOperation> operations;
     private Map<String, Object> additionalProperties;
 
@@ -86,19 +83,6 @@ public class AclRule implements UnknownPropertyPreserving {
 
     public void setHost(String host) {
         this.host = host;
-    }
-
-    @Description("Operation which will be allowed or denied. " +
-            "Supported operations are: Read, Write, Create, Delete, Alter, Describe, ClusterAction, AlterConfigs, DescribeConfigs, IdempotentWrite and All.")
-    @DeprecatedProperty(movedToPath = "spec.authorization.acls[*].operations")
-    @Deprecated
-    @PresentInVersions("v1alpha1-v1beta2")
-    public AclOperation getOperation() {
-        return operation;
-    }
-
-    public void setOperation(AclOperation operation) {
-        this.operation = operation;
     }
 
     @Description("List of operations to allow or deny. " +

@@ -39,8 +39,7 @@ import java.util.function.Predicate;
         group = KafkaRebalance.RESOURCE_GROUP,
         scope = KafkaRebalance.SCOPE,
         versions = {
-            @Crd.Spec.Version(name = Constants.V1, served = true, storage = true),
-            @Crd.Spec.Version(name = Constants.V1BETA2, served = true, storage = false, deprecated = true, deprecationWarning = "Version v1beta2 of the KafkaRebalance API is deprecated. Please use the v1 version instead.")
+            @Crd.Spec.Version(name = Constants.V1, served = true, storage = true)
         },
         subresources = @Crd.Spec.Subresources(
             status = @Crd.Spec.Subresources.Status()
@@ -79,7 +78,7 @@ public class KafkaRebalance extends CustomResource<KafkaRebalanceSpec, KafkaReba
     private static final long serialVersionUID = 1L;
 
     public static final String SCOPE = Constants.SCOPE_NAMESPACED;
-    public static final List<String> VERSIONS = List.of(Constants.V1, Constants.V1BETA2);
+    public static final List<String> VERSIONS = List.of(Constants.V1);
     public static final String RESOURCE_KIND = "KafkaRebalance";
     public static final String RESOURCE_LIST_KIND = RESOURCE_KIND + "List";
     public static final String RESOURCE_GROUP = Constants.RESOURCE_GROUP_NAME;

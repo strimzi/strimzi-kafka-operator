@@ -6,11 +6,9 @@ package io.strimzi.api.kafka.model.mirrormaker2;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import io.strimzi.api.annotations.DeprecatedProperty;
 import io.strimzi.api.kafka.model.common.Constants;
 import io.strimzi.api.kafka.model.connect.AbstractKafkaConnectSpec;
 import io.strimzi.crdgenerator.annotations.Description;
-import io.strimzi.crdgenerator.annotations.PresentInVersions;
 import io.strimzi.crdgenerator.annotations.RequiredInVersions;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
@@ -23,43 +21,13 @@ import java.util.List;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({"version", "replicas", "image", "connectCluster", "clusters", "target", "mirrors", "resources",
-    "livenessProbe", "readinessProbe", "jvmOptions", "jmxOptions", "logging", "clientRackInitImage", "rack",
-    "metricsConfig", "tracing", "template", "externalConfiguration" })
+@JsonPropertyOrder({"version", "replicas", "image", "target", "mirrors", "resources", "livenessProbe", "readinessProbe",
+    "jvmOptions", "jmxOptions", "logging", "clientRackInitImage", "rack", "metricsConfig", "tracing", "template" })
 @EqualsAndHashCode(callSuper = true, doNotUseGetters = true)
 @ToString(callSuper = true)
 public class KafkaMirrorMaker2Spec extends AbstractKafkaConnectSpec {
-    private List<KafkaMirrorMaker2ClusterSpec> clusters;
-    private String connectCluster;
     private KafkaMirrorMaker2TargetClusterSpec target;
     private List<KafkaMirrorMaker2MirrorSpec> mirrors;
-
-    @Description("Kafka clusters for mirroring.")
-    @PresentInVersions("v1beta2")
-    @Deprecated
-    @DeprecatedProperty(description = "The `clusters` section is deprecated and will be removed in the `v1` CRD API. " +
-            "Please use the `.spec.target` and `.spec.mirrors[].source` sections instead.")
-    public List<KafkaMirrorMaker2ClusterSpec> getClusters() {
-        return clusters;
-    }
-
-    public void setClusters(List<KafkaMirrorMaker2ClusterSpec> clusters) {
-        this.clusters = clusters;
-    }
-
-    @Description("The cluster alias used for Kafka Connect. " +
-            "The value must match the alias of the *target* Kafka cluster as specified in the `spec.clusters` configuration. " +
-            "The target Kafka cluster is used by the underlying Kafka Connect framework for its internal topics.")
-    @Deprecated
-    @DeprecatedProperty(movedToPath = ".spec.target", description = "The `connectCluster` property is deprecated and will be removed in the `v1` CRD API.")
-    @PresentInVersions("v1beta2")
-    public String getConnectCluster() {
-        return connectCluster;
-    }
-
-    public void setConnectCluster(String connectCluster) {
-        this.connectCluster = connectCluster;
-    }
 
     @Description("The target Apache Kafka cluster. " +
             "The target Kafka cluster is used by the underlying Kafka Connect framework for its internal topics.")

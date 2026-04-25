@@ -6,7 +6,6 @@ package io.strimzi.api.kafka.model.kafka;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import io.strimzi.api.annotations.DeprecatedProperty;
 import io.strimzi.api.kafka.model.common.Constants;
 import io.strimzi.api.kafka.model.common.UnknownPropertyPreserving;
 import io.strimzi.api.kafka.model.common.template.ContainerTemplate;
@@ -15,9 +14,7 @@ import io.strimzi.api.kafka.model.common.template.InternalServiceTemplate;
 import io.strimzi.api.kafka.model.common.template.PodDisruptionBudgetTemplate;
 import io.strimzi.api.kafka.model.common.template.PodTemplate;
 import io.strimzi.api.kafka.model.common.template.ResourceTemplate;
-import io.strimzi.api.kafka.model.common.template.StatefulSetTemplate;
 import io.strimzi.crdgenerator.annotations.Description;
-import io.strimzi.crdgenerator.annotations.PresentInVersions;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -33,15 +30,13 @@ import java.util.Map;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({
-    "statefulset", "pod", "bootstrapService", "brokersService", "externalBootstrapService", "perPodService",
+@JsonPropertyOrder({"pod", "bootstrapService", "brokersService", "externalBootstrapService", "perPodService",
     "externalBootstrapRoute", "perPodRoute", "externalBootstrapIngress", "perPodIngress", "persistentVolumeClaim",
     "podDisruptionBudget", "kafkaContainer", "initContainer", "clusterCaCert", "serviceAccount", "jmxSecret",
     "clusterRoleBinding", "podSet"})
 @EqualsAndHashCode
 @ToString
 public class KafkaClusterTemplate implements HasJmxSecretTemplate, UnknownPropertyPreserving {
-    private StatefulSetTemplate statefulset;
     private ResourceTemplate podSet;
     private PodTemplate pod;
     private InternalServiceTemplate bootstrapService;
@@ -61,19 +56,6 @@ public class KafkaClusterTemplate implements HasJmxSecretTemplate, UnknownProper
     private ResourceTemplate serviceAccount;
     private ResourceTemplate jmxSecret;
     private Map<String, Object> additionalProperties;
-
-    @Description("Template for Kafka `StatefulSet`.")
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    @Deprecated
-    @DeprecatedProperty(description = "Support for StatefulSets was removed in Strimzi 0.35.0. This property is ignored.")
-    @PresentInVersions("v1beta2")
-    public StatefulSetTemplate getStatefulset() {
-        return statefulset;
-    }
-
-    public void setStatefulset(StatefulSetTemplate statefulset) {
-        this.statefulset = statefulset;
-    }
 
     @Description("Template for Kafka `StrimziPodSet` resource.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)

@@ -6,7 +6,6 @@ package io.strimzi.api.kafka.model.kafka.entityoperator;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import io.strimzi.api.annotations.DeprecatedProperty;
 import io.strimzi.api.kafka.model.common.Constants;
 import io.strimzi.api.kafka.model.common.UnknownPropertyPreserving;
 import io.strimzi.api.kafka.model.common.template.ContainerTemplate;
@@ -15,7 +14,6 @@ import io.strimzi.api.kafka.model.common.template.PodDisruptionBudgetTemplate;
 import io.strimzi.api.kafka.model.common.template.PodTemplate;
 import io.strimzi.api.kafka.model.common.template.ResourceTemplate;
 import io.strimzi.crdgenerator.annotations.Description;
-import io.strimzi.crdgenerator.annotations.PresentInVersions;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -31,7 +29,7 @@ import java.util.Map;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({"deployment", "pod", "topicOperatorContainer", "userOperatorContainer", "tlsSidecarContainer", "serviceAccount", "podDisruptionBudget", "entityOperatorRole", "topicOperatorRoleBinding", "userOperatorRoleBinding"})
+@JsonPropertyOrder({"deployment", "pod", "topicOperatorContainer", "userOperatorContainer", "serviceAccount", "podDisruptionBudget", "entityOperatorRole", "topicOperatorRoleBinding", "userOperatorRoleBinding"})
 @EqualsAndHashCode
 @ToString
 public class EntityOperatorTemplate implements UnknownPropertyPreserving {
@@ -42,7 +40,6 @@ public class EntityOperatorTemplate implements UnknownPropertyPreserving {
     private ResourceTemplate userOperatorRoleBinding;
     private ContainerTemplate topicOperatorContainer;
     private ContainerTemplate userOperatorContainer;
-    private ContainerTemplate tlsSidecarContainer;
     private ResourceTemplate serviceAccount;
     private PodDisruptionBudgetTemplate podDisruptionBudget;
     private Map<String, Object> additionalProperties;
@@ -115,19 +112,6 @@ public class EntityOperatorTemplate implements UnknownPropertyPreserving {
 
     public void setUserOperatorContainer(ContainerTemplate userOperatorContainer) {
         this.userOperatorContainer = userOperatorContainer;
-    }
-
-    @Deprecated
-    @DeprecatedProperty(description = "TLS sidecar was removed in Strimzi 0.41.0. This property is ignored.")
-    @PresentInVersions("v1beta2")
-    @Description("Template for the Entity Operator TLS sidecar container")
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public ContainerTemplate getTlsSidecarContainer() {
-        return tlsSidecarContainer;
-    }
-
-    public void setTlsSidecarContainer(ContainerTemplate tlsSidecarContainer) {
-        this.tlsSidecarContainer = tlsSidecarContainer;
     }
 
     @Description("Template for the Entity Operator service account.")

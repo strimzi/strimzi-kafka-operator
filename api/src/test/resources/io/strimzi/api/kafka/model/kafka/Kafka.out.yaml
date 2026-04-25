@@ -53,9 +53,6 @@ spec:
         foo: "bar"
       "-Xmx": "4G"
       "-Xms": "2G"
-    resources:
-      limits:
-        memory: "5Gi"
     metricsConfig:
       type: "jmxPrometheusExporter"
       valueFrom:

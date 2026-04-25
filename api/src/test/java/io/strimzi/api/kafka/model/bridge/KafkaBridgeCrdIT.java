@@ -97,7 +97,7 @@ public class KafkaBridgeCrdIT extends AbstractCrdIT {
 
         assertThat(exception.getMessage(), allOf(
                 containsStringIgnoringCase("Could not resolve type id 'wrongtype'"),
-                containsStringIgnoringCase("known type ids = [jaeger, opentelemetry]"))
+                containsStringIgnoringCase("known type ids = [opentelemetry]"))
         );
     }
 

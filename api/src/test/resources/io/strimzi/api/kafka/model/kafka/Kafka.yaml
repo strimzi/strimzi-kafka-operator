@@ -7,9 +7,6 @@ spec:
   kafka:
     image: "strimzi/kafka:latest"
     brokerRackInitImage: "strimzi/kafka-init:latest"
-    resources:
-      limits:
-        memory: "5Gi"
     livenessProbe:
       initialDelaySeconds: 5
       timeoutSeconds: 1

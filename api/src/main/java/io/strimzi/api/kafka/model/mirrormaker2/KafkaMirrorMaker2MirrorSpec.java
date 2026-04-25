@@ -6,11 +6,9 @@ package io.strimzi.api.kafka.model.mirrormaker2;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import io.strimzi.api.annotations.DeprecatedProperty;
 import io.strimzi.api.kafka.model.common.Constants;
 import io.strimzi.api.kafka.model.common.UnknownPropertyPreserving;
 import io.strimzi.crdgenerator.annotations.Description;
-import io.strimzi.crdgenerator.annotations.PresentInVersions;
 import io.strimzi.crdgenerator.annotations.RequiredInVersions;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
@@ -24,22 +22,17 @@ import java.util.Map;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({"sourceCluster", "targetCluster", "source", "sourceConnector", "heartbeatConnector", "checkpointConnector",
-    "topicsPattern", "topicsBlacklistPattern", "topicsExcludePattern", "groupsPattern", "groupsBlacklistPattern", "groupsExcludePattern"})
+@JsonPropertyOrder({"source", "sourceConnector", "checkpointConnector", "topicsPattern", "topicsExcludePattern",
+    "groupsPattern", "groupsExcludePattern"})
 @EqualsAndHashCode
 @ToString
 public class KafkaMirrorMaker2MirrorSpec implements UnknownPropertyPreserving {
-    private String sourceCluster;
-    private String targetCluster;
     private KafkaMirrorMaker2ClusterSpec source;
     private KafkaMirrorMaker2ConnectorSpec sourceConnector;
     private KafkaMirrorMaker2ConnectorSpec checkpointConnector;
-    private KafkaMirrorMaker2ConnectorSpec heartbeatConnector;
     private String topicsPattern;
-    private String topicsBlacklistPattern;
     private String topicsExcludePattern;
     private String groupsPattern;
-    private String groupsBlacklistPattern;
     private String groupsExcludePattern;
     private Map<String, Object> additionalProperties;
 
@@ -63,18 +56,6 @@ public class KafkaMirrorMaker2MirrorSpec implements UnknownPropertyPreserving {
         this.topicsPattern = topicsPattern;
     }
 
-    @DeprecatedProperty(movedToPath = ".spec.mirrors.topicsExcludePattern")
-    @PresentInVersions("v1beta2")
-    @Deprecated
-    @Description("A regular expression matching the topics to exclude from mirroring. Comma-separated lists are also supported.")
-    public String getTopicsBlacklistPattern() {
-        return topicsBlacklistPattern;
-    }
-
-    public void setTopicsBlacklistPattern(String topicsBlacklistPattern) {
-        this.topicsBlacklistPattern = topicsBlacklistPattern;
-    }
-
     @Description("A regular expression matching the topics to exclude from mirroring. Comma-separated lists are also supported.")
     public String getTopicsExcludePattern() {
         return topicsExcludePattern;
@@ -93,18 +74,6 @@ public class KafkaMirrorMaker2MirrorSpec implements UnknownPropertyPreserving {
         this.groupsPattern = groupsPattern;
     }
 
-    @DeprecatedProperty(movedToPath = ".spec.mirrors.groupsExcludePattern")
-    @PresentInVersions("v1beta2")
-    @Deprecated
-    @Description("A regular expression matching the consumer groups to exclude from mirroring. Comma-separated lists are also supported.")
-    public String getGroupsBlacklistPattern() {
-        return groupsBlacklistPattern;
-    }
-
-    public void setGroupsBlacklistPattern(String groupsBlacklistPattern) {
-        this.groupsBlacklistPattern = groupsBlacklistPattern;
-    }
-
     @Description("A regular expression matching the consumer groups to exclude from mirroring. Comma-separated lists are also supported.")
     public String getGroupsExcludePattern() {
         return groupsExcludePattern;
@@ -112,30 +81,6 @@ public class KafkaMirrorMaker2MirrorSpec implements UnknownPropertyPreserving {
 
     public void setGroupsExcludePattern(String groupsExcludePattern) {
         this.groupsExcludePattern = groupsExcludePattern;
-    }
-
-    @Description("The alias of the source cluster used by the Kafka MirrorMaker 2 connectors. The alias must match a cluster in the list at `spec.clusters`.")
-    @Deprecated
-    @DeprecatedProperty(movedToPath = ".spec.mirrors.source", description = "The `sourceCluster` property is deprecated and will be removed in the `v1` CRD API.")
-    @PresentInVersions("v1beta2")
-    public String getSourceCluster() {
-        return sourceCluster;
-    }
-
-    public void setSourceCluster(String sourceCluster) {
-        this.sourceCluster = sourceCluster;
-    }
-
-    @Description("The alias of the target cluster used by the Kafka MirrorMaker 2 connectors. The alias must match a cluster in the list at `spec.clusters`.")
-    @Deprecated
-    @DeprecatedProperty(movedToPath = ".spec.target", description = "The `targetCluster` property is deprecated and will be removed in the `v1` CRD API.")
-    @PresentInVersions("v1beta2")
-    public String getTargetCluster() {
-        return targetCluster;
-    }
-
-    public void setTargetCluster(String targetCluster) {
-        this.targetCluster = targetCluster;
     }
 
     @Description("The specification of the Kafka MirrorMaker 2 source connector.")
@@ -154,18 +99,6 @@ public class KafkaMirrorMaker2MirrorSpec implements UnknownPropertyPreserving {
 
     public void setCheckpointConnector(KafkaMirrorMaker2ConnectorSpec checkpointConnector) {
         this.checkpointConnector = checkpointConnector;
-    }
-
-    @Description("The specification of the Kafka MirrorMaker 2 heartbeat connector.")
-    @Deprecated
-    @DeprecatedProperty(description = "The `heartbeatConnector` property is deprecated and will be removed in the `v1` CRD API.")
-    @PresentInVersions("v1beta2")
-    public KafkaMirrorMaker2ConnectorSpec getHeartbeatConnector() {
-        return heartbeatConnector;
-    }
-
-    public void setHeartbeatConnector(KafkaMirrorMaker2ConnectorSpec heartbeatConnector) {
-        this.heartbeatConnector = heartbeatConnector;
     }
 
     @Override

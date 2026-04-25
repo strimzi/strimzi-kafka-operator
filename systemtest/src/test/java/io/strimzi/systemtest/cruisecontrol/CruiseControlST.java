@@ -467,13 +467,7 @@ public class CruiseControlST extends AbstractST {
                 .build(),
             KafkaNodePoolTemplates.controllerPool(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 3).build()
         );
-        KubeResourceManager.get().createResourceWithWait(KafkaTemplates.kafkaWithCruiseControl(testStorage.getNamespaceName(), testStorage.getClusterName(), 3)
-                .editOrNewSpec()
-                    .editKafka()
-                        .withStorage(jbodStorage)
-                    .endKafka()
-                .endSpec()
-                .build());
+        KubeResourceManager.get().createResourceWithWait(KafkaTemplates.kafkaWithCruiseControl(testStorage.getNamespaceName(), testStorage.getClusterName(), 3).build());
         KubeResourceManager.get().createResourceWithWait(KafkaRebalanceTemplates.kafkaRebalance(testStorage.getNamespaceName(), testStorage.getClusterName())
                 .editOrNewSpec()
                     .withRebalanceDisk(true)
@@ -810,14 +804,7 @@ public class CruiseControlST extends AbstractST {
         );
 
         // Deploy Kafka with Cruise Control enabled
-        KubeResourceManager.get().createResourceWithWait(
-            KafkaTemplates.kafkaWithCruiseControlTunedForFastModelGeneration(testStorage.getNamespaceName(), testStorage.getClusterName(), 3)
-                .editOrNewSpec()
-                    .editKafka()
-                        .withStorage(jbodStorage)
-                    .endKafka()
-                .endSpec()
-                .build());
+        KubeResourceManager.get().createResourceWithWait(KafkaTemplates.kafkaWithCruiseControlTunedForFastModelGeneration(testStorage.getNamespaceName(), testStorage.getClusterName(), 3).build());
 
         // Create topics and produce some data to them
         KubeResourceManager.get().createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getTopicName(), testStorage.getClusterName(), 24, 3).build());

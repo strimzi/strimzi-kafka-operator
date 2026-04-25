@@ -6,17 +6,13 @@ package io.strimzi.api.kafka.model.kafka.listener;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import io.strimzi.api.annotations.DeprecatedProperty;
 import io.strimzi.api.kafka.model.common.Constants;
-import io.strimzi.api.kafka.model.common.GenericSecretSource;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.DescriptionFile;
-import io.strimzi.crdgenerator.annotations.PresentInVersions;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -28,7 +24,7 @@ import java.util.Map;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({"type", "sasl", "listenerConfig", "secrets"})
+@JsonPropertyOrder({"type", "sasl", "listenerConfig"})
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class KafkaListenerAuthenticationCustom extends KafkaListenerAuthentication {
@@ -38,7 +34,6 @@ public class KafkaListenerAuthenticationCustom extends KafkaListenerAuthenticati
 
     private Map<String, Object> listenerConfig;
     private boolean sasl;
-    private List<GenericSecretSource> secrets;
 
     @Description("Must be `" + TYPE_CUSTOM + "`")
     @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -65,18 +60,5 @@ public class KafkaListenerAuthenticationCustom extends KafkaListenerAuthenticati
 
     public void setListenerConfig(Map<String, Object> config) {
         this.listenerConfig = config;
-    }
-
-    @Description("Secrets to be mounted to `/opt/kafka/custom-authn-secrets/custom-listener-<listener_name>-<port>/<secret_name>`")
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    @Deprecated
-    @DeprecatedProperty(description = "Please use the template section to configure additional volumes instead.")
-    @PresentInVersions("v1beta2")
-    public List<GenericSecretSource> getSecrets() {
-        return secrets;
-    }
-
-    public void setSecrets(List<GenericSecretSource> secrets) {
-        this.secrets = secrets;
     }
 }

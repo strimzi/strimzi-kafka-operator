@@ -587,15 +587,7 @@ class KafkaST extends AbstractST {
         final KafkaBuilder kafkaBuilder = KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getClusterName(), 3)
             .editMetadata()
                 .withLabels(customSpecifiedLabels)
-            .endMetadata()
-            .editSpec()
-                .editKafka()
-                    .withNewTemplate()
-                        .withPersistentVolumeClaim(pvcResourceTemplate)
-                    .endTemplate()
-                    .withStorage(jbodStorage)
-                .endKafka()
-            .endSpec();
+            .endMetadata();
 
         KubeResourceManager.get().createResourceWithWait(kafkaBuilder.build());
         KubeResourceManager.get().createResourceWithWait(KafkaTopicTemplates.topic(testStorage).build());

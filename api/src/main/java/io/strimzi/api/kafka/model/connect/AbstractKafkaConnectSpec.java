@@ -8,7 +8,6 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
-import io.strimzi.api.annotations.DeprecatedProperty;
 import io.strimzi.api.kafka.model.common.Constants;
 import io.strimzi.api.kafka.model.common.HasConfigurableLogging;
 import io.strimzi.api.kafka.model.common.HasConfigurableMetrics;
@@ -25,7 +24,6 @@ import io.strimzi.api.kafka.model.common.metrics.MetricsConfig;
 import io.strimzi.api.kafka.model.common.tracing.Tracing;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.KubeLink;
-import io.strimzi.crdgenerator.annotations.PresentInVersions;
 import io.strimzi.crdgenerator.annotations.RequiredInVersions;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
@@ -36,13 +34,10 @@ import lombok.ToString;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({ "replicas", "version", "image", "resources", 
-    "livenessProbe", "readinessProbe", "jvmOptions",  "jmxOptions",
-    "logging", "clientRackInitImage", "rack", "metricsConfig", "tracing",
-    "template", "externalConfiguration" })
+@JsonPropertyOrder({ "replicas", "version", "image", "resources", "livenessProbe", "readinessProbe", "jvmOptions",
+    "jmxOptions", "logging", "clientRackInitImage", "rack", "metricsConfig", "tracing", "template" })
 @EqualsAndHashCode(doNotUseGetters = true, callSuper = true)
 @ToString(callSuper = true)
-@SuppressWarnings("deprecation") // External Configuration is deprecated
 public abstract class AbstractKafkaConnectSpec extends Spec implements HasConfigurableMetrics, HasConfigurableLogging, HasJmxOptions, HasLivenessProbe, HasReadinessProbe {
     private Logging logging;
     private int replicas = 3;
@@ -56,14 +51,11 @@ public abstract class AbstractKafkaConnectSpec extends Spec implements HasConfig
     private MetricsConfig metricsConfig;
     private Tracing tracing;
     private KafkaConnectTemplate template;
-    private ExternalConfiguration externalConfiguration;
     private String clientRackInitImage;
     private Rack rack;
 
     @Description("The number of pods in the Kafka Connect group. " +
-            "Required in the `v1` version of the Strimzi API. " +
-            "Defaults to `3` in the `v1beta2` version of the Strimzi API.")
-    @JsonProperty(defaultValue = "3")
+            "Required in the `v1` version of the Strimzi API.")
     @RequiredInVersions("v1+")
     public int getReplicas() {
         return replicas;
@@ -190,20 +182,6 @@ public abstract class AbstractKafkaConnectSpec extends Spec implements HasConfig
 
     public void setTemplate(KafkaConnectTemplate template) {
         this.template = template;
-    }
-
-    @Description("Pass data from Secrets or ConfigMaps to the Kafka Connect pods and use them to configure connectors.")
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    @Deprecated
-    @DeprecatedProperty(description = "The external configuration is deprecated and will be removed in the future. " +
-            "Please use the template section instead to configure additional environment variables or volumes.")
-    @PresentInVersions("v1beta2")
-    public ExternalConfiguration getExternalConfiguration() {
-        return externalConfiguration;
-    }
-
-    public void setExternalConfiguration(ExternalConfiguration externalConfiguration) {
-        this.externalConfiguration = externalConfiguration;
     }
 
     @Description("The image of the init container used for initializing the `client.rack`.")

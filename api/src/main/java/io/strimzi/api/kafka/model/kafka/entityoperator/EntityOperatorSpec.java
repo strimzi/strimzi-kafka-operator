@@ -6,11 +6,9 @@ package io.strimzi.api.kafka.model.kafka.entityoperator;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import io.strimzi.api.annotations.DeprecatedProperty;
 import io.strimzi.api.kafka.model.common.Constants;
 import io.strimzi.api.kafka.model.common.UnknownPropertyPreserving;
 import io.strimzi.crdgenerator.annotations.Description;
-import io.strimzi.crdgenerator.annotations.PresentInVersions;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -26,14 +24,12 @@ import java.util.Map;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({"topicOperator", "userOperator", "tlsSidecar", "template"})
+@JsonPropertyOrder({"topicOperator", "userOperator", "template"})
 @EqualsAndHashCode
 @ToString
 public class EntityOperatorSpec implements UnknownPropertyPreserving {
     private EntityTopicOperatorSpec topicOperator;
     private EntityUserOperatorSpec userOperator;
-    @SuppressWarnings("deprecation") // TLS Sidecar is not used anymore and is deprecated
-    private TlsSidecar tlsSidecar;
     private EntityOperatorTemplate template;
     private Map<String, Object> additionalProperties;
 
@@ -55,20 +51,6 @@ public class EntityOperatorSpec implements UnknownPropertyPreserving {
 
     public void setUserOperator(EntityUserOperatorSpec userOperator) {
         this.userOperator = userOperator;
-    }
-
-    @Deprecated
-    @DeprecatedProperty(description = "TLS sidecar was removed in Strimzi 0.41.0. This property is ignored.")
-    @PresentInVersions("v1beta2")
-    @Description("TLS sidecar configuration")
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    public TlsSidecar getTlsSidecar() {
-        return tlsSidecar;
-    }
-
-    @Deprecated
-    public void setTlsSidecar(TlsSidecar tlsSidecar) {
-        this.tlsSidecar = tlsSidecar;
     }
 
     @Description("Template for Entity Operator resources. " +

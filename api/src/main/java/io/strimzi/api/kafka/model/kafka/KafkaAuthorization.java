@@ -21,11 +21,8 @@ import java.util.Map;
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME,
         include = JsonTypeInfo.As.EXISTING_PROPERTY,
         property = "type")
-@SuppressWarnings("deprecation") // OPA and Keycloak Authorization is deprecated
 @JsonSubTypes({
     @JsonSubTypes.Type(name = KafkaAuthorizationSimple.TYPE_SIMPLE, value = KafkaAuthorizationSimple.class),
-    @JsonSubTypes.Type(name = KafkaAuthorizationOpa.TYPE_OPA, value = KafkaAuthorizationOpa.class),
-    @JsonSubTypes.Type(name = KafkaAuthorizationKeycloak.TYPE_KEYCLOAK, value = KafkaAuthorizationKeycloak.class),
     @JsonSubTypes.Type(name = KafkaAuthorizationCustom.TYPE_CUSTOM, value = KafkaAuthorizationCustom.class)
 })
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -35,13 +32,9 @@ public abstract class KafkaAuthorization implements UnknownPropertyPreserving {
     private Map<String, Object> additionalProperties;
 
     @Description("Authorization type. " +
-            "Currently, the supported types are `simple`, `keycloak`, `opa` and `custom`. " +
+            "Currently, the supported types are `simple` and `custom`. " +
             "`simple` authorization type uses Kafka's built-in authorizer for authorization. " +
-            "`keycloak` authorization type uses Keycloak Authorization Services for authorization. " +
-            "`opa` authorization type uses Open Policy Agent based authorization. " +
-            "`custom` authorization type uses user-provided implementation for authorization. " +
-            "`opa` (as of Strimzi 0.46.0) and `keycloak` (as of Strimzi 0.49.0) types are deprecated and will be removed in the `v1` API version. " +
-            "Please use `custom` type instead.")
+            "`custom` authorization type uses user-provided implementation for authorization.")
     public abstract String getType();
 
     /**

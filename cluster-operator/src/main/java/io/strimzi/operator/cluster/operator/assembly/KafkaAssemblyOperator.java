@@ -11,7 +11,6 @@ import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.model.common.Condition;
 import io.strimzi.api.kafka.model.common.ConditionBuilder;
-import io.strimzi.api.kafka.model.common.Constants;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
 import io.strimzi.api.kafka.model.kafka.KafkaList;
@@ -302,30 +301,25 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     Kafka kafka = getRes.result();
 
                     if (kafka != null) {
-                        if ((Constants.RESOURCE_GROUP_NAME + "/" + Constants.V1ALPHA1).equals(kafka.getApiVersion()))   {
-                            LOGGER.warnCr(reconciliation, "The resource needs to be upgraded from version {} to 'v1beta1' to use the status field", kafka.getApiVersion());
-                            updateStatusPromise.complete();
+                        KafkaStatus currentStatus = kafka.getStatus();
+
+                        StatusDiff ksDiff = new StatusDiff(currentStatus, desiredStatus);
+
+                        if (!ksDiff.isEmpty()) {
+                            Kafka resourceWithNewStatus = new KafkaBuilder(kafka).withStatus(desiredStatus).build();
+
+                            kafkaOperator.updateStatusAsync(reconciliation, resourceWithNewStatus).onComplete(updateRes -> {
+                                if (updateRes.succeeded()) {
+                                    LOGGER.debugCr(reconciliation, "Completed status update");
+                                    updateStatusPromise.complete();
+                                } else {
+                                    LOGGER.errorCr(reconciliation, "Failed to update status", updateRes.cause());
+                                    updateStatusPromise.fail(updateRes.cause());
+                                }
+                            });
                         } else {
-                            KafkaStatus currentStatus = kafka.getStatus();
-
-                            StatusDiff ksDiff = new StatusDiff(currentStatus, desiredStatus);
-
-                            if (!ksDiff.isEmpty()) {
-                                Kafka resourceWithNewStatus = new KafkaBuilder(kafka).withStatus(desiredStatus).build();
-
-                                kafkaOperator.updateStatusAsync(reconciliation, resourceWithNewStatus).onComplete(updateRes -> {
-                                    if (updateRes.succeeded()) {
-                                        LOGGER.debugCr(reconciliation, "Completed status update");
-                                        updateStatusPromise.complete();
-                                    } else {
-                                        LOGGER.errorCr(reconciliation, "Failed to update status", updateRes.cause());
-                                        updateStatusPromise.fail(updateRes.cause());
-                                    }
-                                });
-                            } else {
-                                LOGGER.debugCr(reconciliation, "Status did not change");
-                                updateStatusPromise.complete();
-                            }
+                            LOGGER.debugCr(reconciliation, "Status did not change");
+                            updateStatusPromise.complete();
                         }
                     } else {
                         LOGGER.errorCr(reconciliation, "Current Kafka resource not found");

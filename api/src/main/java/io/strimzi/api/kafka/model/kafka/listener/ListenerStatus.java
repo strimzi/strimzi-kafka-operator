@@ -6,11 +6,9 @@ package io.strimzi.api.kafka.model.kafka.listener;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import io.strimzi.api.annotations.DeprecatedProperty;
 import io.strimzi.api.kafka.model.common.Constants;
 import io.strimzi.api.kafka.model.common.UnknownPropertyPreserving;
 import io.strimzi.crdgenerator.annotations.Description;
-import io.strimzi.crdgenerator.annotations.PresentInVersions;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -28,29 +26,15 @@ import java.util.stream.Collectors;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({ "type", "name", "addresses", "bootstrapServers", "certificates" })
+@JsonPropertyOrder({ "name", "addresses", "bootstrapServers", "certificates" })
 @EqualsAndHashCode
 @ToString
 public class ListenerStatus implements UnknownPropertyPreserving {
-    private String type;
     private String name;
     private List<ListenerAddress> addresses;
     private String bootstrapServers;
     private List<String> certificates;
     private Map<String, Object> additionalProperties;
-
-    @Deprecated
-    @DeprecatedProperty(description = "The `type` property is not used anymore. Use the `name` property with the same value.", movedToPath = ".status.listeners.name")
-    @Description("The name of the listener.")
-    @PresentInVersions("v1beta2")
-    public String getType() {
-        return type;
-    }
-
-    @Deprecated
-    public void setType(String type) {
-        this.type = type;
-    }
 
     @Description("The name of the listener.")
     public String getName() {

@@ -7,8 +7,6 @@ package io.strimzi.api.kafka.model.kafka;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import io.fabric8.kubernetes.api.model.ResourceRequirements;
-import io.strimzi.api.annotations.DeprecatedProperty;
 import io.strimzi.api.kafka.model.common.Constants;
 import io.strimzi.api.kafka.model.common.HasConfigurableLogging;
 import io.strimzi.api.kafka.model.common.HasConfigurableMetrics;
@@ -28,10 +26,7 @@ import io.strimzi.api.kafka.model.kafka.tieredstorage.TieredStorage;
 import io.strimzi.crdgenerator.annotations.AddedIn;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.DescriptionFile;
-import io.strimzi.crdgenerator.annotations.KubeLink;
-import io.strimzi.crdgenerator.annotations.Minimum;
 import io.strimzi.crdgenerator.annotations.MinimumItems;
-import io.strimzi.crdgenerator.annotations.PresentInVersions;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -51,10 +46,9 @@ import java.util.Map;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({
-    "version", "metadataVersion", "replicas", "image", "listeners", "config", "storage", "authorization", "rack",
-    "brokerRackInitImage", "livenessProbe", "readinessProbe", "jvmOptions", "jmxOptions", "resources", "metricsConfig",
-    "logging", "template", "tieredStorage", "quotas"})
+@JsonPropertyOrder({"version", "metadataVersion", "image", "listeners", "config", "authorization", "rack",
+    "brokerRackInitImage", "livenessProbe", "readinessProbe", "jvmOptions", "jmxOptions", "metricsConfig", "logging",
+    "template", "tieredStorage", "quotas"})
 @EqualsAndHashCode
 @ToString
 public class KafkaClusterSpec implements HasConfigurableMetrics, HasConfigurableLogging, HasJmxOptions, HasReadinessProbe, HasLivenessProbe, UnknownPropertyPreserving {
@@ -80,16 +74,13 @@ public class KafkaClusterSpec implements HasConfigurableMetrics, HasConfigurable
     /* When ALLOWED_PER_LISTENER_CONFIGS is updated, documentation/api/io.strimzi.api.kafka.model.kafka.KafkaClusterSpec.adoc must be updated accordingly. */
     public static final String ALLOWED_PER_LISTENER_CONFIGS  = "connections.max.reauth.ms, max.connections, max.connection.creation.rate";
 
-    private Storage storage;
     private String version;
     private String metadataVersion;
     private Map<String, Object> config = new HashMap<>(0);
     private String brokerRackInitImage;
     private Rack rack;
     private Logging logging;
-    private Integer replicas;
     private String image;
-    private ResourceRequirements resources;
     private Probe livenessProbe;
     private Probe readinessProbe;
     private JvmOptions jvmOptions;
@@ -155,18 +146,6 @@ public class KafkaClusterSpec implements HasConfigurableMetrics, HasConfigurable
         this.rack = rack;
     }
 
-    @Deprecated
-    @DeprecatedProperty(description = "Use `KafkaNodePool` resources.")
-    @PresentInVersions("v1beta2")
-    @Description("Storage is now configured in the `KafkaNodePool` resources and this option is ignored.")
-    public Storage getStorage() {
-        return storage;
-    }
-
-    public void setStorage(Storage storage) {
-        this.storage = storage;
-    }
-
     @Description("Logging configuration for Kafka")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     @Override
@@ -177,20 +156,6 @@ public class KafkaClusterSpec implements HasConfigurableMetrics, HasConfigurable
     @Override
     public void setLogging(Logging logging) {
         this.logging = logging;
-    }
-
-    @Deprecated
-    @DeprecatedProperty(description = "Use `KafkaNodePool` resources.")
-    @PresentInVersions("v1beta2")
-    @Description("Replicas are now configured in `KafkaNodePool` resources and this option is ignored.")
-    @Minimum(1)
-    public Integer getReplicas() {
-        return replicas;
-    }
-
-    @Deprecated
-    public void setReplicas(Integer replicas) {
-        this.replicas = replicas;
     }
 
     @Description("The container image used for Kafka pods. "
@@ -204,20 +169,6 @@ public class KafkaClusterSpec implements HasConfigurableMetrics, HasConfigurable
 
     public void setImage(String image) {
         this.image = image;
-    }
-
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    @KubeLink(group = "core", version = "v1", kind = "resourcerequirements")
-    @Description("CPU and memory resources to reserve.")
-    @Deprecated
-    @DeprecatedProperty(description = "Use `KafkaNodePool` custom resources to configure CPU and memory.")
-    @PresentInVersions("v1beta2")
-    public ResourceRequirements getResources() {
-        return resources;
-    }
-
-    public void setResources(ResourceRequirements resources) {
-        this.resources = resources;
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
