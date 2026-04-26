@@ -7,6 +7,11 @@ package io.strimzi.operator.cluster.operator.resource;
 import io.strimzi.operator.common.Reconciliation;
 import org.junit.jupiter.api.Test;
 
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.time.Duration;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -59,5 +64,31 @@ public class KafkaAgentClientTest {
         assertEquals(-1, actual.code());
         assertEquals(0, actual.remainingLogsToRecover());
         assertEquals(0, actual.remainingSegmentsToRecover());
+    }
+
+    /**
+     * Regression guard: a previous version of KafkaAgentClient configured no timeout on the per-request side,
+     * which let a broker stuck on IO block the KafkaRoller's single-threaded executor indefinitely. Verify that
+     * requests built via the package-private helper carry the configured timeout.
+     */
+    @Test
+    public void testBuildRequestAppliesHttpRequestTimeout() {
+        HttpRequest request = KafkaAgentClient.buildRequest(URI.create("https://example.invalid/v1/broker-state/"));
+        Duration timeout = request.timeout().orElseThrow(() -> new AssertionError("HTTP request timeout was not configured"));
+        assertEquals(KafkaAgentClient.HTTP_REQUEST_TIMEOUT, timeout, "Request timeout must equal HTTP_REQUEST_TIMEOUT");
+        assertTrue(timeout.toMillis() > 0, "HTTP request timeout must be positive but was " + timeout);
+    }
+
+    /**
+     * Regression guard: a previous version of KafkaAgentClient configured no connect timeout, which let an
+     * unresponsive broker block the KafkaRoller's single-threaded executor indefinitely. Verify that clients
+     * built via the package-private helper carry the configured connect timeout.
+     */
+    @Test
+    public void testHttpClientBuilderAppliesConnectTimeout() {
+        HttpClient client = KafkaAgentClient.httpClientBuilder().build();
+        Duration connectTimeout = client.connectTimeout().orElseThrow(() -> new AssertionError("HTTP connect timeout was not configured"));
+        assertEquals(KafkaAgentClient.HTTP_REQUEST_TIMEOUT, connectTimeout, "Connect timeout must equal HTTP_REQUEST_TIMEOUT");
+        assertTrue(connectTimeout.toMillis() > 0, "HTTP connect timeout must be positive but was " + connectTimeout);
     }
 }
