@@ -50,7 +50,7 @@ public class PodOperator extends AbstractReadyNamespacedResourceOperator<Kuberne
 
     @Override
     protected DeletionPropagation determineDeletionPropagation(boolean cascading) {
-        return cascading ? cascadingDeletionPropagation: DeletionPropagation.ORPHAN;
+        return cascading ? cascadingDeletionPropagation : DeletionPropagation.ORPHAN;
     }
 
     @Override
