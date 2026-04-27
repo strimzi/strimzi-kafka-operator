@@ -238,7 +238,7 @@ public abstract class AbstractNamespacedResourceOperator<C extends KubernetesCli
                 }
             });
 
-        Future<Void> deleteFuture = resourceSupport.deleteAsync(resourceOp.withPropagationPolicy(getDeletionPropagation(cascading)).withGracePeriod(-1L));
+        Future<Void> deleteFuture = resourceSupport.deleteAsync(resourceOp.withPropagationPolicy(determineDeletionPropagation(cascading)).withGracePeriod(-1L));
 
         return Future.join(watchForDeleteFuture, deleteFuture).map(ReconcileResult.deleted());
     }
@@ -251,7 +251,7 @@ public abstract class AbstractNamespacedResourceOperator<C extends KubernetesCli
      *
      * @return  The DeletionPropagation policy to use
      */
-    protected DeletionPropagation getDeletionPropagation(boolean cascading) {
+    protected DeletionPropagation determineDeletionPropagation(boolean cascading) {
         return cascading ? DeletionPropagation.FOREGROUND : DeletionPropagation.ORPHAN;
     }
 

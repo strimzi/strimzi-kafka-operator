@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.cluster.operator.resource;
 
+import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.strimzi.api.kafka.model.bridge.KafkaBridge;
@@ -310,7 +311,7 @@ public class ResourceOperatorSupplier {
                 new ClusterRoleBindingOperator(vertx, client),
                 new NetworkPolicyOperator(vertx, client),
                 new PodDisruptionBudgetOperator(vertx, client),
-                new PodOperator(vertx, client, featureGates.useBackgroundPodDeletionEnabled()),
+                new PodOperator(vertx, client, featureGates.useBackgroundPodDeletionEnabled() ? DeletionPropagation.BACKGROUND : DeletionPropagation.FOREGROUND),
                 new IngressOperator(vertx, client, featureGates.serverSideApplyPhase1Enabled()),
                 pfa.hasBuilds() ? new BuildConfigOperator(vertx, client.adapt(OpenShiftClient.class)) : null,
                 pfa.hasBuilds() ? new BuildOperator(vertx, client.adapt(OpenShiftClient.class)) : null,

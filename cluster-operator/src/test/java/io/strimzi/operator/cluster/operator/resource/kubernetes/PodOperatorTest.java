@@ -69,16 +69,16 @@ public class PodOperatorTest extends
         Vertx vertx = mock(Vertx.class);
         KubernetesClient client = mock(KubernetesClient.class);
         PodOperator podOperator = new PodOperator(vertx, client);
-        assertThat(podOperator.getDeletionPropagation(true), is(DeletionPropagation.FOREGROUND));
-        assertThat(podOperator.getDeletionPropagation(false), is(DeletionPropagation.ORPHAN));
+        assertThat(podOperator.determineDeletionPropagation(true), is(DeletionPropagation.FOREGROUND));
+        assertThat(podOperator.determineDeletionPropagation(false), is(DeletionPropagation.ORPHAN));
     }
 
     @Test
     void testDeletionPropagationWithBackgroundDeletion() {
         Vertx vertx = mock(Vertx.class);
         KubernetesClient client = mock(KubernetesClient.class);
-        PodOperator podOperator = new PodOperator(vertx, client, true);
-        assertThat(podOperator.getDeletionPropagation(true), is(DeletionPropagation.BACKGROUND));
-        assertThat(podOperator.getDeletionPropagation(false), is(DeletionPropagation.BACKGROUND));
+        PodOperator podOperator = new PodOperator(vertx, client, DeletionPropagation.BACKGROUND);
+        assertThat(podOperator.determineDeletionPropagation(true), is(DeletionPropagation.BACKGROUND));
+        assertThat(podOperator.determineDeletionPropagation(false), is(DeletionPropagation.ORPHAN));
     }
 }

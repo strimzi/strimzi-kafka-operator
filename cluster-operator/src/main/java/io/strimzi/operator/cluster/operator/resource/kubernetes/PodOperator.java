@@ -25,7 +25,7 @@ public class PodOperator extends AbstractReadyNamespacedResourceOperator<Kuberne
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(PodOperator.class);
     private static final String NO_UID = "NULL";
 
-    private boolean useBackgroundDeletion = false;
+    private final DeletionPropagation cascadingDeletionPropagation;
 
     /**
      * Constructor
@@ -34,22 +34,23 @@ public class PodOperator extends AbstractReadyNamespacedResourceOperator<Kuberne
      */
     public PodOperator(Vertx vertx, KubernetesClient client) {
         super(vertx, client, "Pods");
+        cascadingDeletionPropagation = DeletionPropagation.FOREGROUND;
     }
 
     /**
      * Constructor
-     * @param vertx                 The Vertx instance
-     * @param client                The Kubernetes client
-     * @param useBackgroundDeletion Whether to use background deletion propagation when deleting pods
+     * @param vertx                         The Vertx instance
+     * @param client                        The Kubernetes client
+     * @param cascadingDeletionPropagation  The deletion propagation policy to use when cascading deletion is enabled
      */
-    public PodOperator(Vertx vertx, KubernetesClient client, boolean useBackgroundDeletion) {
+    public PodOperator(Vertx vertx, KubernetesClient client, DeletionPropagation cascadingDeletionPropagation) {
         super(vertx, client, "Pods");
-        this.useBackgroundDeletion = useBackgroundDeletion;
+        this.cascadingDeletionPropagation = cascadingDeletionPropagation;
     }
 
     @Override
-    protected DeletionPropagation getDeletionPropagation(boolean cascading) {
-        return useBackgroundDeletion ? DeletionPropagation.BACKGROUND : super.getDeletionPropagation(cascading);
+    protected DeletionPropagation determineDeletionPropagation(boolean cascading) {
+        return cascading ? cascadingDeletionPropagation: DeletionPropagation.ORPHAN;
     }
 
     @Override
