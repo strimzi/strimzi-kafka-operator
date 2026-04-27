@@ -291,6 +291,13 @@
   metadata: 4.2
   url: https://archive.apache.org/dist/kafka/4.2.0/kafka_2.13-4.2.0.tgz
   checksum: 16CE46E590BA915F01B720EA514445E49C88BF129CF4CEAB88878B122D54EF24F0DEDB88D0EB178957F58057A6C6A9ADBEA8B8059307585DAEA13129B85BA1D8
-  third-party-libs: 4.2.x
+  third-party-libs: 4.2.0
+  supported: true
+  default: false
+- version: 4.2.1
+  metadata: 4.2
+  url: https://dist.apache.org/repos/dist/dev/kafka/4.2.1-rc3/kafka_2.13-4.2.1.tgz
+  checksum: B6B015FAEE8E00D8B4A4110B2332BC44EB3FAEF1164148A74F0A44C25A24DEC9616625C7F581143A138B27758D2D38F8018BFD7DBFE60D2FE70A720128B6E328
+  third-party-libs: 4.2.1
   supported: true
   default: true
