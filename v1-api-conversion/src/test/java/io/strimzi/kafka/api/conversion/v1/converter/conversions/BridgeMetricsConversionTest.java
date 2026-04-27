@@ -9,6 +9,7 @@ import com.fasterxml.jackson.databind.json.JsonMapper;
 import io.strimzi.api.annotations.ApiVersion;
 import io.strimzi.api.kafka.model.bridge.KafkaBridge;
 import io.strimzi.api.kafka.model.bridge.KafkaBridgeBuilder;
+import io.strimzi.api.kafka.model.common.Constants;
 import io.strimzi.api.kafka.model.common.metrics.JmxPrometheusExporterMetrics;
 import io.strimzi.api.kafka.model.common.metrics.MetricsConfig;
 import io.strimzi.kafka.api.conversion.v1.converter.AbstractConverter;
@@ -41,7 +42,7 @@ class BridgeMetricsConversionTest {
     @Test
     public void testBridgeMetricsConversion() throws Exception {
         KafkaBridge kb = new KafkaBridgeBuilder()
-                .withApiVersion("kafka.strimzi.io/v1beta2")
+                .withApiVersion(Constants.RESOURCE_GROUP_NAME + "/v1beta2")
                 .withNewMetadata()
                     .withName("test")
                 .endMetadata()
@@ -54,7 +55,7 @@ class BridgeMetricsConversionTest {
                     .withEnableMetrics(true)
                 .endSpec()
                 .build();
-        kb.setApiVersion("kafka.strimzi.io/v1beta2");
+        kb.setApiVersion(Constants.RESOURCE_GROUP_NAME + "/v1beta2");
 
         verify(crConversion(new KafkaBridgeConverter(), kb, ApiVersion.V1));
         verify(jsonConversion(new KafkaBridgeConverter(), kb, ApiVersion.V1));

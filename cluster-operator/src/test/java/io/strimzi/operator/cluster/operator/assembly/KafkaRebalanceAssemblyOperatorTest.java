@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.common.Condition;
 import io.strimzi.api.kafka.model.common.ConditionBuilder;
+import io.strimzi.api.kafka.model.common.Constants;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
@@ -1514,7 +1515,7 @@ public class KafkaRebalanceAssemblyOperatorTest extends AbstractKafkaRebalanceAs
         // Set up the rebalance endpoint with the number of pending calls before a response is received.
         cruiseControlServer.setupCCRebalanceResponse(0, CruiseControlEndpoints.REBALANCE, "true");
 
-        String rebalanceString = "apiVersion: kafka.strimzi.io/v1beta2\n" +
+        String rebalanceString = "apiVersion: " + Constants.RESOURCE_GROUP_NAME + "/v1beta2\n" +
                 "kind: KafkaRebalance\n" +
                 "metadata:\n" +
                 "  name: " + RESOURCE_NAME + "\n" +

@@ -10,6 +10,7 @@ import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinition
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.strimzi.api.annotations.ApiVersion;
 import io.strimzi.api.annotations.VersionRange;
+import io.strimzi.api.kafka.model.common.Constants;
 import io.strimzi.test.CrdUtils;
 import io.strimzi.test.TestUtils;
 import org.junit.jupiter.api.AfterEach;
@@ -29,16 +30,15 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 public class StructuralCrdIT extends AbstractCrdIT {
     private final static Map<String, String> CRD_FILES = Map.of(
-            "kafkas.kafka.strimzi.io", "040-Crd-kafka.yaml",
-            "kafkaconnects.kafka.strimzi.io", "041-Crd-kafkaconnect.yaml",
-            "kafkatopics.kafka.strimzi.io", "043-Crd-kafkatopic.yaml",
-            "kafkausers.kafka.strimzi.io", "044-Crd-kafkauser.yaml",
-            "kafkabridges.kafka.strimzi.io", "046-Crd-kafkabridge.yaml",
-            "kafkaconnectors.kafka.strimzi.io", "047-Crd-kafkaconnector.yaml",
-            "kafkamirrormaker2s.kafka.strimzi.io", "048-Crd-kafkamirrormaker2.yaml",
-            "kafkarebalances.kafka.strimzi.io", "049-Crd-kafkarebalance.yaml",
-            "kafkanodepools.kafka.strimzi.io", "045-Crd-kafkanodepool.yaml"
-    );
+            "kafkas." + Constants.RESOURCE_GROUP_NAME, "040-Crd-kafka.yaml",
+            "kafkaconnects." + Constants.RESOURCE_GROUP_NAME, "041-Crd-kafkaconnect.yaml",
+            "kafkatopics." + Constants.RESOURCE_GROUP_NAME, "043-Crd-kafkatopic.yaml",
+            "kafkausers." + Constants.RESOURCE_GROUP_NAME, "044-Crd-kafkauser.yaml",
+            "kafkabridges." + Constants.RESOURCE_GROUP_NAME, "046-Crd-kafkabridge.yaml",
+            "kafkaconnectors." + Constants.RESOURCE_GROUP_NAME, "047-Crd-kafkaconnector.yaml",
+            "kafkamirrormaker2s." + Constants.RESOURCE_GROUP_NAME, "048-Crd-kafkamirrormaker2.yaml",
+            "kafkarebalances." + Constants.RESOURCE_GROUP_NAME, "049-Crd-kafkarebalance.yaml",
+            "kafkanodepools." + Constants.RESOURCE_GROUP_NAME, "045-Crd-kafkanodepool.yaml");
 
     @BeforeEach
     public void beforeEach() {

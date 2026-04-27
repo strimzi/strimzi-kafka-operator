@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.strimzi.api.annotations.ApiVersion;
+import io.strimzi.api.kafka.model.common.Constants;
 import io.strimzi.api.kafka.model.connector.KafkaConnector;
 import io.strimzi.api.kafka.model.connector.KafkaConnectorBuilder;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalance;
@@ -23,10 +24,10 @@ class VersionConversionTest {
 
     @Test
     public void testVersionConversion() throws Exception {
-        KafkaConnector kc = new KafkaConnectorBuilder().withApiVersion("kafka.strimzi.io/v1beta2").withNewSpec().endSpec().build();
+        KafkaConnector kc = new KafkaConnectorBuilder().withApiVersion(Constants.RESOURCE_GROUP_NAME + "/v1beta2").withNewSpec().endSpec().build();
         versionConversion(new KafkaConnectorConverter(), kc, ApiVersion.V1);
 
-        KafkaRebalance kr = new KafkaRebalanceBuilder().withApiVersion("kafka.strimzi.io/v1beta2").withNewSpec().endSpec().build();
+        KafkaRebalance kr = new KafkaRebalanceBuilder().withApiVersion(Constants.RESOURCE_GROUP_NAME + "/v1beta2").withNewSpec().endSpec().build();
         versionConversion(new KafkaRebalanceConverter(), kr, ApiVersion.V1);
     }
 
@@ -41,10 +42,10 @@ class VersionConversionTest {
         converter.convertTo(node, toApiVersion);
         T converted = JSON_MAPPER.readerFor(converter.crClass()).readValue(node);
         String apiVersion = converted.getApiVersion();
-        Assertions.assertEquals("kafka.strimzi.io/v1", apiVersion);
+        Assertions.assertEquals(Constants.RESOURCE_GROUP_NAME + "/v1", apiVersion);
 
         converter.convertTo(cr, toApiVersion);
         apiVersion = converted.getApiVersion();
-        Assertions.assertEquals("kafka.strimzi.io/v1", apiVersion);
+        Assertions.assertEquals(Constants.RESOURCE_GROUP_NAME + "/v1", apiVersion);
     }
 }

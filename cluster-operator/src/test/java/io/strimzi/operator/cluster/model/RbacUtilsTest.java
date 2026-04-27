@@ -13,6 +13,7 @@ import io.fabric8.kubernetes.api.model.rbac.RoleRef;
 import io.fabric8.kubernetes.api.model.rbac.RoleRefBuilder;
 import io.fabric8.kubernetes.api.model.rbac.Subject;
 import io.fabric8.kubernetes.api.model.rbac.SubjectBuilder;
+import io.strimzi.api.kafka.model.common.Constants;
 import io.strimzi.api.kafka.model.common.template.ResourceTemplate;
 import io.strimzi.api.kafka.model.common.template.ResourceTemplateBuilder;
 import io.strimzi.operator.cluster.ResourceUtils;
@@ -45,7 +46,7 @@ public class RbacUtilsTest {
     @Test
     public void testRole()  {
         PolicyRule rule = new PolicyRuleBuilder()
-                .withApiGroups("kafka.strimzi.io")
+                .withApiGroups(Constants.RESOURCE_GROUP_NAME)
                 .withResources("kafkausers", "kafkausers/status")
                 .withVerbs("get", "list", "watch", "create", "patch", "update", "delete")
                 .build();
@@ -64,7 +65,7 @@ public class RbacUtilsTest {
     @Test
     public void testRoleWithTemplate()  {
         PolicyRule rule = new PolicyRuleBuilder()
-                .withApiGroups("kafka.strimzi.io")
+                .withApiGroups(Constants.RESOURCE_GROUP_NAME)
                 .withResources("kafkausers", "kafkausers/status")
                 .withVerbs("get", "list", "watch", "create", "patch", "update", "delete")
                 .build();
