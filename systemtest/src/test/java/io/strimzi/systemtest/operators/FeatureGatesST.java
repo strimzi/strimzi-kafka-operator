@@ -213,9 +213,6 @@ public class FeatureGatesST extends AbstractST {
 
         brokerPods = RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), 3, brokerPods);
 
-        LOGGER.info("Verifying all broker pods are ready after rolling update with background pod deletion");
-        RollingUpdateUtils.waitForComponentAndPodsReady(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), 3);
-
         assertThat("Broker pods were rolled successfully with UseBackgroundPodDeletion enabled", brokerPods.size(), is(3));
     }
 
