@@ -697,7 +697,9 @@ public abstract class Ca {
         }
 
         switch (renewalType) {
-            case REPLACE_KEY, RENEW_CERT, CREATE, NOOP ->
+            case NOOP ->
+                    LOGGER.debugCr(reconciliation, "{}: {}", this, renewalType.preDescription(caName()));
+            case REPLACE_KEY, RENEW_CERT, CREATE ->
                     LOGGER.debugCr(reconciliation, "{}: {}: {}", this, renewalType.preDescription(caName()), reason);
             case POSTPONED ->
                     LOGGER.warnCr(reconciliation, "{}: {}: {}", this, renewalType.preDescription(caName()), reason);
