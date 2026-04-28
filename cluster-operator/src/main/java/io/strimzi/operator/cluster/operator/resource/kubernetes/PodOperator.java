@@ -39,13 +39,13 @@ public class PodOperator extends AbstractReadyNamespacedResourceOperator<Kuberne
 
     /**
      * Constructor
-     * @param vertx                         The Vertx instance
-     * @param client                        The Kubernetes client
-     * @param cascadingDeletionPropagation  The deletion propagation policy to use when cascading deletion is enabled
+     * @param vertx                 The Vertx instance
+     * @param client                The Kubernetes client
+     * @param useBackgroundDeletion Whether to use background deletion propagation when cascading deletion is enabled
      */
-    public PodOperator(Vertx vertx, KubernetesClient client, DeletionPropagation cascadingDeletionPropagation) {
+    public PodOperator(Vertx vertx, KubernetesClient client, boolean useBackgroundDeletion) {
         super(vertx, client, "Pods");
-        this.cascadingDeletionPropagation = cascadingDeletionPropagation;
+        this.cascadingDeletionPropagation = useBackgroundDeletion ? DeletionPropagation.BACKGROUND : DeletionPropagation.FOREGROUND;
     }
 
     @Override

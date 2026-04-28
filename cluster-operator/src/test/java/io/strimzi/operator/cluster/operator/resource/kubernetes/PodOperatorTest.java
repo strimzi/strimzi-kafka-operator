@@ -77,7 +77,7 @@ public class PodOperatorTest extends
     void testDeletionPropagationWithBackgroundDeletion() {
         Vertx vertx = mock(Vertx.class);
         KubernetesClient client = mock(KubernetesClient.class);
-        PodOperator podOperator = new PodOperator(vertx, client, DeletionPropagation.BACKGROUND);
+        PodOperator podOperator = new PodOperator(vertx, client, true);
         assertThat(podOperator.determineDeletionPropagation(true), is(DeletionPropagation.BACKGROUND));
         assertThat(podOperator.determineDeletionPropagation(false), is(DeletionPropagation.ORPHAN));
     }

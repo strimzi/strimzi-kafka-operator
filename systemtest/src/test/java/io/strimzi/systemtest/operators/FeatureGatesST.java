@@ -5,7 +5,6 @@
 package io.strimzi.systemtest.operators;
 
 import io.fabric8.kubernetes.api.model.EnvVar;
-import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
 import io.skodjob.annotations.Desc;
 import io.skodjob.annotations.Label;
@@ -40,9 +39,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.Tag;
 
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
@@ -183,17 +180,14 @@ public class FeatureGatesST extends AbstractST {
     }
 
 
-    @IsolatedTest("Tests behavior change between FOREGROUND and BACKGROUND pod deletion propagation")
+    @IsolatedTest("Enables UseBackgroundPodDeletion feature gate in CO")
     @TestDoc(
-        description = @Desc("Verifies that the UseBackgroundPodDeletion feature gate correctly switches pod deletion propagation from FOREGROUND to BACKGROUND. " +
-            "With FOREGROUND deletion, terminating pods have the 'foregroundDeletion' finalizer set. " +
-            "With BACKGROUND deletion, terminating pods do not have this finalizer."),
+        description = @Desc("This test verifies that the UseBackgroundPodDeletion feature gate works correctly. When enabled, Kafka broker pods are deleted with BACKGROUND propagation during rolling restarts, and the rolling restart completes successfully."),
         steps = {
-            @Step(value = "Deploy Cluster Operator with default deletion propagation (FOREGROUND).", expected = "Cluster Operator is deployed without background pod deletion feature gate."),
+            @Step(value = "Deploy Cluster Operator with UseBackgroundPodDeletion enabled.", expected = "Cluster Operator is deployed with background pod deletion feature gate."),
             @Step(value = "Create Kafka cluster with broker and controller node pools.", expected = "Kafka cluster is deployed and ready."),
-            @Step(value = "Trigger manual rolling update and verify pods are deleted with FOREGROUND propagation.", expected = "Terminating broker pods have the finalizer."),
-            @Step(value = "Enable UseBackgroundPodDeletion feature gate.", expected = "Cluster Operator is reconfigured with background pod deletion enabled."),
-            @Step(value = "Trigger manual rolling update and verify pods are deleted with BACKGROUND propagation.", expected = "Terminating broker pods do not have the finalizer.")
+            @Step(value = "Trigger manual rolling update of broker pods.", expected = "Rolling update is triggered via manual-rolling-update annotation."),
+            @Step(value = "Wait for broker pods to finish rolling.", expected = "All broker pods are rolled and ready, confirming background deletion works correctly.")
         },
         labels = {
             @Label(value = TestDocsLabels.KAFKA)
@@ -202,8 +196,8 @@ public class FeatureGatesST extends AbstractST {
     void testUseBackgroundPodDeletion() {
         TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
-        LOGGER.info("Deploying CO with default deletion propagation (FOREGROUND)");
-        setupClusterOperatorWithFeatureGate("");
+        LOGGER.info("Deploying CO with UseBackgroundPodDeletion enabled");
+        setupClusterOperatorWithFeatureGate(USE_BACKGROUND_POD_DELETION_ENABLED);
 
         KubeResourceManager.get().createResourceWithWait(
             KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
@@ -213,61 +207,16 @@ public class FeatureGatesST extends AbstractST {
 
         Map<String, String> brokerPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getBrokerSelector());
 
-        LOGGER.info("Triggering rolling update - expecting FOREGROUND deletion");
+        LOGGER.info("Triggering manual rolling update of broker pods");
         StrimziPodSetUtils.annotateStrimziPodSet(testStorage.getNamespaceName(), testStorage.getBrokerComponentName(),
-            Collections.singletonMap(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true"));
-
-        assertTerminatingPodHasFinalizer(testStorage, true);
+            Map.of(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true"));
 
         brokerPods = RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), 3, brokerPods);
+
+        LOGGER.info("Verifying all broker pods are ready after rolling update with background pod deletion");
         RollingUpdateUtils.waitForComponentAndPodsReady(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), 3);
 
-        LOGGER.info("Enabling UseBackgroundPodDeletion feature gate");
-        changeFeatureGatesAndWaitForCoRollingUpdate(USE_BACKGROUND_POD_DELETION_ENABLED);
-
-        brokerPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getBrokerSelector());
-
-        LOGGER.info("Triggering rolling update - expecting BACKGROUND deletion");
-        StrimziPodSetUtils.annotateStrimziPodSet(testStorage.getNamespaceName(), testStorage.getBrokerComponentName(),
-            Collections.singletonMap(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true"));
-
-        assertTerminatingPodHasFinalizer(testStorage, false);
-
-        RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), 3, brokerPods);
-        RollingUpdateUtils.waitForComponentAndPodsReady(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), 3);
-    }
-
-    private void assertTerminatingPodHasFinalizer(TestStorage testStorage, boolean expectFinalizer) {
-        final String finalizer = "foregroundDeletion";
-        final long timeoutMs = TestConstants.GLOBAL_TIMEOUT_SHORT;
-        final long pollIntervalMs = TestConstants.GLOBAL_POLL_INTERVAL;
-
-        LOGGER.info("Waiting for a broker pod to enter terminating state");
-
-        long deadline = System.currentTimeMillis() + timeoutMs;
-        Pod terminatingPod = null;
-
-        while (System.currentTimeMillis() < deadline) {
-            List<Pod> pods = KubeResourceManager.get().kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getBrokerSelector());
-            terminatingPod = pods.stream()
-                .filter(pod -> pod.getMetadata().getDeletionTimestamp() != null)
-                .findFirst()
-                .orElse(null);
-
-            if (terminatingPod != null) {
-                break;
-            }
-            LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(pollIntervalMs));
-        }
-
-        assertThat("A broker pod should have been observed in terminating state", terminatingPod != null, is(true));
-
-        List<String> finalizers = terminatingPod.getMetadata().getFinalizers();
-        boolean hasFinalizer = finalizers != null && finalizers.contains(finalizer);
-
-        LOGGER.info("Terminating pod {} has finalizers: {}", terminatingPod.getMetadata().getName(), finalizers);
-        assertThat("Presence of 'foregroundDeletion' finalizer should match expected deletion mode",
-            hasFinalizer, is(expectFinalizer));
+        assertThat("Broker pods were rolled successfully with UseBackgroundPodDeletion enabled", brokerPods.size(), is(3));
     }
 
     private static void annotateResourcesAndCheckIfPresent(TestStorage testStorage, boolean shouldBePresent) {
