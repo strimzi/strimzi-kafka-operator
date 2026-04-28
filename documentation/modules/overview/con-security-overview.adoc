@@ -37,4 +37,8 @@ Supported authorization mechanisms:
 * Custom authorization (supported by Kafka)
 
 Federal Information Processing Standards (FIPS):: Strimzi is designed to run on FIPS-enabled Kubernetes clusters to ensure data security and system interoperability.
-For more information about the NIST validation program and validated modules, see link:https://csrc.nist.gov/Projects/cryptographic-module-validation-program/validated-modules[Cryptographic Module Validation Program^] on the NIST website.
+
+[role="_additional-resources"]
+.Additional resources
+
+* link:https://csrc.nist.gov/Projects/cryptographic-module-validation-program/validated-modules[National Institute of Standards and Technology (NIST): Cryptographic Module Validation Program^]

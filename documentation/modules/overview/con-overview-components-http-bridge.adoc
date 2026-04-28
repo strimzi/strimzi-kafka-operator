@@ -32,4 +32,5 @@ Messages can be sent in JSON or binary formats.
 
 [role="_additional-resources"]
 .Additional resources
-* To view the API documentation, including example requests and responses, see link:{BookURLBridge}[Using the HTTP Bridge^].
+
+* link:{BookURLBridge}[Using the HTTP Bridge^]

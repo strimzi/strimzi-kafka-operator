@@ -21,6 +21,8 @@ Use custom resources to configure the following components:
 * Kafka Connect
 * HTTP Bridge
 
-Strimzi provides link:{BookURLDeploying}#config-examples-{context}[example configuration files^], which can serve as a starting point when building your own Kafka component configuration for deployment.
+[role="_additional-resources"]
+.Additional resources
 
-For detailed configuration instructions and examples, see the guide for link:{BookURLDeploying}[Deploying and Managing Strimzi^].
+* link:{BookURLDeploying}[Deploying and Managing Strimzi^]
+* link:{BookURLDeploying}#config-examples-{context}[Example configuration files^]
