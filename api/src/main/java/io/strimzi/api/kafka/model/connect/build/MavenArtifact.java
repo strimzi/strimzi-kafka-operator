@@ -21,7 +21,7 @@ import lombok.ToString;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({ "type", "repository", "group", "artifact", "version", "insecure" })
+@JsonPropertyOrder({ "type", "repository", "group", "artifact", "version", "insecure", "includeScope" })
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class MavenArtifact extends Artifact {
@@ -32,6 +32,7 @@ public class MavenArtifact extends Artifact {
     private String version;
     private String repository;
     private Boolean insecure;
+    private MavenArtifactIncludeScope includeScope;
 
     @Description("Must be `" + TYPE_MVN + "`")
     @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -87,5 +88,18 @@ public class MavenArtifact extends Artifact {
 
     public void setInsecure(Boolean insecure) {
         this.insecure = insecure;
+    }
+
+    @Description("Maven scope for including dependencies for the artifact. " +
+            "Valid values are `compile`, `provided`, `runtime`, `test`, and `system`. " +
+            "When not configured, no scope is set, and all dependencies are included. " +
+            "Applicable to the `maven` artifact type only.")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public MavenArtifactIncludeScope getIncludeScope() {
+        return includeScope;
+    }
+
+    public void setIncludeScope(MavenArtifactIncludeScope includeScope) {
+        this.includeScope = includeScope;
     }
 }

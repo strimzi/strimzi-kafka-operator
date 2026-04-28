@@ -21,7 +21,4 @@ COPY scripts/ tmp/bin/ bin/
 
 COPY tmp/lib/ lib/
 
-RUN mkdir -p ${STRIMZI_HOME}/../v1-api-conversion
-COPY tmp/v1-api-conversion/ ../v1-api-conversion/
-
 USER 1001

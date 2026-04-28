@@ -159,18 +159,6 @@ public class KafkaResources {
     }
 
     /**
-     * Returns the name of the Kafka Secret with server certificates.
-     *
-     * @param clusterName  The {@code metadata.name} of the {@code Kafka} resource.
-     *
-     * @return The name of the corresponding Kafka Secret.
-     */
-    @Deprecated // Kafka server certificates are now kept in per-node Secrets
-    public static String kafkaSecretName(String clusterName) {
-        return clusterName + "-kafka-brokers";
-    }
-
-    /**
      * Returns the name of the Kafka Secret with JMX credentials.
      *
      * @param clusterName  The {@code metadata.name} of the {@code Kafka} resource.

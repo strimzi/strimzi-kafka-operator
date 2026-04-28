@@ -54,6 +54,9 @@ apiVersion: v1
 kind: Service
 metadata:
   name: strimzi-kube-state-metrics
+  labels:
+    app.kubernetes.io/name: kube-state-metrics
+    app.kubernetes.io/instance: strimzi-kube-state-metrics
 spec:
   type: "ClusterIP"
   ports:

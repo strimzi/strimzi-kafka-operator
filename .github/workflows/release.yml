@@ -65,7 +65,7 @@ jobs:
       - name: Deploy to Maven Central
         uses: strimzi/github-actions/.github/actions/build/deploy-java@v1
         with:
-          modules: "./,crd-annotations,crd-generator,test,api,v1-api-conversion"
+          modules: "./,crd-annotations,crd-generator,test,api"
           gpgPassphrase: ${{ secrets.GPG_PASSPHRASE }}
           gpgSigningKey: ${{ secrets.GPG_SIGNING_KEY }}
           centralUsername: ${{ secrets.CENTRAL_USERNAME }}

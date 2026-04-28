@@ -2,6 +2,7 @@
 
 ## 1.1.0
 
+* Support for dependency scope configuration of Maven artifacts in Kafka Connect Build
 * Add `UseBackgroundPodDeletion` feature gate (alpha, disabled by default) to use background deletion propagation when deleting pods during rolling updates. 
 
 ### Major changes, deprecations, and removals
