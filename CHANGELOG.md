@@ -2,7 +2,7 @@
 
 ## 1.1.0
 
-* _Nothing here yet, but we will surely develop something new pretty soon_ 😉
+* Support for dependency scope configuration of Maven artifacts in Kafka Connect Build
 
 ### Major changes, deprecations, and removals
 
