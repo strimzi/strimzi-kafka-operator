@@ -80,7 +80,6 @@ spec:
         com.linkedin.kafka.cruisecontrol.analyzer.goals.TopicReplicaDistributionGoal,
         com.linkedin.kafka.cruisecontrol.analyzer.goals.LeaderReplicaDistributionGoal,
         com.linkedin.kafka.cruisecontrol.analyzer.goals.LeaderBytesInDistributionGoal,
-        com.linkedin.kafka.cruisecontrol.analyzer.goals.PreferredLeaderElectionGoal
       # Note that `default.goals` must be a superset `hard.goals`
       default.goals: >
         com.linkedin.kafka.cruisecontrol.analyzer.goals.RackAwareGoal,
