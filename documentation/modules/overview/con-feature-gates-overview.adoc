@@ -8,7 +8,7 @@
 = Feature gates in Strimzi operators
 
 [role="_abstract"]
-Strimzi operators use feature gates to enable or disable specific features and functions. 
+Strimzi operators use feature gates to enable or disable specific features and functions.
 Enabling a feature gate alters the behavior of the associated operator, introducing the corresponding feature to your Strimzi deployment.
 
 Feature gates are set in the operator configuration and have three stages of maturity: alpha, beta, or graduated.
