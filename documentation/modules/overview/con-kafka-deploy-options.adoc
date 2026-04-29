@@ -19,4 +19,7 @@ ifdef::Section[]
 * *Helm chart*: Provides a streamlined and repeatable deployment approach using the Strimzi Helm chart.
 endif::Section[]
 
-For detailed instructions, see the guide for link:{BookURLDeploying}[Deploying and Managing Strimzi^].
+[role="_additional-resources"]
+.Additional resources
+
+* link:{BookURLDeploying}[Deploying and Managing Strimzi^]

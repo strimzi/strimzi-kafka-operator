@@ -15,13 +15,9 @@ From the listener configuration, the resulting listener bootstrap and per-broker
 |===
 | Listener type | Bootstrap service name | Per-Broker service name
 | `internal` | <cluster_name>-kafka-bootstrap | _Not applicable_
-| `loadbalancer` + 
-  `nodeport` +
-  `ingress` +
-  `route` +
-  `cluster-ip`
- | <cluster_name>-kafka-<listener-name>-bootstrap | <cluster_name>-kafka-<listener-name>-<idx>
-|===  
+| `loadbalancer`, `nodeport`, `ingress`, `route`, `cluster-ip`
+| <cluster_name>-kafka-<listener-name>-bootstrap | <cluster_name>-kafka-<listener-name>-<idx>
+|===
 
 For example, `my-cluster-kafka-bootstrap`, `my-cluster-kafka-external1-bootstrap`, and `my-cluster-kafka-external1-0`.
 The names are assigned to the services, routes, load balancers, and ingresses created through the listener configuration.
