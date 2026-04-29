@@ -334,7 +334,8 @@ Compare the balancedness scores to see whether the Kafka cluster could be more b
 Name:         my-rebalance
 Namespace:    myproject
 Labels:       strimzi.io/cluster=my-cluster
-Annotations:  API Version:  kafka.strimzi.io/v1alpha1
+Annotations:  <none>
+API Version:  kafka.strimzi.io/v1
 Kind:         KafkaRebalance
 Metadata:
 # ...

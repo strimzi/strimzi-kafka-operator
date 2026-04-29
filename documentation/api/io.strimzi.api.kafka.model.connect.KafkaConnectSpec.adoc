@@ -23,8 +23,7 @@ spec:
   # ...
 ----
 
-These fields are required in the `v1` CRD API version.
-In the `v1beta2` version, these properties are optional.
+These fields are required.
 
 If you do not set them, the following default values apply:
 
