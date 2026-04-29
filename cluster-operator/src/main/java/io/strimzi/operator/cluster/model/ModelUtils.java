@@ -19,7 +19,6 @@ import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
-import io.strimzi.api.kafka.model.common.CertificateAuthority;
 import io.strimzi.api.kafka.model.common.Rack;
 import io.strimzi.api.kafka.model.common.TopologyLabelRack;
 import io.strimzi.api.kafka.model.common.template.PodTemplate;
@@ -44,38 +43,6 @@ public class ModelUtils {
     private ModelUtils() {}
 
     protected static final ReconciliationLogger LOGGER = ReconciliationLogger.create(ModelUtils.class.getName());
-
-    /**
-     * Extract certificate validity days from cluster CA configuration
-     *
-     * @param certificateAuthority The CA configuration.
-     * @return The cert validity.
-     */
-    public static int getCertificateValidity(CertificateAuthority certificateAuthority) {
-        int validity = CertificateAuthority.DEFAULT_CERTS_VALIDITY_DAYS;
-        if (certificateAuthority != null
-                && certificateAuthority.getValidityDays() > 0) {
-            validity = certificateAuthority.getValidityDays();
-        }
-        return validity;
-    }
-
-    /**
-     * Extract certificate renewal days from cluster CA configuration
-     *
-     * @param certificateAuthority The CA configuration.
-     * @return The renewal days.
-     */
-    public static int getRenewalDays(CertificateAuthority certificateAuthority) {
-        int renewalDays = CertificateAuthority.DEFAULT_CERTS_RENEWAL_DAYS;
-
-        if (certificateAuthority != null
-                && certificateAuthority.getRenewalDays() > 0) {
-            renewalDays = certificateAuthority.getRenewalDays();
-        }
-
-        return renewalDays;
-    }
 
     /**
      * Generate labels used by entity-operators to find the resources related to given cluster

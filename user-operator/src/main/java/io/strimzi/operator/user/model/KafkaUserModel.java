@@ -25,6 +25,7 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Ca;
+import io.strimzi.operator.common.model.CaConfig;
 import io.strimzi.operator.common.model.ClientsCa;
 import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.common.model.Labels;
@@ -232,10 +233,8 @@ public class KafkaUserModel {
                 passwordGenerator,
                 clientsCaCertSecret,
                 clientsCaKeySecret,
-                validityDays,
-                renewalDays,
-                false,
-                null);
+                new CaConfig(validityDays, renewalDays, false)
+        );
         this.caCert = clientsCa.currentCaCertBase64();
 
         if (userSecret != null) {

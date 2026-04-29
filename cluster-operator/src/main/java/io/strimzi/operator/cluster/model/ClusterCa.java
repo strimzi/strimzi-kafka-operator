@@ -5,8 +5,6 @@
 package io.strimzi.operator.cluster.model;
 
 import io.fabric8.kubernetes.api.model.Secret;
-import io.strimzi.api.kafka.model.common.CertificateAuthority;
-import io.strimzi.api.kafka.model.common.CertificateExpirationPolicy;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlResources;
 import io.strimzi.certs.CertAndKey;
@@ -15,6 +13,7 @@ import io.strimzi.certs.IpAndDnsValidation;
 import io.strimzi.certs.Subject;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Ca;
+import io.strimzi.operator.common.model.CaConfig;
 import io.strimzi.operator.common.model.PasswordGenerator;
 
 import java.io.File;
@@ -54,7 +53,7 @@ public class ClusterCa extends Ca {
      * @param caKeySecret           Name of the CA private key secret
      */
     public ClusterCa(Reconciliation reconciliation, CertManager certManager, PasswordGenerator passwordGenerator, Secret caCertSecret, Secret caKeySecret) {
-        this(reconciliation, certManager, passwordGenerator, caCertSecret, caKeySecret, CertificateAuthority.DEFAULT_CERTS_VALIDITY_DAYS, CertificateAuthority.DEFAULT_CERTS_RENEWAL_DAYS, true, null);
+        this(reconciliation, certManager, passwordGenerator, caCertSecret, caKeySecret, CaConfig.createDefault());
     }
 
     /**
@@ -65,23 +64,17 @@ public class ClusterCa extends Ca {
      * @param passwordGenerator     Password generator instance
      * @param clusterCaCert         Secret with the public key
      * @param clusterCaKey          Secret with the private key
-     * @param validityDays          Validity days
-     * @param renewalDays           Renewal days (how many days before expiration should the CA be renewed)
-     * @param generateCa            Flag indicating if Strimzi CA should be generated or custom CA is used
-     * @param policy                Renewal policy
+     * @param caConfig              Certificate Authority configuration
      */
     public ClusterCa(Reconciliation reconciliation, CertManager certManager,
                      PasswordGenerator passwordGenerator,
                      Secret clusterCaCert,
-                     Secret clusterCaKey,
-                     int validityDays,
-                     int renewalDays,
-                     boolean generateCa,
-                     CertificateExpirationPolicy policy) {
+                     Secret clusterCaKey, CaConfig caConfig) {
         super(reconciliation, certManager, passwordGenerator,
                 "cluster-ca",
                 clusterCaCert,
-                clusterCaKey, validityDays, renewalDays, generateCa, policy);
+                clusterCaKey,
+                caConfig);
     }
 
     @Override
