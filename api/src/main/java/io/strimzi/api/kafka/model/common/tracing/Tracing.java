@@ -21,9 +21,7 @@ import java.util.Map;
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME,
         include = JsonTypeInfo.As.EXISTING_PROPERTY,
         property = "type")
-@SuppressWarnings("deprecation") // Jaeger Tracing is deprecated
 @JsonSubTypes({
-    @JsonSubTypes.Type(name = JaegerTracing.TYPE_JAEGER, value = JaegerTracing.class),
     @JsonSubTypes.Type(name = OpenTelemetryTracing.TYPE_OPENTELEMETRY, value = OpenTelemetryTracing.class),
 })
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -33,8 +31,7 @@ public abstract class Tracing implements UnknownPropertyPreserving {
     private Map<String, Object> additionalProperties;
 
     @Description("Type of the tracing used. " +
-            "Currently the only supported type is `opentelemetry` for OpenTelemetry tracing. " +
-            "As of Strimzi 0.37.0, `jaeger` type is not supported anymore and this option is ignored.")
+            "Currently the only supported type is `opentelemetry` for OpenTelemetry tracing.")
     public abstract String getType();
 
     @Override

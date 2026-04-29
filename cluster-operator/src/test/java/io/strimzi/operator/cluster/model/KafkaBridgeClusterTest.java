@@ -100,7 +100,6 @@ public class KafkaBridgeClusterTest {
                 .withLabels(Map.of(Labels.KUBERNETES_DOMAIN + "part-of", "tests", "my-user-label", "cromulent"))
             .endMetadata()
             .withNewSpec()
-                .withEnableMetrics(true)
                 .withBootstrapServers("foo-kafka:9092")
                 .withNewHttp(8080)
             .endSpec()

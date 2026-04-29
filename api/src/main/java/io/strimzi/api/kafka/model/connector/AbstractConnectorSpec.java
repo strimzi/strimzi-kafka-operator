@@ -6,13 +6,11 @@ package io.strimzi.api.kafka.model.connector;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import io.strimzi.api.annotations.DeprecatedProperty;
 import io.strimzi.api.kafka.model.common.ConnectorState;
 import io.strimzi.api.kafka.model.common.Constants;
 import io.strimzi.api.kafka.model.common.Spec;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.Minimum;
-import io.strimzi.crdgenerator.annotations.PresentInVersions;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -29,7 +27,7 @@ import java.util.Map;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({"pause", "tasksMax", "version", "config", "state", "listOffsets", "alterOffsets"})
+@JsonPropertyOrder({"tasksMax", "version", "config", "state", "listOffsets", "alterOffsets"})
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public abstract class AbstractConnectorSpec extends Spec {
@@ -39,7 +37,6 @@ public abstract class AbstractConnectorSpec extends Spec {
     public static final String FORBIDDEN_PARAMETERS = "name, connector.class, tasks.max, connector.plugin.version";
 
     private Integer tasksMax;
-    private Boolean pause;
     private String version;
     private Map<String, Object> config = new HashMap<>(0);
     private ConnectorState state;
@@ -107,29 +104,6 @@ public abstract class AbstractConnectorSpec extends Spec {
      */
     public void setConfig(Map<String, Object> config) {
         this.config = config;
-    }
-
-    /**
-     * Gets the flag indicating whether the connector should be paused.
-     *
-     * @return  Flag indicating whether the connector should paused or not
-     */
-    @Description("Whether the connector should be paused. Defaults to false.")
-    @Deprecated
-    @DeprecatedProperty(description = "Deprecated in Strimzi 0.38.0, use state instead.")
-    @PresentInVersions("v1beta2")
-    public Boolean getPause() {
-        return pause;
-    }
-
-    /**
-     * Sets the flag to indicate if the connector should be paused or not
-     *
-     * @param pause     Set to true to request the connector to be paused. False to have it running.
-     */
-    @Deprecated
-    public void setPause(Boolean pause) {
-        this.pause = pause;
     }
 
     /**

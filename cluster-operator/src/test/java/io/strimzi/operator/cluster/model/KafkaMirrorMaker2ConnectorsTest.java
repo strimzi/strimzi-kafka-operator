@@ -152,10 +152,6 @@ public class KafkaMirrorMaker2ConnectorsTest {
     public void testConnectorsWithMultipleSources() {
         KafkaMirrorMaker2 kmm2 = new KafkaMirrorMaker2Builder(KMM2)
                 .editSpec()
-                    .addToClusters(new KafkaMirrorMaker2ClusterSpecBuilder()
-                            .withAlias("other-source")
-                            .withBootstrapServers("other-source:9092")
-                            .build())
                     .addToMirrors(new KafkaMirrorMaker2MirrorSpecBuilder()
                             .withNewSource()
                                 .withAlias("other-source")

@@ -6,19 +6,16 @@ package io.strimzi.api.kafka.model.connect;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import io.strimzi.api.annotations.DeprecatedProperty;
 import io.strimzi.api.kafka.model.common.Constants;
 import io.strimzi.api.kafka.model.common.UnknownPropertyPreserving;
 import io.strimzi.api.kafka.model.common.template.BuildConfigTemplate;
 import io.strimzi.api.kafka.model.common.template.ContainerTemplate;
-import io.strimzi.api.kafka.model.common.template.DeploymentTemplate;
 import io.strimzi.api.kafka.model.common.template.HasJmxSecretTemplate;
 import io.strimzi.api.kafka.model.common.template.InternalServiceTemplate;
 import io.strimzi.api.kafka.model.common.template.PodDisruptionBudgetTemplate;
 import io.strimzi.api.kafka.model.common.template.PodTemplate;
 import io.strimzi.api.kafka.model.common.template.ResourceTemplate;
 import io.strimzi.crdgenerator.annotations.Description;
-import io.strimzi.crdgenerator.annotations.PresentInVersions;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -34,13 +31,12 @@ import java.util.Map;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({"deployment", "podSet", "pod", "apiService", "headlessService", "connectContainer", "initContainer",
+@JsonPropertyOrder({"podSet", "pod", "apiService", "headlessService", "connectContainer", "initContainer",
     "podDisruptionBudget", "serviceAccount", "clusterRoleBinding", "buildPod", "buildContainer", "buildConfig",
     "buildServiceAccount", "jmxSecret"})
 @EqualsAndHashCode
 @ToString
 public class KafkaConnectTemplate implements HasJmxSecretTemplate, UnknownPropertyPreserving {
-    private DeploymentTemplate deployment;
     private ResourceTemplate podSet;
     private PodTemplate pod;
     private PodTemplate buildPod;
@@ -56,19 +52,6 @@ public class KafkaConnectTemplate implements HasJmxSecretTemplate, UnknownProper
     private ResourceTemplate buildServiceAccount;
     private ResourceTemplate jmxSecret;
     private Map<String, Object> additionalProperties;
-
-    @Description("Template for Kafka Connect `Deployment`.")
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    @Deprecated
-    @DeprecatedProperty(description = "Kafka Connect and MirrorMaker 2 operands do not use `Deployment` resources anymore. This field will be ignored.")
-    @PresentInVersions("v1beta2")
-    public DeploymentTemplate getDeployment() {
-        return deployment;
-    }
-
-    public void setDeployment(DeploymentTemplate deployment) {
-        this.deployment = deployment;
-    }
 
     @Description("Template for Kafka Connect `StrimziPodSet` resource.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)

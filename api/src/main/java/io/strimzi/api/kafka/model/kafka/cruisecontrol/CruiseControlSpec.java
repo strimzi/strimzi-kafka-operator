@@ -7,7 +7,6 @@ package io.strimzi.api.kafka.model.kafka.cruisecontrol;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
-import io.strimzi.api.annotations.DeprecatedProperty;
 import io.strimzi.api.kafka.model.common.Constants;
 import io.strimzi.api.kafka.model.common.HasConfigurableLogging;
 import io.strimzi.api.kafka.model.common.HasConfigurableMetrics;
@@ -18,13 +17,11 @@ import io.strimzi.api.kafka.model.common.Logging;
 import io.strimzi.api.kafka.model.common.Probe;
 import io.strimzi.api.kafka.model.common.UnknownPropertyPreserving;
 import io.strimzi.api.kafka.model.common.metrics.MetricsConfig;
-import io.strimzi.api.kafka.model.kafka.entityoperator.TlsSidecar;
 import io.strimzi.crdgenerator.annotations.CelValidation;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.DescriptionFile;
 import io.strimzi.crdgenerator.annotations.KubeLink;
 import io.strimzi.crdgenerator.annotations.MinimumItems;
-import io.strimzi.crdgenerator.annotations.PresentInVersions;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -40,8 +37,7 @@ import java.util.Map;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({
-    "image", "tlsSidecar", "resources", "livenessProbe", "readinessProbe", "jvmOptions", "logging", "template",
+@JsonPropertyOrder({"image", "resources", "livenessProbe", "readinessProbe", "jvmOptions", "logging", "template",
     "brokerCapacity", "config", "metricsConfig", "apiUsers", "autoRebalance"})
 @EqualsAndHashCode
 @ToString
@@ -54,8 +50,6 @@ public class CruiseControlSpec implements HasConfigurableMetrics, HasConfigurabl
         + "webserver.http.cors.origin, webserver.http.cors.exposeheaders, webserver.security.enable, webserver.ssl.enable";
 
     private String image;
-    @SuppressWarnings("deprecation")  // TLS Sidecar is not used anymore and is deprecated
-    private TlsSidecar tlsSidecar;
     private ResourceRequirements resources;
     private Probe livenessProbe;
     private Probe readinessProbe;
@@ -79,20 +73,6 @@ public class CruiseControlSpec implements HasConfigurableMetrics, HasConfigurabl
 
     public void setImage(String image) {
         this.image = image;
-    }
-
-    @DeprecatedProperty
-    @Deprecated
-    @Description("TLS sidecar configuration")
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    @PresentInVersions("v1beta2")
-    public TlsSidecar getTlsSidecar() {
-        return tlsSidecar;
-    }
-
-    @Deprecated
-    public void setTlsSidecar(TlsSidecar tlsSidecar) {
-        this.tlsSidecar = tlsSidecar;
     }
 
     @Description("The Cruise Control `brokerCapacity` configuration.")

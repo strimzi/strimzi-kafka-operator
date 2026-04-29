@@ -6,14 +6,10 @@ package io.strimzi.api.kafka.model.kafka.cruisecontrol;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import io.strimzi.api.annotations.DeprecatedProperty;
 import io.strimzi.api.kafka.model.common.Constants;
 import io.strimzi.api.kafka.model.common.UnknownPropertyPreserving;
 import io.strimzi.crdgenerator.annotations.Description;
-import io.strimzi.crdgenerator.annotations.Maximum;
-import io.strimzi.crdgenerator.annotations.Minimum;
 import io.strimzi.crdgenerator.annotations.Pattern;
-import io.strimzi.crdgenerator.annotations.PresentInVersions;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -31,48 +27,15 @@ import java.util.Map;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({"disk", "cpuUtilization", "cpu", "inboundNetwork", "outboundNetwork", "overrides"})
+@JsonPropertyOrder({"cpu", "inboundNetwork", "outboundNetwork", "overrides"})
 @EqualsAndHashCode
 @ToString
 public class BrokerCapacity implements UnknownPropertyPreserving {
-    private String disk;
-    private Integer cpuUtilization;
     private String cpu;
     private String inboundNetwork;
     private String outboundNetwork;
     private List<BrokerCapacityOverride> overrides;
     private Map<String, Object> additionalProperties;
-
-    @Deprecated
-    @DeprecatedProperty(description = "The Cruise Control disk capacity setting has been deprecated, is ignored, and will be removed in the future")
-    @PresentInVersions("v1beta2")
-    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
-    @Pattern("^[0-9]+([.][0-9]*)?([KMGTPE]i?|e[0-9]+)?$")
-    @Description("Broker capacity for disk in bytes. " +
-            "Use a number value with either standard Kubernetes byte units (K, M, G, or T), their bibyte (power of two) equivalents (Ki, Mi, Gi, or Ti), or a byte value with or without E notation. " +
-            "For example, 100000M, 100000Mi, 104857600000, or 1e+11.")
-    public String getDisk() {
-        return disk;
-    }
-
-    public void setDisk(String disk) {
-        this.disk = disk;
-    }
-
-    @Deprecated
-    @DeprecatedProperty(description = "The Cruise Control CPU capacity setting has been deprecated, is ignored, and will be removed in the future")
-    @PresentInVersions("v1beta2")
-    @Minimum(0)
-    @Maximum(100)
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    @Description("Broker capacity for CPU resource utilization as a percentage (0 - 100).")
-    public Integer getCpuUtilization() {
-        return cpuUtilization;
-    }
-
-    public void setCpuUtilization(Integer cpuUtilization) {
-        this.cpuUtilization = cpuUtilization;
-    }
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @Pattern("^[0-9]+([.][0-9]{0,3}|[m]?)$")

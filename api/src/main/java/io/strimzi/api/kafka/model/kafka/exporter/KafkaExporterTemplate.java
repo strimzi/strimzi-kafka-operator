@@ -6,7 +6,6 @@ package io.strimzi.api.kafka.model.kafka.exporter;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import io.strimzi.api.annotations.DeprecatedProperty;
 import io.strimzi.api.kafka.model.common.Constants;
 import io.strimzi.api.kafka.model.common.UnknownPropertyPreserving;
 import io.strimzi.api.kafka.model.common.template.ContainerTemplate;
@@ -15,7 +14,6 @@ import io.strimzi.api.kafka.model.common.template.PodDisruptionBudgetTemplate;
 import io.strimzi.api.kafka.model.common.template.PodTemplate;
 import io.strimzi.api.kafka.model.common.template.ResourceTemplate;
 import io.strimzi.crdgenerator.annotations.Description;
-import io.strimzi.crdgenerator.annotations.PresentInVersions;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -31,13 +29,12 @@ import java.util.Map;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({"deployment", "pod", "service", "container", "serviceAccount", "podDisruptionBudget"})
+@JsonPropertyOrder({"deployment", "pod", "container", "serviceAccount", "podDisruptionBudget"})
 @EqualsAndHashCode
 @ToString
 public class KafkaExporterTemplate implements UnknownPropertyPreserving {
     private DeploymentTemplate deployment;
     private PodTemplate pod;
-    private ResourceTemplate service;
     private ContainerTemplate container;
     private ResourceTemplate serviceAccount;
     private PodDisruptionBudgetTemplate podDisruptionBudget;
@@ -61,19 +58,6 @@ public class KafkaExporterTemplate implements UnknownPropertyPreserving {
 
     public void setPod(PodTemplate pod) {
         this.pod = pod;
-    }
-
-    @Description("Template for Kafka Exporter `Service`.")
-    @DeprecatedProperty(description = "The Kafka Exporter service has been removed.")
-    @PresentInVersions("v1beta2")
-    @Deprecated
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public ResourceTemplate getService() {
-        return service;
-    }
-
-    public void setService(ResourceTemplate service) {
-        this.service = service;
     }
 
     @Description("Template for the Kafka Exporter container")

@@ -123,15 +123,7 @@ class NamespaceDeletionRecoveryST extends AbstractST {
                 .build()
         );
 
-        KubeResourceManager.get().createResourceWithWait(KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getClusterName(), 3)
-            .editSpec()
-                .editKafka()
-                    .withNewPersistentClaimStorage()
-                        .withSize("1Gi")
-                    .endPersistentClaimStorage()
-                .endKafka()
-            .endSpec()
-            .build());
+        KubeResourceManager.get().createResourceWithWait(KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getClusterName(), 3).build());
 
         final KafkaClients clients = ClientUtils.getInstantPlainClients(testStorage);
         KubeResourceManager.get().createResourceWithWait(clients.producerStrimzi(), clients.consumerStrimzi());
@@ -294,16 +286,7 @@ class NamespaceDeletionRecoveryST extends AbstractST {
                 .build()
         );
 
-        KubeResourceManager.get().createResourceWithWait(KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getClusterName(), 3)
-            .editSpec()
-                .editKafka()
-                    .withNewPersistentClaimStorage()
-                        .withSize("1Gi")
-                        .withStorageClass(storageClassName)
-                    .endPersistentClaimStorage()
-                .endKafka()
-            .endSpec()
-            .build());
+        KubeResourceManager.get().createResourceWithWait(KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getClusterName(), 3).build());
 
         KubeResourceManager.get().createResourceWithWait(KafkaTopicTemplates.topic(testStorage).build());
 

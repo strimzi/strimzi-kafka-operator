@@ -18,10 +18,6 @@ spec:
         config:
           replication.factor: 1
           offset-syncs.topic.replication.factor: 1
-      heartbeatConnector:
-        tasksMax: 2
-        config:
-          heartbeats.topic.replication.factor: 1
       checkpointConnector:
         tasksMax: 2
         config:
@@ -32,9 +28,6 @@ spec:
         config:
           replication.factor: 1
           offset-syncs.topic.replication.factor: 1
-      heartbeatConnector:
-        config:
-          heartbeats.topic.replication.factor: 1
       checkpointConnector:
         config:
           checkpoints.topic.replication.factor: 1

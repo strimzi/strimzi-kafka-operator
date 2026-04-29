@@ -8,7 +8,6 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
-import io.strimzi.api.annotations.DeprecatedProperty;
 import io.strimzi.api.kafka.model.common.ClientTls;
 import io.strimzi.api.kafka.model.common.Constants;
 import io.strimzi.api.kafka.model.common.HasConfigurableLogging;
@@ -27,7 +26,6 @@ import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.DescriptionFile;
 import io.strimzi.crdgenerator.annotations.KubeLink;
 import io.strimzi.crdgenerator.annotations.Minimum;
-import io.strimzi.crdgenerator.annotations.PresentInVersions;
 import io.strimzi.crdgenerator.annotations.RequiredInVersions;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
@@ -45,7 +43,7 @@ import java.util.Map;
 @JsonPropertyOrder({
     "replicas", "image", "bootstrapServers", "tls", "authentication", "http", "adminClient", "consumer",
     "producer", "resources", "jvmOptions", "logging", "clientRackInitImage", "rack",
-    "enableMetrics", "metricsConfig", "livenessProbe", "readinessProbe", "template", "tracing", "config"})
+    "metricsConfig", "livenessProbe", "readinessProbe", "template", "tracing", "config"})
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class KafkaBridgeSpec extends Spec implements HasConfigurableLogging, HasConfigurableMetrics, HasLivenessProbe, HasReadinessProbe {
@@ -67,7 +65,6 @@ public class KafkaBridgeSpec extends Spec implements HasConfigurableLogging, Has
     private ResourceRequirements resources;
     private JvmOptions jvmOptions;
     private Logging logging;
-    private Boolean enableMetrics;
     private MetricsConfig metricsConfig;
     private Probe livenessProbe;
     private Probe readinessProbe;
@@ -78,10 +75,8 @@ public class KafkaBridgeSpec extends Spec implements HasConfigurableLogging, Has
     private Map<String, Object> config = new HashMap<>(0);
 
     @Description("The number of pods in the `Deployment`. " +
-            "Required in the `v1` version of the Strimzi API. " +
-            "Defaults to `1` in the `v1beta2` version of the Strimzi API.")
+            "Required in the `v1` version of the Strimzi API.")
     @Minimum(0)
-    @JsonProperty(defaultValue = "1")
     @RequiredInVersions("v1+")
     public int getReplicas() {
         return replicas;
@@ -89,20 +84,6 @@ public class KafkaBridgeSpec extends Spec implements HasConfigurableLogging, Has
 
     public void setReplicas(int replicas) {
         this.replicas = replicas;
-    }
-
-    @Deprecated
-    @DeprecatedProperty(movedToPath = ".spec.metricsConfig",
-            description = "The `enableMetrics` configuration is deprecated and will be removed in the future.")
-    @PresentInVersions("v1beta2")
-    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
-    @Description("Enable the metrics for the HTTP Bridge. Default is false.")
-    public Boolean getEnableMetrics() {
-        return enableMetrics;
-    }
-
-    public void setEnableMetrics(Boolean enableMetrics) {
-        this.enableMetrics = enableMetrics;
     }
 
     @Description("Metrics configuration.")

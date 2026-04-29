@@ -6,7 +6,6 @@ package io.strimzi.api.kafka.model.kafka.cruisecontrol;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import io.strimzi.api.annotations.DeprecatedProperty;
 import io.strimzi.api.kafka.model.common.Constants;
 import io.strimzi.api.kafka.model.common.UnknownPropertyPreserving;
 import io.strimzi.api.kafka.model.common.template.ContainerTemplate;
@@ -16,7 +15,6 @@ import io.strimzi.api.kafka.model.common.template.PodDisruptionBudgetTemplate;
 import io.strimzi.api.kafka.model.common.template.PodTemplate;
 import io.strimzi.api.kafka.model.common.template.ResourceTemplate;
 import io.strimzi.crdgenerator.annotations.Description;
-import io.strimzi.crdgenerator.annotations.PresentInVersions;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -33,8 +31,7 @@ import java.util.Map;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({
-    "deployment", "pod", "apiService", "podDisruptionBudget", "cruiseControlContainer", "tlsSidecarContainer", "serviceAccount"})
+@JsonPropertyOrder({"deployment", "pod", "apiService", "podDisruptionBudget", "cruiseControlContainer", "serviceAccount"})
 @EqualsAndHashCode
 @ToString
 public class CruiseControlTemplate implements UnknownPropertyPreserving {
@@ -43,7 +40,6 @@ public class CruiseControlTemplate implements UnknownPropertyPreserving {
     private InternalServiceTemplate apiService;
     private PodDisruptionBudgetTemplate podDisruptionBudget;
     private ContainerTemplate cruiseControlContainer;
-    private ContainerTemplate tlsSidecarContainer;
     private ResourceTemplate serviceAccount;
     private Map<String, Object> additionalProperties;
 
@@ -95,19 +91,6 @@ public class CruiseControlTemplate implements UnknownPropertyPreserving {
 
     public void setCruiseControlContainer(ContainerTemplate cruiseControlContainer) {
         this.cruiseControlContainer = cruiseControlContainer;
-    }
-
-    @DeprecatedProperty
-    @Deprecated
-    @PresentInVersions("v1beta2")
-    @Description("Template for the Cruise Control TLS sidecar container")
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public ContainerTemplate getTlsSidecarContainer() {
-        return tlsSidecarContainer;
-    }
-
-    public void setTlsSidecarContainer(ContainerTemplate tlsSidecarContainer) {
-        this.tlsSidecarContainer = tlsSidecarContainer;
     }
 
     @Description("Template for the Cruise Control service account.")

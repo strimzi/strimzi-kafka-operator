@@ -7,16 +7,13 @@ package io.strimzi.api.kafka.model.kafka;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import io.strimzi.api.annotations.DeprecatedProperty;
 import io.strimzi.api.kafka.model.common.Constants;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.Minimum;
-import io.strimzi.crdgenerator.annotations.PresentInVersions;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -26,7 +23,7 @@ import java.util.Map;
         editableEnabled = false,
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
-@JsonPropertyOrder({"id", "type", "size", "kraftMetadata", "class", "volumeAttributesClass", "selector", "deleteClaim", "overrides"})
+@JsonPropertyOrder({"id", "type", "size", "kraftMetadata", "class", "volumeAttributesClass", "selector", "deleteClaim"})
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
@@ -35,7 +32,6 @@ public class PersistentClaimStorage extends SingleVolumeStorage {
     private String storageClass;
     private Map<String, String> selector;
     private boolean deleteClaim;
-    private List<PersistentClaimStorageOverride> overrides;
     private String volumeAttributesClass;
 
     @Description("Must be `" + TYPE_PERSISTENT_CLAIM + "`")
@@ -113,19 +109,6 @@ public class PersistentClaimStorage extends SingleVolumeStorage {
 
     public void setDeleteClaim(boolean deleteClaim) {
         this.deleteClaim = deleteClaim;
-    }
-
-    @Description("As of Strimzi 0.46.0, the storage overrides for individual brokers are not supported anymore and this option is ignored.")
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    @PresentInVersions("v1beta2")
-    @Deprecated
-    @DeprecatedProperty(description = "The storage overrides for individual brokers are not supported anymore since Strimzi 0.46.0.")
-    public List<PersistentClaimStorageOverride> getOverrides() {
-        return overrides;
-    }
-
-    public void setOverrides(List<PersistentClaimStorageOverride> overrides) {
-        this.overrides = overrides;
     }
 
     @Description("Specifies `VolumeAttributeClass` name for dynamically configuring storage attributes.")
