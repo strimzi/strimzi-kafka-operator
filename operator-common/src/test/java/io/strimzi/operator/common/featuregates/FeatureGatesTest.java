@@ -59,6 +59,10 @@ public class FeatureGatesTest {
         assertThat(new FeatureGates("-UseConnectBuildWithBuildah").useConnectBuildWithBuildahEnabled(), is(false));
         assertThat(new FeatureGates("   -UseConnectBuildWithBuildah   ").useConnectBuildWithBuildahEnabled(), is(false));
 
+        assertThat(new FeatureGates("+UseBackgroundPodDeletion").useBackgroundPodDeletionEnabled(), is(true));
+        assertThat(new FeatureGates("-UseBackgroundPodDeletion").useBackgroundPodDeletionEnabled(), is(false));
+        assertThat(new FeatureGates("   +UseBackgroundPodDeletion   ").useBackgroundPodDeletionEnabled(), is(true));
+
         assertThat(new FeatureGates("-ServerSideApplyPhase1,-UseConnectBuildWithBuildah").serverSideApplyPhase1Enabled(), is(false));
         assertThat(new FeatureGates("-ServerSideApplyPhase1,-UseConnectBuildWithBuildah").useConnectBuildWithBuildahEnabled(), is(false));
         assertThat(new FeatureGates("  +ServerSideApplyPhase1    ,    +UseConnectBuildWithBuildah").serverSideApplyPhase1Enabled(), is(true));
@@ -123,5 +127,8 @@ public class FeatureGatesTest {
 
         assertThat(new FeatureGates("+UseConnectBuildWithBuildah").toEnvironmentVariable(), is(""));
         assertThat(new FeatureGates("-UseConnectBuildWithBuildah").toEnvironmentVariable(), is("-UseConnectBuildWithBuildah"));
+
+        assertThat(new FeatureGates("+UseBackgroundPodDeletion").toEnvironmentVariable(), is("+UseBackgroundPodDeletion"));
+        assertThat(new FeatureGates("-UseBackgroundPodDeletion").toEnvironmentVariable(), is(""));
     }
 }

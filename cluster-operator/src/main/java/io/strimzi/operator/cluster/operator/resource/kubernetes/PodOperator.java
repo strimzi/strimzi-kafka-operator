@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.cluster.operator.resource.kubernetes;
 
+import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodList;
@@ -24,6 +25,8 @@ public class PodOperator extends AbstractReadyNamespacedResourceOperator<Kuberne
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(PodOperator.class);
     private static final String NO_UID = "NULL";
 
+    private final DeletionPropagation cascadingDeletionPropagation;
+
     /**
      * Constructor
      * @param vertx The Vertx instance
@@ -31,6 +34,23 @@ public class PodOperator extends AbstractReadyNamespacedResourceOperator<Kuberne
      */
     public PodOperator(Vertx vertx, KubernetesClient client) {
         super(vertx, client, "Pods");
+        cascadingDeletionPropagation = DeletionPropagation.FOREGROUND;
+    }
+
+    /**
+     * Constructor
+     * @param vertx                 The Vertx instance
+     * @param client                The Kubernetes client
+     * @param useBackgroundDeletion Whether to use background deletion propagation when cascading deletion is enabled
+     */
+    public PodOperator(Vertx vertx, KubernetesClient client, boolean useBackgroundDeletion) {
+        super(vertx, client, "Pods");
+        this.cascadingDeletionPropagation = useBackgroundDeletion ? DeletionPropagation.BACKGROUND : DeletionPropagation.FOREGROUND;
+    }
+
+    @Override
+    protected DeletionPropagation determineDeletionPropagation(boolean cascading) {
+        return cascading ? cascadingDeletionPropagation : DeletionPropagation.ORPHAN;
     }
 
     @Override

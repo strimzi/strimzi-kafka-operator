@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.cluster.operator.resource.kubernetes;
 
+import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodBuilder;
 import io.fabric8.kubernetes.api.model.PodList;
@@ -12,7 +13,11 @@ import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.PodResource;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.vertx.core.Vertx;
+import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class PodOperatorTest extends
@@ -57,5 +62,23 @@ public class PodOperatorTest extends
     @Override
     protected PodOperator createResourceOperations(Vertx vertx, KubernetesClient mockClient) {
         return new PodOperator(vertx, mockClient);
+    }
+
+    @Test
+    void testDeletionPropagationWithoutBackgroundDeletion() {
+        Vertx vertx = mock(Vertx.class);
+        KubernetesClient client = mock(KubernetesClient.class);
+        PodOperator podOperator = new PodOperator(vertx, client);
+        assertThat(podOperator.determineDeletionPropagation(true), is(DeletionPropagation.FOREGROUND));
+        assertThat(podOperator.determineDeletionPropagation(false), is(DeletionPropagation.ORPHAN));
+    }
+
+    @Test
+    void testDeletionPropagationWithBackgroundDeletion() {
+        Vertx vertx = mock(Vertx.class);
+        KubernetesClient client = mock(KubernetesClient.class);
+        PodOperator podOperator = new PodOperator(vertx, client, true);
+        assertThat(podOperator.determineDeletionPropagation(true), is(DeletionPropagation.BACKGROUND));
+        assertThat(podOperator.determineDeletionPropagation(false), is(DeletionPropagation.ORPHAN));
     }
 }

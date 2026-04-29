@@ -310,7 +310,7 @@ public class ResourceOperatorSupplier {
                 new ClusterRoleBindingOperator(vertx, client),
                 new NetworkPolicyOperator(vertx, client),
                 new PodDisruptionBudgetOperator(vertx, client),
-                new PodOperator(vertx, client),
+                new PodOperator(vertx, client, featureGates.useBackgroundPodDeletionEnabled()),
                 new IngressOperator(vertx, client, featureGates.serverSideApplyPhase1Enabled()),
                 pfa.hasBuilds() ? new BuildConfigOperator(vertx, client.adapt(OpenShiftClient.class)) : null,
                 pfa.hasBuilds() ? new BuildOperator(vertx, client.adapt(OpenShiftClient.class)) : null,
