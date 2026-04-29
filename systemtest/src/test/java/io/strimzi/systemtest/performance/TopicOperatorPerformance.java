@@ -11,6 +11,7 @@ import io.skodjob.annotations.SuiteDoc;
 import io.skodjob.annotations.TestDoc;
 import io.skodjob.kubetest4j.resources.KubeResourceManager;
 import io.skodjob.kubetest4j.wait.WaitException;
+import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.topic.KafkaTopic;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
@@ -46,6 +47,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Stream;
 
@@ -120,6 +122,7 @@ public class TopicOperatorPerformance extends AbstractST {
                     .editSpec()
                         .withNewPersistentClaimStorage()
                             .withSize("50Gi")
+                            .withDeleteClaim(true)
                         .endPersistentClaimStorage()
                     .endSpec()
                     .build(),
@@ -127,6 +130,7 @@ public class TopicOperatorPerformance extends AbstractST {
                     .editSpec()
                         .withNewPersistentClaimStorage()
                             .withSize("5Gi")
+                            .withDeleteClaim(true)
                         .endPersistentClaimStorage()
                     .endSpec()
                     .build()
@@ -207,9 +211,15 @@ public class TopicOperatorPerformance extends AbstractST {
                 } catch (WaitException e) {
                     LOGGER.error("Failed to create Kafka topics from index {} to {}: {}", start, end, e.getMessage());
 
-                    // after a failure we will gather logs from all components under test (i.e., TO, Kafka pods) to observer behaviour
-                    // what might be a bottleneck of such performance
-                    this.logCollector = new TestLogCollector();
+                    this.logCollector = TestLogCollector.of(
+                        TestLogCollector.defaultLogCollectorBuilder()
+                            // Collect only resources, which are important to debug the failure (e.g., pods, deployments, Kafka CR).
+                            // Full collection would include thousands of KafkaTopic CRs, which is too slow to be practical.
+                            .withNamespacedResources(
+                                TestConstants.DEPLOYMENT.toLowerCase(Locale.ROOT),
+                                TestConstants.CONFIG_MAP.toLowerCase(Locale.ROOT),
+                                Kafka.RESOURCE_SINGULAR
+                            ).build());
                     this.logCollector.collectLogs();
 
                     break; // Break out of the loop if an error occurs

@@ -10,6 +10,8 @@ import io.skodjob.annotations.Step;
 import io.skodjob.annotations.SuiteDoc;
 import io.skodjob.annotations.TestDoc;
 import io.skodjob.kubetest4j.resources.KubeResourceManager;
+import io.skodjob.kubetest4j.wait.WaitException;
+import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.user.KafkaUser;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
@@ -23,14 +25,11 @@ import io.strimzi.systemtest.performance.gather.schedulers.UserOperatorMetricsCo
 import io.strimzi.systemtest.performance.report.UserOperatorPerformanceReporter;
 import io.strimzi.systemtest.performance.report.parser.BasePerformanceMetricsParser;
 import io.strimzi.systemtest.performance.utils.UserOperatorPerformanceUtils;
-import io.strimzi.systemtest.resources.CrdClients;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.specific.ScraperTemplates;
-import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
-import io.strimzi.test.WaitException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterAll;
@@ -45,6 +44,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Stream;
 
@@ -66,7 +66,6 @@ public class UserOperatorPerformance extends AbstractST {
     private UserOperatorMetricsCollector userOperatorCollector;
     private UserOperatorMetricsCollectionScheduler userOperatorMetricsGatherer;
     private UserOperatorPerformanceReporter userOperatorPerformanceReporter = new UserOperatorPerformanceReporter();
-    private TestLogCollector logCollector;
 
     /**
      * Provides a stream of configurations for capacity testing, designed to evaluate
@@ -135,6 +134,7 @@ public class UserOperatorPerformance extends AbstractST {
                     .editSpec()
                         .withNewPersistentClaimStorage()
                             .withSize("10Gi")
+                            .withDeleteClaim(true)
                         .endPersistentClaimStorage()
                     .endSpec()
                     .build(),
@@ -218,20 +218,23 @@ public class UserOperatorPerformance extends AbstractST {
                 } catch (WaitException e) {
                     LOGGER.error("Failed to create Kafka users from index {} to {}: {}", start, end, e.getMessage());
 
-                    // after a failure we will gather logs from all components under test (i.e., UO, Kafka pods) to observer behaviour
-                    // what might be a bottleneck of such performance
-                    this.logCollector = new TestLogCollector();
-                    this.logCollector.collectLogs();
+                    final TestLogCollector logCollector = TestLogCollector.of(
+                        // Collect only resources, which are important to debug the failure (e.g., pods, deployments, Kafka CR).
+                        // Full collection would include thousands of KafkaUser CRs and Secrets, which is too slow to be practical.
+                        TestLogCollector.defaultLogCollectorBuilder()
+                            .withNamespacedResources(
+                                TestConstants.DEPLOYMENT.toLowerCase(Locale.ROOT),
+                                TestConstants.CONFIG_MAP.toLowerCase(Locale.ROOT),
+                                Kafka.RESOURCE_SINGULAR
+                            ).build()
+                    );
+                    logCollector.collectLogs();
 
                     break; // Break out of the loop if an error occurs
                 }
             }
         } finally {
-            // to enchantment a process of deleting we should delete all resources at once
-            // I saw a behaviour where deleting one by one might lead to 10s delay for deleting each KafkaUser
-            List<KafkaUser> kafkaUsers = CrdClients.kafkaUserClient().inNamespace(testStorage.getNamespaceName()).list().getItems();
-            KubeResourceManager.get().deleteResourceAsyncWait(kafkaUsers.toArray(new KafkaUser[0]));
-            KafkaUserUtils.waitForUserWithPrefixDeletion(testStorage.getNamespaceName(), testStorage.getUsername());
+            UserOperatorPerformanceUtils.cleanupKafkaUsers(testStorage);
 
             if (this.userOperatorMetricsGatherer != null) {
                 this.userOperatorMetricsGatherer.stopCollecting();

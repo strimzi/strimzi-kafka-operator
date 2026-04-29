@@ -122,20 +122,9 @@ public class TestLogCollector {
     }
 
     /**
-     * TestLogCollector's constructor
+     * TestLogCollector's constructor with default list of namespaced resources.
      */
     public TestLogCollector() {
-        this.logCollector = defaultLogCollector();
-    }
-
-    /**
-     * Method for creating default configuration of the {@link LogCollector}.
-     * It provides default list of resources into the builder and configures the required {@link KubeClient} and
-     * {@link Kubectl}
-     *
-     * @return  {@link LogCollector} configured with default configuration for the tests
-     */
-    private LogCollector defaultLogCollector() {
         List<String> resources = new ArrayList<>(List.of(
             TestConstants.SECRET.toLowerCase(Locale.ROOT),
             TestConstants.DEPLOYMENT.toLowerCase(Locale.ROOT),
@@ -163,13 +152,40 @@ public class TestLogCollector {
             ));
         }
 
+        this.logCollector = defaultLogCollectorBuilder()
+            .withNamespacedResources(resources.toArray(new String[0]))
+            .build();
+    }
+
+    private TestLogCollector(LogCollector logCollector) {
+        this.logCollector = logCollector;
+    }
+
+    /**
+     * Create an instance of {@link TestLogCollector}.
+     *
+     * @param logCollector instance of LogCollector
+     * @return      {@link TestLogCollector}
+     */
+    public static TestLogCollector of(LogCollector logCollector) {
+        return new TestLogCollector(logCollector);
+    }
+
+    /**
+     * Creates a pre-configured {@link LogCollectorBuilder} with the common settings
+     * (clients, root folder path, previous logs collection).
+     * Callers can further customize the builder (e.g., with a scoped namespaced resource list)
+     * before calling {@link LogCollectorBuilder#build()} and passing the result to
+     * {@link #TestLogCollector(LogCollector)}.
+     *
+     * @return  {@link LogCollectorBuilder} with default configuration
+     */
+    public static LogCollectorBuilder defaultLogCollectorBuilder() {
         return new LogCollectorBuilder()
             .withKubeClient(new KubeClient())
             .withKubeCmdClient(new Kubectl())
             .withRootFolderPath(Environment.TEST_LOG_DIR)
-            .withNamespacedResources(resources.toArray(new String[0]))
-            .withCollectPreviousLogs()
-            .build();
+            .withCollectPreviousLogs();
     }
 
     /**

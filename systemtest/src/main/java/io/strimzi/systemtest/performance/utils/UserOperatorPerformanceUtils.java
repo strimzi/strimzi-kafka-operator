@@ -11,6 +11,7 @@ import io.strimzi.api.kafka.model.user.KafkaUserAuthorizationSimpleBuilder;
 import io.strimzi.api.kafka.model.user.KafkaUserQuotas;
 import io.strimzi.api.kafka.model.user.KafkaUserQuotasBuilder;
 import io.strimzi.api.kafka.model.user.acl.AclOperation;
+import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.enums.UserAuthType;
 import io.strimzi.systemtest.resources.CrdClients;
@@ -26,6 +27,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
@@ -160,6 +162,10 @@ public class UserOperatorPerformanceUtils {
             final long deleteApiCallMs = Duration.ofNanos(System.nanoTime() - batchStartTime).toMillis();
             LOGGER.info("Batch {}/{} delete API calls took {} ms", batchNumber, totalBatches, deleteApiCallMs);
 
+            List<String> batchSecretNames = batch.stream()
+                .map(u -> u.getMetadata().getName())
+                .toList();
+
             TestUtils.waitFor(
                 "deletion of batch " + batchNumber + "/" + totalBatches,
                 TestConstants.GLOBAL_POLL_INTERVAL,
@@ -177,15 +183,69 @@ public class UserOperatorPerformanceUtils {
                     }
                 });
 
+            waitForUserSecretsCleanup(testStorage, batchSecretNames, batchNumber, totalBatches);
+
             final long batchTotalMs = Duration.ofNanos(System.nanoTime() - batchStartTime).toMillis();
             LOGGER.info("Batch {}/{} completed in {} ms (API calls: {} ms, reconciliation wait: {} ms)",
                 batchNumber, totalBatches, batchTotalMs, deleteApiCallMs, batchTotalMs - deleteApiCallMs);
         }
 
         final long totalCleanupMs = Duration.ofNanos(System.nanoTime() - cleanupStartTime).toMillis();
-        LOGGER.info("All {} KafkaUsers with prefix '{}' deleted in {} ms ({} ms/user avg)",
-            kafkaUsers.size(), testStorage.getUsername(), totalCleanupMs,
+        LOGGER.info("Full cleanup (KafkaUsers + Secrets) of {} users completed in {} ms ({} ms/user avg)",
+            kafkaUsers.size(), totalCleanupMs,
             kafkaUsers.size() > 0 ? totalCleanupMs / kafkaUsers.size() : 0);
+    }
+
+    /**
+     * Waits until all Secrets for the given batch of deleted KafkaUsers are fully removed.
+     * The User Operator deletes Secrets one-by-one through its reconciliation loop, which
+     * can be slow for large numbers of users. This method ensures each batch's Secrets are
+     * cleaned up before proceeding to the next batch.
+     *
+     * @param testStorage       storage containing namespace information
+     * @param secretNames       names of the Secrets to wait for (same as the KafkaUser names)
+     * @param batchNumber       current batch number (for logging)
+     * @param totalBatches      total number of batches (for logging)
+     */
+    private static void waitForUserSecretsCleanup(TestStorage testStorage,
+                                                  List<String> secretNames,
+                                                  int batchNumber,
+                                                  int totalBatches) {
+        final Set<String> secretNameSet = Set.copyOf(secretNames);
+
+        LOGGER.info("Waiting for {} Secrets from batch {}/{} to be cleaned up",
+            secretNameSet.size(), batchNumber, totalBatches);
+
+        final long secretWaitStart = System.nanoTime();
+
+        TestUtils.waitFor(
+            "deletion of Secrets from batch " + batchNumber + "/" + totalBatches,
+            TestConstants.GLOBAL_POLL_INTERVAL,
+            TestConstants.GLOBAL_TIMEOUT,
+            () -> {
+                List<String> remaining = KubeResourceManager.get().kubeClient().getClient()
+                    .secrets()
+                    .inNamespace(testStorage.getNamespaceName())
+                    .withLabel(Labels.STRIMZI_KIND_LABEL, KafkaUser.RESOURCE_KIND)
+                    .list()
+                    .getItems()
+                    .stream()
+                    .map(s -> s.getMetadata().getName())
+                    .filter(secretNameSet::contains)
+                    .toList();
+
+                if (remaining.isEmpty()) {
+                    return true;
+                }
+
+                LOGGER.debug("Batch {}/{}: still {} Secrets remaining",
+                    batchNumber, totalBatches, remaining.size());
+                return false;
+            });
+
+        final long secretWaitMs = Duration.ofNanos(System.nanoTime() - secretWaitStart).toMillis();
+        LOGGER.info("Batch {}/{} Secrets cleaned up in {} ms",
+            batchNumber, totalBatches, secretWaitMs);
     }
 
     /**
