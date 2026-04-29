@@ -22,6 +22,7 @@ public class BundleVersionModificationData extends CommonVersionModificationData
     private Map<String, String> imagesAfterOperations;
     private Map<String, Object> client;
     private Map<String, String> environmentInfo;
+    // TODO: Remove this after 1.1.0 release - https://github.com/strimzi/strimzi-kafka-operator/issues/12692
     @JsonIgnoreProperties
     private Boolean convertCrsAndCrds = false;
 
@@ -109,10 +110,12 @@ public class BundleVersionModificationData extends CommonVersionModificationData
         this.environmentInfo = environmentInfo;
     }
 
+    // TODO: Remove this after 1.1.0 release - https://github.com/strimzi/strimzi-kafka-operator/issues/12692
     public Boolean getConvertCrsAndCrds() {
         return convertCrsAndCrds;
     }
 
+    // TODO: Remove this after 1.1.0 release - https://github.com/strimzi/strimzi-kafka-operator/issues/12692
     public void setConvertCrsAndCrds(Boolean convertCrsAndCrds) {
         if (convertCrsAndCrds == null) {
             this.convertCrsAndCrds = false;

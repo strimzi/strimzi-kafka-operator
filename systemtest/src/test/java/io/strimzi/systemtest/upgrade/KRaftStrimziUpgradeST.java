@@ -43,6 +43,7 @@ public class KRaftStrimziUpgradeST extends AbstractKRaftUpgradeST {
 
     private static final Logger LOGGER = LogManager.getLogger(KRaftStrimziUpgradeST.class);
     private final BundleVersionModificationData acrossUpgradeData = new VersionModificationDataLoader(VersionModificationDataLoader.ModificationType.BUNDLE_UPGRADE).buildDataForUpgradeAcrossVersionsForKRaft();
+    // TODO: Remove this after 1.1.0 release - https://github.com/strimzi/strimzi-kafka-operator/issues/12692
     private final BundleVersionModificationData conversionUpgradeData = new VersionModificationDataLoader(VersionModificationDataLoader.ModificationType.BUNDLE_UPGRADE)
         .getBundleUpgradeOrDowngradeDataList()
         .stream()
@@ -68,6 +69,7 @@ public class KRaftStrimziUpgradeST extends AbstractKRaftUpgradeST {
         doKafkaConnectAndKafkaConnectorUpgradeOrDowngradeProcedure(CO_NAMESPACE, testStorage, upgradeData, upgradeKafkaVersion);
     }
 
+    // TODO: Remove this after 1.1.0 release - https://github.com/strimzi/strimzi-kafka-operator/issues/12692
     @IsolatedTest
     void testUpgradeWithCrAndCrdConversion() throws IOException {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());

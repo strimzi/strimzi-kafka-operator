@@ -120,6 +120,8 @@ public class AbstractKRaftUpgradeST extends AbstractST {
     protected final LabelSelector coSelector = new LabelSelectorBuilder().withMatchLabels(Map.of(Labels.STRIMZI_KIND_LABEL, "cluster-operator")).build();
     protected final LabelSelector connectLabelSelector = LabelSelectors.connectLabelSelector(CLUSTER_NAME, KafkaConnectResources.componentName(CLUSTER_NAME));
 
+    // TODO: Remove this after 1.1.0 release - https://github.com/strimzi/strimzi-kafka-operator/issues/12692
+    // Plus delete all the files on the path
     protected static final String PATH_TO_CONVERSION_RESOURCES_FILES = TestUtils.USER_PATH + "/../systemtest/src/test/resources/upgrade/conversion/";
     protected static final String CONVERSION_TOOL_JOB_NAME = "strimzi-v1-api-conversion";
 
@@ -162,6 +164,7 @@ public class AbstractKRaftUpgradeST extends AbstractST {
         // 4. Verify KafkaConnector FileSink
         verifyKafkaConnectorFileSink(testStorage);
 
+        // TODO: Remove this after 1.1.0 release - https://github.com/strimzi/strimzi-kafka-operator/issues/12692
         if (upgradeDowngradeData.getConvertCrsAndCrds()) {
             // convert CRs and CRDs to v1
             convertCrsAndCrds(testStorage.getNamespaceName());
@@ -273,6 +276,7 @@ public class AbstractKRaftUpgradeST extends AbstractST {
             if (upgradeData.getFromVersion().equals("HEAD")) {
                 kafkaTopicYaml = new File(dir, PATH_TO_PACKAGING_EXAMPLES + "/topic/kafka-topic.yaml");
             } else if (upgradeData.getConvertCrsAndCrds()) {
+                // TODO: Remove this after 1.1.0 release - https://github.com/strimzi/strimzi-kafka-operator/issues/12692
                 kafkaTopicYaml = new File(PATH_TO_CONVERSION_RESOURCES_FILES + "kafka-topic.yaml");
             } else {
                 kafkaTopicYaml = new File(dir, upgradeData.getFromExamples() + "/examples/topic/kafka-topic.yaml");
@@ -369,6 +373,7 @@ public class AbstractKRaftUpgradeST extends AbstractST {
                         .endSpec()
                         .build());
             } else {
+                // TODO: Remove this after 1.1.0 release - https://github.com/strimzi/strimzi-kafka-operator/issues/12692
                 if (upgradeData.getConvertCrsAndCrds()) {
                     kafkaYaml = new File(PATH_TO_CONVERSION_RESOURCES_FILES + "kafka.yaml");
                 } else {
@@ -400,6 +405,7 @@ public class AbstractKRaftUpgradeST extends AbstractST {
             if (upgradeData.getFromVersion().equals("HEAD")) {
                 KubeResourceManager.get().createResourceWithWait(KafkaUserTemplates.tlsUser(componentsNamespaceName, USER_NAME, CLUSTER_NAME).build());
             } else {
+                // TODO: Remove this after 1.1.0 release - https://github.com/strimzi/strimzi-kafka-operator/issues/12692
                 if (upgradeData.getConvertCrsAndCrds()) {
                     kafkaUserYaml = new File(PATH_TO_CONVERSION_RESOURCES_FILES + "kafka-user.yaml");
                 } else {
@@ -420,6 +426,7 @@ public class AbstractKRaftUpgradeST extends AbstractST {
             if (upgradeData.getFromVersion().equals("HEAD")) {
                 kafkaTopicYaml = new File(dir, PATH_TO_PACKAGING_EXAMPLES + "/topic/kafka-topic.yaml");
             } else if (upgradeData.getConvertCrsAndCrds()) {
+                // TODO: Remove this after 1.1.0 release - https://github.com/strimzi/strimzi-kafka-operator/issues/12692
                 kafkaTopicYaml = new File(PATH_TO_CONVERSION_RESOURCES_FILES + "kafka-topic.yaml");
             } else {
                 kafkaTopicYaml = new File(dir, upgradeData.getFromExamples() + "/examples/topic/kafka-topic.yaml");
@@ -481,6 +488,7 @@ public class AbstractKRaftUpgradeST extends AbstractST {
                 // resource stored in `systemtest/src/test/resources/upgrade/conversion/kafka-connect.yaml`
                 // In order to not map the file to v1 KafkaConnect (which is default when you are using the object) we need to use
                 // GenericKubernetesResource and append all the changes related to the Connect Build (for running the file-sink connector).
+                // TODO: Remove this after 1.1.0 release - https://github.com/strimzi/strimzi-kafka-operator/issues/12692
                 if (acrossUpgradeData.getConvertCrsAndCrds()) {
                     kafkaConnectYaml = new File(PATH_TO_CONVERSION_RESOURCES_FILES + "kafka-connect.yaml");
 
@@ -886,6 +894,7 @@ public class AbstractKRaftUpgradeST extends AbstractST {
      *
      * @param componentsNamespaceName   Namespace where the conversion tool will run and where are all the operands.
      */
+    // TODO: Remove this after 1.1.0 release - https://github.com/strimzi/strimzi-kafka-operator/issues/12692
     protected void convertCrsAndCrds(String componentsNamespaceName) {
         // create RBAC resources needed for running the conversion Job
         createConversionToolRbacResources(componentsNamespaceName);
@@ -903,6 +912,7 @@ public class AbstractKRaftUpgradeST extends AbstractST {
      *
      * @param componentsNamespaceName   Namespace where the conversion tool will run and where are all the operands.
      */
+    // TODO: Remove this after 1.1.0 release - https://github.com/strimzi/strimzi-kafka-operator/issues/12692
     protected void convertCrdsOnly(String componentsNamespaceName) {
         // create RBAC resources needed for running the conversion Job
         createConversionToolRbacResources(componentsNamespaceName);
@@ -921,6 +931,7 @@ public class AbstractKRaftUpgradeST extends AbstractST {
      *
      * @param componentsNamespaceName   Namespace where the conversion tool will run and where are all the operands.
      */
+    // TODO: Remove this after 1.1.0 release - https://github.com/strimzi/strimzi-kafka-operator/issues/12692
     private void convertCrs(String componentsNamespaceName) {
         runConversion(componentsNamespaceName, "convert-resource");
 
@@ -946,6 +957,7 @@ public class AbstractKRaftUpgradeST extends AbstractST {
      *
      * @param componentsNamespaceName Namespace where the conversion tool will run and where are all the operands.
      */
+    // TODO: Remove this after 1.1.0 release - https://github.com/strimzi/strimzi-kafka-operator/issues/12692
     private void convertCrds(String componentsNamespaceName) {
         runConversion(componentsNamespaceName, "crd-upgrade");
 
@@ -971,6 +983,7 @@ public class AbstractKRaftUpgradeST extends AbstractST {
      * @param componentsNamespaceName   Namespace where the conversion tool will run and where are all the operands.
      * @param command                   Command that should be executed by the conversion tool.
      */
+    // TODO: Remove this after 1.1.0 release - https://github.com/strimzi/strimzi-kafka-operator/issues/12692
     private void runConversion(String componentsNamespaceName, String command) {
         String jobResourceYaml = buildConversionToolJob(componentsNamespaceName, command);
         KubeResourceManager.get().kubeCmdClient().inNamespace(componentsNamespaceName).applyContent(jobResourceYaml);
@@ -984,6 +997,7 @@ public class AbstractKRaftUpgradeST extends AbstractST {
      *
      * @param componentsNamespaceName Namespace where the conversion tool will run and where are all the operands.
      */
+    // TODO: Remove this after 1.1.0 release - https://github.com/strimzi/strimzi-kafka-operator/issues/12692
     private void createConversionToolRbacResources(String componentsNamespaceName) {
         File conversionToolFile = new File(PATH_TO_CONVERSION_RESOURCES_FILES + "conversion-tool-rbac.yaml");
 
@@ -1022,6 +1036,7 @@ public class AbstractKRaftUpgradeST extends AbstractST {
      *
      * @return  Job YAML of the conversion tool, updated with Namespace and command.
      */
+    // TODO: Remove this after 1.1.0 release - https://github.com/strimzi/strimzi-kafka-operator/issues/12692
     private String buildConversionToolJob(String componentsNamespaceName, String command) {
         File conversionToolFile = new File(PATH_TO_CONVERSION_RESOURCES_FILES + "conversion-tool.yaml");
 
