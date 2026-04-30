@@ -48,7 +48,7 @@
     status: stable
     flakyEnvVariable: none
     reason: Test is working on environment, where k8s server version is < 1.22
-  fromFeatureGates: "-UseConnectBuildWithBuildah,-ServerSideApplyPhase1"
+  fromFeatureGates: "-ServerSideApplyPhase1"
   toFeatureGates: ""
   filePaths:
     fromKafka: "/examples/kafka/kafka-persistent.yaml"

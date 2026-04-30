@@ -168,6 +168,9 @@ public class AbstractKRaftUpgradeST extends AbstractST {
         if (upgradeDowngradeData.getConvertCrsAndCrds()) {
             // convert CRs and CRDs to v1
             convertCrsAndCrds(testStorage.getNamespaceName());
+        } else if (upgradeDowngradeData.getFromVersion().equals("0.51.0")) {
+            // convert CRDs to v1
+            convertCrds(testStorage.getNamespaceName());
         }
 
         // 5. Upgrade CO to HEAD and wait for readiness of ClusterOperator
