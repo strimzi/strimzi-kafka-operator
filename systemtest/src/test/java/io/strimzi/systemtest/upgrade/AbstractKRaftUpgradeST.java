@@ -168,9 +168,6 @@ public class AbstractKRaftUpgradeST extends AbstractST {
         if (upgradeDowngradeData.getConvertCrsAndCrds()) {
             // convert CRs and CRDs to v1
             convertCrsAndCrds(testStorage.getNamespaceName());
-        } else if (!upgradeDowngradeData.getFromVersion().equals("HEAD")) {
-            // convert just CRDs to v1 as we are upgrading from storage being v1beta2
-            convertCrdsOnly(testStorage.getNamespaceName());
         }
 
         // 5. Upgrade CO to HEAD and wait for readiness of ClusterOperator
@@ -413,7 +410,11 @@ public class AbstractKRaftUpgradeST extends AbstractST {
                 }
                 LOGGER.info("Deploying KafkaUser from: {}", kafkaUserYaml.getPath());
                 KubeResourceManager.get().kubeCmdClient().inNamespace(componentsNamespaceName).applyContent(KafkaUserUtils.removeKafkaUserPart(kafkaUserYaml, "authorization"));
-                KafkaUserUtils.waitForKafkaUserReadyForV1Beta2(componentsNamespaceName, USER_NAME);
+                if (upgradeData.getConvertCrsAndCrds()) {
+                    KafkaUserUtils.waitForKafkaUserReadyForV1Beta2(componentsNamespaceName, USER_NAME);
+                } else {
+                    KafkaUserUtils.waitForKafkaUserReady(componentsNamespaceName, USER_NAME);
+                }
             }
         }
     }

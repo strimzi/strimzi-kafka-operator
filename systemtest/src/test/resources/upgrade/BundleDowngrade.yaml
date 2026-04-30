@@ -76,7 +76,7 @@
     flakyEnvVariable: none
     reason: Test is working on all environment used by QE.
   fromFeatureGates: ""
-  toFeatureGates: "-ServerSideApplyPhase1,-UseConnectBuildWithBuildah"
+  toFeatureGates: "-ServerSideApplyPhase1"
   filePaths:
     fromKafka: "/examples/kafka/kafka-persistent.yaml"
     toKafka: "/examples/kafka/kafka-persistent.yaml"
