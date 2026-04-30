@@ -8,5 +8,5 @@
 = Upgrading from versions earlier than 1.0.0
 
 [role="_abstract"]
-When upgrading from a version prior to Strimzi 1.0.0, you **must** convert your custom resources and CRDs to the `v1` API.
-Please follow the link:https://strimzi.io/docs/operators/1.0.0/deploying.html#assembly-api-conversion-str[Strimzi 1.0.0 documentation^] for more details.
+When upgrading from a version earlier than Strimzi 1.0.0, you **must** convert your custom resources and CRDs to the `v1` API.
+For guidance on the conversion, see the link:https://strimzi.io/docs/operators/1.0.0/deploying.html#assembly-api-conversion-str[Strimzi 1.0.0 documentation^].
