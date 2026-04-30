@@ -3,7 +3,6 @@
 ## 1.1.0
 
 * Support for dependency scope configuration of Maven artifacts in Kafka Connect Build
-* Fix the default `operatorNetworkPolicy.egress` value in the Helm chart so that enabling the operator NetworkPolicy without overriding `egress` produces a wildcard egress rule (allow-all) instead of a deny-all empty rule
 
 ### Major changes, deprecations, and removals
 
