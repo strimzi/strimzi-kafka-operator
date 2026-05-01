@@ -45,6 +45,7 @@ import java.util.Map;
 import static io.strimzi.systemtest.TestTags.CRUISE_CONTROL;
 import static io.strimzi.systemtest.TestTags.REGRESSION;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.containsString;
 
 @Tag(REGRESSION)
@@ -110,9 +111,12 @@ public class TopicReplicasChangeST extends AbstractST {
         KafkaTopicUtils.waitForKafkaTopicNotReady(sharedTestStorage.getNamespaceName(), testStorage.getTopicName());
         KafkaTopicStatus kafkaTopicStatus = CrdClients.kafkaTopicClient().inNamespace(sharedTestStorage.getNamespaceName()).withName(testStorage.getTopicName()).get().getStatus();
 
+        // Used with Kafka 4.2 and earlier
         String errorMessage = "org.apache.kafka.common.errors.InvalidReplicationFactorException: Unable to replicate the partition 5 time(s): The target replication factor of 5 cannot be reached because only 3 broker(s) are registered.";
+        // Used with Kafka 4.3 and newer
+        String errorMessage2 = "org.apache.kafka.common.errors.InvalidReplicationFactorException: Unable to replicate the partition 5 time(s): The target replication factor of 5 cannot be reached because only 3 broker(s) are registered or some brokers have all their log directories cordoned.";
 
-        assertThat(kafkaTopicStatus.getConditions().get(0).getMessage(), containsString(errorMessage));
+        assertThat(kafkaTopicStatus.getConditions().get(0).getMessage(), anyOf(containsString(errorMessage), containsString(errorMessage2)));
         assertThat(kafkaTopicStatus.getConditions().get(0).getReason(), containsString("KafkaError"));
 
         // also we will not see any replicationChange status here because UTO failed on reconciliation

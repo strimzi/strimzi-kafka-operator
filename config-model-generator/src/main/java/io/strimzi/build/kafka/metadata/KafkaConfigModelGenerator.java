@@ -13,7 +13,6 @@ import io.strimzi.kafka.config.model.ConfigModels;
 import io.strimzi.kafka.config.model.Scope;
 import io.strimzi.kafka.config.model.Type;
 import kafka.Kafka;
-import kafka.server.DynamicBrokerConfig$;
 import kafka.server.KafkaConfig$;
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.server.common.MetadataVersion;
@@ -306,7 +305,19 @@ public class KafkaConfigModelGenerator {
     }
 
     static Map<String, String> brokerDynamicUpdates() {
-        return DynamicBrokerConfig$.MODULE$.dynamicConfigUpdateModes();
+        if (classExists("org.apache.kafka.server.config.DynamicBrokerConfig")) {
+            return org.apache.kafka.server.config.DynamicBrokerConfig.dynamicConfigUpdateModes();
+        } else {
+            try {
+                Class<?> clazz = Class.forName("kafka.server.DynamicBrokerConfig$");
+                Field moduleField = clazz.getDeclaredField("MODULE$");
+                Object moduleInstance = moduleField.get(null);
+                Method method = clazz.getDeclaredMethod("dynamicConfigUpdateModes");
+                return (Map<String, String>) method.invoke(moduleInstance);
+            } catch (ClassNotFoundException | NoSuchFieldException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
+                throw new RuntimeException("Failed to get dynamic config update modes", e);
+            }
+        }
     }
 
     static ConfigDef brokerConfigs() {
@@ -346,4 +357,12 @@ public class KafkaConfigModelGenerator {
         return 0;
     }
 
+    static boolean classExists(String className) {
+        try {
+            Class.forName(className);
+            return true;
+        } catch (ClassNotFoundException e) {
+            return false;
+        }
+    }
 }

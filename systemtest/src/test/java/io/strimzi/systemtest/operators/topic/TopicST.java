@@ -67,6 +67,7 @@ import static io.strimzi.systemtest.utils.specific.MetricsUtils.assertMetricReso
 import static io.strimzi.systemtest.utils.specific.MetricsUtils.assertMetricResourcesHigherThanOrEqualTo;
 import static io.strimzi.systemtest.utils.specific.MetricsUtils.assertMetricValueHigherThanOrEqualTo;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.is;
@@ -113,12 +114,15 @@ public class TopicST extends AbstractST {
         assertThat("Topic exists in Kafka CR (Kubernetes)", hasTopicInCRK8s(kafkaTopic, testStorage.getTopicName()));
         assertThat("Topic doesn't exists in Kafka itself", !hasTopicInKafka(testStorage.getTopicName(), sharedTestStorage.getClusterName(), scraperPodName));
 
+        // Used with Kafka 4.2 and earlier
         String errorMessage = "org.apache.kafka.common.errors.InvalidReplicationFactorException: Unable to replicate the partition 5 time(s): The target replication factor of 5 cannot be reached because only 3 broker(s) are registered.";
+        // Used with Kafka 4.3 and newer
+        String errorMessage2 = "org.apache.kafka.common.errors.InvalidReplicationFactorException: Unable to replicate the partition 5 time(s): The target replication factor of 5 cannot be reached because only 3 broker(s) are registered or some brokers have all their log directories cordoned.";
 
         KafkaTopicUtils.waitForKafkaTopicNotReady(Environment.TEST_SUITE_NAMESPACE, testStorage.getTopicName());
         KafkaTopicStatus kafkaTopicStatus = CrdClients.kafkaTopicClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName(testStorage.getTopicName()).get().getStatus();
 
-        assertThat(kafkaTopicStatus.getConditions().get(0).getMessage(), containsString(errorMessage));
+        assertThat(kafkaTopicStatus.getConditions().get(0).getMessage(), anyOf(containsString(errorMessage), containsString(errorMessage2)));
         assertThat(kafkaTopicStatus.getConditions().get(0).getReason(), containsString("KafkaError"));
 
         LOGGER.info("Delete Topic: {}", testStorage.getTopicName());

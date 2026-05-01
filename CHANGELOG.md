@@ -2,6 +2,7 @@
 
 ## 1.1.0
 
+* Add support for Apache Kafka 4.3.0 and remove support for Kafka 4.1.x
 * New Cluster operator configuration option `STRIMZI_PKCS12_KEYSTORE_GENERATION` to disable generating PKCS12 stores in CA and Kafka user `Secret` resources.
 * Support for dependency scope configuration of Maven artifacts in Kafka Connect Build
 * Support for configuring per-broker listener annotation and label templates.
