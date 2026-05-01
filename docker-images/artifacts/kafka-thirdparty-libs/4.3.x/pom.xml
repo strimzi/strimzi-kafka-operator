@@ -9,9 +9,7 @@
     <packaging>pom</packaging>
 
     <!--
-    Changes compared to 4.1.x:
-      - Log4j2: 2.24.3 -> 2.25.4
-      - Jackson (jackson-dataformat-yaml, jackson-datatype-jsr310): 2.19.0 -> 2.19.4
+    Kafka 4.2.1 uses different Jackson version (2.21.2) than Kafka 4.2.0. So we use separate third-party libs directory.
     -->
 
     <licenses>
@@ -321,7 +319,7 @@
                     <artifactId>jackson-databind</artifactId>
                 </exclusion>
                 <exclusion>
-                    <!-- Excluded and imported separately to keep the Jackson version in sync with Kafka -->
+                    <!-- Excluded because using the latest version coming from Kafka -->
                     <groupId>com.fasterxml.jackson.dataformat</groupId>
                     <artifactId>jackson-dataformat-yaml</artifactId>
                 </exclusion>
@@ -333,14 +331,23 @@
             </exclusions>
         </dependency>
         <dependency>
-            <groupId>com.fasterxml.jackson.dataformat</groupId>
-            <artifactId>jackson-dataformat-yaml</artifactId>
-            <version>2.19.4</version>
-        </dependency>
-        <dependency>
             <groupId>com.fasterxml.jackson.datatype</groupId>
             <artifactId>jackson-datatype-jsr310</artifactId>
-            <version>2.19.4</version>
+            <version>2.21.2</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.fasterxml.jackson.core</groupId>
+                    <artifactId>jackson-core</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.fasterxml.jackson.core</groupId>
+                    <artifactId>jackson-annotations</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.fasterxml.jackson.core</groupId>
+                    <artifactId>jackson-databind</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
     </dependencies>
 </project>
