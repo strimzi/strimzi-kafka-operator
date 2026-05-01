@@ -147,17 +147,25 @@ public class KafkaUserOperator {
     }
 
     /**
-     * Utility method to get all usernames based on the KafkaUser Kubernetes resources
+     * Utility method to get all usernames based on the KafkaUser Kubernetes resources.
+     * Returns both the CR names and the resolved Kafka usernames (from spec.username) to ensure
+     * that Kafka-side usernames matching a CR's resolved username are not treated as orphans
+     * during periodic reconciliation.
      *
      * @param namespace     Namespace where to look for the users
      *
-     * @return  Set of KafkaUser resource names
+     * @return  Set of CR names and resolved Kafka usernames
      */
     private CompletionStage<Set<String>> getAllKafkaUserUsernames(String namespace)  {
         return kafkaUserCrdOperator.listAsync(namespace, Labels.fromMap(selector.getMatchLabels()))
-            .thenApply(users -> users.stream()
-                    .map(resource -> resource.getMetadata().getName())
-                    .collect(Collectors.toSet()));
+            .thenApply(users -> {
+                Set<String> names = new HashSet<>();
+                for (KafkaUser user : users) {
+                    names.add(user.getMetadata().getName());
+                    names.add(KafkaUserModel.resolveUsername(user));
+                }
+                return names;
+            });
     }
 
     /**
@@ -188,33 +196,44 @@ public class KafkaUserOperator {
             // Create or update
             return createOrUpdate(reconciliation, kafkaUser, userSecret);
         } else {
-            // Delete the user from everywhere with both the TLS and SCRAM-SHa name variants
-            return delete(reconciliation).thenApply(i -> null);
+            // Delete the user from everywhere with both the TLS and SCRAM-SHA name variants
+            return delete(reconciliation, userSecret).thenApply(i -> null);
         }
     }
 
     /**
-     * Deletes the user
+     * Deletes the user. The resolved Kafka username is read from the Secret annotation if available,
+     * otherwise falls back to the reconciliation name (CR name).
      *
      * @param reconciliation    Reconciliation marker
+     * @param userSecret        The user secret (may be null if already deleted)
      *
      * @return A CompletionStage
      */
-    private CompletionStage<Void> delete(Reconciliation reconciliation) {
+    private CompletionStage<Void> delete(Reconciliation reconciliation, Secret userSecret) {
         String namespace = reconciliation.namespace();
-        String user = reconciliation.name();
-        String secretName = KafkaUserModel.getSecretName(config.getSecretPrefix(), user);
+        String crName = reconciliation.name();
+        String secretName = KafkaUserModel.getSecretName(config.getSecretPrefix(), crName);
 
-        LOGGER.debugCr(reconciliation, "Deleting User {} from namespace {}", user, namespace);
+        // Try to get the resolved username from the Secret annotation
+        String resolvedUsername = crName;
+        if (userSecret != null && userSecret.getMetadata().getAnnotations() != null) {
+            String annotatedUsername = userSecret.getMetadata().getAnnotations().get(KafkaUserModel.ANNO_STRIMZI_IO_KAFKA_USERNAME);
+            if (annotatedUsername != null) {
+                resolvedUsername = annotatedUsername;
+            }
+        }
 
-        // Delete everything what can be deleted
+        LOGGER.debugCr(reconciliation, "Deleting User {} (Kafka username: {}) from namespace {}", crName, resolvedUsername, namespace);
+
+        // Delete everything what can be deleted using the resolved Kafka username
         return CompletableFuture.allOf(
                 secretOperator.deleteAsync(reconciliation, namespace, secretName, false).toCompletableFuture(),
-                config.isAclsAdminApiSupported() ? aclOperator.reconcile(reconciliation, KafkaUserModel.getTlsUserName(user), null).toCompletableFuture() : CompletableFuture.completedFuture(ReconcileResult.noop(null)),
-                config.isAclsAdminApiSupported() ? aclOperator.reconcile(reconciliation, KafkaUserModel.getScramUserName(user), null).toCompletableFuture() : CompletableFuture.completedFuture(ReconcileResult.noop(null)),
-                scramCredentialsOperator.reconcile(reconciliation, KafkaUserModel.getScramUserName(user), null).toCompletableFuture(),
-                quotasOperator.reconcile(reconciliation, KafkaUserModel.getTlsUserName(user), null).toCompletableFuture(),
-                quotasOperator.reconcile(reconciliation, KafkaUserModel.getScramUserName(user), null).toCompletableFuture()
+                config.isAclsAdminApiSupported() ? aclOperator.reconcile(reconciliation, KafkaUserModel.getTlsUserName(resolvedUsername), null).toCompletableFuture() : CompletableFuture.completedFuture(ReconcileResult.noop(null)),
+                config.isAclsAdminApiSupported() ? aclOperator.reconcile(reconciliation, KafkaUserModel.getScramUserName(resolvedUsername), null).toCompletableFuture() : CompletableFuture.completedFuture(ReconcileResult.noop(null)),
+                scramCredentialsOperator.reconcile(reconciliation, KafkaUserModel.getScramUserName(resolvedUsername), null).toCompletableFuture(),
+                quotasOperator.reconcile(reconciliation, KafkaUserModel.getTlsUserName(resolvedUsername), null).toCompletableFuture(),
+                quotasOperator.reconcile(reconciliation, KafkaUserModel.getScramUserName(resolvedUsername), null).toCompletableFuture()
         );
     }
 
@@ -383,12 +402,14 @@ public class KafkaUserOperator {
             scramOrNoneQuotas = user.getQuotas();
         }
 
+        String resolvedUsername = user.getResolvedUsername();
+
         // Reconcile the user SCRAM-SHA-512 credentials
-        CompletionStage<ReconcileResult<String>> scramCredentialsFuture = scramCredentialsOperator.reconcile(reconciliation, user.getName(), user.getScramSha512Password());
+        CompletionStage<ReconcileResult<String>> scramCredentialsFuture = scramCredentialsOperator.reconcile(reconciliation, resolvedUsername, user.getScramSha512Password());
 
         // Quotas need to reconciled for both regular and TLS username. It will be (possibly) set for one user and deleted for the other
-        CompletionStage<ReconcileResult<KafkaUserQuotas>> tlsQuotasFuture = quotasOperator.reconcile(reconciliation, KafkaUserModel.getTlsUserName(reconciliation.name()), tlsQuotas);
-        CompletionStage<ReconcileResult<KafkaUserQuotas>> quotasFuture = quotasOperator.reconcile(reconciliation, KafkaUserModel.getScramUserName(reconciliation.name()), scramOrNoneQuotas);
+        CompletionStage<ReconcileResult<KafkaUserQuotas>> tlsQuotasFuture = quotasOperator.reconcile(reconciliation, KafkaUserModel.getTlsUserName(resolvedUsername), tlsQuotas);
+        CompletionStage<ReconcileResult<KafkaUserQuotas>> quotasFuture = quotasOperator.reconcile(reconciliation, KafkaUserModel.getScramUserName(resolvedUsername), scramOrNoneQuotas);
 
         // Reconcile the user secret generated by the user operator with the credentials
         CompletionStage<ReconcileResult<Secret>> userSecretFuture = reconcileUserSecret(reconciliation, user, userSecret, userStatus);
@@ -398,8 +419,8 @@ public class KafkaUserOperator {
         CompletionStage<ReconcileResult<Set<SimpleAclRule>>> aclsScramUserFuture;
 
         if (config.isAclsAdminApiSupported()) {
-            aclsTlsUserFuture = aclOperator.reconcile(reconciliation, KafkaUserModel.getTlsUserName(reconciliation.name()), tlsAcls);
-            aclsScramUserFuture = aclOperator.reconcile(reconciliation, KafkaUserModel.getScramUserName(reconciliation.name()), scramOrNoneAcls);
+            aclsTlsUserFuture = aclOperator.reconcile(reconciliation, KafkaUserModel.getTlsUserName(resolvedUsername), tlsAcls);
+            aclsScramUserFuture = aclOperator.reconcile(reconciliation, KafkaUserModel.getScramUserName(resolvedUsername), scramOrNoneAcls);
         } else {
             aclsTlsUserFuture = CompletableFuture.completedFuture(ReconcileResult.noop(null));
             aclsScramUserFuture = CompletableFuture.completedFuture(ReconcileResult.noop(null));

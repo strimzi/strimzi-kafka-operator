@@ -145,7 +145,7 @@ public class KafkaUserModelTest {
 
         assertThat(generatedSecret.getMetadata().getName(), is(ResourceUtils.NAME));
         assertThat(generatedSecret.getMetadata().getNamespace(), is(ResourceUtils.NAMESPACE));
-        assertThat(generatedSecret.getMetadata().getAnnotations(), is(emptyMap()));
+        assertThat(generatedSecret.getMetadata().getAnnotations(), hasEntry(KafkaUserModel.ANNO_STRIMZI_IO_KAFKA_USERNAME, ResourceUtils.NAME));
         assertThat(generatedSecret.getMetadata().getLabels(),
                 is(Labels.fromMap(ResourceUtils.LABELS)
                         .withStrimziKind(KafkaUser.RESOURCE_KIND)
@@ -169,7 +169,7 @@ public class KafkaUserModelTest {
 
         assertThat(generatedSecret.getMetadata().getName(), is(secretPrefix + ResourceUtils.NAME));
         assertThat(generatedSecret.getMetadata().getNamespace(), is(ResourceUtils.NAMESPACE));
-        assertThat(generatedSecret.getMetadata().getAnnotations(), is(emptyMap()));
+        assertThat(generatedSecret.getMetadata().getAnnotations(), hasEntry(KafkaUserModel.ANNO_STRIMZI_IO_KAFKA_USERNAME, ResourceUtils.NAME));
         assertThat(generatedSecret.getMetadata().getLabels(),
                 is(Labels.fromMap(ResourceUtils.LABELS)
                         .withStrimziKind(KafkaUser.RESOURCE_KIND)
@@ -215,7 +215,8 @@ public class KafkaUserModelTest {
                         .withKubernetesManagedBy(KafkaUserModel.KAFKA_USER_OPERATOR_NAME)
                         .withAdditionalLabels(singletonMap("label1", "value1"))
                         .toMap()));
-        assertThat(generatedSecret.getMetadata().getAnnotations(), is(singletonMap("anno1", "value1")));
+        assertThat(generatedSecret.getMetadata().getAnnotations(), hasEntry("anno1", "value1"));
+        assertThat(generatedSecret.getMetadata().getAnnotations(), hasEntry(KafkaUserModel.ANNO_STRIMZI_IO_KAFKA_USERNAME, ResourceUtils.NAME));
         // Check owner reference
         checkOwnerReference(model.createOwnerReference(), generatedSecret);
     }
@@ -757,5 +758,175 @@ public class KafkaUserModelTest {
     public void testFromCrdAclsWithAclsAdminApiSupportMissing() {
         InvalidResourceException e = assertThrows(InvalidResourceException.class, () -> KafkaUserModel.fromCrd(scramShaUser, UserOperatorConfig.SECRET_PREFIX.defaultValue(), false));
         assertThat(e.getMessage(), is("Simple authorization ACL rules are configured but not supported in the Kafka cluster configuration."));
+    }
+
+    @Test
+    public void testResolveUsernameWithoutSpecUsername() {
+        assertThat(KafkaUserModel.resolveUsername(tlsUser), is(ResourceUtils.NAME));
+        assertThat(KafkaUserModel.resolveUsername(scramShaUser), is(ResourceUtils.NAME));
+    }
+
+    @Test
+    public void testResolveUsernameWithSpecUsername() {
+        KafkaUser userWithCustomUsername = new KafkaUserBuilder(scramShaUser)
+                .editSpec()
+                    .withUsername("custom-kafka-user")
+                .endSpec()
+                .build();
+
+        assertThat(KafkaUserModel.resolveUsername(userWithCustomUsername), is("custom-kafka-user"));
+    }
+
+    @Test
+    public void testFromCrdWithCustomUsernameScramSha() {
+        KafkaUser userWithCustomUsername = new KafkaUserBuilder(scramShaUser)
+                .editSpec()
+                    .withUsername("custom-kafka-user")
+                .endSpec()
+                .build();
+
+        KafkaUserModel model = KafkaUserModel.fromCrd(userWithCustomUsername, UserOperatorConfig.SECRET_PREFIX.defaultValue(), Boolean.parseBoolean(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.defaultValue()));
+
+        assertThat(model.getName(), is(ResourceUtils.NAME));
+        assertThat(model.getResolvedUsername(), is("custom-kafka-user"));
+        assertThat(model.getUserName(), is("custom-kafka-user"));
+        assertThat(model.getSecretName(), is(ResourceUtils.NAME));
+    }
+
+    @Test
+    public void testFromCrdWithCustomUsernameTls() {
+        KafkaUser userWithCustomUsername = new KafkaUserBuilder(tlsUser)
+                .editSpec()
+                    .withUsername("custom-tls-user")
+                .endSpec()
+                .build();
+
+        KafkaUserModel model = KafkaUserModel.fromCrd(userWithCustomUsername, UserOperatorConfig.SECRET_PREFIX.defaultValue(), Boolean.parseBoolean(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.defaultValue()));
+
+        assertThat(model.getName(), is(ResourceUtils.NAME));
+        assertThat(model.getResolvedUsername(), is("custom-tls-user"));
+        assertThat(model.getUserName(), is("CN=custom-tls-user"));
+        assertThat(model.getSecretName(), is(ResourceUtils.NAME));
+    }
+
+    @Test
+    public void testSecretAnnotationContainsResolvedUsername() {
+        KafkaUser userWithCustomUsername = new KafkaUserBuilder(scramShaUser)
+                .editSpec()
+                    .withUsername("custom-kafka-user")
+                .endSpec()
+                .build();
+
+        KafkaUserModel model = KafkaUserModel.fromCrd(userWithCustomUsername, UserOperatorConfig.SECRET_PREFIX.defaultValue(), Boolean.parseBoolean(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.defaultValue()));
+        model.maybeGeneratePassword(Reconciliation.DUMMY_RECONCILIATION, passwordGenerator, null, null);
+        Secret generatedSecret = model.generateSecret();
+
+        assertThat(generatedSecret.getMetadata().getAnnotations(), hasEntry(KafkaUserModel.ANNO_STRIMZI_IO_KAFKA_USERNAME, "custom-kafka-user"));
+        assertThat(generatedSecret.getMetadata().getName(), is(ResourceUtils.NAME));
+    }
+
+    @Test
+    public void testSaslJsonConfigUsesResolvedUsername() {
+        KafkaUser userWithCustomUsername = new KafkaUserBuilder(scramShaUser)
+                .editSpec()
+                    .withUsername("custom-kafka-user")
+                .endSpec()
+                .build();
+
+        KafkaUserModel model = KafkaUserModel.fromCrd(userWithCustomUsername, UserOperatorConfig.SECRET_PREFIX.defaultValue(), Boolean.parseBoolean(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.defaultValue()));
+        model.maybeGeneratePassword(Reconciliation.DUMMY_RECONCILIATION, passwordGenerator, null, null);
+        Secret generatedSecret = model.generateSecret();
+
+        String password = "aaaaaaaaaa";
+        assertThat(Util.decodeFromBase64(generatedSecret.getData().get(KafkaUserModel.KEY_SASL_JAAS_CONFIG)),
+                is("org.apache.kafka.common.security.scram.ScramLoginModule required username=\"custom-kafka-user\" password=\"" + password + "\";"));
+    }
+
+    @Test
+    public void testTlsUsernameLengthValidationUsesResolvedUsername() {
+        KafkaUser userWithLongCustomUsername = new KafkaUserBuilder(tlsUser)
+                .editSpec()
+                    .withUsername("User-123456789012345678901234567890123456789012345678901234567890")
+                .endSpec()
+                .build();
+
+        assertThrows(InvalidResourceException.class, () -> {
+            KafkaUserModel.fromCrd(userWithLongCustomUsername, UserOperatorConfig.SECRET_PREFIX.defaultValue(), Boolean.parseBoolean(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.defaultValue()));
+        });
+    }
+
+    @Test
+    public void testTlsUsernameLengthValidationPassesWithShortResolvedUsername() {
+        KafkaUser userWithLongCrNameButShortUsername = new KafkaUserBuilder(tlsUser)
+                .editMetadata()
+                    .withName("User-123456789012345678901234567890123456789012345678901234567890")
+                .endMetadata()
+                .editSpec()
+                    .withUsername("short-user")
+                .endSpec()
+                .build();
+
+        KafkaUserModel model = KafkaUserModel.fromCrd(userWithLongCrNameButShortUsername, UserOperatorConfig.SECRET_PREFIX.defaultValue(), Boolean.parseBoolean(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.defaultValue()));
+        assertThat(model.getResolvedUsername(), is("short-user"));
+    }
+
+    @Test
+    public void testUsernameImmutabilityValidation() {
+        KafkaUser userWithChangedUsername = new KafkaUserBuilder(scramShaUser)
+                .editSpec()
+                    .withUsername("new-username")
+                .endSpec()
+                .withNewStatus()
+                    .withUsername("old-username")
+                .endStatus()
+                .build();
+
+        InvalidResourceException e = assertThrows(InvalidResourceException.class, () -> {
+            KafkaUserModel.fromCrd(userWithChangedUsername, UserOperatorConfig.SECRET_PREFIX.defaultValue(), Boolean.parseBoolean(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.defaultValue()));
+        });
+
+        assertThat(e.getMessage(), is("Changing spec.username is not supported"));
+    }
+
+    @Test
+    public void testUsernameImmutabilityPassesWhenUnchanged() {
+        KafkaUser userWithSameUsername = new KafkaUserBuilder(scramShaUser)
+                .editSpec()
+                    .withUsername("my-user")
+                .endSpec()
+                .withNewStatus()
+                    .withUsername("my-user")
+                .endStatus()
+                .build();
+
+        KafkaUserModel model = KafkaUserModel.fromCrd(userWithSameUsername, UserOperatorConfig.SECRET_PREFIX.defaultValue(), Boolean.parseBoolean(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.defaultValue()));
+        assertThat(model.getResolvedUsername(), is("my-user"));
+    }
+
+    @Test
+    public void testUsernameImmutabilityPassesForTlsUserWithCnPrefix() {
+        KafkaUser tlsUserWithUsername = new KafkaUserBuilder(tlsUser)
+                .editSpec()
+                    .withUsername("my-tls-user")
+                .endSpec()
+                .withNewStatus()
+                    .withUsername("CN=my-tls-user")
+                .endStatus()
+                .build();
+
+        KafkaUserModel model = KafkaUserModel.fromCrd(tlsUserWithUsername, UserOperatorConfig.SECRET_PREFIX.defaultValue(), Boolean.parseBoolean(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.defaultValue()));
+        assertThat(model.getResolvedUsername(), is("my-tls-user"));
+    }
+
+    @Test
+    public void testUsernameImmutabilitySkippedWithNoStatus() {
+        KafkaUser userWithNewUsername = new KafkaUserBuilder(scramShaUser)
+                .editSpec()
+                    .withUsername("any-username")
+                .endSpec()
+                .build();
+
+        KafkaUserModel model = KafkaUserModel.fromCrd(userWithNewUsername, UserOperatorConfig.SECRET_PREFIX.defaultValue(), Boolean.parseBoolean(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.defaultValue()));
+        assertThat(model.getResolvedUsername(), is("any-username"));
     }
 }

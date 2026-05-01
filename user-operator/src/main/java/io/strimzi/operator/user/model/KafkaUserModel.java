@@ -61,8 +61,14 @@ public class KafkaUserModel {
      */
     public static final String KEY_SASL_JAAS_CONFIG = "sasl.jaas.config";
 
+    /**
+     * Annotation key for storing the resolved Kafka username on the generated Secret
+     */
+    public static final String ANNO_STRIMZI_IO_KAFKA_USERNAME = "strimzi.io/kafka-username";
+
     protected final String namespace;
     protected final String name;
+    protected final String username;
     protected final Labels labels;
 
     protected KafkaUserAuthentication authentication;
@@ -91,17 +97,38 @@ public class KafkaUserModel {
      * Constructor
      *
      * @param namespace Kubernetes namespace where Kafka Connect cluster resources are going to be created
-     * @param name   User name
+     * @param name   CR name (metadata.name)
+     * @param username Resolved Kafka username (from spec.username or metadata.name)
      * @param labels   Labels
+     * @param secretPrefix Secret prefix
      */
-    protected KafkaUserModel(String namespace, String name, Labels labels, String secretPrefix) {
+    protected KafkaUserModel(String namespace, String name, String username, Labels labels, String secretPrefix) {
         this.namespace = namespace;
         this.name = name;
+        this.username = username;
         this.labels = labels.withKubernetesName(KAFKA_USER_OPERATOR_NAME)
             .withKubernetesInstance(name)
             .withKubernetesPartOf(name)
             .withKubernetesManagedBy(KAFKA_USER_OPERATOR_NAME);
         this.secretPrefix = secretPrefix;
+    }
+
+    /**
+     * Resolves the Kafka username from the KafkaUser custom resource. If {@code spec.username} is set,
+     * it is used. Otherwise, the CR name ({@code metadata.name}) is used as the username.
+     *
+     * @param kafkaUser The KafkaUser custom resource
+     * @return The resolved Kafka username
+     */
+    public static String resolveUsername(KafkaUser kafkaUser) {
+        String un = null;
+        if (kafkaUser.getSpec() != null) {
+            un = kafkaUser.getSpec().getUsername();
+        }
+        if (un == null) {
+            un = kafkaUser.getMetadata().getName();
+        }
+        return un;
     }
 
     /**
@@ -118,11 +145,13 @@ public class KafkaUserModel {
                                          boolean aclsAdminApiSupported) {
         KafkaUserModel result = new KafkaUserModel(kafkaUser.getMetadata().getNamespace(),
                 kafkaUser.getMetadata().getName(),
+                resolveUsername(kafkaUser),
                 Labels.fromResource(kafkaUser).withStrimziKind(kafkaUser.getKind()),
                 secretPrefix);
 
         validateTlsUsername(kafkaUser);
         validateDesiredPassword(kafkaUser);
+        validateUnchangedUsername(kafkaUser);
 
         result.setOwnerReference(kafkaUser);
         result.setAuthentication(kafkaUser.getSpec().getAuthentication());
@@ -156,9 +185,24 @@ public class KafkaUserModel {
      */
     private static void validateTlsUsername(KafkaUser user)  {
         if (user.getSpec().getAuthentication() instanceof KafkaUserTlsClientAuthentication) {
-            if (user.getMetadata().getName().length() > OpenSslCertManager.MAXIMUM_CN_LENGTH)    {
-                throw new InvalidResourceException("Users with TLS client authentication can have a username (name of the KafkaUser custom resource) only up to 64 characters long.");
+            String resolvedName = resolveUsername(user);
+            if (resolvedName.length() > OpenSslCertManager.MAXIMUM_CN_LENGTH)    {
+                throw new InvalidResourceException("Users with TLS client authentication can have a username only up to 64 characters long.");
             }
+        }
+    }
+
+    /**
+     * Validates that the username has not been changed after initial creation. Changing the username is not supported
+     * because it would require recreating the Kafka user (ACLs, quotas, credentials) under the new name.
+     *
+     * @param user  The KafkaUser which should be validated
+     */
+    private static void validateUnchangedUsername(KafkaUser user)  {
+        if (user.getStatus() != null
+                && user.getStatus().getUsername() != null
+                && !resolveUsername(user).equals(decodeUsername(user.getStatus().getUsername()))) {
+            throw new InvalidResourceException("Changing spec.username is not supported");
         }
     }
 
@@ -283,9 +327,9 @@ public class KafkaUserModel {
 
     CertAndKey generateNewCertificate(Reconciliation reconciliation, Ca clientsCa) {
         try {
-            return clientsCa.generateSignedCert(name);
+            return clientsCa.generateSignedCert(username);
         } catch (IOException e) {
-            LOGGER.errorCr(reconciliation, "Error generating signed certificate for user {}", name, e);
+            LOGGER.errorCr(reconciliation, "Error generating signed certificate for user {}", username, e);
             return null;
         }
     }
@@ -307,7 +351,7 @@ public class KafkaUserModel {
         } else {
             // coming from an older operator version, the user secret exists but without keystore and password
             try {
-                return clientsCa.addKeyAndCertToKeyStore(name,
+                return clientsCa.addKeyAndCertToKeyStore(username,
                         decodeFromSecret(userSecret, "user.key"),
                         decodeFromSecret(userSecret, "user.crt"));
             } catch (IOException e) {
@@ -392,12 +436,14 @@ public class KafkaUserModel {
      * @return The secret.
      */
     protected Secret createSecret(Map<String, String> data) {
+        Map<String, String> annotations = new HashMap<>();
+        annotations.put(ANNO_STRIMZI_IO_KAFKA_USERNAME, username);
         return new SecretBuilder()
                 .withNewMetadata()
                     .withName(getSecretName())
                     .withNamespace(namespace)
                     .withLabels(Util.mergeLabelsOrAnnotations(labels.toMap(), templateSecretLabels))
-                    .withAnnotations(Util.mergeLabelsOrAnnotations(null, templateSecretAnnotations))
+                    .withAnnotations(Util.mergeLabelsOrAnnotations(annotations, templateSecretAnnotations))
                     .withOwnerReferences(createOwnerReference())
                 .endMetadata()
                 .withType("Opaque")
@@ -473,27 +519,36 @@ public class KafkaUserModel {
     }
 
     /**
-     * Gets the Username
+     * Gets the Kafka username (the principal used in Kafka for ACLs, quotas, etc.)
      *
-     * @return The user name.
+     * @return The Kafka user name.
      */
     public String getUserName()    {
         if (isTlsUser() || isTlsExternalUser()) {
-            return getTlsUserName(name);
+            return getTlsUserName(username);
         } else if (isScramUser()) {
-            return getScramUserName(name);
+            return getScramUserName(username);
         } else {
-            return getName();
+            return getResolvedUsername();
         }
     }
 
     /**
-     * Gets the name of the user.
+     * Gets the CR name (metadata.name) of the KafkaUser resource.
      *
-     * @return The name of the user.
+     * @return The CR name.
      */
     public String getName() {
         return name;
+    }
+
+    /**
+     * Gets the resolved Kafka username (from spec.username or metadata.name).
+     *
+     * @return The resolved Kafka username.
+     */
+    public String getResolvedUsername() {
+        return username;
     }
 
     /**
@@ -678,7 +733,7 @@ public class KafkaUserModel {
      * @return The JAAS configuration string.
      */
     public String getSaslJsonConfig() {
-        return getSaslJsonConfig(getScramUserName(name), scramSha512Password);
+        return getSaslJsonConfig(getScramUserName(username), scramSha512Password);
     }
 
 }

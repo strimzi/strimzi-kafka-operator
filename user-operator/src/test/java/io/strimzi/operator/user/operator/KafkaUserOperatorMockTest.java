@@ -1553,6 +1553,87 @@ public class KafkaUserOperatorMockTest {
         testReconciliationFailsWithMissingCaSecrets(ResourceUtils.CA_KEY_NAME);
     }
 
+    @Test
+    public void testCreateScramShaUserWithCustomUsername() throws ExecutionException, InterruptedException {
+        String customUsername = "custom-kafka-user";
+        KafkaUser user = new KafkaUserBuilder(ResourceUtils.createKafkaUserScramSha(namespace))
+                .editSpec()
+                    .withUsername(customUsername)
+                .endSpec()
+                .build();
+        user = Crds.kafkaUserOperation(client).resource(user).create();
+
+        KafkaUserOperator op = new KafkaUserOperator(ResourceUtils.createUserOperatorConfig(namespace), mockCertManager, secretOps, kafkaUserOps, scramOps, quotasOps, aclOps);
+        CompletionStage<KafkaUserStatus> futureResult = op.reconcile(new Reconciliation("test-trigger", KafkaUser.RESOURCE_KIND, namespace, ResourceUtils.NAME), user, null);
+        KafkaUserStatus status = futureResult.toCompletableFuture().get();
+
+        // Assert KafkaUserStatus uses the custom username
+        assertThat(status, is(notNullValue()));
+        assertThat(status.getUsername(), is(customUsername));
+        assertThat(status.getSecret(), is(ResourceUtils.NAME));
+        assertThat(status.getConditions().size(), is(1));
+        assertThat(status.getConditions().get(0).getStatus(), is("True"));
+
+        // Assert the user secret is named after the CR name, not the custom username
+        Secret userSecret = secretOps.get(namespace, ResourceUtils.NAME);
+        assertThat(userSecret.getMetadata().getName(), is(ResourceUtils.NAME));
+
+        // Assert the secret has the kafka-username annotation
+        assertThat(userSecret.getMetadata().getAnnotations().get(KafkaUserModel.ANNO_STRIMZI_IO_KAFKA_USERNAME), is(customUsername));
+
+        // Assert the mocked Kafka SCRAM-SHA credentials use the custom username
+        List<String> capturedScramNames = scramNameCaptor.getAllValues();
+        assertThat(capturedScramNames, hasSize(1));
+        assertThat(capturedScramNames.get(0), is(customUsername));
+
+        // Assert the mocked Kafka ACLs use the custom username
+        List<String> capturedAclNames = aclNameCaptor.getAllValues();
+        assertThat(capturedAclNames, hasSize(2));
+        assertThat(capturedAclNames.get(0), is(KafkaUserModel.getTlsUserName(customUsername)));
+        assertThat(capturedAclNames.get(1), is(KafkaUserModel.getScramUserName(customUsername)));
+
+        // Assert the mocked Kafka Quotas use the custom username
+        List<String> capturedQuotaNames = quotasNameCaptor.getAllValues();
+        assertThat(capturedQuotaNames, hasSize(2));
+        assertThat(capturedQuotaNames.get(0), is(KafkaUserModel.getTlsUserName(customUsername)));
+        assertThat(capturedQuotaNames.get(1), is(KafkaUserModel.getScramUserName(customUsername)));
+    }
+
+    @Test
+    public void testDeleteUserWithCustomUsernameFromSecretAnnotation() throws ExecutionException, InterruptedException {
+        String customUsername = "custom-kafka-user";
+        // Create a secret with the kafka-username annotation (simulating a previously reconciled user)
+        Secret existingUserSecret = new SecretBuilder(ResourceUtils.createUserSecretScramSha(namespace))
+                .editMetadata()
+                    .addToAnnotations(KafkaUserModel.ANNO_STRIMZI_IO_KAFKA_USERNAME, customUsername)
+                .endMetadata()
+                .build();
+        secretOps.resource(namespace, existingUserSecret).create();
+
+        KafkaUserOperator op = new KafkaUserOperator(ResourceUtils.createUserOperatorConfig(namespace), mockCertManager, secretOps, kafkaUserOps, scramOps, quotasOps, aclOps);
+        CompletionStage<KafkaUserStatus> futureResult = op.reconcile(new Reconciliation("test-trigger", KafkaUser.RESOURCE_KIND, namespace, ResourceUtils.NAME), null, existingUserSecret);
+        KafkaUserStatus status = futureResult.toCompletableFuture().get();
+
+        assertThat(status, is(nullValue()));
+
+        // Assert the mocked Kafka ACLs use the custom username from the annotation
+        List<String> capturedAclNames = aclNameCaptor.getAllValues();
+        assertThat(capturedAclNames, hasSize(2));
+        assertThat(capturedAclNames.get(0), is(KafkaUserModel.getTlsUserName(customUsername)));
+        assertThat(capturedAclNames.get(1), is(KafkaUserModel.getScramUserName(customUsername)));
+
+        // Assert the mocked Kafka SCRAM-SHA credentials use the custom username
+        List<String> capturedScramNames = scramNameCaptor.getAllValues();
+        assertThat(capturedScramNames, hasSize(1));
+        assertThat(capturedScramNames.get(0), is(KafkaUserModel.getScramUserName(customUsername)));
+
+        // Assert the mocked Kafka Quotas use the custom username
+        List<String> capturedQuotaNames = quotasNameCaptor.getAllValues();
+        assertThat(capturedQuotaNames, hasSize(2));
+        assertThat(capturedQuotaNames.get(0), is(KafkaUserModel.getTlsUserName(customUsername)));
+        assertThat(capturedQuotaNames.get(1), is(KafkaUserModel.getScramUserName(customUsername)));
+    }
+
     // Utility method for resting with missing CA secret
     private void testReconciliationFailsWithMissingCaSecrets(String missingSecretName) {
         KafkaUser user = ResourceUtils.createKafkaUserTls(namespace);
