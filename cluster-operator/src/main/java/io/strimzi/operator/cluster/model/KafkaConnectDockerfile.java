@@ -154,7 +154,7 @@ public class KafkaConnectDockerfile {
                     String settingsXml = "<settings xmlns=\"http://maven.apache.org/SETTINGS/1.0.0\"><profiles><profile><id>download</id><repositories><repository><id>custom-repo</id><url>" + escapeXml(repo) + "</url></repository></repositories></profile></profiles><activeProfiles><activeProfile>download</activeProfile></activeProfiles></settings>";
 
                     Cmd cmd;
-                    String includeScopeParam = "-DincludeScope=" + (mvn.getIncludeScope() != null ? mvn.getIncludeScope().toValue() : "\"\"");
+                    String includeScopeParam = "-DincludeScope=" + (mvn.getIncludeScope() != null ? mvn.getIncludeScope().toValue() : "");
                     if (Boolean.TRUE.equals(mvn.getInsecure()))    {
                         // Insecure download => disables TLS certificate checks in curl and Maven commands
                         cmd = run("curl", "-f", "-k", "-L", "--create-dirs", "--output", "/tmp/" + artifactDir + "/pom.xml", assembleResourceUrl(repo, mvn, "pom"))
