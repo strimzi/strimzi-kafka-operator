@@ -253,7 +253,7 @@ public class CustomCaST extends AbstractST {
         LOGGER.info("Check Kafka(s) certificates");
         String brokerPodName = KubeResourceManager.get().kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getBrokerSelector()).get(0).getMetadata().getName();
         final X509Certificate kafkaCert = SecretUtils.getCertificateFromSecret(KubeResourceManager.get().kubeClient().getClient().secrets().inNamespace(testStorage.getNamespaceName()).withName(brokerPodName).get(), brokerPodName + ".crt");
-        assertThat("KafkaCert does not have expected test Issuer: " + kafkaCert.getIssuerDN(),
+        assertThat("KafkaCert does not have expected test Issuer: " + kafkaCert.getIssuerX500Principal().getName(),
                 SystemTestCertGenerator.containsAllDN(kafkaCert.getIssuerX500Principal().getName(), clusterCa.getSubjectDn()));
 
         KubeResourceManager.get().createResourceWithWait(KafkaTopicTemplates.topic(testStorage).build());
@@ -262,7 +262,7 @@ public class CustomCaST extends AbstractST {
         final KafkaUser user = KafkaUserTemplates.tlsUser(testStorage).build();
         KubeResourceManager.get().createResourceWithWait(user);
         final X509Certificate userCert = SecretUtils.getCertificateFromSecret(KubeResourceManager.get().kubeClient().getClient().secrets().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getUsername()).get(), "user.crt");
-        assertThat("Generated ClientsCA does not have expected test Subject: " + userCert.getIssuerDN(),
+        assertThat("Generated ClientsCA does not have expected test Subject: " + userCert.getIssuerX500Principal().getName(),
                 SystemTestCertGenerator.containsAllDN(userCert.getIssuerX500Principal().getName(), clientsCa.getSubjectDn()));
 
         LOGGER.info("Send and receive messages over TLS");
@@ -511,9 +511,9 @@ public class CustomCaST extends AbstractST {
 
     private void checkCustomCaCorrectness(final SystemTestCertBundle caHolder, final X509Certificate certificate) {
         LOGGER.info("Check ClusterCA and ClientsCA certificates");
-        assertThat("Generated ClientsCA or ClusterCA does not have expected Issuer: " + certificate.getIssuerDN(),
+        assertThat("Generated ClientsCA or ClusterCA does not have expected Issuer: " + certificate.getIssuerX500Principal().getName(),
             SystemTestCertGenerator.containsAllDN(certificate.getIssuerX500Principal().getName(), STRIMZI_INTERMEDIATE_CA));
-        assertThat("Generated ClientsCA or ClusterCA does not have expected Subject: " + certificate.getSubjectDN(),
+        assertThat("Generated ClientsCA or ClusterCA does not have expected Subject: " + certificate.getSubjectX500Principal().getName(),
             SystemTestCertGenerator.containsAllDN(certificate.getSubjectX500Principal().getName(), caHolder.getSubjectDn()));
     }
 

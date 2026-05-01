@@ -92,7 +92,6 @@ public class KafkaCrdOperatorTest extends AbstractNamespacedResourceOperatorTest
     public void testUpdateStatusAsync(VertxTestContext context) {
         Kafka resource = resource();
         Resource mockResource = mock(resourceType());
-        when(mockResource.replaceStatus()).thenReturn(resource);
 
         NonNamespaceOperation mockNameable = mock(NonNamespaceOperation.class);
         when(mockNameable.withName(matches(resource.getMetadata().getName()))).thenReturn(mockResource);

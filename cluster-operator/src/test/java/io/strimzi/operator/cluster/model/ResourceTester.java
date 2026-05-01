@@ -48,7 +48,7 @@ class ResourceTester<R extends HasMetadata, M extends AbstractModel> {
         }
         ObjectMapper mapper = new YAMLMapper();
         try {
-            return mapper.readValue(url, c);
+            return mapper.readValue(url.openStream(), c);
         } catch (InvalidFormatException e) {
             throw new IllegalArgumentException(e);
         } catch (IOException e) {
@@ -111,7 +111,7 @@ class ResourceTester<R extends HasMetadata, M extends AbstractModel> {
         // Parse resource into CM
         try {
             resourceName = CustomResource.class.isAssignableFrom(cls) ?
-                    prefix + "-" + cls.newInstance().getKind() + ".yaml" :
+                    prefix + "-" + cls.getDeclaredConstructor().newInstance().getKind() + ".yaml" :
                     prefix + "-" + cls.getSimpleName() + ".yaml";
         } catch (ReflectiveOperationException e) {
             throw new RuntimeException(e);

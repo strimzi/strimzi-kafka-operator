@@ -27,7 +27,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.net.MalformedURLException;
-import java.net.URL;
+import java.net.URI;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -115,7 +115,7 @@ public class ClusterOperatorTest {
         KubernetesClient client = mock(KubernetesClient.class);
 
         try {
-            when(client.getMasterUrl()).thenReturn(new URL("http://localhost"));
+            when(client.getMasterUrl()).thenReturn(URI.create("http://localhost").toURL());
         } catch (MalformedURLException e) {
             throw new RuntimeException(e);
         }
@@ -214,7 +214,7 @@ public class ClusterOperatorTest {
         KubernetesClient client = mock(KubernetesClient.class);
 
         try {
-            when(client.getMasterUrl()).thenReturn(new URL("http://localhost"));
+            when(client.getMasterUrl()).thenReturn(URI.create("http://localhost").toURL());
         } catch (MalformedURLException e) {
             throw new RuntimeException(e);
         }

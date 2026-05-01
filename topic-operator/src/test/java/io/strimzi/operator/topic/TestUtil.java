@@ -25,7 +25,7 @@ import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.net.HttpURLConnection;
-import java.net.URL;
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -65,7 +65,7 @@ public class TestUtil {
         }
         NamespaceListVisitFromServerGetDeleteRecreateWaitApplicable<HasMetadata> loadedResources;
         try {
-            loadedResources = kubernetesClient.load(new BufferedInputStream(new URL(resourcesPath).openStream()));
+            loadedResources = kubernetesClient.load(new BufferedInputStream(URI.create(resourcesPath).toURL().openStream()));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
