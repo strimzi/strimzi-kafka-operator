@@ -169,6 +169,8 @@ public class AbstractKRaftUpgradeST extends AbstractST {
             // convert CRs and CRDs to v1
             convertCrsAndCrds(testStorage.getNamespaceName());
         } else if (upgradeDowngradeData.getFromVersion().equals("0.51.0")) {
+            // create RBAC resources needed for running the conversion Job
+            createConversionToolRbacResources(testStorage.getNamespaceName());
             // convert CRDs to v1
             convertCrds(testStorage.getNamespaceName());
         }
