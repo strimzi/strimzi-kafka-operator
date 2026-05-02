@@ -51,6 +51,7 @@ import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.NetworkPolicyUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
+import io.strimzi.test.k8s.KubeClusterResource;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
@@ -74,6 +75,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 @Tag(REGRESSION)
 @Tag(CONNECT_COMPONENTS)
@@ -547,6 +549,9 @@ class ConnectBuilderST extends AbstractST {
         }
     )
     void testBuildPluginUsingMavenCoordinatesArtifacts() {
+        // This assumption could be removed when Buildah moves to GA
+        assumeFalse(KubeClusterResource.getInstance().isKind() && !Environment.isConnectBuildWithBuildahEnabled());
+
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
         final String imageName = getImageNameForTestCase();
