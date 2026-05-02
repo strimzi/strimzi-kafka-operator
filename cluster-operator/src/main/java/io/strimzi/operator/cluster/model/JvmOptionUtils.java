@@ -10,6 +10,7 @@ import io.strimzi.api.kafka.model.common.JvmOptions;
 import io.strimzi.api.kafka.model.common.SystemProperty;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -190,7 +191,7 @@ public final class JvmOptionUtils  {
      * @return JVM flag e.g. -XX+PrintNMTStatistics
      */
     private static String toJvmPerformanceFlag(Map.Entry<String, String> jvmOption) {
-        return switch (jvmOption.getValue().toLowerCase()) {
+        return switch (jvmOption.getValue().toLowerCase(Locale.ENGLISH)) {
             case "true" -> "-XX:+" + jvmOption.getKey();
             case "false" -> "-XX:-" + jvmOption.getKey();
             default -> "-XX:" + jvmOption.getKey() + "=" + jvmOption.getValue();
