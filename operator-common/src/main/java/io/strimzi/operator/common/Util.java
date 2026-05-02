@@ -98,24 +98,22 @@ public class Util {
     public static byte[] decodeBase64FieldFromSecret(Secret secret, String field) {
         Objects.requireNonNull(secret);
         String data = secret.getData().get(field);
-        if (data != null) {
-            return Base64.getDecoder().decode(data);
-        } else {
+        if (data == null) {
             throw new RuntimeException(String.format("The Secret %s/%s is missing the field %s",
                     secret.getMetadata().getNamespace(),
                     secret.getMetadata().getName(),
                     field));
         }
+        return Base64.getDecoder().decode(data);
     }
 
     /**
      * Logs environment variables into the regular log file.
      */
     public static void printEnvInfo() {
-        Map<String, String> env = new HashMap<>(System.getenv());
         StringBuilder sb = new StringBuilder();
 
-        for (Map.Entry<String, String> entry: env.entrySet()) {
+        for (Map.Entry<String, String> entry: System.getenv().entrySet()) {
             sb.append("\t").append(entry.getKey()).append(": ").append(maskPassword(entry.getKey(), entry.getValue())).append("\n");
         }
 
@@ -232,27 +230,29 @@ public class Util {
      * @return                      True if we are in a maintenance window or if no maintenance windows are defined. False otherwise.
      */
     public static boolean isMaintenanceTimeWindowsSatisfied(Reconciliation reconciliation, List<String> maintenanceWindows, Instant instant) {
-        String currentCron = null;
-        try {
-            boolean isSatisfiedBy = maintenanceWindows == null || maintenanceWindows.isEmpty();
-            if (!isSatisfiedBy) {
-                for (String cron : maintenanceWindows) {
-                    currentCron = cron;
-                    CronExpression cronExpression = new CronExpression(cron);
-                    // the user defines the cron expression in "UTC/GMT" timezone but CO pod
-                    // can be running on a different one, so setting it on the cron expression
-                    cronExpression.setTimeZone(TimeZone.getTimeZone("GMT"));
-                    if (cronExpression.isSatisfiedBy(Date.from(instant))) {
-                        isSatisfiedBy = true;
-                        break;
-                    }
-                }
-            }
-            return isSatisfiedBy;
-        } catch (ParseException e) {
-            LOGGER.warnCr(reconciliation, "The provided maintenance time windows list contains {} which is not a valid cron expression", currentCron);
-            return false;
+        // If no maintenance windows defined, always satisfied
+        if (maintenanceWindows == null || maintenanceWindows.isEmpty()) {
+            return true;
         }
+
+        Date dateToCheck = Date.from(instant);
+
+        for (String cron : maintenanceWindows) {
+            try {
+                CronExpression cronExpression = new CronExpression(cron);
+                // the user defines the cron expression in "UTC/GMT" timezone but CO pod
+                // can be running on a different one, so setting it on the cron expression
+                cronExpression.setTimeZone(TimeZone.getTimeZone("GMT"));
+                if (cronExpression.isSatisfiedBy(dateToCheck)) {
+                    return true;
+                }
+            } catch (ParseException e) {
+                LOGGER.warnCr(reconciliation, "The provided maintenance time windows list contains {} which is not a valid cron expression", cron);
+                return false;
+            }
+        }
+
+        return false;  // No maintenance window matched
     }
 
     /**
