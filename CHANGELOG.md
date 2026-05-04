@@ -596,6 +596,10 @@
   Please use the Helm Chart OCI artifacts from our [Helm Chart OCI repository instead](https://quay.io/organization/strimzi-helm).
 * Option `customClaimCheck` of 'oauth' authentication which relies on JsonPath changed the handling of equal comparison against `null` as the behaviour was buggy and is now fixed in the updated version of JsonPath library [OAuth #196](https://github.com/strimzi/strimzi-kafka-oauth/pull/196)
 
+### Upgrade note
+
+When upgrading from Strimzi 0.35.x or earlier to 0.36.0, Kafka listener Services are updated to use the new node-pool selector label `strimzi.io/pool-name` before the existing broker Pods are updated with the matching label. For clusters using per-broker external listeners such as NodePort or LoadBalancer, this temporarily leaves the per-broker Services with no matching endpoints during the first reconciliation after upgrade. Operators should expect a short connectivity interruption for those listeners and plan the upgrade accordingly.
+
 ## 0.35.0
 
 * Redesigned the Cluster and User Operator configuration to make it more efficient and flexible
