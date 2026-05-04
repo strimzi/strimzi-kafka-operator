@@ -6,6 +6,10 @@ inputs:
     description: "Name of the documentation artifact to upload"
     required: false
     default: "documentation.tar"
+  releaseVersion:
+    description: "Release version to set within docs (i.e. 'latest', '0.46.0')"
+    required: false
+    default: "latest"
 
 runs:
   using: "composite"
@@ -13,6 +17,8 @@ runs:
     - name: Build documentation
       shell: bash
       run: make docu_html docu_htmlnoheader docu_pdf
+      env:
+        RELEASE_VERSION: ${{ inputs.releaseVersion }}
       
     - name: Create documentation archive
       shell: bash
