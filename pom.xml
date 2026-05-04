@@ -787,7 +787,6 @@
                 <groupId>io.strimzi.test-clients</groupId>
                 <artifactId>builders</artifactId>
                 <version>${test-clients.version}</version>
-                <scope>provided</scope>
             </dependency>
         </dependencies>
     </dependencyManagement>
