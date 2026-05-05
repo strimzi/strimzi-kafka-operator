@@ -111,6 +111,24 @@ public class KafkaConnectApiImplTest {
     }
 
     @Test
+    public void testStatusWithNon2xxUsesConnectErrorBody() throws Exception {
+        server.stubFor(get(urlPathMatching(".*/connectors/c/status"))
+                .willReturn(aResponse()
+                        .withStatus(500)
+                        .withBody("{\"message\": \"Connect cluster error\"}")));
+
+        KafkaConnectApi api = new KafkaConnectApiImpl();
+
+        ExecutionException ex = assertThrows(ExecutionException.class,
+                () -> api.status(
+                        Reconciliation.DUMMY_RECONCILIATION, "127.0.0.1", server.port(),
+                        "c", Collections.singleton(200))
+                        .get());
+        assertThat(ex.getCause(), instanceOf(ConnectRestException.class));
+        assertThat(ex.getCause().getMessage(), containsString("Connect cluster error"));
+    }
+
+    @Test
     public void testListConnectLoggersWithLevel() throws Exception {
         server.stubFor(get(urlPathMatching(".*"))
                 .willReturn(aResponse()
