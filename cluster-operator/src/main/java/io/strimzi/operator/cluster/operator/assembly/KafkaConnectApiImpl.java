@@ -132,7 +132,14 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
                         return CompletableFuture.completedFuture(OBJECT_MAPPER.convertValue(json, type));
                     } else {
                         LOGGER.debugCr(reconciliation, "Got {} response to GET request to {}", statusCode, path);
-                        return CompletableFuture.failedFuture(new ConnectRestException(response, tryToExtractErrorMessage(reconciliation, response.body())));
+                        String message;
+                        if (statusCode >= 200 && statusCode < 300) {
+                            // Unlisted 2xx: poll may get 200 before 404 after delete.
+                            message = "Unexpected HTTP status code " + statusCode;
+                        } else {
+                            message = tryToExtractErrorMessage(reconciliation, response.body());
+                        }
+                        return CompletableFuture.failedFuture(new ConnectRestException(response, message));
                     }
                 });
     }
@@ -170,6 +177,7 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
                     int statusCode = response.statusCode();
                     if (statusCode == 204) {
                         LOGGER.debugCr(reconciliation, "Connector was deleted. Waiting for status deletion!");
+                        // Only 404 completes poll; 200 fails and triggers backoff.
                         return withBackoff(reconciliation, new BackOff(200L, 2, 10), connectorName, Collections.singleton(200),
                                 () -> status(reconciliation, host, port, connectorName, Collections.singleton(404)), "status").thenApply(r -> null);
                     } else if (statusCode == 409) {

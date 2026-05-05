@@ -15,7 +15,9 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.util.Collections;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
@@ -26,6 +28,7 @@ import static org.hamcrest.Matchers.aMapWithSize;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasEntry;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -84,6 +87,27 @@ public class KafkaConnectApiImplTest {
 
         assertThrows(Exception.class, api.createOrUpdatePutRequest(Reconciliation.DUMMY_RECONCILIATION, "127.0.0.1", server.port(), "my-connector", new JsonObject())
                 .whenComplete((res, ex) -> assertThat(ex.getMessage(), containsString("This is the error")))::join);
+    }
+
+    @Test
+    public void testStatusWhileWaitingForDeletionDoesNotTreatOkBodyAsErrorMessage() throws Exception {
+        // Poll /status for 404 only; 200 with connector status is normal until removal.
+        String statusBody = "{\"name\":\"my-connector\",\"connector\":{\"state\":\"RUNNING\"},"
+                + "\"tasks\":[]}";
+        server.stubFor(get(urlPathMatching(".*/connectors/my-connector/status"))
+                .willReturn(aResponse()
+                        .withStatus(200)
+                        .withBody(statusBody)));
+
+        KafkaConnectApi api = new KafkaConnectApiImpl();
+
+        ExecutionException ex = assertThrows(ExecutionException.class,
+                () -> api.status(
+                        Reconciliation.DUMMY_RECONCILIATION, "127.0.0.1", server.port(),
+                        "my-connector", Collections.singleton(404))
+                        .get());
+        assertThat(ex.getCause(), instanceOf(ConnectRestException.class));
+        assertThat(ex.getCause().getMessage(), containsString("Unexpected HTTP status code 200"));
     }
 
     @Test
