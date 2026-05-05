@@ -23,56 +23,35 @@ public interface TestConstants {
     long TIMEOUT_FOR_SEND_RECEIVE_MSG = Duration.ofSeconds(60).toMillis();
     long TIMEOUT_FOR_CLUSTER_STABLE = Duration.ofMinutes(20).toMillis();
 
-    long TIMEOUT_TEARDOWN = Duration.ofSeconds(10).toMillis();
     long GLOBAL_TIMEOUT = Duration.ofMinutes(5).toMillis();
     long GLOBAL_TIMEOUT_SHORT = Duration.ofMinutes(2).toMillis();
     long GLOBAL_TIMEOUT_LONG = Duration.ofMinutes(10).toMillis();
-    long GLOBAL_CMD_CLIENT_TIMEOUT = Duration.ofMinutes(5).toMillis();
     long GLOBAL_STATUS_TIMEOUT = Duration.ofMinutes(3).toMillis();
     long GLOBAL_POLL_INTERVAL = Duration.ofSeconds(1).toMillis();
     long GLOBAL_POLL_INTERVAL_5_SECS = Duration.ofSeconds(5).toMillis();
     long GLOBAL_POLL_INTERVAL_MEDIUM = Duration.ofSeconds(10).toMillis();
     long GLOBAL_POLL_INTERVAL_LONG = Duration.ofSeconds(30).toMillis();
-    long PRODUCER_TIMEOUT = Duration.ofSeconds(25).toMillis();
     long METRICS_COLLECT_TIMEOUT = Duration.ofMinutes(1).toMillis();
 
-    long GLOBAL_TRACING_POLL = Duration.ofSeconds(30).toMillis();
-
-    long API_CRUISE_CONTROL_POLL = Duration.ofSeconds(5).toMillis();
-    long API_CRUISE_CONTROL_TIMEOUT = Duration.ofMinutes(10).toMillis();
     long GLOBAL_CRUISE_CONTROL_TIMEOUT = Duration.ofMinutes(5).toMillis();
-    long GLOBAL_CRUISE_CONTROL_TIMEOUT_LONG = Duration.ofMinutes(10).toMillis();
     long CRUISE_CONTROL_TRAIN_MODEL_TIMEOUT = Duration.ofMinutes(8).toMillis();
 
     long OLM_UPGRADE_INSTALL_PLAN_TIMEOUT = Duration.ofMinutes(15).toMillis();
     long OLM_UPGRADE_INSTALL_PLAN_POLL = Duration.ofMinutes(1).toMillis();
 
-    long GLOBAL_CLIENTS_POLL = Duration.ofSeconds(15).toMillis();
     long GLOBAL_CLIENTS_TIMEOUT = Duration.ofMinutes(2).toMillis();
-    long GLOBAL_CLIENTS_EXCEPT_ERROR_TIMEOUT = Duration.ofSeconds(10).toMillis();
 
     long CO_OPERATION_TIMEOUT_DEFAULT = Duration.ofMinutes(5).toMillis();
     long CO_OPERATION_TIMEOUT_SHORT = Duration.ofSeconds(30).toMillis();
     long CO_OPERATION_TIMEOUT_MEDIUM = Duration.ofMinutes(2).toMillis();
     long RECONCILIATION_INTERVAL = Duration.ofSeconds(30).toMillis();
     long SAFETY_RECONCILIATION_INTERVAL = (RECONCILIATION_INTERVAL + Duration.ofSeconds(10).toMillis()) * 2;
-    long LOGGING_RELOADING_INTERVAL = Duration.ofSeconds(30).toMillis();
     long CC_LOG_CONFIG_RELOAD = Duration.ofSeconds(5).toMillis();
-
-    // Keycloak
-    long KEYCLOAK_DEPLOYMENT_POLL = Duration.ofSeconds(5).toMillis();
-    long KEYCLOAK_DEPLOYMENT_TIMEOUT = Duration.ofMinutes(10).toMillis();
-    long CA_CERT_VALIDITY_DELAY = 10;
 
     // stability count ensures that after some reconciliation we have some additional time
     int GLOBAL_STABILITY_OFFSET_TIME = 20;
     // it is replacement instead of checking logs for reconciliation using dynamic waiting on some change for some period of time
     int GLOBAL_STABILIZATION_TIME = (int) ((RECONCILIATION_INTERVAL / GLOBAL_POLL_INTERVAL) + GLOBAL_STABILITY_OFFSET_TIME);
-
-    long THROTTLING_EXCEPTION_TIMEOUT = Duration.ofMinutes(10).toMillis();
-
-    // sometimes each call `curl -X GET http://localhost:8083/connectors` could take in maximum 13s, and we do 50 calls; meaning (13s * 50)/60 ~= 11m
-    long KAFKA_CONNECTOR_STABILITY_TIMEOUT = Duration.ofMinutes(12).toMillis();
 
     // Jaeger
     long JAEGER_DEPLOYMENT_TIMEOUT = Duration.ofMinutes(4).toMillis();
@@ -98,17 +77,6 @@ public interface TestConstants {
 
     String SCRAPER_NAME = "scraper";
 
-    /**
-     * Constants for Kafka clients labels
-     */
-    String KAFKA_CLIENTS_LABEL_KEY = "user-test-app";
-    String KAFKA_ADMIN_CLIENT_LABEL_KEY = "user-test-admin-app";
-    String ADMIN_CLIENT_NAME = "admin-client";
-
-    String KAFKA_CLIENTS_LABEL_VALUE = "kafka-clients";
-    String KAFKA_ADMIN_CLIENT_LABEL_VALUE = "kafka-clients";
-    String KAFKA_BRIDGE_CLIENTS_LABEL_VALUE = "kafka-clients";
-
     String STRIMZI_DEPLOYMENT_NAME = "strimzi-cluster-operator";
     String ALWAYS_IMAGE_PULL_POLICY = "Always";
     String IF_NOT_PRESENT_IMAGE_PULL_POLICY = "IfNotPresent";
@@ -125,13 +93,11 @@ public interface TestConstants {
     String APP_POD_LABEL = "app";
     String APP_KUBERNETES_INSTANCE_LABEL = "app.kubernetes.io/instance";
     String APP_KUBERNETES_NAME_LABEL = "app.kubernetes.io/name";
-    String APP_CONTROLLER_LABEL = "controlled-by";
 
     /**
      * Cluster operator config images
      */
     String KAFKA_IMAGE_MAP = "STRIMZI_KAFKA_IMAGES";
-    String TO_IMAGE = "STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE";
     String UO_IMAGE = "STRIMZI_DEFAULT_USER_OPERATOR_IMAGE";
     String KAFKA_INIT_IMAGE = "STRIMZI_DEFAULT_KAFKA_INIT_IMAGE";
     String KAFKA_MIRROR_MAKER_2_IMAGE_MAP = "STRIMZI_KAFKA_MIRROR_MAKER_2_IMAGES";
@@ -154,7 +120,6 @@ public interface TestConstants {
     String SERVICE_ACCOUNT = "ServiceAccount";
     String CLUSTER_ROLE = "ClusterRole";
     String CLUSTER_ROLE_BINDING = "ClusterRoleBinding";
-    String CUSTOM_RESOURCE_DEFINITION = "CustomResourceDefinition";
     String CUSTOM_RESOURCE_DEFINITION_SHORT = "Crd";
     String ROLE_BINDING = "RoleBinding";
     String ROLE = "Role";
@@ -168,8 +133,6 @@ public interface TestConstants {
     String VALIDATION_WEBHOOK_CONFIG = "ValidatingWebhookConfiguration";
     String SUBSCRIPTION = "Subscription";
     String OPERATOR_GROUP = "OperatorGroup";
-    String BUILD_CONFIG = "BuildConfig";
-    String IMAGE_STREAM = "ImageStream";
     String INSTALL_PLAN = "InstallPlan";
     String CLUSTER_SERVICE_VERSION = "ClusterServiceVersion";
     String CERTIFICATE = "Certificate";
@@ -198,16 +161,9 @@ public interface TestConstants {
     String METRICS_CONFIG_YAML_NAME = "metrics-config.yml";
     String METRICS_CONFIG_JSON_NAME = "metrics-config.json";
 
-    String PATH_TO_KAFKA_CONNECT_CONFIG = PATH_TO_PACKAGING_EXAMPLES + "/connect/kafka-connect.yaml";
     String PATH_TO_KAFKA_CONNECT_METRICS_CONFIG = PATH_TO_PACKAGING_EXAMPLES + "/metrics/kafka-connect-metrics.yaml";
-    String PATH_TO_KAFKA_BRIDGE_CONFIG = PATH_TO_PACKAGING_EXAMPLES + "/bridge/kafka-bridge.yaml";
     String PATH_TO_KAFKA_BRIDGE_METRICS_CONFIG = PATH_TO_PACKAGING_EXAMPLES + "/metrics/kafka-bridge-metrics.yaml";
-    String PATH_TO_KAFKA_REBALANCE_CONFIG = PATH_TO_PACKAGING_EXAMPLES + "/cruise-control/kafka-rebalance-full.yaml";
-    String PATH_TO_KAFKA_CRUISE_CONTROL_CONFIG = PATH_TO_PACKAGING_EXAMPLES + "/cruise-control/kafka-cruise-control.yaml";
-    String PATH_TO_KAFKA_CRUISE_CONTROL_METRICS_CONFIG = PATH_TO_PACKAGING_EXAMPLES + "/metrics/kafka-cruise-control-metrics.yaml";
     String PATH_TO_KAFKA_TOPIC_CONFIG = PATH_TO_PACKAGING_EXAMPLES + "/topic/kafka-topic.yaml";
-    String PATH_TO_KAFKA_CONNECTOR_CONFIG = PATH_TO_PACKAGING_EXAMPLES + "/connect/source-connector.yaml";
-    String PATH_TO_KAFKA_MIRROR_MAKER_2_CONFIG = PATH_TO_PACKAGING_EXAMPLES + "/mirror-maker/kafka-mirror-maker-2.yaml";
     String PATH_TO_KAFKA_MIRROR_MAKER_2_METRICS_CONFIG = PATH_TO_PACKAGING_EXAMPLES + "/metrics/kafka-mirror-maker-2-metrics.yaml";
 
     String TEST_CASE_NAME_LABEL = "test.case";
@@ -218,7 +174,6 @@ public interface TestConstants {
      */
     String CRUISE_CONTROL_NAME = "Cruise Control";
     String CRUISE_CONTROL_CONTAINER_NAME = "cruise-control";
-    String CRUISE_CONTROL_CONFIGURATION_ENV = "CRUISE_CONTROL_CONFIGURATION";
     String CRUISE_CONTROL_CONFIGURATION_FILE_PATH = "/tmp/cruisecontrol.properties";
     String CRUISE_CONTROL_LOG_FILE_PATH = "/opt/cruise-control/custom-config/log4j2.properties";
 
@@ -242,7 +197,6 @@ public interface TestConstants {
      * Auxiliary variables for storing data across our tests
      */
     String NAMESPACE_KEY = "NAMESPACE_NAME";
-    String PREPARE_OPERATOR_ENV_KEY = "PREPARE_OPERATOR_ENV";
 
     // Count of test messages that needs to be sent during the test
     int MESSAGE_COUNT = 100;
@@ -284,7 +238,6 @@ public interface TestConstants {
     String CONTROLLER_COMPONENT_NAME_KEY = "CONTROLLER_COMPONENT_NAME";
     String MIXED_COMPONENT_NAME_KEY = "MIXED_COMPONENT_NAME";
     String SCRAPER_POD_KEY = "SCRAPER_POD_NAME";
-    String KAFKA_TRACING_CLIENT_KEY = "KAFKA_TRACING_CLIENT";
     String BROKER_SELECTOR_KEY = "BROKER_SELECTOR";
     String BROKER_POOL_SELECTOR_KEY = "BROKER_POOL_SELECTOR";
     String CONTROLLER_POOL_SELECTOR_KEY = "CONTROLLER_POOL_SELECTOR";

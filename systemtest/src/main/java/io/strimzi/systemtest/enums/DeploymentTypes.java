@@ -8,10 +8,8 @@ public enum DeploymentTypes {
     BundleClusterOperator,
     HelmClusterOperator,
     OlmClusterOperator,
-    KafkaClients,
     DrainCleaner,
     Scraper,
-    AdminClient,
     SeaweedFS,
     AccessOperator
 }

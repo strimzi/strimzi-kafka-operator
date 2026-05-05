@@ -59,8 +59,7 @@ Notable modules:
 Notable classes:
 
 * **Environment** — singleton class, which loads the test environment variables (see following section) used in tests.
-* **Constants** — simple interface holding all constants used in tests.
-* **resources/ResourceManager** - singleton class which stores data about deployed resources and takes care of proper resource deletion.
+* **TestConstants** — simple interface holding all constants used in tests.
 * **resources/operator/SetupClusterOperator** - encapsulates the whole installation process of Cluster Operator (i.e., `RoleBinding`, `ClusterRoleBinding`,
 * `ConfigMap`, `Deployment`, `CustomResourceDefinition`, preparation of the Namespace). The Environment class
   values decide how Cluster Operator should be installed (i.e., Olm, Helm, Bundle). Moreover, it provides `rollbackToDefaultConfiguration()`
@@ -89,9 +88,10 @@ Here is an example how to create an instance of Cluster Operator:
 @BeforeAll
 void setup(ExtensionContext extensionContext){
     // deploy Cluster Operator using default configuration
-    clusterOperator = clusterOperator.defaultInstallation(extensionContext)
-        .createInstallation()
-        .runInstallation();
+    SetupClusterOperator
+        .getInstance()
+        .withDefaultConfiguration()
+        .install();
 }
 ```
 
@@ -125,8 +125,6 @@ void setUp(ExtensionContext extensionContext) {
     // kafka with cruise control and metrics
     KafkaTemplates.kafkaWithMetricsAndCruiseControlWithMetrics(...).build(),
     KafkaTemplates.kafkaWithMetrics(...).build(),
-    KafkaClientsTemplates.kafkaClients(...).build(),
-    KafkaClientsTemplates.kafkaClients(...).build(),
     KafkaMirrorMaker2Templates.kafkaMirrorMaker2WithMetrics(...).build(),
     KafkaBridgeTemplates.kafkaBridgeWithMetrics(...).build()
     );
@@ -168,13 +166,12 @@ so if you want to change teardown from your `@AfterAll`, you must override metho
     }
 ```
 
-To delete all resources from a specific test case, you have to provide `ExtensionContext.class`, by which the
-the resource manager will know which resources he can delete.
-For instance `extensionContext.getDisplayName()` is `myNewTestName` then resource manager will delete all resources
-related to `myNewTestName` test.
+To delete all resources from a specific test case, you can just do following:
 ```
-    ResourceManager.getInstance().deleteResources(extensionContext);
+    KubeResourceManager.get().deleteResources(true);
 ```
+The Kubetest4j's `KubeResourceManager` will handle the rest - it will even know in which test and context we are currently at.
+So you don't need to pass any `ExtensionContext` to the method.
 
 ## Adding brand-new test suite 
 
@@ -336,9 +333,6 @@ All environment variables are defined in [Environment](systemtest/src/main/java/
 | STRIMZI_COMPONENTS_LOG_LEVEL           | Log level for the components                                                                                                                                                                                                                                         | INFO                                                              |
 | KUBERNETES_DOMAIN                      | Cluster domain                                                                                                                                                                                                                                                       | .nip.io                                                           |
 | TEST_CLUSTER_CONTEXT                   | context which will be used to reach the cluster*                                                                                                                                                                                                                     | currently active Kubernetes context                               |
-| TEST_CLUSTER_USER                      | Default user which will be used for command-line admin operations                                                                                                                                                                                                    | developer                                                         |
-| TEST_CLIENTS_IMAGE                     | Image with strimzi test clients                                                                                                                                                                                                                                      | quay.io/strimzi-test-clients/test-clients:0.6.0-kafka-3.6.0       |
-| TEST_CLIENTS_VERSION                   | Version of strimzi test clients                                                                                                                                                                                                                                      | 0.6.0                                                             |
 | SCRAPER_IMAGE_ENV                      | Scraper image                                                                                                                                                                                                                                                        | quay.io/strimzi/kafka:latest-kafka-3.6.1                          |
 | SKIP_TEARDOWN                          | Variable for skip teardown phase for more debug if needed                                                                                                                                                                                                            | false                                                             |
 | OPERATOR_IMAGE_PULL_POLICY             | Image Pull Policy for Operator image                                                                                                                                                                                                                                 | Always                                                            |
@@ -352,7 +346,6 @@ All environment variables are defined in [Environment](systemtest/src/main/java/
 | OLM_APP_BUNDLE_PREFIX                  | CSV bundle name                                                                                                                                                                                                                                                      | strimzi                                                           |
 | OLM_OPERATOR_CHANNEL                   | Channel of the operator, from which will be the latest available version installed                                                                                                                                                                                   | v0.16.2                                                           |
 | DEFAULT_TO_DENY_NETWORK_POLICIES       | Determines how will be network policies set - to deny-all (true) or allow-all (false)                                                                                                                                                                                | true                                                              |
-| STRIMZI_EXEC_MAX_LOG_OUTPUT_CHARACTERS | Set maximum count of characters printed from [Executor](test/src/main/java/io/strimzi/test/executor/Exec.java) stdout and stderr                                                                                                                                     | 20000                                                             |
 | RESOURCE_ALLOCATION_STRATEGY           | Set memory allocation for strimzi pod set                                                                                                                                                                                                                            | SHARE_MEMORY_FOR_ALL_COMPONENTS                                   |
 | CLUSTER_OPERATOR_INSTALL_TYPE          | Specify how the CO will be deployed. `OLM` option will install operator via OLM, and you just need to set other `OLM` env variables.                                                                                                                                 | bundle                                                            |
 | CONNECT_BUILD_IMAGE_PATH               | Specify the registry together with org used by KafkaConnect build. For example `quay.io/strimzi/custom-connect-build`                                                                                                                                                | empty                                                             |

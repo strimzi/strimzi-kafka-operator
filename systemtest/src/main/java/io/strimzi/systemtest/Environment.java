@@ -63,12 +63,6 @@ public class Environment {
      */
     private static final String STRIMZI_TAG_ENV = "DOCKER_TAG";
 
-    /**
-     * Specify Kafka client app images used in system tests.
-     */
-    private static final String TEST_CLIENTS_IMAGE_ENV = "TEST_CLIENTS_IMAGE";
-    private static final String TEST_CLIENTS_VERSION_ENV = "TEST_CLIENTS_VERSION";
-
     private static final String SCRAPER_IMAGE_ENV = "SCRAPER_IMAGE";
 
     /**
@@ -84,10 +78,6 @@ public class Environment {
      * Kafka version used in images during the system tests.
      */
     private static final String ST_KAFKA_VERSION_ENV = "ST_KAFKA_VERSION";
-    /**
-     * Kafka version used in test-clients during the system tests.
-     */
-    private static final String CLIENTS_KAFKA_VERSION_ENV = "CLIENTS_KAFKA_VERSION";
     /**
      * Log level for cluster operator.
      */
@@ -177,7 +167,6 @@ public class Environment {
     public static final String STRIMZI_TAG_DEFAULT = "latest";
     public static final String STRIMZI_ORG_DEFAULT = "strimzi";
     public static final String STRIMZI_REGISTRY_DEFAULT = "quay.io";
-    public static final String TEST_CLIENTS_ORG_DEFAULT = "strimzi-test-clients";
     private static final String TEST_LOG_DIR_DEFAULT = TestUtils.USER_PATH + "/../systemtest/target/logs/";
     private static final String PERFORMANCE_DIR_DEFAULT = TestUtils.USER_PATH + "/../systemtest/target/performance/";
     private static final String STRIMZI_LOG_LEVEL_DEFAULT = "DEBUG";
@@ -194,8 +183,6 @@ public class Environment {
     private static final String RESOURCE_ALLOCATION_STRATEGY_DEFAULT = "SHARE_MEMORY_FOR_ALL_COMPONENTS";
 
     private static final String ST_KAFKA_VERSION_DEFAULT = TestKafkaVersion.getDefaultSupportedKafkaVersion();
-    private static final String ST_CLIENTS_KAFKA_VERSION_DEFAULT = "4.2.0";
-    public static final String TEST_CLIENTS_VERSION_DEFAULT = "0.13.0";
     public static final String ST_FILE_PLUGIN_URL_DEFAULT = "https://repo1.maven.org/maven2/org/apache/kafka/connect-file/" + ST_KAFKA_VERSION_DEFAULT + "/connect-file-" + ST_KAFKA_VERSION_DEFAULT + ".jar";
 
     public static final String IP_FAMILY_DEFAULT = "ipv4";
@@ -218,17 +205,12 @@ public class Environment {
     public static final String TEST_LOG_DIR = getOrDefault(TEST_LOG_DIR_ENV, TEST_LOG_DIR_DEFAULT);
     public static final String PERFORMANCE_DIR = getOrDefault(PERFORMANCE_DIR_ENV, PERFORMANCE_DIR_DEFAULT);
     public static final String ST_KAFKA_VERSION = getOrDefault(ST_KAFKA_VERSION_ENV, ST_KAFKA_VERSION_DEFAULT);
-    public static final String CLIENTS_KAFKA_VERSION = getOrDefault(CLIENTS_KAFKA_VERSION_ENV, ST_CLIENTS_KAFKA_VERSION_DEFAULT);
     public static final String STRIMZI_LOG_LEVEL = getOrDefault(STRIMZI_LOG_LEVEL_ENV, STRIMZI_LOG_LEVEL_DEFAULT);
     public static final boolean SKIP_TEARDOWN = getOrDefault(SKIP_TEARDOWN_ENV, Boolean::parseBoolean, false);
     public static final ClusterOperatorRBACType STRIMZI_RBAC_SCOPE =  getOrDefault(STRIMZI_RBAC_SCOPE_ENV, value -> ClusterOperatorRBACType.valueOf(value.toUpperCase(Locale.ENGLISH)), ClusterOperatorRBACType.CLUSTER);
 
     public static final String STRIMZI_FEATURE_GATES = getOrDefault(STRIMZI_FEATURE_GATES_ENV, STRIMZI_FEATURE_GATES_DEFAULT);
 
-    // variables for kafka client app images
-    private static final String TEST_CLIENTS_VERSION = getOrDefault(TEST_CLIENTS_VERSION_ENV, TEST_CLIENTS_VERSION_DEFAULT);
-    private static final String TEST_CLIENTS_IMAGE_DEFAULT = STRIMZI_REGISTRY_DEFAULT + "/" + TEST_CLIENTS_ORG_DEFAULT + "/test-clients:" + TEST_CLIENTS_VERSION + "-kafka-" + CLIENTS_KAFKA_VERSION;
-    public static final String TEST_CLIENTS_IMAGE = getOrDefault(TEST_CLIENTS_IMAGE_ENV, TEST_CLIENTS_IMAGE_DEFAULT);
     private static final String SCRAPER_IMAGE_DEFAULT = getIfNotEmptyOrDefault(STRIMZI_REGISTRY, STRIMZI_REGISTRY_DEFAULT) + "/" +
         getIfNotEmptyOrDefault(STRIMZI_ORG, STRIMZI_ORG_DEFAULT) + "/kafka:" +
         getIfNotEmptyOrDefault(STRIMZI_TAG, STRIMZI_TAG_DEFAULT) + "-kafka-" + ST_KAFKA_VERSION;
