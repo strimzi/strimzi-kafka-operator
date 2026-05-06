@@ -35,7 +35,6 @@ import io.strimzi.testclients.clients.kafka.KafkaProducerConsumerBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 
 import java.util.List;
@@ -46,9 +45,6 @@ import static io.strimzi.systemtest.TestTags.REGRESSION;
  * Class for testing the usage of Kafka Access Operator together with operators and Kafka/KafkaUser CRs in real environment.
  */
 @Tag(REGRESSION)
-// Access operator cannot support the v1 API until the Strimzi Operators 1.0.0 release. These tests should be re-enabled afterwards.
-// Tracked by https://github.com/strimzi/strimzi-kafka-operator/issues/12522
-@Disabled
 public class AccessOperatorST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(AccessOperatorST.class);
 

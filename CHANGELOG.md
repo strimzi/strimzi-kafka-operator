@@ -5,6 +5,7 @@
 * Support for dependency scope configuration of Maven artifacts in Kafka Connect Build
 * Add `UseBackgroundPodDeletion` feature gate (alpha, disabled by default) to use background deletion propagation when deleting pods during rolling updates. 
 * Strimzi Drain Cleaner updated to 1.6.0 (included in the Strimzi installation files)
+* Strimzi Access Operator updated to 0.3.0 - included in Strimzi installation files, examples, and documentation
 
 ### Major changes, deprecations, and removals
 
