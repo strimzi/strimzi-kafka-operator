@@ -9,7 +9,7 @@
 
 [role="_abstract"]
 Set up auto-rebalancing to automatically redistribute topic partitions when scaling a cluster by changing the number of brokers in an existing node pool.
-Scale a Kafka cluster by adjusting the number of brokers using the `spec.replicas` property in the `Kafka` or `KafkaNodePool` custom resource used in deployment. 
+Scale a Kafka cluster by adjusting the number of brokers using the `spec.replicas` property in the `KafkaNodePool` custom resource. 
 For auto-rebalancing, a scaling event is a change to the `spec.replicas` value of an existing node pool.
 
 When auto-rebalancing is enabled, the cluster is rebalanced without further intervention.
