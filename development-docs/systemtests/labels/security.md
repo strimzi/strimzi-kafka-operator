@@ -11,6 +11,7 @@ They cover authentication and authorization mechanisms (OAuth, ACLs, OPA integra
 - [testAclWithSuperUser](../io.strimzi.systemtest.security.custom.CustomAuthorizerST.md)
 - [testCustomCaTrustChainOnInternalPort](../io.strimzi.systemtest.security.custom.CustomCaChainST.md)
 - [testCustomClusterCaAndClientsCaCertificates](../io.strimzi.systemtest.security.custom.CustomCaST.md)
+- [testDisabledPKCS12Stores](../io.strimzi.systemtest.security.DisablingPkcs12StoresST.md)
 - [testKafkaConnectTrustWithCustomCaChain](../io.strimzi.systemtest.security.custom.CustomCaChainST.md)
 - [testMultistageCustomCaTrustChainEstablishment](../io.strimzi.systemtest.security.custom.CustomCaChainST.md)
 - [testMultistageCustomCaUserCertificateAuthentication](../io.strimzi.systemtest.security.custom.CustomCaChainST.md)
