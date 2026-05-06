@@ -92,6 +92,27 @@
 * [connect](labels/connect.md)
 
 
+## testMountPluginUsingImageVolume
+
+**Description:** Test for mounting a Kafka Connect plugin from an OCI artifact via a Kubernetes Image Volume, and validating message send-receive functionality.
+
+**Steps:**
+
+| Step | Action | Result |
+| - | - | - |
+| 1. | Create TestStorage object | TestStorage instance is created with context |
+| 2. | Create Kafka Topic resource | Kafka Topic resource is created |
+| 3. | Create Kafka Connect resource with the EchoSink plugin mounted from a container image via Kubernetes Image Volume | Kafka Connect resource is created and is using the mounted plugin |
+| 4. | Create Kafka Connector | Kafka Connector is created |
+| 5. | Verify Kafka Connector class name | Connector class name matches expected ECHO_SINK_CLASS_NAME |
+| 6. | Create Kafka Clients and send messages | Kafka Clients created and messages sent and verified |
+| 7. | Check logs for received message | Logs contain the expected received message |
+
+**Labels:**
+
+* [connect](labels/connect.md)
+
+
 ## testPushIntoImageStream
 
 **Description:** Test verifying the successful push of a KafkaConnect build into an OpenShift ImageStream.

@@ -32,6 +32,7 @@ maintaining data consistency and availability in a streaming ecosystem.
 - [testKafkaConnectWithPlainAndScramShaAuthentication](../io.strimzi.systemtest.connect.ConnectST.md)
 - [testKafkaConnectWithScramShaAuthenticationRolledAfterPasswordChanged](../io.strimzi.systemtest.connect.ConnectST.md)
 - [testKafkaConnectorWithoutClusterConfig](../io.strimzi.systemtest.operators.CustomResourceStatusST.md)
+- [testMountPluginUsingImageVolume](../io.strimzi.systemtest.connect.ConnectBuilderST.md)
 - [testMountingSecretAndConfigMapAsVolumesAndEnvVars](../io.strimzi.systemtest.connect.ConnectST.md)
 - [testMultiNodeKafkaConnectWithConnectorCreation](../io.strimzi.systemtest.connect.ConnectST.md)
 - [testMultipleCOsInDifferentNamespaces](../io.strimzi.systemtest.operators.MultipleClusterOperatorsST.md)

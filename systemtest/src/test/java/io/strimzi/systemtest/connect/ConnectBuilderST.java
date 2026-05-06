@@ -14,8 +14,10 @@ import io.skodjob.annotations.SuiteDoc;
 import io.skodjob.annotations.TestDoc;
 import io.skodjob.kubetest4j.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.common.Condition;
+import io.strimzi.api.kafka.model.connect.ImageArtifactBuilder;
 import io.strimzi.api.kafka.model.connect.KafkaConnect;
 import io.strimzi.api.kafka.model.connect.KafkaConnectResources;
+import io.strimzi.api.kafka.model.connect.MountedPluginBuilder;
 import io.strimzi.api.kafka.model.connect.build.JarArtifactBuilder;
 import io.strimzi.api.kafka.model.connect.build.MavenArtifactBuilder;
 import io.strimzi.api.kafka.model.connect.build.OtherArtifactBuilder;
@@ -33,6 +35,7 @@ import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.MicroShiftNotSupported;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
 import io.strimzi.systemtest.annotations.ParallelTest;
+import io.strimzi.systemtest.annotations.RequiredMinKubeApiVersion;
 import io.strimzi.systemtest.docs.TestDocsLabels;
 import io.strimzi.systemtest.resources.CrdClients;
 import io.strimzi.systemtest.resources.operator.ClusterOperatorConfigurationBuilder;
@@ -108,6 +111,8 @@ class ConnectBuilderST extends AbstractST {
     private static final String PLUGIN_WITH_ZIP_NAME = "connector-from-zip";
     private static final String PLUGIN_WITH_OTHER_TYPE_NAME = "plugin-with-other-type";
     private static final String PLUGIN_WITH_MAVEN_NAME = "connector-from-maven";
+    private static final String PLUGIN_WITH_IMAGE_VOLUME_NAME = "connector-from-image-volume";
+    private static final String ECHO_SINK_IMAGE_VOLUME_REFERENCE = "ghcr.io/scholzj/echo-sink:latest";
 
     private TestStorage suiteTestStorage;
 
@@ -279,6 +284,78 @@ class ConnectBuilderST extends AbstractST {
                     .withPlugins(PLUGIN_WITH_TAR_AND_JAR, PLUGIN_WITH_ZIP)
                     .withOutput(KafkaConnectTemplates.dockerOutput(imageName))
                 .endBuild()
+                .withNewInlineLogging()
+                    .addToLoggers("rootLogger.level", "INFO")
+                .endInlineLogging()
+            .endSpec()
+            .build());
+
+        Map<String, Object> connectorConfig = new HashMap<>();
+        connectorConfig.put("topics", testStorage.getTopicName());
+        connectorConfig.put("level", "INFO");
+
+        KubeResourceManager.get().createResourceWithWait(KafkaConnectorTemplates.kafkaConnector(testStorage.getNamespaceName(), testStorage.getClusterName())
+            .editOrNewSpec()
+                .withClassName(TestConstants.ECHO_SINK_CLASS_NAME)
+                .withConfig(connectorConfig)
+            .endSpec()
+            .build());
+
+        KafkaConnector kafkaConnector = CrdClients.kafkaConnectorClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get();
+        assertThat(kafkaConnector.getSpec().getClassName(), is(TestConstants.ECHO_SINK_CLASS_NAME));
+
+        KafkaProducerClient kafkaProducerClient = new KafkaProducerClientBuilder()
+            .withName(testStorage.getProducerName())
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(suiteTestStorage.getClusterName()))
+            .withMessageCount(testStorage.getMessageCount())
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withTopicName(testStorage.getTopicName())
+            .withMessageCount(testStorage.getMessageCount())
+            .build();
+
+        KubeResourceManager.get().createResourceWithWait(kafkaProducerClient.getJob());
+        ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getProducerName(), testStorage.getMessageCount());
+
+        String connectPodName = PodUtils.listPodNames(testStorage.getNamespaceName(), testStorage.getKafkaConnectSelector()).get(0);
+        PodUtils.waitUntilMessageIsInPodLogs(testStorage.getNamespaceName(), connectPodName, "Received message with key 'null' and value 'Hello world - 99'");
+    }
+
+    @ParallelTest
+    @RequiredMinKubeApiVersion(version = 1.35)
+    @TestDoc(
+        description = @Desc("Test for mounting a Kafka Connect plugin from an OCI artifact via a Kubernetes Image Volume, and validating message send-receive functionality."),
+        steps = {
+            @Step(value = "Create TestStorage object", expected = "TestStorage instance is created with context"),
+            @Step(value = "Create Kafka Topic resource", expected = "Kafka Topic resource is created"),
+            @Step(value = "Create Kafka Connect resource with the EchoSink plugin mounted from a container image via Kubernetes Image Volume", expected = "Kafka Connect resource is created and is using the mounted plugin"),
+            @Step(value = "Create Kafka Connector", expected = "Kafka Connector is created"),
+            @Step(value = "Verify Kafka Connector class name", expected = "Connector class name matches expected ECHO_SINK_CLASS_NAME"),
+            @Step(value = "Create Kafka Clients and send messages", expected = "Kafka Clients created and messages sent and verified"),
+            @Step(value = "Check logs for received message", expected = "Logs contain the expected received message")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.CONNECT)
+        }
+    )
+    void testMountPluginUsingImageVolume() {
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
+
+        KubeResourceManager.get().createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getTopicName(), suiteTestStorage.getClusterName()).build());
+        KubeResourceManager.get().createResourceWithWait(KafkaConnectTemplates.kafkaConnect(testStorage.getNamespaceName(), testStorage.getClusterName(), suiteTestStorage.getClusterName(), 1)
+            .editMetadata()
+                .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
+            .endMetadata()
+            .editOrNewSpec()
+                .addToConfig("key.converter.schemas.enable", false)
+                .addToConfig("value.converter.schemas.enable", false)
+                .addToConfig("key.converter", "org.apache.kafka.connect.storage.StringConverter")
+                .addToConfig("value.converter", "org.apache.kafka.connect.storage.StringConverter")
+                .withPlugins(new MountedPluginBuilder()
+                    .withName(PLUGIN_WITH_IMAGE_VOLUME_NAME)
+                    .withArtifacts(new ImageArtifactBuilder()
+                        .withReference(ECHO_SINK_IMAGE_VOLUME_REFERENCE)
+                        .build())
+                    .build())
                 .withNewInlineLogging()
                     .addToLoggers("rootLogger.level", "INFO")
                 .endInlineLogging()
