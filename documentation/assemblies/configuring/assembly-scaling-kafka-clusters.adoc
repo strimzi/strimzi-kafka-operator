@@ -54,7 +54,12 @@ When adding brokers by changing the number of `replicas`, node IDs start at 0, a
 Removing brokers starts with the pod that has the highest node ID. 
 Additionally, when scaling clusters with node pools, you can xref:proc-managing-node-pools-ids-{context}[assign node IDs for scaling operations].
 
-Strimzi can automatically reassign partitions when brokers are added or removed if Cruise Control is deployed and auto-rebalancing is enabled in the Kafka resource. 
+Strimzi can automatically reassign partitions when brokers are added or removed by changing the `spec.replicas` value of an existing node pool. 
+Cruise Control must be deployed and auto-rebalancing enabled in the `Kafka` resource.
+
+Creating or deleting a `KafkaNodePool` resource does not trigger auto-rebalancing automatically. 
+For these operations, apply a `KafkaRebalance` resource configured to use `add-brokers` or `remove-brokers` mode.
+
 If auto-rebalancing is disabled, you can use Cruise Control to generate optimization proposals before manually rebalancing the cluster.
 
 Cruise Control provides `add-brokers` and `remove-brokers` modes for scaling:

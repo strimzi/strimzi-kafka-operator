@@ -8,21 +8,31 @@
 = Triggering auto-rebalances when scaling clusters
 
 [role="_abstract"]
-Set up auto-rebalancing to automatically redistribute topic partitions when scaling a cluster.
-You can scale a Kafka cluster by adjusting the number of brokers using the `spec.replicas` property in the `Kafka` or `KafkaNodePool` custom resource used in deployment. 
+Set up auto-rebalancing to automatically redistribute topic partitions when scaling a cluster by changing the number of brokers in an existing node pool.
+Scale a Kafka cluster by adjusting the number of brokers using the `spec.replicas` property in the `Kafka` or `KafkaNodePool` custom resource used in deployment. 
+For auto-rebalancing, a scaling event is a change to the `spec.replicas` value of an existing node pool.
+
 When auto-rebalancing is enabled, the cluster is rebalanced without further intervention.
 
 * After adding brokers, topic partitions are redistributed across the new brokers.
 * Before removing brokers, partitions are moved off the brokers being removed.
+
+Auto-rebalancing is not triggered when creating a new `KafkaNodePool` resource or deleting an existing one. 
+These actions are not treated as scaling events by the auto-rebalancing mechanism.
+
+When adding or removing node pools, manually trigger partition reassignment using Cruise Control by creating a `KafkaRebalance` resource with:
+
+* `add-brokers` mode when adding a node pool
+* `remove-brokers` mode when removing a node pool
 
 Auto-rebalancing helps maintain balanced load distribution across Kafka brokers during scaling operations, depending on how the rebalancing configuration is set up.
 
 Scaling operates in two modes: `add-brokers` and `remove-brokers`.
 Each mode can have its own auto-rebalancing configuration specified in the `Kafka` resource under `spec.cruiseControl.autoRebalance` properties. 
 Use the `template` property to specify a predefined `KafkaRebalance` resource, which serves as a rebalance configuration template.
-If a template is not specified in the `autorebalance` configuration, the default Cruise Control rebalancing configuration is used.
+If a template is not specified in the `autoRebalance` configuration, the default Cruise Control rebalancing configuration is used.
 You can apply the same template configuration for both scaling modes, use different configurations for each, or enable auto-rebalancing for only one mode.
-If `autorebalance` configuration is not set for a mode, auto-rebalancing will not occur for that mode.
+If `autoRebalance` is not configured for a mode, auto-rebalancing does not occur for that mode.
 
 The template `KafkaRebalance` resource must include the `strimzi.io/rebalance-template: "true"` annotation. 
 The template does not represent an actual rebalance request but holds the rebalancing configuration.
@@ -119,7 +129,10 @@ spec:
 . Apply the changes to the `Kafka` configuration. +
 Wait for the Cluster Operator to update the cluster.
 
-. Scale the cluster by adjusting the `spec.replicas` property representing the number of brokers in the cluster.
+. Scale the cluster by adjusting the `spec.replicas` property of an existing node pool.
++
+Only changes to `spec.replicas` trigger auto-rebalancing. 
+Creating or deleting node pools does not trigger auto-rebalancing.
 +
 The following example shows a node pool configuration for a cluster using three brokers (`replicas: 3`). 
 +
@@ -183,7 +196,7 @@ status:
 ----
 <1> The state of the rebalance, which shows `RebalanceOnScaleUp` when adding brokers, and `RebalanceOnScaleDown` when removing brokers. 
 Scale-down operations take precedence.
-Initial and final state (failed or successful) shows as `Idle`.
+The initial state and final state (successful or failed) are shown as `Idle`.
 <2> Rebalance operations grouped by mode, with a list of nodes to be added or removed.
 
 NOTE: During a rebalance, the status of the `KafkaRebalance` resource used for the rebalance is checked, and the auto-rebalance state is adjusted accordingly. 
