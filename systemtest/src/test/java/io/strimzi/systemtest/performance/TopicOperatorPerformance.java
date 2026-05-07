@@ -100,7 +100,7 @@ public class TopicOperatorPerformance extends AbstractST {
             @Step(value = "Start collecting Topic Operator metrics.", expected = "Metrics collection is running."),
             @Step(value = "Create KafkaTopics in batches of 100, each with 12 partitions and 3 replicas.", expected = "Topics are created and reach Ready state."),
             @Step(value = "Continue creating topic batches until the Topic Operator fails to reconcile.", expected = "Maximum capacity is reached and failure is detected."),
-            @Step(value = "Collect logs from Topic Operator and Kafka pods for analysis.", expected = "Logs are collected for identifying bottlenecks."),
+            @Step(value = "Collect scoped logs (pods, deployments, configmaps, Kafka CR) using TestLogCollector with a custom resource list to avoid collecting thousands of KafkaTopic CRs and Secrets.", expected = "Logs are collected for identifying bottlenecks."),
             @Step(value = "Clean up all KafkaTopics and persist performance metrics.", expected = "Namespace is cleaned and performance data is saved to topic-operator report directory.")
         },
         labels = {

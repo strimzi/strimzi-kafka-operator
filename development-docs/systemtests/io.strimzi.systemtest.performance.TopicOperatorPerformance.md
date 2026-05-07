@@ -20,7 +20,7 @@
 | 2. | Start collecting Topic Operator metrics. | Metrics collection is running. |
 | 3. | Create KafkaTopics in batches of 100, each with 12 partitions and 3 replicas. | Topics are created and reach Ready state. |
 | 4. | Continue creating topic batches until the Topic Operator fails to reconcile. | Maximum capacity is reached and failure is detected. |
-| 5. | Collect logs from Topic Operator and Kafka pods for analysis. | Logs are collected for identifying bottlenecks. |
+| 5. | Collect scoped logs (pods, deployments, configmaps, Kafka CR) using TestLogCollector with a custom resource list to avoid collecting thousands of KafkaTopic CRs and Secrets. | Logs are collected for identifying bottlenecks. |
 | 6. | Clean up all KafkaTopics and persist performance metrics. | Namespace is cleaned and performance data is saved to topic-operator report directory. |
 
 **Labels:**

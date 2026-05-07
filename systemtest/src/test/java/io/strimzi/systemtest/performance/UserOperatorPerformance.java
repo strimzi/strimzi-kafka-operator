@@ -110,7 +110,7 @@ public class UserOperatorPerformance extends AbstractST {
             @Step(value = "Start collecting User Operator metrics.", expected = "Metrics collection is running."),
             @Step(value = "Create KafkaUsers with TLS authentication in batches of 100.", expected = "Users are created and reach Ready state."),
             @Step(value = "Continue creating user batches until the User Operator fails to reconcile.", expected = "Maximum capacity is reached and failure is detected."),
-            @Step(value = "Collect logs from User Operator and Kafka pods for analysis.", expected = "Logs are collected for identifying bottlenecks."),
+            @Step(value = "Collect scoped logs (pods, deployments, configmaps, Kafka CR) using TestLogCollector with a custom resource list to avoid collecting thousands of KafkaUser CRs and Secrets.", expected = "Logs are collected for identifying bottlenecks."),
             @Step(value = "Clean up all KafkaUsers and persist performance metrics.", expected = "Namespace is cleaned and performance data is saved to user-operator report directory.")
         },
         labels = {
