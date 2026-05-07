@@ -30,11 +30,14 @@ import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.AlterConfigOp;
 import org.apache.kafka.clients.admin.AlterConfigsResult;
 import org.apache.kafka.clients.admin.Config;
+import org.apache.kafka.clients.admin.DescribeLogDirsResult;
+import org.apache.kafka.clients.admin.LogDirDescription;
 import org.apache.kafka.common.KafkaFuture;
 import org.apache.kafka.common.config.ConfigResource;
 import org.apache.kafka.common.errors.SslAuthenticationException;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -102,6 +105,9 @@ public class KafkaRoller {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(KafkaRoller.class);
     private static final String CONTROLLER_QUORUM_FETCH_TIMEOUT_MS_CONFIG_NAME = "controller.quorum.fetch.timeout.ms";
     private static final String CONTROLLER_QUORUM_FETCH_TIMEOUT_MS_CONFIG_DEFAULT = "2000";
+    // Cooldown period after pod creation before triggering another restart for offline log dirs.
+    // Prevents infinite restart loops when offline dirs are caused by permanent hardware failure.
+    /* test */ static volatile long offlineLogDirRestartCooldownMs = Duration.ofMinutes(30).toMillis();
 
     private final PodOperator podOperations;
     private final long pollingIntervalMs;
@@ -428,6 +434,7 @@ public class KafkaRoller {
 
         try {
             checkIfRestartOrReconfigureRequired(nodeRef, isController, isBroker, restartContext);
+            checkForOfflineLogDirs(nodeRef, isBroker, restartContext, pod);
             if (restartContext.forceRestart) {
                 LOGGER.debugCr(reconciliation, "Pod {} can be rolled now", nodeRef);
                 restartAndAwaitReadiness(pod, operationTimeoutMs, restartContext);
@@ -666,6 +673,100 @@ public class KafkaRoller {
 
         LOGGER.traceCr(reconciliation, "KafkaFuture for getting Kafka configuration for pod {} is null", nodeRef);
         return null;
+    }
+
+    /**
+     * Checks for offline log directories on a broker node and updates the restart context if any are found.
+     * This is a no-op for controller-only nodes, pods already marked for force-restart, or when the broker
+     * admin client is not available.
+     *
+     * <p>To prevent infinite restart loops when offline dirs are caused by permanent hardware failure,
+     * this method skips the check for pods created within the last {@link #offlineLogDirRestartCooldownMs}
+     * milliseconds.</p>
+     */
+    private void checkForOfflineLogDirs(NodeRef nodeRef, boolean isBroker, RestartContext restartContext, Pod pod)
+            throws InterruptedException {
+        if (!isBroker || restartContext.forceRestart || brokerAdminClient == null) {
+            return;
+        }
+
+        if (isPodWithinOfflineLogDirCooldown(pod)) {
+            LOGGER.debugCr(reconciliation, "Skipping offline log directory check for pod {} (created recently, within cooldown period)", nodeRef);
+            return;
+        }
+
+        try {
+            if (hasOfflineLogDirs(nodeRef)) {
+                restartContext.restartReasons.add(RestartReason.OFFLINE_LOG_DIRS);
+                restartContext.needsRestart = true;
+            }
+        } catch (InterruptedException e) {
+            throw e;
+        } catch (Exception e) {
+            LOGGER.warnCr(reconciliation, "Failed to check offline log directories for pod {}: {}", nodeRef, e.getMessage());
+        }
+    }
+
+    /**
+     * Checks whether the pod was created recently enough that it is still within the offline-log-dir
+     * restart cooldown window. If so, restarting for offline dirs should be skipped to avoid a
+     * tight restart loop when the underlying cause is permanent (e.g., dead disk).
+     */
+    private boolean isPodWithinOfflineLogDirCooldown(Pod pod) {
+        String creationTimestamp = pod.getMetadata().getCreationTimestamp();
+        if (creationTimestamp == null) {
+            return false;
+        }
+        try {
+            Instant createdAt = Instant.parse(creationTimestamp);
+            return Instant.now().toEpochMilli() - createdAt.toEpochMilli() < offlineLogDirRestartCooldownMs;
+        } catch (Exception e) {
+            LOGGER.debugCr(reconciliation, "Could not parse pod creation timestamp '{}', skipping cooldown check", creationTimestamp);
+            return false;
+        }
+    }
+
+    /**
+     * Checks whether the given broker has any offline log directories.
+     *
+     * @param nodeRef   Reference to the broker node to check
+     *
+     * @return  true if the broker has at least one offline log directory
+     *
+     * @throws ForceableProblem     If there is an error querying the log directories
+     * @throws InterruptedException If the thread is interrupted while waiting
+     */
+    /* test */ boolean hasOfflineLogDirs(NodeRef nodeRef) throws ForceableProblem, InterruptedException {
+        DescribeLogDirsResult result = brokerAdminClient.describeLogDirs(singletonList(nodeRef.nodeId()));
+        Map<Integer, KafkaFuture<Map<String, LogDirDescription>>> descriptions = result.descriptions();
+        KafkaFuture<Map<String, LogDirDescription>> future = descriptions.get(nodeRef.nodeId());
+
+        if (future == null) {
+            LOGGER.traceCr(reconciliation, "KafkaFuture for describing log dirs for pod {} is null", nodeRef);
+            return false;
+        }
+
+        Map<String, LogDirDescription> logDirs = await(future.toCompletionStage().toCompletableFuture(),
+                30_000,
+                error -> new ForceableProblem("Error describing log dirs for pod " + nodeRef + ": " + error, error)
+        );
+
+        if (logDirs == null) {
+            return false;
+        }
+
+        List<String> offlineDirs = logDirs.entrySet().stream()
+                .filter(entry -> entry.getValue().error() != null)
+                .map(Map.Entry::getKey)
+                .toList();
+
+        if (!offlineDirs.isEmpty()) {
+            LOGGER.warnCr(reconciliation, "Pod {} has {} offline log director{}: {}",
+                    nodeRef, offlineDirs.size(), offlineDirs.size() == 1 ? "y" : "ies", offlineDirs);
+            return true;
+        }
+
+        return false;
     }
 
     /* test */ void dynamicUpdateKafkaConfig(NodeRef nodeRef, Admin ac, KafkaConfigurationDiff configurationDiff)
