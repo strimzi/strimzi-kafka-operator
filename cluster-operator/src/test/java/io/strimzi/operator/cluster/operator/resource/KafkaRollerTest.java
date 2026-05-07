@@ -829,6 +829,40 @@ public class KafkaRollerTest {
     }
 
     @Test
+    public void testOfflineLogDirWeakerCheckAllowsRestartWhenStandardCheckBlocked() {
+        PodOperator podOps = mockPodOps(podId -> CompletableFuture.completedFuture(null));
+        // Broker 2 has offline dirs. Standard canRoll returns false (URPs on offline dirs block it).
+        // The weaker check (excluding offline-dir partitions) should allow the restart.
+        TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(addPodNames(REPLICAS, 0, 0), podOps,
+                noException(), null, noException(), noException(), noException(),
+                brokerId -> brokerId == 2 ? CompletableFuture.completedFuture(false) : CompletableFuture.completedFuture(true),
+                new DefaultAdminClientProvider(), new DefaultKafkaAgentClientProvider(), false, null, -1,
+                Set.of(2));
+        // Broker 2 has offline dirs AND canRoll returns false, but the weaker check allows it
+        doSuccessfulRollingRestart(kafkaRoller,
+                emptyList(),
+                singletonList(2));
+    }
+
+    @Test
+    public void testOfflineLogDirWeakerCheckNotUsedWhenMultipleReasonsExist() {
+        PodOperator podOps = mockPodOps(podId -> CompletableFuture.completedFuture(null));
+        // Broker 2 has offline dirs AND another restart reason (manual rolling update).
+        // Standard canRoll returns false. The weaker check should NOT be used because
+        // OFFLINE_LOG_DIRS is not the sole reason.
+        TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(addPodNames(REPLICAS, 0, 0), podOps,
+                noException(), null, noException(), noException(), noException(),
+                brokerId -> brokerId == 2 ? CompletableFuture.completedFuture(false) : CompletableFuture.completedFuture(true),
+                new DefaultAdminClientProvider(), new DefaultKafkaAgentClientProvider(), false, null, -1,
+                Set.of(2));
+        // Both MANUAL_ROLLING_UPDATE and OFFLINE_LOG_DIRS reasons → weaker check not used → blocked
+        doFailingRollingRestart(kafkaRoller,
+                singletonList(2),  // manual rolling update for broker 2
+                KafkaRoller.UnforceableProblem.class, "Pod c-kafka-2 cannot be updated right now.",
+                asList(0, 1, 3, 4));
+    }
+
+    @Test
     public void testOfflineLogDirCooldownPreventsRestart() {
         // Pods with recent creation timestamp should not be restarted for offline log dirs
         PodOperator podOps = mockPodOpsWithTimestamp(podId -> CompletableFuture.completedFuture(null), java.time.Instant.now().toString());
@@ -1113,6 +1147,12 @@ public class KafkaRollerTest {
                 CompletableFuture<Boolean> canRoll(int podId) {
                     return canRollFn.apply(podId);
                 }
+
+                @Override
+                CompletableFuture<Boolean> canRollExcludingOfflineDirPartitions(int podId, Set<org.apache.kafka.common.TopicPartition> partitionsOnHealthyDirs) {
+                    // For the weaker check, always allow the roll (the offline-dir partitions have been excluded)
+                    return CompletableFuture.completedFuture(true);
+                }
             };
         }
 
@@ -1157,6 +1197,11 @@ public class KafkaRollerTest {
         @Override
         boolean hasOfflineLogDirs(NodeRef nodeRef) {
             return brokersWithOfflineLogDirs.contains(nodeRef.nodeId());
+        }
+
+        @Override
+        Set<org.apache.kafka.common.TopicPartition> getPartitionsOnHealthyDirs(NodeRef nodeRef) {
+            return Set.of();
         }
 
         @Override

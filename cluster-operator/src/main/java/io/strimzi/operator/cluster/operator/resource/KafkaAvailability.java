@@ -12,6 +12,7 @@ import org.apache.kafka.clients.admin.ConfigEntry;
 import org.apache.kafka.clients.admin.ListTopicsOptions;
 import org.apache.kafka.clients.admin.TopicDescription;
 import org.apache.kafka.common.Node;
+import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.TopicPartitionInfo;
 import org.apache.kafka.common.config.ConfigResource;
 import org.apache.kafka.common.config.TopicConfig;
@@ -60,10 +61,31 @@ class KafkaAvailability {
      */
     CompletableFuture<Boolean> canRoll(int podId) {
         LOGGER.debugCr(reconciliation, "Determining whether broker {} can be rolled", podId);
-        return canRollBroker(descriptions, podId);
+        return canRollBroker(descriptions, podId, null);
     }
 
-    private CompletableFuture<Boolean> canRollBroker(CompletableFuture<Collection<TopicDescription>> descriptions, int podId) {
+    /**
+     * Determine whether the given broker can be rolled, excluding partitions on offline log directories
+     * from the availability check. Partitions not in {@code partitionsOnHealthyDirs} are assumed to be
+     * on offline dirs (already degraded) and are skipped — restarting can only help them.
+     *
+     * @param podId                     The broker ID to check
+     * @param partitionsOnHealthyDirs   The set of topic-partitions known to be on healthy log dirs
+     */
+    CompletableFuture<Boolean> canRollExcludingOfflineDirPartitions(int podId, Set<TopicPartition> partitionsOnHealthyDirs) {
+        LOGGER.debugCr(reconciliation, "Determining whether broker {} can be rolled (excluding partitions on offline dirs)", podId);
+        return canRollBroker(descriptions, podId, partitionsOnHealthyDirs);
+    }
+
+    /**
+     * Determines whether the given broker can be rolled, optionally excluding partitions on offline dirs.
+     *
+     * @param partitionsOnHealthyDirs   If non-null, partitions NOT in this set are excluded from the availability check
+     *                                  (they are assumed to be on offline dirs and already degraded).
+     *                                  If null, all partitions are checked (standard behavior).
+     */
+    private CompletableFuture<Boolean> canRollBroker(CompletableFuture<Collection<TopicDescription>> descriptions, int podId,
+                                                      Set<TopicPartition> partitionsOnHealthyDirs) {
         CompletableFuture<Set<TopicDescription>> topicsOnGivenBroker = descriptions
                 .whenComplete((r, error) -> {
                     if (error != null) {
@@ -82,7 +104,7 @@ class KafkaAvailability {
         // 5. join
         return topicsOnGivenBroker.thenCombine(topicConfigsOnGivenBroker, (tds, topicNameToConfig) -> {
             boolean canRoll = tds.stream().noneMatch(
-                td -> wouldAffectAvailability(podId, topicNameToConfig, td));
+                td -> wouldAffectAvailability(podId, topicNameToConfig, td, partitionsOnHealthyDirs));
             if (!canRoll) {
                 LOGGER.debugCr(reconciliation, "Restart pod {} would remove it from ISR, stalling producers with acks=all", podId);
             }
@@ -95,7 +117,13 @@ class KafkaAvailability {
         });
     }
 
-    private boolean wouldAffectAvailability(int broker, Map<String, Config> nameToConfig, TopicDescription td) {
+    /**
+     * Checks whether rolling the given broker would affect availability of a specific topic.
+     *
+     * @param partitionsOnHealthyDirs   If non-null, partitions NOT in this set are skipped (assumed to be on offline dirs).
+     */
+    private boolean wouldAffectAvailability(int broker, Map<String, Config> nameToConfig, TopicDescription td,
+                                             Set<TopicPartition> partitionsOnHealthyDirs) {
         Config config = nameToConfig.get(td.name());
         ConfigEntry minIsrConfig = config.get(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG);
         int minIsr;
@@ -108,6 +136,13 @@ class KafkaAvailability {
         }
 
         for (TopicPartitionInfo pi : td.partitions()) {
+            // If we have a healthy-dirs set, skip partitions that are on offline dirs (not in the healthy set).
+            // These partitions are already degraded and restarting the broker can only help them recover.
+            if (partitionsOnHealthyDirs != null
+                    && !partitionsOnHealthyDirs.contains(new TopicPartition(td.name(), pi.partition()))) {
+                LOGGER.debugCr(reconciliation, "{}/{} is on an offline log directory, skipping availability check for this partition", td.name(), pi.partition());
+                continue;
+            }
             List<Node> isr = pi.isr();
             if (minIsr >= 0) {
                 if (pi.replicas().size() <= minIsr) {
