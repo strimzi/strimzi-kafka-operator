@@ -59,6 +59,7 @@ hs_err_pid*
 # Cluster operator config models
 **/cluster-operator/src/main/resources/kafka-*-config-model.json
 
-# Claude configuration
+# AI assistants configuration
 .claude/
 .mcp.json
+.bob/
