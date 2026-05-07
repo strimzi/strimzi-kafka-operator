@@ -889,7 +889,8 @@ public class KafkaRollerTest {
                 noException(), null, noException(), noException(), noException(),
                 brokerId -> CompletableFuture.completedFuture(true),
                 new DefaultAdminClientProvider(), new DefaultKafkaAgentClientProvider(), false, null, -1,
-                Set.of(2), 30 * 60_000L);
+                Set.of(2), 30 * 60_000L,
+                brokerId -> CompletableFuture.completedFuture(true));
         // Pod 2 has offline log dirs BUT was created recently (within cooldown) -> should NOT be restarted
         doSuccessfulRollingRestart(kafkaRoller,
                 emptyList(),
@@ -1004,16 +1005,13 @@ public class KafkaRollerTest {
     private PodOperator mockPodOpsWithTimestamp(Function<Integer, CompletableFuture<Void>> readiness, String creationTimestamp) {
         PodOperator podOps = mock(PodOperator.class);
         when(podOps.get(any(), any())).thenAnswer(
-                invocation -> {
-                    PodBuilder builder = new PodBuilder()
-                            .withNewMetadata()
+                invocation -> new PodBuilder()
+                        .withNewMetadata()
                             .withNamespace(invocation.getArgument(0))
-                            .withName(invocation.getArgument(1));
-                    if (creationTimestamp != null) {
-                        builder.withCreationTimestamp(creationTimestamp);
-                    }
-                    return builder.endMetadata().build();
-                }
+                            .withName(invocation.getArgument(1))
+                            .withCreationTimestamp(creationTimestamp)
+                        .endMetadata()
+                        .build()
         );
 
         when(podOps.readiness(any(), any(), any(), anyLong(), anyLong())).thenAnswer(invocationOnMock -> {
@@ -1236,7 +1234,7 @@ public class KafkaRollerTest {
         }
 
         @Override
-        LogDirStatus describeLogDirStatus(NodeRef nodeRef) {
+        LogDirStatus describeLogDirStatus(NodeRef nodeRef) throws ForceableProblem {
             boolean hasOffline = brokersWithOfflineLogDirs.contains(nodeRef.nodeId());
             return new LogDirStatus(hasOffline, Set.of());
         }
