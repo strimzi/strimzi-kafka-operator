@@ -14,6 +14,7 @@ import org.apache.kafka.clients.admin.ListTopicsResult;
 import org.apache.kafka.clients.admin.TopicDescription;
 import org.apache.kafka.common.KafkaFuture;
 import org.apache.kafka.common.Node;
+import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.TopicPartitionInfo;
 import org.apache.kafka.common.config.ConfigResource;
 import org.apache.kafka.common.config.TopicConfig;
@@ -28,6 +29,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -583,5 +585,75 @@ public class KafkaAvailabilityTest {
                         assertThat(maybeUnwrapCompletionException(error), instanceOf(UnknownTopicOrPartitionException.class)));
             }
         }
+    }
+
+    @Test
+    public void testCanRollExcludingOfflineDirPartitionsAllowsRollWhenOfflinePartitionExcluded() {
+        // Broker 0 has two partitions: A/0 on a healthy dir, B/0 on an offline dir.
+        // B/0 is at min.isr=2 with ISR={0,1} — rolling broker 0 would drop ISR to {1} < min.isr.
+        // Standard canRoll should return false. But canRollExcludingOfflineDirPartitions should
+        // return true because B/0 (on the offline dir) is excluded from the check.
+        KSB ksb = new KSB()
+                .addNewTopic("A", false)
+                    .addToConfig(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, "1")
+                    .addNewPartition(0)
+                        .replicaOn(0, 1, 2)
+                        .leader(0)
+                        .isr(0, 1, 2)
+                    .endPartition()
+                .endTopic()
+                .addNewTopic("B", false)
+                    .addToConfig(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, "2")
+                    .addNewPartition(0)
+                        .replicaOn(0, 1)
+                        .leader(0)
+                        .isr(0, 1)
+                    .endPartition()
+                .endTopic()
+                .addBroker(2);
+
+        KafkaAvailability kafkaAvailability = new KafkaAvailability(new Reconciliation("dummy", "kind", "namespace", "test"), ksb.ac());
+
+        // Standard check: broker 0 cannot be rolled (B/0 would go below min.isr)
+        kafkaAvailability.canRoll(0).whenComplete((canRoll, err) ->
+                assertFalse(canRoll, "broker 0 should NOT be rollable with standard check (B/0 at min.isr)"));
+
+        // Weaker check: B/0 is on offline dir (not in healthyPartitions), so it's excluded.
+        // Only A/0 is checked, which has ISR={0,1,2} and min.isr=1 — safe to roll.
+        Set<TopicPartition> healthyPartitions = Set.of(new TopicPartition("A", 0));
+        kafkaAvailability.canRollExcludingOfflineDirPartitions(0, healthyPartitions).whenComplete((canRoll, err) ->
+                assertTrue(canRoll, "broker 0 should be rollable with weaker check (B/0 excluded as offline)"));
+    }
+
+    @Test
+    public void testCanRollExcludingOfflineDirPartitionsStillBlocksWhenHealthyPartitionAtMinIsr() {
+        // Broker 0 has two partitions: A/0 on a healthy dir at min.isr, B/0 on an offline dir.
+        // Even with B/0 excluded, A/0 still blocks the roll because it's at min.isr.
+        KSB ksb = new KSB()
+                .addNewTopic("A", false)
+                    .addToConfig(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, "2")
+                    .addNewPartition(0)
+                        .replicaOn(0, 1, 2)
+                        .leader(0)
+                        .isr(0, 1)
+                    .endPartition()
+                .endTopic()
+                .addNewTopic("B", false)
+                    .addToConfig(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, "2")
+                    .addNewPartition(0)
+                        .replicaOn(0, 1)
+                        .leader(0)
+                        .isr(0, 1)
+                    .endPartition()
+                .endTopic()
+                .addBroker(2);
+
+        KafkaAvailability kafkaAvailability = new KafkaAvailability(new Reconciliation("dummy", "kind", "namespace", "test"), ksb.ac());
+
+        // Weaker check: B/0 excluded (offline dir), but A/0 is on healthy dir and at min.isr=2
+        // with ISR={0,1}. Rolling broker 0 would drop A/0's ISR to {1} < min.isr. Blocked.
+        Set<TopicPartition> healthyPartitions = Set.of(new TopicPartition("A", 0));
+        kafkaAvailability.canRollExcludingOfflineDirPartitions(0, healthyPartitions).whenComplete((canRoll, err) ->
+                assertFalse(canRoll, "broker 0 should NOT be rollable even with weaker check (A/0 on healthy dir is at min.isr)"));
     }
 }

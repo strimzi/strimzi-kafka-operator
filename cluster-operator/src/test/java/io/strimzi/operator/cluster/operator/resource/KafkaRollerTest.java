@@ -761,10 +761,46 @@ public class KafkaRollerTest {
                 brokerId -> CompletableFuture.completedFuture(true),
                 new DefaultAdminClientProvider(), new DefaultKafkaAgentClientProvider(), false, null, -1,
                 Set.of(1));
-        // Combined node 1 has offline log dirs
+        // Combined node 1 has offline log dirs, canRoll returns true -> rolled normally
         doSuccessfulRollingRestart(kafkaRoller,
                 emptyList(),
                 singletonList(1));
+    }
+
+    @Test
+    public void testCombinedNodeWithOfflineLogDirsWeakerCheckNotUsed() {
+        PodOperator podOps = mockPodOps(podId -> CompletableFuture.completedFuture(null));
+        // Combined node 1 has offline dirs. Standard canRoll returns false.
+        // The weaker check should NOT be used for combined nodes (!isController guard)
+        // because bypassing the quorum check could break the KRaft controller quorum.
+        TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(addPodNames(0, REPLICAS, 0), podOps,
+                noException(), null, noException(), noException(), noException(),
+                brokerId -> brokerId == 1 ? CompletableFuture.completedFuture(false) : CompletableFuture.completedFuture(true),
+                new DefaultAdminClientProvider(), new DefaultKafkaAgentClientProvider(), false, null, -1,
+                Set.of(1));
+        // Combined node 1 has offline dirs but canRoll returns false -> blocked (weaker check NOT attempted)
+        doFailingRollingRestart(kafkaRoller,
+                emptyList(),
+                KafkaRoller.UnforceableProblem.class, "Pod c-kafka-1 cannot be updated right now.",
+                emptyList());
+    }
+
+    @Test
+    public void testCombinedNodeWithOfflineLogDirsWeakerCheckNotUsed() {
+        PodOperator podOps = mockPodOps(podId -> CompletableFuture.completedFuture(null));
+        // Combined node 1 has offline dirs. Standard canRoll returns false.
+        // The weaker check should NOT be used for combined nodes (!isController guard)
+        // because bypassing the quorum check could break the KRaft controller quorum.
+        TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(addPodNames(0, REPLICAS, 0), podOps,
+                noException(), null, noException(), noException(), noException(),
+                brokerId -> brokerId == 1 ? CompletableFuture.completedFuture(false) : CompletableFuture.completedFuture(true),
+                new DefaultAdminClientProvider(), new DefaultKafkaAgentClientProvider(), false, null, -1,
+                Set.of(1));
+        // Combined node 1 has offline dirs but canRoll returns false -> blocked (weaker check NOT attempted)
+        doFailingRollingRestart(kafkaRoller,
+                emptyList(),
+                KafkaRoller.UnforceableProblem.class, "Pod c-kafka-1 cannot be updated right now.",
+                emptyList());
     }
 
     @Test
