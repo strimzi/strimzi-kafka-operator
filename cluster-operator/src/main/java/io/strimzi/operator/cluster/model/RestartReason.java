@@ -81,7 +81,12 @@ public enum RestartReason {
     /**
      * Kafka TLS certificates changed
      */
-    KAFKA_CERTIFICATES_CHANGED("Kafka broker TLS certificates updated");
+    KAFKA_CERTIFICATES_CHANGED("Kafka broker TLS certificates updated"),
+
+    /**
+     * Broker has offline log directories that require a restart to recover
+     */
+    OFFLINE_LOG_DIRS("Broker has offline log directories");
 
     //Used in logging and Kubernetes event notes
     private final String defaultNote;

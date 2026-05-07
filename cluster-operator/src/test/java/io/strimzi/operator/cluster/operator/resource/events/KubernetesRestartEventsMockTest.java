@@ -49,6 +49,7 @@ import io.strimzi.operator.cluster.operator.assembly.KafkaAssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaClusterCreator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaReconciler;
 import io.strimzi.operator.cluster.operator.assembly.StrimziPodSetController;
+import io.strimzi.operator.cluster.operator.resource.KafkaRoller;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.AdminClientProvider;
 import io.strimzi.operator.common.Reconciliation;
@@ -74,9 +75,12 @@ import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.Config;
 import org.apache.kafka.clients.admin.ConfigEntry;
 import org.apache.kafka.clients.admin.DescribeConfigsResult;
+import org.apache.kafka.clients.admin.DescribeLogDirsResult;
+import org.apache.kafka.clients.admin.LogDirDescription;
 import org.apache.kafka.common.KafkaFuture;
 import org.apache.kafka.common.config.ConfigException;
 import org.apache.kafka.common.config.ConfigResource;
+import org.apache.kafka.common.errors.KafkaStorageException;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -109,12 +113,14 @@ import static io.strimzi.operator.cluster.model.RestartReason.CONFIG_CHANGE_REQU
 import static io.strimzi.operator.cluster.model.RestartReason.FILE_SYSTEM_RESIZE_NEEDED;
 import static io.strimzi.operator.cluster.model.RestartReason.KAFKA_CERTIFICATES_CHANGED;
 import static io.strimzi.operator.cluster.model.RestartReason.MANUAL_ROLLING_UPDATE;
+import static io.strimzi.operator.cluster.model.RestartReason.OFFLINE_LOG_DIRS;
 import static io.strimzi.operator.cluster.model.RestartReason.POD_HAS_OLD_REVISION;
 import static io.strimzi.operator.cluster.model.RestartReason.POD_STUCK;
 import static io.strimzi.operator.cluster.model.RestartReason.POD_UNRESPONSIVE;
 import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -537,6 +543,60 @@ public class KubernetesRestartEventsMockTest {
                 PFA,
                 vertx);
         reconciler.reconcile(new KafkaStatus(), Clock.systemUTC()).onComplete(verifyEventPublished(KAFKA_CERTIFICATES_CHANGED, context));
+    }
+
+    @Test
+    void testEventEmittedWhenBrokerHasOfflineLogDirs(Vertx vertx, VertxTestContext context) {
+        // Disable cooldown so the freshly-created test pod is eligible for the offline-dir restart
+        long originalCooldown = KafkaRoller.offlineLogDirRestartCooldownMs;
+        KafkaRoller.offlineLogDirRestartCooldownMs = 0;
+
+        try {
+            Admin adminClient = withOfflineLogDirs(ResourceUtils.adminClientProvider().createAdminClient(null, null, null));
+            ResourceOperatorSupplier supplierWithModifiedAdmin = supplierWithAdmin(vertx, () -> adminClient);
+
+            KafkaCluster kafkaCluster = KafkaClusterCreator.createKafkaCluster(reconciliation,
+                    kafka,
+                    List.of(kafkaNodePool),
+                    Map.of(),
+                    KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE,
+                    VERSIONS,
+                    supplier.sharedEnvironmentProvider);
+            KafkaReconciler reconciler = new KafkaReconciler(reconciliation,
+                    kafka,
+                    List.of(kafkaNodePool),
+                    kafkaCluster,
+                    clusterCa,
+                    clientsCa,
+                    clusterOperatorConfig,
+                    supplierWithModifiedAdmin,
+                    PFA,
+                    vertx);
+
+            reconciler.reconcile(new KafkaStatus(), Clock.systemUTC()).onComplete(ar -> {
+                KafkaRoller.offlineLogDirRestartCooldownMs = originalCooldown;
+                verifyEventPublished(OFFLINE_LOG_DIRS, context).handle(ar);
+            });
+        } catch (Exception e) {
+            KafkaRoller.offlineLogDirRestartCooldownMs = originalCooldown;
+            context.failNow(e);
+        }
+    }
+
+    private Admin withOfflineLogDirs(Admin preMockedAdminClient) {
+        DescribeLogDirsResult mockResult = mock(DescribeLogDirsResult.class);
+
+        // Simulate one healthy log dir and one offline log dir for broker 0
+        LogDirDescription healthyDir = new LogDirDescription(null, Map.of());
+        LogDirDescription offlineDir = new LogDirDescription(new KafkaStorageException("Log directory offline"), Map.of());
+
+        KafkaFuture<Map<String, LogDirDescription>> future = KafkaFuture.completedFuture(
+                Map.of("/var/kafka-data-0/data", healthyDir, "/var/kafka-data-1/data", offlineDir)
+        );
+
+        when(mockResult.descriptions()).thenReturn(Map.of(0, future));
+        when(preMockedAdminClient.describeLogDirs(any())).thenReturn(mockResult);
+        return preMockedAdminClient;
     }
 
     private <T> Handler<AsyncResult<T>> verifyEventPublished(RestartReason expectedReason, VertxTestContext context) {

@@ -726,6 +726,124 @@ public class KafkaRollerTest {
     }
 
     @Test
+    public void testBrokerWithOfflineLogDirsGetsRolled() {
+        PodOperator podOps = mockPodOps(podId -> CompletableFuture.completedFuture(null));
+        TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(addPodNames(REPLICAS, 0, 0), podOps,
+                noException(), null, noException(), noException(), noException(),
+                brokerId -> CompletableFuture.completedFuture(true),
+                new DefaultAdminClientProvider(), new DefaultKafkaAgentClientProvider(), false, null, -1,
+                Set.of(2));
+        // Pod 2 has offline log dirs and should be restarted even though it wasn't in the original restart list
+        doSuccessfulRollingRestart(kafkaRoller,
+                emptyList(),
+                singletonList(2));
+    }
+
+    @Test
+    public void testMultipleBrokersWithOfflineLogDirsGetRolled() {
+        PodOperator podOps = mockPodOps(podId -> CompletableFuture.completedFuture(null));
+        TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(addPodNames(REPLICAS, 0, 0), podOps,
+                noException(), null, noException(), noException(), noException(),
+                brokerId -> CompletableFuture.completedFuture(true),
+                new DefaultAdminClientProvider(), new DefaultKafkaAgentClientProvider(), false, null, -1,
+                Set.of(1, 3));
+        // Pods 1 and 3 have offline log dirs
+        doSuccessfulRollingRestart(kafkaRoller,
+                emptyList(),
+                asList(1, 3));
+    }
+
+    @Test
+    public void testCombinedNodeWithOfflineLogDirsGetsRolled() {
+        PodOperator podOps = mockPodOps(podId -> CompletableFuture.completedFuture(null));
+        TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(addPodNames(0, REPLICAS, 0), podOps,
+                noException(), null, noException(), noException(), noException(),
+                brokerId -> CompletableFuture.completedFuture(true),
+                new DefaultAdminClientProvider(), new DefaultKafkaAgentClientProvider(), false, null, -1,
+                Set.of(1));
+        // Combined node 1 has offline log dirs
+        doSuccessfulRollingRestart(kafkaRoller,
+                emptyList(),
+                singletonList(1));
+    }
+
+    @Test
+    public void testControllerOnlyNodeWithOfflineLogDirsNotChecked() {
+        PodOperator podOps = mockPodOps(podId -> CompletableFuture.completedFuture(null));
+        // Controller-only nodes (not brokers) should not be checked for offline log dirs
+        TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(addPodNames(0, 0, REPLICAS), podOps,
+                noException(), null, noException(), noException(), noException(),
+                brokerId -> CompletableFuture.completedFuture(true),
+                new DefaultAdminClientProvider(), new DefaultKafkaAgentClientProvider(), false, null, -1,
+                Set.of(2));
+        // Controller-only node 2 is in the offline set but should NOT be checked (only brokers are checked)
+        doSuccessfulRollingRestart(kafkaRoller,
+                emptyList(),
+                emptyList());
+    }
+
+    @Test
+    public void testOfflineLogDirCheckErrorIsSwallowed() {
+        PodOperator podOps = mockPodOps(podId -> CompletableFuture.completedFuture(null));
+        // Create a roller where hasOfflineLogDirs throws for broker 1
+        TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(addPodNames(REPLICAS, 0, 0), podOps,
+                noException(), null, noException(), noException(), noException(),
+                brokerId -> CompletableFuture.completedFuture(true),
+                new DefaultAdminClientProvider(), new DefaultKafkaAgentClientProvider(), false, null, -1,
+                Set.of()) {
+            @Override
+            boolean hasOfflineLogDirs(NodeRef nodeRef) throws ForceableProblem {
+                if (nodeRef.nodeId() == 1) {
+                    throw new ForceableProblem("Simulated Admin API error");
+                }
+                return false;
+            }
+        };
+        // Broker 1 throws from hasOfflineLogDirs, but the error should be swallowed (best-effort).
+        // No brokers need restart from the original list, and the error path should not cause any restarts.
+        doSuccessfulRollingRestart(kafkaRoller,
+                emptyList(),
+                emptyList());
+    }
+
+    @Test
+    public void testOfflineLogDirCheckRuntimeExceptionIsSwallowed() {
+        PodOperator podOps = mockPodOps(podId -> CompletableFuture.completedFuture(null));
+        TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(addPodNames(REPLICAS, 0, 0), podOps,
+                noException(), null, noException(), noException(), noException(),
+                brokerId -> CompletableFuture.completedFuture(true),
+                new DefaultAdminClientProvider(), new DefaultKafkaAgentClientProvider(), false, null, -1,
+                Set.of()) {
+            @Override
+            boolean hasOfflineLogDirs(NodeRef nodeRef) {
+                if (nodeRef.nodeId() == 2) {
+                    throw new RuntimeException("Admin client closed unexpectedly");
+                }
+                return false;
+            }
+        };
+        // RuntimeException from hasOfflineLogDirs should be caught by catch(Exception e) and not disrupt rolling
+        doSuccessfulRollingRestart(kafkaRoller,
+                emptyList(),
+                emptyList());
+    }
+
+    @Test
+    public void testOfflineLogDirCooldownPreventsRestart() {
+        // Pods with recent creation timestamp should not be restarted for offline log dirs
+        PodOperator podOps = mockPodOpsWithTimestamp(podId -> CompletableFuture.completedFuture(null), java.time.Instant.now().toString());
+        TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(addPodNames(REPLICAS, 0, 0), podOps,
+                noException(), null, noException(), noException(), noException(),
+                brokerId -> CompletableFuture.completedFuture(true),
+                new DefaultAdminClientProvider(), new DefaultKafkaAgentClientProvider(), false, null, -1,
+                Set.of(2));
+        // Pod 2 has offline log dirs BUT was created recently (within cooldown) -> should NOT be restarted
+        doSuccessfulRollingRestart(kafkaRoller,
+                emptyList(),
+                emptyList());
+    }
+
+    @Test
     public void testRollUnreadyPodFirstAllRoles() {
         AtomicBoolean pod1Unready = new AtomicBoolean(true);
         AtomicBoolean pod4Unready = new AtomicBoolean(true);
@@ -827,14 +945,22 @@ public class KafkaRollerTest {
     }
 
     private PodOperator mockPodOps(Function<Integer, CompletableFuture<Void>> readiness) {
+        return mockPodOpsWithTimestamp(readiness, null);
+    }
+
+    private PodOperator mockPodOpsWithTimestamp(Function<Integer, CompletableFuture<Void>> readiness, String creationTimestamp) {
         PodOperator podOps = mock(PodOperator.class);
         when(podOps.get(any(), any())).thenAnswer(
-                invocation -> new PodBuilder()
-                        .withNewMetadata()
-                        .withNamespace(invocation.getArgument(0))
-                        .withName(invocation.getArgument(1))
-                        .endMetadata()
-                        .build()
+                invocation -> {
+                    PodBuilder builder = new PodBuilder()
+                            .withNewMetadata()
+                            .withNamespace(invocation.getArgument(0))
+                            .withName(invocation.getArgument(1));
+                    if (creationTimestamp != null) {
+                        builder.withCreationTimestamp(creationTimestamp);
+                    }
+                    return builder.endMetadata().build();
+                }
         );
 
         when(podOps.readiness(any(), any(), any(), anyLong(), anyLong())).thenAnswer(invocationOnMock -> {
@@ -872,6 +998,7 @@ public class KafkaRollerTest {
         private final boolean delegateAdminClientCall;
         private final int activeController;
         private final BrokerState brokerState;
+        private final Set<Integer> brokersWithOfflineLogDirs;
 
         @SuppressWarnings("checkstyle:ParameterNumber")
         private TestingKafkaRoller(Set<NodeRef> nodes,
@@ -885,6 +1012,24 @@ public class KafkaRollerTest {
                                    AdminClientProvider adminClientProvider,
                                    KafkaAgentClientProvider kafkaAgentClientProvider,
                                    boolean delegateAdminClientCall, BrokerState brokerState, int activeController) {
+            this(nodes, podOps, acOpenException, acCloseException, controllerException, alterConfigsException,
+                    getConfigsException, canRollFn, adminClientProvider, kafkaAgentClientProvider,
+                    delegateAdminClientCall, brokerState, activeController, Set.of());
+        }
+
+        @SuppressWarnings("checkstyle:ParameterNumber")
+        private TestingKafkaRoller(Set<NodeRef> nodes,
+                                   PodOperator podOps,
+                                   Function<Set<NodeRef>, RuntimeException> acOpenException,
+                                   Throwable acCloseException,
+                                   Function<Integer, Throwable> controllerException,
+                                   Function<Integer, ForceableProblem> alterConfigsException,
+                                   Function<Integer, ForceableProblem> getConfigsException,
+                                   Function<Integer, CompletableFuture<Boolean>> canRollFn,
+                                   AdminClientProvider adminClientProvider,
+                                   KafkaAgentClientProvider kafkaAgentClientProvider,
+                                   boolean delegateAdminClientCall, BrokerState brokerState, int activeController,
+                                   Set<Integer> brokersWithOfflineLogDirs) {
             super(
                     new Reconciliation("test", "Kafka", stsNamespace(), clusterName()),
                     podOps,
@@ -911,6 +1056,7 @@ public class KafkaRollerTest {
             this.canRollFn = canRollFn;
             this.unclosedAdminClients = new IdentityHashMap<>();
             this.brokerState = brokerState;
+            this.brokersWithOfflineLogDirs = brokersWithOfflineLogDirs;
         }
 
         @Override
@@ -1006,6 +1152,11 @@ public class KafkaRollerTest {
             if (problem != null) {
                 throw problem;
             } else return new Config(emptyList());
+        }
+
+        @Override
+        boolean hasOfflineLogDirs(NodeRef nodeRef) {
+            return brokersWithOfflineLogDirs.contains(nodeRef.nodeId());
         }
 
         @Override

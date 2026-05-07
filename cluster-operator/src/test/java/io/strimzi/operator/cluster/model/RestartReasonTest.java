@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 
 import static io.strimzi.operator.cluster.model.RestartReason.CA_CERT_HAS_OLD_GENERATION;
 import static io.strimzi.operator.cluster.model.RestartReason.FILE_SYSTEM_RESIZE_NEEDED;
+import static io.strimzi.operator.cluster.model.RestartReason.OFFLINE_LOG_DIRS;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
@@ -17,5 +18,6 @@ class RestartReasonTest {
     void testPascalCasedReason() {
         assertThat(CA_CERT_HAS_OLD_GENERATION.pascalCased(), is("CaCertHasOldGeneration"));
         assertThat(FILE_SYSTEM_RESIZE_NEEDED.pascalCased(), is("FileSystemResizeNeeded"));
+        assertThat(OFFLINE_LOG_DIRS.pascalCased(), is("OfflineLogDirs"));
     }
 }
