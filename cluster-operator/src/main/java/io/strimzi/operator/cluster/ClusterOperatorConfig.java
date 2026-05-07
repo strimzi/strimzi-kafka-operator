@@ -665,6 +665,7 @@ public class ClusterOperatorConfig {
                 "\n\tpodSecurityProviderClass='" + getPodSecurityProviderClass() + '\'' +
                 "\n\tleaderElectionConfig='" + getLeaderElectionConfig() + '\'' +
                 "\n\tpodDisruptionBudgetGeneration=" + isPodDisruptionBudgetGeneration() +
+                "\n\tofflineLogDirRestartCooldownMs=" + getOfflineLogDirRestartCooldownMs() +
                 "}";
     }
 }

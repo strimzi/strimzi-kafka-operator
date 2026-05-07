@@ -863,6 +863,24 @@ public class KafkaRollerTest {
     }
 
     @Test
+    public void testOfflineLogDirWeakerCheckAlsoFailsBlocksRestart() {
+        PodOperator podOps = mockPodOps(podId -> CompletableFuture.completedFuture(null));
+        // Broker 2 has offline dirs. Standard canRoll returns false AND weaker check also returns false
+        // (healthy-dir partitions are also at min ISR).
+        TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(addPodNames(REPLICAS, 0, 0), podOps,
+                noException(), null, noException(), noException(), noException(),
+                brokerId -> brokerId == 2 ? CompletableFuture.completedFuture(false) : CompletableFuture.completedFuture(true),
+                new DefaultAdminClientProvider(), new DefaultKafkaAgentClientProvider(), false, null, -1,
+                Set.of(2), 0L,
+                brokerId -> CompletableFuture.completedFuture(false));
+        // Both checks fail -> broker 2 should NOT be restarted
+        doFailingRollingRestart(kafkaRoller,
+                emptyList(),
+                KafkaRoller.UnforceableProblem.class, "Pod c-kafka-2 cannot be updated right now.",
+                asList(0, 1, 3, 4));
+    }
+
+    @Test
     public void testOfflineLogDirCooldownPreventsRestart() {
         // Pods with recent creation timestamp should not be restarted for offline log dirs
         PodOperator podOps = mockPodOpsWithTimestamp(podId -> CompletableFuture.completedFuture(null), java.time.Instant.now().toString());
@@ -1034,6 +1052,7 @@ public class KafkaRollerTest {
         private final int activeController;
         private final BrokerState brokerState;
         private final Set<Integer> brokersWithOfflineLogDirs;
+        private final Function<Integer, CompletableFuture<Boolean>> weakerCheckFn;
 
         @SuppressWarnings("checkstyle:ParameterNumber")
         private TestingKafkaRoller(Set<NodeRef> nodes,
@@ -1067,7 +1086,8 @@ public class KafkaRollerTest {
                                    Set<Integer> brokersWithOfflineLogDirs) {
             this(nodes, podOps, acOpenException, acCloseException, controllerException, alterConfigsException,
                     getConfigsException, canRollFn, adminClientProvider, kafkaAgentClientProvider,
-                    delegateAdminClientCall, brokerState, activeController, brokersWithOfflineLogDirs, 0L);
+                    delegateAdminClientCall, brokerState, activeController, brokersWithOfflineLogDirs, 0L,
+                    brokerId -> CompletableFuture.completedFuture(true));
         }
 
         @SuppressWarnings("checkstyle:ParameterNumber")
@@ -1082,7 +1102,8 @@ public class KafkaRollerTest {
                                    AdminClientProvider adminClientProvider,
                                    KafkaAgentClientProvider kafkaAgentClientProvider,
                                    boolean delegateAdminClientCall, BrokerState brokerState, int activeController,
-                                   Set<Integer> brokersWithOfflineLogDirs, long cooldownMs) {
+                                   Set<Integer> brokersWithOfflineLogDirs, long cooldownMs,
+                                   Function<Integer, CompletableFuture<Boolean>> weakerCheckFn) {
             super(
                     new Reconciliation("test", "Kafka", stsNamespace(), clusterName()),
                     podOps,
@@ -1098,6 +1119,7 @@ public class KafkaRollerTest {
                     true,
                     mock(KubernetesRestartEventPublisher.class),
                     cooldownMs);
+            this.weakerCheckFn = weakerCheckFn;
             this.delegateAdminClientCall = delegateAdminClientCall;
             this.activeController = activeController;
             this.controllerCall = 0;
@@ -1170,8 +1192,7 @@ public class KafkaRollerTest {
 
                 @Override
                 CompletableFuture<Boolean> canRollExcludingOfflineDirPartitions(int podId, Set<org.apache.kafka.common.TopicPartition> partitionsOnHealthyDirs) {
-                    // For the weaker check, always allow the roll (the offline-dir partitions have been excluded)
-                    return CompletableFuture.completedFuture(true);
+                    return weakerCheckFn.apply(podId);
                 }
             };
         }
@@ -1215,13 +1236,9 @@ public class KafkaRollerTest {
         }
 
         @Override
-        boolean hasOfflineLogDirs(NodeRef nodeRef) {
-            return brokersWithOfflineLogDirs.contains(nodeRef.nodeId());
-        }
-
-        @Override
-        Set<org.apache.kafka.common.TopicPartition> getPartitionsOnHealthyDirs(NodeRef nodeRef) {
-            return Set.of();
+        LogDirStatus describeLogDirStatus(NodeRef nodeRef) {
+            boolean hasOffline = brokersWithOfflineLogDirs.contains(nodeRef.nodeId());
+            return new LogDirStatus(hasOffline, Set.of());
         }
 
         @Override
