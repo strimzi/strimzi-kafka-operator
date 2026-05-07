@@ -107,6 +107,7 @@ public class KafkaRoller {
     private static final String CONTROLLER_QUORUM_FETCH_TIMEOUT_MS_CONFIG_NAME = "controller.quorum.fetch.timeout.ms";
     private static final String CONTROLLER_QUORUM_FETCH_TIMEOUT_MS_CONFIG_DEFAULT = "2000";
     private static final long ADMIN_API_TIMEOUT_MS = 30_000;
+    private static final long AVAILABILITY_CHECK_TIMEOUT_MS = 60_000;
     // Cooldown period after pod creation before triggering another restart for offline log dirs.
     // Prevents infinite restart loops when offline dirs are caused by permanent hardware failure.
     private final long offlineLogDirRestartCooldownMs;
@@ -692,6 +693,12 @@ public class KafkaRoller {
     }
 
     /**
+     * Cached log dir status from the most recent checkForOfflineLogDirs call, used by the weaker
+     * availability check to avoid a second describeLogDirs round trip.
+     */
+    private LogDirStatus lastLogDirStatus;
+
+    /**
      * Checks for offline log directories on a broker node and updates the restart context if any are found.
      * This is a no-op for controller-only nodes, pods already marked for force-restart, or when the broker
      * admin client is not available.
@@ -700,12 +707,6 @@ public class KafkaRoller {
      * this method skips the check for pods created within the last {@link #offlineLogDirRestartCooldownMs}
      * milliseconds.</p>
      */
-    /**
-     * Cached log dir status from the most recent checkForOfflineLogDirs call, used by the weaker
-     * availability check to avoid a second describeLogDirs round trip.
-     */
-    private LogDirStatus lastLogDirStatus;
-
     private void checkForOfflineLogDirs(NodeRef nodeRef, boolean isBroker, RestartContext restartContext, Pod pod)
             throws InterruptedException {
         lastLogDirStatus = null;
@@ -897,7 +898,7 @@ public class KafkaRoller {
 
     private boolean canRoll(int nodeId, boolean isController, boolean isBroker, boolean ignoreSslError, RestartContext restartContext)
             throws ForceableProblem, InterruptedException, UnforceableProblem {
-        long timeoutMs = 60_000;
+        long timeoutMs = AVAILABILITY_CHECK_TIMEOUT_MS;
         try {
             if (isBroker && isController) {
                 boolean canRollController = await(restartContext.quorumCheck.canRollController(nodeId), timeoutMs,
@@ -1052,7 +1053,7 @@ public class KafkaRoller {
                 : Set.of();
         LOGGER.infoCr(reconciliation, "Pod {} has {} partitions on healthy log dirs; checking availability excluding offline-dir partitions",
                 nodeRef, healthyPartitions.size());
-        long timeoutMs = 60_000;
+        long timeoutMs = AVAILABILITY_CHECK_TIMEOUT_MS;
         return await(kafkaAvailability.canRollExcludingOfflineDirPartitions(nodeRef.nodeId(), healthyPartitions),
                 timeoutMs,
                 t -> new ForceableProblem("Error checking availability excluding offline dir partitions for pod " + nodeRef, t));

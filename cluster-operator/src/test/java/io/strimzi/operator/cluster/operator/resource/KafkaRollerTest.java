@@ -785,21 +785,21 @@ public class KafkaRollerTest {
     @Test
     public void testOfflineLogDirCheckErrorIsSwallowed() {
         PodOperator podOps = mockPodOps(podId -> CompletableFuture.completedFuture(null));
-        // Create a roller where hasOfflineLogDirs throws for broker 1
+        // Create a roller where describeLogDirStatus throws ForceableProblem for broker 1
         TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(addPodNames(REPLICAS, 0, 0), podOps,
                 noException(), null, noException(), noException(), noException(),
                 brokerId -> CompletableFuture.completedFuture(true),
                 new DefaultAdminClientProvider(), new DefaultKafkaAgentClientProvider(), false, null, -1,
                 Set.of()) {
             @Override
-            boolean hasOfflineLogDirs(NodeRef nodeRef) throws ForceableProblem {
+            LogDirStatus describeLogDirStatus(NodeRef nodeRef) throws ForceableProblem {
                 if (nodeRef.nodeId() == 1) {
                     throw new ForceableProblem("Simulated Admin API error");
                 }
-                return false;
+                return LogDirStatus.EMPTY;
             }
         };
-        // Broker 1 throws from hasOfflineLogDirs, but the error should be swallowed (best-effort).
+        // Broker 1 throws from describeLogDirStatus, but the error should be swallowed (best-effort).
         // No brokers need restart from the original list, and the error path should not cause any restarts.
         doSuccessfulRollingRestart(kafkaRoller,
                 emptyList(),
@@ -815,14 +815,14 @@ public class KafkaRollerTest {
                 new DefaultAdminClientProvider(), new DefaultKafkaAgentClientProvider(), false, null, -1,
                 Set.of()) {
             @Override
-            boolean hasOfflineLogDirs(NodeRef nodeRef) {
+            LogDirStatus describeLogDirStatus(NodeRef nodeRef) {
                 if (nodeRef.nodeId() == 2) {
                     throw new RuntimeException("Admin client closed unexpectedly");
                 }
-                return false;
+                return LogDirStatus.EMPTY;
             }
         };
-        // RuntimeException from hasOfflineLogDirs should be caught by catch(Exception e) and not disrupt rolling
+        // RuntimeException from describeLogDirStatus should be caught by catch(Exception e) and not disrupt rolling
         doSuccessfulRollingRestart(kafkaRoller,
                 emptyList(),
                 emptyList());
