@@ -463,8 +463,9 @@ public class KafkaRoller {
                         throw new UnforceableProblem("Pod " + nodeRef.podName() + " cannot be updated right now.");
                     }
                 } else {
-                    // Check for rollability before trying a dynamic update so that if the dynamic update fails we can go to a full restart
-                    if (!maybeDynamicUpdateBrokerConfig(nodeRef, restartContext, isController && !isBroker)) {
+                    // If a restart is required (not just a reconfig), skip dynamic update and go straight to restart.
+                    // Otherwise, try a dynamic update first so that if it fails we can fall back to a full restart.
+                    if (restartContext.needsRestart || !maybeDynamicUpdateBrokerConfig(nodeRef, restartContext, isController && !isBroker)) {
                         LOGGER.infoCr(reconciliation, "Rolling Pod {} due to {}", nodeRef, restartContext.restartReasons.getAllReasonNotes());
                         restartAndAwaitReadiness(pod, operationTimeoutMs, restartContext);
                     } else {
