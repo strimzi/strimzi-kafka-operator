@@ -35,7 +35,6 @@ import io.strimzi.api.kafka.model.nodepool.ProcessRoles;
 import io.strimzi.api.kafka.model.podset.StrimziPodSetBuilder;
 import io.strimzi.certs.OpenSslCertManager;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
-import io.strimzi.operator.cluster.ClusterOperatorConfigBuilder;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ResourceUtils;
@@ -551,9 +550,9 @@ public class KubernetesRestartEventsMockTest {
         ResourceOperatorSupplier supplierWithModifiedAdmin = supplierWithAdmin(vertx, () -> adminClient);
 
         // Use a config with cooldown=0 so the freshly-created test pod is eligible for restart
-        ClusterOperatorConfig zeroCooldownConfig = new ClusterOperatorConfigBuilder(clusterOperatorConfig, KafkaVersionTestUtils.getKafkaVersionLookup())
-                .with(ClusterOperatorConfig.OFFLINE_LOG_DIR_RESTART_COOLDOWN_MS.key(), "0")
-                .build();
+        ClusterOperatorConfig zeroCooldownConfig = ClusterOperatorConfig.buildFromMap(
+                Map.of(ClusterOperatorConfig.OFFLINE_LOG_DIR_RESTART_COOLDOWN_MS.key(), "0"),
+                KafkaVersionTestUtils.getKafkaVersionLookup());
 
         KafkaCluster kafkaCluster = KafkaClusterCreator.createKafkaCluster(reconciliation,
                 kafka,
