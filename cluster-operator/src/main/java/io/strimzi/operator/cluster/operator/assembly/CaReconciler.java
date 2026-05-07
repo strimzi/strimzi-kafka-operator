@@ -518,7 +518,8 @@ public class CaReconciler {
                 brokerId -> null,
                 null,
                 false,
-                eventPublisher);
+                eventPublisher,
+                operationTimeoutMs);
     }
 
     /**

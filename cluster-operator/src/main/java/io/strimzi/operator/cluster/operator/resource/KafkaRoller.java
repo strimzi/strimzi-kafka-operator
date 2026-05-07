@@ -108,7 +108,7 @@ public class KafkaRoller {
     private static final String CONTROLLER_QUORUM_FETCH_TIMEOUT_MS_CONFIG_DEFAULT = "2000";
     // Cooldown period after pod creation before triggering another restart for offline log dirs.
     // Prevents infinite restart loops when offline dirs are caused by permanent hardware failure.
-    /* test */ static volatile long offlineLogDirRestartCooldownMs = Duration.ofMinutes(30).toMillis();
+    private final long offlineLogDirRestartCooldownMs;
 
     private final PodOperator podOperations;
     private final long pollingIntervalMs;
@@ -150,13 +150,15 @@ public class KafkaRoller {
      * @param kafkaAgentClientProvider  Kafka Agent client provider
      * @param kafkaConfigProvider       Kafka configuration provider
      * @param kafkaVersion              Kafka version
-     * @param allowReconfiguration      Flag indicting whether reconfiguration is allowed or not
-     * @param eventsPublisher           Kubernetes Events publisher for publishing events about pod restarts
+     * @param allowReconfiguration              Flag indicting whether reconfiguration is allowed or not
+     * @param eventsPublisher                   Kubernetes Events publisher for publishing events about pod restarts
+     * @param offlineLogDirRestartCooldownMs    Cooldown in milliseconds before restarting a broker again for offline log dirs
      */
     public KafkaRoller(Reconciliation reconciliation, PodOperator podOperations,
                        long pollingIntervalMs, long operationTimeoutMs, Supplier<BackOff> backOffSupplier, Set<NodeRef> nodes,
                        TlsPemIdentity coTlsPemIdentity, AdminClientProvider adminClientProvider, KafkaAgentClientProvider kafkaAgentClientProvider,
-                       Function<Integer, String> kafkaConfigProvider, KafkaVersion kafkaVersion, boolean allowReconfiguration, KubernetesRestartEventPublisher eventsPublisher) {
+                       Function<Integer, String> kafkaConfigProvider, KafkaVersion kafkaVersion, boolean allowReconfiguration,
+                       KubernetesRestartEventPublisher eventsPublisher, long offlineLogDirRestartCooldownMs) {
         this.namespace = reconciliation.namespace();
         this.cluster = reconciliation.name();
         this.nodes = nodes;
@@ -175,6 +177,7 @@ public class KafkaRoller {
         this.kafkaVersion = kafkaVersion;
         this.reconciliation = reconciliation;
         this.allowReconfiguration = allowReconfiguration;
+        this.offlineLogDirRestartCooldownMs = offlineLogDirRestartCooldownMs;
     }
 
     private final ScheduledExecutorService singleExecutor = Executors.newSingleThreadScheduledExecutor(

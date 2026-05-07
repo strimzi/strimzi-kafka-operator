@@ -35,6 +35,7 @@ import io.strimzi.api.kafka.model.nodepool.ProcessRoles;
 import io.strimzi.api.kafka.model.podset.StrimziPodSetBuilder;
 import io.strimzi.certs.OpenSslCertManager;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
+import io.strimzi.operator.cluster.ClusterOperatorConfigBuilder;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ResourceUtils;
@@ -49,7 +50,6 @@ import io.strimzi.operator.cluster.operator.assembly.KafkaAssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaClusterCreator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaReconciler;
 import io.strimzi.operator.cluster.operator.assembly.StrimziPodSetController;
-import io.strimzi.operator.cluster.operator.resource.KafkaRoller;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.AdminClientProvider;
 import io.strimzi.operator.common.Reconciliation;
@@ -547,40 +547,33 @@ public class KubernetesRestartEventsMockTest {
 
     @Test
     void testEventEmittedWhenBrokerHasOfflineLogDirs(Vertx vertx, VertxTestContext context) {
-        // Disable cooldown so the freshly-created test pod is eligible for the offline-dir restart
-        long originalCooldown = KafkaRoller.offlineLogDirRestartCooldownMs;
-        KafkaRoller.offlineLogDirRestartCooldownMs = 0;
+        Admin adminClient = withOfflineLogDirs(ResourceUtils.adminClientProvider().createAdminClient(null, null, null));
+        ResourceOperatorSupplier supplierWithModifiedAdmin = supplierWithAdmin(vertx, () -> adminClient);
 
-        try {
-            Admin adminClient = withOfflineLogDirs(ResourceUtils.adminClientProvider().createAdminClient(null, null, null));
-            ResourceOperatorSupplier supplierWithModifiedAdmin = supplierWithAdmin(vertx, () -> adminClient);
+        // Use a config with cooldown=0 so the freshly-created test pod is eligible for restart
+        ClusterOperatorConfig zeroCooldownConfig = new ClusterOperatorConfigBuilder(clusterOperatorConfig, KafkaVersionTestUtils.getKafkaVersionLookup())
+                .with(ClusterOperatorConfig.OFFLINE_LOG_DIR_RESTART_COOLDOWN_MINUTES.key(), "0")
+                .build();
 
-            KafkaCluster kafkaCluster = KafkaClusterCreator.createKafkaCluster(reconciliation,
-                    kafka,
-                    List.of(kafkaNodePool),
-                    Map.of(),
-                    KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE,
-                    VERSIONS,
-                    supplier.sharedEnvironmentProvider);
-            KafkaReconciler reconciler = new KafkaReconciler(reconciliation,
-                    kafka,
-                    List.of(kafkaNodePool),
-                    kafkaCluster,
-                    clusterCa,
-                    clientsCa,
-                    clusterOperatorConfig,
-                    supplierWithModifiedAdmin,
-                    PFA,
-                    vertx);
+        KafkaCluster kafkaCluster = KafkaClusterCreator.createKafkaCluster(reconciliation,
+                kafka,
+                List.of(kafkaNodePool),
+                Map.of(),
+                KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE,
+                VERSIONS,
+                supplier.sharedEnvironmentProvider);
+        KafkaReconciler reconciler = new KafkaReconciler(reconciliation,
+                kafka,
+                List.of(kafkaNodePool),
+                kafkaCluster,
+                clusterCa,
+                clientsCa,
+                zeroCooldownConfig,
+                supplierWithModifiedAdmin,
+                PFA,
+                vertx);
 
-            reconciler.reconcile(new KafkaStatus(), Clock.systemUTC()).onComplete(ar -> {
-                KafkaRoller.offlineLogDirRestartCooldownMs = originalCooldown;
-                verifyEventPublished(OFFLINE_LOG_DIRS, context).handle(ar);
-            });
-        } catch (Exception e) {
-            KafkaRoller.offlineLogDirRestartCooldownMs = originalCooldown;
-            context.failNow(e);
-        }
+        reconciler.reconcile(new KafkaStatus(), Clock.systemUTC()).onComplete(verifyEventPublished(OFFLINE_LOG_DIRS, context));
     }
 
     private Admin withOfflineLogDirs(Admin preMockedAdminClient) {
