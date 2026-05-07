@@ -451,10 +451,10 @@ public class KafkaRoller {
                 } else if (!canRoll(nodeRef.nodeId(), isController, isBroker, false, restartContext)) {
                     // Standard availability check failed. If the sole reason is OFFLINE_LOG_DIRS,
                     // try a weaker check that excludes partitions on offline dirs (they're already
-                    // degraded and restarting can only help them). Reuses the same KafkaAvailability
-                    // instance to avoid re-fetching topic metadata.
+                    // degraded and restarting can only help them). Only for broker-only nodes --
+                    // combined controller+broker nodes must respect the quorum check from canRoll().
                     if (restartContext.restartReasons.getReasons().equals(Set.of(RestartReason.OFFLINE_LOG_DIRS))
-                            && isBroker
+                            && isBroker && !isController
                             && canRollExcludingOfflineDirPartitions(nodeRef, availability(brokerAdminClient))) {
                         LOGGER.infoCr(reconciliation, "Rolling Pod {} for offline log dir recovery (URPs on offline dirs excluded from availability check)", nodeRef);
                         restartAndAwaitReadiness(pod, operationTimeoutMs, restartContext);
@@ -1052,7 +1052,7 @@ public class KafkaRoller {
         Set<TopicPartition> healthyPartitions = lastLogDirStatus != null
                 ? lastLogDirStatus.partitionsOnHealthyDirs()
                 : Set.of();
-        LOGGER.infoCr(reconciliation, "Pod {} has {} partitions on healthy log dirs; checking availability excluding offline-dir partitions",
+        LOGGER.debugCr(reconciliation, "Pod {} has {} partitions on healthy log dirs; checking availability excluding offline-dir partitions",
                 nodeRef, healthyPartitions.size());
         long timeoutMs = AVAILABILITY_CHECK_TIMEOUT_MS;
         return await(kafkaAvailability.canRollExcludingOfflineDirPartitions(nodeRef.nodeId(), healthyPartitions),
