@@ -25,6 +25,7 @@ import io.strimzi.api.kafka.model.user.KafkaUserTlsClientAuthentication;
 import io.strimzi.api.kafka.model.user.KafkaUserTlsExternalClientAuthentication;
 import io.strimzi.api.kafka.model.user.acl.AclOperation;
 import io.strimzi.api.kafka.model.user.acl.AclResourcePatternType;
+import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Util;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
@@ -575,8 +576,8 @@ class UserST extends AbstractST {
             @Step(value = "Obtain the `KafkaUser`'s `Secret` and check validity period of the user certificate.", expected = "Validity period should be default - 200 days."),
             @Step(value = "Do message transmission to verify, that we are able to connect to Kafka cluster with the TLS `KafkaUser`.", expected = "Messages are successfully sent and received."),
             @Step(value = "Change the `validityDays` and `renewalDays` in the `KafkaUser` `.spec.authentication` to 60 and 10.", expected = "The `validityDays` and `renewalDays` should be changed in the `KafkaUser`."),
-            @Step(value = "Because the current certificate would exceed the new validity period, `KafkaUser`'s `Secret` and user certificate should be renewed - we are waiting for the certificate change.",
-                expected = "The user certificate was changed."),
+            @Step(value = "Because we changed the `validityDays` and `renewalDays`, we need to force renew the certificate using the `strimzi.io/force-renew=true` annotation",
+                expected = "The user certificate was renewed."),
             @Step(value = "Obtain the `KafkaUser`'s `Secret` again and check the validity period of the user certificate.", expected = "Validity period should be 60 days."),
             @Step(value = "Do message transmission again to verify, that we are able to connect to Kafka cluster with the new user's certificate.", expected = "Messages are successfully sent and received using new certificate."),
         },
@@ -585,7 +586,7 @@ class UserST extends AbstractST {
         }
     )
     @ParallelTest
-    void testTlsValidityDays() {
+    void testTlsValidityDaysWithForceRenewal() {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         final int newValidityDays = 60;
         final int newRenewalDays = 10;
@@ -602,20 +603,20 @@ class UserST extends AbstractST {
         assertThat("validity period of the certificate has incorrect value", KafkaUserUtils.getValidityDaysOfCertificate(userCertificate), is(defaultValidityDays));
 
         LOGGER.info("Produce and consume messages before changing the validity - in order to see that everything works as expected.");
-        final KafkaClients kafkaClients = new KafkaClientsBuilder()
+        final KafkaProducerConsumer kafkaProducerConsumer = new KafkaProducerConsumerBuilder()
             .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(sharedTestStorage.getClusterName()))
             .withProducerName(testStorage.getProducerName())
             .withConsumerName(testStorage.getConsumerName())
-            .withUsername(testStorage.getUsername())
             .withMessageCount(testStorage.getMessageCount())
             .withConsumerGroup(ClientUtils.generateRandomConsumerGroup())
             .withNamespaceName(testStorage.getNamespaceName())
             .withTopicName(testStorage.getTopicName())
+            .withAuthentication(ClientsAuthentication.configureTls(sharedTestStorage.getClusterName(), testStorage.getUsername()))
             .build();
 
         KubeResourceManager.get().createResourceWithWait(
-            kafkaClients.producerTlsStrimzi(sharedTestStorage.getClusterName()),
-            kafkaClients.consumerTlsStrimzi(sharedTestStorage.getClusterName())
+            kafkaProducerConsumer.getProducer().getJob(),
+            kafkaProducerConsumer.getConsumer().getJob()
         );
         ClientUtils.waitForClientsSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getProducerName(), testStorage.getMessageCount());
 
@@ -630,7 +631,8 @@ class UserST extends AbstractST {
             .build()
         );
 
-        LOGGER.info("Because we changed validityDays and current validity period would exceed the new validity policy, the certificate should be renewed.");
+        LOGGER.info("We changed the validity and renewal days, we need to force-renew the Secret in order to get new validity period in the certificate");
+        SecretUtils.annotateSecret(testStorage.getNamespaceName(), testStorage.getUsername(), Annotations.ANNO_STRIMZI_IO_FORCE_RENEW, "true");
         SecretUtils.waitForCertToChange(testStorage.getNamespaceName(), Util.decodeFromBase64(userCertificate), testStorage.getUsername(), "user.crt");
 
         tlsUserSecret = KubeResourceManager.get().kubeClient().getClient().secrets().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getUsername()).get();
@@ -641,8 +643,8 @@ class UserST extends AbstractST {
 
         LOGGER.info("Produce and consume messages with new user's certificate and verify, that we are able to access Kafka cluster.");
         KubeResourceManager.get().createResourceWithWait(
-            kafkaClients.producerTlsStrimzi(sharedTestStorage.getClusterName()),
-            kafkaClients.consumerTlsStrimzi(sharedTestStorage.getClusterName())
+            kafkaProducerConsumer.getProducer().getJob(),
+            kafkaProducerConsumer.getConsumer().getJob()
         );
         ClientUtils.waitForClientsSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getProducerName(), testStorage.getMessageCount());
     }

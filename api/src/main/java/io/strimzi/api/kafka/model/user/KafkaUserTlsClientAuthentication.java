@@ -21,6 +21,16 @@ import lombok.ToString;
 @JsonPropertyOrder({"type", "validityDays", "renewalDays"})
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
+@CelValidation(rules = {
+    @CelValidation.CelValidationRule(
+        rule = "has(self.renewalDays) == has(self.validityDays)",
+        message = "Both 'validityDays' and 'renewalDays' must be set together, or both must be unset."
+        ),
+    @CelValidation.CelValidationRule(
+        rule = "!has(self.renewalDays) || !has(self.validityDays) || self.renewalDays < self.validityDays",
+        message = "'renewalDays' must be less than 'validityDays'."
+        )
+})
 public class KafkaUserTlsClientAuthentication extends KafkaUserAuthentication {
     public static final String TYPE_TLS = "tls";
 
@@ -42,9 +52,7 @@ public class KafkaUserTlsClientAuthentication extends KafkaUserAuthentication {
     })
     @Description(
         "Number of days for which the user certificate should be valid. " +
-        "If not configured, default User Operator value is used. " +
-        "If new validity policy would make the current certificate expired or current certificate's validity period would exceed new policy, " +
-        "the certificate is immediately renewed, without waiting for maintenance window. "
+        "If not configured, Clients CA configuration is used."
     )
     @JsonInclude(value = JsonInclude.Include.NON_NULL)
     public Integer getValidityDays() {
@@ -63,7 +71,7 @@ public class KafkaUserTlsClientAuthentication extends KafkaUserAuthentication {
     })
     @Description(
         "Configures how many days before the certificate expiration should be the user certificate renewed. " +
-        "If not configured, default User Operator value is used."
+        "If not configured, Clients CA configuration is used."
     )
     @JsonInclude(value = JsonInclude.Include.NON_NULL)
     public Integer getRenewalDays() {

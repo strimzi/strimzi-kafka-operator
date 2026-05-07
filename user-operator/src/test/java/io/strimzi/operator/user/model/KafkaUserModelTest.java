@@ -26,10 +26,12 @@ import io.strimzi.operator.user.ResourceUtils;
 import io.strimzi.operator.user.UserOperatorConfig;
 import org.junit.jupiter.api.Test;
 
+import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
 import java.time.Clock;
-import java.time.Instant;
-import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.Base64;
@@ -296,157 +298,31 @@ public class KafkaUserModelTest {
     }
 
     @Test
-    public void testGenerateSecretWithRenewalDaysHigherThanValidityDays() {
-        KafkaUser kafkaUserWithValidity = new KafkaUserBuilder(ResourceUtils.createKafkaUserTls(ResourceUtils.NAMESPACE))
-            .editSpec()
-                .withNewKafkaUserTlsClientAuthentication()
-                    .withValidityDays(10)
-                    .withRenewalDays(11)
-                .endKafkaUserTlsClientAuthentication()
-            .endSpec()
-            .build();
-
-        KafkaUserModel model = KafkaUserModel.fromCrd(kafkaUserWithValidity, UserOperatorConfig.SECRET_PREFIX.defaultValue(), Boolean.parseBoolean(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.defaultValue()));
-        assertThrows(InvalidResourceException.class,
-            () -> model.maybeGenerateCertificates(Reconciliation.DUMMY_RECONCILIATION, mockCertManager, passwordGenerator, clientsCaCert, clientsCaKey, null, 365, 30, null, Clock.systemUTC()));
-    }
-
-    @Test
-    public void testGenerateSecretWithDefaultRenewalDaysHigherThanValidityDays() {
-        KafkaUser kafkaUserWithValidity = new KafkaUserBuilder(ResourceUtils.createKafkaUserTls(ResourceUtils.NAMESPACE))
-            .editSpec()
-                .withNewKafkaUserTlsClientAuthentication()
-                    .withValidityDays(10)
-                .endKafkaUserTlsClientAuthentication()
-            .endSpec()
-            .build();
-
-        KafkaUserModel model = KafkaUserModel.fromCrd(kafkaUserWithValidity, UserOperatorConfig.SECRET_PREFIX.defaultValue(), Boolean.parseBoolean(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.defaultValue()));
-        assertThrows(InvalidResourceException.class,
-            () -> model.maybeGenerateCertificates(Reconciliation.DUMMY_RECONCILIATION, mockCertManager, passwordGenerator, clientsCaCert, clientsCaKey, null, 365, 30, null, Clock.systemUTC()));
-    }
-
-    @Test
-    public void testGenerateSecretWithCurrentValidityExceedingNewValidityPolicy() {
-        int renewalDays = 5;
-        int oldValidityDays = 30;
-        int newValidityDays = 10;
-        Clock currentTime = Clock.systemUTC();
+    public void testGenerateSecretWithUserSpecificValidityPolicy() throws CertificateException {
+        int renewalDays = 10;
+        int validityDays = 60;
 
         KafkaUser kafkaUserWithValidity = new KafkaUserBuilder(ResourceUtils.createKafkaUserTls(ResourceUtils.NAMESPACE))
             .editSpec()
                 .withNewKafkaUserTlsClientAuthentication()
-                    .withValidityDays(oldValidityDays)
+                    .withValidityDays(validityDays)
                     .withRenewalDays(renewalDays)
                 .endKafkaUserTlsClientAuthentication()
             .endSpec()
             .build();
 
         KafkaUserModel model = KafkaUserModel.fromCrd(kafkaUserWithValidity, UserOperatorConfig.SECRET_PREFIX.defaultValue(), Boolean.parseBoolean(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.defaultValue()));
-        model.maybeGenerateCertificates(Reconciliation.DUMMY_RECONCILIATION, new OpenSslCertManager(currentTime), passwordGenerator, clientsCaCert, clientsCaKey, null, 365, 30, null, currentTime);
+        model.maybeGenerateCertificates(Reconciliation.DUMMY_RECONCILIATION, new OpenSslCertManager(Clock.systemUTC()), passwordGenerator, clientsCaCert, clientsCaKey, null, 365, 30, null, Clock.systemUTC());
 
-        Secret oldCertificate = model.generateSecret();
+        Secret userSecret = model.generateSecret();
 
-        // Change validityDays to number that will make the current validity exceeding the new one
-        kafkaUserWithValidity = new KafkaUserBuilder(kafkaUserWithValidity)
-            .editSpec()
-                .withNewKafkaUserTlsClientAuthentication()
-                    .withRenewalDays(renewalDays)
-                    .withValidityDays(newValidityDays)
-                .endKafkaUserTlsClientAuthentication()
-            .endSpec()
-            .build();
+        byte[] certBytes = Util.decodeFromBase64(userSecret.getData().get("user.crt")).getBytes(StandardCharsets.UTF_8);
+        CertificateFactory cf = CertificateFactory.getInstance("X.509");
+        X509Certificate cert = (X509Certificate) cf.generateCertificate(new ByteArrayInputStream(certBytes));
 
-        model = KafkaUserModel.fromCrd(kafkaUserWithValidity, UserOperatorConfig.SECRET_PREFIX.defaultValue(), Boolean.parseBoolean(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.defaultValue()));
-        model.maybeGenerateCertificates(Reconciliation.DUMMY_RECONCILIATION, new OpenSslCertManager(currentTime), passwordGenerator, clientsCaCert, clientsCaKey, oldCertificate, 365, 30, null, currentTime);
+        int certificateValidity = (int) ChronoUnit.DAYS.between(cert.getNotBefore().toInstant(), cert.getNotAfter().toInstant());
 
-        Secret newCertificate = model.generateSecret();
-
-        assertThat(oldCertificate.equals(newCertificate), is(false));
-    }
-
-    @Test
-    public void testGenerateSecretWithCertificateExpiringUnderNewValidityPolicy() {
-        int renewalDays = 5;
-        int oldValidityDays = 30;
-        int newValidityDays = 20;
-
-        Instant now = Instant.now();
-        Clock issuedClock = Clock.fixed(now.minus(25, ChronoUnit.DAYS), ZoneOffset.UTC);
-        Clock currentTime = Clock.fixed(now, ZoneOffset.UTC);
-
-        KafkaUser kafkaUserWithValidity = new KafkaUserBuilder(ResourceUtils.createKafkaUserTls(ResourceUtils.NAMESPACE))
-            .editSpec()
-                .withNewKafkaUserTlsClientAuthentication()
-                    .withValidityDays(oldValidityDays)
-                    .withRenewalDays(renewalDays)
-                .endKafkaUserTlsClientAuthentication()
-            .endSpec()
-            .build();
-
-        KafkaUserModel model = KafkaUserModel.fromCrd(kafkaUserWithValidity, UserOperatorConfig.SECRET_PREFIX.defaultValue(), Boolean.parseBoolean(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.defaultValue()));
-        model.maybeGenerateCertificates(Reconciliation.DUMMY_RECONCILIATION, new OpenSslCertManager(issuedClock), passwordGenerator, clientsCaCert, clientsCaKey, null, 365, 30, null, issuedClock);
-
-        Secret oldCertificate = model.generateSecret();
-
-        // Change validityDays to number that will make the current validity exceeding the new one
-        kafkaUserWithValidity = new KafkaUserBuilder(kafkaUserWithValidity)
-            .editSpec()
-                .withNewKafkaUserTlsClientAuthentication()
-                    .withRenewalDays(renewalDays)
-                    .withValidityDays(newValidityDays)
-                .endKafkaUserTlsClientAuthentication()
-            .endSpec()
-            .build();
-
-        model = KafkaUserModel.fromCrd(kafkaUserWithValidity, UserOperatorConfig.SECRET_PREFIX.defaultValue(), Boolean.parseBoolean(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.defaultValue()));
-        model.maybeGenerateCertificates(Reconciliation.DUMMY_RECONCILIATION, new OpenSslCertManager(currentTime), passwordGenerator, clientsCaCert, clientsCaKey, oldCertificate, 365, 30, null, currentTime);
-
-        Secret newCertificate = model.generateSecret();
-
-        assertThat(oldCertificate.equals(newCertificate), is(false));
-    }
-
-    @Test
-    public void testGenerateSecretWithNewValidityPolicy() {
-        int renewalDays = 5;
-        int oldValidityDays = 60;
-        int newValidityDays = 70;
-
-        Instant now = Instant.now();
-        Clock issuedClock = Clock.fixed(now.minus(25, ChronoUnit.DAYS), ZoneOffset.UTC);
-        Clock currentTime = Clock.fixed(now, ZoneOffset.UTC);
-
-        KafkaUser kafkaUserWithValidity = new KafkaUserBuilder(ResourceUtils.createKafkaUserTls(ResourceUtils.NAMESPACE))
-            .editSpec()
-                .withNewKafkaUserTlsClientAuthentication()
-                    .withValidityDays(oldValidityDays)
-                    .withRenewalDays(renewalDays)
-                .endKafkaUserTlsClientAuthentication()
-            .endSpec()
-            .build();
-
-        KafkaUserModel model = KafkaUserModel.fromCrd(kafkaUserWithValidity, UserOperatorConfig.SECRET_PREFIX.defaultValue(), Boolean.parseBoolean(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.defaultValue()));
-        model.maybeGenerateCertificates(Reconciliation.DUMMY_RECONCILIATION, new OpenSslCertManager(issuedClock), passwordGenerator, clientsCaCert, clientsCaKey, null, 365, 30, null, issuedClock);
-
-        Secret oldCertificate = model.generateSecret();
-
-        // Change validityDays to number that will make the current validity exceeding the new one
-        kafkaUserWithValidity = new KafkaUserBuilder(kafkaUserWithValidity)
-            .editSpec()
-                .withNewKafkaUserTlsClientAuthentication()
-                    .withRenewalDays(renewalDays)
-                    .withValidityDays(newValidityDays)
-                .endKafkaUserTlsClientAuthentication()
-            .endSpec()
-            .build();
-
-        model = KafkaUserModel.fromCrd(kafkaUserWithValidity, UserOperatorConfig.SECRET_PREFIX.defaultValue(), Boolean.parseBoolean(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.defaultValue()));
-        model.maybeGenerateCertificates(Reconciliation.DUMMY_RECONCILIATION, new OpenSslCertManager(currentTime), passwordGenerator, clientsCaCert, clientsCaKey, oldCertificate, 365, 30, null, currentTime);
-
-        Secret newCertificate = model.generateSecret();
-
-        assertThat(oldCertificate.equals(newCertificate), is(true));
+        assertThat(certificateValidity, is(validityDays));
     }
 
     @Test

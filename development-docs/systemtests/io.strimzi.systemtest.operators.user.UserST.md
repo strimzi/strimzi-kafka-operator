@@ -97,7 +97,7 @@
 * [user-operator](labels/user-operator.md)
 
 
-## testTlsValidityDays
+## testTlsValidityDaysWithForceRenewal
 
 **Description:** Verifies functionality of the mTLS `validityDays` and `renewalDays` configured inside each KafkaUser.
 
@@ -110,7 +110,7 @@
 | 3. | Obtain the `KafkaUser`'s `Secret` and check validity period of the user certificate. | Validity period should be default - 200 days. |
 | 4. | Do message transmission to verify, that we are able to connect to Kafka cluster with the TLS `KafkaUser`. | Messages are successfully sent and received. |
 | 5. | Change the `validityDays` and `renewalDays` in the `KafkaUser` `.spec.authentication` to 60 and 10. | The `validityDays` and `renewalDays` should be changed in the `KafkaUser`. |
-| 6. | Because the current certificate would exceed the new validity period, `KafkaUser`'s `Secret` and user certificate should be renewed - we are waiting for the certificate change. | The user certificate was changed. |
+| 6. | Because we changed the `validityDays` and `renewalDays`, we need to force renew the certificate using the `strimzi.io/force-renew=true` annotation | The user certificate was renewed. |
 | 7. | Obtain the `KafkaUser`'s `Secret` again and check the validity period of the user certificate. | Validity period should be 60 days. |
 | 8. | Do message transmission again to verify, that we are able to connect to Kafka cluster with the new user's certificate. | Messages are successfully sent and received using new certificate. |
 

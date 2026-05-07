@@ -86,9 +86,6 @@ public class KafkaUserModel {
     private Map<String, String> templateSecretLabels;
     private Map<String, String> templateSecretAnnotations;
 
-    private int validityDays;
-    private int renewalDays;
-
     private final String secretPrefix;
 
     /**
@@ -218,8 +215,8 @@ public class KafkaUserModel {
      * @param clientsCaCertSecret   The clients CA certificate Secret.
      * @param clientsCaKeySecret    The clients CA key Secret.
      * @param userSecret            Secret with the user certificate
-     * @param defaultValidityDays   The default number of days (configured in User Operator) the certificate should be valid for.
-     * @param defaultRenewalDays    The default renewal days (configured in User Operator).
+     * @param defaultValidityDays   The default number of days (configured in Clients CA) the certificate should be valid for.
+     * @param defaultRenewalDays    The default renewal days (configured in Clients CA).
      * @param maintenanceWindows    List of configured maintenance windows
      * @param clock                 The clock for supplying the reconciler with the time instant of each reconciliation cycle.
      *                              That time is used for checking maintenance windows
@@ -228,8 +225,14 @@ public class KafkaUserModel {
     public void maybeGenerateCertificates(Reconciliation reconciliation, CertManager certManager, PasswordGenerator passwordGenerator,
                                           Secret clientsCaCertSecret, Secret clientsCaKeySecret, Secret userSecret, int defaultValidityDays,
                                           int defaultRenewalDays, List<String> maintenanceWindows, Clock clock) {
+        // in case that validityDays and renewalDays are configured inside the authentication part of KafkaUser,
+        // use those instead of default Clients CA configuration
+        // we are checking it here as we have all needed information about the KafkaUser configuration and also default configuration of Clients CA
+        KafkaUserTlsClientAuthentication kafkaUserTlsClientAuthentication = (KafkaUserTlsClientAuthentication) authentication;
 
-        validateValidityAndRenewalDays(defaultValidityDays, defaultRenewalDays);
+        int validityDays = kafkaUserTlsClientAuthentication.getValidityDays() != null ? kafkaUserTlsClientAuthentication.getValidityDays() : defaultValidityDays;
+        int renewalDays = kafkaUserTlsClientAuthentication.getRenewalDays() != null ? kafkaUserTlsClientAuthentication.getRenewalDays() : defaultRenewalDays;
+
         validateCACertificates(clientsCaCertSecret, clientsCaKeySecret);
 
         ClientsCa clientsCa = new ClientsCa(
@@ -260,10 +263,7 @@ public class KafkaUserModel {
                     && !userCrt.isEmpty()
                     && userKey != null
                     && !userKey.isEmpty()) {
-                if (clientsCa.requiresImmediateRenewalDueToValidityChange(userSecret, "user.crt")) {
-                    LOGGER.infoCr(reconciliation, "Certificate for user {} in namespace {} exceeds new validity configuration, renewing the certificate immediately", name, namespace);
-                    this.userCertAndKey = generateNewCertificate(reconciliation, clientsCa);
-                } else if (clientsCa.isExpiring(userSecret, "user.crt"))   {
+                if (clientsCa.isExpiring(userSecret, "user.crt"))   {
                     // The certificate exists but is expiring
                     if (Util.isMaintenanceTimeWindowsSatisfied(reconciliation, maintenanceWindows, clock.instant()))   {
                         // => if we are in compliance with maintenance window, we renew it
@@ -322,43 +322,6 @@ public class KafkaUserModel {
                 return null;
             }
         }
-    }
-
-    /**
-     * Method that checks the configuration of validityDays - either those configured for the KafkaUser,
-     * combination of defaults and KafkaUser's configuration, or just defaults.
-     * If the `renewalDays` is higher or equal to `validityDays`, it throws {@link InvalidResourceException}.
-     * Otherwise, it configures {@link #validityDays} and {@link #renewalDays}.
-     *
-     * @param defaultValidityDays   Default validity days configured in User Operator.
-     * @param defaultRenewalDays    Default renewal days configured in User Operator.
-     */
-    private void validateValidityAndRenewalDays(
-        int defaultValidityDays,
-        int defaultRenewalDays
-    ) {
-        KafkaUserTlsClientAuthentication tlsAuthentication = (KafkaUserTlsClientAuthentication) authentication;
-
-        int validityDays = defaultValidityDays;
-        int renewalDays = defaultRenewalDays;
-
-        if (tlsAuthentication != null) {
-            // in case that the validityDays and renewalDays are configured in the authentication section, we will use that
-            // otherwise we will keep the defaults from User Operator's configuration
-            if (tlsAuthentication.getValidityDays() != null) {
-                validityDays = tlsAuthentication.getValidityDays();
-            }
-            if (tlsAuthentication.getRenewalDays() != null) {
-                renewalDays = tlsAuthentication.getRenewalDays();
-            }
-        }
-
-        if (renewalDays >= validityDays) {
-            throw new InvalidResourceException("spec.authentication.renewalDays is higher or equal to spec.authentication.validityDays. It should be configured to be lower than spec.authentication.validityDays.");
-        }
-
-        this.validityDays = validityDays;
-        this.renewalDays = renewalDays;
     }
 
     void validateCACertificates(Secret clientsCaCertSecret, Secret clientsCaKeySecret)   {
