@@ -866,11 +866,12 @@ public class KafkaRollerTest {
     public void testOfflineLogDirCooldownPreventsRestart() {
         // Pods with recent creation timestamp should not be restarted for offline log dirs
         PodOperator podOps = mockPodOpsWithTimestamp(podId -> CompletableFuture.completedFuture(null), java.time.Instant.now().toString());
+        // Use a 30-minute cooldown so the freshly-created pod is within the cooldown window
         TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(addPodNames(REPLICAS, 0, 0), podOps,
                 noException(), null, noException(), noException(), noException(),
                 brokerId -> CompletableFuture.completedFuture(true),
                 new DefaultAdminClientProvider(), new DefaultKafkaAgentClientProvider(), false, null, -1,
-                Set.of(2));
+                Set.of(2), 30 * 60_000L);
         // Pod 2 has offline log dirs BUT was created recently (within cooldown) -> should NOT be restarted
         doSuccessfulRollingRestart(kafkaRoller,
                 emptyList(),
@@ -1064,6 +1065,24 @@ public class KafkaRollerTest {
                                    KafkaAgentClientProvider kafkaAgentClientProvider,
                                    boolean delegateAdminClientCall, BrokerState brokerState, int activeController,
                                    Set<Integer> brokersWithOfflineLogDirs) {
+            this(nodes, podOps, acOpenException, acCloseException, controllerException, alterConfigsException,
+                    getConfigsException, canRollFn, adminClientProvider, kafkaAgentClientProvider,
+                    delegateAdminClientCall, brokerState, activeController, brokersWithOfflineLogDirs, 0L);
+        }
+
+        @SuppressWarnings("checkstyle:ParameterNumber")
+        private TestingKafkaRoller(Set<NodeRef> nodes,
+                                   PodOperator podOps,
+                                   Function<Set<NodeRef>, RuntimeException> acOpenException,
+                                   Throwable acCloseException,
+                                   Function<Integer, Throwable> controllerException,
+                                   Function<Integer, ForceableProblem> alterConfigsException,
+                                   Function<Integer, ForceableProblem> getConfigsException,
+                                   Function<Integer, CompletableFuture<Boolean>> canRollFn,
+                                   AdminClientProvider adminClientProvider,
+                                   KafkaAgentClientProvider kafkaAgentClientProvider,
+                                   boolean delegateAdminClientCall, BrokerState brokerState, int activeController,
+                                   Set<Integer> brokersWithOfflineLogDirs, long cooldownMs) {
             super(
                     new Reconciliation("test", "Kafka", stsNamespace(), clusterName()),
                     podOps,
@@ -1077,7 +1096,8 @@ public class KafkaRollerTest {
                     brokerId -> "compression.type=gzip",
                     KafkaVersionTestUtils.getLatestVersion(),
                     true,
-                    mock(KubernetesRestartEventPublisher.class));
+                    mock(KubernetesRestartEventPublisher.class),
+                    cooldownMs);
             this.delegateAdminClientCall = delegateAdminClientCall;
             this.activeController = activeController;
             this.controllerCall = 0;
