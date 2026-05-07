@@ -30,11 +30,15 @@ import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.AlterConfigOp;
 import org.apache.kafka.clients.admin.AlterConfigsResult;
 import org.apache.kafka.clients.admin.Config;
+import org.apache.kafka.clients.admin.DescribeLogDirsResult;
+import org.apache.kafka.clients.admin.LogDirDescription;
 import org.apache.kafka.common.KafkaFuture;
+import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.config.ConfigResource;
 import org.apache.kafka.common.errors.SslAuthenticationException;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -102,6 +106,11 @@ public class KafkaRoller {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(KafkaRoller.class);
     private static final String CONTROLLER_QUORUM_FETCH_TIMEOUT_MS_CONFIG_NAME = "controller.quorum.fetch.timeout.ms";
     private static final String CONTROLLER_QUORUM_FETCH_TIMEOUT_MS_CONFIG_DEFAULT = "2000";
+    private static final long ADMIN_API_TIMEOUT_MS = 30_000;
+    private static final long AVAILABILITY_CHECK_TIMEOUT_MS = 60_000;
+    // Cooldown period after pod creation before triggering another restart for offline log dirs.
+    // Prevents infinite restart loops when offline dirs are caused by permanent hardware failure.
+    private final long offlineLogDirRestartCooldownMs;
 
     private final PodOperator podOperations;
     private final long pollingIntervalMs;
@@ -143,13 +152,15 @@ public class KafkaRoller {
      * @param kafkaAgentClientProvider  Kafka Agent client provider
      * @param kafkaConfigProvider       Kafka configuration provider
      * @param kafkaVersion              Kafka version
-     * @param allowReconfiguration      Flag indicting whether reconfiguration is allowed or not
+     * @param allowReconfiguration      Flag indicating whether reconfiguration is allowed or not
      * @param eventsPublisher           Kubernetes Events publisher for publishing events about pod restarts
+     * @param offlineLogDirRestartCooldownMs  Cooldown in milliseconds before restarting a broker again for offline log dirs
      */
     public KafkaRoller(Reconciliation reconciliation, PodOperator podOperations,
                        long pollingIntervalMs, long operationTimeoutMs, Supplier<BackOff> backOffSupplier, Set<NodeRef> nodes,
                        TlsPemIdentity coTlsPemIdentity, AdminClientProvider adminClientProvider, KafkaAgentClientProvider kafkaAgentClientProvider,
-                       Function<Integer, String> kafkaConfigProvider, KafkaVersion kafkaVersion, boolean allowReconfiguration, KubernetesRestartEventPublisher eventsPublisher) {
+                       Function<Integer, String> kafkaConfigProvider, KafkaVersion kafkaVersion, boolean allowReconfiguration,
+                       KubernetesRestartEventPublisher eventsPublisher, long offlineLogDirRestartCooldownMs) {
         this.namespace = reconciliation.namespace();
         this.cluster = reconciliation.name();
         this.nodes = nodes;
@@ -168,6 +179,7 @@ public class KafkaRoller {
         this.kafkaVersion = kafkaVersion;
         this.reconciliation = reconciliation;
         this.allowReconfiguration = allowReconfiguration;
+        this.offlineLogDirRestartCooldownMs = offlineLogDirRestartCooldownMs;
     }
 
     private final ScheduledExecutorService singleExecutor = Executors.newSingleThreadScheduledExecutor(
@@ -428,6 +440,7 @@ public class KafkaRoller {
 
         try {
             checkIfRestartOrReconfigureRequired(nodeRef, isController, isBroker, restartContext);
+            checkForOfflineLogDirs(nodeRef, isBroker, restartContext, pod);
             if (restartContext.forceRestart) {
                 LOGGER.debugCr(reconciliation, "Pod {} can be rolled now", nodeRef);
                 restartAndAwaitReadiness(pod, operationTimeoutMs, restartContext);
@@ -436,11 +449,23 @@ public class KafkaRoller {
                     LOGGER.debugCr(reconciliation, "Pod {} is the active controller and there are other pods to verify first.", nodeRef);
                     throw new ForceableProblem("Pod " + nodeRef.podName() + " is the active controller and there are other pods to verify first");
                 } else if (!canRoll(nodeRef.nodeId(), isController, isBroker, false, restartContext)) {
-                    LOGGER.debugCr(reconciliation, "Pod {} cannot be updated right now", nodeRef);
-                    throw new UnforceableProblem("Pod " + nodeRef.podName() + " cannot be updated right now.");
+                    // Standard availability check failed. If the sole reason is OFFLINE_LOG_DIRS,
+                    // try a weaker check that excludes partitions on offline dirs (they're already
+                    // degraded and restarting can only help them). Reuses the same KafkaAvailability
+                    // instance to avoid re-fetching topic metadata.
+                    if (restartContext.restartReasons.getReasons().equals(Set.of(RestartReason.OFFLINE_LOG_DIRS))
+                            && isBroker
+                            && canRollExcludingOfflineDirPartitions(nodeRef, availability(brokerAdminClient))) {
+                        LOGGER.infoCr(reconciliation, "Rolling Pod {} for offline log dir recovery (URPs on offline dirs excluded from availability check)", nodeRef);
+                        restartAndAwaitReadiness(pod, operationTimeoutMs, restartContext);
+                    } else {
+                        LOGGER.debugCr(reconciliation, "Pod {} cannot be updated right now", nodeRef);
+                        throw new UnforceableProblem("Pod " + nodeRef.podName() + " cannot be updated right now.");
+                    }
                 } else {
-                    // Check for rollability before trying a dynamic update so that if the dynamic update fails we can go to a full restart
-                    if (!maybeDynamicUpdateBrokerConfig(nodeRef, restartContext, isController && !isBroker)) {
+                    // If a restart is required (not just a reconfig), skip dynamic update and go straight to restart.
+                    // Otherwise, try a dynamic update first so that if it fails we can fall back to a full restart.
+                    if (restartContext.needsRestart || !maybeDynamicUpdateBrokerConfig(nodeRef, restartContext, isController && !isBroker)) {
                         LOGGER.infoCr(reconciliation, "Rolling Pod {} due to {}", nodeRef, restartContext.restartReasons.getAllReasonNotes());
                         restartAndAwaitReadiness(pod, operationTimeoutMs, restartContext);
                     } else {
@@ -649,7 +674,7 @@ public class KafkaRoller {
             KafkaFuture<Config> configFuture = controllerAdminClient.describeConfigs(singletonList(resource)).values().get(resource);
             if (configFuture != null) {
                 return await(configFuture.toCompletionStage().toCompletableFuture(),
-                        30_000,
+                        ADMIN_API_TIMEOUT_MS,
                         error -> new ForceableProblem("Error getting controller config: " + error, error)
                 );
             }
@@ -658,7 +683,7 @@ public class KafkaRoller {
             KafkaFuture<Config> configFuture = brokerAdminClient.describeConfigs(singletonList(resource)).values().get(resource);
             if (configFuture != null) {
                 return await(configFuture.toCompletionStage().toCompletableFuture(),
-                        30_000,
+                        ADMIN_API_TIMEOUT_MS,
                         error -> new ForceableProblem("Error getting broker config: " + error, error)
                 );
             }
@@ -666,6 +691,118 @@ public class KafkaRoller {
 
         LOGGER.traceCr(reconciliation, "KafkaFuture for getting Kafka configuration for pod {} is null", nodeRef);
         return null;
+    }
+
+    /**
+     * Cached log dir status from the most recent checkForOfflineLogDirs call, used by the weaker
+     * availability check to avoid a second describeLogDirs round trip.
+     */
+    private LogDirStatus lastLogDirStatus;
+
+    /**
+     * Checks for offline log directories on a broker node and updates the restart context if any are found.
+     * This is a no-op for controller-only nodes, pods already marked for force-restart, or when the broker
+     * admin client is not available.
+     *
+     * <p>To prevent infinite restart loops when offline dirs are caused by permanent hardware failure,
+     * this method skips the check for pods created within the last {@link #offlineLogDirRestartCooldownMs}
+     * milliseconds.</p>
+     */
+    private void checkForOfflineLogDirs(NodeRef nodeRef, boolean isBroker, RestartContext restartContext, Pod pod)
+            throws InterruptedException {
+        lastLogDirStatus = null;
+
+        if (!isBroker || restartContext.forceRestart || brokerAdminClient == null) {
+            return;
+        }
+
+        if (isPodWithinOfflineLogDirCooldown(pod)) {
+            LOGGER.debugCr(reconciliation, "Skipping offline log directory check for pod {} (created recently, within cooldown period)", nodeRef);
+            return;
+        }
+
+        try {
+            lastLogDirStatus = describeLogDirStatus(nodeRef);
+            if (lastLogDirStatus.hasOfflineDirs()) {
+                restartContext.restartReasons.add(RestartReason.OFFLINE_LOG_DIRS);
+                restartContext.needsRestart = true;
+            }
+        } catch (InterruptedException e) {
+            throw e;
+        } catch (Exception e) {
+            LOGGER.warnCr(reconciliation, "Failed to check offline log directories for pod {}: {}", nodeRef, e.getMessage());
+        }
+    }
+
+    /**
+     * Checks whether the pod was created recently enough that it is still within the offline-log-dir
+     * restart cooldown window. If so, restarting for offline dirs should be skipped to avoid a
+     * tight restart loop when the underlying cause is permanent (e.g., dead disk).
+     */
+    private boolean isPodWithinOfflineLogDirCooldown(Pod pod) {
+        String creationTimestamp = pod.getMetadata().getCreationTimestamp();
+        if (creationTimestamp == null) {
+            return false;
+        }
+        try {
+            Instant createdAt = Instant.parse(creationTimestamp);
+            return Instant.now().toEpochMilli() - createdAt.toEpochMilli() < offlineLogDirRestartCooldownMs;
+        } catch (Exception e) {
+            LOGGER.debugCr(reconciliation, "Could not parse pod creation timestamp '{}', skipping cooldown check", creationTimestamp);
+            return false;
+        }
+    }
+
+    /**
+     * Result of inspecting a broker's log directories via describeLogDirs().
+     *
+     * @param hasOfflineDirs          Whether any log dirs have a non-null error
+     * @param partitionsOnHealthyDirs The set of topic-partitions on healthy (non-offline) log dirs
+     */
+    /* test */ record LogDirStatus(boolean hasOfflineDirs, Set<TopicPartition> partitionsOnHealthyDirs) {
+        static final LogDirStatus EMPTY = new LogDirStatus(false, Set.of());
+    }
+
+    /**
+     * Queries describeLogDirs() for the given broker and returns both offline status and healthy-dir partitions
+     * in a single Admin API call.
+     */
+    /* test */ LogDirStatus describeLogDirStatus(NodeRef nodeRef) throws ForceableProblem, InterruptedException {
+        DescribeLogDirsResult result = brokerAdminClient.describeLogDirs(singletonList(nodeRef.nodeId()));
+        Map<Integer, KafkaFuture<Map<String, LogDirDescription>>> descriptions = result.descriptions();
+        KafkaFuture<Map<String, LogDirDescription>> future = descriptions.get(nodeRef.nodeId());
+
+        if (future == null) {
+            LOGGER.traceCr(reconciliation, "KafkaFuture for describing log dirs for pod {} is null", nodeRef);
+            return LogDirStatus.EMPTY;
+        }
+
+        Map<String, LogDirDescription> logDirs = await(future.toCompletionStage().toCompletableFuture(),
+                ADMIN_API_TIMEOUT_MS,
+                error -> new ForceableProblem("Error describing log dirs for pod " + nodeRef + ": " + error, error)
+        );
+
+        if (logDirs == null) {
+            return LogDirStatus.EMPTY;
+        }
+
+        List<String> offlineDirs = new ArrayList<>();
+        Set<TopicPartition> healthyPartitions = new HashSet<>();
+
+        for (Map.Entry<String, LogDirDescription> entry : logDirs.entrySet()) {
+            if (entry.getValue().error() != null) {
+                offlineDirs.add(entry.getKey());
+            } else {
+                healthyPartitions.addAll(entry.getValue().replicaInfos().keySet());
+            }
+        }
+
+        if (!offlineDirs.isEmpty()) {
+            LOGGER.warnCr(reconciliation, "Pod {} has {} offline log director{}: {}",
+                    nodeRef, offlineDirs.size(), offlineDirs.size() == 1 ? "y" : "ies", offlineDirs);
+        }
+
+        return new LogDirStatus(!offlineDirs.isEmpty(), healthyPartitions);
     }
 
     /* test */ void dynamicUpdateKafkaConfig(NodeRef nodeRef, Admin ac, KafkaConfigurationDiff configurationDiff)
@@ -683,7 +820,7 @@ public class KafkaRoller {
             KafkaFuture<Void> brokerConfigFuture = alterBrokerConfigResult.values().get(getBrokersConfig(nodeRef.nodeId()));
 
             if (brokerConfigFuture != null) {
-                await(brokerConfigFuture.toCompletionStage().toCompletableFuture(), 30_000, error -> {
+                await(brokerConfigFuture.toCompletionStage().toCompletableFuture(), ADMIN_API_TIMEOUT_MS, error -> {
                     LOGGER.errorCr(reconciliation, "Error updating Kafka configuration for pod {}", nodeRef, error);
                     return new ForceableProblem("Error updating Kafka configuration for pod " + nodeRef, error);
                 });
@@ -705,7 +842,7 @@ public class KafkaRoller {
             KafkaFuture<Void> clusterConfigFuture = alterClusterConfigResult.values().get(getClusterWideConfig());
 
             if (clusterConfigFuture != null) {
-                await(clusterConfigFuture.toCompletionStage().toCompletableFuture(), 30_000, error -> {
+                await(clusterConfigFuture.toCompletionStage().toCompletableFuture(), ADMIN_API_TIMEOUT_MS, error -> {
                     LOGGER.errorCr(reconciliation, "Error updating cluster-wide configuration", error);
                     return new ForceableProblem("Error updating cluster-wide configuration", error);
                 });
@@ -762,7 +899,7 @@ public class KafkaRoller {
 
     private boolean canRoll(int nodeId, boolean isController, boolean isBroker, boolean ignoreSslError, RestartContext restartContext)
             throws ForceableProblem, InterruptedException, UnforceableProblem {
-        long timeoutMs = 60_000;
+        long timeoutMs = AVAILABILITY_CHECK_TIMEOUT_MS;
         try {
             if (isBroker && isController) {
                 boolean canRollController = await(restartContext.quorumCheck.canRollController(nodeId), timeoutMs,
@@ -901,6 +1038,26 @@ public class KafkaRoller {
 
     /* test */ KafkaAvailability availability(Admin ac) {
         return new KafkaAvailability(reconciliation, ac);
+    }
+
+    /**
+     * Checks if the broker can be rolled when considering only partitions on healthy log directories.
+     * Partitions on offline directories are excluded from the ISR availability check because they are
+     * already degraded and the restart is intended to recover them.
+     * Uses the cached LogDirStatus from the most recent checkForOfflineLogDirs call and the
+     * provided KafkaAvailability instance to avoid redundant Admin API calls.
+     */
+    private boolean canRollExcludingOfflineDirPartitions(NodeRef nodeRef, KafkaAvailability kafkaAvailability)
+            throws ForceableProblem, InterruptedException {
+        Set<TopicPartition> healthyPartitions = lastLogDirStatus != null
+                ? lastLogDirStatus.partitionsOnHealthyDirs()
+                : Set.of();
+        LOGGER.infoCr(reconciliation, "Pod {} has {} partitions on healthy log dirs; checking availability excluding offline-dir partitions",
+                nodeRef, healthyPartitions.size());
+        long timeoutMs = AVAILABILITY_CHECK_TIMEOUT_MS;
+        return await(kafkaAvailability.canRollExcludingOfflineDirPartitions(nodeRef.nodeId(), healthyPartitions),
+                timeoutMs,
+                t -> new ForceableProblem("Error checking availability excluding offline dir partitions for pod " + nodeRef, t));
     }
 
     /**

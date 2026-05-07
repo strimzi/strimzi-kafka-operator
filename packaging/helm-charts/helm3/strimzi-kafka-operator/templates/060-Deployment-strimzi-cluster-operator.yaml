@@ -160,6 +160,10 @@ spec:
             - name: STRIMZI_POD_DISRUPTION_BUDGET_GENERATION
               value: {{ .Values.generatePodDisruptionBudget | quote }}
             {{- end }}
+            {{- if ne (int .Values.offlineLogDirRestartCooldownMs) 1800000 }}
+            - name: STRIMZI_OFFLINE_LOG_DIR_RESTART_COOLDOWN_MS
+              value: {{ .Values.offlineLogDirRestartCooldownMs | int64 | quote }}
+            {{- end }}
             {{- if .Values.extraEnvs }}
 {{ toYaml .Values.extraEnvs | indent 12 }}
             {{- end }}

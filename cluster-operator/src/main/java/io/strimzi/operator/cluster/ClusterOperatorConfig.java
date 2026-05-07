@@ -250,6 +250,12 @@ public class ClusterOperatorConfig {
     public static final ConfigParameter<Boolean> POD_DISRUPTION_BUDGET_GENERATION = new ConfigParameter<>("STRIMZI_POD_DISRUPTION_BUDGET_GENERATION", BOOLEAN, "true", CONFIG_VALUES);
 
     /**
+     * Cooldown period in milliseconds before restarting a broker again for offline log directories.
+     * Prevents infinite restart loops when offline dirs are caused by permanent hardware failure.
+     */
+    public static final ConfigParameter<Long> OFFLINE_LOG_DIR_RESTART_COOLDOWN_MS = new ConfigParameter<>("STRIMZI_OFFLINE_LOG_DIR_RESTART_COOLDOWN_MS", LONG, "1800000", CONFIG_VALUES);
+
+    /**
      * The configured Kafka versions
      */
     private final KafkaVersion.Lookup versions;
@@ -628,6 +634,15 @@ public class ClusterOperatorConfig {
         return get(POD_DISRUPTION_BUDGET_GENERATION);
     }
 
+    /**
+     * Gets the cooldown period in milliseconds before restarting a broker again for offline log directories.
+     *
+     * @return  cooldown in milliseconds
+     */
+    public long getOfflineLogDirRestartCooldownMs() {
+        return get(OFFLINE_LOG_DIR_RESTART_COOLDOWN_MS);
+    }
+
     @Override
     public String toString() {
         return "ClusterOperatorConfig{" +
@@ -650,6 +665,7 @@ public class ClusterOperatorConfig {
                 "\n\tpodSecurityProviderClass='" + getPodSecurityProviderClass() + '\'' +
                 "\n\tleaderElectionConfig='" + getLeaderElectionConfig() + '\'' +
                 "\n\tpodDisruptionBudgetGeneration=" + isPodDisruptionBudgetGeneration() +
+                "\n\tofflineLogDirRestartCooldownMs=" + getOfflineLogDirRestartCooldownMs() +
                 "}";
     }
 }
