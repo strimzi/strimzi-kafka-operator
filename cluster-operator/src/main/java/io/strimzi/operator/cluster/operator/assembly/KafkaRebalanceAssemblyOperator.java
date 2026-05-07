@@ -291,6 +291,9 @@ public class KafkaRebalanceAssemblyOperator
             default:
                 rebalanceOptionsBuilder = new RebalanceOptions.RebalanceOptionsBuilder();
                 if (kafkaRebalanceSpec.isRebalanceDisk()) {
+                    if (!kafkaRebalanceSpec.getGoals().isEmpty()) {
+                        throw new IllegalArgumentException("The goals list should be empty when using the `rebalanceDisk: true` configuration for intra-broker disk balancing");
+                    }
                     ((RebalanceOptions.RebalanceOptionsBuilder) rebalanceOptionsBuilder).withRebalanceDisk();
                 }
                 if (kafkaRebalanceSpec.getConcurrentIntraBrokerPartitionMovements() > 0) {
