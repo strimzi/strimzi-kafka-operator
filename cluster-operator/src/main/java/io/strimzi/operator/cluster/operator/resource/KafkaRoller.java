@@ -33,6 +33,7 @@ import org.apache.kafka.clients.admin.Config;
 import org.apache.kafka.clients.admin.DescribeLogDirsResult;
 import org.apache.kafka.clients.admin.LogDirDescription;
 import org.apache.kafka.common.KafkaFuture;
+import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.config.ConfigResource;
 import org.apache.kafka.common.errors.SslAuthenticationException;
 
@@ -443,8 +444,18 @@ public class KafkaRoller {
                     LOGGER.debugCr(reconciliation, "Pod {} is the active controller and there are other pods to verify first.", nodeRef);
                     throw new ForceableProblem("Pod " + nodeRef.podName() + " is the active controller and there are other pods to verify first");
                 } else if (!canRoll(nodeRef.nodeId(), isController, isBroker, false, restartContext)) {
-                    LOGGER.debugCr(reconciliation, "Pod {} cannot be updated right now", nodeRef);
-                    throw new UnforceableProblem("Pod " + nodeRef.podName() + " cannot be updated right now.");
+                    // Standard availability check failed. If the sole reason is OFFLINE_LOG_DIRS,
+                    // try a weaker check that excludes partitions on offline dirs (they're already
+                    // degraded and restarting can only help them).
+                    if (restartContext.restartReasons.getReasons().equals(Set.of(RestartReason.OFFLINE_LOG_DIRS))
+                            && isBroker
+                            && canRollExcludingOfflineDirPartitions(nodeRef, restartContext)) {
+                        LOGGER.infoCr(reconciliation, "Rolling Pod {} for offline log dir recovery (URPs on offline dirs excluded from availability check)", nodeRef);
+                        restartAndAwaitReadiness(pod, operationTimeoutMs, restartContext);
+                    } else {
+                        LOGGER.debugCr(reconciliation, "Pod {} cannot be updated right now", nodeRef);
+                        throw new UnforceableProblem("Pod " + nodeRef.podName() + " cannot be updated right now.");
+                    }
                 } else {
                     // Check for rollability before trying a dynamic update so that if the dynamic update fails we can go to a full restart
                     if (!maybeDynamicUpdateBrokerConfig(nodeRef, restartContext, isController && !isBroker)) {
@@ -1002,6 +1013,53 @@ public class KafkaRoller {
 
     /* test */ KafkaAvailability availability(Admin ac) {
         return new KafkaAvailability(reconciliation, ac);
+    }
+
+    /**
+     * Collects the set of topic-partitions on healthy (non-offline) log directories for the given broker.
+     * This is used to determine which partitions can be excluded from the availability check when
+     * restarting for offline log dir recovery.
+     */
+    /* test */ Set<TopicPartition> getPartitionsOnHealthyDirs(NodeRef nodeRef) throws ForceableProblem, InterruptedException {
+        DescribeLogDirsResult result = brokerAdminClient.describeLogDirs(singletonList(nodeRef.nodeId()));
+        KafkaFuture<Map<String, LogDirDescription>> future = result.descriptions().get(nodeRef.nodeId());
+
+        if (future == null) {
+            return Set.of();
+        }
+
+        Map<String, LogDirDescription> logDirs = await(future.toCompletionStage().toCompletableFuture(),
+                30_000,
+                error -> new ForceableProblem("Error describing log dirs for pod " + nodeRef + ": " + error, error)
+        );
+
+        if (logDirs == null) {
+            return Set.of();
+        }
+
+        Set<TopicPartition> healthyPartitions = new HashSet<>();
+        for (LogDirDescription dir : logDirs.values()) {
+            if (dir.error() == null) {
+                healthyPartitions.addAll(dir.replicaInfos().keySet());
+            }
+        }
+        return healthyPartitions;
+    }
+
+    /**
+     * Checks if the broker can be rolled when considering only partitions on healthy log directories.
+     * Partitions on offline directories are excluded from the ISR availability check because they are
+     * already degraded and the restart is intended to recover them.
+     */
+    private boolean canRollExcludingOfflineDirPartitions(NodeRef nodeRef, RestartContext restartContext)
+            throws ForceableProblem, InterruptedException, UnforceableProblem {
+        Set<TopicPartition> healthyPartitions = getPartitionsOnHealthyDirs(nodeRef);
+        LOGGER.infoCr(reconciliation, "Pod {} has {} partitions on healthy log dirs; checking availability excluding offline-dir partitions",
+                nodeRef, healthyPartitions.size());
+        long timeoutMs = 60_000;
+        return await(availability(brokerAdminClient).canRollExcludingOfflineDirPartitions(nodeRef.nodeId(), healthyPartitions),
+                timeoutMs,
+                t -> new ForceableProblem("Error checking availability excluding offline dir partitions for pod " + nodeRef, t));
     }
 
     /**
