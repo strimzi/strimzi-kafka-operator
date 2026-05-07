@@ -855,11 +855,12 @@ public class KafkaRollerTest {
                 brokerId -> brokerId == 2 ? CompletableFuture.completedFuture(false) : CompletableFuture.completedFuture(true),
                 new DefaultAdminClientProvider(), new DefaultKafkaAgentClientProvider(), false, null, -1,
                 Set.of(2));
-        // Both MANUAL_ROLLING_UPDATE and OFFLINE_LOG_DIRS reasons → weaker check not used → blocked
+        // Both MANUAL_ROLLING_UPDATE and OFFLINE_LOG_DIRS reasons → weaker check not used → broker 2 blocked.
+        // Other brokers have no restart reasons and are dynamically reconfigured (not restarted).
         doFailingRollingRestart(kafkaRoller,
                 singletonList(2),  // manual rolling update for broker 2
                 KafkaRoller.UnforceableProblem.class, "Pod c-kafka-2 cannot be updated right now.",
-                asList(0, 1, 3, 4));
+                emptyList());
     }
 
     @Test
@@ -873,11 +874,12 @@ public class KafkaRollerTest {
                 new DefaultAdminClientProvider(), new DefaultKafkaAgentClientProvider(), false, null, -1,
                 Set.of(2), 0L,
                 brokerId -> CompletableFuture.completedFuture(false));
-        // Both checks fail -> broker 2 should NOT be restarted
+        // Both checks fail -> broker 2 should NOT be restarted.
+        // Other brokers have no restart reasons and are dynamically reconfigured (not restarted).
         doFailingRollingRestart(kafkaRoller,
                 emptyList(),
                 KafkaRoller.UnforceableProblem.class, "Pod c-kafka-2 cannot be updated right now.",
-                asList(0, 1, 3, 4));
+                emptyList());
     }
 
     @Test
