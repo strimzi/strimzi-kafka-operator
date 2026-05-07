@@ -552,7 +552,7 @@ public class KubernetesRestartEventsMockTest {
 
         // Use a config with cooldown=0 so the freshly-created test pod is eligible for restart
         ClusterOperatorConfig zeroCooldownConfig = new ClusterOperatorConfigBuilder(clusterOperatorConfig, KafkaVersionTestUtils.getKafkaVersionLookup())
-                .with(ClusterOperatorConfig.OFFLINE_LOG_DIR_RESTART_COOLDOWN_MINUTES.key(), "0")
+                .with(ClusterOperatorConfig.OFFLINE_LOG_DIR_RESTART_COOLDOWN_MS.key(), "0")
                 .build();
 
         KafkaCluster kafkaCluster = KafkaClusterCreator.createKafkaCluster(reconciliation,
