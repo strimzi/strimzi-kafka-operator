@@ -44,7 +44,7 @@ public class DisablingPkcs12StoresST extends AbstractST {
         description = @Desc("This test verifies that PKCS12 stores are not generated in CA and User secrets when it is disabled in the Cluster Operator configuration."),
         steps = {
             @Step(value = "Create a Kafka cluster.", expected = "Kafka cluster is deployed."),
-            @Step(value = "Create a Kafka User with tls authentication.", expected = "New KAfka User is created."),
+            @Step(value = "Create a KafkaUser with TLS authentication.", expected = "New KafkaUser is created."),
             @Step(value = "Verify that Clients and Cluster CA secrets have no PKCS12 store and no password for it.", expected = "PKCS12 store and password are not present."),
             @Step(value = "Verify that Kafka User secret has no PKCS12 store and no password for it.", expected = "PKCS12 store and password are not present.")
         },
@@ -78,7 +78,7 @@ public class DisablingPkcs12StoresST extends AbstractST {
         checkSecretForPkcs12Files(userSecret);
     }
 
-    private void checkSecretForPkcs12Files(Secret secret)   {
+    private void checkSecretForPkcs12Files(Secret secret) {
         secret.getData().keySet()
                 .stream()
                 .filter(key -> key.endsWith(".p12"))

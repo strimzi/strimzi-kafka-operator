@@ -44,7 +44,7 @@ public class UserOperatorConfigTest {
     }
 
     @Test
-    public void testDefaults()    {
+    public void testDefaults() {
         Map<String, String> envVars = new HashMap<>(ENV_VARS);
         envVars.remove(UserOperatorConfig.RECONCILIATION_INTERVAL_MS.key());
         envVars.remove(UserOperatorConfig.LABELS.key());

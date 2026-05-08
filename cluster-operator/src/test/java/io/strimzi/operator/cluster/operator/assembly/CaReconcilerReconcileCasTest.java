@@ -382,7 +382,7 @@ public class CaReconcilerReconcileCasTest {
     }
 
     @Test
-    public void testGenerateNewCasWithoutPkcs12(VertxTestContext context)   {
+    public void testGenerateNewCasWithoutPkcs12(VertxTestContext context) {
         Checkpoint async = context.checkpoint();
         reconcileCas(KAFKA, Clock.systemUTC(), false)
             .onComplete(context.succeeding(v -> context.verify(() -> {

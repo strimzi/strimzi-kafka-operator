@@ -427,7 +427,7 @@ public abstract class Ca {
                 Files.write(keyFile.toPath(), key);
                 Files.write(certFile.toPath(), cert);
 
-                if (caConfig.isGeneratePkcs12Stores())   {
+                if (caConfig.isGeneratePkcs12Stores()) {
                     keyStoreFile = Files.createTempFile("tls", "p12").toFile();
 
                     String keyStorePassword = passwordGenerator.generate();
@@ -477,7 +477,7 @@ public abstract class Ca {
                 certChain = Files.readAllBytes(certFile.toPath());
             }
 
-            if (caConfig.isGeneratePkcs12Stores())   {
+            if (caConfig.isGeneratePkcs12Stores()) {
                 String keyStorePassword = passwordGenerator.generate();
                 certManager.addKeyAndCertToKeyStore(keyFile, certFile, subject.commonName(), keyStoreFile, keyStorePassword);
 
@@ -603,7 +603,7 @@ public abstract class Ca {
                     if (certData.containsKey(CA_CRT)) {
                         String notAfterDate = DATE_TIME_FORMATTER.format(currentCert.getNotAfter().toInstant().atZone(ZoneId.of("Z")));
 
-                        if (caConfig.isGeneratePkcs12Stores())   {
+                        if (caConfig.isGeneratePkcs12Stores()) {
                             addCertCaToTrustStore("ca-" + notAfterDate + SecretEntry.CRT.suffix, certData);
                         }
 
@@ -625,7 +625,7 @@ public abstract class Ca {
                     if (caConfig.isGeneratePkcs12Stores() && !certData.containsKey(CA_STORE)) {
                         // If we are generating PKCS12 stores, and it is missing in the Secret, we add it
                         addCertCaToTrustStore(CA_CRT, certData);
-                    } else if (!caConfig.isGeneratePkcs12Stores() && certData.containsKey(CA_STORE))  {
+                    } else if (!caConfig.isGeneratePkcs12Stores() && certData.containsKey(CA_STORE)) {
                         // If we are not generating PKCS12 stores, and it is already present in the Secret, we will remove it
                         certData.remove(CA_STORE);
                         certData.remove(CA_STORE_PASSWORD);
@@ -967,7 +967,7 @@ public abstract class Ca {
         if (removed.isEmpty()) {
             return false;
         } else {
-            if (caConfig.isGeneratePkcs12Stores())   {
+            if (caConfig.isGeneratePkcs12Stores()) {
                 // the certificates removed from the Secret data have to be removed from the store as well
                 try {
                     File trustStoreFile = Files.createTempFile("tls", "-truststore").toFile();
@@ -1090,7 +1090,7 @@ public abstract class Ca {
                 certManager.generateSelfSignedCert(keyFile, certFile, subject, caConfig.getValidityDays());
                 CertAndKey ca;
 
-                if (caConfig.isGeneratePkcs12Stores())   {
+                if (caConfig.isGeneratePkcs12Stores()) {
                     File trustStoreFile = Files.createTempFile("tls", subject.commonName() + "-truststore").toFile();
                     String trustStorePassword;
                     // if secret already contains the truststore, we have to reuse it without changing password
@@ -1147,7 +1147,7 @@ public abstract class Ca {
                 certManager.renewSelfSignedCert(keyFile, certFile, subject, caConfig.getValidityDays());
                 CertAndKey ca;
 
-                if (caConfig.isGeneratePkcs12Stores())    {
+                if (caConfig.isGeneratePkcs12Stores()) {
                     File trustStoreFile = Files.createTempFile("tls", subject.commonName() + "-truststore").toFile();
                     try {
                         String trustStorePassword = passwordGenerator.generate();

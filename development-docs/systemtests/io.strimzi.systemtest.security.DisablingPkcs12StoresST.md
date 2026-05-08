@@ -17,7 +17,7 @@
 | Step | Action | Result |
 | - | - | - |
 | 1. | Create a Kafka cluster. | Kafka cluster is deployed. |
-| 2. | Create a Kafka User with tls authentication. | New KAfka User is created. |
+| 2. | Create a KafkaUser with TLS authentication. | New KafkaUser is created. |
 | 3. | Verify that Clients and Cluster CA secrets have no PKCS12 store and no password for it. | PKCS12 store and password are not present. |
 | 4. | Verify that Kafka User secret has no PKCS12 store and no password for it. | PKCS12 store and password are not present. |
 
