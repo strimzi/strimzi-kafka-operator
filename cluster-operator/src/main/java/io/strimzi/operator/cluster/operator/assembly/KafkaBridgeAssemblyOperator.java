@@ -23,6 +23,8 @@ import io.strimzi.operator.cluster.model.KafkaBridgeCluster;
 import io.strimzi.operator.cluster.model.SharedEnvironmentProvider;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.DeploymentOperator;
+import io.strimzi.operator.cluster.operator.resource.kubernetes.RoleBindingOperator;
+import io.strimzi.operator.cluster.operator.resource.kubernetes.RoleOperator;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationException;
@@ -52,6 +54,8 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
     private final DeploymentOperator deploymentOperations;
     private final SharedEnvironmentProvider sharedEnvironmentProvider;
     private final boolean isPodDisruptionBudgetGeneration;
+    private final RoleOperator roleOperations;
+    private final RoleBindingOperator roleBindingOperations;
 
     /**
      * Constructs a new KafkaBridgeAssemblyOperator.
@@ -71,6 +75,8 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
         this.deploymentOperations = supplier.deploymentOperations;
         this.sharedEnvironmentProvider = supplier.sharedEnvironmentProvider;
         this.isPodDisruptionBudgetGeneration = config.isPodDisruptionBudgetGeneration();
+        this.roleOperations = supplier.roleOperations;
+        this.roleBindingOperations = supplier.roleBindingOperations;
     }
 
     @Override
@@ -102,8 +108,11 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
         LOGGER.debugCr(reconciliation, "Updating Kafka Bridge cluster");
         kafkaBridgeServiceAccount(reconciliation, namespace, bridge)
             .compose(i -> bridgeInitClusterRoleBinding(reconciliation, initCrbName, initCrb))
+            .compose(i -> bridgeRole(reconciliation, namespace, bridge))
+            .compose(i -> bridgeRoleBinding(reconciliation, namespace, bridge))
             .compose(i -> deploymentOperations.scaleDown(reconciliation, namespace, bridge.getComponentName(), bridge.getReplicas(), operationTimeoutMs))
             .compose(scale -> serviceOperations.reconcile(reconciliation, namespace, KafkaBridgeResources.serviceName(bridge.getCluster()), bridge.generateService()))
+            .compose(i -> tlsTrustedCertsSecret(reconciliation, namespace, bridge))
             .compose(i -> MetricsAndLoggingUtils.metricsAndLogging(reconciliation, configMapOperations, bridge.logging(), bridge.metrics()))
             .compose(metricsAndLogging -> {
                 ConfigMap configMap = bridge.generateBridgeConfigMap(metricsAndLogging);
@@ -142,6 +151,32 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
         return createOrUpdatePromise.future();
     }
 
+    /**
+     * Generates or reconciles the secret that combines secrets and certificates
+     * provided for Kafka Bridge truststore if TLS is enabled.
+     *
+     * @return  Future which completes when the reconciliation is done
+     */
+    private Future<Void> tlsTrustedCertsSecret(Reconciliation reconciliation, String namespace, KafkaBridgeCluster bridge) {
+        if (bridge.getTls() != null) {
+            return ReconcilerUtils.trustedCertificates(reconciliation, secretOperations, bridge.getTls().getTrustedCertificates())
+                    .compose(certificates -> {
+                        if (certificates != null) {
+                            return secretOperations.reconcile(
+                                            reconciliation,
+                                            namespace,
+                                            KafkaBridgeResources.internalTlsTrustedCertsSecretName(bridge.getCluster()),
+                                            bridge.generateTlsTrustedCertsSecret(Map.of("ca.crt", Util.encodeToBase64(certificates)), KafkaBridgeResources.internalTlsTrustedCertsSecretName(bridge.getCluster())))
+                                    .mapEmpty();
+                        } else {
+                            return Future.succeededFuture();
+                        }
+                    });
+        } else {
+            return Future.succeededFuture();
+        }
+    }
+
 
     /**
      * Deletes the ClusterRoleBinding which as a cluster-scoped resource cannot be deleted by the ownerReference
@@ -170,5 +205,25 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
 
     protected Future<ReconcileResult<ClusterRoleBinding>> bridgeInitClusterRoleBinding(Reconciliation reconciliation, String crbName, ClusterRoleBinding crb) {
         return ReconcilerUtils.withIgnoreRbacError(reconciliation, clusterRoleBindingOperations.reconcile(reconciliation, crbName, crb), crb);
+    }
+
+    private Future<Void> bridgeRole(Reconciliation reconciliation, String namespace, KafkaBridgeCluster bridge) {
+        return roleOperations.
+                reconcile(
+                        reconciliation,
+                        namespace,
+                        bridge.getComponentName(),
+                        bridge.generateRole()
+                ).mapEmpty();
+    }
+
+    private Future<Void> bridgeRoleBinding(Reconciliation reconciliation, String namespace, KafkaBridgeCluster bridge) {
+        return roleBindingOperations
+                .reconcile(
+                        reconciliation,
+                        namespace,
+                        bridge.getRoleBindingName(),
+                        bridge.generateRoleBindingForRole()
+                ).mapEmpty();
     }
 }

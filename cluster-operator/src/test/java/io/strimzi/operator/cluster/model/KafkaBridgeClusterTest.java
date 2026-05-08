@@ -70,6 +70,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import static io.strimzi.operator.cluster.model.KafkaBridgeCluster.BRIDGE_CONFIGURATION_FILENAME;
 import static io.strimzi.operator.cluster.model.KafkaBridgeCluster.ENV_VAR_KAFKA_INIT_INIT_FOLDER_KEY;
@@ -78,6 +79,7 @@ import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -222,6 +224,9 @@ public class KafkaBridgeClusterTest {
     public void testGenerateDeployment()   {
         Deployment dep = KBC.generateDeployment(new HashMap<>(), true, null, null);
 
+        Set<String> secretsToAccess = KBC.secretsToAllowAccessTo();
+        assertThat(secretsToAccess.size(), is(0));
+
         assertThat(dep.getMetadata().getName(), is(KafkaBridgeResources.componentName(CLUSTER)));
         assertThat(dep.getMetadata().getNamespace(), is(NAMESPACE));
         Map<String, String> expectedDeploymentLabels = expectedLabels(KafkaBridgeResources.componentName(CLUSTER));
@@ -266,17 +271,15 @@ public class KafkaBridgeClusterTest {
                 .endSpec()
                 .build();
         KafkaBridgeCluster kbc = KafkaBridgeCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, SHARED_ENV_PROVIDER);
-        Deployment dep = kbc.generateDeployment(emptyMap(), true, null, null);
 
-        assertThat(dep.getSpec().getTemplate().getSpec().getVolumes().get(2).getName(), is("my-secret"));
-        assertThat(dep.getSpec().getTemplate().getSpec().getVolumes().get(3).getName(), is("my-another-secret"));
+        Set<String> secretsToAccess = kbc.secretsToAllowAccessTo();
+        assertThat(secretsToAccess.size(), is(1));
+        assertThat(secretsToAccess, hasItems("foo-bridge-tls-trusted-certs"));
 
-        List<Container> containers = dep.getSpec().getTemplate().getSpec().getContainers();
-
-        assertThat(containers.get(0).getVolumeMounts().get(2).getMountPath(), is(KafkaBridgeCluster.TLS_CERTS_BASE_VOLUME_MOUNT + "my-secret"));
-        assertThat(containers.get(0).getVolumeMounts().get(3).getMountPath(), is(KafkaBridgeCluster.TLS_CERTS_BASE_VOLUME_MOUNT + "my-another-secret"));
-
-        assertThat(io.strimzi.operator.cluster.TestUtils.containerEnvVars(containers.get(0)).get(KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_TRUSTED_CERTS), is("my-secret/cert.crt;my-secret/new-cert.crt;my-another-secret/another-cert.crt"));
+        ConfigMap configMap = kbc.generateBridgeConfigMap(METRICS_AND_LOGGING);
+        String bridgeConfigurations = configMap.getData().get(BRIDGE_CONFIGURATION_FILENAME);
+        assertThat(bridgeConfigurations, containsString("kafka.ssl.truststore.certificates=${strimzisecrets:namespace/foo-bridge-tls-trusted-certs:ca.crt}"));
+        assertThat(bridgeConfigurations, containsString("kafka.ssl.truststore.type=PEM"));
     }
 
     @Test
@@ -297,19 +300,18 @@ public class KafkaBridgeClusterTest {
                 .endSpec()
                 .build();
         KafkaBridgeCluster kbc = KafkaBridgeCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, SHARED_ENV_PROVIDER);
-        Deployment dep = kbc.generateDeployment(emptyMap(), true, null, null);
 
-        assertThat(dep.getSpec().getTemplate().getSpec().getVolumes().get(3).getName(), is("user-secret"));
-
-        List<Container> containers = dep.getSpec().getTemplate().getSpec().getContainers();
-
-        assertThat(containers.get(0).getVolumeMounts().get(3).getMountPath(), is(KafkaBridgeCluster.TLS_CERTS_BASE_VOLUME_MOUNT + "user-secret"));
+        Set<String> secretsToAccess = kbc.secretsToAllowAccessTo();
+        assertThat(secretsToAccess.size(), is(2));
+        assertThat(secretsToAccess, hasItems("user-secret", "foo-bridge-tls-trusted-certs"));
 
         ConfigMap configMap = kbc.generateBridgeConfigMap(METRICS_AND_LOGGING);
         String bridgeConfigurations = configMap.getData().get(BRIDGE_CONFIGURATION_FILENAME);
-        assertThat(bridgeConfigurations, containsString("kafka.ssl.keystore.location=/tmp/strimzi/bridge.keystore.p12"));
-        assertThat(bridgeConfigurations, containsString("kafka.ssl.keystore.password=${strimzienv:CERTS_STORE_PASSWORD}"));
-        assertThat(bridgeConfigurations, containsString("kafka.ssl.keystore.type=PKCS12"));
+        assertThat(bridgeConfigurations, containsString("kafka.ssl.truststore.certificates=${strimzisecrets:namespace/foo-bridge-tls-trusted-certs:ca.crt}"));
+        assertThat(bridgeConfigurations, containsString("kafka.ssl.truststore.type=PEM"));
+        assertThat(bridgeConfigurations, containsString("kafka.ssl.keystore.certificate.chain=${strimzisecrets:namespace/user-secret:user.crt}"));
+        assertThat(bridgeConfigurations, containsString("kafka.ssl.keystore.key=${strimzisecrets:namespace/user-secret:user.key}"));
+        assertThat(bridgeConfigurations, containsString("kafka.ssl.keystore.type=PEM"));
     }
 
     @Test
@@ -330,11 +332,18 @@ public class KafkaBridgeClusterTest {
                 .endSpec()
                 .build();
         KafkaBridgeCluster kbc = KafkaBridgeCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, SHARED_ENV_PROVIDER);
-        Deployment dep = kbc.generateDeployment(emptyMap(), true, null, null);
 
-        // 2 = 1 volume from logging/metrics + just 1 from above certs Secret
-        assertThat(dep.getSpec().getTemplate().getSpec().getVolumes().size(), is(3));
-        assertThat(dep.getSpec().getTemplate().getSpec().getVolumes().get(2).getName(), is("my-secret"));
+        Set<String> secretsToAccess = kbc.secretsToAllowAccessTo();
+        assertThat(secretsToAccess.size(), is(2));
+        assertThat(secretsToAccess, hasItems("my-secret", "foo-bridge-tls-trusted-certs"));
+
+        ConfigMap configMap = kbc.generateBridgeConfigMap(METRICS_AND_LOGGING);
+        String bridgeConfigurations = configMap.getData().get(BRIDGE_CONFIGURATION_FILENAME);
+        assertThat(bridgeConfigurations, containsString("kafka.ssl.truststore.certificates=${strimzisecrets:namespace/foo-bridge-tls-trusted-certs:ca.crt}"));
+        assertThat(bridgeConfigurations, containsString("kafka.ssl.truststore.type=PEM"));
+        assertThat(bridgeConfigurations, containsString("kafka.ssl.keystore.certificate.chain=${strimzisecrets:namespace/my-secret:user.crt}"));
+        assertThat(bridgeConfigurations, containsString("kafka.ssl.keystore.key=${strimzisecrets:namespace/my-secret:user.key}"));
+        assertThat(bridgeConfigurations, containsString("kafka.ssl.keystore.type=PEM"));
     }
 
     @Test
@@ -351,18 +360,14 @@ public class KafkaBridgeClusterTest {
                 .endSpec()
                 .build();
         KafkaBridgeCluster kbc = KafkaBridgeCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, SHARED_ENV_PROVIDER);
-        Deployment dep = kbc.generateDeployment(emptyMap(), true, null, null);
-
-        assertThat(dep.getSpec().getTemplate().getSpec().getVolumes().get(2).getName(), is("user1-secret"));
-
-        List<Container> containers = dep.getSpec().getTemplate().getSpec().getContainers();
-
-        assertThat(containers.get(0).getVolumeMounts().get(2).getMountPath(), is(KafkaBridgeCluster.PASSWORD_VOLUME_MOUNT + "user1-secret"));
+        Set<String> secretsToAccess = kbc.secretsToAllowAccessTo();
+        assertThat(secretsToAccess.size(), is(1));
+        assertThat(secretsToAccess, hasItems("user1-secret"));
 
         ConfigMap configMap = kbc.generateBridgeConfigMap(METRICS_AND_LOGGING);
         String bridgeConfigurations = configMap.getData().get(BRIDGE_CONFIGURATION_FILENAME);
         assertThat(bridgeConfigurations, containsString("kafka.sasl.mechanism=SCRAM-SHA-512"));
-        assertThat(bridgeConfigurations, containsString("kafka.sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required username=\"user1\" password=\"${strimzidir:/opt/strimzi/bridge-password/user1-secret:password}\";"));
+        assertThat(bridgeConfigurations, containsString("kafka.sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required username=\"user1\" password=\"${strimzisecrets:namespace/user1-secret:password}\";"));
     }
 
     @Test
@@ -379,18 +384,15 @@ public class KafkaBridgeClusterTest {
                 .endSpec()
                 .build();
         KafkaBridgeCluster kbc = KafkaBridgeCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, SHARED_ENV_PROVIDER);
-        Deployment dep = kbc.generateDeployment(emptyMap(), true, null, null);
 
-        assertThat(dep.getSpec().getTemplate().getSpec().getVolumes().get(2).getName(), is("user1-secret"));
-
-        List<Container> containers = dep.getSpec().getTemplate().getSpec().getContainers();
-
-        assertThat(containers.get(0).getVolumeMounts().get(2).getMountPath(), is(KafkaBridgeCluster.PASSWORD_VOLUME_MOUNT + "user1-secret"));
+        Set<String> secretsToAccess = kbc.secretsToAllowAccessTo();
+        assertThat(secretsToAccess.size(), is(1));
+        assertThat(secretsToAccess, hasItems("user1-secret"));
 
         ConfigMap configMap = kbc.generateBridgeConfigMap(METRICS_AND_LOGGING);
         String bridgeConfigurations = configMap.getData().get(BRIDGE_CONFIGURATION_FILENAME);
         assertThat(bridgeConfigurations, containsString("kafka.sasl.mechanism=SCRAM-SHA-256"));
-        assertThat(bridgeConfigurations, containsString("kafka.sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required username=\"user1\" password=\"${strimzidir:/opt/strimzi/bridge-password/user1-secret:password}\";"));
+        assertThat(bridgeConfigurations, containsString("kafka.sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required username=\"user1\" password=\"${strimzisecrets:namespace/user1-secret:password}\";"));
     }
 
     @Test
@@ -407,18 +409,15 @@ public class KafkaBridgeClusterTest {
             .endSpec()
             .build();
         KafkaBridgeCluster kbc = KafkaBridgeCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, SHARED_ENV_PROVIDER);
-        Deployment dep = kbc.generateDeployment(emptyMap(), true, null, null);
 
-        assertThat(dep.getSpec().getTemplate().getSpec().getVolumes().get(2).getName(), is("user1-secret"));
-
-        List<Container> containers = dep.getSpec().getTemplate().getSpec().getContainers();
-
-        assertThat(containers.get(0).getVolumeMounts().get(2).getMountPath(), is(KafkaBridgeCluster.PASSWORD_VOLUME_MOUNT + "user1-secret"));
+        Set<String> secretsToAccess = kbc.secretsToAllowAccessTo();
+        assertThat(secretsToAccess.size(), is(1));
+        assertThat(secretsToAccess, hasItems("user1-secret"));
 
         ConfigMap configMap = kbc.generateBridgeConfigMap(METRICS_AND_LOGGING);
         String bridgeConfigurations = configMap.getData().get(BRIDGE_CONFIGURATION_FILENAME);
         assertThat(bridgeConfigurations, containsString("kafka.sasl.mechanism=PLAIN"));
-        assertThat(bridgeConfigurations, containsString("kafka.sasl.jaas.config=org.apache.kafka.common.security.plain.PlainLoginModule required username=\"user1\" password=\"${strimzidir:/opt/strimzi/bridge-password/user1-secret:password}\";"));
+        assertThat(bridgeConfigurations, containsString("kafka.sasl.jaas.config=org.apache.kafka.common.security.plain.PlainLoginModule required username=\"user1\" password=\"${strimzisecrets:namespace/user1-secret:password}\";"));
     }
 
     @Test
@@ -1035,40 +1034,6 @@ public class KafkaBridgeClusterTest {
         ClusterRoleBinding crb = cluster.generateClusterRoleBinding();
 
         assertThat(crb, is(nullValue()));
-    }
-
-    @Test
-    public void testKafkaBridgeContainerEnvVarsConflict() {
-        ContainerEnvVar envVar1 = new ContainerEnvVar();
-        String testEnvKey = KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_TRUSTED_CERTS;
-        String testEnvValue = "PEM certs";
-        envVar1.setName(testEnvKey);
-        envVar1.setValue(testEnvValue);
-
-        List<ContainerEnvVar> testEnvs = new ArrayList<>();
-        testEnvs.add(envVar1);
-        ContainerTemplate kafkaBridgeContainer = new ContainerTemplate();
-        kafkaBridgeContainer.setEnv(testEnvs);
-
-        KafkaBridge resource = new KafkaBridgeBuilder(RESOURCE)
-                .editSpec()
-                .withNewTls()
-                    .addNewTrustedCertificate()
-                        .withSecretName("tls-trusted-certificate")
-                        .withCertificate("pem-content")
-                    .endTrustedCertificate()
-                .endTls()
-                .withNewTemplate()
-                    .withBridgeContainer(kafkaBridgeContainer)
-                .endTemplate()
-                .endSpec()
-                .build();
-
-        List<EnvVar> kafkaEnvVars = KafkaBridgeCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, SHARED_ENV_PROVIDER).getEnvVars();
-
-        assertThat("Failed to prevent over writing existing container environment variable: " + testEnvKey,
-                kafkaEnvVars.stream().filter(env -> testEnvKey.equals(env.getName()))
-                        .map(EnvVar::getValue).findFirst().orElse("").equals(testEnvValue), is(false));
     }
 
     @Test

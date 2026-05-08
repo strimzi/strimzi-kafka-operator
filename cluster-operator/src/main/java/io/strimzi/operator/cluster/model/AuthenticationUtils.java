@@ -5,19 +5,32 @@
 package io.strimzi.operator.cluster.model;
 
 import io.fabric8.kubernetes.api.model.EnvVar;
+import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
+import io.fabric8.kubernetes.api.model.rbac.PolicyRule;
+import io.fabric8.kubernetes.api.model.rbac.PolicyRuleBuilder;
+import io.fabric8.kubernetes.api.model.rbac.Role;
+import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
+import io.fabric8.kubernetes.api.model.rbac.RoleRef;
+import io.fabric8.kubernetes.api.model.rbac.RoleRefBuilder;
+import io.fabric8.kubernetes.api.model.rbac.Subject;
+import io.fabric8.kubernetes.api.model.rbac.SubjectBuilder;
+import io.strimzi.api.kafka.model.common.ClientTls;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthentication;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationPlain;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationScram;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationTls;
 import io.strimzi.operator.common.model.InvalidResourceException;
+import io.strimzi.operator.common.model.Labels;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
+import java.util.Set;
 import java.util.StringJoiner;
 import java.util.function.Function;
 
@@ -182,5 +195,107 @@ public class AuthenticationUtils {
             }
         }
         return moduleName + " required " + joiner + ";";
+    }
+
+    /**
+     * Collects the names of Secrets that need to be accessible for authentication and TLS configuration.
+     * This includes trusted certificates for TLS connections and authentication credentials.
+     *
+     * @param tls                           The TLS configuration containing trusted certificates
+     * @param authentication                The authentication configuration (TLS, PLAIN, or SCRAM)
+     * @param tlsTrustedCertsSecretName     The name of the secret containing TLS trusted certificates (component-specific)
+     * @return List of secret names that need to be accessible
+     */
+    public static Set<String> getAuthenticationSecretsToAccess(ClientTls tls, KafkaClientAuthentication authentication, String tlsTrustedCertsSecretName) {
+        Set<String> secretNames = new HashSet<>();
+
+        // Add TLS trusted certificates secret if configured
+        if (tls != null && tls.getTrustedCertificates() != null && !tls.getTrustedCertificates().isEmpty()) {
+            secretNames.add(tlsTrustedCertsSecretName);
+        }
+
+        // Add authentication secrets based on authentication type
+        if (authentication != null) {
+            if (authentication instanceof KafkaClientAuthenticationTls tlsAuth && tlsAuth.getCertificateAndKey() != null) {
+                secretNames.add(tlsAuth.getCertificateAndKey().getSecretName());
+            } else if (authentication instanceof KafkaClientAuthenticationPlain plainAuth) {
+                secretNames.add(plainAuth.getPasswordSecret().getSecretName());
+            } else if (authentication instanceof KafkaClientAuthenticationScram scramAuth) {
+                secretNames.add(scramAuth.getPasswordSecret().getSecretName());
+            }
+        }
+
+        return secretNames;
+    }
+
+    /**
+     * Generates a Kubernetes Role for accessing authentication secrets.
+     * The Role grants "get" permission on specific secrets needed for authentication and TLS.
+     * Returns null if no secrets need to be accessed.
+     *
+     * @param componentName     The name of the component (used as role name)
+     * @param namespace         The namespace where the role will be created
+     * @param secretNames       List of secret names that need to be accessible
+     * @param labels            Labels to apply to the role
+     * @param ownerReference    Owner reference for the role
+     * @return Role resource or null if no secrets need to be accessed
+     */
+    public static Role generateAuthenticationSecretsRole(
+            String componentName,
+            String namespace,
+            Set<String> secretNames,
+            Labels labels,
+            OwnerReference ownerReference) {
+        if (secretNames.isEmpty()) {
+            return null;
+        }
+
+        List<PolicyRule> rules = List.of(new PolicyRuleBuilder()
+                .withApiGroups("")
+                .withResources("secrets")
+                .withVerbs("get")
+                .withResourceNames(secretNames.stream().toList())
+                .build());
+
+        return RbacUtils.createRole(componentName, namespace, rules, labels, ownerReference, null);
+    }
+
+    /**
+     * Generates a Kubernetes RoleBinding for the authentication secrets Role.
+     * Binds the ServiceAccount to the Role created for the component.
+     * Returns null if no secrets need to be accessed.
+     *
+     * @param roleBindingName   The name of the role binding
+     * @param componentName     The name of the component (used as service account name)
+     * @param namespace         The namespace where the role binding will be created
+     * @param secretNames       List of secret names that need to be accessible
+     * @param labels            Labels to apply to the role binding
+     * @param ownerReference    Owner reference for the role binding
+     * @return RoleBinding resource or null if no secrets need to be accessed
+     */
+    public static RoleBinding generateAuthenticationSecretsRoleBinding(
+            String roleBindingName,
+            String componentName,
+            String namespace,
+            Set<String> secretNames,
+            Labels labels,
+            OwnerReference ownerReference) {
+        if (secretNames.isEmpty()) {
+            return null;
+        }
+
+        Subject subject = new SubjectBuilder()
+                .withKind("ServiceAccount")
+                .withName(componentName)
+                .withNamespace(namespace)
+                .build();
+
+        RoleRef roleRef = new RoleRefBuilder()
+                .withName(componentName)
+                .withApiGroup("rbac.authorization.k8s.io")
+                .withKind("Role")
+                .build();
+
+        return RbacUtils.createRoleBinding(roleBindingName, namespace, roleRef, List.of(subject), labels, ownerReference, null);
     }
 }

@@ -72,27 +72,30 @@ public class KafkaBridgeConfigurationBuilderTest {
                 "bridge.id=my-bridge",
                 "kafka.bootstrap.servers=my-cluster-kafka-bootstrap:9092",
                 "kafka.security.protocol=PLAINTEXT",
-                "kafka.admin.config.providers=strimzienv,strimzifile,strimzidir",
+                "kafka.admin.config.providers=strimzienv,strimzifile,strimzidir,strimzisecrets",
                 "kafka.admin.config.providers.strimzienv.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider",
                 "kafka.admin.config.providers.strimzienv.param.allowlist.pattern=.*",
                 "kafka.admin.config.providers.strimzifile.class=org.apache.kafka.common.config.provider.FileConfigProvider",
                 "kafka.admin.config.providers.strimzifile.param.allowed.paths=/opt/strimzi",
                 "kafka.admin.config.providers.strimzidir.class=org.apache.kafka.common.config.provider.DirectoryConfigProvider",
                 "kafka.admin.config.providers.strimzidir.param.allowed.paths=/opt/strimzi",
-                "kafka.producer.config.providers=strimzienv,strimzifile,strimzidir",
+                "kafka.admin.config.providers.strimzisecrets.class=io.strimzi.kafka.KubernetesSecretConfigProvider",
+                "kafka.producer.config.providers=strimzienv,strimzifile,strimzidir,strimzisecrets",
                 "kafka.producer.config.providers.strimzienv.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider",
                 "kafka.producer.config.providers.strimzienv.param.allowlist.pattern=.*",
                 "kafka.producer.config.providers.strimzifile.class=org.apache.kafka.common.config.provider.FileConfigProvider",
                 "kafka.producer.config.providers.strimzifile.param.allowed.paths=/opt/strimzi",
                 "kafka.producer.config.providers.strimzidir.class=org.apache.kafka.common.config.provider.DirectoryConfigProvider",
                 "kafka.producer.config.providers.strimzidir.param.allowed.paths=/opt/strimzi",
-                "kafka.consumer.config.providers=strimzienv,strimzifile,strimzidir",
+                "kafka.producer.config.providers.strimzisecrets.class=io.strimzi.kafka.KubernetesSecretConfigProvider",
+                "kafka.consumer.config.providers=strimzienv,strimzifile,strimzidir,strimzisecrets",
                 "kafka.consumer.config.providers.strimzienv.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider",
                 "kafka.consumer.config.providers.strimzienv.param.allowlist.pattern=.*",
                 "kafka.consumer.config.providers.strimzifile.class=org.apache.kafka.common.config.provider.FileConfigProvider",
                 "kafka.consumer.config.providers.strimzifile.param.allowed.paths=/opt/strimzi",
                 "kafka.consumer.config.providers.strimzidir.class=org.apache.kafka.common.config.provider.DirectoryConfigProvider",
-                "kafka.consumer.config.providers.strimzidir.param.allowed.paths=/opt/strimzi"
+                "kafka.consumer.config.providers.strimzidir.param.allowed.paths=/opt/strimzi",
+                "kafka.consumer.config.providers.strimzisecrets.class=io.strimzi.kafka.KubernetesSecretConfigProvider"
         ));
     }
 
@@ -125,39 +128,38 @@ public class KafkaBridgeConfigurationBuilderTest {
                 .build();
 
         String configuration = new KafkaBridgeConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, BRIDGE_CLUSTER, BRIDGE_BOOTSTRAP_SERVERS)
-                .withTls(clientTls)
+                .withTls(clientTls, BRIDGE_CLUSTER)
                 .build();
         assertThat(configuration, isEquivalent(
                 "bridge.id=my-bridge",
                 "kafka.bootstrap.servers=my-cluster-kafka-bootstrap:9092",
                 "kafka.security.protocol=SSL",
-                "kafka.ssl.truststore.location=/tmp/strimzi/bridge.truststore.p12",
-                "kafka.ssl.truststore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "kafka.ssl.truststore.type=PKCS12"
+                "kafka.ssl.truststore.certificates=${strimzisecrets:namespace/my-bridge-bridge-tls-trusted-certs:ca.crt}",
+                "kafka.ssl.truststore.type=PEM"
         ));
 
         // test TLS with mutual authentication (mTLS, server and client authentication)
         KafkaClientAuthenticationTls tlsAuth = new KafkaClientAuthenticationTlsBuilder()
                 .withNewCertificateAndKey()
                     .withSecretName("tls-keystore")
+                    .withKey("pem-key")
                     .withCertificate("pem-content")
                 .endCertificateAndKey()
                 .build();
 
         configuration = new KafkaBridgeConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, BRIDGE_CLUSTER, BRIDGE_BOOTSTRAP_SERVERS)
-                .withTls(clientTls)
+                .withTls(clientTls, BRIDGE_CLUSTER)
                 .withAuthentication(tlsAuth)
                 .build();
         assertThat(configuration, isEquivalent(
                 "bridge.id=my-bridge",
                 "kafka.bootstrap.servers=my-cluster-kafka-bootstrap:9092",
                 "kafka.security.protocol=SSL",
-                "kafka.ssl.truststore.location=/tmp/strimzi/bridge.truststore.p12",
-                "kafka.ssl.truststore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "kafka.ssl.truststore.type=PKCS12",
-                "kafka.ssl.keystore.location=/tmp/strimzi/bridge.keystore.p12",
-                "kafka.ssl.keystore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "kafka.ssl.keystore.type=PKCS12"
+                "kafka.ssl.truststore.certificates=${strimzisecrets:namespace/my-bridge-bridge-tls-trusted-certs:ca.crt}",
+                "kafka.ssl.truststore.type=PEM",
+                "kafka.ssl.keystore.certificate.chain=${strimzisecrets:namespace/tls-keystore:pem-content}",
+                "kafka.ssl.keystore.key=${strimzisecrets:namespace/tls-keystore:pem-key}",
+                "kafka.ssl.keystore.type=PEM"
         ));
 
         // test custom authentication without SASL
@@ -167,16 +169,15 @@ public class KafkaBridgeConfigurationBuilderTest {
                 .build();
 
         configuration = new KafkaBridgeConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, BRIDGE_CLUSTER, BRIDGE_BOOTSTRAP_SERVERS)
-                .withTls(clientTls)
+                .withTls(clientTls, BRIDGE_CLUSTER)
                 .withAuthentication(customAuth)
                 .build();
         assertThat(configuration, isEquivalent(
                 "bridge.id=my-bridge",
                 "kafka.bootstrap.servers=my-cluster-kafka-bootstrap:9092",
                 "kafka.security.protocol=SSL",
-                "kafka.ssl.truststore.location=/tmp/strimzi/bridge.truststore.p12",
-                "kafka.ssl.truststore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "kafka.ssl.truststore.type=PKCS12",
+                "kafka.ssl.truststore.certificates=${strimzisecrets:namespace/my-bridge-bridge-tls-trusted-certs:ca.crt}",
+                "kafka.ssl.truststore.type=PEM",
                 "kafka.ssl.keystore.location=/mnt/certs/keystore",
                 "kafka.ssl.keystore.password=changeme"
         ));
@@ -200,7 +201,7 @@ public class KafkaBridgeConfigurationBuilderTest {
                 "kafka.bootstrap.servers=my-cluster-kafka-bootstrap:9092",
                 "kafka.security.protocol=SASL_PLAINTEXT",
                 "kafka.sasl.mechanism=PLAIN",
-                "kafka.sasl.jaas.config=org.apache.kafka.common.security.plain.PlainLoginModule required username=\"user1\" password=\"${strimzidir:/opt/strimzi/bridge-password/my-auth-secret:my-password-key}\";"
+                "kafka.sasl.jaas.config=org.apache.kafka.common.security.plain.PlainLoginModule required username=\"user1\" password=\"${strimzisecrets:namespace/my-auth-secret:my-password-key}\";"
         ));
 
         // test plain authentication but with TLS as well (server authentication only, encryption)
@@ -211,7 +212,7 @@ public class KafkaBridgeConfigurationBuilderTest {
                 .endTrustedCertificate()
                 .build();
         configuration = new KafkaBridgeConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, BRIDGE_CLUSTER, BRIDGE_BOOTSTRAP_SERVERS)
-                .withTls(clientTls)
+                .withTls(clientTls, BRIDGE_CLUSTER)
                 .withAuthentication(authPlain)
                 .build();
         assertThat(configuration, isEquivalent(
@@ -219,10 +220,9 @@ public class KafkaBridgeConfigurationBuilderTest {
                 "kafka.bootstrap.servers=my-cluster-kafka-bootstrap:9092",
                 "kafka.security.protocol=SASL_SSL",
                 "kafka.sasl.mechanism=PLAIN",
-                "kafka.sasl.jaas.config=org.apache.kafka.common.security.plain.PlainLoginModule required username=\"user1\" password=\"${strimzidir:/opt/strimzi/bridge-password/my-auth-secret:my-password-key}\";",
-                "kafka.ssl.truststore.location=/tmp/strimzi/bridge.truststore.p12",
-                "kafka.ssl.truststore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "kafka.ssl.truststore.type=PKCS12"
+                "kafka.sasl.jaas.config=org.apache.kafka.common.security.plain.PlainLoginModule required username=\"user1\" password=\"${strimzisecrets:namespace/my-auth-secret:my-password-key}\";",
+                "kafka.ssl.truststore.certificates=${strimzisecrets:namespace/my-bridge-bridge-tls-trusted-certs:ca.crt}",
+                "kafka.ssl.truststore.type=PEM"
                 ));
 
         // test scram-sha-256 authentication
@@ -241,7 +241,7 @@ public class KafkaBridgeConfigurationBuilderTest {
                 "kafka.bootstrap.servers=my-cluster-kafka-bootstrap:9092",
                 "kafka.security.protocol=SASL_PLAINTEXT",
                 "kafka.sasl.mechanism=SCRAM-SHA-256",
-                "kafka.sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required username=\"user1\" password=\"${strimzidir:/opt/strimzi/bridge-password/my-auth-secret:my-password-key}\";"
+                "kafka.sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required username=\"user1\" password=\"${strimzisecrets:namespace/my-auth-secret:my-password-key}\";"
         ));
 
         // test scram-sha-512 authentication
@@ -260,7 +260,7 @@ public class KafkaBridgeConfigurationBuilderTest {
                 "kafka.bootstrap.servers=my-cluster-kafka-bootstrap:9092",
                 "kafka.security.protocol=SASL_PLAINTEXT",
                 "kafka.sasl.mechanism=SCRAM-SHA-512",
-                "kafka.sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required username=\"user1\" password=\"${strimzidir:/opt/strimzi/bridge-password/my-auth-secret:my-password-key}\";"
+                "kafka.sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required username=\"user1\" password=\"${strimzisecrets:namespace/my-auth-secret:my-password-key}\";"
         ));
 
         // test custom authentication
@@ -309,13 +309,14 @@ public class KafkaBridgeConfigurationBuilderTest {
                 "kafka.producer.linger.ms=100",
                 "kafka.producer.key.serializer=my-producer-key-serializer",
                 "kafka.producer.value.serializer=my-producer-value-serializer",
-                "kafka.producer.config.providers=strimzienv,strimzifile,strimzidir",
+                "kafka.producer.config.providers=strimzienv,strimzifile,strimzidir,strimzisecrets",
                 "kafka.producer.config.providers.strimzienv.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider",
                 "kafka.producer.config.providers.strimzienv.param.allowlist.pattern=.*",
                 "kafka.producer.config.providers.strimzifile.class=org.apache.kafka.common.config.provider.FileConfigProvider",
                 "kafka.producer.config.providers.strimzifile.param.allowed.paths=/opt/strimzi",
                 "kafka.producer.config.providers.strimzidir.class=org.apache.kafka.common.config.provider.DirectoryConfigProvider",
-                "kafka.producer.config.providers.strimzidir.param.allowed.paths=/opt/strimzi"
+                "kafka.producer.config.providers.strimzidir.param.allowed.paths=/opt/strimzi",
+                "kafka.producer.config.providers.strimzisecrets.class=io.strimzi.kafka.KubernetesSecretConfigProvider"
         ));
 
         // Kafka Producer with config providers
@@ -341,14 +342,15 @@ public class KafkaBridgeConfigurationBuilderTest {
                 "kafka.producer.linger.ms=100",
                 "kafka.producer.key.serializer=my-producer-key-serializer",
                 "kafka.producer.value.serializer=my-producer-value-serializer",
-                "kafka.producer.config.providers=env,strimzienv,strimzifile,strimzidir",
+                "kafka.producer.config.providers=env,strimzienv,strimzifile,strimzidir,strimzisecrets",
                 "kafka.producer.config.providers.strimzienv.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider",
                 "kafka.producer.config.providers.strimzienv.param.allowlist.pattern=.*",
                 "kafka.producer.config.providers.strimzifile.class=org.apache.kafka.common.config.provider.FileConfigProvider",
                 "kafka.producer.config.providers.strimzifile.param.allowed.paths=/opt/strimzi",
                 "kafka.producer.config.providers.strimzidir.class=org.apache.kafka.common.config.provider.DirectoryConfigProvider",
                 "kafka.producer.config.providers.strimzidir.param.allowed.paths=/opt/strimzi",
-                "kafka.producer.config.providers.env.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider"
+                "kafka.producer.config.providers.env.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider",
+                "kafka.producer.config.providers.strimzisecrets.class=io.strimzi.kafka.KubernetesSecretConfigProvider"
         ));
     }
 
@@ -378,13 +380,14 @@ public class KafkaBridgeConfigurationBuilderTest {
                 "kafka.consumer.auto.offset.reset=earliest",
                 "kafka.consumer.key.deserializer=my-consumer-key-deserializer",
                 "kafka.consumer.value.deserializer=my-consumer-value-deserializer",
-                "kafka.consumer.config.providers=strimzienv,strimzifile,strimzidir",
+                "kafka.consumer.config.providers=strimzienv,strimzifile,strimzidir,strimzisecrets",
                 "kafka.consumer.config.providers.strimzienv.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider",
                 "kafka.consumer.config.providers.strimzienv.param.allowlist.pattern=.*",
                 "kafka.consumer.config.providers.strimzifile.class=org.apache.kafka.common.config.provider.FileConfigProvider",
                 "kafka.consumer.config.providers.strimzifile.param.allowed.paths=/opt/strimzi",
                 "kafka.consumer.config.providers.strimzidir.class=org.apache.kafka.common.config.provider.DirectoryConfigProvider",
-                "kafka.consumer.config.providers.strimzidir.param.allowed.paths=/opt/strimzi"
+                "kafka.consumer.config.providers.strimzidir.param.allowed.paths=/opt/strimzi",
+                "kafka.consumer.config.providers.strimzisecrets.class=io.strimzi.kafka.KubernetesSecretConfigProvider"
         ));
 
         // Kafka Consumer with config providers
@@ -408,14 +411,15 @@ public class KafkaBridgeConfigurationBuilderTest {
                 "kafka.consumer.auto.offset.reset=earliest",
                 "kafka.consumer.key.deserializer=my-consumer-key-deserializer",
                 "kafka.consumer.value.deserializer=my-consumer-value-deserializer",
-                "kafka.consumer.config.providers=env,strimzienv,strimzifile,strimzidir",
+                "kafka.consumer.config.providers=env,strimzienv,strimzifile,strimzidir,strimzisecrets",
                 "kafka.consumer.config.providers.strimzienv.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider",
                 "kafka.consumer.config.providers.strimzienv.param.allowlist.pattern=.*",
                 "kafka.consumer.config.providers.strimzifile.class=org.apache.kafka.common.config.provider.FileConfigProvider",
                 "kafka.consumer.config.providers.strimzifile.param.allowed.paths=/opt/strimzi",
                 "kafka.consumer.config.providers.strimzidir.class=org.apache.kafka.common.config.provider.DirectoryConfigProvider",
                 "kafka.consumer.config.providers.strimzidir.param.allowed.paths=/opt/strimzi",
-                "kafka.consumer.config.providers.env.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider"
+                "kafka.consumer.config.providers.env.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider",
+                "kafka.consumer.config.providers.strimzisecrets.class=io.strimzi.kafka.KubernetesSecretConfigProvider"
         ));
 
         // Kafka Consumer with topology-label-based rack
@@ -430,13 +434,14 @@ public class KafkaBridgeConfigurationBuilderTest {
                 "kafka.bootstrap.servers=my-cluster-kafka-bootstrap:9092",
                 "kafka.security.protocol=PLAINTEXT",
                 "kafka.consumer.client.rack=${strimzidir:/opt/strimzi/init:rack.id}",
-                "kafka.consumer.config.providers=strimzienv,strimzifile,strimzidir",
+                "kafka.consumer.config.providers=strimzienv,strimzifile,strimzidir,strimzisecrets",
                 "kafka.consumer.config.providers.strimzienv.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider",
                 "kafka.consumer.config.providers.strimzienv.param.allowlist.pattern=.*",
                 "kafka.consumer.config.providers.strimzifile.class=org.apache.kafka.common.config.provider.FileConfigProvider",
                 "kafka.consumer.config.providers.strimzifile.param.allowed.paths=/opt/strimzi",
                 "kafka.consumer.config.providers.strimzidir.class=org.apache.kafka.common.config.provider.DirectoryConfigProvider",
-                "kafka.consumer.config.providers.strimzidir.param.allowed.paths=/opt/strimzi"
+                "kafka.consumer.config.providers.strimzidir.param.allowed.paths=/opt/strimzi",
+                "kafka.consumer.config.providers.strimzisecrets.class=io.strimzi.kafka.KubernetesSecretConfigProvider"
         ));
 
         // Kafka Consumer with envvar-based rack
@@ -451,13 +456,14 @@ public class KafkaBridgeConfigurationBuilderTest {
                 "kafka.bootstrap.servers=my-cluster-kafka-bootstrap:9092",
                 "kafka.security.protocol=PLAINTEXT",
                 "kafka.consumer.client.rack=${strimzienv:MY_RACK_ID}",
-                "kafka.consumer.config.providers=strimzienv,strimzifile,strimzidir",
+                "kafka.consumer.config.providers=strimzienv,strimzifile,strimzidir,strimzisecrets",
                 "kafka.consumer.config.providers.strimzienv.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider",
                 "kafka.consumer.config.providers.strimzienv.param.allowlist.pattern=.*",
                 "kafka.consumer.config.providers.strimzifile.class=org.apache.kafka.common.config.provider.FileConfigProvider",
                 "kafka.consumer.config.providers.strimzifile.param.allowed.paths=/opt/strimzi",
                 "kafka.consumer.config.providers.strimzidir.class=org.apache.kafka.common.config.provider.DirectoryConfigProvider",
-                "kafka.consumer.config.providers.strimzidir.param.allowed.paths=/opt/strimzi"
+                "kafka.consumer.config.providers.strimzidir.param.allowed.paths=/opt/strimzi",
+                "kafka.consumer.config.providers.strimzisecrets.class=io.strimzi.kafka.KubernetesSecretConfigProvider"
         ));
     }
 
@@ -485,13 +491,14 @@ public class KafkaBridgeConfigurationBuilderTest {
                 "kafka.security.protocol=PLAINTEXT",
                 "kafka.admin.client.id=my-admin-client",
                 "kafka.admin.bootstrap.controllers=my-bootstrap-controllers",
-                "kafka.admin.config.providers=strimzienv,strimzifile,strimzidir",
+                "kafka.admin.config.providers=strimzienv,strimzifile,strimzidir,strimzisecrets",
                 "kafka.admin.config.providers.strimzienv.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider",
                 "kafka.admin.config.providers.strimzienv.param.allowlist.pattern=.*",
                 "kafka.admin.config.providers.strimzifile.class=org.apache.kafka.common.config.provider.FileConfigProvider",
                 "kafka.admin.config.providers.strimzifile.param.allowed.paths=/opt/strimzi",
                 "kafka.admin.config.providers.strimzidir.class=org.apache.kafka.common.config.provider.DirectoryConfigProvider",
-                "kafka.admin.config.providers.strimzidir.param.allowed.paths=/opt/strimzi"
+                "kafka.admin.config.providers.strimzidir.param.allowed.paths=/opt/strimzi",
+                "kafka.admin.config.providers.strimzisecrets.class=io.strimzi.kafka.KubernetesSecretConfigProvider"
         ));
 
         // Kafka Admin with config providers
@@ -513,14 +520,15 @@ public class KafkaBridgeConfigurationBuilderTest {
                 "kafka.security.protocol=PLAINTEXT",
                 "kafka.admin.client.id=my-admin-client",
                 "kafka.admin.bootstrap.controllers=my-bootstrap-controllers",
-                "kafka.admin.config.providers=env,strimzienv,strimzifile,strimzidir",
+                "kafka.admin.config.providers=env,strimzienv,strimzifile,strimzidir,strimzisecrets",
                 "kafka.admin.config.providers.strimzienv.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider",
                 "kafka.admin.config.providers.strimzienv.param.allowlist.pattern=.*",
                 "kafka.admin.config.providers.strimzifile.class=org.apache.kafka.common.config.provider.FileConfigProvider",
                 "kafka.admin.config.providers.strimzifile.param.allowed.paths=/opt/strimzi",
                 "kafka.admin.config.providers.strimzidir.class=org.apache.kafka.common.config.provider.DirectoryConfigProvider",
                 "kafka.admin.config.providers.strimzidir.param.allowed.paths=/opt/strimzi",
-                "kafka.admin.config.providers.env.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider"
+                "kafka.admin.config.providers.env.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider",
+                "kafka.admin.config.providers.strimzisecrets.class=io.strimzi.kafka.KubernetesSecretConfigProvider"
         ));
     }
 

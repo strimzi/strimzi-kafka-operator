@@ -8,9 +8,9 @@ import io.strimzi.api.kafka.model.bridge.KafkaBridgeAdminClientSpec;
 import io.strimzi.api.kafka.model.bridge.KafkaBridgeConsumerSpec;
 import io.strimzi.api.kafka.model.bridge.KafkaBridgeHttpConfig;
 import io.strimzi.api.kafka.model.bridge.KafkaBridgeProducerSpec;
+import io.strimzi.api.kafka.model.bridge.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.common.ClientTls;
 import io.strimzi.api.kafka.model.common.EnvironmentVariableRack;
-import io.strimzi.api.kafka.model.common.PasswordSecretSource;
 import io.strimzi.api.kafka.model.common.Rack;
 import io.strimzi.api.kafka.model.common.TopologyLabelRack;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthentication;
@@ -43,12 +43,8 @@ import static io.strimzi.operator.cluster.model.KafkaBridgeCluster.KAFKA_BRIDGE_
  */
 @SuppressWarnings("checkstyle:CyclomaticComplexity")
 public class KafkaBridgeConfigurationBuilder {
-
-    // placeholders expanded through config providers inside the bridge node
-    private static final String PLACEHOLDER_CERT_STORE_PASSWORD_CONFIG_PROVIDER_ENV_VAR = "${strimzienv:CERTS_STORE_PASSWORD}";
-    private static final String PASSWORD_VOLUME_MOUNT = "/opt/strimzi/bridge-password/";
-    // the volume mounted secret file template includes: <volume_mount>/<secret_name>/<secret_key>
-    private static final String PLACEHOLDER_VOLUME_MOUNTED_SECRET_TEMPLATE_CONFIG_PROVIDER_DIR = "${strimzidir:%s%s:%s}";
+    // the secrets file template: <namespace>/<secret_name>:<secret_key>
+    private static final String PLACEHOLDER_SECRET_TEMPLATE_KUBE_CONFIG_PROVIDER = "${strimzisecrets:%s/%s:%s}";
 
     private final Reconciliation reconciliation;
     private final StringWriter stringWriter = new StringWriter();
@@ -121,18 +117,18 @@ public class KafkaBridgeConfigurationBuilder {
      * Adds the TLS/SSL configuration for the bridge to connect to the Kafka cluster.
      * The configuration includes the trusted certificates store for TLS connection (server authentication).
      *
-     * @param tls   client TLS configuration
-     * @return  the builder instance
+     * @param tls         client TLS configuration
+     * @param bridgeId    bridge ID
+     * @return the builder instance
      */
-    public KafkaBridgeConfigurationBuilder withTls(ClientTls tls) {
+    public KafkaBridgeConfigurationBuilder withTls(ClientTls tls, String bridgeId) {
         if (tls != null) {
             securityProtocol = "SSL";
 
             if (tls.getTrustedCertificates() != null && !tls.getTrustedCertificates().isEmpty()) {
                 printSectionHeader("TLS/SSL");
-                writer.println("kafka.ssl.truststore.location=/tmp/strimzi/bridge.truststore.p12");
-                writer.println("kafka.ssl.truststore.password=" + PLACEHOLDER_CERT_STORE_PASSWORD_CONFIG_PROVIDER_ENV_VAR);
-                writer.println("kafka.ssl.truststore.type=PKCS12");
+                writer.println("kafka.ssl.truststore.certificates=" + String.format(PLACEHOLDER_SECRET_TEMPLATE_KUBE_CONFIG_PROVIDER, reconciliation.namespace(), KafkaBridgeResources.internalTlsTrustedCertsSecretName(bridgeId), "ca.crt"));
+                writer.println("kafka.ssl.truststore.type=PEM");
             }
         }
         return this;
@@ -149,9 +145,9 @@ public class KafkaBridgeConfigurationBuilder {
             printSectionHeader("Authentication configuration");
             // configuring mTLS (client TLS authentication, together with server authentication already set)
             if (authentication instanceof KafkaClientAuthenticationTls tlsAuth && tlsAuth.getCertificateAndKey() != null) {
-                writer.println("kafka.ssl.keystore.location=/tmp/strimzi/bridge.keystore.p12");
-                writer.println("kafka.ssl.keystore.password=" + PLACEHOLDER_CERT_STORE_PASSWORD_CONFIG_PROVIDER_ENV_VAR);
-                writer.println("kafka.ssl.keystore.type=PKCS12");
+                writer.println("kafka.ssl.keystore.certificate.chain=" + String.format(PLACEHOLDER_SECRET_TEMPLATE_KUBE_CONFIG_PROVIDER, reconciliation.namespace(), tlsAuth.getCertificateAndKey().getSecretName(), tlsAuth.getCertificateAndKey().getCertificate()));
+                writer.println("kafka.ssl.keystore.key=" + String.format(PLACEHOLDER_SECRET_TEMPLATE_KUBE_CONFIG_PROVIDER, reconciliation.namespace(), tlsAuth.getCertificateAndKey().getSecretName(), tlsAuth.getCertificateAndKey().getKey()));
+                writer.println("kafka.ssl.keystore.type=PEM");
             } else if (authentication instanceof KafkaClientAuthenticationCustom customAuth) { // Configure custom authentication
                 if (customAuth.isSasl())    {
                     // If this authentication uses SASL, we need to update the security protocol to combine the SASL
@@ -174,7 +170,8 @@ public class KafkaBridgeConfigurationBuilder {
 
                 if (authentication instanceof KafkaClientAuthenticationPlain passwordAuth) {
                     saslMechanism = "PLAIN";
-                    jaasConfig.append("org.apache.kafka.common.security.plain.PlainLoginModule required username=\"" + passwordAuth.getUsername() + "\" password=\"" + formatPasswordTemplate(passwordAuth.getPasswordSecret(), PASSWORD_VOLUME_MOUNT) + "\";");
+                    String passwordAuthConfigProvider = String.format(PLACEHOLDER_SECRET_TEMPLATE_KUBE_CONFIG_PROVIDER, reconciliation.namespace(), passwordAuth.getPasswordSecret().getSecretName(), passwordAuth.getPasswordSecret().getPassword());
+                    jaasConfig.append("org.apache.kafka.common.security.plain.PlainLoginModule required username=\"" + passwordAuth.getUsername() + "\" password=\"" + passwordAuthConfigProvider + "\";");
                 } else if (authentication instanceof KafkaClientAuthenticationScram scramAuth) {
 
                     if (scramAuth.getType().equals(KafkaClientAuthenticationScramSha256.TYPE_SCRAM_SHA_256)) {
@@ -182,8 +179,8 @@ public class KafkaBridgeConfigurationBuilder {
                     } else if (scramAuth.getType().equals(KafkaClientAuthenticationScramSha512.TYPE_SCRAM_SHA_512)) {
                         saslMechanism = "SCRAM-SHA-512";
                     }
-
-                    jaasConfig.append("org.apache.kafka.common.security.scram.ScramLoginModule required username=\"" + scramAuth.getUsername() + "\" password=\"" + formatPasswordTemplate(scramAuth.getPasswordSecret(), PASSWORD_VOLUME_MOUNT) + "\";");
+                    String passwordAuthConfigProvider = String.format(PLACEHOLDER_SECRET_TEMPLATE_KUBE_CONFIG_PROVIDER, reconciliation.namespace(), scramAuth.getPasswordSecret().getSecretName(), scramAuth.getPasswordSecret().getPassword());
+                    jaasConfig.append("org.apache.kafka.common.security.scram.ScramLoginModule required username=\"" + scramAuth.getUsername() + "\" password=\"" + passwordAuthConfigProvider + "\";");
                 }
 
                 writer.println("kafka.sasl.mechanism=" + saslMechanism);
@@ -195,10 +192,6 @@ public class KafkaBridgeConfigurationBuilder {
         return this;
     }
 
-    private String formatPasswordTemplate(PasswordSecretSource secret, String volumeMountPath) {
-        return String.format(PLACEHOLDER_VOLUME_MOUNTED_SECRET_TEMPLATE_CONFIG_PROVIDER_DIR, volumeMountPath, secret.getSecretName(), secret.getPassword());
-    }
-
     /**
      * Configures the Kafka configuration providers
      *
@@ -208,7 +201,7 @@ public class KafkaBridgeConfigurationBuilder {
      */
     private void configProvider(AbstractConfiguration userConfig, String prefix) {
         printSectionHeader("Config providers");
-        String strimziConfigProviders = "strimzienv,strimzifile,strimzidir";
+        String strimziConfigProviders = "strimzienv,strimzifile,strimzidir,strimzisecrets";
         // configure user provided config providers together with the Strimzi ones ...
         if (userConfig != null
                 && !userConfig.getConfiguration().isEmpty()
@@ -225,6 +218,7 @@ public class KafkaBridgeConfigurationBuilder {
         writer.println(prefix + ".config.providers.strimzifile.param.allowed.paths=/opt/strimzi");
         writer.println(prefix + ".config.providers.strimzidir.class=org.apache.kafka.common.config.provider.DirectoryConfigProvider");
         writer.println(prefix + ".config.providers.strimzidir.param.allowed.paths=/opt/strimzi");
+        writer.println(prefix + ".config.providers.strimzisecrets.class=io.strimzi.kafka.KubernetesSecretConfigProvider");
     }
 
     /**

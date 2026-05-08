@@ -11,6 +11,7 @@ import io.fabric8.kubernetes.api.model.ContainerPort;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
+import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServicePort;
 import io.fabric8.kubernetes.api.model.Volume;
@@ -18,6 +19,8 @@ import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.policy.v1.PodDisruptionBudget;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
+import io.fabric8.kubernetes.api.model.rbac.Role;
+import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.RoleRef;
 import io.fabric8.kubernetes.api.model.rbac.RoleRefBuilder;
 import io.fabric8.kubernetes.api.model.rbac.Subject;
@@ -67,6 +70,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Kafka Bridge model class
@@ -91,9 +95,7 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
     protected static final String REST_API_PORT_NAME = "rest-api";
     /* test */ static final String REST_API_MANAGEMENT_PORT_NAME = "rest-api-mgmt";
     /* test */ static final int REST_API_MANAGEMENT_PORT = 8081;
-    protected static final String TLS_CERTS_BASE_VOLUME_MOUNT = "/opt/strimzi/bridge-certs/";
     protected static final String HTTP_SERVER_CERTS_BASE_VOLUME_MOUNT = "/opt/strimzi/bridge-http-certs/";
-    protected static final String PASSWORD_VOLUME_MOUNT = "/opt/strimzi/bridge-password/";
     protected static final String ENV_VAR_KAFKA_INIT_INIT_FOLDER_KEY = "INIT_FOLDER";
     private static final String KAFKA_BRIDGE_CONFIG_VOLUME_NAME = "kafka-bridge-configurations";
 
@@ -101,9 +103,6 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
     protected static final String CO_ENV_VAR_CUSTOM_SERVICE_LABELS = "STRIMZI_CUSTOM_KAFKA_BRIDGE_SERVICE_LABELS";
     protected static final String CO_ENV_VAR_CUSTOM_SERVICE_ANNOTATIONS = "STRIMZI_CUSTOM_KAFKA_BRIDGE_SERVICE_ANNOTATIONS";
 
-    // Kafka Bridge configuration keys (EnvVariables)
-    protected static final String ENV_VAR_PREFIX = "KAFKA_BRIDGE_";
-    protected static final String ENV_VAR_KAFKA_BRIDGE_TRUSTED_CERTS = "KAFKA_BRIDGE_TRUSTED_CERTS";
     protected static final String KAFKA_BRIDGE_CONFIG_VOLUME_MOUNT = "/opt/strimzi/custom-config/";
     protected static final String CO_ENV_VAR_CUSTOM_BRIDGE_POD_LABELS = "STRIMZI_CUSTOM_KAFKA_BRIDGE_LABELS";
     protected static final String INIT_VOLUME_MOUNT = "/opt/strimzi/init";
@@ -319,10 +318,6 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
         volumeList.add(VolumeUtils.createTempDirVolume(templatePod));
         volumeList.add(VolumeUtils.createConfigMapVolume(KAFKA_BRIDGE_CONFIG_VOLUME_NAME, KafkaBridgeResources.configMapName(cluster)));
 
-        if (tls != null) {
-            CertUtils.createTrustedCertificatesVolumes(volumeList, tls.getTrustedCertificates(), isOpenShift);
-        }
-
         if (http != null && http.getTls() != null) {
             if (http.getTls().getCertificateAndKey() != null) {
                 String secretName = http.getTls().getCertificateAndKey().getSecretName();
@@ -340,8 +335,6 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
             volumeList.add(VolumeUtils.createEmptyDirVolume(INIT_VOLUME_NAME, "1Mi", "Memory"));
         }
 
-        AuthenticationUtils.configureClientAuthenticationVolumes(authentication, volumeList, isOpenShift, "");
-
         TemplateUtils.addAdditionalVolumes(templatePod, volumeList);
 
         return volumeList;
@@ -352,10 +345,6 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
 
         volumeMountList.add(VolumeUtils.createTempDirVolumeMount());
         volumeMountList.add(VolumeUtils.createVolumeMount(KAFKA_BRIDGE_CONFIG_VOLUME_NAME, KAFKA_BRIDGE_CONFIG_VOLUME_MOUNT));
-
-        if (tls != null) {
-            CertUtils.createTrustedCertificatesVolumeMounts(volumeMountList, tls.getTrustedCertificates(), TLS_CERTS_BASE_VOLUME_MOUNT);
-        }
 
         if (http != null && http.getTls() != null) {
             if (http.getTls().getCertificateAndKey() != null) {
@@ -370,8 +359,6 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
         if (rack instanceof TopologyLabelRack) {
             volumeMountList.add(VolumeUtils.createVolumeMount(INIT_VOLUME_NAME, INIT_VOLUME_MOUNT));
         }
-
-        AuthenticationUtils.configureClientAuthenticationVolumeMounts(authentication, volumeMountList, TLS_CERTS_BASE_VOLUME_MOUNT, PASSWORD_VOLUME_MOUNT, "");
 
         TemplateUtils.addAdditionalVolumeMounts(volumeMountList, templateContainer);
 
@@ -466,13 +453,6 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_STRIMZI_GC_LOG_ENABLED, String.valueOf(gcLoggingEnabled)));
         JvmOptionUtils.javaOptions(varList, jvmOptions);
 
-        if (tls != null && tls.getTrustedCertificates() != null && !tls.getTrustedCertificates().isEmpty()) {
-            varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_BRIDGE_TRUSTED_CERTS, CertUtils.trustedCertsEnvVar(tls.getTrustedCertificates())));
-        }
-
-        // Client authentication env var is needed to generate truststore certificates in PKCS12 format in container script
-        AuthenticationUtils.configureClientAuthenticationEnvVars(authentication, varList, name -> ENV_VAR_PREFIX + name);
-
         // Add shared environment variables used for all containers
         varList.addAll(sharedEnvironmentProvider.variables());
 
@@ -496,6 +476,15 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
      */
     protected void setTls(ClientTls tls) {
         this.tls = tls;
+    }
+
+    /**
+     * Gets the tls configuration with the certificate to trust
+     *
+     * @return tls trusted certificates list
+     */
+    public ClientTls getTls() {
+        return tls;
     }
 
     /**
@@ -584,6 +573,64 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
         }
     }
 
+    /**
+     * Gets the list of Secrets the Pods need to access through the Kubernetes API.
+     *
+     * @return  The list of Secrets the Pods will need access to through Kubernetes API to load their values using
+     *          configuration providers.
+     */
+    /* test */ public Set<String> secretsToAllowAccessTo() {
+        return AuthenticationUtils.getAuthenticationSecretsToAccess(
+                tls,
+                authentication,
+                KafkaBridgeResources.internalTlsTrustedCertsSecretName(cluster));
+    }
+
+    /**
+     * Creates a Role for reading TLS certificate secrets in the same namespace as the resource.
+     * This is used for loading certificates from secrets directly.
+     **
+     * @return role for the Kafka Bridge
+     */
+    public Role generateRole() {
+        return AuthenticationUtils.generateAuthenticationSecretsRole(
+                componentName, namespace, secretsToAllowAccessTo(), labels, ownerReference);
+    }
+
+    /**
+     * Generates the Kafka Bridge Role Binding
+     *
+     * @return  Role Binding for the Kafka Bridge
+     */
+    public RoleBinding generateRoleBindingForRole() {
+        return AuthenticationUtils.generateAuthenticationSecretsRoleBinding(
+                getRoleBindingName(), componentName, namespace, secretsToAllowAccessTo(), labels, ownerReference);
+    }
+
+    /**
+     * Gets the name of the RoleBinding for the Kafka Bridge.
+     *
+     * @return The name of the RoleBinding for the Kafka Bridge
+     */
+    public String getRoleBindingName() {
+        return KafkaBridgeResources.bridgeRoleBindingName(getCluster());
+    }
+
+    /**
+     * Creates a secret that contains the TLS certificates from one or more secrets
+     * in the same namespace as the resource.
+     * This is used for loading truststore certificates from the secret directly.
+     **
+     * @param secretData secret data
+     * @param secretName secret name
+     *
+     * @return secret for tls certificates
+     */
+    public Secret generateTlsTrustedCertsSecret(Map<String, String> secretData, String secretName) {
+        return ModelUtils.createSecret(secretName, namespace, labels, ownerReference, secretData, Map.of(), Map.of());
+    }
+
+
     protected List<EnvVar> getInitContainerEnvVars(TopologyLabelRack topologyLabelRack) {
         List<EnvVar> varList = new ArrayList<>();
         varList.add(ContainerUtils.createEnvVarFromFieldRef(ENV_VAR_KAFKA_INIT_NODE_NAME, "spec.nodeName"));
@@ -614,7 +661,7 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
         KafkaBridgeConfigurationBuilder builder =
                 new KafkaBridgeConfigurationBuilder(reconciliation, cluster, bootstrapServers)
                         .withTracing(tracing)
-                        .withTls(tls)
+                        .withTls(tls, cluster)
                         .withAuthentication(authentication)
                         .withKafkaAdminClient(kafkaBridgeAdminClient)
                         .withKafkaProducer(kafkaBridgeProducer)
