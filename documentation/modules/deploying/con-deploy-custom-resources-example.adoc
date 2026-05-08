@@ -92,11 +92,11 @@ spec: <3>
     segment.bytes: 1073741824
 status:
   conditions: <4>
-    lastTransitionTime: "2019-08-20T11:37:00.706Z"
-    status: "True"
-    type: Ready
+    - lastTransitionTime: "2019-08-20T11:37:00.706Z"
+      status: "True"
+      type: Ready
   observedGeneration: 1
-  / ...
+  # ...
 ----
 <1> The `kind` and `apiVersion` identify the CRD of which the custom resource is an instance.
 <2> A label, applicable only to `KafkaTopic` and `KafkaUser` resources, that defines the name of the Kafka cluster (which is same as the name of the `Kafka` resource) to which a topic or user belongs.
