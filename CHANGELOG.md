@@ -2,7 +2,7 @@
 
 ## 1.1.0
 
-* New Cluster operator configuration option `STRIMZI_PKCS12_KEYSTORE_GENERATION` to disable generating PKCS12 stores in CA and User Secrets
+* New Cluster operator configuration option `STRIMZI_PKCS12_KEYSTORE_GENERATION` to disable generating PKCS12 stores in CA and Kafka user `Secret` resources.
 * Support for dependency scope configuration of Maven artifacts in Kafka Connect Build
 * Add `UseBackgroundPodDeletion` feature gate (alpha, disabled by default) to use background deletion propagation when deleting pods during rolling updates. 
 * Strimzi Drain Cleaner updated to 1.6.0 (included in the Strimzi installation files)
