@@ -219,8 +219,9 @@ public class UserOperatorPerformance extends AbstractST {
                     LOGGER.error("Failed to create Kafka users from index {} to {}: {}", start, end, e.getMessage());
 
                     final TestLogCollector logCollector = TestLogCollector.of(
-                        // Collect only resources, which are important to debug the failure (e.g., pods, deployments, Kafka CR).
-                        // Full collection would include thousands of KafkaUser CRs and Secrets, which is too slow to be practical.
+                        // Pod logs and descriptions are always collected by LogCollector automatically.
+                        // Here we scope the additional namespaced resources to only deployments, configmaps, and Kafka CRs,
+                        // avoiding the default full set which would include thousands of KafkaUser CRs and Secrets.
                         TestLogCollector.defaultLogCollectorBuilder()
                             .withNamespacedResources(
                                 TestConstants.DEPLOYMENT.toLowerCase(Locale.ROOT),

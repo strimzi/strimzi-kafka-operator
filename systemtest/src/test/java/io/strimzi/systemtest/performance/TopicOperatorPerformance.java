@@ -212,9 +212,10 @@ public class TopicOperatorPerformance extends AbstractST {
                     LOGGER.error("Failed to create Kafka topics from index {} to {}: {}", start, end, e.getMessage());
 
                     this.logCollector = TestLogCollector.of(
+                        // Pod logs and descriptions are always collected by LogCollector automatically.
+                        // Here we scope the additional namespaced resources to only deployments, configmaps, and Kafka CRs,
+                        // avoiding the default full set which would include thousands of KafkaTopic CRs.
                         TestLogCollector.defaultLogCollectorBuilder()
-                            // Collect only resources, which are important to debug the failure (e.g., pods, deployments, Kafka CR).
-                            // Full collection would include thousands of KafkaTopic CRs, which is too slow to be practical.
                             .withNamespacedResources(
                                 TestConstants.DEPLOYMENT.toLowerCase(Locale.ROOT),
                                 TestConstants.CONFIG_MAP.toLowerCase(Locale.ROOT),
