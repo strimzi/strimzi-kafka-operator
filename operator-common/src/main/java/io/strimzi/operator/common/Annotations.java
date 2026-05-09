@@ -82,6 +82,11 @@ public class Annotations extends ResourceAnnotations {
     public static final String ANNO_STRIMZI_IO_IN_PLACE_RESIZING_WAIT_FOR_DEFERRED = STRIMZI_DOMAIN + "in-place-resizing-wait-for-deferred";
 
     /**
+     * Annotation for indicating the the resizing of the Pod failed
+     */
+    public static final String ANNO_STRIMZI_IO_IN_PLACE_RESIZING_ERROR = STRIMZI_DOMAIN + "in-place-resizing-error";
+
+    /**
      * Annotation for tracking Deployment revisions
      */
     public static final String ANNO_DEP_KUBE_IO_REVISION = "deployment.kubernetes.io/revision";
