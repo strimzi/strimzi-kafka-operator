@@ -257,7 +257,7 @@ public class KafkaAssemblyOperatorKRaftMockTest {
         Kafka k = Crds.kafkaOperation(client).inNamespace(namespace).withName(CLUSTER_NAME).get();
         assertThat(k.getStatus(), is(notNullValue()));
         assertThat(Kafka.isReady().test(k), is(true));
-        assertThat(k.getStatus().getKafkaMetadataVersion(), startsWith(VERSIONS.defaultVersion().metadataVersion() + "-IV"));
+        assertThat(k.getStatus().getKafkaMetadataVersion(), startsWith(VERSIONS.defaultVersion().metadataVersion()));
         assertThat(k.getStatus().getKafkaVersion(), is(VERSIONS.defaultVersion().version()));
         assertThat(k.getStatus().getOperatorLastSuccessfulVersion(), is(KafkaAssemblyOperator.OPERATOR_VERSION));
         assertThat(k.getStatus().getKafkaNodePools().stream().map(UsedNodePoolStatus::getName).toList(), is(List.of("brokers", "controllers")));

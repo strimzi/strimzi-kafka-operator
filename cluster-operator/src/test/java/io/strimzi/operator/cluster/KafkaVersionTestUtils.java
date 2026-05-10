@@ -15,34 +15,39 @@ import java.util.stream.Collectors;
 
 public class KafkaVersionTestUtils {
     private static final String KAFKA_IMAGE_STR = "strimzi/kafka:latest-kafka-";
-    private static final String KAFKA_CONNECT_IMAGE_STR = "strimzi/kafka-connect:latest-kafka-";
-    private static final String KAFKA_MIRROR_MAKER_2_IMAGE_STR = "strimzi/kafka-connect:latest-kafka-";
-
     private static final Set<String> SUPPORTED_VERSIONS = new KafkaVersion.Lookup(Collections.emptyMap(), Collections.emptyMap(), Collections.emptyMap()).supportedVersions();
 
-    public static final String LATEST_KAFKA_VERSION = "4.2.0";
-    public static final String LATEST_FORMAT_VERSION = "4.2";
-    public static final String LATEST_PROTOCOL_VERSION = "4.2";
-    public static final String LATEST_METADATA_VERSION = "4.2-IV1";
-    public static final String LATEST_CHECKSUM = "ABCD1234";
-    public static final String LATEST_THIRD_PARTY_VERSION = "4.2.x";
-    public static final String LATEST_KAFKA_IMAGE = KAFKA_IMAGE_STR + LATEST_KAFKA_VERSION;
-    public static final String LATEST_KAFKA_CONNECT_IMAGE = KAFKA_CONNECT_IMAGE_STR + LATEST_KAFKA_VERSION;
-    public static final String LATEST_KAFKA_MIRROR_MAKER_2_IMAGE = KAFKA_MIRROR_MAKER_2_IMAGE_STR + LATEST_KAFKA_VERSION;
+    public static final String LATEST_KAFKA_VERSION;
+    public static final String LATEST_METADATA_VERSION;
+    public static final String LATEST_KAFKA_IMAGE;
+    static {
+        String v = SUPPORTED_VERSIONS.stream().max(KafkaVersion::compareDottedVersions).orElseThrow(() -> new RuntimeException("Failed to find the latest Kafka version"));
+        KafkaVersion version = getKafkaVersionLookup().version(v);
+        LATEST_KAFKA_VERSION = version.version();
+        LATEST_METADATA_VERSION = version.metadataVersion();
+        LATEST_KAFKA_IMAGE = KAFKA_IMAGE_STR + version.version();
+    }
 
-    public static final String PREVIOUS_KAFKA_VERSION = "4.1.2";
-    public static final String PREVIOUS_FORMAT_VERSION = "4.1";
-    public static final String PREVIOUS_PROTOCOL_VERSION = "4.1";
-    public static final String PREVIOUS_METADATA_VERSION = "4.1-IV1";
-    public static final String PREVIOUS_CHECKSUM = "ABCD1234";
-    public static final String PREVIOUS_THIRD_PARTY_VERSION = "4.1.x";
-    public static final String PREVIOUS_KAFKA_IMAGE = KAFKA_IMAGE_STR + PREVIOUS_KAFKA_VERSION;
-    public static final String PREVIOUS_KAFKA_CONNECT_IMAGE = KAFKA_CONNECT_IMAGE_STR + PREVIOUS_KAFKA_VERSION;
-    public static final String PREVIOUS_KAFKA_MIRROR_MAKER_2_IMAGE = KAFKA_MIRROR_MAKER_2_IMAGE_STR + PREVIOUS_KAFKA_VERSION;
+    public static final String PREVIOUS_KAFKA_VERSION;
+    public static final String PREVIOUS_METADATA_VERSION;
+    public static final String PREVIOUS_KAFKA_IMAGE;
+    static {
+        String v = SUPPORTED_VERSIONS.stream().min(KafkaVersion::compareDottedVersions).orElseThrow(() -> new RuntimeException("Failed to find the latest Kafka version"));
+        KafkaVersion version = getKafkaVersionLookup().version(v);
+        PREVIOUS_KAFKA_VERSION = version.version();
+        PREVIOUS_METADATA_VERSION = version.metadataVersion();
+        PREVIOUS_KAFKA_IMAGE = KAFKA_IMAGE_STR + version.version();
+    }
 
-    public static final String DEFAULT_KAFKA_VERSION = LATEST_KAFKA_VERSION;
-    public static final String DEFAULT_KAFKA_IMAGE = LATEST_KAFKA_IMAGE;
-    public static final String DEFAULT_KAFKA_CONNECT_IMAGE = LATEST_KAFKA_CONNECT_IMAGE;
+    public static final String DEFAULT_KAFKA_VERSION;
+    public static final String DEFAULT_METADATA_VERSION;
+    public static final String DEFAULT_KAFKA_IMAGE;
+    static {
+        KafkaVersion version = getKafkaVersionLookup().defaultVersion();
+        DEFAULT_KAFKA_VERSION = version.version();
+        DEFAULT_METADATA_VERSION = version.metadataVersion();
+        DEFAULT_KAFKA_IMAGE = KAFKA_IMAGE_STR + version.version();
+    }
     
     public static final String HIGH_UNKNOWN_KAFKA_VERSION = "99.0.0";
     public static final String LOW_UNKNOWN_KAFKA_VERSION = "3.99.0";
@@ -54,11 +59,11 @@ public class KafkaVersionTestUtils {
     }
 
     private static Map<String, String> getKafkaConnectImageMap() {
-        return getImageMap(KAFKA_CONNECT_IMAGE_STR);
+        return getImageMap(KAFKA_IMAGE_STR);
     }
 
     private static Map<String, String> getKafkaMirrorMaker2ImageMap() {
-        return getImageMap(KAFKA_MIRROR_MAKER_2_IMAGE_STR);
+        return getImageMap(KAFKA_IMAGE_STR);
     }
 
     private static String envVarFromMap(Map<String, String> imageMap)   {

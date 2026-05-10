@@ -192,7 +192,7 @@ public class KafkaConnectClusterTest {
             .build();
         KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, connect, VERSIONS, SHARED_ENV_PROVIDER);
 
-        assertThat(kc.image, is(KafkaVersionTestUtils.DEFAULT_KAFKA_CONNECT_IMAGE));
+        assertThat(kc.image, is(KafkaVersionTestUtils.DEFAULT_KAFKA_IMAGE));
         assertThat(kc.getReplicas(), is(3)); // Once only v1 API is supported, there should be no default replicas number as it is a required field in v1
         assertThat(kc.readinessProbeOptions.getInitialDelaySeconds(), is(60));
         assertThat(kc.readinessProbeOptions.getTimeoutSeconds(), is(5));

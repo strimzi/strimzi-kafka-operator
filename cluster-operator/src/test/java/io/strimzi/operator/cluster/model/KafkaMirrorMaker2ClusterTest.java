@@ -172,7 +172,7 @@ public class KafkaMirrorMaker2ClusterTest {
 
     @Test
     public void testDefaultValues() {
-        assertThat(KMM2.image, is(KafkaVersionTestUtils.DEFAULT_KAFKA_CONNECT_IMAGE));
+        assertThat(KMM2.image, is(KafkaVersionTestUtils.DEFAULT_KAFKA_IMAGE));
         assertThat(KMM2.getReplicas(), is(3));
         assertThat(KMM2.readinessProbeOptions.getInitialDelaySeconds(), is(60));
         assertThat(KMM2.readinessProbeOptions.getTimeoutSeconds(), is(5));
