@@ -20,7 +20,9 @@ public class RequiredMinKubeApiVersionCondition implements ExecutionCondition {
 
     @Override
     public ConditionEvaluationResult evaluateExecutionCondition(ExtensionContext extensionContext) {
-        Optional<RequiredMinKubeApiVersion> annotation = findAnnotation(extensionContext.getElement(), RequiredMinKubeApiVersion.class);
+        // Checks for the RequiredMinKubeApiVersion annotation on the test method or test class
+        Optional<RequiredMinKubeApiVersion> annotation = findAnnotation(extensionContext.getElement(), RequiredMinKubeApiVersion.class)
+                .or(() -> findAnnotation(extensionContext.getTestClass(), RequiredMinKubeApiVersion.class));
         double version = annotation.get().version();
 
         if (Double.parseDouble(StUtils.getKubernetesClusterVersion()) >= version) {

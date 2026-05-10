@@ -60,6 +60,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
             @Label(TestDocsLabels.KAFKA)
         }
 )
+@RequiredMinKubeApiVersion(version = 1.35)
 public class InPlacePodResizingST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(InPlacePodResizingST.class);
 
@@ -75,7 +76,6 @@ public class InPlacePodResizingST extends AbstractST {
             }
     )
     @IsolatedTest
-    @RequiredMinKubeApiVersion(version = 1.35)
     void testDynamicInPlaceKafkaResourceUpdates() {
         Map<String, String> mixedPoolPodSnapshots = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getMixedPoolSelector());
 
@@ -109,7 +109,6 @@ public class InPlacePodResizingST extends AbstractST {
             }
     )
     @IsolatedTest
-    @RequiredMinKubeApiVersion(version = 1.35)
     void testDynamicInPlaceConnectResourceUpdates() {
         final Map<String, String> connectPodsSnapshot = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getKafkaConnectSelector());
 
@@ -144,7 +143,6 @@ public class InPlacePodResizingST extends AbstractST {
             }
     )
     @IsolatedTest
-    @RequiredMinKubeApiVersion(version = 1.35)
     void testInfeasibleInPlaceKafkaResourceUpdates() {
         AtomicReference<ResourceRequirements> originalResources = new AtomicReference<>();
 
@@ -176,7 +174,6 @@ public class InPlacePodResizingST extends AbstractST {
             }
     )
     @IsolatedTest
-    @RequiredMinKubeApiVersion(version = 1.35)
     void testInfeasibleInPlaceConnectResourceUpdates() {
         AtomicReference<ResourceRequirements> originalResources = new AtomicReference<>();
 
@@ -208,7 +205,6 @@ public class InPlacePodResizingST extends AbstractST {
             }
     )
     @IsolatedTest
-    @RequiredMinKubeApiVersion(version = 1.35)
     void testDeferredInPlaceKafkaResourceUpdates() {
         List<Pod> pods = PodUtils.getPodsByPrefixInNameWithDynamicWait(testStorage.getNamespaceName(), KafkaComponents.getPodSetName(testStorage.getClusterName(), testStorage.getMixedPoolName()));
         Node worker = KubeResourceManager.get().kubeClient().getClient().nodes().withName(pods.get(0).getSpec().getNodeName()).get();
@@ -243,7 +239,6 @@ public class InPlacePodResizingST extends AbstractST {
             }
     )
     @IsolatedTest
-    @RequiredMinKubeApiVersion(version = 1.35)
     void testDeferredInPlaceConnectResourceUpdates() {
         List<Pod> pods = PodUtils.getPodsByPrefixInNameWithDynamicWait(testStorage.getNamespaceName(), KafkaConnectResources.componentName(testStorage.getClusterName()));
         Node worker = KubeResourceManager.get().kubeClient().getClient().nodes().withName(pods.get(0).getSpec().getNodeName()).get();
