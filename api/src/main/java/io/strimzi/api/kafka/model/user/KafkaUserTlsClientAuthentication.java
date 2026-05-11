@@ -9,6 +9,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.strimzi.api.kafka.model.common.Constants;
 import io.strimzi.crdgenerator.annotations.CelValidation;
 import io.strimzi.crdgenerator.annotations.Description;
+import io.strimzi.crdgenerator.annotations.Minimum;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -44,16 +45,11 @@ public class KafkaUserTlsClientAuthentication extends KafkaUserAuthentication {
         return TYPE_TLS;
     }
 
-    @CelValidation(rules = {
-        @CelValidation.CelValidationRule(
-            rule = "self > 0",
-            message = "'validityDays' has to be higher than 0."
-            )
-    })
     @Description(
         "Number of days for which the user certificate should be valid. " +
         "If not configured, Clients CA configuration is used."
     )
+    @Minimum(1)
     @JsonInclude(value = JsonInclude.Include.NON_NULL)
     public Integer getValidityDays() {
         return this.validityDays;
@@ -63,16 +59,11 @@ public class KafkaUserTlsClientAuthentication extends KafkaUserAuthentication {
         this.validityDays = validityDays;
     }
 
-    @CelValidation(rules = {
-        @CelValidation.CelValidationRule(
-            rule = "self > 0",
-            message = "'renewalDays' has to be higher than 0."
-            )
-    })
     @Description(
         "Configures how many days before the certificate expiration should be the user certificate renewed. " +
         "If not configured, Clients CA configuration is used."
     )
+    @Minimum(1)
     @JsonInclude(value = JsonInclude.Include.NON_NULL)
     public Integer getRenewalDays() {
         return renewalDays;
