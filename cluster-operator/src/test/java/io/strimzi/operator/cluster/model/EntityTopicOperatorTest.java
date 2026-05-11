@@ -9,6 +9,7 @@ import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
+import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
 import io.strimzi.api.kafka.model.common.InlineLogging;
 import io.strimzi.api.kafka.model.common.JvmOptions;
@@ -312,6 +313,16 @@ public class EntityTopicOperatorTest {
             EntityTopicOperator.ETO_CA_CERTS_VOLUME_NAME, EntityTopicOperator.ETO_CA_CERTS_VOLUME_MOUNT,
             EntityTopicOperator.ETO_CC_API_VOLUME_NAME, EntityTopicOperator.ETO_CC_API_VOLUME_MOUNT
         )));
+        VolumeMount clusterCaVolumeMount = container.getVolumeMounts().stream()
+                .filter(volumeMount -> EntityTopicOperator.ETO_CA_CERTS_VOLUME_NAME.equals(volumeMount.getName()))
+                .findFirst()
+                .orElseThrow();
+        VolumeMount ccApiVolumeMount = container.getVolumeMounts().stream()
+                .filter(volumeMount -> EntityTopicOperator.ETO_CC_API_VOLUME_NAME.equals(volumeMount.getName()))
+                .findFirst()
+                .orElseThrow();
+        assertThat(clusterCaVolumeMount.getReadOnly(), is(true));
+        assertThat(ccApiVolumeMount.getReadOnly(), is(true));
     }
 
     @Test

@@ -343,9 +343,9 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
     protected List<VolumeMount> getVolumeMounts() {
         List<VolumeMount> volumeMounts = new ArrayList<>();
         volumeMounts.add(VolumeUtils.createTempDirVolumeMount());
-        volumeMounts.add(VolumeUtils.createVolumeMount(CruiseControl.TLS_CC_CERTS_VOLUME_NAME, CruiseControl.TLS_CC_CERTS_VOLUME_MOUNT));
-        volumeMounts.add(VolumeUtils.createVolumeMount(CruiseControl.TLS_CA_CERTS_VOLUME_NAME, CruiseControl.TLS_CA_CERTS_VOLUME_MOUNT));
-        volumeMounts.add(VolumeUtils.createVolumeMount(CruiseControl.API_AUTH_CONFIG_VOLUME_NAME, CruiseControl.API_AUTH_CONFIG_VOLUME_MOUNT));
+        volumeMounts.add(VolumeUtils.createReadOnlyVolumeMount(CruiseControl.TLS_CC_CERTS_VOLUME_NAME, CruiseControl.TLS_CC_CERTS_VOLUME_MOUNT));
+        volumeMounts.add(VolumeUtils.createReadOnlyVolumeMount(CruiseControl.TLS_CA_CERTS_VOLUME_NAME, CruiseControl.TLS_CA_CERTS_VOLUME_MOUNT));
+        volumeMounts.add(VolumeUtils.createReadOnlyVolumeMount(CruiseControl.API_AUTH_CONFIG_VOLUME_NAME, CruiseControl.API_AUTH_CONFIG_VOLUME_MOUNT));
         volumeMounts.add(VolumeUtils.createVolumeMount(CONFIG_VOLUME_NAME, CONFIG_VOLUME_MOUNT));
 
         TemplateUtils.addAdditionalVolumeMounts(volumeMounts, templateContainer);

@@ -119,13 +119,13 @@ public class AuthenticationUtils {
             if (authentication instanceof KafkaClientAuthenticationTls tlsAuth) {
                 // skipping if a volume mount with same Secret name was already added
                 if (volumeMountList.stream().noneMatch(vm -> vm.getName().equals(volumeNamePrefix + tlsAuth.getCertificateAndKey().getSecretName()))) {
-                    volumeMountList.add(VolumeUtils.createVolumeMount(volumeNamePrefix + tlsAuth.getCertificateAndKey().getSecretName(),
+                    volumeMountList.add(VolumeUtils.createReadOnlyVolumeMount(volumeNamePrefix + tlsAuth.getCertificateAndKey().getSecretName(),
                             tlsVolumeMount + tlsAuth.getCertificateAndKey().getSecretName()));
                 }
             } else if (authentication instanceof KafkaClientAuthenticationPlain passwordAuth) {
-                volumeMountList.add(VolumeUtils.createVolumeMount(volumeNamePrefix + passwordAuth.getPasswordSecret().getSecretName(), passwordVolumeMount + passwordAuth.getPasswordSecret().getSecretName()));
+                volumeMountList.add(VolumeUtils.createReadOnlyVolumeMount(volumeNamePrefix + passwordAuth.getPasswordSecret().getSecretName(), passwordVolumeMount + passwordAuth.getPasswordSecret().getSecretName()));
             } else if (authentication instanceof KafkaClientAuthenticationScram scramAuth) {
-                volumeMountList.add(VolumeUtils.createVolumeMount(volumeNamePrefix + scramAuth.getPasswordSecret().getSecretName(), passwordVolumeMount + scramAuth.getPasswordSecret().getSecretName()));
+                volumeMountList.add(VolumeUtils.createReadOnlyVolumeMount(volumeNamePrefix + scramAuth.getPasswordSecret().getSecretName(), passwordVolumeMount + scramAuth.getPasswordSecret().getSecretName()));
             }
         }
     }

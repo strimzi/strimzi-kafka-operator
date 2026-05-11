@@ -233,7 +233,7 @@ public class CertUtils {
      * @param prefix                Prefix used to generate the volume name
      */
     private static void maybeAddTrustedCertificateVolumeMount(List<VolumeMount> volumeMountList, CertSecretSource certSecretSource, String tlsVolumeMountPath, String prefix) {
-        VolumeMount secretVolumeMount = VolumeUtils.createVolumeMount(
+        VolumeMount secretVolumeMount = VolumeUtils.createReadOnlyVolumeMount(
             trustedCertificateVolumeName(certSecretSource, prefix),
             tlsVolumeMountPath + certSecretSource.getSecretName());
 

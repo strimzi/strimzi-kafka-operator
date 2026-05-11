@@ -266,6 +266,23 @@ public class VolumeUtils {
     }
 
     /**
+     * Creates a read-only Volume mount
+     *
+     * @param name Name of the Volume mount
+     * @param path volume mount path
+     * @return The Volume mount created
+     */
+    public static VolumeMount createReadOnlyVolumeMount(String name, String path) {
+        String validName = getValidVolumeName(name);
+
+        return new VolumeMountBuilder()
+                .withName(validName)
+                .withMountPath(path)
+                .withReadOnly(true)
+                .build();
+    }
+
+    /**
      * Creates the volume mount for the temp directory with a default volume name
      *
      * @return  Volume mount for the temp directory

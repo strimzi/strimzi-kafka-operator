@@ -231,8 +231,10 @@ public class CertUtilsTest {
         assertThat(mounts.size(), is(2));
         assertThat(mounts.get(0).getName(), is("prefixed-first-certificate"));
         assertThat(mounts.get(0).getMountPath(), is("/my/path/first-certificate"));
+        assertThat(mounts.get(0).getReadOnly(), is(true));
         assertThat(mounts.get(1).getName(), is("prefixed-second-certificate"));
         assertThat(mounts.get(1).getMountPath(), is("/my/path/second-certificate"));
+        assertThat(mounts.get(1).getReadOnly(), is(true));
     }
 
     @Test
@@ -258,8 +260,10 @@ public class CertUtilsTest {
         assertThat(mounts.size(), is(2));
         assertThat(mounts.get(0).getName(), is("first-certificate"));
         assertThat(mounts.get(0).getMountPath(), is("/my/path/first-certificate"));
+        assertThat(mounts.get(0).getReadOnly(), is(true));
         assertThat(mounts.get(1).getName(), is("second-certificate"));
         assertThat(mounts.get(1).getMountPath(), is("/my/path/second-certificate"));
+        assertThat(mounts.get(1).getReadOnly(), is(true));
     }
 
     @Test

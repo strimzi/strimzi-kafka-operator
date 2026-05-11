@@ -7,6 +7,7 @@ package io.strimzi.operator.cluster.model;
 import io.fabric8.kubernetes.api.model.KeyToPathBuilder;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.Volume;
+import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.strimzi.api.kafka.model.kafka.EphemeralStorageBuilder;
 import io.strimzi.api.kafka.model.kafka.JbodStorage;
 import io.strimzi.api.kafka.model.kafka.JbodStorageBuilder;
@@ -164,6 +165,15 @@ public class VolumeUtilsTest {
         assertThat(volumeFromPvc.getName(), is("my-volume"));
         assertThat(volumeFromPvc.getPersistentVolumeClaim(), is(notNullValue()));
         assertThat(volumeFromPvc.getPersistentVolumeClaim().getClaimName(), is("my-pvc"));
+    }
+
+    @Test
+    public void testCreateReadOnlyVolumeMount() {
+        VolumeMount volumeMount = VolumeUtils.createReadOnlyVolumeMount("my-secret", "/mnt/secret");
+
+        assertThat(volumeMount.getName(), is("my-secret"));
+        assertThat(volumeMount.getMountPath(), is("/mnt/secret"));
+        assertThat(volumeMount.getReadOnly(), is(true));
     }
 
     ////////////////////

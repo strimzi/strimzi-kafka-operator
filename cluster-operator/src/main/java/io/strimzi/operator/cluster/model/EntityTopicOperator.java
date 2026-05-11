@@ -257,8 +257,8 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
         result.add(VolumeUtils.createVolumeMount(LOG_AND_METRICS_CONFIG_VOLUME_NAME, LOG_AND_METRICS_CONFIG_VOLUME_MOUNT));
 
         if (this.cruiseControlEnabled) {
-            result.add(VolumeUtils.createVolumeMount(ETO_CA_CERTS_VOLUME_NAME, ETO_CA_CERTS_VOLUME_MOUNT));
-            result.add(VolumeUtils.createVolumeMount(ETO_CC_API_VOLUME_NAME, ETO_CC_API_VOLUME_MOUNT));
+            result.add(VolumeUtils.createReadOnlyVolumeMount(ETO_CA_CERTS_VOLUME_NAME, ETO_CA_CERTS_VOLUME_MOUNT));
+            result.add(VolumeUtils.createReadOnlyVolumeMount(ETO_CC_API_VOLUME_NAME, ETO_CC_API_VOLUME_MOUNT));
         }
 
         TemplateUtils.addAdditionalVolumeMounts(result, templateContainer);

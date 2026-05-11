@@ -277,8 +277,8 @@ public class KafkaExporter extends AbstractModel {
     private List<VolumeMount> getVolumeMounts() {
         List<VolumeMount> volumeList = new ArrayList<>(3);
         volumeList.add(VolumeUtils.createTempDirVolumeMount());
-        volumeList.add(VolumeUtils.createVolumeMount(KAFKA_EXPORTER_CERTS_VOLUME_NAME, KAFKA_EXPORTER_CERTS_VOLUME_MOUNT));
-        volumeList.add(VolumeUtils.createVolumeMount(CLUSTER_CA_CERTS_VOLUME_NAME, CLUSTER_CA_CERTS_VOLUME_MOUNT));
+        volumeList.add(VolumeUtils.createReadOnlyVolumeMount(KAFKA_EXPORTER_CERTS_VOLUME_NAME, KAFKA_EXPORTER_CERTS_VOLUME_MOUNT));
+        volumeList.add(VolumeUtils.createReadOnlyVolumeMount(CLUSTER_CA_CERTS_VOLUME_NAME, CLUSTER_CA_CERTS_VOLUME_MOUNT));
 
         TemplateUtils.addAdditionalVolumeMounts(volumeList, templateContainer);
 

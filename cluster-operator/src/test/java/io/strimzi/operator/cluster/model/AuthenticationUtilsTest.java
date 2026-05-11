@@ -4,19 +4,57 @@
  */
 package io.strimzi.operator.cluster.model;
 
+import io.fabric8.kubernetes.api.model.VolumeMount;
+import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationPlainBuilder;
+import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationScramSha512Builder;
+import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationTlsBuilder;
 import org.junit.jupiter.api.Test;
 
 import javax.security.auth.login.AppConfigurationEntry;
 import javax.security.auth.login.Configuration;
 
 import java.lang.reflect.Constructor;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class AuthenticationUtilsTest {
+    @Test
+    public void testClientAuthenticationVolumeMountsAreReadOnly() {
+        List<VolumeMount> volumeMounts = new ArrayList<>();
+
+        AuthenticationUtils.configureClientAuthenticationVolumeMounts(new KafkaClientAuthenticationTlsBuilder()
+                .withNewCertificateAndKey()
+                    .withSecretName("tls-secret")
+                    .withCertificate("tls.crt")
+                    .withKey("tls.key")
+                .endCertificateAndKey()
+                .build(), volumeMounts, "/mnt/tls/", "/mnt/password/", "");
+        AuthenticationUtils.configureClientAuthenticationVolumeMounts(new KafkaClientAuthenticationPlainBuilder()
+                .withUsername("plain-user")
+                .withNewPasswordSecret()
+                    .withSecretName("plain-secret")
+                    .withPassword("password")
+                .endPasswordSecret()
+                .build(), volumeMounts, "/mnt/tls/", "/mnt/password/", "");
+        AuthenticationUtils.configureClientAuthenticationVolumeMounts(new KafkaClientAuthenticationScramSha512Builder()
+                .withUsername("scram-user")
+                .withNewPasswordSecret()
+                    .withSecretName("scram-secret")
+                    .withPassword("password")
+                .endPasswordSecret()
+                .build(), volumeMounts, "/mnt/tls/", "/mnt/password/", "");
+
+        assertEquals(3, volumeMounts.size());
+        assertEquals(Boolean.TRUE, volumeMounts.get(0).getReadOnly());
+        assertEquals(Boolean.TRUE, volumeMounts.get(1).getReadOnly());
+        assertEquals(Boolean.TRUE, volumeMounts.get(2).getReadOnly());
+    }
+
     @Test
     public void testValidJaasConfig() {
         Map<String, String> options = new HashMap<>();
