@@ -15,6 +15,7 @@ import io.strimzi.api.kafka.model.user.KafkaUserSpec;
 import io.strimzi.api.kafka.model.user.KafkaUserTlsClientAuthentication;
 import io.strimzi.api.kafka.model.user.KafkaUserTlsExternalClientAuthentication;
 import io.strimzi.certs.CertManager;
+import io.strimzi.certs.OpenSslCertManager;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.InvalidResourceException;
@@ -25,8 +26,13 @@ import io.strimzi.operator.user.ResourceUtils;
 import io.strimzi.operator.user.UserOperatorConfig;
 import org.junit.jupiter.api.Test;
 
+import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
 import java.time.Clock;
+import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.HashSet;
@@ -289,6 +295,34 @@ public class KafkaUserModelTest {
 
         // Check owner reference
         checkOwnerReference(model.createOwnerReference(), generatedSecret);
+    }
+
+    @Test
+    public void testGenerateSecretWithUserSpecificValidityPolicy() throws CertificateException {
+        int renewalDays = 10;
+        int validityDays = 60;
+
+        KafkaUser kafkaUserWithValidity = new KafkaUserBuilder(ResourceUtils.createKafkaUserTls(ResourceUtils.NAMESPACE))
+            .editSpec()
+                .withNewKafkaUserTlsClientAuthentication()
+                    .withValidityDays(validityDays)
+                    .withRenewalDays(renewalDays)
+                .endKafkaUserTlsClientAuthentication()
+            .endSpec()
+            .build();
+
+        KafkaUserModel model = KafkaUserModel.fromCrd(kafkaUserWithValidity, UserOperatorConfig.SECRET_PREFIX.defaultValue(), Boolean.parseBoolean(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.defaultValue()));
+        model.maybeGenerateCertificates(Reconciliation.DUMMY_RECONCILIATION, new OpenSslCertManager(Clock.systemUTC()), passwordGenerator, clientsCaCert, clientsCaKey, null, 365, 30, null, Clock.systemUTC());
+
+        Secret userSecret = model.generateSecret();
+
+        byte[] certBytes = Util.decodeFromBase64(userSecret.getData().get("user.crt")).getBytes(StandardCharsets.UTF_8);
+        CertificateFactory cf = CertificateFactory.getInstance("X.509");
+        X509Certificate cert = (X509Certificate) cf.generateCertificate(new ByteArrayInputStream(certBytes));
+
+        int certificateValidity = (int) ChronoUnit.DAYS.between(cert.getNotBefore().toInstant(), cert.getNotAfter().toInstant());
+
+        assertThat(certificateValidity, is(validityDays));
     }
 
     @Test
