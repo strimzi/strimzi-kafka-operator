@@ -4,7 +4,6 @@
  */
 package io.strimzi.operator.cluster.model;
 
-import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
@@ -32,25 +31,11 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
 import java.util.StringJoiner;
-import java.util.function.Function;
 
 /**
  * Utils for working with different authentication types
  */
 public class AuthenticationUtils {
-    /**
-     * Key for a SASL username
-     */
-    public static final String SASL_USERNAME = "SASL_USERNAME";
-
-    /**
-     * Key for a SASL mechanism
-     */
-    public static final String SASL_MECHANISM = "SASL_MECHANISM";
-
-    private static final String TLS_AUTH_CERT = "TLS_AUTH_CERT";
-    private static final String TLS_AUTH_KEY = "TLS_AUTH_KEY";
-    private static final String SASL_PASSWORD_FILE = "SASL_PASSWORD_FILE";
 
     private AuthenticationUtils() { }
 
@@ -144,30 +129,6 @@ public class AuthenticationUtils {
     }
 
     /**
-     * Configured environment variables related to authentication in Kafka clients within Strimzi-based containers
-     *
-     * @param authentication    Authentication object with auth configuration
-     * @param varList   List where the new environment variables should be added
-     * @param envVarNamer   Function for naming the environment variables (ech components is using different names)
-     */
-    public static void configureClientAuthenticationEnvVars(KafkaClientAuthentication authentication, List<EnvVar> varList, Function<String, String> envVarNamer)   {
-        if (authentication != null) {
-            if (authentication instanceof KafkaClientAuthenticationTls tlsAuth) {
-                varList.add(ContainerUtils.createEnvVar(envVarNamer.apply(TLS_AUTH_CERT), String.format("%s/%s", tlsAuth.getCertificateAndKey().getSecretName(), tlsAuth.getCertificateAndKey().getCertificate())));
-                varList.add(ContainerUtils.createEnvVar(envVarNamer.apply(TLS_AUTH_KEY), String.format("%s/%s", tlsAuth.getCertificateAndKey().getSecretName(), tlsAuth.getCertificateAndKey().getKey())));
-            } else if (authentication instanceof KafkaClientAuthenticationPlain passwordAuth) {
-                varList.add(ContainerUtils.createEnvVar(envVarNamer.apply(SASL_USERNAME), passwordAuth.getUsername()));
-                varList.add(ContainerUtils.createEnvVar(envVarNamer.apply(SASL_PASSWORD_FILE), String.format("%s/%s", passwordAuth.getPasswordSecret().getSecretName(), passwordAuth.getPasswordSecret().getPassword())));
-                varList.add(ContainerUtils.createEnvVar(envVarNamer.apply(SASL_MECHANISM), KafkaClientAuthenticationPlain.TYPE_PLAIN));
-            } else if (authentication instanceof KafkaClientAuthenticationScram scramAuth) {
-                varList.add(ContainerUtils.createEnvVar(envVarNamer.apply(SASL_USERNAME), scramAuth.getUsername()));
-                varList.add(ContainerUtils.createEnvVar(envVarNamer.apply(SASL_PASSWORD_FILE), String.format("%s/%s", scramAuth.getPasswordSecret().getSecretName(), scramAuth.getPasswordSecret().getPassword())));
-                varList.add(ContainerUtils.createEnvVar(envVarNamer.apply(SASL_MECHANISM), scramAuth.getType()));
-            }
-        }
-    }
-
-    /**
      * Generates a JAAS configuration string based on the provided module name and options.
      * The flag will always be "required".
      *
@@ -248,16 +209,16 @@ public class AuthenticationUtils {
             OwnerReference ownerReference) {
         if (secretNames.isEmpty()) {
             return null;
+        } else {
+            List<PolicyRule> rules = List.of(new PolicyRuleBuilder()
+                    .withApiGroups("")
+                    .withResources("secrets")
+                    .withVerbs("get")
+                    .withResourceNames(secretNames.stream().toList())
+                    .build());
+
+            return RbacUtils.createRole(componentName, namespace, rules, labels, ownerReference, null);
         }
-
-        List<PolicyRule> rules = List.of(new PolicyRuleBuilder()
-                .withApiGroups("")
-                .withResources("secrets")
-                .withVerbs("get")
-                .withResourceNames(secretNames.stream().toList())
-                .build());
-
-        return RbacUtils.createRole(componentName, namespace, rules, labels, ownerReference, null);
     }
 
     /**
@@ -282,20 +243,20 @@ public class AuthenticationUtils {
             OwnerReference ownerReference) {
         if (secretNames.isEmpty()) {
             return null;
+        } else {
+            Subject subject = new SubjectBuilder()
+                    .withKind("ServiceAccount")
+                    .withName(componentName)
+                    .withNamespace(namespace)
+                    .build();
+
+            RoleRef roleRef = new RoleRefBuilder()
+                    .withName(componentName)
+                    .withApiGroup("rbac.authorization.k8s.io")
+                    .withKind("Role")
+                    .build();
+
+            return RbacUtils.createRoleBinding(roleBindingName, namespace, roleRef, List.of(subject), labels, ownerReference, null);
         }
-
-        Subject subject = new SubjectBuilder()
-                .withKind("ServiceAccount")
-                .withName(componentName)
-                .withNamespace(namespace)
-                .build();
-
-        RoleRef roleRef = new RoleRefBuilder()
-                .withName(componentName)
-                .withApiGroup("rbac.authorization.k8s.io")
-                .withKind("Role")
-                .build();
-
-        return RbacUtils.createRoleBinding(roleBindingName, namespace, roleRef, List.of(subject), labels, ownerReference, null);
     }
 }

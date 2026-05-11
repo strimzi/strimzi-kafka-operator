@@ -36,6 +36,8 @@ import io.fabric8.kubernetes.api.model.VolumeMountBuilder;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.policy.v1.PodDisruptionBudget;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
+import io.fabric8.kubernetes.api.model.rbac.Role;
+import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
 import io.strimzi.api.kafka.model.bridge.KafkaBridge;
 import io.strimzi.api.kafka.model.bridge.KafkaBridgeBuilder;
 import io.strimzi.api.kafka.model.bridge.KafkaBridgeConsumerSpecBuilder;
@@ -1034,6 +1036,52 @@ public class KafkaBridgeClusterTest {
         ClusterRoleBinding crb = cluster.generateClusterRoleBinding();
 
         assertThat(crb, is(nullValue()));
+    }
+
+    @Test
+    public void testRoleAbdRoleBindingNoSecrets() {
+        assertThat(KBC.generateRole(), is(nullValue()));
+        assertThat(KBC.generateRoleBindingForRole(), is(nullValue()));
+    }
+
+    @Test
+    public void testRoleAndRoleBinding() {
+        KafkaBridge resource = new KafkaBridgeBuilder(RESOURCE)
+                .editSpec()
+                .editOrNewTls()
+                .addToTrustedCertificates(new CertSecretSourceBuilder().withSecretName("my-secret").withCertificate("cert.crt").build())
+                .endTls()
+                .withAuthentication(
+                        new KafkaClientAuthenticationTlsBuilder()
+                                .withNewCertificateAndKey()
+                                .withSecretName("user-secret")
+                                .withCertificate("user.crt")
+                                .withKey("user.key")
+                                .endCertificateAndKey()
+                                .build())
+                .endSpec()
+                .build();
+        KafkaBridgeCluster kbc = KafkaBridgeCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, SHARED_ENV_PROVIDER);
+
+        Role r = kbc.generateRole();
+        assertThat(r.getMetadata().getName(), is(kbc.componentName));
+        assertThat(r.getMetadata().getNamespace(), is(NAMESPACE));
+        assertThat(r.getRules().size(), is(1));
+        assertThat(r.getRules().get(0).getApiGroups(), is(List.of("")));
+        assertThat(r.getRules().get(0).getResources(), is(List.of("secrets")));
+        assertThat(r.getRules().get(0).getVerbs(), is(List.of("get")));
+        assertThat(r.getRules().get(0).getResourceNames(), is(List.of("foo-bridge-tls-trusted-certs", "user-secret")));
+        assertThat(r.getRules().get(0).getVerbs(), is(List.of("get")));
+
+        RoleBinding rb = kbc.generateRoleBindingForRole();
+        assertThat(rb.getMetadata().getName(), is(KafkaBridgeResources.bridgeRoleBindingName(CLUSTER)));
+        assertThat(rb.getMetadata().getNamespace(), is(NAMESPACE));
+        assertThat(rb.getSubjects().size(), is(1));
+        assertThat(rb.getSubjects().get(0).getKind(), is("ServiceAccount"));
+        assertThat(rb.getSubjects().get(0).getName(), is(kbc.componentName));
+        assertThat(rb.getSubjects().get(0).getNamespace(), is(NAMESPACE));
+        assertThat(rb.getRoleRef().getKind(), is("Role"));
+        assertThat(rb.getRoleRef().getName(), is(kbc.componentName));
     }
 
     @Test
