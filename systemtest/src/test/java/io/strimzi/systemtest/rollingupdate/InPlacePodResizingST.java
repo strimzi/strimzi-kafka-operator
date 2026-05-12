@@ -283,7 +283,7 @@ public class InPlacePodResizingST extends AbstractST {
 
         // Create dedicated controller and broker KafkaNodePools and Kafka CR
         KubeResourceManager.get().createResourceWithWait(
-                KafkaNodePoolTemplates.mixedPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getMixedPoolName(), testStorage.getClusterName(), 3)
+                KafkaNodePoolTemplates.mixedPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getMixedPoolName(), testStorage.getClusterName(), brokerNodes)
                         .editSpec()
                             .withResources(new ResourceRequirementsBuilder()
                                     .withRequests(Map.of("cpu", new Quantity("500m"), "memory", new Quantity("1024Mi")))
