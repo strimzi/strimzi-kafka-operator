@@ -18,7 +18,7 @@ pipelines:
   ### Regression ###
   ##################
   # x86-64
-  - agent: "oracle-vm-8cpu-32gb-x86-64"
+  - agent: "cncf-ubuntu-8-32-x86"
     arch: "amd64"
     pipeline: "regression"
     profile: "brokers-and-security"
@@ -27,7 +27,7 @@ pipelines:
     strimzi_rbac_scope: "CLUSTER"
     cluster_operator_install_type: "yaml"
     parallel: 4
-  - agent: "oracle-vm-8cpu-32gb-x86-64"
+  - agent: "cncf-ubuntu-8-32-x86"
     arch: "amd64"
     pipeline: "regression"
     profile: "operators"
@@ -36,7 +36,7 @@ pipelines:
     strimzi_rbac_scope: "CLUSTER"
     cluster_operator_install_type: "yaml"
     parallel: 4
-  - agent: "oracle-vm-8cpu-32gb-x86-64"
+  - agent: "cncf-ubuntu-8-32-x86"
     arch: "amd64"
     pipeline: "regression"
     profile: "operands"
@@ -46,7 +46,7 @@ pipelines:
     cluster_operator_install_type: "yaml"
     parallel: 4
   # arm64
-  - agent: "oracle-vm-8cpu-32gb-arm64"
+  - agent: "cncf-ubuntu-8-32-arm"
     arch: "arm64"
     pipeline: "regression"
     profile: "brokers-and-security"
@@ -55,7 +55,7 @@ pipelines:
     strimzi_rbac_scope: "CLUSTER"
     cluster_operator_install_type: "yaml"
     parallel: 4
-  - agent: "oracle-vm-8cpu-32gb-arm64"
+  - agent: "cncf-ubuntu-8-32-arm"
     arch: "arm64"
     pipeline: "regression"
     profile: "operators"
@@ -64,7 +64,7 @@ pipelines:
     strimzi_rbac_scope: "CLUSTER"
     cluster_operator_install_type: "yaml"
     parallel: 4
-  - agent: "oracle-vm-8cpu-32gb-arm64"
+  - agent: "cncf-ubuntu-8-32-arm"
     arch: "arm64"
     pipeline: "regression"
     profile: "operands"
@@ -78,7 +78,7 @@ pipelines:
   #############
   # Smoke pipelines can use smaller agents as the tests are not running in parallel even if configured
   # x86-64
-  - agent: "oracle-vm-2cpu-8gb-x86-64"
+  - agent: "cncf-ubuntu-2-8-x86"
     arch: "amd64"
     pipeline: "smoke"
     profile: "smoke"
@@ -88,7 +88,7 @@ pipelines:
     cluster_operator_install_type: "yaml"
     parallel: 1
   # arm64
-  - agent: "oracle-vm-2cpu-8gb-arm64"
+  - agent: "cncf-ubuntu-2-8-arm"
     arch: "arm64"
     pipeline: "smoke"
     profile: "smoke"
@@ -101,7 +101,7 @@ pipelines:
   ### Upgrade ###
   ###############
   # x86-64
-  - agent: "oracle-vm-4cpu-16gb-x86-64"
+  - agent: "cncf-ubuntu-4-16-x86"
     arch: "amd64"
     pipeline: "upgrade"
     profile: "azp_kraft_upgrade"
@@ -110,7 +110,7 @@ pipelines:
     strimzi_rbac_scope: "CLUSTER"
     cluster_operator_install_type: "yaml"
     parallel: 1
-  - agent: "oracle-vm-4cpu-16gb-x86-64"
+  - agent: "cncf-ubuntu-4-16-x86"
     arch: "amd64"
     pipeline: "upgrade"
     profile: "azp_kafka_upgrade"
@@ -120,7 +120,7 @@ pipelines:
     cluster_operator_install_type: "yaml"
     parallel: 1
   # arm64
-  - agent: "oracle-vm-4cpu-16gb-arm64"
+  - agent: "cncf-ubuntu-4-16-arm"
     arch: "arm64"
     pipeline: "upgrade"
     profile: "azp_kraft_upgrade"
@@ -129,7 +129,7 @@ pipelines:
     strimzi_rbac_scope: "CLUSTER"
     cluster_operator_install_type: "yaml"
     parallel: 1
-  - agent: "oracle-vm-4cpu-16gb-arm64"
+  - agent: "cncf-ubuntu-4-16-arm"
     arch: "arm64"
     pipeline: "upgrade"
     profile: "azp_kafka_upgrade"
@@ -143,7 +143,7 @@ pipelines:
   ##################
   # Acceptance pipelines can use smaller agents as the tests are not running in parallel even if configured
   # x86-64
-  - agent: "oracle-vm-4cpu-16gb-x86-64"
+  - agent: "cncf-ubuntu-4-16-x86"
     arch: "amd64"
     pipeline: "acceptance"
     profile: "acceptance"
@@ -153,7 +153,7 @@ pipelines:
     cluster_operator_install_type: "yaml"
     parallel: 2
   # arm64
-  - agent: "oracle-vm-4cpu-16gb-arm64"
+  - agent: "cncf-ubuntu-4-16-arm"
     arch: "arm64"
     pipeline: "acceptance"
     profile: "acceptance"
@@ -166,7 +166,7 @@ pipelines:
   ### Acceptance Helm ###
   #######################
   # x86-64
-  - agent: "oracle-vm-4cpu-16gb-x86-64"
+  - agent: "cncf-ubuntu-4-16-x86"
     arch: "amd64"
     pipeline: "acceptance-helm"
     profile: "acceptance"
@@ -176,7 +176,7 @@ pipelines:
     cluster_operator_install_type: "helm"
     parallel: 2
   # arm64
-  - agent: "oracle-vm-4cpu-16gb-arm64"
+  - agent: "cncf-ubuntu-4-16-arm"
     arch: "arm64"
     pipeline: "acceptance-helm"
     profile: "acceptance"
@@ -192,7 +192,7 @@ pipelines:
   # Each of the pipeline use a specific profile as we use also on Azure
   # In case we will need to adjust the profiles, we should update or create one in systemtest-settings.xml in .azure folder
   # x86-64
-  - agent: "oracle-vm-4cpu-16gb-x86-64"
+  - agent: "cncf-ubuntu-4-16-x86"
     arch: "amd64"
     pipeline: "regression-rbac"
     profile: "azp_kafka_oauth"
@@ -202,7 +202,7 @@ pipelines:
     cluster_operator_install_type: "yaml"
     excluded_groups: 'nodeport'
     parallel: 1
-  - agent: "oracle-vm-4cpu-16gb-x86-64"
+  - agent: "cncf-ubuntu-4-16-x86"
     arch: "amd64"
     pipeline: "regression-rbac"
     profile: "azp_security"
@@ -212,7 +212,7 @@ pipelines:
     cluster_operator_install_type: "yaml"
     excluded_groups: 'nodeport'
     parallel: 1
-  - agent: "oracle-vm-4cpu-16gb-x86-64"
+  - agent: "cncf-ubuntu-4-16-x86"
     arch: "amd64"
     pipeline: "regression-rbac"
     profile: "azp_dynconfig_listeners_tracing_watcher"
@@ -222,7 +222,7 @@ pipelines:
     cluster_operator_install_type: "yaml"
     excluded_groups: 'nodeport'
     parallel: 1
-  - agent: "oracle-vm-4cpu-16gb-x86-64"
+  - agent: "cncf-ubuntu-4-16-x86"
     arch: "amd64"
     pipeline: "regression-rbac"
     profile: "azp_operators"
@@ -232,7 +232,7 @@ pipelines:
     cluster_operator_install_type: "yaml"
     excluded_groups: 'nodeport'
     parallel: 1
-  - agent: "oracle-vm-4cpu-16gb-x86-64"
+  - agent: "cncf-ubuntu-4-16-x86"
     arch: "amd64"
     pipeline: "regression-rbac"
     profile: "azp_rolling_update_bridge"
@@ -242,7 +242,7 @@ pipelines:
     cluster_operator_install_type: "yaml"
     excluded_groups: 'nodeport'
     parallel: 1
-  - agent: "oracle-vm-4cpu-16gb-x86-64"
+  - agent: "cncf-ubuntu-4-16-x86"
     arch: "amd64"
     pipeline: "regression-rbac"
     profile: "azp_connect_mirrormaker"
@@ -252,7 +252,7 @@ pipelines:
     cluster_operator_install_type: "yaml"
     excluded_groups: 'nodeport'
     parallel: 1
-  - agent: "oracle-vm-4cpu-16gb-x86-64"
+  - agent: "cncf-ubuntu-4-16-x86"
     arch: "amd64"
     pipeline: "regression-rbac"
     profile: "azp_rbac_remaining"
@@ -263,7 +263,7 @@ pipelines:
     excluded_groups: 'nodeport'
     parallel: 1
   # arm64
-  - agent: "oracle-vm-4cpu-16gb-arm64"
+  - agent: "cncf-ubuntu-4-16-arm"
     arch: "arm64"
     pipeline: "regression-rbac"
     profile: "azp_kafka_oauth"
@@ -273,7 +273,7 @@ pipelines:
     cluster_operator_install_type: "yaml"
     excluded_groups: 'nodeport'
     parallel: 1
-  - agent: "oracle-vm-4cpu-16gb-arm64"
+  - agent: "cncf-ubuntu-4-16-arm"
     arch: "arm64"
     pipeline: "regression-rbac"
     profile: "azp_security"
@@ -283,7 +283,7 @@ pipelines:
     cluster_operator_install_type: "yaml"
     excluded_groups: 'nodeport'
     parallel: 1
-  - agent: "oracle-vm-4cpu-16gb-arm64"
+  - agent: "cncf-ubuntu-4-16-arm"
     arch: "arm64"
     pipeline: "regression-rbac"
     profile: "azp_dynconfig_listeners_tracing_watcher"
@@ -293,7 +293,7 @@ pipelines:
     cluster_operator_install_type: "yaml"
     excluded_groups: 'nodeport'
     parallel: 1
-  - agent: "oracle-vm-4cpu-16gb-arm64"
+  - agent: "cncf-ubuntu-4-16-arm"
     arch: "arm64"
     pipeline: "regression-rbac"
     profile: "azp_operators"
@@ -303,7 +303,7 @@ pipelines:
     cluster_operator_install_type: "yaml"
     excluded_groups: 'nodeport'
     parallel: 1
-  - agent: "oracle-vm-4cpu-16gb-arm64"
+  - agent: "cncf-ubuntu-4-16-arm"
     arch: "arm64"
     pipeline: "regression-rbac"
     profile: "azp_rolling_update_bridge"
@@ -313,7 +313,7 @@ pipelines:
     cluster_operator_install_type: "yaml"
     excluded_groups: 'nodeport'
     parallel: 1
-  - agent: "oracle-vm-4cpu-16gb-arm64"
+  - agent: "cncf-ubuntu-4-16-arm"
     arch: "arm64"
     pipeline: "regression-rbac"
     profile: "azp_connect_mirrormaker"
@@ -323,7 +323,7 @@ pipelines:
     cluster_operator_install_type: "yaml"
     excluded_groups: 'nodeport'
     parallel: 1
-  - agent: "oracle-vm-4cpu-16gb-arm64"
+  - agent: "cncf-ubuntu-4-16-arm"
     arch: "arm64"
     pipeline: "regression-rbac"
     profile: "azp_rbac_remaining"
@@ -337,7 +337,7 @@ pipelines:
   ### Regression Feature Gates ###
   ################################
   # x86-64
-  - agent: "oracle-vm-8cpu-32gb-x86-64"
+  - agent: "cncf-ubuntu-8-32-x86"
     arch: "amd64"
     pipeline: "regression-fg"
     profile: "brokers-and-security"
@@ -346,7 +346,7 @@ pipelines:
     strimzi_rbac_scope: "CLUSTER"
     cluster_operator_install_type: "yaml"
     parallel: 3
-  - agent: "oracle-vm-8cpu-32gb-x86-64"
+  - agent: "cncf-ubuntu-8-32-x86"
     arch: "amd64"
     pipeline: "regression-fg"
     profile: "operators"
@@ -355,7 +355,7 @@ pipelines:
     strimzi_rbac_scope: "CLUSTER"
     cluster_operator_install_type: "yaml"
     parallel: 4
-  - agent: "oracle-vm-8cpu-32gb-x86-64"
+  - agent: "cncf-ubuntu-8-32-x86"
     arch: "amd64"
     pipeline: "regression-fg"
     profile: "operands"
@@ -365,7 +365,7 @@ pipelines:
     cluster_operator_install_type: "yaml"
     parallel: 3
   # arm64
-  - agent: "oracle-vm-8cpu-32gb-arm64"
+  - agent: "cncf-ubuntu-8-32-arm"
     arch: "arm64"
     pipeline: "regression-fg"
     profile: "brokers-and-security"
@@ -374,7 +374,7 @@ pipelines:
     strimzi_rbac_scope: "CLUSTER"
     cluster_operator_install_type: "yaml"
     parallel: 4
-  - agent: "oracle-vm-8cpu-32gb-arm64"
+  - agent: "cncf-ubuntu-8-32-arm"
     arch: "arm64"
     pipeline: "regression-fg"
     profile: "operators"
@@ -383,7 +383,7 @@ pipelines:
     strimzi_rbac_scope: "CLUSTER"
     cluster_operator_install_type: "yaml"
     parallel: 4
-  - agent: "oracle-vm-8cpu-32gb-arm64"
+  - agent: "cncf-ubuntu-8-32-arm"
     arch: "arm64"
     pipeline: "regression-fg"
     profile: "operands"
@@ -396,7 +396,7 @@ pipelines:
   ### Performance ###
   ###################
   # x86-64
-  - agent: "oracle-vm-8cpu-32gb-x86-64"
+  - agent: "cncf-ubuntu-8-32-x86"
     arch: "amd64"
     pipeline: "performance"
     profile: "performance"
@@ -406,7 +406,7 @@ pipelines:
     cluster_operator_install_type: "yaml"
     parallel: 1
   # arm64
-  - agent: "oracle-vm-8cpu-32gb-arm64"
+  - agent: "cncf-ubuntu-8-32-arm"
     arch: "arm64"
     pipeline: "performance"
     profile: "performance"
@@ -420,7 +420,7 @@ pipelines:
   ##############
   # Bridge pipelines can use smaller agents similar to acceptance
   # x86-64
-  - agent: "oracle-vm-4cpu-16gb-x86-64"
+  - agent: "cncf-ubuntu-4-16-x86"
     arch: "amd64"
     pipeline: "bridge"
     profile: "azp_bridge"
@@ -430,7 +430,7 @@ pipelines:
     cluster_operator_install_type: "yaml"
     parallel: 2
   # arm64
-  - agent: "oracle-vm-4cpu-16gb-arm64"
+  - agent: "cncf-ubuntu-4-16-arm"
     arch: "arm64"
     pipeline: "bridge"
     profile: "azp_bridge"

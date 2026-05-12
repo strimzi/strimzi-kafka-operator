@@ -6,16 +6,12 @@ self-hosted-runner:
   # Labels of self-hosted runner in array of strings.
   # Add other runners if needed
   labels:
-    # container runners
-    - oracle-2cpu-8gb-arm64
-    - oracle-2cpu-8gb-x86_64
-    # VM runners
-    - oracle-vm-2cpu-8gb-x86-64
-    - oracle-vm-2cpu-8gb-arm64
-    - oracle-vm-4cpu-16gb-x86-64
-    - oracle-vm-4cpu-16gb-arm64
-    - oracle-vm-8cpu-32gb-x86-64
-    - oracle-vm-8cpu-32gb-arm64
+    - cncf-ubuntu-2-8-x86
+    - cncf-ubuntu-4-16-x86
+    - cncf-ubuntu-8-32-x86
+    - cncf-ubuntu-2-8-arm
+    - cncf-ubuntu-4-16-arm
+    - cncf-ubuntu-8-32-arm
 
 # Path-specific configurations.
 paths:
