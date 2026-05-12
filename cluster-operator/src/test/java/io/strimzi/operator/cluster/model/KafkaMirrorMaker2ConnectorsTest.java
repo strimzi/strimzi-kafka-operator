@@ -23,7 +23,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
-import static io.strimzi.operator.cluster.model.KafkaMirrorMaker2Connectors.PLACEHOLDER_CERT_STORE_PASSWORD_CONFIG_PROVIDER_ENV_VAR;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -466,9 +465,9 @@ public class KafkaMirrorMaker2ConnectorsTest {
         assertThat(new TreeMap<>(config),
                 is(new TreeMap<>(Map.of("prefix.alias", "sourceClusterAlias",
                                 "prefix.security.protocol", "SSL",
-                                "prefix.ssl.keystore.location", "/tmp/kafka/clusters/sourceClusterAlias.keystore.p12",
-                                "prefix.ssl.keystore.password", PLACEHOLDER_CERT_STORE_PASSWORD_CONFIG_PROVIDER_ENV_VAR,
-                                "prefix.ssl.keystore.type", "PKCS12",
+                                "prefix.ssl.keystore.certificate.chain", "${strimzisecrets:namespace/my-secret:my.crt}",
+                                "prefix.ssl.keystore.key", "${strimzisecrets:namespace/my-secret:my.key}",
+                                "prefix.ssl.keystore.type", "PEM",
                                 "prefix.bootstrap.servers", "sourceClusterAlias.sourceNamespace.svc:9092"))));
     }
 
@@ -494,7 +493,7 @@ public class KafkaMirrorMaker2ConnectorsTest {
         assertThat(configEntry.getLoginModuleName(), is("org.apache.kafka.common.security.plain.PlainLoginModule"));
         assertThat(configEntry.getOptions(),
                 is(Map.of("username", "shaza",
-                        "password", "${strimzidir:/opt/kafka/mm2-password/sourceClusterAlias/my-secret:pa55word}")));
+                        "password", "${strimzisecrets:namespace/my-secret:pa55word}")));
 
         assertThat(new TreeMap<>(config),
                 is(new TreeMap<>(Map.of("prefix.alias", "sourceClusterAlias",
@@ -525,7 +524,7 @@ public class KafkaMirrorMaker2ConnectorsTest {
         assertThat(configEntry.getLoginModuleName(), is("org.apache.kafka.common.security.scram.ScramLoginModule"));
         assertThat(configEntry.getOptions(),
                 is(Map.of("username", "shaza",
-                        "password", "${strimzidir:/opt/kafka/mm2-password/sourceClusterAlias/my-secret:pa55word}")));
+                        "password", "${strimzisecrets:namespace/my-secret:pa55word}")));
 
         assertThat(new TreeMap<>(config),
                 is(new TreeMap<>(Map.of("prefix.alias", "sourceClusterAlias",
@@ -559,14 +558,13 @@ public class KafkaMirrorMaker2ConnectorsTest {
         assertThat("org.apache.kafka.common.security.scram.ScramLoginModule", is(configEntry.getLoginModuleName()));
         assertThat(configEntry.getOptions(),
                 is(Map.of("username", "shaza",
-                        "password", "${strimzidir:/opt/kafka/mm2-password/sourceClusterAlias/my-secret:pa55word}")));
+                        "password", "${strimzisecrets:namespace/my-secret:pa55word}")));
 
         assertThat(new TreeMap<>(config),
                 is(new TreeMap<>(Map.of("prefix.alias", "sourceClusterAlias",
                         "prefix.security.protocol", "SASL_SSL",
-                       "prefix.ssl.truststore.location", "/tmp/kafka/clusters/sourceClusterAlias.truststore.p12",
-                       "prefix.ssl.truststore.password", PLACEHOLDER_CERT_STORE_PASSWORD_CONFIG_PROVIDER_ENV_VAR,
-                        "prefix.ssl.truststore.type", "PKCS12",
+                        "prefix.ssl.truststore.certificates", "${strimzisecrets:namespace/name-connect-tls-trusted-certs:ca.crt}",
+                        "prefix.ssl.truststore.type", "PEM",
                         "prefix.sasl.mechanism", "SCRAM-SHA-512",
                         "prefix.bootstrap.servers", "sourceClusterAlias.sourceNamespace.svc:9092"))));
     }

@@ -172,13 +172,13 @@ class KafkaConnectConfigurationBuilderTest {
                 "consumer.security.protocol=SASL_PLAINTEXT",
                 "admin.security.protocol=SASL_PLAINTEXT",
                 "sasl.mechanism=PLAIN",
-                "sasl.jaas.config=org.apache.kafka.common.security.plain.PlainLoginModule required username=\"user1\" password=\"${strimzidir:/opt/kafka/connect-password/my-auth-secret:my-password-key}\";",
+                "sasl.jaas.config=org.apache.kafka.common.security.plain.PlainLoginModule required username=\"user1\" password=\"${strimzisecrets:namespace/my-auth-secret:my-password-key}\";",
                 "producer.sasl.mechanism=PLAIN",
-                "producer.sasl.jaas.config=org.apache.kafka.common.security.plain.PlainLoginModule required username=\"user1\" password=\"${strimzidir:/opt/kafka/connect-password/my-auth-secret:my-password-key}\";",
+                "producer.sasl.jaas.config=org.apache.kafka.common.security.plain.PlainLoginModule required username=\"user1\" password=\"${strimzisecrets:namespace/my-auth-secret:my-password-key}\";",
                 "consumer.sasl.mechanism=PLAIN",
-                "consumer.sasl.jaas.config=org.apache.kafka.common.security.plain.PlainLoginModule required username=\"user1\" password=\"${strimzidir:/opt/kafka/connect-password/my-auth-secret:my-password-key}\";",
+                "consumer.sasl.jaas.config=org.apache.kafka.common.security.plain.PlainLoginModule required username=\"user1\" password=\"${strimzisecrets:namespace/my-auth-secret:my-password-key}\";",
                 "admin.sasl.mechanism=PLAIN",
-                "admin.sasl.jaas.config=org.apache.kafka.common.security.plain.PlainLoginModule required username=\"user1\" password=\"${strimzidir:/opt/kafka/connect-password/my-auth-secret:my-password-key}\";"
+                "admin.sasl.jaas.config=org.apache.kafka.common.security.plain.PlainLoginModule required username=\"user1\" password=\"${strimzisecrets:namespace/my-auth-secret:my-password-key}\";"
         ));
     }
 
@@ -219,13 +219,13 @@ class KafkaConnectConfigurationBuilderTest {
                 "admin.ssl.truststore.certificates=${strimzisecrets:namespace/my-cluster-connect-tls-trusted-certs:ca.crt}",
                 "admin.ssl.truststore.type=PEM",
                 "sasl.mechanism=PLAIN",
-                "sasl.jaas.config=org.apache.kafka.common.security.plain.PlainLoginModule required username=\"user1\" password=\"${strimzidir:/opt/kafka/connect-password/my-auth-secret:my-password-key}\";",
+                "sasl.jaas.config=org.apache.kafka.common.security.plain.PlainLoginModule required username=\"user1\" password=\"${strimzisecrets:namespace/my-auth-secret:my-password-key}\";",
                 "producer.sasl.mechanism=PLAIN",
-                "producer.sasl.jaas.config=org.apache.kafka.common.security.plain.PlainLoginModule required username=\"user1\" password=\"${strimzidir:/opt/kafka/connect-password/my-auth-secret:my-password-key}\";",
+                "producer.sasl.jaas.config=org.apache.kafka.common.security.plain.PlainLoginModule required username=\"user1\" password=\"${strimzisecrets:namespace/my-auth-secret:my-password-key}\";",
                 "consumer.sasl.mechanism=PLAIN",
-                "consumer.sasl.jaas.config=org.apache.kafka.common.security.plain.PlainLoginModule required username=\"user1\" password=\"${strimzidir:/opt/kafka/connect-password/my-auth-secret:my-password-key}\";",
+                "consumer.sasl.jaas.config=org.apache.kafka.common.security.plain.PlainLoginModule required username=\"user1\" password=\"${strimzisecrets:namespace/my-auth-secret:my-password-key}\";",
                 "admin.sasl.mechanism=PLAIN",
-                "admin.sasl.jaas.config=org.apache.kafka.common.security.plain.PlainLoginModule required username=\"user1\" password=\"${strimzidir:/opt/kafka/connect-password/my-auth-secret:my-password-key}\";"
+                "admin.sasl.jaas.config=org.apache.kafka.common.security.plain.PlainLoginModule required username=\"user1\" password=\"${strimzisecrets:namespace/my-auth-secret:my-password-key}\";"
         ));
     }
 
@@ -250,13 +250,13 @@ class KafkaConnectConfigurationBuilderTest {
                 "consumer.security.protocol=SASL_PLAINTEXT",
                 "admin.security.protocol=SASL_PLAINTEXT",
                 "sasl.mechanism=SCRAM-SHA-256",
-                "sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required username=\"my-user\" password=\"${strimzidir:/opt/kafka/connect-password/my-auth-secret:my-password-key}\";",
+                "sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required username=\"my-user\" password=\"${strimzisecrets:namespace/my-auth-secret:my-password-key}\";",
                 "producer.sasl.mechanism=SCRAM-SHA-256",
-                "producer.sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required username=\"my-user\" password=\"${strimzidir:/opt/kafka/connect-password/my-auth-secret:my-password-key}\";",
+                "producer.sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required username=\"my-user\" password=\"${strimzisecrets:namespace/my-auth-secret:my-password-key}\";",
                 "consumer.sasl.mechanism=SCRAM-SHA-256",
-                "consumer.sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required username=\"my-user\" password=\"${strimzidir:/opt/kafka/connect-password/my-auth-secret:my-password-key}\";",
+                "consumer.sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required username=\"my-user\" password=\"${strimzisecrets:namespace/my-auth-secret:my-password-key}\";",
                 "admin.sasl.mechanism=SCRAM-SHA-256",
-                "admin.sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required username=\"my-user\" password=\"${strimzidir:/opt/kafka/connect-password/my-auth-secret:my-password-key}\";"
+                "admin.sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required username=\"my-user\" password=\"${strimzisecrets:namespace/my-auth-secret:my-password-key}\";"
         ));
     }
 
@@ -297,13 +297,13 @@ class KafkaConnectConfigurationBuilderTest {
                 "admin.ssl.truststore.certificates=${strimzisecrets:namespace/my-cluster-connect-tls-trusted-certs:ca.crt}",
                 "admin.ssl.truststore.type=PEM",
                 "sasl.mechanism=SCRAM-SHA-256",
-                "sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required username=\"my-user\" password=\"${strimzidir:/opt/kafka/connect-password/my-auth-secret:my-password-key}\";",
+                "sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required username=\"my-user\" password=\"${strimzisecrets:namespace/my-auth-secret:my-password-key}\";",
                 "producer.sasl.mechanism=SCRAM-SHA-256",
-                "producer.sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required username=\"my-user\" password=\"${strimzidir:/opt/kafka/connect-password/my-auth-secret:my-password-key}\";",
+                "producer.sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required username=\"my-user\" password=\"${strimzisecrets:namespace/my-auth-secret:my-password-key}\";",
                 "consumer.sasl.mechanism=SCRAM-SHA-256",
-                "consumer.sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required username=\"my-user\" password=\"${strimzidir:/opt/kafka/connect-password/my-auth-secret:my-password-key}\";",
+                "consumer.sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required username=\"my-user\" password=\"${strimzisecrets:namespace/my-auth-secret:my-password-key}\";",
                 "admin.sasl.mechanism=SCRAM-SHA-256",
-                "admin.sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required username=\"my-user\" password=\"${strimzidir:/opt/kafka/connect-password/my-auth-secret:my-password-key}\";"
+                "admin.sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required username=\"my-user\" password=\"${strimzisecrets:namespace/my-auth-secret:my-password-key}\";"
         ));
     }
 
@@ -328,13 +328,13 @@ class KafkaConnectConfigurationBuilderTest {
                 "consumer.security.protocol=SASL_PLAINTEXT",
                 "admin.security.protocol=SASL_PLAINTEXT",
                 "sasl.mechanism=SCRAM-SHA-512",
-                "sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required username=\"my-user\" password=\"${strimzidir:/opt/kafka/connect-password/my-auth-secret:my-password-key}\";",
+                "sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required username=\"my-user\" password=\"${strimzisecrets:namespace/my-auth-secret:my-password-key}\";",
                 "producer.sasl.mechanism=SCRAM-SHA-512",
-                "producer.sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required username=\"my-user\" password=\"${strimzidir:/opt/kafka/connect-password/my-auth-secret:my-password-key}\";",
+                "producer.sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required username=\"my-user\" password=\"${strimzisecrets:namespace/my-auth-secret:my-password-key}\";",
                 "consumer.sasl.mechanism=SCRAM-SHA-512",
-                "consumer.sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required username=\"my-user\" password=\"${strimzidir:/opt/kafka/connect-password/my-auth-secret:my-password-key}\";",
+                "consumer.sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required username=\"my-user\" password=\"${strimzisecrets:namespace/my-auth-secret:my-password-key}\";",
                 "admin.sasl.mechanism=SCRAM-SHA-512",
-                "admin.sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required username=\"my-user\" password=\"${strimzidir:/opt/kafka/connect-password/my-auth-secret:my-password-key}\";"
+                "admin.sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required username=\"my-user\" password=\"${strimzisecrets:namespace/my-auth-secret:my-password-key}\";"
         ));
     }
 
