@@ -261,14 +261,14 @@ public abstract class AbstractNamespacedResourceOperator<C extends KubernetesCli
      */
     protected Future<ReconcileResult<T>> internalUpdate(Reconciliation reconciliation, String namespace, String name, T current, T desired) {
         if (needsPatching(reconciliation, name, current, desired))  {
-            try {
+            return resourceSupport.executeBlocking(() -> {
                 T result = patchOrReplace(namespace, name, desired);
                 LOGGER.debugCr(reconciliation, "{} {} in namespace {} has been patched", resourceKind, name, namespace);
-                return Future.succeededFuture(wasChanged(current, result) ? ReconcileResult.patched(result) : ReconcileResult.noop(result));
-            } catch (Exception e) {
+                return wasChanged(current, result) ? ReconcileResult.patched(result) : ReconcileResult.noop(result);
+            }).recover(e -> {
                 LOGGER.debugCr(reconciliation, "Caught exception while patching {} {} in namespace {}", resourceKind, name, namespace, e);
                 return Future.failedFuture(e);
-            }
+            });
         } else {
             LOGGER.debugCr(reconciliation, "{} {} in namespace {} did not changed and doesn't need patching", resourceKind, name, namespace);
             return Future.succeededFuture(ReconcileResult.noop(current));
@@ -283,9 +283,8 @@ public abstract class AbstractNamespacedResourceOperator<C extends KubernetesCli
      * First patch attempt is done without force, however if there is a conflict, operator will try again using force.
      */
     protected Future<ReconcileResult<T>> internalServerSideApply(Reconciliation reconciliation, String namespace, String name, T desired) {
-        R resourceOp = operation().inNamespace(namespace).withName(name);
-
-        try {
+        return resourceSupport.executeBlocking(() -> {
+            R resourceOp = operation().inNamespace(namespace).withName(name);
             T result;
 
             try {
@@ -303,12 +302,13 @@ public abstract class AbstractNamespacedResourceOperator<C extends KubernetesCli
                 }
             }
 
+            ReconcileResult<T> reconcileResult = ReconcileResult.patchedWithServerSideApply(result);
             LOGGER.debugCr(reconciliation, "{} {}/{} has been patched", resourceKind, namespace, name);
-            return Future.succeededFuture(ReconcileResult.patchedWithServerSideApply(result));
-        } catch (Exception e) {
+            return reconcileResult;
+        }).recover(e -> {
             LOGGER.debugCr(reconciliation, "Caught exception while patching {} {} in namespace {}", resourceKind, name, namespace, e);
             return Future.failedFuture(e);
-        }
+        });
     }
 
     /**
@@ -344,14 +344,14 @@ public abstract class AbstractNamespacedResourceOperator<C extends KubernetesCli
      * and completes the given future accordingly.
      */
     protected Future<ReconcileResult<T>> internalCreate(Reconciliation reconciliation, String namespace, String name, T desired) {
-        try {
+        return resourceSupport.executeBlocking(() -> {
             ReconcileResult<T> result = ReconcileResult.created(operation().inNamespace(namespace).resource(desired).create());
             LOGGER.debugCr(reconciliation, "{} {} in namespace {} has been created", resourceKind, name, namespace);
-            return Future.succeededFuture(result);
-        } catch (Exception e) {
+            return result;
+        }).recover(e -> {
             LOGGER.debugCr(reconciliation, "Caught exception while creating {} {} in namespace {}", resourceKind, name, namespace, e);
             return Future.failedFuture(e);
-        }
+        });
     }
 
     /**
