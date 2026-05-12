@@ -90,7 +90,7 @@ public class KafkaConnectApiImplTest {
     }
 
     @Test
-    public void testStatusWhileWaitingForDeletionDoesNotTreatOkBodyAsErrorMessage() throws Exception {
+    public void testStatusDoesNotTreatOkBodyAsErrorMessage() throws Exception {
         // Poll /status for 404 only; 200 with connector status is normal until removal.
         String statusBody = "{\"name\":\"my-connector\",\"connector\":{\"state\":\"RUNNING\"},"
                 + "\"tasks\":[]}";
@@ -111,7 +111,7 @@ public class KafkaConnectApiImplTest {
     }
 
     @Test
-    public void testStatusWithNon2xxUsesConnectErrorBody() throws Exception {
+    public void testStatusWithValidErrorBody() throws Exception {
         server.stubFor(get(urlPathMatching(".*/connectors/c/status"))
                 .willReturn(aResponse()
                         .withStatus(500)
