@@ -292,5 +292,4 @@ partitioner.class=my-custom-partitioner
 [role="_additional-resources"]
 .Additional resources
 
-* {K8SJsonPath}
 * xref:assembly-securing-access-{context}[Securing access to a Kafka cluster]

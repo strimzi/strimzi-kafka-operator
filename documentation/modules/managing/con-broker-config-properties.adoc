@@ -433,7 +433,7 @@ Followers operate only to replicate messages from the partition leader and allow
 Recovery requires an in-sync follower. Followers stay in sync by sending fetch requests to the leader, which returns messages to the follower in order.
 The follower is considered to be in sync if it has caught up with the most recently committed message on the leader.
 The leader checks this by looking at the last offset requested by the follower.
-An out-of-sync follower is usually not eligible as a leader should the current leader fail, unclean leader election is allowed.
+An out-of-sync follower is usually not eligible as a leader should the current leader fail, unless unclean leader election is allowed.
 
 You can adjust the lag time before a follower is considered out of sync:
 

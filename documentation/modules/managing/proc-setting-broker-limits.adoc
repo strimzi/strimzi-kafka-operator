@@ -19,8 +19,9 @@ Configure throughput and storage limits on Kafka brokers by enabling a quota plu
 . Add quota configuration to the `quotas` section of the `Kafka` resource.
 Configure either the `strimzi` or `kafka` quota plugin.
 +
+--
 Example `strimzi` quota plugin configuration:
-+
+
 [source,yaml,subs="+attributes"]
 ----
 apiVersion: {KafkaApiVersion}
@@ -38,15 +39,18 @@ spec:
       excludedPrincipals:
         - my-user
 ----
+
 * `producerByteRate` and `consumerByteRate` set total throughput limits across all clients.
 * `minAvailableBytesPerVolume` protects broker disk capacity by throttling producers when available storage drops below the configured byte threshold on any volume. You can also use `minAvailableRatioPerVolume` to set the threshold as a percentage of total volume size.
 * `excludedPrincipals` excludes specified users from quota enforcement.
+--
 +
 `minAvailableBytesPerVolume` and `minAvailableRatioPerVolume` are mutually exclusive.
 Configure only one of these properties.
 +
+--
 Example `kafka` quota plugin configuration:
-+
+
 [source,yaml,subs="+attributes"]
 ----
 apiVersion: {KafkaApiVersion}
@@ -67,6 +71,7 @@ spec:
 * `producerByteRate` and `consumerByteRate` apply throughput limits per user and per broker.
 * `requestPercentage` limits CPU usage for client requests.
 * `controllerMutationRate` limits the number of create topic, create partition, and delete topic requests per second.
+--
 +
 NOTE: Default `kafka` quotas apply to internal users, including the Topic Operator and Cruise Control.
 To prevent the Topic Operator from being throttled, monitor controller metrics and explicitly set a `controllerMutationRate` that accommodates your topic operations.

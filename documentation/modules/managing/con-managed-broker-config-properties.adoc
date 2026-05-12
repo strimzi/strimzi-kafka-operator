@@ -26,4 +26,4 @@ For JBOD storage, they are mounted at `/var/lib/kafka/data-<volume_id>/kafka-log
 [role="_additional-resources"]
 .Additional resources
 
-* link:{BookURLConfiguring}#type-KafkaClusterSpec-reference[`KafkaClusterSpec` schema reference for list of exclusions]
+* link:{BookURLConfiguring}#type-KafkaClusterSpec-reference[`KafkaClusterSpec` schema reference for a list of exclusions]

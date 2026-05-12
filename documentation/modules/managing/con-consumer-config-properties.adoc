@@ -380,7 +380,7 @@ Implement dynamic scaling policies::
 NOTE: In cases where lengthy message processing is unavoidable, consider pausing and resuming partitions as needed.
 If you pause all partitions, `poll()` returns no records, allowing you to keep calling it without overwhelming the consumers. 
 Alternatively, you can offload the processing tasks to a pool of worker threads. 
-This helps prevents delays and potential rebalances.
+This helps prevent delays and potential rebalances.
 
 [role="_additional-resources"]
 .Additional resources
