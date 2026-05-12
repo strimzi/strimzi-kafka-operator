@@ -177,7 +177,6 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
                     int statusCode = response.statusCode();
                     if (statusCode == 204) {
                         LOGGER.debugCr(reconciliation, "Connector was deleted. Waiting for status deletion!");
-                        // Only 404 completes poll; 200 fails and triggers backoff.
                         return withBackoff(reconciliation, new BackOff(200L, 2, 10), connectorName, Collections.singleton(200),
                                 () -> status(reconciliation, host, port, connectorName, Collections.singleton(404)), "status").thenApply(r -> null);
                     } else if (statusCode == 409) {
