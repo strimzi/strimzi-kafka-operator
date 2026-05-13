@@ -98,13 +98,14 @@ public class Util {
     public static byte[] decodeBase64FieldFromSecret(Secret secret, String field) {
         Objects.requireNonNull(secret);
         String data = secret.getData().get(field);
-        if (data == null) {
+        if (data != null) {
+            return Base64.getDecoder().decode(data);
+        } else {
             throw new RuntimeException(String.format("The Secret %s/%s is missing the field %s",
                     secret.getMetadata().getNamespace(),
                     secret.getMetadata().getName(),
                     field));
         }
-        return Base64.getDecoder().decode(data);
     }
 
     /**
