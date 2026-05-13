@@ -41,8 +41,13 @@ Use the `kafka` quota plugin to control individual client behavior using static 
 
 The `kafka` plugin is suitable when you need to:
 
-* Apply per-broker and per-user limits (broker-level limits can be overridden by xref:con-configuring-client-quotas-str[user-specific quotas])
+* Apply per-broker and per-user limits (broker-level limits can be overridden by configuring user-specific quotas)
 * Control CPU usage for client requests
 * Limit the rate of mutations accepted for create topic, create partition, and delete topic requests
 
 Default quotas apply to all users, including internal components.
+
+[role="_additional-resources"]
+.Additional resources
+
+* xref:con-configuring-client-quotas-str[Configuring user-specific quotas]

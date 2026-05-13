@@ -57,7 +57,7 @@ The `auto.create.topics.enable` property is enabled by default so that topics th
 If you are using automatic topic creation, you can set the default number of partitions for topics using `num.partitions`.
 Generally, however, this property is disabled so that more control is provided over topics through explicit topic creation.
 
-For xref:data_durability[data durability], you should also set `min.insync.replicas` in your _topic_ configuration and message delivery acknowledgments using `acks=all` in your _producer_ configuration.
+For data durability, you should also set `min.insync.replicas` in your _topic_ configuration and message delivery acknowledgments using `acks=all` in your _producer_ configuration.
 
 Use `replica.fetch.max.bytes` to set the maximum size, in bytes, of messages fetched by each follower that replicates the leader partition.
 Change this value according to the average message size and throughput. When considering the total memory allocation required for read/write buffering, the memory available must also be able to accommodate the maximum replicated message size when multiplied by all followers.
@@ -80,7 +80,7 @@ delete.topic.enable=true
 
 == Internal topic settings for transactions and commits
 
-If you are xref:reliability_guarantees[using transactions] to enable atomic writes to partitions from producers, the state of the transactions is stored in the internal `__transaction_state` topic.
+If you are using transactions to enable atomic writes to partitions from producers, the state of the transactions is stored in the internal `__transaction_state` topic.
 By default, the brokers are configured with a replication factor of 3 and a minimum of 2 in-sync replicas for this topic, which means that a minimum of three brokers are required in your Kafka cluster.
 
 [source,env]
@@ -123,16 +123,18 @@ At a minimum, the number of I/O threads should equal the number of storage volum
 [source,env]
 ----
 # ...
-num.network.threads=3 <1>
-queued.max.requests=500 <2>
-num.io.threads=8 <3>
-num.recovery.threads.per.data.dir=4 <4>
+num.network.threads=3
+queued.max.requests=500
+num.io.threads=8
+num.recovery.threads.per.data.dir=4
 # ...
 ----
-<1> The number of network threads for the Kafka cluster.
-<2> The number of requests allowed in the request queue.
-<3> The number of I/O  threads for a Kafka broker.
-<4> The number of threads used for log loading at startup and flushing at shutdown. Try setting to a value of at least the number of cores.
+
+* `num.network.threads` defines the number of network threads for the Kafka cluster.
+* `queued.max.requests` defines the number of requests allowed in the request queue.
+* `num.io.threads` defines the number of I/O threads for a Kafka broker.
+* `num.recovery.threads.per.data.dir` defines the number of threads used for log loading at startup and flushing at shutdown. 
+Try setting this to at least the number of CPU cores.
 
 Configuration updates to the thread pools for all brokers might occur dynamically at the cluster level.
 These updates are restricted to between half the current size and twice the current size.
@@ -222,7 +224,7 @@ Compact cleanup policy:: Compact cleanup policy is generally configured as a top
 Kafka's log cleaner applies compaction on specific topics, retaining only the most recent value for a key in the topic.
 You can also configure topics to use both policies (`cleanup.policy=compact,delete`). 
 
-.Setting up retention limits for the delete policy
+== Setting up retention limits for a delete policy
 
 Delete cleanup policy corresponds to managing logs with data retention. 
 The policy is suitable when data does not need to be retained forever.
@@ -292,7 +294,7 @@ Adjust the log retention check interval in relation to the log retention setting
 Smaller retention sizes might require more frequent checks. 
 The frequency of cleanup should be often enough to manage the disk space but not so often it affects performance on a broker.
 
-.Retaining the most recent messages using compact policy
+== Retaining the most recent messages using compact policy
 
 When you enable log compaction for a topic by setting `cleanup.policy=compact`, Kafka uses the log cleaner as a background thread to perform the compaction.
 The compact policy guarantees that the most recent message for each message key is retained, effectively cleaning up older versions of records. 
@@ -340,7 +342,7 @@ log.cleaner.backoff.ms=15000
 # ...
 ----
 
-.Using combined compact and delete policies 
+== Using combined compact and delete policies 
 
 If you choose only a compact policy, your log can still become arbitrarily large. 
 In such cases, you can set the cleanup policy for a topic to compact and delete logs.
@@ -431,7 +433,7 @@ Followers operate only to replicate messages from the partition leader and allow
 Recovery requires an in-sync follower. Followers stay in sync by sending fetch requests to the leader, which returns messages to the follower in order.
 The follower is considered to be in sync if it has caught up with the most recently committed message on the leader.
 The leader checks this by looking at the last offset requested by the follower.
-An out-of-sync follower is usually not eligible as a leader should the current leader fail, unless xref:con-broker-config-properties-unclean-{context}[unclean leader election is allowed].
+An out-of-sync follower is usually not eligible as a leader should the current leader fail, unless unclean leader election is allowed.
 
 You can adjust the lag time before a follower is considered out of sync:
 
@@ -515,3 +517,10 @@ group.initial.rebalance.delay.ms=3000
 The delay is the amount of time that the coordinator waits for members to join. The longer the delay,
 the more likely it is that all the members will join in time and avoid a rebalance.
 But the delay also prevents the group from consuming until the period has ended.
+
+[role="_additional-resources"]
+.Additional resources
+
+* xref:reliability_guarantees[Reliability guarantees using transactions]
+* xref:data_durability[Data durability]
+* xref:con-broker-config-properties-unclean-{context}[Unclean leader election]

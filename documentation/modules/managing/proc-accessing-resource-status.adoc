@@ -30,4 +30,5 @@ Using the `jq` {JQTool} makes it easier to read the output.
 
 [role="_additional-resources"]
 .Additional resources
-* For more information about using JSONPath, see {K8SJsonPath}.
+
+* {K8SJsonPath}

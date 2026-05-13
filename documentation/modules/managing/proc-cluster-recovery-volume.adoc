@@ -16,7 +16,7 @@ This procedure shows how to recreate both resources.
 
 WARNING: If the User Operator is enabled and Kafka users are not recreated, users are deleted from the Kafka cluster immediately after recovery. 
 
-.Before you begin
+.Prerequisites
 
 In this procedure, it is essential that PVs are mounted into the correct PVC to avoid data corruption.
 A `volumeName` is specified for the PVC and this must match the name of the PV.

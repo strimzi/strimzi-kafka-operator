@@ -23,4 +23,7 @@ Node IDs start from 0 (zero) and run sequentially across the Kafka cluster.
 Log directories are mounted to `/var/lib/kafka/data/kafka-log<pod_id>` based on the `spec.storage` configuration specified in the `KafkaNodePool` custom resource.
 For JBOD storage, they are mounted at `/var/lib/kafka/data-<volume_id>/kafka-log<pod_id>`.
 
-For a list of exclusions, see the link:{BookURLConfiguring}#type-KafkaClusterSpec-reference[`KafkaClusterSpec` schema reference].
+[role="_additional-resources"]
+.Additional resources
+
+* link:{BookURLConfiguring}#type-KafkaClusterSpec-reference[`KafkaClusterSpec` schema reference for a list of exclusions]
