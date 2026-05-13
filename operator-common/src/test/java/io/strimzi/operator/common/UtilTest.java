@@ -6,6 +6,11 @@ package io.strimzi.operator.common;
 
 import org.junit.jupiter.api.Test;
 
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 import static io.strimzi.operator.common.Util.parseMap;
@@ -83,5 +88,94 @@ public class UtilTest {
         assertThat(Util.maskPassword(noPassword, "123456"), is("123456"));
         assertThat(Util.maskPassword(passwordAtTheEnd, "123456"), is("********"));
         assertThat(Util.maskPassword(passwordInTheMiddle, "123456"), is("********"));
+    }
+
+    @Test
+    public void testMaintenanceTimeWindowsSatisfiedWithNullWindows() {
+        boolean result = Util.isMaintenanceTimeWindowsSatisfied(Reconciliation.DUMMY_RECONCILIATION, null, Instant.now());
+
+        assertThat(result, is(true));
+    }
+
+    @Test
+    public void testMaintenanceTimeWindowsSatisfiedWithEmptyWindows() {
+        boolean result = Util.isMaintenanceTimeWindowsSatisfied(Reconciliation.DUMMY_RECONCILIATION, Collections.emptyList(), Instant.now());
+
+        assertThat(result, is(true));
+    }
+
+    @Test
+    public void testMaintenanceTimeWindowsSatisfiedWithMatchingWindow() {
+        // Create a time: 2026-05-02 14:30:00 GMT (Friday)
+        ZonedDateTime zdt = ZonedDateTime.of(2026, 5, 2, 14, 30, 0, 0, ZoneId.of("GMT"));
+
+        // Cron that matches: every day at 14:30 (sec min hour day month day-of-week)
+        List<String> maintenanceWindows = List.of("0 30 14 * * ?");
+
+        boolean result = Util.isMaintenanceTimeWindowsSatisfied(Reconciliation.DUMMY_RECONCILIATION, maintenanceWindows, zdt.toInstant());
+
+        assertThat(result, is(true));
+    }
+
+    @Test
+    public void testMaintenanceTimeWindowsSatisfiedWithNonMatchingWindow() {
+        // Create a time: 2026-05-02 14:30:00 GMT (Friday)
+        ZonedDateTime zdt = ZonedDateTime.of(2026, 5, 2, 14, 30, 0, 0, ZoneId.of("GMT"));
+
+        // Cron that doesn't match: every day at 10:00 (sec min hour day month day-of-week)
+        List<String> maintenanceWindows = List.of("0 0 10 * * ?");
+
+        boolean result = Util.isMaintenanceTimeWindowsSatisfied(Reconciliation.DUMMY_RECONCILIATION, maintenanceWindows, zdt.toInstant());
+
+        assertThat(result, is(false));
+    }
+
+    @Test
+    public void testMaintenanceTimeWindowsSatisfiedWithMultipleWindowsOneMatches() {
+        // Create a time: 2026-05-02 14:30:00 GMT (Friday)
+        ZonedDateTime zdt = ZonedDateTime.of(2026, 5, 2, 14, 30, 0, 0, ZoneId.of("GMT"));
+
+        // Multiple windows: first doesn't match, second matches
+        List<String> maintenanceWindows = List.of("0 0 10 * * ?", "0 30 14 * * ?", "0 0 20 * * ?");
+
+        boolean result = Util.isMaintenanceTimeWindowsSatisfied(Reconciliation.DUMMY_RECONCILIATION, maintenanceWindows, zdt.toInstant());
+
+        assertThat(result, is(true));
+    }
+
+    @Test
+    public void testMaintenanceTimeWindowsSatisfiedWithMultipleWindowsNoneMatch() {
+        // Create a time: 2026-05-02 14:30:00 GMT (Friday)
+        ZonedDateTime zdt = ZonedDateTime.of(2026, 5, 2, 14, 30, 0, 0, ZoneId.of("GMT"));
+
+        // Multiple windows: none match
+        List<String> maintenanceWindows = List.of("0 0 10 * * ?", "0 0 12 * * ?", "0 0 20 * * ?");
+
+        boolean result = Util.isMaintenanceTimeWindowsSatisfied(Reconciliation.DUMMY_RECONCILIATION, maintenanceWindows, zdt.toInstant());
+
+        assertThat(result, is(false));
+    }
+
+    @Test
+    public void testMaintenanceTimeWindowsSatisfiedWithInvalidCronExpression() {
+        // Invalid cron expression
+        List<String> maintenanceWindows = List.of("invalid-cron-expression");
+
+        boolean result = Util.isMaintenanceTimeWindowsSatisfied(Reconciliation.DUMMY_RECONCILIATION, maintenanceWindows, Instant.now());
+
+        assertThat(result, is(false));
+    }
+
+    @Test
+    public void testMaintenanceTimeWindowsSatisfiedWithInvalidCronInList() {
+        // Create a time: 2026-05-02 14:30:00 GMT (Friday)
+        ZonedDateTime zdt = ZonedDateTime.of(2026, 5, 2, 14, 30, 0, 0, ZoneId.of("GMT"));
+
+        // First cron is valid, second is invalid - should return false on invalid
+        List<String> maintenanceWindows = List.of("0 0 10 * * ?", "invalid-cron");
+
+        boolean result = Util.isMaintenanceTimeWindowsSatisfied(Reconciliation.DUMMY_RECONCILIATION, maintenanceWindows, zdt.toInstant());
+
+        assertThat(result, is(false));
     }
 }
