@@ -1,6 +1,6 @@
 [
   {
-    "agent": "oracle-vm-2cpu-8gb-x86-64",
+    "agent": "cncf-ubuntu-2-8-x86",
     "arch": "amd64",
     "pipeline": "smoke",
     "profile": "smoke",

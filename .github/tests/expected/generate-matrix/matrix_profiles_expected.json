@@ -1,6 +1,6 @@
 [
   {
-    "agent": "oracle-vm-8cpu-32gb-x86-64",
+    "agent": "cncf-ubuntu-8-32-x86",
     "arch": "amd64",
     "pipeline": "regression",
     "profile": "operators",
@@ -12,7 +12,7 @@
     "jobName": "regression-operators-amd64"
   },
   {
-    "agent": "oracle-vm-8cpu-32gb-arm64",
+    "agent": "cncf-ubuntu-8-32-arm",
     "arch": "arm64",
     "pipeline": "regression",
     "profile": "operators",
@@ -24,7 +24,7 @@
     "jobName": "regression-operators-arm64"
   },
   {
-    "agent": "oracle-vm-8cpu-32gb-x86-64",
+    "agent": "cncf-ubuntu-8-32-x86",
     "arch": "amd64",
     "pipeline": "regression",
     "profile": "brokers-and-security",
@@ -36,7 +36,7 @@
     "jobName": "regression-brokers-and-security-amd64"
   },
   {
-    "agent": "oracle-vm-8cpu-32gb-arm64",
+    "agent": "cncf-ubuntu-8-32-arm",
     "arch": "arm64",
     "pipeline": "regression",
     "profile": "brokers-and-security",
@@ -48,7 +48,7 @@
     "jobName": "regression-brokers-and-security-arm64"
   },
   {
-    "agent": "oracle-vm-8cpu-32gb-x86-64",
+    "agent": "cncf-ubuntu-8-32-x86",
     "arch": "amd64",
     "pipeline": "regression-fg",
     "profile": "operators",
@@ -60,7 +60,7 @@
     "jobName": "regression-fg-operators-amd64"
   },
   {
-    "agent": "oracle-vm-8cpu-32gb-arm64",
+    "agent": "cncf-ubuntu-8-32-arm",
     "arch": "arm64",
     "pipeline": "regression-fg",
     "profile": "operators",
@@ -72,7 +72,7 @@
     "jobName": "regression-fg-operators-arm64"
   },
   {
-    "agent": "oracle-vm-8cpu-32gb-x86-64",
+    "agent": "cncf-ubuntu-8-32-x86",
     "arch": "amd64",
     "pipeline": "regression-fg",
     "profile": "brokers-and-security",
@@ -84,7 +84,7 @@
     "jobName": "regression-fg-brokers-and-security-amd64"
   },
   {
-    "agent": "oracle-vm-8cpu-32gb-arm64",
+    "agent": "cncf-ubuntu-8-32-arm",
     "arch": "arm64",
     "pipeline": "regression-fg",
     "profile": "brokers-and-security",

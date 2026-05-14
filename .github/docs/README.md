@@ -34,7 +34,7 @@ This actions has to be called separately for each architecture with matrix strat
     strategy:
       matrix:
         architecture: [amd64, arm64]
-    runs-on: oracle-vm-2cpu-8gb-arm64
+    runs-on: cncf-ubuntu-2-8-arm
     steps:
       - uses: actions/checkout@v6
       - uses: strimzi/github-actions/.github/actions/build/build-containers@v1
@@ -42,7 +42,7 @@ This actions has to be called separately for each architecture with matrix strat
           architecture: ${{ matrix.architecture }}
 ```
 
-As a runner we use `oracle-vm-2cpu-8gb-arm64` which is basically a small arm-based VM.
+As a runner we use `cncf-ubuntu-2-8-arm` which is basically a small arm-based VM.
 This runner allows us to build multi-arch images without any tweaks in our build mechanism (container runners from oracle cloud doesn't allow it).
 
 ## Supporting actions

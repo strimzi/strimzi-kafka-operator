@@ -1,6 +1,6 @@
 [
   {
-    "agent": "oracle-vm-4cpu-16gb-x86-64",
+    "agent": "cncf-ubuntu-4-16-x86",
     "arch": "amd64",
     "pipeline": "upgrade",
     "profile": "azp_kraft_upgrade",
@@ -12,7 +12,7 @@
     "jobName": "upgrade-azp_kraft_upgrade-amd64"
   },
   {
-    "agent": "oracle-vm-4cpu-16gb-x86-64",
+    "agent": "cncf-ubuntu-4-16-x86",
     "arch": "amd64",
     "pipeline": "upgrade",
     "profile": "azp_kafka_upgrade",
@@ -24,7 +24,7 @@
     "jobName": "upgrade-azp_kafka_upgrade-amd64"
   },
   {
-    "agent": "oracle-vm-4cpu-16gb-arm64",
+    "agent": "cncf-ubuntu-4-16-arm",
     "arch": "arm64",
     "pipeline": "upgrade",
     "profile": "azp_kraft_upgrade",
@@ -36,7 +36,7 @@
     "jobName": "upgrade-azp_kraft_upgrade-arm64"
   },
   {
-    "agent": "oracle-vm-4cpu-16gb-arm64",
+    "agent": "cncf-ubuntu-4-16-arm",
     "arch": "arm64",
     "pipeline": "upgrade",
     "profile": "azp_kafka_upgrade",
