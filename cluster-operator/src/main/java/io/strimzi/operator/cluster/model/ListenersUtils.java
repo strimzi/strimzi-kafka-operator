@@ -402,9 +402,8 @@ public class ListenersUtils {
     public static Map<String, String> brokerAnnotations(GenericKafkaListener listener, NodeRef node)    {
         if (listener.getConfiguration() != null) {
             Map<String, String> annotations = brokerAnnotations(listener, node.nodeId());
-            Map<String, String> renderedAnnotationsFromTemplate = renderTemplateMap(listener.getConfiguration().getPerBrokerAnnotationsTemplate(), node);
 
-            return annotations.isEmpty() ? renderedAnnotationsFromTemplate : annotations;
+            return annotations.isEmpty() ? renderTemplateMap(listener.getConfiguration().getPerBrokerAnnotationsTemplate(), node) : annotations;
         } else {
             return Collections.emptyMap();
         }
@@ -457,9 +456,8 @@ public class ListenersUtils {
     public static Map<String, String> brokerLabels(GenericKafkaListener listener, NodeRef node)    {
         if (listener.getConfiguration() != null) {
             Map<String, String> labels = brokerLabels(listener, node.nodeId());
-            Map<String, String> renderedLabels = renderTemplateMap(listener.getConfiguration().getPerBrokerLabelsTemplate(), node);
 
-            return labels.isEmpty() ? renderedLabels : labels;
+            return labels.isEmpty() ? renderTemplateMap(listener.getConfiguration().getPerBrokerLabelsTemplate(), node) : labels;
         } else {
             return Collections.emptyMap();
         }
