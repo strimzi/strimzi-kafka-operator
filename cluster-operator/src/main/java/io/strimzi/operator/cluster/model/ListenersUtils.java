@@ -362,7 +362,7 @@ public class ListenersUtils {
      * @param pod       Pod ID for which we should get the configuration option
      * @return          Map with DNS annotations or empty map if not specified
      */
-    public static Map<String, String> brokerAnnotations(GenericKafkaListener listener, int pod)    {
+    /* test */ static Map<String, String> brokerAnnotations(GenericKafkaListener listener, int pod)    {
         if (listener.getConfiguration() != null
                 && listener.getConfiguration().getBrokers() != null) {
             return listener.getConfiguration().getBrokers().stream()
@@ -433,7 +433,7 @@ public class ListenersUtils {
      * @param pod       Pod ID for which we should get the configuration option
      * @return          Map with labels or empty map if not specified
      */
-    public static Map<String, String> brokerLabels(GenericKafkaListener listener, int pod)    {
+    /* test */ static Map<String, String> brokerLabels(GenericKafkaListener listener, int pod)    {
         if (listener.getConfiguration() != null
                 && listener.getConfiguration().getBrokers() != null) {
             return listener.getConfiguration().getBrokers().stream()
