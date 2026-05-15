@@ -319,10 +319,10 @@ This property is used to select the preferred address type, which is checked fir
 |Configures whether the service endpoints are considered "ready" even if the Pods themselves are not. Defaults to `false`. This field can not be used with `internal` listeners.
 |perBrokerAnnotationsTemplate
 |map
-|Configures the template for generating the annotations of the individual brokers. Valid placeholders that you can use in the template values are `{nodeId}` and `{nodePodName}`. Templating is only available for annotation values.
+|Configures the template used to generate annotations for individual brokers. You can use the `{nodeId}` and `{nodePodName}` placeholders in annotation values. Templating applies only to annotation values.
 |perBrokerLabelsTemplate
 |map
-|Configures the template for generating the labels of the individual brokers. Valid placeholders that you can use in the template values are `{nodeId}` and `{nodePodName}`. Templating is only available for label values.
+|Configures the template used to generate labels for individual brokers. You can use the `{nodeId}` and `{nodePodName}` placeholders in label values. Templating applies only to label values.
 |hostTemplate
 |string
 |Configures the template for generating the hostnames of the individual brokers. Valid placeholders that you can use in the template are `{nodeId}` and `{nodePodName}`.

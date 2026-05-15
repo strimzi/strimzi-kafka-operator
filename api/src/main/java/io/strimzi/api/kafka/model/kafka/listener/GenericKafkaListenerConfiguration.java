@@ -260,9 +260,9 @@ public class GenericKafkaListenerConfiguration implements UnknownPropertyPreserv
         this.publishNotReadyAddresses = publishNotReadyAddresses;
     }
 
-    @Description("Configures the template for generating the annotations of the individual brokers. " +
-            "Valid placeholders that you can use in the template values are `{nodeId}` and `{nodePodName}`. " +
-            "Templating is only available for annotation values")
+    @Description("Configures the template used to generate annotations for individual brokers. " +
+            "You can use the `{nodeId}` and `{nodePodName}` placeholders in annotation values. " +
+            "Templating applies only to annotation values.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public Map<String, String> getPerBrokerAnnotationsTemplate() {
         return perBrokerAnnotationsTemplate;
@@ -272,9 +272,9 @@ public class GenericKafkaListenerConfiguration implements UnknownPropertyPreserv
         this.perBrokerAnnotationsTemplate = perBrokerAnnotationsTemplate;
     }
 
-    @Description("Configures the template for generating the labels of the individual brokers. " +
-            "Valid placeholders that you can use in the template values are `{nodeId}` and `{nodePodName}`. " +
-            "Templating is only available for label values")
+    @Description("Configures the template used to generate labels for individual brokers. " +
+            "You can use the `{nodeId}` and `{nodePodName}` placeholders in label values. " +
+            "Templating applies only to label values.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public Map<String, String> getPerBrokerLabelsTemplate() {
         return perBrokerLabelsTemplate;
