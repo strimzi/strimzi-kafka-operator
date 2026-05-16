@@ -350,11 +350,7 @@ public class ListenersValidator {
     }
 
     private static void validatePerBrokerLabelsAndAnnotationsTemplates(Set<String> errors, GenericKafkaListener listener) {
-        if (!KafkaListenerType.LOADBALANCER.equals(listener.getType())
-                && !KafkaListenerType.NODEPORT.equals(listener.getType())
-                && !KafkaListenerType.ROUTE.equals(listener.getType())
-                && !KafkaListenerType.INGRESS.equals(listener.getType())
-                && !KafkaListenerType.CLUSTER_IP.equals(listener.getType())) {
+        if (KafkaListenerType.INTERNAL.equals(listener.getType())) {
             if (listener.getConfiguration().getPerBrokerLabelsTemplate() != null
                     && !listener.getConfiguration().getPerBrokerLabelsTemplate().isEmpty()) {
                 errors.add("listener " + listener.getName() + " cannot configure perBrokerLabelsTemplate because it is not LoadBalancer, NodePort, Route, Ingress or ClusterIP based listener");
