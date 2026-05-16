@@ -30,7 +30,7 @@ import java.util.Map;
 @JsonPropertyOrder({"brokerCertChainAndKey", "class", "externalTrafficPolicy", "loadBalancerSourceRanges", "bootstrap",
     "brokers", "ipFamilyPolicy", "ipFamilies", "createBootstrapService", "finalizers", "useServiceDnsDomain",
     "maxConnections", "maxConnectionCreationRate", "preferredNodePortAddressType", "publishNotReadyAddresses",
-    "hostTemplate", "advertisedHostTemplate", "advertisedPortTemplate", "allocateLoadBalancerNodePorts"})
+    "perBrokerAnnotationsTemplate", "perBrokerLabelsTemplate", "hostTemplate", "advertisedHostTemplate", "advertisedPortTemplate", "allocateLoadBalancerNodePorts"})
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Buildable(
     editableEnabled = false,
@@ -54,6 +54,8 @@ public class GenericKafkaListenerConfiguration implements UnknownPropertyPreserv
     private List<IpFamily> ipFamilies;
     private Boolean createBootstrapService = true;
     private Boolean publishNotReadyAddresses;
+    private Map<String, String> perBrokerAnnotationsTemplate;
+    private Map<String, String> perBrokerLabelsTemplate;
     private String hostTemplate;
     private String advertisedHostTemplate;
     private String advertisedPortTemplate;
@@ -256,6 +258,30 @@ public class GenericKafkaListenerConfiguration implements UnknownPropertyPreserv
 
     public void setPublishNotReadyAddresses(Boolean publishNotReadyAddresses) {
         this.publishNotReadyAddresses = publishNotReadyAddresses;
+    }
+
+    @Description("Configures the template used to generate annotations for individual brokers. " +
+            "You can use the `{nodeId}` and `{nodePodName}` placeholders in annotation values. " +
+            "Templating applies only to annotation values.")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public Map<String, String> getPerBrokerAnnotationsTemplate() {
+        return perBrokerAnnotationsTemplate;
+    }
+
+    public void setPerBrokerAnnotationsTemplate(Map<String, String> perBrokerAnnotationsTemplate) {
+        this.perBrokerAnnotationsTemplate = perBrokerAnnotationsTemplate;
+    }
+
+    @Description("Configures the template used to generate labels for individual brokers. " +
+            "You can use the `{nodeId}` and `{nodePodName}` placeholders in label values. " +
+            "Templating applies only to label values.")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public Map<String, String> getPerBrokerLabelsTemplate() {
+        return perBrokerLabelsTemplate;
+    }
+
+    public void setPerBrokerLabelsTemplate(Map<String, String> perBrokerLabelsTemplate) {
+        this.perBrokerLabelsTemplate = perBrokerLabelsTemplate;
     }
 
     @Description("Configures the template for generating the hostnames of the individual brokers. " +
