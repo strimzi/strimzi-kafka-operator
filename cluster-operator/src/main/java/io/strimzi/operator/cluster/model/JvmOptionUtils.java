@@ -9,8 +9,8 @@ import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.strimzi.api.kafka.model.common.JvmOptions;
 import io.strimzi.api.kafka.model.common.SystemProperty;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -112,11 +112,9 @@ public final class JvmOptionUtils  {
         if (javaSystemProperties == null) {
             return null;
         }
-        List<String> javaSystemPropertiesList = new ArrayList<>(javaSystemProperties.size());
-        for (SystemProperty property: javaSystemProperties) {
-            javaSystemPropertiesList.add("-D" + property.getName() + "=" + property.getValue());
-        }
-        return String.join(" ", javaSystemPropertiesList);
+        return javaSystemProperties.stream()
+            .map(property -> "-D" + property.getName() + "=" + property.getValue())
+            .collect(joining(" "));
     }
 
     /**
@@ -193,13 +191,11 @@ public final class JvmOptionUtils  {
      * @return JVM flag e.g. -XX+PrintNMTStatistics
      */
     private static String toJvmPerformanceFlag(Map.Entry<String, String> jvmOption) {
-        if ("true".equalsIgnoreCase(jvmOption.getValue())) {
-            return "-XX:+" + jvmOption.getKey();
-        }
-        if ("false".equalsIgnoreCase(jvmOption.getValue())) {
-            return "-XX:-" + jvmOption.getKey();
-        }
-        return "-XX:" + jvmOption.getKey() + "=" + jvmOption.getValue();
+        return switch (jvmOption.getValue().toLowerCase(Locale.ENGLISH)) {
+            case "true" -> "-XX:+" + jvmOption.getKey();
+            case "false" -> "-XX:-" + jvmOption.getKey();
+            default -> "-XX:" + jvmOption.getKey() + "=" + jvmOption.getValue();
+        };
     }
 
     /**
@@ -251,7 +247,7 @@ public final class JvmOptionUtils  {
      * @return  True if our own custom configuration should be added. False otherwise.
      */
     private static boolean needsDefaultHeapConfiguration(JvmOptions jvmOptions)    {
-        return jvmOptions == null || (jvmOptions.getXmx() == null && (jvmOptions.getXx() == null || jvmOptions.getXx().get("MaxRAMPercentage") == null));
+        return jvmOptions == null || (jvmOptions.getXmx() == null && (jvmOptions.getXx() == null || jvmOptions.getXx().get(MAX_RAM_PERCENTAGE) == null));
     }
 
     /**
@@ -263,7 +259,7 @@ public final class JvmOptionUtils  {
      * @return  True if our own custom Xms configuration should be added. False otherwise.
      */
     private static boolean needsDefaultHeapXmsConfiguration(JvmOptions jvmOptions)    {
-        return jvmOptions == null || (jvmOptions.getXms() == null && (jvmOptions.getXx() == null || jvmOptions.getXx().get("InitialRAMPercentage") == null));
+        return jvmOptions == null || (jvmOptions.getXms() == null && (jvmOptions.getXx() == null || jvmOptions.getXx().get(INITIAL_RAM_PERCENTAGE) == null));
     }
 
     private static boolean hasMemoryRequestOrLimit(ResourceRequirements resources) {
