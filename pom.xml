@@ -949,6 +949,10 @@
                     <!-- This is workaround for https://issues.apache.org/jira/browse/SUREFIRE-1809 -->
                     <useModulePath>false</useModulePath>
                     <skipTests>${skip.surefire.tests}</skipTests>
+                    <argLine>
+                        -javaagent:${org.mockito:mockito-core:jar}
+                        -Xshare:off
+                    </argLine>
                 </configuration>
             </plugin>
             <plugin>
@@ -1035,6 +1039,11 @@
                         <configuration>
                             <failOnWarning>true</failOnWarning>
                         </configuration>
+                    </execution>
+                    <execution>
+                        <goals>
+                            <goal>properties</goal>
+                        </goals>
                     </execution>
                 </executions>
             </plugin>
