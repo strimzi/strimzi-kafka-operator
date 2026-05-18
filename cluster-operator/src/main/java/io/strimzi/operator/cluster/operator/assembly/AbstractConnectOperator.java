@@ -483,7 +483,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
             Future<Void> future = Future.succeededFuture();
 
             switch (state) {
-                case "RUNNING" -> {
+                case "RUNNING", "FAILED" -> {
                     if (targetState == ConnectorState.PAUSED) {
                         LOGGER.infoCr(reconciliation, "Pausing connector {}", connectorName);
                         future = Future.fromCompletionStage(apiClient.pause(reconciliation, host, port, connectorName));
@@ -508,15 +508,6 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                     } else if (targetState == ConnectorState.PAUSED) {
                         LOGGER.infoCr(reconciliation, "Pausing connector {}", connectorName);
                         future = Future.fromCompletionStage(apiClient.pause(reconciliation, host, port, connectorName));
-                    }
-                }
-                case "FAILED" -> {
-                    if (targetState == ConnectorState.PAUSED) {
-                        LOGGER.infoCr(reconciliation, "Pausing connector {}", connectorName);
-                        future = Future.fromCompletionStage(apiClient.pause(reconciliation, host, port, connectorName));
-                    } else if (targetState == ConnectorState.STOPPED) {
-                        LOGGER.infoCr(reconciliation, "Stopping connector {}", connectorName);
-                        future = Future.fromCompletionStage(apiClient.stop(reconciliation, host, port, connectorName));
                     }
                 }
                 default -> {
