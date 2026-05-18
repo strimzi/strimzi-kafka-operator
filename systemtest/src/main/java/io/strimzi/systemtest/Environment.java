@@ -4,11 +4,9 @@
  */
 package io.strimzi.systemtest;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import io.fabric8.kubernetes.api.model.Service;
 import io.skodjob.kubetest4j.enums.InstallType;
+import io.skodjob.kubetest4j.environment.TestEnvironmentVariables;
 import io.skodjob.kubetest4j.resources.KubeResourceManager;
 import io.strimzi.systemtest.enums.ClusterOperatorRBACType;
 import io.strimzi.systemtest.utils.TestKafkaVersion;
@@ -18,20 +16,10 @@ import io.strimzi.test.k8s.cluster.OpenShift;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.Locale;
-import java.util.Map;
-import java.util.Objects;
-import java.util.function.Function;
 
 /**
  * Class which holds environment variables for system tests.
@@ -39,13 +27,8 @@ import java.util.function.Function;
 public class Environment {
 
     private static final Logger LOGGER = LogManager.getLogger(Environment.class);
-    private static final Map<String, String> VALUES = new HashMap<>();
-    private static final Map<String, Object> YAML_DATA = loadConfigurationFile();
+    private static final TestEnvironmentVariables ENVIRONMENT_VARIABLES = new TestEnvironmentVariables();
 
-    /**
-     * Specify the system test configuration file path from an environmental variable
-     */
-    private static final String CONFIG_FILE_PATH_ENV = "ST_CONFIG_PATH";
     /**
      * Specify Secret name of private registries, with the container registry credentials to be able to pull images.
      */
@@ -149,7 +132,6 @@ public class Environment {
      * Connect image with file sink plugin
      */
     public static final String CONNECT_IMAGE_WITH_FILE_SINK_PLUGIN_ENV = "CONNECT_IMAGE_WITH_FILE_SINK_PLUGIN";
-    public static final String CONNECT_IMAGE_WITH_FILE_SINK_PLUGIN = getOrDefault(CONNECT_IMAGE_WITH_FILE_SINK_PLUGIN_ENV, "");
 
     /**
      * Env var for specify base image for building Kafka with tiered storage in system tests
@@ -198,72 +180,69 @@ public class Environment {
     /**
      * Set values
      */
-    public static final String SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET = getOrDefault(STRIMZI_IMAGE_PULL_SECRET_ENV, "");
-    public static final String STRIMZI_ORG = getOrDefault(STRIMZI_ORG_ENV, "");
-    public static final String STRIMZI_TAG = getOrDefault(STRIMZI_TAG_ENV, "");
-    public static final String STRIMZI_REGISTRY = getOrDefault(STRIMZI_REGISTRY_ENV, "");
-    public static final String TEST_LOG_DIR = getOrDefault(TEST_LOG_DIR_ENV, TEST_LOG_DIR_DEFAULT);
-    public static final String PERFORMANCE_DIR = getOrDefault(PERFORMANCE_DIR_ENV, PERFORMANCE_DIR_DEFAULT);
-    public static final String ST_KAFKA_VERSION = getOrDefault(ST_KAFKA_VERSION_ENV, ST_KAFKA_VERSION_DEFAULT);
-    public static final String STRIMZI_LOG_LEVEL = getOrDefault(STRIMZI_LOG_LEVEL_ENV, STRIMZI_LOG_LEVEL_DEFAULT);
-    public static final boolean SKIP_TEARDOWN = getOrDefault(SKIP_TEARDOWN_ENV, Boolean::parseBoolean, false);
-    public static final ClusterOperatorRBACType STRIMZI_RBAC_SCOPE =  getOrDefault(STRIMZI_RBAC_SCOPE_ENV, value -> ClusterOperatorRBACType.valueOf(value.toUpperCase(Locale.ENGLISH)), ClusterOperatorRBACType.CLUSTER);
+    public static final String CONNECT_IMAGE_WITH_FILE_SINK_PLUGIN = ENVIRONMENT_VARIABLES.getOrDefault(CONNECT_IMAGE_WITH_FILE_SINK_PLUGIN_ENV, "");
+    public static final String SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET = ENVIRONMENT_VARIABLES.getOrDefault(STRIMZI_IMAGE_PULL_SECRET_ENV, "");
+    public static final String STRIMZI_ORG = ENVIRONMENT_VARIABLES.getOrDefault(STRIMZI_ORG_ENV, "");
+    public static final String STRIMZI_TAG = ENVIRONMENT_VARIABLES.getOrDefault(STRIMZI_TAG_ENV, "");
+    public static final String STRIMZI_REGISTRY = ENVIRONMENT_VARIABLES.getOrDefault(STRIMZI_REGISTRY_ENV, "");
+    public static final String TEST_LOG_DIR = ENVIRONMENT_VARIABLES.getOrDefault(TEST_LOG_DIR_ENV, TEST_LOG_DIR_DEFAULT);
+    public static final String PERFORMANCE_DIR = ENVIRONMENT_VARIABLES.getOrDefault(PERFORMANCE_DIR_ENV, PERFORMANCE_DIR_DEFAULT);
+    public static final String ST_KAFKA_VERSION = ENVIRONMENT_VARIABLES.getOrDefault(ST_KAFKA_VERSION_ENV, ST_KAFKA_VERSION_DEFAULT);
+    public static final String STRIMZI_LOG_LEVEL = ENVIRONMENT_VARIABLES.getOrDefault(STRIMZI_LOG_LEVEL_ENV, STRIMZI_LOG_LEVEL_DEFAULT);
+    public static final boolean SKIP_TEARDOWN = ENVIRONMENT_VARIABLES.getOrDefault(SKIP_TEARDOWN_ENV, Boolean::parseBoolean, false);
+    public static final ClusterOperatorRBACType STRIMZI_RBAC_SCOPE =  ENVIRONMENT_VARIABLES.getOrDefault(STRIMZI_RBAC_SCOPE_ENV, value -> ClusterOperatorRBACType.valueOf(value.toUpperCase(Locale.ENGLISH)), ClusterOperatorRBACType.CLUSTER);
 
-    public static final String STRIMZI_FEATURE_GATES = getOrDefault(STRIMZI_FEATURE_GATES_ENV, STRIMZI_FEATURE_GATES_DEFAULT);
+    public static final String STRIMZI_FEATURE_GATES = ENVIRONMENT_VARIABLES.getOrDefault(STRIMZI_FEATURE_GATES_ENV, STRIMZI_FEATURE_GATES_DEFAULT);
 
     private static final String SCRAPER_IMAGE_DEFAULT = getIfNotEmptyOrDefault(STRIMZI_REGISTRY, STRIMZI_REGISTRY_DEFAULT) + "/" +
         getIfNotEmptyOrDefault(STRIMZI_ORG, STRIMZI_ORG_DEFAULT) + "/kafka:" +
         getIfNotEmptyOrDefault(STRIMZI_TAG, STRIMZI_TAG_DEFAULT) + "-kafka-" + ST_KAFKA_VERSION;
-    public static final String SCRAPER_IMAGE = getOrDefault(SCRAPER_IMAGE_ENV, SCRAPER_IMAGE_DEFAULT);
+    public static final String SCRAPER_IMAGE = ENVIRONMENT_VARIABLES.getOrDefault(SCRAPER_IMAGE_ENV, SCRAPER_IMAGE_DEFAULT);
 
     // variables for kafka bridge image
     private static final String BRIDGE_IMAGE_DEFAULT = "latest-released";
-    public static final String BRIDGE_IMAGE = getOrDefault(BRIDGE_IMAGE_ENV, BRIDGE_IMAGE_DEFAULT);
+    public static final String BRIDGE_IMAGE = ENVIRONMENT_VARIABLES.getOrDefault(BRIDGE_IMAGE_ENV, BRIDGE_IMAGE_DEFAULT);
     // Image pull policy variables
-    public static final String COMPONENTS_IMAGE_PULL_POLICY = getOrDefault(COMPONENTS_IMAGE_PULL_POLICY_ENV, COMPONENTS_IMAGE_PULL_POLICY_ENV_DEFAULT);
-    public static final String OPERATOR_IMAGE_PULL_POLICY = getOrDefault(OPERATOR_IMAGE_PULL_POLICY_ENV, OPERATOR_IMAGE_PULL_POLICY_ENV_DEFAULT);
+    public static final String COMPONENTS_IMAGE_PULL_POLICY = ENVIRONMENT_VARIABLES.getOrDefault(COMPONENTS_IMAGE_PULL_POLICY_ENV, COMPONENTS_IMAGE_PULL_POLICY_ENV_DEFAULT);
+    public static final String OPERATOR_IMAGE_PULL_POLICY = ENVIRONMENT_VARIABLES.getOrDefault(OPERATOR_IMAGE_PULL_POLICY_ENV, OPERATOR_IMAGE_PULL_POLICY_ENV_DEFAULT);
     // OLM env variables
-    public static final String OLM_OPERATOR_NAME = getOrDefault(OLM_OPERATOR_NAME_ENV, OLM_OPERATOR_NAME_DEFAULT);
-    public static final String OLM_OPERATOR_DEPLOYMENT_NAME = getOrDefault(OLM_OPERATOR_DEPLOYMENT_NAME_ENV, OLM_OPERATOR_DEPLOYMENT_NAME_DEFAULT);
-    public static final String OLM_SOURCE_NAME = getOrDefault(OLM_SOURCE_NAME_ENV, OLM_SOURCE_NAME_DEFAULT);
-    public static final String OLM_SOURCE_NAMESPACE = getOrDefault(OLM_SOURCE_NAMESPACE_ENV, OpenShift.OLM_SOURCE_NAMESPACE);
-    public static final String OLM_APP_BUNDLE_PREFIX = getOrDefault(OLM_APP_BUNDLE_PREFIX_ENV, OLM_APP_BUNDLE_PREFIX_DEFAULT);
-    public static final String OLM_OPERATOR_CHANNEL = getOrDefault(OLM_OPERATOR_CHANNEL_ENV, OLM_OPERATOR_CHANNEL_DEFAULT);
+    public static final String OLM_OPERATOR_NAME = ENVIRONMENT_VARIABLES.getOrDefault(OLM_OPERATOR_NAME_ENV, OLM_OPERATOR_NAME_DEFAULT);
+    public static final String OLM_OPERATOR_DEPLOYMENT_NAME = ENVIRONMENT_VARIABLES.getOrDefault(OLM_OPERATOR_DEPLOYMENT_NAME_ENV, OLM_OPERATOR_DEPLOYMENT_NAME_DEFAULT);
+    public static final String OLM_SOURCE_NAME = ENVIRONMENT_VARIABLES.getOrDefault(OLM_SOURCE_NAME_ENV, OLM_SOURCE_NAME_DEFAULT);
+    public static final String OLM_SOURCE_NAMESPACE = ENVIRONMENT_VARIABLES.getOrDefault(OLM_SOURCE_NAMESPACE_ENV, OpenShift.OLM_SOURCE_NAMESPACE);
+    public static final String OLM_APP_BUNDLE_PREFIX = ENVIRONMENT_VARIABLES.getOrDefault(OLM_APP_BUNDLE_PREFIX_ENV, OLM_APP_BUNDLE_PREFIX_DEFAULT);
+    public static final String OLM_OPERATOR_CHANNEL = ENVIRONMENT_VARIABLES.getOrDefault(OLM_OPERATOR_CHANNEL_ENV, OLM_OPERATOR_CHANNEL_DEFAULT);
     // NetworkPolicy variable
-    public static final boolean DEFAULT_TO_DENY_NETWORK_POLICIES = getOrDefault(DEFAULT_TO_DENY_NETWORK_POLICIES_ENV, Boolean::parseBoolean, DEFAULT_TO_DENY_NETWORK_POLICIES_DEFAULT);
-    public static final InstallType CLUSTER_OPERATOR_INSTALL_TYPE = getOrDefault(CLUSTER_OPERATOR_INSTALL_TYPE_ENV, InstallType::fromString, InstallType.Yaml);
+    public static final boolean DEFAULT_TO_DENY_NETWORK_POLICIES = ENVIRONMENT_VARIABLES.getOrDefault(DEFAULT_TO_DENY_NETWORK_POLICIES_ENV, Boolean::parseBoolean, DEFAULT_TO_DENY_NETWORK_POLICIES_DEFAULT);
+    public static final InstallType CLUSTER_OPERATOR_INSTALL_TYPE = ENVIRONMENT_VARIABLES.getOrDefault(CLUSTER_OPERATOR_INSTALL_TYPE_ENV, InstallType::fromString, InstallType.Yaml);
 
-    public static final boolean LB_FINALIZERS = getOrDefault(LB_FINALIZERS_ENV, Boolean::parseBoolean, LB_FINALIZERS_DEFAULT);
-    public static final String RESOURCE_ALLOCATION_STRATEGY = getOrDefault(RESOURCE_ALLOCATION_STRATEGY_ENV, RESOURCE_ALLOCATION_STRATEGY_DEFAULT);
+    public static final boolean LB_FINALIZERS = ENVIRONMENT_VARIABLES.getOrDefault(LB_FINALIZERS_ENV, Boolean::parseBoolean, LB_FINALIZERS_DEFAULT);
+    public static final String RESOURCE_ALLOCATION_STRATEGY = ENVIRONMENT_VARIABLES.getOrDefault(RESOURCE_ALLOCATION_STRATEGY_ENV, RESOURCE_ALLOCATION_STRATEGY_DEFAULT);
 
     // Connect build related variables
-    public static final String ST_FILE_PLUGIN_URL = getOrDefault(ST_FILE_PLUGIN_URL_ENV, ST_FILE_PLUGIN_URL_DEFAULT);
+    public static final String ST_FILE_PLUGIN_URL = ENVIRONMENT_VARIABLES.getOrDefault(ST_FILE_PLUGIN_URL_ENV, ST_FILE_PLUGIN_URL_DEFAULT);
 
-    public static final String CONNECT_BUILD_IMAGE_PATH = getOrDefault(CONNECT_BUILD_IMAGE_PATH_ENV, "");
-    public static final String CONNECT_BUILD_REGISTRY_SECRET = getOrDefault(CONNECT_BUILD_REGISTRY_SECRET_ENV, "");
+    public static final String CONNECT_BUILD_IMAGE_PATH = ENVIRONMENT_VARIABLES.getOrDefault(CONNECT_BUILD_IMAGE_PATH_ENV, "");
+    public static final String CONNECT_BUILD_REGISTRY_SECRET = ENVIRONMENT_VARIABLES.getOrDefault(CONNECT_BUILD_REGISTRY_SECRET_ENV, "");
     public static final String TEST_SUITE_NAMESPACE = Environment.isNamespaceRbacScope() ? TestConstants.CO_NAMESPACE : "test-suite-namespace";
 
-    public static final String IP_FAMILY = getOrDefault(IP_FAMILY_ENV, IP_FAMILY_DEFAULT);
+    public static final String IP_FAMILY = ENVIRONMENT_VARIABLES.getOrDefault(IP_FAMILY_ENV, IP_FAMILY_DEFAULT);
 
-    public static final String KAFKA_TIERED_STORAGE_BASE_IMAGE = getOrDefault(KAFKA_TIERED_STORAGE_BASE_IMAGE_ENV, KAFKA_TIERED_STORAGE_BASE_IMAGE_DEFAULT);
-    public static final String BUILDAH_IMAGE = getOrDefault(BUILDAH_IMAGE_ENV, BUILDAH_IMAGE_DEFAULT);
-    public static final String KAFKA_TIERED_STORAGE_IMAGE = getOrDefault(KAFKA_TIERED_STORAGE_IMAGE_ENV, "");
-    public static final String KAFKA_TIERED_STORAGE_CLASSPATH = getOrDefault(KAFKA_TIERED_STORAGE_CLASSPATH_ENV, KAFKA_TIERED_STORAGE_CLASSPATH_DEFAULT);
+    public static final String KAFKA_TIERED_STORAGE_BASE_IMAGE = ENVIRONMENT_VARIABLES.getOrDefault(KAFKA_TIERED_STORAGE_BASE_IMAGE_ENV, KAFKA_TIERED_STORAGE_BASE_IMAGE_DEFAULT);
+    public static final String BUILDAH_IMAGE = ENVIRONMENT_VARIABLES.getOrDefault(BUILDAH_IMAGE_ENV, BUILDAH_IMAGE_DEFAULT);
+    public static final String KAFKA_TIERED_STORAGE_IMAGE = ENVIRONMENT_VARIABLES.getOrDefault(KAFKA_TIERED_STORAGE_IMAGE_ENV, "");
+    public static final String KAFKA_TIERED_STORAGE_CLASSPATH = ENVIRONMENT_VARIABLES.getOrDefault(KAFKA_TIERED_STORAGE_CLASSPATH_ENV, KAFKA_TIERED_STORAGE_CLASSPATH_DEFAULT);
 
-    public static final String POSTGRES_IMAGE = getOrDefault(POSTGRES_IMAGE_ENV, POSTGRES_IMAGE_DEFAULT);
+    public static final String POSTGRES_IMAGE = ENVIRONMENT_VARIABLES.getOrDefault(POSTGRES_IMAGE_ENV, POSTGRES_IMAGE_DEFAULT);
 
     private Environment() { }
 
     static {
-        String debugFormat = "{}: {}";
-        LOGGER.info("Used environment variables:");
-        VALUES.entrySet().stream()
-                .sorted(Map.Entry.comparingByKey())
-                .forEach(entry -> LOGGER.info(debugFormat, entry.getKey(), entry.getValue()));
+        ENVIRONMENT_VARIABLES.logEnvironmentVariables();
         try {
-            saveConfigurationFile();
+            ENVIRONMENT_VARIABLES.saveConfigurationFile(TEST_LOG_DIR);
         } catch (IOException e) {
-            LOGGER.warn("Yaml configuration can't be saved");
+            LOGGER.error("Failed to write configuration to the {} due to: {}", TEST_LOG_DIR, e);
         }
     }
 
@@ -310,24 +289,6 @@ public class Environment {
         return !STRIMZI_FEATURE_GATES.contains("-UseConnectBuildWithBuildah");
     }
 
-    private static String getOrDefault(String varName, String defaultValue) {
-        return getOrDefault(varName, String::toString, defaultValue);
-    }
-
-    private static <T> T getOrDefault(String var, Function<String, T> converter, T defaultValue) {
-        String value = isEnvVarSet(var) ?
-            System.getenv(var) :
-            (Objects.requireNonNull(YAML_DATA).get(var) != null ?
-                YAML_DATA.get(var).toString() :
-                null);
-        T returnValue = defaultValue;
-        if (value != null) {
-            returnValue = converter.apply(value);
-        }
-        VALUES.put(var, String.valueOf(returnValue));
-        return returnValue;
-    }
-
     public static String getImageOutputRegistry() {
         if (KubeClusterResource.getInstance().isOpenShift()) {
             return "image-registry.openshift-image-registry.svc:5000";
@@ -368,45 +329,6 @@ public class Environment {
         } else {
             return getImageOutputRegistry() + "/" + namespaceName + "/" + imageName + ":" + tag;
         }
-    }
-
-    private static void saveConfigurationFile() throws IOException {
-        Path logPath = Path.of(TEST_LOG_DIR);
-        Files.createDirectories(logPath);
-
-        LinkedHashMap<String, String> toSave = new LinkedHashMap<>();
-
-        VALUES.forEach((key, value) -> {
-            if (isWriteable(key, value)) {
-                toSave.put(key, value);
-            }
-        });
-
-        ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
-        mapper.writerWithDefaultPrettyPrinter().writeValue(logPath.resolve("config.yaml").toFile(), toSave);
-    }
-
-    private static Map<String, Object> loadConfigurationFile() {
-        String config = System.getenv().getOrDefault(CONFIG_FILE_PATH_ENV,
-            Paths.get(System.getProperty("user.dir"), "config.yaml").toAbsolutePath().toString());
-        ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
-        try {
-            return mapper.readValue(new File(config), new TypeReference<>() { });
-        } catch (IOException ex) {
-            LOGGER.info("Yaml configuration not provider or not exists");
-            return Collections.emptyMap();
-        }
-    }
-
-    private static boolean isWriteable(String var, String value) {
-        return !value.equals("null")
-            && !var.equals(CONFIG_FILE_PATH_ENV)
-            && !var.equals(TEST_LOG_DIR)
-            && !var.equals("USER");
-    }
-
-    public static boolean isEnvVarSet(String envVarName) {
-        return System.getenv(envVarName) != null;
     }
 
     public static String getIfNotEmptyOrDefault(String envVar, String defaultValue) {
