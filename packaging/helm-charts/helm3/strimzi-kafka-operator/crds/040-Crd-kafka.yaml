@@ -89,6 +89,7 @@ spec:
                             enum:
                               - internal
                               - route
+                              - tlsroute
                               - loadbalancer
                               - nodeport
                               - ingress
@@ -328,6 +329,27 @@ spec:
                                   Configures whether to allocate NodePort automatically for the `Service` with type `LoadBalancer`.
                                   This is a one to one with the `spec.allocateLoadBalancerNodePorts` configuration in the `Service` type
                                   For `loadbalancer` listeners only.
+                              parentRefs:
+                                type: array
+                                items:
+                                  type: object
+                                  properties:
+                                    kind:
+                                      type: string
+                                    group:
+                                      type: string
+                                    name:
+                                      type: string
+                                    namespace:
+                                      type: string
+                                    port:
+                                      type: integer
+                                    sectionName:
+                                      type: string
+                                description: |-
+                                  Configures the resource(s) TLSRoutes created by this listener will be attached to.
+                                  Typically this would be Gateway resource.
+                                  For `tlsroute` listeners only.
                             description: Additional listener configuration.
                           networkPolicyPeers:
                             type: array

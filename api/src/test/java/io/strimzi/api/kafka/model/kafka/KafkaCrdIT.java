@@ -101,7 +101,7 @@ public class KafkaCrdIT extends AbstractCrdIT {
                 KubernetesClientException.class,
                 () -> createDeleteCustomResource("Kafka-with-invalid-listener.yaml"));
 
-        assertThat(exception.getMessage(), containsStringIgnoringCase("spec.kafka.listeners[1].type: Unsupported value: \"foobar\": supported values: \"internal\", \"route\", \"loadbalancer\", \"nodeport\", \"ingress\", \"cluster-ip\""));
+        assertThat(exception.getMessage(), containsStringIgnoringCase("spec.kafka.listeners[1].type: Unsupported value: \"foobar\": supported values: \"internal\", \"route\", \"tlsroute\", \"loadbalancer\", \"nodeport\", \"ingress\", \"cluster-ip\""));
     }
 
     @Test

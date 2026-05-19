@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.cluster.model;
 
+import io.fabric8.kubernetes.api.model.gatewayapi.v1.ParentReferenceBuilder;
 import io.strimzi.api.kafka.model.common.template.ExternalTrafficPolicy;
 import io.strimzi.api.kafka.model.common.template.IpFamily;
 import io.strimzi.api.kafka.model.common.template.IpFamilyPolicy;
@@ -238,6 +239,7 @@ public class ListenersValidatorTest {
                     .withPerBrokerLabelsTemplate(Map.of("label", "value-{nodePodName}"))
                     .withHostTemplate("my-host-{nodeId}")
                     .withAdvertisedHostTemplate("my-advertised-host-{nodeId}")
+                    .withParentRefs(new ParentReferenceBuilder().withName("my-gateway").withSectionName("tls-sni").build())
                     .withNewBootstrap()
                         .withAlternativeNames(List.of("my-name-1", "my-name-2"))
                         .withLoadBalancerIP("130.211.204.1")
@@ -279,20 +281,21 @@ public class ListenersValidatorTest {
                 "listener " + name + " cannot configure preferredAddressType because it is not NodePort based listener",
                 "listener " + name + " cannot configure perBrokerAnnotationsTemplate because it is not LoadBalancer, NodePort, Route, Ingress or ClusterIP based listener",
                 "listener " + name + " cannot configure perBrokerLabelsTemplate because it is not LoadBalancer, NodePort, Route, Ingress or ClusterIP based listener",
-                "listener " + name + " cannot configure hostTemplate because it is not Route or Ingress based listener",
-                "listener " + name + " cannot configure bootstrap.host because it is not Route or Ingress based listener",
+                "listener " + name + " cannot configure hostTemplate because it is not TLSRoute, Route, or Ingress based listener",
+                "listener " + name + " cannot configure bootstrap.host because it is not TLSRoute, Route, or Ingress based listener",
                 "listener " + name + " cannot configure bootstrap.loadBalancerIP because it is not LoadBalancer based listener",
                 "listener " + name + " cannot configure bootstrap.nodePort because it is not NodePort based listener",
-                "listener " + name + " cannot configure bootstrap.annotations because it is not LoadBalancer, NodePort, Route, Ingress or ClusterIP based listener",
-                "listener " + name + " cannot configure bootstrap.labels because it is not LoadBalancer, NodePort, Route, Ingress or ClusterIP based listener",
-                "listener " + name + " cannot configure brokers[].host because it is not Route or Ingress based listener",
+                "listener " + name + " cannot configure bootstrap.annotations because it is not LoadBalancer, NodePort, TLSRoute, Route, Ingress, or ClusterIP based listener",
+                "listener " + name + " cannot configure bootstrap.labels because it is not LoadBalancer, NodePort, TLSRoute, Route, Ingress, or ClusterIP based listener",
+                "listener " + name + " cannot configure brokers[].host because it is not TLSRoute, Route, or Ingress based listener",
                 "listener " + name + " cannot configure brokers[].loadBalancerIP because it is not LoadBalancer based listener",
                 "listener " + name + " cannot configure brokers[].nodePort because it is not NodePort based listener",
-                "listener " + name + " cannot configure brokers[].annotations because it is not LoadBalancer, NodePort, Route, Ingress or ClusterIP based listener",
-                "listener " + name + " cannot configure brokers[].labels because it is not LoadBalancer, NodePort, Route, Ingress or ClusterIP based listener",
+                "listener " + name + " cannot configure brokers[].annotations because it is not LoadBalancer, NodePort, TLSRoute, Route, Ingress, or ClusterIP based listener",
+                "listener " + name + " cannot configure brokers[].labels because it is not LoadBalancer, NodePort, TLSRoute, Route, Ingress, or ClusterIP based listener",
                 "listener " + name + " cannot configure ipFamilyPolicy because it is internal listener",
                 "listener " + name + " cannot configure ipFamilies because it is internal listener",
-                "listener " + name + " cannot configure publishNotReadyAddresses because it is internal listener"
+                "listener " + name + " cannot configure publishNotReadyAddresses because it is internal listener",
+                "listener " + name + " cannot configure parentRefs because it is not TLSRoute based listener"
         );
 
         assertThat(ListenersValidator.validateAndGetErrorMessages(Reconciliation.DUMMY_RECONCILIATION, THREE_NODES, listeners), containsInAnyOrder(expectedErrors.toArray()));
@@ -321,6 +324,7 @@ public class ListenersValidatorTest {
                     .withPerBrokerLabelsTemplate(Map.of("label", "value-{nodePodName}"))
                     .withHostTemplate("my-host-{nodeId}")
                     .withAdvertisedHostTemplate("my-advertised-host-{nodeId}")
+                    .withParentRefs(new ParentReferenceBuilder().withName("my-gateway").withSectionName("tls-sni").build())
                     .withNewBootstrap()
                         .withAlternativeNames(List.of("my-name-1", "my-name-2"))
                         .withLoadBalancerIP("130.211.204.1")
@@ -354,9 +358,10 @@ public class ListenersValidatorTest {
         List<String> expectedErrors = List.of(
                 "listener " + name + " cannot configure useServiceDnsDomain because it is not internal or cluster-ip listener",
                 "listener " + name + " cannot configure preferredAddressType because it is not NodePort based listener",
-                "listener " + name + " cannot configure hostTemplate because it is not Route or Ingress based listener",
-                "listener " + name + " cannot configure bootstrap.host because it is not Route or Ingress based listener",
-                "listener " + name + " cannot configure brokers[].host because it is not Route or Ingress based listener"
+                "listener " + name + " cannot configure hostTemplate because it is not TLSRoute, Route, or Ingress based listener",
+                "listener " + name + " cannot configure bootstrap.host because it is not TLSRoute, Route, or Ingress based listener",
+                "listener " + name + " cannot configure brokers[].host because it is not TLSRoute, Route, or Ingress based listener",
+                "listener " + name + " cannot configure parentRefs because it is not TLSRoute based listener"
         );
 
         assertThat(ListenersValidator.validateAndGetErrorMessages(Reconciliation.DUMMY_RECONCILIATION, THREE_NODES, listeners), containsInAnyOrder(expectedErrors.toArray()));
@@ -405,6 +410,7 @@ public class ListenersValidatorTest {
                     .withPerBrokerLabelsTemplate(Map.of("label", "value-{nodePodName}"))
                     .withHostTemplate("my-host-{nodeId}")
                     .withAdvertisedHostTemplate("my-advertised-host-{nodeId}")
+                    .withParentRefs(new ParentReferenceBuilder().withName("my-gateway").withSectionName("tls-sni").build())
                     .withNewBootstrap()
                         .withAlternativeNames(List.of("my-name-1", "my-name-2"))
                         .withLoadBalancerIP("130.211.204.1")
@@ -440,12 +446,13 @@ public class ListenersValidatorTest {
                 "listener " + name + " cannot configure useServiceDnsDomain because it is not internal or cluster-ip listener",
                 "listener " + name + " cannot configure loadBalancerSourceRanges because it is not LoadBalancer based listener",
                 "listener " + name + " cannot configure finalizers because it is not LoadBalancer based listener",
-                "listener " + name + " cannot configure hostTemplate because it is not Route or Ingress based listener",
-                "listener " + name + " cannot configure bootstrap.host because it is not Route or Ingress based listener",
+                "listener " + name + " cannot configure hostTemplate because it is not TLSRoute, Route, or Ingress based listener",
+                "listener " + name + " cannot configure bootstrap.host because it is not TLSRoute, Route, or Ingress based listener",
                 "listener " + name + " cannot configure bootstrap.loadBalancerIP because it is not LoadBalancer based listener",
-                "listener " + name + " cannot configure brokers[].host because it is not Route or Ingress based listener",
+                "listener " + name + " cannot configure brokers[].host because it is not TLSRoute, Route, or Ingress based listener",
                 "listener " + name + " cannot configure brokers[].loadBalancerIP because it is not LoadBalancer based listener",
-                "listener " + name + " cannot configure allocateLoadBalancerNodePorts because it is not LoadBalancer based listener"
+                "listener " + name + " cannot configure allocateLoadBalancerNodePorts because it is not LoadBalancer based listener",
+                "listener " + name + " cannot configure parentRefs because it is not TLSRoute based listener"
         );
 
         assertThat(ListenersValidator.validateAndGetErrorMessages(Reconciliation.DUMMY_RECONCILIATION, THREE_NODES, listeners), containsInAnyOrder(expectedErrors.toArray()));
@@ -495,6 +502,7 @@ public class ListenersValidatorTest {
                     .withPerBrokerLabelsTemplate(Map.of("label", "value-{nodePodName}"))
                     .withHostTemplate("my-host-{nodeId}")
                     .withAdvertisedHostTemplate("my-advertised-host-{nodeId}")
+                    .withParentRefs(new ParentReferenceBuilder().withName("my-gateway").withSectionName("tls-sni").build())
                     .withNewBootstrap()
                         .withAlternativeNames(List.of("my-name-1", "my-name-2"))
                         .withLoadBalancerIP("130.211.204.1")
@@ -539,7 +547,8 @@ public class ListenersValidatorTest {
                 "listener " + name + " cannot configure bootstrap.nodePort because it is not NodePort based listener",
                 "listener " + name + " cannot configure brokers[].loadBalancerIP because it is not LoadBalancer based listener",
                 "listener " + name + " cannot configure brokers[].nodePort because it is not NodePort based listener",
-                "listener " + name + " cannot configure allocateLoadBalancerNodePorts because it is not LoadBalancer based listener"
+                "listener " + name + " cannot configure allocateLoadBalancerNodePorts because it is not LoadBalancer based listener",
+                "listener " + name + " cannot configure parentRefs because it is not TLSRoute based listener"
         );
 
         assertThat(ListenersValidator.validateAndGetErrorMessages(Reconciliation.DUMMY_RECONCILIATION, THREE_NODES, listeners), containsInAnyOrder(expectedErrors.toArray()));
@@ -602,6 +611,7 @@ public class ListenersValidatorTest {
                     .withPerBrokerLabelsTemplate(Map.of("label", "value-{nodePodName}"))
                     .withHostTemplate("my-host-{nodeId}")
                     .withAdvertisedHostTemplate("my-advertised-host-{nodeId}")
+                    .withParentRefs(new ParentReferenceBuilder().withName("my-gateway").withSectionName("tls-sni").build())
                     .withNewBootstrap()
                         .withAlternativeNames(List.of("my-name-1", "my-name-2"))
                         .withLoadBalancerIP("130.211.204.1")
@@ -642,7 +652,8 @@ public class ListenersValidatorTest {
                 "listener " + name + " cannot configure bootstrap.nodePort because it is not NodePort based listener",
                 "listener " + name + " cannot configure brokers[].loadBalancerIP because it is not LoadBalancer based listener",
                 "listener " + name + " cannot configure brokers[].nodePort because it is not NodePort based listener",
-                "listener " + name + " cannot configure allocateLoadBalancerNodePorts because it is not LoadBalancer based listener"
+                "listener " + name + " cannot configure allocateLoadBalancerNodePorts because it is not LoadBalancer based listener",
+                "listener " + name + " cannot configure parentRefs because it is not TLSRoute based listener"
         );
 
         assertThat(ListenersValidator.validateAndGetErrorMessages(Reconciliation.DUMMY_RECONCILIATION, TWO_NODES, listeners), containsInAnyOrder(expectedErrors.toArray()));
@@ -868,6 +879,7 @@ public class ListenersValidatorTest {
                     .withHostTemplate("my-host-{nodeId}")
                     .withAllocateLoadBalancerNodePorts(false)
                     .withAdvertisedHostTemplate("my-advertised-host-{nodeId}")
+                    .withParentRefs(new ParentReferenceBuilder().withName("my-gateway").withSectionName("tls-sni").build())
                     .withNewBootstrap()
                         .withAlternativeNames(List.of("my-name-1", "my-name-2"))
                         .withLoadBalancerIP("130.211.204.1")
@@ -903,18 +915,206 @@ public class ListenersValidatorTest {
                 "listener " + name + " cannot configure loadBalancerSourceRanges because it is not LoadBalancer based listener",
                 "listener " + name + " cannot configure finalizers because it is not LoadBalancer based listener",
                 "listener " + name + " cannot configure preferredAddressType because it is not NodePort based listener",
-                "listener " + name + " cannot configure hostTemplate because it is not Route or Ingress based listener",
+                "listener " + name + " cannot configure hostTemplate because it is not TLSRoute, Route, or Ingress based listener",
                 "listener " + name + " cannot configure bootstrap.loadBalancerIP because it is not LoadBalancer based listener",
                 "listener " + name + " cannot configure bootstrap.nodePort because it is not NodePort based listener",
                 "listener " + name + " cannot configure brokers[].loadBalancerIP because it is not LoadBalancer based listener",
                 "listener " + name + " cannot configure brokers[].nodePort because it is not NodePort based listener",
                 "listener " + name + " cannot configure class because it is not an Ingress or LoadBalancer based listener",
-                "listener " + name + " cannot configure bootstrap.host because it is not Route or Ingress based listener",
-                "listener " + name + " cannot configure brokers[].host because it is not Route or Ingress based listener",
-                "listener " + name + " cannot configure allocateLoadBalancerNodePorts because it is not LoadBalancer based listener"
+                "listener " + name + " cannot configure bootstrap.host because it is not TLSRoute, Route, or Ingress based listener",
+                "listener " + name + " cannot configure brokers[].host because it is not TLSRoute, Route, or Ingress based listener",
+                "listener " + name + " cannot configure allocateLoadBalancerNodePorts because it is not LoadBalancer based listener",
+                "listener " + name + " cannot configure parentRefs because it is not TLSRoute based listener"
         );
 
         assertThat(ListenersValidator.validateAndGetErrorMessages(Reconciliation.DUMMY_RECONCILIATION, TWO_NODES, listeners), containsInAnyOrder(expectedErrors.toArray()));
+    }
+
+    @Test
+    public void testTlsRouteListener() {
+        String name = "tlsroute";
+
+        GenericKafkaListener listener1 = new GenericKafkaListenerBuilder()
+                .withName(name)
+                .withPort(9092)
+                .withType(KafkaListenerType.TLSROUTE)
+                .withTls(true)
+                .withNewConfiguration()
+                    .withControllerClass("my-ingress")
+                    .withUseServiceDnsDomain(true)
+                    .withExternalTrafficPolicy(ExternalTrafficPolicy.LOCAL)
+                    .withIpFamilyPolicy(IpFamilyPolicy.REQUIRE_DUAL_STACK)
+                    .withIpFamilies(IpFamily.IPV4, IpFamily.IPV6)
+                    .withPreferredNodePortAddressType(NodeAddressType.INTERNAL_DNS)
+                    .withLoadBalancerSourceRanges(List.of("10.0.0.0/8", "130.211.204.1/32"))
+                    .withFinalizers(List.of("service.kubernetes.io/load-balancer-cleanup"))
+                    .withPublishNotReadyAddresses(true)
+                    .withAllocateLoadBalancerNodePorts(false)
+                    .withHostTemplate("my-host-{nodeId}")
+                    .withAdvertisedHostTemplate("my-advertised-host-{nodeId}")
+                    .withNewBootstrap()
+                        .withAlternativeNames(List.of("my-name-1", "my-name-2"))
+                        .withLoadBalancerIP("130.211.204.1")
+                        .withNodePort(32189)
+                        .withHost("my-host")
+                        .withAnnotations(Collections.singletonMap("dns-anno", "dns-value"))
+                    .endBootstrap()
+                    .withBrokers(new GenericKafkaListenerConfigurationBrokerBuilder()
+                                    .withBroker(0)
+                                    .withAdvertisedHost("advertised-host")
+                                    .withAdvertisedPort(9092)
+                                    .withLoadBalancerIP("130.211.204.1")
+                                    .withNodePort(32189)
+                                    .withHost("my-host")
+                                    .withAnnotations(Collections.singletonMap("dns-anno", "dns-value"))
+                                    .build(),
+                            new GenericKafkaListenerConfigurationBrokerBuilder()
+                                    .withBroker(1)
+                                    .withAdvertisedHost("advertised-host")
+                                    .withAdvertisedPort(9092)
+                                    .withLoadBalancerIP("130.211.204.1")
+                                    .withNodePort(32189)
+                                    .withHost("my-host")
+                                    .withAnnotations(Collections.singletonMap("dns-anno", "dns-value"))
+                                    .build())
+                .endConfiguration()
+                .build();
+
+        List<GenericKafkaListener> listeners = List.of(listener1);
+
+        List<String> expectedErrors = List.of(
+                "listener " + name + " cannot configure useServiceDnsDomain because it is not internal or cluster-ip listener",
+                "listener " + name + " cannot configure externalTrafficPolicy because it is not LoadBalancer or NodePort based listener",
+                "listener " + name + " cannot configure loadBalancerSourceRanges because it is not LoadBalancer based listener",
+                "listener " + name + " cannot configure finalizers because it is not LoadBalancer based listener",
+                "listener " + name + " cannot configure preferredAddressType because it is not NodePort based listener",
+                "listener " + name + " cannot configure bootstrap.loadBalancerIP because it is not LoadBalancer based listener",
+                "listener " + name + " cannot configure bootstrap.nodePort because it is not NodePort based listener",
+                "listener " + name + " cannot configure brokers[].loadBalancerIP because it is not LoadBalancer based listener",
+                "listener " + name + " cannot configure brokers[].nodePort because it is not NodePort based listener",
+                "listener " + name + " cannot configure allocateLoadBalancerNodePorts because it is not LoadBalancer based listener",
+                "listener " + name + " cannot configure class because it is not an Ingress or LoadBalancer based listener",
+                "listener " + name + " is missing a parent references property which is required for TLSRoute based listeners"
+        );
+
+        assertThat(ListenersValidator.validateAndGetErrorMessages(Reconciliation.DUMMY_RECONCILIATION, TWO_NODES, listeners), containsInAnyOrder(expectedErrors.toArray()));
+    }
+
+    @Test
+    public void testTlsRouteListenerMissingRequired() {
+        String name = "tlsroute";
+
+        GenericKafkaListener listener1 = new GenericKafkaListenerBuilder()
+                .withName(name)
+                .withPort(9092)
+                .withType(KafkaListenerType.TLSROUTE)
+                .withTls(true)
+                .build();
+
+        List<String> expectedErrors = List.of(
+                "listener " + name + " is missing a configuration with host properties which are required for TLSRoute based listeners",
+                "listener " + name + " is missing a parent references property which is required for TLSRoute based listeners"
+        );
+
+        assertThat(ListenersValidator.validateAndGetErrorMessages(Reconciliation.DUMMY_RECONCILIATION, TWO_NODES, List.of(listener1)), containsInAnyOrder(expectedErrors.toArray()));
+
+        GenericKafkaListener listener2 = new GenericKafkaListenerBuilder()
+                .withName(name)
+                .withPort(9092)
+                .withType(KafkaListenerType.TLSROUTE)
+                .withTls(true)
+                .withNewConfiguration()
+                .endConfiguration()
+                .build();
+
+        expectedErrors = List.of(
+                "listener " + name + " is missing a broker configuration with host properties which are required for TLSRoute based listeners",
+                "listener " + name + " is missing a bootstrap host property which is required for TLSRoute based listeners",
+                "listener " + name + " is missing a parent references property which is required for TLSRoute based listeners"
+        );
+
+        assertThat(ListenersValidator.validateAndGetErrorMessages(Reconciliation.DUMMY_RECONCILIATION, TWO_NODES, List.of(listener2)), containsInAnyOrder(expectedErrors.toArray()));
+    }
+
+
+    @Test
+    public void testTlsRouteListenerHostNamesInNodePools() {
+        GenericKafkaListener listener = new GenericKafkaListenerBuilder()
+                .withName("tlsroute")
+                .withPort(9092)
+                .withType(KafkaListenerType.TLSROUTE)
+                .withTls(true)
+                .build();
+
+        assertThat(ListenersValidator.validateAndGetErrorMessages(Reconciliation.DUMMY_RECONCILIATION, NODE_POOL_NODES, List.of(listener)), containsInAnyOrder(
+                "listener tlsroute is missing a configuration with host properties which are required for TLSRoute based listeners",
+                "listener tlsroute is missing a parent references property which is required for TLSRoute based listeners"));
+
+        listener.setConfiguration(new GenericKafkaListenerConfigurationBuilder()
+                .withParentRefs(new ParentReferenceBuilder().withName("my-gateway").withSectionName("tls-sni").build())
+                .withBrokers((List<GenericKafkaListenerConfigurationBroker>) null)
+                .build());
+
+        assertThat(ListenersValidator.validateAndGetErrorMessages(Reconciliation.DUMMY_RECONCILIATION, NODE_POOL_NODES, List.of(listener)), containsInAnyOrder("listener tlsroute is missing a bootstrap host property which is required for TLSRoute based listeners",
+                "listener tlsroute is missing a broker configuration with host properties which are required for TLSRoute based listeners"));
+
+        listener.setConfiguration(new GenericKafkaListenerConfigurationBuilder()
+                .withParentRefs(new ParentReferenceBuilder().withName("my-gateway").withSectionName("tls-sni").build())
+                .withBootstrap(new GenericKafkaListenerConfigurationBootstrapBuilder()
+                                .build())
+                .withBrokers(new GenericKafkaListenerConfigurationBrokerBuilder()
+                                .withBroker(1000)
+                                .build(),
+                        new GenericKafkaListenerConfigurationBrokerBuilder()
+                                .withBroker(2000)
+                                .build(),
+                        new GenericKafkaListenerConfigurationBrokerBuilder()
+                                .withBroker(2001)
+                                .build())
+                .build());
+
+        assertThat(ListenersValidator.validateAndGetErrorMessages(Reconciliation.DUMMY_RECONCILIATION, NODE_POOL_NODES, List.of(listener)), containsInAnyOrder("listener tlsroute is missing a bootstrap host property which is required for TLSRoute based listeners",
+                "listener tlsroute is missing a broker host property for broker with ID 1000 which is required for TLSRoute based listeners",
+                "listener tlsroute is missing a broker host property for broker with ID 2000 which is required for TLSRoute based listeners",
+                "listener tlsroute is missing a broker host property for broker with ID 2001 which is required for TLSRoute based listeners"));
+
+        listener.setConfiguration(new GenericKafkaListenerConfigurationBuilder()
+                .withParentRefs(new ParentReferenceBuilder().withName("my-gateway").withSectionName("tls-sni").build())
+                .withBootstrap(new GenericKafkaListenerConfigurationBootstrapBuilder()
+                        .withHost("bootstrap-host")
+                        .build())
+                .withBrokers(new GenericKafkaListenerConfigurationBrokerBuilder()
+                                .withBroker(1000)
+                                .withHost("host-1000")
+                                .build(),
+                        new GenericKafkaListenerConfigurationBrokerBuilder()
+                                .withBroker(2001)
+                                .withHost("host-2001")
+                                .build())
+                .build());
+
+        assertThat(ListenersValidator.validateAndGetErrorMessages(Reconciliation.DUMMY_RECONCILIATION, NODE_POOL_NODES, List.of(listener)), containsInAnyOrder("listener tlsroute is missing a broker host property for broker with ID 2000 which is required for TLSRoute based listeners"));
+
+        listener.setConfiguration(new GenericKafkaListenerConfigurationBuilder()
+                .withParentRefs(new ParentReferenceBuilder().withName("my-gateway").withSectionName("tls-sni").build())
+                .withBootstrap(new GenericKafkaListenerConfigurationBootstrapBuilder()
+                        .withHost("bootstrap-host")
+                        .build())
+                .withBrokers(new GenericKafkaListenerConfigurationBrokerBuilder()
+                                .withBroker(1000)
+                                .withHost("host-1000")
+                                .build(),
+                        new GenericKafkaListenerConfigurationBrokerBuilder()
+                                .withBroker(2000)
+                                .withHost("host-2000")
+                                .build(),
+                        new GenericKafkaListenerConfigurationBrokerBuilder()
+                                .withBroker(2001)
+                                .withHost("host-2001")
+                                .build())
+                .build());
+
+        assertThat(ListenersValidator.validateAndGetErrorMessages(Reconciliation.DUMMY_RECONCILIATION, NODE_POOL_NODES, List.of(listener)), hasSize(0));
     }
 
     @Test
@@ -991,7 +1191,32 @@ public class ListenersValidatorTest {
                 .endConfiguration()
                 .build();
 
-        List<GenericKafkaListener> listeners = List.of(internal, route, lb, np, inq);
+        GenericKafkaListener tlsRoute = new GenericKafkaListenerBuilder()
+                .withName("tlsroute")
+                .withPort(9097)
+                .withType(KafkaListenerType.TLSROUTE)
+                .withTls(true)
+                .withNewConfiguration()
+                    .withParentRefs(new ParentReferenceBuilder().withName("my-gateway").withSectionName("tls-sni").build())
+                    .withNewBootstrap()
+                        .withHost("my-host")
+                    .endBootstrap()
+                    .withBrokers(new GenericKafkaListenerConfigurationBrokerBuilder()
+                                    .withBroker(0)
+                                    .withHost("my-host")
+                                    .build(),
+                            new GenericKafkaListenerConfigurationBrokerBuilder()
+                                    .withBroker(1)
+                                    .withHost("my-host")
+                                    .build(),
+                            new GenericKafkaListenerConfigurationBrokerBuilder()
+                                    .withBroker(2)
+                                    .withHost("my-host")
+                                    .build())
+                .endConfiguration()
+                .build();
+
+        List<GenericKafkaListener> listeners = List.of(internal, route, lb, np, inq, tlsRoute);
 
         assertThat(ListenersValidator.validateAndGetErrorMessages(Reconciliation.DUMMY_RECONCILIATION, THREE_NODES, listeners), empty());
     }

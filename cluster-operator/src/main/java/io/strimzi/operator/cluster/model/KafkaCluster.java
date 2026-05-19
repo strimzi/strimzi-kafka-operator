@@ -17,6 +17,10 @@ import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServicePort;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
+import io.fabric8.kubernetes.api.model.gatewayapi.v1.BackendRefBuilder;
+import io.fabric8.kubernetes.api.model.gatewayapi.v1.TLSRoute;
+import io.fabric8.kubernetes.api.model.gatewayapi.v1.TLSRouteBuilder;
+import io.fabric8.kubernetes.api.model.gatewayapi.v1.TLSRouteRuleBuilder;
 import io.fabric8.kubernetes.api.model.networking.v1.HTTPIngressPath;
 import io.fabric8.kubernetes.api.model.networking.v1.HTTPIngressPathBuilder;
 import io.fabric8.kubernetes.api.model.networking.v1.Ingress;
@@ -169,6 +173,11 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
      * Port used by the Ingress listeners
      */
     public static final int INGRESS_PORT = 443;
+
+    /**
+     * Port used by the TLSRoute listeners
+     */
+    public static final int TLSROUTE_PORT = 443;
 
     protected static final String KAFKA_NAME = "kafka";
     private static final String LOG_AND_METRICS_CONFIG_VOLUME_NAME = "kafka-metrics-and-logging";
@@ -966,6 +975,84 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
                         if (host != null) {
                             route.getSpec().setHost(host);
                         }
+
+                        routes.add(route);
+                    }
+                }
+            }
+        }
+
+        return routes;
+    }
+
+    /**
+     * Generates a list of bootstrap TLS Route which can be used to bootstrap clients outside a Gateway APi enabled
+     * Kubernetes cluster.
+     *
+     * @return The list of generated TLSRoutes
+     */
+    public List<TLSRoute> generateExternalBootstrapTlsRoutes() {
+        List<GenericKafkaListener> routeListeners = ListenersUtils.tlsRouteListeners(listeners);
+        List<TLSRoute> routes = new ArrayList<>(routeListeners.size());
+
+        for (GenericKafkaListener listener : routeListeners)   {
+            TLSRoute route = new TLSRouteBuilder()
+                    .withNewMetadata()
+                        .withName(ListenersUtils.backwardsCompatibleBootstrapRouteOrIngressName(cluster, listener))
+                        .withLabels(Util.mergeLabelsOrAnnotations(labels.withAdditionalLabels(TemplateUtils.labels(templateBootstrapRoute)).toMap(), ListenersUtils.bootstrapLabels(listener)))
+                        .withAnnotations(Util.mergeLabelsOrAnnotations(TemplateUtils.annotations(templateBootstrapRoute), ListenersUtils.bootstrapAnnotations(listener)))
+                        .withNamespace(namespace)
+                        .withOwnerReferences(ownerReference)
+                    .endMetadata()
+                    .withNewSpec()
+                        .withParentRefs(listener.getConfiguration().getParentRefs())
+                        .withHostnames(ListenersUtils.bootstrapHost(listener))
+                        .withRules(new TLSRouteRuleBuilder()
+                                .withBackendRefs(new BackendRefBuilder()
+                                        .withName(ListenersUtils.backwardsCompatibleBootstrapServiceName(cluster, listener))
+                                        .withPort(listener.getPort())
+                                        .build())
+                                .build())
+                    .endSpec()
+                    .build();
+            routes.add(route);
+        }
+
+        return routes;
+    }
+
+    /**
+     * Generates list of per-pod TLS Routes. These Routes are used for exposing the Kafka cluster externally using Gateway API.
+     *
+     * @return The list with generated TLSRoutes
+     */
+    public List<TLSRoute> generateExternalTlsRoutes() {
+        List<GenericKafkaListener> routeListeners = ListenersUtils.tlsRouteListeners(listeners);
+        List<TLSRoute> routes = new ArrayList<>();
+
+        for (GenericKafkaListener listener : routeListeners)   {
+            for (KafkaPool pool : nodePools)    {
+                if (pool.isBroker()) {
+                    for (NodeRef node : pool.nodes()) {
+                        TLSRoute route = new TLSRouteBuilder()
+                                .withNewMetadata()
+                                    .withName(ListenersUtils.backwardsCompatiblePerBrokerServiceName(pool.componentName, node.nodeId(), listener))
+                                    .withLabels(pool.labels.withAdditionalLabels(Util.mergeLabelsOrAnnotations(TemplateUtils.labels(pool.templatePerBrokerRoute), ListenersUtils.brokerLabels(listener, node))).toMap())
+                                    .withAnnotations(Util.mergeLabelsOrAnnotations(TemplateUtils.annotations(pool.templatePerBrokerRoute), ListenersUtils.brokerAnnotations(listener, node)))
+                                    .withNamespace(namespace)
+                                    .withOwnerReferences(pool.ownerReference)
+                                .endMetadata()
+                                .withNewSpec()
+                                    .withParentRefs(listener.getConfiguration().getParentRefs())
+                                    .withHostnames(ListenersUtils.brokerHost(listener, node))
+                                    .withRules(new TLSRouteRuleBuilder()
+                                            .withBackendRefs(new BackendRefBuilder()
+                                                    .withName(ListenersUtils.backwardsCompatiblePerBrokerServiceName(pool.componentName, node.nodeId(), listener))
+                                                    .withPort(listener.getPort())
+                                                    .build())
+                                            .build())
+                                .endSpec()
+                                .build();
 
                         routes.add(route);
                     }

@@ -3,6 +3,7 @@
 ## 1.1.0
 
 * New Cluster operator configuration option `STRIMZI_PKCS12_KEYSTORE_GENERATION` to disable generating PKCS12 stores in CA and Kafka user `Secret` resources.
+* Support for Gateway API-based `type: tlsroute` listener
 * Support for dependency scope configuration of Maven artifacts in Kafka Connect Build
 * Support for configuring per-broker listener annotation and label templates.
 * Add `UseBackgroundPodDeletion` feature gate (alpha, disabled by default) to use background deletion propagation when deleting pods during rolling updates. 
