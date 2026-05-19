@@ -1,10 +1,7 @@
 name: Run System Tests
 
-# Permissions has to have at least the following permissions for the job to work properly
 permissions:
   contents: read
-  pull-requests: write
-  statuses: write
 
 on:
   workflow_call:
@@ -52,6 +49,10 @@ on:
 
 jobs:
   run-tests:
+    permissions:
+      contents: read
+      pull-requests: write
+      statuses: write
     strategy:
       matrix:
         config: ${{ fromJson(inputs.matrix) }}
@@ -212,11 +213,11 @@ jobs:
           CONNECT_IMAGE="${CONNECT_BUILD_REGISTRY}/${DOCKER_ORG}/connect-file-sink:latest"
           KAFKA_VERSION=$([[ "${KAFKA_VERSION}" == *"latest"* ]] && yq eval '.[] | select(.default) | .version' kafka-versions.yaml || echo "${KAFKA_VERSION}")
           BASE_IMAGE="${DOCKER_REGISTRY}/${DOCKER_ORG}/kafka:${DOCKER_TAG}-kafka-${KAFKA_VERSION}"
-          
+
           echo "Base image: $BASE_IMAGE"
           eval "$(./systemtest/src/test/resources/connect-build/build-connect-image.sh "$KAFKA_VERSION" "$BASE_IMAGE" "$CONNECT_IMAGE")"
           echo "connect build image: $CONNECT_IMAGE_WITH_FILE_SINK_PLUGIN"
-          
+
           # Push the images
           docker push ${CONNECT_IMAGE_WITH_FILE_SINK_PLUGIN}
 
