@@ -57,10 +57,10 @@ All bugs, tasks or enhancements are tracked as [GitHub issues](https://github.co
 might be a good start for new contributors are marked with ["good-start"](https://github.com/strimzi/strimzi-kafka-operator/labels/good-start)
 label.
 
-The [Dev guide](development-docs/DEV_GUIDE.md) describes how to quickly get set up to build Strimzi from source.
+The [development guide](development-docs/DEV_GUIDE.md) describes how to quickly get set up to build Strimzi from source.
 Before submitting a patch, make sure you understand how to test your changes by reading the [Test guide](development-docs/TESTING.md).
-The [Release guide](development-docs/RELEASE.md) describes the steps needed for a new version release.
-The [Documentation Contributor Guide](https://strimzi.io/contributing/guide/) describes how to contribute to Strimzi documentation.
+The [release checklist](development-docs/RELEASE.md) describes the steps needed for a new version release.
+The [documentation contributor guide](https://strimzi.io/contributing/guide/) describes how to contribute to Strimzi documentation.
 
 ### Developer Certificate of Origin
 
