@@ -59,7 +59,7 @@ import static io.strimzi.systemtest.TestTags.REGRESSION;
     beforeTestSteps = {
         @Step(value = "Deploy Cluster Operator, Keycloak, and necessary OAuth secrets.", expected = "Cluster Operator and Keycloak are deployed and ready."),
         @Step(value = "Deploy Kafka cluster with custom OAuth authentication and Keycloak authorization over TLS listener.", expected = "Kafka cluster is deployed and ready with OAuth authentication and Keycloak authorization configured."),
-        @Step(value = "Create TLS users for team-a-client and team-b-client.", expected = "TLS users are created and ready.")
+        @Step(value = "Create KafkaUser resources with TLS authentication for team-a-client and team-b-client.", expected = "KafkaUser resources are created and ready.")
     },
     labels = {
         @Label(value = TestDocsLabels.SECURITY)
@@ -159,7 +159,7 @@ public class OauthAuthorizationST extends OauthAbstractST {
             .build();
 
         LOGGER.info("Sending {} messages to Broker with Topic name {}", testStorage.getMessageCount(), testStorage.getTopicName());
-        LOGGER.info("Producer will not produce messages because authorization Topic will failed. Team A can write only to Topic starting with 'x-'");
+        LOGGER.info("Producer will not produce messages because authorization Topic will failed. Team A can write only to Topic starting with 'x-' or 'a-'");
 
         KubeResourceManager.get().createResourceWithWait(teamAOauthProducer.getJob());
         JobUtils.waitForJobFailure(Environment.TEST_SUITE_NAMESPACE, teamAProducerName, 30_000);
@@ -277,7 +277,7 @@ public class OauthAuthorizationST extends OauthAbstractST {
             .build();
 
         LOGGER.info("Sending {} messages to Broker with Topic name {}", testStorage.getMessageCount(), testStorage.getTopicName());
-        // Producer will not produce messages because authorization topic will failed. Team A can write only to topic starting with 'x-'
+        // Producer will not produce messages because authorization topic will failed. Team B can write only to topic starting with 'b-'
         KubeResourceManager.get().createResourceWithWait(teamBOauthClients.getProducer().getJob());
         JobUtils.waitForJobFailure(Environment.TEST_SUITE_NAMESPACE, teamBProducerName, 30_000);
         JobUtils.deleteJobWithWait(Environment.TEST_SUITE_NAMESPACE, teamBProducerName);

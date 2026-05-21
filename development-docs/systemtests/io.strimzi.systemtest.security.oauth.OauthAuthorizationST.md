@@ -8,7 +8,7 @@
 | - | - | - |
 | 1. | Deploy Cluster Operator, Keycloak, and necessary OAuth secrets. | Cluster Operator and Keycloak are deployed and ready. |
 | 2. | Deploy Kafka cluster with custom OAuth authentication and Keycloak authorization over TLS listener. | Kafka cluster is deployed and ready with OAuth authentication and Keycloak authorization configured. |
-| 3. | Create TLS users for team-a-client and team-b-client. | TLS users are created and ready. |
+| 3. | Create KafkaUser resources with TLS authentication for team-a-client and team-b-client. | KafkaUser resources are created and ready. |
 
 **Labels:**
 
