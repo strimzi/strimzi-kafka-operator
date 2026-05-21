@@ -2743,9 +2743,9 @@ public class ConnectorMockTest {
                 eq(connectorName));
     }
 
-    /** Create connect, create connector, simulate FAILED state, pause connector */
+    /** Create connect, create connector in FAILED state, attempt to pause — should log warning and add condition instead of calling pause() */
     @Test
-    public void testConnectorFailedToPaused() {
+    public void testConnectorPauseWhenFailed() {
         String connectName = "cluster";
         String connectorName = "connector";
 
@@ -2782,7 +2782,7 @@ public class ConnectorMockTest {
         waitForConnectorReady(connectorName);
         waitForConnectorState(connectorName, "RUNNING");
 
-        // Simulate connector going into FAILED state by updating the connectors map directly
+        // Simulate connector entering FAILED state
         String host = KafkaConnectResources.qualifiedServiceName(connectName, namespace);
         connectors.put(key(host, connectorName), new ConnectorStatus("FAILED", connectors.get(key(host, connectorName)).config));
 
@@ -2792,12 +2792,9 @@ public class ConnectorMockTest {
                 .endSpec()
                 .build());
 
-        waitForConnectorState(connectorName, "PAUSED");
+        waitForConnectorCondition(connectorName, "Warning", "UpdateConnectorState");
 
-        verify(api, times(1)).pause(any(),
-                eq(KafkaConnectResources.qualifiedServiceName(connectName, namespace)), eq(KafkaConnectCluster.REST_API_PORT),
-                eq(connectorName));
-        verify(api, never()).stop(any(),
+        verify(api, never()).pause(any(),
                 eq(KafkaConnectResources.qualifiedServiceName(connectName, namespace)), eq(KafkaConnectCluster.REST_API_PORT),
                 eq(connectorName));
     }
