@@ -47,6 +47,7 @@ Resources:
 ## Contributing
 
 You can contribute by:
+
 - Raising issues you find while using Strimzi
 - Fixing issues by opening Pull Requests
 - Improving Strimzi documentation
@@ -56,10 +57,33 @@ All bugs, tasks or enhancements are tracked as [GitHub issues](https://github.co
 might be a good start for new contributors are marked with ["good-start"](https://github.com/strimzi/strimzi-kafka-operator/labels/good-start)
 label.
 
-The [Dev guide](https://github.com/strimzi/strimzi-kafka-operator/blob/main/development-docs/DEV_GUIDE.md) describes how to build Strimzi.
-Before submitting a patch, please make sure to understand, how to test your changes before opening a PR [Test guide](https://github.com/strimzi/strimzi-kafka-operator/blob/main/development-docs/TESTING.md).
+The [development guide](development-docs/DEV_GUIDE.md) describes how to quickly get set up to build Strimzi from source.
+Before submitting a patch, make sure you understand how to test your changes by reading the [Test guide](development-docs/TESTING.md).
+The [release checklist](development-docs/RELEASE.md) describes the steps needed for a new version release.
+The [documentation contributor guide](https://strimzi.io/contributing/guide/) describes how to contribute to Strimzi documentation.
 
-The [Documentation Contributor Guide](https://strimzi.io/contributing/guide/) describes how to contribute to Strimzi documentation.
+### Developer Certificate of Origin
+
+The [Developer Certificate of Origin (DCO)](https://developercertificate.org/) is a lightweight way for contributors to certify that they wrote or otherwise have the right to submit the code they are contributing to the project.
+All commits must be signed off by adding a `Signed-off-by` line to the commit message.
+
+```shell
+This is my commit message
+
+Signed-off-by: John Doe <JohnDoe@somewhere.org>
+```
+
+Git has a `-s` option to append this automatically:
+
+```shell
+git commit -s -m 'This is my commit message'
+```
+
+If you have already made a commit and forgot to include the sign-off, you can amend your last commit:
+
+```shell
+git commit --amend -s
+```
 
 If you want to get in touch with us first before contributing, you can use:
 
