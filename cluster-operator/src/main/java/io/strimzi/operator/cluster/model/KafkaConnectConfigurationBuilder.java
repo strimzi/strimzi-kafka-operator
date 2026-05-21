@@ -6,7 +6,6 @@ package io.strimzi.operator.cluster.model;
 
 import io.strimzi.api.kafka.model.common.ClientTls;
 import io.strimzi.api.kafka.model.common.EnvironmentVariableRack;
-import io.strimzi.api.kafka.model.common.PasswordSecretSource;
 import io.strimzi.api.kafka.model.common.Rack;
 import io.strimzi.api.kafka.model.common.TopologyLabelRack;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthentication;
@@ -28,8 +27,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import static io.strimzi.operator.cluster.model.KafkaConnectCluster.PASSWORD_VOLUME_MOUNT;
-
 /**
  * This class is used to generate the Connect configuration template. The template is later passed using a config map to
  * the connect pods. The scripts in the container images will fill in the variables in the template and use the
@@ -38,8 +35,6 @@ import static io.strimzi.operator.cluster.model.KafkaConnectCluster.PASSWORD_VOL
  */
 @SuppressWarnings("checkstyle:CyclomaticComplexity")
 public class KafkaConnectConfigurationBuilder {
-    // the volume mounted secret file template includes: <volume_mount>/<secret_name>/<secret_key>
-    private static final String PLACEHOLDER_VOLUME_MOUNTED_SECRET_TEMPLATE_CONFIG_PROVIDER_DIR = "${strimzidir:%s%s:%s}";
     // the secrets file template: <namespace>/<secret_name>:<secret_key>
     private static final String PLACEHOLDER_SECRET_TEMPLATE_KUBE_CONFIG_PROVIDER = "${strimzisecrets:%s/%s:%s}";
 
@@ -177,14 +172,16 @@ public class KafkaConnectConfigurationBuilder {
 
                 if (authentication instanceof KafkaClientAuthenticationPlain passwordAuth) {
                     saslMechanism = "PLAIN";
-                    jaasConfig.append("org.apache.kafka.common.security.plain.PlainLoginModule required username=\"" + passwordAuth.getUsername() + "\" password=\"" + formatPasswordTemplate(passwordAuth.getPasswordSecret(), PASSWORD_VOLUME_MOUNT) + "\";");
+                    String passwordAuthConfigProvider = String.format(PLACEHOLDER_SECRET_TEMPLATE_KUBE_CONFIG_PROVIDER, reconciliation.namespace(), passwordAuth.getPasswordSecret().getSecretName(), passwordAuth.getPasswordSecret().getPassword());
+                    jaasConfig.append("org.apache.kafka.common.security.plain.PlainLoginModule required username=\"" + passwordAuth.getUsername() + "\" password=\"" + passwordAuthConfigProvider + "\";");
                 } else if (authentication instanceof KafkaClientAuthenticationScram scramAuth) {
                     if (scramAuth.getType().equals(KafkaClientAuthenticationScramSha256.TYPE_SCRAM_SHA_256)) {
                         saslMechanism = "SCRAM-SHA-256";
                     } else if (scramAuth.getType().equals(KafkaClientAuthenticationScramSha512.TYPE_SCRAM_SHA_512)) {
                         saslMechanism = "SCRAM-SHA-512";
                     }
-                    jaasConfig.append("org.apache.kafka.common.security.scram.ScramLoginModule required username=\"" + scramAuth.getUsername() + "\" password=\"" + formatPasswordTemplate(scramAuth.getPasswordSecret(), PASSWORD_VOLUME_MOUNT) + "\";");
+                    String passwordAuthConfigProvider = String.format(PLACEHOLDER_SECRET_TEMPLATE_KUBE_CONFIG_PROVIDER, reconciliation.namespace(), scramAuth.getPasswordSecret().getSecretName(), scramAuth.getPasswordSecret().getPassword());
+                    jaasConfig.append("org.apache.kafka.common.security.scram.ScramLoginModule required username=\"" + scramAuth.getUsername() + "\" password=\"" + passwordAuthConfigProvider + "\";");
                 }
 
                 writer.println("sasl.mechanism=" + saslMechanism);
@@ -204,10 +201,6 @@ public class KafkaConnectConfigurationBuilder {
         }
 
         return this;
-    }
-
-    private String formatPasswordTemplate(PasswordSecretSource secret, String volumeMountPath) {
-        return String.format(PLACEHOLDER_VOLUME_MOUNTED_SECRET_TEMPLATE_CONFIG_PROVIDER_DIR, volumeMountPath, secret.getSecretName(), secret.getPassword());
     }
 
     /**

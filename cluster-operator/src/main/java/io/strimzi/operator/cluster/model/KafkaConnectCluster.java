@@ -21,8 +21,6 @@ import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyIngressRule;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPeer;
 import io.fabric8.kubernetes.api.model.policy.v1.PodDisruptionBudget;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
-import io.fabric8.kubernetes.api.model.rbac.PolicyRule;
-import io.fabric8.kubernetes.api.model.rbac.PolicyRuleBuilder;
 import io.fabric8.kubernetes.api.model.rbac.Role;
 import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.RoleRef;
@@ -36,7 +34,6 @@ import io.strimzi.api.kafka.model.common.ProbeBuilder;
 import io.strimzi.api.kafka.model.common.Rack;
 import io.strimzi.api.kafka.model.common.TopologyLabelRack;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthentication;
-import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationTls;
 import io.strimzi.api.kafka.model.common.metrics.JmxPrometheusExporterMetrics;
 import io.strimzi.api.kafka.model.common.metrics.StrimziMetricsReporter;
 import io.strimzi.api.kafka.model.common.template.ContainerTemplate;
@@ -75,6 +72,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Kafka Connect model class
@@ -398,7 +396,6 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
             volumeList.add(VolumeUtils.createEmptyDirVolume(INIT_VOLUME_NAME, "1Mi", "Memory"));
         }
 
-        AuthenticationUtils.configureClientAuthenticationVolumes(authentication, volumeList, isOpenShift, "");
         volumeList.addAll(getMountedPluginVolumes());
         
         TemplateUtils.addAdditionalVolumes(templatePod, volumeList);
@@ -441,7 +438,6 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
             volumeMountList.add(VolumeUtils.createVolumeMount(INIT_VOLUME_NAME, INIT_VOLUME_MOUNT));
         }
 
-        AuthenticationUtils.configureClientAuthenticationVolumeMounts(authentication, volumeMountList, TLS_CERTS_BASE_VOLUME_MOUNT, PASSWORD_VOLUME_MOUNT, "");
         volumeMountList.addAll(getMountedPluginVolumeMounts());
 
         TemplateUtils.addAdditionalVolumeMounts(volumeMountList, templateContainer);
@@ -596,7 +592,7 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
      * @return  Command for starting Kafka Connect container
      */
     protected String getCommand() {
-        return "/opt/kafka/kafka_connect_run.sh";
+        return "/opt/kafka/kafka_connect_mm2_shared_run.sh";
     }
 
     protected List<EnvVar> getEnvVars() {
@@ -769,17 +765,11 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
      * @return  The list of Secrets the Pods will need access to through Kubernetes API to load their values using
      *          configuration providers.
      */
-    private List<String> secretsToAllowAccessTo() {
-        List<String> certSecretNames = new ArrayList<>();
-        if (tls != null && tls.getTrustedCertificates() != null && !tls.getTrustedCertificates().isEmpty()) {
-            certSecretNames.add(KafkaConnectResources.internalTlsTrustedCertsSecretName(cluster));
-        }
-
-        if (authentication != null && authentication instanceof KafkaClientAuthenticationTls tlsAuth && tlsAuth.getCertificateAndKey() != null) {
-            certSecretNames.add(tlsAuth.getCertificateAndKey().getSecretName());
-        }
-
-        return certSecretNames;
+    public Set<String> secretsToAllowAccessTo() {
+        return AuthenticationUtils.getAuthenticationSecretsToAccess(
+                tls,
+                authentication,
+                KafkaConnectResources.internalTlsTrustedCertsSecretName(cluster));
     }
 
     /**
@@ -789,20 +779,8 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
      * @return role for the Kafka Connect
      */
     public Role generateRole() {
-        List<String> certSecretNames = secretsToAllowAccessTo();
-
-        if (certSecretNames.isEmpty()) {
-            return null;
-        } else {
-            List<PolicyRule> rules = List.of(new PolicyRuleBuilder()
-                    .withApiGroups("")
-                    .withResources("secrets")
-                    .withVerbs("get")
-                    .withResourceNames(certSecretNames)
-                    .build());
-
-            return RbacUtils.createRole(componentName, namespace, rules, labels, ownerReference, null);
-        }
+        return AuthenticationUtils.generateAuthenticationSecretsRole(
+                componentName, namespace, secretsToAllowAccessTo(), labels, ownerReference);
     }
 
     /**
@@ -811,23 +789,8 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
      * @return  Role Binding for the Kafka Connect
      */
     public RoleBinding generateRoleBindingForRole() {
-        if (secretsToAllowAccessTo().isEmpty()) {
-            return null;
-        } else {
-            Subject subject = new SubjectBuilder()
-                    .withKind("ServiceAccount")
-                    .withName(componentName)
-                    .withNamespace(namespace)
-                    .build();
-
-            RoleRef roleRef = new RoleRefBuilder()
-                    .withName(componentName)
-                    .withApiGroup("rbac.authorization.k8s.io")
-                    .withKind("Role")
-                    .build();
-
-            return RbacUtils.createRoleBinding(getRoleBindingName(), namespace, roleRef, List.of(subject), labels, ownerReference, null);
-        }
+        return AuthenticationUtils.generateAuthenticationSecretsRoleBinding(
+                getRoleBindingName(), componentName, namespace, secretsToAllowAccessTo(), labels, ownerReference);
     }
 
     /**

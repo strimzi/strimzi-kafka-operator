@@ -2,6 +2,10 @@
 set -e
 set +x
 
+# Clean-up /tmp directory from files which might have remained from previous container restart
+# We ignore any errors which might be caused by files injected by different agents which we do not have the rights to delete
+rm -rfv /tmp/* || true
+
 # Prepare hostname - for StrimziPodSets we use the Pod DNS name assigned through the headless service
 ADVERTISED_HOSTNAME=$(hostname -f | cut -d "." -f1-4)
 export ADVERTISED_HOSTNAME
