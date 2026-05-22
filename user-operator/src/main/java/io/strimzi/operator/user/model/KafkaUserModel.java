@@ -225,7 +225,8 @@ public class KafkaUserModel {
      * @param defaultRenewalDays    The default renewal days (configured in Clients CA).
      * @param maintenanceWindows    List of configured maintenance windows
      * @param clock                 The clock for supplying the reconciler with the time instant of each reconciliation cycle.
-     *                              That time is used for checking maintenance windows* @param generatePkcs12Stores Flag indicating whether PKCS12 keystores should be generated for the user certificates
+     *                              That time is used for checking maintenance windows
+     * @param generatePkcs12Stores  Flag indicating whether PKCS12 keystores should be generated for the user certificates
      */
     @SuppressWarnings("checkstyle:BooleanExpressionComplexity")
     public void maybeGenerateCertificates(Reconciliation reconciliation, CertManager certManager, PasswordGenerator passwordGenerator,

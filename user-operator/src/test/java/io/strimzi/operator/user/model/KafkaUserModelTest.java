@@ -336,9 +336,9 @@ public class KafkaUserModelTest {
             .build();
 
         KafkaUserModel model = KafkaUserModel.fromCrd(kafkaUserWithValidity, UserOperatorConfig.SECRET_PREFIX.defaultValue(), Boolean.parseBoolean(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.defaultValue()));
-        model.maybeGenerateCertificates(Reconciliation.DUMMY_RECONCILIATION, new OpenSslCertManager(Clock.systemUTC()), passwordGenerator, clientsCaCert, clientsCaKey, null, 365, 30, null, Clock.systemUTC());
+        model.maybeGenerateCertificates(Reconciliation.DUMMY_RECONCILIATION, new OpenSslCertManager(Clock.systemUTC()), passwordGenerator, clientsCaCert, clientsCaKey, null, 365, 30, null, Clock.systemUTC(), true);
 
-        Secret userSecret = model.generateSecret();
+        Secret userSecret = model.generateSecret(true);
 
         byte[] certBytes = Util.decodeFromBase64(userSecret.getData().get("user.crt")).getBytes(StandardCharsets.UTF_8);
         CertificateFactory cf = CertificateFactory.getInstance("X.509");
