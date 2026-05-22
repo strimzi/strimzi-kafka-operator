@@ -1322,7 +1322,6 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
                                     .build())
                         .endTls()
                     .endTarget()
-                    .withConnectCluster("target")
                     .withMirrors(new KafkaMirrorMaker2MirrorSpecBuilder()
                             .withNewSource()
                                 .withAlias("source")
@@ -1334,7 +1333,6 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
                                             .build())
                                 .endTls()
                             .endSource()
-                            .withTargetCluster("target")
                             .build())
                 .endSpec()
                 .build();
