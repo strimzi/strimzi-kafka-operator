@@ -124,7 +124,8 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
     }
 
     @Description("Enable or disable issuer checking. By default issuer is checked using the value configured by `validIssuerUri`. " +
-            "Default value is `true`.")
+            "If `validIssuerUri` is configured, issuer checking is performed even when this property is set to `false`. " +
+            "To disable issuer checking, set this property to `false` and leave `validIssuerUri` unset. Default value is `true`.")
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     public boolean isCheckIssuer() {
         return checkIssuer;
