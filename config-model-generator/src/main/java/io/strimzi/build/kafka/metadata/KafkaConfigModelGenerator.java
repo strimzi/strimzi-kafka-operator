@@ -305,9 +305,16 @@ public class KafkaConfigModelGenerator {
     }
 
     static Map<String, String> brokerDynamicUpdates() {
+        // From Kafka 4.3.0, this logic moved from the Scala class kafka.server.DynamicBrokerConfig to the Java class
+        // org.apache.kafka.server.config.DynamicBrokerConfig. As we need to build the configuration models for both
+        // older and newer Kafka versions, we have to detect which class is present and use it.
+        //
+        // This condition can be removed once we support only Kafka 4.3.0 and newer.
         if (classExists("org.apache.kafka.server.config.DynamicBrokerConfig")) {
+            // Kafka 4.3.0+
             return org.apache.kafka.server.config.DynamicBrokerConfig.dynamicConfigUpdateModes();
         } else {
+            // Kafka versions older than 4.3.0
             try {
                 Class<?> clazz = Class.forName("kafka.server.DynamicBrokerConfig$");
                 Field moduleField = clazz.getDeclaredField("MODULE$");
