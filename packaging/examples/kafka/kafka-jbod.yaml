@@ -46,8 +46,8 @@ metadata:
   name: my-cluster
 spec:
   kafka:
-    version: 4.2.0
-    metadataVersion: 4.2-IV1
+    version: 4.3.0
+    metadataVersion: 4.3-IV0
     listeners:
       - name: plain
         port: 9092
