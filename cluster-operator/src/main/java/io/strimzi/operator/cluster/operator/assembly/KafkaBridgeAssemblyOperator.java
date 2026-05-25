@@ -112,7 +112,6 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
             .compose(i -> bridgeRoleBinding(reconciliation, namespace, bridge))
             .compose(i -> deploymentOperations.scaleDown(reconciliation, namespace, bridge.getComponentName(), bridge.getReplicas(), operationTimeoutMs))
             .compose(scale -> serviceOperations.reconcile(reconciliation, namespace, KafkaBridgeResources.serviceName(bridge.getCluster()), bridge.generateService()))
-            .compose(i -> tlsTrustedCertsSecret(reconciliation, namespace, bridge))
             .compose(i -> MetricsAndLoggingUtils.metricsAndLogging(reconciliation, configMapOperations, bridge.logging(), bridge.metrics()))
             .compose(metricsAndLogging -> {
                 ConfigMap configMap = bridge.generateBridgeConfigMap(metricsAndLogging);
@@ -120,7 +119,7 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
                 return configMapOperations.reconcile(reconciliation, namespace, KafkaBridgeResources.configMapName(reconciliation.name()), configMap);
             })
             .compose(i -> isPodDisruptionBudgetGeneration ? podDisruptionBudgetOperator.reconcile(reconciliation, namespace, bridge.getComponentName(), bridge.generatePodDisruptionBudget()) : Future.succeededFuture())
-            .compose(i -> ReconcilerUtils.trustedCertificates(reconciliation, secretOperations, trustedCertificates))
+            .compose(i -> tlsTrustedCertsSecret(reconciliation, namespace, bridge))
             .compose(certs -> ReconcilerUtils.authTlsHash(secretOperations, namespace, auth, certs))
             .compose(authTlsHash -> {
                 podAnnotations.put(Annotations.ANNO_STRIMZI_AUTH_HASH, Integer.toString(authTlsHash));
@@ -158,7 +157,7 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
      *
      * @return  Future which completes when the reconciliation is done
      */
-    private Future<Void> tlsTrustedCertsSecret(Reconciliation reconciliation, String namespace, KafkaBridgeCluster bridge) {
+    private Future<String> tlsTrustedCertsSecret(Reconciliation reconciliation, String namespace, KafkaBridgeCluster bridge) {
         if (bridge.getTls() != null) {
             return ReconcilerUtils.trustedCertificates(reconciliation, secretOperations, bridge.getTls().getTrustedCertificates())
                     .compose(certificates -> {
@@ -168,7 +167,7 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
                                             namespace,
                                             KafkaBridgeResources.internalTlsTrustedCertsSecretName(bridge.getCluster()),
                                             bridge.generateTlsTrustedCertsSecret(Map.of("ca.crt", Util.encodeToBase64(certificates)), KafkaBridgeResources.internalTlsTrustedCertsSecretName(bridge.getCluster())))
-                                    .mapEmpty();
+                                .map(certificates);
                         } else {
                             return Future.succeededFuture();
                         }
