@@ -7,6 +7,7 @@ package io.strimzi.kafka.agent;
 import com.yammer.metrics.core.Gauge;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
+import jakarta.servlet.http.HttpServletResponse;
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.HttpConfiguration;
 import org.eclipse.jetty.server.HttpConnectionFactory;
@@ -21,7 +22,6 @@ import org.junit.jupiter.api.Test;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManagerFactory;
-import javax.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
 import java.net.URI;
