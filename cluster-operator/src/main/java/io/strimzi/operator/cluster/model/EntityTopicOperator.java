@@ -327,41 +327,6 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
     }
 
     /**
-     * Creates the Secret containing Cruise Control API auth credentials.
-     * 
-     * @param oldSecret The old secret.
-     *                           
-     * @return The generated Secret.
-     */
-    public Secret generateCruiseControlApiSecret(Secret oldSecret) {
-        return ModelUtils.createSecret(KafkaResources.entityTopicOperatorCcApiSecretName(cluster), namespace, labels, ownerReference, 
-            generateCruiseControlApiCredentials(oldSecret), Collections.emptyMap(), Collections.emptyMap());
-    }
-    
-    private static Map<String, String> generateCruiseControlApiCredentials(Secret oldSecret) {
-        if (oldSecret != null) {
-            // The credentials should not change with every reconciliation.
-            // So if the secret with credentials already exists, we re-use the values.
-            // But we use the new secret to update labels etc. if needed.
-            var data = oldSecret.getData();
-            var username = data.get(TOPIC_OPERATOR_USERNAME_KEY);
-            var password = data.get(TOPIC_OPERATOR_PASSWORD_KEY);
-            if (username == null || username.isBlank() || password == null || password.isBlank()) {
-                throw new RuntimeException(format("Secret %s is invalid", oldSecret.getMetadata().getName()));
-            } else {
-                return data;
-            }
-        } else {
-            PasswordGenerator passwordGenerator = new PasswordGenerator(16);
-            String apiToAdminPassword = passwordGenerator.generate();
-            return Map.of(
-                    TOPIC_OPERATOR_USERNAME_KEY, Util.encodeToBase64(TOPIC_OPERATOR_USERNAME),
-                    TOPIC_OPERATOR_PASSWORD_KEY, Util.encodeToBase64(apiToAdminPassword)
-            );
-        }
-    }
-
-    /**
      * Gets the namespace watched by the Topic Operator.
      *
      * @return Returns the namespace watched by the Topic Operator

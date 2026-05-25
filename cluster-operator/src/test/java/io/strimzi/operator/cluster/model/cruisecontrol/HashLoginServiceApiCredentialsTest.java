@@ -39,6 +39,7 @@ import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiPro
 import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties.HEALTHCHECK_USERNAME;
 import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties.REBALANCE_OPERATOR_USERNAME;
 import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties.TOPIC_OPERATOR_PASSWORD_KEY;
+import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties.TOPIC_OPERATOR_USERNAME;
 import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties.TOPIC_OPERATOR_USERNAME_KEY;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -365,5 +366,32 @@ public class HashLoginServiceApiCredentialsTest {
                 null,
                 null,
                 null));
+    }
+
+    @Test
+    public void testGenerateTopicOperatorApiSecret() {
+        CruiseControl cc = CruiseControl.fromCrd(Reconciliation.DUMMY_RECONCILIATION, createKafka(new CruiseControlSpec()), VERSIONS, NODES, STORAGE, Map.of(), SHARED_ENV_PROVIDER);
+
+        Secret newSecret = cc.apiCredentials().generateTopicOperatorApiSecret(null);
+        assertThat(newSecret, is(not(nullValue())));
+        assertThat(newSecret.getData(), is(not(nullValue())));
+        assertThat(newSecret.getData().size(), is(2));
+        assertThat(newSecret.getData().get(TOPIC_OPERATOR_USERNAME_KEY), is(encodeToBase64(TOPIC_OPERATOR_USERNAME)));
+        assertThat(newSecret.getData().get(TOPIC_OPERATOR_PASSWORD_KEY), is(not(nullValue())));
+
+        String name = encodeToBase64(TOPIC_OPERATOR_USERNAME);
+        String password = encodeToBase64("change-it");
+        Secret oldSecret = cc.apiCredentials().generateTopicOperatorApiSecret(new SecretBuilder().withData(Map.of(TOPIC_OPERATOR_USERNAME_KEY, name, TOPIC_OPERATOR_PASSWORD_KEY, password)).build());
+        assertThat(oldSecret, is(not(nullValue())));
+        assertThat(oldSecret.getData(), is(not(nullValue())));
+        assertThat(oldSecret.getData().size(), is(2));
+        assertThat(oldSecret.getData().get(TOPIC_OPERATOR_USERNAME_KEY), is(name));
+        assertThat(oldSecret.getData().get(TOPIC_OPERATOR_PASSWORD_KEY), is(password));
+
+        assertThrows(RuntimeException.class, () -> cc.apiCredentials().generateTopicOperatorApiSecret(new SecretBuilder().withData(Map.of(TOPIC_OPERATOR_USERNAME_KEY, name)).build()));
+        assertThrows(RuntimeException.class, () -> cc.apiCredentials().generateTopicOperatorApiSecret(new SecretBuilder().withData(Map.of(TOPIC_OPERATOR_PASSWORD_KEY, password)).build()));
+        assertThrows(RuntimeException.class, () -> cc.apiCredentials().generateTopicOperatorApiSecret(new SecretBuilder().withData(Map.of()).build()));
+        assertThrows(RuntimeException.class, () -> cc.apiCredentials().generateTopicOperatorApiSecret(new SecretBuilder().withData(Map.of(TOPIC_OPERATOR_USERNAME_KEY, " ", TOPIC_OPERATOR_PASSWORD_KEY, password)).build()));
+        assertThrows(RuntimeException.class, () -> cc.apiCredentials().generateTopicOperatorApiSecret(new SecretBuilder().withData(Map.of(TOPIC_OPERATOR_USERNAME_KEY, name, TOPIC_OPERATOR_PASSWORD_KEY, " ")).build()));
     }
 }

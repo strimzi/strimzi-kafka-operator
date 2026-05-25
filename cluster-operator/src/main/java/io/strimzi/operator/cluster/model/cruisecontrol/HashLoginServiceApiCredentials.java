@@ -6,6 +6,7 @@ package io.strimzi.operator.cluster.model.cruisecontrol;
 
 import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.Secret;
+import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlResources;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlSpec;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.HashLoginServiceApiUsers;
@@ -271,6 +272,39 @@ public class HashLoginServiceApiCredentials {
         data.put(HEALTHCHECK_PASSWORD_KEY, Util.encodeToBase64(userEntries.get(HEALTHCHECK_USERNAME).password));
         data.put(AUTH_FILE_KEY, Util.encodeToBase64(generateApiAuthFileAsString(userEntries)));
         return data;
+    }
+
+    /**
+     * Generates the Topic Operator API secret containing credentials for the Topic Operator to access Cruise Control.
+     * If an existing secret is provided with valid credentials, those are reused; otherwise new credentials are generated.
+     *
+     * @param oldSecret The existing secret, or null if it does not exist yet
+     *
+     * @return A new Secret containing Topic Operator API credentials
+     */
+    public Secret generateTopicOperatorApiSecret(Secret oldSecret) {
+        return ModelUtils.createSecret(KafkaResources.entityTopicOperatorCcApiSecretName(cluster), namespace, labels, ownerReference,
+                generateTopicOperatorApiCredentials(oldSecret), Collections.emptyMap(), Collections.emptyMap());
+    }
+
+    private static Map<String, String> generateTopicOperatorApiCredentials(Secret oldSecret) {
+        if (oldSecret != null) {
+            var data = oldSecret.getData();
+            var username = data.get(TOPIC_OPERATOR_USERNAME_KEY);
+            var password = data.get(TOPIC_OPERATOR_PASSWORD_KEY);
+            if (username == null || username.isBlank() || password == null || password.isBlank()) {
+                throw new RuntimeException(String.format("Secret %s is invalid", oldSecret.getMetadata().getName()));
+            } else {
+                return data;
+            }
+        } else {
+            PasswordGenerator passwordGenerator = new PasswordGenerator(16);
+            String apiToAdminPassword = passwordGenerator.generate();
+            return Map.of(
+                    TOPIC_OPERATOR_USERNAME_KEY, Util.encodeToBase64(TOPIC_OPERATOR_USERNAME),
+                    TOPIC_OPERATOR_PASSWORD_KEY, Util.encodeToBase64(apiToAdminPassword)
+            );
+        }
     }
 
     /**

@@ -315,43 +315,6 @@ public class EntityTopicOperatorTest {
     }
 
     @Test
-    public void testGenerateCruiseControlApiSecret() {
-        Kafka resource = new KafkaBuilder(KAFKA)
-                .editSpec()
-                    .withNewEntityOperator()
-                        .withNewTopicOperator()
-                        .endTopicOperator()
-                    .endEntityOperator()
-                    .withNewCruiseControl()
-                    .endCruiseControl()
-                .endSpec()
-                .build();
-        EntityTopicOperator entityTopicOperator = EntityTopicOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig());
-
-        Secret newSecret = entityTopicOperator.generateCruiseControlApiSecret(null);
-        assertThat(newSecret, is(notNullValue()));
-        assertThat(newSecret.getData(), is(notNullValue()));
-        assertThat(newSecret.getData().size(), is(2));
-        assertThat(newSecret.getData().get(TOPIC_OPERATOR_USERNAME_KEY), is(Util.encodeToBase64(TOPIC_OPERATOR_USERNAME)));
-        assertThat(newSecret.getData().get(TOPIC_OPERATOR_USERNAME_KEY), is(notNullValue()));
-        
-        String name = Util.encodeToBase64(TOPIC_OPERATOR_USERNAME);
-        String password = Util.encodeToBase64("change-it");
-        Secret oldSecret = entityTopicOperator.generateCruiseControlApiSecret(new SecretBuilder().withData(Map.of(TOPIC_OPERATOR_USERNAME_KEY, name, TOPIC_OPERATOR_PASSWORD_KEY, password)).build());
-        assertThat(oldSecret, is(notNullValue()));
-        assertThat(oldSecret.getData(), is(notNullValue()));
-        assertThat(oldSecret.getData().size(), is(2));
-        assertThat(oldSecret.getData().get(TOPIC_OPERATOR_USERNAME_KEY), is(name));
-        assertThat(oldSecret.getData().get(TOPIC_OPERATOR_PASSWORD_KEY), is(password));
-        
-        assertThrows(RuntimeException.class, () -> entityTopicOperator.generateCruiseControlApiSecret(new SecretBuilder().withData(Map.of(TOPIC_OPERATOR_USERNAME_KEY, name)).build()));
-        assertThrows(RuntimeException.class, () -> entityTopicOperator.generateCruiseControlApiSecret(new SecretBuilder().withData(Map.of(TOPIC_OPERATOR_PASSWORD_KEY, password)).build()));
-        assertThrows(RuntimeException.class, () -> entityTopicOperator.generateCruiseControlApiSecret(new SecretBuilder().withData(Map.of()).build()));
-        assertThrows(RuntimeException.class, () -> entityTopicOperator.generateCruiseControlApiSecret(new SecretBuilder().withData(Map.of(TOPIC_OPERATOR_USERNAME_KEY, " ", TOPIC_OPERATOR_PASSWORD_KEY, password)).build()));
-        assertThrows(RuntimeException.class, () -> entityTopicOperator.generateCruiseControlApiSecret(new SecretBuilder().withData(Map.of(TOPIC_OPERATOR_USERNAME_KEY, name, TOPIC_OPERATOR_PASSWORD_KEY, " ")).build()));
-    }
-
-    @Test
     public void testSecurityProvider() {
         EntityTopicOperator eto = EntityTopicOperator.fromCrd(new Reconciliation("test", KAFKA.getKind(), KAFKA.getMetadata().getNamespace(), KAFKA.getMetadata().getName()), KAFKA, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig());
         eto.securityProvider = new TestPodSecurityProvider();
