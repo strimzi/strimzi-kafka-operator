@@ -836,6 +836,7 @@ public class KafkaBridgeAssemblyOperatorTest {
                         "ca2.crt", Util.encodeToBase64(DUMMY_CERT)))
                 .build();
         when(mockSecretOps.getAsync(eq(kbNamespace), eq("shared-tls-secret"))).thenReturn(Future.succeededFuture(tlsSecret));
+        when(mockSecretOps.reconcile(any(), eq(kbNamespace), any(), any())).thenReturn(Future.succeededFuture());
 
         KafkaBridgeAssemblyOperator ops = new KafkaBridgeAssemblyOperator(vertx,
                 new PlatformFeaturesAvailability(true, kubernetesVersion),
