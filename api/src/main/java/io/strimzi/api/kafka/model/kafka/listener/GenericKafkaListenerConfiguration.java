@@ -16,6 +16,7 @@ import io.strimzi.api.kafka.model.common.template.IpFamily;
 import io.strimzi.api.kafka.model.common.template.IpFamilyPolicy;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.DescriptionFile;
+import io.strimzi.crdgenerator.annotations.ExternalLink;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -340,6 +341,7 @@ public class GenericKafkaListenerConfiguration implements UnknownPropertyPreserv
             "Typically this would be Gateway resource.\n" +
             "For `tlsroute` listeners only.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
+    @ExternalLink(url = "https://gateway-api.sigs.k8s.io/reference/api-spec/1.5/spec/#parentreference")
     public List<ParentReference> getParentRefs() {
         return parentRefs;
     }

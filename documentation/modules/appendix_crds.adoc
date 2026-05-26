@@ -338,7 +338,7 @@ This property is used to select the preferred address type, which is checked fir
 This is a one to one with the `spec.allocateLoadBalancerNodePorts` configuration in the `Service` type
 For `loadbalancer` listeners only.
 |parentRefs
-|xref:type-ParentReference-{context}[`ParentReference`] array
+|https://gateway-api.sigs.k8s.io/reference/api-spec/1.5/spec/#parentreference[ParentReference] array
 |Configures the resource(s) TLSRoutes created by this listener will be attached to.
 Typically this would be Gateway resource.
 For `tlsroute` listeners only.
@@ -446,35 +446,6 @@ include::../api/io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerCo
 |externalIPs
 |string array
 |External IPs associated to the nodeport service. These IPs are used by clients external to the Kubernetes cluster to access the Kafka brokers. This field is helpful when `nodeport` without `externalIP` is not sufficient. For example on bare-metal Kubernetes clusters that do not support Loadbalancer service types. This field can only be used with `nodeport` type listener.
-|====
-
-[id='type-ParentReference-{context}']
-= `ParentReference` schema reference
-
-Used in: xref:type-GenericKafkaListenerConfiguration-{context}[`GenericKafkaListenerConfiguration`]
-
-
-[cols="2,2,3a",options="header"]
-|====
-|Property |Property type |Description
-|kind
-|string
-|
-|group
-|string
-|
-|name
-|string
-|
-|namespace
-|string
-|
-|port
-|integer
-|
-|sectionName
-|string
-|
 |====
 
 [id='type-KafkaAuthorizationSimple-{context}']
