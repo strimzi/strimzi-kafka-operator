@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.cluster.model;
 
+import io.strimzi.api.kafka.model.common.PasswordSecretSource;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationCustom;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationPlain;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationScram;
@@ -19,6 +20,7 @@ import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2ClusterSpec;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2ConnectorSpec;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2MirrorSpec;
+import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2Resources;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2TargetClusterSpec;
 import io.strimzi.operator.cluster.model.metrics.StrimziMetricsReporterConfig;
 import io.strimzi.operator.common.Reconciliation;
@@ -200,19 +202,17 @@ public class KafkaMirrorMaker2Connectors {
             } else if (cluster.getAuthentication() instanceof KafkaClientAuthenticationPlain plainAuthentication) {
                 securityProtocol = cluster.getTls() != null ? "SASL_SSL" : "SASL_PLAINTEXT";
                 config.put(configPrefix + SaslConfigs.SASL_MECHANISM, "PLAIN");
-                String passwordAuthConfigProvider = String.format(PLACEHOLDER_SECRET_TEMPLATE_KUBE_CONFIG_PROVIDER, reconciliation.namespace(), plainAuthentication.getPasswordSecret().getSecretName(), plainAuthentication.getPasswordSecret().getPassword());
                 config.put(configPrefix + SaslConfigs.SASL_JAAS_CONFIG,
                         AuthenticationUtils.jaasConfig("org.apache.kafka.common.security.plain.PlainLoginModule",
                                 Map.of("username", plainAuthentication.getUsername(),
-                                        "password", passwordAuthConfigProvider)));
+                                        "password", formatPasswordTemplate(plainAuthentication.getPasswordSecret(), reconciliation.namespace()))));
             } else if (cluster.getAuthentication() instanceof KafkaClientAuthenticationScram scramAuthentication) {
                 securityProtocol = cluster.getTls() != null ? "SASL_SSL" : "SASL_PLAINTEXT";
                 config.put(configPrefix + SaslConfigs.SASL_MECHANISM, scramAuthentication instanceof KafkaClientAuthenticationScramSha256 ? "SCRAM-SHA-256" : "SCRAM-SHA-512");
-                String passwordAuthConfigProvider = String.format(PLACEHOLDER_SECRET_TEMPLATE_KUBE_CONFIG_PROVIDER, reconciliation.namespace(), scramAuthentication.getPasswordSecret().getSecretName(), scramAuthentication.getPasswordSecret().getPassword());
                 config.put(configPrefix + SaslConfigs.SASL_JAAS_CONFIG,
                         AuthenticationUtils.jaasConfig("org.apache.kafka.common.security.scram.ScramLoginModule",
                                 Map.of("username", scramAuthentication.getUsername(),
-                                        "password", passwordAuthConfigProvider)));
+                                        "password", formatPasswordTemplate(scramAuthentication.getPasswordSecret(), reconciliation.namespace()))));
             } else if (cluster.getAuthentication() instanceof KafkaClientAuthenticationCustom customAuth) { // Configure custom authentication
                 if (customAuth.isSasl()) {
                     // If this authentication uses SASL, we need to update the security protocol to combine the SASL
@@ -238,6 +238,10 @@ public class KafkaMirrorMaker2Connectors {
         config.putAll(cluster.getAdditionalProperties());
     }
 
+    private static String formatPasswordTemplate(PasswordSecretSource passwordSecret, String namespace) {
+        return String.format(PLACEHOLDER_SECRET_TEMPLATE_KUBE_CONFIG_PROVIDER, namespace, passwordSecret.getSecretName(), passwordSecret.getPassword());
+    }
+
     /**
      * Adds configuration for the TLS encryption to the map if TLS is configured and returns the security protocol
      * (SSL or PLAINTEXT). The returned security protocol is later modified for SASL if needed, but this is done in the
@@ -254,7 +258,7 @@ public class KafkaMirrorMaker2Connectors {
     private static String addTLSConfigToMirrorMaker2ConnectorConfig(Map<String, Object> config, KafkaMirrorMaker2ClusterSpec cluster, String configPrefix, String namespace, String mm2ClusterName) {
         if (cluster.getTls() != null) {
             if (cluster.getTls().getTrustedCertificates() != null && !cluster.getTls().getTrustedCertificates().isEmpty()) {
-                String configProviderValue = String.format(PLACEHOLDER_SECRET_TEMPLATE_KUBE_CONFIG_PROVIDER, namespace, KafkaConnectResources.internalTlsTrustedCertsSecretName(mm2ClusterName), "ca.crt");
+                String configProviderValue = String.format(PLACEHOLDER_SECRET_TEMPLATE_KUBE_CONFIG_PROVIDER, namespace, KafkaConnectResources.internalTlsTrustedCertsSecretName(mm2ClusterName), KafkaMirrorMaker2Resources.tlsCertificateKey(cluster.getAlias()));
                 config.put(configPrefix + SslConfigs.SSL_TRUSTSTORE_CERTIFICATES_CONFIG, configProviderValue);
                 config.put(configPrefix + SslConfigs.SSL_TRUSTSTORE_TYPE_CONFIG, "PEM");
             }

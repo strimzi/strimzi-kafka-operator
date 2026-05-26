@@ -236,7 +236,7 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
      */
     @Override
     protected String getCommand() {
-        return "/opt/kafka/kafka_connect_mm2_shared_run.sh";
+        return "/opt/kafka/kafka_connect_run.sh";
     }
 
     /**

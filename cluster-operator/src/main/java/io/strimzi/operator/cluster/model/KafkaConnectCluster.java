@@ -592,7 +592,7 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
      * @return  Command for starting Kafka Connect container
      */
     protected String getCommand() {
-        return "/opt/kafka/kafka_connect_mm2_shared_run.sh";
+        return "/opt/kafka/kafka_connect_run.sh";
     }
 
     protected List<EnvVar> getEnvVars() {

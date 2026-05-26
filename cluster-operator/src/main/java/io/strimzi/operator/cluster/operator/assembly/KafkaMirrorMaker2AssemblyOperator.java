@@ -184,7 +184,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
 
     /**
      * Collects trusted certificates from ALL clusters (target + source)
-     * and consolidates them into a single internal secret.
+     * and consolidates them into a single internal secret with cluster-specific keys
      *
      * @param reconciliation            Reconciliation marker
      * @param namespace                 Namespace where the secret will be created
@@ -193,40 +193,49 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
      */
     @Override
     protected Future<Void> tlsTrustedCertsSecret(Reconciliation reconciliation, String namespace, KafkaConnectCluster mirrorMaker2Cluster) {
-        List<CertSecretSource> allTrustedCertificates = new ArrayList<>();
-
-        if (mirrorMaker2Cluster.getTls() != null && mirrorMaker2Cluster.getTls().getTrustedCertificates() != null) {
-            allTrustedCertificates.addAll(mirrorMaker2Cluster.getTls().getTrustedCertificates());
-        }
+        Map<String, Future<String>> certificatesFutures = new HashMap<>();
 
         if (mirrorMaker2Cluster instanceof KafkaMirrorMaker2Cluster mm2Cluster) {
             for (KafkaMirrorMaker2ClusterSpec cluster : mm2Cluster.clusters()) {
                 if (cluster.getTls() != null && cluster.getTls().getTrustedCertificates() != null) {
-                    allTrustedCertificates.addAll(cluster.getTls().getTrustedCertificates());
+                    certificatesFutures.put(
+                            KafkaMirrorMaker2Resources.tlsCertificateKey(cluster.getAlias()),
+                            ReconcilerUtils.trustedCertificates(reconciliation, secretOperations, cluster.getTls().getTrustedCertificates())
+                    );
                 }
             }
         }
 
-        if (!allTrustedCertificates.isEmpty()) {
-            return ReconcilerUtils.trustedCertificates(reconciliation, secretOperations, allTrustedCertificates)
-                    .compose(certificates -> {
-                        if (certificates != null) {
-                            return secretOperations.reconcile(
-                                            reconciliation,
-                                            namespace,
-                                            KafkaConnectResources.internalTlsTrustedCertsSecretName(mirrorMaker2Cluster.getCluster()),
-                                            mirrorMaker2Cluster.generateTlsTrustedCertsSecret(
-                                                Map.of("ca.crt", Util.encodeToBase64(certificates)),
-                                                KafkaConnectResources.internalTlsTrustedCertsSecretName(mirrorMaker2Cluster.getCluster())
-                                            ))
-                                    .mapEmpty();
-                        } else {
-                            return Future.succeededFuture();
-                        }
-                    });
-        } else {
-            return Future.succeededFuture();
+        if (certificatesFutures.isEmpty()) {
+            // No TLS configured - delete the secret
+            return secretOperations.reconcile(
+                            reconciliation,
+                            namespace,
+                            KafkaConnectResources.internalTlsTrustedCertsSecretName(mirrorMaker2Cluster.getCluster()),
+                            null)
+                    .mapEmpty();
         }
+
+        return Future.join(new ArrayList<>(certificatesFutures.values()))
+                .compose(i -> {
+                    Map<String, String> secretData = new HashMap<>();
+                    for (Map.Entry<String, Future<String>> entry : certificatesFutures.entrySet()) {
+                        String certificate = entry.getValue().result();
+                        if (certificate != null && !certificate.isEmpty()) {
+                            secretData.put(entry.getKey(), Util.encodeToBase64(certificate));
+                        }
+                    }
+
+                    return secretOperations.reconcile(
+                                    reconciliation,
+                                    namespace,
+                                    KafkaConnectResources.internalTlsTrustedCertsSecretName(mirrorMaker2Cluster.getCluster()),
+                                    mirrorMaker2Cluster.generateTlsTrustedCertsSecret(
+                                            secretData,
+                                            KafkaConnectResources.internalTlsTrustedCertsSecretName(mirrorMaker2Cluster.getCluster())
+                                    ))
+                            .mapEmpty();
+                });
     }
 
     /**

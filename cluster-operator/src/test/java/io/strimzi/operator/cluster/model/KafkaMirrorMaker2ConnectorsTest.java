@@ -563,7 +563,7 @@ public class KafkaMirrorMaker2ConnectorsTest {
         assertThat(new TreeMap<>(config),
                 is(new TreeMap<>(Map.of("prefix.alias", "sourceClusterAlias",
                         "prefix.security.protocol", "SASL_SSL",
-                        "prefix.ssl.truststore.certificates", "${strimzisecrets:namespace/name-connect-tls-trusted-certs:ca.crt}",
+                        "prefix.ssl.truststore.certificates", "${strimzisecrets:namespace/name-connect-tls-trusted-certs:sourceClusterAlias-ca.crt}",
                         "prefix.ssl.truststore.type", "PEM",
                         "prefix.sasl.mechanism", "SCRAM-SHA-512",
                         "prefix.bootstrap.servers", "sourceClusterAlias.sourceNamespace.svc:9092"))));
