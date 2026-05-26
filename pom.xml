@@ -92,7 +92,7 @@
         <quartz.version>2.5.0</quartz.version>
         <opentelemetry.version>1.34.1</opentelemetry.version>
         <opentelemetry-alpha.version>${opentelemetry.version}-alpha</opentelemetry-alpha.version>
-        <jetty.version>12.0.22</jetty.version>
+        <jetty.version>12.0.35</jetty.version>
         <jakarta-servlet.version>6.1.0</jakarta-servlet.version>
         <netty.version>4.2.13.Final</netty.version>
         <micrometer.version>1.14.5</micrometer.version>
