@@ -92,14 +92,4 @@ public class KafkaMirrorMaker2Resources {
     public static String mm2RoleBindingName(String clusterName) {
         return componentName(clusterName) + "-role";
     }
-
-    /**
-     * Returns the key used in the internal trusted certs secret for TLS truststore certificate of Kafka MirrorMaker 2 cluster
-     *
-     * @param clusterAlias  The alias of the cluster
-     * @return The key of the TLS truststore certificate for Kafka MirrorMaker 2 cluster
-     */
-    public static String tlsCertificateKey(String clusterAlias) {
-        return clusterAlias + "-ca.crt";
-    }
 }

@@ -20,7 +20,6 @@ import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2ClusterSpec;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2ConnectorSpec;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2MirrorSpec;
-import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2Resources;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2TargetClusterSpec;
 import io.strimzi.operator.cluster.model.metrics.StrimziMetricsReporterConfig;
 import io.strimzi.operator.common.Reconciliation;
@@ -258,7 +257,7 @@ public class KafkaMirrorMaker2Connectors {
     private static String addTLSConfigToMirrorMaker2ConnectorConfig(Map<String, Object> config, KafkaMirrorMaker2ClusterSpec cluster, String configPrefix, String namespace, String mm2ClusterName) {
         if (cluster.getTls() != null) {
             if (cluster.getTls().getTrustedCertificates() != null && !cluster.getTls().getTrustedCertificates().isEmpty()) {
-                String configProviderValue = String.format(PLACEHOLDER_SECRET_TEMPLATE_KUBE_CONFIG_PROVIDER, namespace, KafkaConnectResources.internalTlsTrustedCertsSecretName(mm2ClusterName), KafkaMirrorMaker2Resources.tlsCertificateKey(cluster.getAlias()));
+                String configProviderValue = String.format(PLACEHOLDER_SECRET_TEMPLATE_KUBE_CONFIG_PROVIDER, namespace, KafkaConnectResources.internalTlsTrustedCertsSecretName(mm2ClusterName), KafkaMirrorMaker2Cluster.tlsCertificateKey(cluster.getAlias()));
                 config.put(configPrefix + SslConfigs.SSL_TRUSTSTORE_CERTIFICATES_CONFIG, configProviderValue);
                 config.put(configPrefix + SslConfigs.SSL_TRUSTSTORE_TYPE_CONFIG, "PEM");
             }

@@ -37,9 +37,6 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
     protected static final String ENV_VAR_KAFKA_MIRRORMAKER_2_TRUSTED_CERTS_CLUSTERS = "KAFKA_MIRRORMAKER_2_TRUSTED_CERTS_CLUSTERS";
     protected static final String CO_ENV_VAR_CUSTOM_MIRROR_MAKER2_POD_LABELS = "STRIMZI_CUSTOM_KAFKA_MIRROR_MAKER2_LABELS";
 
-    protected static final String MIRRORMAKER_2_TLS_CERTS_BASE_VOLUME_MOUNT = "/opt/kafka/mm2-certs/";
-    protected static final String MIRRORMAKER_2_PASSWORD_VOLUME_MOUNT = "/opt/kafka/mm2-password/";
-
     private static final Map<String, String> DEFAULT_POD_LABELS = new HashMap<>();
     static {
         String value = System.getenv(CO_ENV_VAR_CUSTOM_MIRROR_MAKER2_POD_LABELS);
@@ -277,5 +274,15 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
     @Override
     protected List<String> getDefaultMetricsAllowList() {
         return DEFAULT_METRICS_ALLOW_LIST;
+    }
+
+    /**
+     * Returns the key used in the internal trusted certs secret for TLS truststore certificate of Kafka MirrorMaker 2 cluster
+     *
+     * @param clusterAlias  The alias of the cluster
+     * @return The key of the TLS truststore certificate for Kafka MirrorMaker 2 cluster
+     */
+    public static String tlsCertificateKey(String clusterAlias) {
+        return clusterAlias + "-ca.crt";
     }
 }

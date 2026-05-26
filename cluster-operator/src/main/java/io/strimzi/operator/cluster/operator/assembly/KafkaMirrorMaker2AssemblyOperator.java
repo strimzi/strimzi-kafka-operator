@@ -199,7 +199,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
             for (KafkaMirrorMaker2ClusterSpec cluster : mm2Cluster.clusters()) {
                 if (cluster.getTls() != null && cluster.getTls().getTrustedCertificates() != null) {
                     certificatesFutures.put(
-                            KafkaMirrorMaker2Resources.tlsCertificateKey(cluster.getAlias()),
+                            KafkaMirrorMaker2Cluster.tlsCertificateKey(cluster.getAlias()),
                             ReconcilerUtils.trustedCertificates(reconciliation, secretOperations, cluster.getTls().getTrustedCertificates())
                     );
                 }
