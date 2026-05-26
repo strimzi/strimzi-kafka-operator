@@ -339,9 +339,9 @@ This is a one to one with the `spec.allocateLoadBalancerNodePorts` configuration
 For `loadbalancer` listeners only.
 |parentRefs
 |https://gateway-api.sigs.k8s.io/reference/api-spec/1.5/spec/#parentreference[ParentReference] array
-|Configures the resource(s) TLSRoutes created by this listener will be attached to.
-Typically this would be Gateway resource.
-For `tlsroute` listeners only.
+|For `tlsroute` listeners only.
+Configures the Gateway API resource or resources that generated `TLSRoute` resources attach to.
+Typically, this is a `Gateway` resource.
 |====
 
 [id='type-CertAndKeySecretSource-{context}']

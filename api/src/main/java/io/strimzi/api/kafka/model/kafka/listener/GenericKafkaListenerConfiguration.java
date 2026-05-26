@@ -337,9 +337,9 @@ public class GenericKafkaListenerConfiguration implements UnknownPropertyPreserv
         this.allocateLoadBalancerNodePorts = allocateLoadBalancerNodePorts;
     }
 
-    @Description("Configures the resource(s) TLSRoutes created by this listener will be attached to.\n" +
-            "Typically this would be Gateway resource.\n" +
-            "For `tlsroute` listeners only.")
+    @Description("For `tlsroute` listeners only.\n" +
+            "Configures the Gateway API resource or resources that generated `TLSRoute` resources attach to.\n" +
+            "Typically, this is a `Gateway` resource.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @ExternalLink(url = "https://gateway-api.sigs.k8s.io/reference/api-spec/1.5/spec/#parentreference")
     public List<ParentReference> getParentRefs() {

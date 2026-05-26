@@ -347,9 +347,9 @@ spec:
                                     sectionName:
                                       type: string
                                 description: |-
-                                  Configures the resource(s) TLSRoutes created by this listener will be attached to.
-                                  Typically this would be Gateway resource.
                                   For `tlsroute` listeners only.
+                                  Configures the Gateway API resource or resources that generated `TLSRoute` resources attach to.
+                                  Typically, this is a `Gateway` resource.
                             description: Additional listener configuration.
                           networkPolicyPeers:
                             type: array
