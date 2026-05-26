@@ -286,7 +286,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
     }
 
     /**
-     * Generates or reconciles the secret that combines secrets and certificates
+     * Reconciles the secret that combines secrets and certificates
      * provided for Kafka Connect truststore if TLS is enabled. Uses
      * {@code certificates} instead of fetching secrets in {@code connect}.
      *
