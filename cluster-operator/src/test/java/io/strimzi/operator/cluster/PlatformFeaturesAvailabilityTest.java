@@ -8,6 +8,10 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.fabric8.kubernetes.api.model.APIGroup;
 import io.fabric8.kubernetes.api.model.APIGroupBuilder;
+import io.fabric8.kubernetes.api.model.APIResource;
+import io.fabric8.kubernetes.api.model.APIResourceBuilder;
+import io.fabric8.kubernetes.api.model.APIResourceList;
+import io.fabric8.kubernetes.api.model.APIResourceListBuilder;
 import io.fabric8.kubernetes.api.model.GroupVersionForDiscovery;
 import io.fabric8.kubernetes.api.model.GroupVersionForDiscoveryBuilder;
 import io.fabric8.kubernetes.client.ConfigBuilder;
@@ -29,7 +33,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.text.ParseException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
@@ -63,7 +66,7 @@ public class PlatformFeaturesAvailabilityTest {
                 }"""
                 .formatted(KubernetesVersion.MINIMAL_SUPPORTED_MAJOR, KubernetesVersion.MINIMAL_SUPPORTED_MINOR, KubernetesVersion.MINIMAL_SUPPORTED_MAJOR, KubernetesVersion.MINIMAL_SUPPORTED_MINOR);
 
-        startMockApi(vertx, version, Collections.emptyList());
+        startMockApi(vertx, version, List.of(), List.of());
 
         KubernetesClient client = buildKubernetesClient("127.0.0.1:" + server.actualPort());
 
@@ -91,7 +94,7 @@ public class PlatformFeaturesAvailabilityTest {
                 }"""
                 .formatted(KubernetesVersion.MINIMAL_SUPPORTED_MAJOR, KubernetesVersion.MINIMAL_SUPPORTED_MINOR, KubernetesVersion.MINIMAL_SUPPORTED_MAJOR, KubernetesVersion.MINIMAL_SUPPORTED_MINOR);
 
-        startMockApi(vertx, version, Collections.emptyList());
+        startMockApi(vertx, version, List.of(), List.of());
 
         KubernetesClient client = buildKubernetesClient("127.0.0.1:" + server.actualPort());
 
@@ -107,7 +110,7 @@ public class PlatformFeaturesAvailabilityTest {
     public void testVersionDetectionWrongVersion(Vertx vertx, VertxTestContext context) throws InterruptedException, ExecutionException {
         String version = "Not a proper version JSON";
 
-        startMockApi(vertx, version, Collections.emptyList());
+        startMockApi(vertx, version, List.of(), List.of());
 
         KubernetesClient client = buildKubernetesClient("127.0.0.1:" + server.actualPort());
 
@@ -140,7 +143,7 @@ public class PlatformFeaturesAvailabilityTest {
         apis.add(buildAPIGroup("route.openshift.io", "v1"));
         apis.add(buildAPIGroup("build.openshift.io", "v1"));
 
-        startMockApi(vertx, apis);
+        startMockApi(vertx, apis, List.of());
 
         KubernetesClient client = buildKubernetesClient("127.0.0.1:" + server.actualPort());
 
@@ -155,13 +158,16 @@ public class PlatformFeaturesAvailabilityTest {
     }
 
     @Test
-    public void testApiDetectionOpenshift(Vertx vertx, VertxTestContext context) throws InterruptedException, ExecutionException {
+    public void testApiDetectionPresent(Vertx vertx, VertxTestContext context) throws InterruptedException, ExecutionException {
         List<APIGroup> apis = new ArrayList<>();
         apis.add(buildAPIGroup("route.openshift.io", "v1"));
         apis.add(buildAPIGroup("build.openshift.io", "v1"));
         apis.add(buildAPIGroup("image.openshift.io", "v1"));
 
-        startMockApi(vertx, apis);
+        List<APIResourceList> apiLists = new ArrayList<>();
+        apiLists.add(buildAPIResourceList("gateway.networking.k8s.io", "v1", "HTTPRoute", "TLSRoute"));
+
+        startMockApi(vertx, apis, apiLists);
 
         KubernetesClient client = buildKubernetesClient("127.0.0.1:" + server.actualPort());
 
@@ -171,6 +177,7 @@ public class PlatformFeaturesAvailabilityTest {
             assertThat(pfa.hasRoutes(), is(true));
             assertThat(pfa.hasBuilds(), is(true));
             assertThat(pfa.hasImages(), is(true));
+            assertThat(pfa.hasTLSRoutes(), is(true));
             async.flag();
         })));
     }
@@ -182,7 +189,11 @@ public class PlatformFeaturesAvailabilityTest {
         apis.add(buildAPIGroup("build.openshift.io", "v1"));
         apis.add(buildAPIGroup("image.openshift.io", "v1"));
 
-        startMockApi(vertx, apis);
+        List<APIResourceList> apiLists = new ArrayList<>();
+        apiLists.add(buildAPIResourceList("gateway.networking.k8s.io", "v1alpha3", "HTTPRoute"));
+        apiLists.add(buildAPIResourceList("gateway.networking.k8s.io", "v1alpha2", "TLSRoute"));
+
+        startMockApi(vertx, apis, apiLists);
 
         KubernetesClient client = buildKubernetesClient("127.0.0.1:" + server.actualPort());
 
@@ -192,13 +203,14 @@ public class PlatformFeaturesAvailabilityTest {
             assertThat(pfa.hasRoutes(), is(false));
             assertThat(pfa.hasBuilds(), is(true));
             assertThat(pfa.hasImages(), is(true));
+            assertThat(pfa.hasTLSRoutes(), is(false));
             async.flag();
         })));
     }
 
     @Test
-    public void testApiDetectionKubernetes(Vertx vertx, VertxTestContext context) throws InterruptedException, ExecutionException {
-        startMockApi(vertx, Collections.emptyList());
+    public void testApiDetectionNotPresent(Vertx vertx, VertxTestContext context) throws InterruptedException, ExecutionException {
+        startMockApi(vertx, List.of(), List.of());
 
         KubernetesClient client = buildKubernetesClient("127.0.0.1:" + server.actualPort());
 
@@ -208,6 +220,7 @@ public class PlatformFeaturesAvailabilityTest {
             assertThat(pfa.hasRoutes(), is(false));
             assertThat(pfa.hasBuilds(), is(false));
             assertThat(pfa.hasImages(), is(false));
+            assertThat(pfa.hasTLSRoutes(), is(false));
             async.flag();
         })));
     }
@@ -278,8 +291,9 @@ public class PlatformFeaturesAvailabilityTest {
         return new KubernetesClientBuilder().withConfig(new ConfigBuilder().withMasterUrl(masterUrl).withHttp2Disable().build()).build();
     }
 
-    void startMockApi(Vertx vertx, String version, List<APIGroup> apis) throws InterruptedException, ExecutionException {
+    void startMockApi(Vertx vertx, String version, List<APIGroup> apis, List<APIResourceList> apiResourceLists) throws InterruptedException, ExecutionException {
         Set<String> groupsPaths = apis.stream().map(api -> "/apis/" + api.getName()).collect(Collectors.toSet());
+        Set<String> apiResourcePaths = apiResourceLists.stream().map(api -> "/apis/" + api.getGroupVersion()).collect(Collectors.toSet());
 
         HttpServer httpServer = vertx.createHttpServer().requestHandler(request -> {
             if (HttpMethod.GET.equals(request.method()) && groupsPaths.contains(request.uri())) {
@@ -288,6 +302,15 @@ public class PlatformFeaturesAvailabilityTest {
 
                 try {
                     request.response().setStatusCode(200).end(OBJECTMAPPER.writeValueAsString(group));
+                } catch (JsonProcessingException e) {
+                    e.printStackTrace();
+                }
+            } else if (HttpMethod.GET.equals(request.method()) && apiResourcePaths.contains(request.uri())) {
+                String groupVersion = request.uri().substring(request.uri().indexOf("/", 2) + 1);
+                APIResourceList list = apiResourceLists.stream().filter(l -> groupVersion.equals(l.getGroupVersion())).findFirst().orElse(null);
+
+                try {
+                    request.response().setStatusCode(200).end(OBJECTMAPPER.writeValueAsString(list));
                 } catch (JsonProcessingException e) {
                     e.printStackTrace();
                 }
@@ -300,7 +323,7 @@ public class PlatformFeaturesAvailabilityTest {
         server = httpServer.listen(0).toCompletionStage().toCompletableFuture().get();
     }
 
-    void startMockApi(Vertx vertx, List<APIGroup> apis) throws InterruptedException, ExecutionException {
+    void startMockApi(Vertx vertx, List<APIGroup> apis, List<APIResourceList> apiResourceLists) throws InterruptedException, ExecutionException {
         String version = """
                 {
                   "major": "1",
@@ -314,7 +337,7 @@ public class PlatformFeaturesAvailabilityTest {
                   "platform": "linux/amd64"
                 }""";
 
-        startMockApi(vertx, version, apis);
+        startMockApi(vertx, version, apis, apiResourceLists);
     }
 
     private APIGroup buildAPIGroup(String group, String... versions)    {
@@ -336,6 +359,21 @@ public class PlatformFeaturesAvailabilityTest {
         apiGroup.setVersions(groupVersions);
 
         return apiGroup;
+    }
+
+    private APIResourceList buildAPIResourceList(String group, String version, String... kinds)    {
+        List<APIResource> apiResources = new ArrayList<>();
+
+        for (String kind : kinds) {
+            apiResources.add(
+                    new APIResourceBuilder().withKind(kind).build()
+            );
+        }
+
+        return new APIResourceListBuilder()
+                .withGroupVersion(group + "/" + version)
+                .withResources(apiResources)
+                .build();
     }
 
     void startFailingMockApi(Vertx vertx) throws InterruptedException, ExecutionException {

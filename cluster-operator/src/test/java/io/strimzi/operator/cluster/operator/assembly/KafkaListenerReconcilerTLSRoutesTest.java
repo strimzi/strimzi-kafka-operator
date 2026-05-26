@@ -5,7 +5,9 @@
 package io.strimzi.operator.cluster.operator.assembly;
 
 import io.fabric8.kubernetes.api.model.Service;
-import io.fabric8.openshift.api.model.Route;
+import io.fabric8.kubernetes.api.model.gatewayapi.v1.ParentReferenceBuilder;
+import io.fabric8.kubernetes.api.model.gatewayapi.v1.RouteParentStatus;
+import io.fabric8.kubernetes.api.model.gatewayapi.v1.TLSRoute;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
 import io.strimzi.api.kafka.model.kafka.PersistentClaimStorageBuilder;
@@ -40,10 +42,12 @@ import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.List;
 import java.util.Map;
+import java.util.function.BiPredicate;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.ArgumentMatchers.notNull;
@@ -54,14 +58,11 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(VertxExtension.class)
-public class KafkaListenerReconcilerRoutesTest {
+public class KafkaListenerReconcilerTLSRoutesTest {
     private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
     public static final String NAMESPACE = "test";
     public static final String CLUSTER_NAME = "my-kafka";
-    public static final String DNS_NAME_FOR_BROKER_10 = "broker-10-route.test.dns.name";
-    public static final String DNS_NAME_FOR_BROKER_11 = "broker-11-route.test.dns.name";
-    public static final String DNS_NAME_FOR_BROKER_12 = "broker-12-reout.test.dns.name";
-    public static final String DNS_NAME_FOR_BOOTSTRAP_SERVICE = "bootstrap-route.test.dns.name";
+    public static final String DNS_NAME_FOR_BOOTSTRAP_SERVICE = "my-kafka-bootstrap.com";
     public static final int LISTENER_PORT = 9094;
     private static final Kafka KAFKA = new KafkaBuilder()
                 .withNewMetadata()
@@ -114,15 +115,31 @@ public class KafkaListenerReconcilerRoutesTest {
                 .build();
 
     @Test
-    public void testRoutesNotSupported(VertxTestContext context) {
+    public void testTLSRoutesNotSupported(VertxTestContext context) {
         Kafka kafka = new KafkaBuilder(KAFKA)
                 .editSpec()
                     .editKafka()
                         .withListeners(new GenericKafkaListenerBuilder()
                                 .withName("external")
                                 .withPort(LISTENER_PORT)
+                                .withType(KafkaListenerType.TLSROUTE)
                                 .withTls(true)
-                                .withType(KafkaListenerType.ROUTE)
+                                .withNewConfiguration()
+                                    .withNewBootstrap()
+                                        .withHost("my-kafka-bootstrap.com")
+                                        .withAnnotations(Map.of("dns-annotation", "my-kafka-bootstrap.com"))
+                                        .withLabels(Map.of("label", "label-value"))
+                                    .endBootstrap()
+                                    .withHostTemplate("my-kafka-broker-{nodeId}.com")
+                                    .withPerBrokerLabelsTemplate(Map.of("label", "label-value-{nodeId}"))
+                                    .withPerBrokerAnnotationsTemplate(Map.of("dns-annotation", "my-kafka-broker-{nodeId}.com"))
+                                    .withParentRefs(new ParentReferenceBuilder()
+                                            .withKind("Gateway")
+                                            .withGroup("gateway.networking.k8s.io")
+                                            .withName("envoy-gateway")
+                                            .withNamespace("envoy-gateway-system")
+                                            .build())
+                                .endConfiguration()
                                 .build())
                     .endKafka()
                 .endSpec()
@@ -154,7 +171,7 @@ public class KafkaListenerReconcilerRoutesTest {
         MockKafkaListenersReconciler reconciler = new MockKafkaListenersReconciler(
                 reconciliation,
                 kafkaCluster,
-                new PlatformFeaturesAvailability(false, KubernetesVersion.MINIMAL_SUPPORTED_VERSION),
+                new PlatformFeaturesAvailability(true, false, KubernetesVersion.MINIMAL_SUPPORTED_VERSION),
                 supplier.secretOperations,
                 supplier.serviceOperations,
                 supplier.routeOperations,
@@ -165,21 +182,37 @@ public class KafkaListenerReconcilerRoutesTest {
         Checkpoint async = context.checkpoint();
         reconciler.reconcile()
                 .onComplete(context.failing(res -> context.verify(() -> {
-                    assertThat(res.getMessage(), is("The OpenShift route API is not available in this Kubernetes cluster. Exposing Kafka cluster my-kafka using routes is not possible."));
+                    assertThat(res.getMessage(), is("The Gateway API TLSRoute resource is not available in this Kubernetes cluster. Exposing Kafka cluster my-kafka using TLSRoutes is not possible."));
                     async.flag();
                 })));
     }
 
     @Test
-    public void testRoutes(VertxTestContext context) {
+    public void testTLSRoutes(VertxTestContext context) {
         Kafka kafka = new KafkaBuilder(KAFKA)
                 .editSpec()
                     .editKafka()
                         .withListeners(new GenericKafkaListenerBuilder()
                                 .withName("external")
                                 .withPort(LISTENER_PORT)
+                                .withType(KafkaListenerType.TLSROUTE)
                                 .withTls(true)
-                                .withType(KafkaListenerType.ROUTE)
+                                .withNewConfiguration()
+                                    .withNewBootstrap()
+                                        .withHost("my-kafka-bootstrap.com")
+                                        .withAnnotations(Map.of("dns-annotation", "my-kafka-bootstrap.com"))
+                                        .withLabels(Map.of("label", "label-value"))
+                                    .endBootstrap()
+                                    .withHostTemplate("my-kafka-broker-{nodeId}.com")
+                                    .withPerBrokerLabelsTemplate(Map.of("label", "label-value-{nodeId}"))
+                                    .withPerBrokerAnnotationsTemplate(Map.of("dns-annotation", "my-kafka-broker-{nodeId}.com"))
+                                    .withParentRefs(new ParentReferenceBuilder()
+                                            .withKind("Gateway")
+                                            .withGroup("gateway.networking.k8s.io")
+                                            .withName("envoy-gateway")
+                                            .withNamespace("envoy-gateway-system")
+                                            .build())
+                                .endConfiguration()
                                 .build())
                     .endKafka()
                 .endSpec()
@@ -197,22 +230,28 @@ public class KafkaListenerReconcilerRoutesTest {
         when(mockServiceOperator.reconcile(any(), eq(NAMESPACE), any(), any())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(3))));
 
         // Mock the RouteOperator for the OpenShift routes
-        RouteOperator mockRouteOperator = supplier.routeOperations;
+        TLSRouteOperator mockRouteOperator = supplier.tlsRouteOperations;
         // Delegate the batchReconcile call to the real method which calls the other mocked methods. This allows us to better test the exact behavior.
         when(mockRouteOperator.batchReconcile(any(), eq(NAMESPACE), any(), any())).thenCallRealMethod();
-        // Mock getting of routes and their readiness
-        Route mockRouteBootstrap = mock(Route.class, RETURNS_DEEP_STUBS);
-        Route mockRouteBroker0 = mock(Route.class, RETURNS_DEEP_STUBS);
-        Route mockRouteBroker1 = mock(Route.class, RETURNS_DEEP_STUBS);
-        Route mockRouteBroker2 = mock(Route.class, RETURNS_DEEP_STUBS);
-        when(mockRouteBootstrap.getStatus().getIngress().get(0).getHost()).thenReturn(DNS_NAME_FOR_BOOTSTRAP_SERVICE);
-        when(mockRouteBroker0.getStatus().getIngress().get(0).getHost()).thenReturn(DNS_NAME_FOR_BROKER_10);
-        when(mockRouteBroker1.getStatus().getIngress().get(0).getHost()).thenReturn(DNS_NAME_FOR_BROKER_11);
-        when(mockRouteBroker2.getStatus().getIngress().get(0).getHost()).thenReturn(DNS_NAME_FOR_BROKER_12);
-        when(mockRouteOperator.getAsync(eq(NAMESPACE), eq(CLUSTER_NAME + "-kafka-bootstrap"))).thenReturn(Future.succeededFuture(mockRouteBootstrap));
-        when(mockRouteOperator.getAsync(eq(NAMESPACE), eq(CLUSTER_NAME + "-brokers-10"))).thenReturn(Future.succeededFuture(mockRouteBroker0));
-        when(mockRouteOperator.getAsync(eq(NAMESPACE), eq(CLUSTER_NAME + "-brokers-11"))).thenReturn(Future.succeededFuture(mockRouteBroker1));
-        when(mockRouteOperator.getAsync(eq(NAMESPACE), eq(CLUSTER_NAME + "-brokers-12"))).thenReturn(Future.succeededFuture(mockRouteBroker2));
+        // Mock getting of routes
+        TLSRoute mockRouteBootstrap = mock(TLSRoute.class, RETURNS_DEEP_STUBS);
+        TLSRoute mockRouteBroker0 = mock(TLSRoute.class, RETURNS_DEEP_STUBS);
+        TLSRoute mockRouteBroker1 = mock(TLSRoute.class, RETURNS_DEEP_STUBS);
+        TLSRoute mockRouteBroker2 = mock(TLSRoute.class, RETURNS_DEEP_STUBS);
+        when(mockRouteBootstrap.getStatus().getParents()).thenReturn(List.of(new RouteParentStatus()));
+        when(mockRouteBroker0.getStatus().getParents()).thenReturn(List.of(new RouteParentStatus()));
+        when(mockRouteBroker1.getStatus().getParents()).thenReturn(List.of(new RouteParentStatus()));
+        when(mockRouteBroker2.getStatus().getParents()).thenReturn(List.of(new RouteParentStatus()));
+        when(mockRouteOperator.get(eq(NAMESPACE), eq(CLUSTER_NAME + "-kafka-bootstrap"))).thenReturn(mockRouteBootstrap);
+        when(mockRouteOperator.get(eq(NAMESPACE), eq(CLUSTER_NAME + "-brokers-10"))).thenReturn(mockRouteBroker0);
+        when(mockRouteOperator.get(eq(NAMESPACE), eq(CLUSTER_NAME + "-brokers-11"))).thenReturn(mockRouteBroker1);
+        when(mockRouteOperator.get(eq(NAMESPACE), eq(CLUSTER_NAME + "-brokers-12"))).thenReturn(mockRouteBroker2);
+        when(mockRouteOperator.hasParents(any(), eq(NAMESPACE), any(), anyLong(), anyLong())).thenCallRealMethod();
+        when(mockRouteOperator.waitFor(any(), eq(NAMESPACE), any(), eq("addressable"), anyLong(), anyLong(), any())).then(i -> {
+            BiPredicate<String, String> predicate = i.getArgument(6);
+            boolean result = predicate.test(i.getArgument(1), i.getArgument(2));
+            return result ? Future.succeededFuture() : Future.failedFuture(new RuntimeException("failed"));
+        });
         // Mock listing of routes
         when(mockRouteOperator.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(Future.succeededFuture(List.of()));
         // Mock route creation / update
@@ -233,7 +272,7 @@ public class KafkaListenerReconcilerRoutesTest {
         MockKafkaListenersReconciler reconciler = new MockKafkaListenersReconciler(
                 reconciliation,
                 kafkaCluster,
-                new PlatformFeaturesAvailability(true, KubernetesVersion.MINIMAL_SUPPORTED_VERSION),
+                new PlatformFeaturesAvailability(false, true, KubernetesVersion.MINIMAL_SUPPORTED_VERSION),
                 supplier.secretOperations,
                 supplier.serviceOperations,
                 supplier.routeOperations,
@@ -259,17 +298,17 @@ public class KafkaListenerReconcilerRoutesTest {
                     verify(supplier.serviceOperations, times(1)).reconcile(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-brokers-12"), notNull());
 
                     // Check creation of routes
-                    verify(supplier.routeOperations, times(1)).reconcile(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-kafka-bootstrap"), notNull());
-                    verify(supplier.routeOperations, times(1)).reconcile(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-brokers-10"), notNull());
-                    verify(supplier.routeOperations, times(1)).reconcile(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-brokers-11"), notNull());
-                    verify(supplier.routeOperations, times(1)).reconcile(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-brokers-12"), notNull());
+                    verify(supplier.tlsRouteOperations, times(1)).reconcile(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-kafka-bootstrap"), notNull());
+                    verify(supplier.tlsRouteOperations, times(1)).reconcile(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-brokers-10"), notNull());
+                    verify(supplier.tlsRouteOperations, times(1)).reconcile(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-brokers-11"), notNull());
+                    verify(supplier.tlsRouteOperations, times(1)).reconcile(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-brokers-12"), notNull());
 
                     async.flag();
                 })));
     }
 
     @Test
-    public void testRouteDeletion(VertxTestContext context) {
+    public void testTLSRouteDeletion(VertxTestContext context) {
         Kafka kafka = new KafkaBuilder(KAFKA)
                 .editSpec()
                     .editKafka()
@@ -313,14 +352,19 @@ public class KafkaListenerReconcilerRoutesTest {
         });
 
         // Mock the RouteOperator for the OpenShift routes
-        RouteOperator mockRouteOperator = supplier.routeOperations;
+        TLSRouteOperator mockRouteOperator = supplier.tlsRouteOperations;
         // Delegate the batchReconcile call to the real method which calls the other mocked methods. This allows us to better test the exact behavior.
         when(mockRouteOperator.batchReconcile(any(), eq(NAMESPACE), any(), any())).thenCallRealMethod();
+        // Mock the check if the TLSRoute has been accepted or not
+        when(mockRouteOperator.hasParents(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-kafka-bootstrap"), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockRouteOperator.hasParents(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-brokers-10"), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockRouteOperator.hasParents(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-brokers-11"), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockRouteOperator.hasParents(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-brokers-12"), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         // Mock listing of routes
-        Route mockRouteBootstrap = mock(Route.class, RETURNS_DEEP_STUBS);
-        Route mockRouteBroker0 = mock(Route.class, RETURNS_DEEP_STUBS);
-        Route mockRouteBroker1 = mock(Route.class, RETURNS_DEEP_STUBS);
-        Route mockRouteBroker2 = mock(Route.class, RETURNS_DEEP_STUBS);
+        TLSRoute mockRouteBootstrap = mock(TLSRoute.class, RETURNS_DEEP_STUBS);
+        TLSRoute mockRouteBroker0 = mock(TLSRoute.class, RETURNS_DEEP_STUBS);
+        TLSRoute mockRouteBroker1 = mock(TLSRoute.class, RETURNS_DEEP_STUBS);
+        TLSRoute mockRouteBroker2 = mock(TLSRoute.class, RETURNS_DEEP_STUBS);
         when(mockRouteBootstrap.getMetadata().getName()).thenReturn(CLUSTER_NAME + "-kafka-bootstrap");
         when(mockRouteBroker0.getMetadata().getName()).thenReturn(CLUSTER_NAME + "-brokers-10");
         when(mockRouteBroker1.getMetadata().getName()).thenReturn(CLUSTER_NAME + "-brokers-11");
@@ -344,7 +388,7 @@ public class KafkaListenerReconcilerRoutesTest {
         MockKafkaListenersReconciler reconciler = new MockKafkaListenersReconciler(
                 reconciliation,
                 kafkaCluster,
-                new PlatformFeaturesAvailability(true, KubernetesVersion.MINIMAL_SUPPORTED_VERSION),
+                new PlatformFeaturesAvailability(false, true, KubernetesVersion.MINIMAL_SUPPORTED_VERSION),
                 supplier.secretOperations,
                 supplier.serviceOperations,
                 supplier.routeOperations,
@@ -367,10 +411,113 @@ public class KafkaListenerReconcilerRoutesTest {
                     verify(supplier.serviceOperations, times(1)).reconcile(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-brokers-12"), isNull());
 
                     // Check creation of routes
-                    verify(supplier.routeOperations, times(1)).reconcile(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-kafka-bootstrap"), isNull());
-                    verify(supplier.routeOperations, times(1)).reconcile(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-brokers-10"), isNull());
-                    verify(supplier.routeOperations, times(1)).reconcile(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-brokers-11"), isNull());
-                    verify(supplier.routeOperations, times(1)).reconcile(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-brokers-12"), isNull());
+                    verify(supplier.tlsRouteOperations, times(1)).reconcile(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-kafka-bootstrap"), isNull());
+                    verify(supplier.tlsRouteOperations, times(1)).reconcile(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-brokers-10"), isNull());
+                    verify(supplier.tlsRouteOperations, times(1)).reconcile(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-brokers-11"), isNull());
+                    verify(supplier.tlsRouteOperations, times(1)).reconcile(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-brokers-12"), isNull());
+
+                    async.flag();
+                })));
+    }
+
+    @Test
+    public void testTLSRoutesNotReady(VertxTestContext context) {
+        Kafka kafka = new KafkaBuilder(KAFKA)
+                .editSpec()
+                    .editKafka()
+                        .withListeners(new GenericKafkaListenerBuilder()
+                                .withName("external")
+                                .withPort(LISTENER_PORT)
+                                .withType(KafkaListenerType.TLSROUTE)
+                                .withTls(true)
+                                .withNewConfiguration()
+                                    .withNewBootstrap()
+                                        .withHost("my-kafka-bootstrap.com")
+                                        .withAnnotations(Map.of("dns-annotation", "my-kafka-bootstrap.com"))
+                                        .withLabels(Map.of("label", "label-value"))
+                                    .endBootstrap()
+                                    .withHostTemplate("my-kafka-broker-{nodeId}.com")
+                                    .withPerBrokerLabelsTemplate(Map.of("label", "label-value-{nodeId}"))
+                                    .withPerBrokerAnnotationsTemplate(Map.of("dns-annotation", "my-kafka-broker-{nodeId}.com"))
+                                    .withParentRefs(new ParentReferenceBuilder()
+                                            .withKind("Gateway")
+                                            .withGroup("gateway.networking.k8s.io")
+                                            .withName("envoy-gateway")
+                                            .withNamespace("envoy-gateway-system")
+                                            .build())
+                                .endConfiguration()
+                                .build())
+                    .endKafka()
+                .endSpec()
+                .build();
+
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
+
+        // Mock the ServiceOperator for the kafka services.
+        ServiceOperator mockServiceOperator = supplier.serviceOperations;
+        // Delegate the batchReconcile call to the real method which calls the other mocked methods. This allows us to better test the exact behavior.
+        when(mockServiceOperator.batchReconcile(any(), eq(NAMESPACE), any(), any())).thenCallRealMethod();
+        // Mock listing of services
+        when(mockServiceOperator.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(Future.succeededFuture(List.of()));
+        // Mock service creation / update
+        when(mockServiceOperator.reconcile(any(), eq(NAMESPACE), any(), any())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(3))));
+
+        // Mock the RouteOperator for the OpenShift routes
+        TLSRouteOperator mockRouteOperator = supplier.tlsRouteOperations;
+        // Delegate the batchReconcile call to the real method which calls the other mocked methods. This allows us to better test the exact behavior.
+        when(mockRouteOperator.batchReconcile(any(), eq(NAMESPACE), any(), any())).thenCallRealMethod();
+        // Mock getting of routes
+        TLSRoute mockRouteBootstrap = mock(TLSRoute.class, RETURNS_DEEP_STUBS);
+        TLSRoute mockRouteBroker0 = mock(TLSRoute.class, RETURNS_DEEP_STUBS);
+        TLSRoute mockRouteBroker1 = mock(TLSRoute.class, RETURNS_DEEP_STUBS);
+        TLSRoute mockRouteBroker2 = mock(TLSRoute.class, RETURNS_DEEP_STUBS);
+        when(mockRouteBootstrap.getStatus().getParents()).thenReturn(List.of(new RouteParentStatus()));
+        when(mockRouteBroker0.getStatus().getParents()).thenReturn(null);
+        when(mockRouteBroker1.getStatus().getParents()).thenReturn(List.of());
+        when(mockRouteBroker2.getStatus().getParents()).thenReturn(List.of(new RouteParentStatus()));
+        when(mockRouteOperator.get(eq(NAMESPACE), eq(CLUSTER_NAME + "-kafka-bootstrap"))).thenReturn(mockRouteBootstrap);
+        when(mockRouteOperator.get(eq(NAMESPACE), eq(CLUSTER_NAME + "-brokers-10"))).thenReturn(mockRouteBroker0);
+        when(mockRouteOperator.get(eq(NAMESPACE), eq(CLUSTER_NAME + "-brokers-11"))).thenReturn(mockRouteBroker1);
+        when(mockRouteOperator.get(eq(NAMESPACE), eq(CLUSTER_NAME + "-brokers-12"))).thenReturn(mockRouteBroker2);
+        when(mockRouteOperator.hasParents(any(), eq(NAMESPACE), any(), anyLong(), anyLong())).thenCallRealMethod();
+        when(mockRouteOperator.waitFor(any(), eq(NAMESPACE), any(), eq("addressable"), anyLong(), anyLong(), any())).then(i -> {
+            BiPredicate<String, String> predicate = i.getArgument(6);
+            boolean result = predicate.test(i.getArgument(1), i.getArgument(2));
+            return result ? Future.succeededFuture() : Future.failedFuture(new RuntimeException(i.getArgument(2) + " is not addressable"));
+        });
+        // Mock listing of routes
+        when(mockRouteOperator.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(Future.succeededFuture(List.of()));
+        // Mock route creation / update
+        when(mockRouteOperator.reconcile(any(), eq(NAMESPACE), any(), any())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(3))));
+
+        Reconciliation reconciliation = new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME);
+
+        KafkaCluster kafkaCluster = KafkaClusterCreator.createKafkaCluster(
+                reconciliation,
+                kafka,
+                List.of(POOL_CONTROLLERS, POOL_BROKERS),
+                Map.of(),
+                KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE,
+                VERSIONS,
+                supplier.sharedEnvironmentProvider
+        );
+
+        MockKafkaListenersReconciler reconciler = new MockKafkaListenersReconciler(
+                reconciliation,
+                kafkaCluster,
+                new PlatformFeaturesAvailability(false, true, KubernetesVersion.MINIMAL_SUPPORTED_VERSION),
+                supplier.secretOperations,
+                supplier.serviceOperations,
+                supplier.routeOperations,
+                supplier.tlsRouteOperations,
+                supplier.ingressOperations
+        );
+
+        Checkpoint async = context.checkpoint();
+        reconciler.reconcile()
+                .onComplete(context.failing(e -> context.verify(() -> {
+                    // Check status
+                    assertThat(e.getMessage(), is("my-kafka-brokers-10 is not addressable"));
 
                     async.flag();
                 })));
@@ -395,10 +542,10 @@ public class KafkaListenerReconcilerRoutesTest {
         @Override
         public Future<ReconciliationResult> reconcile()  {
             return services()
-                    .compose(i -> routes())
+                    .compose(i -> tlsRoutes())
                     .compose(i -> clusterIPServicesReady())
                     .compose(i -> loadBalancerServicesReady())
-                    .compose(i -> routesReady())
+                    .compose(i -> tlsRoutesReady())
                     .compose(i -> Future.succeededFuture(result));
         }
     }

@@ -11,6 +11,8 @@ import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
+import io.fabric8.kubernetes.api.model.gatewayapi.v1.ParentReferenceBuilder;
+import io.fabric8.kubernetes.api.model.gatewayapi.v1.TLSRoute;
 import io.fabric8.kubernetes.api.model.networking.v1.Ingress;
 import io.fabric8.openshift.api.model.Route;
 import io.strimzi.api.kafka.model.common.template.ExternalTrafficPolicy;
@@ -2355,5 +2357,187 @@ public class KafkaClusterListenersTest {
 
         String controllerConfig = kc.generatePerBrokerConfiguration(0, Map.of(0, Map.of("CONTROLPLANE_9090", "controller-0")), Map.of(0, Map.of("CONTROLPLANE_9090", "9090")));
         assertThat(controllerConfig, not(containsString("listener.name.tls-9093")));
+    }
+
+    @Test
+    public void testExternalTLSRoutes() {
+        GenericKafkaListenerConfigurationBroker broker5 = new GenericKafkaListenerConfigurationBrokerBuilder()
+                .withHost("my-custom-kafka-broker-5.com")
+                .withLabels(Map.of("label", "custom-label-value-5"))
+                .withAnnotations(Map.of("dns-annotation", "my-custom-kafka-broker-5.com"))
+                .withBroker(5)
+                .build();
+
+        Kafka kafkaAssembly = new KafkaBuilder(KAFKA)
+                .editSpec()
+                    .editKafka()
+                        .withListeners(new GenericKafkaListenerBuilder()
+                                .withName("external")
+                                .withPort(9094)
+                                .withType(KafkaListenerType.TLSROUTE)
+                                .withTls(true)
+                                .withNewConfiguration()
+                                    .withNewBootstrap()
+                                        .withHost("my-kafka-bootstrap.com")
+                                        .withAnnotations(Map.of("dns-annotation", "my-kafka-bootstrap.com"))
+                                        .withLabels(Map.of("label", "label-value"))
+                                    .endBootstrap()
+                                    .withBrokers(broker5)
+                                    .withHostTemplate("my-kafka-broker-{nodeId}.com")
+                                    .withPerBrokerLabelsTemplate(Map.of("label", "label-value-{nodeId}"))
+                                    .withPerBrokerAnnotationsTemplate(Map.of("dns-annotation", "my-kafka-broker-{nodeId}.com"))
+                                    .withParentRefs(new ParentReferenceBuilder()
+                                            .withKind("Gateway")
+                                            .withGroup("gateway.networking.k8s.io")
+                                            .withName("envoy-gateway")
+                                            .withNamespace("envoy-gateway-system")
+                                            .build())
+                                .endConfiguration()
+                                .build())
+                    .endKafka()
+                .endSpec()
+                .build();
+
+        List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, List.of(POOL_CONTROLLERS, POOL_MIXED, POOL_BROKERS), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, SHARED_ENV_PROVIDER);
+        KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, null, SHARED_ENV_PROVIDER);
+
+        assertThat(kc.getListeners().stream().findFirst().orElseThrow().getType(), is(KafkaListenerType.TLSROUTE));
+
+        List<StrimziPodSet> podSets = kc.generatePodSets(null, null, node -> Map.of());
+        podSets.stream().forEach(podSet -> PodSetUtils.podSetToPods(podSet).stream().forEach(pod -> {
+            List<ContainerPort> ports = pod.getSpec().getContainers().stream().findAny().orElseThrow().getPorts();
+
+            if (pod.getMetadata().getName().startsWith(CLUSTER + "-controllers")) {
+                assertThat(ports.contains(ContainerUtils.createContainerPort(ListenersUtils.BACKWARDS_COMPATIBLE_EXTERNAL_PORT_NAME, 9094)), is(false));
+            } else {
+                assertThat(ports.contains(ContainerUtils.createContainerPort(ListenersUtils.BACKWARDS_COMPATIBLE_EXTERNAL_PORT_NAME, 9094)), is(true));
+            }
+        }));
+
+        // Check external bootstrap service
+        List<Service> bootstrapServices = kc.generateExternalBootstrapServices();
+        assertThat(bootstrapServices.size(), is(1));
+
+        assertThat(bootstrapServices.get(0).getMetadata().getName(), is(CLUSTER + "-kafka-external-bootstrap"));
+        assertThat(bootstrapServices.get(0).getSpec().getType(), is("ClusterIP"));
+        assertThat(bootstrapServices.get(0).getSpec().getSelector(), is(expectedBrokerSelectorLabels()));
+        assertThat(bootstrapServices.get(0).getSpec().getPorts().size(), is(1));
+        assertThat(bootstrapServices.get(0).getSpec().getPorts().get(0).getName(), is(ListenersUtils.BACKWARDS_COMPATIBLE_EXTERNAL_PORT_NAME));
+        assertThat(bootstrapServices.get(0).getSpec().getPorts().get(0).getPort(), is(9094));
+        assertThat(bootstrapServices.get(0).getSpec().getPorts().get(0).getTargetPort().getStrVal(), is("tcp-external"));
+        assertThat(bootstrapServices.get(0).getSpec().getPorts().get(0).getNodePort(), is(nullValue()));
+        assertThat(bootstrapServices.get(0).getSpec().getPorts().get(0).getProtocol(), is("TCP"));
+        io.strimzi.operator.cluster.TestUtils.checkOwnerReference(bootstrapServices.get(0), KAFKA);
+
+        // Check per pod services
+        List<Service> services = kc.generatePerPodServices();
+        assertThat(services.size(), is(5));
+
+        for (Service service : services)    {
+            if (service.getMetadata().getName().contains("foo-brokers-")) {
+                assertThat(service.getMetadata().getName(), startsWith("foo-brokers-"));
+                assertThat(service.getSpec().getSelector().get(Labels.STRIMZI_POD_NAME_LABEL), oneOf("foo-brokers-5", "foo-brokers-6", "foo-brokers-7"));
+                io.strimzi.operator.cluster.TestUtils.checkOwnerReference(service, POOL_BROKERS);
+            } else {
+                assertThat(service.getMetadata().getName(), startsWith("foo-mixed-"));
+                assertThat(service.getSpec().getSelector().get(Labels.STRIMZI_POD_NAME_LABEL), oneOf("foo-mixed-3", "foo-mixed-4"));
+                io.strimzi.operator.cluster.TestUtils.checkOwnerReference(service, POOL_MIXED);
+            }
+
+            assertThat(service.getSpec().getType(), is("ClusterIP"));
+            assertThat(service.getSpec().getPorts().size(), is(1));
+            assertThat(service.getSpec().getPorts().get(0).getName(), is(ListenersUtils.BACKWARDS_COMPATIBLE_EXTERNAL_PORT_NAME));
+            assertThat(service.getSpec().getPorts().get(0).getPort(), is(9094));
+            assertThat(service.getSpec().getPorts().get(0).getTargetPort().getStrVal(), is("tcp-external"));
+            assertThat(service.getSpec().getPorts().get(0).getNodePort(), is(nullValue()));
+            assertThat(service.getSpec().getPorts().get(0).getProtocol(), is("TCP"));
+        }
+
+        // Check bootstrap Gateway API TLS Route
+        List<TLSRoute> bootstrapRoutes = kc.generateExternalBootstrapTlsRoutes();
+        assertThat(bootstrapRoutes.size(), is(1));
+
+        assertThat(bootstrapRoutes.get(0).getMetadata().getName(), is(KafkaResources.bootstrapServiceName(CLUSTER)));
+        assertThat(bootstrapRoutes.get(0).getMetadata().getAnnotations().get("dns-annotation"), is("my-kafka-bootstrap.com"));
+        assertThat(bootstrapRoutes.get(0).getMetadata().getLabels().get("label"), is("label-value"));
+        assertThat(bootstrapRoutes.get(0).getSpec().getHostnames().size(), is(1));
+        assertThat(bootstrapRoutes.get(0).getSpec().getHostnames().get(0), is("my-kafka-bootstrap.com"));
+        assertThat(bootstrapRoutes.get(0).getSpec().getRules().size(), is(1));
+        assertThat(bootstrapRoutes.get(0).getSpec().getRules().get(0).getBackendRefs().size(), is(1));
+        assertThat(bootstrapRoutes.get(0).getSpec().getRules().get(0).getBackendRefs().get(0).getName(), is(CLUSTER + "-kafka-external-bootstrap"));
+        assertThat(bootstrapRoutes.get(0).getSpec().getRules().get(0).getBackendRefs().get(0).getPort(), is(9094));
+        assertThat(bootstrapRoutes.get(0).getSpec().getParentRefs().size(), is(1));
+        assertThat(bootstrapRoutes.get(0).getSpec().getParentRefs().get(0).getKind(), is("Gateway"));
+        assertThat(bootstrapRoutes.get(0).getSpec().getParentRefs().get(0).getGroup(), is("gateway.networking.k8s.io"));
+        assertThat(bootstrapRoutes.get(0).getSpec().getParentRefs().get(0).getName(), is("envoy-gateway"));
+        assertThat(bootstrapRoutes.get(0).getSpec().getParentRefs().get(0).getNamespace(), is("envoy-gateway-system"));
+        io.strimzi.operator.cluster.TestUtils.checkOwnerReference(bootstrapRoutes.get(0), KAFKA);
+
+        // Check per pod Gateway API TLS Route
+        List<TLSRoute> routes = kc.generateExternalTlsRoutes();
+        assertThat(routes.size(), is(5));
+
+        for (TLSRoute route : routes)    {
+            if (route.getMetadata().getName().contains("foo-brokers-")) {
+                assertThat(route.getMetadata().getName(), oneOf("foo-brokers-5", "foo-brokers-6", "foo-brokers-7"));
+                io.strimzi.operator.cluster.TestUtils.checkOwnerReference(route, POOL_BROKERS);
+            } else {
+                assertThat(route.getMetadata().getName(), oneOf("foo-mixed-3", "foo-mixed-4"));
+                io.strimzi.operator.cluster.TestUtils.checkOwnerReference(route, POOL_MIXED);
+            }
+
+            if (route.getMetadata().getName().contains("foo-brokers-5")) {
+                assertThat(route.getMetadata().getAnnotations().get("dns-annotation"), is("my-custom-kafka-broker-5.com"));
+                assertThat(route.getMetadata().getLabels().get("label"), is("custom-label-value-5"));
+                assertThat(route.getSpec().getHostnames().size(), is(1));
+                assertThat(route.getSpec().getHostnames().get(0), is("my-custom-kafka-broker-5.com"));
+            } else {
+                assertThat(route.getMetadata().getAnnotations().get("dns-annotation"), oneOf("my-kafka-broker-3.com", "my-kafka-broker-4.com", "my-kafka-broker-6.com", "my-kafka-broker-7.com"));
+                assertThat(route.getMetadata().getLabels().get("label"), oneOf("label-value-3", "label-value-4", "label-value-6", "label-value-7"));
+                assertThat(route.getSpec().getHostnames().size(), is(1));
+                assertThat(route.getSpec().getHostnames().get(0), oneOf("my-kafka-broker-3.com", "my-kafka-broker-4.com", "my-kafka-broker-6.com", "my-kafka-broker-7.com"));
+            }
+
+            assertThat(route.getSpec().getRules().size(), is(1));
+            assertThat(route.getSpec().getRules().get(0).getBackendRefs().size(), is(1));
+            assertThat(route.getSpec().getRules().get(0).getBackendRefs().get(0).getName(), oneOf("foo-mixed-3", "foo-mixed-4", "foo-brokers-5", "foo-brokers-6", "foo-brokers-7"));
+            assertThat(route.getSpec().getRules().get(0).getBackendRefs().get(0).getPort(), is(9094));
+            assertThat(route.getSpec().getParentRefs().size(), is(1));
+            assertThat(route.getSpec().getParentRefs().get(0).getKind(), is("Gateway"));
+            assertThat(route.getSpec().getParentRefs().get(0).getGroup(), is("gateway.networking.k8s.io"));
+            assertThat(route.getSpec().getParentRefs().get(0).getName(), is("envoy-gateway"));
+            assertThat(route.getSpec().getParentRefs().get(0).getNamespace(), is("envoy-gateway-system"));
+        }
+    }
+
+    @Test
+    public void testExternalTLSRouteMissingConfiguration() {
+        Kafka kafkaAssembly = new KafkaBuilder(KAFKA)
+                .editSpec()
+                    .editKafka()
+                        .withListeners(new GenericKafkaListenerBuilder()
+                                .withName("external")
+                                .withPort(9094)
+                                .withType(KafkaListenerType.TLSROUTE)
+                                .withTls(true)
+                                .withNewConfiguration()
+                                    .withNewBootstrap()
+                                        .withHost("my-kafka-bootstrap.com")
+                                        .withAnnotations(Map.of("dns-annotation", "my-kafka-bootstrap.com"))
+                                        .withLabels(Map.of("label", "label-value"))
+                                    .endBootstrap()
+                                    .withHostTemplate("my-kafka-broker-{nodeId}.com")
+                                    .withPerBrokerLabelsTemplate(Map.of("label", "label-value-{nodeId}"))
+                                    .withPerBrokerAnnotationsTemplate(Map.of("dns-annotation", "my-kafka-broker-{nodeId}.com"))
+                                .endConfiguration()
+                                .build())
+                    .endKafka()
+                .endSpec()
+                .build();
+
+        assertThrows(InvalidResourceException.class, () -> {
+            List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, List.of(POOL_CONTROLLERS, POOL_MIXED, POOL_BROKERS), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, SHARED_ENV_PROVIDER);
+            KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, null, SHARED_ENV_PROVIDER);
+        });
     }
 }
