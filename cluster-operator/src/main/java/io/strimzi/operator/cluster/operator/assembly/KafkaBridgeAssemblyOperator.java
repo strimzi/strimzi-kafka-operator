@@ -14,7 +14,6 @@ import io.strimzi.api.kafka.model.bridge.KafkaBridgeList;
 import io.strimzi.api.kafka.model.bridge.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.bridge.KafkaBridgeSpec;
 import io.strimzi.api.kafka.model.bridge.KafkaBridgeStatus;
-import io.strimzi.api.kafka.model.common.CertSecretSource;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthentication;
 import io.strimzi.certs.CertManager;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
@@ -38,9 +37,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -97,7 +94,6 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
             return Future.failedFuture(new ReconciliationException(kafkaBridgeStatus, e));
         }
         KafkaClientAuthentication auth = assemblyResource.getSpec().getAuthentication();
-        List<CertSecretSource> trustedCertificates = assemblyResource.getSpec().getTls() == null ? Collections.emptyList() : assemblyResource.getSpec().getTls().getTrustedCertificates();
 
         Promise<KafkaBridgeStatus> createOrUpdatePromise = Promise.promise();
 
