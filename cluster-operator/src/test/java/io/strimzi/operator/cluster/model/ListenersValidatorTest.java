@@ -1012,7 +1012,7 @@ public class ListenersValidatorTest {
                 .build();
 
         List<String> expectedErrors = List.of(
-                "listener " + name + " is missing a configuration with host properties which are required for TLSRoute based listeners",
+                "listener " + name + " is missing a configuration with bootstrap and broker host properties which are required for TLSRoute based listeners",
                 "listener " + name + " is missing a parent references property which is required for TLSRoute based listeners"
         );
 
@@ -1047,7 +1047,7 @@ public class ListenersValidatorTest {
                 .build();
 
         assertThat(ListenersValidator.validateAndGetErrorMessages(Reconciliation.DUMMY_RECONCILIATION, NODE_POOL_NODES, List.of(listener)), containsInAnyOrder(
-                "listener tlsroute is missing a configuration with host properties which are required for TLSRoute based listeners",
+                "listener tlsroute is missing a configuration with bootstrap and broker host properties which are required for TLSRoute based listeners",
                 "listener tlsroute is missing a parent references property which is required for TLSRoute based listeners"));
 
         listener.setConfiguration(new GenericKafkaListenerConfigurationBuilder()

@@ -178,9 +178,9 @@ public class KafkaListenersReconciler {
     }
 
     /**
-     * Makes sure all desired routes are updated and the rest is deleted.
+     * Makes sure all desired Gateway API TLS Routes are updated and the rest is deleted.
      *
-     * @return Future which completes when all routes are created or deleted.
+     * @return Future that completes when all Gateway API TLS Routes are created or deleted.
      */
     protected Future<Void> tlsRoutes() {
         List<TLSRoute> routes = new ArrayList<>(kafka.generateExternalBootstrapTlsRoutes());
@@ -654,12 +654,12 @@ public class KafkaListenersReconciler {
     /**
      * Makes sure all routes are ready and collects their addresses for Statuses,
      * certificates and advertised addresses. This method for all routes:
-     *      1) Checks if the bootstrap route has been provisioned and has at least one parent
+     *      1) Checks if the bootstrap Gateway API TLS Route has been provisioned and has at least one parent
      *      2) Collects the relevant addresses and stores them for use in certificates and in CR status
-     *      3) Checks it the broker routes have been provisioned and have at least one parent
+     *      3) Checks it the broker Gateway API TLS Routes have been provisioned and have at least one parent
      *      4) Collects the route addresses for certificates and advertised hostnames
      *
-     * @return  Future which completes when all TLSRoutes are ready and their addresses are collected
+     * @return  Future which completes when all Gateway API TLS Routes are ready and their addresses are collected
      */
     protected Future<Void> tlsRoutesReady() {
         List<GenericKafkaListener> routeListeners = ListenersUtils.tlsRouteListeners(kafka.getListeners());

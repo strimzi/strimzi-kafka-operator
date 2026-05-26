@@ -171,8 +171,7 @@ public class ListenersValidator {
         if (listener.getConfiguration() != null)    {
             GenericKafkaListenerConfiguration conf = listener.getConfiguration();
 
-            if (conf.getBootstrap() == null
-                    || conf.getBootstrap().getHost() == null)   {
+            if (conf.getBootstrap() == null || conf.getBootstrap().getHost() == null)   {
                 errors.add("listener " + listener.getName() + " is missing a bootstrap host property which is required for Ingress based listeners");
             }
 
@@ -209,8 +208,7 @@ public class ListenersValidator {
                 errors.add("listener " + listener.getName() + " is missing a parent references property which is required for TLSRoute based listeners");
             }
 
-            if (conf.getBootstrap() == null
-                    || conf.getBootstrap().getHost() == null)   {
+            if (conf.getBootstrap() == null || conf.getBootstrap().getHost() == null)   {
                 errors.add("listener " + listener.getName() + " is missing a bootstrap host property which is required for TLSRoute based listeners");
             }
 
@@ -228,7 +226,7 @@ public class ListenersValidator {
                 errors.add("listener " + listener.getName() + " is missing a broker configuration with host properties which are required for TLSRoute based listeners");
             }
         } else {
-            errors.add("listener " + listener.getName() + " is missing a configuration with host properties which are required for TLSRoute based listeners");
+            errors.add("listener " + listener.getName() + " is missing a configuration with bootstrap and broker host properties which are required for TLSRoute based listeners");
             errors.add("listener " + listener.getName() + " is missing a parent references property which is required for TLSRoute based listeners");
         }
     }

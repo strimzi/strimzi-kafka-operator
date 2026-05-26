@@ -80,11 +80,11 @@ public class ListenersUtils {
     }
 
     /**
-     * Returns list of all TLSRoute type listeners
+     * Returns a list of all Gateway API TLS Route type listeners
      *
      * @param listeners List of all listeners
      *
-     * @return          List of route listeners
+     * @return          List of Gateway API TLS Route type listeners
      */
     public static List<GenericKafkaListener> tlsRouteListeners(List<GenericKafkaListener> listeners)    {
         return listenersByType(listeners, KafkaListenerType.TLSROUTE);

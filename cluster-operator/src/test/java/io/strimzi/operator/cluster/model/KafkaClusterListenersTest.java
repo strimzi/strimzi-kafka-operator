@@ -2453,7 +2453,7 @@ public class KafkaClusterListenersTest {
             assertThat(service.getSpec().getPorts().get(0).getProtocol(), is("TCP"));
         }
 
-        // Check bootstrap ingress
+        // Check bootstrap Gateway API TLS Route
         List<TLSRoute> bootstrapRoutes = kc.generateExternalBootstrapTlsRoutes();
         assertThat(bootstrapRoutes.size(), is(1));
 
@@ -2473,7 +2473,7 @@ public class KafkaClusterListenersTest {
         assertThat(bootstrapRoutes.get(0).getSpec().getParentRefs().get(0).getNamespace(), is("envoy-gateway-system"));
         io.strimzi.operator.cluster.TestUtils.checkOwnerReference(bootstrapRoutes.get(0), KAFKA);
 
-        // Check per pod ingress
+        // Check per pod Gateway API TLS Route
         List<TLSRoute> routes = kc.generateExternalTlsRoutes();
         assertThat(routes.size(), is(5));
 

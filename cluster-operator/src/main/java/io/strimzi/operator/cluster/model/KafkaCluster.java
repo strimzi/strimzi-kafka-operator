@@ -986,7 +986,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
     }
 
     /**
-     * Generates a list of bootstrap TLS Route which can be used to bootstrap clients outside a Gateway APi enabled
+     * Generates a list of bootstrap TLS Route which can be used to bootstrap clients outside a Gateway API enabled
      * Kubernetes cluster.
      *
      * @return The list of generated TLSRoutes
