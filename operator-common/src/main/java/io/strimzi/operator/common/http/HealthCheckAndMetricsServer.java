@@ -6,6 +6,7 @@ package io.strimzi.operator.common.http;
 
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry;
 import io.strimzi.operator.common.MetricsProvider;
+import jakarta.servlet.http.HttpServletResponse;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.jetty.http.HttpHeader;
@@ -16,8 +17,6 @@ import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.ContextHandler;
 import org.eclipse.jetty.server.handler.ContextHandlerCollection;
 import org.eclipse.jetty.util.Callback;
-
-import javax.servlet.http.HttpServletResponse;
 
 import java.nio.charset.StandardCharsets;
 
