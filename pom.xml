@@ -84,7 +84,7 @@
         <fasterxml.jackson-jaxrs.version>2.21.2</fasterxml.jackson-jaxrs.version>
         <vertx.version>5.0.12</vertx.version>
         <vertx-junit5.version>5.0.12</vertx-junit5.version>
-        <kafka.version>4.2.0</kafka.version>
+        <kafka.version>4.3.0</kafka.version>
         <yammer-metrics.version>2.2.0</yammer-metrics.version>
         <snappy.version>1.1.10.5</snappy.version>
         <slf4j.version>2.0.17</slf4j.version>
@@ -116,7 +116,6 @@
         <kindcontainer.version>2.0.0</kindcontainer.version>
         <testcontainer.version>2.0.2</testcontainer.version>
         <docker-java.version>3.4.0</docker-java.version>
-        <junit4.version>4.13.2</junit4.version>
         <skodjob.kubetest4j.version>1.1.0</skodjob.kubetest4j.version>
         <skodjob-doc.version>0.6.0</skodjob-doc.version>
         <helm-client.version>0.0.15</helm-client.version>
@@ -346,6 +345,11 @@
             <dependency>
                 <groupId>org.apache.kafka</groupId>
                 <artifactId>kafka_2.13</artifactId>
+                <version>${kafka.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.kafka</groupId>
+                <artifactId>kafka-server</artifactId>
                 <version>${kafka.version}</version>
             </dependency>
             <dependency>
@@ -748,12 +752,6 @@
                 <groupId>com.marcnuri.helm-java</groupId>
                 <artifactId>helm-java</artifactId>
                 <version>${helm-client.version}</version>
-            </dependency>
-            <!-- JUnit dependency is needed at compile time by MockKube because of how Test Containers are designed -->
-            <dependency>
-                <groupId>junit</groupId>
-                <artifactId>junit</artifactId>
-                <version>${junit4.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.skodjob</groupId>

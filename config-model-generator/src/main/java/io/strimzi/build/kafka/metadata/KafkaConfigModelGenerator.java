@@ -13,7 +13,6 @@ import io.strimzi.kafka.config.model.ConfigModels;
 import io.strimzi.kafka.config.model.Scope;
 import io.strimzi.kafka.config.model.Type;
 import kafka.Kafka;
-import kafka.server.DynamicBrokerConfig$;
 import kafka.server.KafkaConfig$;
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.server.common.MetadataVersion;
@@ -306,7 +305,26 @@ public class KafkaConfigModelGenerator {
     }
 
     static Map<String, String> brokerDynamicUpdates() {
-        return DynamicBrokerConfig$.MODULE$.dynamicConfigUpdateModes();
+        // From Kafka 4.3.0, this logic moved from the Scala class kafka.server.DynamicBrokerConfig to the Java class
+        // org.apache.kafka.server.config.DynamicBrokerConfig. As we need to build the configuration models for both
+        // older and newer Kafka versions, we have to detect which class is present and use it.
+        //
+        // This condition can be removed once we support only Kafka 4.3.0 and newer.
+        if (classExists("org.apache.kafka.server.config.DynamicBrokerConfig")) {
+            // Kafka 4.3.0+
+            return org.apache.kafka.server.config.DynamicBrokerConfig.dynamicConfigUpdateModes();
+        } else {
+            // Kafka versions older than 4.3.0
+            try {
+                Class<?> clazz = Class.forName("kafka.server.DynamicBrokerConfig$");
+                Field moduleField = clazz.getDeclaredField("MODULE$");
+                Object moduleInstance = moduleField.get(null);
+                Method method = clazz.getDeclaredMethod("dynamicConfigUpdateModes");
+                return (Map<String, String>) method.invoke(moduleInstance);
+            } catch (ClassNotFoundException | NoSuchFieldException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
+                throw new RuntimeException("Failed to get dynamic config update modes", e);
+            }
+        }
     }
 
     static ConfigDef brokerConfigs() {
@@ -346,4 +364,12 @@ public class KafkaConfigModelGenerator {
         return 0;
     }
 
+    static boolean classExists(String className) {
+        try {
+            Class.forName(className);
+            return true;
+        } catch (ClassNotFoundException e) {
+            return false;
+        }
+    }
 }
