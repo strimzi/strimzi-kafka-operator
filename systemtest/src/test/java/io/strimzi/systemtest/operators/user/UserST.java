@@ -87,8 +87,8 @@ class UserST extends AbstractST {
 
     private TestStorage sharedTestStorage;
     private String scraperPodName = "";
-    private final int defaultValidityDays = 200;
-    private final int defaultRenewalDays = 20;
+    private final int caValidityDays = 10;
+    private final int caRenewalDays = 5;
 
     @TestDoc(
         description = @Desc("Verifies that Kafka users with names longer than 64 characters are rejected, while users with valid names are accepted."),
@@ -572,13 +572,12 @@ class UserST extends AbstractST {
         description = @Desc("Verifies functionality of the mTLS `validityDays` and `renewalDays` configured inside each KafkaUser."),
         steps = {
             @Step(value = "Create `KafkaTopic` to which we will send (and from which we will receive) messages - created in existing Kafka cluster.", expected = "`KafkaTopic` is created."),
-            @Step(value = "Create `KafkaUser` with TLS authentication; together with default `validityDays` (200 days) and `renewalDays` (20 days) - configured in User operator.", expected = "`KafkaUser` is created with defaults."),
+            @Step(value = "Create `KafkaUser` with TLS authentication; without configuring the `validityDays` and `renewalDays` - values from User Operator are taken.", expected = "`KafkaUser` is created with values from User Operator."),
             @Step(value = "Obtain the `KafkaUser`'s `Secret` and check validity period of the user certificate.", expected = "Validity period should be default - 200 days."),
             @Step(value = "Do message transmission to verify, that we are able to connect to Kafka cluster with the TLS `KafkaUser`.", expected = "Messages are successfully sent and received."),
-            @Step(value = "Change the `validityDays` and `renewalDays` in the `KafkaUser` `.spec.authentication` to 60 and 10.", expected = "The `validityDays` and `renewalDays` should be changed in the `KafkaUser`."),
-            @Step(value = "Because we changed the `validityDays` and `renewalDays`, we need to force renew the certificate using the `strimzi.io/force-renew=true` annotation",
-                expected = "The user certificate was renewed."),
-            @Step(value = "Obtain the `KafkaUser`'s `Secret` again and check the validity period of the user certificate.", expected = "Validity period should be 60 days."),
+            @Step(value = "Change the `validityDays` and `renewalDays` in the `KafkaUser` `.spec.authentication` to 40 and 20.", expected = "The `validityDays` and `renewalDays` should be changed in the `KafkaUser`."),
+            @Step(value = "Because of the change of `validityDays` and `renewalDays` (and because of the values inside), the certificate will be renewed", expected = "The user certificate was renewed."),
+            @Step(value = "Obtain the `KafkaUser`'s `Secret` again and check the validity period of the user certificate.", expected = "Validity period should be 40 days."),
             @Step(value = "Do message transmission again to verify, that we are able to connect to Kafka cluster with the new user's certificate.", expected = "Messages are successfully sent and received using new certificate."),
         },
         labels = {
@@ -586,10 +585,10 @@ class UserST extends AbstractST {
         }
     )
     @ParallelTest
-    void testTlsValidityDaysWithForceRenewal() {
+    void testTlsValidityDays() {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
-        final int newValidityDays = 60;
-        final int newRenewalDays = 10;
+        final int newValidityDays = 40;
+        final int newRenewalDays = 20;
 
         KubeResourceManager.get().createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getTopicName(), sharedTestStorage.getClusterName()).build());
 
@@ -600,7 +599,7 @@ class UserST extends AbstractST {
         String userCertificate = tlsUserSecret.getData().get("user.crt");
 
         // check that notBefore and notAfter contains really the default value of validityDays
-        assertThat("validity period of the certificate has incorrect value", KafkaUserUtils.getValidityDaysOfCertificate(userCertificate), is(defaultValidityDays));
+        assertThat("validity period of the certificate has incorrect value", KafkaUserUtils.getValidityDaysOfCertificate(userCertificate), is(caValidityDays));
 
         LOGGER.info("Produce and consume messages before changing the validity - in order to see that everything works as expected.");
         final KafkaProducerConsumer kafkaProducerConsumer = new KafkaProducerConsumerBuilder()
@@ -677,8 +676,8 @@ class UserST extends AbstractST {
                     )
                 .endKafka()
                 .withNewClientsCa()
-                    .withValidityDays(defaultValidityDays)
-                    .withRenewalDays(defaultRenewalDays)
+                    .withValidityDays(caValidityDays)
+                    .withRenewalDays(caRenewalDays)
                 .endClientsCa()
             .endSpec()
             .build(),

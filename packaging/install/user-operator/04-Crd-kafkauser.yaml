@@ -83,7 +83,7 @@ spec:
                   renewalDays:
                     type: integer
                     minimum: 1
-                    description: "Number of days before certificate expiration when the user certificate should be renewed. If not configured, Clients CA configuration is used."
+                    description: "Number of days before certificate expiration when the user certificate should be renewed. It has to be configured together with `validityDays`, or none of them should be configured.The number should be bigger than 0 and smaller than `validityDays`.If not configured, Clients CA configuration is used."
                   type:
                     type: string
                     enum:
@@ -94,7 +94,7 @@ spec:
                   validityDays:
                     type: integer
                     minimum: 1
-                    description: "Number of days for which the user certificate should be valid. If not configured, Clients CA configuration is used."
+                    description: "Number of days for which the user certificate should be valid. It has to be configured together with `renewalDays`, or none of them should be configured.The number should be bigger than 0 and than `renewalDays`.If not configured, Clients CA configuration is used."
                 required:
                 - type
                 description: "Authentication mechanism enabled for this Kafka user. The supported authentication mechanisms are `scram-sha-512`, `tls`, and `tls-external`. \n\n* `scram-sha-512` generates a secret with SASL SCRAM-SHA-512 credentials.\n* `tls` generates a secret with user certificate for mutual TLS authentication.\n* `tls-external` does not generate a user certificate.   But prepares the user for using mutual TLS authentication using a user certificate generated outside the User Operator.\n  ACLs and quotas set for this user are configured in the `CN=<username>` format.\n\nAuthentication is optional. If authentication is not configured, no credentials are generated. ACLs and quotas set for the user are configured in the `<username>` format suitable for SASL authentication."

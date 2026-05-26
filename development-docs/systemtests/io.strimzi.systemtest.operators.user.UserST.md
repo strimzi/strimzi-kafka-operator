@@ -97,7 +97,7 @@
 * [user-operator](labels/user-operator.md)
 
 
-## testTlsValidityDaysWithForceRenewal
+## testTlsValidityDays
 
 **Description:** Verifies functionality of the mTLS `validityDays` and `renewalDays` configured inside each KafkaUser.
 
@@ -106,12 +106,12 @@
 | Step | Action | Result |
 | - | - | - |
 | 1. | Create `KafkaTopic` to which we will send (and from which we will receive) messages - created in existing Kafka cluster. | `KafkaTopic` is created. |
-| 2. | Create `KafkaUser` with TLS authentication; together with default `validityDays` (200 days) and `renewalDays` (20 days) - configured in User operator. | `KafkaUser` is created with defaults. |
+| 2. | Create `KafkaUser` with TLS authentication; without configuring the `validityDays` and `renewalDays` - values from User Operator are taken. | `KafkaUser` is created with values from User Operator. |
 | 3. | Obtain the `KafkaUser`'s `Secret` and check validity period of the user certificate. | Validity period should be default - 200 days. |
 | 4. | Do message transmission to verify, that we are able to connect to Kafka cluster with the TLS `KafkaUser`. | Messages are successfully sent and received. |
-| 5. | Change the `validityDays` and `renewalDays` in the `KafkaUser` `.spec.authentication` to 60 and 10. | The `validityDays` and `renewalDays` should be changed in the `KafkaUser`. |
-| 6. | Because we changed the `validityDays` and `renewalDays`, we need to force renew the certificate using the `strimzi.io/force-renew=true` annotation | The user certificate was renewed. |
-| 7. | Obtain the `KafkaUser`'s `Secret` again and check the validity period of the user certificate. | Validity period should be 60 days. |
+| 5. | Change the `validityDays` and `renewalDays` in the `KafkaUser` `.spec.authentication` to 40 and 20. | The `validityDays` and `renewalDays` should be changed in the `KafkaUser`. |
+| 6. | Because of the change of `validityDays` and `renewalDays` (and because of the values inside), the certificate will be renewed | The user certificate was renewed. |
+| 7. | Obtain the `KafkaUser`'s `Secret` again and check the validity period of the user certificate. | Validity period should be 40 days. |
 | 8. | Do message transmission again to verify, that we are able to connect to Kafka cluster with the new user's certificate. | Messages are successfully sent and received using new certificate. |
 
 **Labels:**

@@ -221,8 +221,8 @@ public class KafkaUserModel {
      * @param clientsCaCertSecret   The clients CA certificate Secret.
      * @param clientsCaKeySecret    The clients CA key Secret.
      * @param userSecret            Secret with the user certificate
-     * @param defaultValidityDays   The default number of days (configured in Clients CA) the certificate should be valid for.
-     * @param defaultRenewalDays    The default renewal days (configured in Clients CA).
+     * @param caValidityDays        The default number of days (configured in Clients CA) the certificate should be valid for.
+     * @param caRenewalDays         The default renewal days (configured in Clients CA).
      * @param maintenanceWindows    List of configured maintenance windows
      * @param clock                 The clock for supplying the reconciler with the time instant of each reconciliation cycle.
      *                              That time is used for checking maintenance windows
@@ -230,15 +230,15 @@ public class KafkaUserModel {
      */
     @SuppressWarnings("checkstyle:BooleanExpressionComplexity")
     public void maybeGenerateCertificates(Reconciliation reconciliation, CertManager certManager, PasswordGenerator passwordGenerator,
-                                          Secret clientsCaCertSecret, Secret clientsCaKeySecret, Secret userSecret, int defaultValidityDays,
-                                          int defaultRenewalDays, List<String> maintenanceWindows, Clock clock, boolean generatePkcs12Stores) {
+                                          Secret clientsCaCertSecret, Secret clientsCaKeySecret, Secret userSecret, int caValidityDays,
+                                          int caRenewalDays, List<String> maintenanceWindows, Clock clock, boolean generatePkcs12Stores) {
         // in case that validityDays and renewalDays are configured inside the authentication part of KafkaUser,
         // use those instead of default Clients CA configuration
         // we are checking it here as we have all needed information about the KafkaUser configuration and also default configuration of Clients CA
         KafkaUserTlsClientAuthentication kafkaUserTlsClientAuthentication = (KafkaUserTlsClientAuthentication) authentication;
 
-        int validityDays = kafkaUserTlsClientAuthentication.getValidityDays() != null ? kafkaUserTlsClientAuthentication.getValidityDays() : defaultValidityDays;
-        int renewalDays = kafkaUserTlsClientAuthentication.getRenewalDays() != null ? kafkaUserTlsClientAuthentication.getRenewalDays() : defaultRenewalDays;
+        int validityDays = kafkaUserTlsClientAuthentication.getValidityDays() != null ? kafkaUserTlsClientAuthentication.getValidityDays() : caValidityDays;
+        int renewalDays = kafkaUserTlsClientAuthentication.getRenewalDays() != null ? kafkaUserTlsClientAuthentication.getRenewalDays() : caRenewalDays;
         validateCACertificates(clientsCaCertSecret, clientsCaKeySecret);
 
         ClientsCa clientsCa = new ClientsCa(
