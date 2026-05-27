@@ -116,8 +116,6 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
 
     protected static final String COMPONENT_TYPE = "kafka-connect";
     protected static final String REST_API_PORT_NAME = "rest-api";
-    protected static final String TLS_CERTS_BASE_VOLUME_MOUNT = "/opt/kafka/connect-certs/";
-    protected static final String PASSWORD_VOLUME_MOUNT = "/opt/kafka/connect-password/";
     protected static final String KAFKA_CONNECT_CONFIG_VOLUME_NAME = "kafka-connect-configurations";
     protected static final String KAFKA_CONNECT_CONFIG_VOLUME_MOUNT = "/opt/kafka/custom-config/";
 
@@ -128,6 +126,11 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
      * Key under which the Connect configuration is stored in ConfigMap
      */
     public static final String KAFKA_CONNECT_CONFIGURATION_FILENAME = "kafka-connect.properties";
+
+    /**
+     * Key under which TLS truststore certificates for Connect cluster stored in the internal secret
+     */
+    public static final String KAFKA_CONNECT_CERTIFICATES_KEY = "ca.crt";
 
     // Kafka Connect configuration keys (EnvVariables)
     protected static final String ENV_VAR_KAFKA_CONNECT_JMX_EXPORTER_ENABLED = "KAFKA_CONNECT_JMX_EXPORTER_ENABLED";

@@ -195,6 +195,13 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
     protected Future<Void> tlsTrustedCertsSecret(Reconciliation reconciliation, String namespace, KafkaConnectCluster mirrorMaker2Cluster) {
         Map<String, Future<String>> certificatesFutures = new HashMap<>();
 
+        if (mirrorMaker2Cluster.getTls() != null && mirrorMaker2Cluster.getTls().getTrustedCertificates() != null) {
+            certificatesFutures.put(
+                    KafkaConnectCluster.KAFKA_CONNECT_CERTIFICATES_KEY,
+                    ReconcilerUtils.trustedCertificates(reconciliation, secretOperations, mirrorMaker2Cluster.getTls().getTrustedCertificates())
+            );
+        }
+
         if (mirrorMaker2Cluster instanceof KafkaMirrorMaker2Cluster mm2Cluster) {
             for (KafkaMirrorMaker2ClusterSpec cluster : mm2Cluster.clusters()) {
                 if (cluster.getTls() != null && cluster.getTls().getTrustedCertificates() != null) {

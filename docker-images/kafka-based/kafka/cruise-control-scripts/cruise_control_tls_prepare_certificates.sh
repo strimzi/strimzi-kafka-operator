@@ -5,7 +5,7 @@ set +x
 # Load predefined functions for preparing trust- and keystores
 # Shellcheck SC1091 is disabled because the path does not work locally, but does inside the container
 # shellcheck disable=SC1091
-source ./tls_utils.sh
+source "$CRUISE_CONTROL_HOME"/tls_utils.sh
 
 echo "Preparing truststore for Cruise Control"
 STORE=/tmp/cruise-control/replication.truststore.p12

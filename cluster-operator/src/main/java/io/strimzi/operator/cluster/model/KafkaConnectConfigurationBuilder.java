@@ -95,7 +95,7 @@ public class KafkaConnectConfigurationBuilder {
 
             if (tls.getTrustedCertificates() != null && !tls.getTrustedCertificates().isEmpty()) {
                 printSectionHeader("TLS / SSL");
-                String configProviderValue = String.format(PLACEHOLDER_SECRET_TEMPLATE_KUBE_CONFIG_PROVIDER, reconciliation.namespace(), KafkaConnectResources.internalTlsTrustedCertsSecretName(clusterName), "ca.crt");
+                String configProviderValue = String.format(PLACEHOLDER_SECRET_TEMPLATE_KUBE_CONFIG_PROVIDER, reconciliation.namespace(), KafkaConnectResources.internalTlsTrustedCertsSecretName(clusterName), KafkaConnectCluster.KAFKA_CONNECT_CERTIFICATES_KEY);
                 writer.println("ssl.truststore.certificates=" + configProviderValue);
                 writer.println("ssl.truststore.type=PEM");
 
