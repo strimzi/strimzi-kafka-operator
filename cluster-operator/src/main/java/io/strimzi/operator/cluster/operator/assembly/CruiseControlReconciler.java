@@ -266,21 +266,17 @@ public class CruiseControlReconciler {
      * @return  Future which completes when the reconciliation is done
      */
     protected Future<Void> topicOperatorCruiseControlApiSecret() {
-        if (isTopicOperatorEnabled) {
-            String toApiSecretName = KafkaResources.entityTopicOperatorCcApiSecretName(reconciliation.name());
-            if (cruiseControl != null) {
-                return secretOperator.getAsync(reconciliation.namespace(), toApiSecretName)
-                        .compose(oldSecret -> {
-                            Secret newSecret = cruiseControl.apiCredentials().generateTopicOperatorApiSecret(oldSecret);
-                            return secretOperator.reconcile(reconciliation, reconciliation.namespace(), toApiSecretName, newSecret)
-                                    .mapEmpty();
-                        });
-            } else {
-                return secretOperator.reconcile(reconciliation, reconciliation.namespace(), toApiSecretName, null)
-                        .mapEmpty();
-            }
+        String toApiSecretName = KafkaResources.entityTopicOperatorCcApiSecretName(reconciliation.name());
+        if (isTopicOperatorEnabled && cruiseControl != null) {
+            return secretOperator.getAsync(reconciliation.namespace(), toApiSecretName)
+                    .compose(oldSecret -> {
+                        Secret newSecret = cruiseControl.apiCredentials().generateTopicOperatorApiSecret(oldSecret);
+                        return secretOperator.reconcile(reconciliation, reconciliation.namespace(), toApiSecretName, newSecret)
+                                .mapEmpty();
+                    });
         } else {
-            return Future.succeededFuture();
+            return secretOperator.reconcile(reconciliation, reconciliation.namespace(), toApiSecretName, null)
+                    .mapEmpty();
         }
     }
 
