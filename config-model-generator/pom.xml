@@ -29,6 +29,11 @@
             </dependency>
             <dependency>
                 <groupId>org.apache.kafka</groupId>
+                <artifactId>kafka-server</artifactId>
+                <version>${kafka-metadata-version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.kafka</groupId>
                 <artifactId>kafka-clients</artifactId>
                 <version>${kafka-metadata-version}</version>
             </dependency>
@@ -53,6 +58,10 @@
         <dependency>
             <groupId>org.apache.kafka</groupId>
             <artifactId>kafka_2.13</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.kafka</groupId>
+            <artifactId>kafka-server</artifactId>
         </dependency>
         <dependency>
             <groupId>org.apache.kafka</groupId>
@@ -102,6 +111,7 @@
                                     <ignoredUnusedDeclaredDependencies>
                                         <!-- Mot used directly because of differences between Kafka versions. But needed in the classpath. -->
                                         <ignoredUnusedDeclaredDependency>org.apache.kafka:kafka-raft</ignoredUnusedDeclaredDependency>
+                                        <ignoredUnusedDeclaredDependency>org.apache.kafka:kafka-server</ignoredUnusedDeclaredDependency>
                                         <!-- Needed for logging using the Kafka Clients (uses SLF4J) -->
                                         <ignoredUnusedDeclaredDependency>org.apache.logging.log4j:log4j-slf4j2-impl</ignoredUnusedDeclaredDependency>
                                     </ignoredUnusedDeclaredDependencies>
@@ -160,6 +170,7 @@
                                     <ignoredUnusedDeclaredDependencies>
                                         <!-- Mot used directly because of differences between Kafka versions. But needed in the classpath. -->
                                         <ignoredUnusedDeclaredDependency>org.apache.kafka:kafka-raft</ignoredUnusedDeclaredDependency>
+                                        <ignoredUnusedDeclaredDependency>org.apache.kafka:kafka-server</ignoredUnusedDeclaredDependency>
                                         <!-- Needed for logging using the Kafka Clients (uses SLF4J) -->
                                         <ignoredUnusedDeclaredDependency>org.apache.logging.log4j:log4j-slf4j2-impl</ignoredUnusedDeclaredDependency>
                                     </ignoredUnusedDeclaredDependencies>

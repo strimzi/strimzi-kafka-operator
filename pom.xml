@@ -84,7 +84,7 @@
         <fasterxml.jackson-jaxrs.version>2.21.2</fasterxml.jackson-jaxrs.version>
         <vertx.version>5.0.12</vertx.version>
         <vertx-junit5.version>5.0.12</vertx-junit5.version>
-        <kafka.version>4.2.0</kafka.version>
+        <kafka.version>4.3.0</kafka.version>
         <yammer-metrics.version>2.2.0</yammer-metrics.version>
         <snappy.version>1.1.10.5</snappy.version>
         <slf4j.version>2.0.17</slf4j.version>
@@ -93,7 +93,7 @@
         <opentelemetry.version>1.34.1</opentelemetry.version>
         <opentelemetry-alpha.version>${opentelemetry.version}-alpha</opentelemetry-alpha.version>
         <jetty.version>12.0.22</jetty.version>
-        <javax-servlet.version>3.1.0</javax-servlet.version>
+        <jakarta-servlet.version>6.1.0</jakarta-servlet.version>
         <netty.version>4.2.13.Final</netty.version>
         <micrometer.version>1.14.5</micrometer.version>
         <commons-codec.version>1.13</commons-codec.version>
@@ -116,7 +116,6 @@
         <kindcontainer.version>2.0.0</kindcontainer.version>
         <testcontainer.version>2.0.2</testcontainer.version>
         <docker-java.version>3.4.0</docker-java.version>
-        <junit4.version>4.13.2</junit4.version>
         <skodjob.kubetest4j.version>1.1.0</skodjob.kubetest4j.version>
         <skodjob-doc.version>0.6.0</skodjob-doc.version>
         <helm-client.version>0.0.15</helm-client.version>
@@ -294,6 +293,11 @@
             </dependency>
             <dependency>
                 <groupId>io.fabric8</groupId>
+                <artifactId>kubernetes-model-gatewayapi</artifactId>
+                <version>${fabric8.kubernetes-model.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.fabric8</groupId>
                 <artifactId>openshift-model</artifactId>
                 <version>${fabric8.kubernetes-model.version}</version>
             </dependency>
@@ -346,6 +350,11 @@
             <dependency>
                 <groupId>org.apache.kafka</groupId>
                 <artifactId>kafka_2.13</artifactId>
+                <version>${kafka.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.kafka</groupId>
+                <artifactId>kafka-server</artifactId>
                 <version>${kafka.version}</version>
             </dependency>
             <dependency>
@@ -735,9 +744,9 @@
                 <version>${jetty.version}</version>
             </dependency>
             <dependency>
-                <groupId>javax.servlet</groupId>
-                <artifactId>javax.servlet-api</artifactId>
-                <version>${javax-servlet.version}</version>
+                <groupId>jakarta.servlet</groupId>
+                <artifactId>jakarta.servlet-api</artifactId>
+                <version>${jakarta-servlet.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.dajudge.kindcontainer</groupId>
@@ -748,12 +757,6 @@
                 <groupId>com.marcnuri.helm-java</groupId>
                 <artifactId>helm-java</artifactId>
                 <version>${helm-client.version}</version>
-            </dependency>
-            <!-- JUnit dependency is needed at compile time by MockKube because of how Test Containers are designed -->
-            <dependency>
-                <groupId>junit</groupId>
-                <artifactId>junit</artifactId>
-                <version>${junit4.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.skodjob</groupId>

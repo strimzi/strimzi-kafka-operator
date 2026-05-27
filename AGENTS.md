@@ -52,7 +52,7 @@ Multi-module Maven project.
 
 - **Code style**: Enforced by checkstyle (runs in CI on all PRs)
   - Config: `.checkstyle/checkstyle.xml`
-  - Run locally: `mvn checkstyle:check`
+  - Run locally: `mvn checkstyle:check@validate`
   - CI will fail if checkstyle errors are found
 
 ## Developer Notes

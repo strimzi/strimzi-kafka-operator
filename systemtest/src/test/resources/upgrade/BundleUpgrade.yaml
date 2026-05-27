@@ -38,7 +38,7 @@
   fromKafkaVersionsUrl: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/1.0.0/kafka-versions.yaml
   additionalTopics: 2
   imagesAfterOperations:
-    kafka: strimzi/kafka:latest-kafka-4.2.0
+    kafka: strimzi/kafka:latest-kafka-4.3.0
     topicOperator: strimzi/operator:latest
     userOperator: strimzi/operator:latest
   client:
@@ -60,7 +60,7 @@
   fromKafkaVersionsUrl: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/1.0.0/kafka-versions.yaml
   additionalTopics: 2
   imagesAfterOperations:
-    kafka: strimzi/kafka:latest-kafka-4.2.0
+    kafka: strimzi/kafka:latest-kafka-4.3.0
     topicOperator: strimzi/operator:latest
     userOperator: strimzi/operator:latest
   client:
@@ -85,7 +85,7 @@
   fromKafkaVersionsUrl: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/0.51.0/kafka-versions.yaml
   additionalTopics: 2
   imagesAfterOperations:
-    kafka: strimzi/kafka:latest-kafka-4.2.0
+    kafka: strimzi/kafka:latest-kafka-4.3.0
     topicOperator: strimzi/operator:latest
     userOperator: strimzi/operator:latest
   client:

@@ -15,6 +15,7 @@ if [ "$1" = "build" ]
 then
     for version in "${versions[@]}"
     do
+        echo "Generating config model for Kafka $version"
         mvn ${MVN_ARGS} verify exec:java \
         "-Pgenerate-model" \
         "-Dkafka-metadata-version=$version" \
