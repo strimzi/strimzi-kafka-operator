@@ -149,6 +149,8 @@ public class CruiseControlReconcilerTest {
             doReturn(Map.of(TOPIC_OPERATOR_USERNAME_KEY, Util.encodeToBase64(TOPIC_OPERATOR_USERNAME), TOPIC_OPERATOR_PASSWORD_KEY, Util.encodeToBase64("changeit"))).when(topicOperatorApiSecret).getData();
             when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaResources.entityTopicOperatorCcApiSecretName(NAME)))).thenReturn(Future.succeededFuture(topicOperatorApiSecret));
             when(mockSecretOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.entityTopicOperatorCcApiSecretName(NAME)), any())).thenReturn(Future.succeededFuture());
+        } else {
+            when(mockSecretOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.entityTopicOperatorCcApiSecretName(NAME)), isNull())).thenReturn(Future.succeededFuture());
         }
 
         when(mockServiceOps.reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.serviceName(NAME)), any())).thenReturn(Future.succeededFuture());
@@ -276,6 +278,9 @@ public class CruiseControlReconcilerTest {
         when(mockSaOps.reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.serviceAccountName(NAME)), any())).thenReturn(Future.succeededFuture());
 
         when(mockSecretOps.reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.secretName(NAME)), any())).thenReturn(Future.succeededFuture());
+
+        when(mockSecretOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.entityTopicOperatorCcApiSecretName(NAME)), isNull())).thenReturn(Future.succeededFuture());
+
         when(mockSecretOps.reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.apiSecretName(NAME)), any())).thenReturn(Future.succeededFuture());
 
         when(mockServiceOps.reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.serviceName(NAME)), any())).thenReturn(Future.succeededFuture());
@@ -317,6 +322,9 @@ public class CruiseControlReconcilerTest {
                     verify(mockSaOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.serviceAccountName(NAME)), isNull());
 
                     verify(mockSecretOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.secretName(NAME)), isNull());
+
+                    verify(mockSecretOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(KafkaResources.entityTopicOperatorCcApiSecretName(NAME)), isNull());
+
                     verify(mockSecretOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.apiSecretName(NAME)), isNull());
 
                     verify(mockServiceOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.serviceName(NAME)), isNull());
