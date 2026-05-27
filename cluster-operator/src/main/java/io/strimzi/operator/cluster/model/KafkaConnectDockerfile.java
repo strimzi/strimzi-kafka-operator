@@ -358,7 +358,7 @@ public class KafkaConnectDockerfile {
             String shaFile = artifactPath + ".sha512";
             run.andRun("echo", art.getSha512sum() + " " + artifactPath)
                     .redirectTo(shaFile)
-                .andRun("sha512sum", "--check", shaFile)
+                .andRun("sha512sum", "-c", shaFile)
                 .andRun("rm", "-f", shaFile);
         }
         writer.append("RUN ").println(run);
@@ -385,7 +385,7 @@ public class KafkaConnectDockerfile {
             String shaFile = archivePath + ".sha512";
             run.andRun("echo", tgz.getSha512sum() + " " + archivePath)
                     .redirectTo(shaFile)
-                .andRun("sha512sum", "--check", shaFile)
+                .andRun("sha512sum", "-c", shaFile)
                 .andRun("rm", "-f", shaFile);
         }
         run.andRun("tar", "xvfz", archivePath, "-C", artifactDir)
@@ -414,7 +414,7 @@ public class KafkaConnectDockerfile {
             String shaFile = archivePath + ".sha512";
             run.andRun("echo", zip.getSha512sum() + " " + archivePath)
                     .redirectTo(shaFile)
-                .andRun("sha512sum", "--check", shaFile)
+                .andRun("sha512sum", "-c", shaFile)
                 .andRun("rm", "-f", shaFile);
         }
 
