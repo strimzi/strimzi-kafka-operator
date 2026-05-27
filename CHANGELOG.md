@@ -2,6 +2,12 @@
 
 ## 1.1.0
 
+* Kafka Agent: add `/v1/controller-ready` endpoint that reflects KRaft controller state via the
+  `kafka.server:type=raft-metrics, current-state` JMX attribute, and use it from the controller-only
+  readiness probe. This catches the case where the CONTROLPLANE listener is bound but the controller
+  is not actually attached to the metadata quorum (e.g. a controller wedged after early DNS failures
+  during cold-boot). Falls back to the existing port-listening check when the raft-metrics MBean is
+  not registered.
 * Add support for Apache Kafka 4.3.0 and remove support for Kafka 4.1.x
 * New Cluster operator configuration option `STRIMZI_PKCS12_KEYSTORE_GENERATION` to disable generating PKCS12 stores in CA and Kafka user `Secret` resources.
 * Support for Gateway API-based `type: tlsroute` listener

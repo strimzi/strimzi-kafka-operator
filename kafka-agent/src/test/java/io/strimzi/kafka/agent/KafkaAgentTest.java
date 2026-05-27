@@ -223,4 +223,69 @@ public class KafkaAgentTest {
 
         assertThat(HttpServletResponse.SC_SERVICE_UNAVAILABLE, is(response.statusCode()));
     }
+
+    @Test
+    public void testControllerReadinessSuccessLeader() throws Exception {
+        assertControllerReadinessStatusCode("leader", HttpServletResponse.SC_NO_CONTENT);
+    }
+
+    @Test
+    public void testControllerReadinessSuccessFollower() throws Exception {
+        assertControllerReadinessStatusCode("follower", HttpServletResponse.SC_NO_CONTENT);
+    }
+
+    @Test
+    public void testControllerReadinessFailUnattached() throws Exception {
+        // 'unattached' is the state observed in the cold-boot DNS-race wedge: raft heartbeats run,
+        // controller registration never completes, port 9090 is open but the node is not serving.
+        assertControllerReadinessStatusCode("unattached", HttpServletResponse.SC_SERVICE_UNAVAILABLE);
+    }
+
+    @Test
+    public void testControllerReadinessFailCandidate() throws Exception {
+        // 'candidate' is transient (mid-election); kubelet's failureThreshold/periodSeconds handles
+        // genuinely transient cases. We deliberately fail the probe so the pod doesn't get traffic
+        // while no leader is known.
+        assertControllerReadinessStatusCode("candidate", HttpServletResponse.SC_SERVICE_UNAVAILABLE);
+    }
+
+    @Test
+    public void testControllerReadinessFailResigned() throws Exception {
+        assertControllerReadinessStatusCode("resigned", HttpServletResponse.SC_SERVICE_UNAVAILABLE);
+    }
+
+    @Test
+    public void testControllerReadinessFailObserver() throws Exception {
+        // Observer is a non-voter; never serves as a controller for our purposes.
+        assertControllerReadinessStatusCode("observer", HttpServletResponse.SC_SERVICE_UNAVAILABLE);
+    }
+
+    @Test
+    public void testControllerReadinessFailProspective() throws Exception {
+        // 'prospective' is the pre-candidate state used when a follower's fetch from the leader
+        // times out. Observed during AKS testing when peer connectivity was broken and the local
+        // node could not maintain follower status. Caught by the same {leader, follower} filter.
+        assertControllerReadinessStatusCode("prospective", HttpServletResponse.SC_SERVICE_UNAVAILABLE);
+    }
+
+    @Test
+    public void testControllerReadinessNotFound() throws Exception {
+        // Supplier returns null = raft-metrics MBean not registered (e.g. broker-only node before
+        // broker startup, or older Kafka version). Endpoint returns 404 so the calling script can
+        // optionally fall back to a port-listening check.
+        assertControllerReadinessStatusCode(null, HttpServletResponse.SC_NOT_FOUND);
+    }
+
+    private void assertControllerReadinessStatusCode(String raftState, int expectedStatus) throws Exception {
+        KafkaAgent agent = new KafkaAgent(caCertSecret, nodeCertSecret, null, null, null, () -> raftState);
+        context.setHandler(agent.getControllerReadinessHandler());
+        server.setHandler(context);
+        server.start();
+
+        HttpResponse<String> response = HttpClient.newBuilder()
+                .build()
+                .send(httpReq, HttpResponse.BodyHandlers.ofString());
+
+        assertThat(response.statusCode(), is(expectedStatus));
+    }
 }

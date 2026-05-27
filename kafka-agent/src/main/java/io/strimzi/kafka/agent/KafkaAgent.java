@@ -32,8 +32,14 @@ import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.management.InstanceNotFoundException;
+import javax.management.MBeanServer;
+import javax.management.MalformedObjectNameException;
+import javax.management.ObjectName;
+
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.lang.management.ManagementFactory;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
@@ -43,6 +49,8 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
+import java.util.function.Supplier;
 
 /**
  * A very simple Java agent which polls the value of the {@code kafka.server:type=KafkaServer,name=BrokerState}
@@ -61,12 +69,22 @@ import java.util.Properties;
  *     <dt>{@code GET /v1/ready}</dt>
  *     <dd>Returns HTTP code 204 if broker state is RUNNING(3). Otherwise returns non successful HTTP code.
  *     </dd>
+ *     <dt>{@code GET /v1/controller-ready}</dt>
+ *     <dd>Returns HTTP code 204 if the KRaft controller node is attached to the metadata quorum,
+ *      i.e. the {@code current-state} attribute of the {@code kafka.server:type=raft-metrics} JMX MBean
+ *      is one of {@code leader} or {@code follower}. Returns 503 for any other state (e.g. {@code unattached},
+ *      {@code candidate}, {@code voted}, {@code resigned}, {@code observer}). Returns 404 if the raft-metrics MBean
+ *      is not registered (e.g. broker-only nodes before broker startup, or older Kafka versions without raft-metrics).
+ *      Intended to back the controller-only readiness probe — distinguishes "port 9090 is listening" from
+ *      "this controller is actually participating in the quorum."
+ *     </dd>
  * </dl>
  */
 public class KafkaAgent {
     private static final Logger LOGGER = LoggerFactory.getLogger(KafkaAgent.class);
     private static final String BROKER_STATE_PATH = "/v1/broker-state";
     private static final String READINESS_ENDPOINT_PATH = "/v1/ready";
+    private static final String CONTROLLER_READINESS_ENDPOINT_PATH = "/v1/controller-ready";
     private static final int HTTPS_PORT = 8443;
     private static final int HTTP_PORT = 8080;
     private static final long GRACEFUL_SHUTDOWN_TIMEOUT_MS = 30 * 1000;
@@ -77,6 +95,15 @@ public class KafkaAgent {
     private static final byte BROKER_RUNNING_STATE = 3;
     private static final byte BROKER_RECOVERY_STATE = 2;
     private static final byte BROKER_UNKNOWN_STATE = 127;
+
+    // KRaft raft-metrics MBean exposed by Apache Kafka. Read via the platform MBeanServer.
+    static final String RAFT_METRICS_OBJECT_NAME = "kafka.server:type=raft-metrics";
+    static final String RAFT_CURRENT_STATE_ATTRIBUTE = "current-state";
+    // Raft state values that indicate the local node is attached to the quorum and able to serve.
+    // Other values (unattached, candidate, voted, resigned, observer) mean the controller is either
+    // mid-election (transient — handled by failureThreshold) or wedged.
+    static final Set<String> RAFT_READY_STATES = Set.of("leader", "follower");
+
     static final SecureRandom RANDOM = new SecureRandom();
     private final Secret caCertSecret;
     private final Secret nodeCertSecret;
@@ -84,6 +111,9 @@ public class KafkaAgent {
     private Gauge brokerState;
     private Gauge remainingLogsToRecover;
     private Gauge remainingSegmentsToRecover;
+    // Returns the current value of the raft-metrics "current-state" attribute, or null if the MBean
+    // is not (yet) registered. Pulled at request time so it always reflects current JVM state.
+    private final Supplier<String> raftCurrentStateSupplier;
 
     /**
      * Constructor of the KafkaAgent
@@ -96,6 +126,7 @@ public class KafkaAgent {
     /* test */ KafkaAgent(KubernetesClient client, String caCertSecretName, String nodeCertSecretName, String namespace) {
         this.caCertSecret = getKubernetesSecret(client, caCertSecretName, namespace);
         this.nodeCertSecret = getKubernetesSecret(client, nodeCertSecretName, namespace);
+        this.raftCurrentStateSupplier = KafkaAgent::queryRaftCurrentStateFromJmx;
     }
 
     private Secret getKubernetesSecret(KubernetesClient client, String caCertSecretName, String namespace) {
@@ -112,11 +143,19 @@ public class KafkaAgent {
      * @param remainingSegmentsToRecover    Number of remaining segments to recover
      */
     /* test */ KafkaAgent(Secret caCertSecret, Secret nodeCertSecret, Gauge brokerState, Gauge remainingLogsToRecover, Gauge remainingSegmentsToRecover) {
+        this(caCertSecret, nodeCertSecret, brokerState, remainingLogsToRecover, remainingSegmentsToRecover, () -> null);
+    }
+
+    /**
+     * Constructor of the KafkaAgent — variant exposing the raft-current-state supplier for tests.
+     */
+    /* test */ KafkaAgent(Secret caCertSecret, Secret nodeCertSecret, Gauge brokerState, Gauge remainingLogsToRecover, Gauge remainingSegmentsToRecover, Supplier<String> raftCurrentStateSupplier) {
         this.caCertSecret = caCertSecret;
         this.nodeCertSecret = nodeCertSecret;
         this.brokerState = brokerState;
         this.remainingLogsToRecover = remainingLogsToRecover;
         this.remainingSegmentsToRecover = remainingSegmentsToRecover;
+        this.raftCurrentStateSupplier = raftCurrentStateSupplier;
     }
 
     private void run() {
@@ -221,8 +260,11 @@ public class KafkaAgent {
         ContextHandler readinessContext = new ContextHandler(READINESS_ENDPOINT_PATH);
         readinessContext.setHandler(getReadinessHandler());
 
+        ContextHandler controllerReadinessContext = new ContextHandler(CONTROLLER_READINESS_ENDPOINT_PATH);
+        controllerReadinessContext.setHandler(getControllerReadinessHandler());
+
         server.setConnectors(new Connector[] {httpsConn, httpConn});
-        server.setHandler(new ContextHandlerCollection(brokerStateContext, readinessContext));
+        server.setHandler(new ContextHandlerCollection(brokerStateContext, readinessContext, controllerReadinessContext));
 
         server.setStopTimeout(GRACEFUL_SHUTDOWN_TIMEOUT_MS);
         server.setStopAtShutdown(true);
@@ -311,6 +353,67 @@ public class KafkaAgent {
                 return true;
             }
         };
+    }
+
+    /**
+     * Creates a Handler instance to handle incoming HTTP requests for the controller readiness check.
+     *
+     * Returns 204 if the local KRaft node is attached to the quorum as {@code leader} or {@code follower},
+     * 503 for any other raft state, and 404 if the raft-metrics MBean is not registered.
+     *
+     * @return Handler
+     */
+    /* test */ Handler getControllerReadinessHandler() {
+        return new Handler.Abstract() {
+            @Override
+            public boolean handle(Request request, Response response, Callback callback) {
+                response.getHeaders().put(HttpHeader.CONTENT_TYPE, "application/json; charset=UTF-8");
+
+                String state = raftCurrentStateSupplier != null ? raftCurrentStateSupplier.get() : null;
+                if (state == null) {
+                    LOGGER.trace("Raft metrics MBean not found ({} attribute {}).", RAFT_METRICS_OBJECT_NAME, RAFT_CURRENT_STATE_ATTRIBUTE);
+                    response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+                    response.write(true, StandardCharsets.UTF_8.encode("{\"error\":\"raft-metrics MBean not found\"}"), callback);
+                    return true;
+                }
+
+                if (RAFT_READY_STATES.contains(state)) {
+                    LOGGER.trace("Controller is ready (raft current-state={}).", state);
+                    response.setStatus(HttpServletResponse.SC_NO_CONTENT);
+                    response.write(true, null, callback);
+                } else {
+                    LOGGER.trace("Controller is not ready (raft current-state={}).", state);
+                    response.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
+                    String body = String.format("{\"error\":\"controller not ready, current raft state: %s\"}", state);
+                    response.write(true, StandardCharsets.UTF_8.encode(body), callback);
+                }
+                return true;
+            }
+        };
+    }
+
+    /**
+     * Default JMX-backed implementation of {@link #raftCurrentStateSupplier}. Returns the value of the
+     * {@code current-state} attribute on {@code kafka.server:type=raft-metrics}, or {@code null} if
+     * the MBean is not registered (e.g. broker-only nodes before broker startup, or older Kafka
+     * versions without raft-metrics).
+     */
+    static String queryRaftCurrentStateFromJmx() {
+        try {
+            MBeanServer server = ManagementFactory.getPlatformMBeanServer();
+            ObjectName name = new ObjectName(RAFT_METRICS_OBJECT_NAME);
+            Object value = server.getAttribute(name, RAFT_CURRENT_STATE_ATTRIBUTE);
+            return value == null ? null : value.toString();
+        } catch (InstanceNotFoundException e) {
+            return null;
+        } catch (MalformedObjectNameException e) {
+            // RAFT_METRICS_OBJECT_NAME is a compile-time constant — this should never happen.
+            LOGGER.warn("Malformed JMX object name {}", RAFT_METRICS_OBJECT_NAME, e);
+            return null;
+        } catch (Exception e) {
+            LOGGER.warn("Could not query JMX attribute {} on {}: {}", RAFT_CURRENT_STATE_ATTRIBUTE, RAFT_METRICS_OBJECT_NAME, e.getMessage());
+            return null;
+        }
     }
 
     /**
