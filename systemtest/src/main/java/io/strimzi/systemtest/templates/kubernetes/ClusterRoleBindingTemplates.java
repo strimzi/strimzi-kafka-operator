@@ -19,12 +19,11 @@ public class ClusterRoleBindingTemplates {
     private static final Logger LOGGER = LogManager.getLogger(ClusterRoleBindingTemplates.class);
 
     public static List<ClusterRoleBinding> clusterRoleBindingsForAllNamespaces(String namespaceName) {
-        LOGGER.info("Creating ClusterRoleBinding that grant cluster-wide access to all OpenShift projects");
         return clusterRoleBindingsForAllNamespaces(namespaceName, "strimzi-cluster-operator");
     }
 
     public static List<ClusterRoleBinding> clusterRoleBindingsForAllNamespaces(String namespaceName, String coName) {
-        LOGGER.info("Creating ClusterRoleBinding that grant cluster-wide access to all OpenShift projects");
+        LOGGER.info("Creating ClusterRoleBinding that grant cluster-wide access to all Kubernetes namespaces");
 
         return Arrays.asList(
             getClusterOperatorNamespacedCrb(namespaceName, coName),
