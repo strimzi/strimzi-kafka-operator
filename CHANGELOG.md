@@ -2,6 +2,7 @@
 
 ## 1.1.0
 
+* Reconcile Cruise Control before Entity Operator when both are enabled.
 * Add support for Apache Kafka 4.3.0 and remove support for Kafka 4.1.x
 * New Cluster operator configuration option `STRIMZI_PKCS12_KEYSTORE_GENERATION` to disable generating PKCS12 stores in CA and Kafka user `Secret` resources.
 * Support for Gateway API-based `type: tlsroute` listener

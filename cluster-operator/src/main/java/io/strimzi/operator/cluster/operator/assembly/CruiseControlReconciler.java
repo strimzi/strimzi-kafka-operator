@@ -139,6 +139,7 @@ public class CruiseControlReconciler {
                 .compose(i -> serviceAccount())
                 .compose(i -> configMap())
                 .compose(i -> certificatesSecret(clock))
+                .compose(i -> topicOperatorCruiseControlApiSecret())
                 .compose(i -> apiSecret())
                 .compose(i -> service())
                 .compose(i -> podDisruptionBudget())
@@ -253,6 +254,28 @@ public class CruiseControlReconciler {
                     });
         } else {
             return secretOperator.reconcile(reconciliation, reconciliation.namespace(), CruiseControlResources.secretName(reconciliation.name()), null)
+                    .mapEmpty();
+        }
+    }
+
+    /**
+     * Manages the Topic Operator Cruise Control API Secret.
+     * This secret contains credentials for the Topic Operator to access Cruise Control's REST API.
+     * It is generated here so that the secret exists before Cruise Control reads it in {@link #apiSecret()}.
+     *
+     * @return  Future which completes when the reconciliation is done
+     */
+    protected Future<Void> topicOperatorCruiseControlApiSecret() {
+        String toApiSecretName = KafkaResources.entityTopicOperatorCcApiSecretName(reconciliation.name());
+        if (isTopicOperatorEnabled && cruiseControl != null) {
+            return secretOperator.getAsync(reconciliation.namespace(), toApiSecretName)
+                    .compose(oldSecret -> {
+                        Secret newSecret = cruiseControl.apiCredentials().generateTopicOperatorApiSecret(oldSecret);
+                        return secretOperator.reconcile(reconciliation, reconciliation.namespace(), toApiSecretName, newSecret)
+                                .mapEmpty();
+                    });
+        } else {
+            return secretOperator.reconcile(reconciliation, reconciliation.namespace(), toApiSecretName, null)
                     .mapEmpty();
         }
     }
