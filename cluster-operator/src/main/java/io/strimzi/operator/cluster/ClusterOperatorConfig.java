@@ -255,6 +255,11 @@ public class ClusterOperatorConfig {
     public static final ConfigParameter<Boolean> PKCS12_KEYSTORE_GENERATION = new ConfigParameter<>("STRIMZI_PKCS12_KEYSTORE_GENERATION", BOOLEAN, "true", CONFIG_VALUES);
 
     /**
+     * Set true to enable watched namespace feature for Entity Operators (Topic Operator and User Operator)
+     */
+    public static final ConfigParameter<Boolean> ENTITY_OPERATOR_WATCHED_NAMESPACE_ENABLED = new ConfigParameter<>("STRIMZI_ENTITY_OPERATOR_WATCHED_NAMESPACE_ENABLED", BOOLEAN, "false", CONFIG_VALUES);
+
+    /**
      * The configured Kafka versions
      */
     private final KafkaVersion.Lookup versions;
@@ -642,6 +647,15 @@ public class ClusterOperatorConfig {
         return get(PKCS12_KEYSTORE_GENERATION);
     }
 
+    /**
+     * Checks whether Entity Operator watched namespace feature is enabled.
+     *
+     * @return  Indicates whether Entity Operator watched namespace feature is enabled.
+     */
+    public boolean isEntityOperatorWatchedNamespaceEnabled() {
+        return get(ENTITY_OPERATOR_WATCHED_NAMESPACE_ENABLED);
+    }
+
     @Override
     public String toString() {
         return "ClusterOperatorConfig{" +
@@ -665,6 +679,7 @@ public class ClusterOperatorConfig {
                 "\n\tleaderElectionConfig='" + getLeaderElectionConfig() + '\'' +
                 "\n\tpodDisruptionBudgetGeneration=" + isPodDisruptionBudgetGeneration() + '\'' +
                 "\n\tisPkcs12KeystoreGeneration='" + isPkcs12KeystoreGeneration() +
+                "\n\tisEntityOperatorWatchedNamespaceEnabled='" + isEntityOperatorWatchedNamespaceEnabled() +
                 "}";
     }
 }

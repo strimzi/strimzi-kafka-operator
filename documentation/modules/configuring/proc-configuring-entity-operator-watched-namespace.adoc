@@ -1,0 +1,132 @@
+:_mod-docs-content-type: PROCEDURE
+
+// Module included in the following assemblies:
+//
+// ref-kafka-entity-operator.adoc
+
+[id='proc-configuring-entity-operator-watched-namespace-{context}']
+= Configuring Topic and User Operators to watch a different namespace
+
+[role="_abstract"]
+By default, the Topic Operator and User Operator watch for `KafkaTopic` and `KafkaUser` resources in the same namespace where the Kafka cluster is deployed.
+You can configure them to watch a different namespace, which is useful when you want to manage Kafka topics and users in a separate namespace from the Kafka cluster itself.
+
+NOTE: This feature is disabled by default and must be explicitly enabled in the Cluster Operator configuration.
+
+WARNING: If you configure `watchedNamespace` to a different namespace while the feature is disabled, the Entity Operator deployment and all the related existing resources (ConfigMap, Secret, Role, RoleBinding and so on) will be deleted, reconciliation will fail, and a warning condition will be added to the `Kafka` resource status. Existing `KafkaTopic` and `KafkaUser` resources will stay.
+
+IMPORTANT: If you are upgrading from a previous Strimzi version where you were using `watchedNamespace` to watch a different namespace, you must enable this feature during the upgrade to avoid disruption. When upgrading the Cluster Operator, update the deployment to include the `STRIMZI_ENTITY_OPERATOR_WATCHED_NAMESPACE_ENABLED=true` environment variable at the same time. Otherwise, the Entity Operator will be deleted during the upgrade reconciliation, and your topics and users will no longer be managed until you enable the feature.
+
+.Prerequisites
+
+* The Cluster Operator is deployed and running
+* A Kafka cluster is deployed or ready to be deployed
+
+.Procedure
+
+. Enable the watched namespace feature in the Cluster Operator deployment.
++
+Edit the Cluster Operator `Deployment` to set the `STRIMZI_ENTITY_OPERATOR_WATCHED_NAMESPACE_ENABLED` environment variable to `true`:
++
+[source,yaml,options="nowrap"]
+----
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: strimzi-cluster-operator
+spec:
+  # ...
+  template:
+    spec:
+      containers:
+      - name: strimzi-cluster-operator
+        # ...
+        env:
+        - name: STRIMZI_ENTITY_OPERATOR_WATCHED_NAMESPACE_ENABLED
+          value: "true"
+        # ...
+----
++
+When this environment variable is set to `false` (the default):
++
+* If `watchedNamespace` is not configured or is set to the same namespace as the Kafka cluster, the Topic and User Operators function normally.
+* If `watchedNamespace` is configured to a different namespace, the Cluster Operator deletes the Entity Operator deployment and all related resources, fails the reconciliation, and adds a warning condition to the `Kafka` resource status. Existing `KafkaTopic` and `KafkaUser` resources will stay.
+
+. Configure the `watchedNamespace` property for the Topic Operator, User Operator, or both in your `Kafka` custom resource.
++
+.Example: Topic Operator watching a different namespace
+[source,yaml,subs=attributes+]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+  name: my-cluster
+  namespace: kafka # <1>
+spec:
+  kafka:
+    # ...
+  entityOperator:
+    topicOperator:
+      watchedNamespace: my-topics-namespace # <2>
+    userOperator:
+      watchedNamespace: my-users-namespace # <3>
+----
+<1> The Kafka cluster is deployed in the `kafka` namespace
+<2> The Topic Operator watches for `KafkaTopic` resources in the `my-topics-namespace` namespace
+<3> The User Operator watches for `KafkaUser` resources in the `my-users-namespace` namespace
++
+If the `watchedNamespace` property is not specified, both operators default to watching the namespace where the Kafka cluster is deployed.
+
+. Ensure the watched namespace exists.
++
+The Cluster Operator automatically creates a `Role` and `RoleBinding` in the watched namespace to grant the Entity Operator the necessary permissions.
+However, you must ensure the watched namespace exists before deploying the Kafka cluster.
++
+For example, if using `my-topics-namespace`:
++
+[source,shell,subs="+quotes,attributes+"]
+----
+kubectl create namespace my-topics-namespace
+----
+
+. Apply the updated `Kafka` resource:
++
+[source,shell,subs="+quotes,attributes+"]
+----
+kubectl apply -f _kafka-config.yaml_
+----
+
+.Verification
+
+. Verify that the Entity Operator pod is running:
++
+[source,shell,subs="+quotes,attributes+"]
+----
+kubectl get pods -n kafka -l strimzi.io/name=my-cluster-entity-operator
+----
+
+. Check that the required RBAC resources were created in the watched namespace:
++
+[source,shell,subs="+quotes,attributes+"]
+----
+kubectl get role,rolebinding -n my-topics-namespace
+----
++
+You should see a `Role` and `RoleBinding` created by the Cluster Operator for the Entity Operator.
+
+. Check the Topic and User Operators logs to confirm they are watching the correct namespaces:
++
+[source,shell,subs="+quotes,attributes+"]
+----
+kubectl logs -n kafka deployment/my-cluster-entity-operator -c topic-operator
+kubectl logs -n kafka deployment/my-cluster-entity-operator -c user-operator
+----
++
+The logs should indicate that the operators are watching the configured namespaces.
+
+[role="_additional-resources"]
+.Additional resources
+
+* xref:topic-operator-{context}[Configuring the Topic Operator]
+* xref:user-operator-{context}[Configuring the User Operator]
+* xref:ref-operator-cluster-{context}[Configuring the Cluster Operator]
