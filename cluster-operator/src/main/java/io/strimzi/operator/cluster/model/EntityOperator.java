@@ -16,6 +16,7 @@ import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyIngressRule;
 import io.fabric8.kubernetes.api.model.policy.v1.PodDisruptionBudget;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
 import io.fabric8.kubernetes.api.model.rbac.PolicyRule;
+import io.fabric8.kubernetes.api.model.rbac.PolicyRuleBuilder;
 import io.fabric8.kubernetes.api.model.rbac.Role;
 import io.strimzi.api.kafka.model.common.Probe;
 import io.strimzi.api.kafka.model.common.template.DeploymentTemplate;
@@ -56,6 +57,29 @@ public class EntityOperator extends AbstractModel {
     public static final String COMPONENT_TYPE = "entity-operator";
 
     protected static final String CO_ENV_VAR_CUSTOM_ENTITY_OPERATOR_POD_LABELS = "STRIMZI_CUSTOM_ENTITY_OPERATOR_LABELS";
+
+    /**
+     * Represents which operator permissions should be included when filtering ClusterRole rules
+     */
+    public enum Permissions {
+        /** Include only Topic Operator permissions (kafkatopics resources) */
+        TOPIC_OPERATOR,
+
+        /** Include only User Operator permissions (kafkausers and secrets resources) */
+        USER_OPERATOR,
+
+        /** Include both Topic and User Operator permissions (no filtering) */
+        BOTH
+    }
+
+    /**
+     * Map defining which resource prefixes belong to each permission type.
+     * Used for filtering ClusterRole rules to enforce least-privilege permissions.
+     */
+    private static final Map<Permissions, List<String>> OPERATOR_RESOURCE_PREFIXES = Map.of(
+        Permissions.TOPIC_OPERATOR, List.of("kafkatopics"),
+        Permissions.USER_OPERATOR, List.of("kafkausers", "secrets")
+    );
 
     /**
      * Default health check options used by the Topic and User operators
@@ -112,7 +136,7 @@ public class EntityOperator extends AbstractModel {
 
             EntityTopicOperator topicOperator = EntityTopicOperator.fromCrd(reconciliation, kafkaAssembly, sharedEnvironmentProvider, config);
             EntityUserOperator userOperator = EntityUserOperator.fromCrd(reconciliation, kafkaAssembly, sharedEnvironmentProvider, config);
-            
+
             result.topicOperator = topicOperator;
             result.cruiseControlEnabled = kafkaAssembly.getSpec().getCruiseControl() != null;
             result.userOperator = userOperator;
@@ -227,17 +251,66 @@ public class EntityOperator extends AbstractModel {
     }
 
     /**
-     * Read the entity operator ClusterRole and use the rules to create a new Role.
-     * This is done to avoid duplication of the rules set defined in source code.
-     * If the namespace of the role is different from the namespace of the parent resource (Kafka CR), we do not set
-     * the owner reference.
+     * Filters PolicyRules based on permissions to provide least-privilege access.
+     * Rules that reference both TO and UO resources are split to include only the
+     * relevant resources for the specified permissions.
      *
-     * @param ownerNamespace        The namespace of the parent resource (the Kafka CR)
-     * @param namespace             The namespace of this role will be located
-     *
-     * @return role for the entity operator
+     * @param rules        The original list of PolicyRules from the combined ClusterRole
+     * @param permissions  Which operator permissions to include
+     * @return Filtered list of PolicyRules
      */
-    public Role generateRole(String ownerNamespace, String namespace) {
+    private List<PolicyRule> filterRulesByPermissions(List<PolicyRule> rules, Permissions permissions) {
+        if (permissions == Permissions.BOTH) {
+            // No filtering needed, return all rules
+            return rules;
+        }
+
+        List<PolicyRule> filteredRules = new ArrayList<>();
+
+        for (PolicyRule rule : rules) {
+            // Filter resources that match the permissions
+            List<String> resourcesToKeep = rule.getResources().stream()
+                    .filter(resource -> matchesPermissions(resource, permissions))
+                    .toList();
+
+            // If this rule has relevant resources, create a new rule with only those resources
+            if (!resourcesToKeep.isEmpty()) {
+                PolicyRule filteredRule = new PolicyRuleBuilder(rule)
+                        .withResources(resourcesToKeep)
+                        .build();
+                filteredRules.add(filteredRule);
+            }
+        }
+
+        return filteredRules;
+    }
+
+    /**
+     * Checks if a resource matches the specified permissions based on the OPERATOR_RESOURCE_PREFIXES map.
+     * Handles both exact matches (e.g., "secrets") and subresource matches (e.g., "kafkatopics/status").
+     *
+     * @param resource     The resource name (e.g., "kafkatopics", "kafkausers/status", "secrets")
+     * @param permissions  The permissions to match against
+     * @return true if this resource belongs to the specified permissions
+     */
+    private boolean matchesPermissions(String resource, Permissions permissions) {
+        return OPERATOR_RESOURCE_PREFIXES.get(permissions).stream()
+                .anyMatch(prefix -> resource.equals(prefix) || resource.startsWith(prefix + "/"));
+    }
+
+    /**
+     * Generate a Role with filtered permissions based on which operator(s) need access.
+     * Loads the combined Entity Operator ClusterRole template and filters the rules
+     * based on the specified permissions to enforce least-privilege access.
+     *
+     * @param ownerNamespace   The namespace of the parent resource (the Kafka CR)
+     * @param namespace        The namespace where this role will be located
+     * @param roleName         The name to use for the Role resource
+     * @param permissions      Which operator permissions to include (TOPIC_OPERATOR, USER_OPERATOR, or BOTH)
+     *
+     * @return Role with appropriately filtered permissions
+     */
+    public Role generateRole(String ownerNamespace, String namespace, String roleName, Permissions permissions) {
         List<PolicyRule> rules;
 
         try (BufferedReader br = new BufferedReader(
@@ -249,13 +322,13 @@ public class EntityOperator extends AbstractModel {
             String yaml = br.lines().collect(Collectors.joining(System.lineSeparator()));
             ObjectMapper yamlReader = new ObjectMapper(new YAMLFactory());
             ClusterRole cr = yamlReader.readValue(yaml, ClusterRole.class);
-            rules = cr.getRules();
+            rules = filterRulesByPermissions(cr.getRules(), permissions);
         } catch (IOException e) {
             LOGGER.errorCr(reconciliation, "Failed to read entity-operator ClusterRole.", e);
             throw new RuntimeException(e);
         }
 
-        Role role = RbacUtils.createRole(componentName, namespace, rules, labels, ownerReference, templateRole);
+        Role role = RbacUtils.createRole(roleName, namespace, rules, labels, ownerReference, templateRole);
 
         // We set OwnerReference only within the same namespace since it does not work cross-namespace
         if (!namespace.equals(ownerNamespace)) {

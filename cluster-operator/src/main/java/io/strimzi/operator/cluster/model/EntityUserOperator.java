@@ -40,7 +40,7 @@ import java.util.Map;
  */
 public class EntityUserOperator extends AbstractModel implements SupportsLogging {
     protected static final String COMPONENT_TYPE = "entity-user-operator";
-    
+
     protected static final String USER_OPERATOR_CONTAINER_NAME = "user-operator";
     private static final String NAME_SUFFIX = "-entity-user-operator";
 

@@ -250,6 +250,11 @@ public class ClusterOperatorConfig {
     public static final ConfigParameter<Boolean> POD_DISRUPTION_BUDGET_GENERATION = new ConfigParameter<>("STRIMZI_POD_DISRUPTION_BUDGET_GENERATION", BOOLEAN, "true", CONFIG_VALUES);
 
     /**
+     * Set true to enable watched namespace feature for Entity Operators (Topic Operator and User Operator)
+     */
+    public static final ConfigParameter<Boolean> ENTITY_OPERATOR_WATCHED_NAMESPACE_ENABLED = new ConfigParameter<>("STRIMZI_ENTITY_OPERATOR_WATCHED_NAMESPACE_ENABLED", BOOLEAN, "false", CONFIG_VALUES);
+
+    /**
      * The configured Kafka versions
      */
     private final KafkaVersion.Lookup versions;
@@ -628,6 +633,15 @@ public class ClusterOperatorConfig {
         return get(POD_DISRUPTION_BUDGET_GENERATION);
     }
 
+    /**
+     * Checks whether Entity Operator watched namespace feature is enabled.
+     *
+     * @return  Indicates whether Entity Operator watched namespace feature is enabled.
+     */
+    public boolean isEntityOperatorWatchedNamespaceEnabled() {
+        return get(ENTITY_OPERATOR_WATCHED_NAMESPACE_ENABLED);
+    }
+
     @Override
     public String toString() {
         return "ClusterOperatorConfig{" +
@@ -649,7 +663,8 @@ public class ClusterOperatorConfig {
                 "\n\toperatorName='" + getOperatorName() + '\'' +
                 "\n\tpodSecurityProviderClass='" + getPodSecurityProviderClass() + '\'' +
                 "\n\tleaderElectionConfig='" + getLeaderElectionConfig() + '\'' +
-                "\n\tpodDisruptionBudgetGeneration=" + isPodDisruptionBudgetGeneration() +
+                "\n\tpodDisruptionBudgetGeneration=" + isPodDisruptionBudgetGeneration() + '\'' +
+                "\n\tisEntityOperatorWatchedNamespaceEnabled='" + isEntityOperatorWatchedNamespaceEnabled() +
                 "}";
     }
 }

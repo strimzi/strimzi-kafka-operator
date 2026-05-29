@@ -19,6 +19,9 @@ import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlSpecBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
+import io.strimzi.operator.cluster.ClusterOperatorConfig;
+import io.strimzi.operator.cluster.ClusterOperatorConfig.ClusterOperatorConfigBuilder;
+import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.model.ClusterCa;
@@ -32,6 +35,7 @@ import io.strimzi.operator.cluster.operator.resource.kubernetes.RoleOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.SecretOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.ServiceAccountOperator;
 import io.strimzi.operator.common.Annotations;
+import io.strimzi.operator.common.InvalidConfigurationException;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Ca;
 import io.strimzi.operator.common.model.PasswordGenerator;
@@ -47,11 +51,14 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 
 import java.time.Clock;
+import java.util.Objects;
 
+import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasItems;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
@@ -261,9 +268,13 @@ public class EntityOperatorReconcilerTest {
                 .endSpec()
                 .build();
 
+        ClusterOperatorConfig config = new ClusterOperatorConfigBuilder(ResourceUtils.dummyClusterOperatorConfig(), KafkaVersionTestUtils.getKafkaVersionLookup())
+                .with(ClusterOperatorConfig.ENTITY_OPERATOR_WATCHED_NAMESPACE_ENABLED.key(), "true")
+                .build();
+
         EntityOperatorReconciler rcnclr = new EntityOperatorReconciler(
                 Reconciliation.DUMMY_RECONCILIATION,
-                ResourceUtils.dummyClusterOperatorConfig(),
+                config,
                 supplier,
                 kafka,
                 CLUSTER_CA
@@ -291,15 +302,11 @@ public class EntityOperatorReconcilerTest {
                     assertThat(uoRoleCaptor.getValue(), is(notNullValue()));
 
                     assertThat(toRoleBindingCaptor.getAllValues().size(), is(2));
-                    assertThat(toRoleBindingCaptor.getAllValues().get(0), is(notNullValue()));
-                    assertThat(toRoleBindingCaptor.getAllValues().get(0).getMetadata().getNamespace(), is(toWatchNamespace));
-                    assertThat(toRoleBindingCaptor.getAllValues().get(1), is(notNullValue()));
-                    assertThat(toRoleBindingCaptor.getAllValues().get(1).getMetadata().getNamespace(), is(NAMESPACE));
+                    assertThat(toRoleBindingCaptor.getAllValues().stream().allMatch(Objects::nonNull), is(true));
+                    assertThat(toRoleBindingCaptor.getAllValues().stream().map(rb -> rb.getMetadata().getNamespace()).toList(), hasItems(toWatchNamespace, NAMESPACE));
                     assertThat(uoRoleBindingCaptor.getAllValues().size(), is(2));
-                    assertThat(uoRoleBindingCaptor.getAllValues().get(0), is(notNullValue()));
-                    assertThat(uoRoleBindingCaptor.getAllValues().get(0).getMetadata().getNamespace(), is(uoWatchNamespace));
-                    assertThat(uoRoleBindingCaptor.getAllValues().get(1), is(notNullValue()));
-                    assertThat(uoRoleBindingCaptor.getAllValues().get(1).getMetadata().getNamespace(), is(NAMESPACE));
+                    assertThat(uoRoleBindingCaptor.getAllValues().stream().allMatch(Objects::nonNull), is(true));
+                    assertThat(uoRoleBindingCaptor.getAllValues().stream().map(rb -> rb.getMetadata().getNamespace()).toList(), hasItems(uoWatchNamespace, NAMESPACE));
 
                     assertThat(toCmCaptor.getAllValues().size(), is(1));
                     assertThat(toCmCaptor.getValue(), is(notNullValue()));
@@ -706,6 +713,265 @@ public class EntityOperatorReconcilerTest {
                     assertThat(toRoleBindingCaptor.getAllValues().get(0), is(nullValue()));
                     assertThat(uoRoleBindingCaptor.getAllValues().size(), is(1));
                     assertThat(uoRoleBindingCaptor.getAllValues().get(0), is(nullValue()));
+
+                    assertThat(toCmCaptor.getAllValues().size(), is(1));
+                    assertThat(toCmCaptor.getValue(), is(nullValue()));
+                    assertThat(uoCmCaptor.getAllValues().size(), is(1));
+                    assertThat(uoCmCaptor.getValue(), is(nullValue()));
+
+                    assertThat(depCaptor.getAllValues().size(), is(1));
+                    assertThat(depCaptor.getValue(), is(nullValue()));
+
+                    assertThat(pdbCaptor.getAllValues().size(), is(1));
+                    assertThat(pdbCaptor.getValue(), is(nullValue()));
+
+                    async.flag();
+                })));
+    }
+
+    @Test
+    public void reconcileWithToAndUoAndWatchNamespacesWithFeatureDisabled(VertxTestContext context) {
+        String toWatchNamespace = "to-watch-namespace";
+
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
+        DeploymentOperator mockDepOps = supplier.deploymentOperations;
+        SecretOperator mockSecretOps = supplier.secretOperations;
+        ServiceAccountOperator mockSaOps = supplier.serviceAccountOperations;
+        RoleOperator mockRoleOps = supplier.roleOperations;
+        RoleBindingOperator mockRoleBindingOps = supplier.roleBindingOperations;
+        NetworkPolicyOperator mockNetPolicyOps = supplier.networkPolicyOperator;
+        ConfigMapOperator mockCmOps = supplier.configMapOperations;
+        PodDisruptionBudgetOperator mockPodDisruptionBudgetOps = supplier.podDisruptionBudgetOperator;
+
+        ArgumentCaptor<ServiceAccount> saCaptor = ArgumentCaptor.forClass(ServiceAccount.class);
+        when(mockSaOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.entityOperatorDeploymentName(NAME)), saCaptor.capture())).thenReturn(Future.succeededFuture());
+
+        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaResources.entityTopicOperatorSecretName(NAME)))).thenReturn(Future.succeededFuture());
+        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaResources.entityUserOperatorSecretName(NAME)))).thenReturn(Future.succeededFuture());
+        ArgumentCaptor<Secret> toSecretCaptor = ArgumentCaptor.forClass(Secret.class);
+        when(mockSecretOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.entityTopicOperatorSecretName(NAME)), toSecretCaptor.capture())).thenReturn(Future.succeededFuture());
+        ArgumentCaptor<Secret> uoSecretCaptor = ArgumentCaptor.forClass(Secret.class);
+        when(mockSecretOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.entityUserOperatorSecretName(NAME)), uoSecretCaptor.capture())).thenReturn(Future.succeededFuture());
+
+        ArgumentCaptor<Role> operatorRoleCaptor = ArgumentCaptor.forClass(Role.class);
+        when(mockRoleOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.entityOperatorDeploymentName(NAME)), operatorRoleCaptor.capture())).thenReturn(Future.succeededFuture());
+        // Both TO and UO Roles in watched namespace use the same resource name, so use single captor
+        ArgumentCaptor<Role> watchedNamespaceRoleCaptor = ArgumentCaptor.forClass(Role.class);
+        when(mockRoleOps.reconcile(any(), eq(toWatchNamespace), eq(KafkaResources.entityOperatorDeploymentName(NAME)), watchedNamespaceRoleCaptor.capture())).thenReturn(Future.succeededFuture());
+
+        ArgumentCaptor<RoleBinding> toRoleBindingCaptor = ArgumentCaptor.forClass(RoleBinding.class);
+        when(mockRoleBindingOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.entityTopicOperatorRoleBinding(NAME)), toRoleBindingCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockRoleBindingOps.reconcile(any(), eq(toWatchNamespace), eq(KafkaResources.entityTopicOperatorRoleBinding(NAME)), toRoleBindingCaptor.capture())).thenReturn(Future.succeededFuture());
+        ArgumentCaptor<RoleBinding> uoRoleBindingCaptor = ArgumentCaptor.forClass(RoleBinding.class);
+        when(mockRoleBindingOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.entityUserOperatorRoleBinding(NAME)), uoRoleBindingCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockRoleBindingOps.reconcile(any(), eq(toWatchNamespace), eq(KafkaResources.entityUserOperatorRoleBinding(NAME)), uoRoleBindingCaptor.capture())).thenReturn(Future.succeededFuture());
+
+        ArgumentCaptor<ConfigMap> toCmCaptor = ArgumentCaptor.forClass(ConfigMap.class);
+        when(mockCmOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.entityTopicOperatorLoggingConfigMapName(NAME)), toCmCaptor.capture())).thenReturn(Future.succeededFuture());
+        ArgumentCaptor<ConfigMap> uoCmCaptor = ArgumentCaptor.forClass(ConfigMap.class);
+        when(mockCmOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.entityUserOperatorLoggingConfigMapName(NAME)), uoCmCaptor.capture())).thenReturn(Future.succeededFuture());
+
+        ArgumentCaptor<NetworkPolicy> netPolicyCaptor = ArgumentCaptor.forClass(NetworkPolicy.class);
+        when(mockNetPolicyOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.entityOperatorDeploymentName(NAME)), netPolicyCaptor.capture())).thenReturn(Future.succeededFuture());
+
+        ArgumentCaptor<Deployment> depCaptor = ArgumentCaptor.forClass(Deployment.class);
+        when(mockDepOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.entityOperatorDeploymentName(NAME)), depCaptor.capture())).thenReturn(Future.succeededFuture());
+
+        ArgumentCaptor<PodDisruptionBudget> pdbCaptor = ArgumentCaptor.forClass(PodDisruptionBudget.class);
+        when(mockPodDisruptionBudgetOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.entityOperatorDeploymentName(NAME)), pdbCaptor.capture())).thenReturn(Future.succeededFuture());
+
+        // Create Kafka CR with Topic Operator having watchedNamespace configured
+        Kafka kafka = new KafkaBuilder(KAFKA)
+                .editSpec()
+                    .withNewEntityOperator()
+                        .withNewTopicOperator()
+                            .withWatchedNamespace(toWatchNamespace)
+                        .endTopicOperator()
+                        .withNewUserOperator()
+                            .withWatchedNamespace(toWatchNamespace)
+                        .endUserOperator()
+                    .endEntityOperator()
+                .endSpec()
+                .build();
+
+        // Create config with feature DISABLED
+        ClusterOperatorConfig config = new ClusterOperatorConfigBuilder(ResourceUtils.dummyClusterOperatorConfig(), KafkaVersionTestUtils.getKafkaVersionLookup())
+                .with(ClusterOperatorConfig.ENTITY_OPERATOR_WATCHED_NAMESPACE_ENABLED.key(), "false")
+                .build();
+
+        EntityOperatorReconciler rcnclr = new EntityOperatorReconciler(
+                Reconciliation.DUMMY_RECONCILIATION,
+                config,
+                supplier,
+                kafka,
+                CLUSTER_CA
+        );
+
+        Checkpoint async = context.checkpoint();
+        rcnclr.reconcile(false, null, null, Clock.systemUTC())
+                .onComplete(context.failing(error -> context.verify(() -> {
+                    // Verify the reconciliation failed with InvalidConfigurationException
+                    assertThat(error, instanceOf(InvalidConfigurationException.class));
+                    assertThat(error.getMessage(), is("Entity Operator deployment deleted because Topic Operator and/or User Operator are configured with " +
+                            "watchedNamespace set to a different namespace but the feature is disabled. " +
+                            "To enable cross-namespace watching, set STRIMZI_ENTITY_OPERATOR_WATCHED_NAMESPACE_ENABLED=true"));
+
+                    // Verify all resources are deleted (null passed to reconcile) before failure
+                    assertThat(saCaptor.getAllValues().size(), is(1));
+                    assertThat(saCaptor.getValue(), is(nullValue()));
+
+                    assertThat(toSecretCaptor.getAllValues().size(), is(1));
+                    assertThat(toSecretCaptor.getValue(), is(nullValue()));
+                    assertThat(uoSecretCaptor.getAllValues().size(), is(1));
+                    assertThat(uoSecretCaptor.getValue(), is(nullValue()));
+
+                    assertThat(netPolicyCaptor.getAllValues().size(), is(1));
+                    assertThat(netPolicyCaptor.getValue(), is(nullValue()));
+
+                    assertThat(operatorRoleCaptor.getAllValues().size(), is(1));
+                    assertThat(operatorRoleCaptor.getValue(), is(nullValue()));
+
+                    // Both TO and UO Roles in watched namespace - should be 2 calls, both with null
+                    assertThat(watchedNamespaceRoleCaptor.getAllValues().size(), is(2));
+                    assertThat(watchedNamespaceRoleCaptor.getAllValues().stream().allMatch(r -> r == null), is(true));
+
+                    assertThat(toRoleBindingCaptor.getAllValues().size(), is(2));
+                    assertThat(toRoleBindingCaptor.getAllValues().stream().allMatch(rb -> rb == null), is(true));
+
+                    assertThat(uoRoleBindingCaptor.getAllValues().size(), is(2));
+                    assertThat(uoRoleBindingCaptor.getAllValues().stream().allMatch(rb -> rb == null), is(true));
+
+                    assertThat(toCmCaptor.getAllValues().size(), is(1));
+                    assertThat(toCmCaptor.getValue(), is(nullValue()));
+                    assertThat(uoCmCaptor.getAllValues().size(), is(1));
+                    assertThat(uoCmCaptor.getValue(), is(nullValue()));
+
+                    assertThat(depCaptor.getAllValues().size(), is(1));
+                    assertThat(depCaptor.getValue(), is(nullValue()));
+
+                    assertThat(pdbCaptor.getAllValues().size(), is(1));
+                    assertThat(pdbCaptor.getValue(), is(nullValue()));
+
+                    async.flag();
+                })));
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = { true, false })
+    public void reconcileWithOnlyOneOperatorWatchedNamespaceAndFeatureDisabled(boolean topicOperatorWatches, VertxTestContext context) {
+        String watchNamespace = "watch-namespace";
+
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
+        DeploymentOperator mockDepOps = supplier.deploymentOperations;
+        SecretOperator mockSecretOps = supplier.secretOperations;
+        ServiceAccountOperator mockSaOps = supplier.serviceAccountOperations;
+        RoleOperator mockRoleOps = supplier.roleOperations;
+        RoleBindingOperator mockRoleBindingOps = supplier.roleBindingOperations;
+        NetworkPolicyOperator mockNetPolicyOps = supplier.networkPolicyOperator;
+        ConfigMapOperator mockCmOps = supplier.configMapOperations;
+        PodDisruptionBudgetOperator mockPodDisruptionBudgetOps = supplier.podDisruptionBudgetOperator;
+
+        ArgumentCaptor<ServiceAccount> saCaptor = ArgumentCaptor.forClass(ServiceAccount.class);
+        when(mockSaOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.entityOperatorDeploymentName(NAME)), saCaptor.capture())).thenReturn(Future.succeededFuture());
+
+        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaResources.entityTopicOperatorSecretName(NAME)))).thenReturn(Future.succeededFuture());
+        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaResources.entityUserOperatorSecretName(NAME)))).thenReturn(Future.succeededFuture());
+        ArgumentCaptor<Secret> toSecretCaptor = ArgumentCaptor.forClass(Secret.class);
+        when(mockSecretOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.entityTopicOperatorSecretName(NAME)), toSecretCaptor.capture())).thenReturn(Future.succeededFuture());
+        ArgumentCaptor<Secret> uoSecretCaptor = ArgumentCaptor.forClass(Secret.class);
+        when(mockSecretOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.entityUserOperatorSecretName(NAME)), uoSecretCaptor.capture())).thenReturn(Future.succeededFuture());
+
+        ArgumentCaptor<Role> operatorRoleCaptor = ArgumentCaptor.forClass(Role.class);
+        when(mockRoleOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.entityOperatorDeploymentName(NAME)), operatorRoleCaptor.capture())).thenReturn(Future.succeededFuture());
+        ArgumentCaptor<Role> watchRoleCaptor = ArgumentCaptor.forClass(Role.class);
+        when(mockRoleOps.reconcile(any(), eq(watchNamespace), eq(KafkaResources.entityOperatorDeploymentName(NAME)), watchRoleCaptor.capture())).thenReturn(Future.succeededFuture());
+
+        ArgumentCaptor<RoleBinding> toRoleBindingCaptor = ArgumentCaptor.forClass(RoleBinding.class);
+        when(mockRoleBindingOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.entityTopicOperatorRoleBinding(NAME)), toRoleBindingCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockRoleBindingOps.reconcile(any(), eq(watchNamespace), eq(KafkaResources.entityTopicOperatorRoleBinding(NAME)), toRoleBindingCaptor.capture())).thenReturn(Future.succeededFuture());
+        ArgumentCaptor<RoleBinding> uoRoleBindingCaptor = ArgumentCaptor.forClass(RoleBinding.class);
+        when(mockRoleBindingOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.entityUserOperatorRoleBinding(NAME)), uoRoleBindingCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockRoleBindingOps.reconcile(any(), eq(watchNamespace), eq(KafkaResources.entityUserOperatorRoleBinding(NAME)), uoRoleBindingCaptor.capture())).thenReturn(Future.succeededFuture());
+
+        ArgumentCaptor<ConfigMap> toCmCaptor = ArgumentCaptor.forClass(ConfigMap.class);
+        when(mockCmOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.entityTopicOperatorLoggingConfigMapName(NAME)), toCmCaptor.capture())).thenReturn(Future.succeededFuture());
+        ArgumentCaptor<ConfigMap> uoCmCaptor = ArgumentCaptor.forClass(ConfigMap.class);
+        when(mockCmOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.entityUserOperatorLoggingConfigMapName(NAME)), uoCmCaptor.capture())).thenReturn(Future.succeededFuture());
+
+        ArgumentCaptor<NetworkPolicy> netPolicyCaptor = ArgumentCaptor.forClass(NetworkPolicy.class);
+        when(mockNetPolicyOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.entityOperatorDeploymentName(NAME)), netPolicyCaptor.capture())).thenReturn(Future.succeededFuture());
+
+        ArgumentCaptor<Deployment> depCaptor = ArgumentCaptor.forClass(Deployment.class);
+        when(mockDepOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.entityOperatorDeploymentName(NAME)), depCaptor.capture())).thenReturn(Future.succeededFuture());
+
+        ArgumentCaptor<PodDisruptionBudget> pdbCaptor = ArgumentCaptor.forClass(PodDisruptionBudget.class);
+        when(mockPodDisruptionBudgetOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.entityOperatorDeploymentName(NAME)), pdbCaptor.capture())).thenReturn(Future.succeededFuture());
+
+        // Create Kafka CR with only one operator having watchedNamespace configured
+        Kafka kafka = new KafkaBuilder(KAFKA)
+                .editSpec()
+                    .withNewEntityOperator()
+                        .withNewTopicOperator()
+                            .withWatchedNamespace(topicOperatorWatches ? watchNamespace : null)
+                        .endTopicOperator()
+                        .withNewUserOperator()
+                            .withWatchedNamespace(topicOperatorWatches ? null : watchNamespace)
+                        .endUserOperator()
+                    .endEntityOperator()
+                .endSpec()
+                .build();
+
+        // Create config with feature DISABLED
+        ClusterOperatorConfig config = new ClusterOperatorConfigBuilder(ResourceUtils.dummyClusterOperatorConfig(), KafkaVersionTestUtils.getKafkaVersionLookup())
+                .with(ClusterOperatorConfig.ENTITY_OPERATOR_WATCHED_NAMESPACE_ENABLED.key(), "false")
+                .build();
+
+        EntityOperatorReconciler rcnclr = new EntityOperatorReconciler(
+                Reconciliation.DUMMY_RECONCILIATION,
+                config,
+                supplier,
+                kafka,
+                CLUSTER_CA
+        );
+
+        Checkpoint async = context.checkpoint();
+        rcnclr.reconcile(false, null, null, Clock.systemUTC())
+                .onComplete(context.failing(error -> context.verify(() -> {
+                    // Verify the reconciliation failed with InvalidConfigurationException
+                    assertThat(error, instanceOf(InvalidConfigurationException.class));
+
+                    // Verify ENTIRE Entity Operator deployment is deleted before failure
+                    // even though only one operator has watchedNamespace configured
+
+                    assertThat(saCaptor.getAllValues().size(), is(1));
+                    assertThat(saCaptor.getValue(), is(nullValue()));
+
+                    assertThat(toSecretCaptor.getAllValues().size(), is(1));
+                    assertThat(toSecretCaptor.getValue(), is(nullValue()));
+                    assertThat(uoSecretCaptor.getAllValues().size(), is(1));
+                    assertThat(uoSecretCaptor.getValue(), is(nullValue()));
+
+                    assertThat(netPolicyCaptor.getAllValues().size(), is(1));
+                    assertThat(netPolicyCaptor.getValue(), is(nullValue()));
+
+                    assertThat(operatorRoleCaptor.getAllValues().size(), is(1));
+                    assertThat(operatorRoleCaptor.getValue(), is(nullValue()));
+
+                    assertThat(watchRoleCaptor.getAllValues().size(), is(1));
+                    assertThat(watchRoleCaptor.getValue(), is(nullValue()));
+
+                    // RoleBindings should be deleted (both cluster namespace and watched namespace)
+                    if (topicOperatorWatches) {
+                        assertThat(toRoleBindingCaptor.getAllValues().size(), is(2));
+                        assertThat(toRoleBindingCaptor.getAllValues().stream().allMatch(rb -> rb == null), is(true));
+                        assertThat(uoRoleBindingCaptor.getAllValues().size(), is(1));
+                        assertThat(uoRoleBindingCaptor.getValue(), is(nullValue()));
+                    } else {
+                        assertThat(toRoleBindingCaptor.getAllValues().size(), is(1));
+                        assertThat(toRoleBindingCaptor.getValue(), is(nullValue()));
+                        assertThat(uoRoleBindingCaptor.getAllValues().size(), is(2));
+                        assertThat(uoRoleBindingCaptor.getAllValues().stream().allMatch(rb -> rb == null), is(true));
+                    }
 
                     assertThat(toCmCaptor.getAllValues().size(), is(1));
                     assertThat(toCmCaptor.getValue(), is(nullValue()));
