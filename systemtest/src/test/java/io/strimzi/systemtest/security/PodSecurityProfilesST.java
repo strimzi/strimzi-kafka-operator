@@ -10,6 +10,11 @@ import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.SecurityContext;
 import io.fabric8.kubernetes.api.model.batch.v1.Job;
 import io.fabric8.kubernetes.api.model.batch.v1.JobBuilder;
+import io.skodjob.annotations.Desc;
+import io.skodjob.annotations.Label;
+import io.skodjob.annotations.Step;
+import io.skodjob.annotations.SuiteDoc;
+import io.skodjob.annotations.TestDoc;
 import io.skodjob.kubetest4j.resources.KubeResourceManager;
 import io.skodjob.kubetest4j.utils.KubeUtils;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
@@ -18,6 +23,7 @@ import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.annotations.RequiredMinKubeOrOcpBasedKubeVersion;
+import io.strimzi.systemtest.docs.TestDocsLabels;
 import io.strimzi.systemtest.resources.crd.KafkaComponents;
 import io.strimzi.systemtest.resources.operator.ClusterOperatorConfigurationBuilder;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
@@ -46,44 +52,36 @@ import java.util.List;
 import static io.strimzi.systemtest.TestTags.REGRESSION;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-/**
- * PodSecurityProfilesST provides tests for Pod Security profiles. In short, Pod security profiles are a mechanism used
- * in Pods or containers, which may prohibit some set of operations (e.g., running only as a non-root user, allowing
- * only some Volume types etc.).
- *
- * Test cases are design to verify common behaviour of Pod Security profiles. Specifically, (i.) we check if containers such
- * as Kafka, Entity Operator, KafkaBridge has properly set .securityContext (ii.) then we check if these
- * resources working and are stable with exchanging messages.
- */
 @Tag(REGRESSION)
+@SuiteDoc(
+    description = @Desc("Test suite for verifying Pod Security profiles with Strimzi operands, ensuring containers have properly set security contexts when using the restricted Pod Security provider class."),
+    beforeTestSteps = {
+        @Step(value = "Deploy Cluster Operator with STRIMZI_POD_SECURITY_PROVIDER_CLASS set to restricted.", expected = "Cluster Operator is deployed with the restricted Pod Security provider.")
+    },
+    labels = {
+        @Label(value = TestDocsLabels.SECURITY)
+    }
+)
 public class PodSecurityProfilesST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(PodSecurityProfilesST.class);
 
-    /**
-     * @description This test case verifies common behaviour of Pod Security profiles.
-     *
-     * @steps
-     *  1. - Add restricted security profile to the namespace containing all resources, by applying according label
-     *     - Namespace is modified
-     *  2. - Deploy 3 Kafka Clusters, of which 2 will serve as targets and one as a source and for other purposes
-     *     - Kafka clusters are deployed
-     *  3. - Deploy all additional Operands which are to be tested, i.e., KafkaMirrorMaker2 KafkaBridge KafkaConnect, KafkaConnector.
-     *     - All components are deployed targeting respective Kafka Clusters
-     *  4. - Deploy producer which will produce data into Topic residing in Kafka Cluster serving as Source for KafkaMirrorMakers and is targeted by other Operands
-     *     - Messages are sent into KafkaTopic
-     *  5. - Verify that containers such as Kafka, Entity Operator, KafkaBridge has properly set .securityContext
-     *     - All containers and Pods have expected properties
-     *  6. - Verify KafkaConnect and KafkaConnector are working by checking presence of Data in file targeted by FileSink KafkaConnector
-     *     - Data are present here
-     *  7. - Verify Kafka and MirrorMakers by Deploy kafka Consumers in respective target Kafka Clusters targeting KafkaTopics created by mirroring
-     *     - Data are present here
-     *  8. - Deploy Kafka consumer with invalid configuration regarding, i.e., without pod security profile
-     *     - Consumer is unable to communicate correctly with Kafka
-     *
-     * @usecase
-     *  - security-profiles
-     */
+    @TestDoc(
+        description = @Desc("Test verifying that all Strimzi operands function correctly under the Kubernetes restricted Pod Security profile, including proper security context generation for all containers and successful message exchange across Kafka, KafkaConnect, KafkaBridge, and KafkaMirrorMaker2 components."),
+        steps = {
+            @Step(value = "Label the test namespace with pod-security.kubernetes.io/enforce: restricted.", expected = "Namespace is labeled with restricted Pod Security profile."),
+            @Step(value = "Deploy three Kafka clusters: one source and two targets for MirrorMaker2.", expected = "Kafka clusters are deployed."),
+            @Step(value = "Deploy KafkaConnect with file plugin, KafkaBridge, KafkaMirrorMaker2, and a FileSink KafkaConnector.", expected = "All additional operands are deployed."),
+            @Step(value = "Produce and consume messages in the source Kafka cluster using clients with restricted security profile applied.", expected = "Messages are produced and consumed successfully."),
+            @Step(value = "Verify that all Pod containers for Kafka, KafkaConnect, KafkaBridge, and KafkaMirrorMaker2 have proper security context settings.", expected = "All containers have expected security context properties."),
+            @Step(value = "Verify KafkaConnect FileSink connector received messages.", expected = "Messages are present in the sink file."),
+            @Step(value = "Verify KafkaMirrorMaker2 mirrored messages to the target cluster.", expected = "Messages are present in the target cluster."),
+            @Step(value = "Deploy a producer without restricted security profile and verify it fails.", expected = "Producer fails due to Pod Security profile violation.")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.SECURITY)
+        }
+    )
     @ParallelNamespaceTest
     @RequiredMinKubeOrOcpBasedKubeVersion(kubeVersion = 1.23, ocpBasedKubeVersion = 1.24)
     void testOperandsWithRestrictedSecurityProfile() {
