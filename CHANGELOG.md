@@ -18,6 +18,14 @@
 ### Major changes, deprecations, and removals
 
 * The entity-operator healthcheck port names have been renamed from `healthcheck` to `healthcheck-to` (topic-operator) and `healthcheck-uo` (user-operator) to avoid duplicate port name warnings in Kubernetes. If you reference these port names in custom `PodMonitor`, `ServiceMonitor`, `NetworkPolicy`, or similar resources, you will need to update them.
+* **Entity Operator cross-namespace watching is now controlled by the `STRIMZI_ENTITY_OPERATOR_WATCHED_NAMESPACE_ENABLED` environment variable in the Cluster Operator.**
+  **This feature is now disabled by default.**
+  If you have `watchedNamespace` configured in your Kafka CR's Entity Operator sections and it differs from the cluster namespace, you must set `STRIMZI_ENTITY_OPERATOR_WATCHED_NAMESPACE_ENABLED=true` in the Cluster Operator deployment:
+  ```yaml
+  env:
+    - name: STRIMZI_ENTITY_OPERATOR_WATCHED_NAMESPACE_ENABLED
+      value: "true"
+  ```
 
 ## 1.0.0
 

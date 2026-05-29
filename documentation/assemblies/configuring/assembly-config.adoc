@@ -88,6 +88,8 @@ include::../../modules/configuring/ref-kafka-entity-operator.adoc[leveloffset=+1
 include::../../modules/configuring/con-configuring-topic-operator.adoc[leveloffset=+2]
 //user operator config
 include::../../modules/configuring/con-configuring-user-operator.adoc[leveloffset=+2]
+//watched namespace config for topic and user operators
+include::../../modules/configuring/proc-configuring-entity-operator-watched-namespace.adoc[leveloffset=+2]
 
 //cluster operator config env vars
 include::../../modules/operators/con-configuring-cluster-operator.adoc[leveloffset=+1]

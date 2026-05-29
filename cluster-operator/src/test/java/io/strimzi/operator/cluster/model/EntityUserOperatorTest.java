@@ -284,7 +284,7 @@ public class EntityUserOperatorTest {
         assertThat(binding.getMetadata().getAnnotations().get("anno-1"), is("value-1"));
 
         assertThat(binding.getRoleRef().getKind(), is("Role"));
-        assertThat(binding.getRoleRef().getName(), is("my-cluster-entity-operator"));
+        assertThat(binding.getRoleRef().getName(), is("my-cluster-entity-operator")); // Same namespace = shared Role
     }
 
     @Test
