@@ -1,4 +1,0 @@
-apiVersion: kafka.strimzi.io/v1
-kind: KafkaUser
-metadata:
-  name: "my-user"
