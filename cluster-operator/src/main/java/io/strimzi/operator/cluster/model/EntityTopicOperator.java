@@ -50,8 +50,6 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
     private static final String LOG_AND_METRICS_CONFIG_VOLUME_MOUNT = "/opt/topic-operator/custom-config/";
 
     // Certificates for the Entity Topic Operator
-    /* test */ static final String ETO_CERTS_VOLUME_NAME = "eto-certs";
-    /* test */ static final String ETO_CERTS_VOLUME_MOUNT = "/etc/eto-certs/";
     /* test */ static final String ETO_CA_CERTS_VOLUME_NAME = "cluster-ca-certs";
     /* test */ static final String ETO_CA_CERTS_VOLUME_MOUNT = "/etc/cluster-ca-certs/";
 
