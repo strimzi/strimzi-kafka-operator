@@ -49,7 +49,7 @@ public class EntityUserOperator extends AbstractModel implements SupportsLogging
 
     // Port configuration
     protected static final int HEALTHCHECK_PORT = 8081;
-    protected static final String HEALTHCHECK_PORT_NAME = "healthcheck";
+    protected static final String HEALTHCHECK_PORT_NAME = "healthcheck-uo";
 
     // User Operator configuration keys
     /* test */ static final String ENV_VAR_RESOURCE_LABELS = "STRIMZI_LABELS";

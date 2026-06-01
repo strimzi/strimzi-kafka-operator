@@ -14,4 +14,6 @@ spec:
       - myproject
   podMetricsEndpoints:
   - path: /metrics
-    port: healthcheck
+    port: healthcheck-to
+  - path: /metrics
+    port: healthcheck-uo
