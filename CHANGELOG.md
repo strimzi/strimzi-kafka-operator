@@ -2,8 +2,9 @@
 
 ## 1.1.0
 
+* Add support for Apache Kafka 4.3.0 and 4.2.1
+* Remove support for Kafka 4.1.x
 * Reconcile Cruise Control before Entity Operator when both are enabled.
-* Add support for Apache Kafka 4.3.0 and remove support for Kafka 4.1.x
 * New Cluster operator configuration option `STRIMZI_PKCS12_KEYSTORE_GENERATION` to disable generating PKCS12 stores in CA and Kafka user `Secret` resources.
 * Support for Gateway API-based `type: tlsroute` listener
 * Support for dependency scope configuration of Maven artifacts in Kafka Connect Build
