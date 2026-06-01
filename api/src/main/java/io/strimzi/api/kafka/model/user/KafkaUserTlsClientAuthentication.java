@@ -7,7 +7,6 @@ package io.strimzi.api.kafka.model.user;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.strimzi.api.kafka.model.common.Constants;
-import io.strimzi.crdgenerator.annotations.CelValidation;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.Minimum;
 import io.sundr.builder.annotations.Buildable;
@@ -22,16 +21,6 @@ import lombok.ToString;
 @JsonPropertyOrder({"type", "validityDays", "renewalDays"})
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
-@CelValidation(rules = {
-    @CelValidation.CelValidationRule(
-        rule = "has(self.renewalDays) == has(self.validityDays)",
-        message = "Both 'validityDays' and 'renewalDays' must be set together, or both must be unset."
-        ),
-    @CelValidation.CelValidationRule(
-        rule = "!has(self.renewalDays) || !has(self.validityDays) || self.renewalDays < self.validityDays",
-        message = "'renewalDays' must be less than 'validityDays'."
-        )
-})
 public class KafkaUserTlsClientAuthentication extends KafkaUserAuthentication {
     public static final String TYPE_TLS = "tls";
 

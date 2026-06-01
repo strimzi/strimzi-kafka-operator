@@ -20,6 +20,14 @@ import java.util.Map;
     @CelValidation.CelValidationRule(
         rule = "self.type == 'tls' || (!has(self.validityDays) && !has(self.renewalDays))",
         message = "'validityDays' and 'renewalDays' can be configured only with 'type: tls'"
+        ),
+    @CelValidation.CelValidationRule(
+        rule = "self.type != 'tls' || (has(self.renewalDays) == has(self.validityDays))",
+        message = "Both 'validityDays' and 'renewalDays' must be set together, or both must be unset."
+        ),
+    @CelValidation.CelValidationRule(
+        rule = "self.type != 'tls' || !has(self.renewalDays) || !has(self.validityDays) || self.renewalDays < self.validityDays",
+        message = "'renewalDays' must be less than 'validityDays'."
         )
 })
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME,
