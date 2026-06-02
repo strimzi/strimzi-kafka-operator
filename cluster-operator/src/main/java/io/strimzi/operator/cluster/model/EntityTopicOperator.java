@@ -59,7 +59,7 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
 
     // Port configuration
     protected static final int HEALTHCHECK_PORT = 8080;
-    protected static final String HEALTHCHECK_PORT_NAME = "healthcheck";
+    protected static final String HEALTHCHECK_PORT_NAME = "healthcheck-to";
     protected static final int CRUISE_CONTROL_API_PORT = 9090;
 
     // Topic Operator configuration keys

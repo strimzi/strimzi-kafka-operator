@@ -15,7 +15,7 @@
 
 ### Major changes, deprecations, and removals
 
-* n/a
+* The entity-operator healthcheck port names have been renamed from `healthcheck` to `healthcheck-to` (topic-operator) and `healthcheck-uo` (user-operator) to avoid duplicate port name warnings in Kubernetes. If you reference these port names in custom `PodMonitor`, `ServiceMonitor`, `NetworkPolicy`, or similar resources, you will need to update them.
 
 ## 1.0.0
 
