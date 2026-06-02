@@ -501,6 +501,19 @@ public class EntityOperatorTest {
     }
 
     @Test
+    public void testContainerPortNameUniqueness() {
+        List<Container> containers = ENTITY_OPERATOR.createContainers(null);
+
+        List<String> portNames = containers.stream()
+                .flatMap(container -> container.getPorts().stream())
+                .map(port -> port.getName())
+                .toList();
+
+        assertThat("Port names across entity-operator containers must be unique",
+                portNames.size(), is((int) portNames.stream().distinct().count()));
+    }
+
+    @Test
     public void testTopicOperatorContainerEnvVars() {
         ContainerEnvVar envVar1 = new ContainerEnvVar();
         String testEnvOneKey = "TEST_ENV_1";
