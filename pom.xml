@@ -1015,6 +1015,12 @@
                 <version>${maven.dependency.version}</version>
                 <executions>
                     <execution>
+                        <id>resolve-mockito-jar</id>
+                        <goals>
+                            <goal>properties</goal>
+                        </goals>
+                    </execution>
+                    <execution>
                         <id>analyze</id>
                         <goals>
                             <goal>analyze-only</goal>
@@ -1105,15 +1111,6 @@
             <id>coverage</id>
             <build>
                 <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-surefire-plugin</artifactId>
-                        <version>${maven.surefire.version}</version>
-                        <configuration>
-                            <!--suppress UnresolvedMavenProperty -->
-                            <argLine>${surefireArgLine}</argLine>
-                        </configuration>
-                    </plugin>
                 </plugins>
             </build>
         </profile>
