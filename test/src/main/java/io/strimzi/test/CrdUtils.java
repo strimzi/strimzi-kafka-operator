@@ -8,15 +8,9 @@ import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinition;
 import io.fabric8.kubernetes.client.KubernetesClient;
 
-import java.io.ByteArrayInputStream;
-import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
-
-import static org.hamcrest.CoreMatchers.anyOf;
-import static org.hamcrest.CoreMatchers.containsStringIgnoringCase;
-import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * Class with methods and fields useful for testing CRD related things
@@ -189,7 +183,7 @@ public final class CrdUtils {
     }
 
     /**
-     * Creates a custom resource from the given YAML content, then deletes it. If creation fails the deletion is still
+     * Creates a custom resource from the given YAML content, then deletes it. If creation fails, the deletion is still
      * attempted and the original creation exception is rethrown.
      *
      * @param client        Kubernetes client
@@ -200,12 +194,12 @@ public final class CrdUtils {
         RuntimeException deletionException = null;
 
         try {
-            client.load(new ByteArrayInputStream(yamlContent.getBytes(StandardCharsets.UTF_8))).create();
+            client.resource(yamlContent).create();
         } catch (RuntimeException t) {
             creationException = t;
         } finally {
             try {
-                client.load(new ByteArrayInputStream(yamlContent.getBytes(StandardCharsets.UTF_8))).delete();
+                client.resource(yamlContent).delete();
             } catch (RuntimeException t) {
                 deletionException = t;
             }
@@ -218,25 +212,6 @@ public final class CrdUtils {
             throw creationException;
         } else if (deletionException != null) {
             throw deletionException;
-        }
-    }
-
-    /**
-     * Asserts that the given Kubernetes API server error message indicates one or more required properties are missing.
-     * The exact phrasing varies across Kubernetes versions, so any of the known variants is accepted.
-     *
-     * @param message               The error message returned by the API server
-     * @param requiredProperties    The properties expected to be reported as missing
-     */
-    public static void assertMissingRequiredPropertiesMessage(String message, String... requiredProperties) {
-        for (String requiredProperty : requiredProperties) {
-            assertThat("Could not find " + requiredProperty + " in message: " + message, message, anyOf(
-                    containsStringIgnoringCase(requiredProperty + " in body is required"),
-                    containsStringIgnoringCase(requiredProperty + ": Required value"),
-                    containsStringIgnoringCase(requiredProperty.substring(requiredProperty.lastIndexOf(".") + 1) + ": Required value"),
-                    containsStringIgnoringCase("missing required field \"" + requiredProperty + "\""),
-                    containsStringIgnoringCase("missing required field \"" + requiredProperty.substring(requiredProperty.lastIndexOf(".") + 1) + "\"")
-            ));
         }
     }
 }
