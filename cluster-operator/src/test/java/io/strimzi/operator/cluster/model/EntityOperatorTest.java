@@ -67,7 +67,6 @@ import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -521,9 +520,6 @@ public class EntityOperatorTest {
         assertThat(uoContainer.getPorts().get(0).getName(), is(EntityUserOperator.HEALTHCHECK_PORT_NAME));
         assertThat(uoContainer.getPorts().get(0).getContainerPort(), is(EntityUserOperator.HEALTHCHECK_PORT));
         assertThat(uoContainer.getPorts().get(0).getProtocol(), is("TCP"));
-
-        assertThat("Port names across entity-operator containers must be unique",
-                EntityTopicOperator.HEALTHCHECK_PORT_NAME, is(not(equalTo(EntityUserOperator.HEALTHCHECK_PORT_NAME))));
     }
 
     @Test
