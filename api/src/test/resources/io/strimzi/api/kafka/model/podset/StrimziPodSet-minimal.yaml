@@ -1,0 +1,9 @@
+apiVersion: core.strimzi.io/v1
+kind: StrimziPodSet
+metadata:
+  name: minimal-strimzi-pod-set
+spec:
+  selector:
+    matchLabels:
+      label: value
+  pods: []

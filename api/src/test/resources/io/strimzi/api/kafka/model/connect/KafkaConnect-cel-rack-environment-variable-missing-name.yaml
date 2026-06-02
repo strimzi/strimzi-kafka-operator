@@ -1,0 +1,14 @@
+apiVersion: kafka.strimzi.io/v1
+kind: KafkaConnect
+metadata:
+  name: my-connect
+spec:
+  replicas: 1
+  bootstrapServers: kafka:9092
+  groupId: my-connect-group
+  configStorageTopic: my-connect-configs
+  statusStorageTopic: my-connect-status
+  offsetStorageTopic: my-connect-offsets
+  rack:
+    type: environment-variable
+    envVarName: ""

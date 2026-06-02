@@ -1,0 +1,38 @@
+---
+apiVersion: "kafka.strimzi.io/v1"
+kind: "KafkaMirrorMaker2"
+metadata:
+  name: "my-mirror-maker-2"
+spec:
+  version: "4.2.0"
+  replicas: 1
+  target:
+    alias: "cluster-b"
+    bootstrapServers: "cluster-b-kafka-bootstrap:9092"
+    groupId: "my-mirror-maker-2-group"
+    configStorageTopic: "my-mirror-maker-2-config"
+    statusStorageTopic: "my-mirror-maker-2-status"
+    offsetStorageTopic: "my-mirror-maker-2-offset"
+    config:
+      config.storage.replication.factor: -1
+      offset.storage.replication.factor: -1
+      status.storage.replication.factor: -1
+  mirrors:
+  - source:
+      alias: "cluster-a"
+      bootstrapServers: "cluster-a-kafka-bootstrap:9092"
+    sourceConnector:
+      tasksMax: 1
+      config:
+        replication.factor: -1
+        offset-syncs.topic.replication.factor: -1
+        sync.topic.acls.enabled: "false"
+        refresh.topics.interval.seconds: 600
+    checkpointConnector:
+      tasksMax: 1
+      config:
+        checkpoints.topic.replication.factor: -1
+        sync.group.offsets.enabled: "false"
+        refresh.groups.interval.seconds: 600
+    topicsPattern: ".*"
+    groupsPattern: ".*"

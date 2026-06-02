@@ -1,0 +1,8 @@
+---
+apiVersion: "kafka.strimzi.io/v1"
+kind: "KafkaConnector"
+metadata:
+  labels:
+    strimzi.io/cluster: "my-connect-cluster"
+  name: "minimal-connector"
+spec: {}
