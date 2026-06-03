@@ -13,6 +13,7 @@ import io.strimzi.api.kafka.model.bridge.KafkaBridge;
 import io.strimzi.api.kafka.model.connect.KafkaConnect;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2;
+import io.strimzi.api.kafka.model.user.KafkaUser;
 import io.strimzi.test.CrdUtils;
 import io.strimzi.test.ReadWriteUtils;
 import io.strimzi.test.TestUtils;
@@ -61,6 +62,10 @@ public class CelValidationIT implements TestSeparator {
         final String valueFromRequired = "valueFrom property is required";
         final String ccStrimziTypeNotSupported = "value type not supported";
 
+        final String validityRenewalDaysSetTogether = "Both 'validityDays' and 'renewalDays' must be set together, or both must be unset.";
+        final String renewalMustBeLessThanValidity = "'renewalDays' must be less than 'validityDays'.";
+        final String validityRenewalMustBeSetUnderTls = "'validityDays' and 'renewalDays' can be configured only with 'type: tls'";
+
         return Stream.of(
                 Arguments.of(Kafka.class, "Kafka-cel-rack-topology-label-missing-key.yaml", topologyKeyRequired),
                 Arguments.of(Kafka.class, "Kafka-cel-rack-environment-variable-missing-name.yaml", envVarNameRequired),
@@ -78,7 +83,12 @@ public class CelValidationIT implements TestSeparator {
 
                 Arguments.of(KafkaMirrorMaker2.class, "KafkaMirrorMaker2-cel-rack-topology-label-missing-key.yaml", topologyKeyRequired),
                 Arguments.of(KafkaMirrorMaker2.class, "KafkaMirrorMaker2-cel-rack-environment-variable-missing-name.yaml", envVarNameRequired),
-                Arguments.of(KafkaMirrorMaker2.class, "KafkaMirrorMaker2-cel-metrics-jmx-missing-valueFrom.yaml", valueFromRequired)
+                Arguments.of(KafkaMirrorMaker2.class, "KafkaMirrorMaker2-cel-metrics-jmx-missing-valueFrom.yaml", valueFromRequired),
+
+                Arguments.of(KafkaUser.class, "KafkaUser-cel-missing-renewal-days.yaml", validityRenewalDaysSetTogether),
+                Arguments.of(KafkaUser.class, "KafkaUser-cel-missing-validity-days.yaml", validityRenewalDaysSetTogether),
+                Arguments.of(KafkaUser.class, "KafkaUser-cel-renewal-higher-than-validity.yaml", renewalMustBeLessThanValidity),
+                Arguments.of(KafkaUser.class, "KafkaUser-cel-validity-renewal-configured-outside-tls.yaml", validityRenewalMustBeSetUnderTls)
         );
     }
 

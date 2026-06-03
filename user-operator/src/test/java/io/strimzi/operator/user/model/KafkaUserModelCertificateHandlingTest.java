@@ -6,6 +6,7 @@ package io.strimzi.operator.user.model;
 
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
+import io.strimzi.api.kafka.model.user.KafkaUserTlsClientAuthentication;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.certs.CertManager;
 import io.strimzi.operator.common.Annotations;
@@ -204,6 +205,7 @@ public class KafkaUserModelCertificateHandlingTest {
 
         protected MockKafkaUserModel() {
             super(ResourceUtils.NAMESPACE, ResourceUtils.NAME, Labels.EMPTY, null);
+            this.authentication = new KafkaUserTlsClientAuthentication();
         }
 
         @Override

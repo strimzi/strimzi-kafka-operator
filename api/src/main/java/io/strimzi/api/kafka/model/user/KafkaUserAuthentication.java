@@ -8,6 +8,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import io.strimzi.api.kafka.model.common.UnknownPropertyPreserving;
+import io.strimzi.crdgenerator.annotations.CelValidation;
 import io.strimzi.crdgenerator.annotations.Description;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -15,6 +16,20 @@ import lombok.ToString;
 import java.util.HashMap;
 import java.util.Map;
 
+@CelValidation(rules = {
+    @CelValidation.CelValidationRule(
+        rule = "self.type == 'tls' || (!has(self.validityDays) && !has(self.renewalDays))",
+        message = "'validityDays' and 'renewalDays' can be configured only with 'type: tls'"
+        ),
+    @CelValidation.CelValidationRule(
+        rule = "self.type != 'tls' || (has(self.renewalDays) == has(self.validityDays))",
+        message = "Both 'validityDays' and 'renewalDays' must be set together, or both must be unset."
+        ),
+    @CelValidation.CelValidationRule(
+        rule = "self.type != 'tls' || !has(self.renewalDays) || !has(self.validityDays) || self.renewalDays < self.validityDays",
+        message = "'renewalDays' must be less than 'validityDays'."
+        )
+})
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME,
         include = JsonTypeInfo.As.EXISTING_PROPERTY,
         property = "type")

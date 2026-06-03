@@ -170,12 +170,12 @@ public class SecretUtils {
         waitForSecretReady(namespaceName, name, () -> { });
     }
 
-    public static void waitForCertToChange(String namespaceName, String originalCert, String secretName) {
+    public static void waitForCertToChange(String namespaceName, String originalCert, String secretName, String fieldName) {
         LOGGER.info("Waiting for Secret: {}/{} certificate to be replaced", namespaceName, secretName);
         TestUtils.waitFor("cert to be replaced", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.TIMEOUT_FOR_CLUSTER_STABLE, () -> {
             Secret secret = KubeResourceManager.get().kubeClient().getClient().secrets().inNamespace(namespaceName).withName(secretName).get();
-            if (secret != null && secret.getData() != null && secret.getData().containsKey("ca.crt")) {
-                String currentCert = Util.decodeFromBase64((secret.getData().get("ca.crt")));
+            if (secret != null && secret.getData() != null && secret.getData().containsKey(fieldName)) {
+                String currentCert = Util.decodeFromBase64((secret.getData().get(fieldName)));
                 boolean changed = !originalCert.equals(currentCert);
                 if (changed) {
                     LOGGER.info("Certificate in Secret: {}/{} changed, was: {}, is now: {}", namespaceName, secretName, originalCert, currentCert);
