@@ -157,6 +157,26 @@ public final class CrdUtils {
     }
 
     /**
+     * Creates a CRD resource in the Kubernetes cluster from a YAML string; useful when the YAML is generated in
+     * memory (e.g., by the CRD generator) and there is no on-disk file to point at.
+     *
+     * @param client    Kubernetes client
+     * @param crdName   Name of the CRD
+     * @param crdYaml   CRD YAML content
+     */
+    public static void createCrdFromYaml(KubernetesClient client, String crdName, String crdYaml)   {
+        if (client.apiextensions().v1().customResourceDefinitions().withName(crdName).get() != null) {
+            deleteCrd(client, crdName);
+        }
+
+        client.resource(crdYaml).create();
+        client.apiextensions().v1()
+                .customResourceDefinitions()
+                .withName(crdName)
+                .waitUntilCondition(CrdUtils::isCrdEstablished, 10, TimeUnit.SECONDS);
+    }
+
+    /**
      * Checks if the CRD has been established
      *
      * @param crd   The CRD resource
