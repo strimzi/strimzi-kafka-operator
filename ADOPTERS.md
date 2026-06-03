@@ -19,6 +19,7 @@ Please let us know by adding your company name and, if you want, a description o
 * [Atruvia](https://atruvia.de/)
 * [Procure Ai](https://www.procure.ai/)
 * [LittleHorse](https://littlehorse.dev/)
+* [DPG Media](https://www.dpgmediagroup.com/)
 * [Decathlon](https://digital.decathlon.net/)
     * [Seamless data exchange with Kafka Connect and Strimzi on Kubernetes at Decathlon](https://medium.com/decathlondigital/seamless-data-exchange-with-kafka-connect-and-strimzi-on-kubernetes-at-decathlon-e6f81d034535)
 * [Skillsoft](https://www.skillsoft.com/)
