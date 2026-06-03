@@ -45,15 +45,15 @@ metadata:
 spec:
   authentication:
     type: tls
-    validityDays: 30 # <1>
-    renewalDays: 10 # <2>
-  # ...
+    validityDays: 30
+    renewalDays: 10
+ # ...
 ----
-<1> (Optional) Number of days for which the user certificate will be valid. The number has to be bigger than 0 and than `renewalDays`.
-<2> (Optional) Number of days before certificate expiration when the user certificate should be renewed. The number should be bigger than 0 and smaller than `validityDays`.
+* `validityDays` defines the number of days for which the user certificate is valid. The value must be greater than 0 and greater than `renewalDays`.
+* `renewalDays` defines the number of days before certificate expiration when the user certificate is renewed. The value must be greater than 0 and less than `validityDays`.
 
-The `validityDays` and `renewalDays` have to be set together, or none of them should be configured.
-If not configured, Clients CA configuration of validity and renewal days is used.
+The `validityDays` and `renewalDays` properties must be configured together.
+If they are not configured, the Clients CA validity and renewal day settings are used.
 
 The authentication type must match the equivalent configuration for the `Kafka` listener used to access the Kafka cluster.
 

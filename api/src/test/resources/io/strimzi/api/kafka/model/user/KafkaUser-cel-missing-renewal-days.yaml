@@ -1,0 +1,9 @@
+---
+apiVersion: "kafka.strimzi.io/v1"
+kind: "KafkaUser"
+metadata:
+  name: my-user
+spec:
+  authentication:
+    type: tls
+    validityDays: 10

@@ -1,0 +1,10 @@
+---
+apiVersion: "kafka.strimzi.io/v1"
+kind: "KafkaUser"
+metadata:
+  name: my-user
+spec:
+  authentication:
+    type: scram-sha-512
+    renewalDays: 10
+    validityDays: 20

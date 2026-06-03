@@ -571,14 +571,14 @@ class UserST extends AbstractST {
     @TestDoc(
         description = @Desc("Verifies functionality of the mTLS `validityDays` and `renewalDays` configured inside each KafkaUser."),
         steps = {
-            @Step(value = "Create `KafkaTopic` to which we will send (and from which we will receive) messages - created in existing Kafka cluster.", expected = "`KafkaTopic` is created."),
-            @Step(value = "Create `KafkaUser` with TLS authentication; without configuring the `validityDays` and `renewalDays` - values from User Operator are taken.", expected = "`KafkaUser` is created with values from User Operator."),
-            @Step(value = "Obtain the `KafkaUser`'s `Secret` and check validity period of the user certificate.", expected = "Validity period should be default - 200 days."),
-            @Step(value = "Do message transmission to verify, that we are able to connect to Kafka cluster with the TLS `KafkaUser`.", expected = "Messages are successfully sent and received."),
-            @Step(value = "Change the `validityDays` and `renewalDays` in the `KafkaUser` `.spec.authentication` to 40 and 20.", expected = "The `validityDays` and `renewalDays` should be changed in the `KafkaUser`."),
-            @Step(value = "Because of the change of `validityDays` and `renewalDays` (and because of the values inside), the certificate will be renewed", expected = "The user certificate was renewed."),
-            @Step(value = "Obtain the `KafkaUser`'s `Secret` again and check the validity period of the user certificate.", expected = "Validity period should be 40 days."),
-            @Step(value = "Do message transmission again to verify, that we are able to connect to Kafka cluster with the new user's certificate.", expected = "Messages are successfully sent and received using new certificate."),
+            @Step(value = "Create a `KafkaTopic` in the existing Kafka cluster to send and receive messages.", expected = "`KafkaTopic` is created."),
+            @Step(value = "Create a `KafkaUser` with TLS authentication without configuring `validityDays` and `renewalDays`. The values from the User Operator are used.", expected = "`KafkaUser` is created with values from the User Operator."),
+            @Step(value = "Obtain the `KafkaUser`'s `Secret` and check the validity period of the user certificate.", expected = "The default validity period is 200 days."),
+            @Step(value = "Send and receive messages to verify connection to the Kafka cluster using the TLS `KafkaUser`.", expected = "Messages are successfully sent and received."),
+            @Step(value = "Change the `validityDays` and `renewalDays` in `KafkaUser` `.spec.authentication` to 40 and 20.", expected = "The `validityDays` and `renewalDays` are updated in the `KafkaUser`."),
+            @Step(value = "The certificate is renewed automatically after the `validityDays` and `renewalDays` values are updated.", expected = "The user certificate is renewed."),
+            @Step(value = "Obtain the `KafkaUser` `Secret` again and check the validity period of the user certificate.", expected = "Validity period is 40 days."),
+            @Step(value = "Send and receive messages again to verify connection to the Kafka cluster using the new user certificate.", expected = "Messages are successfully sent and received using the new certificate."),
         },
         labels = {
             @Label(TestDocsLabels.USER_OPERATOR)

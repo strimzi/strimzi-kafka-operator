@@ -35,10 +35,10 @@ public class KafkaUserTlsClientAuthentication extends KafkaUserAuthentication {
     }
 
     @Description(
-        "Number of days for which the user certificate should be valid. " +
-        "It has to be configured together with `renewalDays`, or none of them should be configured." +
-        "The number should be bigger than 0 and than `renewalDays`." +
-        "If not configured, Clients CA configuration is used."
+        "Number of days for which the user certificate is valid. " +
+        "Both this property and `renewalDays` must be configured together." +
+        "The value must be greater than 0 and greater than `renewalDays`." +
+        "If not configured, the Clients CA configuration is used."
     )
     @Minimum(1)
     @JsonInclude(value = JsonInclude.Include.NON_NULL)
@@ -51,10 +51,10 @@ public class KafkaUserTlsClientAuthentication extends KafkaUserAuthentication {
     }
 
     @Description(
-        "Number of days before certificate expiration when the user certificate should be renewed. " +
-        "It has to be configured together with `validityDays`, or none of them should be configured." +
-        "The number should be bigger than 0 and smaller than `validityDays`." +
-        "If not configured, Clients CA configuration is used."
+        "Number of days before certificate expiration when the user certificate is renewed. " +
+        "Both this property and `validityDays` must be configured together." +
+        "The value must be greater than 0 and less than `validityDays`." +
+        "If not configured, the Clients CA configuration is used."
     )
     @Minimum(1)
     @JsonInclude(value = JsonInclude.Include.NON_NULL)

@@ -105,14 +105,14 @@
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Create `KafkaTopic` to which we will send (and from which we will receive) messages - created in existing Kafka cluster. | `KafkaTopic` is created. |
-| 2. | Create `KafkaUser` with TLS authentication; without configuring the `validityDays` and `renewalDays` - values from User Operator are taken. | `KafkaUser` is created with values from User Operator. |
-| 3. | Obtain the `KafkaUser`'s `Secret` and check validity period of the user certificate. | Validity period should be default - 200 days. |
-| 4. | Do message transmission to verify, that we are able to connect to Kafka cluster with the TLS `KafkaUser`. | Messages are successfully sent and received. |
-| 5. | Change the `validityDays` and `renewalDays` in the `KafkaUser` `.spec.authentication` to 40 and 20. | The `validityDays` and `renewalDays` should be changed in the `KafkaUser`. |
-| 6. | Because of the change of `validityDays` and `renewalDays` (and because of the values inside), the certificate will be renewed | The user certificate was renewed. |
-| 7. | Obtain the `KafkaUser`'s `Secret` again and check the validity period of the user certificate. | Validity period should be 40 days. |
-| 8. | Do message transmission again to verify, that we are able to connect to Kafka cluster with the new user's certificate. | Messages are successfully sent and received using new certificate. |
+| 1. | Create a `KafkaTopic` in the existing Kafka cluster to send and receive messages. | `KafkaTopic` is created. |
+| 2. | Create a `KafkaUser` with TLS authentication without configuring `validityDays` and `renewalDays`. The values from the User Operator are used. | `KafkaUser` is created with values from the User Operator. |
+| 3. | Obtain the `KafkaUser`'s `Secret` and check the validity period of the user certificate. | The default validity period is 200 days. |
+| 4. | Send and receive messages to verify connection to the Kafka cluster using the TLS `KafkaUser`. | Messages are successfully sent and received. |
+| 5. | Change the `validityDays` and `renewalDays` in `KafkaUser` `.spec.authentication` to 40 and 20. | The `validityDays` and `renewalDays` are updated in the `KafkaUser`. |
+| 6. | The certificate is renewed automatically after the `validityDays` and `renewalDays` values are updated. | The user certificate is renewed. |
+| 7. | Obtain the `KafkaUser` `Secret` again and check the validity period of the user certificate. | Validity period is 40 days. |
+| 8. | Send and receive messages again to verify connection to the Kafka cluster using the new user certificate. | Messages are successfully sent and received using the new certificate. |
 
 **Labels:**
 
