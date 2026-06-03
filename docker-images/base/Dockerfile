@@ -1,10 +1,36 @@
 #####
-# Build the helper container image for downloading prerequisites
+# Install runtime dependencies into a chroot and download prerequisites
 #####
-FROM registry.access.redhat.com/ubi9/ubi-minimal:latest AS downloader
+FROM registry.access.redhat.com/ubi10/ubi-minimal:latest AS builder
 
+ARG JAVA_VERSION=21
 ARG TARGETOS
 ARG TARGETARCH
+
+RUN mkdir -p /mnt/rootfs && \
+    microdnf install \
+        --installroot /mnt/rootfs \
+        --noplugins \
+        --config /etc/dnf/dnf.conf \
+        --setopt=cachedir=/var/cache/microdnf \
+        --setopt=reposdir=/etc/yum.repos.d \
+        --setopt=varsdir=/etc/dnf \
+        --setopt=install_weak_deps=0 \
+        --setopt=tsflags=nodocs \
+        --releasever 10 \
+        -y \
+        java-${JAVA_VERSION}-openjdk-headless \
+        openssl \
+        bash \
+        tzdata \
+    && microdnf \
+        --installroot /mnt/rootfs \
+        --noplugins \
+        --config /etc/dnf/dnf.conf \
+        --setopt=cachedir=/var/cache/microdnf \
+        --setopt=reposdir=/etc/yum.repos.d \
+        --setopt=varsdir=/etc/dnf \
+        clean all
 
 #####
 # Get Tini
@@ -35,9 +61,9 @@ RUN set -ex; \
     fi
 
 #####
-# Build the main container image
+# Build the main container image on distroless base
 #####
-FROM registry.access.redhat.com/ubi9/ubi-minimal:latest
+FROM registry.access.redhat.com/ubi10/ubi-micro:latest
 
 LABEL org.opencontainers.image.source='https://github.com/strimzi/strimzi-kafka-operator'
 
@@ -55,20 +81,14 @@ LABEL name='base' \
 
 USER root
 
-RUN microdnf update -y \
-    && microdnf --setopt=install_weak_deps=0 --setopt=tsflags=nodocs install -y  \
-            # Needed to run Java applications \
-            java-${JAVA_VERSION}-openjdk-headless \
-            # Needed to work with TLS certificates in our shell scripts as well as from our own Java code \
-            openssl \
-            # Needed to add non-root users to our container images \
-            shadow-utils \
-    && microdnf reinstall -y tzdata \
-    && microdnf clean all -y
+#####
+# Copy installed packages from builder chroot
+#####
+COPY --from=builder /mnt/rootfs /
+
+#####
+# Copy Tini from the builder stage
+#####
+COPY --from=builder /usr/bin/tini /usr/bin/tini
 
 ENV JAVA_HOME=/usr/lib/jvm/jre-${JAVA_VERSION}
-
-#####
-# Copy Tini from the downloader stage
-#####
-COPY --from=downloader /usr/bin/tini /usr/bin/tini
