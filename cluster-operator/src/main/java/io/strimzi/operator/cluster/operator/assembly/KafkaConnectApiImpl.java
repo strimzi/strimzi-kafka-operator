@@ -131,8 +131,16 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
                         LOGGER.debugCr(reconciliation, "Got {} response to GET request to {}: {}", statusCode, path, json.asText());
                         return CompletableFuture.completedFuture(OBJECT_MAPPER.convertValue(json, type));
                     } else {
-                        LOGGER.debugCr(reconciliation, "Got {} response to GET request to {}", statusCode, path);
-                        return CompletableFuture.failedFuture(new ConnectRestException(response, tryToExtractErrorMessage(reconciliation, response.body())));
+                        LOGGER.debugCr(reconciliation, "Got unexpected {} response to GET request to {}. Ok status codes: {}",
+                                statusCode, path, okStatusCodes);
+                        String message;
+                        if (statusCode >= 200 && statusCode < 300) {
+                            // Unlisted 2xx: poll may get 200 before 404 after delete.
+                            message = "Unexpected HTTP status code " + statusCode;
+                        } else {
+                            message = tryToExtractErrorMessage(reconciliation, response.body());
+                        }
+                        return CompletableFuture.failedFuture(new ConnectRestException(response, message));
                     }
                 });
     }
