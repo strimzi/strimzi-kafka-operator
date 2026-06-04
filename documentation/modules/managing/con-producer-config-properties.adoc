@@ -19,7 +19,7 @@ Compression::
 By compressing messages before they are sent over the network, you can conserve network bandwidth and reduce disk storage requirements, but with the additional cost of increased CPU utilization due to the compression and decompression processes.
 Batching:: Adjusting the batch size and time intervals when the producer sends messages can affect throughput and latency. 
 Partitioning:: Partitioning strategies in the Kafka cluster can support producers through parallelism and load balancing, whereby producers can write to multiple partitions concurrently and each partition receives an equal share of messages. Other strategies might include topic replication for fault tolerance.
-Securing access:: Implement security measures for authentication, encryption, and authorization by setting up user accounts to xref:assembly-securing-access-{context}[manage secure access to Kafka].
+Securing access:: Implement security measures for authentication, encryption, and authorization by setting up user accounts to manage secure access to Kafka.
 
 == Basic producer configuration
 
@@ -36,21 +36,24 @@ In a basic producer configuration:
 [source,env]
 ----
 # ...
-bootstrap.servers=localhost:9092 <1>
-key.serializer=org.apache.kafka.common.serialization.StringSerializer <2>
-value.serializer=org.apache.kafka.common.serialization.StringSerializer <3>
-client.id=my-client <4>
-compression.type=gzip <5>
+bootstrap.servers=localhost:9092
+key.serializer=org.apache.kafka.common.serialization.StringSerializer
+value.serializer=org.apache.kafka.common.serialization.StringSerializer
+client.id=my-client
+compression.type=gzip
 # ...
 ----
-<1> (Required) Tells the producer to connect to a Kafka cluster using a _host:port_ bootstrap server address for a Kafka broker.
-The producer uses the address to discover and connect to all brokers in the cluster.
-Use a comma-separated list to specify two or three addresses in case a server is down, but it’s not necessary to provide a list of all the brokers in the cluster.
-<2> (Required) Serializer to transform the key of each message to bytes prior to them being sent to a broker.
-<3> (Required) Serializer to transform the value of each message to bytes prior to them being sent to a broker.
-<4> (Optional) The logical name for the client, which is used in logs and metrics to identify the source of a request.
-<5> (Optional) The codec for compressing messages, which are sent and might be stored in compressed format and then decompressed when reaching a consumer.
-Compression is useful for improving throughput and reducing the load on storage, but might not be suitable for low latency applications where the cost of compression or decompression could be prohibitive.
+
+* `bootstrap.servers` (Required) defines the _host:port_ bootstrap server address for connecting to the Kafka cluster.
+The producer uses this address to discover and connect to all brokers in the cluster.
+Use a comma-separated list to specify two or three addresses for resiliency if a broker is unavailable.
+You do not need to specify every broker in the cluster.
+* `key.serializer` (Required) defines the serializer used to transform message keys into bytes before they are sent to a broker.
+* `value.serializer` (Required) defines the serializer used to transform message values into bytes before they are sent to a broker.
+* `client.id` (Optional) defines the logical name for the client, which is used in logs and metrics to identify the source of a request.
+* `compression.type` (Optional) defines the compression codec used for messages.
+Messages can be sent and stored in compressed format before being decompressed by consumers.
+Compression can improve throughput and reduce storage usage, but it might not be suitable for low-latency applications where compression and decompression overhead is significant.
 
 == Data durability
 
@@ -62,16 +65,15 @@ To control the maximum time the producer waits for acknowledgments from the brok
 [source,env]
 ----
 # ...
-acks=all <1>
-delivery.timeout.ms=120000 <2>
+acks=all
+delivery.timeout.ms=120000
 # ...
 ----
 
-<1> `acks=all` forces a leader replica to replicate messages to a certain number of followers before
-acknowledging that the message request was successfully received. 
-<2> The maximum time in milliseconds to wait for a complete send request. 
-You can set the value to `MAX_LONG` to delegate to Kafka an indefinite number of retries.
-The default is `120000` or 2 minutes.
+* `acks=all` configures the leader replica to wait for replication to the required number of follower replicas before acknowledging that the message was successfully received.
+* `delivery.timeout.ms` defines the maximum time, in milliseconds, to wait for a complete send request.
+You can set the value to `MAX_LONG` to allow Kafka to retry indefinitely.
+The default value is `120000` milliseconds, or 2 minutes.
 
 The `acks=all` setting offers the strongest guarantee of delivery, but it will increase the latency between the producer sending a message and receiving acknowledgment.
 If you don't require such strong guarantees, a setting of `acks=0` or `acks=1` provides either no delivery guarantees or only acknowledgment that the leader replica has written the record to its log.
@@ -139,16 +141,19 @@ With idempotency enabled, you can set the number of concurrent in-flight request
 [source,env]
 ----
 # ...
-enable.idempotence=true <1>
-max.in.flight.requests.per.connection=5 <2>
-acks=all <3>
-retries=2147483647 <4>
+enable.idempotence=true
+max.in.flight.requests.per.connection=5
+acks=all
+retries=2147483647
 # ...
 ----
-<1> Set to `true` to enable the idempotent producer.
-<2> With idempotent delivery the number of in-flight requests may be greater than 1 while still providing the message ordering guarantee. The default is 5 in-flight requests.
-<3> Set `acks` to `all`.
-<4> Set the number of attempts to resend a failed message request.
+
+* `enable.idempotence=true` enables the idempotent producer.
+* `max.in.flight.requests.per.connection` defines the maximum number of unacknowledged requests allowed on a connection.
+With idempotence enabled, the value can be greater than `1` while still preserving message ordering.
+The default value is `5`.
+* `acks=all` configures the leader replica to wait for replication to the required number of follower replicas before acknowledging that the message was successfully received.
+* `retries` defines the number of attempts to resend a failed message request.
 
 If you choose not to use `acks=all` and disable idempotency because of the performance cost,
 set the number of in-flight (unacknowledged) requests to 1 to preserve ordering.
@@ -158,13 +163,15 @@ Otherwise, a situation is possible where _Message-A_ fails only to succeed after
 [source,env]
 ----
 # ...
-enable.idempotence=false <1>
-max.in.flight.requests.per.connection=1 <2>
+enable.idempotence=false
+max.in.flight.requests.per.connection=1
 retries=2147483647
 # ...
 ----
-<1> Set to `false` to disable the idempotent producer.
-<2> Set the number of in-flight requests to exactly `1`.
+
+* `enable.idempotence=false` disables the idempotent producer.
+* `max.in.flight.requests.per.connection=1` configures the producer to allow only one in-flight request per connection to preserve message ordering without idempotency.
+* `retries` defines the number of attempts to resend a failed message request.
 
 == Reliability guarantees
 
@@ -181,13 +188,14 @@ enable.idempotence=true
 max.in.flight.requests.per.connection=5
 acks=all
 retries=2147483647
-transactional.id=_UNIQUE-ID_ <1>
-transaction.timeout.ms=900000 <2>
+transactional.id=_UNIQUE-ID_
+transaction.timeout.ms=900000
 # ...
 ----
-<1> Specify a unique transactional ID.
-<2> Set the maximum allowed time for transactions in milliseconds before a timeout error is returned.
-The default is `900000` or 15 minutes.
+
+* `transactional.id` specifies a unique transactional ID for the producer.
+* `transaction.timeout.ms` defines the maximum time, in milliseconds, allowed for a transaction before a timeout error is returned.
+The default value is `900000` milliseconds, or 15 minutes.
 
 The choice of `transactional.id` is important in order that the transactional guarantee is maintained.
 Each transactional id should be used for a unique set of topic partitions.
@@ -227,7 +235,7 @@ Pipelining means sending more requests before the response to a previous request
 In general more pipelining means better throughput, up to a threshold at which other effects,
 such as worse batching, start to counteract the effect on throughput.
 
-.Lowering latency
+== Lowering latency
 
 When your application calls the `KafkaProducer.send()` method, messages undergo a series of operations before being sent:
 
@@ -253,25 +261,35 @@ Use the `linger.ms` and `batch.size` properties to batch more messages into a si
 [source,env]
 ----
 # ...
-linger.ms=100 <1>
-batch.size=16384 <2>
-buffer.memory=33554432 <3>
+linger.ms=100
+batch.size=16384
+buffer.memory=33554432
 # ...
 ----
-<1> The `linger.ms` property adds a delay in milliseconds so that larger batches of messages are accumulated and sent in a request. The default is `0`.
-<2> If a maximum `batch.size` in bytes is used, a request is sent when the maximum is reached, or messages have been queued for longer than `linger.ms` (whichever comes sooner).
-Adding the delay allows batches to accumulate messages up to the batch size.
-<3> The buffer size must be at least as big as the batch size, and be able to accommodate buffering, compression, and in-flight requests.
 
-.Increasing throughput
+* `linger.ms` defines the delay, in milliseconds, before the producer sends a batch of messages.
+Adding a delay allows larger batches of messages to accumulate and be sent in a single request.
+The default value is `0`.
+* `batch.size` defines the maximum batch size, in bytes, for a request.
+A request is sent when the maximum batch size is reached or when messages have been queued longer than `linger.ms`, whichever occurs first.
+Adding a delay allows batches to accumulate messages up to the configured batch size.
+* `buffer.memory` defines the total memory available to the producer for buffering records.
+The buffer size must be at least as large as the batch size and large enough to accommodate buffering, compression, and in-flight requests.
+
+== Increasing throughput
 
 You can improve throughput of your message requests by directing messages to a specified partition using a custom partitioner to replace the default.
 
 [source,env]
 ----
 # ...
-partitioner.class=my-custom-partitioner <1>
-
+partitioner.class=my-custom-partitioner
 # ...
 ----
-<1> Specify the class name of your custom partitioner.
+
+* `partitioner.class` specifies the class name of the custom partitioner.
+
+[role="_additional-resources"]
+.Additional resources
+
+* xref:assembly-securing-access-{context}[Securing access to a Kafka cluster]

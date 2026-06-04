@@ -18,6 +18,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
@@ -228,6 +229,33 @@ public class ListenersUtilsTest {
                                 .withLoadBalancerIP("130.211.204.1")
                                 .withAnnotations(Collections.singletonMap("dns-anno-2", "dns-value"))
                                 .withLabels(Collections.singletonMap("label-2", "label-value"))
+                                .build())
+            .endConfiguration()
+            .build();
+
+    private final GenericKafkaListener newLoadBalancerWithTemplates = new GenericKafkaListenerBuilder()
+            .withName("lb3")
+            .withPort(9907)
+            .withType(KafkaListenerType.LOADBALANCER)
+            .withTls(true)
+            .withNewConfiguration()
+                .withPerBrokerAnnotationsTemplate(Map.of("dns-anno", "dns-{nodeId}-{nodePodName}"))
+                .withPerBrokerLabelsTemplate(Map.of("label", "label-{nodeId}-{nodePodName}"))
+            .endConfiguration()
+            .build();
+
+    private final GenericKafkaListener newLoadBalancerWithTemplateOverrides = new GenericKafkaListenerBuilder()
+            .withName("lb4")
+            .withPort(9908)
+            .withType(KafkaListenerType.LOADBALANCER)
+            .withTls(true)
+            .withNewConfiguration()
+                .withPerBrokerAnnotationsTemplate(Map.of("dns-anno", "dns-{nodeId}", "dns-ttl", "60"))
+                .withPerBrokerLabelsTemplate(Map.of("label", "label-{nodeId}", "label-zone", "primary"))
+                .withBrokers(new GenericKafkaListenerConfigurationBrokerBuilder()
+                                .withBroker(1)
+                                .withAnnotations(Collections.singletonMap("dns-anno", "explicit-dns"))
+                                .withLabels(Collections.singletonMap("label", "explicit-label"))
                                 .build())
             .endConfiguration()
             .build();
@@ -539,6 +567,14 @@ public class ListenersUtilsTest {
         assertThat(ListenersUtils.brokerLabels(newTls, 1), is(emptyMap()));
         assertThat(ListenersUtils.brokerLabels(newNodePort, 1), is(emptyMap()));
         assertThat(ListenersUtils.brokerLabels(newNodePort3, 1), is(emptyMap()));
+
+        assertThat(ListenersUtils.brokerAnnotations(newLoadBalancerWithTemplates, NODE_1), is(Map.of("dns-anno", "dns-1-my-cluster-kafka-1")));
+        assertThat(ListenersUtils.brokerLabels(newLoadBalancerWithTemplates, NODE_1), is(Map.of("label", "label-1-my-cluster-kafka-1")));
+
+        assertThat(ListenersUtils.brokerAnnotations(newLoadBalancerWithTemplateOverrides, NODE_0), is(Map.of("dns-anno", "dns-0", "dns-ttl", "60")));
+        assertThat(ListenersUtils.brokerLabels(newLoadBalancerWithTemplateOverrides, NODE_0), is(Map.of("label", "label-0", "label-zone", "primary")));
+        assertThat(ListenersUtils.brokerAnnotations(newLoadBalancerWithTemplateOverrides, NODE_1), is(Map.of("dns-anno", "explicit-dns")));
+        assertThat(ListenersUtils.brokerLabels(newLoadBalancerWithTemplateOverrides, NODE_1), is(Map.of("label", "explicit-label")));
     }
 
     @Test

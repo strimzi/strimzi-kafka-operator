@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinition;
 import io.fabric8.kubernetes.client.KubernetesClient;
 
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
@@ -115,6 +116,22 @@ public final class CrdUtils {
      */
     public static final String CRD_STRIMZI_POD_SET_NAME = "strimzipodsets.core.strimzi.io";
 
+    /**
+     * Map with CRD names and their paths.
+     */
+    public static final Map<String, String> CRDS = Map.of(
+        CrdUtils.CRD_KAFKA_NAME, CrdUtils.CRD_KAFKA,
+        CrdUtils.CRD_KAFKA_CONNECT_NAME, CrdUtils.CRD_KAFKA_CONNECT,
+        CrdUtils.CRD_KAFKA_CONNECTOR_NAME, CrdUtils.CRD_KAFKA_CONNECTOR,
+        CrdUtils.CRD_KAFKA_BRIDGE_NAME, CrdUtils.CRD_KAFKA_BRIDGE,
+        CrdUtils.CRD_KAFKA_MIRROR_MAKER_2_NAME, CrdUtils.CRD_KAFKA_MIRROR_MAKER_2,
+        CrdUtils.CRD_KAFKA_NODE_POOL_NAME, CrdUtils.CRD_KAFKA_NODE_POOL,
+        CrdUtils.CRD_KAFKA_REBALANCE_NAME, CrdUtils.CRD_KAFKA_REBALANCE,
+        CrdUtils.CRD_KAFKA_TOPIC_NAME, CrdUtils.CRD_TOPIC,
+        CrdUtils.CRD_KAFKA_USER_NAME, CrdUtils.CRD_KAFKA_USER,
+        CrdUtils.CRD_STRIMZI_POD_SET_NAME, CrdUtils.CRD_STRIMZI_POD_SET
+    );
+
     private CrdUtils() { }
 
     /**
@@ -136,6 +153,26 @@ public final class CrdUtils {
         client.apiextensions().v1()
                 .customResourceDefinitions()
                 .load(crdPath)
+                .waitUntilCondition(CrdUtils::isCrdEstablished, 10, TimeUnit.SECONDS);
+    }
+
+    /**
+     * Creates a CRD resource in the Kubernetes cluster from a YAML string; useful when the YAML is generated in
+     * memory (e.g., by the CRD generator) and there is no on-disk file to point at.
+     *
+     * @param client    Kubernetes client
+     * @param crdName   Name of the CRD
+     * @param crdYaml   CRD YAML content
+     */
+    public static void createCrdFromYaml(KubernetesClient client, String crdName, String crdYaml)   {
+        if (client.apiextensions().v1().customResourceDefinitions().withName(crdName).get() != null) {
+            deleteCrd(client, crdName);
+        }
+
+        client.resource(crdYaml).create();
+        client.apiextensions().v1()
+                .customResourceDefinitions()
+                .withName(crdName)
                 .waitUntilCondition(CrdUtils::isCrdEstablished, 10, TimeUnit.SECONDS);
     }
 
@@ -162,6 +199,39 @@ public final class CrdUtils {
         if (client.apiextensions().v1().customResourceDefinitions().withName(crdName).get() != null) {
             client.apiextensions().v1().customResourceDefinitions().withName(crdName).withPropagationPolicy(DeletionPropagation.BACKGROUND).delete();
             client.apiextensions().v1().customResourceDefinitions().withName(crdName).waitUntilCondition(Objects::isNull, 30_000, TimeUnit.MILLISECONDS);
+        }
+    }
+
+    /**
+     * Creates a custom resource from the given YAML content, then deletes it. If creation fails, the deletion is still
+     * attempted and the original creation exception is rethrown.
+     *
+     * @param client        Kubernetes client
+     * @param yamlContent   YAML representation of the custom resource
+     */
+    public static void createDeleteCustomResource(KubernetesClient client, String yamlContent) {
+        RuntimeException creationException = null;
+        RuntimeException deletionException = null;
+
+        try {
+            client.resource(yamlContent).create();
+        } catch (RuntimeException t) {
+            creationException = t;
+        } finally {
+            try {
+                client.resource(yamlContent).delete();
+            } catch (RuntimeException t) {
+                deletionException = t;
+            }
+        }
+
+        if (creationException != null) {
+            if (deletionException != null) {
+                creationException.addSuppressed(deletionException);
+            }
+            throw creationException;
+        } else if (deletionException != null) {
+            throw deletionException;
         }
     }
 }

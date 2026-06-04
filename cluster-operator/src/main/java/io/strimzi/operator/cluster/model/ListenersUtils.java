@@ -80,6 +80,17 @@ public class ListenersUtils {
     }
 
     /**
+     * Returns a list of all Gateway API TLS Route type listeners
+     *
+     * @param listeners List of all listeners
+     *
+     * @return          List of Gateway API TLS Route type listeners
+     */
+    public static List<GenericKafkaListener> tlsRouteListeners(List<GenericKafkaListener> listeners)    {
+        return listenersByType(listeners, KafkaListenerType.TLSROUTE);
+    }
+
+    /**
      * Returns list of all LoadBalancer type listeners
      *
      * @param listeners List of all listeners
@@ -362,7 +373,7 @@ public class ListenersUtils {
      * @param pod       Pod ID for which we should get the configuration option
      * @return          Map with DNS annotations or empty map if not specified
      */
-    public static Map<String, String> brokerAnnotations(GenericKafkaListener listener, int pod)    {
+    /* test */ static Map<String, String> brokerAnnotations(GenericKafkaListener listener, int pod)    {
         if (listener.getConfiguration() != null
                 && listener.getConfiguration().getBrokers() != null) {
             return listener.getConfiguration().getBrokers().stream()
@@ -370,6 +381,40 @@ public class ListenersUtils {
                     .map(GenericKafkaListenerConfigurationBroker::getAnnotations)
                     .findAny()
                     .orElse(Collections.emptyMap());
+        } else {
+            return Collections.emptyMap();
+        }
+    }
+
+    /**
+     * Renders a metadata template map for a specific Kafka node.
+     *
+     * @param template  Metadata template map whose values might contain placeholders
+     * @param node      Node for which the values should be rendered
+     * @return          Rendered metadata map or an empty map when no template is configured
+     */
+    private static Map<String, String> renderTemplateMap(Map<String, String> template, NodeRef node) {
+        if (template == null || template.isEmpty()) {
+            return Collections.emptyMap();
+        } else {
+            return template.entrySet().stream()
+                .collect(Collectors.toMap(Map.Entry::getKey, entry -> renderHostTemplate(entry.getValue(), node)));
+        }
+    }
+
+    /**
+     * Finds broker service annotations. If no per-broker annotations are configured for the broker, the
+     * per-broker annotation template is rendered and returned instead.
+     *
+     * @param listener  Listener for which the annotations should be found
+     * @param node      Node reference for which we should get the configuration option
+     * @return          Map with DNS annotations or empty map if not specified
+     */
+    public static Map<String, String> brokerAnnotations(GenericKafkaListener listener, NodeRef node)    {
+        if (listener.getConfiguration() != null) {
+            Map<String, String> annotations = brokerAnnotations(listener, node.nodeId());
+
+            return annotations.isEmpty() ? renderTemplateMap(listener.getConfiguration().getPerBrokerAnnotationsTemplate(), node) : annotations;
         } else {
             return Collections.emptyMap();
         }
@@ -398,7 +443,7 @@ public class ListenersUtils {
      * @param pod       Pod ID for which we should get the configuration option
      * @return          Map with labels or empty map if not specified
      */
-    public static Map<String, String> brokerLabels(GenericKafkaListener listener, int pod)    {
+    /* test */ static Map<String, String> brokerLabels(GenericKafkaListener listener, int pod)    {
         if (listener.getConfiguration() != null
                 && listener.getConfiguration().getBrokers() != null) {
             return listener.getConfiguration().getBrokers().stream()
@@ -406,6 +451,24 @@ public class ListenersUtils {
                     .map(GenericKafkaListenerConfigurationBroker::getLabels)
                     .findAny()
                     .orElse(Collections.emptyMap());
+        } else {
+            return Collections.emptyMap();
+        }
+    }
+
+    /**
+     * Finds broker service labels. If no per-broker labels are configured for the broker, the per-broker label
+     * template is rendered and returned instead.
+     *
+     * @param listener  Listener for which the labels should be found
+     * @param node      Node reference for which we should get the configuration option
+     * @return          Map with labels or empty map if not specified
+     */
+    public static Map<String, String> brokerLabels(GenericKafkaListener listener, NodeRef node)    {
+        if (listener.getConfiguration() != null) {
+            Map<String, String> labels = brokerLabels(listener, node.nodeId());
+
+            return labels.isEmpty() ? renderTemplateMap(listener.getConfiguration().getPerBrokerLabelsTemplate(), node) : labels;
         } else {
             return Collections.emptyMap();
         }

@@ -270,7 +270,7 @@ jobs:
     strategy:
       matrix:
         architecture: [amd64, arm64]
-    runs-on: oracle-vm-2cpu-8gb-arm64
+    runs-on: cncf-ubuntu-2-8-arm
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v6

@@ -323,7 +323,7 @@ public class KafkaUtils {
     }
 
     public static String getVersionFromKafkaPodLibs(String namespaceName, String kafkaPodName) {
-        String command = "ls libs | grep -Po 'kafka_\\d+.\\d+-\\K(\\d+.\\d+.\\d+)(?=.*jar)' | head -1 | cut -d \"-\" -f2";
+        String command = "ls libs | sed -n 's/^kafka_[0-9]*\\.[0-9]*-\\(.*\\)\\.jar$/\\1/p' | head -1";
         return KubeResourceManager.get().kubeCmdClient()
             .inNamespace(namespaceName)
             .execInPodContainer(

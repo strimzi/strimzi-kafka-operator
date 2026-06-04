@@ -202,6 +202,16 @@ public class InPlacePodResizingUtilsTest {
         Pod pod4 = podWithAnnotationResourcesPhaseAndCondition(PodRevision.STRIMZI_RESOURCE_REVISION_ANNOTATION, "skso1919", resources3, "Running", List.of());
         Pod pod5 = podWithAnnotationResourcesPhaseAndCondition(PodRevision.STRIMZI_RESOURCE_REVISION_ANNOTATION, "skso1919", resources2, "Running", List.of(podCondition("PodResizePending", "True", "Deferred")));
         Pod pod6 = podWithAnnotationResourcesPhaseAndCondition(PodRevision.STRIMZI_RESOURCE_REVISION_ANNOTATION, "skso1919", resources2, "Running", List.of(podCondition("PodResizePending", "True", "Infeasible")));
+        Pod pod7 = new PodBuilder(pod1)
+                .editMetadata()
+                    .addToAnnotations(Annotations.ANNO_STRIMZI_IO_IN_PLACE_RESIZING_ERROR, "true")
+                .endMetadata()
+                .build();
+        Pod pod8 = new PodBuilder(pod2)
+                .editMetadata()
+                    .addToAnnotations(Annotations.ANNO_STRIMZI_IO_IN_PLACE_RESIZING_ERROR, "true")
+                .endMetadata()
+                .build();
 
         @SuppressWarnings("unchecked")
         StrimziPodSet podSet = new StrimziPodSetBuilder()
@@ -228,6 +238,12 @@ public class InPlacePodResizingUtilsTest {
 
         // Infeasible -> should be rolled
         assertThat(restartReasons(podSet, pod6).getReasons(), is(Set.of(RestartReason.POD_RESOURCES_CHANGED)));
+
+        // It has the resizing error annotation, but the resources are not changes => No restart
+        assertThat(restartReasons(podSet, pod7).shouldRestart(), is(false));
+
+        // StrimziPodSetController failed to resize the pod and the resource annotations differ => Restart Pod
+        assertThat(restartReasons(podSet, pod8).getReasons(), is(Set.of(RestartReason.POD_RESOURCES_CHANGED)));
     }
 
     @Test

@@ -12,8 +12,6 @@ Status properties provide status information for certain custom resources.
 
 The following table lists the custom resources that provide status information (when deployed) and the schemas that define the status properties.
 
-For more information on the schemas, see the link:{BookURLConfiguring}[Strimzi Custom Resource API Reference^].
-
 .Custom resources that provide status information
 [cols="1m,1m,1",options="header",stripes="none",separator=¦]
 |===
@@ -23,10 +21,7 @@ For more information on the schemas, see the link:{BookURLConfiguring}[Strimzi C
 ¦Publishes status information on...
 
 ¦Kafka
-¦KafkaStatus +
-ListenerStatus +
-UsedNodePoolStatus +
-KafkaAutoRebalanceStatus
+¦KafkaStatus, ListenerStatus, UsedNodePoolStatus, KafkaAutoRebalanceStatus
 ¦The Kafka cluster, its listeners, node pools, and any auto-rebalances on scaling
 
 ¦KafkaNodePool
@@ -94,17 +89,17 @@ metadata:
 spec:
   # ...
 status:
-  clusterId: XP9FP2P-RByvEy0W4cOEUA # <1>
-  conditions: # <2>
+  clusterId: XP9FP2P-RByvEy0W4cOEUA
+  conditions:
     - lastTransitionTime: '2023-01-20T17:56:29.396588Z'
       status: 'True'
-      type: Ready # <3>
-  kafkaMetadataState: KRaft # <4>
-  kafkaVersion: {DefaultKafkaVersion} # <5>
-  kafkaNodePools: # <6>
+      type: Ready
+  kafkaMetadataState: KRaft
+  kafkaVersion: {DefaultKafkaVersion}
+  kafkaNodePools:
     - name: broker
     - name: controller
-  listeners: # <7>
+  listeners:
     - addresses:
         - host: my-cluster-kafka-bootstrap.prm-project.svc
           port: 9092
@@ -142,17 +137,23 @@ status:
           
           -----END CERTIFICATE-----
       name: external4
-  observedGeneration: 3 # <8>
-  operatorLastSuccessfulVersion: {ProductVersion} # <9>
+  observedGeneration: 3
+  operatorLastSuccessfulVersion: {ProductVersion}
 ----
-<1> The Kafka cluster ID.
-<2> Status `conditions` describe the current state of the Kafka cluster.
-<3> The `Ready` condition indicates that the Cluster Operator considers the Kafka cluster able to handle traffic.
-<4> Kafka metadata state that shows KRaft is managing Kafka metadata and coordinating operations. 
-<5> The version of Kafka being used by the Kafka cluster.
-<6> The node pools belonging to the Kafka cluster.
-<7> The `listeners` describe Kafka bootstrap addresses by type.
-<8> The `observedGeneration` value indicates the last reconciliation of the `Kafka` custom resource by the Cluster Operator.
-<9> The version of the operator that successfully completed the last reconciliation. 
+
+* `clusterId` shows the Kafka cluster ID.
+* `conditions` describe the current state of the Kafka cluster.
+* The `Ready` condition indicates that the Cluster Operator considers the Kafka cluster ready to handle traffic.
+* `kafkaMetadataState` shows that KRaft is managing Kafka metadata and coordinating operations.
+* `kafkaVersion` shows the Kafka version used by the cluster.
+* `kafkaNodePools` lists the node pools that belong to the Kafka cluster.
+* `listeners` describe the Kafka bootstrap addresses for each listener type.
+* `observedGeneration` indicates the last reconciliation of the `Kafka` custom resource by the Cluster Operator.
+* `operatorLastSuccessfulVersion` shows the operator version that successfully completed the last reconciliation. 
 
 NOTE: The Kafka bootstrap addresses listed in the status do not signify that those endpoints or the Kafka cluster is in a `Ready` state.
+
+[role="_additional-resources"]
+.Additional resources
+
+* link:{BookURLConfiguring}[Strimzi Custom Resource API Reference^]

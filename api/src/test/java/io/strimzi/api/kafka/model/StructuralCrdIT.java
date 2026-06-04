@@ -7,11 +7,12 @@ package io.strimzi.api.kafka.model;
 import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinition;
 import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinitionCondition;
 import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinitionVersion;
+import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.strimzi.api.annotations.ApiVersion;
 import io.strimzi.api.annotations.VersionRange;
 import io.strimzi.test.CrdUtils;
-import io.strimzi.test.TestUtils;
+import io.strimzi.test.interfaces.TestSeparator;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -27,18 +28,8 @@ import java.util.stream.Collectors;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
-public class StructuralCrdIT extends AbstractCrdIT {
-    private final static Map<String, String> CRD_FILES = Map.of(
-            "kafkas.kafka.strimzi.io", "040-Crd-kafka.yaml",
-            "kafkaconnects.kafka.strimzi.io", "041-Crd-kafkaconnect.yaml",
-            "kafkatopics.kafka.strimzi.io", "043-Crd-kafkatopic.yaml",
-            "kafkausers.kafka.strimzi.io", "044-Crd-kafkauser.yaml",
-            "kafkabridges.kafka.strimzi.io", "046-Crd-kafkabridge.yaml",
-            "kafkaconnectors.kafka.strimzi.io", "047-Crd-kafkaconnector.yaml",
-            "kafkamirrormaker2s.kafka.strimzi.io", "048-Crd-kafkamirrormaker2.yaml",
-            "kafkarebalances.kafka.strimzi.io", "049-Crd-kafkarebalance.yaml",
-            "kafkanodepools.kafka.strimzi.io", "045-Crd-kafkanodepool.yaml"
-    );
+public class StructuralCrdIT implements TestSeparator {
+    private KubernetesClient client;
 
     @BeforeEach
     public void beforeEach() {
@@ -52,8 +43,8 @@ public class StructuralCrdIT extends AbstractCrdIT {
 
     @Test
     public void v1Beta2IsStructuralWithCrdV1() {
-        for (Map.Entry<String, String> crd : CRD_FILES.entrySet()) {
-            assertApiVersionsAreStructural(crd.getKey(), TestUtils.USER_PATH + "/../packaging/install/cluster-operator/" + crd.getValue(), ApiVersion.parseRange("v1+"));
+        for (Map.Entry<String, String> crd : CrdUtils.CRDS.entrySet()) {
+            assertApiVersionsAreStructural(crd.getKey(), crd.getValue(), ApiVersion.parseRange("v1+"));
         }
     }
 

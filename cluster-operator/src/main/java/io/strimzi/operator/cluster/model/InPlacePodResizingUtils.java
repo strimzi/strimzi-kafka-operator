@@ -182,6 +182,12 @@ public class InPlacePodResizingUtils {
                 // The resources changed but the Pod is not in a Running state (could be stuck) -> needs to be rolled
                 restartReasons.add(RestartReason.POD_HAS_OLD_RESOURCE_REVISION);
             }
+
+            if (PodRevision.hasChanged(pod, podSet, PodRevision.STRIMZI_RESOURCE_REVISION_ANNOTATION)
+                    && Annotations.booleanAnnotation(pod, Annotations.ANNO_STRIMZI_IO_IN_PLACE_RESIZING_ERROR, false)) {
+                // There was some error when StrimziPodSetController tried to resize the pod. The resizing should be done by rolling update
+                restartReasons.add(RestartReason.POD_RESOURCES_CHANGED);
+            }
         } else if (PodRevision.hasChanged(pod, podSet, PodRevision.STRIMZI_RESOURCE_REVISION_ANNOTATION))    {
             // In-place resizing is disabled, and resource revision changed -> we have a restart reason
             restartReasons.add(RestartReason.POD_HAS_OLD_RESOURCE_REVISION);

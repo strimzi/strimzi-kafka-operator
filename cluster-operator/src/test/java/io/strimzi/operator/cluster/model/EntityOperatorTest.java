@@ -501,6 +501,28 @@ public class EntityOperatorTest {
     }
 
     @Test
+    public void testContainerPortNames() {
+        List<Container> containers = ENTITY_OPERATOR.createContainers(null);
+        assertThat(containers.size(), is(2));
+
+        Container toContainer = containers.stream()
+                .filter(c -> EntityTopicOperator.TOPIC_OPERATOR_CONTAINER_NAME.equals(c.getName()))
+                .findFirst().orElseThrow();
+        assertThat(toContainer.getPorts().size(), is(1));
+        assertThat(toContainer.getPorts().get(0).getName(), is(EntityTopicOperator.HEALTHCHECK_PORT_NAME));
+        assertThat(toContainer.getPorts().get(0).getContainerPort(), is(EntityTopicOperator.HEALTHCHECK_PORT));
+        assertThat(toContainer.getPorts().get(0).getProtocol(), is("TCP"));
+
+        Container uoContainer = containers.stream()
+                .filter(c -> EntityUserOperator.USER_OPERATOR_CONTAINER_NAME.equals(c.getName()))
+                .findFirst().orElseThrow();
+        assertThat(uoContainer.getPorts().size(), is(1));
+        assertThat(uoContainer.getPorts().get(0).getName(), is(EntityUserOperator.HEALTHCHECK_PORT_NAME));
+        assertThat(uoContainer.getPorts().get(0).getContainerPort(), is(EntityUserOperator.HEALTHCHECK_PORT));
+        assertThat(uoContainer.getPorts().get(0).getProtocol(), is("TCP"));
+    }
+
+    @Test
     public void testTopicOperatorContainerEnvVars() {
         ContainerEnvVar envVar1 = new ContainerEnvVar();
         String testEnvOneKey = "TEST_ENV_1";

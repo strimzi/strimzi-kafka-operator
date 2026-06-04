@@ -1,0 +1,8 @@
+---
+apiVersion: "kafka.strimzi.io/v1"
+kind: "KafkaUser"
+metadata:
+  name: "minimal"
+spec:
+  authentication:
+    type: "tls"

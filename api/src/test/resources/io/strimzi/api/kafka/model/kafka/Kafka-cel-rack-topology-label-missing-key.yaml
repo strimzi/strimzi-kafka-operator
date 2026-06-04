@@ -1,0 +1,13 @@
+apiVersion: kafka.strimzi.io/v1
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+  kafka:
+    listeners:
+      - name: plain
+        type: internal
+        tls: false
+        port: 9092
+    rack:
+      type: topology-label

@@ -25,6 +25,7 @@ import io.strimzi.operator.cluster.operator.resource.kubernetes.IngressOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.RouteOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.SecretOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.ServiceOperator;
+import io.strimzi.operator.cluster.operator.resource.kubernetes.TLSRouteOperator;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
@@ -157,6 +158,7 @@ public class KafkaListenerReconcilerRoutesTest {
                 supplier.secretOperations,
                 supplier.serviceOperations,
                 supplier.routeOperations,
+                supplier.tlsRouteOperations,
                 supplier.ingressOperations
         );
 
@@ -235,6 +237,7 @@ public class KafkaListenerReconcilerRoutesTest {
                 supplier.secretOperations,
                 supplier.serviceOperations,
                 supplier.routeOperations,
+                supplier.tlsRouteOperations,
                 supplier.ingressOperations
         );
 
@@ -345,6 +348,7 @@ public class KafkaListenerReconcilerRoutesTest {
                 supplier.secretOperations,
                 supplier.serviceOperations,
                 supplier.routeOperations,
+                supplier.tlsRouteOperations,
                 supplier.ingressOperations
         );
 
@@ -383,8 +387,9 @@ public class KafkaListenerReconcilerRoutesTest {
                 SecretOperator secretOperator,
                 ServiceOperator serviceOperator,
                 RouteOperator routeOperator,
+                TLSRouteOperator tlsRouteOperator,
                 IngressOperator ingressOperator) {
-            super(reconciliation, kafka, null, pfa, 300_000L, secretOperator, serviceOperator, routeOperator, ingressOperator);
+            super(reconciliation, kafka, null, pfa, 300_000L, secretOperator, serviceOperator, routeOperator, tlsRouteOperator, ingressOperator);
         }
 
         @Override

@@ -33,7 +33,7 @@ import java.util.List;
 import java.util.Map;
 
 import static io.strimzi.systemtest.TestTags.KRAFT_UPGRADE;
-import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 
@@ -217,14 +217,14 @@ public class KRaftKafkaUpgradeDowngradeST extends AbstractKRaftUpgradeST {
         LOGGER.info("Post-change Kafka version query returned: {}", controllerVersionResult);
 
         assertThat("Kafka container had version " + controllerVersionResult + " where " + newVersion.version() +
-            " was expected", controllerVersionResult, is(newVersion.version()));
+            " was expected", controllerVersionResult, containsString(newVersion.version()));
 
         // Extract the Kafka version number from the jars in the lib directory
         String brokerVersionResult = KafkaUtils.getVersionFromKafkaPodLibs(testStorage.getNamespaceName(), brokerPodName);
         LOGGER.info("Post-change Kafka version query returned: {}", brokerVersionResult);
 
         assertThat("Kafka container had version " + brokerVersionResult + " where " + newVersion.version() +
-            " was expected", brokerVersionResult, is(newVersion.version()));
+            " was expected", brokerVersionResult, containsString(newVersion.version()));
 
         if (isUpgrade && !sameMinorVersion) {
             LOGGER.info("Updating Kafka config attribute 'metadataVersion' from '{}' to '{}' version", initialVersion.metadataVersion(), newVersion.metadataVersion());

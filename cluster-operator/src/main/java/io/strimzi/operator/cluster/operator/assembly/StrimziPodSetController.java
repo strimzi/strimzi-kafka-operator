@@ -34,6 +34,7 @@ import io.strimzi.operator.cluster.model.PodSetUtils;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.CrdOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.PodOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.StrimziPodSetOperator;
+import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.InformerUtils;
 import io.strimzi.operator.common.MetricsProvider;
 import io.strimzi.operator.common.Reconciliation;
@@ -471,11 +472,24 @@ public class StrimziPodSetController implements Runnable {
                             && "Running".equals(currentPod.getStatus().getPhase())
                             && InPlacePodResizingUtils.canResourcesBeUpdatedInPlace(currentPod, desiredPod))    {
                         LOGGER.infoCr(reconciliation, "Pod {} in namespace {} has changed only in resources => resizing it", desiredPod.getMetadata().getName(), reconciliation.namespace());
-                        podOperator.client().inNamespace(reconciliation.namespace()).resource(InPlacePodResizingUtils.patchPodResources(currentPod, desiredPod)).subresource("resize").update();
-                        LOGGER.infoCr(reconciliation, "Pod {} in namespace {} has changed only in resources => updating the resource annotation", desiredPod.getMetadata().getName(), reconciliation.namespace());
-                        // Patch is used to avoid conflicts with the Pod status updates related to the resizing
-                        podOperator.client().inNamespace(reconciliation.namespace()).withName(currentPod.getMetadata().getName()).patch(PatchContext.of(PatchType.STRATEGIC_MERGE), "{\"metadata\":{\"annotations\":{\"" + PodRevision.STRIMZI_RESOURCE_REVISION_ANNOTATION + "\":\"" + desiredPod.getMetadata().getAnnotations().get(PodRevision.STRIMZI_RESOURCE_REVISION_ANNOTATION) + "\"}}}");
-                        podCounter.currentPods++;
+
+                        try {
+                            podOperator.client().inNamespace(reconciliation.namespace()).resource(InPlacePodResizingUtils.patchPodResources(currentPod, desiredPod)).subresource("resize").update();
+                            LOGGER.infoCr(reconciliation, "Pod {} in namespace {} has changed only in resources => updating the resource annotation", desiredPod.getMetadata().getName(), reconciliation.namespace());
+                            // Patch is used to avoid conflicts with the Pod status updates related to the resizing
+                            podOperator.client().inNamespace(reconciliation.namespace()).withName(currentPod.getMetadata().getName()).patch(PatchContext.of(PatchType.STRATEGIC_MERGE), "{\"metadata\":{\"annotations\":{\"" + PodRevision.STRIMZI_RESOURCE_REVISION_ANNOTATION + "\":\"" + desiredPod.getMetadata().getAnnotations().get(PodRevision.STRIMZI_RESOURCE_REVISION_ANNOTATION) + "\"}}}");
+                            podCounter.currentPods++;
+                        } catch (KubernetesClientException e) {
+                            LOGGER.warnCr(reconciliation, "Pod {} in namespace {} cannot be resized", desiredPod.getMetadata().getName(), reconciliation.namespace());
+
+                            if (LOGGER.isDebugEnabled())    {
+                                // The error is expected in some situations, so we do not log it at the warning level and only on debug level for some debugging purposes
+                                LOGGER.debugCr(reconciliation, "Pod {} in namespace {} cannot be resized", desiredPod.getMetadata().getName(), reconciliation.namespace(), e);
+                            }
+
+                            // Patch is used to indicate conflict to the Roller
+                            podOperator.client().inNamespace(reconciliation.namespace()).withName(currentPod.getMetadata().getName()).patch(PatchContext.of(PatchType.STRATEGIC_MERGE), "{\"metadata\":{\"annotations\":{\"" + Annotations.ANNO_STRIMZI_IO_IN_PLACE_RESIZING_ERROR + "\":\"true\"}}}");
+                        }
                     }
                 } else {
                     podCounter.currentPods++;

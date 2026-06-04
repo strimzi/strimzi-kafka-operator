@@ -1,0 +1,16 @@
+apiVersion: kafka.strimzi.io/v1
+kind: KafkaMirrorMaker2
+metadata:
+  name: my-mm2
+spec:
+  replicas: 1
+  target:
+    alias: target
+    bootstrapServers: target:9092
+    groupId: g
+    configStorageTopic: c
+    offsetStorageTopic: o
+    statusStorageTopic: s
+  mirrors: []
+  metricsConfig:
+    type: jmxPrometheusExporter

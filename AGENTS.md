@@ -48,11 +48,11 @@ Multi-module Maven project.
 - **Commit sign-off (DCO)** (REQUIRED on all commits): always use `git commit -s`
   - If forgotten: `git commit --amend -s` to fix last commit
   - CI will fail without sign-off
-  - More info: [CONTRIBUTING.md](CONTRIBUTING.md)
+  - More info: [README.md#contributing](README.md#contributing)
 
 - **Code style**: Enforced by checkstyle (runs in CI on all PRs)
   - Config: `.checkstyle/checkstyle.xml`
-  - Run locally: `mvn checkstyle:check`
+  - Run locally: `mvn checkstyle:check@validate`
   - CI will fail if checkstyle errors are found
 
 ## Developer Notes

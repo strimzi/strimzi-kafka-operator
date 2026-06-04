@@ -39,13 +39,14 @@ spec:
       excludedPrincipals:
         - my-user
 ----
+
 * `producerByteRate` and `consumerByteRate` set total throughput limits across all clients.
 * `minAvailableBytesPerVolume` protects broker disk capacity by throttling producers when available storage drops below the configured byte threshold on any volume. You can also use `minAvailableRatioPerVolume` to set the threshold as a percentage of total volume size.
 * `excludedPrincipals` excludes specified users from quota enforcement.
-
+--
++
 `minAvailableBytesPerVolume` and `minAvailableRatioPerVolume` are mutually exclusive.
 Configure only one of these properties.
---
 +
 --
 Example `kafka` quota plugin configuration:
@@ -66,6 +67,7 @@ spec:
       requestPercentage: 55
       controllerMutationRate: 50
 ----
+
 * `producerByteRate` and `consumerByteRate` apply throughput limits per user and per broker.
 * `requestPercentage` limits CPU usage for client requests.
 * `controllerMutationRate` limits the number of create topic, create partition, and delete topic requests per second.
@@ -77,7 +79,7 @@ For Cruise Control and its metrics reporter, ensure sufficient throughput for re
 A minimum rate of at least 1 KB/s is recommended for producer and consumer quotas in small clusters (three brokers), which should be increased for larger or more active clusters.
 
 . Apply the changes to the `Kafka` configuration.
-
++
 NOTE: Additional quota properties are available for both quota plugins.
 For a complete list of supported options, see the https://github.com/strimzi/kafka-quotas-plugin?tab=readme-ov-file#properties-and-their-defaults[plugin documentation].
 

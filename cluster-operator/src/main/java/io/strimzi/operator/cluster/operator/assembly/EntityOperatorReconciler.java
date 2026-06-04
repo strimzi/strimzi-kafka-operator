@@ -61,7 +61,7 @@ public class EntityOperatorReconciler {
 
     private String toCertificateHash = "";
     private String uoCertificateHash = "";
-    private String ccApiSecretHash = "";
+    private String toApiSecretHash = "";
 
     /**
      * Constructs the Entity Operator reconciler
@@ -121,36 +121,10 @@ public class EntityOperatorReconciler {
                 .compose(i -> userOperatorRoleBindings())
                 .compose(i -> topicOperatorConfigMap())
                 .compose(i -> userOperatorConfigMap())
-                .compose(i -> topicOperatorCruiseControlApiSecret())
                 .compose(i -> topicOperatorSecret(clock))
                 .compose(i -> userOperatorSecret(clock))
                 .compose(i -> deployment(isOpenShift, imagePullPolicy, imagePullSecrets))
                 .compose(i -> waitForDeploymentReadiness());
-    }
-
-    /**
-     * If not present, we generate a new Topic Operator secret containing its admin credentials for the Cruise Control API secret.
-     * We also generate the secret's content hash, that is later used to detect changes that require a pod restart.
-     *
-     * @return Future which completes when the reconciliation is done.
-     */
-    protected Future<Void> topicOperatorCruiseControlApiSecret() {
-        if (isCruiseControlEnabled) {
-            String ccApiSecretName = KafkaResources.entityTopicOperatorCcApiSecretName(reconciliation.name());
-            if (entityOperator != null && entityOperator.topicOperator() != null) {
-                return secretOperator.getAsync(reconciliation.namespace(), ccApiSecretName)
-                    .compose(oldSecret -> {
-                        Secret newSecret = entityOperator.topicOperator().generateCruiseControlApiSecret(oldSecret);
-                        this.ccApiSecretHash = ReconcilerUtils.hashSecretContent(newSecret);
-                        return secretOperator.reconcile(reconciliation, reconciliation.namespace(), ccApiSecretName, newSecret)
-                            .mapEmpty();
-                    });
-            } else {
-                return secretOperator.reconcile(reconciliation, reconciliation.namespace(), ccApiSecretName, null)
-                    .mapEmpty();
-            }
-        }
-        return Future.succeededFuture();
     }
 
     /**
@@ -368,6 +342,16 @@ public class EntityOperatorReconciler {
 
                                     return Future.succeededFuture();
                                 });
+                    })
+                    .compose(i -> {
+                        if (isCruiseControlEnabled) {
+                            return secretOperator.getAsync(reconciliation.namespace(), KafkaResources.entityTopicOperatorCcApiSecretName(reconciliation.name()))
+                                    .compose(secret -> {
+                                        toApiSecretHash = ReconcilerUtils.hashSecretContent(secret);
+                                        return Future.succeededFuture();
+                                    });
+                        }
+                        return Future.succeededFuture();
                     });
         } else {
             return secretOperator
@@ -453,7 +437,7 @@ public class EntityOperatorReconciler {
             podAnnotations.put(Annotations.ANNO_STRIMZI_SERVER_CERT_HASH, toCertificateHash + uoCertificateHash);
 
             if (entityOperator.topicOperator() != null && isCruiseControlEnabled) {
-                podAnnotations.put(Annotations.ANNO_STRIMZI_AUTH_HASH, ccApiSecretHash);
+                podAnnotations.put(Annotations.ANNO_STRIMZI_AUTH_HASH, toApiSecretHash);
             }
 
             Deployment deployment = entityOperator.generateDeployment(podAnnotations, isOpenShift, imagePullPolicy, imagePullSecrets);

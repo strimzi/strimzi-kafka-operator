@@ -7,6 +7,7 @@ package io.strimzi.api.kafka.model.kafka.listener;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import io.fabric8.kubernetes.api.model.gatewayapi.v1.ParentReference;
 import io.strimzi.api.kafka.model.common.CertAndKeySecretSource;
 import io.strimzi.api.kafka.model.common.Constants;
 import io.strimzi.api.kafka.model.common.UnknownPropertyPreserving;
@@ -15,6 +16,7 @@ import io.strimzi.api.kafka.model.common.template.IpFamily;
 import io.strimzi.api.kafka.model.common.template.IpFamilyPolicy;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.DescriptionFile;
+import io.strimzi.crdgenerator.annotations.ExternalLink;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -30,7 +32,8 @@ import java.util.Map;
 @JsonPropertyOrder({"brokerCertChainAndKey", "class", "externalTrafficPolicy", "loadBalancerSourceRanges", "bootstrap",
     "brokers", "ipFamilyPolicy", "ipFamilies", "createBootstrapService", "finalizers", "useServiceDnsDomain",
     "maxConnections", "maxConnectionCreationRate", "preferredNodePortAddressType", "publishNotReadyAddresses",
-    "hostTemplate", "advertisedHostTemplate", "advertisedPortTemplate", "allocateLoadBalancerNodePorts"})
+    "perBrokerAnnotationsTemplate", "perBrokerLabelsTemplate", "hostTemplate", "advertisedHostTemplate",
+    "advertisedPortTemplate", "allocateLoadBalancerNodePorts", "parentRefs"})
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Buildable(
     editableEnabled = false,
@@ -54,11 +57,14 @@ public class GenericKafkaListenerConfiguration implements UnknownPropertyPreserv
     private List<IpFamily> ipFamilies;
     private Boolean createBootstrapService = true;
     private Boolean publishNotReadyAddresses;
+    private Map<String, String> perBrokerAnnotationsTemplate;
+    private Map<String, String> perBrokerLabelsTemplate;
     private String hostTemplate;
     private String advertisedHostTemplate;
     private String advertisedPortTemplate;
     private Map<String, Object> additionalProperties;
     private Boolean allocateLoadBalancerNodePorts;
+    private List<ParentReference> parentRefs;
 
     @Description("Reference to the `Secret` which holds the certificate and private key pair which will be used for this listener. " +
             "The certificate can optionally contain the whole chain. " +
@@ -258,6 +264,30 @@ public class GenericKafkaListenerConfiguration implements UnknownPropertyPreserv
         this.publishNotReadyAddresses = publishNotReadyAddresses;
     }
 
+    @Description("Configures the template used to generate annotations for individual brokers. " +
+            "You can use the `{nodeId}` and `{nodePodName}` placeholders in annotation values. " +
+            "Templating applies only to annotation values.")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public Map<String, String> getPerBrokerAnnotationsTemplate() {
+        return perBrokerAnnotationsTemplate;
+    }
+
+    public void setPerBrokerAnnotationsTemplate(Map<String, String> perBrokerAnnotationsTemplate) {
+        this.perBrokerAnnotationsTemplate = perBrokerAnnotationsTemplate;
+    }
+
+    @Description("Configures the template used to generate labels for individual brokers. " +
+            "You can use the `{nodeId}` and `{nodePodName}` placeholders in label values. " +
+            "Templating applies only to label values.")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public Map<String, String> getPerBrokerLabelsTemplate() {
+        return perBrokerLabelsTemplate;
+    }
+
+    public void setPerBrokerLabelsTemplate(Map<String, String> perBrokerLabelsTemplate) {
+        this.perBrokerLabelsTemplate = perBrokerLabelsTemplate;
+    }
+
     @Description("Configures the template for generating the hostnames of the individual brokers. " +
             "Valid placeholders that you can use in the template are `{nodeId}` and `{nodePodName}`")
     @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -307,6 +337,18 @@ public class GenericKafkaListenerConfiguration implements UnknownPropertyPreserv
         this.allocateLoadBalancerNodePorts = allocateLoadBalancerNodePorts;
     }
 
+    @Description("For `tlsroute` listeners only.\n" +
+            "Configures the Gateway API resource or resources that generated `TLSRoute` resources attach to.\n" +
+            "Typically, this is a `Gateway` resource.")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @ExternalLink(url = "https://gateway-api.sigs.k8s.io/reference/api-spec/1.5/spec/#parentreference")
+    public List<ParentReference> getParentRefs() {
+        return parentRefs;
+    }
+
+    public void setParentRefs(List<ParentReference> parentRefs) {
+        this.parentRefs = parentRefs;
+    }
 
     @Override
     public Map<String, Object> getAdditionalProperties() {

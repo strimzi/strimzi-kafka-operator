@@ -25,7 +25,7 @@ You can use a unique ID, like a user ID, as the message key and route all messag
 Offset reset policy:: Setting the appropriate offset policy ensures that the consumer consumes messages from the desired starting point and handles message processing accordingly. 
 The default Kafka reset value is `latest`, which starts at the end of the partition, and consequently means some messages might be missed, depending on the consumer's behavior and the state of the partition. 
 Setting `auto.offset.reset` to `earliest` ensures that when connecting with a new `group.id`, all messages are retrieved from the beginning of the log.
-Securing access:: Implement security measures for authentication, encryption, and authorization by setting up user accounts to xref:assembly-securing-access-{context}[manage secure access to Kafka].
+Securing access:: Implement security measures for authentication, encryption, and authorization by setting up user accounts to manage secure access to Kafka.
 
 == Basic consumer configuration
 
@@ -41,21 +41,25 @@ In a consumer configuration, irrespective of any subsequent configuration:
 [source,env]
 ----
 # ...
-bootstrap.servers=localhost:9092 <1>
-key.deserializer=org.apache.kafka.common.serialization.StringDeserializer  <2>
-value.deserializer=org.apache.kafka.common.serialization.StringDeserializer  <3>
-client.id=my-client <4>
-group.id=my-group-id <5>
+bootstrap.servers=localhost:9092
+key.deserializer=org.apache.kafka.common.serialization.StringDeserializer
+value.deserializer=org.apache.kafka.common.serialization.StringDeserializer
+client.id=my-client
+group.id=my-group-id
 # ...
 ----
-<1> (Required) Tells the consumer to connect to a Kafka cluster using a _host:port_ bootstrap server address for a Kafka broker.
-The consumer uses the address to discover and connect to all brokers in the cluster.
-Use a comma-separated list to specify two or three addresses in case a server is down, but it is not necessary to provide a list of all the brokers in the cluster.
-If you are using a loadbalancer service to expose the Kafka cluster, you only need the address for the service because the availability is handled by the loadbalancer.
-<2> (Required) Deserializer to transform the bytes fetched from the Kafka broker into message keys.
-<3> (Required) Deserializer to transform the bytes fetched from the Kafka broker into message values.
-<4> (Optional) The logical name for the client, which is used in logs and metrics to identify the source of a request. The id can also be used to throttle consumers based on processing time quotas.
-<5> (Conditional) A group id is _required_ for a consumer to be able to join a consumer group.
+
+* `bootstrap.servers` (Required) defines the _host:port_ bootstrap server address for connecting to the Kafka cluster.
+The consumer uses this address to discover and connect to all brokers in the cluster.
+Use a comma-separated list to specify two or three addresses for resiliency if a broker is unavailable.
+You do not need to specify every broker in the cluster.
+If you expose the Kafka cluster using a load balancer service, only the service address is required because the load balancer handles availability.
+* `key.deserializer` (Required) defines the deserializer used to transform bytes fetched from the Kafka broker into message keys.
+* `value.deserializer` (Required) defines the deserializer used to transform bytes fetched from the Kafka broker into message values.
+* `client.id` (Optional) defines the logical name for the client, which is used in logs and metrics to identify the source of a request.
+The ID can also be used to throttle consumers based on processing time quotas.
+* `group.id` (Conditional) defines the consumer group ID.
+A group ID is required for a consumer to join a consumer group.
 
 == Scaling data consumption using consumer groups
 
@@ -77,10 +81,11 @@ So the greater the number of consumers in the group, the higher the request load
 [source,env]
 ----
 # ...
-group.id=my-group-id <1>
+group.id=my-group-id
 # ...
 ----
-<1> Add a consumer to a consumer group using a group id.
+
+* `group.id` defines the consumer group ID used to add the consumer to a consumer group.
 
 == Choosing the right partition assignment strategy
 
@@ -137,16 +142,18 @@ Conversely, you can adjust the `fetch.max.wait.ms` and `fetch.min.bytes` propert
 [source,env]
 ----
 # ...
-fetch.max.wait.ms=500 <1>
-fetch.min.bytes=16384 <2>
+fetch.max.wait.ms=500
+fetch.min.bytes=16384
 # ...
 ----
-<1> The maximum time in milliseconds the broker will wait before completing fetch requests.
-The default is `500` milliseconds.
-<2> If a minimum batch size in bytes is used, a request is sent when the minimum is reached, or messages have been queued for longer than `fetch.max.wait.ms` (whichever comes sooner).
-Adding the delay allows batches to accumulate messages up to the batch size.
 
-.Lowering latency by increasing the fetch request size
+* `fetch.max.wait.ms` defines the maximum time, in milliseconds, that the broker waits before completing a fetch request.
+The default value is `500` milliseconds.
+* `fetch.min.bytes` defines the minimum batch size, in bytes, for fetch requests.
+A request is sent when the minimum size is reached or when messages have been queued longer than `fetch.max.wait.ms`, whichever occurs first.
+Adding a delay allows batches to accumulate messages up to the configured batch size.
+
+== Lowering latency by increasing the fetch request size
 
 Use the `fetch.max.bytes` and `max.partition.fetch.bytes` properties to increase the maximum amount of data fetched by the consumer from the Kafka broker.
 
@@ -168,12 +175,13 @@ By allowing more data in each request, latency is improved as there are fewer fe
 [source,env]
 ----
 # ...
-fetch.max.bytes=52428800 <1>
-max.partition.fetch.bytes=1048576 <2>
+fetch.max.bytes=52428800
+max.partition.fetch.bytes=1048576
 # ...
 ----
-<1> The maximum amount of data in bytes returned for a fetch request.
-<2> The maximum amount of data in bytes returned for each partition.
+
+* `fetch.max.bytes` defines the maximum amount of data, in bytes, returned for a fetch request.
+* `max.partition.fetch.bytes` defines the maximum amount of data, in bytes, returned for each partition.
 
 == Avoiding data loss or duplication when committing offsets
 
@@ -193,10 +201,11 @@ Or you can use `auto.commit.interval.ms` to decrease the intervals between commi
 [source,env]
 ----
 # ...
-enable.auto.commit=false <1>
+enable.auto.commit=false
 # ...
 ----
-<1> Auto commit is set to false to provide more control over committing offsets.
+
+* `enable.auto.commit=false` disables automatic offset commits to provide greater control over when offsets are committed.
 
 By setting to `enable.auto.commit` to `false`, you can commit offsets after *all* processing has been performed and the message has been consumed.
 For example, you can set up your application to call the Kafka `commitSync` and `commitAsync` commit APIs.
@@ -210,7 +219,7 @@ The `commitAsync` API does not wait for the broker to respond to a commit reques
 but risks creating more duplicates when rebalancing.
 A common approach is to combine both commit APIs in an application, with the `commitSync` API used just before shutting the consumer down or rebalancing to make sure the final commit is successful.
 
-=== Controlling transactional messages
+== Controlling transactional messages
 
 Consider using transactional ids and enabling idempotence (`enable.idempotence=true`) on the producer side to guarantee exactly-once delivery.
 On the consumer side, you can then use the `isolation.level` property to control how transactional messages are read by the consumer.
@@ -227,10 +236,12 @@ However, this will cause an increase in end-to-end latency, because the consumer
 ----
 # ...
 enable.auto.commit=false
-isolation.level=read_committed <1>
+isolation.level=read_committed
 # ...
 ----
-<1> Set to `read_committed` so that only committed messages are read by the consumer.
+
+* `enable.auto.commit=false` disables automatic offset commits to provide greater control over when offsets are committed.
+* `isolation.level=read_committed` configures the consumer to read only committed messages.
 
 == Recovering from failure to avoid data loss
 
@@ -255,15 +266,17 @@ Decreasing the heartbeat interval reduces the chance of accidental rebalancing, 
 [source,env]
 ----
 # ...
-max.poll.records=100 # <1>
-session.timeout.ms=30000 # <2>
-heartbeat.interval.ms=5000 # <3>
+max.poll.records=100
+session.timeout.ms=30000
+heartbeat.interval.ms=5000
 # ...
 ----
-<1> Set the number records returned to the consumer when calling the `poll()` method.
-<2> Set the timeout for detecting client failure. 
-If the broker configuration has a `group.min.session.timeout.ms` and `group.max.session.timeout.ms`, the session timeout value must be within that range.
-<3> Adjust the heartbeat interval according to anticipated rebalances.
+
+* `max.poll.records` defines the maximum number of records returned to the consumer when calling the `poll()` method.
+* `session.timeout.ms` defines the timeout used to detect client failures.
+If the broker configuration specifies `group.min.session.timeout.ms` and `group.max.session.timeout.ms`, the configured session timeout must fall within that range.
+* `heartbeat.interval.ms` defines the interval between heartbeats sent to the broker.
+Adjust the interval according to expected rebalance behavior.
 
 == Managing offset policy
 
@@ -282,10 +295,11 @@ If a consumer group or standalone consumer is inactive and commits no offsets du
 [source,env]
 ----
 # ...
-auto.offset.reset=earliest # <1>
+auto.offset.reset=earliest
 # ...
 ----
-<1> Set to `earliest` to return to the start of a partition and avoid data loss if offsets were not committed.
+
+* `auto.offset.reset=earliest` configures the consumer to start reading from the beginning of a partition if offsets are unavailable, which helps avoid data loss when offsets have not been committed.
 
 If the amount of data returned in a single fetch request is large,
 a timeout might occur before the consumer has processed it.
@@ -344,7 +358,7 @@ partition.assignment.strategy=org.apache.kafka.clients.consumer.CooperativeStick
 # ...
 ----
 
-.Scaling strategies
+== Scaling strategies
 To minimize the impact of rebalances during scaling of consumer groups, consider the following approaches:
 
 Set a rebalance delay:: Use the `group.initial.rebalance.delay.ms` property in the Kafka configuration to delay the time it takes for consumers to join a new consumer group before performing a rebalance.
@@ -366,4 +380,9 @@ Implement dynamic scaling policies::
 NOTE: In cases where lengthy message processing is unavoidable, consider pausing and resuming partitions as needed.
 If you pause all partitions, `poll()` returns no records, allowing you to keep calling it without overwhelming the consumers. 
 Alternatively, you can offload the processing tasks to a pool of worker threads. 
-This helps prevents delays and potential rebalances.
+This helps prevent delays and potential rebalances.
+
+[role="_additional-resources"]
+.Additional resources
+
+* xref:assembly-securing-access-{context}[Securing access to a Kafka cluster]

@@ -1,0 +1,31 @@
+---
+apiVersion: "kafka.strimzi.io/v1"
+kind: "KafkaUser"
+metadata:
+  labels:
+    strimzi.io/cluster: "my-cluster"
+  name: "my-user"
+spec:
+  authentication:
+    type: "tls"
+  authorization:
+    type: "simple"
+    acls:
+    - resource:
+        type: "topic"
+        name: "my-topic"
+      operations:
+      - "Describe"
+      - "Read"
+    - resource:
+        type: "group"
+        name: "my-group"
+      operations:
+      - "Read"
+    - resource:
+        type: "topic"
+        name: "my-topic"
+      operations:
+      - "Create"
+      - "Describe"
+      - "Write"

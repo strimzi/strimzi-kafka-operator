@@ -30,19 +30,12 @@ import io.strimzi.operator.cluster.model.logging.LoggingModel;
 import io.strimzi.operator.cluster.model.logging.SupportsLogging;
 import io.strimzi.operator.cluster.model.securityprofiles.ContainerSecurityProviderContextImpl;
 import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Ca;
-import io.strimzi.operator.common.model.PasswordGenerator;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-
-import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties.TOPIC_OPERATOR_PASSWORD_KEY;
-import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties.TOPIC_OPERATOR_USERNAME;
-import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties.TOPIC_OPERATOR_USERNAME_KEY;
-import static java.lang.String.format;
 
 /**
  * Represents the Topic Operator deployment
@@ -57,8 +50,6 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
     private static final String LOG_AND_METRICS_CONFIG_VOLUME_MOUNT = "/opt/topic-operator/custom-config/";
 
     // Certificates for the Entity Topic Operator
-    /* test */ static final String ETO_CERTS_VOLUME_NAME = "eto-certs";
-    /* test */ static final String ETO_CERTS_VOLUME_MOUNT = "/etc/eto-certs/";
     /* test */ static final String ETO_CA_CERTS_VOLUME_NAME = "cluster-ca-certs";
     /* test */ static final String ETO_CA_CERTS_VOLUME_MOUNT = "/etc/cluster-ca-certs/";
 
@@ -68,7 +59,7 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
 
     // Port configuration
     protected static final int HEALTHCHECK_PORT = 8080;
-    protected static final String HEALTHCHECK_PORT_NAME = "healthcheck";
+    protected static final String HEALTHCHECK_PORT_NAME = "healthcheck-to";
     protected static final int CRUISE_CONTROL_API_PORT = 9090;
 
     // Topic Operator configuration keys
@@ -324,41 +315,6 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
                 Map.of(clusterCa.caCertGenerationAnnotation(), String.valueOf(updatedCert.caCertGeneration())),
                 Map.of()
         );
-    }
-
-    /**
-     * Creates the Secret containing Cruise Control API auth credentials.
-     * 
-     * @param oldSecret The old secret.
-     *                           
-     * @return The generated Secret.
-     */
-    public Secret generateCruiseControlApiSecret(Secret oldSecret) {
-        return ModelUtils.createSecret(KafkaResources.entityTopicOperatorCcApiSecretName(cluster), namespace, labels, ownerReference, 
-            generateCruiseControlApiCredentials(oldSecret), Collections.emptyMap(), Collections.emptyMap());
-    }
-    
-    private static Map<String, String> generateCruiseControlApiCredentials(Secret oldSecret) {
-        if (oldSecret != null) {
-            // The credentials should not change with every reconciliation.
-            // So if the secret with credentials already exists, we re-use the values.
-            // But we use the new secret to update labels etc. if needed.
-            var data = oldSecret.getData();
-            var username = data.get(TOPIC_OPERATOR_USERNAME_KEY);
-            var password = data.get(TOPIC_OPERATOR_PASSWORD_KEY);
-            if (username == null || username.isBlank() || password == null || password.isBlank()) {
-                throw new RuntimeException(format("Secret %s is invalid", oldSecret.getMetadata().getName()));
-            } else {
-                return data;
-            }
-        } else {
-            PasswordGenerator passwordGenerator = new PasswordGenerator(16);
-            String apiToAdminPassword = passwordGenerator.generate();
-            return Map.of(
-                    TOPIC_OPERATOR_USERNAME_KEY, Util.encodeToBase64(TOPIC_OPERATOR_USERNAME),
-                    TOPIC_OPERATOR_PASSWORD_KEY, Util.encodeToBase64(apiToAdminPassword)
-            );
-        }
     }
 
     /**

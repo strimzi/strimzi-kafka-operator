@@ -215,23 +215,30 @@ public class KafkaUserModel {
     /**
      * Manage certificates generation based on those already present in the Secrets
      *
-     * @param reconciliation       The reconciliation
-     * @param certManager          CertManager instance for handling certificates creation
-     * @param passwordGenerator    PasswordGenerator instance for generating passwords
-     * @param clientsCaCertSecret  The clients CA certificate Secret.
-     * @param clientsCaKeySecret   The clients CA key Secret.
-     * @param userSecret           Secret with the user certificate
-     * @param validityDays         The number of days the certificate should be valid for.
-     * @param renewalDays          The renewal days.
-     * @param maintenanceWindows   List of configured maintenance windows
-     * @param clock                The clock for supplying the reconciler with the time instant of each reconciliation cycle.
-     *                             That time is used for checking maintenance windows
-     * @param generatePkcs12Stores Flag indicating whether PKCS12 keystores should be generated for the user certificates
+     * @param reconciliation        The reconciliation
+     * @param certManager           CertManager instance for handling certificates creation
+     * @param passwordGenerator     PasswordGenerator instance for generating passwords
+     * @param clientsCaCertSecret   The clients CA certificate Secret.
+     * @param clientsCaKeySecret    The clients CA key Secret.
+     * @param userSecret            Secret with the user certificate
+     * @param caValidityDays        The default number of days (configured in Clients CA) the certificate should be valid for.
+     * @param caRenewalDays         The default renewal days (configured in Clients CA).
+     * @param maintenanceWindows    List of configured maintenance windows
+     * @param clock                 The clock for supplying the reconciler with the time instant of each reconciliation cycle.
+     *                              That time is used for checking maintenance windows
+     * @param generatePkcs12Stores  Flag indicating whether PKCS12 keystores should be generated for the user certificates
      */
     @SuppressWarnings("checkstyle:BooleanExpressionComplexity")
     public void maybeGenerateCertificates(Reconciliation reconciliation, CertManager certManager, PasswordGenerator passwordGenerator,
-                                          Secret clientsCaCertSecret, Secret clientsCaKeySecret, Secret userSecret, int validityDays,
-                                          int renewalDays, List<String> maintenanceWindows, Clock clock, boolean generatePkcs12Stores) {
+                                          Secret clientsCaCertSecret, Secret clientsCaKeySecret, Secret userSecret, int caValidityDays,
+                                          int caRenewalDays, List<String> maintenanceWindows, Clock clock, boolean generatePkcs12Stores) {
+        // in case that validityDays and renewalDays are configured inside the authentication part of KafkaUser,
+        // use those instead of default Clients CA configuration
+        // we are checking it here as we have all needed information about the KafkaUser configuration and also default configuration of Clients CA
+        KafkaUserTlsClientAuthentication kafkaUserTlsClientAuthentication = (KafkaUserTlsClientAuthentication) authentication;
+
+        int validityDays = kafkaUserTlsClientAuthentication.getValidityDays() != null ? kafkaUserTlsClientAuthentication.getValidityDays() : caValidityDays;
+        int renewalDays = kafkaUserTlsClientAuthentication.getRenewalDays() != null ? kafkaUserTlsClientAuthentication.getRenewalDays() : caRenewalDays;
         validateCACertificates(clientsCaCertSecret, clientsCaKeySecret);
 
         ClientsCa clientsCa = new ClientsCa(

@@ -2,16 +2,22 @@
 
 ## 1.1.0
 
+* Add support for Apache Kafka 4.3.0 and 4.2.1
+* Remove support for Kafka 4.1.x
+* Reconcile Cruise Control before Entity Operator when both are enabled.
 * New Cluster operator configuration option `STRIMZI_PKCS12_KEYSTORE_GENERATION` to disable generating PKCS12 stores in CA and Kafka user `Secret` resources.
+* Support for Gateway API-based `type: tlsroute` listener
 * Support for dependency scope configuration of Maven artifacts in Kafka Connect Build
+* Support for configuring per-broker listener annotation and label templates.
 * Add `UseBackgroundPodDeletion` feature gate (alpha, disabled by default) to use background deletion propagation when deleting pods during rolling updates. 
 * Strimzi Drain Cleaner updated to 1.6.0 (included in the Strimzi installation files)
 * Strimzi Access Operator updated to 0.3.0 - included in Strimzi installation files, examples, and documentation
 * KafkaBridge and KafkaMirrorMaker2 now use PEM files instead of P12/JKS for TLS authentication and TLS truststore. PEM files are accessed directly from secrets using KubernetesSecretConfigProvider.
+* It's now possible to configure mTLS `validityDays` and `renewalDays` for each `KafkaUser`
 
 ### Major changes, deprecations, and removals
 
-* n/a
+* The entity-operator healthcheck port names have been renamed from `healthcheck` to `healthcheck-to` (topic-operator) and `healthcheck-uo` (user-operator) to avoid duplicate port name warnings in Kubernetes. If you reference these port names in custom `PodMonitor`, `ServiceMonitor`, `NetworkPolicy`, or similar resources, you will need to update them.
 
 ## 1.0.0
 
