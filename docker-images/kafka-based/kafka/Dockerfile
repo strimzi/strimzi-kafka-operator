@@ -57,11 +57,11 @@ RUN set -ex; \
 # Get Prometheus JMX Exporter
 #####
 ENV JMX_EXPORTER_HOME=/opt/prometheus-jmx-exporter
-ENV JMX_EXPORTER_VERSION=1.5.0
-ENV JMX_EXPORTER_CHECKSUM="76e09532d01ea38c5718d77bee0da7ab628b9f813d85cc59928c9a1dde0f0f864b1e52c0494298e738ab709a31e8d0fa5318bfa1825a82157c7d3c7b9fa33c0a  jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.jar"
+ENV JMX_EXPORTER_VERSION=1.6.0
+ENV JMX_EXPORTER_CHECKSUM="2b1278f76480c0d5053ca0c7622716403de0e6f6f3ee70acda8157cf97cba2c5eeb2234025e5d66b57951429397c38a6770e934e6e8ffc5a75b0337c719530de  jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.jar"
 
 RUN set -ex; \
-    curl -LO https://github.com/prometheus/jmx_exporter/releases/download/${JMX_EXPORTER_VERSION}/jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.jar; \
+    curl -LO https://github.com/prometheus/jmx_exporter/releases/download/v${JMX_EXPORTER_VERSION}/jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.jar; \
     echo $JMX_EXPORTER_CHECKSUM > jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.jar.sha512; \
     sha512sum -c jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.jar.sha512; \
     mkdir $JMX_EXPORTER_HOME; \
