@@ -779,9 +779,6 @@ public class KafkaBridgeAssemblyOperatorTest {
 
     @Test
     public void testTlsSecretsFetchedOnlyOncePerReference(VertxTestContext context) {
-        String kbName = "foo";
-        String kbNamespace = "test";
-
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
         var mockBridgeOps = supplier.kafkaBridgeOperator;
         DeploymentOperator mockDcOps = supplier.deploymentOperations;
@@ -790,15 +787,8 @@ public class KafkaBridgeAssemblyOperatorTest {
         ServiceOperator mockServiceOps = supplier.serviceOperations;
         SecretOperator mockSecretOps = supplier.secretOperations;
 
-        KafkaBridge bridgeWithTls = new KafkaBridgeBuilder()
-                .withNewMetadata()
-                    .withName(kbName)
-                    .withNamespace(kbNamespace)
-                .endMetadata()
-                .withNewSpec()
-                    .withBootstrapServers(BOOTSTRAP_SERVERS)
-                    .withReplicas(1)
-                    .withNewHttp(8080)
+        KafkaBridge bridgeWithTls = new KafkaBridgeBuilder(BRIDGE)
+                .editSpec()
                     .withNewTls()
                         .withTrustedCertificates(
                                 new CertSecretSourceBuilder()
@@ -814,17 +804,17 @@ public class KafkaBridgeAssemblyOperatorTest {
                 .endSpec()
                 .build();
 
-        when(mockBridgeOps.get(eq(kbNamespace), eq(kbName))).thenReturn(bridgeWithTls);
-        when(mockBridgeOps.getAsync(eq(kbNamespace), eq(kbName))).thenReturn(Future.succeededFuture(bridgeWithTls));
+        when(mockBridgeOps.get(eq(NAMESPACE), eq(NAME))).thenReturn(bridgeWithTls);
+        when(mockBridgeOps.getAsync(eq(NAMESPACE), eq(NAME))).thenReturn(Future.succeededFuture(bridgeWithTls));
         when(mockBridgeOps.updateStatusAsync(any(), any())).thenReturn(Future.succeededFuture());
 
-        when(mockDcOps.scaleDown(any(), eq(kbNamespace), any(), anyInt(), anyLong())).thenReturn(Future.succeededFuture());
-        when(mockDcOps.scaleUp(any(), eq(kbNamespace), any(), anyInt(), anyLong())).thenReturn(Future.succeededFuture());
-        when(mockDcOps.reconcile(any(), eq(kbNamespace), any(), any())).thenReturn(Future.succeededFuture());
+        when(mockDcOps.scaleDown(any(), eq(NAMESPACE), any(), anyInt(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockDcOps.scaleUp(any(), eq(NAMESPACE), any(), anyInt(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockDcOps.reconcile(any(), eq(NAMESPACE), any(), any())).thenReturn(Future.succeededFuture());
         when(mockDcOps.waitForObserved(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockDcOps.readiness(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
 
-        when(mockServiceOps.reconcile(any(), eq(kbNamespace), any(), any())).thenReturn(Future.succeededFuture());
+        when(mockServiceOps.reconcile(any(), eq(NAMESPACE), any(), any())).thenReturn(Future.succeededFuture());
         when(mockPdbOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture());
         when(mockCmOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture());
 
@@ -835,8 +825,8 @@ public class KafkaBridgeAssemblyOperatorTest {
                         "ca.crt", Util.encodeToBase64(DUMMY_CERT),
                         "ca2.crt", Util.encodeToBase64(DUMMY_CERT)))
                 .build();
-        when(mockSecretOps.getAsync(eq(kbNamespace), eq("shared-tls-secret"))).thenReturn(Future.succeededFuture(tlsSecret));
-        when(mockSecretOps.reconcile(any(), eq(kbNamespace), any(), any())).thenReturn(Future.succeededFuture());
+        when(mockSecretOps.getAsync(eq(NAMESPACE), eq("shared-tls-secret"))).thenReturn(Future.succeededFuture(tlsSecret));
+        when(mockSecretOps.reconcile(any(), eq(NAMESPACE), any(), any())).thenReturn(Future.succeededFuture());
 
         KafkaBridgeAssemblyOperator ops = new KafkaBridgeAssemblyOperator(vertx,
                 new PlatformFeaturesAvailability(true, kubernetesVersion),
@@ -844,12 +834,12 @@ public class KafkaBridgeAssemblyOperatorTest {
                 supplier,
                 ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
 
-        Reconciliation reconciliation = new Reconciliation("test-trigger", KafkaBridge.RESOURCE_KIND, kbNamespace, kbName);
+        Reconciliation reconciliation = new Reconciliation("test-trigger", KafkaBridge.RESOURCE_KIND, NAMESPACE, NAME);
 
         Checkpoint async = context.checkpoint();
         ops.reconcile(reconciliation)
                 .onComplete(context.succeeding(v -> context.verify(() -> {
-                    verify(mockSecretOps, times(2)).getAsync(eq(kbNamespace), eq("shared-tls-secret"));
+                    verify(mockSecretOps, times(2)).getAsync(eq(NAMESPACE), eq("shared-tls-secret"));
 
                     async.flag();
                 })));
