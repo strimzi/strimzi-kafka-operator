@@ -512,10 +512,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                 }
                 case "FAILED" -> {
                     if (targetState == ConnectorState.PAUSED) {
-                        String message = "Connector " + connectorName + " cannot be paused since it is in failed state.";
-                        LOGGER.warnCr(reconciliation, message);
-                        conditions.add(StatusUtils.buildWarningCondition("UpdateConnectorState", message));
-                        return Future.succeededFuture(conditions);
+                        return Future.failedFuture("Connector " + connectorName + " cannot be paused since it is in failed state.");
                     } else if (targetState == ConnectorState.STOPPED) {
                         LOGGER.infoCr(reconciliation, "Stopping connector {}", connectorName);
                         future = Future.fromCompletionStage(apiClient.stop(reconciliation, host, port, connectorName));

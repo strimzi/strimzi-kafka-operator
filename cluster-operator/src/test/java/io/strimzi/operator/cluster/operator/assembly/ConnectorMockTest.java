@@ -2743,7 +2743,7 @@ public class ConnectorMockTest {
                 eq(connectorName));
     }
 
-    /** Create connect, create connector in FAILED state, attempt to pause — should log warning and add condition instead of calling pause() */
+    /** Create connect, create connector in FAILED state, attempt to pause — reconciliation should fail instead of calling pause() */
     @Test
     public void testConnectorPauseWhenFailed() {
         String connectName = "cluster";
@@ -2792,7 +2792,8 @@ public class ConnectorMockTest {
                 .endSpec()
                 .build());
 
-        waitForConnectorCondition(connectorName, "Warning", "UpdateConnectorState");
+        waitForConnectorNotReady(connectorName, "NoStackTraceThrowable",
+                "Connector " + connectorName + " cannot be paused since it is in failed state.");
 
         verify(api, never()).pause(any(),
                 eq(KafkaConnectResources.qualifiedServiceName(connectName, namespace)), eq(KafkaConnectCluster.REST_API_PORT),
