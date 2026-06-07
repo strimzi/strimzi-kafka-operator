@@ -1327,9 +1327,14 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
                                 .withAlias("source")
                                 .withBootstrapServers("source:9092")
                                 .withNewTls()
-                                    .withTrustedCertificates(new CertSecretSourceBuilder()
-                                            .withSecretName("shared-tls-secret")
-                                            .withCertificate("ca.crt")
+                                    .withTrustedCertificates(
+                                        new CertSecretSourceBuilder()
+                                            .withSecretName("shared-tls-secret-2")
+                                            .withCertificate("ca2.crt")
+                                            .build(),
+                                        new CertSecretSourceBuilder()
+                                            .withSecretName("shared-tls-secret-2")
+                                            .withCertificate("ca3.crt")
                                             .build())
                                 .endTls()
                             .endSource()
@@ -1373,10 +1378,17 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
                 .withNewMetadata().withName("shared-tls-secret").endMetadata()
                 .withData(Map.of("ca.crt", Util.encodeToBase64(DUMMY_CERT)))
                 .build();
+        Secret tlsSecret2 = new SecretBuilder()
+                .withNewMetadata().withName("shared-tls-secret-2").endMetadata()
+                .withData(Map.of(
+                    "ca2.crt", Util.encodeToBase64(DUMMY_CERT),
+                    "ca3.crt", Util.encodeToBase64(DUMMY_CERT)))
+                .build();
 
         SecretOperator mockSecretOps = supplier.secretOperations;
         when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaConnectResources.jmxSecretName(NAME)))).thenReturn(Future.succeededFuture());
         when(mockSecretOps.getAsync(eq(NAMESPACE), eq("shared-tls-secret"))).thenReturn(Future.succeededFuture(tlsSecret));
+        when(mockSecretOps.getAsync(eq(NAMESPACE), eq("shared-tls-secret-2"))).thenReturn(Future.succeededFuture(tlsSecret2));
         when(mockSecretOps.reconcile(any(), eq(NAMESPACE), any(), any())).thenReturn(Future.succeededFuture());
 
         // Mock KafkaMirrorMaker2 CRs
@@ -1400,7 +1412,8 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
         Checkpoint async = context.checkpoint();
         ops.reconcile(new Reconciliation("test-trigger", KafkaMirrorMaker2.RESOURCE_KIND, NAMESPACE, NAME))
                 .onComplete(context.succeeding(v -> context.verify(() -> {
-                    verify(mockSecretOps, times(2)).getAsync(eq(NAMESPACE), eq("shared-tls-secret"));
+                    verify(mockSecretOps, times(1)).getAsync(eq(NAMESPACE), eq("shared-tls-secret"));
+                    verify(mockSecretOps, times(2)).getAsync(eq(NAMESPACE), eq("shared-tls-secret-2"));
 
                     async.flag();
                 })));

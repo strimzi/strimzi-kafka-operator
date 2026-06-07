@@ -2136,14 +2136,18 @@ public class KafkaConnectAssemblyOperatorPodSetTest {
                 .editSpec()
                     .withNewTls()
                         .withTrustedCertificates(List.of(
-                                new CertSecretSourceBuilder()
-                                    .withSecretName("shared-tls-secret")
-                                    .withCertificate("ca.crt")
-                                    .build(),
-                                new CertSecretSourceBuilder()
-                                    .withSecretName("shared-tls-secret")
-                                    .withCertificate("ca2.crt")
-                                    .build()
+                            new CertSecretSourceBuilder()
+                                .withSecretName("shared-tls-secret")
+                                .withCertificate("ca.crt")
+                                .build(),
+                            new CertSecretSourceBuilder()
+                                .withSecretName("shared-tls-secret-2")
+                                .withCertificate("ca2.crt")
+                                .build(),
+                            new CertSecretSourceBuilder()
+                                .withSecretName("shared-tls-secret-2")
+                                .withCertificate("ca3.crt")
+                                .build()
                         ))
                     .endTls()
                 .endSpec()
@@ -2184,13 +2188,19 @@ public class KafkaConnectAssemblyOperatorPodSetTest {
         Secret tlsSecret = new SecretBuilder()
             .withNewMetadata().withName("shared-tls-secret").endMetadata()
             .withData(Map.of(
-                "ca.crt", Util.encodeToBase64(DUMMY_CERT),
-                "ca2.crt", Util.encodeToBase64(DUMMY_CERT)))
+                "ca.crt", Util.encodeToBase64(DUMMY_CERT)))
+            .build();
+        Secret tlsSecret2 = new SecretBuilder()
+            .withNewMetadata().withName("shared-tls-secret-2").endMetadata()
+            .withData(Map.of(
+                "ca2.crt", Util.encodeToBase64(DUMMY_CERT),
+                "ca3.crt", Util.encodeToBase64(DUMMY_CERT)))
             .build();
 
         SecretOperator mockSecretOps = supplier.secretOperations;
         when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaConnectResources.jmxSecretName(NAME)))).thenReturn(Future.succeededFuture());
         when(mockSecretOps.getAsync(eq(NAMESPACE), eq("shared-tls-secret"))).thenReturn(Future.succeededFuture(tlsSecret));
+        when(mockSecretOps.getAsync(eq(NAMESPACE), eq("shared-tls-secret-2"))).thenReturn(Future.succeededFuture(tlsSecret2));
         when(mockSecretOps.reconcile(any(), eq(NAMESPACE), any(), any())).thenReturn(Future.succeededFuture());
 
         // Mock Connect CRs
@@ -2219,7 +2229,8 @@ public class KafkaConnectAssemblyOperatorPodSetTest {
         Checkpoint async = context.checkpoint();
         ops.reconcile(new Reconciliation("test-trigger", KafkaConnect.RESOURCE_KIND, NAMESPACE, NAME))
                 .onComplete(context.succeeding(v -> context.verify(() -> {
-                    verify(mockSecretOps, times(2)).getAsync(eq(NAMESPACE), eq("shared-tls-secret"));
+                    verify(mockSecretOps, times(1)).getAsync(eq(NAMESPACE), eq("shared-tls-secret"));
+                    verify(mockSecretOps, times(2)).getAsync(eq(NAMESPACE), eq("shared-tls-secret-2"));
 
                     async.flag();
                 })));
