@@ -791,14 +791,18 @@ public class KafkaBridgeAssemblyOperatorTest {
                 .editSpec()
                     .withNewTls()
                         .withTrustedCertificates(
-                                new CertSecretSourceBuilder()
-                                        .withSecretName("shared-tls-secret")
-                                        .withCertificate("ca.crt")
-                                        .build(),
-                                new CertSecretSourceBuilder()
-                                        .withSecretName("shared-tls-secret")
-                                        .withCertificate("ca2.crt")
-                                        .build()
+                            new CertSecretSourceBuilder()
+                                .withSecretName("shared-tls-secret")
+                                .withCertificate("ca.crt")
+                                .build(),
+                            new CertSecretSourceBuilder()
+                                .withSecretName("shared-tls-secret-2")
+                                .withCertificate("ca2.crt")
+                                .build(),
+                            new CertSecretSourceBuilder()
+                                .withSecretName("shared-tls-secret-2")
+                                .withCertificate("ca3.crt")
+                                .build()
                         )
                     .endTls()
                 .endSpec()
@@ -817,15 +821,22 @@ public class KafkaBridgeAssemblyOperatorTest {
         when(mockServiceOps.reconcile(any(), eq(NAMESPACE), any(), any())).thenReturn(Future.succeededFuture());
         when(mockPdbOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture());
         when(mockCmOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture());
+        // Metrics ConfigMap
+        when(mockCmOps.getAsync(any(), eq("my-metrics-config"))).thenReturn(Future.succeededFuture(new ConfigMapBuilder().withData(Map.of("metrics.yaml", "metrics-config")).build()));
 
         // Mock Secrets - the shared TLS secret referenced multiple times
         Secret tlsSecret = new SecretBuilder()
                 .withNewMetadata().withName("shared-tls-secret").endMetadata()
+                .withData(Map.of("ca.crt", Util.encodeToBase64(DUMMY_CERT)))
+                .build();
+        Secret tlsSecret2 = new SecretBuilder()
+                .withNewMetadata().withName("shared-tls-secret-2").endMetadata()
                 .withData(Map.of(
-                        "ca.crt", Util.encodeToBase64(DUMMY_CERT),
-                        "ca2.crt", Util.encodeToBase64(DUMMY_CERT)))
+                    "ca2.crt", Util.encodeToBase64(DUMMY_CERT),
+                    "ca3.crt", Util.encodeToBase64(DUMMY_CERT)))
                 .build();
         when(mockSecretOps.getAsync(eq(NAMESPACE), eq("shared-tls-secret"))).thenReturn(Future.succeededFuture(tlsSecret));
+        when(mockSecretOps.getAsync(eq(NAMESPACE), eq("shared-tls-secret-2"))).thenReturn(Future.succeededFuture(tlsSecret2));
         when(mockSecretOps.reconcile(any(), eq(NAMESPACE), any(), any())).thenReturn(Future.succeededFuture());
 
         KafkaBridgeAssemblyOperator ops = new KafkaBridgeAssemblyOperator(vertx,
@@ -839,8 +850,8 @@ public class KafkaBridgeAssemblyOperatorTest {
         Checkpoint async = context.checkpoint();
         ops.reconcile(reconciliation)
                 .onComplete(context.succeeding(v -> context.verify(() -> {
-                    verify(mockSecretOps, times(2)).getAsync(eq(NAMESPACE), eq("shared-tls-secret"));
-
+                    verify(mockSecretOps, times(1)).getAsync(eq(NAMESPACE), eq("shared-tls-secret"));
+                    verify(mockSecretOps, times(2)).getAsync(eq(NAMESPACE), eq("shared-tls-secret-2"));
                     async.flag();
                 })));
     }
