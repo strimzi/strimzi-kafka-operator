@@ -8,6 +8,7 @@ import io.strimzi.api.kafka.model.common.metrics.StrimziMetricsReporter;
 import io.strimzi.api.kafka.model.common.metrics.StrimziMetricsReporterBuilder;
 import io.strimzi.api.kafka.model.connect.KafkaConnectSpecBuilder;
 import io.strimzi.api.kafka.model.kafka.KafkaClusterSpecBuilder;
+import io.strimzi.operator.cluster.model.NodeRef;
 import io.strimzi.operator.common.InvalidConfigurationException;
 import io.strimzi.operator.common.model.InvalidResourceException;
 import org.junit.jupiter.api.Assertions;
@@ -39,6 +40,21 @@ public class StrimziMetricsReporterModelTest {
 
         assertThat(metrics.getAllowList().isEmpty(), is(false));
         assertThat(metrics.getAllowList(), is("kafka_log.*,kafka_network.*"));
+        assertThat(metrics.getAllowList(new NodeRef("my-cluster-kafka-0", 0, "kafka", false, true)), is("kafka_log.*,kafka_network.*"));
+        assertThat(metrics.getAllowList(new NodeRef("my-cluster-kafka-1", 1, "kafka", true, false)), is("kafka_log.*,kafka_network.*"));
+        assertThat(metrics.getAllowList(new NodeRef("my-cluster-kafka-2", 2, "kafka", true, true)), is("kafka_log.*,kafka_network.*"));
+    }
+
+    @Test
+    public void testRoleSpecificDefaultAllowLists() {
+        StrimziMetricsReporter metricsConfig = new StrimziMetricsReporterBuilder().build();
+        StrimziMetricsReporterModel metrics = new StrimziMetricsReporterModel(new KafkaClusterSpecBuilder()
+                .withMetricsConfig(metricsConfig).build(), List.of("shared.*", "broker.*", "controller.*"), List.of("shared.*", "broker.*"), List.of("shared.*", "controller.*"));
+
+        assertThat(metrics.getAllowList(), is("shared.*,broker.*,controller.*"));
+        assertThat(metrics.getAllowList(new NodeRef("my-cluster-brokers-0", 0, "brokers", false, true)), is("shared.*,broker.*"));
+        assertThat(metrics.getAllowList(new NodeRef("my-cluster-controllers-1", 1, "controllers", true, false)), is("shared.*,controller.*"));
+        assertThat(metrics.getAllowList(new NodeRef("my-cluster-mixed-2", 2, "mixed", true, true)), is("shared.*,broker.*,controller.*"));
     }
 
     @Test

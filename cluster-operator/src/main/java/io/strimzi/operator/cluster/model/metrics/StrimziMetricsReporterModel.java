@@ -6,6 +6,7 @@ package io.strimzi.operator.cluster.model.metrics;
 
 import io.strimzi.api.kafka.model.common.HasConfigurableMetrics;
 import io.strimzi.api.kafka.model.common.metrics.StrimziMetricsReporter;
+import io.strimzi.operator.cluster.model.NodeRef;
 import io.strimzi.operator.common.InvalidConfigurationException;
 import io.strimzi.operator.common.model.InvalidResourceException;
 
@@ -22,19 +23,43 @@ public class StrimziMetricsReporterModel implements MetricsModel {
      * Fully qualified class name of the Strimzi Metrics Reporter.
      */
     private final List<String> allowList;
+    private final List<String> brokerAllowList;
+    private final List<String> controllerAllowList;
 
-        /**
-         * Constructs the Metrics Model for managing configurable metrics to Strimzi.
-         *
-         * @param spec Custom resource section configuring metrics.
-         * @param defaultAllowList Default allow list to be used when no value is provided.
-         */
+    /**
+     * Constructs the Metrics Model for managing configurable metrics to Strimzi.
+     *
+     * @param spec Custom resource section configuring metrics.
+     * @param defaultAllowList Default allow list to be used when no value is provided.
+     */
     public StrimziMetricsReporterModel(HasConfigurableMetrics spec, List<String> defaultAllowList) {
+        this(spec, defaultAllowList, defaultAllowList, defaultAllowList);
+    }
+
+    /**
+     * Constructs the Metrics Model for managing configurable metrics to Strimzi.
+     *
+     * @param spec Custom resource section configuring metrics.
+     * @param defaultAllowList Default allow list to be used when no value is provided.
+     * @param defaultBrokerAllowList Default allow list to be used for broker nodes when no value is provided.
+     * @param defaultControllerAllowList Default allow list to be used for controller nodes when no value is provided.
+     */
+    public StrimziMetricsReporterModel(HasConfigurableMetrics spec,
+                                       List<String> defaultAllowList,
+                                       List<String> defaultBrokerAllowList,
+                                       List<String> defaultControllerAllowList) {
         if (spec.getMetricsConfig() != null) {
             StrimziMetricsReporter config = (StrimziMetricsReporter) spec.getMetricsConfig();
             validate(config);
-            this.allowList = config.getValues() != null && config.getValues().getAllowList() != null
-                    ? config.getValues().getAllowList() : defaultAllowList;
+            if (config.getValues() != null && config.getValues().getAllowList() != null) {
+                this.allowList = config.getValues().getAllowList();
+                this.brokerAllowList = this.allowList;
+                this.controllerAllowList = this.allowList;
+            } else {
+                this.allowList = defaultAllowList;
+                this.brokerAllowList = defaultBrokerAllowList;
+                this.controllerAllowList = defaultControllerAllowList;
+            }
         } else {
             throw new InvalidConfigurationException("Unexpected empty metrics config");
         }
@@ -47,6 +72,23 @@ public class StrimziMetricsReporterModel implements MetricsModel {
      */
     public String getAllowList() {
         return String.join(",", allowList);
+    }
+
+    /**
+     * Gets the comma-separated list of allow regex expressions for a Kafka node.
+     *
+     * @param node Kafka node.
+     *
+     * @return Comma separated list of allow regex expressions.
+     */
+    public String getAllowList(NodeRef node) {
+        if (node.broker() && !node.controller()) {
+            return String.join(",", brokerAllowList);
+        } else if (!node.broker() && node.controller()) {
+            return String.join(",", controllerAllowList);
+        } else {
+            return getAllowList();
+        }
     }
 
     /**
