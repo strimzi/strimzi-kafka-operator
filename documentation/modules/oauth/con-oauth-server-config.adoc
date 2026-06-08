@@ -49,6 +49,9 @@ To enable OAuth 2.0 token-based authentication on a Kafka listener, configure th
 
 All OAuth 2.0 validation settings (such as JWKS or token introspection) are provided through the JAAS configuration string inside the listener configuration.
 
+If you disable issuer checking by setting `oauth.check.issuer="false"`, do not configure `oauth.valid.issuer.uri`.
+When `oauth.valid.issuer.uri` is configured, the issuer is checked against that value.
+
 === JWT validation example
 
 The following example shows a minimal listener configuration that validates JSON Web Tokens (JWTs) using a JWKS endpoint.
