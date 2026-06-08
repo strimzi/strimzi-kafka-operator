@@ -5,8 +5,6 @@
 package io.strimzi.operator.cluster.model;
 
 import io.fabric8.kubernetes.api.model.OwnerReference;
-import io.fabric8.kubernetes.api.model.Volume;
-import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.rbac.PolicyRule;
 import io.fabric8.kubernetes.api.model.rbac.PolicyRuleBuilder;
 import io.fabric8.kubernetes.api.model.rbac.Role;
@@ -70,62 +68,6 @@ public class AuthenticationUtils {
             }
         }
         return warnMsg;
-    }
-
-    /**
-     * Creates the Volumes used for authentication of Kafka client based components
-     *
-     * @param authentication    Authentication object from CRD
-     * @param volumeList        List where the volumes will be added
-     * @param isOpenShift       Indicates whether we run on OpenShift or not
-     * @param volumeNamePrefix  Prefix used for volume names
-     */
-    public static void configureClientAuthenticationVolumes(KafkaClientAuthentication authentication, List<Volume> volumeList, boolean isOpenShift, String volumeNamePrefix)   {
-        if (authentication != null) {
-            if (authentication instanceof KafkaClientAuthenticationTls tlsAuth) {
-                addNewVolume(volumeList, volumeNamePrefix, tlsAuth.getCertificateAndKey().getSecretName(), isOpenShift);
-            } else if (authentication instanceof KafkaClientAuthenticationPlain passwordAuth) {
-                addNewVolume(volumeList, volumeNamePrefix, passwordAuth.getPasswordSecret().getSecretName(), isOpenShift);
-            } else if (authentication instanceof KafkaClientAuthenticationScram scramAuth) {
-                addNewVolume(volumeList, volumeNamePrefix, scramAuth.getPasswordSecret().getSecretName(), isOpenShift);
-            }
-        }
-    }
-
-    /**
-     * Creates the Volumes used for authentication of Kafka client based components, checking that the named volume has not already been
-     * created.
-     */
-    private static void addNewVolume(List<Volume> volumeList, String volumeNamePrefix, String secretName, boolean isOpenShift) {
-        // skipping if a volume with same name was already added
-        if (volumeList.stream().noneMatch(v -> v.getName().equals(volumeNamePrefix + secretName))) {
-            volumeList.add(VolumeUtils.createSecretVolume(volumeNamePrefix + secretName, secretName, isOpenShift));
-        }
-    }
-
-    /**
-     * Creates the VolumeMounts used for authentication of Kafka client based components
-     *
-     * @param authentication        Authentication object from CRD
-     * @param volumeMountList       List where the volume mounts will be added
-     * @param tlsVolumeMount        Path where the TLS certs should be mounted
-     * @param passwordVolumeMount   Path where passwords should be mounted
-     * @param volumeNamePrefix      Prefix used for volume mount names
-     */
-    public static void configureClientAuthenticationVolumeMounts(KafkaClientAuthentication authentication, List<VolumeMount> volumeMountList, String tlsVolumeMount, String passwordVolumeMount, String volumeNamePrefix) {
-        if (authentication != null) {
-            if (authentication instanceof KafkaClientAuthenticationTls tlsAuth) {
-                // skipping if a volume mount with same Secret name was already added
-                if (volumeMountList.stream().noneMatch(vm -> vm.getName().equals(volumeNamePrefix + tlsAuth.getCertificateAndKey().getSecretName()))) {
-                    volumeMountList.add(VolumeUtils.createVolumeMount(volumeNamePrefix + tlsAuth.getCertificateAndKey().getSecretName(),
-                            tlsVolumeMount + tlsAuth.getCertificateAndKey().getSecretName()));
-                }
-            } else if (authentication instanceof KafkaClientAuthenticationPlain passwordAuth) {
-                volumeMountList.add(VolumeUtils.createVolumeMount(volumeNamePrefix + passwordAuth.getPasswordSecret().getSecretName(), passwordVolumeMount + passwordAuth.getPasswordSecret().getSecretName()));
-            } else if (authentication instanceof KafkaClientAuthenticationScram scramAuth) {
-                volumeMountList.add(VolumeUtils.createVolumeMount(volumeNamePrefix + scramAuth.getPasswordSecret().getSecretName(), passwordVolumeMount + scramAuth.getPasswordSecret().getSecretName()));
-            }
-        }
     }
 
     /**

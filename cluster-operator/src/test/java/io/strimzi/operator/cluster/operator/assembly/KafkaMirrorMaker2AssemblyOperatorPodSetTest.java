@@ -175,6 +175,7 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
         // Mock Secrets
         SecretOperator mockSecretOps = supplier.secretOperations;
         when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaConnectResources.jmxSecretName(NAME)))).thenReturn(Future.succeededFuture());
+        when(mockSecretOps.reconcile(any(), eq(NAMESPACE), anyString(), any())).thenReturn(Future.succeededFuture());
 
         // Mock KafkaMirrorMaker2 CRs
         CrdOperator<KubernetesClient, KafkaMirrorMaker2, KafkaMirrorMaker2List> mockConnectOps = supplier.mirrorMaker2Operator;
@@ -298,6 +299,7 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
         // Mock Secrets
         SecretOperator mockSecretOps = supplier.secretOperations;
         when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaConnectResources.jmxSecretName(NAME)))).thenReturn(Future.succeededFuture());
+        when(mockSecretOps.reconcile(any(), eq(NAMESPACE), anyString(), any())).thenReturn(Future.succeededFuture());
 
         // Mock KafkaMirrorMaker2 CRs
         CrdOperator<KubernetesClient, KafkaMirrorMaker2, KafkaMirrorMaker2List> mockConnectOps = supplier.mirrorMaker2Operator;
@@ -391,6 +393,7 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
         // Mock Secrets
         SecretOperator mockSecretOps = supplier.secretOperations;
         when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaConnectResources.jmxSecretName(NAME)))).thenReturn(Future.succeededFuture());
+        when(mockSecretOps.reconcile(any(), eq(NAMESPACE), anyString(), any())).thenReturn(Future.succeededFuture());
 
         // Mock KafkaMirrorMaker2 CRs
         CrdOperator<KubernetesClient, KafkaMirrorMaker2, KafkaMirrorMaker2List> mockConnectOps = supplier.mirrorMaker2Operator;
@@ -489,6 +492,7 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
         // Mock Secrets
         SecretOperator mockSecretOps = supplier.secretOperations;
         when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaConnectResources.jmxSecretName(NAME)))).thenReturn(Future.succeededFuture());
+        when(mockSecretOps.reconcile(any(), eq(NAMESPACE), anyString(), any())).thenReturn(Future.succeededFuture());
 
         // Mock KafkaMirrorMaker2 CRs
         CrdOperator<KubernetesClient, KafkaMirrorMaker2, KafkaMirrorMaker2List> mockConnectOps = supplier.mirrorMaker2Operator;
@@ -581,6 +585,7 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
         // Mock Secrets
         SecretOperator mockSecretOps = supplier.secretOperations;
         when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaConnectResources.jmxSecretName(NAME)))).thenReturn(Future.succeededFuture());
+        when(mockSecretOps.reconcile(any(), eq(NAMESPACE), anyString(), any())).thenReturn(Future.succeededFuture());
 
         // Mock KafkaMirrorMaker2 CRs
         CrdOperator<KubernetesClient, KafkaMirrorMaker2, KafkaMirrorMaker2List> mockConnectOps = supplier.mirrorMaker2Operator;
@@ -696,6 +701,7 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
         // Mock Secrets
         SecretOperator mockSecretOps = supplier.secretOperations;
         when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaConnectResources.jmxSecretName(NAME)))).thenReturn(Future.succeededFuture());
+        when(mockSecretOps.reconcile(any(), eq(NAMESPACE), anyString(), any())).thenReturn(Future.succeededFuture());
 
         // Mock KafkaMirrorMaker2 CRs
         CrdOperator<KubernetesClient, KafkaMirrorMaker2, KafkaMirrorMaker2List> mockConnectOps = supplier.mirrorMaker2Operator;
@@ -809,6 +815,7 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
         // Mock Secrets
         SecretOperator mockSecretOps = supplier.secretOperations;
         when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaConnectResources.jmxSecretName(NAME)))).thenReturn(Future.succeededFuture());
+        when(mockSecretOps.reconcile(any(), eq(NAMESPACE), anyString(), any())).thenReturn(Future.succeededFuture());
 
         // Mock KafkaMirrorMaker2 CRs
         CrdOperator<KubernetesClient, KafkaMirrorMaker2, KafkaMirrorMaker2List> mockConnectOps = supplier.mirrorMaker2Operator;
@@ -1034,6 +1041,7 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
         // Mock Secrets
         SecretOperator mockSecretOps = supplier.secretOperations;
         when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaConnectResources.jmxSecretName(NAME)))).thenReturn(Future.succeededFuture());
+        when(mockSecretOps.reconcile(any(), eq(NAMESPACE), anyString(), any())).thenReturn(Future.succeededFuture());
 
         // Mock KafkaMirrorMaker2 CRs
         CrdOperator<KubernetesClient, KafkaMirrorMaker2, KafkaMirrorMaker2List> mockConnectOps = supplier.mirrorMaker2Operator;
@@ -1117,6 +1125,7 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
         // Mock Secrets
         SecretOperator mockSecretOps = supplier.secretOperations;
         when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaConnectResources.jmxSecretName(NAME)))).thenReturn(Future.succeededFuture());
+        when(mockSecretOps.reconcile(any(), eq(NAMESPACE), anyString(), any())).thenReturn(Future.succeededFuture());
 
         // Mock KafkaMirrorMaker2 CRs
         CrdOperator<KubernetesClient, KafkaMirrorMaker2, KafkaMirrorMaker2List> mockConnectOps = supplier.mirrorMaker2Operator;
@@ -1201,6 +1210,7 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
         // Mock Secrets
         SecretOperator mockSecretOps = supplier.secretOperations;
         when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaConnectResources.jmxSecretName(NAME)))).thenReturn(Future.succeededFuture());
+        when(mockSecretOps.reconcile(any(), eq(NAMESPACE), anyString(), any())).thenReturn(Future.succeededFuture());
 
         // Mock KafkaMirrorMaker2 CRs
         CrdOperator<KubernetesClient, KafkaMirrorMaker2, KafkaMirrorMaker2List> mockConnectOps = supplier.mirrorMaker2Operator;
@@ -1292,6 +1302,7 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
         // Mock Secrets
         SecretOperator mockSecretOps = supplier.secretOperations;
         when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaConnectResources.jmxSecretName(NAME)))).thenReturn(Future.succeededFuture());
+        when(mockSecretOps.reconcile(any(), eq(NAMESPACE), anyString(), any())).thenReturn(Future.succeededFuture());
 
         // Mock KafkaMirrorMaker2 CRs
         CrdOperator<KubernetesClient, KafkaMirrorMaker2, KafkaMirrorMaker2List> mockConnectOps = supplier.mirrorMaker2Operator;

@@ -12,6 +12,7 @@
 * Add `UseBackgroundPodDeletion` feature gate (alpha, disabled by default) to use background deletion propagation when deleting pods during rolling updates. 
 * Strimzi Drain Cleaner updated to 1.6.0 (included in the Strimzi installation files)
 * Strimzi Access Operator updated to 0.3.0 - included in Strimzi installation files, examples, and documentation
+* KafkaBridge and KafkaMirrorMaker2 now use PEM files instead of P12/JKS for TLS authentication and TLS truststore. PEM files are accessed directly from secrets using KubernetesSecretConfigProvider.
 * It's now possible to configure mTLS `validityDays` and `renewalDays` for each `KafkaUser`
 
 ### Major changes, deprecations, and removals

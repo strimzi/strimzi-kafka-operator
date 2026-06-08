@@ -285,7 +285,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                                             reconciliation,
                                             namespace,
                                             KafkaConnectResources.internalTlsTrustedCertsSecretName(connect.getCluster()),
-                                            connect.generateTlsTrustedCertsSecret(Map.of("ca.crt", Util.encodeToBase64(certificates)), KafkaConnectResources.internalTlsTrustedCertsSecretName(connect.getCluster())))
+                                            connect.generateTlsTrustedCertsSecret(Map.of(KafkaConnectCluster.KAFKA_CONNECT_CERTIFICATES_KEY, Util.encodeToBase64(certificates)), KafkaConnectResources.internalTlsTrustedCertsSecretName(connect.getCluster())))
                                     .mapEmpty();
                         } else {
                             return Future.succeededFuture();

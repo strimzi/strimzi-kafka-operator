@@ -28,8 +28,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import static io.strimzi.operator.cluster.model.KafkaConnectCluster.PASSWORD_VOLUME_MOUNT;
-
 /**
  * This class is used to generate the Connect configuration template. The template is later passed using a config map to
  * the connect pods. The scripts in the container images will fill in the variables in the template and use the
@@ -38,8 +36,6 @@ import static io.strimzi.operator.cluster.model.KafkaConnectCluster.PASSWORD_VOL
  */
 @SuppressWarnings("checkstyle:CyclomaticComplexity")
 public class KafkaConnectConfigurationBuilder {
-    // the volume mounted secret file template includes: <volume_mount>/<secret_name>/<secret_key>
-    private static final String PLACEHOLDER_VOLUME_MOUNTED_SECRET_TEMPLATE_CONFIG_PROVIDER_DIR = "${strimzidir:%s%s:%s}";
     // the secrets file template: <namespace>/<secret_name>:<secret_key>
     private static final String PLACEHOLDER_SECRET_TEMPLATE_KUBE_CONFIG_PROVIDER = "${strimzisecrets:%s/%s:%s}";
 
@@ -99,7 +95,7 @@ public class KafkaConnectConfigurationBuilder {
 
             if (tls.getTrustedCertificates() != null && !tls.getTrustedCertificates().isEmpty()) {
                 printSectionHeader("TLS / SSL");
-                String configProviderValue = String.format(PLACEHOLDER_SECRET_TEMPLATE_KUBE_CONFIG_PROVIDER, reconciliation.namespace(), KafkaConnectResources.internalTlsTrustedCertsSecretName(clusterName), "ca.crt");
+                String configProviderValue = String.format(PLACEHOLDER_SECRET_TEMPLATE_KUBE_CONFIG_PROVIDER, reconciliation.namespace(), KafkaConnectResources.internalTlsTrustedCertsSecretName(clusterName), KafkaConnectCluster.KAFKA_CONNECT_CERTIFICATES_KEY);
                 writer.println("ssl.truststore.certificates=" + configProviderValue);
                 writer.println("ssl.truststore.type=PEM");
 
@@ -177,14 +173,14 @@ public class KafkaConnectConfigurationBuilder {
 
                 if (authentication instanceof KafkaClientAuthenticationPlain passwordAuth) {
                     saslMechanism = "PLAIN";
-                    jaasConfig.append("org.apache.kafka.common.security.plain.PlainLoginModule required username=\"" + passwordAuth.getUsername() + "\" password=\"" + formatPasswordTemplate(passwordAuth.getPasswordSecret(), PASSWORD_VOLUME_MOUNT) + "\";");
+                    jaasConfig.append("org.apache.kafka.common.security.plain.PlainLoginModule required username=\"" + passwordAuth.getUsername() + "\" password=\"" + formatPasswordTemplate(passwordAuth.getPasswordSecret()) + "\";");
                 } else if (authentication instanceof KafkaClientAuthenticationScram scramAuth) {
                     if (scramAuth.getType().equals(KafkaClientAuthenticationScramSha256.TYPE_SCRAM_SHA_256)) {
                         saslMechanism = "SCRAM-SHA-256";
                     } else if (scramAuth.getType().equals(KafkaClientAuthenticationScramSha512.TYPE_SCRAM_SHA_512)) {
                         saslMechanism = "SCRAM-SHA-512";
                     }
-                    jaasConfig.append("org.apache.kafka.common.security.scram.ScramLoginModule required username=\"" + scramAuth.getUsername() + "\" password=\"" + formatPasswordTemplate(scramAuth.getPasswordSecret(), PASSWORD_VOLUME_MOUNT) + "\";");
+                    jaasConfig.append("org.apache.kafka.common.security.scram.ScramLoginModule required username=\"" + scramAuth.getUsername() + "\" password=\"" + formatPasswordTemplate(scramAuth.getPasswordSecret()) + "\";");
                 }
 
                 writer.println("sasl.mechanism=" + saslMechanism);
@@ -206,8 +202,8 @@ public class KafkaConnectConfigurationBuilder {
         return this;
     }
 
-    private String formatPasswordTemplate(PasswordSecretSource secret, String volumeMountPath) {
-        return String.format(PLACEHOLDER_VOLUME_MOUNTED_SECRET_TEMPLATE_CONFIG_PROVIDER_DIR, volumeMountPath, secret.getSecretName(), secret.getPassword());
+    private String formatPasswordTemplate(PasswordSecretSource passwordSecret) {
+        return String.format(PLACEHOLDER_SECRET_TEMPLATE_KUBE_CONFIG_PROVIDER, reconciliation.namespace(), passwordSecret.getSecretName(), passwordSecret.getPassword());
     }
 
     /**
