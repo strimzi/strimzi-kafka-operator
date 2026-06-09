@@ -36,6 +36,11 @@ For MirrorMaker 2, messages are traced from the source cluster to the target clu
 
 For Kafka Connect, only messages produced and consumed by Kafka Connect are traced. To trace messages sent between Kafka Connect and external systems, you must configure tracing in the connectors for those systems.
 
+NOTE: When tracing is enabled, Strimzi automatically sets `consumer.interceptor.classes` and `producer.interceptor.classes` on the Kafka Connect cluster to inject the OpenTelemetry interceptors.
+These properties are restricted and cannot be overridden at the `KafkaConnect` level.
+If a connector requires its own interceptor classes (for example, to enable connector-level distributed tracing with a tool such as Debezium), configure the `interceptor.classes` property in the connector configuration itself using `spec.config` in the `KafkaConnector` resource, or through the Kafka Connect REST API.
+Connector-level interceptor settings are not affected by the Connect-level restriction.
+
 .Tracing in the HTTP Bridge
 
 For the HTTP Bridge, messages produced and consumed by the HTTP Bridge are traced. Incoming HTTP requests from client applications to send and receive messages through the HTTP Bridge are also traced.
