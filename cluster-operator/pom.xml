@@ -168,16 +168,6 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.apache.kafka</groupId>
-            <artifactId>connect-file</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.kafka</groupId>
-            <artifactId>connect-api</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
             <groupId>io.strimzi</groupId>
             <artifactId>strimzi-test-container</artifactId>
         </dependency>
@@ -313,8 +303,6 @@
                                 <ignoredUnusedDeclaredDependency>org.apache.logging.log4j:log4j-layout-template-json</ignoredUnusedDeclaredDependency>
                                 <!-- Used to provide native epoll for Netty-->
                                 <ignoredUnusedDeclaredDependency>io.netty:netty-transport-native-epoll:jar</ignoredUnusedDeclaredDependency>
-                                <!-- Used by KafkaConnectApiIT -->
-                                <ignoredUnusedDeclaredDependency>org.apache.kafka:connect-file</ignoredUnusedDeclaredDependency>
                             </ignoredUnusedDeclaredDependencies>
                             <ignoredNonTestScopedDependencies>
                                 <!-- Needed for builders used in the code -->

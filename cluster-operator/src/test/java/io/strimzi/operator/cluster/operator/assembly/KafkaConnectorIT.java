@@ -174,8 +174,8 @@ public class KafkaConnectorIT {
                 connector)
             .onComplete(context.succeeding(v -> assertConnectorIsRunning(context, client, namespace, connectorName)))
             .compose(v -> {
-                config.remove(TestingConnector.START_TIME_MS, 1_000);
-                config.put(TestingConnector.START_TIME_MS, 1_000);
+                config.remove(StrimziFaultInjectionSourceConnectorConfig.START_TIME_MS, 1_000);
+                config.put(StrimziFaultInjectionSourceConnectorConfig.START_TIME_MS, 1_000);
                 Crds.kafkaConnectorOperation(client)
                         .inNamespace(namespace)
                         .resource(createKafkaConnector(namespace, connectorName, false, config))
