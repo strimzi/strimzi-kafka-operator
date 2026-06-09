@@ -68,7 +68,6 @@ public class KafkaConnectApiIT {
     @BeforeAll
     public static void before() throws IOException {
         cluster = new StrimziKafkaCluster.StrimziKafkaClusterBuilder()
-                .withKafkaVersion("4.3.0")
                 .withNumberOfBrokers(1)
                 .withInternalTopicReplicationFactor(1)
                 .withSharedNetwork()

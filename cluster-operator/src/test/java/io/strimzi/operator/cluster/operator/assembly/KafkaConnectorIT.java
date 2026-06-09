@@ -22,6 +22,7 @@ import io.strimzi.operator.common.MicrometerMetricsProvider;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.metrics.MetricsHolder;
 import io.strimzi.platform.KubernetesVersion;
+import io.strimzi.test.connectors.StrimziFaultInjectionSourceConnector;
 import io.strimzi.test.connectors.StrimziFaultInjectionSourceConnectorConfig;
 import io.strimzi.test.container.StrimziConnectCluster;
 import io.strimzi.test.container.StrimziConnectContainer;
@@ -80,7 +81,6 @@ public class KafkaConnectorIT {
     @BeforeAll
     public static void before() throws IOException {
         cluster = new StrimziKafkaCluster.StrimziKafkaClusterBuilder()
-                .withKafkaVersion("4.3.0")
                 .withNumberOfBrokers(1)
                 .withInternalTopicReplicationFactor(1)
                 .withSharedNetwork()
@@ -408,7 +408,7 @@ public class KafkaConnectorIT {
                         .withNamespace(namespace)
                     .endMetadata()
                     .withNewSpec()
-                        .withClassName("io.strimzi.test.connectors.StrimziFaultInjectionSourceConnector")
+                        .withClassName(StrimziFaultInjectionSourceConnector.class.getName())
                         .withTasksMax(1)
                         .withConfig(config)
                         .withNewAutoRestart()
