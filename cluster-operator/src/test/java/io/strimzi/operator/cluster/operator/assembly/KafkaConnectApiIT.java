@@ -7,6 +7,8 @@ package io.strimzi.operator.cluster.operator.assembly;
 import io.strimzi.api.kafka.model.connect.ConnectorPlugin;
 import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.test.container.StrimziConnectCluster;
+import io.strimzi.test.container.StrimziConnectContainer;
 import io.strimzi.test.container.StrimziKafkaCluster;
 import io.vertx.core.json.JsonObject;
 import org.junit.jupiter.api.AfterAll;
@@ -41,29 +43,32 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 public class KafkaConnectApiIT {
     private static StrimziKafkaCluster cluster;
 
-    private ConnectCluster connectCluster;
+    private StrimziConnectCluster connectCluster;
     private int port;
 
     @BeforeEach
     public void beforeEach() throws InterruptedException {
         // Start a 1 node connect cluster
-        connectCluster = new ConnectCluster()
-                .usingBrokers(cluster.getBootstrapServers())
-                .addConnectNodes(1);
-        connectCluster.startup();
-        port = connectCluster.getPort(0);
+        connectCluster = new StrimziConnectCluster.StrimziConnectClusterBuilder()
+                .withKafkaCluster(cluster)
+                .withGroupId("kafka-connect-api-it")
+                .build();
+        connectCluster.start();
+        StrimziConnectContainer worker = connectCluster.getWorkers().iterator().next();
+        port = worker.getMappedPort(8083);
     }
 
     @AfterEach
     public void afterEach() {
         if (connectCluster != null) {
-            connectCluster.shutdown();
+            connectCluster.stop();
         }
     }
 
     @BeforeAll
     public static void before() throws IOException {
         cluster = new StrimziKafkaCluster.StrimziKafkaClusterBuilder()
+                .withKafkaVersion("4.3.0")
                 .withNumberOfBrokers(1)
                 .withInternalTopicReplicationFactor(1)
                 .withSharedNetwork()

@@ -22,6 +22,9 @@ import io.strimzi.operator.common.MicrometerMetricsProvider;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.metrics.MetricsHolder;
 import io.strimzi.platform.KubernetesVersion;
+import io.strimzi.test.connectors.StrimziFaultInjectionSourceConnectorConfig;
+import io.strimzi.test.container.StrimziConnectCluster;
+import io.strimzi.test.container.StrimziConnectContainer;
 import io.strimzi.test.container.StrimziKafkaCluster;
 import io.strimzi.test.mockkube3.MockKube3;
 import io.vertx.core.Future;
@@ -71,11 +74,13 @@ public class KafkaConnectorIT {
     private static MockKube3 mockKube;
 
     private String namespace;
-    private ConnectCluster connectCluster;
+    private StrimziConnectCluster connectCluster;
+    private int connectPort;
 
     @BeforeAll
     public static void before() throws IOException {
         cluster = new StrimziKafkaCluster.StrimziKafkaClusterBuilder()
+                .withKafkaVersion("4.3.0")
                 .withNumberOfBrokers(1)
                 .withInternalTopicReplicationFactor(1)
                 .withSharedNetwork()
@@ -108,10 +113,14 @@ public class KafkaConnectorIT {
         ));
 
         // Start Connect cluster
-        connectCluster = new ConnectCluster()
-                .usingBrokers(cluster.getBootstrapServers())
-                .addConnectNodes(1);
-        connectCluster.startup();
+        connectCluster = new StrimziConnectCluster.StrimziConnectClusterBuilder()
+                .withKafkaCluster(cluster)
+                .withGroupId("kafka-connector-it")
+                .withStrimziFaultInjectionSourceConnector()
+                .build();
+        connectCluster.start();
+        StrimziConnectContainer worker = connectCluster.getWorkers().iterator().next();
+        connectPort = worker.getMappedPort(8083);
     }
 
     @AfterEach
@@ -120,7 +129,7 @@ public class KafkaConnectorIT {
         client.namespaces().withName(namespace).delete();
 
         if (connectCluster != null) {
-            connectCluster.shutdown();
+            connectCluster.stop();
         }
     }
 
@@ -133,14 +142,14 @@ public class KafkaConnectorIT {
         String connectorName = "my-connector";
 
         LinkedHashMap<String, Object> config = new LinkedHashMap<>();
-        config.put(TestingConnector.START_TIME_MS, 1_000);
-        config.put(TestingConnector.STOP_TIME_MS, 0);
-        config.put(TestingConnector.TASK_START_TIME_MS, 1_000);
-        config.put(TestingConnector.TASK_STOP_TIME_MS, 0);
-        config.put(TestingConnector.TASK_POLL_TIME_MS, 1_000);
-        config.put(TestingConnector.TASK_POLL_RECORDS, 100);
-        config.put(TestingConnector.NUM_PARTITIONS, 1);
-        config.put(TestingConnector.TOPIC_NAME, "my-topic");
+        config.put(StrimziFaultInjectionSourceConnectorConfig.START_TIME_MS, 1_000);
+        config.put(StrimziFaultInjectionSourceConnectorConfig.STOP_TIME_MS, 0);
+        config.put(StrimziFaultInjectionSourceConnectorConfig.TASK_START_TIME_MS, 1_000);
+        config.put(StrimziFaultInjectionSourceConnectorConfig.TASK_STOP_TIME_MS, 0);
+        config.put(StrimziFaultInjectionSourceConnectorConfig.TASK_POLL_TIME_MS, 1_000);
+        config.put(StrimziFaultInjectionSourceConnectorConfig.TASK_POLL_RECORDS, 100);
+        config.put(StrimziFaultInjectionSourceConnectorConfig.NUM_PARTITIONS, 1);
+        config.put(StrimziFaultInjectionSourceConnectorConfig.TOPIC_NAME, "my-topic");
 
         KafkaConnector connector = createKafkaConnector(namespace, connectorName, false, config);
         Crds.kafkaConnectorOperation(client).inNamespace(namespace).resource(connector).create();
@@ -156,7 +165,7 @@ public class KafkaConnectorIT {
         KafkaConnectAssemblyOperator operator = new KafkaConnectAssemblyOperator(vertx, pfa, ros,
                 ClusterOperatorConfig.buildFromMap(Map.of(), KafkaVersionTestUtils.getKafkaVersionLookup()),
             connect -> new KafkaConnectApiImpl(),
-            connectCluster.getPort(0)
+            connectPort
         ) { };
 
         Checkpoint async = context.checkpoint();
@@ -198,15 +207,15 @@ public class KafkaConnectorIT {
         String connectorName = "my-connector-2";
 
         LinkedHashMap<String, Object> config = new LinkedHashMap<>();
-        config.put(TestingConnector.FAIL_ON_START, true);
-        config.put(TestingConnector.START_TIME_MS, 0);
-        config.put(TestingConnector.STOP_TIME_MS, 0);
-        config.put(TestingConnector.TASK_START_TIME_MS, 0);
-        config.put(TestingConnector.TASK_STOP_TIME_MS, 0);
-        config.put(TestingConnector.TASK_POLL_TIME_MS, 0);
-        config.put(TestingConnector.TASK_POLL_RECORDS, 100);
-        config.put(TestingConnector.NUM_PARTITIONS, 1);
-        config.put(TestingConnector.TOPIC_NAME, "my-topic");
+        config.put(StrimziFaultInjectionSourceConnectorConfig.FAIL_ON_START, true);
+        config.put(StrimziFaultInjectionSourceConnectorConfig.START_TIME_MS, 0);
+        config.put(StrimziFaultInjectionSourceConnectorConfig.STOP_TIME_MS, 0);
+        config.put(StrimziFaultInjectionSourceConnectorConfig.TASK_START_TIME_MS, 0);
+        config.put(StrimziFaultInjectionSourceConnectorConfig.TASK_STOP_TIME_MS, 0);
+        config.put(StrimziFaultInjectionSourceConnectorConfig.TASK_POLL_TIME_MS, 0);
+        config.put(StrimziFaultInjectionSourceConnectorConfig.TASK_POLL_RECORDS, 100);
+        config.put(StrimziFaultInjectionSourceConnectorConfig.NUM_PARTITIONS, 1);
+        config.put(StrimziFaultInjectionSourceConnectorConfig.TOPIC_NAME, "my-topic");
 
         KafkaConnector connector = createKafkaConnector(namespace, connectorName, false, config);
         Crds.kafkaConnectorOperation(client).inNamespace(namespace).resource(connector).create();
@@ -222,7 +231,7 @@ public class KafkaConnectorIT {
         KafkaConnectAssemblyOperator operator = new KafkaConnectAssemblyOperator(vertx, pfa, ros,
                 ClusterOperatorConfig.buildFromMap(Map.of(), KafkaVersionTestUtils.getKafkaVersionLookup()),
                 connect -> new KafkaConnectApiImpl(),
-                connectCluster.getPort(0)
+                connectPort
         ) { };
 
         operator.reconcileConnectorAndHandleResult(new Reconciliation("test", "KafkaConnect", namespace, "bogus"),
@@ -243,15 +252,15 @@ public class KafkaConnectorIT {
         String connectorName = "my-connector-3";
 
         LinkedHashMap<String, Object> config = new LinkedHashMap<>();
-        config.put(TestingConnector.TASK_FAIL_ON_START, true);
-        config.put(TestingConnector.START_TIME_MS, 0);
-        config.put(TestingConnector.STOP_TIME_MS, 0);
-        config.put(TestingConnector.TASK_START_TIME_MS, 0);
-        config.put(TestingConnector.TASK_STOP_TIME_MS, 0);
-        config.put(TestingConnector.TASK_POLL_TIME_MS, 0);
-        config.put(TestingConnector.TASK_POLL_RECORDS, 100);
-        config.put(TestingConnector.NUM_PARTITIONS, 1);
-        config.put(TestingConnector.TOPIC_NAME, "my-topic");
+        config.put(StrimziFaultInjectionSourceConnectorConfig.TASK_FAIL_ON_START, true);
+        config.put(StrimziFaultInjectionSourceConnectorConfig.START_TIME_MS, 0);
+        config.put(StrimziFaultInjectionSourceConnectorConfig.STOP_TIME_MS, 0);
+        config.put(StrimziFaultInjectionSourceConnectorConfig.TASK_START_TIME_MS, 0);
+        config.put(StrimziFaultInjectionSourceConnectorConfig.TASK_STOP_TIME_MS, 0);
+        config.put(StrimziFaultInjectionSourceConnectorConfig.TASK_POLL_TIME_MS, 0);
+        config.put(StrimziFaultInjectionSourceConnectorConfig.TASK_POLL_RECORDS, 100);
+        config.put(StrimziFaultInjectionSourceConnectorConfig.NUM_PARTITIONS, 1);
+        config.put(StrimziFaultInjectionSourceConnectorConfig.TOPIC_NAME, "my-topic");
 
         KafkaConnector connector = createKafkaConnector(namespace, connectorName, false, config);
         Crds.kafkaConnectorOperation(client).inNamespace(namespace).resource(connector).create();
@@ -267,7 +276,7 @@ public class KafkaConnectorIT {
         KafkaConnectAssemblyOperator operator = new KafkaConnectAssemblyOperator(vertx, pfa, ros,
                 ClusterOperatorConfig.buildFromMap(Map.of(), KafkaVersionTestUtils.getKafkaVersionLookup()),
                 connect -> new KafkaConnectApiImpl(),
-                connectCluster.getPort(0)
+                connectPort
         ) { };
 
         operator.reconcileConnectorAndHandleResult(new Reconciliation("test", "KafkaConnect", namespace, "bogus"),
@@ -299,15 +308,15 @@ public class KafkaConnectorIT {
         String connectorName = "my-connector-4";
 
         LinkedHashMap<String, Object> config = new LinkedHashMap<>();
-        config.put(TestingConnector.FAIL_ON_START, true);
-        config.put(TestingConnector.START_TIME_MS, 0);
-        config.put(TestingConnector.STOP_TIME_MS, 0);
-        config.put(TestingConnector.TASK_START_TIME_MS, 0);
-        config.put(TestingConnector.TASK_STOP_TIME_MS, 0);
-        config.put(TestingConnector.TASK_POLL_TIME_MS, 0);
-        config.put(TestingConnector.TASK_POLL_RECORDS, 100);
-        config.put(TestingConnector.NUM_PARTITIONS, 1);
-        config.put(TestingConnector.TOPIC_NAME, "my-topic");
+        config.put(StrimziFaultInjectionSourceConnectorConfig.FAIL_ON_START, true);
+        config.put(StrimziFaultInjectionSourceConnectorConfig.START_TIME_MS, 0);
+        config.put(StrimziFaultInjectionSourceConnectorConfig.STOP_TIME_MS, 0);
+        config.put(StrimziFaultInjectionSourceConnectorConfig.TASK_START_TIME_MS, 0);
+        config.put(StrimziFaultInjectionSourceConnectorConfig.TASK_STOP_TIME_MS, 0);
+        config.put(StrimziFaultInjectionSourceConnectorConfig.TASK_POLL_TIME_MS, 0);
+        config.put(StrimziFaultInjectionSourceConnectorConfig.TASK_POLL_RECORDS, 100);
+        config.put(StrimziFaultInjectionSourceConnectorConfig.NUM_PARTITIONS, 1);
+        config.put(StrimziFaultInjectionSourceConnectorConfig.TOPIC_NAME, "my-topic");
 
         KafkaConnector connector = createKafkaConnector(namespace, connectorName, true, config);
         Crds.kafkaConnectorOperation(client).inNamespace(namespace).resource(connector).create();
@@ -323,7 +332,7 @@ public class KafkaConnectorIT {
         KafkaConnectAssemblyOperator operator = new KafkaConnectAssemblyOperator(vertx, pfa, ros,
             ClusterOperatorConfig.buildFromMap(Map.of(), KafkaVersionTestUtils.getKafkaVersionLookup()),
             connect -> new KafkaConnectApiImpl(),
-            connectCluster.getPort(0)
+            connectPort
         ) { };
 
         operator.reconcileConnectorAndHandleResult(new Reconciliation("test", "KafkaConnect", namespace, "bogus"),
@@ -344,15 +353,15 @@ public class KafkaConnectorIT {
         String connectorName = "my-connector-5";
 
         LinkedHashMap<String, Object> config = new LinkedHashMap<>();
-        config.put(TestingConnector.TASK_FAIL_ON_START, true);
-        config.put(TestingConnector.START_TIME_MS, 0);
-        config.put(TestingConnector.STOP_TIME_MS, 0);
-        config.put(TestingConnector.TASK_START_TIME_MS, 0);
-        config.put(TestingConnector.TASK_STOP_TIME_MS, 0);
-        config.put(TestingConnector.TASK_POLL_TIME_MS, 0);
-        config.put(TestingConnector.TASK_POLL_RECORDS, 100);
-        config.put(TestingConnector.NUM_PARTITIONS, 1);
-        config.put(TestingConnector.TOPIC_NAME, "my-topic");
+        config.put(StrimziFaultInjectionSourceConnectorConfig.TASK_FAIL_ON_START, true);
+        config.put(StrimziFaultInjectionSourceConnectorConfig.START_TIME_MS, 0);
+        config.put(StrimziFaultInjectionSourceConnectorConfig.STOP_TIME_MS, 0);
+        config.put(StrimziFaultInjectionSourceConnectorConfig.TASK_START_TIME_MS, 0);
+        config.put(StrimziFaultInjectionSourceConnectorConfig.TASK_STOP_TIME_MS, 0);
+        config.put(StrimziFaultInjectionSourceConnectorConfig.TASK_POLL_TIME_MS, 0);
+        config.put(StrimziFaultInjectionSourceConnectorConfig.TASK_POLL_RECORDS, 100);
+        config.put(StrimziFaultInjectionSourceConnectorConfig.NUM_PARTITIONS, 1);
+        config.put(StrimziFaultInjectionSourceConnectorConfig.TOPIC_NAME, "my-topic");
 
         KafkaConnector connector = createKafkaConnector(namespace, connectorName, true, config);
         Crds.kafkaConnectorOperation(client).inNamespace(namespace).resource(connector).create();
@@ -368,7 +377,7 @@ public class KafkaConnectorIT {
         KafkaConnectAssemblyOperator operator = new KafkaConnectAssemblyOperator(vertx, pfa, ros,
             ClusterOperatorConfig.buildFromMap(Map.of(), KafkaVersionTestUtils.getKafkaVersionLookup()),
             connect -> new KafkaConnectApiImpl(),
-            connectCluster.getPort(0)
+            connectPort
         ) { };
 
         operator.reconcileConnectorAndHandleResult(new Reconciliation("test", "KafkaConnect", namespace, "bogus"),
@@ -399,7 +408,7 @@ public class KafkaConnectorIT {
                         .withNamespace(namespace)
                     .endMetadata()
                     .withNewSpec()
-                        .withClassName(TestingConnector.class.getName())
+                        .withClassName("io.strimzi.test.connectors.StrimziFaultInjectionSourceConnector")
                         .withTasksMax(1)
                         .withConfig(config)
                         .withNewAutoRestart()
