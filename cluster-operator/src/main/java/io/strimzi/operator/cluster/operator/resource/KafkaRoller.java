@@ -514,6 +514,7 @@ public class KafkaRoller {
         set.add("CrashLoopBackOff");
         set.add("ImagePullBackOff");
         set.add("ContainerCreating");
+        set.add("InvalidImageName");
         return isPendingAndUnschedulable(pod) || podWaitingBecauseOfAnyReasons(pod, set);
     }
 
