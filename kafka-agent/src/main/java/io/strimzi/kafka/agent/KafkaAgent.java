@@ -14,6 +14,7 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import jakarta.servlet.http.HttpServletResponse;
+import org.apache.kafka.server.metrics.KafkaYammerMetrics;
 import org.eclipse.jetty.http.HttpHeader;
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Handler;
@@ -34,8 +35,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.security.SecureRandom;
@@ -70,9 +69,6 @@ public class KafkaAgent {
     private static final int HTTPS_PORT = 8443;
     private static final int HTTP_PORT = 8080;
     private static final long GRACEFUL_SHUTDOWN_TIMEOUT_MS = 30 * 1000;
-
-    // KafkaYammerMetrics class in Kafka 3.3+
-    private static final String YAMMER_METRICS_IN_KAFKA_3_3_AND_LATER = "org.apache.kafka.server.metrics.KafkaYammerMetrics";
 
     private static final byte BROKER_RUNNING_STATE = 3;
     private static final byte BROKER_RECOVERY_STATE = 2;
@@ -151,36 +147,12 @@ public class KafkaAgent {
     }
 
     /**
-     * Acquires the MetricsRegistry from the KafkaYammerMetrics class. Depending on the Kafka version we are on, it will
-     * use reflection to use the right class to get it.
+     * Acquires the MetricsRegistry from the KafkaYammerMetrics class.
      *
      * @return  Metrics Registry object
      */
     private MetricsRegistry metricsRegistry()   {
-        Object metricsRegistry;
-        Class<?> yammerMetrics;
-
-        try {
-            // First we try to get the KafkaYammerMetrics class for Kafka 3.3+
-            yammerMetrics = Class.forName(YAMMER_METRICS_IN_KAFKA_3_3_AND_LATER);
-            LOGGER.info("Found class {} for Kafka 3.3 and newer.", YAMMER_METRICS_IN_KAFKA_3_3_AND_LATER);
-        } catch (ClassNotFoundException e)    {
-            LOGGER.info("Class {} not found. We are probably on Kafka 3.2 or older.", YAMMER_METRICS_IN_KAFKA_3_3_AND_LATER);
-            throw new RuntimeException("Failed to find Yammer Metrics class", e);
-        }
-
-        try {
-            Method method = yammerMetrics.getMethod("defaultRegistry");
-            metricsRegistry = method.invoke(null);
-        } catch (InvocationTargetException | NoSuchMethodException | IllegalAccessException e) {
-            throw new RuntimeException("Failed to get metrics registry", e);
-        }
-
-        if (metricsRegistry instanceof MetricsRegistry) {
-            return (MetricsRegistry) metricsRegistry;
-        } else {
-            throw new RuntimeException("Metrics registry does not have the expected type");
-        }
+        return KafkaYammerMetrics.defaultRegistry();
     }
 
     private boolean isBrokerState(MetricName name) {

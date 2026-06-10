@@ -23,7 +23,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-
 /**
  * Class with various utility methods for generating KeyStore and TrustStore for KafkaAgent
  */
