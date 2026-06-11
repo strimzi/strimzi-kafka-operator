@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.cluster.operator.resource;
 
+import io.fabric8.kubernetes.api.model.ContainerStatusBuilder;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodBuilder;
 import io.fabric8.kubernetes.client.KubernetesClientException;
@@ -28,6 +29,8 @@ import org.apache.kafka.clients.admin.TopicDescription;
 import org.apache.kafka.common.KafkaFuture;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -45,6 +48,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static io.strimzi.operator.common.Util.maybeUnwrapCompletionException;
 import static java.util.Arrays.asList;
@@ -753,6 +757,29 @@ public class KafkaRollerTest {
                 asList(7, 4, 3, 5, 6, 8, 1, 0, 2)); //Rolls in order: unready controllers, ready controllers, unready brokers, ready brokers
     }
 
+    @ParameterizedTest(name = "testPodStuckWith-{0}")
+    @MethodSource("stuckPodReasons")
+    public void testPodStuckThrowsFatalProblem(String reason) {
+        PodOperator podOps = mockPodOpsWithStuckPod(podId -> CompletableFuture.completedFuture(null), reason);
+        TestingKafkaRoller kafkaRoller = rollerWithActiveController(podOps, addPodNames(REPLICAS, 0, 0), -1);
+        doFailingRollingRestart(kafkaRoller,
+            asList(0, 1, 2, 3, 4),
+            KafkaRoller.FatalProblem.class, "Pod is unschedulable or is not starting",
+            emptyList());
+    }
+
+    @ParameterizedTest(name = "testPodStuckForceRestartWith-{0}")
+    @MethodSource("stuckPodReasons")
+    public void testPodStuckForceRestartWithOldRevision(String reason) {
+        PodOperator podOps = mockPodOpsWithStuckPod(podId -> CompletableFuture.completedFuture(null), reason);
+        TestingKafkaRoller kafkaRoller = rollerWithActiveController(podOps, addPodNames(REPLICAS, 0, 0), -1);
+        kafkaRoller.rollingRestart(pod -> RestartReasons.of(RestartReason.POD_HAS_OLD_REVISION))
+            .whenComplete((v, err) -> {
+                assertThat(restarted(), is(asList(0, 1, 2, 3, 4)));
+                assertNoUnclosedAdminClient(kafkaRoller);
+            }).join();
+    }
+
     private TestingKafkaRoller rollerWithActiveController(PodOperator podOps, Set<NodeRef> nodes, int activeController) {
         return new TestingKafkaRoller(nodes, podOps,
                 noException(), null, noException(), noException(), noException(),
@@ -857,6 +884,35 @@ public class KafkaRollerTest {
             }
         });
         return podOps;
+    }
+
+    private PodOperator mockPodOpsWithStuckPod(Function<Integer, CompletableFuture<Void>> readiness, String reason) {
+        PodOperator podOps = mockPodOps(readiness);
+
+        when(podOps.get(any(), any())).thenAnswer(invocation ->
+            new PodBuilder()
+                .withNewMetadata()
+                    .withNamespace(invocation.getArgument(0))
+                    .withName(invocation.getArgument(1))
+                .endMetadata()
+                .withNewStatus()
+                    .withContainerStatuses(
+                        new ContainerStatusBuilder()
+                            .withName("kafka")
+                            .withNewState()
+                                .withNewWaiting()
+                                    .withReason(reason)
+                                .endWaiting()
+                            .endState()
+                            .build())
+                .endStatus()
+            .build()
+        );
+        return podOps;
+    }
+
+    private static Stream<String> stuckPodReasons() {
+        return Stream.of("CrashLoopBackOff", "ImagePullBackOff", "ContainerCreating", "InvalidImageName");
     }
 
     private class TestingKafkaRoller extends KafkaRoller {
