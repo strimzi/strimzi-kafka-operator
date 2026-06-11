@@ -1412,7 +1412,13 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
         Checkpoint async = context.checkpoint();
         ops.reconcile(new Reconciliation("test-trigger", KafkaMirrorMaker2.RESOURCE_KIND, NAMESPACE, NAME))
                 .onComplete(context.succeeding(v -> context.verify(() -> {
-                    verify(mockSecretOps, times(1)).getAsync(eq(NAMESPACE), eq("shared-tls-secret"));
+                    // This secret is fetched twice by KafkaMirrorMaker2AssemblyOperator.tlsTrustedCertsSecret.
+                    //
+                    // KafkaMirrorMaker2Cluster.getTls() is set to the target cluster TLS configuration.
+                    //
+                    // Hence, once for the main "ca.crt" per KafkaMirrorMaker2Spec and once for "<alias>-ca.crt"
+                    // per KafkaMirrorMaker2ClusterSpec within MM2Spec.
+                    verify(mockSecretOps, times(2)).getAsync(eq(NAMESPACE), eq("shared-tls-secret"));
                     verify(mockSecretOps, times(2)).getAsync(eq(NAMESPACE), eq("shared-tls-secret-2"));
 
                     async.flag();
