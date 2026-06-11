@@ -771,7 +771,7 @@
             "inspect": false
           },
           "mappings": [],
-          "noValue": "0",
+          "noValue": "N/A",
           "thresholds": {
             "mode": "absolute",
             "steps": [
