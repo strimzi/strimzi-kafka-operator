@@ -510,6 +510,15 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                         future = Future.fromCompletionStage(apiClient.pause(reconciliation, host, port, connectorName));
                     }
                 }
+                case "FAILED" -> {
+                    if (targetState == ConnectorState.PAUSED) {
+                        LOGGER.warnCr(reconciliation, "Connector {} cannot be paused since it is in the failed state", connectorName);
+                        return Future.failedFuture("Connector " + connectorName + " cannot be paused since it is in failed state.");
+                    } else if (targetState == ConnectorState.STOPPED) {
+                        LOGGER.infoCr(reconciliation, "Stopping connector {}", connectorName);
+                        future = Future.fromCompletionStage(apiClient.stop(reconciliation, host, port, connectorName));
+                    }
+                }
                 default -> {
                     // Connectors can also be in the UNASSIGNED or RESTARTING state. We could transition directly
                     // from these states to PAUSED or STOPPED but as these are transient, and typically lead to

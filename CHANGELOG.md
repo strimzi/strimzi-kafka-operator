@@ -2,6 +2,7 @@
 
 ## 1.1.0
 
+* Allow failed `KafkaConnectors` to be stopped and reject pausing of failed connectors since this operation is not supported by Kafka Connect
 * Add support for Apache Kafka 4.3.0 and 4.2.1
 * Remove support for Kafka 4.1.x
 * Reconcile Cruise Control before Entity Operator when both are enabled.

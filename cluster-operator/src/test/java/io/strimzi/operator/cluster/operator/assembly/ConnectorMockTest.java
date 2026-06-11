@@ -143,11 +143,11 @@ public class ConnectorMockTest {
         statusNode.put("name", connectorName);
         Map<String, Object> connector = new HashMap<>();
         statusNode.put("connector", connector);
-        connector.put("state", connectorStatus.state.toString());
+        connector.put("state", connectorStatus.state);
         connector.put("worker_id", "somehost0:8083");
         Map<String, Object> task = new HashMap<>();
         task.put("id", 0);
-        task.put("state", connectorStatus.state.toString());
+        task.put("state", connectorStatus.state);
         task.put("worker_id", "somehost2:8083");
         List<Map<String, Object>> tasks = singletonList(task);
         statusNode.put("tasks", tasks);
@@ -289,7 +289,7 @@ public class ConnectorMockTest {
             LOGGER.info("###### create " + host);
             String connectorName = invocation.getArgument(3);
             JsonObject connectorConfig = invocation.getArgument(4);
-            connectors.putIfAbsent(key(host, connectorName), new ConnectorStatus(ConnectorState.RUNNING, connectorConfig));
+            connectors.putIfAbsent(key(host, connectorName), new ConnectorStatus("RUNNING", connectorConfig));
             return CompletableFuture.completedFuture(null);
         });
         when(api.delete(any(), any(), anyInt(), anyString())).thenAnswer(invocation -> {
@@ -318,8 +318,8 @@ public class ConnectorMockTest {
             if (connectorStatus == null) {
                 return CompletableFuture.failedFuture(new ConnectRestException("PUT", "", 404, "Not found", "Connector name " + connectorName));
             }
-            if (!ConnectorState.PAUSED.equals(connectorStatus.state)) {
-                connectors.put(key(host, connectorName), new ConnectorStatus(ConnectorState.PAUSED, connectorStatus.config));
+            if (!"PAUSED".equals(connectorStatus.state)) {
+                connectors.put(key(host, connectorName), new ConnectorStatus("PAUSED", connectorStatus.config));
             }
             return CompletableFuture.completedFuture(null);
         });
@@ -330,8 +330,8 @@ public class ConnectorMockTest {
             if (connectorStatus == null) {
                 return CompletableFuture.failedFuture(new ConnectRestException("PUT", "", 404, "Not found", "Connector name " + connectorName));
             }
-            if (!ConnectorState.STOPPED.equals(connectorStatus.state)) {
-                connectors.put(key(host, connectorName), new ConnectorStatus(ConnectorState.STOPPED, connectorStatus.config));
+            if (!"STOPPED".equals(connectorStatus.state)) {
+                connectors.put(key(host, connectorName), new ConnectorStatus("STOPPED", connectorStatus.config));
             }
             return CompletableFuture.completedFuture(null);
         });
@@ -342,8 +342,8 @@ public class ConnectorMockTest {
             if (connectorStatus == null) {
                 return CompletableFuture.failedFuture(new ConnectRestException("PUT", "", 404, "Not found", "Connector name " + connectorName));
             }
-            if (ConnectorState.STOPPED.equals(connectorStatus.state) || ConnectorState.PAUSED.equals(connectorStatus.state)) {
-                connectors.put(key(host, connectorName), new ConnectorStatus(ConnectorState.RUNNING, connectorStatus.config));
+            if ("STOPPED".equals(connectorStatus.state) || "PAUSED".equals(connectorStatus.state)) {
+                connectors.put(key(host, connectorName), new ConnectorStatus("RUNNING", connectorStatus.config));
             }
             return CompletableFuture.completedFuture(null);
         });
@@ -2684,6 +2684,122 @@ public class ConnectorMockTest {
         assertThat(connectorConfig.getValue().containsKey("connector.plugin.version"), is(false));
     }
 
+    /** Create connect, create connector, simulate FAILED state, stop connector */
+    @Test
+    public void testConnectorFailedToStopped() {
+        String connectName = "cluster";
+        String connectorName = "connector";
+
+        KafkaConnect connect = new KafkaConnectBuilder()
+                .withNewMetadata()
+                    .withNamespace(namespace)
+                    .withName(connectName)
+                    .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
+                .endMetadata()
+                .withNewSpec()
+                    .withReplicas(1)
+                    .withBootstrapServers("my-kafka:9092")
+                    .withGroupId("my-group")
+                    .withConfigStorageTopic("my-config-topic")
+                    .withOffsetStorageTopic("my-offset-topic")
+                    .withStatusStorageTopic("my-status-topic")
+                .endSpec()
+                .build();
+        Crds.kafkaConnectOperation(client).inNamespace(namespace).resource(connect).create();
+        waitForConnectReady(connectName);
+
+        KafkaConnector connector = new KafkaConnectorBuilder()
+                .withNewMetadata()
+                    .withName(connectorName)
+                    .withNamespace(namespace)
+                    .addToLabels(Labels.STRIMZI_CLUSTER_LABEL, connectName)
+                .endMetadata()
+                .withNewSpec()
+                    .withTasksMax(1)
+                    .withClassName("Dummy")
+                .endSpec()
+                .build();
+        Crds.kafkaConnectorOperation(client).inNamespace(namespace).resource(connector).create();
+        waitForConnectorReady(connectorName);
+        waitForConnectorState(connectorName, "RUNNING");
+
+        // Simulate connector going into FAILED state by updating the connectors map directly
+        String host = KafkaConnectResources.qualifiedServiceName(connectName, namespace);
+        connectors.put(key(host, connectorName), new ConnectorStatus("FAILED", connectors.get(key(host, connectorName)).config));
+
+        Crds.kafkaConnectorOperation(client).inNamespace(namespace).withName(connectorName).edit(spec -> new KafkaConnectorBuilder(spec)
+                .editSpec()
+                .withState(ConnectorState.STOPPED)
+                .endSpec()
+                .build());
+
+        waitForConnectorState(connectorName, "STOPPED");
+
+        verify(api, times(1)).stop(any(),
+                eq(KafkaConnectResources.qualifiedServiceName(connectName, namespace)), eq(KafkaConnectCluster.REST_API_PORT),
+                eq(connectorName));
+        verify(api, never()).pause(any(),
+                eq(KafkaConnectResources.qualifiedServiceName(connectName, namespace)), eq(KafkaConnectCluster.REST_API_PORT),
+                eq(connectorName));
+    }
+
+    /** Create connect, create connector in FAILED state, attempt to pause — reconciliation should fail instead of calling pause() */
+    @Test
+    public void testConnectorPauseWhenFailed() {
+        String connectName = "cluster";
+        String connectorName = "connector";
+
+        KafkaConnect connect = new KafkaConnectBuilder()
+                .withNewMetadata()
+                    .withNamespace(namespace)
+                    .withName(connectName)
+                    .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
+                .endMetadata()
+                .withNewSpec()
+                    .withReplicas(1)
+                    .withBootstrapServers("my-kafka:9092")
+                    .withGroupId("my-group")
+                    .withConfigStorageTopic("my-config-topic")
+                    .withOffsetStorageTopic("my-offset-topic")
+                    .withStatusStorageTopic("my-status-topic")
+                .endSpec()
+                .build();
+        Crds.kafkaConnectOperation(client).inNamespace(namespace).resource(connect).create();
+        waitForConnectReady(connectName);
+
+        KafkaConnector connector = new KafkaConnectorBuilder()
+                .withNewMetadata()
+                    .withName(connectorName)
+                    .withNamespace(namespace)
+                    .addToLabels(Labels.STRIMZI_CLUSTER_LABEL, connectName)
+                .endMetadata()
+                .withNewSpec()
+                    .withTasksMax(1)
+                    .withClassName("Dummy")
+                .endSpec()
+                .build();
+        Crds.kafkaConnectorOperation(client).inNamespace(namespace).resource(connector).create();
+        waitForConnectorReady(connectorName);
+        waitForConnectorState(connectorName, "RUNNING");
+
+        // Simulate connector entering FAILED state
+        String host = KafkaConnectResources.qualifiedServiceName(connectName, namespace);
+        connectors.put(key(host, connectorName), new ConnectorStatus("FAILED", connectors.get(key(host, connectorName)).config));
+
+        Crds.kafkaConnectorOperation(client).inNamespace(namespace).withName(connectorName).edit(spec -> new KafkaConnectorBuilder(spec)
+                .editSpec()
+                .withState(ConnectorState.PAUSED)
+                .endSpec()
+                .build());
+
+        waitForConnectorNotReady(connectorName, "NoStackTraceThrowable",
+                "Connector " + connectorName + " cannot be paused since it is in failed state.");
+
+        verify(api, never()).pause(any(),
+                eq(KafkaConnectResources.qualifiedServiceName(connectName, namespace)), eq(KafkaConnectCluster.REST_API_PORT),
+                eq(connectorName));
+    }
+
     // Utility record used during tests
-    record ConnectorStatus(ConnectorState state, JsonObject config) { }
+    record ConnectorStatus(String state, JsonObject config) { }
 }
