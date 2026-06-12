@@ -103,11 +103,9 @@ public class TestKafkaVersion implements Comparable<TestKafkaVersion> {
         String[] components = version1.split("\\.");
         String[] otherComponents = version2.split("\\.");
         for (int i = 0; i < Math.min(components.length, otherComponents.length); i++) {
-            int x = Integer.parseInt(components[i]);
-            int y = Integer.parseInt(otherComponents[i]);
-            if (x == y) {
+            if (components[i].compareTo(otherComponents[i]) == 0) {
                 continue;
-            } else if (x < y) {
+            } else if (components[i].compareTo(otherComponents[i]) < 0) {
                 return -1;
             } else {
                 return 1;
