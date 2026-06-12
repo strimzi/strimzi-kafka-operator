@@ -231,7 +231,7 @@
               "options": {
                 "match": "null",
                 "result": {
-                  "text": "0"
+                  "text": "N/A"
                 }
               },
               "type": "special"
@@ -307,7 +307,7 @@
               "options": {
                 "match": "null",
                 "result": {
-                  "text": "0"
+                  "text": "N/A"
                 }
               },
               "type": "special"
@@ -383,7 +383,7 @@
               "options": {
                 "match": "null",
                 "result": {
-                  "text": "0"
+                  "text": "N/A"
                 }
               },
               "type": "special"
@@ -459,7 +459,7 @@
               "options": {
                 "match": "null",
                 "result": {
-                  "text": "0"
+                  "text": "N/A"
                 }
               },
               "type": "special"
