@@ -138,7 +138,7 @@ public class KafkaConfiguration extends AbstractConfiguration {
             try (InputStream in = KafkaConfiguration.class.getResourceAsStream(name)) {
                 if (in != null) {
                     ConfigModels configModels = new ObjectMapper().readValue(in, ConfigModels.class);
-                    if (!kafkaVersion.version().equals(configModels.getVersion())) {
+                    if (!kafkaVersion.mavenVersion().equals(configModels.getVersion())) {
                         throw new RuntimeException("Incorrect version");
                     }
                     return configModels.getConfigs();

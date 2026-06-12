@@ -22,8 +22,8 @@ import io.vertx.core.Future;
 import java.util.List;
 
 import static io.strimzi.operator.cluster.model.KafkaCluster.ANNO_STRIMZI_IO_KAFKA_VERSION;
-import static io.strimzi.operator.cluster.model.KafkaVersion.compareDottedIVVersions;
-import static io.strimzi.operator.cluster.model.KafkaVersion.compareDottedVersions;
+import static io.strimzi.operator.cluster.model.KafkaVersion.compareMetadataVersions;
+import static io.strimzi.operator.cluster.model.KafkaVersion.compareVersions;
 
 /**
  * Creates the KafkaVersionChange object for a KRaft based clusters from the different versions in the Kafka CR and from the Kafka pods.
@@ -116,13 +116,13 @@ public class KRaftVersionChangeCreator {
             if (currentVersion != null) {
                 if (highestKafkaVersion == null)  {
                     highestKafkaVersion = currentVersion;
-                } else if (compareDottedVersions(highestKafkaVersion, currentVersion) < 0) {
+                } else if (compareVersions(highestKafkaVersion, currentVersion) < 0) {
                     highestKafkaVersion = currentVersion;
                 }
 
                 if (lowestKafkaVersion == null)  {
                     lowestKafkaVersion = currentVersion;
-                } else if (compareDottedVersions(lowestKafkaVersion, currentVersion) > 0) {
+                } else if (compareVersions(lowestKafkaVersion, currentVersion) > 0) {
                     lowestKafkaVersion = currentVersion;
                 }
             }
@@ -142,14 +142,14 @@ public class KRaftVersionChangeCreator {
                 LOGGER.warnCr(reconciliation, "Kafka Pods exist, but do not contain the {} annotation to detect their version. Kafka upgrade cannot be detected.", ANNO_STRIMZI_IO_KAFKA_VERSION);
                 throw new KafkaUpgradeException("Kafka Pods exist, but do not contain the " + ANNO_STRIMZI_IO_KAFKA_VERSION + " annotation to detect their version. Kafka upgrade cannot be detected.");
             }
-        } else if (compareDottedVersions(highestKafkaVersion, versionFromCr.version()) > 0)    {
+        } else if (compareVersions(highestKafkaVersion, versionFromCr.version()) > 0)    {
             // Highest Kafka version used by the brokers is higher than desired => suspected downgrade
             try {
                 versionFrom = versions.version(highestKafkaVersion);
             } catch (KafkaUpgradeException exception) {
                 // From version is unknown but thats ok for downgrade
                 LOGGER.infoCr(reconciliation, "Downgrading from unknown Kafka version {}", highestKafkaVersion);
-                versionFrom = new KafkaVersion(highestKafkaVersion, null, false, false, null);
+                versionFrom = new KafkaVersion(highestKafkaVersion, null, null, false, false, null);
             }
             versionTo = versionFromCr;
         } else {
@@ -159,7 +159,7 @@ public class KRaftVersionChangeCreator {
             } catch (KafkaUpgradeException exception) {
                 // From version is unknown but we try to handle it
                 LOGGER.warnCr(reconciliation, "Upgrading from unknown Kafka version {}", lowestKafkaVersion);
-                versionFrom = new KafkaVersion(lowestKafkaVersion, currentMetadataVersion, false, false, null);
+                versionFrom = new KafkaVersion(lowestKafkaVersion, currentMetadataVersion, null, false, false, null);
             }
 
             versionTo = versionFromCr;
@@ -206,7 +206,7 @@ public class KRaftVersionChangeCreator {
      */
     /* test */ static String metadataVersionWithoutKafkaVersionChange(Reconciliation reconciliation, String currentMetadataVersion, String desiredMetadataVersion, KafkaVersion version)   {
         if (desiredMetadataVersion != null)  {
-            if (compareDottedIVVersions(version.metadataVersion(), desiredMetadataVersion) >= 0)    {
+            if (compareMetadataVersions(version.metadataVersion(), desiredMetadataVersion) >= 0)    {
                 return desiredMetadataVersion;
             } else if (currentMetadataVersion != null) {
                 LOGGER.warnCr(reconciliation, "Desired metadata version ({}) is newer than the used Kafka version ({}). The cluster will continue to use the current metadata version ({}).", desiredMetadataVersion, version.version(), currentMetadataVersion);
@@ -232,7 +232,7 @@ public class KRaftVersionChangeCreator {
      */
     /* test */ static String metadataVersionAtUpgrade(Reconciliation reconciliation, String currentMetadataVersion, KafkaVersion versionFrom)   {
         if (currentMetadataVersion != null) {
-            if (compareDottedIVVersions(currentMetadataVersion, versionFrom.metadataVersion()) > 0)    {
+            if (compareMetadataVersions(currentMetadataVersion, versionFrom.metadataVersion()) > 0)    {
                 // The current metadata version is newer than the version we are upgrading from
                 //     => something went completely wrong, and we should just throw an error
                 LOGGER.warnCr(reconciliation, "The current metadata version ({}) has to be lower or equal to the Kafka broker version we upgrade from ({})", currentMetadataVersion, versionFrom.version());
@@ -263,7 +263,7 @@ public class KRaftVersionChangeCreator {
      */
     /* test */ static String metadataVersionAtDowngrade(Reconciliation reconciliation, String currentMetadataVersion, KafkaVersion versionTo) {
         if (currentMetadataVersion != null) {
-            if (compareDottedIVVersions(currentMetadataVersion, versionTo.metadataVersion()) > 0)    {
+            if (compareMetadataVersions(currentMetadataVersion, versionTo.metadataVersion()) > 0)    {
                 // The current metadata version is newer than the version we are downgrading to
                 //     => something went completely wrong, and we should just throw an error
                 LOGGER.warnCr(reconciliation, "The current metadata version ({}) has to be lower or equal to the Kafka broker version we are downgrading to ({})", currentMetadataVersion, versionTo.version());

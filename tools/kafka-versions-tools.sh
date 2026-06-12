@@ -47,6 +47,10 @@ function get_kafka_versions {
     eval versions="($(yq eval '.[] | select(.supported == true) | .version' "$VERSIONS_FILE"))"
 }
 
+function get_kafka_maven_versions {
+    eval maven_versions="($(yq eval '.[] | select(.supported == true) | .maven-version // .version' "$VERSIONS_FILE"))"
+}
+
 function get_kafka_urls {
     eval binary_urls="($(yq eval '.[] | select(.supported == true) | .url' "$VERSIONS_FILE"))"
 }
@@ -76,12 +80,14 @@ function get_kafka_does_not_support {
 }
 
 # Parses the Kafka versions file and creates three associative arrays:
-# "version_binary_urls": Maps from version string to url from which the kafka source 
-# tar will be downloaded.
+# "version_binary_urls": Maps from version string to url from which the kafka source tar will be downloaded.
 # "version_checksums": Maps from version string to sha512 checksum.
 # "version_libs": Maps from version string to third party library version string.
+# "version_maven": Maps from version string to maven version string (which is used for the maven artifact name and can
+#                  differ from the version string in some cases).
 function get_version_maps {
     get_kafka_versions
+    get_kafka_maven_versions
     get_kafka_urls
     get_kafka_checksums
     get_kafka_third_party_libs
@@ -89,11 +95,13 @@ function get_version_maps {
     declare -Ag version_binary_urls
     declare -Ag version_checksums
     declare -Ag version_libs
+    declare -Ag version_maven
     
     for i in "${!versions[@]}"
-    do 
+    do
         version_binary_urls[${versions[$i]}]=${binary_urls[$i]}
         version_checksums[${versions[$i]}]=${checksums[$i]}
         version_libs[${versions[$i]}]=${libs[$i]}
+        version_maven[${versions[$i]}]=${maven_versions[$i]}
     done
 }

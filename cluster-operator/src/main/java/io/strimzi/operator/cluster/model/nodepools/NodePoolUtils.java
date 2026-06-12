@@ -169,7 +169,7 @@ public class NodePoolUtils {
         for (KafkaNodePool pool : nodePools)    {
             if (pool.getSpec().getStorage() != null
                     && pool.getSpec().getStorage() instanceof JbodStorage jbod) {
-                if (jbod.getVolumes().size() > 1 && KafkaVersion.compareDottedIVVersions(versionChange.metadataVersion(), "3.7-IV2") < 0) {
+                if (jbod.getVolumes().size() > 1 && KafkaVersion.compareMetadataVersions(versionChange.metadataVersion(), "3.7-IV2") < 0) {
                     // When running Kafka older than 3.7.0, JBOD storage is not supported in KRaft.
                     // This check should be removed when all the Kafka versions supported by Strimzi have minimal metadata version 3.7-IV2 and newer (kept for upgrade purposes).
                     // This is tracked in https://github.com/strimzi/strimzi-kafka-operator/issues/9960.
