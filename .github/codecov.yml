@@ -46,3 +46,11 @@ ignore:
   - "test"
   # The API model is just getters and setters that are not tested. Measuring coverage for them adds only a little value.
   - "api/src/main/java/io/strimzi/api/kafka/model"
+  # Test infrastructure, not production code
+  - "mockkube"
+  # Build-time tooling, not runtime code
+  - "crd-generator"
+  - "crd-annotations"
+  - "config-model-generator"
+  # Runtime agent that is not meaningfully unit-testable
+  - "tracing-agent"
