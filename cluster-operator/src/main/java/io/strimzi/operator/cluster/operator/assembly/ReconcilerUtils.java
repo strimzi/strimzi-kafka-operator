@@ -449,19 +449,17 @@ public class ReconcilerUtils {
      * @param secretOperations Secret operator
      * @param namespace namespace to get Secrets in
      * @param auth Authentication object to compute hash from
-     * @param certSecretSources TLS trusted certificates whose hashes are joined to result
+     * @param certsBundle certificates bundle String to compute hash from.
+     *                    It is all the certs concatenated.
      * @return Future computing hash from TLS + Auth
      */
-    public static Future<Integer> authTlsHash(SecretOperator secretOperations, String namespace, KafkaClientAuthentication auth, List<CertSecretSource> certSecretSources) {
+    public static Future<Integer> authTlsHash(SecretOperator secretOperations, String namespace, KafkaClientAuthentication auth, String certsBundle) {
         Future<Integer> tlsFuture;
-        if (certSecretSources == null || certSecretSources.isEmpty()) {
+        if (certsBundle == null || certsBundle.isBlank()) {
             tlsFuture = Future.succeededFuture(0);
         } else {
             // get all TLS trusted certs, compute hash from them
-            tlsFuture = Future.join(certSecretSources.stream().map(certSecretSource ->
-                            getTrustedCertificateAsync(secretOperations, namespace, certSecretSource)
-                                    .compose(cert -> Future.succeededFuture(cert.hashCode()))).collect(Collectors.toList()))
-                    .compose(hashes -> Future.succeededFuture(hashes.list().stream().mapToInt(e -> (int) e).sum()));
+            tlsFuture = Future.succeededFuture(certsBundle.hashCode());
         }
 
         if (auth == null) {
@@ -488,7 +486,7 @@ public class ReconcilerUtils {
     }
 
     /**
-     * Gets trusted certificates from Secrets and merges them into a single String.
+     * Gets trusted certificates from Secrets and merges them into a single List.
      *
      * @param reconciliation        Reconciliation marker
      * @param secretOperations      Secrets operator
