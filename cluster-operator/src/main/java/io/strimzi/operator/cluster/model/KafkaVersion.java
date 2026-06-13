@@ -22,6 +22,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -29,6 +31,7 @@ import java.util.stream.Collectors;
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class KafkaVersion implements Comparable<KafkaVersion> {
+    private static final Pattern CANONICAL_VERSION_PATTERN = Pattern.compile("^(\\d+\\.\\d+\\.\\d+)");
 
     /**
      * Parse the version information present in the {@code /kafka-versions} classpath resource.
@@ -371,6 +374,7 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
 
     private final String version;
     private final String metadataVersion;
+    private final String mavenVersion;
     private final boolean isDefault;
     private final boolean isSupported;
     private final String unsupportedFeatures;
@@ -378,8 +382,9 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
     /**
      * Class describing a Kafka version. This is used to deserialize the YAML file with the Kafka versions
      *
-     * @param version               Kafka version
+     * @param version               Kafka version (This might be a user specific version)
      * @param metadataVersion       KRaft Metadata version
+     * @param mavenVersion          The version to use in the Maven coordinates for this Kafka version. If not specified, the value of {@code version} is used.
      * @param isDefault             Flag indicating if this Kafka version is default
      * @param isSupported           Flag indicating if this Kafka version is supported by this operator version
      * @param unsupportedFeatures   Unsupported features
@@ -387,12 +392,13 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
     @JsonCreator
     public KafkaVersion(@JsonProperty("version") String version,
                         @JsonProperty("metadata") String metadataVersion,
+                        @JsonProperty("maven-version") String mavenVersion,
                         @JsonProperty("default") boolean isDefault,
                         @JsonProperty("supported") boolean isSupported,
                         @JsonProperty("unsupported-features") String unsupportedFeatures) {
-
         this.version = version;
         this.metadataVersion = metadataVersion;
+        this.mavenVersion = mavenVersion != null ? mavenVersion : version;
         this.isDefault = isDefault;
         this.isSupported = isSupported;
         this.unsupportedFeatures = unsupportedFeatures;
@@ -419,12 +425,30 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
     }
 
     /**
+     * Gets the canonical Kafka version.
+     *
+     * @return  Canonical Kafka version
+     */
+    public String canonicalVersion() {
+        return extractCanonicalVersion(version);
+    }
+
+    /**
      * Gets the KRaft metadata version.
      *
      * @return  KRaft metadata version
      */
     public String metadataVersion() {
         return metadataVersion;
+    }
+
+    /**
+     * Gets the Maven artifact version.
+     *
+     * @return  Maven artifact version
+     */
+    public String mavenVersion() {
+        return mavenVersion;
     }
 
     /**
@@ -456,45 +480,84 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
 
     @Override
     public int compareTo(KafkaVersion o) {
-        return compareDottedVersions(this.version, o.version);
+        return compareVersions(this.version, o.version);
     }
 
     /**
      * Compare two decimal version strings, e.g. 1.10.1 &gt; 1.9.2
-     * @param version1 The first version.
-     * @param version2 The second version.
-     * @return Zero if version1 == version2;
-     * -1 if version1 &lt; version2;
-     * 1 if version1 &gt; version2.
+     *
+     * @param version1  The first version.
+     * @param version2  The second version.
+     *
+     * @return  Zero if version1 == version2;
+     *          -1 if version1 &lt; version2;
+     *          1 if version1 &gt; version2.
      */
-    public static int compareDottedVersions(String version1, String version2) {
+    private static int compareDottedVersions(String version1, String version2) {
         String[] components = version1.split("\\.");
         String[] otherComponents = version2.split("\\.");
+
         for (int i = 0; i < Math.min(components.length, otherComponents.length); i++) {
             int x = Integer.parseInt(components[i]);
             int y = Integer.parseInt(otherComponents[i]);
             int compared = Integer.compare(x, y);
+
             if (compared != 0) {
                 return compared;
             }
         }
+
         // mismatch was not found, but the versions are of different length, e.g. 2.8 and 2.8.0
         return 0;
     }
 
     /**
-     * Compare two decimal version strings, e.g. 3.0 &gt; 2.7-IV1. Ignores the IV part
-     * @param version1 The first version.
-     * @param version2 The second version.
-     * @return Zero if version1 == version2;
-     * -1 if version1 &lt; version2;
-     * 1 if version1 &gt; version2.
+     * Compare two decimal version strings, e.g. 1.10.1 &gt; 1.9.2
+     *
+     * @param version1  The first version.
+     * @param version2  The second version.
+     *
+     * @return  Zero if version1 == version2;
+     *          -1 if version1 &lt; version2;
+     *          1 if version1 &gt; version2.
      */
-    public static int compareDottedIVVersions(String version1, String version2) {
+    public static int compareVersions(String version1, String version2) {
+        return compareDottedVersions(extractCanonicalVersion(version1), extractCanonicalVersion(version2));
+    }
+
+    /**
+     * Compare two Kafka metadata version strings, e.g. 3.0 &gt; 2.7-IV1. Ignores the IV part.
+     *
+     * @param version1  The first version.
+     * @param version2  The second version.
+     *
+     * @return  Zero if version1 == version2;
+     *          -1 if version1 &lt; version2;
+     *          1 if version1 &gt; version2.
+     */
+    public static int compareMetadataVersions(String version1, String version2) {
         // Due to validation in KafkaConfiguration.validate only values like 2.8 or 2.8-IV0 can get there
         String trimmedVersion1 = version1.split("-")[0];
         String trimmedVersion2 = version2.split("-")[0];
         return compareDottedVersions(trimmedVersion1, trimmedVersion2);
+    }
+
+    /**
+     * Extracts the canonical version (major.minor.patch) from the user-defined Kafka version.
+     *
+     * @param version   The full version string as specified by the user (e.g. "4.3.0-my-patch")
+     *
+     * @return  Return the extracted canonical version (e.g. "4.3.0")
+     *
+     * @throws IllegalArgumentException when canonical version is not found
+     */
+    private static String extractCanonicalVersion(String version) {
+        Matcher matcher = CANONICAL_VERSION_PATTERN.matcher(version);
+        if (!matcher.find()) {
+            throw new IllegalArgumentException("Failed to extract canonical version from: " + version);
+        }
+
+        return matcher.group(1);
     }
 
     @Override

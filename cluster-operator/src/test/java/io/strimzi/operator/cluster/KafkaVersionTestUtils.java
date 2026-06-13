@@ -18,33 +18,39 @@ public class KafkaVersionTestUtils {
     private static final Set<String> SUPPORTED_VERSIONS = new KafkaVersion.Lookup(Collections.emptyMap(), Collections.emptyMap(), Collections.emptyMap()).supportedVersions();
 
     public static final String LATEST_KAFKA_VERSION;
+    public static final String LATEST_CANONICAL_KAFKA_VERSION;
     public static final String LATEST_METADATA_VERSION;
     public static final String LATEST_KAFKA_IMAGE;
     static {
-        String v = SUPPORTED_VERSIONS.stream().max(KafkaVersion::compareDottedVersions).orElseThrow(() -> new RuntimeException("Failed to find the latest Kafka version"));
+        String v = SUPPORTED_VERSIONS.stream().max(KafkaVersion::compareVersions).orElseThrow(() -> new RuntimeException("Failed to find the latest Kafka version"));
         KafkaVersion version = getKafkaVersionLookup().version(v);
         LATEST_KAFKA_VERSION = version.version();
+        LATEST_CANONICAL_KAFKA_VERSION = version.canonicalVersion();
         LATEST_METADATA_VERSION = version.metadataVersion();
         LATEST_KAFKA_IMAGE = KAFKA_IMAGE_STR + version.version();
     }
 
     public static final String PREVIOUS_KAFKA_VERSION;
+    public static final String PREVIOUS_CANONICAL_KAFKA_VERSION;
     public static final String PREVIOUS_METADATA_VERSION;
     public static final String PREVIOUS_KAFKA_IMAGE;
     static {
-        String v = SUPPORTED_VERSIONS.stream().min(KafkaVersion::compareDottedVersions).orElseThrow(() -> new RuntimeException("Failed to find the latest Kafka version"));
+        String v = SUPPORTED_VERSIONS.stream().min(KafkaVersion::compareVersions).orElseThrow(() -> new RuntimeException("Failed to find the oldest Kafka version"));
         KafkaVersion version = getKafkaVersionLookup().version(v);
         PREVIOUS_KAFKA_VERSION = version.version();
+        PREVIOUS_CANONICAL_KAFKA_VERSION = version.canonicalVersion();
         PREVIOUS_METADATA_VERSION = version.metadataVersion();
         PREVIOUS_KAFKA_IMAGE = KAFKA_IMAGE_STR + version.version();
     }
 
     public static final String DEFAULT_KAFKA_VERSION;
+    public static final String DEFAULT_CANONICAL_KAFKA_VERSION;
     public static final String DEFAULT_METADATA_VERSION;
     public static final String DEFAULT_KAFKA_IMAGE;
     static {
         KafkaVersion version = getKafkaVersionLookup().defaultVersion();
         DEFAULT_KAFKA_VERSION = version.version();
+        DEFAULT_CANONICAL_KAFKA_VERSION = version.canonicalVersion();
         DEFAULT_METADATA_VERSION = version.metadataVersion();
         DEFAULT_KAFKA_IMAGE = KAFKA_IMAGE_STR + version.version();
     }

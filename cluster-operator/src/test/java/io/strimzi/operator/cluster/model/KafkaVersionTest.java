@@ -32,11 +32,11 @@ public class KafkaVersionTest {
 
     @Test
     public void parsingInvalidVersionTest() {
-        KafkaVersion kv = new KafkaVersion("2.8.0", "2.8", false, true, "");
-        assertThat(KafkaVersion.compareDottedIVVersions("2.7-IV1", kv.metadataVersion()), lessThan(0));
-        assertThat(KafkaVersion.compareDottedIVVersions("2.9-IV1", kv.metadataVersion()), greaterThan(0));
+        KafkaVersion kv = new KafkaVersion("2.8.0", "2.8", null, false, true, "");
+        assertThat(KafkaVersion.compareMetadataVersions("2.7-IV1", kv.metadataVersion()), lessThan(0));
+        assertThat(KafkaVersion.compareMetadataVersions("2.9-IV1", kv.metadataVersion()), greaterThan(0));
 
-        assertThrows(NumberFormatException.class, () -> KafkaVersion.compareDottedIVVersions("wrong", kv.metadataVersion()));
+        assertThrows(NumberFormatException.class, () -> KafkaVersion.compareMetadataVersions("wrong", kv.metadataVersion()));
     }
 
     @Test
@@ -46,25 +46,40 @@ public class KafkaVersionTest {
 
         assertThat(defaultVersion.version(), is("1.2.0"));
 
-        assertThat(map.size(), is(4));
+        assertThat(map.size(), is(5));
+
+        assertThat(map.containsKey("1.2.0-my-patch-1"), is(true));
+        assertThat(map.get("1.2.0-my-patch-1").version(), is("1.2.0-my-patch-1"));
+        assertThat(map.get("1.2.0-my-patch-1").canonicalVersion(), is("1.2.0"));
+        assertThat(map.get("1.2.0-my-patch-1").mavenVersion(), is("1.2.0-patch-00001"));
+        assertThat(map.get("1.2.0-my-patch-1").metadataVersion(), is("1.2-IV2"));
+        assertThat(map.get("1.2.0-my-patch-1").isSupported(), is(true));
 
         assertThat(map.containsKey("1.2.0"), is(true));
         assertThat(map.get("1.2.0").version(), is("1.2.0"));
+        assertThat(map.get("1.2.0").mavenVersion(), is("1.2.0"));
+        assertThat(map.get("1.2.0").canonicalVersion(), is("1.2.0"));
         assertThat(map.get("1.2.0").metadataVersion(), is("1.2-IV2"));
         assertThat(map.get("1.2.0").isSupported(), is(true));
 
         assertThat(map.containsKey("1.1.0"), is(true));
         assertThat(map.get("1.1.0").version(), is("1.1.0"));
+        assertThat(map.get("1.1.0").canonicalVersion(), is("1.1.0"));
+        assertThat(map.get("1.1.0").mavenVersion(), is("1.1.0"));
         assertThat(map.get("1.1.0").metadataVersion(), is(nullValue()));
         assertThat(map.get("1.1.0").isSupported(), is(true));
 
         assertThat(map.containsKey("1.1.1"), is(true));
         assertThat(map.get("1.1.1").version(), is("1.1.1"));
+        assertThat(map.get("1.1.1").canonicalVersion(), is("1.1.1"));
+        assertThat(map.get("1.1.1").mavenVersion(), is("1.1.1"));
         assertThat(map.get("1.1.1").metadataVersion(), is("1.1"));
         assertThat(map.get("1.1.1").isSupported(), is(true));
 
         assertThat(map.containsKey("1.0.0"), is(true));
         assertThat(map.get("1.0.0").version(), is("1.0.0"));
+        assertThat(map.get("1.0.0").canonicalVersion(), is("1.0.0"));
+        assertThat(map.get("1.0.0").mavenVersion(), is("1.0.0"));
         assertThat(map.get("1.0.0").metadataVersion(), is(nullValue()));
         assertThat(map.get("1.0.0").isSupported(), is(false));
     }
@@ -95,23 +110,39 @@ public class KafkaVersionTest {
 
     @Test
     public void compareEqualVersionMMPTest() {
-        assertThat(KafkaVersion.compareDottedVersions("3.0", "3.0.0"), is(0));
-        assertThat(KafkaVersion.compareDottedVersions("3.0.0", "3.0"), is(0));
+        assertThat(KafkaVersion.compareMetadataVersions("3.0", "3.0.0"), is(0));
+        assertThat(KafkaVersion.compareMetadataVersions("3.0.0", "3.0"), is(0));
     }
 
     @Test
     public void compareEqualVersionTest() {
-        assertThat(KafkaVersion.compareDottedVersions(KafkaVersionTestUtils.DEFAULT_KAFKA_VERSION, KafkaVersionTestUtils.DEFAULT_KAFKA_VERSION), is(0));
+        assertThat(KafkaVersion.compareVersions(KafkaVersionTestUtils.DEFAULT_KAFKA_VERSION, KafkaVersionTestUtils.DEFAULT_KAFKA_VERSION), is(0));
     }
 
     @Test
     public void compareVersionLowerTest() {
-        assertThat(KafkaVersion.compareDottedVersions(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION, KafkaVersionTestUtils.LATEST_KAFKA_VERSION), lessThan(0));
+        assertThat(KafkaVersion.compareVersions(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION, KafkaVersionTestUtils.LATEST_KAFKA_VERSION), lessThan(0));
     }
 
     @Test
     public void compareVersionHigherTest() {
-        assertThat(KafkaVersion.compareDottedVersions(KafkaVersionTestUtils.LATEST_KAFKA_VERSION, KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION), greaterThan(0));
+        assertThat(KafkaVersion.compareVersions(KafkaVersionTestUtils.LATEST_KAFKA_VERSION, KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION), greaterThan(0));
     }
 
+    @Test
+    public void canonicalVersionsTest() {
+        assertThat(new KafkaVersion("2.8.0", null, null, false, true, "").canonicalVersion(), is("2.8.0"));
+        assertThat(new KafkaVersion("2.8.0.1", null, null, false, true, "").canonicalVersion(), is("2.8.0"));
+        assertThat(new KafkaVersion("2.8.01.5", null, null, false, true, "").canonicalVersion(), is("2.8.01"));
+        assertThat(new KafkaVersion("2.8.0-my-patch", null, null, false, true, "").canonicalVersion(), is("2.8.0"));
+        assertThat(new KafkaVersion("2.8.0.my-patch", null, null, false, true, "").canonicalVersion(), is("2.8.0"));
+        assertThat(new KafkaVersion("2.8.0-my-patch-1.0.1", null, null, false, true, "").canonicalVersion(), is("2.8.0"));
+        assertThat(new KafkaVersion("2.8.0.my-patch.1.0.1", null, null, false, true, "").canonicalVersion(), is("2.8.0"));
+        assertThat(new KafkaVersion("2.8.0-1.0.1", null, null, false, true, "").canonicalVersion(), is("2.8.0"));
+        assertThat(new KafkaVersion("2.8.0.1.0.1", null, null, false, true, "").canonicalVersion(), is("2.8.0"));
+
+        assertThrows(IllegalArgumentException.class, () -> new KafkaVersion("2.8", null, null, false, true, "").canonicalVersion());
+        assertThrows(IllegalArgumentException.class, () -> new KafkaVersion("2.8-my-patch", null, null, false, true, "").canonicalVersion());
+        assertThrows(IllegalArgumentException.class, () -> new KafkaVersion("my-patch-2.8", null, null, false, true, "").canonicalVersion());
+    }
 }

@@ -68,7 +68,7 @@ function fetch_and_unpack_kafka_binaries {
         if [ ${version_binary_urls[$kafka_version]} ]
         then
             binary_file_url=${version_binary_urls[$kafka_version]}
-            binary_file_name=$(basename "$binary_file_url")
+            binary_file_name="kafka_2.13-${kafka_version}.tgz"
             binary_file_path="$binary_file_dir/$binary_file_name"
             expected_kafka_checksum="$expected_sha  $binary_file_path"
         else

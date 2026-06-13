@@ -488,14 +488,14 @@ public class KafkaUpgradeDowngradeWithKRaftMockTest {
                 })
                 .compose(v -> operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, CLUSTER_NAME)))
                 .onComplete(context.succeeding(i -> context.verify(() -> {
-                    assertVersionsInKafkaStatus(KafkaAssemblyOperator.OPERATOR_VERSION, KafkaVersionTestUtils.LATEST_KAFKA_VERSION, KafkaVersionTestUtils.PREVIOUS_METADATA_VERSION);
-                    assertVersionsInStrimziPodSet(KafkaVersionTestUtils.LATEST_KAFKA_VERSION, KafkaVersionTestUtils.LATEST_KAFKA_IMAGE);
+                    assertVersionsInKafkaStatus(KafkaAssemblyOperator.OPERATOR_VERSION, KafkaVersionTestUtils.DEFAULT_KAFKA_VERSION, KafkaVersionTestUtils.PREVIOUS_METADATA_VERSION);
+                    assertVersionsInStrimziPodSet(KafkaVersionTestUtils.DEFAULT_KAFKA_VERSION, KafkaVersionTestUtils.DEFAULT_KAFKA_IMAGE);
                     assertMetadataVersion(KafkaVersionTestUtils.PREVIOUS_METADATA_VERSION);
                 })))
                 .compose(v -> operator.reconcile(new Reconciliation("test-trigger2", Kafka.RESOURCE_KIND, namespace, CLUSTER_NAME)))
                 .onComplete(context.succeeding(i -> context.verify(() -> {
-                    assertVersionsInKafkaStatus(KafkaAssemblyOperator.OPERATOR_VERSION, KafkaVersionTestUtils.LATEST_KAFKA_VERSION, KafkaVersionTestUtils.LATEST_METADATA_VERSION);
-                    assertVersionsInStrimziPodSet(KafkaVersionTestUtils.LATEST_KAFKA_VERSION, KafkaVersionTestUtils.LATEST_KAFKA_IMAGE);
+                    assertVersionsInKafkaStatus(KafkaAssemblyOperator.OPERATOR_VERSION, KafkaVersionTestUtils.DEFAULT_KAFKA_VERSION, KafkaVersionTestUtils.DEFAULT_METADATA_VERSION);
+                    assertVersionsInStrimziPodSet(KafkaVersionTestUtils.DEFAULT_KAFKA_VERSION, KafkaVersionTestUtils.DEFAULT_KAFKA_IMAGE);
                     assertMetadataVersion(KafkaVersionTestUtils.LATEST_METADATA_VERSION);
 
                     reconciliation.flag();

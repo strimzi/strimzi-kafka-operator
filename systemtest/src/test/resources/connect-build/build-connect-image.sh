@@ -6,24 +6,27 @@ KAFKA_VERSION=$1
 BASE_IMAGE=$2
 CONNECT_IMAGE=${3:-"strimzi/connect-file-sink:latest"}
 
-function getLatestKafkaVersionFromYAML() {
+function getLatestKafkaMavenVersionFromYAML() {
   local strimziRoot=$(git rev-parse --show-toplevel)
   KAFKA_VERSION=$(cat $strimziRoot/kafka-versions.yaml | yq eval '.[] | select(.default) | .version' -)
+  KAFKA_MAVEN_VERSION=$(cat $strimziRoot/kafka-versions.yaml | yq eval '.[] | select(.default) | .maven-version // .version' -)
 }
 
 function buildDockerImage() {
   local dockerFileDir=$(dirname "$0")
 
   if [ -z "${BASE_IMAGE}" ]; then
-    docker build $dockerFileDir --build-arg KAFKA_VERSION=$KAFKA_VERSION -t $CONNECT_IMAGE
+    docker build $dockerFileDir --build-arg KAFKA_VERSION=$KAFKA_VERSION --build-arg KAFKA_MAVEN_VERSION=$KAFKA_MAVEN_VERSION -t $CONNECT_IMAGE
   else
-    docker build $dockerFileDir --build-arg KAFKA_VERSION=$KAFKA_VERSION --build-arg BASE_IMAGE=$BASE_IMAGE -t $CONNECT_IMAGE
+    docker build $dockerFileDir --build-arg KAFKA_VERSION=$KAFKA_VERSION --build-arg KAFKA_MAVEN_VERSION=$KAFKA_MAVEN_VERSION --build-arg BASE_IMAGE=$BASE_IMAGE -t $CONNECT_IMAGE
   fi
 }
 
 # in case that Kafka version wasn't supplied or we specify "latest" as a version, we will take the default version from kafka-versions.yaml
 if [ -z "${KAFKA_VERSION}" ] || [ "${KAFKA_VERSION}" == "latest" ]; then
-  getLatestKafkaVersionFromYAML
+  getLatestKafkaMavenVersionFromYAML
+else
+  KAFKA_MAVEN_VERSION=$(cat $(git rev-parse --show-toplevel)/kafka-versions.yaml | yq eval ".[] | select(.version == \"${KAFKA_VERSION}\") | .maven-version // .version" -)
 fi
 
 # replace the place holder with the correct version
