@@ -95,7 +95,7 @@
         <jetty.version>12.0.35</jetty.version>
         <jakarta-servlet.version>6.1.0</jakarta-servlet.version>
         <netty.version>4.2.15.Final</netty.version>
-        <micrometer.version>1.14.5</micrometer.version>
+        <micrometer.version>1.16.6</micrometer.version>
         <commons-codec.version>1.13</commons-codec.version>
         <picocli.version>4.7.7</picocli.version>
         <snakeyaml.version>2.5</snakeyaml.version>
