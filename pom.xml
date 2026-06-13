@@ -1015,6 +1015,12 @@
                 <version>${maven.dependency.version}</version>
                 <executions>
                     <execution>
+                        <id>resolve-mockito-jar</id>
+                        <goals>
+                            <goal>properties</goal>
+                        </goals>
+                    </execution>
+                    <execution>
                         <id>analyze</id>
                         <goals>
                             <goal>analyze-only</goal>
