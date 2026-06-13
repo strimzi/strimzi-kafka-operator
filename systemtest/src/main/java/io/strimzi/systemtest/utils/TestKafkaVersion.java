@@ -50,6 +50,9 @@ public class TestKafkaVersion implements Comparable<TestKafkaVersion> {
     @JsonProperty("version")
     String version;
 
+    @JsonProperty("maven-version")
+    String mavenVersion;
+
     @JsonProperty("metadata")
     String metadataVersion;
 
@@ -63,6 +66,7 @@ public class TestKafkaVersion implements Comparable<TestKafkaVersion> {
     public String toString() {
         return "KafkaVersion{" +
                 "version='" + version + '\'' +
+                ", mavenVersion='" + mavenVersion + '\'' +
                 ", metadataVersion='" + metadataVersion + '\'' +
                 ", isDefault=" + isDefault +
                 ", isSupported=" + isSupported +
@@ -71,6 +75,10 @@ public class TestKafkaVersion implements Comparable<TestKafkaVersion> {
 
     public String version() {
         return version;
+    }
+
+    public String mavenVersion() {
+        return mavenVersion != null ?  mavenVersion : version;
     }
 
     public String metadataVersion() {
