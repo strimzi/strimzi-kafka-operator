@@ -908,6 +908,12 @@
                         </goals>
                     </execution>
                     <execution>
+                        <id>default-prepare-agent-integration</id>
+                        <goals>
+                            <goal>prepare-agent-integration</goal>
+                        </goals>
+                    </execution>
+                    <execution>
                         <id>default-report</id>
                         <goals>
                             <goal>report</goal>
@@ -916,6 +922,32 @@
                             <excludes>
                                 <exclude>io/strimzi/api/**/*Fluent*.class</exclude>
                                 <exclude>io/strimzi/api/**/*Builder*.class</exclude>
+                                <exclude>io/strimzi/api/kafka/model/**/*.class</exclude>
+                                <exclude>io/strimzi/test/**/*.class</exclude>
+                                <exclude>io/strimzi/systemtest/**/*.class</exclude>
+                                <exclude>io/strimzi/crdgenerator/**/*.class</exclude>
+                                <exclude>io/strimzi/api/annotations/**/*.class</exclude>
+                                <exclude>io/strimzi/build/**/*.class</exclude>
+                                <exclude>io/strimzi/tracing/**/*.class</exclude>
+                            </excludes>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>default-report-integration</id>
+                        <goals>
+                            <goal>report-integration</goal>
+                        </goals>
+                        <configuration>
+                            <excludes>
+                                <exclude>io/strimzi/api/**/*Fluent*.class</exclude>
+                                <exclude>io/strimzi/api/**/*Builder*.class</exclude>
+                                <exclude>io/strimzi/api/kafka/model/**/*.class</exclude>
+                                <exclude>io/strimzi/test/**/*.class</exclude>
+                                <exclude>io/strimzi/systemtest/**/*.class</exclude>
+                                <exclude>io/strimzi/crdgenerator/**/*.class</exclude>
+                                <exclude>io/strimzi/api/annotations/**/*.class</exclude>
+                                <exclude>io/strimzi/build/**/*.class</exclude>
+                                <exclude>io/strimzi/tracing/**/*.class</exclude>
                             </excludes>
                         </configuration>
                     </execution>
