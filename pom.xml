@@ -39,13 +39,6 @@
         </developer>
     </developers>
 
-    <repositories>
-        <repository>
-            <id>jakub-staging</id>
-            <url>https://pub-d8e7da268f054c92b640faf3f30587ce.r2.dev/maven-repository/</url>
-        </repository>
-    </repositories>
-
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.release>21</maven.compiler.release>

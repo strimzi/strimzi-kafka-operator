@@ -166,8 +166,7 @@ public class Environment {
 
     private static final String ST_KAFKA_VERSION_DEFAULT = TestKafkaVersion.getDefaultSupportedKafkaVersion();
     private static final String ST_KAFKA_MAVEN_VERSION_DEFAULT = TestKafkaVersion.getSpecificVersion(ST_KAFKA_VERSION_DEFAULT).mavenVersion();
-    //public static final String ST_FILE_PLUGIN_URL_DEFAULT = "https://repo1.maven.org/maven2/org/apache/kafka/connect-file/" + ST_KAFKA_MAVEN_VERSION_DEFAULT + "/connect-file-" + ST_KAFKA_MAVEN_VERSION_DEFAULT + ".jar";
-    public static final String ST_FILE_PLUGIN_URL_DEFAULT = "https://pub-d8e7da268f054c92b640faf3f30587ce.r2.dev/maven-repository/org/apache/kafka/connect-file/" + ST_KAFKA_MAVEN_VERSION_DEFAULT + "/connect-file-" + ST_KAFKA_MAVEN_VERSION_DEFAULT + ".jar";
+    public static final String ST_FILE_PLUGIN_URL_DEFAULT = "https://repo1.maven.org/maven2/org/apache/kafka/connect-file/" + ST_KAFKA_MAVEN_VERSION_DEFAULT + "/connect-file-" + ST_KAFKA_MAVEN_VERSION_DEFAULT + ".jar";
 
     public static final String IP_FAMILY_DEFAULT = "ipv4";
     public static final String IP_FAMILY_VERSION_6 = "ipv6";
