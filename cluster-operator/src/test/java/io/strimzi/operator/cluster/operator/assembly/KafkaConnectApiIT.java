@@ -7,6 +7,8 @@ package io.strimzi.operator.cluster.operator.assembly;
 import io.strimzi.api.kafka.model.connect.ConnectorPlugin;
 import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.test.container.StrimziConnectCluster;
+import io.strimzi.test.container.StrimziConnectContainer;
 import io.strimzi.test.container.StrimziKafkaCluster;
 import io.vertx.core.json.JsonObject;
 import org.junit.jupiter.api.AfterAll;
@@ -33,31 +35,33 @@ import static org.hamcrest.Matchers.emptyString;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.matchesRegex;
 import static org.hamcrest.Matchers.not;
-import static org.hamcrest.Matchers.startsWith;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 public class KafkaConnectApiIT {
     private static StrimziKafkaCluster cluster;
 
-    private ConnectCluster connectCluster;
+    private StrimziConnectCluster connectCluster;
     private int port;
 
     @BeforeEach
     public void beforeEach() throws InterruptedException {
         // Start a 1 node connect cluster
-        connectCluster = new ConnectCluster()
-                .usingBrokers(cluster.getBootstrapServers())
-                .addConnectNodes(1);
-        connectCluster.startup();
-        port = connectCluster.getPort(0);
+        connectCluster = new StrimziConnectCluster.StrimziConnectClusterBuilder()
+                .withKafkaCluster(cluster)
+                .withGroupId("kafka-connect-api-it")
+                .build();
+        connectCluster.start();
+        StrimziConnectContainer worker = connectCluster.getWorkers().iterator().next();
+        port = worker.getMappedPort(8083);
     }
 
     @AfterEach
     public void afterEach() {
         if (connectCluster != null) {
-            connectCluster.shutdown();
+            connectCluster.stop();
         }
     }
 
@@ -144,12 +148,12 @@ public class KafkaConnectApiIT {
                 assertThat(status.get("name"), is("test"));
                 Map<String, Object> connectorStatus = (Map<String, Object>) status.getOrDefault("connector", emptyMap());
                 assertThat(connectorStatus.get("state"), is("RUNNING"));
-                assertThat(connectorStatus.get("worker_id").toString(), startsWith("localhost:"));
+                assertThat(connectorStatus.get("worker_id").toString(), matchesRegex("(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|\\[.*\\]):\\d+"));
 
                 List<Map<String, String>> tasks = (List<Map<String, String>>) status.get("tasks");
                 for (Map<String, String> an : tasks) {
                     assertThat(an.get("state"), is("RUNNING"));
-                    assertThat(an.get("worker_id"), startsWith("localhost:"));
+                    assertThat(an.get("worker_id"), matchesRegex("(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|\\[.*\\]):\\d+"));
                 }
             })
 
