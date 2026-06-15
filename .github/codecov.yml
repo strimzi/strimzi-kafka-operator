@@ -50,7 +50,5 @@ ignore:
   - "mockkube"
   # Build-time tooling, not runtime code
   - "crd-generator"
-  - "crd-annotations"
-  - "config-model-generator"
-  # Runtime agent that is not meaningfully unit-testable
-  - "tracing-agent"
+  # Generated Log4j wrapper — testing it verifies Log4j works, not Strimzi logic
+  - "**/ReconciliationLogger.java"
