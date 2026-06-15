@@ -106,7 +106,7 @@
         <mockito.version>5.21.0</mockito.version>
         <opentest4j.version>1.2.0</opentest4j.version>
         <jupiter.version>6.0.0</jupiter.version>
-        <strimzi-test-container.version>0.116.0-RC1</strimzi-test-container.version>
+        <strimzi-test-container.version>0.116.0</strimzi-test-container.version>
         <strimzi-test-connectors.version>0.1.0</strimzi-test-connectors.version>
         <wiremock.version>3.13.2</wiremock.version>
         <valid4j.version>1.1</valid4j.version>
