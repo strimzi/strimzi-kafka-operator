@@ -496,7 +496,7 @@ public class KafkaUpgradeDowngradeWithKRaftMockTest {
                 .onComplete(context.succeeding(i -> context.verify(() -> {
                     assertVersionsInKafkaStatus(KafkaAssemblyOperator.OPERATOR_VERSION, KafkaVersionTestUtils.DEFAULT_KAFKA_VERSION, KafkaVersionTestUtils.DEFAULT_METADATA_VERSION);
                     assertVersionsInStrimziPodSet(KafkaVersionTestUtils.DEFAULT_KAFKA_VERSION, KafkaVersionTestUtils.DEFAULT_KAFKA_IMAGE);
-                    assertMetadataVersion(KafkaVersionTestUtils.LATEST_METADATA_VERSION);
+                    assertMetadataVersion(KafkaVersionTestUtils.DEFAULT_METADATA_VERSION);
 
                     reconciliation.flag();
                 })));
