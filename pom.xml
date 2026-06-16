@@ -920,7 +920,6 @@
                                 <exclude>io/strimzi/api/annotations/**/*.class</exclude>
                                 <exclude>io/strimzi/test/**/*.class</exclude>
                                 <exclude>io/strimzi/systemtest/**/*.class</exclude>
-                                <exclude>io/strimzi/crdgenerator/**/*.class</exclude>
                                 <exclude>io/strimzi/build/**/*.class</exclude>
                                 <exclude>**/ReconciliationLogger.class</exclude>
                             </excludes>
