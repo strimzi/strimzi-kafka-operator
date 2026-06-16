@@ -78,7 +78,7 @@ public class TestKafkaVersion implements Comparable<TestKafkaVersion> {
     }
 
     public String mavenVersion() {
-        return mavenVersion != null ?  mavenVersion : version;
+        return mavenVersion != null ? mavenVersion : version;
     }
 
     public String metadataVersion() {
@@ -111,11 +111,16 @@ public class TestKafkaVersion implements Comparable<TestKafkaVersion> {
         String[] components = version1.split("\\.");
         String[] otherComponents = version2.split("\\.");
         for (int i = 0; i < Math.min(components.length, otherComponents.length); i++) {
-            if (components[i].compareTo(otherComponents[i]) == 0) {
-                continue;
-            } else if (components[i].compareTo(otherComponents[i]) < 0) {
-                return -1;
+            int comparison;
+            if (components[i].matches("\\d+") && otherComponents[i].matches("\\d+")) {
+                comparison = Integer.compare(Integer.parseInt(components[i]), Integer.parseInt(otherComponents[i]));
             } else {
+                comparison = components[i].compareTo(otherComponents[i]);
+            }
+
+            if (comparison < 0) {
+                return -1;
+            } else if (comparison > 0) {
                 return 1;
             }
         }
