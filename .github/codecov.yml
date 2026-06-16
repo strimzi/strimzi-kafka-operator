@@ -48,7 +48,5 @@ ignore:
   - "api/src/main/java/io/strimzi/api/kafka/model"
   # Test infrastructure, not production code
   - "mockkube"
-  # Build-time tooling, not runtime code
-  - "crd-generator"
   # Generated Log4j wrapper — testing it verifies Log4j works, not Strimzi logic
   - "**/ReconciliationLogger.java"
