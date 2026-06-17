@@ -30,6 +30,8 @@
     - name: STRIMZI_ENTITY_OPERATOR_WATCHED_NAMESPACE_ENABLED
       value: "true"
   ```
+* **Fixes [CVE-2026-55225](https://github.com/strimzi/strimzi-kafka-operator/security/advisories/GHSA-mw9r-p8xp-wx96)**
+* **Fixes [CVE-2026-55226](https://github.com/strimzi/strimzi-kafka-operator/security/advisories/GHSA-r427-j2h7-wv3m)**
 
 ## 1.0.0
 
