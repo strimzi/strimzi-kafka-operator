@@ -39,7 +39,7 @@ public class KafkaAgentClient {
     // never produces a response (e.g. alive but stuck on IO) cannot block the KafkaRoller's single-threaded
     // executor indefinitely. The Kafka Agent only serves a small broker-state JSON, so 10 seconds is well above
     // the expected response time on a healthy broker yet small enough to keep the roller responsive.
-    /* test */ static final Duration HTTP_REQUEST_TIMEOUT = Duration.ofSeconds(10);
+    private static final Duration HTTP_REQUEST_TIMEOUT = Duration.ofSeconds(10);
     private final String namespace;
     private final Reconciliation reconciliation;
     private final String cluster;
@@ -98,7 +98,8 @@ public class KafkaAgentClient {
             SSLContext sslContext = SSLContext.getInstance("TLS");
             sslContext.init(keyManagerFactory.getKeyManagers(), trustManagerFactory.getTrustManagers(), null);
 
-            return httpClientBuilder()
+            return HttpClient.newBuilder()
+                    .connectTimeout(HTTP_REQUEST_TIMEOUT)
                     .sslContext(sslContext)
                     .build();
         } catch (GeneralSecurityException | IOException e) {
@@ -106,37 +107,13 @@ public class KafkaAgentClient {
         }
     }
 
-    /**
-     * Returns an {@link HttpClient.Builder} pre-configured with {@link #HTTP_REQUEST_TIMEOUT} as the connect timeout.
-     * Centralising the timeout wiring here keeps {@link #createHttpClient()} focused on TLS setup and lets tests
-     * assert that the configured connect timeout is applied without needing a TLS identity.
-     *
-     * @return an {@link HttpClient.Builder} with the connect timeout already applied
-     */
-    /* test */ static HttpClient.Builder httpClientBuilder() {
-        return HttpClient.newBuilder().connectTimeout(HTTP_REQUEST_TIMEOUT);
-    }
-
-    /**
-     * Builds a {@code GET} {@link HttpRequest} for the given URI with {@link #HTTP_REQUEST_TIMEOUT} applied as the
-     * full request timeout. Centralising the timeout wiring here lets tests assert the request timeout without
-     * needing a live HTTP endpoint.
-     *
-     * @param uri   the target URI for the request
-     *
-     * @return a {@code GET} {@link HttpRequest} for {@code uri} with the request timeout already applied
-     */
-    /* test */ static HttpRequest buildRequest(URI uri) {
-        return HttpRequest.newBuilder()
-                .uri(uri)
-                .timeout(HTTP_REQUEST_TIMEOUT)
-                .GET()
-                .build();
-    }
-
     String doGet(URI uri) {
         try {
-            HttpRequest req = buildRequest(uri);
+            HttpRequest req = HttpRequest.newBuilder()
+                    .uri(uri)
+                    .timeout(HTTP_REQUEST_TIMEOUT)
+                    .GET()
+                    .build();
 
             var response = httpClient.send(req, HttpResponse.BodyHandlers.ofString());
             if (response.statusCode() != 200) {
