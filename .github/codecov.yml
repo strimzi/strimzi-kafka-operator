@@ -46,3 +46,7 @@ ignore:
   - "test"
   # The API model is just getters and setters that are not tested. Measuring coverage for them adds only a little value.
   - "api/src/main/java/io/strimzi/api/kafka/model"
+  # Test infrastructure, not production code
+  - "mockkube"
+  # Generated Log4j wrapper — testing it verifies Log4j works, not Strimzi logic
+  - "**/ReconciliationLogger.java"
