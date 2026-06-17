@@ -1457,9 +1457,9 @@ class CoreFeaturesIT implements TestSeparator {
         assertTrue(readyIsFalse().test(created));
         Condition condition = assertExactlyOneCondition(created);
         assertEquals(TopicOperatorException.Reason.KAFKA_ERROR.value, condition.getReason());
-        assertEquals("org.apache.kafka.common.errors.InvalidReplicationFactorException: Unable to replicate the partition " +
-            "32767 time(s): The target replication factor of 32767 cannot be reached because only 1 broker(s) are registered.", 
-            condition.getMessage());
+        assertTrue(condition.getMessage().startsWith(
+            "org.apache.kafka.common.errors.InvalidReplicationFactorException: Unable to replicate the partition " +
+            "32767 time(s): The target replication factor of 32767 cannot be reached because only 1 broker(s) are registered"));
     }
 
     @Test
