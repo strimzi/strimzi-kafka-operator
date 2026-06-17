@@ -15,7 +15,7 @@
 
 //Latest Strimzi version
 :ProductVersion: 1.1.0
-:ProductVersionPrevious: 1.0.0
+:ProductVersionPrevious: 1.0.1
 
 // Kubernetes versions
 :KubernetesVersion: 1.30 and later
