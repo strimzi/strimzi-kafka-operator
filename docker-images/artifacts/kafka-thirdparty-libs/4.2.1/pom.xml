@@ -69,11 +69,6 @@
             <version>${opentelemetry.version}</version>
         </dependency>
         <dependency>
-            <groupId>io.opentelemetry</groupId>
-            <artifactId>opentelemetry-common</artifactId>
-            <version>${opentelemetry.version}</version>
-        </dependency>
-        <dependency>
             <groupId>io.opentelemetry.instrumentation</groupId>
             <artifactId>opentelemetry-kafka-clients-2.6</artifactId>
             <version>${opentelemetry.instrumentation.version}</version>
