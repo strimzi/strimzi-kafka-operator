@@ -1305,7 +1305,6 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
 
     @Test
     public void testTlsSecretsFetchedOnlyOncePerReference(VertxTestContext context) {
-        // Create MM2 with TLS configured for both source and target clusters using the same secret
         KafkaMirrorMaker2 mm2WithTls = new KafkaMirrorMaker2Builder()
                 .withNewMetadata()
                     .withName(NAME)
