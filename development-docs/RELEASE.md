@@ -51,7 +51,7 @@ The release process should normally look like this:
       * Delete the old HTML files and images from `docs/operators/latest` and `docs/operators/latest/full` (keep the `*.md` files)
       * Copy files from the release artifacts under `documentation/htmlnoheader` to `docs/operators/<new-version>` and `docs/operators/latest` in the website repository
       * Copy files from the release artifacts under `documentation/html` to `docs/operators/<new-version>/full` and `docs/operators/latest/full` in the website repository
-      * Create new files `configuring.md`, `deploying.md` and `overview.md` in `docs/operators/<new-version>` - the content of these files should be the same as for older versions, so you can copy them and update the version number.
+      * Create new files `configuring.md`, `deploying.md`, `overview.md` and `contributing.md` in `docs/operators/<new-version>` - the content of these files should be the same as for older versions, so you can copy them and update the version number.
     * Add the Helm Chart repository `index.yaml` on our website:
       * Download the release artifacts from the CI workflow and unpack them
       * Use the `helm` command to add the new version to the `index.yaml` file:
@@ -66,7 +66,7 @@ The release process should normally look like this:
         Verify the added data and the digest and if they are correct, copy it to `charts/index.yaml` on the website. 
 
 14. _(only for GA, not for RCs)_ On the `main` git branch of the repository:
-    * Check the `ProductVersion` variable is correct in `documentation/shared/attributes.adoc`
+    * Check the `ProductVersion` variable is correct and update `ProductVersionPrevious` in `documentation/shared/attributes.adoc`
     * Update the `install`, `examples` and `helm-chart` directories in the `main` branch with the newly released files
     * Update the checksums for released files in `.checksums`
 
