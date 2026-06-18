@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest.watcher;
 
+import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.NamespaceBuilder;
 import io.skodjob.kubetest4j.resources.KubeResourceManager;
 import io.strimzi.systemtest.resources.operator.ClusterOperatorConfigurationBuilder;
@@ -12,6 +13,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
+
+import java.util.List;
 
 import static io.strimzi.systemtest.TestConstants.CO_NAMESPACE;
 import static io.strimzi.systemtest.TestTags.REGRESSION;
@@ -42,6 +45,9 @@ class MultipleNamespaceST extends AbstractNamespaceST {
             .withCustomConfiguration(new ClusterOperatorConfigurationBuilder()
                 .withNamespaceName(CO_NAMESPACE)
                 .withNamespacesToWatch(String.join(",", CO_NAMESPACE, PRIMARY_KAFKA_WATCHED_NAMESPACE, MAIN_TEST_NAMESPACE))
+                .withExtraEnvVars(List.of(
+                    new EnvVar("STRIMZI_ENTITY_OPERATOR_WATCHED_NAMESPACE_ENABLED", "true", null)
+                ))
                 .build()
             )
             .install();

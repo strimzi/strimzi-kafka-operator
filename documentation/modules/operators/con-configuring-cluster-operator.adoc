@@ -236,6 +236,12 @@ Configuration for the pluggable `PodSecurityProvider` class, which can be used t
 `STRIMZI_PKCS12_KEYSTORE_GENERATION`:: Optional. Default is `true`.
 Controls automatic creation of PKCS12 stores in the CA (Certificate Authority) and Kafka user `Secret` resources.
 
+`STRIMZI_ENTITY_OPERATOR_WATCHED_NAMESPACE_ENABLED`:: Optional. Default is `false`.
+Controls whether the Entity Operator (Topic Operator and User Operator) can watch a namespace different from the one where the Kafka cluster is deployed.
+When set to `false` (the default), the Entity Operators will only operate in the namespace where the Kafka cluster is deployed, regardless of the `watchedNamespace` configuration in the `Kafka` custom resource.
+If `watchedNamespace` is configured but differs from the cluster namespace, a warning is logged and the configuration is ignored.
+When set to `true`, the Entity Operators can watch a different namespace as specified in the `watchedNamespace` configuration.
+
 [id='ref-operator-cluster-network-policy-{context}']
 == Restricting access to the Cluster Operator using network policy
 

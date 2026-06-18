@@ -47,6 +47,7 @@ include::../../shared/snip-cluster-operator-namespace-sed.adoc[]
 +
 ** If the Cluster Operator is watching multiple namespaces, add the list of namespaces to the `STRIMZI_NAMESPACE` environment variable.
 ** If the Cluster Operator is watching all namespaces, specify `value: "*"` for the `STRIMZI_NAMESPACE` environment variable.
+** If you are using the `watchedNamespace` property in your Topic Operator or User Operator configuration to watch a different namespace than the Kafka cluster namespace, you must add the `STRIMZI_ENTITY_OPERATOR_WATCHED_NAMESPACE_ENABLED` environment variable and set it to `true`. Without this setting, the Entity Operator deployment will be deleted during the upgrade. For more information, see xref:proc-configuring-entity-operator-watched-namespace-{context}[].
 
 . If the Cluster Operator is watching more than one namespace, update the role bindings.
 +
