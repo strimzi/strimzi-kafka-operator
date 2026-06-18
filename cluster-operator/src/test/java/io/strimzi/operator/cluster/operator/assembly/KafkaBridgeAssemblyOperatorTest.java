@@ -808,7 +808,6 @@ public class KafkaBridgeAssemblyOperatorTest {
                 .endSpec()
                 .build();
 
-        when(mockBridgeOps.get(eq(NAMESPACE), eq(NAME))).thenReturn(bridgeWithTls);
         when(mockBridgeOps.getAsync(eq(NAMESPACE), eq(NAME))).thenReturn(Future.succeededFuture(bridgeWithTls));
         when(mockBridgeOps.updateStatusAsync(any(), any())).thenReturn(Future.succeededFuture());
 

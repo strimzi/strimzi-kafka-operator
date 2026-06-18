@@ -491,7 +491,7 @@ public class ReconcilerUtils {
     }
 
     /**
-     * Gets trusted certificates from Secrets and merges them into a single List.
+     * Gets trusted certificates from Secrets and merges them into a single String.
      *
      * @param reconciliation        Reconciliation marker
      * @param secretOperations      Secrets operator
