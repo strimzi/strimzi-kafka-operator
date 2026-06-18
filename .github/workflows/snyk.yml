@@ -69,7 +69,7 @@ jobs:
         with:
           snykMonitor: "true"
           uploadToCodeScanning: "true"
-          projectPrefix: strimzi
+          projectPrefix: strimzi-kafka-operator
 
   # Discover container images from build artifacts for matrix scanning
   prepare-container-scan:
@@ -141,5 +141,5 @@ jobs:
           image: ${{ matrix.image }}
           snykMonitor: "true"
           uploadToCodeScanning: "true"
-          projectPrefix: strimzi
+          projectPrefix: strimzi-kafka-operator
           snykMonitorTargetReference: ${{ inputs.releaseVersion }}
