@@ -4,8 +4,6 @@
  */
 package io.strimzi.crdgenerator;
 
-import io.strimzi.api.annotations.ApiVersion;
-import io.strimzi.api.annotations.KubeVersion;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

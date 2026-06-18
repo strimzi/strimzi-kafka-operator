@@ -36,7 +36,7 @@ We also control imports only in production classes and not in tests. This is con
         <allow class="io.fabric8.kubernetes.client.CustomResource" />
 
         <!-- Strimzi Operators classes -->
-        <allow pkg="io.strimzi.api.annotations" />
+        <allow pkg="io.strimzi.crdgenerator.annotations" />
         <allow pkg="io.strimzi.api.kafka" />
         <allow class="io.strimzi.api.ResourceLabels" />
         <allow pkg="io.strimzi.certs" />
