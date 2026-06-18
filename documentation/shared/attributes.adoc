@@ -146,12 +146,11 @@
 // -----------------------------------------------------------------------------
 
 //distributed tracing versions and links
-:OpenTelemetryAlphaVersion: 1.34.1-alpha
-:OpenTelemetryVersion: 1.34.1
+:OpenTelemetryVersion: 1.63.0
 :OpenTelemetryInstrumentationVersion: 1.32.0-alpha
 :OpenTelemetrySemConvVersion: 1.21.0-alpha
 :OpenTelemetryKafkaClientVersion: 2.6
-:GRPCVersion: 1.75.0
+:GRPCVersion: 1.79.0
 
 :OpenTelemetry: link:https://opentelemetry.io[OpenTelemetry^]
 :OpenTelemetryDocs: link:https://opentelemetry.io/docs/[OpenTelemetry documentation^]
