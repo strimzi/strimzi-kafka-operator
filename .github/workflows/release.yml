@@ -227,3 +227,20 @@ jobs:
           helmChartName: "strimzi-kafka-operator-helm-3-chart"
           releaseVersion: ${{ inputs.releaseVersion }}
           artifactSuffix: "operators"
+
+  # Run Snyk security scans on Maven dependencies and container images
+  snyk-scan:
+    name: Snyk Scan
+    needs:
+      - prepare-release-artifacts
+    if: ${{ startsWith(github.ref, 'refs/heads/release-') }}
+    permissions:
+      contents: read
+      actions: read
+      security-events: write
+    uses: ./.github/workflows/snyk.yml
+    with:
+      releaseVersion: ${{ inputs.releaseVersion }}
+      sourceBuildRunId: ${{ inputs.sourceBuildRunId }}
+    secrets:
+      SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}

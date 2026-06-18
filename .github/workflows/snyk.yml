@@ -1,0 +1,145 @@
+name: Snyk Scanning
+
+on:
+  # Run after build workflow finishes in non-blocking way
+  workflow_run:
+    workflows: ["Build"]
+    types:
+      - completed
+    branches:
+      - main
+  # Allow to run it also as reusable workflow from releases
+  workflow_call:
+    inputs:
+      releaseVersion:
+        description: 'Release version for Snyk monitoring target reference'
+        required: false
+        type: string
+        default: 'latest'
+      sourceBuildRunId:
+        description: 'Build workflow run ID for artifact download'
+        required: true
+        type: string
+    secrets:
+      SNYK_TOKEN:
+        required: true
+
+# Declare default permissions as read only
+permissions:
+  contents: read
+
+# Cancel previous scans on the same branch
+concurrency:
+  group: snyk-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Scan Maven dependencies using Snyk
+  snyk-maven-scan:
+    name: Snyk Maven Scan
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name != 'workflow_run' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      actions: read
+      security-events: write
+    env:
+      SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+
+      - name: Setup Java and Maven
+        uses: strimzi/github-actions/.github/actions/dependencies/setup-java@v1
+        with:
+          javaVersion: "21"
+
+      - name: Install yq
+        uses: strimzi/github-actions/.github/actions/dependencies/install-yq@v1
+        with:
+          version: "v4.6.3"
+
+      - name: Build Java code
+        run: mvn -B -DskipTests -Dmaven.javadoc.skip=true clean install
+
+      - name: Run Snyk Maven scan
+        uses: strimzi/github-actions/.github/actions/security/snyk-maven-scan@main
+        with:
+          snykMonitor: "true"
+          uploadToCodeScanning: "true"
+          projectPrefix: strimzi-kafka-operator
+
+  # Discover container images from build artifacts for matrix scanning
+  prepare-container-scan:
+    name: Prepare Container Scan
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name != 'workflow_run' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      actions: read
+    outputs:
+      images: ${{ steps.list-images.outputs.images }}
+    steps:
+      - name: Download container archive
+        uses: actions/download-artifact@v7
+        with:
+          name: containers-operators-amd64.tar
+          run-id: ${{ inputs.sourceBuildRunId || github.event.workflow_run.id }}
+          github-token: ${{ github.token }}
+
+      - name: Untar container archive
+        run: tar -xvf containers-operators-amd64.tar
+
+      - name: List container images
+        id: list-images
+        run: |
+          IMAGES=$(find docker-images/container-archives -name '*.tar.gz' -print0 | \
+            xargs -0 -I{} basename {} | \
+            sed 's/\.tar\.gz$//' | \
+            jq -R -s -c 'split("\n") | map(select(. != ""))')
+          echo "images=$IMAGES" >> "$GITHUB_OUTPUT"
+          echo "Found images: $IMAGES"
+
+  # Scan each container image using Snyk
+  snyk-container-scan:
+    name: Snyk Container Scan (${{ matrix.image }})
+    needs:
+      - prepare-container-scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      actions: read
+      security-events: write
+    env:
+      SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+      CONTAINERS_ARCHIVE: "containers-operators-amd64.tar"
+    strategy:
+      fail-fast: false
+      matrix:
+        image: ${{ fromJson(needs.prepare-container-scan.outputs.images) }}
+    steps:
+      - name: Download container archive
+        uses: actions/download-artifact@v7
+        with:
+          name: ${{ env.CONTAINERS_ARCHIVE }}
+          run-id: ${{ inputs.sourceBuildRunId || github.event.workflow_run.id }}
+          github-token: ${{ github.token }}
+
+      - name: Untar container archive
+        run: tar -xvf "$CONTAINERS_ARCHIVE"
+
+      - name: Install Docker
+        uses: strimzi/github-actions/.github/actions/dependencies/install-docker@v1
+
+      - name: Run Snyk container scan
+        uses: strimzi/github-actions/.github/actions/security/snyk-container-scan@main
+        with:
+          imageFile: docker-images/container-archives/${{ matrix.image }}.tar.gz
+          image: ${{ matrix.image }}
+          snykMonitor: "true"
+          uploadToCodeScanning: "true"
+          projectPrefix: strimzi-kafka-operator
+          snykMonitorTargetReference: ${{ inputs.releaseVersion }}
