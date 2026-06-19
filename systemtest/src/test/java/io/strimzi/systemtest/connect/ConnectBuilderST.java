@@ -245,6 +245,7 @@ class ConnectBuilderST extends AbstractST {
         LOGGER.info("Checking if KafkaConnect resource contains EchoSink KafkaConnector in status");
         kafkaConnect = CrdClients.kafkaConnectClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get();
         assertTrue(kafkaConnect.getStatus().getConnectorPlugins().stream().anyMatch(connectorPlugin -> connectorPlugin.getConnectorClass().contains(TestConstants.ECHO_SINK_CLASS_NAME)));
+        assertTrue(false);
     }
 
     @ParallelTest
@@ -318,6 +319,7 @@ class ConnectBuilderST extends AbstractST {
 
         String connectPodName = PodUtils.listPodNames(testStorage.getNamespaceName(), testStorage.getKafkaConnectSelector()).get(0);
         PodUtils.waitUntilMessageIsInPodLogs(testStorage.getNamespaceName(), connectPodName, "Received message with key 'null' and value 'Hello world - 99'");
+        assertTrue(false);
     }
 
     @ParallelTest
@@ -390,6 +392,7 @@ class ConnectBuilderST extends AbstractST {
 
         String connectPodName = PodUtils.listPodNames(testStorage.getNamespaceName(), testStorage.getKafkaConnectSelector()).get(0);
         PodUtils.waitUntilMessageIsInPodLogs(testStorage.getNamespaceName(), connectPodName, "Received message with key 'null' and value 'Hello world - 99'");
+        assertTrue(false);
     }
 
     @OpenShiftOnly
