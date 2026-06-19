@@ -79,8 +79,11 @@ public class ReconcilerUtils {
         return reconcileFuture.compose(
                 rr -> Future.succeededFuture(),
                 e -> {
+                    // The resource operators run on a CompletableFuture, which wraps exceptions thrown by the
+                    // Kubernetes client in a CompletionException. We therefore unwrap it before checking the type and
+                    // status code (a forbidden ClusterRoleBindings access which is not required is ignored).
                     if (desired == null
-                            && e instanceof KubernetesClientException kce
+                            && Util.maybeUnwrapCompletionException(e) instanceof KubernetesClientException kce
                             && kce.getCode() == 403) {
                         LOGGER.debugCr(reconciliation, "Ignoring forbidden access to ClusterRoleBindings resource which does not seem to be required.");
                         return Future.succeededFuture();

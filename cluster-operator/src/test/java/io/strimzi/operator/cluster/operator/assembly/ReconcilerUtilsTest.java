@@ -13,6 +13,9 @@ import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
+import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
+import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBindingBuilder;
+import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.strimzi.api.kafka.model.common.CertSecretSource;
 import io.strimzi.api.kafka.model.common.CertSecretSourceBuilder;
 import io.strimzi.api.kafka.model.common.PasswordSecretSource;
@@ -50,6 +53,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
 
 import static java.util.Collections.emptyMap;
@@ -843,6 +847,37 @@ public class ReconcilerUtilsTest {
 
         assertThat(ReconcilerUtils.reasonsToRestartPod(Reconciliation.DUMMY_RECONCILIATION, podSet, pod1, Set.of(), false).shouldRestart(), is(false));
         assertThat(ReconcilerUtils.reasonsToRestartPod(Reconciliation.DUMMY_RECONCILIATION, podSet, pod2, Set.of(), false).shouldRestart(), is(false));
+    }
+
+    @Test
+    public void testWithIgnoreRbacErrorIgnoresForbiddenWhenNotNeeded(VertxTestContext context) {
+        // The resource operators run on a CompletableFuture and wrap exceptions in a CompletionException. When the
+        // ClusterRoleBinding is not desired (null) and the access is forbidden (403), the error should still be ignored.
+        Future<ReconcileResult<ClusterRoleBinding>> reconcileFuture = Future.failedFuture(new CompletionException(new KubernetesClientException("Forbidden", 403, null)));
+
+        Checkpoint async = context.checkpoint();
+        ReconcilerUtils.withIgnoreRbacError(Reconciliation.DUMMY_RECONCILIATION, reconcileFuture, null)
+                .onComplete(context.succeeding(rr -> async.flag()));
+    }
+
+    @Test
+    public void testWithIgnoreRbacErrorPropagatesForbiddenWhenNeeded(VertxTestContext context) {
+        // When the ClusterRoleBinding is desired (non-null), a forbidden error must not be ignored.
+        Future<ReconcileResult<ClusterRoleBinding>> reconcileFuture = Future.failedFuture(new CompletionException(new KubernetesClientException("Forbidden", 403, null)));
+
+        Checkpoint async = context.checkpoint();
+        ReconcilerUtils.withIgnoreRbacError(Reconciliation.DUMMY_RECONCILIATION, reconcileFuture, new ClusterRoleBindingBuilder().build())
+                .onComplete(context.failing(e -> async.flag()));
+    }
+
+    @Test
+    public void testWithIgnoreRbacErrorPropagatesNonForbiddenError(VertxTestContext context) {
+        // An error other than forbidden (403) must not be ignored even when the ClusterRoleBinding is not desired.
+        Future<ReconcileResult<ClusterRoleBinding>> reconcileFuture = Future.failedFuture(new CompletionException(new KubernetesClientException("Server Error", 500, null)));
+
+        Checkpoint async = context.checkpoint();
+        ReconcilerUtils.withIgnoreRbacError(Reconciliation.DUMMY_RECONCILIATION, reconcileFuture, null)
+                .onComplete(context.failing(e -> async.flag()));
     }
 
     static class MockJmxCluster implements SupportsJmx {
