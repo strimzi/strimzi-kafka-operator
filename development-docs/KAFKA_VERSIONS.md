@@ -54,3 +54,41 @@ Remember to remove the staging repository when the Apache Kafka release is GA.
 * Add a `CHANGELOG.md` record
 * Run unit tests
 * Run system tests
+
+## Using custom Kafka versions
+
+Since Strimzi 1.1.0, users can add custom Apache Kafka versions by adding them to the `kafka-versions.yaml` file and building the Strimzi project.
+The custom version configuration should look similar to this:
+
+```yaml
+- version: "4.3.0-my-patch-1"
+  maven-version: 4.3.0-my-build-00001
+  metadata: 4.3-IV0
+  url: https://pub-d8e7da268f054c92b640faf3f30587ce.r2.dev/kafka_2.13-4.3.0-jakub-00001.tgz
+  checksum: 98DDDC6248E0CAED4A6426D57DE0351A33CABB8431DE1463859847D2FC0C66B91FB4687D939F62060A2CFC620F45AB868A6E7C5C3E41DD39F290B6EBA8B43E95
+  third-party-libs: 4.3.x
+  supported: true
+  default: true
+```
+
+* The `version` field is the version which will be used in the `Kafka`, `KafkaConnect` and `KafkaMirrorMaker2` custom resources.
+  The `version` should always start with the Kafka version it is based on and can use an additional suffix to distinguish it from the original version (e.g. `4.3.0-my-patch-1`).
+* The `maven-version` field can be used to specify the version of the Apache Kafka Maven artifacts to use in the build.
+  When not set, it is assumed that the Maven artifacts use the same version as the `version` field.
+  If you want to use the Maven artifacts from the official Apache Kafka release, you can just set it to its version (e.g. `4.3.0`).
+  If you use your own version that is not available in the Maven Central repository, you should also add your repository to the main `pom.xml` file:
+  ```xml
+  <repository>
+      <id>my-repo</id>
+      <url>https://my.repo.url/</url>
+  </repository>
+  ```
+* The `metadata` field is the version which will be used as the default Kafka protocol metadata version.
+* The `url` and `checksum` fields should point to the URL of the Kafka binary distribution and its SHA512 checksum.
+* The `third-party-libs` field should point to the directory with the 3rd party libraries which should be used for this version.
+  You can either use one of the directories from an existing version, or create your own by copying an existing one and updating the dependencies in its `pom.xml` file.
+* The `supported` field should be set to `true` if you want to use this version.
+* The `default` field should be set to `true` if you want this version to be the default one (i.e. the one used when the user does not specify any version in the custom resource).
+  Only one version can be marked as default.
+
+In order to allow smooth upgrades to future Strimzi versions, you should keep this version present in your `kafka-versions.yaml` file and just mark it as unsupported when you want to stop using it.

@@ -13,6 +13,7 @@ import io.strimzi.systemtest.resources.crd.KafkaComponents;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.utils.RollingUpdateUtils;
 import io.strimzi.systemtest.utils.StUtils;
+import io.strimzi.systemtest.utils.TestKafkaVersion;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
@@ -118,8 +119,9 @@ public class KRaftStrimziUpgradeST extends AbstractKRaftUpgradeST {
         String controllerPodName = KubeResourceManager.get().kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), KafkaComponents.getPodSetName(CLUSTER_NAME, CONTROLLER_NODE_NAME)).get(0).getMetadata().getName();
         String brokerPodName = KubeResourceManager.get().kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), KafkaComponents.getPodSetName(CLUSTER_NAME, BROKER_NODE_NAME)).get(0).getMetadata().getName();
 
-        assertThat(KafkaUtils.getVersionFromKafkaPodLibs(testStorage.getNamespaceName(), controllerPodName), containsString(acrossUpgradeData.getProcedures().getVersion()));
-        assertThat(KafkaUtils.getVersionFromKafkaPodLibs(testStorage.getNamespaceName(), brokerPodName), containsString(acrossUpgradeData.getProcedures().getVersion()));
+        TestKafkaVersion versionTo = TestKafkaVersion.getSpecificVersion(acrossUpgradeData.getProcedures().getVersion());
+        assertThat(KafkaUtils.getVersionFromKafkaPodLibs(testStorage.getNamespaceName(), controllerPodName), containsString(versionTo.mavenVersion()));
+        assertThat(KafkaUtils.getVersionFromKafkaPodLibs(testStorage.getNamespaceName(), brokerPodName), containsString(versionTo.mavenVersion()));
     }
 
     @IsolatedTest

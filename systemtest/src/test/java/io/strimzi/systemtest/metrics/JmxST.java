@@ -28,6 +28,7 @@ import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.specific.ScraperTemplates;
+import io.strimzi.systemtest.utils.TestKafkaVersion;
 import io.strimzi.systemtest.utils.kubeUtils.objects.NetworkPolicyUtils;
 import io.strimzi.systemtest.utils.specific.JmxUtils;
 import org.apache.logging.log4j.LogManager;
@@ -125,8 +126,10 @@ public class JmxST extends AbstractST {
 
         String kafkaResults = JmxUtils.collectJmxMetricsWithWait(testStorage.getNamespaceName(), KafkaResources.brokersServiceName(testStorage.getClusterName()), kafkaJmxSecretName, scraperPodName, "bean kafka.server:type=app-info\nget -i *");
         String kafkaConnectResults = JmxUtils.collectJmxMetricsWithWait(testStorage.getNamespaceName(), KafkaConnectResources.serviceName(testStorage.getClusterName()), connectJmxSecretName, scraperPodName, "bean kafka.connect:type=app-info\nget -i *");
-        assertThat("Result from Kafka JMX doesn't contain right version of Kafka, result: " + kafkaResults, kafkaResults, containsString("version = " + Environment.ST_KAFKA_VERSION));
-        assertThat("Result from KafkaConnect JMX doesn't contain right version of Kafka, result: " + kafkaConnectResults, kafkaConnectResults, containsString("version = " + Environment.ST_KAFKA_VERSION));
+
+        TestKafkaVersion version = TestKafkaVersion.getSpecificVersion(Environment.ST_KAFKA_VERSION);
+        assertThat("Result from Kafka JMX doesn't contain right version of Kafka, result: " + kafkaResults, kafkaResults, containsString("version = " + version.mavenVersion()));
+        assertThat("Result from KafkaConnect JMX doesn't contain right version of Kafka, result: " + kafkaConnectResults, kafkaConnectResults, containsString("version = " + version.mavenVersion()));
     }
 
     @BeforeAll

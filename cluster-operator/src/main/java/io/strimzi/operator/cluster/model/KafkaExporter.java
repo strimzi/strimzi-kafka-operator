@@ -83,7 +83,7 @@ public class KafkaExporter extends AbstractModel {
     protected boolean saramaLoggingEnabled;
     protected boolean showAllOffsets;
     /* test */ String exporterLogging;
-    protected String version;
+    protected String canonicalKafkaVersion;
 
     private DeploymentTemplate templateDeployment;
     private PodTemplate templatePod;
@@ -157,7 +157,7 @@ public class KafkaExporter extends AbstractModel {
                 result.templatePodDisruptionBudget = template.getPodDisruptionBudget();
             }
 
-            result.version = versions.supportedVersion(kafkaAssembly.getSpec().getKafka().getVersion()).version();
+            result.canonicalKafkaVersion = versions.supportedVersion(kafkaAssembly.getSpec().getKafka().getVersion()).canonicalVersion();
 
             return result;
         } else {
@@ -229,7 +229,7 @@ public class KafkaExporter extends AbstractModel {
         List<EnvVar> varList = new ArrayList<>();
 
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_EXPORTER_LOGGING, Integer.toString(loggingMapping(exporterLogging))));
-        varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_EXPORTER_KAFKA_VERSION, version));
+        varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_EXPORTER_KAFKA_VERSION, canonicalKafkaVersion));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_EXPORTER_GROUP_REGEX, groupRegex));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_EXPORTER_TOPIC_REGEX, topicRegex));
         if (groupExcludeRegex != null) {

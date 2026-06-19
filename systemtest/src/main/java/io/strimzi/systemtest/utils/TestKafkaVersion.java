@@ -50,6 +50,9 @@ public class TestKafkaVersion implements Comparable<TestKafkaVersion> {
     @JsonProperty("version")
     String version;
 
+    @JsonProperty("maven-version")
+    String mavenVersion;
+
     @JsonProperty("metadata")
     String metadataVersion;
 
@@ -63,6 +66,7 @@ public class TestKafkaVersion implements Comparable<TestKafkaVersion> {
     public String toString() {
         return "KafkaVersion{" +
                 "version='" + version + '\'' +
+                ", mavenVersion='" + mavenVersion + '\'' +
                 ", metadataVersion='" + metadataVersion + '\'' +
                 ", isDefault=" + isDefault +
                 ", isSupported=" + isSupported +
@@ -71,6 +75,10 @@ public class TestKafkaVersion implements Comparable<TestKafkaVersion> {
 
     public String version() {
         return version;
+    }
+
+    public String mavenVersion() {
+        return mavenVersion != null ? mavenVersion : version;
     }
 
     public String metadataVersion() {
@@ -103,13 +111,16 @@ public class TestKafkaVersion implements Comparable<TestKafkaVersion> {
         String[] components = version1.split("\\.");
         String[] otherComponents = version2.split("\\.");
         for (int i = 0; i < Math.min(components.length, otherComponents.length); i++) {
-            int x = Integer.parseInt(components[i]);
-            int y = Integer.parseInt(otherComponents[i]);
-            if (x == y) {
-                continue;
-            } else if (x < y) {
-                return -1;
+            int comparison;
+            if (components[i].matches("\\d+") && otherComponents[i].matches("\\d+")) {
+                comparison = Integer.compare(Integer.parseInt(components[i]), Integer.parseInt(otherComponents[i]));
             } else {
+                comparison = components[i].compareTo(otherComponents[i]);
+            }
+
+            if (comparison < 0) {
+                return -1;
+            } else if (comparison > 0) {
                 return 1;
             }
         }

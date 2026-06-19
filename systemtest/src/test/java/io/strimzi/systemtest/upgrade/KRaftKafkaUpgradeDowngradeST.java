@@ -216,15 +216,15 @@ public class KRaftKafkaUpgradeDowngradeST extends AbstractKRaftUpgradeST {
         controllerVersionResult = KafkaUtils.getVersionFromKafkaPodLibs(testStorage.getNamespaceName(), controllerPodName);
         LOGGER.info("Post-change Kafka version query returned: {}", controllerVersionResult);
 
-        assertThat("Kafka container had version " + controllerVersionResult + " where " + newVersion.version() +
-            " was expected", controllerVersionResult, containsString(newVersion.version()));
+        assertThat("Kafka container had version " + controllerVersionResult + " where " + newVersion.mavenVersion() +
+            " was expected", controllerVersionResult, containsString(newVersion.mavenVersion()));
 
         // Extract the Kafka version number from the jars in the lib directory
         String brokerVersionResult = KafkaUtils.getVersionFromKafkaPodLibs(testStorage.getNamespaceName(), brokerPodName);
         LOGGER.info("Post-change Kafka version query returned: {}", brokerVersionResult);
 
-        assertThat("Kafka container had version " + brokerVersionResult + " where " + newVersion.version() +
-            " was expected", brokerVersionResult, containsString(newVersion.version()));
+        assertThat("Kafka container had version " + brokerVersionResult + " where " + newVersion.mavenVersion() +
+            " was expected", brokerVersionResult, containsString(newVersion.mavenVersion()));
 
         if (isUpgrade && !sameMinorVersion) {
             LOGGER.info("Updating Kafka config attribute 'metadataVersion' from '{}' to '{}' version", initialVersion.metadataVersion(), newVersion.metadataVersion());

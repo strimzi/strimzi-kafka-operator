@@ -3,12 +3,13 @@ ARG BASE_IMAGE=quay.io/strimzi/kafka:latest-kafka-${KAFKA_VERSION}
 
 FROM ${BASE_IMAGE}
 
-# to make KAFKA_VERSION arg available again after FROM, we need to specify it once more (different build stage)
+# to make KAFKA_VERSION and KAFKA_MAVEN_VERSION args available again after FROM, we need to specify it once more (different build stage)
 ARG KAFKA_VERSION
+ARG KAFKA_MAVEN_VERSION
 
 USER root:root
 RUN mkdir -p /opt/kafka/plugins/file-sink
 
-RUN ls /opt/kafka/libs/* -d | grep .*connect-file-${KAFKA_VERSION}.*.jar -o | xargs cp -t /opt/kafka/plugins/file-sink
+RUN ls /opt/kafka/libs/* -d | grep .*connect-file-${KAFKA_MAVEN_VERSION}.*.jar -o | xargs cp -t /opt/kafka/plugins/file-sink
 
 USER 1001
