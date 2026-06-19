@@ -142,7 +142,7 @@ public class RbacST extends AbstractST {
 
         final Condition condition = CrdClients.kafkaClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName(testStorage.getClusterName()).get().getStatus().getConditions().stream().filter(c -> "NotReady".equals(c.getType())).findFirst().orElseThrow();
 
-        assertThat(condition.getReason(), CoreMatchers.is("KubernetesClientException"));
+        assertThat(condition.getReason(), CoreMatchers.is("CompletionException"));
         assertThat(condition.getStatus(), CoreMatchers.is("True"));
     }
 
