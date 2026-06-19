@@ -64,12 +64,51 @@ jobs:
       - name: Build Java code
         run: mvn -B -DskipTests -Dmaven.javadoc.skip=true clean install
 
-      - name: Run Snyk Maven scan
+      # This step compute modules for different scans - prod modules, test modules, Kafka 3rd-party module
+      # It dynamically checks root pom file and determine prod modules by excluding test ones
+      # Test modules are defined between env vars of this step in MAVEN_TEST_MODULES
+      - name: Compute module exclude lists
+        id: compute-excludes
+        run: |
+          MAVEN_ALL_MODULES=$(grep '<module>' pom.xml \
+            | sed 's/.*<module>\(.*\)<\/module>.*/\1/' \
+            | paste -sd ',' -)
+          MAVEN_PROD_MODULES=$(grep '<module>' pom.xml \
+            | sed 's/.*<module>\(.*\)<\/module>.*/\1/' \
+            | grep -v -w -E "$(echo $MAVEN_TEST_MODULES | tr ',' '|')" \
+            | paste -sd ',' -)
+          echo "maven-all-modules=${MAVEN_ALL_MODULES}" >> "$GITHUB_OUTPUT"
+          echo "maven-prod-modules=${MAVEN_PROD_MODULES}" >> "$GITHUB_OUTPUT"
+          echo "maven-test-modules=${MAVEN_TEST_MODULES}" >> "$GITHUB_OUTPUT"
+        env:
+          MAVEN_TEST_MODULES: "systemtest,mockkube,test"
+
+      - name: Run Snyk Maven scan (prod)
         uses: strimzi/github-actions/.github/actions/security/snyk-maven-scan@main
         with:
+          scanName: operators-prod
           snykMonitor: "true"
           uploadToCodeScanning: "true"
-          projectPrefix: strimzi-kafka-operator
+          # For prod deps scan we need to exclude maven test modules and docker-images
+          exclude: "${{ steps.compute-excludes.outputs.maven-test-modules }},docker-images"
+
+      - name: Run Snyk Maven scan (test)
+        uses: strimzi/github-actions/.github/actions/security/snyk-maven-scan@main
+        with:
+          scanName: operators-test
+          snykMonitor: "true"
+          uploadToCodeScanning: "true"
+          # For test deps scan we need to exclude maven prod modules and docker-images
+          exclude: "${{ steps.compute-excludes.outputs.maven-prod-modules }},docker-images"
+
+      - name: Run Snyk Maven scan (3rd-party)
+        uses: strimzi/github-actions/.github/actions/security/snyk-maven-scan@main
+        with:
+          scanName: kafka-3rd-party
+          snykMonitor: "true"
+          uploadToCodeScanning: "true"
+          # For Kafka 3rd party scan we need to exclude all maven modules and scan will fallback only to 3rd party poms
+          exclude: ${{ steps.compute-excludes.outputs.maven-all-modules }}
 
   # Discover container images from build artifacts for matrix scanning
   prepare-container-scan:
