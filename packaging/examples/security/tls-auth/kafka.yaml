@@ -42,7 +42,7 @@ metadata:
   name: my-cluster
 spec:
   kafka:
-    version: 4.3.0
+    version: 4.3.1-rc2
     metadataVersion: 4.3-IV0
     listeners:
       - name: tls

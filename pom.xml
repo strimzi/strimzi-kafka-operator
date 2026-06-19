@@ -84,7 +84,7 @@
         <fasterxml.jackson-jaxrs.version>2.21.2</fasterxml.jackson-jaxrs.version>
         <vertx.version>5.1.2</vertx.version>
         <vertx-junit5.version>5.1.2</vertx-junit5.version>
-        <kafka.version>4.3.0</kafka.version>
+        <kafka.version>4.3.1</kafka.version>
         <yammer-metrics.version>2.2.0</yammer-metrics.version>
         <snappy.version>1.1.10.5</snappy.version>
         <slf4j.version>2.0.17</slf4j.version>
@@ -144,6 +144,13 @@
         <module>certificate-manager</module>
         <module>systemtest</module>
     </modules>
+
+    <repositories>
+        <repository>
+            <id>apache-staging</id>
+            <url>https://repository.apache.org/content/groups/staging/</url>
+        </repository>
+    </repositories>
 
     <dependencyManagement>
         <dependencies>
