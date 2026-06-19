@@ -23,6 +23,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.security.GeneralSecurityException;
+import java.time.Duration;
 
 /**
  * Creates HTTP client and interacts with Kafka Agent's REST endpoint
@@ -34,6 +35,11 @@ public class KafkaAgentClient {
     private static final String BROKER_STATE_REST_PATH = "/v1/broker-state/";
     private static final int KAFKA_AGENT_HTTPS_PORT = 8443;
     private static final char[] KEYSTORE_PASSWORD = "changeit".toCharArray();
+    // Bounds the connect and full HTTP request lifecycle so that a broker which accepts the TCP connection but
+    // never produces a response (e.g. alive but stuck on IO) cannot block the KafkaRoller's single-threaded
+    // executor indefinitely. The Kafka Agent only serves a small broker-state JSON, so 10 seconds is well above
+    // the expected response time on a healthy broker yet small enough to keep the roller responsive.
+    private static final Duration HTTP_REQUEST_TIMEOUT = Duration.ofSeconds(10);
     private final String namespace;
     private final Reconciliation reconciliation;
     private final String cluster;
@@ -93,6 +99,7 @@ public class KafkaAgentClient {
             sslContext.init(keyManagerFactory.getKeyManagers(), trustManagerFactory.getTrustManagers(), null);
 
             return HttpClient.newBuilder()
+                    .connectTimeout(HTTP_REQUEST_TIMEOUT)
                     .sslContext(sslContext)
                     .build();
         } catch (GeneralSecurityException | IOException e) {
@@ -104,6 +111,7 @@ public class KafkaAgentClient {
         try {
             HttpRequest req = HttpRequest.newBuilder()
                     .uri(uri)
+                    .timeout(HTTP_REQUEST_TIMEOUT)
                     .GET()
                     .build();
 
