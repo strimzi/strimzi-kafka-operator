@@ -20,9 +20,8 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
-import io.vertx.core.Vertx;
-import io.vertx.junit5.Checkpoint;
-import io.vertx.junit5.VertxTestContext;
+import io.strimzi.operator.common.operator.resource.concurrent.ScalableResourceOperatorTest;
+import io.strimzi.test.TestUtils;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -77,7 +76,7 @@ public class DeploymentOperatorTest extends
     }
 
     @Override
-    protected void mocker(KubernetesClient mockClient, MixedOperation op) {
+    protected void mocker(KubernetesClient mockClient, MixedOperation<Deployment, DeploymentList, RollableScalableResource<Deployment>> op) {
         AppsAPIGroupDSL mockExt = mock(AppsAPIGroupDSL.class);
         when(mockExt.deployments()).thenReturn(op);
         when(mockClient.apps()).thenReturn(mockExt);
@@ -85,13 +84,13 @@ public class DeploymentOperatorTest extends
     }
 
     @Override
-    protected DeploymentOperator createResourceOperations(Vertx vertx, KubernetesClient mockClient) {
-        return new DeploymentOperator(vertx, mockClient);
+    protected DeploymentOperator createResourceOperations(KubernetesClient mockClient) {
+        return new DeploymentOperator(asyncExecutor, mockClient);
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     @Test
-    public void testSinglePodDeploymentRollingUpdate(VertxTestContext context)  {
+    public void testSinglePodDeploymentRollingUpdate()  {
         String depName = "my-dep";
         String podName = depName + "-123456";
 
@@ -143,21 +142,16 @@ public class DeploymentOperatorTest extends
         when(mockClient.pods()).thenReturn(mockPods);
         when(mockClient.apps()).thenReturn(mockApps);
 
-        DeploymentOperator op = new DeploymentOperator(vertx, mockClient);
+        DeploymentOperator op = new DeploymentOperator(asyncExecutor, mockClient);
 
-        Checkpoint async = context.checkpoint();
-        op.singlePodDeploymentRollingUpdate(Reconciliation.DUMMY_RECONCILIATION, NAMESPACE, depName, 5_000)
-                .onComplete(context.succeeding(v -> {
-
-                    verify(mockPodResource, times(1)).delete();
-
-                    async.flag();
-                }));
+        TestUtils.await(op.singlePodDeploymentRollingUpdate(Reconciliation.DUMMY_RECONCILIATION, NAMESPACE, depName, 5_000)
+                .whenComplete(TestUtils::assertSuccessful)
+                .thenRun(() -> verify(mockPodResource, times(1)).delete()));
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     @Test
-    public void testSinglePodDeploymentRollingUpdateWithMissingPod(VertxTestContext context)  {
+    public void testSinglePodDeploymentRollingUpdateWithMissingPod()  {
         String depName = "my-dep";
         String podName = depName + "-123456";
 
@@ -194,15 +188,10 @@ public class DeploymentOperatorTest extends
         when(mockClient.pods()).thenReturn(mockPods);
         when(mockClient.apps()).thenReturn(mockApps);
 
-        DeploymentOperator op = new DeploymentOperator(vertx, mockClient);
+        DeploymentOperator op = new DeploymentOperator(asyncExecutor, mockClient);
 
-        Checkpoint async = context.checkpoint();
-        op.singlePodDeploymentRollingUpdate(Reconciliation.DUMMY_RECONCILIATION, NAMESPACE, depName, 5_000)
-                .onComplete(context.succeeding(v -> {
-
-                    verify(mockPodResource, never()).delete();
-
-                    async.flag();
-                }));
+        TestUtils.await(op.singlePodDeploymentRollingUpdate(Reconciliation.DUMMY_RECONCILIATION, NAMESPACE, depName, 5_000)
+                .whenComplete(TestUtils::assertSuccessful)
+                .thenRun(() -> verify(mockPodResource, never()).delete()));
     }
 }

@@ -14,7 +14,6 @@ import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.CrdOperator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.platform.KubernetesVersion;
-import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
@@ -116,7 +115,7 @@ public class KafkaConnectAssemblyOperatorConnectorAutoRestartTest {
                 .build();
 
         CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> connectorOperator = supplier.kafkaConnectorOperator;
-        when(connectorOperator.getAsync("my-namespace", "my-connector")).thenReturn(Future.succeededFuture(connector));
+        when(connectorOperator.getAsync("my-namespace", "my-connector")).thenReturn(CompletableFuture.completedFuture(connector));
 
         KafkaConnectAssemblyOperator op = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, KubernetesVersion.MINIMAL_SUPPORTED_VERSION),
                 supplier, ResourceUtils.dummyClusterOperatorConfig());
@@ -159,7 +158,7 @@ public class KafkaConnectAssemblyOperatorConnectorAutoRestartTest {
                 .build();
 
         CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> connectorOperator = supplier.kafkaConnectorOperator;
-        when(connectorOperator.getAsync("my-namespace", "my-connector")).thenReturn(Future.succeededFuture(connector));
+        when(connectorOperator.getAsync("my-namespace", "my-connector")).thenReturn(CompletableFuture.completedFuture(connector));
 
         KafkaConnectAssemblyOperator op = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, KubernetesVersion.MINIMAL_SUPPORTED_VERSION),
                 supplier, ResourceUtils.dummyClusterOperatorConfig());
@@ -208,7 +207,7 @@ public class KafkaConnectAssemblyOperatorConnectorAutoRestartTest {
                 .build();
 
         CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> connectorOperator = supplier.kafkaConnectorOperator;
-        when(connectorOperator.getAsync("my-namespace", "my-connector")).thenReturn(Future.succeededFuture(connector));
+        when(connectorOperator.getAsync("my-namespace", "my-connector")).thenReturn(CompletableFuture.completedFuture(connector));
 
         KafkaConnectAssemblyOperator op = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, KubernetesVersion.MINIMAL_SUPPORTED_VERSION),
                 supplier, ResourceUtils.dummyClusterOperatorConfig());
@@ -257,7 +256,7 @@ public class KafkaConnectAssemblyOperatorConnectorAutoRestartTest {
                 .build();
 
         CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> connectorOperator = supplier.kafkaConnectorOperator;
-        when(connectorOperator.getAsync("my-namespace", "my-connector")).thenReturn(Future.succeededFuture(connector));
+        when(connectorOperator.getAsync("my-namespace", "my-connector")).thenReturn(CompletableFuture.completedFuture(connector));
 
         KafkaConnectAssemblyOperator op = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, KubernetesVersion.MINIMAL_SUPPORTED_VERSION),
                 supplier, ResourceUtils.dummyClusterOperatorConfig());
@@ -306,7 +305,7 @@ public class KafkaConnectAssemblyOperatorConnectorAutoRestartTest {
                 .build();
 
         CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> connectorOperator = supplier.kafkaConnectorOperator;
-        when(connectorOperator.getAsync("my-namespace", "my-connector")).thenReturn(Future.succeededFuture(connector));
+        when(connectorOperator.getAsync("my-namespace", "my-connector")).thenReturn(CompletableFuture.completedFuture(connector));
 
         KafkaConnectAssemblyOperator op = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, KubernetesVersion.MINIMAL_SUPPORTED_VERSION),
                 supplier, ResourceUtils.dummyClusterOperatorConfig());
@@ -352,7 +351,7 @@ public class KafkaConnectAssemblyOperatorConnectorAutoRestartTest {
                 .build();
 
         CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> connectorOperator = supplier.kafkaConnectorOperator;
-        when(connectorOperator.getAsync("my-namespace", "my-connector")).thenReturn(Future.succeededFuture(connector));
+        when(connectorOperator.getAsync("my-namespace", "my-connector")).thenReturn(CompletableFuture.completedFuture(connector));
 
         KafkaConnectAssemblyOperator op = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, KubernetesVersion.MINIMAL_SUPPORTED_VERSION),
                 supplier, ResourceUtils.dummyClusterOperatorConfig());

@@ -14,8 +14,11 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
-import io.vertx.core.Future;
-import io.vertx.core.Vertx;
+import io.strimzi.operator.common.operator.resource.concurrent.AbstractScalableNamespacedResourceOperator;
+
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.Executor;
 
 /**
  * Operations for {@code Deployment}s.
@@ -28,22 +31,22 @@ public class DeploymentOperator extends AbstractScalableNamespacedResourceOperat
     /**
      * Constructor
      *
-     * @param vertx The Vertx instance
+     * @param asyncExecutor Executor to use for asynchronous subroutines
      * @param client The Kubernetes client
      */
-    public DeploymentOperator(Vertx vertx, KubernetesClient client) {
-        this(vertx, client, new PodOperator(vertx, client));
+    public DeploymentOperator(Executor asyncExecutor, KubernetesClient client) {
+        this(asyncExecutor, client, new PodOperator(asyncExecutor, client));
     }
 
     /**
      * Constructor
      *
-     * @param vertx             Vert.x instance
+     * @param asyncExecutor     Executor to use for asynchronous subroutines
      * @param client            Kubernetes client
      * @param podOperations     Pod Operator for managing pods
      */
-    public DeploymentOperator(Vertx vertx, KubernetesClient client, PodOperator podOperations) {
-        super(vertx, client, "Deployment");
+    public DeploymentOperator(Executor asyncExecutor, KubernetesClient client, PodOperator podOperations) {
+        super(asyncExecutor, client, "Deployment");
         this.podOperations = podOperations;
     }
 
@@ -74,22 +77,22 @@ public class DeploymentOperator extends AbstractScalableNamespacedResourceOperat
      *
      * @return A future which completes when the pods in the deployment has been restarted.
      */
-    public Future<Void> singlePodDeploymentRollingUpdate(Reconciliation reconciliation, String namespace, String name, long operationTimeoutMs) {
+    public CompletionStage<Void> singlePodDeploymentRollingUpdate(Reconciliation reconciliation, String namespace, String name, long operationTimeoutMs) {
         return podOperations.listAsync(namespace, Labels.EMPTY.withStrimziName(name))
-                .compose(pods -> {
+                .thenCompose(pods -> {
                     if (pods != null && !pods.isEmpty())    {
                         return podOperations.deleteAsync(reconciliation, namespace, pods.get(0).getMetadata().getName(), true);
                     } else {
                         LOGGER.warnCr(reconciliation, "No Pods were found for Deployment {} in namespace {}", name, namespace);
                         // We return success as there is nothing to roll
-                        return Future.succeededFuture();
+                        return CompletableFuture.completedFuture((Void) null);
                     }
                 })
-                .compose(ignored -> readiness(reconciliation, namespace, name, 1_000, operationTimeoutMs));
+                .thenCompose(ignored -> readiness(reconciliation, namespace, name, 1_000, operationTimeoutMs));
     }
 
     @Override
-    protected Future<ReconcileResult<Deployment>> internalUpdate(Reconciliation reconciliation, String namespace, String name, Deployment current, Deployment desired) {
+    protected CompletionStage<ReconcileResult<Deployment>> internalUpdate(Reconciliation reconciliation, String namespace, String name, Deployment current, Deployment desired) {
         String k8sRev = Annotations.annotations(current).get(Annotations.ANNO_DEP_KUBE_IO_REVISION);
         Annotations.annotations(desired).put(Annotations.ANNO_DEP_KUBE_IO_REVISION, k8sRev);
         return super.internalUpdate(reconciliation, namespace, name, current, desired);
@@ -107,7 +110,7 @@ public class DeploymentOperator extends AbstractScalableNamespacedResourceOperat
      * @return  A future which completes when the observed generation of the deployment matches the
      * generation sequence number of the desired state.
      */
-    public Future<Void> waitForObserved(Reconciliation reconciliation, String namespace, String name, long pollIntervalMs, long timeoutMs) {
+    public CompletionStage<Void> waitForObserved(Reconciliation reconciliation, String namespace, String name, long pollIntervalMs, long timeoutMs) {
         return waitFor(reconciliation, namespace, name, "observed", pollIntervalMs, timeoutMs, this::isObserved);
     }
 

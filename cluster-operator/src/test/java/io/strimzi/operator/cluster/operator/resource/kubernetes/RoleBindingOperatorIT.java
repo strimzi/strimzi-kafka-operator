@@ -13,20 +13,17 @@ import io.fabric8.kubernetes.api.model.rbac.Subject;
 import io.fabric8.kubernetes.api.model.rbac.SubjectBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.vertx.junit5.VertxExtension;
-import io.vertx.junit5.VertxTestContext;
-import org.junit.jupiter.api.extension.ExtendWith;
+import io.strimzi.operator.common.operator.resource.concurrent.AbstractNamespacedResourceOperator;
 
 import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-@ExtendWith(VertxExtension.class)
 public class RoleBindingOperatorIT extends AbstractNamespacedResourceOperatorIT<KubernetesClient, RoleBinding, RoleBindingList, Resource<RoleBinding>> {
 
     @Override
     protected AbstractNamespacedResourceOperator<KubernetesClient, RoleBinding, RoleBindingList, Resource<RoleBinding>> operator() {
-        return new RoleBindingOperator(vertx, client);
+        return new RoleBindingOperator(asyncExecutor, client);
     }
 
     @Override
@@ -81,17 +78,17 @@ public class RoleBindingOperatorIT extends AbstractNamespacedResourceOperatorIT<
     }
 
     @Override
-    protected void assertResources(VertxTestContext context, RoleBinding expected, RoleBinding actual)   {
-        context.verify(() -> assertThat(actual.getMetadata().getName(), is(expected.getMetadata().getName())));
-        context.verify(() -> assertThat(actual.getMetadata().getNamespace(), is(expected.getMetadata().getNamespace())));
-        context.verify(() -> assertThat(actual.getMetadata().getLabels(), is(expected.getMetadata().getLabels())));
-        context.verify(() -> assertThat(actual.getSubjects().size(), is(expected.getSubjects().size())));
-        context.verify(() -> assertThat(actual.getSubjects().get(0).getKind(), is(expected.getSubjects().get(0).getKind())));
-        context.verify(() -> assertThat(actual.getSubjects().get(0).getNamespace(), is(expected.getSubjects().get(0).getNamespace())));
-        context.verify(() -> assertThat(actual.getSubjects().get(0).getName(), is(expected.getSubjects().get(0).getName())));
+    protected void assertResources(RoleBinding expected, RoleBinding actual)   {
+        assertThat(actual.getMetadata().getName(), is(expected.getMetadata().getName()));
+        assertThat(actual.getMetadata().getNamespace(), is(expected.getMetadata().getNamespace()));
+        assertThat(actual.getMetadata().getLabels(), is(expected.getMetadata().getLabels()));
+        assertThat(actual.getSubjects().size(), is(expected.getSubjects().size()));
+        assertThat(actual.getSubjects().get(0).getKind(), is(expected.getSubjects().get(0).getKind()));
+        assertThat(actual.getSubjects().get(0).getNamespace(), is(expected.getSubjects().get(0).getNamespace()));
+        assertThat(actual.getSubjects().get(0).getName(), is(expected.getSubjects().get(0).getName()));
 
-        context.verify(() -> assertThat(actual.getRoleRef().getKind(), is(expected.getRoleRef().getKind())));
-        context.verify(() -> assertThat(actual.getRoleRef().getApiGroup(), is(expected.getRoleRef().getApiGroup())));
-        context.verify(() -> assertThat(actual.getRoleRef().getName(), is(expected.getRoleRef().getName())));
+        assertThat(actual.getRoleRef().getKind(), is(expected.getRoleRef().getKind()));
+        assertThat(actual.getRoleRef().getApiGroup(), is(expected.getRoleRef().getApiGroup()));
+        assertThat(actual.getRoleRef().getName(), is(expected.getRoleRef().getName()));
     }
 }

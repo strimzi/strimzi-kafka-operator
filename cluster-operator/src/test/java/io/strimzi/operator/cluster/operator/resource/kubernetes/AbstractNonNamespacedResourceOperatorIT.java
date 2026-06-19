@@ -9,25 +9,24 @@ import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.strimzi.operator.cluster.operator.VertxUtil;
 import io.strimzi.operator.common.Reconciliation;
-import io.vertx.core.Vertx;
-import io.vertx.core.WorkerExecutor;
-import io.vertx.junit5.Checkpoint;
-import io.vertx.junit5.VertxExtension;
-import io.vertx.junit5.VertxTestContext;
+import io.strimzi.operator.common.operator.resource.concurrent.AbstractNonNamespacedResourceOperator;
+import io.strimzi.operator.common.operator.resource.concurrent.ResourceSupport;
+import io.strimzi.test.TestUtils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.Random;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ForkJoinPool;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 /**
  * The main purpose of the Integration Tests for the operators is to test them against a real Kubernetes cluster.
@@ -35,21 +34,21 @@ import static org.hamcrest.Matchers.nullValue;
  * being created by the Kubernetes API etc. These things are hard to test with mocks. These IT tests make it easy to
  * test them against real clusters.
  */
-@ExtendWith(VertxExtension.class)
 public abstract class AbstractNonNamespacedResourceOperatorIT<C extends KubernetesClient,
         T extends HasMetadata,
         L extends KubernetesResourceList<T>,
         R extends Resource<T>> {
     public static final String RESOURCE_NAME = "my-resource";
-    private static WorkerExecutor sharedWorkerExecutor;
     protected String resourceName;
-    protected static Vertx vertx;
     protected static KubernetesClient client;
+
+    protected static Executor asyncExecutor;
+    protected static ResourceSupport resourceSupport;
 
     @BeforeAll
     public static void before() {
-        vertx = Vertx.vertx();
-        sharedWorkerExecutor = vertx.createSharedWorkerExecutor("kubernetes-ops-pool");
+        asyncExecutor = ForkJoinPool.commonPool();
+        resourceSupport = new ResourceSupport(asyncExecutor);
         client = new KubernetesClientBuilder().build();
     }
 
@@ -60,54 +59,49 @@ public abstract class AbstractNonNamespacedResourceOperatorIT<C extends Kubernet
 
     @AfterAll
     public static void after() {
-        sharedWorkerExecutor.close();
-        vertx.close();
     }
 
     abstract AbstractNonNamespacedResourceOperator<C, T, L, R> operator();
     abstract T getOriginal();
     abstract T getModified();
-    abstract void assertResources(VertxTestContext context, T expected, T actual);
+    abstract void assertResources(T expected, T actual);
 
     @Test
-    public void testCreateModifyDelete(VertxTestContext context) {
-        Checkpoint async = context.checkpoint();
+    public void testCreateModifyDelete() {
         AbstractNonNamespacedResourceOperator<C, T, L, R> op = operator();
 
         T newResource = getOriginal();
         T modResource = getModified();
 
-        op.reconcile(Reconciliation.DUMMY_RECONCILIATION, resourceName, newResource)
-            .onComplete(context.succeeding(rrCreate -> context.verify(() -> {
+        TestUtils.await(op.reconcile(Reconciliation.DUMMY_RECONCILIATION, resourceName, newResource)
+            .whenComplete((rrCreate, error) -> {
+                assertNull(error);
                 T created = op.get(resourceName);
 
                 assertThat("Failed to get created Resource", created, is(notNullValue()));
-                assertResources(context, newResource, created);
-            })))
-            .compose(rr -> op.reconcile(Reconciliation.DUMMY_RECONCILIATION, resourceName, modResource))
-            .onComplete(context.succeeding(rrModified -> context.verify(() -> {
-                T modified = (T) op.get(resourceName);
+                assertResources(newResource, created);
+            })
+            .thenCompose(rr -> op.reconcile(Reconciliation.DUMMY_RECONCILIATION, resourceName, modResource))
+            .whenComplete((rrModified, error) -> {
+                assertNull(error);
+                T modified = op.get(resourceName);
 
                 assertThat("Failed to get modified Resource", modified, is(notNullValue()));
-                assertResources(context, modResource, modified);
-            })))
-            .compose(rr -> op.reconcile(Reconciliation.DUMMY_RECONCILIATION, resourceName, null))
-            .onComplete(context.succeeding(rrDelete -> context.verify(() -> {
-                // it seems the resource is cached for some time so we need wait for it to be null
-                context.verify(() -> {
-                        VertxUtil.waitFor(Reconciliation.DUMMY_RECONCILIATION, vertx, "resource deletion " + resourceName, "deleted", 1000,
-                                30_000, () -> op.get(resourceName) == null)
-                                .onComplete(del -> {
-                                    assertThat(op.get(resourceName), is(nullValue()));
-                                    async.flag();
-                                });
-                    }
-                );
-            })));
+                assertResources(modResource, modified);
+            })
+            .thenCompose(rr -> op.reconcile(Reconciliation.DUMMY_RECONCILIATION, resourceName, null))
+            .whenComplete(TestUtils::assertSuccessful)
+            .thenCompose(rr -> resourceSupport.waitFor(
+                    Reconciliation.DUMMY_RECONCILIATION,
+                    "resource deletion " + resourceName,
+                    "deleted",
+                    1000,
+                    30_000,
+                    () -> op.get(resourceName) == null))
+            .thenRun(() -> assertThat(op.get(resourceName), is(nullValue()))));
     }
 
     protected String getResourceName(String name) {
         return name + "-" + new Random().nextInt(Integer.MAX_VALUE);
     }
 }
-

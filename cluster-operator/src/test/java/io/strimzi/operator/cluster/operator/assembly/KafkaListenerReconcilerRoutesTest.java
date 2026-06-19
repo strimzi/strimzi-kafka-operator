@@ -40,6 +40,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -135,9 +136,9 @@ public class KafkaListenerReconcilerRoutesTest {
         // Delegate the batchReconcile call to the real method which calls the other mocked methods. This allows us to better test the exact behavior.
         when(mockServiceOperator.batchReconcile(any(), eq(NAMESPACE), any(), any())).thenCallRealMethod();
         // Mock listing of services
-        when(mockServiceOperator.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(Future.succeededFuture(List.of()));
+        when(mockServiceOperator.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(CompletableFuture.completedFuture(List.of()));
         // Mock service creation / update
-        when(mockServiceOperator.reconcile(any(), eq(NAMESPACE), any(), any())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(3))));
+        when(mockServiceOperator.reconcile(any(), eq(NAMESPACE), any(), any())).thenAnswer(i -> CompletableFuture.completedFuture(ReconcileResult.created(i.getArgument(3))));
 
         Reconciliation reconciliation = new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME);
 
@@ -192,9 +193,9 @@ public class KafkaListenerReconcilerRoutesTest {
         // Delegate the batchReconcile call to the real method which calls the other mocked methods. This allows us to better test the exact behavior.
         when(mockServiceOperator.batchReconcile(any(), eq(NAMESPACE), any(), any())).thenCallRealMethod();
         // Mock listing of services
-        when(mockServiceOperator.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(Future.succeededFuture(List.of()));
+        when(mockServiceOperator.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(CompletableFuture.completedFuture(List.of()));
         // Mock service creation / update
-        when(mockServiceOperator.reconcile(any(), eq(NAMESPACE), any(), any())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(3))));
+        when(mockServiceOperator.reconcile(any(), eq(NAMESPACE), any(), any())).thenAnswer(i -> CompletableFuture.completedFuture(ReconcileResult.created(i.getArgument(3))));
 
         // Mock the RouteOperator for the OpenShift routes
         RouteOperator mockRouteOperator = supplier.routeOperations;
@@ -209,14 +210,14 @@ public class KafkaListenerReconcilerRoutesTest {
         when(mockRouteBroker0.getStatus().getIngress().get(0).getHost()).thenReturn(DNS_NAME_FOR_BROKER_10);
         when(mockRouteBroker1.getStatus().getIngress().get(0).getHost()).thenReturn(DNS_NAME_FOR_BROKER_11);
         when(mockRouteBroker2.getStatus().getIngress().get(0).getHost()).thenReturn(DNS_NAME_FOR_BROKER_12);
-        when(mockRouteOperator.getAsync(eq(NAMESPACE), eq(CLUSTER_NAME + "-kafka-bootstrap"))).thenReturn(Future.succeededFuture(mockRouteBootstrap));
-        when(mockRouteOperator.getAsync(eq(NAMESPACE), eq(CLUSTER_NAME + "-brokers-10"))).thenReturn(Future.succeededFuture(mockRouteBroker0));
-        when(mockRouteOperator.getAsync(eq(NAMESPACE), eq(CLUSTER_NAME + "-brokers-11"))).thenReturn(Future.succeededFuture(mockRouteBroker1));
-        when(mockRouteOperator.getAsync(eq(NAMESPACE), eq(CLUSTER_NAME + "-brokers-12"))).thenReturn(Future.succeededFuture(mockRouteBroker2));
+        when(mockRouteOperator.getAsync(eq(NAMESPACE), eq(CLUSTER_NAME + "-kafka-bootstrap"))).thenReturn(CompletableFuture.completedFuture(mockRouteBootstrap));
+        when(mockRouteOperator.getAsync(eq(NAMESPACE), eq(CLUSTER_NAME + "-brokers-10"))).thenReturn(CompletableFuture.completedFuture(mockRouteBroker0));
+        when(mockRouteOperator.getAsync(eq(NAMESPACE), eq(CLUSTER_NAME + "-brokers-11"))).thenReturn(CompletableFuture.completedFuture(mockRouteBroker1));
+        when(mockRouteOperator.getAsync(eq(NAMESPACE), eq(CLUSTER_NAME + "-brokers-12"))).thenReturn(CompletableFuture.completedFuture(mockRouteBroker2));
         // Mock listing of routes
-        when(mockRouteOperator.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(Future.succeededFuture(List.of()));
+        when(mockRouteOperator.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(CompletableFuture.completedFuture(List.of()));
         // Mock route creation / update
-        when(mockRouteOperator.reconcile(any(), eq(NAMESPACE), any(), any())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(3))));
+        when(mockRouteOperator.reconcile(any(), eq(NAMESPACE), any(), any())).thenAnswer(i -> CompletableFuture.completedFuture(ReconcileResult.created(i.getArgument(3))));
 
         Reconciliation reconciliation = new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME);
 
@@ -302,13 +303,13 @@ public class KafkaListenerReconcilerRoutesTest {
         when(mockServiceBroker0.getMetadata().getName()).thenReturn(CLUSTER_NAME + "-brokers-10");
         when(mockServiceBroker1.getMetadata().getName()).thenReturn(CLUSTER_NAME + "-brokers-11");
         when(mockServiceBroker2.getMetadata().getName()).thenReturn(CLUSTER_NAME + "-brokers-12");
-        when(mockServiceOperator.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(Future.succeededFuture(List.of(mockServiceLocalBootstrap, mockServiceBrokers, mockServiceBootstrap, mockServiceBroker0, mockServiceBroker1, mockServiceBroker2)));
+        when(mockServiceOperator.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(CompletableFuture.completedFuture(List.of(mockServiceLocalBootstrap, mockServiceBrokers, mockServiceBootstrap, mockServiceBroker0, mockServiceBroker1, mockServiceBroker2)));
         // Mock service creation / update
         when(mockServiceOperator.reconcile(any(), eq(NAMESPACE), any(), any())).thenAnswer(i -> {
             if (i.getArgument(3) != null) {
-                return Future.succeededFuture(ReconcileResult.created(i.getArgument(3)));
+                return CompletableFuture.completedFuture(ReconcileResult.created(i.getArgument(3)));
             } else {
-                return Future.succeededFuture(ReconcileResult.deleted());
+                return CompletableFuture.completedFuture(ReconcileResult.deleted());
             }
         });
 
@@ -325,9 +326,9 @@ public class KafkaListenerReconcilerRoutesTest {
         when(mockRouteBroker0.getMetadata().getName()).thenReturn(CLUSTER_NAME + "-brokers-10");
         when(mockRouteBroker1.getMetadata().getName()).thenReturn(CLUSTER_NAME + "-brokers-11");
         when(mockRouteBroker2.getMetadata().getName()).thenReturn(CLUSTER_NAME + "-brokers-12");
-        when(mockRouteOperator.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(Future.succeededFuture(List.of(mockRouteBootstrap, mockRouteBroker0, mockRouteBroker1, mockRouteBroker2)));
+        when(mockRouteOperator.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(CompletableFuture.completedFuture(List.of(mockRouteBootstrap, mockRouteBroker0, mockRouteBroker1, mockRouteBroker2)));
         // Mock route creation / update
-        when(mockRouteOperator.reconcile(any(), eq(NAMESPACE), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.deleted()));
+        when(mockRouteOperator.reconcile(any(), eq(NAMESPACE), any(), any())).thenReturn(CompletableFuture.completedFuture(ReconcileResult.deleted()));
 
         Reconciliation reconciliation = new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME);
 

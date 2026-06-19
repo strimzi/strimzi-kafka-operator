@@ -15,13 +15,13 @@ import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.search.MeterNotFoundException;
 import io.strimzi.api.kafka.model.common.Spec;
 import io.strimzi.api.kafka.model.kafka.Status;
-import io.strimzi.operator.cluster.operator.resource.kubernetes.AbstractWatchableStatusedNamespacedResourceOperator;
 import io.strimzi.operator.common.MetricsProvider;
 import io.strimzi.operator.common.MicrometerMetricsProvider;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.metrics.MetricsHolder;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.NamespaceAndName;
+import io.strimzi.operator.common.operator.resource.concurrent.AbstractWatchableStatusedNamespacedResourceOperator;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
@@ -40,6 +40,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
 
 import static java.util.Collections.emptyMap;
@@ -286,7 +289,7 @@ public class OperatorMetricsTest {
     public void testDeleteCountsReconcile(VertxTestContext context)  {
         MetricsProvider metricsProvider = createCleanMetricsProvider();
 
-        AbstractWatchableStatusedNamespacedResourceOperator resourceOperator = new AbstractWatchableStatusedNamespacedResourceOperator(vertx, null, "TestResource") {
+        AbstractWatchableStatusedNamespacedResourceOperator resourceOperator = new AbstractWatchableStatusedNamespacedResourceOperator(ForkJoinPool.commonPool(), null, "TestResource") {
             @Override
             protected MixedOperation operation() {
                 return null;
@@ -298,12 +301,12 @@ public class OperatorMetricsTest {
             }
 
             @Override
-            public Future getAsync(String namespace, String name) {
-                return Future.succeededFuture();
+            public CompletionStage getAsync(String namespace, String name) {
+                return CompletableFuture.completedFuture(null);
             }
 
             @Override
-            public Future updateStatusAsync(Reconciliation reconciliation, HasMetadata resource) {
+            public CompletionStage updateStatusAsync(Reconciliation reconciliation, HasMetadata resource) {
                 return null;
             }
         };
@@ -499,9 +502,9 @@ public class OperatorMetricsTest {
     protected abstract static class MyResource extends CustomResource { }
 
     protected AbstractWatchableStatusedNamespacedResourceOperator resourceOperatorWithExistingResource(Labels selectorLabels)    {
-        return new AbstractWatchableStatusedNamespacedResourceOperator(vertx, null, "TestResource") {
+        return new AbstractWatchableStatusedNamespacedResourceOperator(ForkJoinPool.commonPool(), null, "TestResource") {
             @Override
-            public Future updateStatusAsync(Reconciliation reconciliation, HasMetadata resource) {
+            public CompletionStage updateStatusAsync(Reconciliation reconciliation, HasMetadata resource) {
                 return null;
             }
 
@@ -523,8 +526,8 @@ public class OperatorMetricsTest {
             }
 
             @Override
-            public Future getAsync(String namespace, String name) {
-                return Future.succeededFuture(get(namespace, name));
+            public CompletionStage getAsync(String namespace, String name) {
+                return CompletableFuture.completedFuture(get(namespace, name));
             }
         };
     }
@@ -538,10 +541,10 @@ public class OperatorMetricsTest {
     }
 
     private AbstractWatchableStatusedNamespacedResourceOperator resourceOperatorWithExistingPausedResource() {
-        return new AbstractWatchableStatusedNamespacedResourceOperator(vertx, null, "TestResource") {
+        return new AbstractWatchableStatusedNamespacedResourceOperator(ForkJoinPool.commonPool(), null, "TestResource") {
             @Override
-            public Future updateStatusAsync(Reconciliation reconciliation, HasMetadata resource) {
-                return Future.succeededFuture();
+            public CompletionStage updateStatusAsync(Reconciliation reconciliation, HasMetadata resource) {
+                return CompletableFuture.completedFuture(null);
             }
 
             @Override
@@ -560,13 +563,13 @@ public class OperatorMetricsTest {
             }
 
             @Override
-            public Future getAsync(String namespace, String name) {
+            public CompletionStage getAsync(String namespace, String name) {
                 Foo foo = new Foo();
                 ObjectMeta md = new ObjectMeta();
                 md.setAnnotations(singletonMap("strimzi.io/pause-reconciliation", "true"));
                 foo.setMetadata(md);
 
-                return Future.succeededFuture(foo);
+                return CompletableFuture.completedFuture(foo);
             }
         };
     }

@@ -24,6 +24,7 @@ import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.ListenersUtils;
 import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.cluster.model.NodeRef;
+import io.strimzi.operator.cluster.operator.VertxUtil;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.IngressOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.RouteOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.SecretOperator;
@@ -153,7 +154,7 @@ public class KafkaListenersReconciler {
         services.addAll(kafka.generateExternalBootstrapServices());
         services.addAll(kafka.generatePerPodServices());
 
-        return serviceOperator.batchReconcile(reconciliation, reconciliation.namespace(), services, kafka.getSelectorLabels()).mapEmpty();
+        return VertxUtil.toFuture(serviceOperator.batchReconcile(reconciliation, reconciliation.namespace(), services, kafka.getSelectorLabels())).mapEmpty();
     }
 
     /**
@@ -166,7 +167,7 @@ public class KafkaListenersReconciler {
         routes.addAll(kafka.generateExternalRoutes());
 
         if (pfa.hasRoutes()) {
-            return routeOperator.batchReconcile(reconciliation, reconciliation.namespace(), routes, kafka.getSelectorLabels()).mapEmpty();
+            return VertxUtil.toFuture(routeOperator.batchReconcile(reconciliation, reconciliation.namespace(), routes, kafka.getSelectorLabels())).mapEmpty();
         } else {
             if (!routes.isEmpty()) {
                 LOGGER.warnCr(reconciliation, "The OpenShift route API is not available in this Kubernetes cluster. Exposing Kafka cluster {} using routes is not possible.", reconciliation.name());
@@ -187,7 +188,7 @@ public class KafkaListenersReconciler {
         routes.addAll(kafka.generateExternalTlsRoutes());
 
         if (pfa.hasTLSRoutes()) {
-            return tlsRouteOperator.batchReconcile(reconciliation, reconciliation.namespace(), routes, kafka.getSelectorLabels()).mapEmpty();
+            return VertxUtil.toFuture(tlsRouteOperator.batchReconcile(reconciliation, reconciliation.namespace(), routes, kafka.getSelectorLabels())).mapEmpty();
         } else {
             if (!routes.isEmpty()) {
                 LOGGER.warnCr(reconciliation, "The Gateway API TLSRoute resource is not available in this Kubernetes cluster. Exposing Kafka cluster {} using TLSRoutes is not possible.", reconciliation.name());
@@ -207,7 +208,7 @@ public class KafkaListenersReconciler {
         List<Ingress> ingresses = new ArrayList<>(kafka.generateExternalBootstrapIngresses());
         ingresses.addAll(kafka.generateExternalIngresses());
 
-        return ingressOperator.batchReconcile(reconciliation, reconciliation.namespace(), ingresses, kafka.getSelectorLabels()).mapEmpty();
+        return VertxUtil.toFuture(ingressOperator.batchReconcile(reconciliation, reconciliation.namespace(), ingresses, kafka.getSelectorLabels())).mapEmpty();
     }
 
     /**
@@ -400,8 +401,8 @@ public class KafkaListenersReconciler {
                 if (ListenersUtils.skipCreateBootstrapService(listener)) {
                     return Future.succeededFuture();
                 } else {
-                    return serviceOperator.hasIngressAddress(reconciliation, reconciliation.namespace(), bootstrapServiceName, 1_000, operationTimeoutMs)
-                            .compose(res -> serviceOperator.getAsync(reconciliation.namespace(), bootstrapServiceName))
+                    return VertxUtil.toFuture(serviceOperator.hasIngressAddress(reconciliation, reconciliation.namespace(), bootstrapServiceName, 1_000, operationTimeoutMs))
+                            .compose(res -> VertxUtil.toFuture(serviceOperator.getAsync(reconciliation.namespace(), bootstrapServiceName)))
                             .compose(svc -> {
                                 String bootstrapAddress;
 
@@ -423,7 +424,7 @@ public class KafkaListenersReconciler {
 
                 for (NodeRef node : kafka.brokerNodes()) {
                     perPodFutures.add(
-                            serviceOperator.hasIngressAddress(reconciliation, reconciliation.namespace(), ListenersUtils.backwardsCompatiblePerBrokerServiceName(ReconcilerUtils.getControllerNameFromPodName(node.podName()), node.nodeId(), listener), 1_000, operationTimeoutMs)
+                            VertxUtil.toFuture(serviceOperator.hasIngressAddress(reconciliation, reconciliation.namespace(), ListenersUtils.backwardsCompatiblePerBrokerServiceName(ReconcilerUtils.getControllerNameFromPodName(node.podName()), node.nodeId(), listener), 1_000, operationTimeoutMs))
                     );
                 }
 
@@ -432,7 +433,7 @@ public class KafkaListenersReconciler {
                 List<Future<Void>> perPodFutures = new ArrayList<>();
 
                 for (NodeRef node : kafka.brokerNodes()) {
-                    Future<Void> perBrokerFut = serviceOperator.getAsync(reconciliation.namespace(), ListenersUtils.backwardsCompatiblePerBrokerServiceName(ReconcilerUtils.getControllerNameFromPodName(node.podName()), node.nodeId(), listener))
+                    Future<Void> perBrokerFut = VertxUtil.toFuture(serviceOperator.getAsync(reconciliation.namespace(), ListenersUtils.backwardsCompatiblePerBrokerServiceName(ReconcilerUtils.getControllerNameFromPodName(node.podName()), node.nodeId(), listener)))
                             .compose(svc -> {
                                 String brokerAddress;
 
@@ -503,8 +504,8 @@ public class KafkaListenersReconciler {
             String bootstrapServiceName = ListenersUtils.backwardsCompatibleBootstrapServiceName(reconciliation.name(), listener);
 
             @SuppressWarnings({ "rawtypes" }) // Has to use Raw type because of the CompositeFuture
-            Future perListenerFut = serviceOperator.hasNodePort(reconciliation, reconciliation.namespace(), bootstrapServiceName, 1_000, operationTimeoutMs)
-                    .compose(res -> serviceOperator.getAsync(reconciliation.namespace(), bootstrapServiceName))
+            Future perListenerFut = VertxUtil.toFuture(serviceOperator.hasNodePort(reconciliation, reconciliation.namespace(), bootstrapServiceName, 1_000, operationTimeoutMs))
+                    .compose(res -> VertxUtil.toFuture(serviceOperator.getAsync(reconciliation.namespace(), bootstrapServiceName)))
                     .compose(svc -> {
                         Integer externalBootstrapNodePort = svc.getSpec().getPorts().get(0).getNodePort();
                         LOGGER.debugCr(reconciliation, "Found node port {} for Service {}", externalBootstrapNodePort, bootstrapServiceName);
@@ -517,7 +518,7 @@ public class KafkaListenersReconciler {
 
                         for (NodeRef node : kafka.brokerNodes()) {
                             perPodFutures.add(
-                                    serviceOperator.hasNodePort(reconciliation, reconciliation.namespace(), ListenersUtils.backwardsCompatiblePerBrokerServiceName(ReconcilerUtils.getControllerNameFromPodName(node.podName()), node.nodeId(), listener), 1_000, operationTimeoutMs)
+                                    VertxUtil.toFuture(serviceOperator.hasNodePort(reconciliation, reconciliation.namespace(), ListenersUtils.backwardsCompatiblePerBrokerServiceName(ReconcilerUtils.getControllerNameFromPodName(node.podName()), node.nodeId(), listener), 1_000, operationTimeoutMs))
                             );
                         }
 
@@ -527,7 +528,7 @@ public class KafkaListenersReconciler {
                         List<Future<Void>> perPodFutures = new ArrayList<>();
 
                         for (NodeRef node : kafka.brokerNodes()) {
-                            Future<Void> perBrokerFut = serviceOperator.getAsync(reconciliation.namespace(), ListenersUtils.backwardsCompatiblePerBrokerServiceName(ReconcilerUtils.getControllerNameFromPodName(node.podName()), node.nodeId(), listener))
+                            Future<Void> perBrokerFut = VertxUtil.toFuture(serviceOperator.getAsync(reconciliation.namespace(), ListenersUtils.backwardsCompatiblePerBrokerServiceName(ReconcilerUtils.getControllerNameFromPodName(node.podName()), node.nodeId(), listener)))
                                     .compose(svc -> {
                                         Integer externalBrokerNodePort = svc.getSpec().getPorts().get(0).getNodePort();
                                         LOGGER.debugCr(reconciliation, "Found node port {} for Service {}", externalBrokerNodePort, svc.getMetadata().getName());
@@ -584,8 +585,8 @@ public class KafkaListenersReconciler {
             String bootstrapRouteName = ListenersUtils.backwardsCompatibleBootstrapRouteOrIngressName(reconciliation.name(), listener);
 
             @SuppressWarnings({ "rawtypes" }) // Has to use Raw type because of the CompositeFuture
-            Future perListenerFut = routeOperator.hasAddress(reconciliation, reconciliation.namespace(), bootstrapRouteName, 1_000, operationTimeoutMs)
-                    .compose(res -> routeOperator.getAsync(reconciliation.namespace(), bootstrapRouteName))
+            Future perListenerFut = VertxUtil.toFuture(routeOperator.hasAddress(reconciliation, reconciliation.namespace(), bootstrapRouteName, 1_000, operationTimeoutMs))
+                    .compose(res -> VertxUtil.toFuture(routeOperator.getAsync(reconciliation.namespace(), bootstrapRouteName)))
                     .compose(route -> {
                         String bootstrapAddress = route.getStatus().getIngress().get(0).getHost();
                         LOGGER.debugCr(reconciliation, "Found address {} for Route {}", bootstrapAddress, bootstrapRouteName);
@@ -608,7 +609,7 @@ public class KafkaListenersReconciler {
 
                         for (NodeRef node : kafka.brokerNodes()) {
                             perPodFutures.add(
-                                    routeOperator.hasAddress(reconciliation, reconciliation.namespace(), ListenersUtils.backwardsCompatiblePerBrokerServiceName(ReconcilerUtils.getControllerNameFromPodName(node.podName()), node.nodeId(), listener), 1_000, operationTimeoutMs)
+                                    VertxUtil.toFuture(routeOperator.hasAddress(reconciliation, reconciliation.namespace(), ListenersUtils.backwardsCompatiblePerBrokerServiceName(ReconcilerUtils.getControllerNameFromPodName(node.podName()), node.nodeId(), listener), 1_000, operationTimeoutMs))
                             );
                         }
 
@@ -619,7 +620,7 @@ public class KafkaListenersReconciler {
 
                         for (NodeRef node : kafka.brokerNodes()) {
                             //final int finalBrokerId = brokerId;
-                            Future<Void> perBrokerFut = routeOperator.getAsync(reconciliation.namespace(), ListenersUtils.backwardsCompatiblePerBrokerServiceName(ReconcilerUtils.getControllerNameFromPodName(node.podName()), node.nodeId(), listener))
+                            Future<Void> perBrokerFut = VertxUtil.toFuture(routeOperator.getAsync(reconciliation.namespace(), ListenersUtils.backwardsCompatiblePerBrokerServiceName(ReconcilerUtils.getControllerNameFromPodName(node.podName()), node.nodeId(), listener)))
                                     .compose(route -> {
                                         String brokerAddress = route.getStatus().getIngress().get(0).getHost();
                                         LOGGER.debugCr(reconciliation, "Found address {} for Route {}", brokerAddress, route.getMetadata().getName());
@@ -669,7 +670,7 @@ public class KafkaListenersReconciler {
             String bootstrapRouteName = ListenersUtils.backwardsCompatibleBootstrapRouteOrIngressName(reconciliation.name(), listener);
 
             @SuppressWarnings({ "rawtypes" }) // Has to use Raw type because of the CompositeFuture
-            Future perListenerFut = tlsRouteOperator.hasParents(reconciliation, reconciliation.namespace(), bootstrapRouteName, 1_000, operationTimeoutMs)
+            Future perListenerFut = VertxUtil.toFuture(tlsRouteOperator.hasParents(reconciliation, reconciliation.namespace(), bootstrapRouteName, 1_000, operationTimeoutMs))
                     .compose(i -> {
                         String bootstrapAddress = listener.getConfiguration().getBootstrap().getHost();
                         LOGGER.debugCr(reconciliation, "Using address {} for TLSRoute {}", bootstrapAddress, bootstrapRouteName);
@@ -692,7 +693,7 @@ public class KafkaListenersReconciler {
 
                         for (NodeRef node : kafka.brokerNodes()) {
                             perPodFutures.add(
-                                    tlsRouteOperator.hasParents(reconciliation, reconciliation.namespace(), ListenersUtils.backwardsCompatiblePerBrokerServiceName(ReconcilerUtils.getControllerNameFromPodName(node.podName()), node.nodeId(), listener), 1_000, operationTimeoutMs)
+                                    VertxUtil.toFuture(tlsRouteOperator.hasParents(reconciliation, reconciliation.namespace(), ListenersUtils.backwardsCompatiblePerBrokerServiceName(ReconcilerUtils.getControllerNameFromPodName(node.podName()), node.nodeId(), listener), 1_000, operationTimeoutMs))
                             );
                         }
 
@@ -743,7 +744,7 @@ public class KafkaListenersReconciler {
         for (GenericKafkaListener listener : ingressListeners) {
             String bootstrapIngressName = ListenersUtils.backwardsCompatibleBootstrapRouteOrIngressName(reconciliation.name(), listener);
 
-            Future<Void> perListenerFut = ingressOperator.hasIngressAddress(reconciliation, reconciliation.namespace(), bootstrapIngressName, 1_000, operationTimeoutMs)
+            Future<Void> perListenerFut = VertxUtil.toFuture(ingressOperator.hasIngressAddress(reconciliation, reconciliation.namespace(), bootstrapIngressName, 1_000, operationTimeoutMs))
                     .compose(res -> {
                         String bootstrapAddress = listener.getConfiguration().getBootstrap().getHost();
                         LOGGER.debugCr(reconciliation, "Using address {} for Ingress {}", bootstrapAddress, bootstrapIngressName);
@@ -764,7 +765,7 @@ public class KafkaListenersReconciler {
 
                         for (NodeRef node : kafka.brokerNodes()) {
                             perPodFutures.add(
-                                    ingressOperator.hasIngressAddress(reconciliation, reconciliation.namespace(), ListenersUtils.backwardsCompatiblePerBrokerServiceName(ReconcilerUtils.getControllerNameFromPodName(node.podName()), node.nodeId(), listener), 1_000, operationTimeoutMs)
+                                    VertxUtil.toFuture(ingressOperator.hasIngressAddress(reconciliation, reconciliation.namespace(), ListenersUtils.backwardsCompatiblePerBrokerServiceName(ReconcilerUtils.getControllerNameFromPodName(node.podName()), node.nodeId(), listener), 1_000, operationTimeoutMs))
                             );
                         }
 
@@ -816,7 +817,7 @@ public class KafkaListenersReconciler {
         Map<String, Secret> customSecrets = new HashMap<>(secretNames.size());
 
         for (String secretName : secretNames)   {
-            Future<Secret> fut = secretOperator.getAsync(reconciliation.namespace(), secretName)
+            Future<Secret> fut = VertxUtil.toFuture(secretOperator.getAsync(reconciliation.namespace(), secretName))
                     .compose(secret -> {
                         if (secret != null) {
                             customSecrets.put(secretName, secret);

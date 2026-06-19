@@ -58,6 +58,7 @@ import java.time.Clock;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
@@ -359,7 +360,7 @@ public class KafkaReconcilerStatusTest {
         pods.add(pod2);
 
         PodOperator mockPodOps = supplier.podOperations;
-        when(mockPodOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(Future.succeededFuture(pods));
+        when(mockPodOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(CompletableFuture.completedFuture(pods));
 
         // Mock Kubernetes worker nodes
         NodeOperator mockNodeOps = supplier.nodeOperator;
@@ -469,7 +470,7 @@ public class KafkaReconcilerStatusTest {
         pods.add(pod2);
 
         PodOperator mockPodOps = supplier.podOperations;
-        when(mockPodOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(Future.succeededFuture(pods));
+        when(mockPodOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(CompletableFuture.completedFuture(pods));
 
         // Mock Kubernetes worker nodes
         NodeOperator mockNodeOps = supplier.nodeOperator;
@@ -569,7 +570,7 @@ public class KafkaReconcilerStatusTest {
         pods.add(pod2);
 
         PodOperator mockPodOps = supplier.podOperations;
-        when(mockPodOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(Future.succeededFuture(pods));
+        when(mockPodOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(CompletableFuture.completedFuture(pods));
 
         // Mock Kubernetes worker nodes
         NodeOperator mockNodeOps = supplier.nodeOperator;
@@ -666,7 +667,7 @@ public class KafkaReconcilerStatusTest {
         pods.add(pod2);
 
         PodOperator mockPodOps = supplier.podOperations;
-        when(mockPodOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(Future.succeededFuture(pods));
+        when(mockPodOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(CompletableFuture.completedFuture(pods));
 
         // Mock Kubernetes worker nodes
         NodeOperator mockNodeOps = supplier.nodeOperator;
@@ -757,7 +758,7 @@ public class KafkaReconcilerStatusTest {
         pods.add(pod2);
 
         PodOperator mockPodOps = supplier.podOperations;
-        when(mockPodOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(Future.succeededFuture(pods));
+        when(mockPodOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(CompletableFuture.completedFuture(pods));
 
         // Mock Kubernetes worker nodes
         NodeOperator mockNodeOps = supplier.nodeOperator;
@@ -837,7 +838,7 @@ public class KafkaReconcilerStatusTest {
         pods.add(pod2);
 
         PodOperator mockPodOps = supplier.podOperations;
-        when(mockPodOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(Future.succeededFuture(pods));
+        when(mockPodOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(CompletableFuture.completedFuture(pods));
 
         // Mock Kubernetes worker nodes
         NodeOperator mockNodeOps = supplier.nodeOperator;
@@ -910,11 +911,11 @@ public class KafkaReconcilerStatusTest {
                 .endStatus()
                 .build();
 
-        when(mockNodeOps.getAsync(eq("node-0"))).thenReturn(Future.succeededFuture(node0));
-        when(mockNodeOps.getAsync(eq("node-1"))).thenReturn(Future.succeededFuture(node1));
-        when(mockNodeOps.getAsync(eq("node-2"))).thenReturn(Future.succeededFuture(node2));
-        when(mockNodeOps.getAsync(eq("node-3"))).thenReturn(Future.succeededFuture(node3));
-        when(mockNodeOps.getAsync(eq("node-999"))).thenReturn(Future.succeededFuture(null)); // Node that does not exist
+        when(mockNodeOps.getAsync(eq("node-0"))).thenReturn(CompletableFuture.completedFuture(node0));
+        when(mockNodeOps.getAsync(eq("node-1"))).thenReturn(CompletableFuture.completedFuture(node1));
+        when(mockNodeOps.getAsync(eq("node-2"))).thenReturn(CompletableFuture.completedFuture(node2));
+        when(mockNodeOps.getAsync(eq("node-3"))).thenReturn(CompletableFuture.completedFuture(node3));
+        when(mockNodeOps.getAsync(eq("node-999"))).thenReturn(CompletableFuture.completedFuture(null)); // Node that does not exist
     }
 
     static class MockKafkaReconcilerStatusTasks extends KafkaReconciler {

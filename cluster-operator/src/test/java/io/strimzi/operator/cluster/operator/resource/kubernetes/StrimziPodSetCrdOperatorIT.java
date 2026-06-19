@@ -16,17 +16,13 @@ import io.strimzi.api.kafka.model.podset.StrimziPodSet;
 import io.strimzi.api.kafka.model.podset.StrimziPodSetBuilder;
 import io.strimzi.api.kafka.model.podset.StrimziPodSetList;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.Util;
 import io.strimzi.test.CrdUtils;
-import io.vertx.core.Promise;
-import io.vertx.junit5.Checkpoint;
-import io.vertx.junit5.Timeout;
-import io.vertx.junit5.VertxExtension;
-import io.vertx.junit5.VertxTestContext;
+import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -35,6 +31,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
  * The main purpose of the Integration Tests for the operators is to test them against a real Kubernetes cluster.
@@ -42,7 +39,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
  * being created by the Kubernetes API etc. These things are hard to test with mocks. These IT tests make it easy to
  * test them against real clusters.
  */
-@ExtendWith(VertxExtension.class)
 public class StrimziPodSetCrdOperatorIT extends AbstractCustomResourceOperatorIT<KubernetesClient, StrimziPodSet, StrimziPodSetList> {
     protected static final Logger LOGGER = LogManager.getLogger(StrimziPodSetCrdOperatorIT.class);
 
@@ -50,7 +46,7 @@ public class StrimziPodSetCrdOperatorIT extends AbstractCustomResourceOperatorIT
 
     @Override
     protected StrimziPodSetOperator operator() {
-        return new StrimziPodSetOperator(vertx, client);
+        return new StrimziPodSetOperator(asyncExecutor, client);
     }
 
     @Override
@@ -131,64 +127,54 @@ public class StrimziPodSetCrdOperatorIT extends AbstractCustomResourceOperatorIT
     }
 
     @Override
-    protected void assertReady(VertxTestContext context, StrimziPodSet resource) {
-        context.verify(() -> {
-            int replicas = resource.getSpec().getPods().size();
+    protected void assertReady(StrimziPodSet resource) {
+        int replicas = resource.getSpec().getPods().size();
 
-            assertThat(resource.getStatus() != null
-                    && replicas == resource.getStatus().getPods()
-                    && replicas == resource.getStatus().getCurrentPods()
-                    && replicas == resource.getStatus().getReadyPods(), is(true));
-        });
+        assertThat(resource.getStatus() != null
+                && replicas == resource.getStatus().getPods()
+                && replicas == resource.getStatus().getCurrentPods()
+                && replicas == resource.getStatus().getReadyPods(), is(true));
     }
 
     @Test
-    public void testCreateSucceeds(VertxTestContext context) {
+    public void testCreateSucceeds() {
         String resourceName = getResourceName(RESOURCE_NAME);
-        Checkpoint async = context.checkpoint();
         String namespace = getNamespace();
 
         StrimziPodSetOperator op = operator();
 
         LOGGER.info("Creating resource");
-        op.reconcile(Reconciliation.DUMMY_RECONCILIATION, namespace, resourceName, getResource(resourceName))
-                .onComplete(context.succeeding(i -> { }))
-                .compose(rrModified -> {
+        TestUtils.await(op.reconcile(Reconciliation.DUMMY_RECONCILIATION, namespace, resourceName, getResource(resourceName))
+                .whenComplete(TestUtils::assertSuccessful)
+                .thenCompose(rrModified -> {
                     LOGGER.info("Deleting resource");
                     return op.reconcile(Reconciliation.DUMMY_RECONCILIATION, namespace, resourceName, null);
-                })
-                .onComplete(context.succeeding(rrDeleted ->  async.flag()));
+                }));
     }
 
     @Test
-    public void testUpdateStatus(VertxTestContext context) {
+    public void testUpdateStatus() {
         String resourceName = getResourceName(RESOURCE_NAME);
-        Checkpoint async = context.checkpoint();
         String namespace = getNamespace();
 
         StrimziPodSetOperator op = operator();
 
         LOGGER.info("Creating resource");
-        op.reconcile(Reconciliation.DUMMY_RECONCILIATION, namespace, resourceName, getResource(resourceName))
-                .onComplete(context.succeeding(i -> { }))
-                .compose(i -> op.getAsync(namespace, resourceName)) // We need to get it again because of the faked readiness which would cause 409 error
-                .onComplete(context.succeeding(i -> { }))
-                .compose(resource -> {
+        TestUtils.await(op.reconcile(Reconciliation.DUMMY_RECONCILIATION, namespace, resourceName, getResource(resourceName))
+                .whenComplete(TestUtils::assertSuccessful)
+                .thenCompose(i -> op.getAsync(namespace, resourceName)) // We need to get it again because of the faked readiness which would cause 409 error
+                .thenCompose(resource -> {
                     StrimziPodSet newStatus = getResourceWithNewReadyStatus(resource);
 
                     LOGGER.info("Updating resource status");
                     return op.updateStatusAsync(Reconciliation.DUMMY_RECONCILIATION, newStatus);
                 })
-                .onComplete(context.succeeding(i -> { }))
-
-                .compose(rrModified -> op.getAsync(namespace, resourceName))
-                .onComplete(context.succeeding(modifiedCustomResource -> context.verify(() -> assertReady(context, modifiedCustomResource))))
-
-                .compose(rrModified -> {
+                .thenCompose(rrModified -> op.getAsync(namespace, resourceName))
+                .whenComplete((modifiedCustomResource, error) -> assertReady(modifiedCustomResource))
+                .thenCompose(rrModified -> {
                     LOGGER.info("Deleting resource");
                     return op.reconcile(Reconciliation.DUMMY_RECONCILIATION, namespace, resourceName, null);
-                })
-                .onComplete(context.succeeding(rrDeleted ->  async.flag()));
+                }));
     }
 
     /**
@@ -196,14 +182,10 @@ public class StrimziPodSetCrdOperatorIT extends AbstractCustomResourceOperatorIT
      *
      * The CR removal does not consistently complete within the default timeout.
      * This requires increasing the timeout for completion to 1 minute.
-     *
-     * @param context Test context
      */
     @Test
-    @Timeout(value = 1, timeUnit = TimeUnit.MINUTES)
-    public void testUpdateStatusAfterResourceDeletedThrowsKubernetesClientException(VertxTestContext context) {
+    public void testUpdateStatusAfterResourceDeletedThrowsKubernetesClientException() {
         String resourceName = getResourceName(RESOURCE_NAME);
-        Checkpoint async = context.checkpoint();
         String namespace = getNamespace();
 
         StrimziPodSetOperator op = operator();
@@ -211,46 +193,39 @@ public class StrimziPodSetCrdOperatorIT extends AbstractCustomResourceOperatorIT
         AtomicReference<StrimziPodSet> newStatus = new AtomicReference<>();
 
         LOGGER.info("Creating resource");
-        op.reconcile(Reconciliation.DUMMY_RECONCILIATION, namespace, resourceName, getResource(resourceName))
-                .onComplete(context.succeeding(i -> { }))
-
-                .compose(rr -> {
+        TestUtils.await(op.reconcile(Reconciliation.DUMMY_RECONCILIATION, namespace, resourceName, getResource(resourceName))
+                .whenComplete(TestUtils::assertSuccessful)
+                .thenCompose(rr -> {
                     LOGGER.info("Saving resource with status change prior to deletion");
                     newStatus.set(getResourceWithNewReadyStatus(op.get(namespace, resourceName)));
                     LOGGER.info("Deleting resource");
                     return op.reconcile(Reconciliation.DUMMY_RECONCILIATION, namespace, resourceName, null);
                 })
-                .onComplete(context.succeeding(i -> { }))
-                .compose(i -> {
+                .thenCompose(i -> {
                     LOGGER.info("Updating resource with new status - should fail");
                     return op.updateStatusAsync(Reconciliation.DUMMY_RECONCILIATION, newStatus.get());
                 })
-                .onComplete(context.failing(e -> context.verify(() -> {
-                    assertThat(e, instanceOf(KubernetesClientException.class));
-                    async.flag();
-                })));
+                .<Void>handle((i, error) -> {
+                    assertThat(Util.maybeUnwrapCompletionException(error), instanceOf(KubernetesClientException.class));
+                    return null;
+                }),
+                1, TimeUnit.MINUTES);
     }
 
     /**
      * Tests what happens when the resource is modified while updating the status
-     *
-     * @param context   Test context
      */
     @Test
-    public void testUpdateStatusAfterResourceUpdated(VertxTestContext context) {
+    public void testUpdateStatusAfterResourceUpdated() {
         String resourceName = getResourceName(RESOURCE_NAME);
-        Checkpoint async = context.checkpoint();
         String namespace = getNamespace();
 
         StrimziPodSetOperator op = operator();
 
-        Promise<Void> updateStatus = Promise.promise();
-        //readinessHelper(op, namespace, resourceName); // Required to be able to create the resource
-
         LOGGER.info("Creating resource");
-        op.reconcile(Reconciliation.DUMMY_RECONCILIATION, namespace, resourceName, getResource(resourceName))
-                .onComplete(context.succeeding(i -> { }))
-                .compose(rrCreated -> {
+        TestUtils.await(op.reconcile(Reconciliation.DUMMY_RECONCILIATION, namespace, resourceName, getResource(resourceName))
+                .whenComplete(TestUtils::assertSuccessful)
+                .thenCompose(rrCreated -> {
                     StrimziPodSet updated = getResourceWithModifications(rrCreated.resource());
                     StrimziPodSet newStatus = getResourceWithNewReadyStatus(rrCreated.resource());
 
@@ -260,18 +235,17 @@ public class StrimziPodSetCrdOperatorIT extends AbstractCustomResourceOperatorIT
                     LOGGER.info("Updating resource status after underlying resource has changed");
                     return op.updateStatusAsync(Reconciliation.DUMMY_RECONCILIATION, newStatus);
                 })
-                .onComplete(context.failing(e -> context.verify(() -> {
+                .<Void>handle((unused, error) -> {
+                    assertNotNull(error);
                     LOGGER.info("Failed as expected");
-                    assertThat(e, instanceOf(KubernetesClientException.class));
-                    assertThat(((KubernetesClientException) e).getCode(), Matchers.is(409));
-                    updateStatus.complete();
-                })));
-
-        updateStatus.future()
-                .compose(v -> {
+                    Throwable cause = Util.maybeUnwrapCompletionException(error);
+                    assertThat(cause, instanceOf(KubernetesClientException.class));
+                    assertThat(((KubernetesClientException) cause).getCode(), Matchers.is(409));
+                    return null;
+                })
+                .thenCompose(v -> {
                     LOGGER.info("Deleting resource");
                     return op.reconcile(Reconciliation.DUMMY_RECONCILIATION, namespace, resourceName, null);
-                })
-                .onComplete(context.succeeding(v -> async.flag()));
+                }));
     }
 }

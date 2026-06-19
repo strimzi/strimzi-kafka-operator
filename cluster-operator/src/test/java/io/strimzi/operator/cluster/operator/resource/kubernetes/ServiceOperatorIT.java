@@ -11,21 +11,18 @@ import io.fabric8.kubernetes.api.model.ServicePort;
 import io.fabric8.kubernetes.api.model.ServicePortBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.ServiceResource;
-import io.vertx.junit5.VertxExtension;
-import io.vertx.junit5.VertxTestContext;
-import org.junit.jupiter.api.extension.ExtendWith;
+import io.strimzi.operator.common.operator.resource.concurrent.AbstractNamespacedResourceOperator;
 
 import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-@ExtendWith(VertxExtension.class)
 public class ServiceOperatorIT extends AbstractNamespacedResourceOperatorIT<KubernetesClient, Service, ServiceList, ServiceResource<Service>> {
 
     @Override
     protected AbstractNamespacedResourceOperator<KubernetesClient, Service, ServiceList,
                 ServiceResource<Service>> operator() {
-        return new ServiceOperator(vertx, client, false);
+        return new ServiceOperator(asyncExecutor, client, false);
     }
 
     @Override
@@ -75,10 +72,10 @@ public class ServiceOperatorIT extends AbstractNamespacedResourceOperatorIT<Kube
     }
 
     @Override
-    protected void assertResources(VertxTestContext context, Service expected, Service actual)   {
-        context.verify(() -> assertThat(actual.getMetadata().getName(), is(expected.getMetadata().getName())));
-        context.verify(() -> assertThat(actual.getMetadata().getNamespace(), is(expected.getMetadata().getNamespace())));
-        context.verify(() -> assertThat(actual.getMetadata().getLabels(), is(expected.getMetadata().getLabels())));
-        context.verify(() -> assertThat(actual.getSpec().getPorts().get(0).getPort(), is(expected.getSpec().getPorts().get(0).getPort())));
+    protected void assertResources(Service expected, Service actual)   {
+        assertThat(actual.getMetadata().getName(), is(expected.getMetadata().getName()));
+        assertThat(actual.getMetadata().getNamespace(), is(expected.getMetadata().getNamespace()));
+        assertThat(actual.getMetadata().getLabels(), is(expected.getMetadata().getLabels()));
+        assertThat(actual.getSpec().getPorts().get(0).getPort(), is(expected.getSpec().getPorts().get(0).getPort()));
     }
 }

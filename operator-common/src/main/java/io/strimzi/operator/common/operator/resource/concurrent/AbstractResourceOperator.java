@@ -89,7 +89,7 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient,
      *
      * @return              The ResourceDiff instance
      */
-    protected ResourceDiff<T> diff(Reconciliation reconciliation, String resourceName, T current, T desired)  {
+    public ResourceDiff<T> diff(Reconciliation reconciliation, String resourceName, T current, T desired)  {
         return new ResourceDiff<>(reconciliation, resourceKind, resourceName, current, desired, ignorablePaths());
     }
 

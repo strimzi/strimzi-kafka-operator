@@ -50,7 +50,6 @@ import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.platform.KubernetesVersion;
-import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
@@ -65,6 +64,7 @@ import org.mockito.ArgumentCaptor;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.BiPredicate;
 import java.util.stream.Collectors;
 
@@ -152,42 +152,42 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
         CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> mockConnectorOps = supplier.kafkaConnectorOperator;
 
         // Mock KafkaConnector ops
-        when(mockConnectorOps.listAsync(anyString(), any(LabelSelector.class))).thenReturn(Future.succeededFuture(emptyList()));
+        when(mockConnectorOps.listAsync(anyString(), any(LabelSelector.class))).thenReturn(CompletableFuture.completedFuture(emptyList()));
 
         // Mock KafkaConnect ops
         when(mockConnectOps.get(NAMESPACE, NAME)).thenReturn(kc);
-        when(mockConnectOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(kc));
+        when(mockConnectOps.getAsync(anyString(), anyString())).thenReturn(CompletableFuture.completedFuture(kc));
 
         // Mock and capture service ops
         ArgumentCaptor<Service> serviceCaptor = ArgumentCaptor.forClass(Service.class);
-        when(mockServiceOps.reconcile(any(), anyString(), anyString(), serviceCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockServiceOps.reconcile(any(), anyString(), anyString(), serviceCaptor.capture())).thenReturn(CompletableFuture.completedFuture(null));
 
         // Mock Secret ops
-        when(mockSecretOps.reconcile(any(), anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
+        when(mockSecretOps.reconcile(any(), anyString(), anyString(), any())).thenReturn(CompletableFuture.completedFuture(null));
 
         // Mock StrimziPodSet ops
-        when(mockPodSetOps.getAsync(eq(NAMESPACE), eq(COMPONENT_NAME))).thenReturn(Future.succeededFuture());
+        when(mockPodSetOps.getAsync(eq(NAMESPACE), eq(COMPONENT_NAME))).thenReturn(CompletableFuture.completedFuture(null));
         ArgumentCaptor<StrimziPodSet> podSetCaptor = ArgumentCaptor.forClass(StrimziPodSet.class);
-        when(mockPodSetOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), podSetCaptor.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(3))));
-        when(mockPodSetOps.readiness(any(), eq(NAMESPACE), eq(COMPONENT_NAME), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockPodSetOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), podSetCaptor.capture())).thenAnswer(i -> CompletableFuture.completedFuture(ReconcileResult.created(i.getArgument(3))));
+        when(mockPodSetOps.readiness(any(), eq(NAMESPACE), eq(COMPONENT_NAME), anyLong(), anyLong())).thenReturn(CompletableFuture.completedFuture(null));
 
         // Mock and capture CM ops
-        when(mockCmOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new ConfigMap())));
+        when(mockCmOps.reconcile(any(), anyString(), any(), any())).thenReturn(CompletableFuture.completedFuture(ReconcileResult.created(new ConfigMap())));
         ArgumentCaptor<ConfigMap> dockerfileCaptor = ArgumentCaptor.forClass(ConfigMap.class);
-        when(mockCmOps.reconcile(any(), anyString(), eq(KafkaConnectResources.dockerFileConfigMapName(NAME)), dockerfileCaptor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.created(new ConfigMap())));
+        when(mockCmOps.reconcile(any(), anyString(), eq(KafkaConnectResources.dockerFileConfigMapName(NAME)), dockerfileCaptor.capture())).thenReturn(CompletableFuture.completedFuture(ReconcileResult.created(new ConfigMap())));
 
         // Mock and capture SA ops
         ArgumentCaptor<ServiceAccount> saCaptor = ArgumentCaptor.forClass(ServiceAccount.class);
-        when(mockSaOps.reconcile(any(), anyString(), anyString(), saCaptor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.created(new ServiceAccount())));
+        when(mockSaOps.reconcile(any(), anyString(), anyString(), saCaptor.capture())).thenReturn(CompletableFuture.completedFuture(ReconcileResult.created(new ServiceAccount())));
 
         // Mock and capture Pod ops
-        when(mockPodOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(Future.succeededFuture(List.of()));
-        when(mockPodOps.getAsync(eq(NAMESPACE), startsWith(COMPONENT_NAME))).thenReturn(Future.succeededFuture());
-        when(mockPodOps.reconcile(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), any())).thenReturn(Future.succeededFuture());
-        when(mockPodOps.readiness(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockPodOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(CompletableFuture.completedFuture(List.of()));
+        when(mockPodOps.getAsync(eq(NAMESPACE), startsWith(COMPONENT_NAME))).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockPodOps.reconcile(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), any())).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockPodOps.readiness(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), anyLong(), anyLong())).thenReturn(CompletableFuture.completedFuture(null));
 
         ArgumentCaptor<Pod> builderPodCaptor = ArgumentCaptor.forClass(Pod.class);
-        when(mockPodOps.reconcile(any(), eq(NAMESPACE), eq(KafkaConnectResources.buildPodName(NAME)), builderPodCaptor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.noop(null)));
+        when(mockPodOps.reconcile(any(), eq(NAMESPACE), eq(KafkaConnectResources.buildPodName(NAME)), builderPodCaptor.capture())).thenReturn(CompletableFuture.completedFuture(ReconcileResult.noop(null)));
 
         Pod terminatedPod = new PodBuilder()
                 .withNewMetadata()
@@ -208,21 +208,21 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
                         .build())
                 .endStatus()
                 .build();
-        when(mockPodOps.waitFor(any(), eq(NAMESPACE), eq(KafkaConnectResources.buildPodName(NAME)), anyString(), anyLong(), anyLong(), any(BiPredicate.class))).thenReturn(Future.succeededFuture((Void) null));
-        when(mockPodOps.getAsync(eq(NAMESPACE), eq(KafkaConnectResources.buildPodName(NAME)))).thenReturn(Future.succeededFuture(null), Future.succeededFuture(terminatedPod));
+        when(mockPodOps.waitFor(any(), eq(NAMESPACE), eq(KafkaConnectResources.buildPodName(NAME)), anyString(), anyLong(), anyLong(), any(BiPredicate.class))).thenReturn(CompletableFuture.completedFuture((Void) null));
+        when(mockPodOps.getAsync(eq(NAMESPACE), eq(KafkaConnectResources.buildPodName(NAME)))).thenReturn(CompletableFuture.completedFuture(null), CompletableFuture.completedFuture(terminatedPod));
 
         // Mock and capture BuildConfig ops
-        when(mockBcOps.reconcile(any(), eq(NAMESPACE), eq(KafkaConnectResources.buildConfigName(NAME)), eq(null))).thenReturn(Future.succeededFuture(ReconcileResult.noop(null)));
+        when(mockBcOps.reconcile(any(), eq(NAMESPACE), eq(KafkaConnectResources.buildConfigName(NAME)), eq(null))).thenReturn(CompletableFuture.completedFuture(ReconcileResult.noop(null)));
 
         // Mock and capture NP ops
-        when(mockNetPolOps.reconcile(any(), eq(NAMESPACE), eq(KafkaConnectResources.componentName(NAME)), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new NetworkPolicy())));
+        when(mockNetPolOps.reconcile(any(), eq(NAMESPACE), eq(KafkaConnectResources.componentName(NAME)), any())).thenReturn(CompletableFuture.completedFuture(ReconcileResult.created(new NetworkPolicy())));
 
         // Mock and capture PDB ops
-        when(mockPdbOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture());
+        when(mockPdbOps.reconcile(any(), anyString(), any(), any())).thenReturn(CompletableFuture.completedFuture(null));
 
         // Mock and capture KafkaConnect ops for status update
         ArgumentCaptor<KafkaConnect> connectCaptor = ArgumentCaptor.forClass(KafkaConnect.class);
-        when(mockConnectOps.updateStatusAsync(any(), connectCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockConnectOps.updateStatusAsync(any(), connectCaptor.capture())).thenReturn(CompletableFuture.completedFuture(null));
 
         // Mock KafkaConnect API client
         KafkaConnectApi mockConnectClient = mock(KafkaConnectApi.class);
@@ -317,30 +317,30 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
         CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> mockConnectorOps = supplier.kafkaConnectorOperator;
 
         // Mock KafkaConnector ops
-        when(mockConnectorOps.listAsync(anyString(), any(LabelSelector.class))).thenReturn(Future.succeededFuture(emptyList()));
+        when(mockConnectorOps.listAsync(anyString(), any(LabelSelector.class))).thenReturn(CompletableFuture.completedFuture(emptyList()));
 
         // Mock KafkaConnect ops
         when(mockConnectOps.get(NAMESPACE, NAME)).thenReturn(kc);
-        when(mockConnectOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(kc));
+        when(mockConnectOps.getAsync(anyString(), anyString())).thenReturn(CompletableFuture.completedFuture(kc));
 
         // Mock and capture service ops
         ArgumentCaptor<Service> serviceCaptor = ArgumentCaptor.forClass(Service.class);
-        when(mockServiceOps.reconcile(any(), anyString(), anyString(), serviceCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockServiceOps.reconcile(any(), anyString(), anyString(), serviceCaptor.capture())).thenReturn(CompletableFuture.completedFuture(null));
 
         // Mock Secret ops
-        when(mockSecretOps.reconcile(any(), anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
+        when(mockSecretOps.reconcile(any(), anyString(), anyString(), any())).thenReturn(CompletableFuture.completedFuture(null));
 
         // Mock StrimziPodSet ops
-        when(mockPodSetOps.getAsync(eq(NAMESPACE), eq(COMPONENT_NAME))).thenReturn(Future.succeededFuture());
+        when(mockPodSetOps.getAsync(eq(NAMESPACE), eq(COMPONENT_NAME))).thenReturn(CompletableFuture.completedFuture(null));
 
         // Mock and capture CM ops
-        when(mockCmOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new ConfigMap())));
+        when(mockCmOps.reconcile(any(), anyString(), any(), any())).thenReturn(CompletableFuture.completedFuture(ReconcileResult.created(new ConfigMap())));
         ArgumentCaptor<ConfigMap> dockerfileCaptor = ArgumentCaptor.forClass(ConfigMap.class);
-        when(mockCmOps.reconcile(any(), anyString(), eq(KafkaConnectResources.dockerFileConfigMapName(NAME)), dockerfileCaptor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.created(new ConfigMap())));
+        when(mockCmOps.reconcile(any(), anyString(), eq(KafkaConnectResources.dockerFileConfigMapName(NAME)), dockerfileCaptor.capture())).thenReturn(CompletableFuture.completedFuture(ReconcileResult.created(new ConfigMap())));
 
         // Mock and capture Pod ops
         ArgumentCaptor<Pod> builderPodCaptor = ArgumentCaptor.forClass(Pod.class);
-        when(mockPodOps.reconcile(any(), eq(NAMESPACE), eq(KafkaConnectResources.buildPodName(NAME)), builderPodCaptor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.noop(null)));
+        when(mockPodOps.reconcile(any(), eq(NAMESPACE), eq(KafkaConnectResources.buildPodName(NAME)), builderPodCaptor.capture())).thenReturn(CompletableFuture.completedFuture(ReconcileResult.noop(null)));
 
         Pod terminatedPod = new PodBuilder()
                 .withNewMetadata()
@@ -360,23 +360,23 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
                         .build())
                 .endStatus()
                 .build();
-        when(mockPodOps.waitFor(any(), eq(NAMESPACE), eq(KafkaConnectResources.buildPodName(NAME)), anyString(), anyLong(), anyLong(), any(BiPredicate.class))).thenReturn(Future.succeededFuture((Void) null));
-        when(mockPodOps.getAsync(eq(NAMESPACE), eq(KafkaConnectResources.buildPodName(NAME)))).thenReturn(Future.succeededFuture(null), Future.succeededFuture(terminatedPod));
+        when(mockPodOps.waitFor(any(), eq(NAMESPACE), eq(KafkaConnectResources.buildPodName(NAME)), anyString(), anyLong(), anyLong(), any(BiPredicate.class))).thenReturn(CompletableFuture.completedFuture((Void) null));
+        when(mockPodOps.getAsync(eq(NAMESPACE), eq(KafkaConnectResources.buildPodName(NAME)))).thenReturn(CompletableFuture.completedFuture(null), CompletableFuture.completedFuture(terminatedPod));
         // Kafka Connect (not builder) Pods
-        when(mockPodOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(Future.succeededFuture(List.of()));
+        when(mockPodOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(CompletableFuture.completedFuture(List.of()));
 
         // Mock and capture BuildConfig ops
-        when(mockBcOps.reconcile(any(), eq(NAMESPACE), eq(KafkaConnectResources.buildConfigName(NAME)), eq(null))).thenReturn(Future.succeededFuture(ReconcileResult.noop(null)));
+        when(mockBcOps.reconcile(any(), eq(NAMESPACE), eq(KafkaConnectResources.buildConfigName(NAME)), eq(null))).thenReturn(CompletableFuture.completedFuture(ReconcileResult.noop(null)));
 
         // Mock and capture NP ops
-        when(mockNetPolOps.reconcile(any(), eq(NAMESPACE), eq(KafkaConnectResources.componentName(NAME)), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new NetworkPolicy())));
+        when(mockNetPolOps.reconcile(any(), eq(NAMESPACE), eq(KafkaConnectResources.componentName(NAME)), any())).thenReturn(CompletableFuture.completedFuture(ReconcileResult.created(new NetworkPolicy())));
 
         // Mock and capture PDB ops
-        when(mockPdbOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture());
+        when(mockPdbOps.reconcile(any(), anyString(), any(), any())).thenReturn(CompletableFuture.completedFuture(null));
 
         // Mock and capture KafkaConnect ops for status update
         ArgumentCaptor<KafkaConnect> connectCaptor = ArgumentCaptor.forClass(KafkaConnect.class);
-        when(mockConnectOps.updateStatusAsync(any(), connectCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockConnectOps.updateStatusAsync(any(), connectCaptor.capture())).thenReturn(CompletableFuture.completedFuture(null));
 
         // Mock KafkaConnect API client
         KafkaConnectApi mockConnectClient = mock(KafkaConnectApi.class);
@@ -455,18 +455,18 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
         CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> mockConnectorOps = supplier.kafkaConnectorOperator;
 
         // Mock KafkaConnector ops
-        when(mockConnectorOps.listAsync(anyString(), any(LabelSelector.class))).thenReturn(Future.succeededFuture(emptyList()));
+        when(mockConnectorOps.listAsync(anyString(), any(LabelSelector.class))).thenReturn(CompletableFuture.completedFuture(emptyList()));
 
         // Mock KafkaConnect ops
         when(mockConnectOps.get(NAMESPACE, NAME)).thenReturn(kc);
-        when(mockConnectOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(kc));
+        when(mockConnectOps.getAsync(anyString(), anyString())).thenReturn(CompletableFuture.completedFuture(kc));
 
         // Mock and capture service ops
         ArgumentCaptor<Service> serviceCaptor = ArgumentCaptor.forClass(Service.class);
-        when(mockServiceOps.reconcile(any(), anyString(), anyString(), serviceCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockServiceOps.reconcile(any(), anyString(), anyString(), serviceCaptor.capture())).thenReturn(CompletableFuture.completedFuture(null));
 
         // Mock Secret ops
-        when(mockSecretOps.reconcile(any(), anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
+        when(mockSecretOps.reconcile(any(), anyString(), anyString(), any())).thenReturn(CompletableFuture.completedFuture(null));
 
         // Mock StrimziPodSet ops
         when(mockPodSetOps.getAsync(eq(NAMESPACE), eq(COMPONENT_NAME))).thenAnswer(i -> {
@@ -480,25 +480,25 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
                             null,
                             null);
 
-            return Future.succeededFuture(sps);
+            return CompletableFuture.completedFuture(sps);
         });
         ArgumentCaptor<StrimziPodSet> podSetCaptor = ArgumentCaptor.forClass(StrimziPodSet.class);
-        when(mockPodSetOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), podSetCaptor.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(3))));
-        when(mockPodSetOps.readiness(any(), eq(NAMESPACE), eq(COMPONENT_NAME), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockPodSetOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), podSetCaptor.capture())).thenAnswer(i -> CompletableFuture.completedFuture(ReconcileResult.created(i.getArgument(3))));
+        when(mockPodSetOps.readiness(any(), eq(NAMESPACE), eq(COMPONENT_NAME), anyLong(), anyLong())).thenReturn(CompletableFuture.completedFuture(null));
 
         // Mock and capture CM ops
-        when(mockCmOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new ConfigMap())));
+        when(mockCmOps.reconcile(any(), anyString(), any(), any())).thenReturn(CompletableFuture.completedFuture(ReconcileResult.created(new ConfigMap())));
         ArgumentCaptor<ConfigMap> dockerfileCaptor = ArgumentCaptor.forClass(ConfigMap.class);
-        when(mockCmOps.reconcile(any(), anyString(), eq(KafkaConnectResources.dockerFileConfigMapName(NAME)), dockerfileCaptor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.created(new ConfigMap())));
+        when(mockCmOps.reconcile(any(), anyString(), eq(KafkaConnectResources.dockerFileConfigMapName(NAME)), dockerfileCaptor.capture())).thenReturn(CompletableFuture.completedFuture(ReconcileResult.created(new ConfigMap())));
 
         // Mock and capture Pod ops
-        when(mockPodOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(Future.succeededFuture(List.of()));
-        when(mockPodOps.getAsync(eq(NAMESPACE), startsWith(COMPONENT_NAME))).thenReturn(Future.succeededFuture());
-        when(mockPodOps.reconcile(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), any())).thenReturn(Future.succeededFuture());
-        when(mockPodOps.readiness(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockPodOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(CompletableFuture.completedFuture(List.of()));
+        when(mockPodOps.getAsync(eq(NAMESPACE), startsWith(COMPONENT_NAME))).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockPodOps.reconcile(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), any())).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockPodOps.readiness(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), anyLong(), anyLong())).thenReturn(CompletableFuture.completedFuture(null));
 
         ArgumentCaptor<Pod> builderPodCaptor = ArgumentCaptor.forClass(Pod.class);
-        when(mockPodOps.reconcile(any(), eq(NAMESPACE), eq(KafkaConnectResources.buildPodName(NAME)), builderPodCaptor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.noop(null)));
+        when(mockPodOps.reconcile(any(), eq(NAMESPACE), eq(KafkaConnectResources.buildPodName(NAME)), builderPodCaptor.capture())).thenReturn(CompletableFuture.completedFuture(ReconcileResult.noop(null)));
 
         Pod terminatedPod = new PodBuilder()
                 .withNewMetadata()
@@ -519,21 +519,21 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
                         .build())
                 .endStatus()
                 .build();
-        when(mockPodOps.waitFor(any(), eq(NAMESPACE), eq(KafkaConnectResources.buildPodName(NAME)), anyString(), anyLong(), anyLong(), any(BiPredicate.class))).thenReturn(Future.succeededFuture((Void) null));
-        when(mockPodOps.getAsync(eq(NAMESPACE), eq(KafkaConnectResources.buildPodName(NAME)))).thenReturn(Future.succeededFuture(null), Future.succeededFuture(terminatedPod));
+        when(mockPodOps.waitFor(any(), eq(NAMESPACE), eq(KafkaConnectResources.buildPodName(NAME)), anyString(), anyLong(), anyLong(), any(BiPredicate.class))).thenReturn(CompletableFuture.completedFuture((Void) null));
+        when(mockPodOps.getAsync(eq(NAMESPACE), eq(KafkaConnectResources.buildPodName(NAME)))).thenReturn(CompletableFuture.completedFuture(null), CompletableFuture.completedFuture(terminatedPod));
 
         // Mock and capture BuildConfig ops
-        when(mockBcOps.reconcile(any(), eq(NAMESPACE), eq(KafkaConnectResources.buildConfigName(NAME)), eq(null))).thenReturn(Future.succeededFuture(ReconcileResult.noop(null)));
+        when(mockBcOps.reconcile(any(), eq(NAMESPACE), eq(KafkaConnectResources.buildConfigName(NAME)), eq(null))).thenReturn(CompletableFuture.completedFuture(ReconcileResult.noop(null)));
 
         // Mock and capture NP ops
-        when(mockNetPolOps.reconcile(any(), eq(NAMESPACE), eq(KafkaConnectResources.componentName(NAME)), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new NetworkPolicy())));
+        when(mockNetPolOps.reconcile(any(), eq(NAMESPACE), eq(KafkaConnectResources.componentName(NAME)), any())).thenReturn(CompletableFuture.completedFuture(ReconcileResult.created(new NetworkPolicy())));
 
         // Mock and capture PDB ops
-        when(mockPdbOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture());
+        when(mockPdbOps.reconcile(any(), anyString(), any(), any())).thenReturn(CompletableFuture.completedFuture(null));
 
         // Mock and capture KafkaConnect ops for status update
         ArgumentCaptor<KafkaConnect> connectCaptor = ArgumentCaptor.forClass(KafkaConnect.class);
-        when(mockConnectOps.updateStatusAsync(any(), connectCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockConnectOps.updateStatusAsync(any(), connectCaptor.capture())).thenReturn(CompletableFuture.completedFuture(null));
 
         // Mock KafkaConnect API client
         KafkaConnectApi mockConnectClient = mock(KafkaConnectApi.class);
@@ -638,18 +638,18 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
         CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> mockConnectorOps = supplier.kafkaConnectorOperator;
 
         // Mock KafkaConnector ops
-        when(mockConnectorOps.listAsync(anyString(), any(LabelSelector.class))).thenReturn(Future.succeededFuture(emptyList()));
+        when(mockConnectorOps.listAsync(anyString(), any(LabelSelector.class))).thenReturn(CompletableFuture.completedFuture(emptyList()));
 
         // Mock KafkaConnect ops
         when(mockConnectOps.get(NAMESPACE, NAME)).thenReturn(kc);
-        when(mockConnectOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(kc));
+        when(mockConnectOps.getAsync(anyString(), anyString())).thenReturn(CompletableFuture.completedFuture(kc));
 
         // Mock and capture service ops
         ArgumentCaptor<Service> serviceCaptor = ArgumentCaptor.forClass(Service.class);
-        when(mockServiceOps.reconcile(any(), anyString(), anyString(), serviceCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockServiceOps.reconcile(any(), anyString(), anyString(), serviceCaptor.capture())).thenReturn(CompletableFuture.completedFuture(null));
 
         // Mock Secret ops
-        when(mockSecretOps.reconcile(any(), anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
+        when(mockSecretOps.reconcile(any(), anyString(), anyString(), any())).thenReturn(CompletableFuture.completedFuture(null));
 
         // Mock StrimziPodSet ops
         when(mockPodSetOps.getAsync(eq(NAMESPACE), eq(COMPONENT_NAME))).thenAnswer(i -> {
@@ -663,26 +663,26 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
                             null,
                             null);
 
-            return Future.succeededFuture(sps);
+            return CompletableFuture.completedFuture(sps);
         });
         ArgumentCaptor<StrimziPodSet> podSetCaptor = ArgumentCaptor.forClass(StrimziPodSet.class);
-        when(mockPodSetOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), podSetCaptor.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(3))));
-        when(mockPodSetOps.readiness(any(), eq(NAMESPACE), eq(COMPONENT_NAME), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockPodSetOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), podSetCaptor.capture())).thenAnswer(i -> CompletableFuture.completedFuture(ReconcileResult.created(i.getArgument(3))));
+        when(mockPodSetOps.readiness(any(), eq(NAMESPACE), eq(COMPONENT_NAME), anyLong(), anyLong())).thenReturn(CompletableFuture.completedFuture(null));
 
         // Mock and capture CM ops
-        when(mockCmOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new ConfigMap())));
+        when(mockCmOps.reconcile(any(), anyString(), any(), any())).thenReturn(CompletableFuture.completedFuture(ReconcileResult.created(new ConfigMap())));
         ArgumentCaptor<ConfigMap> dockerfileCaptor = ArgumentCaptor.forClass(ConfigMap.class);
-        when(mockCmOps.reconcile(any(), anyString(), eq(KafkaConnectResources.dockerFileConfigMapName(NAME)), dockerfileCaptor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.created(new ConfigMap())));
+        when(mockCmOps.reconcile(any(), anyString(), eq(KafkaConnectResources.dockerFileConfigMapName(NAME)), dockerfileCaptor.capture())).thenReturn(CompletableFuture.completedFuture(ReconcileResult.created(new ConfigMap())));
 
         // Mock and capture Pod ops
-        when(mockPodOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(Future.succeededFuture(List.of()));
-        when(mockPodOps.getAsync(eq(NAMESPACE), startsWith(COMPONENT_NAME))).thenReturn(Future.succeededFuture());
+        when(mockPodOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(CompletableFuture.completedFuture(List.of()));
+        when(mockPodOps.getAsync(eq(NAMESPACE), startsWith(COMPONENT_NAME))).thenReturn(CompletableFuture.completedFuture(null));
         ArgumentCaptor<Pod> connectPodCaptor = ArgumentCaptor.forClass(Pod.class);
-        when(mockPodOps.reconcile(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), connectPodCaptor.capture())).thenReturn(Future.succeededFuture());
-        when(mockPodOps.readiness(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockPodOps.reconcile(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), connectPodCaptor.capture())).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockPodOps.readiness(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), anyLong(), anyLong())).thenReturn(CompletableFuture.completedFuture(null));
 
         ArgumentCaptor<Pod> builderPodCaptor = ArgumentCaptor.forClass(Pod.class);
-        when(mockPodOps.reconcile(any(), eq(NAMESPACE), eq(KafkaConnectResources.buildPodName(NAME)), builderPodCaptor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.noop(null)));
+        when(mockPodOps.reconcile(any(), eq(NAMESPACE), eq(KafkaConnectResources.buildPodName(NAME)), builderPodCaptor.capture())).thenReturn(CompletableFuture.completedFuture(ReconcileResult.noop(null)));
 
         Pod terminatedPod = new PodBuilder()
                 .withNewMetadata()
@@ -703,21 +703,21 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
                     .build())
                 .endStatus()
                 .build();
-        when(mockPodOps.waitFor(any(), eq(NAMESPACE), eq(KafkaConnectResources.buildPodName(NAME)), anyString(), anyLong(), anyLong(), any(BiPredicate.class))).thenReturn(Future.succeededFuture((Void) null));
-        when(mockPodOps.getAsync(eq(NAMESPACE), eq(KafkaConnectResources.buildPodName(NAME)))).thenReturn(Future.succeededFuture(null), Future.succeededFuture(terminatedPod));
+        when(mockPodOps.waitFor(any(), eq(NAMESPACE), eq(KafkaConnectResources.buildPodName(NAME)), anyString(), anyLong(), anyLong(), any(BiPredicate.class))).thenReturn(CompletableFuture.completedFuture((Void) null));
+        when(mockPodOps.getAsync(eq(NAMESPACE), eq(KafkaConnectResources.buildPodName(NAME)))).thenReturn(CompletableFuture.completedFuture(null), CompletableFuture.completedFuture(terminatedPod));
 
         // Mock and capture BuildConfig ops
-        when(mockBcOps.reconcile(any(), eq(NAMESPACE), eq(KafkaConnectResources.buildConfigName(NAME)), eq(null))).thenReturn(Future.succeededFuture(ReconcileResult.noop(null)));
+        when(mockBcOps.reconcile(any(), eq(NAMESPACE), eq(KafkaConnectResources.buildConfigName(NAME)), eq(null))).thenReturn(CompletableFuture.completedFuture(ReconcileResult.noop(null)));
 
         // Mock and capture NP ops
-        when(mockNetPolOps.reconcile(any(), eq(NAMESPACE), eq(KafkaConnectResources.componentName(NAME)), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new NetworkPolicy())));
+        when(mockNetPolOps.reconcile(any(), eq(NAMESPACE), eq(KafkaConnectResources.componentName(NAME)), any())).thenReturn(CompletableFuture.completedFuture(ReconcileResult.created(new NetworkPolicy())));
 
         // Mock and capture PDB ops
-        when(mockPdbOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture());
+        when(mockPdbOps.reconcile(any(), anyString(), any(), any())).thenReturn(CompletableFuture.completedFuture(null));
 
         // Mock and capture KafkaConnect ops for status update
         ArgumentCaptor<KafkaConnect> connectCaptor = ArgumentCaptor.forClass(KafkaConnect.class);
-        when(mockConnectOps.updateStatusAsync(any(), connectCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockConnectOps.updateStatusAsync(any(), connectCaptor.capture())).thenReturn(CompletableFuture.completedFuture(null));
 
         // Mock KafkaConnect API client
         KafkaConnectApi mockConnectClient = mock(KafkaConnectApi.class);
@@ -823,18 +823,18 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
         CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> mockConnectorOps = supplier.kafkaConnectorOperator;
 
         // Mock KafkaConnector ops
-        when(mockConnectorOps.listAsync(anyString(), any(LabelSelector.class))).thenReturn(Future.succeededFuture(emptyList()));
+        when(mockConnectorOps.listAsync(anyString(), any(LabelSelector.class))).thenReturn(CompletableFuture.completedFuture(emptyList()));
 
         // Mock KafkaConnect ops
         when(mockConnectOps.get(NAMESPACE, NAME)).thenReturn(kc);
-        when(mockConnectOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(kc));
+        when(mockConnectOps.getAsync(anyString(), anyString())).thenReturn(CompletableFuture.completedFuture(kc));
 
         // Mock and capture service ops
         ArgumentCaptor<Service> serviceCaptor = ArgumentCaptor.forClass(Service.class);
-        when(mockServiceOps.reconcile(any(), anyString(), anyString(), serviceCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockServiceOps.reconcile(any(), anyString(), anyString(), serviceCaptor.capture())).thenReturn(CompletableFuture.completedFuture(null));
 
         // Mock Secret ops
-        when(mockSecretOps.reconcile(any(), anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
+        when(mockSecretOps.reconcile(any(), anyString(), anyString(), any())).thenReturn(CompletableFuture.completedFuture(null));
 
         // Mock StrimziPodSet ops
         when(mockPodSetOps.getAsync(eq(NAMESPACE), eq(COMPONENT_NAME))).thenAnswer(i -> {
@@ -848,25 +848,25 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
                             null,
                             null);
 
-            return Future.succeededFuture(sps);
+            return CompletableFuture.completedFuture(sps);
         });
         ArgumentCaptor<StrimziPodSet> podSetCaptor = ArgumentCaptor.forClass(StrimziPodSet.class);
-        when(mockPodSetOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), podSetCaptor.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(3))));
-        when(mockPodSetOps.readiness(any(), eq(NAMESPACE), eq(COMPONENT_NAME), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockPodSetOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), podSetCaptor.capture())).thenAnswer(i -> CompletableFuture.completedFuture(ReconcileResult.created(i.getArgument(3))));
+        when(mockPodSetOps.readiness(any(), eq(NAMESPACE), eq(COMPONENT_NAME), anyLong(), anyLong())).thenReturn(CompletableFuture.completedFuture(null));
 
         // Mock and capture CM ops
-        when(mockCmOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new ConfigMap())));
+        when(mockCmOps.reconcile(any(), anyString(), any(), any())).thenReturn(CompletableFuture.completedFuture(ReconcileResult.created(new ConfigMap())));
         ArgumentCaptor<ConfigMap> dockerfileCaptor = ArgumentCaptor.forClass(ConfigMap.class);
-        when(mockCmOps.reconcile(any(), anyString(), eq(KafkaConnectResources.dockerFileConfigMapName(NAME)), dockerfileCaptor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.created(new ConfigMap())));
+        when(mockCmOps.reconcile(any(), anyString(), eq(KafkaConnectResources.dockerFileConfigMapName(NAME)), dockerfileCaptor.capture())).thenReturn(CompletableFuture.completedFuture(ReconcileResult.created(new ConfigMap())));
 
         // Mock and capture Pod ops
-        when(mockPodOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(Future.succeededFuture(List.of()));
-        when(mockPodOps.getAsync(eq(NAMESPACE), startsWith(COMPONENT_NAME))).thenReturn(Future.succeededFuture());
-        when(mockPodOps.reconcile(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), any())).thenReturn(Future.succeededFuture());
-        when(mockPodOps.readiness(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockPodOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(CompletableFuture.completedFuture(List.of()));
+        when(mockPodOps.getAsync(eq(NAMESPACE), startsWith(COMPONENT_NAME))).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockPodOps.reconcile(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), any())).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockPodOps.readiness(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), anyLong(), anyLong())).thenReturn(CompletableFuture.completedFuture(null));
 
         ArgumentCaptor<Pod> builderPodCaptor = ArgumentCaptor.forClass(Pod.class);
-        when(mockPodOps.reconcile(any(), eq(NAMESPACE), eq(KafkaConnectResources.buildPodName(NAME)), builderPodCaptor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.noop(null)));
+        when(mockPodOps.reconcile(any(), eq(NAMESPACE), eq(KafkaConnectResources.buildPodName(NAME)), builderPodCaptor.capture())).thenReturn(CompletableFuture.completedFuture(ReconcileResult.noop(null)));
 
         Pod runningBuild = new PodBuilder()
                 .withNewMetadata()
@@ -898,21 +898,21 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
                         .build())
                 .endStatus()
                 .build();
-        when(mockPodOps.waitFor(any(), eq(NAMESPACE), eq(KafkaConnectResources.buildPodName(NAME)), anyString(), anyLong(), anyLong(), any(BiPredicate.class))).thenReturn(Future.succeededFuture((Void) null));
-        when(mockPodOps.getAsync(eq(NAMESPACE), eq(KafkaConnectResources.buildPodName(NAME)))).thenReturn(Future.succeededFuture(runningBuild), Future.succeededFuture(terminatedPod));
+        when(mockPodOps.waitFor(any(), eq(NAMESPACE), eq(KafkaConnectResources.buildPodName(NAME)), anyString(), anyLong(), anyLong(), any(BiPredicate.class))).thenReturn(CompletableFuture.completedFuture((Void) null));
+        when(mockPodOps.getAsync(eq(NAMESPACE), eq(KafkaConnectResources.buildPodName(NAME)))).thenReturn(CompletableFuture.completedFuture(runningBuild), CompletableFuture.completedFuture(terminatedPod));
 
         // Mock and capture BuildConfig ops
-        when(mockBcOps.reconcile(any(), eq(NAMESPACE), eq(KafkaConnectResources.buildConfigName(NAME)), eq(null))).thenReturn(Future.succeededFuture(ReconcileResult.noop(null)));
+        when(mockBcOps.reconcile(any(), eq(NAMESPACE), eq(KafkaConnectResources.buildConfigName(NAME)), eq(null))).thenReturn(CompletableFuture.completedFuture(ReconcileResult.noop(null)));
 
         // Mock and capture NP ops
-        when(mockNetPolOps.reconcile(any(), eq(NAMESPACE), eq(KafkaConnectResources.componentName(NAME)), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new NetworkPolicy())));
+        when(mockNetPolOps.reconcile(any(), eq(NAMESPACE), eq(KafkaConnectResources.componentName(NAME)), any())).thenReturn(CompletableFuture.completedFuture(ReconcileResult.created(new NetworkPolicy())));
 
         // Mock and capture PDB ops
-        when(mockPdbOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture());
+        when(mockPdbOps.reconcile(any(), anyString(), any(), any())).thenReturn(CompletableFuture.completedFuture(null));
 
         // Mock and capture KafkaConnect ops for status update
         ArgumentCaptor<KafkaConnect> connectCaptor = ArgumentCaptor.forClass(KafkaConnect.class);
-        when(mockConnectOps.updateStatusAsync(any(), connectCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockConnectOps.updateStatusAsync(any(), connectCaptor.capture())).thenReturn(CompletableFuture.completedFuture(null));
 
         // Mock KafkaConnect API client
         KafkaConnectApi mockConnectClient = mock(KafkaConnectApi.class);
@@ -1015,18 +1015,18 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
         CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> mockConnectorOps = supplier.kafkaConnectorOperator;
 
         // Mock KafkaConnector ops
-        when(mockConnectorOps.listAsync(anyString(), any(LabelSelector.class))).thenReturn(Future.succeededFuture(emptyList()));
+        when(mockConnectorOps.listAsync(anyString(), any(LabelSelector.class))).thenReturn(CompletableFuture.completedFuture(emptyList()));
 
         // Mock KafkaConnect ops
         when(mockConnectOps.get(NAMESPACE, NAME)).thenReturn(kc);
-        when(mockConnectOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(kc));
+        when(mockConnectOps.getAsync(anyString(), anyString())).thenReturn(CompletableFuture.completedFuture(kc));
 
         // Mock and capture service ops
         ArgumentCaptor<Service> serviceCaptor = ArgumentCaptor.forClass(Service.class);
-        when(mockServiceOps.reconcile(any(), anyString(), anyString(), serviceCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockServiceOps.reconcile(any(), anyString(), anyString(), serviceCaptor.capture())).thenReturn(CompletableFuture.completedFuture(null));
 
         // Mock Secret ops
-        when(mockSecretOps.reconcile(any(), anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
+        when(mockSecretOps.reconcile(any(), anyString(), anyString(), any())).thenReturn(CompletableFuture.completedFuture(null));
 
         // Mock StrimziPodSet ops
         when(mockPodSetOps.getAsync(eq(NAMESPACE), eq(COMPONENT_NAME))).thenAnswer(i -> {
@@ -1040,25 +1040,25 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
                             null,
                             null);
 
-            return Future.succeededFuture(sps);
+            return CompletableFuture.completedFuture(sps);
         });
         ArgumentCaptor<StrimziPodSet> podSetCaptor = ArgumentCaptor.forClass(StrimziPodSet.class);
-        when(mockPodSetOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), podSetCaptor.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(3))));
-        when(mockPodSetOps.readiness(any(), eq(NAMESPACE), eq(COMPONENT_NAME), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockPodSetOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), podSetCaptor.capture())).thenAnswer(i -> CompletableFuture.completedFuture(ReconcileResult.created(i.getArgument(3))));
+        when(mockPodSetOps.readiness(any(), eq(NAMESPACE), eq(COMPONENT_NAME), anyLong(), anyLong())).thenReturn(CompletableFuture.completedFuture(null));
 
         // Mock and capture CM ops
-        when(mockCmOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new ConfigMap())));
+        when(mockCmOps.reconcile(any(), anyString(), any(), any())).thenReturn(CompletableFuture.completedFuture(ReconcileResult.created(new ConfigMap())));
         ArgumentCaptor<ConfigMap> dockerfileCaptor = ArgumentCaptor.forClass(ConfigMap.class);
-        when(mockCmOps.reconcile(any(), anyString(), eq(KafkaConnectResources.dockerFileConfigMapName(NAME)), dockerfileCaptor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.created(new ConfigMap())));
+        when(mockCmOps.reconcile(any(), anyString(), eq(KafkaConnectResources.dockerFileConfigMapName(NAME)), dockerfileCaptor.capture())).thenReturn(CompletableFuture.completedFuture(ReconcileResult.created(new ConfigMap())));
 
         // Mock and capture Pod ops
-        when(mockPodOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(Future.succeededFuture(List.of()));
-        when(mockPodOps.getAsync(eq(NAMESPACE), startsWith(COMPONENT_NAME))).thenReturn(Future.succeededFuture());
-        when(mockPodOps.reconcile(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), any())).thenReturn(Future.succeededFuture());
-        when(mockPodOps.readiness(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockPodOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(CompletableFuture.completedFuture(List.of()));
+        when(mockPodOps.getAsync(eq(NAMESPACE), startsWith(COMPONENT_NAME))).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockPodOps.reconcile(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), any())).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockPodOps.readiness(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), anyLong(), anyLong())).thenReturn(CompletableFuture.completedFuture(null));
 
         ArgumentCaptor<Pod> builderPodCaptor = ArgumentCaptor.forClass(Pod.class);
-        when(mockPodOps.reconcile(any(), eq(NAMESPACE), eq(KafkaConnectResources.buildPodName(NAME)), builderPodCaptor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.noop(null)));
+        when(mockPodOps.reconcile(any(), eq(NAMESPACE), eq(KafkaConnectResources.buildPodName(NAME)), builderPodCaptor.capture())).thenReturn(CompletableFuture.completedFuture(ReconcileResult.noop(null)));
 
         Pod runningBuild = new PodBuilder()
                 .withNewMetadata()
@@ -1091,21 +1091,21 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
                 .endStatus()
                 .build();
 
-        when(mockPodOps.waitFor(any(), eq(NAMESPACE), eq(KafkaConnectResources.buildPodName(NAME)), anyString(), anyLong(), anyLong(), any(BiPredicate.class))).thenReturn(Future.succeededFuture((Void) null));
-        when(mockPodOps.getAsync(eq(NAMESPACE), eq(KafkaConnectResources.buildPodName(NAME)))).thenReturn(Future.succeededFuture(runningBuild), Future.succeededFuture(terminatedPod));
+        when(mockPodOps.waitFor(any(), eq(NAMESPACE), eq(KafkaConnectResources.buildPodName(NAME)), anyString(), anyLong(), anyLong(), any(BiPredicate.class))).thenReturn(CompletableFuture.completedFuture((Void) null));
+        when(mockPodOps.getAsync(eq(NAMESPACE), eq(KafkaConnectResources.buildPodName(NAME)))).thenReturn(CompletableFuture.completedFuture(runningBuild), CompletableFuture.completedFuture(terminatedPod));
 
         // Mock and capture BuildConfig ops
-        when(mockBcOps.reconcile(any(), eq(NAMESPACE), eq(KafkaConnectResources.buildConfigName(NAME)), eq(null))).thenReturn(Future.succeededFuture(ReconcileResult.noop(null)));
+        when(mockBcOps.reconcile(any(), eq(NAMESPACE), eq(KafkaConnectResources.buildConfigName(NAME)), eq(null))).thenReturn(CompletableFuture.completedFuture(ReconcileResult.noop(null)));
 
         // Mock and capture NP ops
-        when(mockNetPolOps.reconcile(any(), eq(NAMESPACE), eq(KafkaConnectResources.componentName(NAME)), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new NetworkPolicy())));
+        when(mockNetPolOps.reconcile(any(), eq(NAMESPACE), eq(KafkaConnectResources.componentName(NAME)), any())).thenReturn(CompletableFuture.completedFuture(ReconcileResult.created(new NetworkPolicy())));
 
         // Mock and capture PDB ops
-        when(mockPdbOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture());
+        when(mockPdbOps.reconcile(any(), anyString(), any(), any())).thenReturn(CompletableFuture.completedFuture(null));
 
         // Mock and capture KafkaConnect ops for status update
         ArgumentCaptor<KafkaConnect> connectCaptor = ArgumentCaptor.forClass(KafkaConnect.class);
-        when(mockConnectOps.updateStatusAsync(any(), connectCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockConnectOps.updateStatusAsync(any(), connectCaptor.capture())).thenReturn(CompletableFuture.completedFuture(null));
 
         // Mock KafkaConnect API client
         KafkaConnectApi mockConnectClient = mock(KafkaConnectApi.class);
@@ -1211,18 +1211,18 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
         CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> mockConnectorOps = supplier.kafkaConnectorOperator;
 
         // Mock KafkaConnector ops
-        when(mockConnectorOps.listAsync(anyString(), any(LabelSelector.class))).thenReturn(Future.succeededFuture(emptyList()));
+        when(mockConnectorOps.listAsync(anyString(), any(LabelSelector.class))).thenReturn(CompletableFuture.completedFuture(emptyList()));
 
         // Mock KafkaConnect ops
         when(mockConnectOps.get(NAMESPACE, NAME)).thenReturn(kc);
-        when(mockConnectOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(kc));
+        when(mockConnectOps.getAsync(anyString(), anyString())).thenReturn(CompletableFuture.completedFuture(kc));
 
         // Mock and capture service ops
         ArgumentCaptor<Service> serviceCaptor = ArgumentCaptor.forClass(Service.class);
-        when(mockServiceOps.reconcile(any(), anyString(), anyString(), serviceCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockServiceOps.reconcile(any(), anyString(), anyString(), serviceCaptor.capture())).thenReturn(CompletableFuture.completedFuture(null));
 
         // Mock Secret ops
-        when(mockSecretOps.reconcile(any(), anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
+        when(mockSecretOps.reconcile(any(), anyString(), anyString(), any())).thenReturn(CompletableFuture.completedFuture(null));
 
         // Mock StrimziPodSet ops
         when(mockPodSetOps.getAsync(eq(NAMESPACE), eq(COMPONENT_NAME))).thenAnswer(i -> {
@@ -1236,25 +1236,25 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
                             null,
                             null);
 
-            return Future.succeededFuture(sps);
+            return CompletableFuture.completedFuture(sps);
         });
         ArgumentCaptor<StrimziPodSet> podSetCaptor = ArgumentCaptor.forClass(StrimziPodSet.class);
-        when(mockPodSetOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), podSetCaptor.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(3))));
-        when(mockPodSetOps.readiness(any(), eq(NAMESPACE), eq(COMPONENT_NAME), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockPodSetOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), podSetCaptor.capture())).thenAnswer(i -> CompletableFuture.completedFuture(ReconcileResult.created(i.getArgument(3))));
+        when(mockPodSetOps.readiness(any(), eq(NAMESPACE), eq(COMPONENT_NAME), anyLong(), anyLong())).thenReturn(CompletableFuture.completedFuture(null));
 
         // Mock and capture CM ops
-        when(mockCmOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new ConfigMap())));
+        when(mockCmOps.reconcile(any(), anyString(), any(), any())).thenReturn(CompletableFuture.completedFuture(ReconcileResult.created(new ConfigMap())));
         ArgumentCaptor<ConfigMap> dockerfileCaptor = ArgumentCaptor.forClass(ConfigMap.class);
-        when(mockCmOps.reconcile(any(), anyString(), eq(KafkaConnectResources.dockerFileConfigMapName(NAME)), dockerfileCaptor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.created(new ConfigMap())));
+        when(mockCmOps.reconcile(any(), anyString(), eq(KafkaConnectResources.dockerFileConfigMapName(NAME)), dockerfileCaptor.capture())).thenReturn(CompletableFuture.completedFuture(ReconcileResult.created(new ConfigMap())));
 
         // Mock and capture Pod ops
-        when(mockPodOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(Future.succeededFuture(List.of()));
-        when(mockPodOps.getAsync(eq(NAMESPACE), startsWith(COMPONENT_NAME))).thenReturn(Future.succeededFuture());
-        when(mockPodOps.reconcile(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), any())).thenReturn(Future.succeededFuture());
-        when(mockPodOps.readiness(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockPodOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(CompletableFuture.completedFuture(List.of()));
+        when(mockPodOps.getAsync(eq(NAMESPACE), startsWith(COMPONENT_NAME))).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockPodOps.reconcile(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), any())).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockPodOps.readiness(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), anyLong(), anyLong())).thenReturn(CompletableFuture.completedFuture(null));
 
         ArgumentCaptor<Pod> builderPodCaptor = ArgumentCaptor.forClass(Pod.class);
-        when(mockPodOps.reconcile(any(), eq(NAMESPACE), eq(KafkaConnectResources.buildPodName(NAME)), builderPodCaptor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.noop(null)));
+        when(mockPodOps.reconcile(any(), eq(NAMESPACE), eq(KafkaConnectResources.buildPodName(NAME)), builderPodCaptor.capture())).thenReturn(CompletableFuture.completedFuture(ReconcileResult.noop(null)));
 
         Pod runningBuild = new PodBuilder()
                 .withNewMetadata()
@@ -1289,21 +1289,21 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
                         .build())
                 .endStatus()
                 .build();
-        when(mockPodOps.waitFor(any(), eq(NAMESPACE), eq(KafkaConnectResources.buildPodName(NAME)), anyString(), anyLong(), anyLong(), any(BiPredicate.class))).thenReturn(Future.succeededFuture((Void) null));
-        when(mockPodOps.getAsync(eq(NAMESPACE), eq(KafkaConnectResources.buildPodName(NAME)))).thenReturn(Future.succeededFuture(runningBuild), Future.succeededFuture(terminatedPod));
+        when(mockPodOps.waitFor(any(), eq(NAMESPACE), eq(KafkaConnectResources.buildPodName(NAME)), anyString(), anyLong(), anyLong(), any(BiPredicate.class))).thenReturn(CompletableFuture.completedFuture((Void) null));
+        when(mockPodOps.getAsync(eq(NAMESPACE), eq(KafkaConnectResources.buildPodName(NAME)))).thenReturn(CompletableFuture.completedFuture(runningBuild), CompletableFuture.completedFuture(terminatedPod));
 
         // Mock and capture BuildConfig ops
-        when(mockBcOps.reconcile(any(), eq(NAMESPACE), eq(KafkaConnectResources.buildConfigName(NAME)), eq(null))).thenReturn(Future.succeededFuture(ReconcileResult.noop(null)));
+        when(mockBcOps.reconcile(any(), eq(NAMESPACE), eq(KafkaConnectResources.buildConfigName(NAME)), eq(null))).thenReturn(CompletableFuture.completedFuture(ReconcileResult.noop(null)));
 
         // Mock and capture NP ops
-        when(mockNetPolOps.reconcile(any(), eq(NAMESPACE), eq(KafkaConnectResources.componentName(NAME)), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new NetworkPolicy())));
+        when(mockNetPolOps.reconcile(any(), eq(NAMESPACE), eq(KafkaConnectResources.componentName(NAME)), any())).thenReturn(CompletableFuture.completedFuture(ReconcileResult.created(new NetworkPolicy())));
 
         // Mock and capture PDB ops
-        when(mockPdbOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture());
+        when(mockPdbOps.reconcile(any(), anyString(), any(), any())).thenReturn(CompletableFuture.completedFuture(null));
 
         // Mock and capture KafkaConnect ops for status update
         ArgumentCaptor<KafkaConnect> connectCaptor = ArgumentCaptor.forClass(KafkaConnect.class);
-        when(mockConnectOps.updateStatusAsync(any(), connectCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockConnectOps.updateStatusAsync(any(), connectCaptor.capture())).thenReturn(CompletableFuture.completedFuture(null));
 
         // Mock KafkaConnect API client
         KafkaConnectApi mockConnectClient = mock(KafkaConnectApi.class);
@@ -1393,18 +1393,18 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
         CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> mockConnectorOps = supplier.kafkaConnectorOperator;
 
         // Mock KafkaConnector ops
-        when(mockConnectorOps.listAsync(anyString(), any(LabelSelector.class))).thenReturn(Future.succeededFuture(emptyList()));
+        when(mockConnectorOps.listAsync(anyString(), any(LabelSelector.class))).thenReturn(CompletableFuture.completedFuture(emptyList()));
 
         // Mock KafkaConnect ops
         when(mockConnectOps.get(NAMESPACE, NAME)).thenReturn(kc);
-        when(mockConnectOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(kc));
+        when(mockConnectOps.getAsync(anyString(), anyString())).thenReturn(CompletableFuture.completedFuture(kc));
 
         // Mock and capture service ops
         ArgumentCaptor<Service> serviceCaptor = ArgumentCaptor.forClass(Service.class);
-        when(mockServiceOps.reconcile(any(), anyString(), anyString(), serviceCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockServiceOps.reconcile(any(), anyString(), anyString(), serviceCaptor.capture())).thenReturn(CompletableFuture.completedFuture(null));
 
         // Mock Secret ops
-        when(mockSecretOps.reconcile(any(), anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
+        when(mockSecretOps.reconcile(any(), anyString(), anyString(), any())).thenReturn(CompletableFuture.completedFuture(null));
 
         // Mock StrimziPodSet ops
         when(mockPodSetOps.getAsync(eq(NAMESPACE), eq(COMPONENT_NAME))).thenAnswer(i -> {
@@ -1418,38 +1418,38 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
                             null,
                             null);
 
-            return Future.succeededFuture(sps);
+            return CompletableFuture.completedFuture(sps);
         });
         ArgumentCaptor<StrimziPodSet> podSetCaptor = ArgumentCaptor.forClass(StrimziPodSet.class);
-        when(mockPodSetOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), podSetCaptor.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(3))));
-        when(mockPodSetOps.readiness(any(), eq(NAMESPACE), eq(COMPONENT_NAME), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockPodSetOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), podSetCaptor.capture())).thenAnswer(i -> CompletableFuture.completedFuture(ReconcileResult.created(i.getArgument(3))));
+        when(mockPodSetOps.readiness(any(), eq(NAMESPACE), eq(COMPONENT_NAME), anyLong(), anyLong())).thenReturn(CompletableFuture.completedFuture(null));
 
         // Mock and capture CM ops
-        when(mockCmOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new ConfigMap())));
+        when(mockCmOps.reconcile(any(), anyString(), any(), any())).thenReturn(CompletableFuture.completedFuture(ReconcileResult.created(new ConfigMap())));
         ArgumentCaptor<ConfigMap> dockerfileCaptor = ArgumentCaptor.forClass(ConfigMap.class);
-        when(mockCmOps.reconcile(any(), anyString(), eq(KafkaConnectResources.dockerFileConfigMapName(NAME)), dockerfileCaptor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.created(new ConfigMap())));
+        when(mockCmOps.reconcile(any(), anyString(), eq(KafkaConnectResources.dockerFileConfigMapName(NAME)), dockerfileCaptor.capture())).thenReturn(CompletableFuture.completedFuture(ReconcileResult.created(new ConfigMap())));
 
         // Mock and capture Pod ops
-        when(mockPodOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(Future.succeededFuture(List.of()));
-        when(mockPodOps.getAsync(eq(NAMESPACE), startsWith(COMPONENT_NAME))).thenReturn(Future.succeededFuture());
-        when(mockPodOps.reconcile(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), any())).thenReturn(Future.succeededFuture());
-        when(mockPodOps.readiness(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockPodOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(CompletableFuture.completedFuture(List.of()));
+        when(mockPodOps.getAsync(eq(NAMESPACE), startsWith(COMPONENT_NAME))).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockPodOps.reconcile(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), any())).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockPodOps.readiness(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), anyLong(), anyLong())).thenReturn(CompletableFuture.completedFuture(null));
 
         ArgumentCaptor<Pod> builderPodCaptor = ArgumentCaptor.forClass(Pod.class);
-        when(mockPodOps.reconcile(any(), eq(NAMESPACE), eq(KafkaConnectResources.buildPodName(NAME)), builderPodCaptor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.noop(null)));
+        when(mockPodOps.reconcile(any(), eq(NAMESPACE), eq(KafkaConnectResources.buildPodName(NAME)), builderPodCaptor.capture())).thenReturn(CompletableFuture.completedFuture(ReconcileResult.noop(null)));
 
         // Mock and capture BuildConfig ops
-        when(mockBcOps.reconcile(any(), eq(NAMESPACE), eq(KafkaConnectResources.buildConfigName(NAME)), eq(null))).thenReturn(Future.succeededFuture(ReconcileResult.noop(null)));
+        when(mockBcOps.reconcile(any(), eq(NAMESPACE), eq(KafkaConnectResources.buildConfigName(NAME)), eq(null))).thenReturn(CompletableFuture.completedFuture(ReconcileResult.noop(null)));
 
         // Mock and capture NP ops
-        when(mockNetPolOps.reconcile(any(), eq(NAMESPACE), eq(KafkaConnectResources.componentName(NAME)), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new NetworkPolicy())));
+        when(mockNetPolOps.reconcile(any(), eq(NAMESPACE), eq(KafkaConnectResources.componentName(NAME)), any())).thenReturn(CompletableFuture.completedFuture(ReconcileResult.created(new NetworkPolicy())));
 
         // Mock and capture PDB ops
-        when(mockPdbOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture());
+        when(mockPdbOps.reconcile(any(), anyString(), any(), any())).thenReturn(CompletableFuture.completedFuture(null));
 
         // Mock and capture KafkaConnect ops for status update
         ArgumentCaptor<KafkaConnect> connectCaptor = ArgumentCaptor.forClass(KafkaConnect.class);
-        when(mockConnectOps.updateStatusAsync(any(), connectCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockConnectOps.updateStatusAsync(any(), connectCaptor.capture())).thenReturn(CompletableFuture.completedFuture(null));
 
         // Mock KafkaConnect API client
         KafkaConnectApi mockConnectClient = mock(KafkaConnectApi.class);
@@ -1534,18 +1534,18 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
         CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> mockConnectorOps = supplier.kafkaConnectorOperator;
 
         // Mock KafkaConnector ops
-        when(mockConnectorOps.listAsync(anyString(), any(LabelSelector.class))).thenReturn(Future.succeededFuture(emptyList()));
+        when(mockConnectorOps.listAsync(anyString(), any(LabelSelector.class))).thenReturn(CompletableFuture.completedFuture(emptyList()));
 
         // Mock KafkaConnect ops
         when(mockConnectOps.get(NAMESPACE, NAME)).thenReturn(kc);
-        when(mockConnectOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(kc));
+        when(mockConnectOps.getAsync(anyString(), anyString())).thenReturn(CompletableFuture.completedFuture(kc));
 
         // Mock and capture service ops
         ArgumentCaptor<Service> serviceCaptor = ArgumentCaptor.forClass(Service.class);
-        when(mockServiceOps.reconcile(any(), anyString(), anyString(), serviceCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockServiceOps.reconcile(any(), anyString(), anyString(), serviceCaptor.capture())).thenReturn(CompletableFuture.completedFuture(null));
 
         // Mock Secret ops
-        when(mockSecretOps.reconcile(any(), anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
+        when(mockSecretOps.reconcile(any(), anyString(), anyString(), any())).thenReturn(CompletableFuture.completedFuture(null));
 
         // Mock StrimziPodSet ops
         when(mockPodSetOps.getAsync(eq(NAMESPACE), eq(COMPONENT_NAME))).thenAnswer(i -> {
@@ -1559,25 +1559,25 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
                             null,
                             null);
 
-            return Future.succeededFuture(sps);
+            return CompletableFuture.completedFuture(sps);
         });
         ArgumentCaptor<StrimziPodSet> podSetCaptor = ArgumentCaptor.forClass(StrimziPodSet.class);
-        when(mockPodSetOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), podSetCaptor.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(3))));
-        when(mockPodSetOps.readiness(any(), eq(NAMESPACE), eq(COMPONENT_NAME), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockPodSetOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), podSetCaptor.capture())).thenAnswer(i -> CompletableFuture.completedFuture(ReconcileResult.created(i.getArgument(3))));
+        when(mockPodSetOps.readiness(any(), eq(NAMESPACE), eq(COMPONENT_NAME), anyLong(), anyLong())).thenReturn(CompletableFuture.completedFuture(null));
 
         // Mock and capture CM ops
-        when(mockCmOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new ConfigMap())));
+        when(mockCmOps.reconcile(any(), anyString(), any(), any())).thenReturn(CompletableFuture.completedFuture(ReconcileResult.created(new ConfigMap())));
         ArgumentCaptor<ConfigMap> dockerfileCaptor = ArgumentCaptor.forClass(ConfigMap.class);
-        when(mockCmOps.reconcile(any(), anyString(), eq(KafkaConnectResources.dockerFileConfigMapName(NAME)), dockerfileCaptor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.created(new ConfigMap())));
+        when(mockCmOps.reconcile(any(), anyString(), eq(KafkaConnectResources.dockerFileConfigMapName(NAME)), dockerfileCaptor.capture())).thenReturn(CompletableFuture.completedFuture(ReconcileResult.created(new ConfigMap())));
 
         // Mock and capture Pod ops
-        when(mockPodOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(Future.succeededFuture(List.of()));
-        when(mockPodOps.getAsync(eq(NAMESPACE), startsWith(COMPONENT_NAME))).thenReturn(Future.succeededFuture());
-        when(mockPodOps.reconcile(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), any())).thenReturn(Future.succeededFuture());
-        when(mockPodOps.readiness(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockPodOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(CompletableFuture.completedFuture(List.of()));
+        when(mockPodOps.getAsync(eq(NAMESPACE), startsWith(COMPONENT_NAME))).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockPodOps.reconcile(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), any())).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockPodOps.readiness(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), anyLong(), anyLong())).thenReturn(CompletableFuture.completedFuture(null));
 
         ArgumentCaptor<Pod> builderPodCaptor = ArgumentCaptor.forClass(Pod.class);
-        when(mockPodOps.reconcile(any(), eq(NAMESPACE), eq(KafkaConnectResources.buildPodName(NAME)), builderPodCaptor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.noop(null)));
+        when(mockPodOps.reconcile(any(), eq(NAMESPACE), eq(KafkaConnectResources.buildPodName(NAME)), builderPodCaptor.capture())).thenReturn(CompletableFuture.completedFuture(ReconcileResult.noop(null)));
 
         Pod terminatedPod = new PodBuilder()
                 .withNewMetadata()
@@ -1598,21 +1598,21 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
                         .build())
                 .endStatus()
                 .build();
-        when(mockPodOps.waitFor(any(), eq(NAMESPACE), eq(KafkaConnectResources.buildPodName(NAME)), anyString(), anyLong(), anyLong(), any(BiPredicate.class))).thenReturn(Future.succeededFuture((Void) null));
-        when(mockPodOps.getAsync(eq(NAMESPACE), eq(KafkaConnectResources.buildPodName(NAME)))).thenReturn(Future.succeededFuture(terminatedPod));
+        when(mockPodOps.waitFor(any(), eq(NAMESPACE), eq(KafkaConnectResources.buildPodName(NAME)), anyString(), anyLong(), anyLong(), any(BiPredicate.class))).thenReturn(CompletableFuture.completedFuture((Void) null));
+        when(mockPodOps.getAsync(eq(NAMESPACE), eq(KafkaConnectResources.buildPodName(NAME)))).thenReturn(CompletableFuture.completedFuture(terminatedPod));
 
         // Mock and capture BuildConfig ops
-        when(mockBcOps.reconcile(any(), eq(NAMESPACE), eq(KafkaConnectResources.buildConfigName(NAME)), eq(null))).thenReturn(Future.succeededFuture(ReconcileResult.noop(null)));
+        when(mockBcOps.reconcile(any(), eq(NAMESPACE), eq(KafkaConnectResources.buildConfigName(NAME)), eq(null))).thenReturn(CompletableFuture.completedFuture(ReconcileResult.noop(null)));
 
         // Mock and capture NP ops
-        when(mockNetPolOps.reconcile(any(), eq(NAMESPACE), eq(KafkaConnectResources.componentName(NAME)), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new NetworkPolicy())));
+        when(mockNetPolOps.reconcile(any(), eq(NAMESPACE), eq(KafkaConnectResources.componentName(NAME)), any())).thenReturn(CompletableFuture.completedFuture(ReconcileResult.created(new NetworkPolicy())));
 
         // Mock and capture PDB ops
-        when(mockPdbOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture());
+        when(mockPdbOps.reconcile(any(), anyString(), any(), any())).thenReturn(CompletableFuture.completedFuture(null));
 
         // Mock and capture KafkaConnect ops for status update
         ArgumentCaptor<KafkaConnect> connectCaptor = ArgumentCaptor.forClass(KafkaConnect.class);
-        when(mockConnectOps.updateStatusAsync(any(), connectCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockConnectOps.updateStatusAsync(any(), connectCaptor.capture())).thenReturn(CompletableFuture.completedFuture(null));
 
         // Mock KafkaConnect API client
         KafkaConnectApi mockConnectClient = mock(KafkaConnectApi.class);

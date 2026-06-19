@@ -13,9 +13,11 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
-import io.vertx.core.Future;
-import io.vertx.core.Vertx;
+import io.strimzi.operator.common.operator.resource.concurrent.AbstractNamespacedResourceOperator;
 
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.Executor;
 import java.util.regex.Pattern;
 
 /**
@@ -40,12 +42,12 @@ public class PvcOperator extends AbstractNamespacedResourceOperator<KubernetesCl
 
     /**
      * Constructor
-     * @param vertx                 The Vertx instance
+     * @param asyncExecutor         Executor to use for asynchronous subroutines
      * @param client                The Kubernetes client
      * @param useServerSideApply    Determines if Server Side Apply should be used
      */
-    public PvcOperator(Vertx vertx, KubernetesClient client, boolean useServerSideApply) {
-        super(vertx, client, "PersistentVolumeClaim", useServerSideApply);
+    public PvcOperator(Executor asyncExecutor, KubernetesClient client, boolean useServerSideApply) {
+        super(asyncExecutor, client, "PersistentVolumeClaim", useServerSideApply);
     }
 
     @Override
@@ -78,7 +80,7 @@ public class PvcOperator extends AbstractNamespacedResourceOperator<KubernetesCl
      * @return  Future with reconciliation result
      */
     @Override
-    protected Future<ReconcileResult<PersistentVolumeClaim>> internalUpdate(Reconciliation reconciliation, String namespace, String name, PersistentVolumeClaim current, PersistentVolumeClaim desired) {
+    protected CompletionStage<ReconcileResult<PersistentVolumeClaim>> internalUpdate(Reconciliation reconciliation, String namespace, String name, PersistentVolumeClaim current, PersistentVolumeClaim desired) {
         try {
             if (current.getSpec() != null && desired.getSpec() != null)   {
                 revertImmutableChanges(current, desired);
@@ -88,7 +90,7 @@ public class PvcOperator extends AbstractNamespacedResourceOperator<KubernetesCl
             return super.internalUpdate(reconciliation, namespace, name, current, desired);
         } catch (Exception e) {
             LOGGER.errorCr(reconciliation, "Caught exception while patching {} {} in namespace {}", resourceKind, name, namespace, e);
-            return Future.failedFuture(e);
+            return CompletableFuture.failedFuture(e);
         }
     }
 

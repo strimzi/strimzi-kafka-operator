@@ -189,7 +189,7 @@ public class ReconcilerUtilsTest {
         JmxModel jmx = new JmxModel(NAMESPACE, NAME, LABELS, ResourceUtils.DUMMY_OWNER_REFERENCE, spec);
 
         SecretOperator mockSecretOps = mock(SecretOperator.class);
-        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(NAME))).thenReturn(Future.succeededFuture());
+        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(NAME))).thenReturn(CompletableFuture.completedFuture(null));
 
         Checkpoint async = context.checkpoint();
         ReconcilerUtils.reconcileJmxSecret(Reconciliation.DUMMY_RECONCILIATION, mockSecretOps, new MockJmxCluster(jmx))
@@ -206,12 +206,12 @@ public class ReconcilerUtilsTest {
         JmxModel jmx = new JmxModel(NAMESPACE, NAME, LABELS, ResourceUtils.DUMMY_OWNER_REFERENCE, spec);
 
         SecretOperator mockSecretOps = mock(SecretOperator.class);
-        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(NAME))).thenReturn(Future.succeededFuture(EXISTING_JMX_SECRET));
+        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(NAME))).thenReturn(CompletableFuture.completedFuture(EXISTING_JMX_SECRET));
         when(mockSecretOps.reconcile(any(), any(), any(), any())).thenAnswer(i -> {
             if (i.getArgument(3) == null) {
-                return Future.succeededFuture(ReconcileResult.deleted());
+                return CompletableFuture.completedFuture(ReconcileResult.deleted());
             } else {
-                return Future.succeededFuture(ReconcileResult.patched(i.getArgument(3)));
+                return CompletableFuture.completedFuture(ReconcileResult.patched(i.getArgument(3)));
             }
         });
 
@@ -230,7 +230,7 @@ public class ReconcilerUtilsTest {
         JmxModel jmx = new JmxModel(NAMESPACE, NAME, LABELS, ResourceUtils.DUMMY_OWNER_REFERENCE, spec);
 
         SecretOperator mockSecretOps = mock(SecretOperator.class);
-        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(NAME))).thenReturn(Future.succeededFuture());
+        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(NAME))).thenReturn(CompletableFuture.completedFuture(null));
 
         Checkpoint async = context.checkpoint();
         ReconcilerUtils.reconcileJmxSecret(Reconciliation.DUMMY_RECONCILIATION, mockSecretOps, new MockJmxCluster(jmx))
@@ -247,12 +247,12 @@ public class ReconcilerUtilsTest {
         JmxModel jmx = new JmxModel(NAMESPACE, NAME, LABELS, ResourceUtils.DUMMY_OWNER_REFERENCE, spec);
 
         SecretOperator mockSecretOps = mock(SecretOperator.class);
-        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(NAME))).thenReturn(Future.succeededFuture(EXISTING_JMX_SECRET));
+        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(NAME))).thenReturn(CompletableFuture.completedFuture(EXISTING_JMX_SECRET));
         when(mockSecretOps.reconcile(any(), any(), any(), any())).thenAnswer(i -> {
             if (i.getArgument(3) == null) {
-                return Future.succeededFuture(ReconcileResult.deleted());
+                return CompletableFuture.completedFuture(ReconcileResult.deleted());
             } else {
-                return Future.succeededFuture(ReconcileResult.patched(i.getArgument(3)));
+                return CompletableFuture.completedFuture(ReconcileResult.patched(i.getArgument(3)));
             }
         });
 
@@ -276,9 +276,9 @@ public class ReconcilerUtilsTest {
         JmxModel jmx = new JmxModel(NAMESPACE, NAME, LABELS, ResourceUtils.DUMMY_OWNER_REFERENCE, spec);
 
         SecretOperator mockSecretOps = mock(SecretOperator.class);
-        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(NAME))).thenReturn(Future.succeededFuture());
+        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(NAME))).thenReturn(CompletableFuture.completedFuture(null));
         ArgumentCaptor<Secret> secretCaptor = ArgumentCaptor.forClass(Secret.class);
-        when(mockSecretOps.reconcile(any(), any(), any(), secretCaptor.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(3))));
+        when(mockSecretOps.reconcile(any(), any(), any(), secretCaptor.capture())).thenAnswer(i -> CompletableFuture.completedFuture(ReconcileResult.created(i.getArgument(3))));
 
         Checkpoint async = context.checkpoint();
         ReconcilerUtils.reconcileJmxSecret(Reconciliation.DUMMY_RECONCILIATION, mockSecretOps, new MockJmxCluster(jmx))
@@ -311,9 +311,9 @@ public class ReconcilerUtilsTest {
         JmxModel jmx = new JmxModel(NAMESPACE, NAME, LABELS, ResourceUtils.DUMMY_OWNER_REFERENCE, spec);
 
         SecretOperator mockSecretOps = mock(SecretOperator.class);
-        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(NAME))).thenReturn(Future.succeededFuture(EXISTING_JMX_SECRET));
+        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(NAME))).thenReturn(CompletableFuture.completedFuture(EXISTING_JMX_SECRET));
         ArgumentCaptor<Secret> secretCaptor = ArgumentCaptor.forClass(Secret.class);
-        when(mockSecretOps.reconcile(any(), any(), any(), secretCaptor.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.patched(i.getArgument(3))));
+        when(mockSecretOps.reconcile(any(), any(), any(), secretCaptor.capture())).thenAnswer(i -> CompletableFuture.completedFuture(ReconcileResult.patched(i.getArgument(3))));
 
         Checkpoint async = context.checkpoint();
         ReconcilerUtils.reconcileJmxSecret(Reconciliation.DUMMY_RECONCILIATION, mockSecretOps, new MockJmxCluster(jmx))
@@ -430,8 +430,8 @@ public class ReconcilerUtilsTest {
                 .build();
 
         SecretOperator secretOps = mock(SecretOperator.class);
-        when(secretOps.getAsync(eq(namespace), eq("top-secret-pwd"))).thenReturn(Future.succeededFuture(secret));
-        when(secretOps.getAsync(eq(namespace), eq("css-secret"))).thenReturn(Future.succeededFuture(cssSecret));
+        when(secretOps.getAsync(eq(namespace), eq("top-secret-pwd"))).thenReturn(CompletableFuture.completedFuture(secret));
+        when(secretOps.getAsync(eq(namespace), eq("css-secret"))).thenReturn(CompletableFuture.completedFuture(cssSecret));
 
         Future<Integer> res = ReconcilerUtils.authTlsHash(secretOps, "ns", kcu, singletonList(css));
         res.onComplete(v -> {
@@ -455,7 +455,7 @@ public class ReconcilerUtilsTest {
                 .build();
 
         SecretOperator secretOps = mock(SecretOperator.class);
-        when(secretOps.getAsync(eq(namespace), eq("top-secret-pwd"))).thenReturn(Future.succeededFuture(null));
+        when(secretOps.getAsync(eq(namespace), eq("top-secret-pwd"))).thenReturn(CompletableFuture.completedFuture(null));
 
         Future<Integer> res = ReconcilerUtils.authTlsHash(secretOps, "ns", kcu, List.of());
         res.onComplete(v -> {
@@ -492,9 +492,9 @@ public class ReconcilerUtilsTest {
                 .build();
 
         SecretOperator secretOps = mock(SecretOperator.class);
-        when(secretOps.getAsync(eq(namespace), eq("cert-secret"))).thenReturn(Future.succeededFuture(secret));
-        when(secretOps.getAsync(eq(namespace), eq("cert-secret2"))).thenReturn(Future.succeededFuture(secret2));
-        when(secretOps.getAsync(eq(namespace), eq("cert-secret3"))).thenReturn(Future.succeededFuture(secret3));
+        when(secretOps.getAsync(eq(namespace), eq("cert-secret"))).thenReturn(CompletableFuture.completedFuture(secret));
+        when(secretOps.getAsync(eq(namespace), eq("cert-secret2"))).thenReturn(CompletableFuture.completedFuture(secret2));
+        when(secretOps.getAsync(eq(namespace), eq("cert-secret3"))).thenReturn(CompletableFuture.completedFuture(secret3));
 
         Checkpoint async = context.checkpoint();
         ReconcilerUtils.authTlsHash(secretOps, "ns", null, List.of(cert1, cert2, cert3)).onComplete(context.succeeding(res -> {
@@ -517,7 +517,7 @@ public class ReconcilerUtilsTest {
                 .build();
 
         SecretOperator secretOps = mock(SecretOperator.class);
-        when(secretOps.getAsync(eq(namespace), eq("cert-secret"))).thenReturn(Future.succeededFuture(secret));
+        when(secretOps.getAsync(eq(namespace), eq("cert-secret"))).thenReturn(CompletableFuture.completedFuture(secret));
 
         Checkpoint async = context.checkpoint();
         ReconcilerUtils.authTlsHash(secretOps, "ns", null, singletonList(cert1)).onComplete(context.succeeding(res -> {
@@ -534,7 +534,7 @@ public class ReconcilerUtilsTest {
         Secret secret = new Secret();
         secret.setData(data);
         CompletionStage<Secret> cf = CompletableFuture.supplyAsync(() ->  secret);
-        when(secretOperator.getAsync(anyString(), anyString())).thenReturn(Future.fromCompletionStage(cf));
+        when(secretOperator.getAsync(anyString(), anyString())).thenReturn(cf);
         KafkaClientAuthenticationScramSha512 auth = new KafkaClientAuthenticationScramSha512();
         PasswordSecretSource passwordSecretSource = new PasswordSecretSource();
         passwordSecretSource.setSecretName("my-secret");
@@ -555,7 +555,7 @@ public class ReconcilerUtilsTest {
         Secret secret = new Secret();
         secret.setData(data);
         CompletionStage<Secret> cf = CompletableFuture.supplyAsync(() ->  secret);
-        when(secretOperator.getAsync(anyString(), anyString())).thenReturn(Future.fromCompletionStage(cf));
+        when(secretOperator.getAsync(anyString(), anyString())).thenReturn(cf);
         KafkaClientAuthenticationScramSha512 auth = new KafkaClientAuthenticationScramSha512();
         PasswordSecretSource passwordSecretSource = new PasswordSecretSource();
         passwordSecretSource.setSecretName("my-secret");
@@ -576,7 +576,7 @@ public class ReconcilerUtilsTest {
         Secret secret = new Secret();
         secret.setData(data);
         CompletionStage<Secret> cf = CompletableFuture.supplyAsync(() ->  secret);
-        when(secretOperator.getAsync(anyString(), anyString())).thenReturn(Future.fromCompletionStage(cf));
+        when(secretOperator.getAsync(anyString(), anyString())).thenReturn(cf);
         KafkaClientAuthenticationPlain auth = new KafkaClientAuthenticationPlain();
         PasswordSecretSource passwordSecretSource = new PasswordSecretSource();
         passwordSecretSource.setSecretName("my-secret");
@@ -597,7 +597,7 @@ public class ReconcilerUtilsTest {
         Secret secret = new Secret();
         secret.setData(data);
         CompletionStage<Secret> cf = CompletableFuture.supplyAsync(() ->  secret);
-        when(secretOperator.getAsync(anyString(), anyString())).thenReturn(Future.fromCompletionStage(cf));
+        when(secretOperator.getAsync(anyString(), anyString())).thenReturn(cf);
         KafkaClientAuthenticationPlain auth = new KafkaClientAuthenticationPlain();
         PasswordSecretSource passwordSecretSource = new PasswordSecretSource();
         passwordSecretSource.setSecretName("my-secret");
@@ -624,7 +624,7 @@ public class ReconcilerUtilsTest {
                 .build();
 
         SecretOperator secretOps = mock(SecretOperator.class);
-        when(secretOps.getAsync(eq(namespace), eq(secretName))).thenReturn(Future.succeededFuture(secret));
+        when(secretOps.getAsync(eq(namespace), eq(secretName))).thenReturn(CompletableFuture.completedFuture(secret));
 
         ReconcilerUtils.getValidatedSecret(secretOps, namespace, secretName, "key1", "key2")
                 .onComplete(r -> {
@@ -639,7 +639,7 @@ public class ReconcilerUtilsTest {
         String secretName = "my-secret";
 
         SecretOperator secretOps = mock(SecretOperator.class);
-        when(secretOps.getAsync(eq(namespace), eq(secretName))).thenReturn(Future.succeededFuture(null));
+        when(secretOps.getAsync(eq(namespace), eq(secretName))).thenReturn(CompletableFuture.completedFuture(null));
 
         ReconcilerUtils.getValidatedSecret(secretOps, namespace, secretName, "key1", "key2")
                 .onComplete(r -> {
@@ -662,7 +662,7 @@ public class ReconcilerUtilsTest {
                 .build();
 
         SecretOperator secretOps = mock(SecretOperator.class);
-        when(secretOps.getAsync(eq(namespace), eq(secretName))).thenReturn(Future.succeededFuture(secret));
+        when(secretOps.getAsync(eq(namespace), eq(secretName))).thenReturn(CompletableFuture.completedFuture(secret));
 
         ReconcilerUtils.getValidatedSecret(secretOps, namespace, secretName, "key1", "key4", "key5")
                 .onComplete(r -> {
@@ -697,9 +697,9 @@ public class ReconcilerUtilsTest {
                 .build();
 
         SecretOperator secretOps = mock(SecretOperator.class);
-        when(secretOps.getAsync(anyString(), eq("cert-secret"))).thenReturn(Future.succeededFuture(secret));
-        when(secretOps.getAsync(anyString(), eq("cert-secret2"))).thenReturn(Future.succeededFuture(secret2));
-        when(secretOps.getAsync(anyString(), eq("cert-secret3"))).thenReturn(Future.succeededFuture(secret3));
+        when(secretOps.getAsync(anyString(), eq("cert-secret"))).thenReturn(CompletableFuture.completedFuture(secret));
+        when(secretOps.getAsync(anyString(), eq("cert-secret2"))).thenReturn(CompletableFuture.completedFuture(secret2));
+        when(secretOps.getAsync(anyString(), eq("cert-secret3"))).thenReturn(CompletableFuture.completedFuture(secret3));
 
         Checkpoint async = context.checkpoint();
         ReconcilerUtils.trustedCertificates(Reconciliation.DUMMY_RECONCILIATION, secretOps, List.of(cert1, cert2, cert3)).onComplete(context.succeeding(res -> {
@@ -724,8 +724,8 @@ public class ReconcilerUtilsTest {
                 .build();
 
         SecretOperator secretOps = mock(SecretOperator.class);
-        when(secretOps.getAsync(anyString(), eq("cert-secret"))).thenReturn(Future.succeededFuture(secret));
-        when(secretOps.getAsync(anyString(), eq("cert-secret2"))).thenReturn(Future.succeededFuture(null));
+        when(secretOps.getAsync(anyString(), eq("cert-secret"))).thenReturn(CompletableFuture.completedFuture(secret));
+        when(secretOps.getAsync(anyString(), eq("cert-secret2"))).thenReturn(CompletableFuture.completedFuture(null));
 
         Checkpoint async = context.checkpoint();
         ReconcilerUtils.trustedCertificates(Reconciliation.DUMMY_RECONCILIATION, secretOps, List.of(cert1, cert2)).onComplete(context.failing(res -> {
@@ -753,8 +753,8 @@ public class ReconcilerUtilsTest {
                 .build();
 
         SecretOperator secretOps = mock(SecretOperator.class);
-        when(secretOps.getAsync(anyString(), eq("cert-secret"))).thenReturn(Future.succeededFuture(secret));
-        when(secretOps.getAsync(anyString(), eq("cert-secret2"))).thenReturn(Future.succeededFuture(secret2));
+        when(secretOps.getAsync(anyString(), eq("cert-secret"))).thenReturn(CompletableFuture.completedFuture(secret));
+        when(secretOps.getAsync(anyString(), eq("cert-secret2"))).thenReturn(CompletableFuture.completedFuture(secret2));
 
         Checkpoint async = context.checkpoint();
         ReconcilerUtils.trustedCertificates(Reconciliation.DUMMY_RECONCILIATION, secretOps, List.of(cert1, cert2)).onComplete(context.failing(res -> {
@@ -775,7 +775,7 @@ public class ReconcilerUtilsTest {
                 .build();
 
         SecretOperator secretOps = mock(SecretOperator.class);
-        when(secretOps.getAsync(anyString(), eq("cert-secret"))).thenReturn(Future.succeededFuture(secret));
+        when(secretOps.getAsync(anyString(), eq("cert-secret"))).thenReturn(CompletableFuture.completedFuture(secret));
 
         Checkpoint async = context.checkpoint();
         ReconcilerUtils.trustedCertificates(Reconciliation.DUMMY_RECONCILIATION, secretOps, List.of(cert1)).onComplete(context.failing(res -> {

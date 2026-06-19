@@ -11,6 +11,7 @@ import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.model.KafkaUpgradeException;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.KafkaVersionChange;
+import io.strimzi.operator.cluster.operator.VertxUtil;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.PodOperator;
 import io.strimzi.operator.common.Annotations;
@@ -95,7 +96,7 @@ public class KRaftVersionChangeCreator {
                 .withStrimziCluster(reconciliation.name())
                 .withStrimziName(KafkaResources.kafkaComponentName(reconciliation.name()));
 
-        return podOperator.listAsync(reconciliation.namespace(), selectorLabels);
+        return VertxUtil.toFuture(podOperator.listAsync(reconciliation.namespace(), selectorLabels));
     }
 
     /**

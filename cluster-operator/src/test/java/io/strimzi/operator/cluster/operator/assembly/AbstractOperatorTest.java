@@ -12,11 +12,11 @@ import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.model.common.Spec;
 import io.strimzi.api.kafka.model.kafka.Status;
-import io.strimzi.operator.cluster.operator.resource.kubernetes.AbstractWatchableStatusedNamespacedResourceOperator;
 import io.strimzi.operator.common.MetricsProvider;
 import io.strimzi.operator.common.MicrometerMetricsProvider;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
+import io.strimzi.operator.common.operator.resource.concurrent.AbstractWatchableStatusedNamespacedResourceOperator;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
@@ -32,6 +32,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.concurrent.Callable;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
@@ -257,11 +259,11 @@ class AbstractOperatorTest {
                 extends AbstractWatchableStatusedNamespacedResourceOperator<C, T, L, R> {
 
         public DefaultWatchableStatusedResourceOperator(Vertx vertx, C client, String resourceKind) {
-            super(vertx, client, resourceKind);
+            super(ForkJoinPool.commonPool(), client, resourceKind);
         }
 
         @Override
-        public Future<T> updateStatusAsync(Reconciliation reconciliation, T resource) {
+        public CompletionStage<T> updateStatusAsync(Reconciliation reconciliation, T resource) {
             return null;
         }
 

@@ -43,6 +43,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 import static org.hamcrest.CoreMatchers.hasItems;
@@ -651,21 +652,21 @@ public class KafkaListenerReconcilerTest {
         when(mockServiceOperator.batchReconcile(any(), eq(NAMESPACE), any(), any())).thenCallRealMethod();
 
         // Mock getting of services and their readiness
-        when(mockServiceOperator.getAsync(eq(NAMESPACE), eq(CLUSTER_NAME + "-kafka-external-bootstrap"))).thenReturn(Future.succeededFuture(mockServiceBootstrap));
-        when(mockServiceOperator.getAsync(eq(NAMESPACE), eq(CLUSTER_NAME + "-brokers-10"))).thenReturn(Future.succeededFuture(mockServiceBroker0));
-        when(mockServiceOperator.getAsync(eq(NAMESPACE), eq(CLUSTER_NAME + "-brokers-11"))).thenReturn(Future.succeededFuture(mockServiceBroker1));
-        when(mockServiceOperator.getAsync(eq(NAMESPACE), eq(CLUSTER_NAME + "-brokers-12"))).thenReturn(Future.succeededFuture(mockServiceBroker2));
+        when(mockServiceOperator.getAsync(eq(NAMESPACE), eq(CLUSTER_NAME + "-kafka-external-bootstrap"))).thenReturn(CompletableFuture.completedFuture(mockServiceBootstrap));
+        when(mockServiceOperator.getAsync(eq(NAMESPACE), eq(CLUSTER_NAME + "-brokers-10"))).thenReturn(CompletableFuture.completedFuture(mockServiceBroker0));
+        when(mockServiceOperator.getAsync(eq(NAMESPACE), eq(CLUSTER_NAME + "-brokers-11"))).thenReturn(CompletableFuture.completedFuture(mockServiceBroker1));
+        when(mockServiceOperator.getAsync(eq(NAMESPACE), eq(CLUSTER_NAME + "-brokers-12"))).thenReturn(CompletableFuture.completedFuture(mockServiceBroker2));
 
         // Mock listing of services
-        when(mockServiceOperator.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(Future.succeededFuture(List.of()));
+        when(mockServiceOperator.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(CompletableFuture.completedFuture(List.of()));
 
         // Mock service creation / update
-        when(mockServiceOperator.reconcile(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-kafka-external-bootstrap"), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(mockServiceBootstrap)));
-        when(mockServiceOperator.reconcile(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-brokers-10"), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(mockServiceBroker0)));
-        when(mockServiceOperator.reconcile(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-brokers-11"), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(mockServiceBroker1)));
-        when(mockServiceOperator.reconcile(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-brokers-12"), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(mockServiceBroker2)));
-        when(mockServiceOperator.reconcile(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-kafka-brokers"), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new Service())));
-        when(mockServiceOperator.reconcile(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-kafka-bootstrap"), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new Service())));
+        when(mockServiceOperator.reconcile(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-kafka-external-bootstrap"), any())).thenReturn(CompletableFuture.completedFuture(ReconcileResult.created(mockServiceBootstrap)));
+        when(mockServiceOperator.reconcile(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-brokers-10"), any())).thenReturn(CompletableFuture.completedFuture(ReconcileResult.created(mockServiceBroker0)));
+        when(mockServiceOperator.reconcile(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-brokers-11"), any())).thenReturn(CompletableFuture.completedFuture(ReconcileResult.created(mockServiceBroker1)));
+        when(mockServiceOperator.reconcile(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-brokers-12"), any())).thenReturn(CompletableFuture.completedFuture(ReconcileResult.created(mockServiceBroker2)));
+        when(mockServiceOperator.reconcile(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-kafka-brokers"), any())).thenReturn(CompletableFuture.completedFuture(ReconcileResult.created(new Service())));
+        when(mockServiceOperator.reconcile(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-kafka-bootstrap"), any())).thenReturn(CompletableFuture.completedFuture(ReconcileResult.created(new Service())));
 
         return supplier;
     }

@@ -57,6 +57,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ForkJoinPool;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -100,11 +101,11 @@ public class StrimziPodSetControllerIT {
         LOGGER.info("Created CRDs");
 
         vertx = Vertx.vertx();
-        kafkaOperator = new CrdOperator<>(vertx, client, Kafka.class, KafkaList.class, Kafka.RESOURCE_KIND);
-        kafkaConnectOperator = new CrdOperator<>(vertx, client, KafkaConnect.class, KafkaConnectList.class, KafkaConnect.RESOURCE_KIND);
-        kafkaMirrorMaker2Operator = new CrdOperator<>(vertx, client, KafkaMirrorMaker2.class, KafkaMirrorMaker2List.class, KafkaMirrorMaker2.RESOURCE_KIND);
-        podSetOperator = new StrimziPodSetOperator(vertx, client);
-        podOperator = new PodOperator(vertx, client);
+        kafkaOperator = new CrdOperator<>(ForkJoinPool.commonPool(), client, Kafka.class, KafkaList.class, Kafka.RESOURCE_KIND);
+        kafkaConnectOperator = new CrdOperator<>(ForkJoinPool.commonPool(), client, KafkaConnect.class, KafkaConnectList.class, KafkaConnect.RESOURCE_KIND);
+        kafkaMirrorMaker2Operator = new CrdOperator<>(ForkJoinPool.commonPool(), client, KafkaMirrorMaker2.class, KafkaMirrorMaker2List.class, KafkaMirrorMaker2.RESOURCE_KIND);
+        podSetOperator = new StrimziPodSetOperator(ForkJoinPool.commonPool(), client);
+        podOperator = new PodOperator(ForkJoinPool.commonPool(), client);
 
         kafkaOp().inNamespace(NAMESPACE).resource(kafka(KAFKA_NAME, MATCHING_LABELS)).create();
         kafkaOp().inNamespace(NAMESPACE).resource(kafka(OTHER_KAFKA_NAME, OTHER_LABELS)).create();

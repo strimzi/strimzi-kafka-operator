@@ -11,6 +11,7 @@ import io.micrometer.prometheusmetrics.PrometheusMeterRegistry;
 import io.strimzi.certs.OpenSslCertManager;
 import io.strimzi.operator.cluster.leaderelection.LeaderElectionManager;
 import io.strimzi.operator.cluster.model.securityprofiles.PodSecurityProviderFactory;
+import io.strimzi.operator.cluster.operator.VertxUtil;
 import io.strimzi.operator.cluster.operator.assembly.KafkaAssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaBridgeAssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaConnectAssemblyOperator;
@@ -27,6 +28,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
+import io.vertx.core.WorkerExecutor;
 import io.vertx.core.http.HttpServer;
 import io.vertx.micrometer.MicrometerMetricsOptions;
 import io.vertx.micrometer.VertxPrometheusOptions;
@@ -40,6 +42,7 @@ import java.security.Security;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
 /**
  * The main class used to start the Strimzi Cluster Operator
@@ -150,8 +153,14 @@ public class Main {
      */
     static CompositeFuture deployClusterOperatorVerticles(Vertx vertx, KubernetesClient client, MetricsProvider metricsProvider,
                                                           PlatformFeaturesAvailability pfa, ClusterOperatorConfig config, ShutdownHook shutdownHook) {
+        // Shared Vert.x worker pool on which the resource operators run their blocking Kubernetes API calls. It is
+        // created with the configured operations thread-pool size here - before the ResourceOperatorSupplier - so that
+        // the configured size is the one actually used (a Vert.x shared worker pool keeps the settings of its first
+        // creation). The same named pool is reused by the rest of the operator (e.g. VertxUtil.async).
+        WorkerExecutor sharedWorkerExecutor = vertx.createSharedWorkerExecutor("kubernetes-ops-pool", config.getOperationsThreadPoolSize(), TimeUnit.SECONDS.toNanos(120));
+
         ResourceOperatorSupplier resourceOperatorSupplier = new ResourceOperatorSupplier(
-                vertx,
+                VertxUtil.asExecutor(sharedWorkerExecutor),
                 client,
                 metricsProvider,
                 pfa,

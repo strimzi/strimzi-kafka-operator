@@ -21,6 +21,7 @@ import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceBuilder;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceList;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceMode;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceState;
+import io.strimzi.operator.cluster.operator.VertxUtil;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.CrdOperator;
 import io.strimzi.operator.common.Reconciliation;
@@ -382,7 +383,7 @@ public class KafkaAutoRebalancingReconciler {
     }
 
     private Future<KafkaRebalance> getKafkaRebalance(String namespace, String cluster, KafkaAutoRebalanceMode kafkaAutoRebalanceMode) {
-        return kafkaRebalanceOperator.getAsync(namespace, KafkaResources.autoRebalancingKafkaRebalanceResourceName(cluster, kafkaAutoRebalanceMode));
+        return VertxUtil.toFuture(kafkaRebalanceOperator.getAsync(namespace, KafkaResources.autoRebalancingKafkaRebalanceResourceName(cluster, kafkaAutoRebalanceMode)));
     }
 
     private Future<Boolean> createKafkaRebalance(String namespace, String cluster, KafkaAutoRebalanceMode kafkaAutoRebalanceMode, List<Integer> brokers) {
@@ -393,7 +394,7 @@ public class KafkaAutoRebalancingReconciler {
         }
 
         if (autoRebalanceConfiguration.get().getTemplate() != null) {
-            return kafkaRebalanceOperator.getAsync(namespace, autoRebalanceConfiguration.get().getTemplate().getName())
+            return VertxUtil.toFuture(kafkaRebalanceOperator.getAsync(namespace, autoRebalanceConfiguration.get().getTemplate().getName()))
                     .compose(kafkaRebalanceTemplate -> {
                         if (kafkaRebalanceTemplate != null) {
                             KafkaRebalance kafkaRebalance = buildKafkaRebalance(kafkaRebalanceTemplate, namespace, cluster, kafkaAutoRebalanceMode, brokers);
@@ -401,7 +402,7 @@ public class KafkaAutoRebalancingReconciler {
                             LOGGER.infoCr(reconciliation, "Create KafkaRebalance {}/{} by using configuration from template {}/{}",
                                     kafkaRebalance.getMetadata().getNamespace(), kafkaRebalance.getMetadata().getName(),
                                     kafkaRebalanceTemplate.getMetadata().getNamespace(), kafkaRebalanceTemplate.getMetadata().getName());
-                            return kafkaRebalanceOperator.createOrUpdate(reconciliation, kafkaRebalance)
+                            return VertxUtil.toFuture(kafkaRebalanceOperator.createOrUpdate(reconciliation, kafkaRebalance))
                                     .map(true);
                         } else {
                             LOGGER.warnCr(reconciliation, "The specified KafkaRebalance template {}/{} for auto-rebalancing doesn't exist. Skipping auto-rebalancing.",
@@ -414,7 +415,7 @@ public class KafkaAutoRebalancingReconciler {
 
             LOGGER.infoCr(reconciliation, "Create KafkaRebalance {}/{} using default Cruise Control configuration. No template specified.",
                     kafkaRebalance.getMetadata().getNamespace(), kafkaRebalance.getMetadata().getName());
-            return kafkaRebalanceOperator.createOrUpdate(reconciliation, kafkaRebalance)
+            return VertxUtil.toFuture(kafkaRebalanceOperator.createOrUpdate(reconciliation, kafkaRebalance))
                     .map(true);
         }
     }
@@ -460,9 +461,9 @@ public class KafkaAutoRebalancingReconciler {
                     .removeFromFinalizers(STRIMZI_IO_AUTO_REBALANCING_FINALIZER)
                 .endMetadata()
                 .build();
-        return kafkaRebalanceOperator.patchAsync(reconciliation, kafkaRebalancePatched)
+        return VertxUtil.toFuture(kafkaRebalanceOperator.patchAsync(reconciliation, kafkaRebalancePatched))
                 // cascading flag is needed in order to delete the corresponding ConfigMap storing the rebalancing progress and load
-                .compose(kr -> kafkaRebalanceOperator.deleteAsync(reconciliation, kr.getMetadata().getNamespace(), kr.getMetadata().getName(), true))
+                .compose(kr -> VertxUtil.toFuture(kafkaRebalanceOperator.deleteAsync(reconciliation, kr.getMetadata().getNamespace(), kr.getMetadata().getName(), true)))
                 .mapEmpty();
     }
 
@@ -476,7 +477,7 @@ public class KafkaAutoRebalancingReconciler {
                     .withBrokers(brokers)
                 .endSpec()
                 .build();
-        return kafkaRebalanceOperator.patchAsync(reconciliation, kafkaRebalancePatched)
+        return VertxUtil.toFuture(kafkaRebalanceOperator.patchAsync(reconciliation, kafkaRebalancePatched))
                 .mapEmpty();
     }
 
@@ -487,7 +488,7 @@ public class KafkaAutoRebalancingReconciler {
                     .addToAnnotations(Map.of(ANNO_STRIMZI_IO_REBALANCE, KafkaRebalanceAnnotation.stop.toString()))
                 .endMetadata()
                 .build();
-        return kafkaRebalanceOperator.patchAsync(reconciliation, kafkaRebalancePatched)
+        return VertxUtil.toFuture(kafkaRebalanceOperator.patchAsync(reconciliation, kafkaRebalancePatched))
                 .mapEmpty();
     }
 

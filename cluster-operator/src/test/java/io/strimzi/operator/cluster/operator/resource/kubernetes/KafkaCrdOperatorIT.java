@@ -11,11 +11,8 @@ import io.strimzi.api.kafka.model.kafka.KafkaList;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.test.CrdUtils;
-import io.vertx.junit5.VertxExtension;
-import io.vertx.junit5.VertxTestContext;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.jupiter.api.extension.ExtendWith;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -26,13 +23,12 @@ import static org.hamcrest.MatcherAssert.assertThat;
  * being created by the Kubernetes API etc. These things are hard to test with mocks. These IT tests make it easy to
  * test them against real clusters.
  */
-@ExtendWith(VertxExtension.class)
 public class KafkaCrdOperatorIT extends AbstractCustomResourceOperatorIT<KubernetesClient, Kafka, KafkaList> {
     protected static final Logger LOGGER = LogManager.getLogger(KafkaCrdOperatorIT.class);
 
     @Override
-    protected CrdOperator operator() {
-        return new CrdOperator(vertx, client, Kafka.class, KafkaList.class, Kafka.RESOURCE_KIND);
+    protected CrdOperator<KubernetesClient, Kafka, KafkaList> operator() {
+        return new CrdOperator<>(asyncExecutor, client, Kafka.class, KafkaList.class, Kafka.RESOURCE_KIND);
     }
 
     @Override
@@ -94,9 +90,9 @@ public class KafkaCrdOperatorIT extends AbstractCustomResourceOperatorIT<Kuberne
     }
 
     @Override
-    protected void assertReady(VertxTestContext context, Kafka resource) {
-        context.verify(() -> assertThat(resource.getStatus()
+    protected void assertReady(Kafka resource) {
+        assertThat(resource.getStatus()
                 .getConditions()
-                .get(0), is(READY_CONDITION)));
+                .get(0), is(READY_CONDITION));
     }
 }

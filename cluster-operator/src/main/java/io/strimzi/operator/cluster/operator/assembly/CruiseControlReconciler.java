@@ -20,6 +20,7 @@ import io.strimzi.operator.cluster.model.CruiseControl;
 import io.strimzi.operator.cluster.model.ImagePullPolicy;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.NodeRef;
+import io.strimzi.operator.cluster.operator.VertxUtil;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.ConfigMapOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.DeploymentOperator;
@@ -154,14 +155,14 @@ public class CruiseControlReconciler {
      */
     protected Future<Void> networkPolicy() {
         if (isNetworkPolicyGeneration) {
-            return networkPolicyOperator
+            return VertxUtil.toFuture(networkPolicyOperator
                     .reconcile(
                             reconciliation,
                             reconciliation.namespace(),
                             CruiseControlResources.networkPolicyName(reconciliation.name()),
                             cruiseControl != null ? cruiseControl.generateNetworkPolicy(
                                 operatorNamespace, operatorNamespaceLabels, isTopicOperatorEnabled) : null
-                    ).mapEmpty();
+                    )).mapEmpty();
         } else {
             return Future.succeededFuture();
         }
@@ -173,13 +174,13 @@ public class CruiseControlReconciler {
      * @return  Future which completes when the reconciliation is done
      */
     protected Future<Void> serviceAccount() {
-        return serviceAccountOperator
+        return VertxUtil.toFuture(serviceAccountOperator
                 .reconcile(
                         reconciliation,
                         reconciliation.namespace(),
                         CruiseControlResources.serviceAccountName(reconciliation.name()),
                         cruiseControl != null ? cruiseControl.generateServiceAccount() : null
-                ).mapEmpty();
+                )).mapEmpty();
     }
     /**
      * Manages the Cruise Control Pod Disruption Budget
@@ -188,13 +189,13 @@ public class CruiseControlReconciler {
      */
     protected Future<Void> podDisruptionBudget() {
         if (isPodDisruptionBudgetGeneration) {
-            return podDisruptionBudgetOperator
+            return VertxUtil.toFuture(podDisruptionBudgetOperator
                     .reconcile(
                             reconciliation,
                             reconciliation.namespace(),
                             CruiseControlResources.componentName(reconciliation.name()),
                             cruiseControl != null ? cruiseControl.generatePodDisruptionBudget() : null
-                    ).mapEmpty();
+                    )).mapEmpty();
         } else {
             return Future.succeededFuture();
         }
@@ -216,16 +217,16 @@ public class CruiseControlReconciler {
                         this.serverConfigurationHash = Util.hashStub(configMap.getData().get(CruiseControl.SERVER_CONFIG_FILENAME));
                         this.capacityConfigurationHash = Util.hashStub(configMap.getData().get(CruiseControl.CAPACITY_CONFIG_FILENAME));
 
-                        return configMapOperator
+                        return VertxUtil.toFuture(configMapOperator
                                 .reconcile(
                                         reconciliation,
                                         reconciliation.namespace(),
                                         CruiseControlResources.configMapName(reconciliation.name()),
                                         configMap
-                                ).mapEmpty();
+                                )).mapEmpty();
                     });
         } else {
-            return configMapOperator.reconcile(reconciliation, reconciliation.namespace(), CruiseControlResources.configMapName(reconciliation.name()), null)
+            return VertxUtil.toFuture(configMapOperator.reconcile(reconciliation, reconciliation.namespace(), CruiseControlResources.configMapName(reconciliation.name()), null))
                     .mapEmpty();
         }
     }
@@ -240,12 +241,12 @@ public class CruiseControlReconciler {
      */
     protected Future<Void> certificatesSecret(Clock clock) {
         if (cruiseControl != null) {
-            return secretOperator.getAsync(reconciliation.namespace(), CruiseControlResources.secretName(reconciliation.name()))
+            return VertxUtil.toFuture(secretOperator.getAsync(reconciliation.namespace(), CruiseControlResources.secretName(reconciliation.name())))
                     .compose(oldSecret -> {
                         Secret newSecret = cruiseControl.generateCertificatesSecret(reconciliation.namespace(), reconciliation.name(), clusterCa, oldSecret, Util.isMaintenanceTimeWindowsSatisfied(reconciliation, maintenanceWindows, clock.instant()));
 
-                        return secretOperator
-                                .reconcile(reconciliation, reconciliation.namespace(), CruiseControlResources.secretName(reconciliation.name()), newSecret)
+                        return VertxUtil.toFuture(secretOperator
+                                .reconcile(reconciliation, reconciliation.namespace(), CruiseControlResources.secretName(reconciliation.name()), newSecret))
                                 .compose(i -> {
                                     certificateHash = CertUtils.getCertificateShortThumbprint(newSecret, Ca.SecretEntry.CRT.asKey(CruiseControl.COMPONENT_TYPE));
 
@@ -253,7 +254,7 @@ public class CruiseControlReconciler {
                                 });
                     });
         } else {
-            return secretOperator.reconcile(reconciliation, reconciliation.namespace(), CruiseControlResources.secretName(reconciliation.name()), null)
+            return VertxUtil.toFuture(secretOperator.reconcile(reconciliation, reconciliation.namespace(), CruiseControlResources.secretName(reconciliation.name()), null))
                     .mapEmpty();
         }
     }
@@ -268,14 +269,14 @@ public class CruiseControlReconciler {
     protected Future<Void> topicOperatorCruiseControlApiSecret() {
         String toApiSecretName = KafkaResources.entityTopicOperatorCcApiSecretName(reconciliation.name());
         if (isTopicOperatorEnabled && cruiseControl != null) {
-            return secretOperator.getAsync(reconciliation.namespace(), toApiSecretName)
+            return VertxUtil.toFuture(secretOperator.getAsync(reconciliation.namespace(), toApiSecretName))
                     .compose(oldSecret -> {
                         Secret newSecret = cruiseControl.apiCredentials().generateTopicOperatorApiSecret(oldSecret);
-                        return secretOperator.reconcile(reconciliation, reconciliation.namespace(), toApiSecretName, newSecret)
+                        return VertxUtil.toFuture(secretOperator.reconcile(reconciliation, reconciliation.namespace(), toApiSecretName, newSecret))
                                 .mapEmpty();
                     });
         } else {
-            return secretOperator.reconcile(reconciliation, reconciliation.namespace(), toApiSecretName, null)
+            return VertxUtil.toFuture(secretOperator.reconcile(reconciliation, reconciliation.namespace(), toApiSecretName, null))
                     .mapEmpty();
         }
     }
@@ -304,12 +305,12 @@ public class CruiseControlReconciler {
      */
     protected Future<Void> apiSecret() {
         if (cruiseControl != null) {
-            Future<Secret> ccApiSecretFuture = secretOperator.getAsync(reconciliation.namespace(), CruiseControlResources.apiSecretName(reconciliation.name()));
+            Future<Secret> ccApiSecretFuture = VertxUtil.toFuture(secretOperator.getAsync(reconciliation.namespace(), CruiseControlResources.apiSecretName(reconciliation.name())));
             Future<Secret> userManagedApiSecretFuture = cruiseControl.apiCredentials().getUserManagedApiSecretName() != null
-                    ? secretOperator.getAsync(reconciliation.namespace(), cruiseControl.apiCredentials().getUserManagedApiSecretName())
+                    ? VertxUtil.toFuture(secretOperator.getAsync(reconciliation.namespace(), cruiseControl.apiCredentials().getUserManagedApiSecretName()))
                     : Future.succeededFuture(null);
             Future<Secret> topicOperatorManagedApiSecretFuture = isTopicOperatorEnabled
-                    ? secretOperator.getAsync(reconciliation.namespace(), KafkaResources.entityTopicOperatorCcApiSecretName(reconciliation.name()))
+                    ? VertxUtil.toFuture(secretOperator.getAsync(reconciliation.namespace(), KafkaResources.entityTopicOperatorCcApiSecretName(reconciliation.name())))
                     : Future.succeededFuture(null);
             return Future.join(ccApiSecretFuture, userManagedApiSecretFuture, topicOperatorManagedApiSecretFuture)
                 .compose(
@@ -322,12 +323,12 @@ public class CruiseControlReconciler {
                                 oldCcApiSecret, userManagedApiSecret, topicOperatorManagedApiSecret);
 
                         this.apiSecretHash = ReconcilerUtils.hashSecretContent(newCcApiUsersSecret);
-                        return secretOperator.reconcile(reconciliation, reconciliation.namespace(), CruiseControlResources.apiSecretName(reconciliation.name()), newCcApiUsersSecret)
+                        return VertxUtil.toFuture(secretOperator.reconcile(reconciliation, reconciliation.namespace(), CruiseControlResources.apiSecretName(reconciliation.name()), newCcApiUsersSecret))
                             .mapEmpty();
                     }
                 );
         } else {
-            return secretOperator.reconcile(reconciliation, reconciliation.namespace(), CruiseControlResources.apiSecretName(reconciliation.name()), null)
+            return VertxUtil.toFuture(secretOperator.reconcile(reconciliation, reconciliation.namespace(), CruiseControlResources.apiSecretName(reconciliation.name()), null))
                     .mapEmpty();
         }
     }
@@ -338,13 +339,13 @@ public class CruiseControlReconciler {
      * @return  Future which completes when the reconciliation is done
      */
     protected Future<Void> service() {
-        return serviceOperator
+        return VertxUtil.toFuture(serviceOperator
                 .reconcile(
                         reconciliation,
                         reconciliation.namespace(),
                         CruiseControlResources.serviceName(reconciliation.name()),
                         cruiseControl != null ? cruiseControl.generateService() : null
-                ).mapEmpty();
+                )).mapEmpty();
     }
 
     /**
@@ -364,11 +365,11 @@ public class CruiseControlReconciler {
             
             Deployment deployment = cruiseControl.generateDeployment(podAnnotations, isOpenShift, imagePullPolicy, imagePullSecrets);
 
-            return deploymentOperator
-                    .reconcile(reconciliation, reconciliation.namespace(), CruiseControlResources.componentName(reconciliation.name()), deployment)
+            return VertxUtil.toFuture(deploymentOperator
+                    .reconcile(reconciliation, reconciliation.namespace(), CruiseControlResources.componentName(reconciliation.name()), deployment))
                     .mapEmpty();
         } else {
-            return deploymentOperator.reconcile(reconciliation, reconciliation.namespace(), CruiseControlResources.componentName(reconciliation.name()), null)
+            return VertxUtil.toFuture(deploymentOperator.reconcile(reconciliation, reconciliation.namespace(), CruiseControlResources.componentName(reconciliation.name()), null))
                     .mapEmpty();
         }
     }
@@ -380,8 +381,8 @@ public class CruiseControlReconciler {
      */
     protected Future<Void> waitForDeploymentReadiness() {
         if (cruiseControl != null) {
-            return deploymentOperator.waitForObserved(reconciliation, reconciliation.namespace(), CruiseControlResources.componentName(reconciliation.name()), 1_000, operationTimeoutMs)
-                    .compose(i -> deploymentOperator.readiness(reconciliation, reconciliation.namespace(), CruiseControlResources.componentName(reconciliation.name()), 1_000, operationTimeoutMs));
+            return VertxUtil.toFuture(deploymentOperator.waitForObserved(reconciliation, reconciliation.namespace(), CruiseControlResources.componentName(reconciliation.name()), 1_000, operationTimeoutMs))
+                    .compose(i -> VertxUtil.toFuture(deploymentOperator.readiness(reconciliation, reconciliation.namespace(), CruiseControlResources.componentName(reconciliation.name()), 1_000, operationTimeoutMs)));
         } else {
             return Future.succeededFuture();
         }

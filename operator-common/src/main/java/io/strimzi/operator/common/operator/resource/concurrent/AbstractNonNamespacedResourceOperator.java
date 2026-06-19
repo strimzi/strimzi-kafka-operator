@@ -2,7 +2,7 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.operator.cluster.operator.resource.kubernetes;
+package io.strimzi.operator.common.operator.resource.concurrent;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
@@ -16,10 +16,11 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
-import io.vertx.core.Future;
-import io.vertx.core.Vertx;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.Executor;
 
 /**
  * Abstract resource creation, for a generic resource type {@code R}.
@@ -39,27 +40,28 @@ public abstract class AbstractNonNamespacedResourceOperator<C extends Kubernetes
 
     /**
      * Constructor.
-     * @param vertx The vertx instance.
-     * @param client The kubernetes client.
-     * @param resourceKind The mind of Kubernetes resource (used for logging).
+     *
+     * @param asyncExecutor Executor to use for asynchronous subroutines
+     * @param client        The kubernetes client.
+     * @param resourceKind  The mind of Kubernetes resource (used for logging).
      */
-    public AbstractNonNamespacedResourceOperator(Vertx vertx, C client, String resourceKind) {
-        super(vertx, client, resourceKind);
+    public AbstractNonNamespacedResourceOperator(Executor asyncExecutor, C client, String resourceKind) {
+        super(asyncExecutor, client, resourceKind);
     }
 
     protected abstract NonNamespaceOperation<T, L, R> operation();
 
     /**
      * Asynchronously create or update the given {@code resource} depending on whether it already exists,
-     * returning a future for the outcome.
+     * returning a CompletionStage for the outcome.
      * If the resource with that name already exists the future completes successfully.
      * @param reconciliation The reconciliation
      * @param resource The resource to create.
-     * @return A future which completes when the resource was created or updated.
+     * @return A CompletionStage which completes when the resource was created or updated.
      */
-    public Future<ReconcileResult<T>> createOrUpdate(Reconciliation reconciliation, T resource) {
+    public CompletionStage<ReconcileResult<T>> createOrUpdate(Reconciliation reconciliation, T resource) {
         if (resource == null) {
-            return Future.failedFuture(new IllegalArgumentException("The " + resourceKind + " resource should not be null."));
+            return CompletableFuture.failedStage(new IllegalArgumentException("The " + resourceKind + " resource should not be null."));
         }
 
         return reconcile(reconciliation, resource.getMetadata().getName(), resource);
@@ -67,20 +69,20 @@ public abstract class AbstractNonNamespacedResourceOperator<C extends Kubernetes
 
     /**
      * Asynchronously reconciles the resource with the given name to match the given
-     * desired resource, returning a future for the result.
+     * desired resource, returning a CompletionStage for the result.
      * @param reconciliation The reconciliation
      * @param name The name of the resource to reconcile.
      * @param desired The desired state of the resource.
-     * @return A future which completes when the resource was reconciled.
+     * @return A CompletionStage which completes when the resource was reconciled.
      */
-    public Future<ReconcileResult<T>> reconcile(Reconciliation reconciliation, String name, T desired) {
+    public CompletionStage<ReconcileResult<T>> reconcile(Reconciliation reconciliation, String name, T desired) {
         if (desired != null && !name.equals(desired.getMetadata().getName())) {
-            return Future.failedFuture("Given name " + name + " incompatible with desired name "
-                    + desired.getMetadata().getName());
+            return CompletableFuture.failedStage(new IllegalArgumentException("Given name " + name + " incompatible with desired name "
+                    + desired.getMetadata().getName()));
         }
 
         return getAsync(name)
-                .compose(current -> {
+                .thenCompose(current -> {
                     if (desired != null) {
                         if (current == null) {
                             LOGGER.debugCr(reconciliation, "{} {} does not exist, creating it", resourceKind, name);
@@ -96,7 +98,7 @@ public abstract class AbstractNonNamespacedResourceOperator<C extends Kubernetes
                             return internalDelete(reconciliation, name);
                         } else {
                             LOGGER.debugCr(reconciliation, "{} {} does not exist, noop", resourceKind, name);
-                            return Future.succeededFuture(ReconcileResult.noop(null));
+                            return CompletableFuture.completedStage(ReconcileResult.noop(null));
                         }
                     }
                 });
@@ -104,17 +106,17 @@ public abstract class AbstractNonNamespacedResourceOperator<C extends Kubernetes
 
     /**
      * Asynchronously deletes the resource with the given {@code name},
-     * returning a Future which completes once the resource
+     * returning a CompletionStage which completes once the resource
      * is observed to have been deleted.
      * @param reconciliation The reconciliation
      * @param name The resource to be deleted.
-     * @return A future which will be completed on the context thread
+     * @return A CompletionStage which will be completed on the context thread
      * once the resource has been deleted.
      */
-    private Future<ReconcileResult<T>> internalDelete(Reconciliation reconciliation, String name) {
+    private CompletionStage<ReconcileResult<T>> internalDelete(Reconciliation reconciliation, String name) {
         R resourceOp = operation().withName(name);
 
-        Future<ReconcileResult<T>> watchForDeleteFuture = resourceSupport.selfClosingWatch(
+        CompletableFuture<?> watchForDeleteFuture = resourceSupport.selfClosingWatch(
             reconciliation,
             resourceOp,
             resourceOp,
@@ -135,32 +137,34 @@ public abstract class AbstractNonNamespacedResourceOperator<C extends Kubernetes
                 } else {
                     return null;
                 }
-            });
+            })
+            .toCompletableFuture();
 
-        Future<Void> deleteFuture = resourceSupport.deleteAsync(resourceOp);
+        CompletableFuture<?> deleteFuture = resourceSupport.deleteAsync(resourceOp).toCompletableFuture();
 
-        return Future.join(watchForDeleteFuture, deleteFuture).map(ReconcileResult.deleted());
+        return CompletableFuture.allOf(watchForDeleteFuture, deleteFuture)
+                .thenApply(nothing -> ReconcileResult.deleted());
     }
 
     /**
      * Patches the resource with the given name to match the given desired resource
      * and completes the given future accordingly.
      */
-    protected Future<ReconcileResult<T>> internalUpdate(Reconciliation reconciliation, String name, T current, T desired) {
+    protected CompletionStage<ReconcileResult<T>> internalUpdate(Reconciliation reconciliation, String name, T current, T desired) {
         if (needsPatching(reconciliation, name, current, desired))  {
-            try {
-                T result = patchOrReplace(name, desired);
-                LOGGER.debugCr(reconciliation, "{} {} has been patched", resourceKind, name);
-
-                return Future.succeededFuture(wasChanged(current, result) ?
-                        ReconcileResult.patched(result) : ReconcileResult.noop(result));
-            } catch (Exception e) {
-                LOGGER.debugCr(reconciliation, "Caught exception while patching {} {}", resourceKind, name, e);
-                return Future.failedFuture(e);
-            }
+            return CompletableFuture.supplyAsync(() -> patchOrReplace(name, desired), asyncExecutor)
+                    .thenApply(result -> {
+                        LOGGER.debugCr(reconciliation, "{} {} has been patched", resourceKind, name);
+                        return wasChanged(current, result) ? ReconcileResult.patched(result) : ReconcileResult.noop(result);
+                    })
+                    .whenComplete((result, error) -> {
+                        if (error != null) {
+                            LOGGER.debugCr(reconciliation, "Caught exception while patching {} {}", resourceKind, name, error);
+                        }
+                    });
         } else {
             LOGGER.debugCr(reconciliation, "{} {} did not changed and doesn't need patching", resourceKind, name);
-            return Future.succeededFuture(ReconcileResult.noop(current));
+            return CompletableFuture.completedStage(ReconcileResult.noop(current));
         }
     }
 
@@ -181,16 +185,17 @@ public abstract class AbstractNonNamespacedResourceOperator<C extends Kubernetes
      * Creates a resource with the name with the given desired state
      * and completes the given future accordingly.
      */
-    protected Future<ReconcileResult<T>> internalCreate(Reconciliation reconciliation, String name, T desired) {
-        try {
-            ReconcileResult<T> result = ReconcileResult.created(operation().resource(desired).create());
-            LOGGER.debugCr(reconciliation, "{} {} has been created", resourceKind, name);
-
-            return Future.succeededFuture(result);
-        } catch (Exception e) {
-            LOGGER.debugCr(reconciliation, "Caught exception while creating {} {}", resourceKind, name, e);
-            return Future.failedFuture(e);
-        }
+    protected CompletionStage<ReconcileResult<T>> internalCreate(Reconciliation reconciliation, String name, T desired) {
+        return CompletableFuture.supplyAsync(() -> ReconcileResult.created(operation().resource(desired).create()), asyncExecutor)
+                .thenApply(result -> {
+                    LOGGER.debugCr(reconciliation, "{} {} has been created", resourceKind, name);
+                    return result;
+                })
+                .whenComplete((result, error) -> {
+                    if (error != null) {
+                        LOGGER.debugCr(reconciliation, "Caught exception while creating {} {}", resourceKind, name, error);
+                    }
+                });
     }
 
     /**
@@ -208,11 +213,11 @@ public abstract class AbstractNonNamespacedResourceOperator<C extends Kubernetes
     /**
      * Asynchronously gets the resource with the given {@code name}.
      * @param name The name.
-     * @return A Future for the result.
+     * @return A CompletionStage for the result.
      */
-    public Future<T> getAsync(String name) {
+    public CompletionStage<T> getAsync(String name) {
         if (name == null || name.isEmpty()) {
-            return Future.failedFuture(new IllegalArgumentException(resourceKind + " with an empty name cannot be configured. Please provide a name."));
+            return CompletableFuture.failedStage(new IllegalArgumentException(resourceKind + " with an empty name cannot be configured. Please provide a name."));
         }
 
         return resourceSupport.getAsync(operation().withName(name));
@@ -230,9 +235,9 @@ public abstract class AbstractNonNamespacedResourceOperator<C extends Kubernetes
     /**
      * Asynchronously list the resources with the given {@code selector}.
      * @param selector The selector.
-     * @return A list of matching resources.
+     * @return A CompletionStage with a list of matching resources.
      */
-    public Future<List<T>> listAsync(Labels selector) {
+    public CompletionStage<List<T>> listAsync(Labels selector) {
         return listAsync(applySelector(operation(), selector));
     }
 }

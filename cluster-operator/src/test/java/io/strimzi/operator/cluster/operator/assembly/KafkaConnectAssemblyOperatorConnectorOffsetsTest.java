@@ -22,7 +22,6 @@ import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.platform.KubernetesVersion;
-import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
@@ -170,7 +169,7 @@ public class KafkaConnectAssemblyOperatorConnectorOffsetsTest {
         Reconciliation reconciliation = Reconciliation.DUMMY_RECONCILIATION;
 
         when(mockConnectApi.getConnectorOffsets(reconciliation, CONNECT_HOSTNAME, KafkaConnectCluster.REST_API_PORT, CONNECTOR_NAME)).thenReturn(CompletableFuture.completedFuture(OFFSETS_JSON));
-        when(supplier.configMapOperations.getAsync(NAMESPACE, CONFIGMAP_NAME)).thenReturn(Future.failedFuture(new RuntimeException("Failed to get ConfigMap")));
+        when(supplier.configMapOperations.getAsync(NAMESPACE, CONFIGMAP_NAME)).thenReturn(CompletableFuture.failedFuture(new RuntimeException("Failed to get ConfigMap")));
 
         op.manageConnectorOffsets(reconciliation, CONNECT_HOSTNAME, mockConnectApi, CONNECTOR_NAME, connector, connector.getSpec(), new ArrayList<>())
                 .onComplete(context.succeeding(result -> context.verify(() -> {
@@ -199,8 +198,8 @@ public class KafkaConnectAssemblyOperatorConnectorOffsetsTest {
         Reconciliation reconciliation = Reconciliation.DUMMY_RECONCILIATION;
 
         when(mockConnectApi.getConnectorOffsets(reconciliation, CONNECT_HOSTNAME, KafkaConnectCluster.REST_API_PORT, CONNECTOR_NAME)).thenReturn(CompletableFuture.completedFuture(OFFSETS_JSON));
-        when(supplier.configMapOperations.getAsync(NAMESPACE, CONFIGMAP_NAME)).thenReturn(Future.succeededFuture(null));
-        when(supplier.configMapOperations.reconcile(any(), any(), any(), any())).thenReturn(Future.failedFuture(new RuntimeException("Create or update ConfigMap failed")));
+        when(supplier.configMapOperations.getAsync(NAMESPACE, CONFIGMAP_NAME)).thenReturn(CompletableFuture.completedFuture(null));
+        when(supplier.configMapOperations.reconcile(any(), any(), any(), any())).thenReturn(CompletableFuture.failedFuture(new RuntimeException("Create or update ConfigMap failed")));
 
         op.manageConnectorOffsets(reconciliation, CONNECT_HOSTNAME, mockConnectApi, CONNECTOR_NAME, connector, connector.getSpec(), new ArrayList<>())
                 .onComplete(context.succeeding(result -> context.verify(() -> {
@@ -229,9 +228,9 @@ public class KafkaConnectAssemblyOperatorConnectorOffsetsTest {
         Reconciliation reconciliation = Reconciliation.DUMMY_RECONCILIATION;
 
         when(mockConnectApi.getConnectorOffsets(reconciliation, CONNECT_HOSTNAME, KafkaConnectCluster.REST_API_PORT, CONNECTOR_NAME)).thenReturn(CompletableFuture.completedFuture(OFFSETS_JSON));
-        when(supplier.configMapOperations.getAsync(NAMESPACE, CONFIGMAP_NAME)).thenReturn(Future.succeededFuture(null));
-        when(supplier.configMapOperations.reconcile(any(), any(), any(), any())).thenReturn(Future.succeededFuture());
-        when(supplier.kafkaConnectorOperator.patchAsync(any(), any())).thenReturn(Future.failedFuture(new RuntimeException("Patch CR failed")));
+        when(supplier.configMapOperations.getAsync(NAMESPACE, CONFIGMAP_NAME)).thenReturn(CompletableFuture.completedFuture(null));
+        when(supplier.configMapOperations.reconcile(any(), any(), any(), any())).thenReturn(CompletableFuture.completedFuture(null));
+        when(supplier.kafkaConnectorOperator.patchAsync(any(), any())).thenReturn(CompletableFuture.failedFuture(new RuntimeException("Patch CR failed")));
 
         op.manageConnectorOffsets(reconciliation, CONNECT_HOSTNAME, mockConnectApi, CONNECTOR_NAME, connector, connector.getSpec(), new ArrayList<>())
                 .onComplete(context.succeeding(result -> context.verify(() -> {
@@ -262,9 +261,9 @@ public class KafkaConnectAssemblyOperatorConnectorOffsetsTest {
 
 
         when(mockConnectApi.getConnectorOffsets(reconciliation, CONNECT_HOSTNAME, KafkaConnectCluster.REST_API_PORT, CONNECTOR_NAME)).thenReturn(CompletableFuture.completedFuture(OFFSETS_JSON));
-        when(supplier.configMapOperations.getAsync(NAMESPACE, CONFIGMAP_NAME)).thenReturn(Future.succeededFuture(null));
-        when(supplier.configMapOperations.reconcile(any(), any(), any(), any())).thenReturn(Future.succeededFuture());
-        when(supplier.kafkaConnectorOperator.patchAsync(any(), any())).thenReturn(Future.succeededFuture());
+        when(supplier.configMapOperations.getAsync(NAMESPACE, CONFIGMAP_NAME)).thenReturn(CompletableFuture.completedFuture(null));
+        when(supplier.configMapOperations.reconcile(any(), any(), any(), any())).thenReturn(CompletableFuture.completedFuture(null));
+        when(supplier.kafkaConnectorOperator.patchAsync(any(), any())).thenReturn(CompletableFuture.completedFuture(null));
 
         op.manageConnectorOffsets(reconciliation, CONNECT_HOSTNAME, mockConnectApi, CONNECTOR_NAME, connector, connector.getSpec(), new ArrayList<>())
                 .onComplete(context.succeeding(result -> context.verify(() -> {
@@ -326,9 +325,9 @@ public class KafkaConnectAssemblyOperatorConnectorOffsetsTest {
                 .build();
 
         when(mockConnectApi.getConnectorOffsets(reconciliation, CONNECT_HOSTNAME, KafkaConnectCluster.REST_API_PORT, CONNECTOR_NAME)).thenReturn(CompletableFuture.completedFuture(OFFSETS_JSON));
-        when(supplier.configMapOperations.getAsync(NAMESPACE, CONFIGMAP_NAME)).thenReturn(Future.succeededFuture(existingCM));
-        when(supplier.configMapOperations.reconcile(any(), any(), any(), any())).thenReturn(Future.succeededFuture());
-        when(supplier.kafkaConnectorOperator.patchAsync(any(), any())).thenReturn(Future.succeededFuture());
+        when(supplier.configMapOperations.getAsync(NAMESPACE, CONFIGMAP_NAME)).thenReturn(CompletableFuture.completedFuture(existingCM));
+        when(supplier.configMapOperations.reconcile(any(), any(), any(), any())).thenReturn(CompletableFuture.completedFuture(null));
+        when(supplier.kafkaConnectorOperator.patchAsync(any(), any())).thenReturn(CompletableFuture.completedFuture(null));
 
         op.manageConnectorOffsets(reconciliation, CONNECT_HOSTNAME, mockConnectApi, CONNECTOR_NAME, connector, connector.getSpec(), new ArrayList<>())
                 .onComplete(context.succeeding(result -> context.verify(() -> {
@@ -469,7 +468,7 @@ public class KafkaConnectAssemblyOperatorConnectorOffsetsTest {
         Reconciliation reconciliation = Reconciliation.DUMMY_RECONCILIATION;
 
         when(mockConnectApi.status(reconciliation, CONNECT_HOSTNAME, KafkaConnectCluster.REST_API_PORT, CONNECTOR_NAME)).thenReturn(CompletableFuture.completedFuture(STOPPED_STATE_MAP));
-        when(supplier.configMapOperations.getAsync(NAMESPACE, CONFIGMAP_NAME)).thenReturn(Future.failedFuture(new RuntimeException("Failed to get ConfigMap")));
+        when(supplier.configMapOperations.getAsync(NAMESPACE, CONFIGMAP_NAME)).thenReturn(CompletableFuture.failedFuture(new RuntimeException("Failed to get ConfigMap")));
 
         op.manageConnectorOffsets(reconciliation, CONNECT_HOSTNAME, mockConnectApi, CONNECTOR_NAME, connector, connector.getSpec(), new ArrayList<>())
                 .onComplete(context.succeeding(result -> context.verify(() -> {
@@ -499,7 +498,7 @@ public class KafkaConnectAssemblyOperatorConnectorOffsetsTest {
         Reconciliation reconciliation = Reconciliation.DUMMY_RECONCILIATION;
 
         when(mockConnectApi.status(reconciliation, CONNECT_HOSTNAME, KafkaConnectCluster.REST_API_PORT, CONNECTOR_NAME)).thenReturn(CompletableFuture.completedFuture(STOPPED_STATE_MAP));
-        when(supplier.configMapOperations.getAsync(NAMESPACE, CONFIGMAP_NAME)).thenReturn(Future.succeededFuture(null));
+        when(supplier.configMapOperations.getAsync(NAMESPACE, CONFIGMAP_NAME)).thenReturn(CompletableFuture.completedFuture(null));
 
         op.manageConnectorOffsets(reconciliation, CONNECT_HOSTNAME, mockConnectApi, CONNECTOR_NAME, connector, connector.getSpec(), new ArrayList<>())
                 .onComplete(context.succeeding(result -> context.verify(() -> {
@@ -533,7 +532,7 @@ public class KafkaConnectAssemblyOperatorConnectorOffsetsTest {
                 .build();
 
         when(mockConnectApi.status(reconciliation, CONNECT_HOSTNAME, KafkaConnectCluster.REST_API_PORT, CONNECTOR_NAME)).thenReturn(CompletableFuture.completedFuture(STOPPED_STATE_MAP));
-        when(supplier.configMapOperations.getAsync(NAMESPACE, CONFIGMAP_NAME)).thenReturn(Future.succeededFuture(alterOffsetsConfigMap));
+        when(supplier.configMapOperations.getAsync(NAMESPACE, CONFIGMAP_NAME)).thenReturn(CompletableFuture.completedFuture(alterOffsetsConfigMap));
 
         op.manageConnectorOffsets(reconciliation, CONNECT_HOSTNAME, mockConnectApi, CONNECTOR_NAME, connector, connector.getSpec(), new ArrayList<>())
                 .onComplete(context.succeeding(result -> context.verify(() -> {
@@ -567,7 +566,7 @@ public class KafkaConnectAssemblyOperatorConnectorOffsetsTest {
                 .build();
 
         when(mockConnectApi.status(reconciliation, CONNECT_HOSTNAME, KafkaConnectCluster.REST_API_PORT, CONNECTOR_NAME)).thenReturn(CompletableFuture.completedFuture(STOPPED_STATE_MAP));
-        when(supplier.configMapOperations.getAsync(NAMESPACE, CONFIGMAP_NAME)).thenReturn(Future.succeededFuture(alterOffsetsConfigMap));
+        when(supplier.configMapOperations.getAsync(NAMESPACE, CONFIGMAP_NAME)).thenReturn(CompletableFuture.completedFuture(alterOffsetsConfigMap));
 
         op.manageConnectorOffsets(reconciliation, CONNECT_HOSTNAME, mockConnectApi, CONNECTOR_NAME, connector, connector.getSpec(), new ArrayList<>())
                 .onComplete(context.succeeding(result -> context.verify(() -> {
@@ -601,9 +600,9 @@ public class KafkaConnectAssemblyOperatorConnectorOffsetsTest {
                 .build();
 
         when(mockConnectApi.status(reconciliation, CONNECT_HOSTNAME, KafkaConnectCluster.REST_API_PORT, CONNECTOR_NAME)).thenReturn(CompletableFuture.completedFuture(STOPPED_STATE_MAP));
-        when(supplier.configMapOperations.getAsync(NAMESPACE, CONFIGMAP_NAME)).thenReturn(Future.succeededFuture(alterOffsetsConfigMap));
+        when(supplier.configMapOperations.getAsync(NAMESPACE, CONFIGMAP_NAME)).thenReturn(CompletableFuture.completedFuture(alterOffsetsConfigMap));
         when(mockConnectApi.alterConnectorOffsets(reconciliation, CONNECT_HOSTNAME, KafkaConnectCluster.REST_API_PORT, CONNECTOR_NAME, OFFSETS_JSON)).thenReturn(CompletableFuture.completedFuture(null));
-        when(supplier.kafkaConnectorOperator.patchAsync(any(), any())).thenReturn(Future.failedFuture(new RuntimeException("Patch CR failed")));
+        when(supplier.kafkaConnectorOperator.patchAsync(any(), any())).thenReturn(CompletableFuture.failedFuture(new RuntimeException("Patch CR failed")));
 
         op.manageConnectorOffsets(reconciliation, CONNECT_HOSTNAME, mockConnectApi, CONNECTOR_NAME, connector, connector.getSpec(), new ArrayList<>())
                 .onComplete(context.succeeding(result -> context.verify(() -> {
@@ -636,9 +635,9 @@ public class KafkaConnectAssemblyOperatorConnectorOffsetsTest {
                 .build();
 
         when(mockConnectApi.status(reconciliation, CONNECT_HOSTNAME, KafkaConnectCluster.REST_API_PORT, CONNECTOR_NAME)).thenReturn(CompletableFuture.completedFuture(STOPPED_STATE_MAP));
-        when(supplier.configMapOperations.getAsync(NAMESPACE, CONFIGMAP_NAME)).thenReturn(Future.succeededFuture(alterOffsetsConfigMap));
+        when(supplier.configMapOperations.getAsync(NAMESPACE, CONFIGMAP_NAME)).thenReturn(CompletableFuture.completedFuture(alterOffsetsConfigMap));
         when(mockConnectApi.alterConnectorOffsets(reconciliation, CONNECT_HOSTNAME, KafkaConnectCluster.REST_API_PORT, CONNECTOR_NAME, OFFSETS_JSON)).thenReturn(CompletableFuture.completedFuture(null));
-        when(supplier.kafkaConnectorOperator.patchAsync(any(), any())).thenReturn(Future.succeededFuture());
+        when(supplier.kafkaConnectorOperator.patchAsync(any(), any())).thenReturn(CompletableFuture.completedFuture(null));
 
         op.manageConnectorOffsets(reconciliation, CONNECT_HOSTNAME, mockConnectApi, CONNECTOR_NAME, connector, connector.getSpec(), new ArrayList<>())
                 .onComplete(context.succeeding(result -> context.verify(() -> {
@@ -727,7 +726,7 @@ public class KafkaConnectAssemblyOperatorConnectorOffsetsTest {
 
         when(mockConnectApi.status(reconciliation, CONNECT_HOSTNAME, KafkaConnectCluster.REST_API_PORT, CONNECTOR_NAME)).thenReturn(CompletableFuture.completedFuture(STOPPED_STATE_MAP));
         when(mockConnectApi.resetConnectorOffsets(reconciliation, CONNECT_HOSTNAME, KafkaConnectCluster.REST_API_PORT, CONNECTOR_NAME)).thenReturn(CompletableFuture.completedFuture(null));
-        when(supplier.kafkaConnectorOperator.patchAsync(any(), any())).thenReturn(Future.failedFuture(new RuntimeException("Patch CR failed")));
+        when(supplier.kafkaConnectorOperator.patchAsync(any(), any())).thenReturn(CompletableFuture.failedFuture(new RuntimeException("Patch CR failed")));
 
         op.manageConnectorOffsets(reconciliation, CONNECT_HOSTNAME, mockConnectApi, CONNECTOR_NAME, connector, connector.getSpec(), new ArrayList<>())
                 .onComplete(context.succeeding(result -> context.verify(() -> {
@@ -756,7 +755,7 @@ public class KafkaConnectAssemblyOperatorConnectorOffsetsTest {
 
         when(mockConnectApi.status(reconciliation, CONNECT_HOSTNAME, KafkaConnectCluster.REST_API_PORT, CONNECTOR_NAME)).thenReturn(CompletableFuture.completedFuture(STOPPED_STATE_MAP));
         when(mockConnectApi.resetConnectorOffsets(reconciliation, CONNECT_HOSTNAME, KafkaConnectCluster.REST_API_PORT, CONNECTOR_NAME)).thenReturn(CompletableFuture.completedFuture(null));
-        when(supplier.kafkaConnectorOperator.patchAsync(any(), any())).thenReturn(Future.succeededFuture());
+        when(supplier.kafkaConnectorOperator.patchAsync(any(), any())).thenReturn(CompletableFuture.completedFuture(null));
 
         op.manageConnectorOffsets(reconciliation, CONNECT_HOSTNAME, mockConnectApi, CONNECTOR_NAME, connector, connector.getSpec(), new ArrayList<>())
                 .onComplete(context.succeeding(result -> context.verify(() -> {

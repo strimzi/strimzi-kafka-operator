@@ -14,7 +14,6 @@ import io.strimzi.operator.cluster.model.logging.LoggingModel;
 import io.strimzi.operator.cluster.model.metrics.JmxPrometheusExporterModel;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.ConfigMapOperator;
 import io.strimzi.operator.common.Reconciliation;
-import io.vertx.core.Future;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
@@ -22,6 +21,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -61,8 +61,8 @@ public class MetricsAndLoggingUtilsTest {
         JmxPrometheusExporterModel metrics = new JmxPrometheusExporterModel(new KafkaConnectSpecBuilder().withMetricsConfig(new JmxPrometheusExporterMetricsBuilder().withNewValueFrom().withConfigMapKeyRef(new ConfigMapKeySelector("metrics.yaml", "metrics-cm", false)).endValueFrom().build()).build());
 
         ConfigMapOperator mockCmOps = mock(ConfigMapOperator.class);
-        when(mockCmOps.getAsync(any(), eq("logging-cm"))).thenReturn(Future.succeededFuture(new ConfigMapBuilder().withNewMetadata().withName("logging-cm").endMetadata().withData(Map.of()).build()));
-        when(mockCmOps.getAsync(any(), eq("metrics-cm"))).thenReturn(Future.succeededFuture(new ConfigMapBuilder().withNewMetadata().withName("metrics-cm").endMetadata().withData(Map.of()).build()));
+        when(mockCmOps.getAsync(any(), eq("logging-cm"))).thenReturn(CompletableFuture.completedFuture(new ConfigMapBuilder().withNewMetadata().withName("logging-cm").endMetadata().withData(Map.of()).build()));
+        when(mockCmOps.getAsync(any(), eq("metrics-cm"))).thenReturn(CompletableFuture.completedFuture(new ConfigMapBuilder().withNewMetadata().withName("metrics-cm").endMetadata().withData(Map.of()).build()));
 
         Checkpoint async = context.checkpoint();
         MetricsAndLoggingUtils.metricsAndLogging(Reconciliation.DUMMY_RECONCILIATION, mockCmOps, logging, metrics)
@@ -84,7 +84,7 @@ public class MetricsAndLoggingUtilsTest {
         LoggingModel logging = new LoggingModel(new KafkaConnectSpecBuilder().withLogging(new ExternalLoggingBuilder().withNewValueFrom().withConfigMapKeyRef(new ConfigMapKeySelector("log4j.properties", "logging-cm", false)).endValueFrom().build()).build(), "KafkaConnectCluster");
 
         ConfigMapOperator mockCmOps = mock(ConfigMapOperator.class);
-        when(mockCmOps.getAsync(any(), eq("logging-cm"))).thenReturn(Future.succeededFuture(new ConfigMapBuilder().withNewMetadata().withName("logging-cm").endMetadata().withData(Map.of()).build()));
+        when(mockCmOps.getAsync(any(), eq("logging-cm"))).thenReturn(CompletableFuture.completedFuture(new ConfigMapBuilder().withNewMetadata().withName("logging-cm").endMetadata().withData(Map.of()).build()));
 
         Checkpoint async = context.checkpoint();
         MetricsAndLoggingUtils.metricsAndLogging(Reconciliation.DUMMY_RECONCILIATION, mockCmOps, logging, null)
@@ -106,7 +106,7 @@ public class MetricsAndLoggingUtilsTest {
         JmxPrometheusExporterModel metrics = new JmxPrometheusExporterModel(new KafkaConnectSpecBuilder().withMetricsConfig(new JmxPrometheusExporterMetricsBuilder().withNewValueFrom().withConfigMapKeyRef(new ConfigMapKeySelector("metrics.yaml", "metrics-cm", false)).endValueFrom().build()).build());
 
         ConfigMapOperator mockCmOps = mock(ConfigMapOperator.class);
-        when(mockCmOps.getAsync(any(), eq("metrics-cm"))).thenReturn(Future.succeededFuture(new ConfigMapBuilder().withNewMetadata().withName("metrics-cm").endMetadata().withData(Map.of()).build()));
+        when(mockCmOps.getAsync(any(), eq("metrics-cm"))).thenReturn(CompletableFuture.completedFuture(new ConfigMapBuilder().withNewMetadata().withName("metrics-cm").endMetadata().withData(Map.of()).build()));
 
         Checkpoint async = context.checkpoint();
         MetricsAndLoggingUtils.metricsAndLogging(Reconciliation.DUMMY_RECONCILIATION, mockCmOps, logging, metrics)

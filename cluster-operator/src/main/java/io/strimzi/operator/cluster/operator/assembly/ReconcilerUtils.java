@@ -26,6 +26,7 @@ import io.strimzi.operator.cluster.model.PodSetUtils;
 import io.strimzi.operator.cluster.model.RestartReason;
 import io.strimzi.operator.cluster.model.RestartReasons;
 import io.strimzi.operator.cluster.model.jmx.SupportsJmx;
+import io.strimzi.operator.cluster.operator.VertxUtil;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.PodOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.SecretOperator;
 import io.strimzi.operator.common.Annotations;
@@ -104,7 +105,7 @@ public class ReconcilerUtils {
 
         for (String podName : podNames) {
             LOGGER.debugCr(reconciliation, "Checking readiness of pod {} in namespace {}", podName, reconciliation.namespace());
-            podFutures.add(podOperator.readiness(reconciliation, reconciliation.namespace(), podName, 1_000, operationTimeoutMs));
+            podFutures.add(VertxUtil.toFuture(podOperator.readiness(reconciliation, reconciliation.namespace(), podName, 1_000, operationTimeoutMs)));
         }
 
         return Future.join(podFutures)
@@ -165,7 +166,7 @@ public class ReconcilerUtils {
      * @return                  Secret with the certificates
      */
     private static Future<Secret> getSecret(SecretOperator secretOperator, String namespace, String secretName)  {
-        return secretOperator.getAsync(namespace, secretName).compose(secret -> {
+        return VertxUtil.toFuture(secretOperator.getAsync(namespace, secretName)).compose(secret -> {
             if (secret == null) {
                 return Future.failedFuture(missingSecretException(namespace, secretName));
             } else {
@@ -241,17 +242,17 @@ public class ReconcilerUtils {
      * @return  Future which completes when the JMX Secret is reconciled
      */
     public static Future<Void> reconcileJmxSecret(Reconciliation reconciliation, SecretOperator secretOperator, SupportsJmx cluster)  {
-        return secretOperator.getAsync(reconciliation.namespace(), cluster.jmx().secretName())
+        return VertxUtil.toFuture(secretOperator.getAsync(reconciliation.namespace(), cluster.jmx().secretName()))
                 .compose(currentJmxSecret -> {
                     Secret desiredJmxSecret = cluster.jmx().jmxSecret(currentJmxSecret);
 
                     if (desiredJmxSecret != null)  {
                         // Desired secret is not null => should be updated
-                        return secretOperator.reconcile(reconciliation, reconciliation.namespace(), cluster.jmx().secretName(), desiredJmxSecret)
+                        return VertxUtil.toFuture(secretOperator.reconcile(reconciliation, reconciliation.namespace(), cluster.jmx().secretName(), desiredJmxSecret))
                                 .mapEmpty();
                     } else if (currentJmxSecret != null)    {
                         // Desired secret is null but current is not => we should delete the secret
-                        return secretOperator.reconcile(reconciliation, reconciliation.namespace(), cluster.jmx().secretName(), null)
+                        return VertxUtil.toFuture(secretOperator.reconcile(reconciliation, reconciliation.namespace(), cluster.jmx().secretName(), null))
                                 .mapEmpty();
                     } else {
                         // Both current and desired secret are null => nothing to do
@@ -526,7 +527,7 @@ public class ReconcilerUtils {
      * @return      Future with the Secret if is exits and has the required items. Failed future with an error message otherwise.
      */
     /* test */ static Future<Secret> getValidatedSecret(SecretOperator secretOperator, String namespace, String name, String... items) {
-        return secretOperator.getAsync(namespace, name)
+        return VertxUtil.toFuture(secretOperator.getAsync(namespace, name))
                 .compose(secret -> validatedSecret(namespace, name, secret, items));
     }
 
@@ -564,7 +565,7 @@ public class ReconcilerUtils {
     }
 
     private static Future<String> getTrustedCertificateAsync(SecretOperator secretOperator, String namespace, CertSecretSource certSecretSource) {
-        return secretOperator.getAsync(namespace, certSecretSource.getSecretName())
+        return VertxUtil.toFuture(secretOperator.getAsync(namespace, certSecretSource.getSecretName()))
                 .compose(secret -> {
                     if (certSecretSource.getCertificate() != null)  {
                         return validatedSecret(namespace, certSecretSource.getSecretName(), secret, certSecretSource.getCertificate())

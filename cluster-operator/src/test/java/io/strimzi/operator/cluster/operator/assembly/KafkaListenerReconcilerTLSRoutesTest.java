@@ -42,6 +42,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.BiPredicate;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -152,9 +153,9 @@ public class KafkaListenerReconcilerTLSRoutesTest {
         // Delegate the batchReconcile call to the real method which calls the other mocked methods. This allows us to better test the exact behavior.
         when(mockServiceOperator.batchReconcile(any(), eq(NAMESPACE), any(), any())).thenCallRealMethod();
         // Mock listing of services
-        when(mockServiceOperator.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(Future.succeededFuture(List.of()));
+        when(mockServiceOperator.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(CompletableFuture.completedFuture(List.of()));
         // Mock service creation / update
-        when(mockServiceOperator.reconcile(any(), eq(NAMESPACE), any(), any())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(3))));
+        when(mockServiceOperator.reconcile(any(), eq(NAMESPACE), any(), any())).thenAnswer(i -> CompletableFuture.completedFuture(ReconcileResult.created(i.getArgument(3))));
 
         Reconciliation reconciliation = new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME);
 
@@ -225,9 +226,9 @@ public class KafkaListenerReconcilerTLSRoutesTest {
         // Delegate the batchReconcile call to the real method which calls the other mocked methods. This allows us to better test the exact behavior.
         when(mockServiceOperator.batchReconcile(any(), eq(NAMESPACE), any(), any())).thenCallRealMethod();
         // Mock listing of services
-        when(mockServiceOperator.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(Future.succeededFuture(List.of()));
+        when(mockServiceOperator.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(CompletableFuture.completedFuture(List.of()));
         // Mock service creation / update
-        when(mockServiceOperator.reconcile(any(), eq(NAMESPACE), any(), any())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(3))));
+        when(mockServiceOperator.reconcile(any(), eq(NAMESPACE), any(), any())).thenAnswer(i -> CompletableFuture.completedFuture(ReconcileResult.created(i.getArgument(3))));
 
         // Mock the RouteOperator for the OpenShift routes
         TLSRouteOperator mockRouteOperator = supplier.tlsRouteOperations;
@@ -250,12 +251,12 @@ public class KafkaListenerReconcilerTLSRoutesTest {
         when(mockRouteOperator.waitFor(any(), eq(NAMESPACE), any(), eq("addressable"), anyLong(), anyLong(), any())).then(i -> {
             BiPredicate<String, String> predicate = i.getArgument(6);
             boolean result = predicate.test(i.getArgument(1), i.getArgument(2));
-            return result ? Future.succeededFuture() : Future.failedFuture(new RuntimeException("failed"));
+            return result ? CompletableFuture.completedFuture(null) : CompletableFuture.failedFuture(new RuntimeException("failed"));
         });
         // Mock listing of routes
-        when(mockRouteOperator.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(Future.succeededFuture(List.of()));
+        when(mockRouteOperator.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(CompletableFuture.completedFuture(List.of()));
         // Mock route creation / update
-        when(mockRouteOperator.reconcile(any(), eq(NAMESPACE), any(), any())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(3))));
+        when(mockRouteOperator.reconcile(any(), eq(NAMESPACE), any(), any())).thenAnswer(i -> CompletableFuture.completedFuture(ReconcileResult.created(i.getArgument(3))));
 
         Reconciliation reconciliation = new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME);
 
@@ -341,13 +342,13 @@ public class KafkaListenerReconcilerTLSRoutesTest {
         when(mockServiceBroker0.getMetadata().getName()).thenReturn(CLUSTER_NAME + "-brokers-10");
         when(mockServiceBroker1.getMetadata().getName()).thenReturn(CLUSTER_NAME + "-brokers-11");
         when(mockServiceBroker2.getMetadata().getName()).thenReturn(CLUSTER_NAME + "-brokers-12");
-        when(mockServiceOperator.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(Future.succeededFuture(List.of(mockServiceLocalBootstrap, mockServiceBrokers, mockServiceBootstrap, mockServiceBroker0, mockServiceBroker1, mockServiceBroker2)));
+        when(mockServiceOperator.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(CompletableFuture.completedFuture(List.of(mockServiceLocalBootstrap, mockServiceBrokers, mockServiceBootstrap, mockServiceBroker0, mockServiceBroker1, mockServiceBroker2)));
         // Mock service creation / update
         when(mockServiceOperator.reconcile(any(), eq(NAMESPACE), any(), any())).thenAnswer(i -> {
             if (i.getArgument(3) != null) {
-                return Future.succeededFuture(ReconcileResult.created(i.getArgument(3)));
+                return CompletableFuture.completedFuture(ReconcileResult.created(i.getArgument(3)));
             } else {
-                return Future.succeededFuture(ReconcileResult.deleted());
+                return CompletableFuture.completedFuture(ReconcileResult.deleted());
             }
         });
 
@@ -356,10 +357,10 @@ public class KafkaListenerReconcilerTLSRoutesTest {
         // Delegate the batchReconcile call to the real method which calls the other mocked methods. This allows us to better test the exact behavior.
         when(mockRouteOperator.batchReconcile(any(), eq(NAMESPACE), any(), any())).thenCallRealMethod();
         // Mock the check if the TLSRoute has been accepted or not
-        when(mockRouteOperator.hasParents(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-kafka-bootstrap"), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
-        when(mockRouteOperator.hasParents(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-brokers-10"), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
-        when(mockRouteOperator.hasParents(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-brokers-11"), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
-        when(mockRouteOperator.hasParents(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-brokers-12"), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockRouteOperator.hasParents(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-kafka-bootstrap"), anyLong(), anyLong())).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockRouteOperator.hasParents(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-brokers-10"), anyLong(), anyLong())).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockRouteOperator.hasParents(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-brokers-11"), anyLong(), anyLong())).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockRouteOperator.hasParents(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-brokers-12"), anyLong(), anyLong())).thenReturn(CompletableFuture.completedFuture(null));
         // Mock listing of routes
         TLSRoute mockRouteBootstrap = mock(TLSRoute.class, RETURNS_DEEP_STUBS);
         TLSRoute mockRouteBroker0 = mock(TLSRoute.class, RETURNS_DEEP_STUBS);
@@ -369,9 +370,9 @@ public class KafkaListenerReconcilerTLSRoutesTest {
         when(mockRouteBroker0.getMetadata().getName()).thenReturn(CLUSTER_NAME + "-brokers-10");
         when(mockRouteBroker1.getMetadata().getName()).thenReturn(CLUSTER_NAME + "-brokers-11");
         when(mockRouteBroker2.getMetadata().getName()).thenReturn(CLUSTER_NAME + "-brokers-12");
-        when(mockRouteOperator.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(Future.succeededFuture(List.of(mockRouteBootstrap, mockRouteBroker0, mockRouteBroker1, mockRouteBroker2)));
+        when(mockRouteOperator.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(CompletableFuture.completedFuture(List.of(mockRouteBootstrap, mockRouteBroker0, mockRouteBroker1, mockRouteBroker2)));
         // Mock route creation / update
-        when(mockRouteOperator.reconcile(any(), eq(NAMESPACE), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.deleted()));
+        when(mockRouteOperator.reconcile(any(), eq(NAMESPACE), any(), any())).thenReturn(CompletableFuture.completedFuture(ReconcileResult.deleted()));
 
         Reconciliation reconciliation = new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME);
 
@@ -458,9 +459,9 @@ public class KafkaListenerReconcilerTLSRoutesTest {
         // Delegate the batchReconcile call to the real method which calls the other mocked methods. This allows us to better test the exact behavior.
         when(mockServiceOperator.batchReconcile(any(), eq(NAMESPACE), any(), any())).thenCallRealMethod();
         // Mock listing of services
-        when(mockServiceOperator.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(Future.succeededFuture(List.of()));
+        when(mockServiceOperator.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(CompletableFuture.completedFuture(List.of()));
         // Mock service creation / update
-        when(mockServiceOperator.reconcile(any(), eq(NAMESPACE), any(), any())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(3))));
+        when(mockServiceOperator.reconcile(any(), eq(NAMESPACE), any(), any())).thenAnswer(i -> CompletableFuture.completedFuture(ReconcileResult.created(i.getArgument(3))));
 
         // Mock the RouteOperator for the OpenShift routes
         TLSRouteOperator mockRouteOperator = supplier.tlsRouteOperations;
@@ -483,12 +484,12 @@ public class KafkaListenerReconcilerTLSRoutesTest {
         when(mockRouteOperator.waitFor(any(), eq(NAMESPACE), any(), eq("addressable"), anyLong(), anyLong(), any())).then(i -> {
             BiPredicate<String, String> predicate = i.getArgument(6);
             boolean result = predicate.test(i.getArgument(1), i.getArgument(2));
-            return result ? Future.succeededFuture() : Future.failedFuture(new RuntimeException(i.getArgument(2) + " is not addressable"));
+            return result ? CompletableFuture.completedFuture(null) : CompletableFuture.failedFuture(new RuntimeException(i.getArgument(2) + " is not addressable"));
         });
         // Mock listing of routes
-        when(mockRouteOperator.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(Future.succeededFuture(List.of()));
+        when(mockRouteOperator.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(CompletableFuture.completedFuture(List.of()));
         // Mock route creation / update
-        when(mockRouteOperator.reconcile(any(), eq(NAMESPACE), any(), any())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(3))));
+        when(mockRouteOperator.reconcile(any(), eq(NAMESPACE), any(), any())).thenAnswer(i -> CompletableFuture.completedFuture(ReconcileResult.created(i.getArgument(3))));
 
         Reconciliation reconciliation = new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME);
 

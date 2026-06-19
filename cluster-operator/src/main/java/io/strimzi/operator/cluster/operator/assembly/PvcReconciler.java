@@ -7,6 +7,7 @@ package io.strimzi.operator.cluster.operator.assembly;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.strimzi.api.kafka.model.kafka.KafkaStatus;
 import io.strimzi.operator.cluster.model.StorageUtils;
+import io.strimzi.operator.cluster.operator.VertxUtil;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.PvcOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.StorageClassOperator;
 import io.strimzi.operator.common.Annotations;
@@ -63,13 +64,13 @@ public class PvcReconciler {
         List<Future<Void>> futures = new ArrayList<>(pvcs.size());
 
         for (PersistentVolumeClaim desiredPvc : pvcs)  {
-            Future<Void> perPvcFuture = pvcOperator.getAsync(reconciliation.namespace(), desiredPvc.getMetadata().getName())
+            Future<Void> perPvcFuture = VertxUtil.toFuture(pvcOperator.getAsync(reconciliation.namespace(), desiredPvc.getMetadata().getName()))
                     .compose(currentPvc -> {
                         if (currentPvc == null || currentPvc.getStatus() == null || !"Bound".equals(currentPvc.getStatus().getPhase())) {
                             // This branch handles the following conditions:
                             // * The PVC doesn't exist yet, we should create it
                             // * The PVC is not Bound, we should reconcile it
-                            return pvcOperator.reconcile(reconciliation, reconciliation.namespace(), desiredPvc.getMetadata().getName(), desiredPvc)
+                            return VertxUtil.toFuture(pvcOperator.reconcile(reconciliation, reconciliation.namespace(), desiredPvc.getMetadata().getName(), desiredPvc))
                                     .mapEmpty();
                         } else if (currentPvc.getStatus().getConditions().stream().anyMatch(cond -> "Resizing".equals(cond.getType()) && "true".equals(cond.getStatus().toLowerCase(Locale.ENGLISH))))  {
                             // The PVC is Bound, but it is already resizing => Nothing to do, we should let it resize
@@ -90,7 +91,7 @@ public class PvcReconciler {
                                 return resizePvc(kafkaStatus, currentPvc, desiredPvc);
                             } else  {
                                 // size didn't change, just reconcile
-                                return pvcOperator.reconcile(reconciliation, reconciliation.namespace(), desiredPvc.getMetadata().getName(), desiredPvc)
+                                return VertxUtil.toFuture(pvcOperator.reconcile(reconciliation, reconciliation.namespace(), desiredPvc.getMetadata().getName(), desiredPvc))
                                         .mapEmpty();
                             }
                         }
@@ -117,7 +118,7 @@ public class PvcReconciler {
         String storageClassName = current.getSpec().getStorageClassName();
 
         if (storageClassName != null && !storageClassName.isEmpty()) {
-            return storageClassOperator.getAsync(storageClassName)
+            return VertxUtil.toFuture(storageClassOperator.getAsync(storageClassName))
                     .compose(sc -> {
                         if (sc == null) {
                             kafkaStatus.addCondition(StatusUtils.buildWarningCondition("PvcResizingWarning",
@@ -135,7 +136,7 @@ public class PvcReconciler {
                         } else  {
                             // Resizing supported by SC => We can reconcile the PVC to have it resized
                             LOGGER.infoCr(reconciliation, "Resizing PVC {} from {} to {}.", desired.getMetadata().getName(), current.getStatus().getCapacity().get("storage").getAmount(), desired.getSpec().getResources().getRequests().get("storage").getAmount());
-                            return pvcOperator.reconcile(reconciliation, reconciliation.namespace(), desired.getMetadata().getName(), desired)
+                            return VertxUtil.toFuture(pvcOperator.reconcile(reconciliation, reconciliation.namespace(), desired.getMetadata().getName(), desired))
                                     .mapEmpty();
                         }
                     });
@@ -177,12 +178,12 @@ public class PvcReconciler {
      * @return          Future which completes when the PVC is deleted or when we find out that it should not be deleted
      */
     private Future<Void> considerPersistentClaimDeletion(String pvcName)   {
-        return pvcOperator.getAsync(reconciliation.namespace(), pvcName)
+        return VertxUtil.toFuture(pvcOperator.getAsync(reconciliation.namespace(), pvcName))
                 .compose(pvc -> {
                     // The PVC might be null in case it was deleted in the mean time by something else such as garbage collection
                     if (pvc != null && Annotations.booleanAnnotation(pvc, Annotations.ANNO_STRIMZI_IO_DELETE_CLAIM, false)) {
                         LOGGER.infoCr(reconciliation, "Deleting PVC {}", pvcName);
-                        return pvcOperator.reconcile(reconciliation, reconciliation.namespace(), pvcName, null)
+                        return VertxUtil.toFuture(pvcOperator.reconcile(reconciliation, reconciliation.namespace(), pvcName, null))
                                 .mapEmpty();
                     } else {
                         return Future.succeededFuture();

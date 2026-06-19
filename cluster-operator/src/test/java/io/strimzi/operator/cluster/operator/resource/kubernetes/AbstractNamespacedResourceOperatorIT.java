@@ -11,29 +11,28 @@ import io.fabric8.kubernetes.api.model.NamespaceBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.strimzi.operator.cluster.operator.VertxUtil;
 import io.strimzi.operator.common.Reconciliation;
-import io.vertx.core.Vertx;
-import io.vertx.core.WorkerExecutor;
-import io.vertx.junit5.Checkpoint;
-import io.vertx.junit5.VertxExtension;
-import io.vertx.junit5.VertxTestContext;
+import io.strimzi.operator.common.operator.resource.concurrent.AbstractNamespacedResourceOperator;
+import io.strimzi.operator.common.operator.resource.concurrent.ResourceSupport;
+import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.Objects;
 import java.util.Random;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 /**
  * The main purpose of the Integration Tests for the operators is to test them against a real Kubernetes cluster.
@@ -41,18 +40,18 @@ import static org.hamcrest.Matchers.nullValue;
  * being created by the Kubernetes API etc. These things are hard to test with mocks. These IT tests make it easy to
  * test them against real clusters.
  */
-@ExtendWith(VertxExtension.class)
 public abstract class AbstractNamespacedResourceOperatorIT<C extends KubernetesClient,
         T extends HasMetadata,
         L extends KubernetesResourceList<T>,
         R extends Resource<T>> {
     protected static final Logger LOGGER = LogManager.getLogger(AbstractNamespacedResourceOperatorIT.class);
     public static final String RESOURCE_NAME = "my-test-resource";
-    private static WorkerExecutor sharedWorkerExecutor;
     protected String resourceName;
-    protected static Vertx vertx;
     protected static KubernetesClient client;
     protected static String namespace = "resource-operator-it-namespace";
+
+    protected static Executor asyncExecutor;
+    protected static ResourceSupport resourceSupport;
 
     @BeforeEach
     public void renameResource() {
@@ -61,8 +60,9 @@ public abstract class AbstractNamespacedResourceOperatorIT<C extends KubernetesC
 
     @BeforeAll
     public static void before() {
-        vertx = Vertx.vertx();
-        sharedWorkerExecutor = vertx.createSharedWorkerExecutor("kubernetes-ops-pool");
+        asyncExecutor = ForkJoinPool.commonPool();
+        resourceSupport = new ResourceSupport(asyncExecutor);
+
         client = new KubernetesClientBuilder().build();
 
         if (client.namespaces().withName(namespace).get() != null && System.getenv("SKIP_TEARDOWN") == null) {
@@ -78,8 +78,6 @@ public abstract class AbstractNamespacedResourceOperatorIT<C extends KubernetesC
 
     @AfterAll
     public static void after() {
-        sharedWorkerExecutor.close();
-        vertx.close();
         if (client.namespaces().withName(namespace).get() != null && System.getenv("SKIP_TEARDOWN") == null) {
             LOGGER.warn("Deleting namespace {} after tests run", namespace);
             client.namespaces().withName(namespace).withPropagationPolicy(DeletionPropagation.BACKGROUND).delete();
@@ -90,47 +88,44 @@ public abstract class AbstractNamespacedResourceOperatorIT<C extends KubernetesC
     abstract AbstractNamespacedResourceOperator<C, T, L, R> operator();
     abstract T getOriginal();
     abstract T getModified();
-    abstract void assertResources(VertxTestContext context, T expected, T actual);
+    abstract void assertResources(T expected, T actual);
 
     @Test
-    public void testCreateModifyDelete(VertxTestContext context)    {
-        Checkpoint async = context.checkpoint();
+    public void testCreateModifyDelete() {
         AbstractNamespacedResourceOperator<C, T, L, R> op = operator();
 
         T newResource = getOriginal();
         T modResource = getModified();
 
-        op.reconcile(Reconciliation.DUMMY_RECONCILIATION, namespace, resourceName, newResource)
-            .onComplete(context.succeeding(rrCreated -> {
+        TestUtils.await(op.reconcile(Reconciliation.DUMMY_RECONCILIATION, namespace, resourceName, newResource)
+            .whenComplete((rrCreated, error) -> {
+                assertNull(error);
                 T created = op.get(namespace, resourceName);
 
-                context.verify(() -> assertThat(created, is(notNullValue())));
-                assertResources(context, newResource, created);
-            }))
-            .compose(rr -> op.reconcile(Reconciliation.DUMMY_RECONCILIATION, namespace, resourceName, modResource))
-            .onComplete(context.succeeding(rrModified -> {
+                assertThat(created, is(notNullValue()));
+                assertResources(newResource, created);
+            })
+            .thenCompose(rr -> op.reconcile(Reconciliation.DUMMY_RECONCILIATION, namespace, resourceName, modResource))
+            .whenComplete((rrModified, error) -> {
+                assertNull(error);
                 T modified = op.get(namespace, resourceName);
 
-                context.verify(() -> assertThat(modified, is(notNullValue())));
-                assertResources(context, modResource, modified);
-            }))
-            .compose(rr -> op.reconcile(Reconciliation.DUMMY_RECONCILIATION, namespace, resourceName, null))
-            .onComplete(context.succeeding(rrDeleted -> {
-                // it seems the resource is cached for some time, so we need wait for it to be null
-                context.verify(() -> {
-                        VertxUtil.waitFor(Reconciliation.DUMMY_RECONCILIATION, vertx, "resource deletion " + resourceName, "deleted", 1000,
-                                30_000, () -> op.get(namespace, resourceName) == null)
-                                .onComplete(del -> {
-                                    assertThat(op.get(namespace, resourceName), is(nullValue()));
-                                    async.flag();
-                                });
-                    }
-                );
-            }));
+                assertThat(modified, is(notNullValue()));
+                assertResources(modResource, modified);
+            })
+            .thenCompose(rr -> op.reconcile(Reconciliation.DUMMY_RECONCILIATION, namespace, resourceName, null))
+            .whenComplete(TestUtils::assertSuccessful)
+            .thenCompose(rr -> resourceSupport.waitFor(
+                    Reconciliation.DUMMY_RECONCILIATION,
+                    "resource deletion " + resourceName,
+                    "deleted",
+                    1000,
+                    30_000,
+                    () -> op.get(namespace, resourceName) == null))
+            .thenRun(() -> assertThat(op.get(namespace, resourceName), is(nullValue()))));
     }
 
     protected String getResourceName(String name) {
         return name + "-" + new Random().nextInt(Integer.MAX_VALUE);
     }
 }
-

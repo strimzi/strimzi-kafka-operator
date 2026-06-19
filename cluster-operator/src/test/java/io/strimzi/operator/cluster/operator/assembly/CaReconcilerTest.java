@@ -71,6 +71,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -367,7 +368,7 @@ public class CaReconcilerTest {
                 }
             });
             async.flag();
-            return Future.succeededFuture();
+            return CompletableFuture.completedFuture(null);
         });
 
         MockCaReconciler mockCaReconciler = new MockCaReconciler(KAFKA, supplier);
@@ -450,7 +451,7 @@ public class CaReconcilerTest {
                 }
             });
             async.flag();
-            return Future.succeededFuture();
+            return CompletableFuture.completedFuture(null);
         });
 
         MockCaReconciler mockCaReconciler = new MockCaReconciler(KAFKA, supplier);
@@ -578,7 +579,7 @@ public class CaReconcilerTest {
                 }
             });
             async.flag();
-            return Future.succeededFuture();
+            return CompletableFuture.completedFuture(null);
         });
 
         // Disable CA generation
@@ -931,14 +932,14 @@ public class CaReconcilerTest {
                                            List<Pod> brokerPods) {
         SecretOperator secretOps = supplier.secretOperations;
 
-        when(secretOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(Future.succeededFuture(secrets));
-        when(secretOps.getAsync(eq(NAMESPACE), any())).thenReturn(Future.succeededFuture(null));
-        when(secretOps.reconcile(any(), eq(NAMESPACE), any(), any(Secret.class))).thenReturn(Future.succeededFuture());
+        when(secretOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(CompletableFuture.completedFuture(secrets));
+        when(secretOps.getAsync(eq(NAMESPACE), any())).thenReturn(CompletableFuture.completedFuture(null));
+        when(secretOps.reconcile(any(), eq(NAMESPACE), any(), any(Secret.class))).thenReturn(CompletableFuture.completedFuture(null));
 
         PodOperator mockPodOps = supplier.podOperations;
         List<Pod> pods = new ArrayList<>(controllerPods);
         pods.addAll(brokerPods);
-        when(mockPodOps.listAsync(any(), any(Labels.class))).thenReturn(Future.succeededFuture(pods));
+        when(mockPodOps.listAsync(any(), any(Labels.class))).thenReturn(CompletableFuture.completedFuture(pods));
 
         StrimziPodSetOperator spsOps = supplier.strimziPodSetOperator;
         StrimziPodSet controllerPodSet = new StrimziPodSetBuilder()
@@ -959,14 +960,14 @@ public class CaReconcilerTest {
                 .endSpec()
                 .build();
 
-        when(spsOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(Future.succeededFuture(List.of(controllerPodSet, brokerPodSet)));
+        when(spsOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(CompletableFuture.completedFuture(List.of(controllerPodSet, brokerPodSet)));
 
         Map<String, Deployment> deps = new HashMap<>();
         deps.put("my-cluster-entity-operator", deploymentWithName("my-cluster-entity-operator"));
         deps.put("my-cluster-cruise-control", deploymentWithName("my-cluster-cruise-control"));
         deps.put("my-cluster-kafka-exporter", deploymentWithName("my-cluster-kafka-exporter"));
         DeploymentOperator depsOperator = supplier.deploymentOperations;
-        when(depsOperator.getAsync(any(), any())).thenAnswer(i -> Future.succeededFuture(deps.get(i.getArgument(1, String.class))));
+        when(depsOperator.getAsync(any(), any())).thenAnswer(i -> CompletableFuture.completedFuture(deps.get(i.getArgument(1, String.class))));
     }
 
     static class MockCaReconciler extends CaReconciler {
@@ -986,7 +987,7 @@ public class CaReconcilerTest {
         @Override
         KafkaRoller createKafkaRoller(Set<NodeRef> nodes, TlsPemIdentity coTlsPemIdentity) {
             KafkaRoller mockKafkaRoller = mock(KafkaRoller.class);
-            when(mockKafkaRoller.rollingRestart(any())).thenAnswer(i -> podOperator.listAsync(NAMESPACE, Labels.EMPTY)
+            when(mockKafkaRoller.rollingRestart(any())).thenAnswer(i -> io.strimzi.operator.cluster.operator.VertxUtil.toFuture(podOperator.listAsync(NAMESPACE, Labels.EMPTY))
                     .onSuccess(pods -> kafkaRestartReasons = pods.stream().collect(Collectors.toMap(
                             pod -> pod.getMetadata().getName(),
                             pod -> (RestartReasons) i.getArgument(0, Function.class).apply(pod))))
@@ -997,7 +998,7 @@ public class CaReconcilerTest {
 
         @Override
         Future<Void> rollDeploymentIfExists(String deploymentName, RestartReason reason) {
-            return deploymentOperator.getAsync(reconciliation.namespace(), deploymentName)
+            return io.strimzi.operator.cluster.operator.VertxUtil.toFuture(deploymentOperator.getAsync(reconciliation.namespace(), deploymentName))
                     .compose(dep -> {
                         if (dep != null) {
                             this.deploymentRestartReasons.put(deploymentName, reason.getDefaultNote());

@@ -13,7 +13,8 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.ServiceResource;
 import io.strimzi.operator.common.Reconciliation;
-import io.vertx.core.Vertx;
+import io.strimzi.operator.common.operator.resource.concurrent.AbstractNamespacedResourceOperator;
+import io.strimzi.operator.common.operator.resource.concurrent.AbstractNamespacedResourceOperatorTest;
 import org.junit.jupiter.api.Test;
 
 import java.util.Map;
@@ -65,18 +66,18 @@ public class ServiceOperatorTest extends AbstractNamespacedResourceOperatorTest<
     }
 
     @Override
-    protected void mocker(KubernetesClient mockClient, MixedOperation op) {
+    protected void mocker(KubernetesClient mockClient, MixedOperation<Service, ServiceList, ServiceResource<Service>> op) {
         when(mockClient.services()).thenReturn(op);
     }
 
     @Override
-    protected AbstractNamespacedResourceOperator<KubernetesClient, Service, ServiceList, ServiceResource<Service>> createResourceOperations(Vertx vertx, KubernetesClient mockClient) {
-        return new ServiceOperator(vertx, mockClient, false);
+    protected AbstractNamespacedResourceOperator<KubernetesClient, Service, ServiceList, ServiceResource<Service>> createResourceOperations(KubernetesClient mockClient) {
+        return new ServiceOperator(asyncExecutor, mockClient, false);
     }
 
     @Override
-    protected ServiceOperator createResourceOperations(Vertx vertx, KubernetesClient mockClient, boolean useServerSideApply) {
-        return new ServiceOperator(vertx, mockClient, useServerSideApply);
+    protected ServiceOperator createResourceOperations(KubernetesClient mockClient, boolean useServerSideApply) {
+        return new ServiceOperator(asyncExecutor, mockClient, useServerSideApply);
     }
 
     @Test
@@ -129,7 +130,7 @@ public class ServiceOperatorTest extends AbstractNamespacedResourceOperatorTest<
                 .endSpec()
                 .build();
 
-        ServiceOperator op = new ServiceOperator(vertx, client, false);
+        ServiceOperator op = new ServiceOperator(asyncExecutor, client, false);
         op.patchNodePorts(current, desired);
 
         assertThat(current.getSpec().getPorts().get(0).getNodePort(), is(desired.getSpec().getPorts().get(1).getNodePort()));
@@ -167,7 +168,7 @@ public class ServiceOperatorTest extends AbstractNamespacedResourceOperatorTest<
                 .endSpec()
                 .build();
 
-        ServiceOperator op = new ServiceOperator(vertx, client, false);
+        ServiceOperator op = new ServiceOperator(asyncExecutor, client, false);
         op.internalUpdate(Reconciliation.DUMMY_RECONCILIATION, NAMESPACE, RESOURCE_NAME, current, desired);
 
         assertThat(desired.getMetadata().getAnnotations().get("field.cattle.io~1publicEndpoints"), equalTo("foo"));
@@ -200,7 +201,7 @@ public class ServiceOperatorTest extends AbstractNamespacedResourceOperatorTest<
                 .endSpec()
                 .build();
 
-        ServiceOperator op = new ServiceOperator(vertx, client, false);
+        ServiceOperator op = new ServiceOperator(asyncExecutor, client, false);
         op.patchHealthCheckPorts(current, desired);
 
         assertThat(current.getSpec().getHealthCheckNodePort(), is(desired.getSpec().getHealthCheckNodePort()));
@@ -304,7 +305,7 @@ public class ServiceOperatorTest extends AbstractNamespacedResourceOperatorTest<
                 .endSpec()
                 .build();
 
-        ServiceOperator op = new ServiceOperator(vertx, client, false);
+        ServiceOperator op = new ServiceOperator(asyncExecutor, client, false);
 
         op.patchDualStackNetworking(current, desired);
         assertThat(current.getSpec().getIpFamilyPolicy(), is(desired.getSpec().getIpFamilyPolicy()));
@@ -358,7 +359,7 @@ public class ServiceOperatorTest extends AbstractNamespacedResourceOperatorTest<
                 .endSpec()
                 .build();
 
-        ServiceOperator op = new ServiceOperator(vertx, client, false);
+        ServiceOperator op = new ServiceOperator(asyncExecutor, client, false);
         op.patchLoadBalancerClass(current, desired);
 
         assertThat(current.getSpec().getLoadBalancerClass(), is(desired.getSpec().getLoadBalancerClass()));

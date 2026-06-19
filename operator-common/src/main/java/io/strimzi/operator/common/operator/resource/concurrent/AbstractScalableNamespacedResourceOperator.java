@@ -2,7 +2,7 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.operator.cluster.operator.resource.kubernetes;
+package io.strimzi.operator.common.operator.resource.concurrent;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
@@ -11,8 +11,10 @@ import io.fabric8.kubernetes.client.dsl.ScalableResource;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
-import io.vertx.core.Future;
-import io.vertx.core.Vertx;
+
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.Executor;
 
 /**
  * An {@link AbstractNamespacedResourceOperator} that can be scaled up and down in addition to the usual operations.
@@ -36,21 +38,21 @@ public abstract class AbstractScalableNamespacedResourceOperator<C extends Kuber
 
     /**
      * Constructor
-     * @param vertx The Vertx instance
+     * @param asyncExecutor Executor to use for asynchronous subroutines
      * @param client The Kubernetes client
      * @param resourceKind The kind of resource.
      */
-    public AbstractScalableNamespacedResourceOperator(Vertx vertx, C client, String resourceKind) {
-        super(vertx, client, resourceKind);
+    public AbstractScalableNamespacedResourceOperator(Executor asyncExecutor, C client, String resourceKind) {
+        super(asyncExecutor, client, resourceKind);
     }
 
-    private R resource(String namespace, String name) {
+    private R scalableResource(String namespace, String name) {
         return operation().inNamespace(namespace).withName(name);
     }
 
     /**
      * Asynchronously scale up the resource given by {@code namespace} and {@code name} to have the scale given by
-     * {@code scaleTo}, returning a future for the outcome. If the resource does not exist, or has a current
+     * {@code scaleTo}, returning a CompletionStage for the outcome. If the resource does not exist, or has a current
      * scale &gt;= the given {@code scaleTo}, then complete successfully.
      *
      * @param reconciliation    The reconciliation
@@ -59,18 +61,18 @@ public abstract class AbstractScalableNamespacedResourceOperator<C extends Kuber
      * @param scaleTo           The desired scale.
      * @param timeoutMs         The timeout how long wait for the scaling to happen
      *
-     * @return A future whose value is the scale after the operation. If the scale was initially &gt; the given
+     * @return A CompletionStage whose value is the scale after the operation. If the scale was initially &gt; the given
      *         {@code scaleTo} then this value will be the original scale. The value will be null if the resource didn't
      *         exist (hence no scaling occurred).
      */
-    public Future<Integer> scaleUp(Reconciliation reconciliation, String namespace, String name, int scaleTo, long timeoutMs) {
-        return vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
+    public CompletionStage<Integer> scaleUp(Reconciliation reconciliation, String namespace, String name, int scaleTo, long timeoutMs) {
+        return CompletableFuture.supplyAsync(
             () -> {
                 try {
                     Integer currentScale = currentScale(namespace, name);
                     if (currentScale != null && currentScale < scaleTo) {
                         LOGGER.infoCr(reconciliation, "Scaling up to {} replicas", scaleTo);
-                        resource(namespace, name).withTimeoutInMillis(timeoutMs).scale(scaleTo);
+                        scalableResource(namespace, name).withTimeoutInMillis(timeoutMs).scale(scaleTo);
                         currentScale = scaleTo;
                     }
 
@@ -79,14 +81,14 @@ public abstract class AbstractScalableNamespacedResourceOperator<C extends Kuber
                     LOGGER.errorCr(reconciliation, "Caught exception while scaling up", e);
                     throw e;
                 }
-            }, false);
+            }, asyncExecutor);
     }
 
     protected abstract Integer currentScale(String namespace, String name);
 
     /**
      * Asynchronously scale down the resource given by {@code namespace} and {@code name} to have the scale given by
-     * {@code scaleTo}, returning a future for the outcome. If the resource does not exist, it has a current
+     * {@code scaleTo}, returning a CompletionStage for the outcome. If the resource does not exist, it has a current
      * scale &lt;= the given {@code scaleTo} then complete successfully.
      *
      * @param reconciliation    The reconciliation
@@ -95,12 +97,12 @@ public abstract class AbstractScalableNamespacedResourceOperator<C extends Kuber
      * @param scaleTo           The desired scale.
      * @param timeoutMs         The timeout how long wait for the scaling to happen
      *
-     * @return A future whose value is the scale after the operation. If the scale was initially &lt; the given
+     * @return A CompletionStage whose value is the scale after the operation. If the scale was initially &lt; the given
      *         {@code scaleTo} then this value will be the original scale. The value will be null if the resource
      *         didn't exist (hence no scaling occurred).
      */
-    public Future<Integer> scaleDown(Reconciliation reconciliation, String namespace, String name, int scaleTo, long timeoutMs) {
-        return vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
+    public CompletionStage<Integer> scaleDown(Reconciliation reconciliation, String namespace, String name, int scaleTo, long timeoutMs) {
+        return CompletableFuture.supplyAsync(
             () -> {
                 try {
                     Integer nextReplicas = currentScale(namespace, name);
@@ -108,7 +110,7 @@ public abstract class AbstractScalableNamespacedResourceOperator<C extends Kuber
                         while (nextReplicas > scaleTo) {
                             nextReplicas--;
                             LOGGER.infoCr(reconciliation, "Scaling down from {} to {}", nextReplicas + 1, nextReplicas);
-                            resource(namespace, name).withTimeoutInMillis(timeoutMs).scale(nextReplicas);
+                            scalableResource(namespace, name).withTimeoutInMillis(timeoutMs).scale(nextReplicas);
                         }
                     }
 
@@ -117,6 +119,6 @@ public abstract class AbstractScalableNamespacedResourceOperator<C extends Kuber
                     LOGGER.errorCr(reconciliation, "Caught exception while scaling down", e);
                     throw e;
                 }
-            }, false);
+            }, asyncExecutor);
     }
 }

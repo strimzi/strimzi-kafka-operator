@@ -42,6 +42,7 @@ import org.mockito.ArgumentCaptor;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
@@ -112,11 +113,11 @@ public class KafkaStatusTest {
         // Mock the Kafka Operator
         CrdOperator<KubernetesClient, Kafka, KafkaList> mockKafkaOps = supplier.kafkaOperator;
 
-        when(mockKafkaOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(getKafkaCrd()));
+        when(mockKafkaOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(CompletableFuture.completedFuture(getKafkaCrd()));
         when(mockKafkaOps.get(eq(namespace), eq(clusterName))).thenReturn(kafka);
 
         ArgumentCaptor<Kafka> kafkaCaptor = ArgumentCaptor.forClass(Kafka.class);
-        when(mockKafkaOps.updateStatusAsync(any(), kafkaCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockKafkaOps.updateStatusAsync(any(), kafkaCaptor.capture())).thenReturn(CompletableFuture.completedFuture(null));
 
         MockWorkingKafkaAssemblyOperator kao = new MockWorkingKafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, kubernetesVersion),
                 certManager,
@@ -162,10 +163,10 @@ public class KafkaStatusTest {
         // Mock the Kafka Operator
         CrdOperator<KubernetesClient, Kafka, KafkaList> mockKafkaOps = supplier.kafkaOperator;
 
-        when(mockKafkaOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(kafka));
+        when(mockKafkaOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(CompletableFuture.completedFuture(kafka));
 
         ArgumentCaptor<Kafka> kafkaCaptor = ArgumentCaptor.forClass(Kafka.class);
-        when(mockKafkaOps.updateStatusAsync(any(), kafkaCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockKafkaOps.updateStatusAsync(any(), kafkaCaptor.capture())).thenReturn(CompletableFuture.completedFuture(null));
 
         MockWorkingKafkaAssemblyOperator kao = new MockWorkingKafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, kubernetesVersion),
                 certManager,
@@ -224,10 +225,10 @@ public class KafkaStatusTest {
                 .endStatus()
                 .build();
 
-        when(mockKafkaOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(readyKafka));
+        when(mockKafkaOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(CompletableFuture.completedFuture(readyKafka));
 
         ArgumentCaptor<Kafka> kafkaCaptor = ArgumentCaptor.forClass(Kafka.class);
-        when(mockKafkaOps.updateStatusAsync(any(), kafkaCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockKafkaOps.updateStatusAsync(any(), kafkaCaptor.capture())).thenReturn(CompletableFuture.completedFuture(null));
 
         MockWorkingKafkaAssemblyOperator kao = new MockWorkingKafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, kubernetesVersion),
                 certManager,
@@ -264,11 +265,11 @@ public class KafkaStatusTest {
         // Mock the Kafka Operator
         CrdOperator<KubernetesClient, Kafka, KafkaList> mockKafkaOps = supplier.kafkaOperator;
 
-        when(mockKafkaOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(getKafkaCrd()));
+        when(mockKafkaOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(CompletableFuture.completedFuture(getKafkaCrd()));
         when(mockKafkaOps.get(eq(namespace), eq(clusterName))).thenReturn(kafka);
 
         ArgumentCaptor<Kafka> kafkaCaptor = ArgumentCaptor.forClass(Kafka.class);
-        when(mockKafkaOps.updateStatusAsync(any(), kafkaCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockKafkaOps.updateStatusAsync(any(), kafkaCaptor.capture())).thenReturn(CompletableFuture.completedFuture(null));
 
         MockFailingKafkaAssemblyOperator kao = new MockFailingKafkaAssemblyOperator(
                 exception,
@@ -341,11 +342,11 @@ public class KafkaStatusTest {
                 .endStatus()
                 .build();
 
-        when(mockKafkaOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(readyKafka));
+        when(mockKafkaOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(CompletableFuture.completedFuture(readyKafka));
         when(mockKafkaOps.get(eq(namespace), eq(clusterName))).thenReturn(readyKafka);
 
         ArgumentCaptor<Kafka> kafkaCaptor = ArgumentCaptor.forClass(Kafka.class);
-        when(mockKafkaOps.updateStatusAsync(any(), kafkaCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockKafkaOps.updateStatusAsync(any(), kafkaCaptor.capture())).thenReturn(CompletableFuture.completedFuture(null));
 
         MockFailingKafkaAssemblyOperator kao = new MockFailingKafkaAssemblyOperator(
                 new RuntimeException("Something went wrong"),
@@ -393,10 +394,10 @@ public class KafkaStatusTest {
         // Mock the Kafka Operator
         CrdOperator<KubernetesClient, Kafka, KafkaList> mockKafkaOps = supplier.kafkaOperator;
 
-        when(mockKafkaOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(kafka));
+        when(mockKafkaOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(CompletableFuture.completedFuture(kafka));
 
         ArgumentCaptor<Kafka> kafkaCaptor = ArgumentCaptor.forClass(Kafka.class);
-        when(mockKafkaOps.updateStatusAsync(any(), kafkaCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockKafkaOps.updateStatusAsync(any(), kafkaCaptor.capture())).thenReturn(CompletableFuture.completedFuture(null));
 
         MockInitialStatusKafkaAssemblyOperator kao = new MockInitialStatusKafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, kubernetesVersion),
                 certManager,
@@ -430,10 +431,10 @@ public class KafkaStatusTest {
         // Mock the Kafka Operator
         CrdOperator<KubernetesClient, Kafka, KafkaList> mockKafkaOps = supplier.kafkaOperator;
 
-        when(mockKafkaOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(kafka));
+        when(mockKafkaOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(CompletableFuture.completedFuture(kafka));
 
         ArgumentCaptor<Kafka> kafkaCaptor = ArgumentCaptor.forClass(Kafka.class);
-        when(mockKafkaOps.updateStatusAsync(any(), kafkaCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockKafkaOps.updateStatusAsync(any(), kafkaCaptor.capture())).thenReturn(CompletableFuture.completedFuture(null));
 
         MockInitialStatusKafkaAssemblyOperator kao = new MockInitialStatusKafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, kubernetesVersion),
                 certManager,

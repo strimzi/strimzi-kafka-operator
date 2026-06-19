@@ -9,11 +9,8 @@ import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2Builder;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2List;
 import io.strimzi.test.CrdUtils;
-import io.vertx.junit5.VertxExtension;
-import io.vertx.junit5.VertxTestContext;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.jupiter.api.extension.ExtendWith;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -24,13 +21,12 @@ import static org.hamcrest.MatcherAssert.assertThat;
  * being created by the Kubernetes API etc. These things are hard to test with mocks. These IT tests make it easy to
  * test them against real clusters.
  */
-@ExtendWith(VertxExtension.class)
 public class KafkaMirrorMaker2CrdOperatorIT extends AbstractCustomResourceOperatorIT<KubernetesClient, KafkaMirrorMaker2, KafkaMirrorMaker2List> {
     protected static final Logger LOGGER = LogManager.getLogger(KafkaMirrorMaker2CrdOperatorIT.class);
 
     @Override
-    protected CrdOperator operator() {
-        return new CrdOperator(vertx, client, KafkaMirrorMaker2.class, KafkaMirrorMaker2List.class, KafkaMirrorMaker2.RESOURCE_KIND);
+    protected CrdOperator<KubernetesClient, KafkaMirrorMaker2, KafkaMirrorMaker2List> operator() {
+        return new CrdOperator<>(asyncExecutor, client, KafkaMirrorMaker2.class, KafkaMirrorMaker2List.class, KafkaMirrorMaker2.RESOURCE_KIND);
     }
 
     @Override
@@ -99,9 +95,9 @@ public class KafkaMirrorMaker2CrdOperatorIT extends AbstractCustomResourceOperat
     }
 
     @Override
-    protected void assertReady(VertxTestContext context, KafkaMirrorMaker2 resource) {
-        context.verify(() -> assertThat(resource.getStatus()
+    protected void assertReady(KafkaMirrorMaker2 resource) {
+        assertThat(resource.getStatus()
                 .getConditions()
-                .get(0), is(READY_CONDITION)));
+                .get(0), is(READY_CONDITION));
     }
 }

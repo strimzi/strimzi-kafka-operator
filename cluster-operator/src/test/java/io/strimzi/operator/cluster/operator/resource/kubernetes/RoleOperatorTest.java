@@ -13,7 +13,8 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.RbacAPIGroupDSL;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.vertx.core.Vertx;
+import io.strimzi.operator.common.operator.resource.concurrent.AbstractNamespacedResourceOperator;
+import io.strimzi.operator.common.operator.resource.concurrent.AbstractNamespacedResourceOperatorTest;
 
 import static java.util.Collections.singletonMap;
 import static org.mockito.Mockito.mock;
@@ -65,14 +66,14 @@ public class RoleOperatorTest extends AbstractNamespacedResourceOperatorTest<
     }
 
     @Override
-    protected void mocker(KubernetesClient mockClient, MixedOperation op) {
+    protected void mocker(KubernetesClient mockClient, MixedOperation<Role, RoleList, Resource<Role>> op) {
         RbacAPIGroupDSL mockRbac = mock(RbacAPIGroupDSL.class);
         when(mockClient.rbac()).thenReturn(mockRbac);
         when(mockClient.rbac().roles()).thenReturn(op);
     }
 
     @Override
-    protected AbstractNamespacedResourceOperator<KubernetesClient, Role, RoleList, Resource<Role>> createResourceOperations(Vertx vertx, KubernetesClient mockClient) {
-        return new RoleOperator(vertx, mockClient);
+    protected AbstractNamespacedResourceOperator<KubernetesClient, Role, RoleList, Resource<Role>> createResourceOperations(KubernetesClient mockClient) {
+        return new RoleOperator(asyncExecutor, mockClient);
     }
 }

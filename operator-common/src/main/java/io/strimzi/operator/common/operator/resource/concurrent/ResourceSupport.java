@@ -69,7 +69,15 @@ public class ResourceSupport {
         }, asyncExecutor);
     }
 
-    <T> CompletionStage<T> executeBlocking(Supplier<T> blockingCodeHandler) {
+    /**
+     * Executes the given blocking code asynchronously on the executor thread pool.
+     *
+     * @param blockingCodeHandler   Supplier with the blocking code
+     * @param <T>                   Type of the result
+     *
+     * @return  CompletionStage which completes with the result of the blocking code
+     */
+    public <T> CompletionStage<T> executeBlocking(Supplier<T> blockingCodeHandler) {
         return CompletableFuture.supplyAsync(blockingCodeHandler, asyncExecutor);
     }
 
@@ -240,7 +248,7 @@ public class ResourceSupport {
      * @param resource The resource(s) to delete.
      * @return A CompletionStage which completes on the context thread.
      */
-    CompletionStage<Void> deleteAsync(Deletable resource) {
+    public CompletionStage<Void> deleteAsync(Deletable resource) {
         return CompletableFuture.supplyAsync(resource::delete, asyncExecutor).thenRun(NOOP);
     }
 
@@ -248,9 +256,10 @@ public class ResourceSupport {
      * Asynchronously gets the given resource, returning a CompletionStage which completes on the context thread.
      *
      * @param resource The resource(s) to get.
+     * @param <T>      The type of the resource
      * @return A CompletionStage which completes on the context thread.
      */
-    <T> CompletionStage<T> getAsync(Gettable<T> resource) {
+    public <T> CompletionStage<T> getAsync(Gettable<T> resource) {
         return CompletableFuture.supplyAsync(resource::get, asyncExecutor);
     }
 
@@ -331,8 +340,10 @@ public class ResourceSupport {
             }
         };
 
-        // Call the handler ourselves the first time
-        task.run();
+        // Submit the first poll to the executor as well (instead of running it inline). The predicate often does
+        // blocking Fabric8 calls, so running it on the calling thread could block it - for example the Vert.x event
+        // loop when the resulting CompletionStage is adapted to a Vert.x Future.
+        asyncExecutor.execute(task);
 
         return promise;
     }

@@ -26,8 +26,10 @@ import io.strimzi.operator.common.operator.resource.ReconcileResult;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.function.BiPredicate;
 import java.util.stream.Collectors;
@@ -47,6 +49,7 @@ public abstract class AbstractNamespacedResourceOperator<C extends KubernetesCli
             R extends Resource<T>>
         extends AbstractResourceOperator<C, T, L, R> {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(AbstractNamespacedResourceOperator.class);
+    private final boolean useServerSideApply;
 
     /**
      * Constructor.
@@ -57,6 +60,20 @@ public abstract class AbstractNamespacedResourceOperator<C extends KubernetesCli
      */
     protected AbstractNamespacedResourceOperator(Executor asyncExecutor, C client, String resourceKind) {
         super(asyncExecutor, client, resourceKind);
+        this.useServerSideApply = false;
+    }
+
+    /**
+     * Constructor.
+     *
+     * @param asyncExecutor         Executor to use for asynchronous subroutines
+     * @param client                The kubernetes client.
+     * @param resourceKind          The kind of Kubernetes resource (used for logging).
+     * @param useServerSideApply    Determines if Server Side Apply should be used.
+     */
+    protected AbstractNamespacedResourceOperator(Executor asyncExecutor, C client, String resourceKind, boolean useServerSideApply) {
+        super(asyncExecutor, client, resourceKind);
+        this.useServerSideApply = useServerSideApply;
     }
 
     protected abstract MixedOperation<T, L, R> operation();
@@ -71,7 +88,7 @@ public abstract class AbstractNamespacedResourceOperator<C extends KubernetesCli
      */
     public CompletionStage<ReconcileResult<T>> createOrUpdate(Reconciliation reconciliation, T resource) {
         if (resource == null) {
-            throw new NullPointerException();
+            return CompletableFuture.failedStage(new IllegalArgumentException("The " + resourceKind + " resource should not be null."));
         }
         return reconcile(reconciliation, resource.getMetadata().getNamespace(), resource.getMetadata().getName(), resource);
     }
@@ -110,7 +127,10 @@ public abstract class AbstractNamespacedResourceOperator<C extends KubernetesCli
      */
     public CompletionStage<ReconcileResult<T>> reconcile(Reconciliation reconciliation, String namespace, String name, T current, T desired) {
         if (desired != null) {
-            if (current == null) {
+            if (useServerSideApply) {
+                LOGGER.debugCr(reconciliation, "{} {}/{} is desired, patching it", resourceKind, namespace, name);
+                return internalServerSideApply(reconciliation, namespace, name, desired);
+            } else if (current == null) {
                 LOGGER.debugCr(reconciliation, "{} {}/{} does not exist, creating it", resourceKind, namespace, name);
                 return internalCreate(reconciliation, namespace, name, desired);
             } else {
@@ -141,12 +161,14 @@ public abstract class AbstractNamespacedResourceOperator<C extends KubernetesCli
      * @param desired           List of desired resources
      * @param selector          Selector for getting a list of current resource
      *
-     * @return CompletionStage which completes when the lists are reconciled
+     * @return CompletionStage which completes with a map of the reconciliation results indexed by resource name when the
+     *         lists are reconciled
      */
-    public CompletionStage<Void> batchReconcile(Reconciliation reconciliation, String namespace, List<T> desired, Labels selector)  {
+    public CompletionStage<Map<String, ReconcileResult<T>>> batchReconcile(Reconciliation reconciliation, String namespace, List<T> desired, Labels selector)  {
         return listAsync(namespace, selector)
                 .thenCompose(current -> {
-                    List<CompletionStage<?>> futures = new ArrayList<>(desired.size());
+                    List<CompletableFuture<?>> futures = new ArrayList<>(desired.size());
+                    Map<String, ReconcileResult<T>> reconcileResults = new ConcurrentHashMap<>();
                     List<String> currentNames = current.stream().map(ingress -> ingress.getMetadata().getName()).collect(Collectors.toList());
 
                     LOGGER.debugCr(reconciliation, "Reconciling existing {} resources {} against the desired {} resources", resourceKind, currentNames, resourceKind);
@@ -155,17 +177,22 @@ public abstract class AbstractNamespacedResourceOperator<C extends KubernetesCli
                     for (T desiredResource : desired) {
                         String name = desiredResource.getMetadata().getName();
                         currentNames.remove(name);
-                        futures.add(reconcile(reconciliation, namespace, name, desiredResource));
+                        futures.add(reconcile(reconciliation, namespace, name, desiredResource)
+                                .thenApply(result -> reconcileResults.put(name, result))
+                                .toCompletableFuture());
                     }
 
                     LOGGER.debugCr(reconciliation, "{} {}/{} should be deleted", resourceKind, namespace, currentNames);
 
                     // Delete resources which match our selector but are not desired anymore
                     for (String name : currentNames) {
-                        futures.add(reconcile(reconciliation, namespace, name, null));
+                        futures.add(reconcile(reconciliation, namespace, name, null)
+                                .thenApply(result -> reconcileResults.put(name, result))
+                                .toCompletableFuture());
                     }
 
-                    return CompletableFuture.allOf(futures.stream().map(CompletionStage::toCompletableFuture).toArray(CompletableFuture[]::new));
+                    return CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new))
+                            .thenApply(nothing -> reconcileResults);
                 });
     }
 
@@ -225,11 +252,81 @@ public abstract class AbstractNamespacedResourceOperator<C extends KubernetesCli
             })
             .toCompletableFuture();
 
-        CompletableFuture<?> deleteFuture = resourceSupport.deleteAsync(resourceOp.withPropagationPolicy(cascading ? DeletionPropagation.FOREGROUND : DeletionPropagation.ORPHAN).withGracePeriod(-1L))
+        CompletableFuture<?> deleteFuture = resourceSupport.deleteAsync(resourceOp.withPropagationPolicy(determineDeletionPropagation(cascading)).withGracePeriod(-1L))
                 .toCompletableFuture();
 
         return CompletableFuture.allOf(watchForDeleteFuture, deleteFuture)
             .thenApply(nothing -> ReconcileResult.deleted());
+    }
+
+    /**
+     * Returns the deletion propagation policy to use when deleting a resource.
+     * Subclasses can override this to customize the propagation behavior.
+     *
+     * @param cascading  Whether the deletion should be cascading or not
+     *
+     * @return  The DeletionPropagation policy to use
+     */
+    protected DeletionPropagation determineDeletionPropagation(boolean cascading) {
+        return cascading ? DeletionPropagation.FOREGROUND : DeletionPropagation.ORPHAN;
+    }
+
+    /**
+     * Patches the resource with the given namespace and name to match the given desired resource and completes the
+     * returned CompletionStage accordingly. The patch is done using Server-Side Apply, which means that the server will
+     * handle the changes to the resource. The first patch attempt is done without force, however if there is a conflict,
+     * the operator will try again using force.
+     *
+     * @param reconciliation    The reconciliation
+     * @param namespace         Namespace of the resource
+     * @param name              Name of the resource
+     * @param desired           Desired resource
+     *
+     * @return  CompletionStage with the reconciliation result
+     */
+    protected CompletionStage<ReconcileResult<T>> internalServerSideApply(Reconciliation reconciliation, String namespace, String name, T desired) {
+        return CompletableFuture.supplyAsync(() -> {
+            R resourceOp = operation().inNamespace(namespace).withName(name);
+            T result;
+
+            try {
+                LOGGER.debugCr(reconciliation, "{} {}/{} is being patched using Server Side Apply", resourceKind, namespace, name);
+                result = resourceOp.patch(serverSideApplyPatchContext(false), desired);
+            } catch (KubernetesClientException e) {
+                // in case that error code is 409, we have conflict with other operator when using SSA
+                // so we will use force
+                if (e.getCode() == 409) {
+                    LOGGER.warnCr(reconciliation, "{} {}/{} failed to patch because of conflict: {}, applying force", resourceKind, namespace, name, e.getMessage());
+                    result = resourceOp.patch(serverSideApplyPatchContext(true), desired);
+                } else {
+                    // otherwise throw the exception
+                    throw e;
+                }
+            }
+
+            ReconcileResult<T> reconcileResult = ReconcileResult.patchedWithServerSideApply(result);
+            LOGGER.debugCr(reconciliation, "{} {}/{} has been patched", resourceKind, namespace, name);
+            return reconcileResult;
+        }, asyncExecutor)
+            .whenComplete((result, error) -> {
+                if (error != null) {
+                    LOGGER.debugCr(reconciliation, "Caught exception while patching {} {} in namespace {}", resourceKind, name, namespace, error);
+                }
+            });
+    }
+
+    /**
+     * Creates {@link PatchContext} with SSA type for the Cluster Operator.
+     *
+     * @param useForce  boolean parameter determining if the force should be used or not.
+     * @return  {@link PatchContext} with SSA type for the Cluster Operator.
+     */
+    private static PatchContext serverSideApplyPatchContext(boolean useForce) {
+        return new PatchContext.Builder()
+            .withFieldManager("strimzi-kafka-operator")
+            .withForce(useForce)
+            .withPatchType(PatchType.SERVER_SIDE_APPLY)
+            .build();
     }
 
     /**

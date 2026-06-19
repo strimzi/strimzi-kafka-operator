@@ -9,7 +9,9 @@ import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBindingList;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.vertx.core.Vertx;
+import io.strimzi.operator.common.operator.resource.concurrent.AbstractNonNamespacedResourceOperator;
+
+import java.util.concurrent.Executor;
 
 /**
  * Operator for managing Cluster Role Bindings
@@ -19,11 +21,11 @@ public class ClusterRoleBindingOperator extends AbstractNonNamespacedResourceOpe
 
     /**
      * Constructor.
-     * @param vertx The Vertx instance.
+     * @param asyncExecutor Executor to use for asynchronous subroutines
      * @param client The Kubernetes client.
      */
-    public ClusterRoleBindingOperator(Vertx vertx, KubernetesClient client) {
-        super(vertx, client, "ClusterRoleBinding");
+    public ClusterRoleBindingOperator(Executor asyncExecutor, KubernetesClient client) {
+        super(asyncExecutor, client, "ClusterRoleBinding");
     }
 
     @Override

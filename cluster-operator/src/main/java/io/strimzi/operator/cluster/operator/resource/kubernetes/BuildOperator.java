@@ -9,7 +9,9 @@ import io.fabric8.openshift.api.model.Build;
 import io.fabric8.openshift.api.model.BuildList;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.fabric8.openshift.client.dsl.BuildResource;
-import io.vertx.core.Vertx;
+import io.strimzi.operator.common.operator.resource.concurrent.AbstractNamespacedResourceOperator;
+
+import java.util.concurrent.Executor;
 
 /**
  * Operations for {@code Build}s.
@@ -18,11 +20,11 @@ public class BuildOperator extends AbstractNamespacedResourceOperator<OpenShiftC
     /**
      * Constructor
      *
-     * @param vertx The Vertx instance
+     * @param asyncExecutor Executor to use for asynchronous subroutines
      * @param client The OpenShift client
      */
-    public BuildOperator(Vertx vertx, OpenShiftClient client) {
-        super(vertx, client, "Build");
+    public BuildOperator(Executor asyncExecutor, OpenShiftClient client) {
+        super(asyncExecutor, client, "Build");
     }
 
     @Override

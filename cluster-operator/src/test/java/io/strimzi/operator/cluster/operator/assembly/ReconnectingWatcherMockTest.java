@@ -25,6 +25,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -72,7 +73,7 @@ public class ReconnectingWatcherMockTest {
 
     @Test
     public void testWatch() throws InterruptedException {
-        CrdOperator<KubernetesClient, Kafka, KafkaList> kafkaOps = new CrdOperator<>(vertx, client, Kafka.class, KafkaList.class, Kafka.RESOURCE_KIND);
+        CrdOperator<KubernetesClient, Kafka, KafkaList> kafkaOps = new CrdOperator<>(ForkJoinPool.commonPool(), client, Kafka.class, KafkaList.class, Kafka.RESOURCE_KIND);
 
         CountDownLatch addedLatch = new CountDownLatch(1);
         CountDownLatch modifiedLatch = new CountDownLatch(1);
@@ -136,7 +137,7 @@ public class ReconnectingWatcherMockTest {
 
     @Test
     public void testWatchAllNamespaces() throws InterruptedException {
-        CrdOperator<KubernetesClient, Kafka, KafkaList> kafkaOps = new CrdOperator<>(vertx, client, Kafka.class, KafkaList.class, Kafka.RESOURCE_KIND);
+        CrdOperator<KubernetesClient, Kafka, KafkaList> kafkaOps = new CrdOperator<>(ForkJoinPool.commonPool(), client, Kafka.class, KafkaList.class, Kafka.RESOURCE_KIND);
 
         CountDownLatch addedLatch = new CountDownLatch(2);
         CountDownLatch modifiedLatch = new CountDownLatch(2);
@@ -200,7 +201,7 @@ public class ReconnectingWatcherMockTest {
 
     @Test
     public void testWatchWithSelector() throws InterruptedException {
-        CrdOperator<KubernetesClient, Kafka, KafkaList> kafkaOps = new CrdOperator<>(vertx, client, Kafka.class, KafkaList.class, Kafka.RESOURCE_KIND);
+        CrdOperator<KubernetesClient, Kafka, KafkaList> kafkaOps = new CrdOperator<>(ForkJoinPool.commonPool(), client, Kafka.class, KafkaList.class, Kafka.RESOURCE_KIND);
 
         CountDownLatch addedLatch = new CountDownLatch(1);
         CountDownLatch modifiedLatch = new CountDownLatch(1);

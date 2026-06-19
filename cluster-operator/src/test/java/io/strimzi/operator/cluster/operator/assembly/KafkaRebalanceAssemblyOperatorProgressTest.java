@@ -117,7 +117,7 @@ public class KafkaRebalanceAssemblyOperatorProgressTest extends AbstractKafkaReb
 
     private Future<ConfigMap> reconcile(Reconciliation reconciliation) {
         return  krao.reconcile(reconciliation)
-                .compose(res -> this.supplier.configMapOperations.getAsync(namespace, RESOURCE_NAME));
+                .compose(res -> io.strimzi.operator.cluster.operator.VertxUtil.toFuture(this.supplier.configMapOperations.getAsync(namespace, RESOURCE_NAME)));
     }
 
     private Future<Void> mockCruiseControlTask(CruiseControlUserTaskStatus taskStatus, boolean stateEndpointFetchError) {

@@ -10,7 +10,8 @@ import io.fabric8.kubernetes.api.model.ConfigMapList;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.vertx.core.Vertx;
+import io.strimzi.operator.common.operator.resource.concurrent.AbstractNamespacedResourceOperator;
+import io.strimzi.operator.common.operator.resource.concurrent.AbstractNamespacedResourceOperatorTest;
 
 import static java.util.Collections.singletonMap;
 import static org.mockito.Mockito.when;
@@ -23,18 +24,18 @@ public class ConfigMapOperatorTest extends AbstractNamespacedResourceOperatorTes
     }
 
     @Override
-    protected void  mocker(KubernetesClient mockClient, MixedOperation mockCms) {
+    protected void mocker(KubernetesClient mockClient, MixedOperation<ConfigMap, ConfigMapList, Resource<ConfigMap>> mockCms) {
         when(mockClient.configMaps()).thenReturn(mockCms);
     }
 
     @Override
-    protected AbstractNamespacedResourceOperator<KubernetesClient, ConfigMap, ConfigMapList, Resource<ConfigMap>> createResourceOperations(Vertx vertx, KubernetesClient mockClient) {
-        return new ConfigMapOperator(vertx, mockClient, false);
+    protected AbstractNamespacedResourceOperator<KubernetesClient, ConfigMap, ConfigMapList, Resource<ConfigMap>> createResourceOperations(KubernetesClient mockClient) {
+        return new ConfigMapOperator(asyncExecutor, mockClient, false);
     }
 
     @Override
-    protected AbstractNamespacedResourceOperator<KubernetesClient, ConfigMap, ConfigMapList, Resource<ConfigMap>> createResourceOperations(Vertx vertx, KubernetesClient mockClient, boolean useServerSideApply) {
-        return new ConfigMapOperator(vertx, mockClient, useServerSideApply);
+    protected AbstractNamespacedResourceOperator<KubernetesClient, ConfigMap, ConfigMapList, Resource<ConfigMap>> createResourceOperations(KubernetesClient mockClient, boolean useServerSideApply) {
+        return new ConfigMapOperator(asyncExecutor, mockClient, useServerSideApply);
     }
 
     @Override

@@ -9,22 +9,19 @@ import io.fabric8.kubernetes.api.model.NodeBuilder;
 import io.fabric8.kubernetes.api.model.NodeList;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.vertx.junit5.VertxExtension;
-import io.vertx.junit5.VertxTestContext;
-import org.junit.jupiter.api.extension.ExtendWith;
+import io.strimzi.operator.common.operator.resource.concurrent.AbstractNonNamespacedResourceOperator;
 
 import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-@ExtendWith(VertxExtension.class)
 public class NodeOperatorIT extends AbstractNonNamespacedResourceOperatorIT<KubernetesClient,
         Node, NodeList, Resource<Node>> {
 
     @Override
     protected AbstractNonNamespacedResourceOperator<KubernetesClient,
             Node, NodeList, Resource<Node>> operator() {
-        return new NodeOperator(vertx, client);
+        return new NodeOperator(asyncExecutor, client);
     }
 
     @Override
@@ -56,9 +53,9 @@ public class NodeOperatorIT extends AbstractNonNamespacedResourceOperatorIT<Kube
     }
 
     @Override
-    protected void assertResources(VertxTestContext context, Node expected, Node actual)   {
-        context.verify(() -> assertThat(actual.getMetadata().getName(), is(expected.getMetadata().getName())));
-        context.verify(() -> assertThat(actual.getMetadata().getLabels(), is(expected.getMetadata().getLabels())));
-        context.verify(() -> assertThat(actual.getSpec().getUnschedulable(), is(expected.getSpec().getUnschedulable())));
+    protected void assertResources(Node expected, Node actual)   {
+        assertThat(actual.getMetadata().getName(), is(expected.getMetadata().getName()));
+        assertThat(actual.getMetadata().getLabels(), is(expected.getMetadata().getLabels()));
+        assertThat(actual.getSpec().getUnschedulable(), is(expected.getSpec().getUnschedulable()));
     }
 }

@@ -10,6 +10,7 @@ import io.strimzi.operator.cluster.model.MetricsAndLogging;
 import io.strimzi.operator.cluster.model.logging.LoggingModel;
 import io.strimzi.operator.cluster.model.metrics.JmxPrometheusExporterModel;
 import io.strimzi.operator.cluster.model.metrics.MetricsModel;
+import io.strimzi.operator.cluster.operator.VertxUtil;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.ConfigMapOperator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
@@ -47,7 +48,7 @@ public class MetricsAndLoggingUtils {
     private static Future<ConfigMap> metricsConfigMap(Reconciliation reconciliation, ConfigMapOperator configMapOperations, MetricsModel metrics) {
         // this is only for JMX Prometheus Exporter, because the Strimzi Metrics Reporter configuration is in the Kafka configuration file
         if (metrics instanceof JmxPrometheusExporterModel model && model.getConfigMapName() != null) {
-            return configMapOperations.getAsync(reconciliation.namespace(), model.getConfigMapName());
+            return VertxUtil.toFuture(configMapOperations.getAsync(reconciliation.namespace(), model.getConfigMapName()));
         } else {
             return Future.succeededFuture(null);
         }
@@ -58,7 +59,7 @@ public class MetricsAndLoggingUtils {
             if (externalLogging.getValueFrom() != null
                     && externalLogging.getValueFrom().getConfigMapKeyRef() != null
                     && externalLogging.getValueFrom().getConfigMapKeyRef().getName() != null) {
-                return configMapOperations.getAsync(reconciliation.namespace(), externalLogging.getValueFrom().getConfigMapKeyRef().getName());
+                return VertxUtil.toFuture(configMapOperations.getAsync(reconciliation.namespace(), externalLogging.getValueFrom().getConfigMapKeyRef().getName()));
             } else {
                 LOGGER.warnCr(reconciliation, "External logging configuration does not specify logging ConfigMap");
                 throw new InvalidResourceException("External logging configuration does not specify logging ConfigMap");

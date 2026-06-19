@@ -10,7 +10,8 @@ import io.fabric8.kubernetes.api.model.gatewayapi.v1.TLSRouteList;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.vertx.core.Vertx;
+import io.strimzi.operator.common.operator.resource.concurrent.AbstractNamespacedResourceOperator;
+import io.strimzi.operator.common.operator.resource.concurrent.AbstractNamespacedResourceOperatorTest;
 
 import static org.mockito.Mockito.when;
 
@@ -53,13 +54,12 @@ public class TLSRouteOperatorTest extends AbstractNamespacedResourceOperatorTest
     }
 
     @Override
-    @SuppressWarnings({ "rawtypes", "unchecked" })
-    protected void mocker(KubernetesClient mockClient, MixedOperation op) {
+    protected void mocker(KubernetesClient mockClient, MixedOperation<TLSRoute, TLSRouteList, Resource<TLSRoute>> op) {
         when(mockClient.resources(TLSRoute.class, TLSRouteList.class)).thenReturn(op);
     }
 
     @Override
-    protected AbstractNamespacedResourceOperator<KubernetesClient, TLSRoute, TLSRouteList, Resource<TLSRoute>> createResourceOperations(Vertx vertx, KubernetesClient mockClient) {
-        return new TLSRouteOperator(vertx, mockClient);
+    protected AbstractNamespacedResourceOperator<KubernetesClient, TLSRoute, TLSRouteList, Resource<TLSRoute>> createResourceOperations(KubernetesClient mockClient) {
+        return new TLSRouteOperator(asyncExecutor, mockClient);
     }
 }

@@ -9,7 +9,9 @@ import io.fabric8.kubernetes.api.model.rbac.RoleBindingList;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.vertx.core.Vertx;
+import io.strimzi.operator.common.operator.resource.concurrent.AbstractNamespacedResourceOperator;
+
+import java.util.concurrent.Executor;
 
 /**
  * Operator for managing Role Bindings
@@ -19,11 +21,11 @@ public class RoleBindingOperator extends AbstractNamespacedResourceOperator<Kube
         Resource<RoleBinding>> {
     /**
      * Constructor
-     * @param vertx The Vertx instance
+     * @param asyncExecutor Executor to use for asynchronous subroutines
      * @param client The Kubernetes client
      */
-    public RoleBindingOperator(Vertx vertx, KubernetesClient client) {
-        super(vertx, client, "RoleBinding");
+    public RoleBindingOperator(Executor asyncExecutor, KubernetesClient client) {
+        super(asyncExecutor, client, "RoleBinding");
     }
 
     @Override

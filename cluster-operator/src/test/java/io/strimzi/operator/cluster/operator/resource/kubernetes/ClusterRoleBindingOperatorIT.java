@@ -13,16 +13,13 @@ import io.fabric8.kubernetes.api.model.rbac.Subject;
 import io.fabric8.kubernetes.api.model.rbac.SubjectBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.vertx.junit5.VertxExtension;
-import io.vertx.junit5.VertxTestContext;
-import org.junit.jupiter.api.extension.ExtendWith;
+import io.strimzi.operator.common.operator.resource.concurrent.AbstractNonNamespacedResourceOperator;
 
 import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
 
-@ExtendWith(VertxExtension.class)
 public class ClusterRoleBindingOperatorIT extends AbstractNonNamespacedResourceOperatorIT<KubernetesClient,
         ClusterRoleBinding, ClusterRoleBindingList, Resource<ClusterRoleBinding>> {
 
@@ -30,7 +27,7 @@ public class ClusterRoleBindingOperatorIT extends AbstractNonNamespacedResourceO
     protected AbstractNonNamespacedResourceOperator<KubernetesClient,
             ClusterRoleBinding, ClusterRoleBindingList,
             Resource<ClusterRoleBinding>> operator() {
-        return new ClusterRoleBindingOperator(vertx, client);
+        return new ClusterRoleBindingOperator(asyncExecutor, client);
     }
 
     @Override
@@ -84,18 +81,16 @@ public class ClusterRoleBindingOperatorIT extends AbstractNonNamespacedResourceO
     }
 
     @Override
-    protected void assertResources(VertxTestContext context, ClusterRoleBinding expected, ClusterRoleBinding actual) {
-        context.verify(() -> {
-            assertThat(actual.getMetadata().getName(), is(expected.getMetadata().getName()));
-            assertThat(actual.getMetadata().getLabels(), is(expected.getMetadata().getLabels()));
-            assertThat(actual.getSubjects(), hasSize(expected.getSubjects().size()));
-            assertThat(actual.getSubjects().get(0).getKind(), is(expected.getSubjects().get(0).getKind()));
-            assertThat(actual.getSubjects().get(0).getNamespace(), is(expected.getSubjects().get(0).getNamespace()));
-            assertThat(actual.getSubjects().get(0).getName(), is(expected.getSubjects().get(0).getName()));
+    protected void assertResources(ClusterRoleBinding expected, ClusterRoleBinding actual) {
+        assertThat(actual.getMetadata().getName(), is(expected.getMetadata().getName()));
+        assertThat(actual.getMetadata().getLabels(), is(expected.getMetadata().getLabels()));
+        assertThat(actual.getSubjects(), hasSize(expected.getSubjects().size()));
+        assertThat(actual.getSubjects().get(0).getKind(), is(expected.getSubjects().get(0).getKind()));
+        assertThat(actual.getSubjects().get(0).getNamespace(), is(expected.getSubjects().get(0).getNamespace()));
+        assertThat(actual.getSubjects().get(0).getName(), is(expected.getSubjects().get(0).getName()));
 
-            assertThat(actual.getRoleRef().getKind(), is(expected.getRoleRef().getKind()));
-            assertThat(actual.getRoleRef().getApiGroup(), is(expected.getRoleRef().getApiGroup()));
-            assertThat(actual.getRoleRef().getName(), is(expected.getRoleRef().getName()));
-        });
+        assertThat(actual.getRoleRef().getKind(), is(expected.getRoleRef().getKind()));
+        assertThat(actual.getRoleRef().getApiGroup(), is(expected.getRoleRef().getApiGroup()));
+        assertThat(actual.getRoleRef().getName(), is(expected.getRoleRef().getName()));
     }
 }

@@ -10,8 +10,10 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.operator.common.Reconciliation;
-import io.vertx.core.Future;
-import io.vertx.core.Vertx;
+import io.strimzi.operator.common.operator.resource.concurrent.AbstractNamespacedResourceOperator;
+
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.Executor;
 
 /**
  * Operations for {@code TLSRoute}s.
@@ -20,11 +22,11 @@ public class TLSRouteOperator extends AbstractNamespacedResourceOperator<Kuberne
     /**
      * Constructor
      *
-     * @param vertx     The Vertx instance
+     * @param asyncExecutor Executor to use for asynchronous subroutines
      * @param client    The Kubernetes client
      */
-    public TLSRouteOperator(Vertx vertx, KubernetesClient client) {
-        super(vertx, client, "TLSRoute");
+    public TLSRouteOperator(Executor asyncExecutor, KubernetesClient client) {
+        super(asyncExecutor, client, "TLSRoute");
     }
 
     @Override
@@ -43,7 +45,7 @@ public class TLSRouteOperator extends AbstractNamespacedResourceOperator<Kuberne
      *
      * @return A future that succeeds when the TLSRoute has at least one parent.
      */
-    public Future<Void> hasParents(Reconciliation reconciliation, String namespace, String name, long pollIntervalMs, long timeoutMs) {
+    public CompletionStage<Void> hasParents(Reconciliation reconciliation, String namespace, String name, long pollIntervalMs, long timeoutMs) {
         return waitFor(reconciliation, namespace, name, "addressable", pollIntervalMs, timeoutMs, this::hasParents);
     }
 

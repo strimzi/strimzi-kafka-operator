@@ -36,6 +36,7 @@ import io.strimzi.operator.cluster.model.CruiseControl;
 import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.cluster.model.NoSuchResourceException;
 import io.strimzi.operator.cluster.model.cruisecontrol.CruiseControlConfiguration;
+import io.strimzi.operator.cluster.operator.VertxUtil;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.AbstractRebalanceOptions;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.AddBrokerOptions;
@@ -47,7 +48,6 @@ import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControl
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.RebalanceOptions;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.RemoveBrokerOptions;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.RemoveDisksOptions;
-import io.strimzi.operator.cluster.operator.resource.kubernetes.AbstractWatchableStatusedNamespacedResourceOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.ConfigMapOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.CrdOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.SecretOperator;
@@ -60,6 +60,7 @@ import io.strimzi.operator.common.model.StatusUtils;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlLoadParameters;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlRebalanceKeys;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlUserTaskStatus;
+import io.strimzi.operator.common.operator.resource.concurrent.AbstractWatchableStatusedNamespacedResourceOperator;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
@@ -342,7 +343,7 @@ public class KafkaRebalanceAssemblyOperator
         String configMapNamespace = kafkaRebalance.getMetadata().getNamespace();
         String configMapName = kafkaRebalance.getMetadata().getName();
 
-        return configMapOperator.getAsync(configMapNamespace, configMapName)
+        return VertxUtil.toFuture(configMapOperator.getAsync(configMapNamespace, configMapName))
                 .compose(existingConfigMap -> {
                     ConfigMap desiredConfigMap = desiredStatusAndMap.getLoadAndProgressConfigMap();
                     KafkaRebalanceStatus desiredStatus = desiredStatusAndMap.getStatus();
@@ -420,8 +421,8 @@ public class KafkaRebalanceAssemblyOperator
                     .compose(statusAndMap -> updateProgressFields(reconciliation, host, cruiseControlPort, apiClient, kafkaRebalance, configMapOperator, statusAndMap))
                     .compose(desiredStatusAndMap -> {
                         KafkaRebalanceAnnotation rebalanceAnnotation = rebalanceAnnotation(kafkaRebalance);
-                        return configMapOperator.reconcile(reconciliation, kafkaRebalance.getMetadata().getNamespace(),
-                                        kafkaRebalance.getMetadata().getName(), desiredStatusAndMap.getLoadAndProgressConfigMap())
+                        return VertxUtil.toFuture(configMapOperator.reconcile(reconciliation, kafkaRebalance.getMetadata().getNamespace(),
+                                        kafkaRebalance.getMetadata().getName(), desiredStatusAndMap.getLoadAndProgressConfigMap()))
                                 .onComplete(ignoredConfigMapResult -> {
                                     KafkaRebalanceStatus kafkaRebalanceStatus = updateStatus(kafkaRebalance, desiredStatusAndMap.getStatus(), null);
                                     if (kafkaRebalance.getStatus() != null
@@ -450,7 +451,7 @@ public class KafkaRebalanceAssemblyOperator
                                                         .removeFromAnnotations(ANNO_STRIMZI_IO_REBALANCE)
                                                     .endMetadata()
                                                     .build();
-                                            kafkaRebalanceOperator.patchAsync(reconciliation, patchedKafkaRebalance)
+                                            VertxUtil.toFuture(kafkaRebalanceOperator.patchAsync(reconciliation, patchedKafkaRebalance))
                                                     .onComplete(ignoredKafkaRebalanceResult -> reconcilePromise.complete(kafkaRebalanceStatus));
                                         }
                                     } else {
@@ -872,7 +873,7 @@ public class KafkaRebalanceAssemblyOperator
         if (cruiseControlResponse.isMaxActiveUserTasksReached()) {
             LOGGER.warnCr(reconciliation, "The maximum number of active user tasks that Cruise Control can run concurrently has been reached, therefore will retry getting user tasks in the next reconciliation. " +
                     "If this occurs often, consider increasing the value for max.active.user.tasks in the Cruise Control configuration.");
-            configMapOperator.getAsync(kafkaRebalance.getMetadata().getNamespace(), kafkaRebalance.getMetadata().getName())
+            VertxUtil.toFuture(configMapOperator.getAsync(kafkaRebalance.getMetadata().getNamespace(), kafkaRebalance.getMetadata().getName()))
                     .onSuccess(loadmap -> p.complete(new MapAndStatus<>(
                         loadmap != null ? createConfigMapForRebalance(kafkaRebalance, loadmap.getData()) : null,
                         buildRebalanceStatusFromPreviousStatus(kafkaRebalance.getStatus(), conditions))
@@ -941,7 +942,7 @@ public class KafkaRebalanceAssemblyOperator
                 // will be in an ACTIVE state. When the proposal is ready it will shift to IN_EXECUTION and we will
                 // check that the optimisation proposal is added to the status on the next reconcile.
                 LOGGER.infoCr(reconciliation, "Rebalance ({}) optimization proposal is still being prepared", sessionId);
-                configMapOperator.getAsync(kafkaRebalance.getMetadata().getNamespace(), kafkaRebalance.getMetadata().getName())
+                VertxUtil.toFuture(configMapOperator.getAsync(kafkaRebalance.getMetadata().getNamespace(), kafkaRebalance.getMetadata().getName()))
                         .onSuccess(loadmap -> p.complete(new MapAndStatus<>(
                             loadmap != null ? createConfigMapForRebalance(kafkaRebalance, loadmap.getData()) : null,
                             buildRebalanceStatusFromPreviousStatus(kafkaRebalance.getStatus(), conditions))
@@ -982,7 +983,7 @@ public class KafkaRebalanceAssemblyOperator
             switch (rebalanceAnnotation) {
                 case none:
                     LOGGER.debugCr(reconciliation, "No {} annotation set", ANNO_STRIMZI_IO_REBALANCE);
-                    return configMapOperator.getAsync(kafkaRebalance.getMetadata().getNamespace(), kafkaRebalance.getMetadata().getName()).compose(loadmap -> Future.succeededFuture(new MapAndStatus<>(
+                    return VertxUtil.toFuture(configMapOperator.getAsync(kafkaRebalance.getMetadata().getNamespace(), kafkaRebalance.getMetadata().getName())).compose(loadmap -> Future.succeededFuture(new MapAndStatus<>(
                         loadmap != null ? createConfigMapForRebalance(kafkaRebalance, loadmap.getData()) : null,
                         buildRebalanceStatusFromPreviousStatus(kafkaRebalance.getStatus(), StatusUtils.validate(reconciliation, kafkaRebalance)))
                     ));
@@ -996,7 +997,7 @@ public class KafkaRebalanceAssemblyOperator
                     LOGGER.warnCr(reconciliation, "Ignore annotation {}={}", ANNO_STRIMZI_IO_REBALANCE, kafkaRebalance.getMetadata().getAnnotations().get(ANNO_STRIMZI_IO_REBALANCE));
                     Set<Condition> conditions = StatusUtils.validate(reconciliation, kafkaRebalance);
                     validateAnnotation(reconciliation, conditions, KafkaRebalanceState.ProposalReady, rebalanceAnnotation, kafkaRebalance);
-                    return configMapOperator.getAsync(kafkaRebalance.getMetadata().getNamespace(), kafkaRebalance.getMetadata().getName())
+                    return VertxUtil.toFuture(configMapOperator.getAsync(kafkaRebalance.getMetadata().getNamespace(), kafkaRebalance.getMetadata().getName()))
                             .compose(loadmap -> Future.succeededFuture(new MapAndStatus<>(
                                 loadmap != null ? createConfigMapForRebalance(kafkaRebalance, loadmap.getData()) : null,
                                 buildRebalanceStatusFromPreviousStatus(kafkaRebalance.getStatus(), conditions))
@@ -1116,7 +1117,7 @@ public class KafkaRebalanceAssemblyOperator
         } else {
             Set<Condition> conditions = StatusUtils.validate(reconciliation, kafkaRebalance);
             validateAnnotation(reconciliation, conditions, KafkaRebalanceState.Ready, rebalanceAnnotation, kafkaRebalance);
-            return configMapOperator.getAsync(kafkaRebalance.getMetadata().getNamespace(), kafkaRebalance.getMetadata().getName())
+            return VertxUtil.toFuture(configMapOperator.getAsync(kafkaRebalance.getMetadata().getNamespace(), kafkaRebalance.getMetadata().getName()))
                     .compose(loadmap -> Future.succeededFuture(new MapAndStatus<>(
                         loadmap != null ? createConfigMapForRebalance(kafkaRebalance, loadmap.getData()) : null,
                         buildRebalanceStatusFromPreviousStatus(kafkaRebalance.getStatus(), conditions))
@@ -1156,7 +1157,7 @@ public class KafkaRebalanceAssemblyOperator
         }
 
         // Get associated Kafka cluster state
-        return kafkaOperator.getAsync(clusterNamespace, clusterName)
+        return VertxUtil.toFuture(kafkaOperator.getAsync(clusterNamespace, clusterName))
                 .compose(kafka -> {
                     if (kafka == null) {
                         LOGGER.warnCr(reconciliation, "Kafka resource '{}' identified by label '{}' does not exist in namespace {}.",
@@ -1191,7 +1192,7 @@ public class KafkaRebalanceAssemblyOperator
                                     .addToAnnotations(Map.of(ANNO_STRIMZI_IO_REBALANCE, KafkaRebalanceAnnotation.refresh.toString()))
                                 .endMetadata();
 
-                        resourcePatchFuture = kafkaRebalanceOperator.patchAsync(reconciliation, patchedKafkaRebalance.build()).onComplete(
+                        resourcePatchFuture = VertxUtil.toFuture(kafkaRebalanceOperator.patchAsync(reconciliation, patchedKafkaRebalance.build())).onComplete(
                                 r -> LOGGER.debugCr(reconciliation, "The KafkaRebalance resource is updated with refresh annotation"));
                     } else {
                         resourcePatchFuture = Future.succeededFuture();
@@ -1200,8 +1201,8 @@ public class KafkaRebalanceAssemblyOperator
                     String ccSecretName =  CruiseControlResources.secretName(clusterName);
                     String ccApiSecretName =  CruiseControlResources.apiSecretName(clusterName);
 
-                    Future<Secret> ccSecretFuture = secretOperations.getAsync(clusterNamespace, ccSecretName);
-                    Future<Secret> ccApiSecretFuture = secretOperations.getAsync(clusterNamespace, ccApiSecretName);
+                    Future<Secret> ccSecretFuture = VertxUtil.toFuture(secretOperations.getAsync(clusterNamespace, ccSecretName));
+                    Future<Secret> ccApiSecretFuture = VertxUtil.toFuture(secretOperations.getAsync(clusterNamespace, ccApiSecretName));
 
                     return Future.join(resourcePatchFuture, ccSecretFuture, ccApiSecretFuture)
                             .compose(compositeFuture -> {
@@ -1221,7 +1222,7 @@ public class KafkaRebalanceAssemblyOperator
                                 CruiseControlApi apiClient = cruiseControlClientProvider(ccSecret, ccApiSecret, apiAuthEnabled, apiSslEnabled);
 
                                 // get latest KafkaRebalance state as it may have changed (see the patching above with "refresh" annotation)
-                                return kafkaRebalanceOperator.getAsync(kafkaRebalance.getMetadata().getNamespace(), kafkaRebalance.getMetadata().getName())
+                                return VertxUtil.toFuture(kafkaRebalanceOperator.getAsync(kafkaRebalance.getMetadata().getNamespace(), kafkaRebalance.getMetadata().getName()))
                                         .compose(currentKafkaRebalance -> {
                                             KafkaRebalanceStatus kafkaRebalanceStatus = currentKafkaRebalance.getStatus();
                                             KafkaRebalanceState currentState;

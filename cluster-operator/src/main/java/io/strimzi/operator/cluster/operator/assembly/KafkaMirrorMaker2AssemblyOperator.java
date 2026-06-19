@@ -26,6 +26,7 @@ import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.model.KafkaConnectCluster;
 import io.strimzi.operator.cluster.model.KafkaConnectorOffsetsAnnotation;
 import io.strimzi.operator.cluster.model.KafkaMirrorMaker2Cluster;
+import io.strimzi.operator.cluster.operator.VertxUtil;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
@@ -124,13 +125,13 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
                 .compose(i -> connectRoleBinding(reconciliation, namespace, mirrorMaker2Cluster))
                 .compose(i -> connectNetworkPolicy(reconciliation, namespace, mirrorMaker2Cluster, true))
                 .compose(i -> manualRollingUpdate(reconciliation, mirrorMaker2Cluster))
-                .compose(i -> serviceOperations.reconcile(reconciliation, namespace, mirrorMaker2Cluster.getServiceName(), mirrorMaker2Cluster.generateService()))
-                .compose(i -> serviceOperations.reconcile(reconciliation, namespace, mirrorMaker2Cluster.getComponentName(), mirrorMaker2Cluster.generateHeadlessService()))
+                .compose(i -> VertxUtil.toFuture(serviceOperations.reconcile(reconciliation, namespace, mirrorMaker2Cluster.getServiceName(), mirrorMaker2Cluster.generateService())))
+                .compose(i -> VertxUtil.toFuture(serviceOperations.reconcile(reconciliation, namespace, mirrorMaker2Cluster.getComponentName(), mirrorMaker2Cluster.generateHeadlessService())))
                 .compose(i -> tlsTrustedCertsSecret(reconciliation, namespace, mirrorMaker2Cluster))
                 .compose(i -> generateMetricsAndLoggingConfigMap(reconciliation, mirrorMaker2Cluster))
                 .compose(logAndMetricsConfigMap -> {
                     podAnnotations.put(Annotations.ANNO_STRIMZI_IO_CONFIGURATION_HASH, Util.hashStub(logAndMetricsConfigMap.getData().get(KafkaMirrorMaker2Cluster.KAFKA_CONNECT_CONFIGURATION_FILENAME)));
-                    return configMapOperations.reconcile(reconciliation, namespace, logAndMetricsConfigMap.getMetadata().getName(), logAndMetricsConfigMap);
+                    return VertxUtil.toFuture(configMapOperations.reconcile(reconciliation, namespace, logAndMetricsConfigMap.getMetadata().getName(), logAndMetricsConfigMap));
                 })
                 .compose(i -> ReconcilerUtils.reconcileJmxSecret(reconciliation, secretOperations, mirrorMaker2Cluster))
                 .compose(i -> connectPodDisruptionBudget(reconciliation, namespace, mirrorMaker2Cluster))
@@ -178,7 +179,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
      */
     @Override
     protected Future<Boolean> delete(Reconciliation reconciliation) {
-        return ReconcilerUtils.withIgnoreRbacError(reconciliation, clusterRoleBindingOperations.reconcile(reconciliation, KafkaMirrorMaker2Resources.initContainerClusterRoleBindingName(reconciliation.name(), reconciliation.namespace()), null), null)
+        return ReconcilerUtils.withIgnoreRbacError(reconciliation, VertxUtil.toFuture(clusterRoleBindingOperations.reconcile(reconciliation, KafkaMirrorMaker2Resources.initContainerClusterRoleBindingName(reconciliation.name(), reconciliation.namespace()), null)), null)
                 .map(Boolean.FALSE); // Return FALSE since other resources are still deleted by garbage collection
     }
 
@@ -215,11 +216,11 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
 
         if (certificatesFutures.isEmpty()) {
             // No TLS configured - delete the secret
-            return secretOperations.reconcile(
+            return VertxUtil.toFuture(secretOperations.reconcile(
                             reconciliation,
                             namespace,
                             KafkaConnectResources.internalTlsTrustedCertsSecretName(mirrorMaker2Cluster.getCluster()),
-                            null)
+                            null))
                     .mapEmpty();
         }
 
@@ -233,14 +234,14 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
                         }
                     }
 
-                    return secretOperations.reconcile(
+                    return VertxUtil.toFuture(secretOperations.reconcile(
                                     reconciliation,
                                     namespace,
                                     KafkaConnectResources.internalTlsTrustedCertsSecretName(mirrorMaker2Cluster.getCluster()),
                                     mirrorMaker2Cluster.generateTlsTrustedCertsSecret(
                                             secretData,
                                             KafkaConnectResources.internalTlsTrustedCertsSecretName(mirrorMaker2Cluster.getCluster())
-                                    ))
+                                    )))
                             .mapEmpty();
                 });
     }
@@ -511,7 +512,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
                 .removeFromAnnotations(annotationKey)
                 .endMetadata()
                 .build();
-        return resourceOperator.patchAsync(reconciliation, patchedKafkaMirrorMaker2)
+        return VertxUtil.toFuture(resourceOperator.patchAsync(reconciliation, patchedKafkaMirrorMaker2))
                 .mapEmpty();
     }
 
@@ -532,7 +533,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
                     .removeFromAnnotations(annotationsToRemove)
                 .endMetadata()
                 .build();
-        return resourceOperator.patchAsync(reconciliation, patchedKafkaMirrorMaker2)
+        return VertxUtil.toFuture(resourceOperator.patchAsync(reconciliation, patchedKafkaMirrorMaker2))
                 .mapEmpty();
     }
 

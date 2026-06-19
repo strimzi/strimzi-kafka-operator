@@ -23,6 +23,7 @@ import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceList;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.model.DefaultSharedEnvironmentProvider;
 import io.strimzi.operator.cluster.model.SharedEnvironmentProvider;
+import io.strimzi.operator.cluster.operator.VertxUtil;
 import io.strimzi.operator.cluster.operator.assembly.BrokersInUseCheck;
 import io.strimzi.operator.cluster.operator.resource.events.KubernetesRestartEventPublisher;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.BuildConfigOperator;
@@ -52,6 +53,8 @@ import io.strimzi.operator.common.DefaultAdminClientProvider;
 import io.strimzi.operator.common.MetricsProvider;
 import io.strimzi.operator.common.featuregates.FeatureGates;
 import io.vertx.core.Vertx;
+
+import java.util.concurrent.Executor;
 
 /**
  * Class holding the various resource operator and providers of various clients
@@ -231,15 +234,17 @@ public class ResourceOperatorSupplier {
     /**
      * Constructor
      *
-     * @param vertx                 Vert.x instance
+     * @param asyncExecutor         Executor on which the resource operators run their blocking Kubernetes API calls.
+     *                              Created and configured by the caller (see {@code Main}) so that the configured
+     *                              operations thread-pool size is applied.
      * @param client                Kubernetes Client
      * @param metricsProvider       Metrics provider
      * @param pfa                   Platform Availability Features
      * @param operatorName          Name of this operator instance
      * @param featureGates          Feature Gates configuration of operator
      */
-    public ResourceOperatorSupplier(Vertx vertx, KubernetesClient client, MetricsProvider metricsProvider, PlatformFeaturesAvailability pfa, String operatorName, FeatureGates featureGates) {
-        this(vertx,
+    public ResourceOperatorSupplier(Executor asyncExecutor, KubernetesClient client, MetricsProvider metricsProvider, PlatformFeaturesAvailability pfa, String operatorName, FeatureGates featureGates) {
+        this(asyncExecutor,
             client,
             new DefaultAdminClientProvider(),
             new DefaultKafkaAgentClientProvider(),
@@ -302,34 +307,55 @@ public class ResourceOperatorSupplier {
                                      PlatformFeaturesAvailability pfa,
                                      KubernetesRestartEventPublisher restartEventPublisher,
                                      FeatureGates featureGates) {
-        this(new ServiceOperator(vertx, client, featureGates.serverSideApplyPhase1Enabled()),
-                pfa.hasRoutes() ? new RouteOperator(vertx, client.adapt(OpenShiftClient.class)) : null,
-                pfa.hasImages() ? new ImageStreamOperator(vertx, client.adapt(OpenShiftClient.class)) : null,
-                new ConfigMapOperator(vertx, client, featureGates.serverSideApplyPhase1Enabled()),
-                new SecretOperator(vertx, client),
-                new PvcOperator(vertx, client, featureGates.serverSideApplyPhase1Enabled()),
-                new DeploymentOperator(vertx, client),
-                new ServiceAccountOperator(vertx, client, featureGates.serverSideApplyPhase1Enabled()),
-                new RoleBindingOperator(vertx, client),
-                new RoleOperator(vertx, client),
-                new ClusterRoleBindingOperator(vertx, client),
-                new NetworkPolicyOperator(vertx, client),
-                new PodDisruptionBudgetOperator(vertx, client),
-                new PodOperator(vertx, client, featureGates.useBackgroundPodDeletionEnabled()),
-                new IngressOperator(vertx, client, featureGates.serverSideApplyPhase1Enabled()),
-                pfa.hasBuilds() ? new BuildConfigOperator(vertx, client.adapt(OpenShiftClient.class)) : null,
-                pfa.hasBuilds() ? new BuildOperator(vertx, client.adapt(OpenShiftClient.class)) : null,
-                new CrdOperator<>(vertx, client, Kafka.class, KafkaList.class, Kafka.RESOURCE_KIND),
-                new CrdOperator<>(vertx, client, KafkaConnect.class, KafkaConnectList.class, KafkaConnect.RESOURCE_KIND),
-                new CrdOperator<>(vertx, client, KafkaBridge.class, KafkaBridgeList.class, KafkaBridge.RESOURCE_KIND),
-                new CrdOperator<>(vertx, client, KafkaConnector.class, KafkaConnectorList.class, KafkaConnector.RESOURCE_KIND),
-                new CrdOperator<>(vertx, client, KafkaMirrorMaker2.class, KafkaMirrorMaker2List.class, KafkaMirrorMaker2.RESOURCE_KIND),
-                new CrdOperator<>(vertx, client, KafkaRebalance.class, KafkaRebalanceList.class, KafkaRebalance.RESOURCE_KIND),
-                new CrdOperator<>(vertx, client, KafkaNodePool.class, KafkaNodePoolList.class, KafkaNodePool.RESOURCE_KIND),
-                new StrimziPodSetOperator(vertx, client),
-                new StorageClassOperator(vertx, client),
-                new NodeOperator(vertx, client),
-                new TLSRouteOperator(vertx, client),
+        // This Vert.x based constructor is used only by tests. The production code creates the executor in Main where
+        // the configured operations thread-pool size is applied. Tests do not need the configured pool size, so the
+        // shared worker pool with its default settings is good enough here.
+        this(VertxUtil.asExecutor(vertx.createSharedWorkerExecutor("kubernetes-ops-pool")),
+                client,
+                adminClientProvider,
+                kafkaAgentClientProvider,
+                metricsProvider,
+                pfa,
+                restartEventPublisher,
+                featureGates);
+    }
+
+    private ResourceOperatorSupplier(Executor asyncExecutor,
+                                     KubernetesClient client,
+                                     AdminClientProvider adminClientProvider,
+                                     KafkaAgentClientProvider kafkaAgentClientProvider,
+                                     MetricsProvider metricsProvider,
+                                     PlatformFeaturesAvailability pfa,
+                                     KubernetesRestartEventPublisher restartEventPublisher,
+                                     FeatureGates featureGates) {
+        this(new ServiceOperator(asyncExecutor, client, featureGates.serverSideApplyPhase1Enabled()),
+                pfa.hasRoutes() ? new RouteOperator(asyncExecutor, client.adapt(OpenShiftClient.class)) : null,
+                pfa.hasImages() ? new ImageStreamOperator(asyncExecutor, client.adapt(OpenShiftClient.class)) : null,
+                new ConfigMapOperator(asyncExecutor, client, featureGates.serverSideApplyPhase1Enabled()),
+                new SecretOperator(asyncExecutor, client),
+                new PvcOperator(asyncExecutor, client, featureGates.serverSideApplyPhase1Enabled()),
+                new DeploymentOperator(asyncExecutor, client),
+                new ServiceAccountOperator(asyncExecutor, client, featureGates.serverSideApplyPhase1Enabled()),
+                new RoleBindingOperator(asyncExecutor, client),
+                new RoleOperator(asyncExecutor, client),
+                new ClusterRoleBindingOperator(asyncExecutor, client),
+                new NetworkPolicyOperator(asyncExecutor, client),
+                new PodDisruptionBudgetOperator(asyncExecutor, client),
+                new PodOperator(asyncExecutor, client, featureGates.useBackgroundPodDeletionEnabled()),
+                new IngressOperator(asyncExecutor, client, featureGates.serverSideApplyPhase1Enabled()),
+                pfa.hasBuilds() ? new BuildConfigOperator(asyncExecutor, client.adapt(OpenShiftClient.class)) : null,
+                pfa.hasBuilds() ? new BuildOperator(asyncExecutor, client.adapt(OpenShiftClient.class)) : null,
+                new CrdOperator<>(asyncExecutor, client, Kafka.class, KafkaList.class, Kafka.RESOURCE_KIND),
+                new CrdOperator<>(asyncExecutor, client, KafkaConnect.class, KafkaConnectList.class, KafkaConnect.RESOURCE_KIND),
+                new CrdOperator<>(asyncExecutor, client, KafkaBridge.class, KafkaBridgeList.class, KafkaBridge.RESOURCE_KIND),
+                new CrdOperator<>(asyncExecutor, client, KafkaConnector.class, KafkaConnectorList.class, KafkaConnector.RESOURCE_KIND),
+                new CrdOperator<>(asyncExecutor, client, KafkaMirrorMaker2.class, KafkaMirrorMaker2List.class, KafkaMirrorMaker2.RESOURCE_KIND),
+                new CrdOperator<>(asyncExecutor, client, KafkaRebalance.class, KafkaRebalanceList.class, KafkaRebalance.RESOURCE_KIND),
+                new CrdOperator<>(asyncExecutor, client, KafkaNodePool.class, KafkaNodePoolList.class, KafkaNodePool.RESOURCE_KIND),
+                new StrimziPodSetOperator(asyncExecutor, client),
+                new StorageClassOperator(asyncExecutor, client),
+                new NodeOperator(asyncExecutor, client),
+                new TLSRouteOperator(asyncExecutor, client),
                 kafkaAgentClientProvider,
                 metricsProvider,
                 adminClientProvider,

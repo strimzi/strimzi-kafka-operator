@@ -25,6 +25,7 @@ import io.strimzi.operator.cluster.model.NodeRef;
 import io.strimzi.operator.cluster.model.RestartReason;
 import io.strimzi.operator.cluster.model.RestartReasons;
 import io.strimzi.operator.cluster.model.WorkloadUtils;
+import io.strimzi.operator.cluster.operator.VertxUtil;
 import io.strimzi.operator.cluster.operator.resource.KafkaAgentClientProvider;
 import io.strimzi.operator.cluster.operator.resource.KafkaRoller;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
@@ -230,7 +231,7 @@ public class CaReconciler {
         String clientsCaCertName = KafkaResources.clientsCaCertificateSecretName(reconciliation.name());
         String clientsCaKeyName = KafkaResources.clientsCaKeySecretName(reconciliation.name());
 
-        return secretOperator.listAsync(reconciliation.namespace(), Labels.EMPTY.withStrimziKind(reconciliation.kind()).withStrimziCluster(reconciliation.name()))
+        return VertxUtil.toFuture(secretOperator.listAsync(reconciliation.namespace(), Labels.EMPTY.withStrimziKind(reconciliation.kind()).withStrimziCluster(reconciliation.name())))
                 .compose(clusterSecrets -> {
                     Secret existingClusterCaCertSecret = null;
                     Secret existingClusterCaKeySecret = null;
@@ -271,10 +272,10 @@ public class CaReconciler {
                         OwnerReference ownerReference = clusterCaConfig.isGenerateSecretOwnerRef() ? ownerRef : null;
 
                         clusterCaCertSecret = createCaCertSecret(clusterCaCertName, clusterCaCertLabels, clusterCaCertAnnotations, ownerReference, clusterCa, existingClusterCaCertSecret);
-                        secretReconciliations.add(secretOperator.reconcile(reconciliation, reconciliation.namespace(), clusterCaCertName, clusterCaCertSecret));
+                        secretReconciliations.add(VertxUtil.toFuture(secretOperator.reconcile(reconciliation, reconciliation.namespace(), clusterCaCertName, clusterCaCertSecret)));
 
                         Secret clusterCaKeySecret = createCaKeySecret(clusterCaKeyName, ownerReference, clusterCa, existingClusterCaKeySecret);
-                        secretReconciliations.add(secretOperator.reconcile(reconciliation, reconciliation.namespace(), clusterCaKeyName, clusterCaKeySecret));
+                        secretReconciliations.add(VertxUtil.toFuture(secretOperator.reconcile(reconciliation, reconciliation.namespace(), clusterCaKeyName, clusterCaKeySecret)));
                     } else {
                         clusterCaCertSecret = existingClusterCaCertSecret;
                     }
@@ -287,10 +288,10 @@ public class CaReconciler {
                         OwnerReference ownerReference = clientsCaConfig.isGenerateSecretOwnerRef() ? ownerRef : null;
 
                         Secret clientsCaCertSecret = createCaCertSecret(clientsCaCertName, Map.of(), Map.of(), ownerReference, clientsCa, existingClientsCaCertSecret);
-                        secretReconciliations.add(secretOperator.reconcile(reconciliation, reconciliation.namespace(), clientsCaCertName, clientsCaCertSecret));
+                        secretReconciliations.add(VertxUtil.toFuture(secretOperator.reconcile(reconciliation, reconciliation.namespace(), clientsCaCertName, clientsCaCertSecret)));
 
                         Secret clientsCaKeySecret = createCaKeySecret(clientsCaKeyName, ownerReference, clientsCa, existingClientsCaKeySecret);
-                        secretReconciliations.add(secretOperator.reconcile(reconciliation, reconciliation.namespace(), clientsCaKeyName, clientsCaKeySecret));
+                        secretReconciliations.add(VertxUtil.toFuture(secretOperator.reconcile(reconciliation, reconciliation.namespace(), clientsCaKeyName, clientsCaKeySecret)));
                     }
 
                     Promise<Void> caUpdatePromise = Promise.promise();
@@ -321,8 +322,8 @@ public class CaReconciler {
                 Map.of()
         );
 
-        return secretOperator
-                .reconcile(reconciliation, reconciliation.namespace(), KafkaResources.trustBundleSecretName(reconciliation.name()), trustBundleSecret)
+        return VertxUtil.toFuture(secretOperator
+                .reconcile(reconciliation, reconciliation.namespace(), KafkaResources.trustBundleSecretName(reconciliation.name()), trustBundleSecret))
                 .mapEmpty();
     }
 
@@ -335,7 +336,7 @@ public class CaReconciler {
      *                 That time is used for checking maintenance windows
      */
     Future<Void> reconcileClusterOperatorSecret(Clock clock) {
-        return secretOperator.getAsync(reconciliation.namespace(), KafkaResources.clusterOperatorCertsSecretName(reconciliation.name()))
+        return VertxUtil.toFuture(secretOperator.getAsync(reconciliation.namespace(), KafkaResources.clusterOperatorCertsSecretName(reconciliation.name())))
                 .compose(oldSecret -> {
                     coSecret = oldSecret;
                     String componentName = "cluster-operator";
@@ -359,7 +360,7 @@ public class CaReconciler {
                             Map.of()
                     );
 
-                    return secretOperator.reconcile(reconciliation, reconciliation.namespace(), KafkaResources.clusterOperatorCertsSecretName(reconciliation.name()), coSecret)
+                    return VertxUtil.toFuture(secretOperator.reconcile(reconciliation, reconciliation.namespace(), KafkaResources.clusterOperatorCertsSecretName(reconciliation.name()), coSecret))
                             .mapEmpty();
                 });
     }
@@ -408,7 +409,7 @@ public class CaReconciler {
         // Building the selector for Kafka related components
         Labels labels =  Labels.forStrimziCluster(reconciliation.name()).withStrimziKind(Kafka.RESOURCE_KIND);
 
-        return podOperator.listAsync(reconciliation.namespace(), labels)
+        return VertxUtil.toFuture(podOperator.listAsync(reconciliation.namespace(), labels))
                 .compose(pods -> {
 
                     // still no Pods, a new Kafka cluster is under creation
@@ -472,7 +473,7 @@ public class CaReconciler {
                 .withStrimziCluster(reconciliation.name())
                 .withStrimziName(KafkaResources.kafkaComponentName(reconciliation.name()));
 
-        return strimziPodSetOperator.listAsync(reconciliation.namespace(), selectorLabels)
+        return VertxUtil.toFuture(strimziPodSetOperator.listAsync(reconciliation.namespace(), selectorLabels))
                 .compose(podSets -> {
                     if (podSets != null) {
                         List<StrimziPodSet> updatedPodSets = podSets
@@ -481,7 +482,7 @@ public class CaReconciler {
                                         podSet,
                                         Map.of(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_KEY_GENERATION, String.valueOf(clusterCa.caKeyGeneration()))
                                 )).toList();
-                        return strimziPodSetOperator.batchReconcile(reconciliation, reconciliation.namespace(), updatedPodSets, selectorLabels)
+                        return VertxUtil.toFuture(strimziPodSetOperator.batchReconcile(reconciliation, reconciliation.namespace(), updatedPodSets, selectorLabels))
                                 .map(i -> updatedPodSets.stream().flatMap(podSet -> ReconcilerUtils.nodesFromPodSet(podSet).stream())
                                 .collect(Collectors.toSet()));
                     } else {
@@ -529,11 +530,11 @@ public class CaReconciler {
      * @return  Succeeded future if it succeeded, failed otherwise.
      */
     /* test */ Future<Void> rollDeploymentIfExists(String deploymentName, RestartReason reason)  {
-        return deploymentOperator.getAsync(reconciliation.namespace(), deploymentName)
+        return VertxUtil.toFuture(deploymentOperator.getAsync(reconciliation.namespace(), deploymentName))
                 .compose(dep -> {
                     if (dep != null) {
                         LOGGER.infoCr(reconciliation, "Rolling Deployment {} due to {}", deploymentName, reason.getDefaultNote());
-                        return deploymentOperator.singlePodDeploymentRollingUpdate(reconciliation, reconciliation.namespace(), deploymentName, operationTimeoutMs);
+                        return VertxUtil.toFuture(deploymentOperator.singlePodDeploymentRollingUpdate(reconciliation, reconciliation.namespace(), deploymentName, operationTimeoutMs));
                     } else {
                         return Future.succeededFuture();
                     }
@@ -552,7 +553,7 @@ public class CaReconciler {
 
             if (clusterCa.certsRemoved()) {
                 clusterCaCertSecret.setData(clusterCa.caCertData());
-                return secretOperator.reconcile(reconciliation, reconciliation.namespace(), AbstractModel.clusterCaCertSecretName(reconciliation.name()), clusterCaCertSecret)
+                return VertxUtil.toFuture(secretOperator.reconcile(reconciliation, reconciliation.namespace(), AbstractModel.clusterCaCertSecretName(reconciliation.name()), clusterCaCertSecret))
                         .mapEmpty();
             } else {
                 return Future.succeededFuture();

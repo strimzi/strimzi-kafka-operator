@@ -15,7 +15,6 @@ import io.strimzi.api.kafka.model.common.ConditionBuilder;
 import io.strimzi.api.kafka.model.common.Spec;
 import io.strimzi.api.kafka.model.kafka.Status;
 import io.strimzi.operator.cluster.operator.VertxUtil;
-import io.strimzi.operator.cluster.operator.resource.kubernetes.AbstractWatchableStatusedNamespacedResourceOperator;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.MetricsProvider;
 import io.strimzi.operator.common.Reconciliation;
@@ -30,6 +29,7 @@ import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.NamespaceAndName;
 import io.strimzi.operator.common.model.StatusDiff;
 import io.strimzi.operator.common.model.StatusUtils;
+import io.strimzi.operator.common.operator.resource.concurrent.AbstractWatchableStatusedNamespacedResourceOperator;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -186,7 +186,7 @@ public abstract class AbstractOperator<
         Timer.Sample reconciliationTimerSample = Timer.start(metrics().metricsProvider().meterRegistry());
 
         Future<Void> handler = withLock(reconciliation, LOCK_TIMEOUT_MS, () ->
-            resourceOperator.getAsync(namespace, name)
+            VertxUtil.toFuture(resourceOperator.getAsync(namespace, name))
                 .compose(cr -> cr != null ? reconcileResource(reconciliation, cr) : reconcileDeletion(reconciliation)));
 
         Promise<Void> result = Promise.promise();
@@ -334,7 +334,7 @@ public abstract class AbstractOperator<
         String namespace = reconciliation.namespace();
         String name = reconciliation.name();
 
-        return resourceOperator.getAsync(namespace, name)
+        return VertxUtil.toFuture(resourceOperator.getAsync(namespace, name))
                 .compose(res -> {
                     if (res != null) {
                         S currentStatus = res.getStatus();
@@ -343,7 +343,7 @@ public abstract class AbstractOperator<
                         if (!sDiff.isEmpty()) {
                             res.setStatus(desiredStatus);
 
-                            return resourceOperator.updateStatusAsync(reconciliation, res)
+                            return VertxUtil.toFuture(resourceOperator.updateStatusAsync(reconciliation, res))
                                     .compose(notUsed -> {
                                         LOGGER.debugCr(reconciliation, "Completed status update");
                                         return Future.succeededFuture();
@@ -478,7 +478,7 @@ public abstract class AbstractOperator<
      */
     @Override
     public Future<Set<NamespaceAndName>> allResourceNames(String namespace) {
-        return resourceOperator.listAsync(namespace, selector())
+        return VertxUtil.toFuture(resourceOperator.listAsync(namespace, selector()))
                 .map(resourceList ->
                         resourceList.stream()
                                 .map(resource -> new NamespaceAndName(resource.getMetadata().getNamespace(), resource.getMetadata().getName()))
@@ -608,7 +608,7 @@ public abstract class AbstractOperator<
             LOGGER.debugCr(reconciliation, "Removed metric " + MetricsHolder.METRICS_PREFIX + "resource.state{}", key);
         }
 
-        return resourceOperator.getAsync(reconciliation.namespace(), reconciliation.name()).map(cr -> {
+        return VertxUtil.toFuture(resourceOperator.getAsync(reconciliation.namespace(), reconciliation.name())).map(cr -> {
             if (cr != null && ReconcilerUtils.matchesSelector(selector(), cr)) {
                 resourcesStateCounter.computeIfAbsent(key, tags ->
                         metrics().metricsProvider().gauge(MetricsHolder.METRICS_RESOURCE_STATE, "Current state of the resource: 1 ready, 0 fail", metricTags)

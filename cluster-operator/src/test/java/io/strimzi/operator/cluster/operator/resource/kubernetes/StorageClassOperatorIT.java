@@ -9,21 +9,18 @@ import io.fabric8.kubernetes.api.model.storage.StorageClassBuilder;
 import io.fabric8.kubernetes.api.model.storage.StorageClassList;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.vertx.junit5.VertxExtension;
-import io.vertx.junit5.VertxTestContext;
-import org.junit.jupiter.api.extension.ExtendWith;
+import io.strimzi.operator.common.operator.resource.concurrent.AbstractNonNamespacedResourceOperator;
 
 import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-@ExtendWith(VertxExtension.class)
 public class StorageClassOperatorIT extends AbstractNonNamespacedResourceOperatorIT<KubernetesClient,
         StorageClass, StorageClassList, Resource<StorageClass>> {
 
     @Override
     protected AbstractNonNamespacedResourceOperator<KubernetesClient, StorageClass, StorageClassList, Resource<StorageClass>> operator() {
-        return new StorageClassOperator(vertx, client);
+        return new StorageClassOperator(asyncExecutor, client);
     }
 
     @Override
@@ -56,13 +53,11 @@ public class StorageClassOperatorIT extends AbstractNonNamespacedResourceOperato
     }
 
     @Override
-    protected void assertResources(VertxTestContext context, StorageClass expected, StorageClass actual) {
-        context.verify(() -> {
-            assertThat(actual.getMetadata().getName(), is(expected.getMetadata().getName()));
-            assertThat(actual.getMetadata().getLabels(), is(expected.getMetadata().getLabels()));
-            assertThat(actual.getReclaimPolicy(), is(expected.getReclaimPolicy()));
-            assertThat(actual.getProvisioner(), is(expected.getProvisioner()));
-            assertThat(actual.getParameters(), is(expected.getParameters()));
-        });
+    protected void assertResources(StorageClass expected, StorageClass actual) {
+        assertThat(actual.getMetadata().getName(), is(expected.getMetadata().getName()));
+        assertThat(actual.getMetadata().getLabels(), is(expected.getMetadata().getLabels()));
+        assertThat(actual.getReclaimPolicy(), is(expected.getReclaimPolicy()));
+        assertThat(actual.getProvisioner(), is(expected.getProvisioner()));
+        assertThat(actual.getParameters(), is(expected.getParameters()));
     }
 }

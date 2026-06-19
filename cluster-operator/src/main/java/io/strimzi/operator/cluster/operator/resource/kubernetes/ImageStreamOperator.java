@@ -9,7 +9,9 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.openshift.api.model.ImageStream;
 import io.fabric8.openshift.api.model.ImageStreamList;
 import io.fabric8.openshift.client.OpenShiftClient;
-import io.vertx.core.Vertx;
+import io.strimzi.operator.common.operator.resource.concurrent.AbstractNamespacedResourceOperator;
+
+import java.util.concurrent.Executor;
 
 /**
  * Operations for {@code ImageStream}s.
@@ -17,11 +19,11 @@ import io.vertx.core.Vertx;
 public class ImageStreamOperator extends AbstractNamespacedResourceOperator<OpenShiftClient, ImageStream, ImageStreamList, Resource<ImageStream>> {
     /**
      * Constructor
-     * @param vertx The Vertx instance
+     * @param asyncExecutor Executor to use for asynchronous subroutines
      * @param client The OpenShift client
      */
-    public ImageStreamOperator(Vertx vertx, OpenShiftClient client) {
-        super(vertx, client, "ImageStream");
+    public ImageStreamOperator(Executor asyncExecutor, OpenShiftClient client) {
+        super(asyncExecutor, client, "ImageStream");
     }
 
     @Override

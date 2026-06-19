@@ -9,6 +9,7 @@ import io.fabric8.kubernetes.api.model.Pod;
 import io.strimzi.api.kafka.model.podset.StrimziPodSet;
 import io.strimzi.api.kafka.model.podset.StrimziPodSetBuilder;
 import io.strimzi.operator.cluster.model.PodSetUtils;
+import io.strimzi.operator.cluster.operator.VertxUtil;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.PodOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.PvcOperator;
@@ -93,7 +94,7 @@ public class ManualPodCleaner {
      * @return  Future indicating the result of the cleanup operation. Returns always success if there are no pods to clean.
      */
     public Future<Void> maybeManualPodCleaning() {
-        return podOperator.listAsync(reconciliation.namespace(), selector)
+        return VertxUtil.toFuture(podOperator.listAsync(reconciliation.namespace(), selector))
                 .compose(pods -> {
                     // Only one pod per reconciliation is rolled
                     Pod podToClean = pods
@@ -122,7 +123,7 @@ public class ManualPodCleaner {
      * @return                  Future indicating the result of the cleanup
      */
     private Future<Void> manualPodCleaning(String podName) {
-        return pvcOperator.listAsync(reconciliation.namespace(), selector)
+        return VertxUtil.toFuture(pvcOperator.listAsync(reconciliation.namespace(), selector))
                 .compose(existingPvcs -> {
                     // Find out which PVCs need to be deleted
                     List<PersistentVolumeClaim> deletePvcs;
@@ -157,7 +158,7 @@ public class ManualPodCleaner {
      * @return              Future indicating the result of the cleanup
      */
     private Future<Void> cleanPodPvcAndPodSet(String podSetName, String podName, List<PersistentVolumeClaim> deletePvcs) {
-        return strimziPodSetOperator.getAsync(reconciliation.namespace(), podSetName)
+        return VertxUtil.toFuture(strimziPodSetOperator.getAsync(reconciliation.namespace(), podSetName))
                 .compose(podSet -> {
                     List<Map<String, Object>> desiredPods = podSet.getSpec().getPods().stream()
                             .filter(pod -> !podName.equals(PodSetUtils.mapToPod(pod).getMetadata().getName()))
@@ -170,7 +171,7 @@ public class ManualPodCleaner {
                             .endSpec()
                             .build();
 
-                    return strimziPodSetOperator.reconcile(reconciliation, reconciliation.namespace(), podSetName, reducedPodSet)
+                    return VertxUtil.toFuture(strimziPodSetOperator.reconcile(reconciliation, reconciliation.namespace(), podSetName, reducedPodSet))
                             .compose(ignore -> deletePodAndPvc(podName, deletePvcs))
                             .mapEmpty();
                 });
@@ -197,7 +198,7 @@ public class ManualPodCleaner {
      */
     private Future<Void> deletePodAndPvc(String podName, List<PersistentVolumeClaim> deletePvcs) {
         // First we delete the Pod which should be cleaned
-        return podOperator.deleteAsync(reconciliation, reconciliation.namespace(), podName, true)
+        return VertxUtil.toFuture(podOperator.deleteAsync(reconciliation, reconciliation.namespace(), podName, true))
                 .compose(ignore -> {
                     // With the pod deleted, we can delete all the PVCs belonging to this pod
                     List<Future<Void>> deleteResults = new ArrayList<>(deletePvcs.size());
@@ -205,7 +206,7 @@ public class ManualPodCleaner {
                     for (PersistentVolumeClaim pvc : deletePvcs)    {
                         String pvcName = pvc.getMetadata().getName();
                         LOGGER.debugCr(reconciliation, "Deleting PVC {} for Pod {} based on {} annotation", pvcName, podName, Annotations.ANNO_STRIMZI_IO_DELETE_POD_AND_PVC);
-                        deleteResults.add(pvcOperator.deleteAsync(reconciliation, reconciliation.namespace(), pvcName, true));
+                        deleteResults.add(VertxUtil.toFuture(pvcOperator.deleteAsync(reconciliation, reconciliation.namespace(), pvcName, true)));
                     }
                     return Future.join(deleteResults);
                 })

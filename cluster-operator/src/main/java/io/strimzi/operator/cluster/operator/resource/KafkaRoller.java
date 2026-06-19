@@ -17,6 +17,7 @@ import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.NodeRef;
 import io.strimzi.operator.cluster.model.RestartReason;
 import io.strimzi.operator.cluster.model.RestartReasons;
+import io.strimzi.operator.cluster.operator.VertxUtil;
 import io.strimzi.operator.cluster.operator.resource.events.KubernetesRestartEventPublisher;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.PodOperator;
 import io.strimzi.operator.common.AdminClientProvider;
@@ -855,7 +856,7 @@ public class KafkaRoller {
      */
     protected CompletableFuture<Void> restart(Pod pod, RestartContext restartContext) {
         CompletableFuture<Void> future = new CompletableFuture<>();
-        podOperations.restart(reconciliation, pod, operationTimeoutMs)
+        VertxUtil.toFuture(podOperations.restart(reconciliation, pod, operationTimeoutMs))
                 .onComplete(ar -> {
                     if (ar.succeeded()) {
                         publishEventExecutor.execute(() -> eventsPublisher.publishRestartEvents(reconciliation, pod, restartContext.restartReasons));
@@ -936,7 +937,7 @@ public class KafkaRoller {
 
     protected CompletableFuture<Void> isReady(String namespace, String podName) {
         CompletableFuture<Void> cf = new CompletableFuture<>();
-        podOperations.readiness(reconciliation, namespace, podName, pollingIntervalMs, operationTimeoutMs)
+        VertxUtil.toFuture(podOperations.readiness(reconciliation, namespace, podName, pollingIntervalMs, operationTimeoutMs))
                 .onComplete(ar -> {
                     if (ar.succeeded()) {
                         cf.complete(null);

@@ -11,9 +11,10 @@ import io.fabric8.kubernetes.api.model.rbac.ClusterRoleList;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.vertx.core.Vertx;
+import io.strimzi.operator.common.operator.resource.concurrent.AbstractNonNamespacedResourceOperator;
 
 import java.io.IOException;
+import java.util.concurrent.Executor;
 
 /**
  * Operator for managing Cluster Roles
@@ -22,11 +23,11 @@ public class ClusterRoleOperator extends AbstractNonNamespacedResourceOperator<K
         ClusterRole, ClusterRoleList, Resource<ClusterRole>> {
     /**
      * Constructor.
-     * @param vertx The Vertx instance.
+     * @param asyncExecutor Executor to use for asynchronous subroutines
      * @param client The Kubernetes client.
      */
-    public ClusterRoleOperator(Vertx vertx, KubernetesClient client) {
-        super(vertx, client, "ClusterRole");
+    public ClusterRoleOperator(Executor asyncExecutor, KubernetesClient client) {
+        super(asyncExecutor, client, "ClusterRole");
     }
 
     @Override

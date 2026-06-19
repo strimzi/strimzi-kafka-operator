@@ -53,6 +53,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 import static io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlApiImpl.HTTP_DEFAULT_IDLE_TIMEOUT_SECONDS;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -204,9 +205,9 @@ public class KafkaRebalanceStateMachineTest {
                         KafkaRebalance,
                         KafkaRebalanceList> mockRebalanceOps = supplier.kafkaRebalanceOperator;
 
-        when(mockCmOps.getAsync(CLUSTER_NAMESPACE, RESOURCE_NAME)).thenReturn(Future.succeededFuture(new ConfigMap()));
+        when(mockCmOps.getAsync(CLUSTER_NAMESPACE, RESOURCE_NAME)).thenReturn(CompletableFuture.completedFuture(new ConfigMap()));
         when(mockRebalanceOps.get(CLUSTER_NAMESPACE, RESOURCE_NAME)).thenReturn(kcRebalance);
-        when(mockRebalanceOps.getAsync(CLUSTER_NAMESPACE, RESOURCE_NAME)).thenReturn(Future.succeededFuture(kcRebalance));
+        when(mockRebalanceOps.getAsync(CLUSTER_NAMESPACE, RESOURCE_NAME)).thenReturn(CompletableFuture.completedFuture(kcRebalance));
 
         KafkaRebalanceAnnotation initialAnnotation = kcrao.rebalanceAnnotation(kcRebalance);
         return kcrao.computeNextStatus(recon, HOST, client, kcRebalance, currentState, rbOptions)
