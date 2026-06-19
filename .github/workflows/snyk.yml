@@ -136,7 +136,7 @@ jobs:
       - name: List container images
         id: list-images
         run: |
-          IMAGES=$(find docker-images/container-archives -name '*.tar.gz' -print0 | \
+          IMAGES=$(find docker-images/container-archives -name '*.tar.gz' ! -name 'base-*' -print0 | \
             xargs -0 -I{} basename {} | \
             sed 's/\.tar\.gz$//' | \
             jq -R -s -c 'split("\n") | map(select(. != ""))')
