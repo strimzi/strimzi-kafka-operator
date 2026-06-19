@@ -30,3 +30,9 @@ runs:
           echo "DOCKER_ORG=strimzi" >> $GITHUB_ENV
           echo "DOCKER_REGISTRY=quay.io" >> $GITHUB_ENV
         fi
+    - name: Fix ARM iptables FORWARD policy for Kind pod networking
+      if: ${{ matrix.config.arch == 'arm64' }}
+      shell: bash
+      run: |
+        sudo iptables -P FORWARD ACCEPT
+        sudo ip6tables -P FORWARD ACCEPT
