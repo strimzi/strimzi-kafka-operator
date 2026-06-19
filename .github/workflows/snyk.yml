@@ -75,11 +75,13 @@ jobs:
             | paste -sd ',' -)
           MAVEN_PROD_MODULES=$(grep '<module>' pom.xml \
             | sed 's/.*<module>\(.*\)<\/module>.*/\1/' \
-            | grep -v -w -E "$(echo $MAVEN_TEST_MODULES | tr ',' '|')" \
+            | grep -v -w -E "$(echo "$MAVEN_TEST_MODULES" | tr ',' '|')" \
             | paste -sd ',' -)
-          echo "maven-all-modules=${MAVEN_ALL_MODULES}" >> "$GITHUB_OUTPUT"
-          echo "maven-prod-modules=${MAVEN_PROD_MODULES}" >> "$GITHUB_OUTPUT"
-          echo "maven-test-modules=${MAVEN_TEST_MODULES}" >> "$GITHUB_OUTPUT"
+          {
+            echo "maven-all-modules=${MAVEN_ALL_MODULES}"
+            echo "maven-prod-modules=${MAVEN_PROD_MODULES}"
+            echo "maven-test-modules=${MAVEN_TEST_MODULES}"
+          } >> "$GITHUB_OUTPUT"
         env:
           MAVEN_TEST_MODULES: "systemtest,mockkube,test"
 
