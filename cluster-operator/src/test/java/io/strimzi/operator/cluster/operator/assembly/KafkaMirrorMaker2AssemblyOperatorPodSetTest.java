@@ -73,6 +73,7 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static io.strimzi.operator.cluster.ResourceUtils.DUMMY_CERT;
+import static io.strimzi.operator.cluster.ResourceUtils.DUMMY_CERT_2;
 import static java.util.Collections.emptyList;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
@@ -1470,7 +1471,7 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
     public void testRollingUpdateWhenTlsSecretChanges(VertxTestContext context) {
         KafkaMirrorMaker2Cluster mm2Cluster = KafkaMirrorMaker2Cluster.fromCrd(RECONCILIATION, MM2_WITH_TLS, VERSIONS, SHARED_ENV_PROVIDER);
         var logAndMetricsConfigMap = mm2Cluster.generateConnectConfigMap(new MetricsAndLogging(null, null));
-        StrimziPodSet oldPodSet = mm2Cluster.generatePodSet(1, null,
+        StrimziPodSet oldPodSet = mm2Cluster.generatePodSet(mm2Cluster.getReplicas(), null,
             // These annotations are set by MM2 Operator's reconcile.
             //
             // Setting these to verify if auth hash actually changed
@@ -1546,12 +1547,52 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
 
         Checkpoint async = context.checkpoint();
         ops.reconcile(new Reconciliation("test-trigger", KafkaMirrorMaker2.RESOURCE_KIND, NAMESPACE, NAME))
-                .onComplete(context.succeeding(v -> context.verify(() -> {
-                    verify(mockPodOps, times(1)).deleteAsync(any(), eq(NAMESPACE), eq(COMPONENT_NAME + "-0"), eq(false));
+                .compose(v -> {
+                    // Pod was deleted because new auth hash was added.
+                    for (int i = 0; i < mm2Cluster.getReplicas(); i++) {
+                        verify(mockPodOps, times(1)).deleteAsync(any(), eq(NAMESPACE), eq(String.format("%s-%d", COMPONENT_NAME, i)), eq(false));
+                    }
 
                     // Verify CR status
                     List<KafkaMirrorMaker2> capturedMm2Statuses = mm2StatusCaptor.getAllValues();
                     assertThat(capturedMm2Statuses, hasSize(1));
+
+                    // Update pods returned by the mock pod operator
+                    StrimziPodSet newPodSet = podSetCaptor.getValue();
+                    assertThat(newPodSet, not(oldPodSet));
+                    List<Pod> newPods = PodSetUtils.podSetToPods(newPodSet);
+                    for (int i = 0; i < mm2Cluster.getReplicas(); i++) {
+                        assertThat(newPods.get(i), not(oldPods.get(i)));
+                        assertThat(newPods.get(i).getMetadata().getAnnotations(), not(oldPods.get(i).getMetadata().getAnnotations()));
+                    }
+                    when(mockPodOps.getAsync(eq(NAMESPACE), startsWith(COMPONENT_NAME))).thenAnswer(i -> {
+                        Pod pod = newPods.stream().filter(p -> i.getArgument(1).equals(p.getMetadata().getName())).findFirst().orElse(null);
+                        return Future.succeededFuture(pod);
+                    });
+
+                    return ops.reconcile(new Reconciliation("test-trigger", KafkaMirrorMaker2.RESOURCE_KIND, NAMESPACE, NAME));
+                })
+                .compose(v -> {
+                    // Pods shouldn't be deleted because the mock returns
+                    // new pods now.
+                    for (int i = 0; i < mm2Cluster.getReplicas(); i++) {
+                        verify(mockPodOps, times(1)).deleteAsync(any(), eq(NAMESPACE), eq(String.format("%s-%d", COMPONENT_NAME, i)), eq(false));
+                    }
+
+                    // Update the Secret
+                    when(mockSecretOps.getAsync(NAMESPACE, TLS_SECRET_1_NAME)).thenAnswer(i -> Future.succeededFuture(
+                        new SecretBuilder(TLS_SECRET_1)
+                            .withData(Map.of("ca.crt", Util.encodeToBase64(DUMMY_CERT_2)))
+                            .build()));
+
+                    return ops.reconcile(new Reconciliation("test-trigger", KafkaMirrorMaker2.RESOURCE_KIND, NAMESPACE, NAME));
+                })
+                .onComplete(context.succeeding(v -> context.verify(() -> {
+                    // Pods should be deleted because auth hash must
+                    // have changed with the secret
+                    for (int i = 0; i < mm2Cluster.getReplicas(); i++) {
+                        verify(mockPodOps, times(2)).deleteAsync(any(), eq(NAMESPACE), eq(String.format("%s-%d", COMPONENT_NAME, i)), eq(false));
+                    }
 
                     async.flag();
                 })));
