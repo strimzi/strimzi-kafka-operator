@@ -122,12 +122,16 @@ jobs:
           workerNodes: 3
           kindVersion: ${{ inputs.kindVersion || '0.31.0' }}
 
-      - name: Fix ARM iptables FORWARD policy for Kind pod networking
+      - name: Fix OCI ARM nftables blocking Docker bridge traffic
         if: ${{ matrix.config.arch == 'arm64' }}
         shell: bash
         run: |
-          sudo iptables -P FORWARD ACCEPT
-          sudo ip6tables -P FORWARD ACCEPT
+          # OCI ARM image has a catch-all "reject with icmp-host-prohibited" in the
+          # nftables INPUT chain that blocks traffic from Docker bridge to the host.
+          # This prevents Kind nodes/pods from reaching the registry via the host IP.
+          # Insert an accept rule for Docker bridge traffic before the reject rule.
+          sudo nft insert rule ip filter INPUT iifname "br-*" accept
+          sudo nft insert rule ip filter FORWARD iifname "br-*" accept
 
       - name: Debug network and firewall config
         run: |
@@ -264,6 +268,21 @@ jobs:
         with:
           architecture: ${{ matrix.config.arch }}
           registry: "kind"
+
+#      # On OCI ARM runners the host IP is not reachable from inside Kind pods/nodes.
+#      # Switch DOCKER_REGISTRY to the registry container's Docker-network IP which
+#      # is directly routable from pods via the Kind node's bridge.
+#      - name: Use Docker-network registry IP on ARM
+#        run: |
+#          REG_DOCKER_IP=$(docker inspect -f '{{.NetworkSettings.Networks.kind.IPAddress}}' kind-registry)
+#          echo "Switching DOCKER_REGISTRY from ${DOCKER_REGISTRY} to ${REG_DOCKER_IP}:5000 for ARM"
+#          echo "DOCKER_REGISTRY=${REG_DOCKER_IP}:5000" >> $GITHUB_ENV
+#          echo "CONNECT_BUILD_REGISTRY=${REG_DOCKER_IP}:5000" >> $GITHUB_ENV
+#
+#          for node in $(kind get nodes --name kind-cluster); do
+#            docker exec "${node}" mkdir -p "/etc/containerd/certs.d/${REG_DOCKER_IP}:5000"
+#            echo "[host.\"http://${REG_DOCKER_IP}:5000\"]" | docker exec -i "${node}" cp /dev/stdin "/etc/containerd/certs.d/${REG_DOCKER_IP}:5000/hosts.toml"
+#          done
 
       - name: Restore Maven cache
         uses: actions/cache/restore@v5
