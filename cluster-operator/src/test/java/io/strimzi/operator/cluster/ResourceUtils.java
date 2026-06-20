@@ -113,7 +113,7 @@ public class ResourceUtils {
             .withController(false)
             .build();
 
-    // This certificate is used for testing purposes only and is not a real certificate. It is valid until 2118,
+    // These certificates are used for testing purposes only and are not real certificates. They are valid until 2118,
     // so it should not cause any issues with the tests.
     public final static String DUMMY_CERT = """
             -----BEGIN CERTIFICATE-----
@@ -136,6 +136,29 @@ public class ResourceUtils {
             mjvyHXmhic4K8SnnB0gnFzHN4y09wLqRMNCRH+aI+sa9Wu8cqvpTqlelVcYV83zu
             ydx4VZkC+zTzjI418znN/NU2CMpxLZNl0/zCrspID7v34NRmJ1AHFcrn7/XhsSvz
             D0z+vgrfionoRhyWUDh7POlWwdUOWiBDBOFrkgeKNphSC0glYFN+2IW7
+            -----END CERTIFICATE-----""";
+    public final static String DUMMY_CERT_2 = """
+            -----BEGIN CERTIFICATE-----
+            MIIDkTCCAnmgAwIBAgIUELT9ep8WsemraBXhUfKONFYR8MMwDQYJKoZIhvcNAQEL
+            BQAwVzELMAkGA1UEBhMCWFgxFTATBgNVBAcMDERlZmF1bHQgQ2l0eTEcMBoGA1UE
+            CgwTRGVmYXVsdCBDb21wYW55IEx0ZDETMBEGA1UEAwwKY2x1c3Rlci1jYTAgFw0y
+            NjA2MjAxNjM3NTRaGA8yMTI2MDUyNzE2Mzc1NFowVzELMAkGA1UEBhMCWFgxFTAT
+            BgNVBAcMDERlZmF1bHQgQ2l0eTEcMBoGA1UECgwTRGVmYXVsdCBDb21wYW55IEx0
+            ZTETMBEGA1UEAwwKY2x1c3Rlci1jYTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCC
+            AQoCggEBAJe/4b0FUQC3cOZ74VEPs7d29Ox2b7NZR5t4TCYYqzhAn7D3eUz410h3
+            PY4+TGe3k/IFow+yLo7xnqs2x4sVOlU9S6BkBjJXeadWC/QBsr0ur9jCnmlxxV/O
+            18wFnXaTi+vaCgp37AZf1h4e+2wfZFsbOhvCr4W52pri7ccmKFquGWBriZiZuBI0
+            rPNyz5bkapZUjlN1bmFbHdbgft9Ali7rAA3WTc9Mau7UABlZHZywypEICw9UL5xR
+            xx1erOGVqY1ts4OtLnnlFc8gX//1Mjz9p25ptSNlCbmLEC+TBmMbQNmxZqdkN8UJ
+            pnt0f+Cs8v9xlMtVpcH8CN0fdCC3Yv8CAwEAAaNTMFEwHQYDVR0OBBYEFNDKxipH
+            px6y1xrHWNQ9WYOYol9KMB8GA1UdIwQYMBaAFNDKxipHpx6y1xrHWNQ9WYOYol9K
+            MA8GA1UdEwEB/wQFMAMBAf8wDQYJKoZIhvcNAQELBQADggEBAEaeGdwY+1JNJHlI
+            gzSD2Fty2D+oe55BjcY5JpWFYqyrSqx37gogMDtXBLwXCQIbYcUIhqD2cZCYIPxL
+            9FGUOBMPXZxMnFxTznRWBRxhGZRBguz59P87HNks5f3xu89n+n7UOi4saPb8cTx9
+            jXQIieXR5odTBsyIHX0xpzkTKnUGAmU7NbRNKkYUlmxp+g7WFIS/jZKD5XdNhrbg
+            t9BNAxdop5RUg8PuevffCRkIuSMkl7XmoNG/L2aptGAhpQpd8igOLles7fQG29si
+            185WdOfJrwHFdIlisvFQEbvUTQX03fsjNwA7YfSFYNgOXKRqwzJ2BA54MFvQZ9BH
+            0ry2YpU=
             -----END CERTIFICATE-----""";
 
 
