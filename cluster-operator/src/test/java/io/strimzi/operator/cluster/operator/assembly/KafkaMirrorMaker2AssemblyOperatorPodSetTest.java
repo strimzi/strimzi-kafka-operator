@@ -29,8 +29,10 @@ import io.strimzi.api.kafka.model.podset.StrimziPodSet;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ResourceUtils;
+import io.strimzi.operator.cluster.model.KafkaConnectCluster;
 import io.strimzi.operator.cluster.model.KafkaMirrorMaker2Cluster;
 import io.strimzi.operator.cluster.model.KafkaVersion;
+import io.strimzi.operator.cluster.model.MetricsAndLogging;
 import io.strimzi.operator.cluster.model.MockSharedEnvironmentProvider;
 import io.strimzi.operator.cluster.model.PodRevision;
 import io.strimzi.operator.cluster.model.PodSetUtils;
@@ -100,6 +102,18 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
     private static final KubernetesVersion KUBERNETES_VERSION = KubernetesVersion.MINIMAL_SUPPORTED_VERSION;
     private static final Reconciliation RECONCILIATION = new Reconciliation("test", "KafkaMirrorMaker2", NAMESPACE, NAME);
     private static final SharedEnvironmentProvider SHARED_ENV_PROVIDER = new MockSharedEnvironmentProvider();
+    private static final String TLS_SECRET_1_NAME = "shared-tls-secret";
+    private static final String TLS_SECRET_2_NAME = "shared-tls-secret-2";
+    private static final Secret TLS_SECRET_1 = new SecretBuilder()
+            .withNewMetadata().withName(TLS_SECRET_1_NAME).endMetadata()
+            .withData(Map.of("ca.crt", Util.encodeToBase64(DUMMY_CERT)))
+            .build();
+    private static final Secret TLS_SECRET_2 = new SecretBuilder()
+            .withNewMetadata().withName(TLS_SECRET_2_NAME).endMetadata()
+            .withData(Map.of(
+                "ca2.crt", Util.encodeToBase64(DUMMY_CERT),
+                "ca3.crt", Util.encodeToBase64(DUMMY_CERT)))
+            .build();
 
     private static final KafkaMirrorMaker2 MM2 = new KafkaMirrorMaker2Builder()
             .withNewMetadata()
@@ -123,6 +137,34 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
                         .endSource()
                         // We do not configure any connectors to avoid mocking the Connect REST API
                         .build())
+            .endSpec()
+            .build();
+
+    private static final KafkaMirrorMaker2 MM2_WITH_TLS = new KafkaMirrorMaker2Builder(MM2)
+            .editSpec()
+                .editTarget()
+                    .withNewTls()
+                    .withTrustedCertificates(new CertSecretSourceBuilder()
+                            .withSecretName("shared-tls-secret")
+                            .withCertificate("ca.crt")
+                            .build())
+                    .endTls()
+                .endTarget()
+                .editMirror(0)
+                    .editSource()
+                        .withNewTls()
+                            .withTrustedCertificates(
+                                    new CertSecretSourceBuilder()
+                                        .withSecretName("shared-tls-secret-2")
+                                        .withCertificate("ca2.crt")
+                                        .build(),
+                                    new CertSecretSourceBuilder()
+                                        .withSecretName("shared-tls-secret-2")
+                                        .withCertificate("ca3.crt")
+                                        .build())
+                        .endTls()
+                    .endSource()
+                .endMirror()
             .endSpec()
             .build();
 
@@ -1305,42 +1347,6 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
 
     @Test
     public void testTlsSecretsFetchedOnlyOncePerReference(VertxTestContext context) {
-        KafkaMirrorMaker2 mm2WithTls = new KafkaMirrorMaker2Builder()
-                .withNewMetadata()
-                    .withName(NAME)
-                    .withNamespace(NAMESPACE)
-                .endMetadata()
-                .withNewSpec()
-                    .withNewTarget()
-                        .withAlias("target")
-                        .withBootstrapServers("target:9092")
-                        .withNewTls()
-                            .withTrustedCertificates(new CertSecretSourceBuilder()
-                                    .withSecretName("shared-tls-secret")
-                                    .withCertificate("ca.crt")
-                                    .build())
-                        .endTls()
-                    .endTarget()
-                    .withMirrors(new KafkaMirrorMaker2MirrorSpecBuilder()
-                            .withNewSource()
-                                .withAlias("source")
-                                .withBootstrapServers("source:9092")
-                                .withNewTls()
-                                    .withTrustedCertificates(
-                                        new CertSecretSourceBuilder()
-                                            .withSecretName("shared-tls-secret-2")
-                                            .withCertificate("ca2.crt")
-                                            .build(),
-                                        new CertSecretSourceBuilder()
-                                            .withSecretName("shared-tls-secret-2")
-                                            .withCertificate("ca3.crt")
-                                            .build())
-                                .endTls()
-                            .endSource()
-                            .build())
-                .endSpec()
-                .build();
-
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
         // Mock PodSets
@@ -1372,28 +1378,17 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
         when(mockPodOps.reconcile(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), any())).thenReturn(Future.succeededFuture());
         when(mockPodOps.readiness(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
 
-        // Mock Secrets - the shared TLS secret used by both source and target clusters
-        Secret tlsSecret = new SecretBuilder()
-                .withNewMetadata().withName("shared-tls-secret").endMetadata()
-                .withData(Map.of("ca.crt", Util.encodeToBase64(DUMMY_CERT)))
-                .build();
-        Secret tlsSecret2 = new SecretBuilder()
-                .withNewMetadata().withName("shared-tls-secret-2").endMetadata()
-                .withData(Map.of(
-                    "ca2.crt", Util.encodeToBase64(DUMMY_CERT),
-                    "ca3.crt", Util.encodeToBase64(DUMMY_CERT)))
-                .build();
-
+        // Mock Secrets
         SecretOperator mockSecretOps = supplier.secretOperations;
         when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaConnectResources.jmxSecretName(NAME)))).thenReturn(Future.succeededFuture());
-        when(mockSecretOps.getAsync(eq(NAMESPACE), eq("shared-tls-secret"))).thenReturn(Future.succeededFuture(tlsSecret));
-        when(mockSecretOps.getAsync(eq(NAMESPACE), eq("shared-tls-secret-2"))).thenReturn(Future.succeededFuture(tlsSecret2));
+        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(TLS_SECRET_1_NAME))).thenReturn(Future.succeededFuture(TLS_SECRET_1));
+        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(TLS_SECRET_2_NAME))).thenReturn(Future.succeededFuture(TLS_SECRET_2));
         when(mockSecretOps.reconcile(any(), eq(NAMESPACE), any(), any())).thenReturn(Future.succeededFuture());
 
         // Mock KafkaMirrorMaker2 CRs
         CrdOperator<KubernetesClient, KafkaMirrorMaker2, KafkaMirrorMaker2List> mockConnectOps = supplier.mirrorMaker2Operator;
-        when(mockConnectOps.get(eq(NAMESPACE), eq(NAME))).thenReturn(mm2WithTls);
-        when(mockConnectOps.getAsync(eq(NAMESPACE), eq(NAME))).thenReturn(Future.succeededFuture(mm2WithTls));
+        when(mockConnectOps.get(eq(NAMESPACE), eq(NAME))).thenReturn(MM2_WITH_TLS);
+        when(mockConnectOps.getAsync(eq(NAMESPACE), eq(NAME))).thenReturn(Future.succeededFuture(MM2_WITH_TLS));
         when(mockConnectOps.updateStatusAsync(any(), any())).thenReturn(Future.succeededFuture());
 
         // Mock Connect API
@@ -1417,8 +1412,99 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
                     //
                     // Hence, once for the main "ca.crt" per KafkaMirrorMaker2Spec and once for "<alias>-ca.crt"
                     // per KafkaMirrorMaker2ClusterSpec within MM2Spec.
-                    verify(mockSecretOps, times(2)).getAsync(eq(NAMESPACE), eq("shared-tls-secret"));
-                    verify(mockSecretOps, times(2)).getAsync(eq(NAMESPACE), eq("shared-tls-secret-2"));
+                    verify(mockSecretOps, times(2)).getAsync(eq(NAMESPACE), eq(TLS_SECRET_1_NAME));
+                    verify(mockSecretOps, times(2)).getAsync(eq(NAMESPACE), eq(TLS_SECRET_2_NAME));
+
+                    async.flag();
+                })));
+    }
+
+    @Test
+    public void testRollingUpdateWhenTlsSecretChanges(VertxTestContext context) {
+        KafkaMirrorMaker2Cluster mm2Cluster = KafkaMirrorMaker2Cluster.fromCrd(RECONCILIATION, MM2_WITH_TLS, VERSIONS, SHARED_ENV_PROVIDER);
+        var logAndMetricsConfigMap = mm2Cluster.generateConnectConfigMap(new MetricsAndLogging(null, null));
+        StrimziPodSet oldPodSet = mm2Cluster.generatePodSet(1, null,
+            // These annotations are set by MM2 Operator's reconcile.
+            //
+            // Setting these to verify if auth hash actually changed
+            // instead of a new "strimzi.io/configuration-hash" annotation
+            // being added.
+            Map.of(
+                Annotations.ANNO_STRIMZI_IO_CONFIGURATION_HASH, Util.hashStub(logAndMetricsConfigMap.getData().get(KafkaConnectCluster.KAFKA_CONNECT_CONFIGURATION_FILENAME)),
+                Annotations.ANNO_STRIMZI_AUTH_HASH, "0"
+            ), false, null, null, null);
+        List<Pod> oldPods = PodSetUtils.podSetToPods(oldPodSet);
+
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
+
+        // Mock PodSet
+        StrimziPodSetOperator mockPodSetOps = supplier.strimziPodSetOperator;
+        when(mockPodSetOps.getAsync(eq(NAMESPACE), eq(COMPONENT_NAME))).thenReturn(Future.succeededFuture());
+        when(mockPodSetOps.readiness(any(), eq(NAMESPACE), eq(COMPONENT_NAME), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        ArgumentCaptor<StrimziPodSet> podSetCaptor = ArgumentCaptor.forClass(StrimziPodSet.class);
+        when(mockPodSetOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), podSetCaptor.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(3))));
+
+        // Mock Secrets
+        SecretOperator mockSecretOps = supplier.secretOperations;
+        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaConnectResources.jmxSecretName(NAME)))).thenReturn(Future.succeededFuture());
+        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(TLS_SECRET_1_NAME))).thenReturn(Future.succeededFuture(TLS_SECRET_1));
+        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(TLS_SECRET_2_NAME))).thenReturn(Future.succeededFuture(TLS_SECRET_2));
+        when(mockSecretOps.reconcile(any(), eq(NAMESPACE), any(), any())).thenReturn(Future.succeededFuture());
+
+        // Mock PDBs
+        PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
+        when(mockPdbOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), any())).thenReturn(Future.succeededFuture());
+
+        // Mock Config Maps
+        ConfigMapOperator mockCmOps = supplier.configMapOperations;
+        when(mockCmOps.reconcile(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), any())).thenReturn(Future.succeededFuture());
+
+        // Mock Services
+        ServiceOperator mockServiceOps = supplier.serviceOperations;
+        when(mockServiceOps.reconcile(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), any())).thenReturn(Future.succeededFuture());
+
+        // Mock Network Policies
+        NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
+        when(mockNetPolOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), any())).thenReturn(Future.succeededFuture());
+
+        // Mock Pods
+        PodOperator mockPodOps = supplier.podOperations;
+        when(mockPodOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(Future.succeededFuture(oldPods));
+        when(mockPodOps.getAsync(eq(NAMESPACE), startsWith(COMPONENT_NAME))).thenAnswer(i -> {
+            Pod pod = oldPods.stream().filter(p -> i.getArgument(1).equals(p.getMetadata().getName())).findFirst().orElse(null);
+            return Future.succeededFuture(pod);
+        });
+        when(mockPodOps.deleteAsync(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), eq(false))).thenReturn(Future.succeededFuture());
+        when(mockPodOps.reconcile(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), any())).thenReturn(Future.succeededFuture());
+        when(mockPodOps.readiness(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+
+        // Mock KafkaMirrorMaker2 CRs
+        CrdOperator<KubernetesClient, KafkaMirrorMaker2, KafkaMirrorMaker2List> mockConnectOps = supplier.mirrorMaker2Operator;
+        when(mockConnectOps.get(eq(NAMESPACE), eq(NAME))).thenReturn(MM2_WITH_TLS);
+        when(mockConnectOps.getAsync(eq(NAMESPACE), eq(NAME))).thenReturn(Future.succeededFuture(MM2_WITH_TLS));
+        ArgumentCaptor<KafkaMirrorMaker2> mm2StatusCaptor = ArgumentCaptor.forClass(KafkaMirrorMaker2.class);
+        when(mockConnectOps.updateStatusAsync(any(), mm2StatusCaptor.capture())).thenReturn(Future.succeededFuture());
+
+        // Mock Connect API
+        KafkaConnectApi mockConnectClient = mock(KafkaConnectApi.class);
+        when(mockConnectClient.list(any(), anyString(), anyInt())).thenReturn(CompletableFuture.completedFuture(emptyList()));
+
+        KafkaMirrorMaker2AssemblyOperator ops = new KafkaMirrorMaker2AssemblyOperator(
+            vertx,
+            new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
+            supplier,
+            ResourceUtils.dummyClusterOperatorConfig(),
+            x -> mockConnectClient
+        );
+
+        Checkpoint async = context.checkpoint();
+        ops.reconcile(new Reconciliation("test-trigger", KafkaMirrorMaker2.RESOURCE_KIND, NAMESPACE, NAME))
+                .onComplete(context.succeeding(v -> context.verify(() -> {
+                    verify(mockPodOps, times(1)).deleteAsync(any(), eq(NAMESPACE), eq(COMPONENT_NAME + "-0"), eq(false));
+
+                    // Verify CR status
+                    List<KafkaMirrorMaker2> capturedMm2Statuses = mm2StatusCaptor.getAllValues();
+                    assertThat(capturedMm2Statuses, hasSize(1));
 
                     async.flag();
                 })));
