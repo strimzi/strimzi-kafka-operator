@@ -133,90 +133,6 @@ jobs:
           sudo nft insert rule ip filter INPUT iifname "br-*" accept
           sudo nft insert rule ip filter FORWARD iifname "br-*" accept
 
-      - name: Debug network and firewall config
-        run: |
-          echo "=== ARCHITECTURE ==="
-          uname -m
-
-          echo "=== KERNEL ==="
-          uname -r
-          dpkg -l | grep linux-image || true
-          dpkg -l | grep linux-oracle || true
-
-          echo "=== IP ADDRESSES ==="
-          ip addr show
-
-          echo "=== ROUTES ==="
-          ip route show
-
-          echo "=== IPTABLES POLICIES ==="
-          sudo iptables -L -n -v 2>/dev/null | head -50
-          sudo iptables -L FORWARD -n -v 2>/dev/null
-
-          echo "=== IPTABLES NAT ==="
-          sudo iptables -t nat -L -n -v 2>/dev/null | head -30
-
-          echo "=== NFTABLES ==="
-          sudo nft list ruleset 2>/dev/null | head -80
-
-          echo "=== IPTABLES BACKEND ==="
-          sudo update-alternatives --display iptables 2>/dev/null || true
-          ls -la /usr/sbin/iptables* 2>/dev/null || true
-
-          echo "=== UFW STATUS ==="
-          sudo ufw status verbose 2>/dev/null || true
-
-          echo "=== FIREWALLD ==="
-          sudo firewall-cmd --state 2>/dev/null || true
-          sudo systemctl is-active firewalld 2>/dev/null || true
-
-          echo "=== ORACLE CLOUD AGENT ==="
-          snap list 2>/dev/null | grep oracle || true
-          systemctl list-units --all 2>/dev/null | grep -i "oracle\|ocid\|oci" || true
-
-          echo "=== SYSCTL NET ==="
-          sudo sysctl net.ipv4.ip_forward
-          sudo sysctl net.bridge.bridge-nf-call-iptables 2>/dev/null || true
-          sudo sysctl net.ipv4.conf.all.forwarding
-          sudo sysctl net.ipv4.conf.default.rp_filter 2>/dev/null || true
-          sudo sysctl net.ipv4.conf.all.rp_filter 2>/dev/null || true
-
-          echo "=== DOCKER INFO ==="
-          docker info 2>/dev/null | grep -i "iptables\|driver\|network\|storage\|cgroup"
-          cat /etc/docker/daemon.json 2>/dev/null || true
-
-          echo "=== KERNEL MODULES ==="
-          lsmod | grep -i "nf_\|br_\|iptable\|nftable\|conntrack\|bridge\|veth" || true
-
-          echo "=== KIND NETWORK ==="
-          docker network inspect kind 2>/dev/null | python3 -m json.tool | head -60
-
-          echo "=== REGISTRY CONTAINER ==="
-          docker inspect kind-registry --format '{{json .NetworkSettings.Networks}}' 2>/dev/null | python3 -m json.tool || true
-
-          echo "=== KIND NODE IPTABLES ==="
-          docker exec kind-cluster-worker iptables -L FORWARD -n -v 2>/dev/null | head -20 || true
-          docker exec kind-cluster-worker ip route show || true
-
-          echo "=== POD-TO-HOST CONNECTIVITY TEST ==="
-          REG_ADDR="${DOCKER_REGISTRY}"
-          REG_DOCKER_IP=$(docker inspect -f '{{.NetworkSettings.Networks.kind.IPAddress}}' kind-registry 2>/dev/null || true)
-
-          kubectl run nettest --image=busybox --restart=Never -- sleep 300 || true
-          kubectl wait --for=condition=Ready pod/nettest --timeout=60s || true
-
-          echo "Testing host IP from pod: ${REG_ADDR}"
-          kubectl exec nettest -- wget -T 5 -q -O /dev/null "http://${REG_ADDR}/v2/" 2>&1 || true
-
-          echo "Testing Docker-network IP from pod: ${REG_DOCKER_IP}:5000"
-          kubectl exec nettest -- wget -T 5 -q -O /dev/null "http://${REG_DOCKER_IP}:5000/v2/" 2>&1 || true
-
-          echo "Testing from Kind node directly:"
-          docker exec kind-cluster-worker curl -sf -o /dev/null "http://${REG_ADDR}/v2/" 2>&1 && echo "Host IP from node: OK" || echo "Host IP from node: FAIL"
-          docker exec kind-cluster-worker curl -sf -o /dev/null "http://${REG_DOCKER_IP}:5000/v2/" 2>&1 && echo "Docker IP from node: OK" || echo "Docker IP from node: FAIL"
-
-          kubectl delete pod nettest --force 2>/dev/null || true
-
       - name: Set default environment variables
         uses: ./.github/actions/utils/set-defaults
 
@@ -268,21 +184,6 @@ jobs:
         with:
           architecture: ${{ matrix.config.arch }}
           registry: "kind"
-
-#      # On OCI ARM runners the host IP is not reachable from inside Kind pods/nodes.
-#      # Switch DOCKER_REGISTRY to the registry container's Docker-network IP which
-#      # is directly routable from pods via the Kind node's bridge.
-#      - name: Use Docker-network registry IP on ARM
-#        run: |
-#          REG_DOCKER_IP=$(docker inspect -f '{{.NetworkSettings.Networks.kind.IPAddress}}' kind-registry)
-#          echo "Switching DOCKER_REGISTRY from ${DOCKER_REGISTRY} to ${REG_DOCKER_IP}:5000 for ARM"
-#          echo "DOCKER_REGISTRY=${REG_DOCKER_IP}:5000" >> $GITHUB_ENV
-#          echo "CONNECT_BUILD_REGISTRY=${REG_DOCKER_IP}:5000" >> $GITHUB_ENV
-#
-#          for node in $(kind get nodes --name kind-cluster); do
-#            docker exec "${node}" mkdir -p "/etc/containerd/certs.d/${REG_DOCKER_IP}:5000"
-#            echo "[host.\"http://${REG_DOCKER_IP}:5000\"]" | docker exec -i "${node}" cp /dev/stdin "/etc/containerd/certs.d/${REG_DOCKER_IP}:5000/hosts.toml"
-#          done
 
       - name: Restore Maven cache
         uses: actions/cache/restore@v5

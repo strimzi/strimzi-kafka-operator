@@ -47,7 +47,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
 
 import static io.strimzi.systemtest.TestTags.REGRESSION;
-import static io.strimzi.systemtest.TestTags.SMOKE;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assumptions.assumeFalse;
@@ -117,7 +116,6 @@ public class FeatureGatesST extends AbstractST {
     }
 
     @IsolatedTest("Enables UseConnectBuildWithBuildah feature gate in CO")
-    @Tag(SMOKE)
     void testUseConnectBuildWithBuildah() {
         // Buildah is used only on Kubernetes, so running this test on OCP doesn't add much value
         assumeFalse(KubeClusterResource.getInstance().isOpenShiftLikeCluster());
