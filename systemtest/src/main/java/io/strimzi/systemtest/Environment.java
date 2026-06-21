@@ -311,6 +311,11 @@ public class Environment {
     }
 
     private static String getHostname() {
+        String envRegistry = ENVIRONMENT_VARIABLES.getOrDefault("CONNECT_BUILD_REGISTRY", "");
+        if (!envRegistry.isEmpty()) {
+            return envRegistry;
+        }
+
         String hostname = "";
         try {
             if (Environment.isIpv4Family() || Environment.isDualStackIpFamily()) {

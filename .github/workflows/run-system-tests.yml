@@ -122,6 +122,17 @@ jobs:
           workerNodes: 3
           kindVersion: ${{ inputs.kindVersion || '0.31.0' }}
 
+      - name: Fix OCI ARM nftables blocking Docker bridge traffic
+        if: ${{ matrix.config.arch == 'arm64' }}
+        shell: bash
+        run: |
+          # OCI ARM image has a catch-all "reject with icmp-host-prohibited" in the
+          # nftables INPUT chain that blocks traffic from Docker bridge to the host.
+          # This prevents Kind nodes/pods from reaching the registry via the host IP.
+          # Insert an accept rule for Docker bridge traffic before the reject rule.
+          sudo nft insert rule ip filter INPUT iifname "br-*" accept
+          sudo nft insert rule ip filter FORWARD iifname "br-*" accept
+
       - name: Set default environment variables
         uses: ./.github/actions/utils/set-defaults
 
