@@ -37,33 +37,33 @@ jobs:
       - uses: actions/checkout@v6
 
       - name: Setup Java and Maven
-        uses: strimzi/github-actions/.github/actions/dependencies/setup-java@v1
+        uses: strimzi/github-actions/.github/actions/dependencies/setup-java@v2
         with:
           javaVersion: "21"
 
       - name: Install yq
-        uses: strimzi/github-actions/.github/actions/dependencies/install-yq@v1
+        uses: strimzi/github-actions/.github/actions/dependencies/install-yq@v2
         with:
           version: "v4.6.3"
 
       - name: Install Helm
-        uses: strimzi/github-actions/.github/actions/dependencies/install-helm@v1
+        uses: strimzi/github-actions/.github/actions/dependencies/install-helm@v2
         with:
           helmVersion: "v3.16.0"
 
       - name: Install AsciiDoctor
-        uses: strimzi/github-actions/.github/actions/dependencies/install-ascii-doctor@v1
+        uses: strimzi/github-actions/.github/actions/dependencies/install-ascii-doctor@v2
         with:
           rubyVersion: "3.2"
 
       - name: Prepare release artifacts
-        uses: strimzi/github-actions/.github/actions/build/release-artifacts@v1
+        uses: strimzi/github-actions/.github/actions/build/release-artifacts@v2
         with:
           releaseVersion: ${{ inputs.releaseVersion }}
           artifactSuffix: "operators"
 
       - name: Deploy to Maven Central
-        uses: strimzi/github-actions/.github/actions/build/deploy-java@v1
+        uses: strimzi/github-actions/.github/actions/build/deploy-java@v2
         with:
           modules: "./,crd-annotations,crd-generator,test,api"
           gpgPassphrase: ${{ secrets.GPG_PASSPHRASE }}
@@ -89,7 +89,7 @@ jobs:
       - uses: actions/checkout@v6
 
       - name: Setup ORAS
-        uses: oras-project/setup-oras@v1
+        uses: oras-project/setup-oras@v2
 
       - name: Download strimzi binaries from source build
         uses: actions/download-artifact@v7
@@ -124,20 +124,20 @@ jobs:
       - uses: actions/checkout@v6
 
       - name: Install Docker
-        uses: strimzi/github-actions/.github/actions/dependencies/install-docker@v1
+        uses: strimzi/github-actions/.github/actions/dependencies/install-docker@v2
 
       - name: Install yq
-        uses: strimzi/github-actions/.github/actions/dependencies/install-yq@v1
+        uses: strimzi/github-actions/.github/actions/dependencies/install-yq@v2
         with:
           version: "v4.6.3"
 
       - name: Install Syft
-        uses: strimzi/github-actions/.github/actions/dependencies/install-syft@v1
+        uses: strimzi/github-actions/.github/actions/dependencies/install-syft@v2
         with:
           version: "1.20.0"
 
       - name: Push containers using push-containers action
-        uses: strimzi/github-actions/.github/actions/build/push-containers@v1
+        uses: strimzi/github-actions/.github/actions/build/push-containers@v2
         with:
           registryUser: ${{ secrets.QUAY_USER }}
           registryPassword: ${{ secrets.QUAY_PASS }}
@@ -172,20 +172,20 @@ jobs:
       - uses: actions/checkout@v6
 
       - name: Install Docker
-        uses: strimzi/github-actions/.github/actions/dependencies/install-docker@v1
+        uses: strimzi/github-actions/.github/actions/dependencies/install-docker@v2
 
       - name: Install yq
-        uses: strimzi/github-actions/.github/actions/dependencies/install-yq@v1
+        uses: strimzi/github-actions/.github/actions/dependencies/install-yq@v2
         with:
           version: "v4.6.3"
 
       - name: Install Syft
-        uses: strimzi/github-actions/.github/actions/dependencies/install-syft@v1
+        uses: strimzi/github-actions/.github/actions/dependencies/install-syft@v2
         with:
           version: "1.20.0"
 
       - name: Push containers using push-containers action
-        uses: strimzi/github-actions/.github/actions/build/push-containers@v1
+        uses: strimzi/github-actions/.github/actions/build/push-containers@v2
         with:
           registryUser: ${{ secrets.QUAY_USER }}
           registryPassword: ${{ secrets.QUAY_PASS }}
@@ -213,12 +213,12 @@ jobs:
       - uses: actions/checkout@v6
 
       - name: Install Helm
-        uses: strimzi/github-actions/.github/actions/dependencies/install-helm@v1
+        uses: strimzi/github-actions/.github/actions/dependencies/install-helm@v2
         with:
           helmVersion: "v3.16.0"
 
       - name: Publish Helm charts using publish-helm action
-        uses: strimzi/github-actions/.github/actions/build/publish-helm-chart@v1
+        uses: strimzi/github-actions/.github/actions/build/publish-helm-chart@v2
         with:
           registryUser: ${{ secrets.QUAY_HELM_USER }}
           registryPassword: ${{ secrets.QUAY_HELM_PASS }}
