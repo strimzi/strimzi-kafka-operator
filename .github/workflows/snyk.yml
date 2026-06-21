@@ -52,12 +52,12 @@ jobs:
           ref: ${{ github.event.workflow_run.head_sha || github.sha }}
 
       - name: Setup Java and Maven
-        uses: strimzi/github-actions/.github/actions/dependencies/setup-java@v1
+        uses: strimzi/github-actions/.github/actions/dependencies/setup-java@v2
         with:
           javaVersion: "21"
 
       - name: Install yq
-        uses: strimzi/github-actions/.github/actions/dependencies/install-yq@v1
+        uses: strimzi/github-actions/.github/actions/dependencies/install-yq@v2
         with:
           version: "v4.6.3"
 
@@ -173,7 +173,7 @@ jobs:
         run: tar -xvf "$CONTAINERS_ARCHIVE"
 
       - name: Install Docker
-        uses: strimzi/github-actions/.github/actions/dependencies/install-docker@v1
+        uses: strimzi/github-actions/.github/actions/dependencies/install-docker@v2
 
       - name: Run Snyk container scan
         uses: strimzi/github-actions/.github/actions/security/snyk-container-scan@v2

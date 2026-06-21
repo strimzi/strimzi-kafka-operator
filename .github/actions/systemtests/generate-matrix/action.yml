@@ -46,7 +46,7 @@ runs:
   steps:
     # yq is required for generate-matrix action
     - name: Install yq
-      uses: strimzi/github-actions/.github/actions/dependencies/install-yq@v1
+      uses: strimzi/github-actions/.github/actions/dependencies/install-yq@v2
       with:
         version: 'v4.6.3'
         architecture: ${{ inputs.runnerArch }}

@@ -46,11 +46,11 @@ jobs:
     steps:
       - name: Should Run
         id: should_run
-        uses: strimzi/github-actions/.github/actions/utils/should-run@v1
+        uses: strimzi/github-actions/.github/actions/utils/should-run@v2
       - name: Determine checkout ref
         id: determine_ref
         if: steps.should_run.outputs.shouldRun == 'true'
-        uses: strimzi/github-actions/.github/actions/utils/determine-ref@v1
+        uses: strimzi/github-actions/.github/actions/utils/determine-ref@v2
 
   check-rights:
     needs:
@@ -63,7 +63,7 @@ jobs:
       pull-requests: write
       statuses: write
     steps:
-      - uses: strimzi/github-actions/.github/actions/utils/check-permissions@v1
+      - uses: strimzi/github-actions/.github/actions/utils/check-permissions@v2
 
   check-build:
     needs:
@@ -226,22 +226,22 @@ jobs:
           javaVersion: "21"
 
       - name: Install yq
-        uses: strimzi/github-actions/.github/actions/dependencies/install-yq@v1
+        uses: strimzi/github-actions/.github/actions/dependencies/install-yq@v2
         with:
           version: "v4.6.3"
 
       - name: Install Shellcheck
-        uses: strimzi/github-actions/.github/actions/dependencies/install-shellcheck@v1
+        uses: strimzi/github-actions/.github/actions/dependencies/install-shellcheck@v2
         with:
           version: "0.11.0"
 
       - name: Install Helm
-        uses: strimzi/github-actions/.github/actions/dependencies/install-helm@v1
+        uses: strimzi/github-actions/.github/actions/dependencies/install-helm@v2
         with:
           helmVersion: "v3.16.0"
 
       - name: Build binaries using build-binaries action
-        uses: strimzi/github-actions/.github/actions/build/build-binaries@v1
+        uses: strimzi/github-actions/.github/actions/build/build-binaries@v2
         with:
           mainJavaBuild: "true"
           artifactSuffix: "operators"
@@ -278,22 +278,22 @@ jobs:
           ref: ${{ needs.parse-params.outputs.ref }}
 
       - name: Install Docker
-        uses: strimzi/github-actions/.github/actions/dependencies/install-docker@v1
+        uses: strimzi/github-actions/.github/actions/dependencies/install-docker@v2
 
       - name: Install yq
-        uses: strimzi/github-actions/.github/actions/dependencies/install-yq@v1
+        uses: strimzi/github-actions/.github/actions/dependencies/install-yq@v2
         with:
           version: "v4.6.3"
 
       - name: Install Shellcheck
-        uses: strimzi/github-actions/.github/actions/dependencies/install-shellcheck@v1
+        uses: strimzi/github-actions/.github/actions/dependencies/install-shellcheck@v2
         with:
           version: "0.11.0"
 
-      - uses: strimzi/github-actions/.github/actions/build/build-containers@v1
+      - uses: strimzi/github-actions/.github/actions/build/build-containers@v2
         with:
           architecture: ${{ matrix.architecture }}
-          imagesDir: "./docker-images/container-archives"
+          imagesLocation: "./docker-images/container-archives"
           artifactSuffix: "operators"
 
   run-tests:

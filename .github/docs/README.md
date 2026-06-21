@@ -18,7 +18,7 @@ Usage example can be like this:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - uses: strimzi/github-actions/.github/actions/build/build-binaries@v1
+      - uses: strimzi/github-actions/.github/actions/build/build-binaries@v2
         with:
           mvnArgs: "-B -DskipTests -Dmaven.javadoc.skip=true"
 ```
@@ -37,7 +37,7 @@ This actions has to be called separately for each architecture with matrix strat
     runs-on: cncf-ubuntu-2-8-arm
     steps:
       - uses: actions/checkout@v6
-      - uses: strimzi/github-actions/.github/actions/build/build-containers@v1
+      - uses: strimzi/github-actions/.github/actions/build/build-containers@v2
         with:
           architecture: ${{ matrix.architecture }}
 ```
