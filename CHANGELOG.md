@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 1.2.0
+
+* _Nothing here yet, but we will surely develop something new pretty soon_ 😉
+
+### Major changes, deprecations, and removals
+
+* n/a
+
 ## 1.1.0
 
 * Allow failed `KafkaConnectors` to be stopped and reject pausing of failed connectors since this operation is not supported by Kafka Connect
