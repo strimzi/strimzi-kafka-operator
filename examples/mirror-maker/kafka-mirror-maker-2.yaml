@@ -3,20 +3,23 @@ kind: KafkaMirrorMaker2
 metadata:
   name: my-mirror-maker-2
 spec:
-  version: 4.2.0
+  version: 4.3.0
   replicas: 1
   target:
     alias: cluster-b
     bootstrapServers: cluster-b-kafka-bootstrap:9092
     groupId: my-mirror-maker-2-group
-    configStorageTopic: my-mirror-maker-2-config
-    offsetStorageTopic: my-mirror-maker-2-offset
-    statusStorageTopic: my-mirror-maker-2-status
+    # internal topics should be prefixed with __ to be excluded from mirroring by default
+    configStorageTopic: __my-mirror-maker-2-config
+    offsetStorageTopic: __my-mirror-maker-2-offset
+    statusStorageTopic: __my-mirror-maker-2-status
     config:
       # -1 means it will use the default replication factor configured in the broker
       config.storage.replication.factor: -1
       offset.storage.replication.factor: -1
       status.storage.replication.factor: -1
+      # It is the fastest strategy and is compatible with MirrorMaker connectors, significantly improving worker start-up time
+      plugin.discovery: service_load
   mirrors:
   - source:
       bootstrapServers: cluster-a-kafka-bootstrap:9092
@@ -28,7 +31,8 @@ spec:
         replication.factor: -1
         offset-syncs.topic.replication.factor: -1
         sync.topic.acls.enabled: "false"
-        refresh.topics.interval.seconds: 600
+        # It is recommended to store offset-sync topic in the target so that MirrorMaker can be granted read-only access to the source cluster
+        offset-syncs.topic.location: "target"
     checkpointConnector:
       tasksMax: 1
       config:
@@ -36,5 +40,7 @@ spec:
         checkpoints.topic.replication.factor: -1
         sync.group.offsets.enabled: "false"
         refresh.groups.interval.seconds: 600
+        # This configuration has to match with the sourceConnector in order to work correctly
+        offset-syncs.topic.location: "target"
     topicsPattern: ".*"
     groupsPattern: ".*"
