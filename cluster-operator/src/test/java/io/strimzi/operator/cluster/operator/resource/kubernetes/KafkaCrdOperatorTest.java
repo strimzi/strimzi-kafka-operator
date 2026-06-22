@@ -16,6 +16,7 @@ import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.operator.resource.concurrent.AbstractNamespacedResourceOperatorTest;
+import io.strimzi.operator.common.operator.resource.concurrent.CrdOperator;
 import io.strimzi.test.TestUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;

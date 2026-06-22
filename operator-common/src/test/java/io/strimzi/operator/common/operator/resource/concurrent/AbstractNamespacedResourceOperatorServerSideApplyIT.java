@@ -2,7 +2,7 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.operator.cluster.operator.resource.kubernetes;
+package io.strimzi.operator.common.operator.resource.concurrent;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
@@ -12,7 +12,6 @@ import io.fabric8.kubernetes.client.dsl.base.PatchContext;
 import io.fabric8.kubernetes.client.dsl.base.PatchType;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
-import io.strimzi.operator.common.operator.resource.concurrent.AbstractNamespacedResourceOperator;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -35,8 +34,8 @@ public abstract class AbstractNamespacedResourceOperatorServerSideApplyIT<C exte
         R extends Resource<T>> extends AbstractNamespacedResourceOperatorIT<C, T, L, R> {
     protected static final Logger LOGGER = LogManager.getLogger(AbstractNamespacedResourceOperatorServerSideApplyIT.class);
 
-    abstract T getNonConflicting();
-    abstract T getConflicting();
+    abstract public T getNonConflicting();
+    abstract public T getConflicting();
 
     @Test
     public void testCreateModifyDelete() {

@@ -12,6 +12,7 @@ import io.fabric8.kubernetes.api.model.rbac.RoleList;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.operator.common.operator.resource.concurrent.AbstractNamespacedResourceOperator;
+import io.strimzi.operator.common.operator.resource.concurrent.AbstractNamespacedResourceOperatorIT;
 
 import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.is;
@@ -22,9 +23,8 @@ public class RoleOperatorIT extends AbstractNamespacedResourceOperatorIT<
         Role,
         RoleList,
         Resource<Role>> {
-
     @Override
-    protected AbstractNamespacedResourceOperator<
+    public AbstractNamespacedResourceOperator<
                 KubernetesClient,
                 Role,
                 RoleList,
@@ -33,7 +33,7 @@ public class RoleOperatorIT extends AbstractNamespacedResourceOperatorIT<
     }
 
     @Override
-    protected Role getOriginal()  {
+    public Role getOriginal()  {
         PolicyRule rule = new PolicyRuleBuilder()
                 .withApiGroups("")
                 .withResources("pods")
@@ -51,7 +51,7 @@ public class RoleOperatorIT extends AbstractNamespacedResourceOperatorIT<
     }
 
     @Override
-    protected Role getModified()  {
+    public Role getModified()  {
         PolicyRule rule = new PolicyRuleBuilder()
                 .withApiGroups("")
                 .withResources("pods")
@@ -69,7 +69,7 @@ public class RoleOperatorIT extends AbstractNamespacedResourceOperatorIT<
     }
 
     @Override
-    protected void assertResources(Role expected, Role actual)   {
+    public void assertResources(Role expected, Role actual)   {
         assertThat(actual.getMetadata().getName(), is(expected.getMetadata().getName()));
         assertThat(actual.getMetadata().getNamespace(), is(expected.getMetadata().getNamespace()));
         assertThat(actual.getMetadata().getLabels(), is(expected.getMetadata().getLabels()));

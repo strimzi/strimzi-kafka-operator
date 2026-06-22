@@ -86,10 +86,10 @@ public abstract class AbstractNamespacedResourceOperatorIT<
         }
     }
 
-    abstract AbstractNamespacedResourceOperator<C, T, L, R> operator();
-    abstract T getOriginal();
-    abstract T getModified();
-    abstract void assertResources(T expected, T actual);
+    abstract public AbstractNamespacedResourceOperator<C, T, L, R> operator();
+    abstract public T getOriginal();
+    abstract public T getModified();
+    abstract public void assertResources(T expected, T actual);
 
     @Test
     public void testCreateModifyDelete() {

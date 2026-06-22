@@ -16,20 +16,21 @@ import io.strimzi.api.kafka.model.podset.StrimziPodSet;
 import io.strimzi.api.kafka.model.podset.StrimziPodSetBuilder;
 import io.strimzi.api.kafka.model.podset.StrimziPodSetList;
 import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.operator.common.Util;
+import io.strimzi.operator.common.operator.resource.concurrent.AbstractCustomResourceOperatorIT;
 import io.strimzi.test.CrdUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
 
 import java.util.Map;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
@@ -169,6 +170,7 @@ public class StrimziPodSetCrdOperatorIT extends AbstractCustomResourceOperatorIT
                     LOGGER.info("Updating resource status");
                     return op.updateStatusAsync(Reconciliation.DUMMY_RECONCILIATION, newStatus);
                 })
+                .whenComplete(TestUtils::assertSuccessful)
                 .thenCompose(rrModified -> op.getAsync(namespace, resourceName))
                 .whenComplete((modifiedCustomResource, error) -> assertReady(modifiedCustomResource))
                 .thenCompose(rrModified -> {
@@ -194,22 +196,26 @@ public class StrimziPodSetCrdOperatorIT extends AbstractCustomResourceOperatorIT
 
         LOGGER.info("Creating resource");
         TestUtils.await(op.reconcile(Reconciliation.DUMMY_RECONCILIATION, namespace, resourceName, getResource(resourceName))
-                .whenComplete(TestUtils::assertSuccessful)
-                .thenCompose(rr -> {
-                    LOGGER.info("Saving resource with status change prior to deletion");
-                    newStatus.set(getResourceWithNewReadyStatus(op.get(namespace, resourceName)));
-                    LOGGER.info("Deleting resource");
-                    return op.reconcile(Reconciliation.DUMMY_RECONCILIATION, namespace, resourceName, null);
-                })
-                .thenCompose(i -> {
-                    LOGGER.info("Updating resource with new status - should fail");
-                    return op.updateStatusAsync(Reconciliation.DUMMY_RECONCILIATION, newStatus.get());
-                })
-                .<Void>handle((i, error) -> {
-                    assertThat(Util.maybeUnwrapCompletionException(error), instanceOf(KubernetesClientException.class));
-                    return null;
-                }),
-                1, TimeUnit.MINUTES);
+                        .whenComplete(TestUtils::assertSuccessful)
+                        .thenCompose(rr -> {
+                            LOGGER.info("Saving resource with status change prior to deletion");
+                            newStatus.set(getResourceWithNewReadyStatus(op.get(namespace, resourceName)));
+                            LOGGER.info("Deleting resource");
+                            return op.reconcile(Reconciliation.DUMMY_RECONCILIATION, namespace, resourceName, null);
+                        })
+                        .whenComplete(TestUtils::assertSuccessful)
+                        .thenCompose(i -> {
+                            LOGGER.info("Updating resource with new status - should fail");
+                            return op.updateStatusAsync(Reconciliation.DUMMY_RECONCILIATION, newStatus.get());
+                        })
+                        .whenComplete(TestUtils::assertSuccessful)
+                        .<Void>handle((i, error) -> {
+                            assertThat(error, is(notNullValue()));
+                            assertThat(error, is(instanceOf(CompletionException.class)));
+                            assertThat(error.getCause(), is(instanceOf(KubernetesClientException.class)));
+                            return null;
+                        }),
+                        1, TimeUnit.MINUTES);
     }
 
     /**
@@ -238,9 +244,10 @@ public class StrimziPodSetCrdOperatorIT extends AbstractCustomResourceOperatorIT
                 .<Void>handle((unused, error) -> {
                     assertNotNull(error);
                     LOGGER.info("Failed as expected");
-                    Throwable cause = Util.maybeUnwrapCompletionException(error);
-                    assertThat(cause, instanceOf(KubernetesClientException.class));
-                    assertThat(((KubernetesClientException) cause).getCode(), Matchers.is(409));
+                    assertThat(error, is(notNullValue()));
+                    assertThat(error, is(instanceOf(CompletionException.class)));
+                    assertThat(error.getCause(), is(instanceOf(KubernetesClientException.class)));
+                    assertThat(((KubernetesClientException) error.getCause()).getCode(), is(409));
                     return null;
                 })
                 .thenCompose(v -> {

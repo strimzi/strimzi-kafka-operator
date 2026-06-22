@@ -12,21 +12,25 @@ import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.strimzi.api.kafka.model.common.Condition;
 import io.strimzi.api.kafka.model.common.ConditionBuilder;
 import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.operator.common.Util;
 import io.strimzi.test.CrdUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 
 import java.util.Random;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -45,7 +49,6 @@ public abstract class AbstractCustomResourceOperatorIT<
             C extends KubernetesClient,
             T extends CustomResource<?, ?>,
             L extends DefaultKubernetesResourceList<T>> {
-
     protected static final Logger LOGGER = LogManager.getLogger(AbstractCustomResourceOperatorIT.class);
     protected static final String RESOURCE_NAME = "my-test-resource";
     protected static final Condition READY_CONDITION = new ConditionBuilder()
@@ -54,6 +57,7 @@ public abstract class AbstractCustomResourceOperatorIT<
             .build();
 
     protected static KubernetesClient client;
+    protected static Executor asyncExecutor;
 
     protected abstract CrdOperator<C, T, L> operator();
     protected abstract String getCrd();
@@ -66,6 +70,7 @@ public abstract class AbstractCustomResourceOperatorIT<
 
     @BeforeAll
     public void before() {
+        asyncExecutor = ForkJoinPool.commonPool();
         client = new KubernetesClientBuilder().build();
 
         LOGGER.info("Creating namespace");
@@ -79,6 +84,7 @@ public abstract class AbstractCustomResourceOperatorIT<
 
     @AfterAll
     public void after() {
+        LOGGER.info("Deleting CRD");
         CrdUtils.deleteCrd(client, getCrdName());
         TestUtils.deleteNamespace(client, getNamespace());
 
@@ -132,13 +138,16 @@ public abstract class AbstractCustomResourceOperatorIT<
 
                 return op.deleteAsync(Reconciliation.DUMMY_RECONCILIATION, namespace, resourceName, false);
             })
+            .whenComplete(TestUtils::assertSuccessful)
             .thenCompose(i -> {
                 LOGGER.info("Updating resource with new status - should fail");
                 return op.updateStatusAsync(Reconciliation.DUMMY_RECONCILIATION, newStatus.get());
             })
             .<Void>handle((i, error) -> {
                 LOGGER.info("Checking exception");
-                assertThat(Util.maybeUnwrapCompletionException(error), instanceOf(KubernetesClientException.class));
+                assertThat(error, CoreMatchers.is(notNullValue()));
+                assertThat(error, CoreMatchers.is(instanceOf(CompletionException.class)));
+                assertThat(error.getCause(), CoreMatchers.is(instanceOf(KubernetesClientException.class)));
                 return null;
             }),
             1, TimeUnit.MINUTES);
@@ -169,9 +178,10 @@ public abstract class AbstractCustomResourceOperatorIT<
             .<Void>handle((unused, error) -> {
                 assertNotNull(error);
                 LOGGER.info("Failed as expected");
-                Throwable cause = Util.maybeUnwrapCompletionException(error);
-                assertThat(cause, instanceOf(KubernetesClientException.class));
-                assertThat(((KubernetesClientException) cause).getCode(), is(409));
+                assertThat(error, CoreMatchers.is(notNullValue()));
+                assertThat(error, CoreMatchers.is(instanceOf(CompletionException.class)));
+                assertThat(error.getCause(), CoreMatchers.is(instanceOf(KubernetesClientException.class)));
+                assertThat(((KubernetesClientException) error.getCause()).getCode(), is(409));
                 return null;
             })
             .thenCompose(v -> {

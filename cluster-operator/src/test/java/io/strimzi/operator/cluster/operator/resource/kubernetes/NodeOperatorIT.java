@@ -10,6 +10,7 @@ import io.fabric8.kubernetes.api.model.NodeList;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.operator.common.operator.resource.concurrent.AbstractNonNamespacedResourceOperator;
+import io.strimzi.operator.common.operator.resource.concurrent.AbstractNonNamespacedResourceOperatorIT;
 
 import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.is;
@@ -19,13 +20,13 @@ public class NodeOperatorIT extends AbstractNonNamespacedResourceOperatorIT<Kube
         Node, NodeList, Resource<Node>> {
 
     @Override
-    protected AbstractNonNamespacedResourceOperator<KubernetesClient,
+    public AbstractNonNamespacedResourceOperator<KubernetesClient,
             Node, NodeList, Resource<Node>> operator() {
         return new NodeOperator(asyncExecutor, client);
     }
 
     @Override
-    protected Node getOriginal()  {
+    public Node getOriginal()  {
         return new NodeBuilder()
                 .withNewMetadata()
                     .withName(resourceName)
@@ -39,7 +40,7 @@ public class NodeOperatorIT extends AbstractNonNamespacedResourceOperatorIT<Kube
     }
 
     @Override
-    protected Node getModified()  {
+    public Node getModified()  {
         return new NodeBuilder()
                 .withNewMetadata()
                     .withName(resourceName)
@@ -53,7 +54,7 @@ public class NodeOperatorIT extends AbstractNonNamespacedResourceOperatorIT<Kube
     }
 
     @Override
-    protected void assertResources(Node expected, Node actual)   {
+    public void assertResources(Node expected, Node actual)   {
         assertThat(actual.getMetadata().getName(), is(expected.getMetadata().getName()));
         assertThat(actual.getMetadata().getLabels(), is(expected.getMetadata().getLabels()));
         assertThat(actual.getSpec().getUnschedulable(), is(expected.getSpec().getUnschedulable()));

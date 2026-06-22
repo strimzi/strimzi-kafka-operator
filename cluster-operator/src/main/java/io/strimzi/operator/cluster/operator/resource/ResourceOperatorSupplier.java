@@ -30,7 +30,6 @@ import io.strimzi.operator.cluster.operator.resource.kubernetes.BuildConfigOpera
 import io.strimzi.operator.cluster.operator.resource.kubernetes.BuildOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.ClusterRoleBindingOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.ConfigMapOperator;
-import io.strimzi.operator.cluster.operator.resource.kubernetes.CrdOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.DeploymentOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.ImageStreamOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.IngressOperator;
@@ -52,6 +51,7 @@ import io.strimzi.operator.common.AdminClientProvider;
 import io.strimzi.operator.common.DefaultAdminClientProvider;
 import io.strimzi.operator.common.MetricsProvider;
 import io.strimzi.operator.common.featuregates.FeatureGates;
+import io.strimzi.operator.common.operator.resource.concurrent.CrdOperator;
 import io.vertx.core.Vertx;
 
 import java.util.concurrent.Executor;

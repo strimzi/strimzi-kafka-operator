@@ -14,20 +14,20 @@ import io.fabric8.kubernetes.api.model.rbac.SubjectBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.operator.common.operator.resource.concurrent.AbstractNamespacedResourceOperator;
+import io.strimzi.operator.common.operator.resource.concurrent.AbstractNamespacedResourceOperatorIT;
 
 import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 public class RoleBindingOperatorIT extends AbstractNamespacedResourceOperatorIT<KubernetesClient, RoleBinding, RoleBindingList, Resource<RoleBinding>> {
-
     @Override
-    protected AbstractNamespacedResourceOperator<KubernetesClient, RoleBinding, RoleBindingList, Resource<RoleBinding>> operator() {
+    public AbstractNamespacedResourceOperator<KubernetesClient, RoleBinding, RoleBindingList, Resource<RoleBinding>> operator() {
         return new RoleBindingOperator(asyncExecutor, client);
     }
 
     @Override
-    protected RoleBinding getOriginal()  {
+    public RoleBinding getOriginal()  {
         Subject ks = new SubjectBuilder()
                 .withKind("ServiceAccount")
                 .withName("my-service-account")
@@ -52,7 +52,7 @@ public class RoleBindingOperatorIT extends AbstractNamespacedResourceOperatorIT<
     }
 
     @Override
-    protected RoleBinding getModified()  {
+    public RoleBinding getModified()  {
         Subject ks = new SubjectBuilder()
                 .withKind("ServiceAccount")
                 .withName("my-service-account2")
@@ -78,7 +78,7 @@ public class RoleBindingOperatorIT extends AbstractNamespacedResourceOperatorIT<
     }
 
     @Override
-    protected void assertResources(RoleBinding expected, RoleBinding actual)   {
+    public void assertResources(RoleBinding expected, RoleBinding actual)   {
         assertThat(actual.getMetadata().getName(), is(expected.getMetadata().getName()));
         assertThat(actual.getMetadata().getNamespace(), is(expected.getMetadata().getNamespace()));
         assertThat(actual.getMetadata().getLabels(), is(expected.getMetadata().getLabels()));

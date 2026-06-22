@@ -11,6 +11,7 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.ServiceAccountResource;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.operator.resource.concurrent.AbstractNamespacedResourceOperator;
+import io.strimzi.operator.common.operator.resource.concurrent.AbstractNamespacedResourceOperatorIT;
 import io.strimzi.test.TestUtils;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
@@ -24,12 +25,12 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 
 public class ServiceAccountOperatorIT extends AbstractNamespacedResourceOperatorIT<KubernetesClient, ServiceAccount, ServiceAccountList, ServiceAccountResource> {
     @Override
-    protected AbstractNamespacedResourceOperator<KubernetesClient, ServiceAccount, ServiceAccountList, ServiceAccountResource> operator() {
+    public AbstractNamespacedResourceOperator<KubernetesClient, ServiceAccount, ServiceAccountList, ServiceAccountResource> operator() {
         return new ServiceAccountOperator(asyncExecutor, client, false);
     }
 
     @Override
-    protected ServiceAccount getOriginal()  {
+    public ServiceAccount getOriginal()  {
         return new ServiceAccountBuilder()
                 .withNewMetadata()
                     .withName(resourceName)
@@ -40,7 +41,7 @@ public class ServiceAccountOperatorIT extends AbstractNamespacedResourceOperator
     }
 
     @Override
-    protected ServiceAccount getModified()  {
+    public ServiceAccount getModified()  {
         return new ServiceAccountBuilder()
                 .withNewMetadata()
                     .withName(resourceName)
@@ -87,7 +88,7 @@ public class ServiceAccountOperatorIT extends AbstractNamespacedResourceOperator
     }
 
     @Override
-    protected void assertResources(ServiceAccount expected, ServiceAccount actual)   {
+    public void assertResources(ServiceAccount expected, ServiceAccount actual)   {
         assertThat(actual.getMetadata().getName(), is(expected.getMetadata().getName()));
         assertThat(actual.getMetadata().getNamespace(), is(expected.getMetadata().getNamespace()));
         assertThat(actual.getMetadata().getLabels(), is(expected.getMetadata().getLabels()));

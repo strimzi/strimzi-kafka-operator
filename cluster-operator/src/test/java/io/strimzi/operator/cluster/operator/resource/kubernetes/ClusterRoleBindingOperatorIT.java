@@ -14,6 +14,7 @@ import io.fabric8.kubernetes.api.model.rbac.SubjectBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.operator.common.operator.resource.concurrent.AbstractNonNamespacedResourceOperator;
+import io.strimzi.operator.common.operator.resource.concurrent.AbstractNonNamespacedResourceOperatorIT;
 
 import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.is;
@@ -24,14 +25,14 @@ public class ClusterRoleBindingOperatorIT extends AbstractNonNamespacedResourceO
         ClusterRoleBinding, ClusterRoleBindingList, Resource<ClusterRoleBinding>> {
 
     @Override
-    protected AbstractNonNamespacedResourceOperator<KubernetesClient,
+    public AbstractNonNamespacedResourceOperator<KubernetesClient,
             ClusterRoleBinding, ClusterRoleBindingList,
             Resource<ClusterRoleBinding>> operator() {
         return new ClusterRoleBindingOperator(asyncExecutor, client);
     }
 
     @Override
-    protected ClusterRoleBinding getOriginal()  {
+    public ClusterRoleBinding getOriginal()  {
         Subject ks = new SubjectBuilder()
                 .withKind("ServiceAccount")
                 .withName("my-service-account")
@@ -56,7 +57,7 @@ public class ClusterRoleBindingOperatorIT extends AbstractNonNamespacedResourceO
     }
 
     @Override
-    protected ClusterRoleBinding getModified()  {
+    public ClusterRoleBinding getModified()  {
         Subject ks = new SubjectBuilder()
                 .withKind("ServiceAccount")
                 .withName("my-service-account2")
@@ -81,7 +82,7 @@ public class ClusterRoleBindingOperatorIT extends AbstractNonNamespacedResourceO
     }
 
     @Override
-    protected void assertResources(ClusterRoleBinding expected, ClusterRoleBinding actual) {
+    public void assertResources(ClusterRoleBinding expected, ClusterRoleBinding actual) {
         assertThat(actual.getMetadata().getName(), is(expected.getMetadata().getName()));
         assertThat(actual.getMetadata().getLabels(), is(expected.getMetadata().getLabels()));
         assertThat(actual.getSubjects(), hasSize(expected.getSubjects().size()));

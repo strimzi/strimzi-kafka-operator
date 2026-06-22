@@ -26,12 +26,12 @@ import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControl
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlApiImpl;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.MockCruiseControl;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.ConfigMapOperator;
-import io.strimzi.operator.cluster.operator.resource.kubernetes.CrdOperator;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlEndpoints;
 import io.strimzi.operator.common.operator.MockCertManager;
+import io.strimzi.operator.common.operator.resource.concurrent.CrdOperator;
 import io.strimzi.test.ReadWriteUtils;
 import io.strimzi.test.TestUtils;
 import io.vertx.core.AsyncResult;
@@ -202,8 +202,8 @@ public class KafkaRebalanceStateMachineTest {
         AbstractRebalanceOptions.AbstractRebalanceOptionsBuilder<?, ?> rbOptions = kcrao.convertRebalanceSpecToRebalanceOptions(kcRebalance.getSpec());
 
         CrdOperator<KubernetesClient,
-                        KafkaRebalance,
-                        KafkaRebalanceList> mockRebalanceOps = supplier.kafkaRebalanceOperator;
+                                KafkaRebalance,
+                                KafkaRebalanceList> mockRebalanceOps = supplier.kafkaRebalanceOperator;
 
         when(mockCmOps.getAsync(CLUSTER_NAMESPACE, RESOURCE_NAME)).thenReturn(CompletableFuture.completedFuture(new ConfigMap()));
         when(mockRebalanceOps.get(CLUSTER_NAMESPACE, RESOURCE_NAME)).thenReturn(kcRebalance);

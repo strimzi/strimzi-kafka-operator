@@ -26,7 +26,6 @@ import io.strimzi.operator.cluster.operator.resource.kubernetes.BuildConfigOpera
 import io.strimzi.operator.cluster.operator.resource.kubernetes.BuildOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.ClusterRoleBindingOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.ConfigMapOperator;
-import io.strimzi.operator.cluster.operator.resource.kubernetes.CrdOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.DeploymentOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.ImageStreamOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.IngressOperator;
@@ -51,6 +50,7 @@ import io.strimzi.operator.common.auth.PemAuthIdentity;
 import io.strimzi.operator.common.auth.PemTrustSet;
 import io.strimzi.operator.common.model.Ca;
 import io.strimzi.operator.common.model.Labels;
+import io.strimzi.operator.common.operator.resource.concurrent.CrdOperator;
 import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.DescribeClientQuotasResult;
 import org.apache.kafka.clients.admin.DescribeClusterOptions;

@@ -12,13 +12,14 @@ import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.TimeoutException;
-import io.strimzi.operator.common.Util;
 import io.strimzi.test.TestUtils;
 import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.matches;
@@ -54,7 +55,9 @@ public abstract class AbstractReadyResourceOperatorTest<C extends KubernetesClie
 
         TestUtils.await(op.readiness(Reconciliation.DUMMY_RECONCILIATION, NAMESPACE, RESOURCE_NAME, 20, 100)
             .<Void>handle((v, error) -> {
-                assertThat(Util.maybeUnwrapCompletionException(error), instanceOf(TimeoutException.class));
+                assertThat(error, is(notNullValue()));
+                assertThat(error, is(instanceOf(TimeoutException.class)));
+
                 verify(mockResource, atLeastOnce()).get();
                 verify(mockResource, never()).isReady();
                 return null;
@@ -82,7 +85,9 @@ public abstract class AbstractReadyResourceOperatorTest<C extends KubernetesClie
 
         TestUtils.await(op.readiness(Reconciliation.DUMMY_RECONCILIATION, NAMESPACE, RESOURCE_NAME, 20, 100)
             .<Void>handle((v, error) -> {
-                assertThat(Util.maybeUnwrapCompletionException(error), instanceOf(TimeoutException.class));
+                assertThat(error, is(notNullValue()));
+                assertThat(error, is(instanceOf(TimeoutException.class)));
+
                 verify(mockResource, never()).isReady();
                 return null;
             }));
@@ -159,7 +164,9 @@ public abstract class AbstractReadyResourceOperatorTest<C extends KubernetesClie
 
         TestUtils.await(op.readiness(Reconciliation.DUMMY_RECONCILIATION, NAMESPACE, RESOURCE_NAME, 20, 100)
             .<Void>handle((v, error) -> {
-                assertThat(Util.maybeUnwrapCompletionException(error), instanceOf(TimeoutException.class));
+                assertThat(error, is(notNullValue()));
+                assertThat(error, is(instanceOf(TimeoutException.class)));
+
                 verify(mockResource, atLeastOnce()).get();
                 verify(mockResource, atLeastOnce()).isReady();
                 return null;
@@ -189,7 +196,9 @@ public abstract class AbstractReadyResourceOperatorTest<C extends KubernetesClie
 
         TestUtils.await(op.readiness(Reconciliation.DUMMY_RECONCILIATION, NAMESPACE, RESOURCE_NAME, 20, 100)
             .<Void>handle((v, error) -> {
-                assertThat(Util.maybeUnwrapCompletionException(error), instanceOf(TimeoutException.class));
+                assertThat(error, is(notNullValue()));
+                assertThat(error, is(instanceOf(TimeoutException.class)));
+
                 return null;
             }));
     }

@@ -12,6 +12,7 @@ import io.fabric8.kubernetes.api.model.rbac.PolicyRuleBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.operator.common.operator.resource.concurrent.AbstractNonNamespacedResourceOperator;
+import io.strimzi.operator.common.operator.resource.concurrent.AbstractNonNamespacedResourceOperatorIT;
 
 import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.is;
@@ -22,13 +23,13 @@ public class ClusterRoleOperatorIT extends AbstractNonNamespacedResourceOperator
         ClusterRole, ClusterRoleList, Resource<ClusterRole>> {
 
     @Override
-    protected AbstractNonNamespacedResourceOperator<KubernetesClient,
+    public AbstractNonNamespacedResourceOperator<KubernetesClient,
             ClusterRole, ClusterRoleList, Resource<ClusterRole>> operator() {
         return new ClusterRoleOperator(asyncExecutor, client);
     }
 
     @Override
-    protected ClusterRole getOriginal()  {
+    public ClusterRole getOriginal()  {
         PolicyRule rule = new PolicyRuleBuilder()
                 .withApiGroups("")
                 .withResources("nodes")
@@ -45,7 +46,7 @@ public class ClusterRoleOperatorIT extends AbstractNonNamespacedResourceOperator
     }
 
     @Override
-    protected ClusterRole getModified()  {
+    public ClusterRole getModified()  {
         PolicyRule rule = new PolicyRuleBuilder()
                 .withApiGroups("")
                 .withResources("nodes")
@@ -62,7 +63,7 @@ public class ClusterRoleOperatorIT extends AbstractNonNamespacedResourceOperator
     }
 
     @Override
-    protected void assertResources(ClusterRole expected, ClusterRole actual)   {
+    public void assertResources(ClusterRole expected, ClusterRole actual)   {
         assertThat(actual.getMetadata().getName(), is(expected.getMetadata().getName()));
         assertThat(actual.getMetadata().getLabels(), is(expected.getMetadata().getLabels()));
         assertThat(actual.getRules(), hasSize(expected.getRules().size()));

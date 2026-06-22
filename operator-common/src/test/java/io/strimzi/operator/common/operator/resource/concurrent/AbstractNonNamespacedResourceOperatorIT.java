@@ -2,7 +2,7 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.operator.cluster.operator.resource.kubernetes;
+package io.strimzi.operator.common.operator.resource.concurrent;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
@@ -10,10 +10,7 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.operator.common.operator.resource.concurrent.AbstractNonNamespacedResourceOperator;
-import io.strimzi.operator.common.operator.resource.concurrent.ResourceSupport;
 import io.strimzi.test.TestUtils;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -57,14 +54,10 @@ public abstract class AbstractNonNamespacedResourceOperatorIT<C extends Kubernet
         resourceName = getResourceName(RESOURCE_NAME);
     }
 
-    @AfterAll
-    public static void after() {
-    }
-
-    abstract AbstractNonNamespacedResourceOperator<C, T, L, R> operator();
-    abstract T getOriginal();
-    abstract T getModified();
-    abstract void assertResources(T expected, T actual);
+    abstract public AbstractNonNamespacedResourceOperator<C, T, L, R> operator();
+    abstract public T getOriginal();
+    abstract public T getModified();
+    abstract public void assertResources(T expected, T actual);
 
     @Test
     public void testCreateModifyDelete() {

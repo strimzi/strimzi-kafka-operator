@@ -70,7 +70,6 @@ public class PodOperatorMockTest {
     public void testCreateReadUpdate() {
         PodOperator pr = new PodOperator(ASYNC_EXECUTOR, client);
 
-        pr.listAsync(NAMESPACE, Labels.EMPTY);
         TestUtils.await(pr.listAsync(NAMESPACE, Labels.EMPTY)
                 .whenComplete(TestUtils::assertSuccessful)
                 .thenAccept(podList -> assertThat(podList.stream().map(p -> p.getMetadata().getName()).collect(Collectors.toList()), is(List.of())))

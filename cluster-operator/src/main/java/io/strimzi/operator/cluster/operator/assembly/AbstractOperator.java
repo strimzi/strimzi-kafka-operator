@@ -61,7 +61,7 @@ import java.util.stream.Collectors;
  * @param <P> The Java representation of the Kubernetes resource .spec section
  * @param <S> The Java representation of the Kubernetes resource .status section
  * @param <O> The "Resource Operator" for the source resource type. Typically, this will be some instantiation of
- *           {@link io.strimzi.operator.cluster.operator.resource.kubernetes.CrdOperator}.
+ *           {@link io.strimzi.operator.common.operator.resource.concurrent.CrdOperator}.
  */
 public abstract class AbstractOperator<
         T extends CustomResource<P, S>,

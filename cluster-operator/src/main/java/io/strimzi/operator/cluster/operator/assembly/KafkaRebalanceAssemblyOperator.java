@@ -49,7 +49,6 @@ import io.strimzi.operator.cluster.operator.resource.cruisecontrol.RebalanceOpti
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.RemoveBrokerOptions;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.RemoveDisksOptions;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.ConfigMapOperator;
-import io.strimzi.operator.cluster.operator.resource.kubernetes.CrdOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.SecretOperator;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
@@ -61,6 +60,7 @@ import io.strimzi.operator.common.model.cruisecontrol.CruiseControlLoadParameter
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlRebalanceKeys;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlUserTaskStatus;
 import io.strimzi.operator.common.operator.resource.concurrent.AbstractWatchableStatusedNamespacedResourceOperator;
+import io.strimzi.operator.common.operator.resource.concurrent.CrdOperator;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;

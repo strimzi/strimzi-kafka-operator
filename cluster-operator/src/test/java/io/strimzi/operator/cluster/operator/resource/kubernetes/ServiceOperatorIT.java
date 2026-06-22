@@ -12,6 +12,7 @@ import io.fabric8.kubernetes.api.model.ServicePortBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.ServiceResource;
 import io.strimzi.operator.common.operator.resource.concurrent.AbstractNamespacedResourceOperator;
+import io.strimzi.operator.common.operator.resource.concurrent.AbstractNamespacedResourceOperatorIT;
 
 import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.is;
@@ -20,13 +21,13 @@ import static org.hamcrest.MatcherAssert.assertThat;
 public class ServiceOperatorIT extends AbstractNamespacedResourceOperatorIT<KubernetesClient, Service, ServiceList, ServiceResource<Service>> {
 
     @Override
-    protected AbstractNamespacedResourceOperator<KubernetesClient, Service, ServiceList,
+    public AbstractNamespacedResourceOperator<KubernetesClient, Service, ServiceList,
                 ServiceResource<Service>> operator() {
         return new ServiceOperator(asyncExecutor, client, false);
     }
 
     @Override
-    protected Service getOriginal()  {
+    public Service getOriginal()  {
         ServicePort servicePort = new ServicePortBuilder()
                 .withName("http")
                 .withProtocol("TCP")
@@ -49,7 +50,7 @@ public class ServiceOperatorIT extends AbstractNamespacedResourceOperatorIT<Kube
     }
 
     @Override
-    protected Service getModified()  {
+    public Service getModified()  {
         ServicePort servicePort = new ServicePortBuilder()
                 .withName("https")
                 .withProtocol("TCP")
@@ -72,7 +73,7 @@ public class ServiceOperatorIT extends AbstractNamespacedResourceOperatorIT<Kube
     }
 
     @Override
-    protected void assertResources(Service expected, Service actual)   {
+    public void assertResources(Service expected, Service actual)   {
         assertThat(actual.getMetadata().getName(), is(expected.getMetadata().getName()));
         assertThat(actual.getMetadata().getNamespace(), is(expected.getMetadata().getNamespace()));
         assertThat(actual.getMetadata().getLabels(), is(expected.getMetadata().getLabels()));

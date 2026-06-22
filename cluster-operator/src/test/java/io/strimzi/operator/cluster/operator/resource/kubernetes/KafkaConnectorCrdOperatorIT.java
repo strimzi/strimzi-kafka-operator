@@ -8,6 +8,8 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.model.connector.KafkaConnector;
 import io.strimzi.api.kafka.model.connector.KafkaConnectorBuilder;
 import io.strimzi.api.kafka.model.connector.KafkaConnectorList;
+import io.strimzi.operator.common.operator.resource.concurrent.AbstractCustomResourceOperatorIT;
+import io.strimzi.operator.common.operator.resource.concurrent.CrdOperator;
 import io.strimzi.test.CrdUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;

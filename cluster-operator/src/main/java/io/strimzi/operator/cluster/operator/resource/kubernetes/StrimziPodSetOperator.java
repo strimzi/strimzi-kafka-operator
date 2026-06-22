@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.model.podset.StrimziPodSet;
 import io.strimzi.api.kafka.model.podset.StrimziPodSetList;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.operator.resource.concurrent.CrdOperator;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;

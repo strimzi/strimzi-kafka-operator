@@ -15,17 +15,18 @@ import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.TimeoutException;
-import io.strimzi.operator.common.Util;
 import io.strimzi.test.TestUtils;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -168,7 +169,9 @@ public abstract class AbstractNonNamespacedResourceOperatorTest<C extends Kubern
 
         TestUtils.await(op.createOrUpdate(Reconciliation.DUMMY_RECONCILIATION, resource)
             .<Void>handle((ar, error) -> {
-                assertThat(Util.maybeUnwrapCompletionException(error), is(ex));
+                assertThat(error, is(notNullValue()));
+                assertThat(error, is(instanceOf(CompletionException.class)));
+                assertThat(error.getCause(), is(ex));
                 return null;
             }));
     }
@@ -225,7 +228,9 @@ public abstract class AbstractNonNamespacedResourceOperatorTest<C extends Kubern
 
         TestUtils.await(op.createOrUpdate(Reconciliation.DUMMY_RECONCILIATION, resource)
             .<Void>handle((rr, error) -> {
-                assertThat(Util.maybeUnwrapCompletionException(error), is(ex));
+                assertThat(error, is(notNullValue()));
+                assertThat(error, is(instanceOf(CompletionException.class)));
+                assertThat(error.getCause(), is(ex));
                 return null;
             }));
     }
@@ -320,7 +325,10 @@ public abstract class AbstractNonNamespacedResourceOperatorTest<C extends Kubern
 
         TestUtils.await(op.reconcile(Reconciliation.DUMMY_RECONCILIATION, resource.getMetadata().getName(), null)
             .<Void>handle((rrDeleted, error) -> {
-                assertThat(Util.maybeUnwrapCompletionException(error), instanceOf(TimeoutException.class));
+                assertThat(error, is(notNullValue()));
+                assertThat(error, is(instanceOf(CompletionException.class)));
+                assertThat(error.getCause(), is(instanceOf(TimeoutException.class)));
+
                 verify(mockResource).delete();
                 assertThat("Watch was not closed", watchWasClosed.get(), is(true));
                 return null;
@@ -395,7 +403,9 @@ public abstract class AbstractNonNamespacedResourceOperatorTest<C extends Kubern
 
         TestUtils.await(op.reconcile(Reconciliation.DUMMY_RECONCILIATION, resource.getMetadata().getName(), null)
             .<Void>handle((rrDeleted, error) -> {
-                assertThat(Util.maybeUnwrapCompletionException(error), is(ex));
+                assertThat(error, is(notNullValue()));
+                assertThat(error, is(instanceOf(CompletionException.class)));
+                assertThat(error.getCause(), is(ex));
                 assertThat("Watch was not closed", watchWasClosed.get(), is(true));
                 return null;
             }));
@@ -424,7 +434,9 @@ public abstract class AbstractNonNamespacedResourceOperatorTest<C extends Kubern
 
         TestUtils.await(op.reconcile(Reconciliation.DUMMY_RECONCILIATION, resource.getMetadata().getName(), null)
             .<Void>handle((rrDeleted, error) -> {
-                assertThat(Util.maybeUnwrapCompletionException(error), is(ex));
+                assertThat(error, is(notNullValue()));
+                assertThat(error, is(instanceOf(CompletionException.class)));
+                assertThat(error.getCause(), is(ex));
                 return null;
             }));
     }
