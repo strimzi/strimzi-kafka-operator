@@ -15,13 +15,4 @@
         <!-- Points to the root directory of the Strimzi project directory and can be used for fixed location to configuration files -->
         <strimziRootDirectory>${basedir}${file.separator}..</strimziRootDirectory>
     </properties>
-
-    <dependencies>
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-api</artifactId>
-            <scope>test</scope>
-        </dependency>
-    </dependencies>
-
 </project>

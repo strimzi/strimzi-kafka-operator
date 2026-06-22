@@ -102,6 +102,12 @@
         </dependency>
         <dependency>
             <groupId>io.strimzi</groupId>
+            <artifactId>crd-annotations</artifactId>
+            <!-- use provided scope because this is not needed at runtime -->
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.strimzi</groupId>
             <artifactId>crd-generator</artifactId>
             <!-- use provided scope because this is not needed at runtime -->
             <scope>provided</scope>

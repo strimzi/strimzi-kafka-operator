@@ -6,11 +6,10 @@ package io.strimzi.crdgenerator;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import io.fabric8.kubernetes.client.CustomResource;
-import io.strimzi.api.annotations.ApiVersion;
-import io.strimzi.api.annotations.DeprecatedProperty;
-import io.strimzi.api.annotations.DeprecatedType;
 import io.strimzi.crdgenerator.annotations.AddedIn;
 import io.strimzi.crdgenerator.annotations.Crd;
+import io.strimzi.crdgenerator.annotations.DeprecatedProperty;
+import io.strimzi.crdgenerator.annotations.DeprecatedType;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.DescriptionFile;
 import io.strimzi.crdgenerator.annotations.ExternalLink;

@@ -9,8 +9,8 @@ import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinition
 import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinitionVersion;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
-import io.strimzi.api.annotations.ApiVersion;
-import io.strimzi.api.annotations.VersionRange;
+import io.strimzi.crdgenerator.ApiVersion;
+import io.strimzi.crdgenerator.VersionRange;
 import io.strimzi.test.CrdUtils;
 import io.strimzi.test.interfaces.TestSeparator;
 import org.junit.jupiter.api.AfterEach;

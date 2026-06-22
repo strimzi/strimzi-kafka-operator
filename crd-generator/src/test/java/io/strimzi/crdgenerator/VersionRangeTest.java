@@ -2,7 +2,7 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.api.annotations;
+package io.strimzi.crdgenerator;
 
 import org.junit.jupiter.api.Test;
 
@@ -12,7 +12,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class VersionRangeTest {
     @Test
     public void testContains() {
-
         assertTrue(ApiVersion.parseRange("v1").contains(ApiVersion.parse("v1")));
         assertFalse(ApiVersion.parseRange("v1").contains(ApiVersion.parse("v1alpha1")));
         assertFalse(ApiVersion.parseRange("v1").contains(ApiVersion.parse("v1beta1")));
