@@ -269,4 +269,17 @@ public class ModelUtilsTest {
 
         assertThat(ModelUtils.affinityWithRackLabelSelector(new PodTemplateBuilder().withAffinity(userAffinity).build(), new TopologyLabelRackBuilder().withTopologyKey("topology.key/my").build()), is(expectedAffinity));
     }
+
+    @Test
+    public void testHostTemplateRendering() {
+        NodeRef node = new NodeRef("my-cluster-kafka-1", 1, "kafka", false, true);
+
+        assertThat(ModelUtils.renderTemplate("my-host", node), is("my-host"));
+        assertThat(ModelUtils.renderTemplate("my-host-{nodeId}", node), is("my-host-1"));
+        assertThat(ModelUtils.renderTemplate("{nodePodName}", node), is("my-cluster-kafka-1"));
+        assertThat(ModelUtils.renderTemplate("my-host-{nodePodName}-{nodeId}", node), is("my-host-my-cluster-kafka-1-1"));
+        assertThat(ModelUtils.renderTemplate("my-{nodeId}-host-{nodeId}", node), is("my-1-host-1"));
+        assertThat(ModelUtils.renderTemplate("my-{nodeId}-host-{nodeID}", node), is("my-1-host-{nodeID}"));
+        assertThat(ModelUtils.renderTemplate("my-{nodeId}-host-nodeId", node), is("my-1-host-nodeId"));
+    }
 }

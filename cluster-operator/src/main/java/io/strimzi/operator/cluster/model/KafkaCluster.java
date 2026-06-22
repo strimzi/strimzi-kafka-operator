@@ -53,8 +53,8 @@ import io.strimzi.api.kafka.model.common.template.ContainerTemplate;
 import io.strimzi.api.kafka.model.common.template.ExternalTrafficPolicy;
 import io.strimzi.api.kafka.model.common.template.InternalServiceTemplate;
 import io.strimzi.api.kafka.model.common.template.PodDisruptionBudgetTemplate;
-import io.strimzi.api.kafka.model.common.template.PodTemplate;
 import io.strimzi.api.kafka.model.common.template.ResourceTemplate;
+import io.strimzi.api.kafka.model.common.template.StatefulPodTemplate;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaAuthorization;
 import io.strimzi.api.kafka.model.kafka.KafkaClusterSpec;
@@ -1434,7 +1434,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
      *
      * @return List of non-data volumes used by the Kafka pods
      */
-    private List<Volume> getNonDataVolumes(NodeRef node, PodTemplate templatePod) {
+    private List<Volume> getNonDataVolumes(NodeRef node, StatefulPodTemplate templatePod) {
         List<Volume> volumeList = new ArrayList<>();
 
         volumeList.add(VolumeUtils.createTempDirVolume(templatePod));
@@ -1450,6 +1450,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
         }
 
         TemplateUtils.addAdditionalVolumes(templatePod, volumeList);
+        TemplateUtils.addAdditionalTemplatedVolumes(node, templatePod, volumeList);
 
         return volumeList;
     }
@@ -1464,7 +1465,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
      *
      * @return              List of volumes to be included in the StrimziPodSet pod
      */
-    private List<Volume> getPodSetVolumes(NodeRef node, Storage storage, PodTemplate templatePod) {
+    private List<Volume> getPodSetVolumes(NodeRef node, Storage storage, StatefulPodTemplate templatePod) {
         List<Volume> volumeList = new ArrayList<>();
 
         volumeList.addAll(VolumeUtils.createPodSetVolumes(node.podName(), storage, false));

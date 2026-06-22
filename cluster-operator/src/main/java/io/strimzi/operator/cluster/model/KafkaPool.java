@@ -8,8 +8,8 @@ import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.strimzi.api.kafka.model.common.Condition;
 import io.strimzi.api.kafka.model.common.JvmOptions;
 import io.strimzi.api.kafka.model.common.template.ContainerTemplate;
-import io.strimzi.api.kafka.model.common.template.PodTemplate;
 import io.strimzi.api.kafka.model.common.template.ResourceTemplate;
+import io.strimzi.api.kafka.model.common.template.StatefulPodTemplate;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaClusterTemplate;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
@@ -67,7 +67,7 @@ public class KafkaPool extends AbstractModel {
     // Templates
     protected ResourceTemplate templatePersistentVolumeClaims;
     protected ResourceTemplate templatePodSet;
-    protected PodTemplate templatePod;
+    protected StatefulPodTemplate templatePod;
     protected ResourceTemplate templatePerBrokerService;
     protected ResourceTemplate templatePerBrokerRoute;
     protected ResourceTemplate templatePerBrokerIngress;

@@ -398,7 +398,7 @@ public class ListenersUtils {
             return Collections.emptyMap();
         } else {
             return template.entrySet().stream()
-                .collect(Collectors.toMap(Map.Entry::getKey, entry -> renderHostTemplate(entry.getValue(), node)));
+                .collect(Collectors.toMap(Map.Entry::getKey, entry -> ModelUtils.renderTemplate(entry.getValue(), node)));
         }
     }
 
@@ -490,20 +490,6 @@ public class ListenersUtils {
     }
 
     /**
-     * Replaces the template fields in the template string with the corresponding values from the node reference.
-     *
-     * @param template  Template with the placeholders
-     * @param node      Node reference that should be used to provide the final values
-     *
-     * @return  The rendered template
-     */
-    /* test */ static String renderHostTemplate(String template, NodeRef node) {
-        return template
-                .replace("{nodeId}", Integer.toString(node.nodeId()))
-                .replace("{nodePodName}", node.podName());
-    }
-
-    /**
      * Finds per-broker host configuration based on node ID.
      *
      * @param listenerConfiguration     Configuration of the listener for which the host should be found
@@ -538,7 +524,7 @@ public class ListenersUtils {
 
             if (host == null && listener.getConfiguration().getHostTemplate() != null)   {
                 // There is no host defined specifically for given broker, so we try to use the template
-                host = renderHostTemplate(listener.getConfiguration().getHostTemplate(), node);
+                host = ModelUtils.renderTemplate(listener.getConfiguration().getHostTemplate(), node);
             }
 
             return host;
@@ -582,7 +568,7 @@ public class ListenersUtils {
 
             if (advertisedHost == null && listener.getConfiguration().getAdvertisedHostTemplate() != null)   {
                 // There is no advertised host defined specifically for given broker, so we try to use the template
-                advertisedHost = renderHostTemplate(listener.getConfiguration().getAdvertisedHostTemplate(), node);
+                advertisedHost = ModelUtils.renderTemplate(listener.getConfiguration().getAdvertisedHostTemplate(), node);
             }
 
             return advertisedHost;

@@ -16,7 +16,7 @@
 
 ## testAdditionalVolumes
 
-**Description:** This test validates the mounting and usage of additional volumes for Kafka, Kafka Connect, and Kafka Bridge components. It tests whether secret and config map volumes are correctly created, mounted, and accessible across various deployments.
+**Description:** This test validates the mounting and usage of additional volumes for Kafka, Kafka Connect, and Kafka Bridge components. It tests whether secret and config map volumes are correctly created, mounted, and accessible across various deployments. For Kafka and Kafka Connect, it also validates the additional templated volumes that use the {nodeId} and {nodePodName} placeholders to mount different content into each Pod.
 
 **Steps:**
 
@@ -24,8 +24,10 @@
 | - | - | - |
 | 1. | Setup environment prerequisites and configure test storage. | Ensure the environment is in KRaft mode. |
 | 2. | Create necessary Kafka resources with additional volumes for secrets and config maps. | Resources are correctly instantiated with specified volumes. |
-| 3. | Deploy Kafka, Kafka Connect, and Kafka Bridge with these volumes. | Components are correctly configured with additional volumes. |
-| 4. | Verify that all pods (Kafka, Connect, and Bridge) have additional volumes mounted and accessible. | Volumes are correctly mounted and usable within pods. |
+| 3. | Create the Secret and ConfigMaps used by the additional templated volumes. | Resources referenced by the templated volumes exist before the Pods are started. |
+| 4. | Deploy Kafka, Kafka Connect, and Kafka Bridge with these volumes. | Components are correctly configured with additional volumes. |
+| 5. | Verify that all pods (Kafka, Connect, and Bridge) have additional volumes mounted and accessible. | Volumes are correctly mounted and usable within pods. |
+| 6. | Verify that Kafka and Connect pods have the additional templated volumes mounted with per-node content. | Templated volumes are correctly mounted and each Pod sees the content belonging to its node ID and Pod name. |
 
 **Labels:**
 

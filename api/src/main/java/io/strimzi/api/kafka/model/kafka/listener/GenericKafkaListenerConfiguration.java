@@ -300,7 +300,7 @@ public class GenericKafkaListenerConfiguration implements UnknownPropertyPreserv
     }
 
     @Description("Configures the template for generating the advertised hostnames of the individual brokers. " +
-            "Valid placeholders that you can use in the template are `{nodeId}` and `{nodePodName}`")
+            "Valid placeholders that you can use in the template are `{nodeId}` and `{nodePodName}`.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public String getAdvertisedHostTemplate() {
         return advertisedHostTemplate;

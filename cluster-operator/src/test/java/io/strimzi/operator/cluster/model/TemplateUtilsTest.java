@@ -7,6 +7,7 @@ package io.strimzi.operator.cluster.model;
 import io.fabric8.kubernetes.api.model.CSIVolumeSourceBuilder;
 import io.fabric8.kubernetes.api.model.ConfigMapVolumeSourceBuilder;
 import io.fabric8.kubernetes.api.model.ImageVolumeSourceBuilder;
+import io.fabric8.kubernetes.api.model.KeyToPathBuilder;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaimVolumeSourceBuilder;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.SecretVolumeSourceBuilder;
@@ -14,6 +15,7 @@ import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeBuilder;
 import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.VolumeMountBuilder;
+import io.strimzi.api.kafka.model.common.template.AdditionalTemplatedVolumeBuilder;
 import io.strimzi.api.kafka.model.common.template.AdditionalVolume;
 import io.strimzi.api.kafka.model.common.template.AdditionalVolumeBuilder;
 import io.strimzi.api.kafka.model.common.template.ContainerTemplate;
@@ -24,6 +26,8 @@ import io.strimzi.api.kafka.model.common.template.PodTemplate;
 import io.strimzi.api.kafka.model.common.template.PodTemplateBuilder;
 import io.strimzi.api.kafka.model.common.template.ResourceTemplate;
 import io.strimzi.api.kafka.model.common.template.ResourceTemplateBuilder;
+import io.strimzi.api.kafka.model.common.template.StatefulPodTemplate;
+import io.strimzi.api.kafka.model.common.template.StatefulPodTemplateBuilder;
 import io.strimzi.operator.common.model.InvalidResourceException;
 import org.junit.jupiter.api.Test;
 
@@ -237,5 +241,123 @@ public class TemplateUtilsTest {
         InvalidResourceException exception = assertThrows(InvalidResourceException.class, () -> TemplateUtils.addAdditionalVolumeMounts(volumeMounts, containerTemplate));
 
         assertThat(exception.getMessage(), is(String.format("Forbidden path found in additional volumes. Should start with %s", ALLOWED_MOUNT_PATH)));
+    }
+
+    @Test
+    public void testAddAdditionalTemplatedVolumes() {
+        List<Volume> existingVolumes = new ArrayList<>();
+        existingVolumes.add(new VolumeBuilder().withName("existingVolume1").build());
+        NodeRef node = new NodeRef("my-cluster-brokers-5", 5, "brokers", false, true);
+
+        StatefulPodTemplate templatePod = new StatefulPodTemplateBuilder()
+                .withTemplatedVolumes(
+                        new AdditionalTemplatedVolumeBuilder()
+                                .withName("secret-volume")
+                                .withSecret(new SecretVolumeSourceBuilder().withSecretName("my-secret-{nodeId}").build())
+                                .build(),
+                        new AdditionalTemplatedVolumeBuilder()
+                                .withName("secret-volume2")
+                                .withSecret(new SecretVolumeSourceBuilder().withSecretName("my-secret").withItems(new KeyToPathBuilder().withKey("{nodePodName}.crt").withPath("certificates-{nodeId}/tls.crt").build()).build())
+                                .build(),
+                        new AdditionalTemplatedVolumeBuilder()
+                                .withName("cm-volume")
+                                .withConfigMap(new ConfigMapVolumeSourceBuilder().withName("my-cm-{nodeId}").build())
+                                .build(),
+                        new AdditionalTemplatedVolumeBuilder()
+                                .withName("cm-volume2")
+                                .withConfigMap(new ConfigMapVolumeSourceBuilder().withName("my-cm").withItems(new KeyToPathBuilder().withKey("{nodePodName}.cfg").withPath("my-config/{nodeId}.cfg").build()).build())
+                                .build(),
+                        new AdditionalTemplatedVolumeBuilder()
+                                .withName("pvc-volume")
+                                .withPersistentVolumeClaim(new PersistentVolumeClaimVolumeSourceBuilder().withClaimName("pvc-{nodeId}-{nodePodName}").build())
+                                .build())
+                .build();
+
+        TemplateUtils.addAdditionalTemplatedVolumes(node, templatePod, existingVolumes);
+
+        assertThat(existingVolumes.size(), is(6));
+
+        assertThat(existingVolumes.get(0).getName(), is("existingVolume1"));
+
+        assertThat(existingVolumes.get(1).getName(), is("secret-volume"));
+        assertThat(existingVolumes.get(1).getSecret().getSecretName(), is("my-secret-5"));
+        assertThat(existingVolumes.get(1).getConfigMap(), is(nullValue()));
+        assertThat(existingVolumes.get(1).getEmptyDir(), is(nullValue()));
+        assertThat(existingVolumes.get(1).getPersistentVolumeClaim(), is(nullValue()));
+        assertThat(existingVolumes.get(1).getCsi(), is(nullValue()));
+        assertThat(existingVolumes.get(1).getImage(), is(nullValue()));
+
+        assertThat(existingVolumes.get(2).getName(), is("secret-volume2"));
+        assertThat(existingVolumes.get(2).getSecret().getSecretName(), is("my-secret"));
+        assertThat(existingVolumes.get(2).getSecret().getItems().size(), is(1));
+        assertThat(existingVolumes.get(2).getSecret().getItems().getFirst().getKey(), is("my-cluster-brokers-5.crt"));
+        assertThat(existingVolumes.get(2).getSecret().getItems().getFirst().getPath(), is("certificates-5/tls.crt"));
+        assertThat(existingVolumes.get(2).getConfigMap(), is(nullValue()));
+        assertThat(existingVolumes.get(2).getEmptyDir(), is(nullValue()));
+        assertThat(existingVolumes.get(2).getPersistentVolumeClaim(), is(nullValue()));
+        assertThat(existingVolumes.get(2).getCsi(), is(nullValue()));
+        assertThat(existingVolumes.get(2).getImage(), is(nullValue()));
+
+        assertThat(existingVolumes.get(3).getName(), is("cm-volume"));
+        assertThat(existingVolumes.get(3).getConfigMap().getName(), is("my-cm-5"));
+        assertThat(existingVolumes.get(3).getSecret(), is(nullValue()));
+        assertThat(existingVolumes.get(3).getEmptyDir(), is(nullValue()));
+        assertThat(existingVolumes.get(3).getPersistentVolumeClaim(), is(nullValue()));
+        assertThat(existingVolumes.get(3).getCsi(), is(nullValue()));
+        assertThat(existingVolumes.get(3).getImage(), is(nullValue()));
+
+        assertThat(existingVolumes.get(4).getName(), is("cm-volume2"));
+        assertThat(existingVolumes.get(4).getConfigMap().getName(), is("my-cm"));
+        assertThat(existingVolumes.get(4).getConfigMap().getItems().size(), is(1));
+        assertThat(existingVolumes.get(4).getConfigMap().getItems().getFirst().getKey(), is("my-cluster-brokers-5.cfg"));
+        assertThat(existingVolumes.get(4).getConfigMap().getItems().getFirst().getPath(), is("my-config/5.cfg"));
+        assertThat(existingVolumes.get(4).getSecret(), is(nullValue()));
+        assertThat(existingVolumes.get(4).getEmptyDir(), is(nullValue()));
+        assertThat(existingVolumes.get(4).getPersistentVolumeClaim(), is(nullValue()));
+        assertThat(existingVolumes.get(4).getCsi(), is(nullValue()));
+        assertThat(existingVolumes.get(4).getImage(), is(nullValue()));
+
+        assertThat(existingVolumes.get(5).getName(), is("pvc-volume"));
+        assertThat(existingVolumes.get(5).getPersistentVolumeClaim().getClaimName(), is("pvc-5-my-cluster-brokers-5"));
+        assertThat(existingVolumes.get(5).getSecret(), is(nullValue()));
+        assertThat(existingVolumes.get(5).getConfigMap(), is(nullValue()));
+        assertThat(existingVolumes.get(5).getEmptyDir(), is(nullValue()));
+        assertThat(existingVolumes.get(5).getCsi(), is(nullValue()));
+        assertThat(existingVolumes.get(5).getImage(), is(nullValue()));
+    }
+
+    @Test
+    public void testAddAdditionalTemplatedVolumesWithDuplicateName() {
+        List<Volume> existingVolumes = new ArrayList<>();
+        existingVolumes.add(new VolumeBuilder().withName("duplicate").build());
+        NodeRef node = new NodeRef("my-cluster-brokers-5", 5, "brokers", false, true);
+
+        StatefulPodTemplate templatePod = new StatefulPodTemplateBuilder()
+                .withTemplatedVolumes(
+                        new AdditionalTemplatedVolumeBuilder()
+                                .withName("duplicate")
+                                .withSecret(new SecretVolumeSourceBuilder().withSecretName("my-secret-{nodeId}").build())
+                                .build())
+                .build();
+
+        InvalidResourceException exception = assertThrows(InvalidResourceException.class, () -> TemplateUtils.addAdditionalTemplatedVolumes(node, templatePod, existingVolumes));
+        assertThat(exception.getMessage(), is("Duplicate volume names found in additional volumes: [duplicate]"));
+    }
+
+    @Test
+    public void testAddAdditionalTemplatedVolumesWithInvalidName() {
+        List<Volume> existingVolumes = new ArrayList<>();
+        NodeRef node = new NodeRef("my-cluster-brokers-5", 5, "brokers", false, true);
+
+        StatefulPodTemplate templatePod = new StatefulPodTemplateBuilder()
+                .withTemplatedVolumes(
+                        new AdditionalTemplatedVolumeBuilder()
+                                .withName("invalid_name!")
+                                .withSecret(new SecretVolumeSourceBuilder().withSecretName("my-secret-{nodeId}").build())
+                                .build())
+                .build();
+
+        InvalidResourceException exception = assertThrows(InvalidResourceException.class, () -> TemplateUtils.addAdditionalTemplatedVolumes(node, templatePod, existingVolumes));
+        assertThat(exception.getMessage(), is("Volume names [invalid_name!] are invalid and do not match the pattern " + VOLUME_NAME_REGEX));
     }
 }

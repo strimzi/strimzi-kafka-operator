@@ -19,6 +19,7 @@ import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.NodeSelectorTermBuilder;
+import io.fabric8.kubernetes.api.model.PersistentVolumeClaimVolumeSourceBuilder;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodDNSConfig;
 import io.fabric8.kubernetes.api.model.PodDNSConfigBuilder;
@@ -55,6 +56,8 @@ import io.strimzi.api.kafka.model.common.jmx.KafkaJmxOptionsBuilder;
 import io.strimzi.api.kafka.model.common.metrics.JmxPrometheusExporterMetricsBuilder;
 import io.strimzi.api.kafka.model.common.metrics.MetricsConfig;
 import io.strimzi.api.kafka.model.common.metrics.StrimziMetricsReporterBuilder;
+import io.strimzi.api.kafka.model.common.template.AdditionalTemplatedVolume;
+import io.strimzi.api.kafka.model.common.template.AdditionalTemplatedVolumeBuilder;
 import io.strimzi.api.kafka.model.common.template.AdditionalVolume;
 import io.strimzi.api.kafka.model.common.template.AdditionalVolumeBuilder;
 import io.strimzi.api.kafka.model.common.template.ContainerEnvVar;
@@ -831,6 +834,16 @@ public class KafkaConnectClusterTest {
                 .withSubPath("def")
                 .build();
 
+        AdditionalTemplatedVolume additionalTemplatedVolume  = new AdditionalTemplatedVolumeBuilder()
+                .withName("pvc-volume-name")
+                .withPersistentVolumeClaim(new PersistentVolumeClaimVolumeSourceBuilder().withClaimName("my-pvc-{nodeId}").build())
+                .build();
+
+        VolumeMount additionalTemplatedVolumeMount = new VolumeMountBuilder()
+                .withName("pvc-volume-name")
+                .withMountPath("/mnt/pvc-volume-name")
+                .build();
+
         KafkaConnect resource = new KafkaConnectBuilder(RESOURCE)
                 .editSpec()
                     .withNewTopologyLabelRack()
@@ -857,10 +870,11 @@ public class KafkaConnectClusterTest {
                             .withEnableServiceLinks(false)
                             .withTmpDirSizeLimit("10Mi")
                             .withVolumes(additionalVolumeSecret, additionalVolumeEmptyDir, additionalVolumeConfigMap)
+                            .withTemplatedVolumes(additionalTemplatedVolume)
                             .withHostUsers(false)
                         .endPod()
                         .withNewConnectContainer()
-                            .withVolumeMounts(additionalVolumeMountSecret, additionalVolumeMountEmptyDir)
+                            .withVolumeMounts(additionalVolumeMountSecret, additionalVolumeMountEmptyDir, additionalTemplatedVolumeMount)
                         .endConnectContainer()
                         .withNewInitContainer()
                             .withVolumeMounts(additionalVolumeMountConfigMap)
@@ -913,7 +927,7 @@ public class KafkaConnectClusterTest {
             assertThat(pod.getSpec().getEnableServiceLinks(), is(false));
             assertThat(pod.getSpec().getHostUsers(), is(false));
 
-            assertThat(pod.getSpec().getVolumes().size(), is(6));
+            assertThat(pod.getSpec().getVolumes().size(), is(7));
             assertThat(pod.getSpec().getVolumes().get(0).getName(), is(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME));
             assertThat(pod.getSpec().getVolumes().get(0).getEmptyDir(), is(notNullValue()));
             assertThat(pod.getSpec().getVolumes().get(0).getEmptyDir().getSizeLimit(), is(new Quantity("10Mi")));
@@ -929,6 +943,8 @@ public class KafkaConnectClusterTest {
             assertThat(pod.getSpec().getVolumes().get(4).getEmptyDir().getMedium(), is("Memory"));
             assertThat(pod.getSpec().getVolumes().get(5).getName(), is("config-map-volume-name"));
             assertThat(pod.getSpec().getVolumes().get(5).getConfigMap().getName(), is("configMap1"));
+            assertThat(pod.getSpec().getVolumes().get(6).getName(), is("pvc-volume-name"));
+            assertThat(pod.getSpec().getVolumes().get(6).getPersistentVolumeClaim().getClaimName(), is("my-pvc-" + pod.getMetadata().getName().substring(pod.getMetadata().getName().lastIndexOf("-") + 1)));
 
             assertThat(pod.getSpec().getInitContainers().get(0).getVolumeMounts().size(), is(2));
             assertThat(pod.getSpec().getInitContainers().get(0).getVolumeMounts().get(0).getName(), is("rack-volume"));
@@ -936,7 +952,7 @@ public class KafkaConnectClusterTest {
             assertThat(pod.getSpec().getInitContainers().get(0).getVolumeMounts().get(1).getName(), is("config-map-volume-name"));
             assertThat(pod.getSpec().getInitContainers().get(0).getVolumeMounts().get(1).getMountPath(), is("/mnt/config"));
 
-            assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().size(), is(5));
+            assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().size(), is(6));
             assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(0).getName(), is(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME));
             assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(0).getMountPath(), is(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_MOUNT_PATH));
             assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(1).getName(), is("kafka-connect-configurations"));
@@ -947,6 +963,8 @@ public class KafkaConnectClusterTest {
             assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(3).getMountPath(), is("/mnt/secret"));
             assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(4).getName(), is("empty-dir-volume-name"));
             assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(4).getMountPath(), is("/mnt/empty-dir"));
+            assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(5).getName(), is("pvc-volume-name"));
+            assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(5).getMountPath(), is("/mnt/pvc-volume-name"));
         });
 
         // Check Service

@@ -592,17 +592,6 @@ public class ListenersUtilsTest {
     }
 
     @Test
-    public void testHostTemplateRendering() {
-        assertThat(ListenersUtils.renderHostTemplate("my-host", NODE_1), is("my-host"));
-        assertThat(ListenersUtils.renderHostTemplate("my-host-{nodeId}", NODE_1), is("my-host-1"));
-        assertThat(ListenersUtils.renderHostTemplate("{nodePodName}", NODE_1), is("my-cluster-kafka-1"));
-        assertThat(ListenersUtils.renderHostTemplate("my-host-{nodePodName}-{nodeId}", NODE_1), is("my-host-my-cluster-kafka-1-1"));
-        assertThat(ListenersUtils.renderHostTemplate("my-{nodeId}-host-{nodeId}", NODE_1), is("my-1-host-1"));
-        assertThat(ListenersUtils.renderHostTemplate("my-{nodeId}-host-{nodeID}", NODE_1), is("my-1-host-{nodeID}"));
-        assertThat(ListenersUtils.renderHostTemplate("my-{nodeId}-host-nodeId", NODE_1), is("my-1-host-nodeId"));
-    }
-
-    @Test
     public void testBrokerHost() {
         assertThat(ListenersUtils.brokerHost(newLoadBalancer, NODE_1), is(nullValue()));
         assertThat(ListenersUtils.brokerHost(oldExternal, NODE_0), is(nullValue()));

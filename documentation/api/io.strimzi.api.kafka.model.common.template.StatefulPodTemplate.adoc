@@ -1,8 +1,8 @@
 :_mod-docs-content-type: CONCEPT
 
-Configures the template for non-stateful pods.
+Configures the template for stateful pods (Kafka, Connect, and MirrorMaker 2 nodes).
 
-.Example `PodTemplate` configuration
+.Example `StatefulPodTemplate` configuration
 [source,yaml,subs=attributes+]
 ----
 # ...

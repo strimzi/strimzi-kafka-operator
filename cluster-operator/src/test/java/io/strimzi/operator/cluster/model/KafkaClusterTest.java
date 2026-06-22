@@ -19,6 +19,7 @@ import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.fabric8.kubernetes.api.model.LabelSelectorRequirementBuilder;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.NodeSelectorTermBuilder;
+import io.fabric8.kubernetes.api.model.PersistentVolumeClaimVolumeSourceBuilder;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodSecurityContextBuilder;
 import io.fabric8.kubernetes.api.model.Quantity;
@@ -54,6 +55,8 @@ import io.strimzi.api.kafka.model.common.jmx.KafkaJmxAuthenticationPasswordBuild
 import io.strimzi.api.kafka.model.common.jmx.KafkaJmxOptionsBuilder;
 import io.strimzi.api.kafka.model.common.metrics.JmxPrometheusExporterMetricsBuilder;
 import io.strimzi.api.kafka.model.common.metrics.MetricsConfig;
+import io.strimzi.api.kafka.model.common.template.AdditionalTemplatedVolume;
+import io.strimzi.api.kafka.model.common.template.AdditionalTemplatedVolumeBuilder;
 import io.strimzi.api.kafka.model.common.template.AdditionalVolume;
 import io.strimzi.api.kafka.model.common.template.AdditionalVolumeBuilder;
 import io.strimzi.api.kafka.model.common.template.ContainerEnvVar;
@@ -3637,6 +3640,16 @@ public class KafkaClusterTest {
                 .withSubPath("def")
                 .build();
 
+        AdditionalTemplatedVolume additionalTemplatedVolume  = new AdditionalTemplatedVolumeBuilder()
+                .withName("pvc-volume-name")
+                .withPersistentVolumeClaim(new PersistentVolumeClaimVolumeSourceBuilder().withClaimName("my-pvc-{nodeId}").build())
+                .build();
+
+        VolumeMount additionalTemplatedVolumeMount = new VolumeMountBuilder()
+                .withName("pvc-volume-name")
+                .withMountPath("/mnt/pvc-volume-name")
+                .build();
+
         // Use the template values in Kafka CR
         Kafka kafka = new KafkaBuilder(KAFKA)
                 .editSpec()
@@ -3672,12 +3685,13 @@ public class KafkaClusterTest {
                                 .withImagePullSecrets(secret1, secret2)
                                 .withSecurityContext(new PodSecurityContextBuilder().withFsGroup(123L).withRunAsGroup(456L).withRunAsUser(789L).build())
                                 .withVolumes(additionalVolume)
+                                .withTemplatedVolumes(additionalTemplatedVolume)
                                 .withHostUsers(false)
                             .endPod()
                             .withNewKafkaContainer()
                                 .withEnv(envVar1, envVar2, envVar3)
                                 .withSecurityContext(securityContext)
-                                .withVolumeMounts(additionalVolumeMount)
+                                .withVolumeMounts(additionalVolumeMount, additionalTemplatedVolumeMount)
                             .endKafkaContainer()
                         .endTemplate()
                     .endKafka()
@@ -3723,7 +3737,7 @@ public class KafkaClusterTest {
                 assertThat(pod.getSpec().getTolerations(), is(toleration));
                 assertThat(pod.getSpec().getHostUsers(), is(false));
 
-                assertThat(pod.getSpec().getVolumes().size(), is(5));
+                assertThat(pod.getSpec().getVolumes().size(), is(6));
                 assertThat(pod.getSpec().getVolumes().get(0).getName(), is("data-0"));
                 assertThat(pod.getSpec().getVolumes().get(0).getPersistentVolumeClaim(), is(notNullValue()));
                 assertThat(pod.getSpec().getVolumes().get(1).getName(), is(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME));
@@ -3735,6 +3749,8 @@ public class KafkaClusterTest {
                 assertThat(pod.getSpec().getVolumes().get(3).getEmptyDir(), is(notNullValue()));
                 assertThat(pod.getSpec().getVolumes().get(4).getName(), is("secret-volume-name"));
                 assertThat(pod.getSpec().getVolumes().get(4).getSecret(), is(notNullValue()));
+                assertThat(pod.getSpec().getVolumes().get(5).getName(), is("pvc-volume-name"));
+                assertThat(pod.getSpec().getVolumes().get(5).getPersistentVolumeClaim().getClaimName(), is("my-pvc-" + pod.getMetadata().getName().substring(pod.getMetadata().getName().lastIndexOf("-") + 1)));
 
                 // Containers
                 assertThat(pod.getSpec().getContainers().size(), is(1));
@@ -3755,7 +3771,7 @@ public class KafkaClusterTest {
                 assertThat(pod.getSpec().getContainers().get(0).getEnv().stream().filter(e -> envVar2.getName().equals(e.getName())).findFirst().orElseThrow().getValue(), is(envVar2.getValue()));
                 assertThat(pod.getSpec().getContainers().get(0).getEnv().stream().filter(e -> envVar3.getName().equals(e.getName())).findFirst().orElseThrow().getValue(), is(not(envVar3.getValue())));
 
-                assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().size(), is(5));
+                assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().size(), is(6));
                 assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(0).getName(), is("data-0"));
                 assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(0).getMountPath(), is("/var/lib/kafka/data-0"));
                 assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(1).getName(), is(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME));
@@ -3766,6 +3782,8 @@ public class KafkaClusterTest {
                 assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(3).getMountPath(), is("/var/opt/kafka"));
                 assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(4).getName(), is("secret-volume-name"));
                 assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(4).getMountPath(), is("/mnt/secret-volume"));
+                assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(5).getName(), is("pvc-volume-name"));
+                assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(5).getMountPath(), is("/mnt/pvc-volume-name"));
             }
         }
     }

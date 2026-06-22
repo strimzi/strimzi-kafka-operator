@@ -132,6 +132,36 @@ spec:
   # ...          
 ----
 
+For `Kafka`, `KafkaConnect`, and `KafkaMirrorMaker2` components, you can also add templated volumes to use a different volume for each pod.
+You can use the `{nodeId}` and `{nodePodName}` placeholders in the volume configuration to create a unique volume for each pod.
+The placeholders can be used in:
+* `Secret`, `ConfigMap`, or `PersistentVolumeClaim` names in the templated volumes
+* `key` and `path` option in the `items` sections of the `Secret` and `ConfigMap` volumes
+
+The templated volumes are mounted through the `volumeMounts` section of the container template in the same way as regular additional volumes.
+
+.Example templated additional volumes
+[source,yaml]
+----
+# ...
+spec:
+  kafka:
+    template:
+      pod:
+        templatedVolumes:
+          - name: example-secret
+            secret:
+              secretName: secret-name
+              items:
+                - key: "{nodePodName}.crt"
+                  path: "{nodePodName}.crt"
+      kafkaContainer:
+        volumeMounts:
+          - name: example-secret
+            mountPath: /mnt/secret-volume
+  # ...
+----
+
 NOTE: You can use `template` configuration to add other customizations to pods and containers, such as affinity and security context. 
 For more information, see xref:assembly-scheduling-str[Configuring pod scheduling] and xref:assembly-security-providers-str[Applying security context to Strimzi pods and containers].
 
