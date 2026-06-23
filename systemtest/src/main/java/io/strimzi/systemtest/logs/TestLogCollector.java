@@ -125,12 +125,26 @@ public class TestLogCollector {
      * TestLogCollector's constructor with default list of namespaced resources.
      */
     public TestLogCollector() {
+        this.logCollector = defaultLogCollectorBuilder()
+            .withNamespacedResources(resourcesToCollect().toArray(new String[0]))
+            .build();
+    }
+
+    private TestLogCollector(LogCollector logCollector) {
+        this.logCollector = logCollector;
+    }
+
+    /**
+     * Return list of resources that should be collected by LogCollector.
+     *
+     * @return  list of resources that should be collected by LogCollector.
+     */
+    private static List<String> resourcesToCollect() {
         List<String> resources = new ArrayList<>(List.of(
             TestConstants.SECRET.toLowerCase(Locale.ROOT),
             TestConstants.DEPLOYMENT.toLowerCase(Locale.ROOT),
             TestConstants.CONFIG_MAP.toLowerCase(Locale.ROOT),
             TestConstants.SERVICE.toLowerCase(Locale.ROOT),
-            TestConstants.CERTIFICATE.toLowerCase(Locale.ROOT),
             TestConstants.JOB.toLowerCase(Locale.ROOT),
             Kafka.RESOURCE_SINGULAR,
             KafkaNodePool.RESOURCE_SINGULAR,
@@ -152,13 +166,7 @@ public class TestLogCollector {
             ));
         }
 
-        this.logCollector = defaultLogCollectorBuilder()
-            .withNamespacedResources(resources.toArray(new String[0]))
-            .build();
-    }
-
-    private TestLogCollector(LogCollector logCollector) {
-        this.logCollector = logCollector;
+        return resources;
     }
 
     /**
@@ -281,16 +289,23 @@ public class TestLogCollector {
         String testClassShortName = StUtils.removePackageName(testClass);
         Path rootPathToLogsForTestCase = buildFullPathToLogs(testClass, testCase);
 
-        final LogCollector testCaseCollector = new LogCollectorBuilder(logCollector)
-            .withRootFolderPath(rootPathToLogsForTestCase.toString())
-            .build();
+        LogCollectorBuilder testCaseCollectorBuilder = new LogCollectorBuilder(logCollector)
+            .withRootFolderPath(rootPathToLogsForTestCase.toString());
+
+        // in case that we are using CertManager in the test-case, we should collect it together with other resources, otherwise it is skipped
+        if (KubeResourceManager.get().kubeClient().getClient().supports(TestConstants.CERT_MANAGER_API_VERSION, TestConstants.CERTIFICATE)) {
+            List<String> resourcesToCollect = resourcesToCollect();
+            resourcesToCollect.add(TestConstants.CERTIFICATE);
+
+            testCaseCollectorBuilder.withNamespacedResources(resourcesToCollect.toArray(new String[0]));
+        }
 
         // List Namespaces with specified test class name and test case name
         List<String> namespaces = new ArrayList<>(getListOfNamespaces(testClassShortName, testCase));
 
         namespaces = namespaces.stream().distinct().toList();
 
-        testCaseCollector.collectFromNamespaces(namespaces.toArray(new String[0]));
+        testCaseCollectorBuilder.build().collectFromNamespaces(namespaces.toArray(new String[0]));
     }
 
     /**
