@@ -25,6 +25,7 @@ import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.PodSetUtils;
+import io.strimzi.operator.cluster.operator.VertxUtil;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
@@ -176,7 +177,7 @@ public class KafkaAssemblyOperatorCustomCertMockTest {
 
         PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(false, KubernetesVersion.MINIMAL_SUPPORTED_VERSION);
         ResourceOperatorSupplier supplier = new ResourceOperatorSupplier(
-                vertx,
+                VertxUtil.asExecutor(vertx.createSharedWorkerExecutor("kubernetes-ops-pool")),
                 client,
                 ResourceUtils.adminClientProvider(),
                 ResourceUtils.kafkaAgentClientProvider(),

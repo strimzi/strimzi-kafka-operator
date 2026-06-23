@@ -23,6 +23,7 @@ import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.KafkaConnectorOffsetsAnnotation;
 import io.strimzi.operator.cluster.model.KafkaVersion;
+import io.strimzi.operator.cluster.operator.VertxUtil;
 import io.strimzi.operator.cluster.operator.resource.DefaultKafkaAgentClientProvider;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.DefaultAdminClientProvider;
@@ -153,7 +154,8 @@ public class KafkaMirrorMaker2AssemblyOperatorMockTest {
         namespace = testInfo.getTestMethod().orElseThrow().getName().toLowerCase(Locale.ROOT);
         mockKube.prepareNamespace(namespace);
 
-        supplier = new ResourceOperatorSupplier(vertx, client,
+        supplier = new ResourceOperatorSupplier(VertxUtil.asExecutor(vertx.createSharedWorkerExecutor("kubernetes-ops-pool")),
+                client,
                 new DefaultAdminClientProvider(),
                 new DefaultKafkaAgentClientProvider(),
                 ResourceUtils.metricsProvider(),

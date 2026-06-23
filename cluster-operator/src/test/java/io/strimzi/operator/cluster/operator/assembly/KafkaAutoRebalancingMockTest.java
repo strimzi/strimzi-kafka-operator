@@ -28,6 +28,7 @@ import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.KafkaVersion;
+import io.strimzi.operator.cluster.operator.VertxUtil;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
@@ -190,8 +191,8 @@ public class KafkaAutoRebalancingMockTest {
         // getting the default admin client to mock it when needed for blocked nodes (on scale down)
         admin = ResourceUtils.adminClient();
 
-        ResourceOperatorSupplier supplier = new ResourceOperatorSupplier(vertx, client, ResourceUtils.adminClientProvider(admin),
-                ResourceUtils.kafkaAgentClientProvider(), ResourceUtils.metricsProvider(), PFA);
+        ResourceOperatorSupplier supplier = new ResourceOperatorSupplier(VertxUtil.asExecutor(vertx.createSharedWorkerExecutor("kubernetes-ops-pool")),
+                client, ResourceUtils.adminClientProvider(admin), ResourceUtils.kafkaAgentClientProvider(), ResourceUtils.metricsProvider(), PFA);
 
         podSetController = new StrimziPodSetController(namespace, Labels.EMPTY, supplier.kafkaOperator, supplier.connectOperator, supplier.mirrorMaker2Operator, supplier.strimziPodSetOperator, supplier.podOperations, supplier.metricsProvider, Integer.parseInt(ClusterOperatorConfig.POD_SET_CONTROLLER_WORK_QUEUE_SIZE.defaultValue()));
         podSetController.start();

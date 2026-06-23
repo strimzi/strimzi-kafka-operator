@@ -24,6 +24,7 @@ import io.strimzi.certs.Subject;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ResourceUtils;
+import io.strimzi.operator.cluster.operator.VertxUtil;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlApi;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlApiImpl;
@@ -140,8 +141,8 @@ public abstract class AbstractKafkaRebalanceAssemblyOperatorTest {
             cruiseControlServer.reset();
         }
 
-        supplier = new ResourceOperatorSupplier(vertx, client, ResourceUtils.adminClientProvider(),
-                ResourceUtils.kafkaAgentClientProvider(), ResourceUtils.metricsProvider(), PFA);
+        supplier = new ResourceOperatorSupplier(VertxUtil.asExecutor(vertx.createSharedWorkerExecutor("kubernetes-ops-pool")),
+                client, ResourceUtils.adminClientProvider(), ResourceUtils.kafkaAgentClientProvider(), ResourceUtils.metricsProvider(), PFA);
 
         // Override to inject mocked cruise control address so real cruise control not required
         krao = createKafkaRebalanceAssemblyOperator(ResourceUtils.dummyClusterOperatorConfig());

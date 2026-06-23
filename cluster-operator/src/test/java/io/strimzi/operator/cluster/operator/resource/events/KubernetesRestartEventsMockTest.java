@@ -44,6 +44,7 @@ import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.PodRevision;
 import io.strimzi.operator.cluster.model.RestartReason;
+import io.strimzi.operator.cluster.operator.VertxUtil;
 import io.strimzi.operator.cluster.operator.assembly.CaReconciler;
 import io.strimzi.operator.cluster.operator.assembly.KafkaAssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaClusterCreator;
@@ -208,7 +209,8 @@ public class KubernetesRestartEventsMockTest {
 
         sharedWorkerExecutor = vertx.createSharedWorkerExecutor("kubernetes-ops-pool");
 
-        supplier = new ResourceOperatorSupplier(vertx,
+        supplier = new ResourceOperatorSupplier(
+                VertxUtil.asExecutor(vertx.createSharedWorkerExecutor("kubernetes-ops-pool")),
                 client,
                 ResourceUtils.adminClientProvider(),
                 ResourceUtils.kafkaAgentClientProvider(),
@@ -603,7 +605,8 @@ public class KubernetesRestartEventsMockTest {
             }
         };
 
-        return new ResourceOperatorSupplier(vertx,
+        return new ResourceOperatorSupplier(
+                VertxUtil.asExecutor(vertx.createSharedWorkerExecutor("kubernetes-ops-pool")),
                 client,
                 adminClientProvider,
                 ResourceUtils.kafkaAgentClientProvider(),

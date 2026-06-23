@@ -26,6 +26,7 @@ import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.VolumeUtils;
+import io.strimzi.operator.cluster.operator.VertxUtil;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
@@ -163,8 +164,8 @@ public class JbodStorageMockTest {
         PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(false, KubernetesVersion.MINIMAL_SUPPORTED_VERSION);
         // creating the Kafka operator
         ResourceOperatorSupplier ros =
-                new ResourceOperatorSupplier(vertx, client, ResourceUtils.adminClientProvider(),
-                        ResourceUtils.kafkaAgentClientProvider(), ResourceUtils.metricsProvider(), pfa);
+                new ResourceOperatorSupplier(VertxUtil.asExecutor(vertx.createSharedWorkerExecutor("kubernetes-ops-pool")),
+                        client, ResourceUtils.adminClientProvider(), ResourceUtils.kafkaAgentClientProvider(), ResourceUtils.metricsProvider(), pfa);
 
         podSetController = new StrimziPodSetController(namespace, Labels.EMPTY, ros.kafkaOperator, ros.connectOperator, ros.mirrorMaker2Operator, ros.strimziPodSetOperator, ros.podOperations, ros.metricsProvider, Integer.parseInt(ClusterOperatorConfig.POD_SET_CONTROLLER_WORK_QUEUE_SIZE.defaultValue()));
         podSetController.start();

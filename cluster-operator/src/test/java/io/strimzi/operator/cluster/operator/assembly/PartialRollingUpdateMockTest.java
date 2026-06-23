@@ -27,6 +27,7 @@ import io.strimzi.operator.cluster.model.CertUtils;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.PodRevision;
 import io.strimzi.operator.cluster.model.PodSetUtils;
+import io.strimzi.operator.cluster.operator.VertxUtil;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
@@ -201,7 +202,8 @@ public class PartialRollingUpdateMockTest {
     }
 
     ResourceOperatorSupplier supplier(KubernetesClient bootstrapClient, PlatformFeaturesAvailability pfa) {
-        return new ResourceOperatorSupplier(vertx,
+        return new ResourceOperatorSupplier(
+                VertxUtil.asExecutor(vertx.createSharedWorkerExecutor("kubernetes-ops-pool")),
                 bootstrapClient,
                 ResourceUtils.adminClientProvider(), ResourceUtils.kafkaAgentClientProvider(),
                 ResourceUtils.metricsProvider(),

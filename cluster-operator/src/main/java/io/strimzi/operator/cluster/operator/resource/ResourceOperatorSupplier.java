@@ -23,7 +23,6 @@ import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceList;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.model.DefaultSharedEnvironmentProvider;
 import io.strimzi.operator.cluster.model.SharedEnvironmentProvider;
-import io.strimzi.operator.cluster.operator.VertxUtil;
 import io.strimzi.operator.cluster.operator.assembly.BrokersInUseCheck;
 import io.strimzi.operator.cluster.operator.resource.events.KubernetesRestartEventPublisher;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.BuildConfigOperator;
@@ -52,7 +51,6 @@ import io.strimzi.operator.common.DefaultAdminClientProvider;
 import io.strimzi.operator.common.MetricsProvider;
 import io.strimzi.operator.common.featuregates.FeatureGates;
 import io.strimzi.operator.common.operator.resource.concurrent.CrdOperator;
-import io.vertx.core.Vertx;
 
 import java.util.concurrent.Executor;
 
@@ -258,66 +256,30 @@ public class ResourceOperatorSupplier {
     /**
      * Constructor used for tests
      *
-     * @param vertx                    Vert.x instance
+     * @param asyncExecutor            Executor on which the resource operators run their blocking Kubernetes API calls.
+     *                                 Created and configured by the caller (see {@code Main}) so that the configured
+     *                                 operations thread-pool size is applied.
      * @param client                   Kubernetes Client
      * @param adminClientProvider      Kafka Admin client provider
      * @param kafkaAgentClientProvider Kafka Agent client provider
      * @param metricsProvider          Metrics provider
      * @param pfa                      Platform Availability Features
      */
-    public ResourceOperatorSupplier(Vertx vertx,
+    public ResourceOperatorSupplier(Executor asyncExecutor,
                                     KubernetesClient client,
                                     AdminClientProvider adminClientProvider,
                                     KafkaAgentClientProvider kafkaAgentClientProvider,
                                     MetricsProvider metricsProvider,
                                     PlatformFeaturesAvailability pfa) {
-        this(vertx,
+        this(asyncExecutor,
                 client,
                 adminClientProvider,
                 kafkaAgentClientProvider,
                 metricsProvider,
                 pfa,
-                new KubernetesRestartEventPublisher(client, "operatorName")
+                new KubernetesRestartEventPublisher(client, "operatorName"),
+                new FeatureGates("")
         );
-    }
-
-    private ResourceOperatorSupplier(Vertx vertx,
-                                     KubernetesClient client,
-                                     AdminClientProvider adminClientProvider,
-                                     KafkaAgentClientProvider kafkaAgentClientProvider,
-                                     MetricsProvider metricsProvider,
-                                     PlatformFeaturesAvailability pfa,
-                                     KubernetesRestartEventPublisher restartEventPublisher) {
-        this(vertx,
-            client,
-            adminClientProvider,
-            kafkaAgentClientProvider,
-            metricsProvider,
-            pfa,
-            restartEventPublisher,
-            new FeatureGates("")
-        );
-    }
-
-    private ResourceOperatorSupplier(Vertx vertx,
-                                     KubernetesClient client,
-                                     AdminClientProvider adminClientProvider,
-                                     KafkaAgentClientProvider kafkaAgentClientProvider,
-                                     MetricsProvider metricsProvider,
-                                     PlatformFeaturesAvailability pfa,
-                                     KubernetesRestartEventPublisher restartEventPublisher,
-                                     FeatureGates featureGates) {
-        // This Vert.x based constructor is used only by tests. The production code creates the executor in Main where
-        // the configured operations thread-pool size is applied. Tests do not need the configured pool size, so the
-        // shared worker pool with its default settings is good enough here.
-        this(VertxUtil.asExecutor(vertx.createSharedWorkerExecutor("kubernetes-ops-pool")),
-                client,
-                adminClientProvider,
-                kafkaAgentClientProvider,
-                metricsProvider,
-                pfa,
-                restartEventPublisher,
-                featureGates);
     }
 
     private ResourceOperatorSupplier(Executor asyncExecutor,
