@@ -51,32 +51,10 @@ public final class VertxUtil {
 
     /**
      * Converts a {@link CompletionStage} (as returned by the non-Vert.x resource operators from the
-     * {@code io.strimzi.operator.common.operator.resource.concurrent} package) into a Vert.x {@link Future}.
-     * <p>
-     * The concurrent resource operators complete their {@link CompletionStage} on their own executor threads rather than
-     * on the Vert.x event loop. To preserve Vert.x threading guarantees for the downstream reactive composition, the
-     * returned {@link Future} is completed on the Vert.x {@link Context} of the calling thread (the context of the
-     * reconciliation). This makes sure that any subsequent {@code compose(...)}, {@code map(...)} or {@code onComplete(...)}
-     * callbacks run on the expected Vert.x context.
-     *
-     * @param vertx The Vert.x instance whose (current) context should be used to complete the returned future
-     * @param stage The completion stage to convert
-     *
-     * @return  A Vert.x Future completed on the Vert.x context once the completion stage completes
-     *
-     * @param <T>   Type of the result
-     */
-    public static <T> Future<T> toFuture(Vertx vertx, CompletionStage<T> stage) {
-        return Future.fromCompletionStage(stage, vertx.getOrCreateContext());
-    }
-
-    /**
-     * Converts a {@link CompletionStage} (as returned by the non-Vert.x resource operators from the
      * {@code io.strimzi.operator.common.operator.resource.concurrent} package) into a Vert.x {@link Future}, completing
      * it on the Vert.x {@link Context} of the calling thread.
      * <p>
-     * This is the same as {@link #toFuture(Vertx, CompletionStage)} but it captures the current Vert.x context using
-     * {@link Vertx#currentContext()} instead of requiring a Vert.x instance. It is intended to be called from code that
+     * It gets the current Vert.x context using {@link Vertx#currentContext()}. It is intended to be called from code that
      * already runs on a Vert.x context (such as the reconciliation chains in the Cluster Operator). If no Vert.x context
      * is associated with the current thread, the resulting future is completed on whichever thread completes the stage.
      *

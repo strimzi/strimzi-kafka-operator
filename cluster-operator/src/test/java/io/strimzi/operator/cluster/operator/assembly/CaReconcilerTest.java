@@ -30,6 +30,7 @@ import io.strimzi.operator.cluster.model.NodeRef;
 import io.strimzi.operator.cluster.model.PodSetUtils;
 import io.strimzi.operator.cluster.model.RestartReason;
 import io.strimzi.operator.cluster.model.RestartReasons;
+import io.strimzi.operator.cluster.operator.VertxUtil;
 import io.strimzi.operator.cluster.operator.resource.KafkaRoller;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.DeploymentOperator;
@@ -987,7 +988,7 @@ public class CaReconcilerTest {
         @Override
         KafkaRoller createKafkaRoller(Set<NodeRef> nodes, TlsPemIdentity coTlsPemIdentity) {
             KafkaRoller mockKafkaRoller = mock(KafkaRoller.class);
-            when(mockKafkaRoller.rollingRestart(any())).thenAnswer(i -> io.strimzi.operator.cluster.operator.VertxUtil.toFuture(podOperator.listAsync(NAMESPACE, Labels.EMPTY))
+            when(mockKafkaRoller.rollingRestart(any())).thenAnswer(i -> VertxUtil.toFuture(podOperator.listAsync(NAMESPACE, Labels.EMPTY))
                     .onSuccess(pods -> kafkaRestartReasons = pods.stream().collect(Collectors.toMap(
                             pod -> pod.getMetadata().getName(),
                             pod -> (RestartReasons) i.getArgument(0, Function.class).apply(pod))))
