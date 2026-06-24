@@ -312,7 +312,18 @@ public class KafkaConfigModelGenerator {
         // This condition can be removed once we support only Kafka 4.3.0 and newer.
         if (classExists("org.apache.kafka.server.config.DynamicBrokerConfig")) {
             // Kafka 4.3.0+
-            return org.apache.kafka.server.config.DynamicBrokerConfig.dynamicConfigUpdateModes();
+            // Uses reflection to avoid a direct compile-time reference to DynamicBrokerConfig which does not exist
+            // in older Kafka versions. The build runs `mvn verify` for each supported Kafka version which can trigger
+            // recompilation and fail if the class is referenced directly.
+            // Once the 4.2.x branch is deleted, we can use the
+            // `return org.apache.kafka.server.config.DynamicBrokerConfig.dynamicConfigUpdateModes();` call directly
+            try {
+                Class<?> clazz = Class.forName("org.apache.kafka.server.config.DynamicBrokerConfig");
+                Method method = clazz.getDeclaredMethod("dynamicConfigUpdateModes");
+                return (Map<String, String>) method.invoke(null);
+            } catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
+                throw new RuntimeException("Failed to get dynamic config update modes", e);
+            }
         } else {
             // Kafka versions older than 4.3.0
             try {
