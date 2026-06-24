@@ -106,6 +106,7 @@ public class SimpleAclOperatorIT extends AdminApiOperatorIT<Set<SimpleAclRule>, 
 
     private Set<SimpleAclRule> get(String username) {
         KafkaPrincipal principal = new KafkaPrincipal("User", username);
+        @SuppressWarnings("checkstyle:NoFullyQualifiedClassNames") // Fully qualified class name used due to a name conflict
         AclBindingFilter aclBindingFilter = new AclBindingFilter(ResourcePatternFilter.ANY,
                 new AccessControlEntryFilter(principal.toString(), null, org.apache.kafka.common.acl.AclOperation.ANY, AclPermissionType.ANY));
 

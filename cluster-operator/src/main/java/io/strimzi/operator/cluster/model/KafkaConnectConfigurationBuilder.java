@@ -233,6 +233,7 @@ public class KafkaConnectConfigurationBuilder {
      *
      * @param userConfig    the user configuration to extract the possible user-provided config provider configuration from it
      */
+    @SuppressWarnings("checkstyle:NoFullyQualifiedClassNames") // False positive, fully qualified class name used in a string
     private void printConfigProviders(AbstractConfiguration userConfig) {
         printSectionHeader("Config providers");
         String strimziConfigProviders = "strimzienv,strimzifile,strimzidir,strimzisecrets";

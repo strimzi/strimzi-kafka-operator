@@ -38,6 +38,7 @@ import java.util.regex.Pattern;
  * }
  * </pre>
  */
+@SuppressWarnings("checkstyle:NoFullyQualifiedClassNames") // Fully qualified names are used due to class name conflicts
 public class LogCaptor implements AutoCloseable {
     private static final Logger LOGGER = LogManager.getLogger(LogCaptor.class);
 

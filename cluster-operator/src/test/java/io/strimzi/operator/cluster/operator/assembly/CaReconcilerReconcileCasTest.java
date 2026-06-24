@@ -1080,8 +1080,8 @@ public class CaReconcilerReconcileCasTest {
                     assertThat(clientsCaCertSecret.getMetadata().getOwnerReferences(), hasSize(1));
                     assertThat(clientsCaKeySecret.getMetadata().getOwnerReferences(), hasSize(1));
 
-                    io.strimzi.operator.cluster.TestUtils.checkOwnerReference(clientsCaCertSecret, kafka);
-                    io.strimzi.operator.cluster.TestUtils.checkOwnerReference(clientsCaKeySecret, kafka);
+                    TestUtils.checkOwnerReference(clientsCaCertSecret, kafka);
+                    TestUtils.checkOwnerReference(clientsCaKeySecret, kafka);
 
                     async.flag();
                 })));
@@ -1109,7 +1109,7 @@ public class CaReconcilerReconcileCasTest {
                     assertThat(captorSecrets.clientsCaCert().getMetadata().getOwnerReferences(), hasSize(0));
                     assertThat(captorSecrets.clientsCaKey().getMetadata().getOwnerReferences(), hasSize(0));
 
-                    io.strimzi.operator.cluster.TestUtils.checkOwnerReference(captorSecrets.clusterCaCert(), kafka);
+                    TestUtils.checkOwnerReference(captorSecrets.clusterCaCert(), kafka);
                     TestUtils.checkOwnerReference(captorSecrets.clusterCaKey(), kafka);
 
                     async.flag();

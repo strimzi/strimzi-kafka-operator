@@ -150,6 +150,7 @@ public class KafkaRebalanceAssemblyOperatorTest extends AbstractKafkaRebalanceAs
      * 8. The KafkaRebalance resource moves to the 'ProposalReady' state
      */
     @Test
+    @SuppressWarnings("checkstyle:NoFullyQualifiedClassNames") // False positive, fully qualified class name used in a string
     public void testKrNotReadyToProposalReadyOnSpecChange(VertxTestContext context) {
         // Set up the rebalance endpoint to get error about hard goals
         cruiseControlServer.setupCCRebalanceBadGoalsError(CruiseControlEndpoints.REBALANCE);
@@ -881,6 +882,7 @@ public class KafkaRebalanceAssemblyOperatorTest extends AbstractKafkaRebalanceAs
         this.krNewWithMissingHardGoals(context, CruiseControlEndpoints.REMOVE_BROKER, kr);
     }
 
+    @SuppressWarnings("checkstyle:NoFullyQualifiedClassNames") // False positive, fully qualified class name used in a string
     private void krNewWithMissingHardGoals(VertxTestContext context, CruiseControlEndpoints endpoint, KafkaRebalance kr) {
         // Set up the rebalance endpoint to get error about hard goals
         cruiseControlServer.setupCCRebalanceBadGoalsError(endpoint);
@@ -1026,6 +1028,7 @@ public class KafkaRebalanceAssemblyOperatorTest extends AbstractKafkaRebalanceAs
         this.krNewWithMissingHardGoalsAndRefresh(context, CruiseControlEndpoints.REMOVE_BROKER, kr);
     }
 
+    @SuppressWarnings("checkstyle:NoFullyQualifiedClassNames") // False positive, fully qualified class name used in a string
     private void krNewWithMissingHardGoalsAndRefresh(VertxTestContext context, CruiseControlEndpoints endpoint, KafkaRebalance kr) {
         // Set up the rebalance endpoint to get error about hard goals
         cruiseControlServer.setupCCRebalanceBadGoalsError(endpoint);

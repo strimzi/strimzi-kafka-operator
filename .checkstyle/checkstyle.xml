@@ -104,6 +104,14 @@
             <property name="ignoreComments" value="true"/>
         </module>
 
+        <!-- Require imports instead of inline fully-qualified class names -->
+        <module name="RegexpSinglelineJava">
+            <property name="id" value="NoFullyQualifiedClassNames"/>
+            <property name="format" value="^(?!\s*(?:import|package)\b).*?(?&lt;![\w.&quot;])(?:[a-z][a-zA-Z0-9_]*\.){2,}[A-Z][a-zA-Z0-9_]*"/>
+            <property name="message" value="Use an import instead of a fully qualified class name in code."/>
+            <property name="ignoreComments" value="true"/>
+        </module>
+
         <!-- code quality -->
         <module name="MethodLength"/>
         <module name="ParameterNumber">

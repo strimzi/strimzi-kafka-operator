@@ -32,13 +32,13 @@ import java.util.Map;
 @Crd(
         spec = @Crd.Spec(
                 names = @Crd.Spec.Names(
-                        kind = io.strimzi.api.kafka.model.nodepool.KafkaNodePool.RESOURCE_KIND,
-                        plural = io.strimzi.api.kafka.model.nodepool.KafkaNodePool.RESOURCE_PLURAL,
+                        kind = KafkaNodePool.RESOURCE_KIND,
+                        plural = KafkaNodePool.RESOURCE_PLURAL,
                         shortNames = {"knp"},
                         categories = {Constants.STRIMZI_CATEGORY}
                 ),
-                group = io.strimzi.api.kafka.model.nodepool.KafkaNodePool.RESOURCE_GROUP,
-                scope = io.strimzi.api.kafka.model.nodepool.KafkaNodePool.SCOPE,
+                group = KafkaNodePool.RESOURCE_GROUP,
+                scope = KafkaNodePool.SCOPE,
                 versions = {
                     @Crd.Spec.Version(name = Constants.V1, served = true, storage = true)
                 },

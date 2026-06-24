@@ -37,6 +37,7 @@ import java.util.stream.Stream;
 import static io.strimzi.operator.cluster.TestUtils.IsEquivalent.isEquivalent;
 import static org.hamcrest.MatcherAssert.assertThat;
 
+@SuppressWarnings("checkstyle:NoFullyQualifiedClassNames") // False positive, fully qualified class name used in a string
 class KafkaConnectConfigurationBuilderTest {
     private static final String BOOTSTRAP_SERVERS = "my-cluster-kafka-bootstrap:9092";
 

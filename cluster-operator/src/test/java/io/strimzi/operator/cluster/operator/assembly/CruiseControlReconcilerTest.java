@@ -165,6 +165,7 @@ public class CruiseControlReconcilerTest {
 
         when(mockPodDisruptionBudget.reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.componentName(NAME)), any())).thenReturn(CompletableFuture.completedFuture(null));
 
+        @SuppressWarnings("checkstyle:NoFullyQualifiedClassNames") // False positive, fully qualified class name used in a string
         Kafka kafka = new KafkaBuilder(KAFKA)
                 .editSpec()
                     .withNewCruiseControl()

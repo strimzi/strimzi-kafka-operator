@@ -139,6 +139,7 @@ public class WorkloadUtilsTest {
 
     @Test
     public void testCreateDeploymentWithNullTemplateAndRecreateStrategy()  {
+        @SuppressWarnings("checkstyle:NoFullyQualifiedClassNames") // Fully qualified class name used due to a name conflict
         Deployment dep = WorkloadUtils.createDeployment(
                 NAME,
                 NAMESPACE,
@@ -168,6 +169,7 @@ public class WorkloadUtilsTest {
 
     @Test
     public void testCreateDeploymentWithTemplateAndRollingUpdateStrategy()  {
+        @SuppressWarnings("checkstyle:NoFullyQualifiedClassNames") // Fully qualified class name used due to a name conflict
         Deployment dep = WorkloadUtils.createDeployment(
                 NAME,
                 NAMESPACE,
@@ -1031,6 +1033,7 @@ public class WorkloadUtilsTest {
 
     @Test
     public void testDeploymentStrategyRecreate()    {
+        @SuppressWarnings("checkstyle:NoFullyQualifiedClassNames") // Fully qualified class name used due to a name conflict
         DeploymentStrategy strategy = WorkloadUtils.deploymentStrategy(io.strimzi.api.kafka.model.common.template.DeploymentStrategy.RECREATE);
 
         assertThat(strategy.getType(), is("Recreate"));
@@ -1039,6 +1042,7 @@ public class WorkloadUtilsTest {
 
     @Test
     public void testDeploymentStrategyRollingUpdate()    {
+        @SuppressWarnings("checkstyle:NoFullyQualifiedClassNames") // Fully qualified class name used due to a name conflict
         DeploymentStrategy strategy = WorkloadUtils.deploymentStrategy(io.strimzi.api.kafka.model.common.template.DeploymentStrategy.ROLLING_UPDATE);
 
         assertThat(strategy.getType(), is("RollingUpdate"));

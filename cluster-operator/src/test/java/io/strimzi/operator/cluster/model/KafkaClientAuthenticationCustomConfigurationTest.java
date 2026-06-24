@@ -15,6 +15,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 public class KafkaClientAuthenticationCustomConfigurationTest {
     @Test
+    @SuppressWarnings("checkstyle:NoFullyQualifiedClassNames") // False positive, fully qualified class name used in a string
     public void testAllowAndForbiddenConfigurationOptions() {
         JsonObject config = new JsonObject()
                 .put("ssl.keystore.location", "/mnt/certs/keystore")

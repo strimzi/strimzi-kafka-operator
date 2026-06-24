@@ -140,7 +140,7 @@ public class EntityOperatorTest {
         assertThat(dep.getMetadata().getName(), is(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME)));
         assertThat(dep.getMetadata().getNamespace(), is(NAMESPACE));
         assertThat(dep.getSpec().getReplicas(), is(1));
-        io.strimzi.operator.cluster.TestUtils.checkOwnerReference(dep, KAFKA);
+        TestUtils.checkOwnerReference(dep, KAFKA);
 
         assertThat(containers.size(), is(2));
         // just check names of topic and user operators (their containers are tested in the related unit test classes)

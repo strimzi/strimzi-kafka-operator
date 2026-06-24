@@ -95,6 +95,7 @@ public class SimpleAclRuleResource {
      *
      * @return the ResourcePattern instance
      */
+    @SuppressWarnings("checkstyle:NoFullyQualifiedClassNames") // Fully qualified class name used due to a name conflict
     public ResourcePattern toKafkaResourcePattern() {
         org.apache.kafka.common.resource.ResourceType kafkaType;
         String kafkaName;

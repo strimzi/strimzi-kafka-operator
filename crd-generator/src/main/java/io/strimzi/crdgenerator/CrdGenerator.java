@@ -882,6 +882,7 @@ class CrdGenerator {
      * @param valueType value Class
      * @return true if key-value types are equal to specified types, false otherwise.
      */
+    @SuppressWarnings("checkstyle:NoFullyQualifiedClassNames") // Type[] cannot be imported because of naming conflicts
     private boolean isMapOfTypes(PropertyType propertyType, Class<?> keyType, Class<?> valueType) {
         java.lang.reflect.Type[] types = ((ParameterizedType) propertyType.getGenericType()).getActualTypeArguments();
         return keyType.equals(types[0]) && valueType.equals(types[1]);

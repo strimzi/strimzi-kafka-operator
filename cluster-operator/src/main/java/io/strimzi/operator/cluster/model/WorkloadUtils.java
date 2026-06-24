@@ -431,6 +431,7 @@ public class WorkloadUtils {
      *
      * @return  Created deployment strategy
      */
+    @SuppressWarnings("checkstyle:NoFullyQualifiedClassNames") // Fully qualified class name used due to a name conflict
     public static DeploymentStrategy deploymentStrategy(io.strimzi.api.kafka.model.common.template.DeploymentStrategy strategy) {
         return switch (strategy) {
             case ROLLING_UPDATE -> rollingUpdateStrategy();

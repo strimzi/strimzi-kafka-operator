@@ -113,6 +113,7 @@ class CrdGeneratorTest {
     }
 
     @Test
+    @SuppressWarnings("checkstyle:NoFullyQualifiedClassNames") // False positive as the fully qualified class names are used in Strings
     void simpleTestWithErrors() throws IOException {
         CrdGenerator crdGenerator = new CrdGenerator(KubeVersion.V1_16_PLUS, ApiVersion.V1, CrdGenerator.YAML_MAPPER,
                 emptyMap(), crdGeneratorReporter, emptyList(), null, null,

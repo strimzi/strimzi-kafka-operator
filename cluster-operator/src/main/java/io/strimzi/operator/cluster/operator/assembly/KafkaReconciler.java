@@ -1040,6 +1040,7 @@ public class KafkaReconciler {
                 .onSuccess(registeredBrokerNodes -> {
 
                     // all current registered broker nodes (fenced or not)
+                    @SuppressWarnings("checkstyle:NoFullyQualifiedClassNames") // Fully qualified class name used due to a name conflict
                     List<Integer> registeredBrokersIds = registeredBrokerNodes.stream()
                             .map(org.apache.kafka.common.Node::id)
                             .toList();

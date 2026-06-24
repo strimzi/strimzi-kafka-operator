@@ -177,7 +177,7 @@ public class ResourceSupport {
                         } else {
                             Throwable primary;
 
-                            if (Util.maybeUnwrapCompletionException(thrown) instanceof java.util.concurrent.TimeoutException) {
+                            if (Util.maybeUnwrapCompletionException(thrown) instanceof TimeoutException) {
                                 primary = new TimeoutException("\"" + watchFnDescription + "\" timed out after " + operationTimeoutMs + "ms");
                             } else {
                                 primary = thrown;

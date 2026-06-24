@@ -84,6 +84,7 @@ public class EntityOperator extends AbstractModel {
     /**
      * Default health check options used by the Topic and User operators
      */
+    @SuppressWarnings("checkstyle:NoFullyQualifiedClassNames") // Fully qualified class name used due to a name conflict
     protected static final Probe DEFAULT_HEALTHCHECK_OPTIONS = new io.strimzi.api.kafka.model.common.ProbeBuilder().withTimeoutSeconds(5).withInitialDelaySeconds(10).build();
 
     private EntityTopicOperator topicOperator;

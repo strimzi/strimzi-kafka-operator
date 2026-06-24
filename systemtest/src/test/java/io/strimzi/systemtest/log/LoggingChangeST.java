@@ -98,6 +98,7 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
         @Label(value = TestDocsLabels.LOGGING)
     }
 )
+@SuppressWarnings("checkstyle:NoFullyQualifiedClassNames") // False positive, fully qualified class name used in a string
 class LoggingChangeST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(LoggingChangeST.class);
 

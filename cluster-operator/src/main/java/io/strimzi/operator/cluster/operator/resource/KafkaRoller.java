@@ -331,6 +331,7 @@ public class KafkaRoller {
      *
      * @return A future which completes when the pod has been rolled.
      */
+    @SuppressWarnings("checkstyle:NoFullyQualifiedClassNames") // Fully qualified class name used due to a name conflict
     private CompletableFuture<Void> schedule(NodeRef nodeRef, long delayMs) {
         RestartContext ctx = podToContext.computeIfAbsent(nodeRef.podName(),
             k -> new RestartContext(backoffSupplier));

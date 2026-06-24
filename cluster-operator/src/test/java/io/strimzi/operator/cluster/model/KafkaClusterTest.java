@@ -292,11 +292,11 @@ public class KafkaClusterTest {
 
         for (ConfigMap cm : cms)    {
             if (cm.getMetadata().getName().contains("controllers")) {
-                io.strimzi.operator.cluster.TestUtils.checkOwnerReference(cm, POOL_CONTROLLERS);
+                TestUtils.checkOwnerReference(cm, POOL_CONTROLLERS);
             } else if (cm.getMetadata().getName().contains("mixed")) {
-                io.strimzi.operator.cluster.TestUtils.checkOwnerReference(cm, POOL_MIXED);
+                TestUtils.checkOwnerReference(cm, POOL_MIXED);
             } else {
-                io.strimzi.operator.cluster.TestUtils.checkOwnerReference(cm, POOL_BROKERS);
+                TestUtils.checkOwnerReference(cm, POOL_BROKERS);
             }
 
             assertThat(cm.getData().get(JmxPrometheusExporterModel.CONFIG_MAP_KEY), is("{\"animal\":\"wombat\"}"));
@@ -884,7 +884,7 @@ public class KafkaClusterTest {
         assertThat(clusterIp.getMetadata().getLabels().containsKey(Labels.STRIMZI_DISCOVERY_LABEL), is(true));
         assertThat(clusterIp.getMetadata().getLabels().get(Labels.STRIMZI_DISCOVERY_LABEL), is("true"));
 
-        io.strimzi.operator.cluster.TestUtils.checkOwnerReference(clusterIp, KAFKA);
+        TestUtils.checkOwnerReference(clusterIp, KAFKA);
     }
 
     @Test
@@ -921,7 +921,7 @@ public class KafkaClusterTest {
         assertThat(clusterIp.getMetadata().getLabels().containsKey(Labels.STRIMZI_DISCOVERY_LABEL), is(true));
         assertThat(clusterIp.getMetadata().getLabels().get(Labels.STRIMZI_DISCOVERY_LABEL), is("true"));
 
-        io.strimzi.operator.cluster.TestUtils.checkOwnerReference(clusterIp, KAFKA);
+        TestUtils.checkOwnerReference(clusterIp, KAFKA);
     }
 
     @Test
@@ -962,7 +962,7 @@ public class KafkaClusterTest {
 
         assertThat(headless.getMetadata().getLabels().containsKey(Labels.STRIMZI_DISCOVERY_LABEL), is(false));
 
-        io.strimzi.operator.cluster.TestUtils.checkOwnerReference(headless, KAFKA);
+        TestUtils.checkOwnerReference(headless, KAFKA);
     }
 
     @Test
@@ -1167,7 +1167,7 @@ public class KafkaClusterTest {
     public void testGenerateHeadlessService() {
         Service headless = KC.generateHeadlessService();
         checkHeadlessService(headless);
-        io.strimzi.operator.cluster.TestUtils.checkOwnerReference(headless, KAFKA);
+        TestUtils.checkOwnerReference(headless, KAFKA);
     }
 
     @Test
@@ -3352,7 +3352,7 @@ public class KafkaClusterTest {
         StrimziPodSet podSet = podSets.stream().filter(sps -> (CLUSTER + "-controllers").equals(sps.getMetadata().getName())).findFirst().orElse(null);
         assertThat(podSet, is(notNullValue()));
 
-        io.strimzi.operator.cluster.TestUtils.checkOwnerReference(podSet, POOL_CONTROLLERS);
+        TestUtils.checkOwnerReference(podSet, POOL_CONTROLLERS);
         assertThat(podSet.getMetadata().getName(), is(CLUSTER + "-controllers"));
         assertThat(podSet.getSpec().getSelector().getMatchLabels(), is(KC.getSelectorLabels().withStrimziPoolName("controllers").toMap()));
         assertThat(podSet.getMetadata().getLabels().entrySet().containsAll(KC.labels.withAdditionalLabels(null).toMap().entrySet()), is(true));
@@ -3409,7 +3409,7 @@ public class KafkaClusterTest {
         podSet = podSets.stream().filter(sps -> (CLUSTER + "-mixed").equals(sps.getMetadata().getName())).findFirst().orElse(null);
         assertThat(podSet, is(notNullValue()));
 
-        io.strimzi.operator.cluster.TestUtils.checkOwnerReference(podSet, POOL_MIXED);
+        TestUtils.checkOwnerReference(podSet, POOL_MIXED);
         assertThat(podSet.getMetadata().getName(), is(CLUSTER + "-mixed"));
         assertThat(podSet.getSpec().getSelector().getMatchLabels(), is(KC.getSelectorLabels().withStrimziPoolName("mixed").toMap()));
         assertThat(podSet.getMetadata().getLabels().entrySet().containsAll(KC.labels.withAdditionalLabels(null).toMap().entrySet()), is(true));
