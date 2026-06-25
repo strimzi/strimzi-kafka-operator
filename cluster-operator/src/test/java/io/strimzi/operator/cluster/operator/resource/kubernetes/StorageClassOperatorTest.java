@@ -12,7 +12,8 @@ import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.StorageAPIGroupDSL;
 import io.fabric8.kubernetes.client.dsl.V1StorageAPIGroupDSL;
-import io.vertx.core.Vertx;
+import io.strimzi.operator.common.operator.resource.concurrent.AbstractNonNamespacedResourceOperator;
+import io.strimzi.operator.common.operator.resource.concurrent.AbstractNonNamespacedResourceOperatorTest;
 
 import static java.util.Collections.singletonMap;
 import static org.mockito.Mockito.mock;
@@ -33,8 +34,8 @@ public class StorageClassOperatorTest extends AbstractNonNamespacedResourceOpera
     @Override
     protected AbstractNonNamespacedResourceOperator<KubernetesClient, StorageClass, StorageClassList,
             Resource<StorageClass>> createResourceOperations(
-                    Vertx vertx, KubernetesClient mockClient) {
-        return new StorageClassOperator(vertx, mockClient) {
+                    KubernetesClient mockClient) {
+        return new StorageClassOperator(asyncExecutor, mockClient) {
             @Override
             protected long deleteTimeoutMs() {
                 return 100;

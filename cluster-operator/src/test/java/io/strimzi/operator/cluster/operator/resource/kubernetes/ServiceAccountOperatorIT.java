@@ -9,30 +9,28 @@ import io.fabric8.kubernetes.api.model.ServiceAccountBuilder;
 import io.fabric8.kubernetes.api.model.ServiceAccountList;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.ServiceAccountResource;
-import io.strimzi.operator.cluster.operator.VertxUtil;
 import io.strimzi.operator.common.Reconciliation;
-import io.vertx.junit5.Checkpoint;
-import io.vertx.junit5.VertxExtension;
-import io.vertx.junit5.VertxTestContext;
+import io.strimzi.operator.common.operator.resource.concurrent.AbstractNamespacedResourceOperator;
+import io.strimzi.operator.common.operator.resource.concurrent.AbstractNamespacedResourceOperatorIT;
+import io.strimzi.test.TestUtils;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 
 import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
-@ExtendWith(VertxExtension.class)
 public class ServiceAccountOperatorIT extends AbstractNamespacedResourceOperatorIT<KubernetesClient, ServiceAccount, ServiceAccountList, ServiceAccountResource> {
     @Override
-    protected AbstractNamespacedResourceOperator<KubernetesClient, ServiceAccount, ServiceAccountList, ServiceAccountResource> operator() {
-        return new ServiceAccountOperator(vertx, client, false);
+    public AbstractNamespacedResourceOperator<KubernetesClient, ServiceAccount, ServiceAccountList, ServiceAccountResource> operator() {
+        return new ServiceAccountOperator(asyncExecutor, client, false);
     }
 
     @Override
-    protected ServiceAccount getOriginal()  {
+    public ServiceAccount getOriginal()  {
         return new ServiceAccountBuilder()
                 .withNewMetadata()
                     .withName(resourceName)
@@ -43,7 +41,7 @@ public class ServiceAccountOperatorIT extends AbstractNamespacedResourceOperator
     }
 
     @Override
-    protected ServiceAccount getModified()  {
+    public ServiceAccount getModified()  {
         return new ServiceAccountBuilder()
                 .withNewMetadata()
                     .withName(resourceName)
@@ -55,44 +53,44 @@ public class ServiceAccountOperatorIT extends AbstractNamespacedResourceOperator
 
     @Test
     @Override
-    public void testCreateModifyDelete(VertxTestContext context)    {
-        Checkpoint async = context.checkpoint();
-        ServiceAccountOperator op = new ServiceAccountOperator(vertx, client, false);
+    public void testCreateModifyDelete()    {
+        ServiceAccountOperator op = new ServiceAccountOperator(asyncExecutor, client, false);
 
         ServiceAccount newResource = getOriginal();
         ServiceAccount modResource = getModified();
 
-        op.reconcile(Reconciliation.DUMMY_RECONCILIATION, namespace, resourceName, newResource)
-                .onComplete(context.succeeding(rrCreated -> {
+        TestUtils.await(op.reconcile(Reconciliation.DUMMY_RECONCILIATION, namespace, resourceName, newResource)
+                .whenComplete((rrCreated, error) -> {
+                    assertNull(error);
                     ServiceAccount created = op.get(namespace, resourceName);
 
-                    context.verify(() -> assertThat(created, Matchers.is(notNullValue())));
-                    assertResources(context, newResource, created);
-                }))
-                .compose(rr -> op.reconcile(Reconciliation.DUMMY_RECONCILIATION, namespace, resourceName, modResource))
-                .onComplete(context.succeeding(rrModified -> {
+                    assertThat(created, Matchers.is(notNullValue()));
+                    assertResources(newResource, created);
+                })
+                .thenCompose(rr -> op.reconcile(Reconciliation.DUMMY_RECONCILIATION, namespace, resourceName, modResource))
+                .whenComplete((rrModified, error) -> {
+                    assertNull(error);
                     ServiceAccount modified = op.get(namespace, resourceName);
 
-                    context.verify(() -> assertThat(modified, Matchers.is(notNullValue())));
-                    assertResources(context, modResource, modified);
-                }))
-                .compose(rr -> op.reconcile(Reconciliation.DUMMY_RECONCILIATION, namespace, resourceName, null))
-                .onComplete(context.succeeding(rrDeleted -> {
-                    // it seems the resource is cached for some time so we need wait for it to be null
-                    context.verify(() -> VertxUtil.waitFor(Reconciliation.DUMMY_RECONCILIATION, vertx, "resource deletion " + resourceName, "deleted", 1000,
-                            30_000, () -> op.get(namespace, resourceName) == null)
-                            .onComplete(del -> {
-                                assertThat(op.get(namespace, resourceName), Matchers.is(nullValue()));
-                                async.flag();
-                            })
-                    );
-                }));
+                    assertThat(modified, Matchers.is(notNullValue()));
+                    assertResources(modResource, modified);
+                })
+                .thenCompose(rr -> op.reconcile(Reconciliation.DUMMY_RECONCILIATION, namespace, resourceName, null))
+                .whenComplete(TestUtils::assertSuccessful)
+                .thenCompose(rr -> resourceSupport.waitFor(
+                        Reconciliation.DUMMY_RECONCILIATION,
+                        "resource deletion " + resourceName,
+                        "deleted",
+                        1000,
+                        30_000,
+                        () -> op.get(namespace, resourceName) == null))
+                .thenRun(() -> assertThat(op.get(namespace, resourceName), Matchers.is(nullValue()))));
     }
 
     @Override
-    protected void assertResources(VertxTestContext context, ServiceAccount expected, ServiceAccount actual)   {
-        context.verify(() -> assertThat(actual.getMetadata().getName(), is(expected.getMetadata().getName())));
-        context.verify(() -> assertThat(actual.getMetadata().getNamespace(), is(expected.getMetadata().getNamespace())));
-        context.verify(() -> assertThat(actual.getMetadata().getLabels(), is(expected.getMetadata().getLabels())));
+    public void assertResources(ServiceAccount expected, ServiceAccount actual)   {
+        assertThat(actual.getMetadata().getName(), is(expected.getMetadata().getName()));
+        assertThat(actual.getMetadata().getNamespace(), is(expected.getMetadata().getNamespace()));
+        assertThat(actual.getMetadata().getLabels(), is(expected.getMetadata().getLabels()));
     }
 }

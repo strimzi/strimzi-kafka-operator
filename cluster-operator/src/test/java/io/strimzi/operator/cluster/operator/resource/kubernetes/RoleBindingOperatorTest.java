@@ -15,7 +15,8 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.RbacAPIGroupDSL;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.vertx.core.Vertx;
+import io.strimzi.operator.common.operator.resource.concurrent.AbstractNamespacedResourceOperator;
+import io.strimzi.operator.common.operator.resource.concurrent.AbstractNamespacedResourceOperatorTest;
 
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
@@ -74,7 +75,7 @@ public class RoleBindingOperatorTest extends AbstractNamespacedResourceOperatorT
     }
 
     @Override
-    protected void mocker(KubernetesClient mockClient, MixedOperation op) {
+    protected void mocker(KubernetesClient mockClient, MixedOperation<RoleBinding, RoleBindingList, Resource<RoleBinding>> op) {
         RbacAPIGroupDSL mockRbac = mock(RbacAPIGroupDSL.class);
         when(mockClient.rbac()).thenReturn(mockRbac);
         when(mockClient.rbac().roleBindings()).thenReturn(op);
@@ -82,7 +83,7 @@ public class RoleBindingOperatorTest extends AbstractNamespacedResourceOperatorT
 
     @Override
     protected AbstractNamespacedResourceOperator<KubernetesClient, RoleBinding, RoleBindingList,
-                Resource<RoleBinding>> createResourceOperations(Vertx vertx, KubernetesClient mockClient) {
-        return new RoleBindingOperator(vertx, mockClient);
+                Resource<RoleBinding>> createResourceOperations(KubernetesClient mockClient) {
+        return new RoleBindingOperator(asyncExecutor, mockClient);
     }
 }

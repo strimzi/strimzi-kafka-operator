@@ -26,7 +26,6 @@ import io.strimzi.operator.cluster.operator.resource.kubernetes.PodOperator;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
-import io.vertx.core.Future;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
@@ -38,6 +37,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -188,8 +188,8 @@ public class KafkaConnectRollerTest {
                 .build();
 
         PodOperator mockPodOps = mock(PodOperator.class);
-        when(mockPodOps.getAsync(eq(NAMESPACE), eq("my-connect-connect-0"))).thenReturn(Future.succeededFuture(READY_POD));
-        when(mockPodOps.readiness(any(), eq(NAMESPACE), eq("my-connect-connect-0"), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockPodOps.getAsync(eq(NAMESPACE), eq("my-connect-connect-0"))).thenReturn(CompletableFuture.completedFuture(READY_POD));
+        when(mockPodOps.readiness(any(), eq(NAMESPACE), eq("my-connect-connect-0"), anyLong(), anyLong())).thenReturn(CompletableFuture.completedFuture(null));
 
         KafkaConnectRoller roller = new KafkaConnectRoller(RECONCILIATION, CLUSTER, 1_000L, mockPodOps);
 
@@ -214,8 +214,8 @@ public class KafkaConnectRollerTest {
                 .build();
 
         PodOperator mockPodOps = mock(PodOperator.class);
-        when(mockPodOps.getAsync(eq(NAMESPACE), eq("my-connect-connect-0"))).thenReturn(Future.succeededFuture(null));
-        when(mockPodOps.readiness(any(), eq(NAMESPACE), eq("my-connect-connect-0"), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockPodOps.getAsync(eq(NAMESPACE), eq("my-connect-connect-0"))).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockPodOps.readiness(any(), eq(NAMESPACE), eq("my-connect-connect-0"), anyLong(), anyLong())).thenReturn(CompletableFuture.completedFuture(null));
 
         KafkaConnectRoller roller = new KafkaConnectRoller(RECONCILIATION, CLUSTER, 1_000L, mockPodOps);
 
@@ -240,9 +240,9 @@ public class KafkaConnectRollerTest {
                 .build();
 
         PodOperator mockPodOps = mock(PodOperator.class);
-        when(mockPodOps.getAsync(eq(NAMESPACE), eq("my-connect-connect-0"))).thenReturn(Future.succeededFuture(changeRevision(READY_POD, "skso1919")));
-        when(mockPodOps.deleteAsync(any(), eq(NAMESPACE), eq("my-connect-connect-0"), eq(false))).thenReturn(Future.succeededFuture());
-        when(mockPodOps.readiness(any(), eq(NAMESPACE), eq("my-connect-connect-0"), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockPodOps.getAsync(eq(NAMESPACE), eq("my-connect-connect-0"))).thenReturn(CompletableFuture.completedFuture(changeRevision(READY_POD, "skso1919")));
+        when(mockPodOps.deleteAsync(any(), eq(NAMESPACE), eq("my-connect-connect-0"), eq(false))).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockPodOps.readiness(any(), eq(NAMESPACE), eq("my-connect-connect-0"), anyLong(), anyLong())).thenReturn(CompletableFuture.completedFuture(null));
 
         KafkaConnectRoller roller = new KafkaConnectRoller(RECONCILIATION, CLUSTER, 1_000L, mockPodOps);
 
@@ -267,8 +267,8 @@ public class KafkaConnectRollerTest {
                 .build();
 
         PodOperator mockPodOps = mock(PodOperator.class);
-        when(mockPodOps.getAsync(eq(NAMESPACE), eq("my-connect-connect-0"))).thenReturn(Future.succeededFuture(null));
-        when(mockPodOps.readiness(any(), eq(NAMESPACE), eq("my-connect-connect-0"), anyLong(), anyLong())).thenReturn(Future.failedFuture(new RuntimeException("Timeout")));
+        when(mockPodOps.getAsync(eq(NAMESPACE), eq("my-connect-connect-0"))).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockPodOps.readiness(any(), eq(NAMESPACE), eq("my-connect-connect-0"), anyLong(), anyLong())).thenReturn(CompletableFuture.failedFuture(new RuntimeException("Timeout")));
 
         KafkaConnectRoller roller = new KafkaConnectRoller(RECONCILIATION, CLUSTER, 1_000L, mockPodOps);
 
@@ -298,19 +298,19 @@ public class KafkaConnectRollerTest {
 
         PodOperator mockPodOps = mock(PodOperator.class);
 
-        when(mockPodOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(Future.succeededFuture(List.of(renamePod(READY_POD, "my-connect-connect-0"), renamePod(READY_POD, "my-connect-connect-2"))));
+        when(mockPodOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(CompletableFuture.completedFuture(List.of(renamePod(READY_POD, "my-connect-connect-0"), renamePod(READY_POD, "my-connect-connect-2"))));
 
         ArgumentCaptor<String> getAsyncCaptor = ArgumentCaptor.forClass(String.class);
         when(mockPodOps.getAsync(eq(NAMESPACE), getAsyncCaptor.capture())).thenAnswer(i -> {
             if ("my-connect-connect-1".equals(i.getArgument(1)))    {
-                return Future.succeededFuture(null);
+                return CompletableFuture.completedFuture(null);
             } else {
-                return Future.succeededFuture(renamePod(READY_POD, i.getArgument(1)));
+                return CompletableFuture.completedFuture(renamePod(READY_POD, i.getArgument(1)));
             }
         });
 
         ArgumentCaptor<String> readinessCaptor = ArgumentCaptor.forClass(String.class);
-        when(mockPodOps.readiness(any(), eq(NAMESPACE), readinessCaptor.capture(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockPodOps.readiness(any(), eq(NAMESPACE), readinessCaptor.capture(), anyLong(), anyLong())).thenReturn(CompletableFuture.completedFuture(null));
 
         KafkaConnectRoller roller = new KafkaConnectRoller(RECONCILIATION, CLUSTER, 1_000L, mockPodOps);
 
@@ -350,11 +350,11 @@ public class KafkaConnectRollerTest {
 
         PodOperator mockPodOps = mock(PodOperator.class);
 
-        when(mockPodOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(Future.succeededFuture(List.of(renamePod(READY_POD, "my-connect-connect-0"), renamePod(READY_POD, "my-connect-connect-2"))));
+        when(mockPodOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(CompletableFuture.completedFuture(List.of(renamePod(READY_POD, "my-connect-connect-0"), renamePod(READY_POD, "my-connect-connect-2"))));
 
-        when(mockPodOps.getAsync(eq(NAMESPACE), any())).thenAnswer(i -> Future.succeededFuture(renamePod(READY_POD, i.getArgument(1))));
+        when(mockPodOps.getAsync(eq(NAMESPACE), any())).thenAnswer(i -> CompletableFuture.completedFuture(renamePod(READY_POD, i.getArgument(1))));
 
-        when(mockPodOps.readiness(any(), eq(NAMESPACE), any(), anyLong(), anyLong())).thenReturn(Future.failedFuture(new RuntimeException("Timeout")));
+        when(mockPodOps.readiness(any(), eq(NAMESPACE), any(), anyLong(), anyLong())).thenReturn(CompletableFuture.failedFuture(new RuntimeException("Timeout")));
 
         KafkaConnectRoller roller = new KafkaConnectRoller(RECONCILIATION, CLUSTER, 1_000L, mockPodOps);
 

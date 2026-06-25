@@ -8,8 +8,11 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.model.podset.StrimziPodSet;
 import io.strimzi.api.kafka.model.podset.StrimziPodSetList;
 import io.strimzi.operator.common.Reconciliation;
-import io.vertx.core.Future;
-import io.vertx.core.Vertx;
+import io.strimzi.operator.common.operator.resource.concurrent.CrdOperator;
+
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.Executor;
 
 /**
  * Operator for {@code StrimziPodSet}s
@@ -19,11 +22,11 @@ public class StrimziPodSetOperator extends CrdOperator<KubernetesClient, Strimzi
     /**
      * Constructs the StrimziPodSet operator
      *
-     * @param vertx  The Vertx instance.
+     * @param asyncExecutor Executor to use for asynchronous subroutines
      * @param client The Kubernetes client.
      */
-    public StrimziPodSetOperator(Vertx vertx, KubernetesClient client) {
-        super(vertx, client, StrimziPodSet.class, StrimziPodSetList.class, StrimziPodSet.RESOURCE_KIND);
+    public StrimziPodSetOperator(Executor asyncExecutor, KubernetesClient client) {
+        super(asyncExecutor, client, StrimziPodSet.class, StrimziPodSetList.class, StrimziPodSet.RESOURCE_KIND);
     }
 
     /**
@@ -35,8 +38,8 @@ public class StrimziPodSetOperator extends CrdOperator<KubernetesClient, Strimzi
      * @return  The patched or replaced resource
      */
     @Override
-    protected StrimziPodSet patchOrReplace(String namespace, String name, StrimziPodSet desired)   {
-        return operation().inNamespace(namespace).resource(desired).update();
+    protected CompletionStage<StrimziPodSet> patchOrReplace(String namespace, String name, StrimziPodSet desired)   {
+        return CompletableFuture.supplyAsync(() -> operation().inNamespace(namespace).resource(desired).update(), asyncExecutor);
     }
 
     /**
@@ -50,7 +53,7 @@ public class StrimziPodSetOperator extends CrdOperator<KubernetesClient, Strimzi
      *
      * @return  A future which completes when the resource is ready or times out
      */
-    public Future<Void> readiness(Reconciliation reconciliation, String namespace, String name, long pollIntervalMs, long timeoutMs) {
+    public CompletionStage<Void> readiness(Reconciliation reconciliation, String namespace, String name, long pollIntervalMs, long timeoutMs) {
         return waitFor(reconciliation, namespace, name, pollIntervalMs, timeoutMs, this::isReady);
     }
 

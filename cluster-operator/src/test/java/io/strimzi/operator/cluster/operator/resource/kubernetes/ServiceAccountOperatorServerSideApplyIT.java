@@ -9,9 +9,8 @@ import io.fabric8.kubernetes.api.model.ServiceAccountBuilder;
 import io.fabric8.kubernetes.api.model.ServiceAccountList;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.ServiceAccountResource;
-import io.vertx.junit5.VertxExtension;
-import io.vertx.junit5.VertxTestContext;
-import org.junit.jupiter.api.extension.ExtendWith;
+import io.strimzi.operator.common.operator.resource.concurrent.AbstractNamespacedResourceOperator;
+import io.strimzi.operator.common.operator.resource.concurrent.AbstractNamespacedResourceOperatorServerSideApplyIT;
 
 import java.util.Map;
 
@@ -19,15 +18,14 @@ import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-@ExtendWith(VertxExtension.class)
 public class ServiceAccountOperatorServerSideApplyIT extends AbstractNamespacedResourceOperatorServerSideApplyIT<KubernetesClient, ServiceAccount, ServiceAccountList, ServiceAccountResource> {
     @Override
-    protected AbstractNamespacedResourceOperator<KubernetesClient, ServiceAccount, ServiceAccountList, ServiceAccountResource> operator() {
-        return new ServiceAccountOperator(vertx, client, true);
+    public AbstractNamespacedResourceOperator<KubernetesClient, ServiceAccount, ServiceAccountList, ServiceAccountResource> operator() {
+        return new ServiceAccountOperator(asyncExecutor, client, true);
     }
 
     @Override
-    protected ServiceAccount getOriginal()  {
+    public ServiceAccount getOriginal()  {
         return new ServiceAccountBuilder()
             .withNewMetadata()
                 .withName(resourceName)
@@ -38,7 +36,7 @@ public class ServiceAccountOperatorServerSideApplyIT extends AbstractNamespacedR
     }
 
     @Override
-    protected ServiceAccount getModified() {
+    public ServiceAccount getModified() {
         return new ServiceAccountBuilder()
             .withNewMetadata()
                 .withName(resourceName)
@@ -50,7 +48,7 @@ public class ServiceAccountOperatorServerSideApplyIT extends AbstractNamespacedR
     }
 
     @Override
-    ServiceAccount getNonConflicting() {
+    public ServiceAccount getNonConflicting() {
         return new ServiceAccountBuilder()
             .withNewMetadata()
                 .withName(resourceName)
@@ -62,7 +60,7 @@ public class ServiceAccountOperatorServerSideApplyIT extends AbstractNamespacedR
     }
 
     @Override
-    protected ServiceAccount getConflicting() {
+    public ServiceAccount getConflicting() {
         return new ServiceAccountBuilder()
             .withNewMetadata()
                 .withName(resourceName)
@@ -74,10 +72,10 @@ public class ServiceAccountOperatorServerSideApplyIT extends AbstractNamespacedR
     }
 
     @Override
-    protected void assertResources(VertxTestContext context, ServiceAccount expected, ServiceAccount actual)   {
-        context.verify(() -> assertThat(actual.getMetadata().getName(), is(expected.getMetadata().getName())));
-        context.verify(() -> assertThat(actual.getMetadata().getNamespace(), is(expected.getMetadata().getNamespace())));
-        context.verify(() -> assertThat(actual.getMetadata().getLabels(), is(expected.getMetadata().getLabels())));
-        context.verify(() -> assertThat(actual.getAutomountServiceAccountToken(), is(expected.getAutomountServiceAccountToken())));
+    public void assertResources(ServiceAccount expected, ServiceAccount actual)   {
+        assertThat(actual.getMetadata().getName(), is(expected.getMetadata().getName()));
+        assertThat(actual.getMetadata().getNamespace(), is(expected.getMetadata().getNamespace()));
+        assertThat(actual.getMetadata().getLabels(), is(expected.getMetadata().getLabels()));
+        assertThat(actual.getAutomountServiceAccountToken(), is(expected.getAutomountServiceAccountToken()));
     }
 }

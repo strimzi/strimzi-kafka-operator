@@ -9,8 +9,9 @@ import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyList;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.vertx.core.Vertx;
+import io.strimzi.operator.common.operator.resource.concurrent.AbstractNamespacedResourceOperator;
 
+import java.util.concurrent.Executor;
 import java.util.regex.Pattern;
 
 /**
@@ -31,11 +32,11 @@ public class NetworkPolicyOperator extends AbstractNamespacedResourceOperator<Ku
     /**
      * Constructs the Network Policy Operator
      *
-     * @param vertx     Vert.x instance
+     * @param asyncExecutor Executor to use for asynchronous subroutines
      * @param client    Kubernetes client
      */
-    public NetworkPolicyOperator(Vertx vertx, KubernetesClient client) {
-        super(vertx, client, "NetworkPolicy");
+    public NetworkPolicyOperator(Executor asyncExecutor, KubernetesClient client) {
+        super(asyncExecutor, client, "NetworkPolicy");
     }
 
     @Override

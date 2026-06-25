@@ -14,6 +14,7 @@ import io.strimzi.api.kafka.model.connector.KafkaConnectorStatus;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
+import io.strimzi.operator.cluster.operator.VertxUtil;
 import io.strimzi.operator.cluster.operator.resource.DefaultKafkaAgentClientProvider;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.DefaultAdminClientProvider;
@@ -154,7 +155,8 @@ public class KafkaConnectorIT {
         Crds.kafkaConnectorOperation(client).inNamespace(namespace).resource(connector).create();
 
         MetricsProvider metrics = new MicrometerMetricsProvider(BackendRegistries.getDefaultNow());
-        ResourceOperatorSupplier ros = new ResourceOperatorSupplier(vertx, client,
+        ResourceOperatorSupplier ros = new ResourceOperatorSupplier(VertxUtil.asExecutor(vertx.createSharedWorkerExecutor("kubernetes-ops-pool")),
+                client,
                 new DefaultAdminClientProvider(),
                 new DefaultKafkaAgentClientProvider(),
                 metrics,
@@ -220,7 +222,8 @@ public class KafkaConnectorIT {
         Crds.kafkaConnectorOperation(client).inNamespace(namespace).resource(connector).create();
 
         MetricsProvider metrics = new MicrometerMetricsProvider(BackendRegistries.getDefaultNow());
-        ResourceOperatorSupplier ros = new ResourceOperatorSupplier(vertx, client,
+        ResourceOperatorSupplier ros = new ResourceOperatorSupplier(VertxUtil.asExecutor(vertx.createSharedWorkerExecutor("kubernetes-ops-pool")),
+                client,
                 new DefaultAdminClientProvider(),
                 new DefaultKafkaAgentClientProvider(),
                 metrics,
@@ -265,7 +268,8 @@ public class KafkaConnectorIT {
         Crds.kafkaConnectorOperation(client).inNamespace(namespace).resource(connector).create();
 
         MetricsProvider metrics = new MicrometerMetricsProvider(BackendRegistries.getDefaultNow());
-        ResourceOperatorSupplier ros = new ResourceOperatorSupplier(vertx, client,
+        ResourceOperatorSupplier ros = new ResourceOperatorSupplier(VertxUtil.asExecutor(vertx.createSharedWorkerExecutor("kubernetes-ops-pool")),
+                client,
                 new DefaultAdminClientProvider(),
                 new DefaultKafkaAgentClientProvider(),
                 metrics,
@@ -321,7 +325,8 @@ public class KafkaConnectorIT {
         Crds.kafkaConnectorOperation(client).inNamespace(namespace).resource(connector).create();
 
         MetricsProvider metrics = new MicrometerMetricsProvider(BackendRegistries.getDefaultNow());
-        ResourceOperatorSupplier ros = new ResourceOperatorSupplier(vertx, client,
+        ResourceOperatorSupplier ros = new ResourceOperatorSupplier(VertxUtil.asExecutor(vertx.createSharedWorkerExecutor("kubernetes-ops-pool")),
+                client,
                 new DefaultAdminClientProvider(),
                 new DefaultKafkaAgentClientProvider(),
             metrics,
@@ -366,7 +371,8 @@ public class KafkaConnectorIT {
         Crds.kafkaConnectorOperation(client).inNamespace(namespace).resource(connector).create();
 
         MetricsProvider metrics = new MicrometerMetricsProvider(BackendRegistries.getDefaultNow());
-        ResourceOperatorSupplier ros = new ResourceOperatorSupplier(vertx, client,
+        ResourceOperatorSupplier ros = new ResourceOperatorSupplier(VertxUtil.asExecutor(vertx.createSharedWorkerExecutor("kubernetes-ops-pool")),
+                client,
                 new DefaultAdminClientProvider(),
                 new DefaultKafkaAgentClientProvider(),
             metrics,

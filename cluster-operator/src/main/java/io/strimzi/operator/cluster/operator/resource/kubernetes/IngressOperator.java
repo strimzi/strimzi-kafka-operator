@@ -11,10 +11,11 @@ import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
-import io.vertx.core.Future;
-import io.vertx.core.Vertx;
+import io.strimzi.operator.common.operator.resource.concurrent.AbstractNamespacedResourceOperator;
 
 import java.util.List;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.Executor;
 import java.util.function.Predicate;
 
 /**
@@ -31,12 +32,12 @@ public class IngressOperator extends AbstractNamespacedResourceOperator<Kubernet
 
     /**
      * Constructor
-     * @param vertx The Vertx instance
+     * @param asyncExecutor Executor to use for asynchronous subroutines
      * @param client The Kubernetes client
      * @param useServerSideApply    Determines if Server Side Apply should be used
      */
-    public IngressOperator(Vertx vertx, KubernetesClient client, boolean useServerSideApply) {
-        super(vertx, client, "Ingress", useServerSideApply);
+    public IngressOperator(Executor asyncExecutor, KubernetesClient client, boolean useServerSideApply) {
+        super(asyncExecutor, client, "Ingress", useServerSideApply);
     }
 
     @Override
@@ -69,7 +70,7 @@ public class IngressOperator extends AbstractNamespacedResourceOperator<Kubernet
      * @return  Future with reconciliation result
      */
     @Override
-    protected Future<ReconcileResult<Ingress>> internalUpdate(Reconciliation reconciliation, String namespace, String name, Ingress current, Ingress desired) {
+    protected CompletionStage<ReconcileResult<Ingress>> internalUpdate(Reconciliation reconciliation, String namespace, String name, Ingress current, Ingress desired) {
         patchIngressClassName(current, desired);
         KubernetesResourceOperatorUtils.patchAnnotations(current, desired, INGRESS_ANNOTATION_IGNORELIST);
 
@@ -101,7 +102,7 @@ public class IngressOperator extends AbstractNamespacedResourceOperator<Kubernet
      * @param timeoutMs     Timeout
      * @return A future that succeeds when the Service has an assigned address.
      */
-    public Future<Void> hasIngressAddress(Reconciliation reconciliation, String namespace, String name, long pollIntervalMs, long timeoutMs) {
+    public CompletionStage<Void> hasIngressAddress(Reconciliation reconciliation, String namespace, String name, long pollIntervalMs, long timeoutMs) {
         return waitFor(reconciliation, namespace, name, "addressable", pollIntervalMs, timeoutMs, this::isIngressAddressReady);
     }
 

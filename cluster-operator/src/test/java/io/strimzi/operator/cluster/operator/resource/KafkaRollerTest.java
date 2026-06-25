@@ -20,7 +20,6 @@ import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.DefaultAdminClientProvider;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.auth.TlsPemIdentity;
-import io.vertx.core.Future;
 import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.Config;
 import org.apache.kafka.clients.admin.DescribeMetadataQuorumResult;
@@ -866,7 +865,7 @@ public class KafkaRollerTest {
 
         when(podOps.readiness(any(), any(), any(), anyLong(), anyLong())).thenAnswer(invocationOnMock -> {
             String podName = invocationOnMock.getArgument(2);
-            return Future.fromCompletionStage(readiness.apply(podName2Number(podName)));
+            return readiness.apply(podName2Number(podName));
         });
 
         when(podOps.isReady(anyString(), anyString())).thenAnswer(invocationOnMock -> {

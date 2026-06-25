@@ -16,6 +16,7 @@ import io.strimzi.operator.cluster.model.CertUtils;
 import io.strimzi.operator.cluster.model.ClusterCa;
 import io.strimzi.operator.cluster.model.EntityOperator;
 import io.strimzi.operator.cluster.model.ImagePullPolicy;
+import io.strimzi.operator.cluster.operator.VertxUtil;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.ConfigMapOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.DeploymentOperator;
@@ -139,13 +140,13 @@ public class EntityOperatorReconciler {
      * @return  Future which completes when the reconciliation is done
      */
     protected Future<Void> serviceAccount() {
-        return serviceAccountOperator
+        return VertxUtil.toFuture(serviceAccountOperator
                 .reconcile(
                         reconciliation,
                         reconciliation.namespace(),
                         KafkaResources.entityOperatorDeploymentName(reconciliation.name()),
                         shouldInstallEntityOperator() ? entityOperator.generateServiceAccount() : null
-                ).mapEmpty();
+                )).mapEmpty();
     }
 
     /**
@@ -156,13 +157,13 @@ public class EntityOperatorReconciler {
      * @return  Future which completes when the reconciliation is done
      */
     protected Future<Void> entityOperatorRole() {
-        return roleOperator
+        return VertxUtil.toFuture(roleOperator
                 .reconcile(
                         reconciliation,
                         reconciliation.namespace(),
                         KafkaResources.entityOperatorDeploymentName(reconciliation.name()),
                         shouldInstallEntityOperator() ? entityOperator.generateRole(reconciliation.namespace(), reconciliation.namespace(), KafkaResources.entityOperatorDeploymentName(reconciliation.name()), EntityOperator.Permissions.BOTH) : null
-                ).mapEmpty();
+                )).mapEmpty();
     }
 
     /**
@@ -228,13 +229,13 @@ public class EntityOperatorReconciler {
 
             // Only reconcile if namespace is different from cluster namespace
             if (namespace != null && !namespace.equals(reconciliation.namespace())) {
-                return roleOperator
+                return VertxUtil.toFuture(roleOperator
                         .reconcile(
                                 reconciliation,
                                 namespace,
                                 KafkaResources.entityOperatorDeploymentName(reconciliation.name()),
                                 role
-                        ).mapEmpty();
+                        )).mapEmpty();
             }
         }
 
@@ -266,13 +267,13 @@ public class EntityOperatorReconciler {
 
             // Only reconcile if namespace is different from cluster namespace
             if (namespace != null && !namespace.equals(reconciliation.namespace())) {
-                return roleOperator
+                return VertxUtil.toFuture(roleOperator
                         .reconcile(
                                 reconciliation,
                                 namespace,
                                 KafkaResources.entityOperatorDeploymentName(reconciliation.name()),
                                 role
-                        ).mapEmpty();
+                        )).mapEmpty();
             }
         }
 
@@ -305,26 +306,26 @@ public class EntityOperatorReconciler {
             }
 
             // Always reconcile own namespace RoleBinding
-            Future<ReconcileResult<RoleBinding>> ownNamespaceFuture = roleBindingOperator
+            Future<ReconcileResult<RoleBinding>> ownNamespaceFuture = VertxUtil.toFuture(roleBindingOperator
                     .reconcile(reconciliation, reconciliation.namespace(),
                             KafkaResources.entityTopicOperatorRoleBinding(reconciliation.name()),
-                            ownNamespaceRoleBinding);
+                            ownNamespaceRoleBinding));
 
             // Reconcile watched namespace RoleBinding if different from cluster namespace
             Future<ReconcileResult<RoleBinding>> watchedNamespaceFuture;
             if (watchedNamespace != null && !watchedNamespace.equals(reconciliation.namespace())) {
-                watchedNamespaceFuture = roleBindingOperator
+                watchedNamespaceFuture = VertxUtil.toFuture(roleBindingOperator
                         .reconcile(reconciliation, watchedNamespace,
                                 KafkaResources.entityTopicOperatorRoleBinding(reconciliation.name()),
-                                watchedNamespaceRoleBinding);
+                                watchedNamespaceRoleBinding));
             } else {
                 watchedNamespaceFuture = Future.succeededFuture();
             }
 
             return Future.join(ownNamespaceFuture, watchedNamespaceFuture).mapEmpty();
         } else {
-            return roleBindingOperator
-                    .reconcile(reconciliation, reconciliation.namespace(), KafkaResources.entityTopicOperatorRoleBinding(reconciliation.name()), null)
+            return VertxUtil.toFuture(roleBindingOperator
+                    .reconcile(reconciliation, reconciliation.namespace(), KafkaResources.entityTopicOperatorRoleBinding(reconciliation.name()), null))
                     .mapEmpty();
         }
     }
@@ -355,26 +356,26 @@ public class EntityOperatorReconciler {
             }
 
             // Always reconcile own namespace RoleBinding
-            Future<ReconcileResult<RoleBinding>> ownNamespaceFuture = roleBindingOperator
+            Future<ReconcileResult<RoleBinding>> ownNamespaceFuture = VertxUtil.toFuture(roleBindingOperator
                     .reconcile(reconciliation, reconciliation.namespace(),
                             KafkaResources.entityUserOperatorRoleBinding(reconciliation.name()),
-                            ownNamespaceRoleBinding);
+                            ownNamespaceRoleBinding));
 
             // Reconcile watched namespace RoleBinding if different from cluster namespace
             Future<ReconcileResult<RoleBinding>> watchedNamespaceFuture;
             if (watchedNamespace != null && !watchedNamespace.equals(reconciliation.namespace())) {
-                watchedNamespaceFuture = roleBindingOperator
+                watchedNamespaceFuture = VertxUtil.toFuture(roleBindingOperator
                         .reconcile(reconciliation, watchedNamespace,
                                 KafkaResources.entityUserOperatorRoleBinding(reconciliation.name()),
-                                watchedNamespaceRoleBinding);
+                                watchedNamespaceRoleBinding));
             } else {
                 watchedNamespaceFuture = Future.succeededFuture();
             }
 
             return Future.join(ownNamespaceFuture, watchedNamespaceFuture).mapEmpty();
         } else {
-            return roleBindingOperator
-                    .reconcile(reconciliation, reconciliation.namespace(), KafkaResources.entityUserOperatorRoleBinding(reconciliation.name()), null)
+            return VertxUtil.toFuture(roleBindingOperator
+                    .reconcile(reconciliation, reconciliation.namespace(), KafkaResources.entityUserOperatorRoleBinding(reconciliation.name()), null))
                     .mapEmpty();
         }
     }
@@ -389,16 +390,16 @@ public class EntityOperatorReconciler {
         if (shouldInstallEntityOperator() && entityOperator.topicOperator() != null) {
             return MetricsAndLoggingUtils.metricsAndLogging(reconciliation, configMapOperator, entityOperator.topicOperator().logging(), null)
                     .compose(logging ->
-                            configMapOperator.reconcile(
+                            VertxUtil.toFuture(configMapOperator.reconcile(
                                     reconciliation,
                                     reconciliation.namespace(),
                                     KafkaResources.entityTopicOperatorLoggingConfigMapName(reconciliation.name()),
                                     entityOperator.topicOperator().generateMetricsAndLogConfigMap(logging)
-                            )
+                            ))
                     ).mapEmpty();
         } else {
-            return configMapOperator
-                    .reconcile(reconciliation, reconciliation.namespace(), KafkaResources.entityTopicOperatorLoggingConfigMapName(reconciliation.name()), null)
+            return VertxUtil.toFuture(configMapOperator
+                    .reconcile(reconciliation, reconciliation.namespace(), KafkaResources.entityTopicOperatorLoggingConfigMapName(reconciliation.name()), null))
                     .mapEmpty();
         }
     }
@@ -413,16 +414,16 @@ public class EntityOperatorReconciler {
         if (shouldInstallEntityOperator() && entityOperator.userOperator() != null) {
             return MetricsAndLoggingUtils.metricsAndLogging(reconciliation, configMapOperator, entityOperator.userOperator().logging(), null)
                     .compose(logging ->
-                            configMapOperator.reconcile(
+                            VertxUtil.toFuture(configMapOperator.reconcile(
                                     reconciliation,
                                     reconciliation.namespace(),
                                     KafkaResources.entityUserOperatorLoggingConfigMapName(reconciliation.name()),
                                     entityOperator.userOperator().generateMetricsAndLogConfigMap(logging)
-                            )
+                            ))
                     ).mapEmpty();
         } else {
-            return configMapOperator
-                    .reconcile(reconciliation, reconciliation.namespace(), KafkaResources.entityUserOperatorLoggingConfigMapName(reconciliation.name()), null)
+            return VertxUtil.toFuture(configMapOperator
+                    .reconcile(reconciliation, reconciliation.namespace(), KafkaResources.entityUserOperatorLoggingConfigMapName(reconciliation.name()), null))
                     .mapEmpty();
         }
     }
@@ -437,12 +438,12 @@ public class EntityOperatorReconciler {
      */
     protected Future<Void> topicOperatorSecret(Clock clock) {
         if (shouldInstallEntityOperator() && entityOperator.topicOperator() != null) {
-            return secretOperator.getAsync(reconciliation.namespace(), KafkaResources.entityTopicOperatorSecretName(reconciliation.name()))
+            return VertxUtil.toFuture(secretOperator.getAsync(reconciliation.namespace(), KafkaResources.entityTopicOperatorSecretName(reconciliation.name())))
                     .compose(oldSecret -> {
                         Secret newSecret = entityOperator.topicOperator().generateCertificatesSecret(clusterCa, oldSecret, Util.isMaintenanceTimeWindowsSatisfied(reconciliation, maintenanceWindows, clock.instant()));
 
-                        return secretOperator
-                                .reconcile(reconciliation, reconciliation.namespace(), KafkaResources.entityTopicOperatorSecretName(reconciliation.name()), newSecret)
+                        return VertxUtil.toFuture(secretOperator
+                                .reconcile(reconciliation, reconciliation.namespace(), KafkaResources.entityTopicOperatorSecretName(reconciliation.name()), newSecret))
                                 .compose(i -> {
                                     toCertificateHash = CertUtils.getCertificateShortThumbprint(newSecret, Ca.SecretEntry.CRT.asKey(EntityOperator.COMPONENT_TYPE));
 
@@ -451,7 +452,7 @@ public class EntityOperatorReconciler {
                     })
                     .compose(i -> {
                         if (isCruiseControlEnabled) {
-                            return secretOperator.getAsync(reconciliation.namespace(), KafkaResources.entityTopicOperatorCcApiSecretName(reconciliation.name()))
+                            return VertxUtil.toFuture(secretOperator.getAsync(reconciliation.namespace(), KafkaResources.entityTopicOperatorCcApiSecretName(reconciliation.name())))
                                     .compose(secret -> {
                                         toApiSecretHash = ReconcilerUtils.hashSecretContent(secret);
                                         return Future.succeededFuture();
@@ -460,8 +461,8 @@ public class EntityOperatorReconciler {
                         return Future.succeededFuture();
                     });
         } else {
-            return secretOperator
-                    .reconcile(reconciliation, reconciliation.namespace(), KafkaResources.entityTopicOperatorSecretName(reconciliation.name()), null)
+            return VertxUtil.toFuture(secretOperator
+                    .reconcile(reconciliation, reconciliation.namespace(), KafkaResources.entityTopicOperatorSecretName(reconciliation.name()), null))
                     .mapEmpty();
         }
     }
@@ -476,12 +477,12 @@ public class EntityOperatorReconciler {
      */
     protected Future<Void> userOperatorSecret(Clock clock) {
         if (shouldInstallEntityOperator() && entityOperator.userOperator() != null) {
-            return secretOperator.getAsync(reconciliation.namespace(), KafkaResources.entityUserOperatorSecretName(reconciliation.name()))
+            return VertxUtil.toFuture(secretOperator.getAsync(reconciliation.namespace(), KafkaResources.entityUserOperatorSecretName(reconciliation.name())))
                     .compose(oldSecret -> {
                         Secret newSecret = entityOperator.userOperator().generateCertificatesSecret(clusterCa, oldSecret, Util.isMaintenanceTimeWindowsSatisfied(reconciliation, maintenanceWindows, clock.instant()));
 
-                        return secretOperator
-                                .reconcile(reconciliation, reconciliation.namespace(), KafkaResources.entityUserOperatorSecretName(reconciliation.name()), newSecret)
+                        return VertxUtil.toFuture(secretOperator
+                                .reconcile(reconciliation, reconciliation.namespace(), KafkaResources.entityUserOperatorSecretName(reconciliation.name()), newSecret))
                                 .compose(i -> {
                                     uoCertificateHash = CertUtils.getCertificateShortThumbprint(newSecret, Ca.SecretEntry.CRT.asKey(EntityOperator.COMPONENT_TYPE));
 
@@ -489,8 +490,8 @@ public class EntityOperatorReconciler {
                                 });
                     });
         } else {
-            return secretOperator
-                    .reconcile(reconciliation, reconciliation.namespace(), KafkaResources.entityUserOperatorSecretName(reconciliation.name()), null)
+            return VertxUtil.toFuture(secretOperator
+                    .reconcile(reconciliation, reconciliation.namespace(), KafkaResources.entityUserOperatorSecretName(reconciliation.name()), null))
                     .mapEmpty();
         }
     }
@@ -501,13 +502,13 @@ public class EntityOperatorReconciler {
      */
     protected Future<Void> networkPolicy() {
         if (isNetworkPolicyGeneration) {
-            return networkPolicyOperator
+            return VertxUtil.toFuture(networkPolicyOperator
                     .reconcile(
                             reconciliation,
                             reconciliation.namespace(),
                             KafkaResources.entityOperatorDeploymentName(reconciliation.name()),
                             shouldInstallEntityOperator() ? entityOperator.generateNetworkPolicy() : null
-                    ).mapEmpty();
+                    )).mapEmpty();
         } else {
             return Future.succeededFuture();
         }
@@ -519,13 +520,13 @@ public class EntityOperatorReconciler {
      */
     protected Future<Void> podDistruptionBudget() {
         if (isPodDisruptionBudgetGeneration) {
-            return podDistruptionBudgetOperator
+            return VertxUtil.toFuture(podDistruptionBudgetOperator
                     .reconcile(
                             reconciliation,
                             reconciliation.namespace(),
                             KafkaResources.entityOperatorDeploymentName(reconciliation.name()),
                             shouldInstallEntityOperator() ? entityOperator.generatePodDisruptionBudget() : null
-                    ).mapEmpty();
+                    )).mapEmpty();
         } else {
             return Future.succeededFuture();
         }
@@ -548,8 +549,8 @@ public class EntityOperatorReconciler {
 
             Deployment deployment = entityOperator.generateDeployment(podAnnotations, isOpenShift, imagePullPolicy, imagePullSecrets);
 
-            return deploymentOperator
-                    .reconcile(reconciliation, reconciliation.namespace(), KafkaResources.entityOperatorDeploymentName(reconciliation.name()), deployment)
+            return VertxUtil.toFuture(deploymentOperator
+                    .reconcile(reconciliation, reconciliation.namespace(), KafkaResources.entityOperatorDeploymentName(reconciliation.name()), deployment))
                     .mapEmpty();
         } else {
             // Log warning and fail if we're deleting due to invalid configuration
@@ -560,13 +561,13 @@ public class EntityOperatorReconciler {
 
                 LOGGER.warnCr(reconciliation, errorMessage);
 
-                return deploymentOperator
-                        .reconcile(reconciliation, reconciliation.namespace(), KafkaResources.entityOperatorDeploymentName(reconciliation.name()), null)
+                return VertxUtil.toFuture(deploymentOperator
+                        .reconcile(reconciliation, reconciliation.namespace(), KafkaResources.entityOperatorDeploymentName(reconciliation.name()), null))
                         .compose(v -> Future.failedFuture(new InvalidConfigurationException(errorMessage)));
             }
 
-            return deploymentOperator
-                    .reconcile(reconciliation, reconciliation.namespace(), KafkaResources.entityOperatorDeploymentName(reconciliation.name()), null)
+            return VertxUtil.toFuture(deploymentOperator
+                    .reconcile(reconciliation, reconciliation.namespace(), KafkaResources.entityOperatorDeploymentName(reconciliation.name()), null))
                     .mapEmpty();
         }
     }
@@ -578,8 +579,8 @@ public class EntityOperatorReconciler {
      */
     protected Future<Void> waitForDeploymentReadiness() {
         if (shouldInstallEntityOperator()) {
-            return deploymentOperator.waitForObserved(reconciliation, reconciliation.namespace(), KafkaResources.entityOperatorDeploymentName(reconciliation.name()), 1_000, operationTimeoutMs)
-                    .compose(i -> deploymentOperator.readiness(reconciliation, reconciliation.namespace(), KafkaResources.entityOperatorDeploymentName(reconciliation.name()), 1_000, operationTimeoutMs));
+            return VertxUtil.toFuture(deploymentOperator.waitForObserved(reconciliation, reconciliation.namespace(), KafkaResources.entityOperatorDeploymentName(reconciliation.name()), 1_000, operationTimeoutMs))
+                    .compose(i -> VertxUtil.toFuture(deploymentOperator.readiness(reconciliation, reconciliation.namespace(), KafkaResources.entityOperatorDeploymentName(reconciliation.name()), 1_000, operationTimeoutMs)));
         } else {
             return Future.succeededFuture();
         }

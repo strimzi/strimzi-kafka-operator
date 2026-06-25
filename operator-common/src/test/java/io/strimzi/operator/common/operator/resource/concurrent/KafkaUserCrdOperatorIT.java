@@ -12,8 +12,6 @@ import io.strimzi.test.CrdUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.util.concurrent.ForkJoinPool;
-
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -28,7 +26,7 @@ public class KafkaUserCrdOperatorIT extends AbstractCustomResourceOperatorIT<Kub
 
     @Override
     protected CrdOperator<KubernetesClient, KafkaUser, KafkaUserList> operator() {
-        return new CrdOperator<>(ForkJoinPool.commonPool(), client, KafkaUser.class, KafkaUserList.class, KafkaUser.RESOURCE_KIND);
+        return new CrdOperator<>(asyncExecutor, client, KafkaUser.class, KafkaUserList.class, KafkaUser.RESOURCE_KIND);
     }
 
     @Override

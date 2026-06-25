@@ -13,7 +13,8 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.operator.common.Reconciliation;
-import io.vertx.core.Vertx;
+import io.strimzi.operator.common.operator.resource.concurrent.AbstractNamespacedResourceOperator;
+import io.strimzi.operator.common.operator.resource.concurrent.AbstractNamespacedResourceOperatorTest;
 import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
@@ -63,18 +64,18 @@ public class PvcOperatorTest extends AbstractNamespacedResourceOperatorTest<Kube
     }
 
     @Override
-    protected void mocker(KubernetesClient mockClient, MixedOperation op) {
+    protected void mocker(KubernetesClient mockClient, MixedOperation<PersistentVolumeClaim, PersistentVolumeClaimList, Resource<PersistentVolumeClaim>> op) {
         when(mockClient.persistentVolumeClaims()).thenReturn(op);
     }
 
     @Override
-    protected AbstractNamespacedResourceOperator<KubernetesClient, PersistentVolumeClaim, PersistentVolumeClaimList, Resource<PersistentVolumeClaim>> createResourceOperations(Vertx vertx, KubernetesClient mockClient) {
-        return new PvcOperator(vertx, mockClient, false);
+    protected AbstractNamespacedResourceOperator<KubernetesClient, PersistentVolumeClaim, PersistentVolumeClaimList, Resource<PersistentVolumeClaim>> createResourceOperations(KubernetesClient mockClient) {
+        return new PvcOperator(asyncExecutor, mockClient, false);
     }
 
     @Override
-    protected PvcOperator createResourceOperations(Vertx vertx, KubernetesClient mockClient, boolean useServerSideApply) {
-        return new PvcOperator(vertx, mockClient, useServerSideApply);
+    protected PvcOperator createResourceOperations(KubernetesClient mockClient, boolean useServerSideApply) {
+        return new PvcOperator(asyncExecutor, mockClient, useServerSideApply);
     }
 
     @Test
@@ -107,7 +108,7 @@ public class PvcOperatorTest extends AbstractNamespacedResourceOperatorTest<Kube
                 .endSpec()
                 .build();
 
-        PvcOperator op = createResourceOperations(vertx, mock(KubernetesClient.class), false);
+        PvcOperator op = createResourceOperations(mock(KubernetesClient.class), false);
         op.revertImmutableChanges(current, desired);
 
         assertThat(current.getSpec().getStorageClassName(), is(desired.getSpec().getStorageClassName()));
@@ -139,7 +140,7 @@ public class PvcOperatorTest extends AbstractNamespacedResourceOperatorTest<Kube
                 .endMetadata()
                 .build();
 
-        PvcOperator op = createResourceOperations(vertx, mock(KubernetesClient.class), false);
+        PvcOperator op = createResourceOperations(mock(KubernetesClient.class), false);
 
         assertThat(op.diff(Reconciliation.DUMMY_RECONCILIATION, "my-pvc", pvcWithDefaultAnnos, pvcWithDefaultAnnos).isEmpty(), is(true));
         assertThat(op.diff(Reconciliation.DUMMY_RECONCILIATION, "my-pvc", pvcWithDefaultAnnos, pvcWithIgnoredAnnos).isEmpty(), is(true));
@@ -172,7 +173,7 @@ public class PvcOperatorTest extends AbstractNamespacedResourceOperatorTest<Kube
             .endSpec()
             .build();
 
-        PvcOperator op = createResourceOperations(vertx, mock(KubernetesClient.class), false);
+        PvcOperator op = createResourceOperations(mock(KubernetesClient.class), false);
 
         op.configureNormalizedStorageSizeIfEqual(pvcWithDefaultStorageSize, pvcWithSameSizeInMi);
         assertThat(pvcWithSameSizeInMi.getSpec().getResources().getRequests().get("storage").toString().equals("1Gi"), is(true));

@@ -14,8 +14,10 @@ import io.fabric8.openshift.client.OpenShiftClient;
 import io.fabric8.openshift.client.dsl.BuildConfigResource;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
-import io.vertx.core.Future;
-import io.vertx.core.Vertx;
+import io.strimzi.operator.common.operator.resource.concurrent.AbstractNamespacedResourceOperator;
+
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.Executor;
 
 /**
  * Operations for {@code BuildConfig}s.
@@ -23,11 +25,11 @@ import io.vertx.core.Vertx;
 public class BuildConfigOperator extends AbstractNamespacedResourceOperator<OpenShiftClient, BuildConfig, BuildConfigList, BuildConfigResource<BuildConfig, Void, Build>> {
     /**
      * Constructor
-     * @param vertx The Vertx instance
+     * @param asyncExecutor Executor to use for asynchronous subroutines
      * @param client The OpenShift client
      */
-    public BuildConfigOperator(Vertx vertx, OpenShiftClient client) {
-        super(vertx, client, "BuildConfig");
+    public BuildConfigOperator(Executor asyncExecutor, OpenShiftClient client) {
+        super(asyncExecutor, client, "BuildConfig");
     }
 
     @Override
@@ -36,7 +38,7 @@ public class BuildConfigOperator extends AbstractNamespacedResourceOperator<Open
     }
 
     @Override
-    protected Future<ReconcileResult<BuildConfig>> internalUpdate(Reconciliation reconciliation, String namespace, String name, BuildConfig current, BuildConfig desired) {
+    protected CompletionStage<ReconcileResult<BuildConfig>> internalUpdate(Reconciliation reconciliation, String namespace, String name, BuildConfig current, BuildConfig desired) {
         desired.getSpec().setTriggers(current.getSpec().getTriggers());
         // Cascading needs to be set to false in order to make sure the Builds are not deleted during reconciliation
         return super.internalUpdate(reconciliation, namespace, name, current, desired);
@@ -56,11 +58,11 @@ public class BuildConfigOperator extends AbstractNamespacedResourceOperator<Open
      * @return A future which will be completed on the context thread once the resource has been deleted.
      */
     @Override
-    protected Future<ReconcileResult<BuildConfig>> internalDelete(Reconciliation reconciliation, String namespace, String name, boolean cascading) {
+    protected CompletionStage<ReconcileResult<BuildConfig>> internalDelete(Reconciliation reconciliation, String namespace, String name, boolean cascading) {
         BuildConfigResource<BuildConfig, Void, Build> resourceOp = operation().inNamespace(namespace).withName(name);
 
         return resourceSupport.deleteAsync(resourceOp.withPropagationPolicy(cascading ? DeletionPropagation.FOREGROUND : DeletionPropagation.ORPHAN).withGracePeriod(-1L))
-                .map(ReconcileResult.deleted());
+                .thenApply(ignored -> ReconcileResult.deleted());
     }
 
     /**
@@ -71,7 +73,7 @@ public class BuildConfigOperator extends AbstractNamespacedResourceOperator<Open
      * @param buildRequest  BuildRequest requesting the build
      * @return              The Build which was created
      */
-    public Future<Build> startBuild(String namespace, String name, BuildRequest buildRequest)   {
+    public CompletionStage<Build> startBuild(String namespace, String name, BuildRequest buildRequest)   {
         return resourceSupport.executeBlocking(() -> operation().inNamespace(namespace).withName(name).instantiate(buildRequest));
     }
 }

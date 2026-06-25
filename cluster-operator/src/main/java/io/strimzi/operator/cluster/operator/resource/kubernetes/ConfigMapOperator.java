@@ -12,11 +12,13 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
-import io.vertx.core.Future;
-import io.vertx.core.Vertx;
+import io.strimzi.operator.common.operator.resource.concurrent.AbstractNamespacedResourceOperator;
 
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.Executor;
 
 /**
  * Operations for {@code ConfigMap}s.
@@ -28,12 +30,12 @@ public class ConfigMapOperator extends AbstractNamespacedResourceOperator<Kubern
     /**
      * Constructor
      *
-     * @param vertx                 The Vertx instance
+     * @param asyncExecutor         Executor to use for asynchronous subroutines
      * @param client                The Kubernetes client
      * @param useServerSideApply    Determines if Server Side Apply should be used
      */
-    public ConfigMapOperator(Vertx vertx, KubernetesClient client, boolean useServerSideApply) {
-        super(vertx, client, "ConfigMap", useServerSideApply);
+    public ConfigMapOperator(Executor asyncExecutor, KubernetesClient client, boolean useServerSideApply) {
+        super(asyncExecutor, client, "ConfigMap", useServerSideApply);
     }
 
     @Override
@@ -42,7 +44,7 @@ public class ConfigMapOperator extends AbstractNamespacedResourceOperator<Kubern
     }
 
     @Override
-    protected Future<ReconcileResult<ConfigMap>> internalUpdate(Reconciliation reconciliation, String namespace, String name, ConfigMap current, ConfigMap desired) {
+    protected CompletionStage<ReconcileResult<ConfigMap>> internalUpdate(Reconciliation reconciliation, String namespace, String name, ConfigMap current, ConfigMap desired) {
         try {
             if (compareObjects(current.getData(), desired.getData())
                     && compareObjects(current.getMetadata().getName(), desired.getMetadata().getName())
@@ -52,13 +54,13 @@ public class ConfigMapOperator extends AbstractNamespacedResourceOperator<Kubern
                 // Checking some metadata. We cannot check entire metadata object because it contains
                 // timestamps which would cause restarting loop
                 LOGGER.debugCr(reconciliation, "{} {} in namespace {} has not been patched because resources are equal", resourceKind, name, namespace);
-                return Future.succeededFuture(ReconcileResult.noop(current));
+                return CompletableFuture.completedFuture(ReconcileResult.noop(current));
             } else {
                 return super.internalUpdate(reconciliation, namespace, name, current, desired);
             }
         } catch (Exception e) {
             LOGGER.errorCr(reconciliation, "Caught exception while patching {} {} in namespace {}", resourceKind, name, namespace, e);
-            return Future.failedFuture(e);
+            return CompletableFuture.failedFuture(e);
         }
     }
 

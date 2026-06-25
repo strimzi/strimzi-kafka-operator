@@ -8,12 +8,11 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.model.connect.KafkaConnect;
 import io.strimzi.api.kafka.model.connect.KafkaConnectBuilder;
 import io.strimzi.api.kafka.model.connect.KafkaConnectList;
+import io.strimzi.operator.common.operator.resource.concurrent.AbstractCustomResourceOperatorIT;
+import io.strimzi.operator.common.operator.resource.concurrent.CrdOperator;
 import io.strimzi.test.CrdUtils;
-import io.vertx.junit5.VertxExtension;
-import io.vertx.junit5.VertxTestContext;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.jupiter.api.extension.ExtendWith;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -24,13 +23,12 @@ import static org.hamcrest.MatcherAssert.assertThat;
  * being created by the Kubernetes API etc. These things are hard to test with mocks. These IT tests make it easy to
  * test them against real clusters.
  */
-@ExtendWith(VertxExtension.class)
 public class KafkaConnectCrdOperatorIT extends AbstractCustomResourceOperatorIT<KubernetesClient, KafkaConnect, KafkaConnectList> {
     protected static final Logger LOGGER = LogManager.getLogger(KafkaConnectCrdOperatorIT.class);
 
     @Override
-    protected CrdOperator operator() {
-        return new CrdOperator(vertx, client, KafkaConnect.class, KafkaConnectList.class, KafkaConnect.RESOURCE_KIND);
+    protected CrdOperator<KubernetesClient, KafkaConnect, KafkaConnectList> operator() {
+        return new CrdOperator<>(asyncExecutor, client, KafkaConnect.class, KafkaConnectList.class, KafkaConnect.RESOURCE_KIND);
     }
 
     @Override
@@ -88,9 +86,9 @@ public class KafkaConnectCrdOperatorIT extends AbstractCustomResourceOperatorIT<
     }
 
     @Override
-    protected void assertReady(VertxTestContext context, KafkaConnect resource) {
-        context.verify(() -> assertThat(resource.getStatus()
+    protected void assertReady(KafkaConnect resource) {
+        assertThat(resource.getStatus()
                 .getConditions()
-                .get(0), is(READY_CONDITION)));
+                .get(0), is(READY_CONDITION));
     }
 }

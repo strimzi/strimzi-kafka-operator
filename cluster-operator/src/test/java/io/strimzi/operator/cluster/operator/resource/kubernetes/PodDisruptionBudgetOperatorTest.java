@@ -12,7 +12,8 @@ import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.PolicyAPIGroupDSL;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.V1PolicyAPIGroupDSL;
-import io.vertx.core.Vertx;
+import io.strimzi.operator.common.operator.resource.concurrent.AbstractNamespacedResourceOperator;
+import io.strimzi.operator.common.operator.resource.concurrent.AbstractNamespacedResourceOperatorTest;
 
 import static java.util.Collections.singletonMap;
 import static org.mockito.Mockito.mock;
@@ -21,7 +22,7 @@ import static org.mockito.Mockito.when;
 public class PodDisruptionBudgetOperatorTest extends AbstractNamespacedResourceOperatorTest<KubernetesClient, PodDisruptionBudget, PodDisruptionBudgetList, Resource<PodDisruptionBudget>> {
 
     @Override
-    protected void  mocker(KubernetesClient mockClient, MixedOperation op) {
+    protected void  mocker(KubernetesClient mockClient, MixedOperation<PodDisruptionBudget, PodDisruptionBudgetList, Resource<PodDisruptionBudget>> op) {
         PolicyAPIGroupDSL mockPolicy = mock(PolicyAPIGroupDSL.class);
         V1PolicyAPIGroupDSL mockV1 = mock(V1PolicyAPIGroupDSL.class);
         when(mockPolicy.v1()).thenReturn(mockV1);
@@ -30,8 +31,8 @@ public class PodDisruptionBudgetOperatorTest extends AbstractNamespacedResourceO
     }
 
     @Override
-    protected AbstractNamespacedResourceOperator<KubernetesClient, PodDisruptionBudget, PodDisruptionBudgetList, Resource<PodDisruptionBudget>> createResourceOperations(Vertx vertx, KubernetesClient mockClient) {
-        return new PodDisruptionBudgetOperator(vertx, mockClient);
+    protected AbstractNamespacedResourceOperator<KubernetesClient, PodDisruptionBudget, PodDisruptionBudgetList, Resource<PodDisruptionBudget>> createResourceOperations(KubernetesClient mockClient) {
+        return new PodDisruptionBudgetOperator(asyncExecutor, mockClient);
     }
 
     @Override

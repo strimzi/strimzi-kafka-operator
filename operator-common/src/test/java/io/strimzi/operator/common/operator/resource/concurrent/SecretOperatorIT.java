@@ -15,9 +15,8 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 public class SecretOperatorIT extends AbstractNamespacedResourceOperatorIT<KubernetesClient, Secret, SecretList, Resource<Secret>> {
-
     @Override
-    Secret getOriginal() {
+    public Secret getOriginal() {
         return new SecretBuilder()
                 .withNewMetadata()
                     .withName(resourceName)
@@ -29,7 +28,7 @@ public class SecretOperatorIT extends AbstractNamespacedResourceOperatorIT<Kuber
     }
 
     @Override
-    Secret getModified() {
+    public Secret getModified() {
         return new SecretBuilder()
                 .withNewMetadata()
                     .withName(resourceName)
@@ -41,13 +40,13 @@ public class SecretOperatorIT extends AbstractNamespacedResourceOperatorIT<Kuber
     }
 
     @Override
-    void assertResources(Secret expected, Secret actual) {
+    public void assertResources(Secret expected, Secret actual) {
         assertThat(actual.getMetadata().getLabels(), is(expected.getMetadata().getLabels()));
         assertThat(actual.getData(), is(expected.getData()));
     }
 
     @Override
-    AbstractNamespacedResourceOperator<KubernetesClient, Secret, SecretList, Resource<Secret>> operator() {
+    public AbstractNamespacedResourceOperator<KubernetesClient, Secret, SecretList, Resource<Secret>> operator() {
         return new SecretOperator(asyncExecutor, client);
     }
 }

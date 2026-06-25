@@ -11,10 +11,11 @@ import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.ServiceAccountResource;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
-import io.vertx.core.Future;
-import io.vertx.core.Vertx;
+import io.strimzi.operator.common.operator.resource.concurrent.AbstractNamespacedResourceOperator;
 
 import java.util.Map;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.Executor;
 
 /**
  * Operator for managing Service Accounts
@@ -24,12 +25,12 @@ public class ServiceAccountOperator extends AbstractNamespacedResourceOperator<K
 
     /**
      * Constructor
-     * @param vertx                 The Vertx instance
+     * @param asyncExecutor         Executor to use for asynchronous subroutines
      * @param client                The Kubernetes client
      * @param useServerSideApply    Determines if Server Side Apply should be used
      */
-    public ServiceAccountOperator(Vertx vertx, KubernetesClient client, boolean useServerSideApply) {
-        super(vertx, client, "ServiceAccount", useServerSideApply);
+    public ServiceAccountOperator(Executor asyncExecutor, KubernetesClient client, boolean useServerSideApply) {
+        super(asyncExecutor, client, "ServiceAccount", useServerSideApply);
     }
 
     @Override
@@ -38,7 +39,7 @@ public class ServiceAccountOperator extends AbstractNamespacedResourceOperator<K
     }
 
     @Override
-    protected Future<ReconcileResult<ServiceAccount>> internalUpdate(Reconciliation reconciliation, String namespace, String name, ServiceAccount current, ServiceAccount desired) {
+    protected CompletionStage<ReconcileResult<ServiceAccount>> internalUpdate(Reconciliation reconciliation, String namespace, String name, ServiceAccount current, ServiceAccount desired) {
         if (desired.getSecrets() == null || desired.getSecrets().isEmpty())    {
             desired.setSecrets(current.getSecrets());
         }

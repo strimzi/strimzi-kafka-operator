@@ -11,7 +11,8 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.RbacAPIGroupDSL;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.vertx.core.Vertx;
+import io.strimzi.operator.common.operator.resource.concurrent.AbstractNonNamespacedResourceOperator;
+import io.strimzi.operator.common.operator.resource.concurrent.AbstractNonNamespacedResourceOperatorTest;
 
 import static java.util.Collections.singletonMap;
 import static org.mockito.Mockito.mock;
@@ -30,8 +31,8 @@ public class ClusterRoleBindingOperatorTest extends AbstractNonNamespacedResourc
     @Override
     protected AbstractNonNamespacedResourceOperator<KubernetesClient, ClusterRoleBinding, ClusterRoleBindingList,
             Resource<ClusterRoleBinding>> createResourceOperations(
-                    Vertx vertx, KubernetesClient mockClient) {
-        return new ClusterRoleBindingOperator(vertx, mockClient) {
+                    KubernetesClient mockClient) {
+        return new ClusterRoleBindingOperator(asyncExecutor, mockClient) {
             @Override
             protected long deleteTimeoutMs() {
                 return 100;

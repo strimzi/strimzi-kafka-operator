@@ -34,7 +34,6 @@ import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.PodRevision;
 import io.strimzi.operator.cluster.model.PodSetUtils;
-import io.strimzi.operator.cluster.operator.resource.kubernetes.CrdOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.PodOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.StrimziPodSetOperator;
 import io.strimzi.operator.common.Annotations;
@@ -42,6 +41,7 @@ import io.strimzi.operator.common.MetricsProvider;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.metrics.MetricsHolder;
 import io.strimzi.operator.common.model.Labels;
+import io.strimzi.operator.common.operator.resource.concurrent.CrdOperator;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.mockkube3.MockKube3;
 import io.vertx.core.Vertx;
@@ -60,6 +60,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -120,11 +121,11 @@ public class StrimziPodSetControllerMockTest {
 
         vertx = Vertx.vertx();
         sharedWorkerExecutor = vertx.createSharedWorkerExecutor("kubernetes-ops-pool");
-        kafkaOperator = new CrdOperator<>(vertx, client, Kafka.class, KafkaList.class, Kafka.RESOURCE_KIND);
-        kafkaConnectOperator = new CrdOperator<>(vertx, client, KafkaConnect.class, KafkaConnectList.class, KafkaConnect.RESOURCE_KIND);
-        kafkaMirrorMaker2Operator = new CrdOperator<>(vertx, client, KafkaMirrorMaker2.class, KafkaMirrorMaker2List.class, KafkaMirrorMaker2.RESOURCE_KIND);
-        podSetOperator = new StrimziPodSetOperator(vertx, client);
-        podOperator = new PodOperator(vertx, client);
+        kafkaOperator = new CrdOperator<>(ForkJoinPool.commonPool(), client, Kafka.class, KafkaList.class, Kafka.RESOURCE_KIND);
+        kafkaConnectOperator = new CrdOperator<>(ForkJoinPool.commonPool(), client, KafkaConnect.class, KafkaConnectList.class, KafkaConnect.RESOURCE_KIND);
+        kafkaMirrorMaker2Operator = new CrdOperator<>(ForkJoinPool.commonPool(), client, KafkaMirrorMaker2.class, KafkaMirrorMaker2List.class, KafkaMirrorMaker2.RESOURCE_KIND);
+        podSetOperator = new StrimziPodSetOperator(ForkJoinPool.commonPool(), client);
+        podOperator = new PodOperator(ForkJoinPool.commonPool(), client);
         metricsProvider = ResourceUtils.metricsProvider();
 
         kafkaOp().inNamespace(namespace).resource(kafka(namespace, KAFKA_NAME, MATCHING_LABELS)).create();

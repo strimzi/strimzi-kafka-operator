@@ -18,6 +18,7 @@ import io.strimzi.operator.cluster.model.ImagePullPolicy;
 import io.strimzi.operator.cluster.model.KafkaConnectBuild;
 import io.strimzi.operator.cluster.model.KafkaConnectBuildUtils;
 import io.strimzi.operator.cluster.model.KafkaConnectDockerfile;
+import io.strimzi.operator.cluster.operator.VertxUtil;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.BuildConfigOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.BuildOperator;
@@ -90,10 +91,10 @@ public class ConnectBuildOperator {
     public Future<BuildInfo> reconcile(Reconciliation reconciliation, String namespace, HasMetadata controllerResource, KafkaConnectBuild connectBuild) {
         if (connectBuild.getBuild() == null) {
             // Build is not configured => we should delete resources
-            return configMapOperations.reconcile(reconciliation, namespace, KafkaConnectResources.dockerFileConfigMapName(connectBuild.getCluster()), null)
-                    .compose(ignore -> podOperator.reconcile(reconciliation, namespace, KafkaConnectResources.buildPodName(connectBuild.getCluster()), null))
-                    .compose(ignore -> serviceAccountOperations.reconcile(reconciliation, namespace, KafkaConnectResources.buildServiceAccountName(connectBuild.getCluster()), null))
-                    .compose(ignore -> pfa.supportsS2I() ? buildConfigOperator.reconcile(reconciliation, namespace, KafkaConnectResources.buildConfigName(connectBuild.getCluster()), null) : Future.succeededFuture())
+            return VertxUtil.toFuture(configMapOperations.reconcile(reconciliation, namespace, KafkaConnectResources.dockerFileConfigMapName(connectBuild.getCluster()), null))
+                    .compose(ignore -> VertxUtil.toFuture(podOperator.reconcile(reconciliation, namespace, KafkaConnectResources.buildPodName(connectBuild.getCluster()), null)))
+                    .compose(ignore -> VertxUtil.toFuture(serviceAccountOperations.reconcile(reconciliation, namespace, KafkaConnectResources.buildServiceAccountName(connectBuild.getCluster()), null)))
+                    .compose(ignore -> pfa.supportsS2I() ? VertxUtil.toFuture(buildConfigOperator.reconcile(reconciliation, namespace, KafkaConnectResources.buildConfigName(connectBuild.getCluster()), null)) : Future.succeededFuture())
                     .map(i -> null);
         } else {
             // Build exists => let's build
@@ -160,7 +161,7 @@ public class ConnectBuildOperator {
         final AtomicReference<String> buildImage = new AtomicReference<>();
         String buildPodName = KafkaConnectResources.buildPodName(connectBuild.getCluster());
 
-        return podOperator.getAsync(namespace, buildPodName)
+        return VertxUtil.toFuture(podOperator.getAsync(namespace, buildPodName))
                 .compose(pod -> {
                     if (pod != null)    {
                         String existingBuildRevision = Annotations.stringAnnotation(pod, Annotations.STRIMZI_IO_CONNECT_BUILD_REVISION, null);
@@ -174,7 +175,7 @@ public class ConnectBuildOperator {
                         } else {
                             // Pod exists, but it either failed or is for different Dockerfile => start new build
                             LOGGER.infoCr(reconciliation, "Previous build exists, but uses different Dockerfile or failed. New build will be started.");
-                            return podOperator.reconcile(reconciliation, namespace, buildPodName, null)
+                            return VertxUtil.toFuture(podOperator.reconcile(reconciliation, namespace, buildPodName, null))
                                     .compose(ignore -> kubernetesBuildStart(reconciliation, namespace, connectBuild, dockerFileConfigMap, newBuildRevision));
                         }
                     } else {
@@ -185,9 +186,9 @@ public class ConnectBuildOperator {
                 .compose(ignore -> kubernetesBuildWaitForFinish(reconciliation, namespace, connectBuild))
                 .compose(image -> {
                     buildImage.set(image);
-                    return podOperator.reconcile(reconciliation, namespace, buildPodName, null);
+                    return VertxUtil.toFuture(podOperator.reconcile(reconciliation, namespace, buildPodName, null));
                 })
-                .compose(ignore -> pfa.supportsS2I() ? buildConfigOperator.reconcile(reconciliation, namespace, KafkaConnectResources.buildConfigName(connectBuild.getCluster()), null) : Future.succeededFuture())
+                .compose(ignore -> pfa.supportsS2I() ? VertxUtil.toFuture(buildConfigOperator.reconcile(reconciliation, namespace, KafkaConnectResources.buildConfigName(connectBuild.getCluster()), null)) : Future.succeededFuture())
                 .map(ignore -> buildImage.get());
     }
 
@@ -204,9 +205,9 @@ public class ConnectBuildOperator {
      * @return                      Future which completes when the build is finished (or fails if it fails)
      */
     private Future<Void> kubernetesBuildStart(Reconciliation reconciliation, String namespace, KafkaConnectBuild connectBuild, ConfigMap dockerFileConfigMap, String newBuildRevision) {
-        return configMapOperations.reconcile(reconciliation, namespace, KafkaConnectResources.dockerFileConfigMapName(connectBuild.getCluster()), dockerFileConfigMap)
-                .compose(ignore -> serviceAccountOperations.reconcile(reconciliation, namespace, KafkaConnectResources.buildServiceAccountName(connectBuild.getCluster()), connectBuild.generateServiceAccount()))
-                .compose(ignore -> podOperator.reconcile(reconciliation, namespace, KafkaConnectResources.buildPodName(connectBuild.getCluster()), connectBuild.generateBuilderPod(pfa.isOpenshift(), useConnectBuildWithBuildah, imagePullPolicy, imagePullSecrets, newBuildRevision)))
+        return VertxUtil.toFuture(configMapOperations.reconcile(reconciliation, namespace, KafkaConnectResources.dockerFileConfigMapName(connectBuild.getCluster()), dockerFileConfigMap))
+                .compose(ignore -> VertxUtil.toFuture(serviceAccountOperations.reconcile(reconciliation, namespace, KafkaConnectResources.buildServiceAccountName(connectBuild.getCluster()), connectBuild.generateServiceAccount())))
+                .compose(ignore -> VertxUtil.toFuture(podOperator.reconcile(reconciliation, namespace, KafkaConnectResources.buildPodName(connectBuild.getCluster()), connectBuild.generateBuilderPod(pfa.isOpenshift(), useConnectBuildWithBuildah, imagePullPolicy, imagePullSecrets, newBuildRevision))))
                 .mapEmpty();
     }
 
@@ -236,8 +237,8 @@ public class ConnectBuildOperator {
         String buildPodName = KafkaConnectResources.buildPodName(connectBuild.getCluster());
         String containerName = KafkaConnectBuildUtils.getBuildContainerName(connectBuild.getCluster(), pfa.isOpenshift());
 
-        return podOperator.waitFor(reconciliation, namespace, buildPodName, "complete", 1_000, connectBuildTimeoutMs, (ignore1, ignore2) -> kubernetesBuildPodFinished(namespace, buildPodName, containerName))
-                .compose(ignore -> podOperator.getAsync(namespace, buildPodName))
+        return VertxUtil.toFuture(podOperator.waitFor(reconciliation, namespace, buildPodName, "complete", 1_000, connectBuildTimeoutMs, (ignore1, ignore2) -> kubernetesBuildPodFinished(namespace, buildPodName, containerName)))
+                .compose(ignore -> VertxUtil.toFuture(podOperator.getAsync(namespace, buildPodName)))
                 .compose(pod -> {
                     if (KafkaConnectBuildUtils.buildPodSucceeded(pod, containerName)) {
                         ContainerStateTerminated state = KafkaConnectBuildUtils.getConnectBuildContainerStateTerminated(pod, containerName);
@@ -269,13 +270,13 @@ public class ConnectBuildOperator {
      */
     private Future<String> openShiftBuild(Reconciliation reconciliation, String namespace, KafkaConnectBuild connectBuild, boolean forceRebuild, KafkaConnectDockerfile dockerfile, String newBuildRevision) {
         final AtomicReference<String> buildImage = new AtomicReference<>();
-        return buildConfigOperator.getAsync(namespace, KafkaConnectResources.buildConfigName(connectBuild.getCluster()))
+        return VertxUtil.toFuture(buildConfigOperator.getAsync(namespace, KafkaConnectResources.buildConfigName(connectBuild.getCluster())))
                 .compose(buildConfig -> {
                     if (buildConfig != null
                             && buildConfig.getStatus() != null
                             && buildConfig.getStatus().getLastVersion() != null) {
                         Long lastVersion = buildConfig.getStatus().getLastVersion();
-                        return buildOperator.getAsync(namespace, KafkaConnectResources.buildName(connectBuild.getCluster(), lastVersion));
+                        return VertxUtil.toFuture(buildOperator.getAsync(namespace, KafkaConnectResources.buildName(connectBuild.getCluster(), lastVersion)));
                     } else {
                         return Future.succeededFuture();
                     }
@@ -301,7 +302,7 @@ public class ConnectBuildOperator {
                 .compose(buildName -> openShiftBuildWaitForFinish(reconciliation, namespace, buildName))
                 .compose(image -> {
                     buildImage.set(image);
-                    return podOperator.reconcile(reconciliation, namespace, KafkaConnectResources.buildPodName(connectBuild.getCluster()), null);
+                    return VertxUtil.toFuture(podOperator.reconcile(reconciliation, namespace, KafkaConnectResources.buildPodName(connectBuild.getCluster()), null));
                 }).map(ignore -> buildImage.get());
     }
 
@@ -318,9 +319,9 @@ public class ConnectBuildOperator {
      */
     private Future<String> openShiftBuildStart(Reconciliation reconciliation, String namespace, KafkaConnectBuild connectBuild, KafkaConnectDockerfile dockerfile, String newBuildRevision) {
         return validateImageStream(namespace, connectBuild.getBuild().getOutput())
-                .compose(ignore -> configMapOperations.reconcile(reconciliation, namespace, KafkaConnectResources.dockerFileConfigMapName(connectBuild.getCluster()), null))
-                .compose(ignore -> buildConfigOperator.reconcile(reconciliation, namespace, KafkaConnectResources.buildConfigName(connectBuild.getCluster()), connectBuild.generateBuildConfig(dockerfile)))
-                .compose(ignore -> buildConfigOperator.startBuild(namespace, KafkaConnectResources.buildConfigName(connectBuild.getCluster()), connectBuild.generateBuildRequest(newBuildRevision)))
+                .compose(ignore -> VertxUtil.toFuture(configMapOperations.reconcile(reconciliation, namespace, KafkaConnectResources.dockerFileConfigMapName(connectBuild.getCluster()), null)))
+                .compose(ignore -> VertxUtil.toFuture(buildConfigOperator.reconcile(reconciliation, namespace, KafkaConnectResources.buildConfigName(connectBuild.getCluster()), connectBuild.generateBuildConfig(dockerfile))))
+                .compose(ignore -> VertxUtil.toFuture(buildConfigOperator.startBuild(namespace, KafkaConnectResources.buildConfigName(connectBuild.getCluster()), connectBuild.generateBuildRequest(newBuildRevision))))
                 .map(build -> build.getMetadata().getName());
     }
 
@@ -334,7 +335,7 @@ public class ConnectBuildOperator {
     public Future<Void> validateImageStream(String namespace, Output buildOutput)   {
         if (buildOutput != null && buildOutput.getType().equals(Output.TYPE_IMAGESTREAM)) {
             String imageName = buildOutput.getImage().split(":")[0];
-            return imageStreamOperations.getAsync(namespace, imageName)
+            return VertxUtil.toFuture(imageStreamOperations.getAsync(namespace, imageName))
                 .compose(is -> {
                     if (is == null) {
                         return Future.failedFuture(new InvalidConfigurationException(String.format("The build can't start because there is no image stream with name %s", imageName)));
@@ -369,8 +370,8 @@ public class ConnectBuildOperator {
      * @return                      Future which completes with the built image when the build is finished (or fails if it fails)
      */
     private Future<String> openShiftBuildWaitForFinish(Reconciliation reconciliation, String namespace, String buildName)   {
-        return buildOperator.waitFor(reconciliation, namespace, buildName, "complete", 1_000, connectBuildTimeoutMs, (ignore1, ignore2) -> openShiftBuildFinished(namespace, buildName))
-                .compose(ignore -> buildOperator.getAsync(namespace, buildName))
+        return VertxUtil.toFuture(buildOperator.waitFor(reconciliation, namespace, buildName, "complete", 1_000, connectBuildTimeoutMs, (ignore1, ignore2) -> openShiftBuildFinished(namespace, buildName)))
+                .compose(ignore -> VertxUtil.toFuture(buildOperator.getAsync(namespace, buildName)))
                 .compose(build -> {
                     if (KafkaConnectBuildUtils.buildSucceeded(build))   {
                         // Build completed successfully. Let's extract the new image

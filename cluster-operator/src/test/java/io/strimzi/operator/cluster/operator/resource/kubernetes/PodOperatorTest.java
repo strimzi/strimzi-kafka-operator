@@ -12,8 +12,10 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.PodResource;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.vertx.core.Vertx;
+import io.strimzi.operator.common.operator.resource.concurrent.AbstractReadyResourceOperatorTest;
 import org.junit.jupiter.api.Test;
+
+import java.util.concurrent.ForkJoinPool;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -55,29 +57,27 @@ public class PodOperatorTest extends
     }
 
     @Override
-    protected void mocker(KubernetesClient client, MixedOperation op) {
+    protected void mocker(KubernetesClient client, MixedOperation<Pod, PodList, PodResource> op) {
         when(client.pods()).thenReturn(op);
     }
 
     @Override
-    protected PodOperator createResourceOperations(Vertx vertx, KubernetesClient mockClient) {
-        return new PodOperator(vertx, mockClient);
+    protected PodOperator createResourceOperations(KubernetesClient mockClient) {
+        return new PodOperator(asyncExecutor, mockClient);
     }
 
     @Test
     void testDeletionPropagationWithoutBackgroundDeletion() {
-        Vertx vertx = mock(Vertx.class);
         KubernetesClient client = mock(KubernetesClient.class);
-        PodOperator podOperator = new PodOperator(vertx, client);
+        PodOperator podOperator = new PodOperator(ForkJoinPool.commonPool(), client);
         assertThat(podOperator.determineDeletionPropagation(true), is(DeletionPropagation.FOREGROUND));
         assertThat(podOperator.determineDeletionPropagation(false), is(DeletionPropagation.ORPHAN));
     }
 
     @Test
     void testDeletionPropagationWithBackgroundDeletion() {
-        Vertx vertx = mock(Vertx.class);
         KubernetesClient client = mock(KubernetesClient.class);
-        PodOperator podOperator = new PodOperator(vertx, client, true);
+        PodOperator podOperator = new PodOperator(ForkJoinPool.commonPool(), client, true);
         assertThat(podOperator.determineDeletionPropagation(true), is(DeletionPropagation.BACKGROUND));
         assertThat(podOperator.determineDeletionPropagation(false), is(DeletionPropagation.ORPHAN));
     }

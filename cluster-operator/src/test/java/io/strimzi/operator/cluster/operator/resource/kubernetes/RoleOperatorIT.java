@@ -11,32 +11,29 @@ import io.fabric8.kubernetes.api.model.rbac.RoleBuilder;
 import io.fabric8.kubernetes.api.model.rbac.RoleList;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.vertx.junit5.VertxExtension;
-import io.vertx.junit5.VertxTestContext;
-import org.junit.jupiter.api.extension.ExtendWith;
+import io.strimzi.operator.common.operator.resource.concurrent.AbstractNamespacedResourceOperator;
+import io.strimzi.operator.common.operator.resource.concurrent.AbstractNamespacedResourceOperatorIT;
 
 import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-@ExtendWith(VertxExtension.class)
 public class RoleOperatorIT extends AbstractNamespacedResourceOperatorIT<
         KubernetesClient,
         Role,
         RoleList,
         Resource<Role>> {
-
     @Override
-    protected AbstractNamespacedResourceOperator<
+    public AbstractNamespacedResourceOperator<
                 KubernetesClient,
                 Role,
                 RoleList,
                 Resource<Role>> operator() {
-        return new RoleOperator(vertx, client);
+        return new RoleOperator(asyncExecutor, client);
     }
 
     @Override
-    protected Role getOriginal()  {
+    public Role getOriginal()  {
         PolicyRule rule = new PolicyRuleBuilder()
                 .withApiGroups("")
                 .withResources("pods")
@@ -54,7 +51,7 @@ public class RoleOperatorIT extends AbstractNamespacedResourceOperatorIT<
     }
 
     @Override
-    protected Role getModified()  {
+    public Role getModified()  {
         PolicyRule rule = new PolicyRuleBuilder()
                 .withApiGroups("")
                 .withResources("pods")
@@ -72,13 +69,13 @@ public class RoleOperatorIT extends AbstractNamespacedResourceOperatorIT<
     }
 
     @Override
-    protected void assertResources(VertxTestContext context, Role expected, Role actual)   {
-        context.verify(() -> assertThat(actual.getMetadata().getName(), is(expected.getMetadata().getName())));
-        context.verify(() -> assertThat(actual.getMetadata().getNamespace(), is(expected.getMetadata().getNamespace())));
-        context.verify(() -> assertThat(actual.getMetadata().getLabels(), is(expected.getMetadata().getLabels())));
-        context.verify(() -> assertThat(actual.getRules().size(), is(expected.getRules().size())));
-        context.verify(() -> assertThat(actual.getRules().get(0).getApiGroups(), is(expected.getRules().get(0).getApiGroups())));
-        context.verify(() -> assertThat(actual.getRules().get(0).getResources(), is(expected.getRules().get(0).getResources())));
-        context.verify(() -> assertThat(actual.getRules().get(0).getVerbs(), is(expected.getRules().get(0).getVerbs())));
+    public void assertResources(Role expected, Role actual)   {
+        assertThat(actual.getMetadata().getName(), is(expected.getMetadata().getName()));
+        assertThat(actual.getMetadata().getNamespace(), is(expected.getMetadata().getNamespace()));
+        assertThat(actual.getMetadata().getLabels(), is(expected.getMetadata().getLabels()));
+        assertThat(actual.getRules().size(), is(expected.getRules().size()));
+        assertThat(actual.getRules().get(0).getApiGroups(), is(expected.getRules().get(0).getApiGroups()));
+        assertThat(actual.getRules().get(0).getResources(), is(expected.getRules().get(0).getResources()));
+        assertThat(actual.getRules().get(0).getVerbs(), is(expected.getRules().get(0).getVerbs()));
     }
 }

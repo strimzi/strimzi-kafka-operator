@@ -68,6 +68,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 import static io.strimzi.operator.common.model.Ca.CA_CRT;
@@ -166,10 +167,10 @@ public class CaReconcilerReconcileCasTest {
                 return labels.equals(requiredLabels);
             }).collect(Collectors.toList());
 
-            return Future.succeededFuture(listedSecrets);
+            return CompletableFuture.completedFuture(listedSecrets);
         });
 
-        when(secretOps.reconcile(any(), eq(NAMESPACE), any(), any())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(0))));
+        when(secretOps.reconcile(any(), eq(NAMESPACE), any(), any())).thenAnswer(i -> CompletableFuture.completedFuture(ReconcileResult.created(i.getArgument(0))));
 
         Reconciliation reconciliation = new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, NAME);
 

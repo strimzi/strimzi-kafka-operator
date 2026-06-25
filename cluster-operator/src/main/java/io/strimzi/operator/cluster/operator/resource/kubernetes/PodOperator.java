@@ -13,9 +13,10 @@ import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.PodResource;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
-import io.vertx.core.Future;
-import io.vertx.core.Promise;
-import io.vertx.core.Vertx;
+import io.strimzi.operator.common.operator.resource.concurrent.AbstractReadyNamespacedResourceOperator;
+
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.Executor;
 
 /**
  * Operations for {@code Pod}s, which support {@link #isReady(String, String)}.
@@ -29,21 +30,21 @@ public class PodOperator extends AbstractReadyNamespacedResourceOperator<Kuberne
 
     /**
      * Constructor
-     * @param vertx The Vertx instance
+     * @param asyncExecutor Executor to use for asynchronous subroutines
      * @param client The Kubernetes client
      */
-    public PodOperator(Vertx vertx, KubernetesClient client) {
-        this(vertx, client, false);
+    public PodOperator(Executor asyncExecutor, KubernetesClient client) {
+        this(asyncExecutor, client, false);
     }
 
     /**
      * Constructor
-     * @param vertx                 The Vertx instance
+     * @param asyncExecutor         Executor to use for asynchronous subroutines
      * @param client                The Kubernetes client
      * @param useBackgroundDeletion Whether to use background deletion propagation when cascading deletion is enabled
      */
-    public PodOperator(Vertx vertx, KubernetesClient client, boolean useBackgroundDeletion) {
-        super(vertx, client, "Pods");
+    public PodOperator(Executor asyncExecutor, KubernetesClient client, boolean useBackgroundDeletion) {
+        super(asyncExecutor, client, "Pods");
         this.cascadingDeletionPropagation = useBackgroundDeletion ? DeletionPropagation.BACKGROUND : DeletionPropagation.FOREGROUND;
     }
 
@@ -65,11 +66,10 @@ public class PodOperator extends AbstractReadyNamespacedResourceOperator<Kuberne
      * @param timeoutMs Timeout of the deletion
      * @return a Future which completes when the Pod has been recreated
      */
-    public Future<Void> restart(Reconciliation reconciliation, Pod pod, long timeoutMs) {
+    public CompletionStage<Void> restart(Reconciliation reconciliation, Pod pod, long timeoutMs) {
         long pollingIntervalMs = 1_000;
         String namespace = pod.getMetadata().getNamespace();
         String podName = pod.getMetadata().getName();
-        Promise<Void> deleteFinished = Promise.promise();
         LOGGER.infoCr(reconciliation, "Rolling pod {}", podName);
 
         // Determine generation of deleted pod
@@ -77,27 +77,23 @@ public class PodOperator extends AbstractReadyNamespacedResourceOperator<Kuberne
 
         // Delete the pod
         LOGGER.debugCr(reconciliation, "Waiting for pod {} to be deleted", podName);
-        Future<Void> podReconcileFuture =
-                reconcile(reconciliation, namespace, podName, null)
-                        .compose(ignore -> waitFor(reconciliation, namespace, podName, "deleted", pollingIntervalMs, timeoutMs, (ignore1, ignore2) -> {
-                            // predicate - changed generation means pod has been updated
-                            String newUid = getPodUid(get(namespace, podName));
-                            boolean done = !deleted.equals(newUid);
+        return reconcile(reconciliation, namespace, podName, null)
+                .thenCompose(ignore -> waitFor(reconciliation, namespace, podName, "deleted", pollingIntervalMs, timeoutMs, (ignore1, ignore2) -> {
+                    // predicate - changed generation means pod has been updated
+                    String newUid = getPodUid(get(namespace, podName));
+                    boolean done = !deleted.equals(newUid);
 
-                            if (done) {
-                                LOGGER.debugCr(reconciliation, "Rolling pod {} finished", podName);
-                            }
+                    if (done) {
+                        LOGGER.debugCr(reconciliation, "Rolling pod {} finished", podName);
+                    }
 
-                            return done;
-                        }));
-
-        podReconcileFuture.onComplete(deleteResult -> {
-            if (deleteResult.succeeded()) {
-                LOGGER.debugCr(reconciliation, "Pod {} was deleted", podName);
-            }
-            deleteFinished.handle(deleteResult);
-        });
-        return deleteFinished.future();
+                    return done;
+                }))
+                .whenComplete((deleteResult, error) -> {
+                    if (error == null) {
+                        LOGGER.debugCr(reconciliation, "Pod {} was deleted", podName);
+                    }
+                });
     }
 
     private static String getPodUid(HasMetadata resource) {

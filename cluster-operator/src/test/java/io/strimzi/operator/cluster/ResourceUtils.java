@@ -26,7 +26,6 @@ import io.strimzi.operator.cluster.operator.resource.kubernetes.BuildConfigOpera
 import io.strimzi.operator.cluster.operator.resource.kubernetes.BuildOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.ClusterRoleBindingOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.ConfigMapOperator;
-import io.strimzi.operator.cluster.operator.resource.kubernetes.CrdOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.DeploymentOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.ImageStreamOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.IngressOperator;
@@ -51,7 +50,7 @@ import io.strimzi.operator.common.auth.PemAuthIdentity;
 import io.strimzi.operator.common.auth.PemTrustSet;
 import io.strimzi.operator.common.model.Ca;
 import io.strimzi.operator.common.model.Labels;
-import io.vertx.core.Future;
+import io.strimzi.operator.common.operator.resource.concurrent.CrdOperator;
 import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.DescribeClientQuotasResult;
 import org.apache.kafka.clients.admin.DescribeClusterOptions;
@@ -86,6 +85,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.Properties;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Stream;
 
 import static java.util.Collections.emptyMap;
@@ -356,8 +356,8 @@ public class ResourceUtils {
                 new MockSharedEnvironmentProvider(),
                 mock(BrokersInUseCheck.class));
 
-        when(supplier.secretOperations.getAsync(any(), any())).thenReturn(Future.succeededFuture());
-        when(supplier.secretOperations.getAsync(any(), or(endsWith("ca-cert"), endsWith("certs")))).thenReturn(Future.succeededFuture(
+        when(supplier.secretOperations.getAsync(any(), any())).thenReturn(CompletableFuture.completedFuture(null));
+        when(supplier.secretOperations.getAsync(any(), or(endsWith("ca-cert"), endsWith("certs")))).thenReturn(CompletableFuture.completedFuture(
                 new SecretBuilder()
                         .withNewMetadata()
                             .withName("cert-secret")
@@ -366,14 +366,14 @@ public class ResourceUtils {
                         .addToData("cluster-operator.key", "key")
                         .addToData("cluster-operator.crt", "cert")
                         .build()));
-        when(supplier.serviceAccountOperations.reconcile(any(), anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
-        when(supplier.roleBindingOperations.reconcile(any(), anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
-        when(supplier.roleOperations.reconcile(any(), anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
-        when(supplier.clusterRoleBindingOperator.reconcile(any(), anyString(), any())).thenReturn(Future.succeededFuture());
+        when(supplier.serviceAccountOperations.reconcile(any(), anyString(), anyString(), any())).thenReturn(CompletableFuture.completedFuture(null));
+        when(supplier.roleBindingOperations.reconcile(any(), anyString(), anyString(), any())).thenReturn(CompletableFuture.completedFuture(null));
+        when(supplier.roleOperations.reconcile(any(), anyString(), anyString(), any())).thenReturn(CompletableFuture.completedFuture(null));
+        when(supplier.clusterRoleBindingOperator.reconcile(any(), anyString(), any())).thenReturn(CompletableFuture.completedFuture(null));
 
         if (openShift) {
-            when(supplier.routeOperations.reconcile(any(), anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
-            when(supplier.routeOperations.hasAddress(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+            when(supplier.routeOperations.reconcile(any(), anyString(), anyString(), any())).thenReturn(CompletableFuture.completedFuture(null));
+            when(supplier.routeOperations.hasAddress(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(CompletableFuture.completedFuture(null));
             when(supplier.routeOperations.get(anyString(), anyString())).thenAnswer(i -> new RouteBuilder()
                     .withNewStatus()
                     .addNewIngress()
@@ -383,8 +383,8 @@ public class ResourceUtils {
                     .build());
         }
 
-        when(supplier.serviceOperations.hasIngressAddress(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
-        when(supplier.serviceOperations.hasNodePort(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(supplier.serviceOperations.hasIngressAddress(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(CompletableFuture.completedFuture(null));
+        when(supplier.serviceOperations.hasNodePort(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(CompletableFuture.completedFuture(null));
         when(supplier.serviceOperations.get(anyString(), anyString())).thenAnswer(i ->
              new ServiceBuilder()
                     .withNewStatus()

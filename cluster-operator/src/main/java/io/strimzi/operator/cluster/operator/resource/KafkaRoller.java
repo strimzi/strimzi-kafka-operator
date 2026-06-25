@@ -44,6 +44,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -824,7 +825,7 @@ public class KafkaRoller {
      * @throws E The exception type returned from {@code exceptionMapper}.
      * @throws InterruptedException If the waiting was interrupted.
      */
-    private static <T, E extends Exception> T await(CompletableFuture<T> future, long timeoutMs,
+    private static <T, E extends Exception> T await(CompletionStage<T> future, long timeoutMs,
                                                     Function<Throwable, E> exceptionMapper)
             throws E, InterruptedException {
         CompletableFuture<T> cf = new CompletableFuture<>();
@@ -853,18 +854,12 @@ public class KafkaRoller {
      *
      * @return a Future which completes when the Pod has been recreated
      */
-    protected CompletableFuture<Void> restart(Pod pod, RestartContext restartContext) {
-        CompletableFuture<Void> future = new CompletableFuture<>();
-        podOperations.restart(reconciliation, pod, operationTimeoutMs)
-                .onComplete(ar -> {
-                    if (ar.succeeded()) {
-                        publishEventExecutor.execute(() -> eventsPublisher.publishRestartEvents(reconciliation, pod, restartContext.restartReasons));
-                        future.complete(null);
-                    } else {
-                        future.completeExceptionally(ar.cause());
-                    }
+    protected CompletionStage<Void> restart(Pod pod, RestartContext restartContext) {
+        return podOperations.restart(reconciliation, pod, operationTimeoutMs)
+                .thenCompose(i -> {
+                    publishEventExecutor.execute(() -> eventsPublisher.publishRestartEvents(reconciliation, pod, restartContext.restartReasons));
+                    return CompletableFuture.completedFuture(null);
                 });
-        return future;
     }
 
     /**
@@ -930,22 +925,17 @@ public class KafkaRoller {
         return podToContext.toString();
     }
 
-    protected CompletableFuture<Void> isReady(Pod pod) {
+    protected CompletionStage<Void> isReady(Pod pod) {
         return isReady(pod.getMetadata().getNamespace(), pod.getMetadata().getName());
     }
 
-    protected CompletableFuture<Void> isReady(String namespace, String podName) {
-        CompletableFuture<Void> cf = new CompletableFuture<>();
-        podOperations.readiness(reconciliation, namespace, podName, pollingIntervalMs, operationTimeoutMs)
-                .onComplete(ar -> {
-                    if (ar.succeeded()) {
-                        cf.complete(null);
-                    } else {
-                        LOGGER.warnCr(reconciliation, "Error waiting for pod {}/{} to become ready: {}", namespace, podName, ar.cause());
-                        cf.completeExceptionally(ar.cause());
+    protected CompletionStage<Void> isReady(String namespace, String podName) {
+        return podOperations.readiness(reconciliation, namespace, podName, pollingIntervalMs, operationTimeoutMs)
+                .whenComplete((i, t) -> {
+                    if (t != null) {
+                        LOGGER.warnCr(reconciliation, "Error waiting for pod {}/{} to become ready: {}", namespace, podName, t);
                     }
                 });
-        return cf;
     }
 
     /**

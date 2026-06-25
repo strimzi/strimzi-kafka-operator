@@ -31,7 +31,6 @@ public class CrdOperator<C extends KubernetesClient,
             T extends CustomResource<?, ?>,
             L extends DefaultKubernetesResourceList<T>>
         extends AbstractWatchableStatusedNamespacedResourceOperator<C, T, L, Resource<T>> {
-
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(CrdOperator.class);
 
     private final Class<T> cls;
@@ -44,8 +43,7 @@ public class CrdOperator<C extends KubernetesClient,
      * @param client        The Kubernetes client
      * @param cls           The class of the CR
      * @param listCls       The class of the list.
-     * @param kind          The Kind of the CR for which this operator should be
-     *                      used
+     * @param kind          The Kind of the CR for which this operator should be used
      */
     public CrdOperator(Executor asyncExecutor, C client, Class<T> cls, Class<L> listCls, String kind) {
         super(asyncExecutor, client, kind);
@@ -54,7 +52,7 @@ public class CrdOperator<C extends KubernetesClient,
     }
 
     @Override
-    protected MixedOperation<T, L, Resource<T>> operation() {
+    public MixedOperation<T, L, Resource<T>> operation() {
         return client.resources(cls, listCls);
     }
 
@@ -84,8 +82,22 @@ public class CrdOperator<C extends KubernetesClient,
         CompletableFuture<Void> deleteFuture = resourceSupport.deleteAsync(resourceOp.withPropagationPolicy(cascading ? DeletionPropagation.FOREGROUND : DeletionPropagation.ORPHAN).withGracePeriod(-1L))
                 .toCompletableFuture();
 
-        return CompletableFuture.allOf(watchForDeleteFuture, deleteFuture)
-                .thenApply(nothing -> ReconcileResult.deleted());
+        // We combine the two futures with fail-fast semantics (equivalent to the Vert.x Future.all() used previously):
+        // the result completes successfully only when both futures complete, but it fails as soon as either of them
+        // fails (without waiting for the polling watchForDeleteFuture to time out).
+        CompletableFuture<ReconcileResult<T>> result = new CompletableFuture<>();
+        watchForDeleteFuture.exceptionally(error -> {
+            result.completeExceptionally(error);
+            return null;
+        });
+        deleteFuture.exceptionally(error -> {
+            result.completeExceptionally(error);
+            return null;
+        });
+        CompletableFuture.allOf(watchForDeleteFuture, deleteFuture)
+                .thenRun(() -> result.complete(ReconcileResult.deleted()));
+
+        return result;
     }
 
     /**
@@ -94,7 +106,7 @@ public class CrdOperator<C extends KubernetesClient,
      * @param reconciliation    Reconciliation marker
      * @param resource          Desired resource
      *
-     * @return  Future which completes when the resource is patched
+     * @return  CompletionStage which completes when the resource is patched
      */
     public CompletionStage<T> patchAsync(Reconciliation reconciliation, T resource) {
         String namespace = resource.getMetadata().getNamespace();
@@ -121,7 +133,7 @@ public class CrdOperator<C extends KubernetesClient,
      * @param reconciliation    Reconciliation marker
      * @param resource          Desired resource with the updated status
      *
-     * @return  Future which completes when the status is patched
+     * @return  CompletionStage which completes when the status is patched
      */
     public CompletionStage<T> updateStatusAsync(Reconciliation reconciliation, T resource) {
         String namespace = resource.getMetadata().getNamespace();

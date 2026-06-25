@@ -10,12 +10,11 @@ import io.strimzi.api.kafka.model.bridge.KafkaBridgeBuilder;
 import io.strimzi.api.kafka.model.bridge.KafkaBridgeList;
 import io.strimzi.api.kafka.model.common.ConditionBuilder;
 import io.strimzi.api.kafka.model.common.InlineLogging;
+import io.strimzi.operator.common.operator.resource.concurrent.AbstractCustomResourceOperatorIT;
+import io.strimzi.operator.common.operator.resource.concurrent.CrdOperator;
 import io.strimzi.test.CrdUtils;
-import io.vertx.junit5.VertxExtension;
-import io.vertx.junit5.VertxTestContext;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.jupiter.api.extension.ExtendWith;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -26,13 +25,12 @@ import static org.hamcrest.MatcherAssert.assertThat;
  * being created by the Kubernetes API etc. These things are hard to test with mocks. These IT tests make it easy to
  * test them against real clusters.
  */
-@ExtendWith(VertxExtension.class)
 public class KafkaBridgeCrdOperatorIT extends AbstractCustomResourceOperatorIT<KubernetesClient, KafkaBridge, KafkaBridgeList> {
     protected static final Logger LOGGER = LogManager.getLogger(KafkaBridgeCrdOperatorIT.class);
 
     @Override
-    protected CrdOperator operator() {
-        return new CrdOperator(vertx, client, KafkaBridge.class, KafkaBridgeList.class, KafkaBridge.RESOURCE_KIND);
+    protected CrdOperator<KubernetesClient, KafkaBridge, KafkaBridgeList> operator() {
+        return new CrdOperator<>(asyncExecutor, client, KafkaBridge.class, KafkaBridgeList.class, KafkaBridge.RESOURCE_KIND);
     }
 
     @Override
@@ -87,9 +85,9 @@ public class KafkaBridgeCrdOperatorIT extends AbstractCustomResourceOperatorIT<K
     }
 
     @Override
-    protected void assertReady(VertxTestContext context, KafkaBridge resource) {
-        context.verify(() -> assertThat(resource.getStatus()
+    protected void assertReady(KafkaBridge resource) {
+        assertThat(resource.getStatus()
                 .getConditions()
-                .get(0), is(READY_CONDITION)));
+                .get(0), is(READY_CONDITION));
     }
 }

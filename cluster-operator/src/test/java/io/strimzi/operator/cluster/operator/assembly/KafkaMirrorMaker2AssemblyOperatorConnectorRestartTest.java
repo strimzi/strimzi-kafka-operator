@@ -16,7 +16,6 @@ import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.platform.KubernetesVersion;
-import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
@@ -234,7 +233,7 @@ public class KafkaMirrorMaker2AssemblyOperatorConnectorRestartTest {
     }
 
     private void configMock(ResourceOperatorSupplier supplier, KafkaConnectApi mockConnectApi) {
-        when(supplier.mirrorMaker2Operator.patchAsync(any(), any())).thenReturn(Future.succeededFuture(new KafkaMirrorMaker2()));
+        when(supplier.mirrorMaker2Operator.patchAsync(any(), any())).thenReturn(CompletableFuture.completedFuture(new KafkaMirrorMaker2()));
 
         when(mockConnectApi.getConnectorConfig(any(), any(), any(), anyInt(), any())).thenReturn(
                 CompletableFuture.completedFuture(Map.of("topic", "my-topic", "tasks.max", "3", "name", "my-connector", "connector.class", "MyClass")));

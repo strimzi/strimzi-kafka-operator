@@ -20,7 +20,6 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
-import io.vertx.core.WorkerExecutor;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -28,7 +27,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
 
 import static java.util.Arrays.asList;
 
@@ -54,10 +52,6 @@ public class ClusterOperator extends AbstractVerticle {
     private final ResourceOperatorSupplier resourceOperatorSupplier;
 
     private StrimziPodSetController strimziPodSetController;
-
-    // this field is required to keep the underlying shared worker pool alive
-    @SuppressWarnings("unused")
-    private WorkerExecutor sharedWorkerExecutor;
 
     /**
      * Constructor
@@ -93,9 +87,6 @@ public class ClusterOperator extends AbstractVerticle {
     @Override
     public void start(Promise<Void> start) {
         LOGGER.info("Starting ClusterOperator for namespace {}", namespace);
-
-        // Configure the executor here, but it is used only in other places
-        sharedWorkerExecutor = getVertx().createSharedWorkerExecutor("kubernetes-ops-pool", config.getOperationsThreadPoolSize(), TimeUnit.SECONDS.toNanos(120));
 
         List<Future<?>> startFutures = new ArrayList<>(8);
         startFutures.add(startStrimziPodSetController());

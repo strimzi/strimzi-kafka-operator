@@ -20,7 +20,6 @@ import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.PodOperator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
-import io.vertx.core.Future;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
@@ -30,6 +29,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.instanceOf;
@@ -530,7 +530,7 @@ public class KRaftVersionChangeCreatorTest {
         ResourceOperatorSupplier ros = ResourceUtils.supplierWithMocks(false);
 
         PodOperator podOps = ros.podOperations;
-        when(podOps.listAsync(any(), any(Labels.class))).thenReturn(Future.succeededFuture(pods));
+        when(podOps.listAsync(any(), any(Labels.class))).thenReturn(CompletableFuture.completedFuture(pods));
 
         return ros;
     }

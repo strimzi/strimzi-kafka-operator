@@ -9,7 +9,9 @@ import io.fabric8.kubernetes.api.model.EndpointsList;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.vertx.core.Vertx;
+import io.strimzi.operator.common.operator.resource.concurrent.AbstractReadyNamespacedResourceOperator;
+
+import java.util.concurrent.Executor;
 
 /**
  * Operations for {@code Endpoint}s.
@@ -17,11 +19,11 @@ import io.vertx.core.Vertx;
 public class EndpointOperator extends AbstractReadyNamespacedResourceOperator<KubernetesClient, Endpoints, EndpointsList, Resource<Endpoints>> {
     /**
      * Constructor
-     * @param vertx The Vertx instance
+     * @param asyncExecutor Executor to use for asynchronous subroutines
      * @param client The Kubernetes client
      */
-    EndpointOperator(Vertx vertx, KubernetesClient client) {
-        super(vertx, client, "Endpoints");
+    EndpointOperator(Executor asyncExecutor, KubernetesClient client) {
+        super(asyncExecutor, client, "Endpoints");
     }
 
     @Override

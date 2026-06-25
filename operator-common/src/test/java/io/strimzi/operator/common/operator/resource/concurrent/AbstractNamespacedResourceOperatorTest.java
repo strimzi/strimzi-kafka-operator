@@ -7,8 +7,10 @@ package io.strimzi.operator.common.operator.resource.concurrent;
 import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
+import io.fabric8.kubernetes.api.model.Status;
 import io.fabric8.kubernetes.client.GracePeriodConfigurable;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.Watch;
 import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.dsl.Deletable;
@@ -16,23 +18,31 @@ import io.fabric8.kubernetes.client.dsl.FilterWatchListDeletable;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
+import io.fabric8.kubernetes.client.dsl.base.PatchContext;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.test.TestUtils;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.mockito.ArgumentCaptor;
 
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Stream;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -45,6 +55,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public abstract class AbstractNamespacedResourceOperatorTest<C extends KubernetesClient, T extends HasMetadata,
         L extends KubernetesResourceList<T>, R extends Resource<T>> {
 
@@ -55,6 +66,36 @@ public abstract class AbstractNamespacedResourceOperatorTest<C extends Kubernete
     @BeforeAll
     public static void before() {
         asyncExecutor = ForkJoinPool.commonPool();
+    }
+
+    /**
+     * Returns if resource supports SSA.
+     * This is used in {@link #useServerSideApplyCombinations()} and then in test cases that are only for SSA.
+     *
+     * @return  boolean value determining if resource supports SSA.
+     */
+    protected boolean supportsServerSideApply() {
+        return false;
+    }
+
+    /**
+     * Returns combinations for parameterized test cases for Server Side Apply.
+     * In case that {@link #supportsServerSideApply()} returns `true`, both of the combinations for SSA disabled
+     * and enabled is returned. Otherwise, just the disabled is returned.
+     *
+     * @return  combinations for parameterized test cases for Server Side Apply.
+     */
+    protected Stream<Arguments> useServerSideApplyCombinations() {
+        if (supportsServerSideApply()) {
+            return Stream.of(
+                Arguments.of(false),
+                Arguments.of(true)
+            );
+        } else {
+            return Stream.of(
+                Arguments.of(false)
+            );
+        }
     }
 
     /**
@@ -111,18 +152,37 @@ public abstract class AbstractNamespacedResourceOperatorTest<C extends Kubernete
     /** Create the subclass of ResourceOperation to be tested */
     protected abstract AbstractNamespacedResourceOperator<C, T, L, R> createResourceOperations(C mockClient);
 
+    /**
+     *  Create the subclass of ResourceOperation to be tested.
+     *  The boolean parameter useServerSideApply is not used by default.
+     *  In case that resource supports SSA, the method should be overridden in resource's test class
+     */
+    protected AbstractNamespacedResourceOperator<C, T, L, R> createResourceOperations(C mockClient, boolean useServerSideApply) {
+        if (useServerSideApply && !supportsServerSideApply()) {
+            throw new UnsupportedOperationException("This resource does not support Server Side Apply");
+        }
+
+        return createResourceOperations(mockClient);
+    }
+
     /** Create the subclass of ResourceOperation to be tested with mocked readiness checks*/
     protected AbstractNamespacedResourceOperator<C, T, L, R> createResourceOperationsWithMockedReadiness(C mockClient) {
         return createResourceOperations(mockClient);
     }
 
-    @Test
-    public void testCreateWhenExistsWithChangeIsAPatch() {
-        testCreateWhenExistsWithChangeIsAPatch(true);
+    /** Create the subclass of ResourceOperation to be tested with mocked readiness checks*/
+    protected AbstractNamespacedResourceOperator<C, T, L, R> createResourceOperationsWithMockedReadiness(C mockClient, boolean useServerSideApply) {
+        return createResourceOperations(mockClient, useServerSideApply);
+    }
+
+    @ParameterizedTest(name = "{displayName} with SSA enabled: {0}")
+    @MethodSource("useServerSideApplyCombinations")
+    public void testCreateWhenExistsWithChangeIsAPatch(boolean useServerSideApply) {
+        testCreateWhenExistsWithChangeIsAPatch(true, useServerSideApply);
     }
 
     @SuppressWarnings("unchecked")
-    public void testCreateWhenExistsWithChangeIsAPatch(boolean cascade) {
+    public void testCreateWhenExistsWithChangeIsAPatch(boolean cascade, boolean useServerSideApply) {
         T resource = resource();
         R mockResource =  (R) mock(resourceType());
         when(mockResource.get()).thenReturn(resource);
@@ -138,7 +198,7 @@ public abstract class AbstractNamespacedResourceOperatorTest<C extends Kubernete
         C mockClient = mock(clientType());
         mocker(mockClient, mockCms);
 
-        AbstractNamespacedResourceOperator<C, T, L, R> op = createResourceOperations(mockClient);
+        AbstractNamespacedResourceOperator<C, T, L, R> op = createResourceOperations(mockClient, useServerSideApply);
 
         TestUtils.await(op.createOrUpdate(Reconciliation.DUMMY_RECONCILIATION, modifiedResource())
             .<Void>handle((rr, error) -> {
@@ -184,9 +244,10 @@ public abstract class AbstractNamespacedResourceOperatorTest<C extends Kubernete
             }));
     }
 
-    @Test
+    @ParameterizedTest(name = "{displayName} with SSA enabled: {0}")
+    @MethodSource("useServerSideApplyCombinations")
     @SuppressWarnings("unchecked")
-    public void testExistenceCheckThrows() {
+    public void testExistenceCheckThrows(boolean useServerSideApply) {
         T resource = resource();
         RuntimeException ex = new RuntimeException();
 
@@ -202,7 +263,7 @@ public abstract class AbstractNamespacedResourceOperatorTest<C extends Kubernete
         C mockClient = mock(clientType());
         mocker(mockClient, mockCms);
 
-        AbstractNamespacedResourceOperator<C, T, L, R> op = createResourceOperations(mockClient);
+        AbstractNamespacedResourceOperator<C, T, L, R> op = createResourceOperations(mockClient, useServerSideApply);
 
         TestUtils.await(op.createOrUpdate(Reconciliation.DUMMY_RECONCILIATION, resource)
             .<Void>handle((rr, error) -> {
@@ -211,18 +272,24 @@ public abstract class AbstractNamespacedResourceOperatorTest<C extends Kubernete
             }));
     }
 
-    @Test
+    @ParameterizedTest(name = "{displayName} with SSA enabled: {0}")
+    @MethodSource("useServerSideApplyCombinations")
     @SuppressWarnings("unchecked")
-    public void testSuccessfulCreation() {
+    public void testSuccessfulCreation(boolean useServerSideApply) {
         T resource = resource();
         R mockResource = (R) mock(resourceType());
 
         when(mockResource.get()).thenReturn(null);
-        when(mockResource.create()).thenReturn(resource);
+
+        if (useServerSideApply) {
+            when(mockResource.patch(any(), eq(resource))).thenReturn(resource);
+        } else {
+            when(mockResource.create()).thenReturn(resource);
+        }
 
         NonNamespaceOperation<T, L, R> mockNameable = mock(NonNamespaceOperation.class);
         when(mockNameable.withName(matches(resource.getMetadata().getName()))).thenReturn(mockResource);
-        when(mockNameable.resource(resource)).thenReturn(mockResource);
+        when(mockNameable.resource(eq(resource))).thenReturn(mockResource);
 
         MixedOperation<T, L, R> mockCms = mock(MixedOperation.class);
         when(mockCms.inNamespace(matches(resource.getMetadata().getNamespace()))).thenReturn(mockNameable);
@@ -230,20 +297,28 @@ public abstract class AbstractNamespacedResourceOperatorTest<C extends Kubernete
         C mockClient = mock(clientType());
         mocker(mockClient, mockCms);
 
-        AbstractNamespacedResourceOperator<C, T, L, R> op = createResourceOperationsWithMockedReadiness(mockClient);
+        AbstractNamespacedResourceOperator<C, T, L, R> op = createResourceOperationsWithMockedReadiness(mockClient, useServerSideApply);
 
         TestUtils.await(op.createOrUpdate(Reconciliation.DUMMY_RECONCILIATION, resource)
             .<Void>handle((rr, error) -> {
                 assertNull(error);
                 verify(mockResource).get();
-                verify(mockResource).create();
+
+                if (useServerSideApply) {
+                    verify(mockResource).patch(any(), eq(resource));
+                    verify(mockResource, never()).create();
+                } else {
+                    verify(mockResource).create();
+                    verify(mockResource, never()).patch(any(), (T) any());
+                }
                 return null;
             }));
     }
 
-    @Test
+    @ParameterizedTest(name = "{displayName} with SSA enabled: {0}")
+    @MethodSource("useServerSideApplyCombinations")
     @SuppressWarnings("unchecked")
-    public void testCreateOrUpdateThrowsWhenCreateThrows() {
+    public void testCreateOrUpdateThrowsWhenCreateThrows(boolean useServerSideApply) {
         T resource = resource();
         RuntimeException ex = new RuntimeException("Testing this exception is handled correctly");
 
@@ -252,16 +327,21 @@ public abstract class AbstractNamespacedResourceOperatorTest<C extends Kubernete
 
         NonNamespaceOperation<T, L, R> mockNameable = mock(NonNamespaceOperation.class);
         when(mockNameable.withName(matches(resource.getMetadata().getName()))).thenReturn(mockResource);
-        when(mockNameable.resource(resource)).thenReturn(mockResource);
+        when(mockNameable.resource(eq(resource))).thenReturn(mockResource);
 
         MixedOperation<T, L, R> mockCms = mock(MixedOperation.class);
         when(mockCms.inNamespace(matches(resource.getMetadata().getNamespace()))).thenReturn(mockNameable);
-        when(mockResource.create()).thenThrow(ex);
+
+        if (useServerSideApply) {
+            when(mockResource.patch(any(), eq(resource))).thenThrow(ex);
+        } else {
+            when(mockResource.create()).thenThrow(ex);
+        }
 
         C mockClient = mock(clientType());
         mocker(mockClient, mockCms);
 
-        AbstractNamespacedResourceOperator<C, T, L, R> op = createResourceOperations(mockClient);
+        AbstractNamespacedResourceOperator<C, T, L, R> op = createResourceOperations(mockClient, useServerSideApply);
         TestUtils.await(op.createOrUpdate(Reconciliation.DUMMY_RECONCILIATION, resource)
             .<Void>handle((rr, error) -> {
                 assertSame(Util.maybeUnwrapCompletionException(error), ex);
@@ -269,9 +349,10 @@ public abstract class AbstractNamespacedResourceOperatorTest<C extends Kubernete
             }));
     }
 
-    @Test
+    @ParameterizedTest(name = "{displayName} with SSA enabled: {0}")
+    @MethodSource("useServerSideApplyCombinations")
     @SuppressWarnings("unchecked")
-    public void testDeleteWhenResourceDoesNotExistIsANop() {
+    public void testDeleteWhenResourceDoesNotExistIsANop(boolean useServerSideApply) {
         T resource = resource();
         R mockResource = (R) mock(resourceType());
 
@@ -284,7 +365,7 @@ public abstract class AbstractNamespacedResourceOperatorTest<C extends Kubernete
         C mockClient = mock(clientType());
         mocker(mockClient, mockCms);
 
-        AbstractNamespacedResourceOperator<C, T, L, R> op = createResourceOperations(mockClient);
+        AbstractNamespacedResourceOperator<C, T, L, R> op = createResourceOperations(mockClient, useServerSideApply);
         TestUtils.await(op.reconcile(Reconciliation.DUMMY_RECONCILIATION, resource.getMetadata().getNamespace(), resource.getMetadata().getName(), null)
             .<Void>handle((rr, error) -> {
                 assertNull(error);
@@ -294,17 +375,22 @@ public abstract class AbstractNamespacedResourceOperatorTest<C extends Kubernete
             }));
     }
 
-    @Test
+    @ParameterizedTest(name = "{displayName} with SSA enabled: {0}")
+    @MethodSource("useServerSideApplyCombinations")
     @SuppressWarnings("unchecked")
-    public void testReconcileDeleteWhenResourceExistsStillDeletes() {
+    public void testReconcileDeleteWhenResourceExistsStillDeletes(boolean useServerSideApply) {
         Deletable mockDeletable = mock(Deletable.class);
-        when(mockDeletable.delete()).thenReturn(List.of());
+        AtomicBoolean resourceDeleted = new AtomicBoolean(false);
+        when(mockDeletable.delete()).thenAnswer(args -> {
+            resourceDeleted.set(true);
+            return List.of();
+        });
         var mockDeletableGrace = mock(GracePeriodConfigurable.class);
         when(mockDeletableGrace.delete()).thenReturn(List.of());
 
         T resource = resource();
         R mockResource = (R) mock(resourceType());
-        when(mockResource.get()).thenReturn(resource);
+        when(mockResource.get()).thenAnswer(args -> resourceDeleted.get() ? null : resource);
         when(mockResource.withPropagationPolicy(DeletionPropagation.FOREGROUND)).thenReturn(mockDeletableGrace);
         when(mockDeletableGrace.withGracePeriod(anyLong())).thenReturn(mockDeletable);
         AtomicBoolean watchClosed = new AtomicBoolean(false);
@@ -325,7 +411,7 @@ public abstract class AbstractNamespacedResourceOperatorTest<C extends Kubernete
         C mockClient = mock(clientType());
         mocker(mockClient, mockCms);
 
-        AbstractNamespacedResourceOperator<C, T, L, R> op = createResourceOperations(mockClient);
+        AbstractNamespacedResourceOperator<C, T, L, R> op = createResourceOperations(mockClient, useServerSideApply);
         TestUtils.await(op.reconcile(Reconciliation.DUMMY_RECONCILIATION, resource.getMetadata().getNamespace(), resource.getMetadata().getName(), null)
             .<Void>handle((rr, error) -> {
                 assertNull(error);
@@ -334,17 +420,22 @@ public abstract class AbstractNamespacedResourceOperatorTest<C extends Kubernete
             }));
     }
 
-    @Test
+    @ParameterizedTest(name = "{displayName} with SSA enabled: {0}")
+    @MethodSource("useServerSideApplyCombinations")
     @SuppressWarnings("unchecked")
-    public void testReconcileDeletionSuccessfullyDeletes() {
+    public void testReconcileDeletionSuccessfullyDeletes(boolean useServerSideApply) {
         Deletable mockDeletable = mock(Deletable.class);
-        when(mockDeletable.delete()).thenReturn(List.of());
+        AtomicBoolean resourceDeleted = new AtomicBoolean(false);
+        when(mockDeletable.delete()).thenAnswer(args -> {
+            resourceDeleted.set(true);
+            return List.of();
+        });
         var mockDeletableGrace = mock(GracePeriodConfigurable.class);
         when(mockDeletableGrace.delete()).thenReturn(List.of());
 
         T resource = resource();
         R mockResource = (R) mock(resourceType());
-        when(mockResource.get()).thenReturn(resource);
+        when(mockResource.get()).thenAnswer(args -> resourceDeleted.get() ? null : resource);
         when(mockResource.withPropagationPolicy(DeletionPropagation.FOREGROUND)).thenReturn(mockDeletableGrace);
         when(mockDeletableGrace.withGracePeriod(anyLong())).thenReturn(mockDeletable);
         AtomicBoolean watchClosed = new AtomicBoolean(false);
@@ -364,7 +455,7 @@ public abstract class AbstractNamespacedResourceOperatorTest<C extends Kubernete
 
         C mockClient = mock(clientType());
         mocker(mockClient, mockCms);
-        AbstractNamespacedResourceOperator<C, T, L, R> op = createResourceOperations(mockClient);
+        AbstractNamespacedResourceOperator<C, T, L, R> op = createResourceOperations(mockClient, useServerSideApply);
 
         TestUtils.await(op.reconcile(Reconciliation.DUMMY_RECONCILIATION, resource.getMetadata().getNamespace(), resource.getMetadata().getName(), null)
             .whenComplete(TestUtils::assertSuccessful)
@@ -374,9 +465,10 @@ public abstract class AbstractNamespacedResourceOperatorTest<C extends Kubernete
             }));
     }
 
-    @Test
+    @ParameterizedTest(name = "{displayName} with SSA enabled: {0}")
+    @MethodSource("useServerSideApplyCombinations")
     @SuppressWarnings("unchecked")
-    public void testReconcileDeleteThrowsWhenDeletionThrows() {
+    public void testReconcileDeleteThrowsWhenDeletionThrows(boolean useServerSideApply) {
         RuntimeException ex = new RuntimeException("Testing this exception is handled correctly");
         Deletable mockDeletable = mock(Deletable.class);
         var mockDeletableGrace = mock(GracePeriodConfigurable.class);
@@ -405,7 +497,7 @@ public abstract class AbstractNamespacedResourceOperatorTest<C extends Kubernete
         C mockClient = mock(clientType());
         mocker(mockClient, mockCms);
 
-        AbstractNamespacedResourceOperator<C, T, L, R> op = createResourceOperations(mockClient);
+        AbstractNamespacedResourceOperator<C, T, L, R> op = createResourceOperations(mockClient, useServerSideApply);
 
         TestUtils.await(op.reconcile(Reconciliation.DUMMY_RECONCILIATION, resource.getMetadata().getNamespace(), resource.getMetadata().getName(), null)
             .<Void>handle((rr, error) -> {
@@ -414,17 +506,22 @@ public abstract class AbstractNamespacedResourceOperatorTest<C extends Kubernete
             }));
     }
 
-    @Test
+    @ParameterizedTest(name = "{displayName} with SSA enabled: {0}")
+    @MethodSource("useServerSideApplyCombinations")
     @SuppressWarnings("unchecked")
-    public void testReconcileDeleteDoesNotThrowWhenDeletionReturnsFalse() {
+    public void testReconcileDeleteDoesNotThrowWhenDeletionReturnsFalse(boolean useServerSideApply) {
         Deletable mockDeletable = mock(Deletable.class);
-        when(mockDeletable.delete()).thenReturn(List.of());
+        AtomicBoolean resourceDeleted = new AtomicBoolean(false);
+        when(mockDeletable.delete()).thenAnswer(args -> {
+            resourceDeleted.set(true);
+            return List.of();
+        });
         var mockDeletableGrace = mock(GracePeriodConfigurable.class);
         when(mockDeletableGrace.delete()).thenReturn(List.of());
 
         T resource = resource();
         R mockResource = (R) mock(resourceType());
-        when(mockResource.get()).thenReturn(resource);
+        when(mockResource.get()).thenAnswer(args -> resourceDeleted.get() ? null : resource);
         when(mockResource.withPropagationPolicy(DeletionPropagation.FOREGROUND)).thenReturn(mockDeletableGrace);
         when(mockDeletableGrace.withGracePeriod(anyLong())).thenReturn(mockDeletable);
         AtomicBoolean watchClosed = new AtomicBoolean(false);
@@ -445,7 +542,7 @@ public abstract class AbstractNamespacedResourceOperatorTest<C extends Kubernete
         C mockClient = mock(clientType());
         mocker(mockClient, mockCms);
 
-        AbstractNamespacedResourceOperator<C, T, L, R> op = createResourceOperations(mockClient);
+        AbstractNamespacedResourceOperator<C, T, L, R> op = createResourceOperations(mockClient, useServerSideApply);
 
         TestUtils.await(op.reconcile(Reconciliation.DUMMY_RECONCILIATION, resource.getMetadata().getNamespace(), resource.getMetadata().getName(), null)
             .whenComplete(TestUtils::assertSuccessful)
@@ -456,9 +553,10 @@ public abstract class AbstractNamespacedResourceOperatorTest<C extends Kubernete
 
     // This tests the pre-check which should stop the self-closing-watch in case the resource is deleted before the
     // watch is opened.
-    @Test
+    @ParameterizedTest(name = "{displayName} with SSA enabled: {0}")
+    @MethodSource("useServerSideApplyCombinations")
     @SuppressWarnings("unchecked")
-    public void testReconcileDeleteDoesNotTimeoutWhenResourceIsAlreadyDeleted() {
+    public void testReconcileDeleteDoesNotTimeoutWhenResourceIsAlreadyDeleted(boolean useServerSideApply) {
         Deletable mockDeletable = mock(Deletable.class);
         when(mockDeletable.delete()).thenReturn(List.of());
         var mockDeletableGrace = mock(GracePeriodConfigurable.class);
@@ -497,7 +595,7 @@ public abstract class AbstractNamespacedResourceOperatorTest<C extends Kubernete
         C mockClient = mock(clientType());
         mocker(mockClient, mockCms);
 
-        AbstractNamespacedResourceOperator<C, T, L, R> op = createResourceOperations(mockClient);
+        AbstractNamespacedResourceOperator<C, T, L, R> op = createResourceOperations(mockClient, useServerSideApply);
 
         TestUtils.await(op.reconcile(Reconciliation.DUMMY_RECONCILIATION, resource.getMetadata().getNamespace(), resource.getMetadata().getName(), null)
             .whenComplete(TestUtils::assertSuccessful)
@@ -506,9 +604,10 @@ public abstract class AbstractNamespacedResourceOperatorTest<C extends Kubernete
             }));
     }
 
-    @Test
+    @ParameterizedTest(name = "{displayName} with SSA enabled: {0}")
+    @MethodSource("useServerSideApplyCombinations")
     @SuppressWarnings("unchecked")
-    public void testBatchReconciliation() {
+    public void testBatchReconciliation(boolean useServerSideApply) {
         Map<String, String> selector = Map.of("labelA", "a", "labelB", "b");
 
         T resource1 = resource("resource-1");
@@ -518,7 +617,11 @@ public abstract class AbstractNamespacedResourceOperatorTest<C extends Kubernete
 
         // For resource1 we need to mock the async deletion process as well
         Deletable mockDeletable1 = mock(Deletable.class);
-        when(mockDeletable1.delete()).thenReturn(List.of());
+        AtomicBoolean resource1Deleted = new AtomicBoolean(false);
+        when(mockDeletable1.delete()).thenAnswer(args -> {
+            resource1Deleted.set(true);
+            return List.of();
+        });
         var mockDeletableGrace1 = mock(GracePeriodConfigurable.class);
         when(mockDeletableGrace1.withGracePeriod(anyLong())).thenReturn(mockDeletable1);
         R mockResource1 = (R) mock(resourceType());
@@ -527,7 +630,7 @@ public abstract class AbstractNamespacedResourceOperatorTest<C extends Kubernete
         when(mockResource1.get()).thenAnswer(invocation -> {
             // First get needs to return the resource to trigger deletion
             // Next gets return null since the resource was already deleted
-            if (watchCreated.get()) {
+            if (watchCreated.get() || resource1Deleted.get()) {
                 return null;
             } else {
                 return resource1;
@@ -547,7 +650,12 @@ public abstract class AbstractNamespacedResourceOperatorTest<C extends Kubernete
 
         R mockResource3 = (R) mock(resourceType());
         when(mockResource3.get()).thenReturn(null);
-        when(mockResource3.create()).thenReturn(resource3);
+
+        if (useServerSideApply) {
+            when(mockResource3.patch(any(), eq(resource3))).thenReturn(resource3);
+        } else {
+            when(mockResource3.create()).thenReturn(resource3);
+        }
 
         KubernetesResourceList<T> mockResourceList = mock(KubernetesResourceList.class);
         when(mockResourceList.getItems()).thenReturn(List.of(resource1, resource2));
@@ -568,7 +676,7 @@ public abstract class AbstractNamespacedResourceOperatorTest<C extends Kubernete
         C mockClient = mock(clientType());
         mocker(mockClient, mockCms);
 
-        AbstractNamespacedResourceOperator<C, T, L, R> op = createResourceOperations(mockClient);
+        AbstractNamespacedResourceOperator<C, T, L, R> op = createResourceOperations(mockClient, useServerSideApply);
 
         TestUtils.await(op.batchReconcile(Reconciliation.DUMMY_RECONCILIATION, NAMESPACE, List.of(resource2Mod, resource3), Labels.fromMap(selector))
             .whenComplete(TestUtils::assertSuccessful)
@@ -584,9 +692,66 @@ public abstract class AbstractNamespacedResourceOperatorTest<C extends Kubernete
                 verify(mockResource2, never()).delete();
 
                 verify(mockResource3, times(1)).get();
-                verify(mockResource3, never()).patch(any(), (T) any());
-                verify(mockResource3, times(1)).create();
+
+                if (!useServerSideApply) {
+                    verify(mockResource3, times(1)).create();
+                    verify(mockResource3, never()).patch(any(), (T) any());
+                } else {
+                    verify(mockResource3, times(1)).patch(any(), eq(resource3));
+                    verify(mockResource3, never()).create();
+                }
+
                 verify(mockResource3, never()).delete();
+            }));
+    }
+
+    /**
+     * Verifies that `force = true` is used when there is exception during resource update/creation.
+     */
+    @Test
+    @SuppressWarnings("unchecked")
+    void testModifyWithForceServerSideApply() {
+        assumeTrue(supportsServerSideApply());
+
+        T resource = resource();
+        R mockResource = (R) mock(resourceType());
+
+        // Simulate resource not existing initially
+        when(mockResource.get()).thenReturn(null);
+
+        // First patch attempt fails
+        when(mockResource.patch(any(), eq(resource)))
+            .thenThrow(new KubernetesClientException("conflict", 409, new Status()))
+            .thenReturn(resource); // Second attempt succeeds
+
+        NonNamespaceOperation<T, L, R> mockNameable = mock(NonNamespaceOperation.class);
+        when(mockNameable.withName(matches(resource.getMetadata().getName()))).thenReturn(mockResource);
+        when(mockNameable.resource(eq(resource))).thenReturn(mockResource);
+
+        MixedOperation<T, L, R> mockCms = mock(MixedOperation.class);
+        when(mockCms.inNamespace(matches(resource.getMetadata().getNamespace()))).thenReturn(mockNameable);
+
+        C mockClient = mock(clientType());
+        mocker(mockClient, mockCms);
+
+        AbstractNamespacedResourceOperator<C, T, L, R> op =
+            createResourceOperationsWithMockedReadiness(mockClient, true);
+
+        TestUtils.await(op.createOrUpdate(Reconciliation.DUMMY_RECONCILIATION, resource)
+            .whenComplete(TestUtils::assertSuccessful)
+            .thenRun(() -> {
+                // Verify first patch attempt
+                verify(mockResource, times(2)).patch(any(), eq(resource));
+
+                // Capture arguments to see if force=true was used second time
+                ArgumentCaptor<PatchContext> patchCtxCaptor = ArgumentCaptor.forClass(PatchContext.class);
+                verify(mockResource, times(2)).patch(patchCtxCaptor.capture(), eq(resource));
+
+                PatchContext firstCtx = patchCtxCaptor.getAllValues().get(0);
+                PatchContext secondCtx = patchCtxCaptor.getAllValues().get(1);
+
+                assertThat("First patch should not be forced", firstCtx.getForce(), is(false));
+                assertThat("Second patch should be forced", secondCtx.getForce(), is(true));
             }));
     }
 }

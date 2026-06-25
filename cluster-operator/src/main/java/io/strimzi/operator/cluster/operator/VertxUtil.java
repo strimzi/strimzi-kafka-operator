@@ -7,12 +7,16 @@ package io.strimzi.operator.cluster.operator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.TimeoutException;
+import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
+import io.vertx.core.WorkerExecutor;
 import org.apache.kafka.common.KafkaFuture;
 
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.Executor;
 import java.util.function.BooleanSupplier;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -26,6 +30,48 @@ public final class VertxUtil {
 
     private VertxUtil() {
         // Not used
+    }
+
+    /**
+     * Adapts a Vert.x {@link WorkerExecutor} to a plain {@link Executor}. This is used to let the non-Vert.x resource
+     * operators from the {@code io.strimzi.operator.common.operator.resource.concurrent} package run their blocking
+     * Kubernetes API calls on a Vert.x worker pool, so that all the blocking operations of the operator share a single,
+     * configurable worker pool without the operators themselves depending on Vert.x.
+     *
+     * @param workerExecutor    The Vert.x worker executor to run the submitted tasks on
+     *
+     * @return  An {@link Executor} that runs submitted tasks on the given Vert.x worker executor (unordered)
+     */
+    public static Executor asExecutor(WorkerExecutor workerExecutor) {
+        return command -> workerExecutor.executeBlocking(() -> {
+            command.run();
+            return null;
+        }, false);
+    }
+
+    /**
+     * Converts a {@link CompletionStage} (as returned by the non-Vert.x resource operators from the
+     * {@code io.strimzi.operator.common.operator.resource.concurrent} package) into a Vert.x {@link Future}, completing
+     * it on the Vert.x {@link Context} of the calling thread.
+     * <p>
+     * It gets the current Vert.x context using {@link Vertx#currentContext()}. It is intended to be called from code that
+     * already runs on a Vert.x context (such as the reconciliation chains in the Cluster Operator). If no Vert.x context
+     * is associated with the current thread, the resulting future is completed on whichever thread completes the stage.
+     *
+     * @param stage The completion stage to convert
+     *
+     * @return  A Vert.x Future completed on the current Vert.x context once the completion stage completes
+     *
+     * @param <T>   Type of the result
+     */
+    public static <T> Future<T> toFuture(CompletionStage<T> stage) {
+        Context context = Vertx.currentContext();
+
+        if (context != null) {
+            return Future.fromCompletionStage(stage, context);
+        } else {
+            return Future.fromCompletionStage(stage);
+        }
     }
 
     /**

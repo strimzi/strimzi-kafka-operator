@@ -9,7 +9,9 @@ import io.fabric8.kubernetes.api.model.policy.v1.PodDisruptionBudgetList;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.vertx.core.Vertx;
+import io.strimzi.operator.common.operator.resource.concurrent.AbstractNamespacedResourceOperator;
+
+import java.util.concurrent.Executor;
 
 /**
  * Operator for managing Pod Disruption Budgets
@@ -18,11 +20,11 @@ public class PodDisruptionBudgetOperator extends AbstractNamespacedResourceOpera
     /**
      * Constructs the PDB operator
      *
-     * @param vertx     Vert.x instance
+     * @param asyncExecutor Executor to use for asynchronous subroutines
      * @param client    Kubernetes client
      */
-    public PodDisruptionBudgetOperator(Vertx vertx, KubernetesClient client) {
-        super(vertx, client, "PodDisruptionBudget");
+    public PodDisruptionBudgetOperator(Executor asyncExecutor, KubernetesClient client) {
+        super(asyncExecutor, client, "PodDisruptionBudget");
     }
 
     @Override

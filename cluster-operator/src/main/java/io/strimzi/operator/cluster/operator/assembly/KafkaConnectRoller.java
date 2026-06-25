@@ -12,6 +12,7 @@ import io.strimzi.operator.cluster.model.KafkaConnectCluster;
 import io.strimzi.operator.cluster.model.PodRevision;
 import io.strimzi.operator.cluster.model.RestartReason;
 import io.strimzi.operator.cluster.model.RestartReasons;
+import io.strimzi.operator.cluster.operator.VertxUtil;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.PodOperator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
@@ -67,7 +68,7 @@ public class KafkaConnectRoller {
      * @return  Future which completes when the rolling update is done
      */
     public Future<Void> maybeRoll(List<String> podNamesToConsider, Function<Pod, RestartReasons> podNeedsRestart)    {
-        return podOperator.listAsync(reconciliation.namespace(), connect.getSelectorLabels())
+        return VertxUtil.toFuture(podOperator.listAsync(reconciliation.namespace(), connect.getSelectorLabels()))
                 .compose(pods -> Future.succeededFuture(prepareRollingOrder(podNamesToConsider, pods)))
                 .compose(rollingOrder -> maybeRollPods(podNeedsRestart, rollingOrder));
     }
@@ -128,7 +129,7 @@ public class KafkaConnectRoller {
      */
     /* test */ Future<Void> maybeRollPod(Function<Pod, RestartReasons> podNeedsRestart,
                                          String podName) {
-        return podOperator.getAsync(reconciliation.namespace(), podName)
+        return VertxUtil.toFuture(podOperator.getAsync(reconciliation.namespace(), podName))
                 .compose(pod -> {
                     if (pod == null) {
                         LOGGER.debugCr(reconciliation, "Pod {} does not exist => waiting for its creation", podName);
@@ -139,7 +140,7 @@ public class KafkaConnectRoller {
                         if (restartReasons.shouldRestart())  {
                             // Pods changed and needs rolling
                             LOGGER.infoCr(reconciliation, "Rolling pod {}: {}", podName, restartReasons.getAllReasonNotes());
-                            return podOperator.deleteAsync(reconciliation, reconciliation.namespace(), podName, false);
+                            return VertxUtil.toFuture(podOperator.deleteAsync(reconciliation, reconciliation.namespace(), podName, false));
                         } else {
                             // Pod exists and does not need to be rolled
                             LOGGER.debugCr(reconciliation, "Pod {} does not need to be rolled", podName);
@@ -149,7 +150,7 @@ public class KafkaConnectRoller {
                 })
                 .compose(i -> {
                     LOGGER.debugCr(reconciliation, "Waiting for pod {} to become ready", podName);
-                    return podOperator.readiness(reconciliation, reconciliation.namespace(), podName, 1_000, operationTimeoutMs);
+                    return VertxUtil.toFuture(podOperator.readiness(reconciliation, reconciliation.namespace(), podName, 1_000, operationTimeoutMs));
                 });
     }
 

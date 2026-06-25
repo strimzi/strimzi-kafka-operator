@@ -14,7 +14,8 @@ import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.NetworkAPIGroupDSL;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.operator.common.Reconciliation;
-import io.vertx.core.Vertx;
+import io.strimzi.operator.common.operator.resource.concurrent.AbstractNamespacedResourceOperator;
+import io.strimzi.operator.common.operator.resource.concurrent.AbstractNamespacedResourceOperatorTest;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
@@ -67,7 +68,7 @@ public class IngressOperatorTest extends AbstractNamespacedResourceOperatorTest<
     }
 
     @Override
-    protected void mocker(KubernetesClient mockClient, MixedOperation op) {
+    protected void mocker(KubernetesClient mockClient, MixedOperation<Ingress, IngressList, Resource<Ingress>> op) {
         NetworkAPIGroupDSL network = mock(NetworkAPIGroupDSL.class);
         V1NetworkAPIGroupDSL v1 = mock(V1NetworkAPIGroupDSL.class);
         when(network.v1()).thenReturn(v1);
@@ -76,13 +77,13 @@ public class IngressOperatorTest extends AbstractNamespacedResourceOperatorTest<
     }
 
     @Override
-    protected AbstractNamespacedResourceOperator<KubernetesClient, Ingress, IngressList, Resource<Ingress>> createResourceOperations(Vertx vertx, KubernetesClient mockClient) {
-        return new IngressOperator(vertx, mockClient, false);
+    protected AbstractNamespacedResourceOperator<KubernetesClient, Ingress, IngressList, Resource<Ingress>> createResourceOperations(KubernetesClient mockClient) {
+        return new IngressOperator(asyncExecutor, mockClient, false);
     }
 
     @Override
-    protected AbstractNamespacedResourceOperator<KubernetesClient, Ingress, IngressList, Resource<Ingress>> createResourceOperations(Vertx vertx, KubernetesClient mockClient, boolean useServerSideApply) {
-        return new IngressOperator(vertx, mockClient, useServerSideApply);
+    protected AbstractNamespacedResourceOperator<KubernetesClient, Ingress, IngressList, Resource<Ingress>> createResourceOperations(KubernetesClient mockClient, boolean useServerSideApply) {
+        return new IngressOperator(asyncExecutor, mockClient, useServerSideApply);
     }
 
     @ParameterizedTest(name = "{displayName} with SSA enabled: {0}")
@@ -112,7 +113,7 @@ public class IngressOperatorTest extends AbstractNamespacedResourceOperatorTest<
                 .endSpec()
                 .build();
 
-        IngressOperator op = new IngressOperator(vertx, client, useServerSideApply);
+        IngressOperator op = new IngressOperator(asyncExecutor, client, useServerSideApply);
         op.patchIngressClassName(current, desired);
 
         assertThat(desired.getSpec().getIngressClassName(), is(current.getSpec().getIngressClassName()));
@@ -145,7 +146,7 @@ public class IngressOperatorTest extends AbstractNamespacedResourceOperatorTest<
                 .endSpec()
                 .build();
 
-        IngressOperator op = new IngressOperator(vertx, client, useServerSideApply);
+        IngressOperator op = new IngressOperator(asyncExecutor, client, useServerSideApply);
         op.internalUpdate(Reconciliation.DUMMY_RECONCILIATION, NAMESPACE, RESOURCE_NAME, current, desired);
 
         assertThat(desired.getMetadata().getAnnotations().get("field.cattle.io/publicEndpoints"), equalTo("foo"));

@@ -32,7 +32,6 @@ import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.cluster.model.NodeRef;
 import io.strimzi.operator.cluster.operator.VertxUtil;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
-import io.strimzi.operator.cluster.operator.resource.kubernetes.CrdOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.StrimziPodSetOperator;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.InvalidConfigurationException;
@@ -46,6 +45,7 @@ import io.strimzi.operator.common.model.NamespaceAndName;
 import io.strimzi.operator.common.model.PasswordGenerator;
 import io.strimzi.operator.common.model.StatusDiff;
 import io.strimzi.operator.common.model.StatusUtils;
+import io.strimzi.operator.common.operator.resource.concurrent.CrdOperator;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -137,7 +137,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
     @Override
     public void reconcileThese(String trigger, Set<NamespaceAndName> desiredNames, String namespace, Handler<AsyncResult<Void>> handler) {
         super.reconcileThese(trigger, desiredNames, namespace, ignore -> {
-            nodePoolOperator.listAsync(namespace, selector())
+            VertxUtil.toFuture(nodePoolOperator.listAsync(namespace, selector()))
                     .onComplete(ar -> {
                         if (ar.succeeded()) {
                             metrics.resetNodePoolCounters(namespace);
@@ -296,7 +296,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         Future<Void> updateStatus(KafkaStatus desiredStatus) {
             Promise<Void> updateStatusPromise = Promise.promise();
 
-            kafkaOperator.getAsync(namespace, name).onComplete(getRes -> {
+            VertxUtil.toFuture(kafkaOperator.getAsync(namespace, name)).onComplete(getRes -> {
                 if (getRes.succeeded())    {
                     Kafka kafka = getRes.result();
 
@@ -308,7 +308,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         if (!ksDiff.isEmpty()) {
                             Kafka resourceWithNewStatus = new KafkaBuilder(kafka).withStatus(desiredStatus).build();
 
-                            kafkaOperator.updateStatusAsync(reconciliation, resourceWithNewStatus).onComplete(updateRes -> {
+                            VertxUtil.toFuture(kafkaOperator.updateStatusAsync(reconciliation, resourceWithNewStatus)).onComplete(updateRes -> {
                                 if (updateRes.succeeded()) {
                                     LOGGER.debugCr(reconciliation, "Completed status update");
                                     updateStatusPromise.complete();
@@ -342,7 +342,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         Future<ReconciliationState> initialStatus() {
             Promise<ReconciliationState> initialStatusPromise = Promise.promise();
 
-            kafkaOperator.getAsync(namespace, name).onComplete(getRes -> {
+            VertxUtil.toFuture(kafkaOperator.getAsync(namespace, name)).onComplete(getRes -> {
                 if (getRes.succeeded())    {
                     Kafka kafka = getRes.result();
 
@@ -493,8 +493,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     .withStrimziCluster(reconciliation.name())
                     .withStrimziName(KafkaResources.kafkaComponentName(reconciliation.name()));
 
-            Future<List<KafkaNodePool>> nodePoolFuture = nodePoolOperator.listAsync(namespace, Labels.fromMap(Map.of(Labels.STRIMZI_CLUSTER_LABEL, name)));
-            Future<List<StrimziPodSet>> podSetFuture = strimziPodSetOperator.listAsync(namespace, kafkaSelectorLabels);
+            Future<List<KafkaNodePool>> nodePoolFuture = VertxUtil.toFuture(nodePoolOperator.listAsync(namespace, Labels.fromMap(Map.of(Labels.STRIMZI_CLUSTER_LABEL, name))));
+            Future<List<StrimziPodSet>> podSetFuture = VertxUtil.toFuture(strimziPodSetOperator.listAsync(namespace, kafkaSelectorLabels));
 
             return Future.join(podSetFuture, nodePoolFuture)
                     .compose(res -> {
@@ -700,7 +700,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
      */
     @Override
     protected Future<Boolean> delete(Reconciliation reconciliation) {
-        return ReconcilerUtils.withIgnoreRbacError(reconciliation, clusterRoleBindingOperations.reconcile(reconciliation, KafkaResources.initContainerClusterRoleBindingName(reconciliation.name(), reconciliation.namespace()), null), null)
+        return ReconcilerUtils.withIgnoreRbacError(reconciliation, VertxUtil.toFuture(clusterRoleBindingOperations.reconcile(reconciliation, KafkaResources.initContainerClusterRoleBindingName(reconciliation.name(), reconciliation.namespace()), null)), null)
                 .map(Boolean.FALSE); // Return FALSE since other resources are still deleted by garbage collection
     }
 

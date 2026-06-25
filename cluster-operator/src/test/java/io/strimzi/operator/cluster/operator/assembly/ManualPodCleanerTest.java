@@ -19,7 +19,6 @@ import io.strimzi.operator.cluster.operator.resource.kubernetes.StrimziPodSetOpe
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
-import io.vertx.core.Future;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
@@ -30,6 +29,7 @@ import org.mockito.ArgumentCaptor;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -126,19 +126,19 @@ public class ManualPodCleanerTest {
         StrimziPodSetOperator mockPodSetOps = supplier.strimziPodSetOperator;
 
         ArgumentCaptor<StrimziPodSet> podSetReconciliationCaptor = ArgumentCaptor.forClass(StrimziPodSet.class);
-        when(mockPodSetOps.getAsync(any(), eq(CONTROLLER_NAME))).thenReturn(Future.succeededFuture(new StrimziPodSetBuilder().withNewMetadata().withName(CONTROLLER_NAME).endMetadata().withNewSpec().withPods(PodSetUtils.podsToMaps(pods)).endSpec().build()));
-        when(mockPodSetOps.reconcile(any(), any(), eq(CONTROLLER_NAME), podSetReconciliationCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockPodSetOps.getAsync(any(), eq(CONTROLLER_NAME))).thenReturn(CompletableFuture.completedFuture(new StrimziPodSetBuilder().withNewMetadata().withName(CONTROLLER_NAME).endMetadata().withNewSpec().withPods(PodSetUtils.podsToMaps(pods)).endSpec().build()));
+        when(mockPodSetOps.reconcile(any(), any(), eq(CONTROLLER_NAME), podSetReconciliationCaptor.capture())).thenReturn(CompletableFuture.completedFuture(null));
 
         PodOperator mockPodOps = supplier.podOperations;
-        when(mockPodOps.listAsync(any(), eq(SELECTOR))).thenReturn(Future.succeededFuture(pods));
+        when(mockPodOps.listAsync(any(), eq(SELECTOR))).thenReturn(CompletableFuture.completedFuture(pods));
         ArgumentCaptor<String> podDeletionCaptor = ArgumentCaptor.forClass(String.class);
-        when(mockPodOps.deleteAsync(any(), any(), podDeletionCaptor.capture(), anyBoolean())).thenReturn(Future.succeededFuture());
-        when(mockPodOps.readiness(any(), any(), any(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockPodOps.deleteAsync(any(), any(), podDeletionCaptor.capture(), anyBoolean())).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockPodOps.readiness(any(), any(), any(), anyLong(), anyLong())).thenReturn(CompletableFuture.completedFuture(null));
 
         PvcOperator mockPvcOps = supplier.pvcOperations;
-        when(mockPvcOps.listAsync(any(), eq(SELECTOR))).thenReturn(Future.succeededFuture(pvcs));
+        when(mockPvcOps.listAsync(any(), eq(SELECTOR))).thenReturn(CompletableFuture.completedFuture(pvcs));
         ArgumentCaptor<String> pvcDeletionCaptor = ArgumentCaptor.forClass(String.class);
-        when(mockPvcOps.deleteAsync(any(), any(), pvcDeletionCaptor.capture(), anyBoolean())).thenReturn(Future.succeededFuture());
+        when(mockPvcOps.deleteAsync(any(), any(), pvcDeletionCaptor.capture(), anyBoolean())).thenReturn(CompletableFuture.completedFuture(null));
 
         ManualPodCleaner cleaner = new ManualPodCleaner(
                 Reconciliation.DUMMY_RECONCILIATION,

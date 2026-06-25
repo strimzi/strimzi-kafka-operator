@@ -12,8 +12,7 @@ import io.fabric8.openshift.api.model.BuildConfigList;
 import io.fabric8.openshift.api.model.BuildTriggerPolicy;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.fabric8.openshift.client.dsl.BuildConfigResource;
-import io.vertx.core.Vertx;
-import io.vertx.junit5.VertxTestContext;
+import io.strimzi.operator.common.operator.resource.concurrent.AbstractNamespacedResourceOperatorTest;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
@@ -24,13 +23,13 @@ public class BuildConfigOperatorTest extends AbstractNamespacedResourceOperatorT
         BuildConfigList, BuildConfigResource<BuildConfig, Void, Build>> {
 
     @Override
-    protected void mocker(OpenShiftClient mockClient, MixedOperation mockCms) {
+    protected void mocker(OpenShiftClient mockClient, MixedOperation<BuildConfig, BuildConfigList, BuildConfigResource<BuildConfig, Void, Build>> mockCms) {
         when(mockClient.buildConfigs()).thenReturn(mockCms);
     }
 
     @Override
-    protected BuildConfigOperator createResourceOperations(Vertx vertx, OpenShiftClient mockClient) {
-        return new BuildConfigOperator(vertx, mockClient);
+    protected BuildConfigOperator createResourceOperations(OpenShiftClient mockClient) {
+        return new BuildConfigOperator(asyncExecutor, mockClient);
     }
 
     @Override
@@ -67,14 +66,14 @@ public class BuildConfigOperatorTest extends AbstractNamespacedResourceOperatorT
     @Override
     @ParameterizedTest(name = "{displayName} with SSA enabled: {0}")
     @MethodSource("useServerSideApplyCombinations")
-    public void testCreateWhenExistsWithChangeIsAPatch(boolean useServerSideApply, VertxTestContext context) {
-        testCreateWhenExistsWithChangeIsAPatch(context, false, useServerSideApply);
+    public void testCreateWhenExistsWithChangeIsAPatch(boolean useServerSideApply) {
+        testCreateWhenExistsWithChangeIsAPatch(false, useServerSideApply);
     }
 
     @Override
     @ParameterizedTest(name = "{displayName} with SSA enabled: {0}")
     @MethodSource("useServerSideApplyCombinations")
-    public void testReconcileDeleteDoesNotTimeoutWhenResourceIsAlreadyDeleted(boolean useServerSideApply, VertxTestContext context) {
+    public void testReconcileDeleteDoesNotTimeoutWhenResourceIsAlreadyDeleted(boolean useServerSideApply) {
         assumeTrue(false, "BuildConfigOperator does not use self-closing watch so this test should be skipped");
     }
 }

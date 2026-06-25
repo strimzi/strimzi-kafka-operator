@@ -11,25 +11,23 @@ import io.fabric8.kubernetes.api.model.ServicePort;
 import io.fabric8.kubernetes.api.model.ServicePortBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.ServiceResource;
-import io.vertx.junit5.VertxExtension;
-import io.vertx.junit5.VertxTestContext;
-import org.junit.jupiter.api.extension.ExtendWith;
+import io.strimzi.operator.common.operator.resource.concurrent.AbstractNamespacedResourceOperator;
+import io.strimzi.operator.common.operator.resource.concurrent.AbstractNamespacedResourceOperatorServerSideApplyIT;
 
 import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-@ExtendWith(VertxExtension.class)
 public class ServiceOperatorServerSideApplyIT extends AbstractNamespacedResourceOperatorServerSideApplyIT<KubernetesClient, Service, ServiceList, ServiceResource<Service>> {
 
     @Override
-    protected AbstractNamespacedResourceOperator<KubernetesClient, Service, ServiceList,
+    public AbstractNamespacedResourceOperator<KubernetesClient, Service, ServiceList,
                 ServiceResource<Service>> operator() {
-        return new ServiceOperator(vertx, client, true);
+        return new ServiceOperator(asyncExecutor, client, true);
     }
 
     @Override
-    protected Service getOriginal()  {
+    public Service getOriginal()  {
         ServicePort servicePort = new ServicePortBuilder()
             .withName("http")
             .withProtocol("TCP")
@@ -52,7 +50,7 @@ public class ServiceOperatorServerSideApplyIT extends AbstractNamespacedResource
     }
 
     @Override
-    protected Service getModified()  {
+    public Service getModified()  {
         ServicePort servicePort = new ServicePortBuilder()
             .withName("http")
             .withProtocol("TCP")
@@ -82,7 +80,7 @@ public class ServiceOperatorServerSideApplyIT extends AbstractNamespacedResource
     }
 
     @Override
-    Service getNonConflicting() {
+    public Service getNonConflicting() {
         ServicePort servicePort = new ServicePortBuilder()
             .withName("http")
             .withProtocol("TCP")
@@ -105,7 +103,7 @@ public class ServiceOperatorServerSideApplyIT extends AbstractNamespacedResource
     }
 
     @Override
-    protected Service getConflicting() {
+    public Service getConflicting() {
         ServicePort servicePort = new ServicePortBuilder()
             .withName("http")
             .withProtocol("TCP")
@@ -135,16 +133,16 @@ public class ServiceOperatorServerSideApplyIT extends AbstractNamespacedResource
     }
 
     @Override
-    protected void assertResources(VertxTestContext context, Service expected, Service actual)   {
-        context.verify(() -> assertThat(actual.getMetadata().getName(), is(expected.getMetadata().getName())));
-        context.verify(() -> assertThat(actual.getMetadata().getNamespace(), is(expected.getMetadata().getNamespace())));
-        context.verify(() -> assertThat(actual.getMetadata().getLabels(), is(expected.getMetadata().getLabels())));
-        context.verify(() -> assertThat(actual.getSpec().getPorts().size(), is(expected.getSpec().getPorts().size())));
+    public void assertResources(Service expected, Service actual)   {
+        assertThat(actual.getMetadata().getName(), is(expected.getMetadata().getName()));
+        assertThat(actual.getMetadata().getNamespace(), is(expected.getMetadata().getNamespace()));
+        assertThat(actual.getMetadata().getLabels(), is(expected.getMetadata().getLabels()));
+        assertThat(actual.getSpec().getPorts().size(), is(expected.getSpec().getPorts().size()));
         actual.getSpec().getPorts().forEach(actualPort -> {
-                context.verify(() -> assertThat(expected.getSpec().getPorts().stream().anyMatch(servicePort -> servicePort.getPort().equals(actualPort.getPort())), is(true)));
-                context.verify(() -> assertThat(expected.getSpec().getPorts().stream().anyMatch(servicePort -> servicePort.getTargetPort().equals(actualPort.getTargetPort())), is(true)));
+                assertThat(expected.getSpec().getPorts().stream().anyMatch(servicePort -> servicePort.getPort().equals(actualPort.getPort())), is(true));
+                assertThat(expected.getSpec().getPorts().stream().anyMatch(servicePort -> servicePort.getTargetPort().equals(actualPort.getTargetPort())), is(true));
             }
         );
-        context.verify(() -> assertThat(actual.getSpec().getType(), is(expected.getSpec().getType())));
+        assertThat(actual.getSpec().getType(), is(expected.getSpec().getType()));
     }
 }

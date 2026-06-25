@@ -10,7 +10,8 @@ import io.fabric8.kubernetes.api.model.NodeList;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.vertx.core.Vertx;
+import io.strimzi.operator.common.operator.resource.concurrent.AbstractNonNamespacedResourceOperator;
+import io.strimzi.operator.common.operator.resource.concurrent.AbstractNonNamespacedResourceOperatorTest;
 
 import static java.util.Collections.singletonMap;
 import static org.mockito.Mockito.when;
@@ -26,8 +27,8 @@ public class NodeOperatorTest extends AbstractNonNamespacedResourceOperatorTest<
     @Override
     protected AbstractNonNamespacedResourceOperator<KubernetesClient, Node, NodeList,
             Resource<Node>> createResourceOperations(
-                    Vertx vertx, KubernetesClient mockClient) {
-        return new NodeOperator(vertx, mockClient) {
+                    KubernetesClient mockClient) {
+        return new NodeOperator(asyncExecutor, mockClient) {
             @Override
             protected long deleteTimeoutMs() {
                 return 100;

@@ -15,9 +15,9 @@ import io.strimzi.api.kafka.model.kafka.KafkaList;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.operator.common.Reconciliation;
-import io.vertx.core.Vertx;
-import io.vertx.junit5.Checkpoint;
-import io.vertx.junit5.VertxTestContext;
+import io.strimzi.operator.common.operator.resource.concurrent.AbstractNamespacedResourceOperatorTest;
+import io.strimzi.operator.common.operator.resource.concurrent.CrdOperator;
+import io.strimzi.test.TestUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -26,6 +26,7 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.matches;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -79,17 +80,17 @@ public class KafkaCrdOperatorTest extends AbstractNamespacedResourceOperatorTest
     }
 
     @Override
-    protected void mocker(KubernetesClient mockClient, MixedOperation op) {
-        when(mockClient.resources(any(), any())).thenReturn(op);
+    protected void mocker(KubernetesClient mockClient, MixedOperation<Kafka, KafkaList, Resource<Kafka>> op) {
+        doReturn(op).when(mockClient).resources(any(), any());
     }
 
     @Override
-    protected CrdOperator createResourceOperations(Vertx vertx, KubernetesClient mockClient) {
-        return new CrdOperator(vertx, mockClient, Kafka.class, KafkaList.class, Kafka.RESOURCE_KIND);
+    protected CrdOperator<KubernetesClient, Kafka, KafkaList> createResourceOperations(KubernetesClient mockClient) {
+        return new CrdOperator<>(asyncExecutor, mockClient, Kafka.class, KafkaList.class, Kafka.RESOURCE_KIND);
     }
 
     @Test
-    public void testUpdateStatusAsync(VertxTestContext context) {
+    public void testUpdateStatusAsync() {
         Kafka resource = resource();
         Resource mockResource = mock(resourceType());
 
@@ -103,17 +104,15 @@ public class KafkaCrdOperatorTest extends AbstractNamespacedResourceOperatorTest
         KubernetesClient mockClient = mock(KubernetesClient.class);
         mocker(mockClient, mockCms);
 
-        Checkpoint async = context.checkpoint();
-
-        createResourceOperations(vertx, mockClient)
+        TestUtils.await(createResourceOperations(mockClient)
             .updateStatusAsync(Reconciliation.DUMMY_RECONCILIATION, resource())
-            .onComplete(context.succeeding(kafka -> async.flag()));
+            .whenComplete(TestUtils::assertSuccessful));
     }
 
     @Override
     @ParameterizedTest(name = "{displayName} with SSA enabled: {0}")
     @MethodSource("useServerSideApplyCombinations")
-    public void testReconcileDeleteDoesNotTimeoutWhenResourceIsAlreadyDeleted(boolean useServerSideApply, VertxTestContext context) {
+    public void testReconcileDeleteDoesNotTimeoutWhenResourceIsAlreadyDeleted(boolean useServerSideApply) {
         assumeTrue(false, "CrdOperator does not use self-closing watch so this test should be skipped");
     }
 }

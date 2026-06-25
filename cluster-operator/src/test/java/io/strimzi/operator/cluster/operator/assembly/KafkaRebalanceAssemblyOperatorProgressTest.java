@@ -10,6 +10,7 @@ import io.strimzi.api.kafka.model.common.Condition;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalance;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceState;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceStatus;
+import io.strimzi.operator.cluster.operator.VertxUtil;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlUserTaskStatus;
 import io.vertx.core.Future;
@@ -117,7 +118,7 @@ public class KafkaRebalanceAssemblyOperatorProgressTest extends AbstractKafkaReb
 
     private Future<ConfigMap> reconcile(Reconciliation reconciliation) {
         return  krao.reconcile(reconciliation)
-                .compose(res -> this.supplier.configMapOperations.getAsync(namespace, RESOURCE_NAME));
+                .compose(res -> VertxUtil.toFuture(this.supplier.configMapOperations.getAsync(namespace, RESOURCE_NAME)));
     }
 
     private Future<Void> mockCruiseControlTask(CruiseControlUserTaskStatus taskStatus, boolean stateEndpointFetchError) {
