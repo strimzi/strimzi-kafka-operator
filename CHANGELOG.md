@@ -2,7 +2,7 @@
 
 ## 1.2.0
 
-* _Nothing here yet, but we will surely develop something new pretty soon_ 😉
+* Add support for Apache Kafka 4.3.1
 
 ### Major changes, deprecations, and removals
 
