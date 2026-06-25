@@ -808,20 +808,20 @@ public class KafkaBridgeAssemblyOperatorTest {
                 .endSpec()
                 .build();
 
-        when(mockBridgeOps.getAsync(eq(NAMESPACE), eq(NAME))).thenReturn(Future.succeededFuture(bridgeWithTls));
-        when(mockBridgeOps.updateStatusAsync(any(), any())).thenReturn(Future.succeededFuture());
+        when(mockBridgeOps.getAsync(eq(NAMESPACE), eq(NAME))).thenReturn(CompletableFuture.completedFuture(bridgeWithTls));
+        when(mockBridgeOps.updateStatusAsync(any(), any())).thenReturn(CompletableFuture.completedFuture(null));
 
-        when(mockDcOps.scaleDown(any(), eq(NAMESPACE), any(), anyInt(), anyLong())).thenReturn(Future.succeededFuture());
-        when(mockDcOps.scaleUp(any(), eq(NAMESPACE), any(), anyInt(), anyLong())).thenReturn(Future.succeededFuture());
-        when(mockDcOps.reconcile(any(), eq(NAMESPACE), any(), any())).thenReturn(Future.succeededFuture());
-        when(mockDcOps.waitForObserved(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
-        when(mockDcOps.readiness(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockDcOps.scaleDown(any(), eq(NAMESPACE), any(), anyInt(), anyLong())).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockDcOps.scaleUp(any(), eq(NAMESPACE), any(), anyInt(), anyLong())).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockDcOps.reconcile(any(), eq(NAMESPACE), any(), any())).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockDcOps.waitForObserved(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockDcOps.readiness(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(CompletableFuture.completedFuture(null));
 
-        when(mockServiceOps.reconcile(any(), eq(NAMESPACE), any(), any())).thenReturn(Future.succeededFuture());
-        when(mockPdbOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture());
-        when(mockCmOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture());
+        when(mockServiceOps.reconcile(any(), eq(NAMESPACE), any(), any())).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockPdbOps.reconcile(any(), anyString(), any(), any())).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockCmOps.reconcile(any(), anyString(), any(), any())).thenReturn(CompletableFuture.completedFuture(null));
         // Metrics ConfigMap
-        when(mockCmOps.getAsync(any(), eq("my-metrics-config"))).thenReturn(Future.succeededFuture(new ConfigMapBuilder().withData(Map.of("metrics.yaml", "metrics-config")).build()));
+        when(mockCmOps.getAsync(any(), eq("my-metrics-config"))).thenReturn(CompletableFuture.completedFuture(new ConfigMapBuilder().withData(Map.of("metrics.yaml", "metrics-config")).build()));
 
         // Mock Secrets - the shared TLS secret referenced multiple times
         Secret tlsSecret = new SecretBuilder()
@@ -834,9 +834,9 @@ public class KafkaBridgeAssemblyOperatorTest {
                     "ca2.crt", Util.encodeToBase64(DUMMY_CERT),
                     "ca3.crt", Util.encodeToBase64(DUMMY_CERT)))
                 .build();
-        when(mockSecretOps.getAsync(eq(NAMESPACE), eq("shared-tls-secret"))).thenReturn(Future.succeededFuture(tlsSecret));
-        when(mockSecretOps.getAsync(eq(NAMESPACE), eq("shared-tls-secret-2"))).thenReturn(Future.succeededFuture(tlsSecret2));
-        when(mockSecretOps.reconcile(any(), eq(NAMESPACE), any(), any())).thenReturn(Future.succeededFuture());
+        when(mockSecretOps.getAsync(eq(NAMESPACE), eq("shared-tls-secret"))).thenReturn(CompletableFuture.completedFuture(tlsSecret));
+        when(mockSecretOps.getAsync(eq(NAMESPACE), eq("shared-tls-secret-2"))).thenReturn(CompletableFuture.completedFuture(tlsSecret2));
+        when(mockSecretOps.reconcile(any(), eq(NAMESPACE), any(), any())).thenReturn(CompletableFuture.completedFuture(null));
 
         KafkaBridgeAssemblyOperator ops = new KafkaBridgeAssemblyOperator(vertx,
                 new PlatformFeaturesAvailability(true, kubernetesVersion),

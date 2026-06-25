@@ -1352,45 +1352,45 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
 
         // Mock PodSets
         StrimziPodSetOperator mockPodSetOps = supplier.strimziPodSetOperator;
-        when(mockPodSetOps.getAsync(eq(NAMESPACE), eq(COMPONENT_NAME))).thenReturn(Future.succeededFuture());
-        when(mockPodSetOps.readiness(any(), eq(NAMESPACE), eq(COMPONENT_NAME), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
-        when(mockPodSetOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), any())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(3))));
+        when(mockPodSetOps.getAsync(eq(NAMESPACE), eq(COMPONENT_NAME))).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockPodSetOps.readiness(any(), eq(NAMESPACE), eq(COMPONENT_NAME), anyLong(), anyLong())).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockPodSetOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), any())).thenAnswer(i -> CompletableFuture.completedFuture(ReconcileResult.created(i.getArgument(3))));
 
         // Mock PDBs
         PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
-        when(mockPdbOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), any())).thenReturn(Future.succeededFuture());
+        when(mockPdbOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), any())).thenReturn(CompletableFuture.completedFuture(null));
 
         // Mock Config Maps
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
-        when(mockCmOps.reconcile(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), any())).thenReturn(Future.succeededFuture());
+        when(mockCmOps.reconcile(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), any())).thenReturn(CompletableFuture.completedFuture(null));
 
         // Mock Services
         ServiceOperator mockServiceOps = supplier.serviceOperations;
-        when(mockServiceOps.reconcile(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), any())).thenReturn(Future.succeededFuture());
+        when(mockServiceOps.reconcile(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), any())).thenReturn(CompletableFuture.completedFuture(null));
 
         // Mock Network Policies
         NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
-        when(mockNetPolOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), any())).thenReturn(Future.succeededFuture());
+        when(mockNetPolOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), any())).thenReturn(CompletableFuture.completedFuture(null));
 
         // Mock Pods
         PodOperator mockPodOps = supplier.podOperations;
-        when(mockPodOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(Future.succeededFuture(List.of()));
-        when(mockPodOps.getAsync(eq(NAMESPACE), startsWith(COMPONENT_NAME))).thenReturn(Future.succeededFuture());
-        when(mockPodOps.reconcile(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), any())).thenReturn(Future.succeededFuture());
-        when(mockPodOps.readiness(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockPodOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(CompletableFuture.completedFuture(List.of()));
+        when(mockPodOps.getAsync(eq(NAMESPACE), startsWith(COMPONENT_NAME))).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockPodOps.reconcile(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), any())).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockPodOps.readiness(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), anyLong(), anyLong())).thenReturn(CompletableFuture.completedFuture(null));
 
         // Mock Secrets
         SecretOperator mockSecretOps = supplier.secretOperations;
-        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaConnectResources.jmxSecretName(NAME)))).thenReturn(Future.succeededFuture());
-        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(TLS_SECRET_1_NAME))).thenReturn(Future.succeededFuture(TLS_SECRET_1));
-        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(TLS_SECRET_2_NAME))).thenReturn(Future.succeededFuture(TLS_SECRET_2));
-        when(mockSecretOps.reconcile(any(), eq(NAMESPACE), any(), any())).thenReturn(Future.succeededFuture());
+        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaConnectResources.jmxSecretName(NAME)))).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(TLS_SECRET_1_NAME))).thenReturn(CompletableFuture.completedFuture(TLS_SECRET_1));
+        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(TLS_SECRET_2_NAME))).thenReturn(CompletableFuture.completedFuture(TLS_SECRET_2));
+        when(mockSecretOps.reconcile(any(), eq(NAMESPACE), any(), any())).thenReturn(CompletableFuture.completedFuture(null));
 
         // Mock KafkaMirrorMaker2 CRs
         CrdOperator<KubernetesClient, KafkaMirrorMaker2, KafkaMirrorMaker2List> mockConnectOps = supplier.mirrorMaker2Operator;
         when(mockConnectOps.get(eq(NAMESPACE), eq(NAME))).thenReturn(MM2_WITH_TLS);
-        when(mockConnectOps.getAsync(eq(NAMESPACE), eq(NAME))).thenReturn(Future.succeededFuture(MM2_WITH_TLS));
-        when(mockConnectOps.updateStatusAsync(any(), any())).thenReturn(Future.succeededFuture());
+        when(mockConnectOps.getAsync(eq(NAMESPACE), eq(NAME))).thenReturn(CompletableFuture.completedFuture(MM2_WITH_TLS));
+        when(mockConnectOps.updateStatusAsync(any(), any())).thenReturn(CompletableFuture.completedFuture(null));
 
         // Mock Connect API
         KafkaConnectApi mockConnectClient = mock(KafkaConnectApi.class);
@@ -1440,51 +1440,51 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
 
         // Mock PodSet
         StrimziPodSetOperator mockPodSetOps = supplier.strimziPodSetOperator;
-        when(mockPodSetOps.getAsync(eq(NAMESPACE), eq(COMPONENT_NAME))).thenReturn(Future.succeededFuture());
-        when(mockPodSetOps.readiness(any(), eq(NAMESPACE), eq(COMPONENT_NAME), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockPodSetOps.getAsync(eq(NAMESPACE), eq(COMPONENT_NAME))).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockPodSetOps.readiness(any(), eq(NAMESPACE), eq(COMPONENT_NAME), anyLong(), anyLong())).thenReturn(CompletableFuture.completedFuture(null));
         ArgumentCaptor<StrimziPodSet> podSetCaptor = ArgumentCaptor.forClass(StrimziPodSet.class);
-        when(mockPodSetOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), podSetCaptor.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(3))));
+        when(mockPodSetOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), podSetCaptor.capture())).thenAnswer(i -> CompletableFuture.completedFuture(ReconcileResult.created(i.getArgument(3))));
 
         // Mock Secrets
         SecretOperator mockSecretOps = supplier.secretOperations;
-        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaConnectResources.jmxSecretName(NAME)))).thenReturn(Future.succeededFuture());
-        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(TLS_SECRET_1_NAME))).thenReturn(Future.succeededFuture(TLS_SECRET_1));
-        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(TLS_SECRET_2_NAME))).thenReturn(Future.succeededFuture(TLS_SECRET_2));
-        when(mockSecretOps.reconcile(any(), eq(NAMESPACE), any(), any())).thenReturn(Future.succeededFuture());
+        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaConnectResources.jmxSecretName(NAME)))).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(TLS_SECRET_1_NAME))).thenReturn(CompletableFuture.completedFuture(TLS_SECRET_1));
+        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(TLS_SECRET_2_NAME))).thenReturn(CompletableFuture.completedFuture(TLS_SECRET_2));
+        when(mockSecretOps.reconcile(any(), eq(NAMESPACE), any(), any())).thenReturn(CompletableFuture.completedFuture(null));
 
         // Mock PDBs
         PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
-        when(mockPdbOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), any())).thenReturn(Future.succeededFuture());
+        when(mockPdbOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), any())).thenReturn(CompletableFuture.completedFuture(null));
 
         // Mock Config Maps
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
-        when(mockCmOps.reconcile(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), any())).thenReturn(Future.succeededFuture());
+        when(mockCmOps.reconcile(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), any())).thenReturn(CompletableFuture.completedFuture(null));
 
         // Mock Services
         ServiceOperator mockServiceOps = supplier.serviceOperations;
-        when(mockServiceOps.reconcile(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), any())).thenReturn(Future.succeededFuture());
+        when(mockServiceOps.reconcile(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), any())).thenReturn(CompletableFuture.completedFuture(null));
 
         // Mock Network Policies
         NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
-        when(mockNetPolOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), any())).thenReturn(Future.succeededFuture());
+        when(mockNetPolOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), any())).thenReturn(CompletableFuture.completedFuture(null));
 
         // Mock Pods
         PodOperator mockPodOps = supplier.podOperations;
-        when(mockPodOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(Future.succeededFuture(oldPods));
+        when(mockPodOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(CompletableFuture.completedFuture(oldPods));
         when(mockPodOps.getAsync(eq(NAMESPACE), startsWith(COMPONENT_NAME))).thenAnswer(i -> {
             Pod pod = oldPods.stream().filter(p -> i.getArgument(1).equals(p.getMetadata().getName())).findFirst().orElse(null);
-            return Future.succeededFuture(pod);
+            return CompletableFuture.completedFuture(pod);
         });
-        when(mockPodOps.deleteAsync(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), eq(false))).thenReturn(Future.succeededFuture());
-        when(mockPodOps.reconcile(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), any())).thenReturn(Future.succeededFuture());
-        when(mockPodOps.readiness(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockPodOps.deleteAsync(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), eq(false))).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockPodOps.reconcile(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), any())).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockPodOps.readiness(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), anyLong(), anyLong())).thenReturn(CompletableFuture.completedFuture(null));
 
         // Mock KafkaMirrorMaker2 CRs
         CrdOperator<KubernetesClient, KafkaMirrorMaker2, KafkaMirrorMaker2List> mockConnectOps = supplier.mirrorMaker2Operator;
         when(mockConnectOps.get(eq(NAMESPACE), eq(NAME))).thenReturn(MM2_WITH_TLS);
-        when(mockConnectOps.getAsync(eq(NAMESPACE), eq(NAME))).thenReturn(Future.succeededFuture(MM2_WITH_TLS));
+        when(mockConnectOps.getAsync(eq(NAMESPACE), eq(NAME))).thenReturn(CompletableFuture.completedFuture(MM2_WITH_TLS));
         ArgumentCaptor<KafkaMirrorMaker2> mm2StatusCaptor = ArgumentCaptor.forClass(KafkaMirrorMaker2.class);
-        when(mockConnectOps.updateStatusAsync(any(), mm2StatusCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockConnectOps.updateStatusAsync(any(), mm2StatusCaptor.capture())).thenReturn(CompletableFuture.completedFuture(null));
 
         // Mock Connect API
         KafkaConnectApi mockConnectClient = mock(KafkaConnectApi.class);
@@ -1520,7 +1520,7 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
                     }
                     when(mockPodOps.getAsync(eq(NAMESPACE), startsWith(COMPONENT_NAME))).thenAnswer(i -> {
                         Pod pod = newPods.stream().filter(p -> i.getArgument(1).equals(p.getMetadata().getName())).findFirst().orElse(null);
-                        return Future.succeededFuture(pod);
+                        return CompletableFuture.completedFuture(pod);
                     });
 
                     return ops.reconcile(new Reconciliation("test-trigger", KafkaMirrorMaker2.RESOURCE_KIND, NAMESPACE, NAME));
@@ -1533,7 +1533,7 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
                     }
 
                     // Update the Secret
-                    when(mockSecretOps.getAsync(NAMESPACE, TLS_SECRET_1_NAME)).thenAnswer(i -> Future.succeededFuture(
+                    when(mockSecretOps.getAsync(NAMESPACE, TLS_SECRET_1_NAME)).thenAnswer(i -> CompletableFuture.completedFuture(
                         new SecretBuilder(TLS_SECRET_1)
                             .withData(Map.of("ca.crt", Util.encodeToBase64(DUMMY_CERT_2)))
                             .build()));
