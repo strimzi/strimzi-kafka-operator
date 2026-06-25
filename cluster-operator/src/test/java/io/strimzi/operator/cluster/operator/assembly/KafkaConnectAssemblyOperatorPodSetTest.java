@@ -2157,32 +2157,32 @@ public class KafkaConnectAssemblyOperatorPodSetTest {
 
         // Mock PodSets
         StrimziPodSetOperator mockPodSetOps = supplier.strimziPodSetOperator;
-        when(mockPodSetOps.getAsync(eq(NAMESPACE), eq(COMPONENT_NAME))).thenReturn(Future.succeededFuture());
-        when(mockPodSetOps.readiness(any(), eq(NAMESPACE), eq(COMPONENT_NAME), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
-        when(mockPodSetOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), any())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(3))));
+        when(mockPodSetOps.getAsync(eq(NAMESPACE), eq(COMPONENT_NAME))).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockPodSetOps.readiness(any(), eq(NAMESPACE), eq(COMPONENT_NAME), anyLong(), anyLong())).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockPodSetOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), any())).thenAnswer(i -> CompletableFuture.completedFuture(ReconcileResult.created(i.getArgument(3))));
 
         // Mock PDBs
         PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
-        when(mockPdbOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), any())).thenReturn(Future.succeededFuture());
+        when(mockPdbOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), any())).thenReturn(CompletableFuture.completedFuture(null));
 
         // Mock Config Maps
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
-        when(mockCmOps.reconcile(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), any())).thenReturn(Future.succeededFuture());
+        when(mockCmOps.reconcile(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), any())).thenReturn(CompletableFuture.completedFuture(null));
 
         // Mock Services
         ServiceOperator mockServiceOps = supplier.serviceOperations;
-        when(mockServiceOps.reconcile(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), any())).thenReturn(Future.succeededFuture());
+        when(mockServiceOps.reconcile(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), any())).thenReturn(CompletableFuture.completedFuture(null));
 
         // Mock Network Policies
         NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
-        when(mockNetPolOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), any())).thenReturn(Future.succeededFuture());
+        when(mockNetPolOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), any())).thenReturn(CompletableFuture.completedFuture(null));
 
         // Mock Pods
         PodOperator mockPodOps = supplier.podOperations;
-        when(mockPodOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(Future.succeededFuture(List.of()));
-        when(mockPodOps.getAsync(eq(NAMESPACE), startsWith(COMPONENT_NAME))).thenReturn(Future.succeededFuture());
-        when(mockPodOps.reconcile(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), any())).thenReturn(Future.succeededFuture());
-        when(mockPodOps.readiness(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockPodOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(CompletableFuture.completedFuture(List.of()));
+        when(mockPodOps.getAsync(eq(NAMESPACE), startsWith(COMPONENT_NAME))).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockPodOps.reconcile(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), any())).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockPodOps.readiness(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), anyLong(), anyLong())).thenReturn(CompletableFuture.completedFuture(null));
 
         // Mock Secrets - the shared TLS secret referenced multiple times
         Secret tlsSecret = new SecretBuilder()
@@ -2198,16 +2198,16 @@ public class KafkaConnectAssemblyOperatorPodSetTest {
             .build();
 
         SecretOperator mockSecretOps = supplier.secretOperations;
-        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaConnectResources.jmxSecretName(NAME)))).thenReturn(Future.succeededFuture());
-        when(mockSecretOps.getAsync(eq(NAMESPACE), eq("shared-tls-secret"))).thenReturn(Future.succeededFuture(tlsSecret));
-        when(mockSecretOps.getAsync(eq(NAMESPACE), eq("shared-tls-secret-2"))).thenReturn(Future.succeededFuture(tlsSecret2));
-        when(mockSecretOps.reconcile(any(), eq(NAMESPACE), any(), any())).thenReturn(Future.succeededFuture());
+        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaConnectResources.jmxSecretName(NAME)))).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockSecretOps.getAsync(eq(NAMESPACE), eq("shared-tls-secret"))).thenReturn(CompletableFuture.completedFuture(tlsSecret));
+        when(mockSecretOps.getAsync(eq(NAMESPACE), eq("shared-tls-secret-2"))).thenReturn(CompletableFuture.completedFuture(tlsSecret2));
+        when(mockSecretOps.reconcile(any(), eq(NAMESPACE), any(), any())).thenReturn(CompletableFuture.completedFuture(null));
 
         // Mock Connect CRs
         CrdOperator<KubernetesClient, KafkaConnect, KafkaConnectList> mockConnectOps = supplier.connectOperator;
         when(mockConnectOps.get(eq(NAMESPACE), eq(NAME))).thenReturn(connectWithTls);
-        when(mockConnectOps.getAsync(eq(NAMESPACE), eq(NAME))).thenReturn(Future.succeededFuture(connectWithTls));
-        when(mockConnectOps.updateStatusAsync(any(), any())).thenReturn(Future.succeededFuture());
+        when(mockConnectOps.getAsync(eq(NAMESPACE), eq(NAME))).thenReturn(CompletableFuture.completedFuture(connectWithTls));
+        when(mockConnectOps.updateStatusAsync(any(), any())).thenReturn(CompletableFuture.completedFuture(null));
 
         // Mock Connect REST API
         KafkaConnectApi mockConnectClient = mock(KafkaConnectApi.class);
