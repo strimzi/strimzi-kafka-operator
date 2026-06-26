@@ -1,0 +1,41 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: strimzi-access-operator
+  labels:
+    app: strimzi-access-operator
+rules:
+  - apiGroups:
+      - "access.strimzi.io"
+    resources:
+      - kafkaaccesses
+      - kafkaaccesses/status
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - delete
+      - patch
+      - update
+  - apiGroups:
+      - "kafka.strimzi.io"
+    resources:
+      - kafkas
+      - kafkausers
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - ""
+    resources:
+      - secrets
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - delete
+      - patch
+      - update
