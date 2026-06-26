@@ -244,16 +244,20 @@ public class KafkaConnectBuildTest {
         assertThat(pod.getSpec().getContainers().get(0).getPorts(), is(nullValue()));
         assertThat(pod.getSpec().getContainers().get(0).getResources().getLimits(), is(limit));
         assertThat(pod.getSpec().getContainers().get(0).getResources().getRequests(), is(request));
-        assertThat(pod.getSpec().getVolumes().size(), is(2));
+        assertThat(pod.getSpec().getVolumes().size(), is(3));
         assertThat(pod.getSpec().getVolumes().get(0).getName(), is("dockerfile"));
         assertThat(pod.getSpec().getVolumes().get(0).getConfigMap().getName(), is(KafkaConnectResources.dockerFileConfigMapName(NAME)));
-        assertThat(pod.getSpec().getVolumes().get(1).getName(), is("docker-credentials"));
-        assertThat(pod.getSpec().getVolumes().get(1).getSecret().getSecretName(), is("my-docker-credentials"));
-        assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().size(), is(2));
+        assertThat(pod.getSpec().getVolumes().get(1).getName(), is("build-context"));
+        assertThat(pod.getSpec().getVolumes().get(1).getEmptyDir(), is(notNullValue()));
+        assertThat(pod.getSpec().getVolumes().get(2).getName(), is("docker-credentials"));
+        assertThat(pod.getSpec().getVolumes().get(2).getSecret().getSecretName(), is("my-docker-credentials"));
+        assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().size(), is(3));
         assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(0).getName(), is("dockerfile"));
         assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(0).getMountPath(), is("/dockerfile"));
-        assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(1).getName(), is("docker-credentials"));
-        assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(1).getMountPath(), is("/build/.docker"));
+        assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(1).getName(), is("build-context"));
+        assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(1).getMountPath(), is("/var/tmp"));
+        assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(2).getName(), is("docker-credentials"));
+        assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(2).getMountPath(), is("/build/.docker"));
         assertThat(pod.getSpec().getContainers().get(0).getEnv().size(), is(1));
         assertThat(pod.getSpec().getContainers().get(0).getEnv().get(0).getName(), is("REGISTRY_AUTH_FILE"));
         assertThat(pod.getSpec().getContainers().get(0).getEnv().get(0).getValue(), is("/build/.docker/config.json"));
@@ -300,17 +304,21 @@ public class KafkaConnectBuildTest {
         KafkaConnectBuild build = KafkaConnectBuild.fromCrd(new Reconciliation("test", "KafkaConnect", NAMESPACE, NAME), kc, VERSIONS, SHARED_ENV_PROVIDER, true);
 
         Pod pod = build.generateBuilderPod(true, true, ImagePullPolicy.IFNOTPRESENT, null, "cf065b80ede090aa");
-        String[] commands = pod.getSpec().getContainers().get(0).getArgs().get(2).split("\n");
-
-        assertThat(pod.getSpec().getVolumes().size(), is(1));
-        assertThat(commands[0], containsString(EXPECTED_DEFAULT_BUILDAH_BUILD_ARGS));
-        assertThat(commands[1], containsString(EXPECTED_DEFAULT_BUILDAH_PUSH_ARGS));
+        assertThat(pod.getSpec().getVolumes().size(), is(2));
         assertThat(pod.getSpec().getVolumes().get(0).getName(), is("dockerfile"));
         assertThat(pod.getSpec().getVolumes().get(0).getConfigMap().getName(), is(KafkaConnectResources.dockerFileConfigMapName(NAME)));
-        assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().size(), is(1));
+        assertThat(pod.getSpec().getVolumes().get(1).getName(), is("build-context"));
+        assertThat(pod.getSpec().getVolumes().get(1).getEmptyDir(), is(notNullValue()));
+        assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().size(), is(2));
         assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(0).getName(), is("dockerfile"));
         assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(0).getMountPath(), is("/dockerfile"));
+        assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(1).getName(), is("build-context"));
+        assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(1).getMountPath(), is("/var/tmp"));
         assertThat(pod.getSpec().getContainers().get(0).getEnv().size(), is(0));
+
+        String[] commands = pod.getSpec().getContainers().get(0).getArgs().get(2).split("\n");
+        assertThat(commands[0], containsString(EXPECTED_DEFAULT_BUILDAH_BUILD_ARGS));
+        assertThat(commands[1], containsString(EXPECTED_DEFAULT_BUILDAH_PUSH_ARGS));
     }
 
     @Test
@@ -708,24 +716,28 @@ public class KafkaConnectBuildTest {
         KafkaConnectBuild build = KafkaConnectBuild.fromCrd(new Reconciliation("test", "KafkaConnect", NAMESPACE, NAME), kc, VERSIONS, SHARED_ENV_PROVIDER, true);
 
         Pod pod = build.generateBuilderPod(true, true, ImagePullPolicy.IFNOTPRESENT, null, "cf065b80ede090aa");
-        assertThat(pod.getSpec().getVolumes().size(), is(2));
+        assertThat(pod.getSpec().getVolumes().size(), is(3));
         assertThat(pod.getSpec().getVolumes().get(0).getName(), is("dockerfile"));
         assertThat(pod.getSpec().getVolumes().get(0).getConfigMap().getName(), is(KafkaConnectResources.dockerFileConfigMapName(NAME)));
         assertThat(pod.getSpec().getVolumes().get(0).getConfigMap().getItems().size(), is(1));
         assertThat(pod.getSpec().getVolumes().get(0).getConfigMap().getItems().get(0).getKey(), is("Dockerfile"));
         assertThat(pod.getSpec().getVolumes().get(0).getConfigMap().getItems().get(0).getPath(), is("Dockerfile"));
-        assertThat(pod.getSpec().getVolumes().get(1).getName(), is("docker-credentials"));
-        assertThat(pod.getSpec().getVolumes().get(1).getSecret().getSecretName(), is("my-docker-credentials"));
-        assertThat(pod.getSpec().getVolumes().get(1).getSecret().getItems().size(), is(1));
-        assertThat(pod.getSpec().getVolumes().get(1).getSecret().getItems().get(0).getKey(), is(".dockerconfigjson"));
-        assertThat(pod.getSpec().getVolumes().get(1).getSecret().getItems().get(0).getPath(), is("config.json"));
-        assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().size(), is(3));
+        assertThat(pod.getSpec().getVolumes().get(1).getName(), is("build-context"));
+        assertThat(pod.getSpec().getVolumes().get(1).getEmptyDir(), is(notNullValue()));
+        assertThat(pod.getSpec().getVolumes().get(2).getName(), is("docker-credentials"));
+        assertThat(pod.getSpec().getVolumes().get(2).getSecret().getSecretName(), is("my-docker-credentials"));
+        assertThat(pod.getSpec().getVolumes().get(2).getSecret().getItems().size(), is(1));
+        assertThat(pod.getSpec().getVolumes().get(2).getSecret().getItems().get(0).getKey(), is(".dockerconfigjson"));
+        assertThat(pod.getSpec().getVolumes().get(2).getSecret().getItems().get(0).getPath(), is("config.json"));
+        assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().size(), is(4));
         assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(0).getName(), is("dockerfile"));
         assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(0).getMountPath(), is("/dockerfile"));
-        assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(1).getName(), is("docker-credentials"));
-        assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(1).getMountPath(), is("/build/.docker"));
-        assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(2).getName(), is("volume"));
-        assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(2).getMountPath(), is("/mnt/my/path"));
+        assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(1).getName(), is("build-context"));
+        assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(1).getMountPath(), is("/var/tmp"));
+        assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(2).getName(), is("docker-credentials"));
+        assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(2).getMountPath(), is("/build/.docker"));
+        assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(3).getName(), is("volume"));
+        assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(3).getMountPath(), is("/mnt/my/path"));
         assertThat(pod.getSpec().getContainers().get(0).getEnv().size(), is(2));
         assertThat(pod.getSpec().getContainers().get(0).getEnv().get(0).getName(), is("REGISTRY_AUTH_FILE"));
         assertThat(pod.getSpec().getContainers().get(0).getEnv().get(0).getValue(), is("/build/.docker/config.json"));
