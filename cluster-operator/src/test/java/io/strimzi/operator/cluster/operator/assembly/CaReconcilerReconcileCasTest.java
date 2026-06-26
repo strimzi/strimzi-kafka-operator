@@ -14,7 +14,7 @@ import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.certs.CertAndKey;
-import io.strimzi.certs.OpenSslCertManager;
+import io.strimzi.certs.OpenSslCertIssuer;
 import io.strimzi.certs.Subject;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
@@ -116,7 +116,7 @@ public class CaReconcilerReconcileCasTest {
             .endSpec()
             .build();
 
-    private final static OpenSslCertManager CERT_MANAGER = new OpenSslCertManager();
+    private final static OpenSslCertIssuer CERT_ISSUER = new OpenSslCertIssuer();
     private final static PasswordGenerator PASSWORD_GENERATOR = new PasswordGenerator(12,
             "abcdefghijklmnopqrstuvwxyz" +
                     "ABCDEFGHIJKLMNOPQRSTUVWXYZ",
@@ -177,7 +177,7 @@ public class CaReconcilerReconcileCasTest {
         Promise<Void> reconcileCasComplete = Promise.promise();
 
         new CaReconciler(reconciliation, kafka, new ClusterOperatorConfig.ClusterOperatorConfigBuilder(ResourceUtils.dummyClusterOperatorConfig(), KafkaVersionTestUtils.getKafkaVersionLookup()).with(ClusterOperatorConfig.PKCS12_KEYSTORE_GENERATION.key(), Boolean.toString(generatePkcs12Stores)).with(ClusterOperatorConfig.OPERATION_TIMEOUT_MS.key(), "1").build(),
-                supplier, CERT_MANAGER, PASSWORD_GENERATOR)
+                supplier, CERT_ISSUER, PASSWORD_GENERATOR)
                 .reconcileCas(clock)
                 .onComplete(ar -> {
                     if (ar.succeeded()) {
@@ -205,9 +205,9 @@ public class CaReconcilerReconcileCasTest {
                 .withOrganizationName("io.strimzi")
                 .withCommonName(commonName).build();
 
-        CERT_MANAGER.generateSelfSignedCert(clusterCaKeyFile.toFile(), clusterCaCertFile.toFile(), sbj, certificateAuthority.getValidityDays());
+        CERT_ISSUER.generateSelfSignedCert(clusterCaKeyFile.toFile(), clusterCaCertFile.toFile(), sbj, certificateAuthority.getValidityDays());
 
-        CERT_MANAGER.addCertToTrustStore(clusterCaCertFile.toFile(), CA_CRT, clusterCaStoreFile.toFile(), clusterCaStorePassword);
+        CERT_ISSUER.addCertToTrustStore(clusterCaCertFile.toFile(), CA_CRT, clusterCaStoreFile.toFile(), clusterCaStorePassword);
         return new CertAndKey(
                 Files.readAllBytes(clusterCaKeyFile),
                 Files.readAllBytes(clusterCaCertFile),
@@ -943,7 +943,7 @@ public class CaReconcilerReconcileCasTest {
         Files.write(certFile, Util.decodeBytesFromBase64(initialClusterCaCertSecret.getData().get("ca-2018-07-01T09-00-00.crt")));
         Files.write(trustStoreFile, Util.decodeBytesFromBase64(initialClusterCaCertSecret.getData().get(CA_STORE)));
         String trustStorePassword = Util.decodeFromBase64(initialClusterCaCertSecret.getData().get(CA_STORE_PASSWORD));
-        CERT_MANAGER.addCertToTrustStore(certFile.toFile(), "ca-2018-07-01T09-00-00.crt", trustStoreFile.toFile(), trustStorePassword);
+        CERT_ISSUER.addCertToTrustStore(certFile.toFile(), "ca-2018-07-01T09-00-00.crt", trustStoreFile.toFile(), trustStorePassword);
         initialClusterCaCertSecret.getData().put(CA_STORE, Base64.getEncoder().encodeToString(Files.readAllBytes(trustStoreFile)));
         assertThat(isCertInTrustStore("ca-2018-07-01T09-00-00.crt", initialClusterCaCertSecret.getData()), is(true));
 
@@ -964,7 +964,7 @@ public class CaReconcilerReconcileCasTest {
         trustStoreFile.toFile().deleteOnExit();
         Files.write(trustStoreFile, Util.decodeBytesFromBase64(initialClientsCaCertSecret.getData().get(CA_STORE)));
         trustStorePassword = Util.decodeFromBase64(initialClientsCaCertSecret.getData().get(CA_STORE_PASSWORD));
-        CERT_MANAGER.addCertToTrustStore(certFile.toFile(), "ca-2018-07-01T09-00-00.crt", trustStoreFile.toFile(), trustStorePassword);
+        CERT_ISSUER.addCertToTrustStore(certFile.toFile(), "ca-2018-07-01T09-00-00.crt", trustStoreFile.toFile(), trustStorePassword);
         initialClientsCaCertSecret.getData().put(CA_STORE, Base64.getEncoder().encodeToString(Files.readAllBytes(trustStoreFile)));
         assertThat(isCertInTrustStore("ca-2018-07-01T09-00-00.crt", initialClientsCaCertSecret.getData()), is(true));
 
@@ -1164,15 +1164,15 @@ public class CaReconcilerReconcileCasTest {
         Instant now = Instant.now();
         ZonedDateTime notBefore = now.truncatedTo(ChronoUnit.SECONDS).atZone(Clock.systemUTC().getZone());
         ZonedDateTime notAfter = now.plus(2, ChronoUnit.HOURS).truncatedTo(ChronoUnit.SECONDS).atZone(Clock.systemUTC().getZone());
-        CERT_MANAGER.generateRootCaCert(sbj, rootKey, rootCert, notBefore, notAfter, 1);
+        CERT_ISSUER.generateRootCaCert(sbj, rootKey, rootCert, notBefore, notAfter, 1);
 
         // Generate an intermediate cert
         Subject intermediateSubject1 = new Subject.Builder().withCommonName("IntermediateCn1").withOrganizationName("MyOrganization").build();
-        CERT_MANAGER.generateIntermediateCaCert(rootKey, rootCert, intermediateSubject1, intermediateKey1, intermediateCert1, notBefore, notAfter, 1);
+        CERT_ISSUER.generateIntermediateCaCert(rootKey, rootCert, intermediateSubject1, intermediateKey1, intermediateCert1, notBefore, notAfter, 1);
 
         // Generate an additional intermediate cert
         Subject intermediateSubject2 = new Subject.Builder().withCommonName("IntermediateCn2").withOrganizationName("MyOrganization").build();
-        CERT_MANAGER.generateIntermediateCaCert(intermediateKey1, intermediateCert1, intermediateSubject2, intermediateKey2, intermediateCert2, notBefore, notAfter, 1);
+        CERT_ISSUER.generateIntermediateCaCert(intermediateKey1, intermediateCert1, intermediateSubject2, intermediateKey2, intermediateCert2, notBefore, notAfter, 1);
 
         String caKey = Base64.getEncoder().encodeToString(Files.readAllBytes(rootKey.toPath()));
 
@@ -1236,15 +1236,15 @@ public class CaReconcilerReconcileCasTest {
         Instant now = Instant.now();
         ZonedDateTime notBefore = now.truncatedTo(ChronoUnit.SECONDS).atZone(Clock.systemUTC().getZone());
         ZonedDateTime notAfter = now.plus(2, ChronoUnit.HOURS).truncatedTo(ChronoUnit.SECONDS).atZone(Clock.systemUTC().getZone());
-        CERT_MANAGER.generateRootCaCert(sbj, rootKey, rootCert, notBefore, notAfter, 1);
+        CERT_ISSUER.generateRootCaCert(sbj, rootKey, rootCert, notBefore, notAfter, 1);
 
         // Generate an intermediate cert
         Subject intermediateSubject1 = new Subject.Builder().withCommonName("IntermediateCn1").withOrganizationName("MyOrganization").build();
-        CERT_MANAGER.generateIntermediateCaCert(rootKey, rootCert, intermediateSubject1, intermediateKey1, intermediateCert1, notBefore, notAfter, 1);
+        CERT_ISSUER.generateIntermediateCaCert(rootKey, rootCert, intermediateSubject1, intermediateKey1, intermediateCert1, notBefore, notAfter, 1);
 
         // Generate an additional intermediate cert
         Subject intermediateSubject2 = new Subject.Builder().withCommonName("IntermediateCn2").withOrganizationName("MyOrganization").build();
-        CERT_MANAGER.generateIntermediateCaCert(intermediateKey1, intermediateCert1, intermediateSubject2, intermediateKey2, intermediateCert2, notBefore, notAfter, 1);
+        CERT_ISSUER.generateIntermediateCaCert(intermediateKey1, intermediateCert1, intermediateSubject2, intermediateKey2, intermediateCert2, notBefore, notAfter, 1);
 
         String caKey = Base64.getEncoder().encodeToString(Files.readAllBytes(rootKey.toPath()));
 

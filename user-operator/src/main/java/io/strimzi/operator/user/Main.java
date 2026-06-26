@@ -16,7 +16,7 @@ import io.micrometer.prometheusmetrics.PrometheusConfig;
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry;
 import io.strimzi.api.kafka.model.user.KafkaUser;
 import io.strimzi.api.kafka.model.user.KafkaUserList;
-import io.strimzi.certs.OpenSslCertManager;
+import io.strimzi.certs.OpenSslCertIssuer;
 import io.strimzi.operator.common.AdminClientProvider;
 import io.strimzi.operator.common.DefaultAdminClientProvider;
 import io.strimzi.operator.common.MetricsProvider;
@@ -86,7 +86,7 @@ public class Main {
 
         KafkaUserOperator kafkaUserOperator = new KafkaUserOperator(
                 config,
-                new OpenSslCertManager(),
+                new OpenSslCertIssuer(),
                 secretOperator,
                 kafkaUserCrdOperator,
                 new ScramCredentialsOperator(adminClient, config, kafkaUserOperatorExecutor),

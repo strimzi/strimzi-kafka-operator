@@ -36,7 +36,7 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.PasswordGenerator;
-import io.strimzi.operator.common.operator.MockCertManager;
+import io.strimzi.operator.common.operator.MockCertIssuer;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.concurrent.CrdOperator;
 import io.strimzi.platform.KubernetesVersion;
@@ -156,7 +156,7 @@ public class KafkaBridgeAssemblyOperatorTest {
         when(mockBridgeOps.updateStatusAsync(any(), bridgeCaptor.capture())).thenReturn(CompletableFuture.completedFuture(null));
         KafkaBridgeAssemblyOperator ops = new KafkaBridgeAssemblyOperator(vertx,
                 new PlatformFeaturesAvailability(true, kubernetesVersion),
-                new MockCertManager(), new PasswordGenerator(10, "a", "a"),
+                new MockCertIssuer(), new PasswordGenerator(10, "a", "a"),
                 supplier,
                 ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
 
@@ -243,7 +243,7 @@ public class KafkaBridgeAssemblyOperatorTest {
 
         KafkaBridgeAssemblyOperator ops = new KafkaBridgeAssemblyOperator(vertx,
                 new PlatformFeaturesAvailability(true, kubernetesVersion),
-                new MockCertManager(), new PasswordGenerator(10, "a", "a"),
+                new MockCertIssuer(), new PasswordGenerator(10, "a", "a"),
                 supplier,
                 ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
 
@@ -322,7 +322,7 @@ public class KafkaBridgeAssemblyOperatorTest {
 
         KafkaBridgeAssemblyOperator ops = new KafkaBridgeAssemblyOperator(vertx,
                 new PlatformFeaturesAvailability(true, kubernetesVersion),
-                new MockCertManager(), new PasswordGenerator(10, "a", "a"),
+                new MockCertIssuer(), new PasswordGenerator(10, "a", "a"),
                 supplier,
                 ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
 
@@ -377,7 +377,7 @@ public class KafkaBridgeAssemblyOperatorTest {
         when(mockCntrOps.listAsync(any(), any(Labels.class))).thenReturn(CompletableFuture.completedFuture(emptyList()));
 
         KafkaBridgeAssemblyOperator op = new KafkaBridgeAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, kubernetesVersion),
-                                                                         new MockCertManager(), new PasswordGenerator(10, "a", "a"),
+                                                                         new MockCertIssuer(), new PasswordGenerator(10, "a", "a"),
                                                                          supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
         Reconciliation reconciliation = new Reconciliation("test-trigger", KafkaBridge.RESOURCE_KIND, NAMESPACE, NAME);
 
@@ -437,7 +437,7 @@ public class KafkaBridgeAssemblyOperatorTest {
 
         KafkaBridgeAssemblyOperator ops = new KafkaBridgeAssemblyOperator(vertx,
                 new PlatformFeaturesAvailability(true, kubernetesVersion),
-                new MockCertManager(), new PasswordGenerator(10, "a", "a"),
+                new MockCertIssuer(), new PasswordGenerator(10, "a", "a"),
                 supplier,
                 ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
 
@@ -486,7 +486,7 @@ public class KafkaBridgeAssemblyOperatorTest {
         when(mockPdbOps.reconcile(any(), anyString(), any(), any())).thenReturn(CompletableFuture.completedFuture(ReconcileResult.created(new PodDisruptionBudget())));
 
         KafkaBridgeAssemblyOperator ops = new KafkaBridgeAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, kubernetesVersion),
-                new MockCertManager(), new PasswordGenerator(10, "a", "a"), supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
+                new MockCertIssuer(), new PasswordGenerator(10, "a", "a"), supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
 
         Checkpoint async = context.checkpoint();
         ops.createOrUpdate(new Reconciliation("test-trigger", KafkaBridge.RESOURCE_KIND, NAMESPACE, NAME), newBridge)
@@ -538,7 +538,7 @@ public class KafkaBridgeAssemblyOperatorTest {
         when(mockPdbOps.reconcile(any(), anyString(), any(), any())).thenReturn(CompletableFuture.completedFuture(ReconcileResult.created(new PodDisruptionBudget())));
 
         KafkaBridgeAssemblyOperator ops = new KafkaBridgeAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, kubernetesVersion),
-                new MockCertManager(), new PasswordGenerator(10, "a", "a"), supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
+                new MockCertIssuer(), new PasswordGenerator(10, "a", "a"), supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
 
         Checkpoint async = context.checkpoint();
         ops.createOrUpdate(new Reconciliation("test-trigger", KafkaBridge.RESOURCE_KIND, NAMESPACE, NAME), scaledDownCluster)
@@ -596,7 +596,7 @@ public class KafkaBridgeAssemblyOperatorTest {
 
         KafkaBridgeAssemblyOperator ops = new KafkaBridgeAssemblyOperator(vertx,
                 new PlatformFeaturesAvailability(true, kubernetesVersion),
-                new MockCertManager(), new PasswordGenerator(10, "a", "a"),
+                new MockCertIssuer(), new PasswordGenerator(10, "a", "a"),
                 supplier,
                 ResourceUtils.dummyClusterOperatorConfig(VERSIONS)) {
 
@@ -645,7 +645,7 @@ public class KafkaBridgeAssemblyOperatorTest {
 
         KafkaBridgeAssemblyOperator ops = new KafkaBridgeAssemblyOperator(vertx,
                 new PlatformFeaturesAvailability(true, kubernetesVersion),
-                new MockCertManager(), new PasswordGenerator(10, "a", "a"),
+                new MockCertIssuer(), new PasswordGenerator(10, "a", "a"),
                 supplier,
                 ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
 
@@ -696,7 +696,7 @@ public class KafkaBridgeAssemblyOperatorTest {
 
         KafkaBridgeAssemblyOperator ops = new KafkaBridgeAssemblyOperator(vertx,
                 new PlatformFeaturesAvailability(true, kubernetesVersion),
-                new MockCertManager(), new PasswordGenerator(10, "a", "a"),
+                new MockCertIssuer(), new PasswordGenerator(10, "a", "a"),
                 supplier,
                 ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
 
@@ -748,7 +748,7 @@ public class KafkaBridgeAssemblyOperatorTest {
 
         KafkaBridgeAssemblyOperator ops = new KafkaBridgeAssemblyOperator(vertx,
                 new PlatformFeaturesAvailability(true, kubernetesVersion),
-                new MockCertManager(), new PasswordGenerator(10, "a", "a"),
+                new MockCertIssuer(), new PasswordGenerator(10, "a", "a"),
                 supplier,
                 ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
 

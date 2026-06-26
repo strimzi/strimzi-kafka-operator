@@ -22,7 +22,7 @@ import io.strimzi.api.kafka.model.kafka.Storage;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePool;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePoolList;
 import io.strimzi.api.kafka.model.podset.StrimziPodSet;
-import io.strimzi.certs.CertManager;
+import io.strimzi.certs.CertIssuer;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.model.ClusterCa;
@@ -113,15 +113,15 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
      *
      * @param vertx The Vertx instance
      * @param pfa Platform features availability properties
-     * @param certManager Certificate manager
+     * @param certIssuer Certificate issuer
      * @param passwordGenerator Password generator
      * @param supplier Supplies the operators for different resources
      * @param config ClusterOperator configuration. Used to get the user-configured image pull policy and the secrets.
      */
     public KafkaAssemblyOperator(Vertx vertx, PlatformFeaturesAvailability pfa,
-                                 CertManager certManager, PasswordGenerator passwordGenerator,
+                                 CertIssuer certIssuer, PasswordGenerator passwordGenerator,
                                  ResourceOperatorSupplier supplier, ClusterOperatorConfig config) {
-        super(vertx, pfa, Kafka.RESOURCE_KIND, certManager, passwordGenerator,
+        super(vertx, pfa, Kafka.RESOURCE_KIND, certIssuer, passwordGenerator,
                 supplier.kafkaOperator, supplier, config);
         this.config = config;
         this.supplier = supplier;
@@ -395,7 +395,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
          * @return  CaReconciler instance
          */
         CaReconciler caReconciler()   {
-            return new CaReconciler(reconciliation, kafkaAssembly, config, supplier, certManager, passwordGenerator);
+            return new CaReconciler(reconciliation, kafkaAssembly, config, supplier, certIssuer, passwordGenerator);
         }
 
         /**

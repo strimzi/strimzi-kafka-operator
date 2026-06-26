@@ -8,7 +8,7 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlResources;
 import io.strimzi.certs.CertAndKey;
-import io.strimzi.certs.CertManager;
+import io.strimzi.certs.CertIssuer;
 import io.strimzi.certs.IpAndDnsValidation;
 import io.strimzi.certs.Subject;
 import io.strimzi.operator.common.Reconciliation;
@@ -47,32 +47,32 @@ public class ClusterCa extends Ca {
      * Constructor
      *
      * @param reconciliation        Reconciliation marker
-     * @param certManager           Certificate manager instance
+     * @param certIssuer            Certificate issuer instance
      * @param passwordGenerator     Password generator instance
      * @param caCertSecret          Name of the CA public key secret
      * @param caKeySecret           Name of the CA private key secret
      */
-    public ClusterCa(Reconciliation reconciliation, CertManager certManager, PasswordGenerator passwordGenerator, Secret caCertSecret, Secret caKeySecret) {
-        this(reconciliation, certManager, passwordGenerator, caCertSecret, caKeySecret, CaConfig.createDefault());
+    public ClusterCa(Reconciliation reconciliation, CertIssuer certIssuer, PasswordGenerator passwordGenerator, Secret caCertSecret, Secret caKeySecret) {
+        this(reconciliation, certIssuer, passwordGenerator, caCertSecret, caKeySecret, CaConfig.createDefault());
     }
 
     /**
      * Constructor
      *
      * @param reconciliation        Reconciliation marker
-     * @param certManager           Certificate manager instance
+     * @param certIssuer            Certificate issuer instance
      * @param passwordGenerator     Password generator instance
      * @param clusterCaCert         Secret with the public key
      * @param clusterCaKey          Secret with the private key
      * @param caConfig              Certificate Authority configuration
      */
     public ClusterCa(Reconciliation reconciliation,
-                     CertManager certManager,
+                     CertIssuer certIssuer,
                      PasswordGenerator passwordGenerator,
                      Secret clusterCaCert,
                      Secret clusterCaKey,
                      CaConfig caConfig) {
-        super(reconciliation, certManager, passwordGenerator,
+        super(reconciliation, certIssuer, passwordGenerator,
                 "cluster-ca",
                 clusterCaCert,
                 clusterCaKey,

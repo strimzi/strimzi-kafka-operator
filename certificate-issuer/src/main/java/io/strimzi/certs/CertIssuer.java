@@ -16,7 +16,7 @@ import java.util.List;
 /**
  * Manages the certificates
  */
-public interface CertManager {
+public interface CertIssuer {
     /**
      * Generate a self-signed certificate
      *

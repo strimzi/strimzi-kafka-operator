@@ -7,7 +7,7 @@ package io.strimzi.operator.common.auth;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
-import io.strimzi.operator.common.operator.MockCertManager;
+import io.strimzi.operator.common.operator.MockCertIssuer;
 import org.junit.jupiter.api.Test;
 
 import java.util.Map;
@@ -54,7 +54,7 @@ public class PemAuthIdentityTest {
                     .withName(KafkaResources.clusterOperatorCertsSecretName(CLUSTER))
                     .withNamespace(NAMESPACE)
                 .endMetadata()
-                .withData(Map.of("cluster-operator.key", MockCertManager.clusterCaKey(),
+                .withData(Map.of("cluster-operator.key", MockCertIssuer.clusterCaKey(),
                         "cluster-operator.crt", "bm90YWNlcnQ=", //notacert
                         "cluster-operator.p12", "bm90YXRydXN0c3RvcmU=", //notatruststore
                         "cluster-operator.password", "bm90YXBhc3N3b3Jk")) //notapassword

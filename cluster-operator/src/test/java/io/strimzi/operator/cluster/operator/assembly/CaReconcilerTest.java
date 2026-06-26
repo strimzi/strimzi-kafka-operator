@@ -20,7 +20,7 @@ import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.api.kafka.model.podset.StrimziPodSet;
 import io.strimzi.api.kafka.model.podset.StrimziPodSetBuilder;
 import io.strimzi.certs.CertAndKey;
-import io.strimzi.certs.OpenSslCertManager;
+import io.strimzi.certs.OpenSslCertIssuer;
 import io.strimzi.certs.Subject;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
@@ -122,7 +122,7 @@ public class CaReconcilerTest {
             .endSpec()
             .build();
 
-    private final static OpenSslCertManager CERT_MANAGER = new OpenSslCertManager();
+    private final static OpenSslCertIssuer CERT_ISSUER = new OpenSslCertIssuer();
     private final static PasswordGenerator PASSWORD_GENERATOR = new PasswordGenerator(12,
             "abcdefghijklmnopqrstuvwxyz" +
                     "ABCDEFGHIJKLMNOPQRSTUVWXYZ",
@@ -160,9 +160,9 @@ public class CaReconcilerTest {
                 .withOrganizationName("io.strimzi")
                 .withCommonName(commonName).build();
 
-        CERT_MANAGER.generateSelfSignedCert(clusterCaKeyFile.toFile(), clusterCaCertFile.toFile(), sbj, certificateAuthority.getValidityDays());
+        CERT_ISSUER.generateSelfSignedCert(clusterCaKeyFile.toFile(), clusterCaCertFile.toFile(), sbj, certificateAuthority.getValidityDays());
 
-        CERT_MANAGER.addCertToTrustStore(clusterCaCertFile.toFile(), CA_CRT, clusterCaStoreFile.toFile(), clusterCaStorePassword);
+        CERT_ISSUER.addCertToTrustStore(clusterCaCertFile.toFile(), CA_CRT, clusterCaStoreFile.toFile(), clusterCaStorePassword);
         return new CertAndKey(
                 Files.readAllBytes(clusterCaKeyFile),
                 Files.readAllBytes(clusterCaCertFile),
@@ -221,7 +221,7 @@ public class CaReconcilerTest {
         Files.write(certFile, Util.decodeBytesFromBase64(initialClusterCaCertSecret.getData().get(oldCertAlias)));
         Files.write(trustStoreFile, Util.decodeBytesFromBase64(initialClusterCaCertSecret.getData().get(CA_STORE)));
         String trustStorePassword = Util.decodeFromBase64(initialClusterCaCertSecret.getData().get(CA_STORE_PASSWORD));
-        CERT_MANAGER.addCertToTrustStore(certFile.toFile(), oldCertAlias, trustStoreFile.toFile(), trustStorePassword);
+        CERT_ISSUER.addCertToTrustStore(certFile.toFile(), oldCertAlias, trustStoreFile.toFile(), trustStorePassword);
         initialClusterCaCertSecret.getData().put(CA_STORE, Base64.getEncoder().encodeToString(Files.readAllBytes(trustStoreFile)));
 
         // Check it was added correctly
@@ -247,7 +247,7 @@ public class CaReconcilerTest {
         trustStoreFile.toFile().deleteOnExit();
         Files.write(trustStoreFile, Util.decodeBytesFromBase64(initialClientsCaCertSecret.getData().get(CA_STORE)));
         trustStorePassword = Util.decodeFromBase64(initialClientsCaCertSecret.getData().get(CA_STORE_PASSWORD));
-        CERT_MANAGER.addCertToTrustStore(certFile.toFile(), oldCertAlias, trustStoreFile.toFile(), trustStorePassword);
+        CERT_ISSUER.addCertToTrustStore(certFile.toFile(), oldCertAlias, trustStoreFile.toFile(), trustStorePassword);
         initialClientsCaCertSecret.getData().put(CA_STORE, Base64.getEncoder().encodeToString(Files.readAllBytes(trustStoreFile)));
 
         // Check it was added correctly
@@ -980,7 +980,7 @@ public class CaReconcilerTest {
                     kafkaCr,
                     new ClusterOperatorConfig.ClusterOperatorConfigBuilder(ResourceUtils.dummyClusterOperatorConfig(), KafkaVersionTestUtils.getKafkaVersionLookup()).with(ClusterOperatorConfig.OPERATION_TIMEOUT_MS.key(), "1").build(),
                     supplier,
-                    CERT_MANAGER,
+                    CERT_ISSUER,
                     PASSWORD_GENERATOR
             );
         }

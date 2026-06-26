@@ -7,7 +7,7 @@ package io.strimzi.operator.cluster.model;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.strimzi.api.kafka.model.common.CertificateAuthorityBuilder;
-import io.strimzi.certs.OpenSslCertManager;
+import io.strimzi.certs.OpenSslCertIssuer;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Ca;
@@ -34,7 +34,7 @@ public class ClusterCaTest {
         String instantExpected = "2022-03-23T09:00:00Z";
         Clock clock = Clock.fixed(Instant.parse(instantExpected), Clock.systemUTC().getZone());
 
-        ClusterCa clusterCa = new ClusterCa(Reconciliation.DUMMY_RECONCILIATION, new OpenSslCertManager(clock), new PasswordGenerator(10, "a", "a"), null, null);
+        ClusterCa clusterCa = new ClusterCa(Reconciliation.DUMMY_RECONCILIATION, new OpenSslCertIssuer(clock), new PasswordGenerator(10, "a", "a"), null, null);
         clusterCa.setClock(clock);
         clusterCa.createRenewOrReplace(true, false, false);
         assertThat(clusterCa.caCertData().size(), is(3));
@@ -43,7 +43,7 @@ public class ClusterCaTest {
         instantExpected = "2022-03-23T11:00:00Z";
         clock = Clock.fixed(Instant.parse(instantExpected), Clock.systemUTC().getZone());
 
-        clusterCa = new ClusterCa(Reconciliation.DUMMY_RECONCILIATION, new OpenSslCertManager(clock), new PasswordGenerator(10, "a", "a"), buildCertSecret(clusterCa), buildKeySecret(clusterCa));
+        clusterCa = new ClusterCa(Reconciliation.DUMMY_RECONCILIATION, new OpenSslCertIssuer(clock), new PasswordGenerator(10, "a", "a"), buildCertSecret(clusterCa), buildKeySecret(clusterCa));
         clusterCa.setClock(clock);
         // force key replacement so certificate renewal ...
         clusterCa.createRenewOrReplace(true, true, false);
@@ -54,7 +54,7 @@ public class ClusterCaTest {
         instantExpected = "2023-03-23T10:00:00Z";
         clock = Clock.fixed(Instant.parse(instantExpected), Clock.systemUTC().getZone());
 
-        clusterCa = new ClusterCa(Reconciliation.DUMMY_RECONCILIATION, new OpenSslCertManager(), new PasswordGenerator(10, "a", "a"), buildCertSecret(clusterCa), buildKeySecret(clusterCa));
+        clusterCa = new ClusterCa(Reconciliation.DUMMY_RECONCILIATION, new OpenSslCertIssuer(), new PasswordGenerator(10, "a", "a"), buildCertSecret(clusterCa), buildKeySecret(clusterCa));
         clusterCa.setClock(clock);
         clusterCa.createRenewOrReplace(true, false, false);
         assertThat(clusterCa.caCertData().size(), is(3));
@@ -67,7 +67,7 @@ public class ClusterCaTest {
         String instantExpected = "2022-03-30T09:00:00Z";
         Clock clock = Clock.fixed(Instant.parse(instantExpected), Clock.systemUTC().getZone());
 
-        ClusterCa clusterCa = new ClusterCa(Reconciliation.DUMMY_RECONCILIATION, new OpenSslCertManager(clock), new PasswordGenerator(10, "a", "a"), null, null);
+        ClusterCa clusterCa = new ClusterCa(Reconciliation.DUMMY_RECONCILIATION, new OpenSslCertIssuer(clock), new PasswordGenerator(10, "a", "a"), null, null);
         clusterCa.setClock(clock);
         clusterCa.createRenewOrReplace(true, false, false);
 
@@ -90,7 +90,7 @@ public class ClusterCaTest {
         String instantExpected = "2022-03-23T09:00:00Z";
         Clock clock = Clock.fixed(Instant.parse(instantExpected), Clock.systemUTC().getZone());
 
-        ClusterCa clusterCa = new ClusterCa(Reconciliation.DUMMY_RECONCILIATION, new OpenSslCertManager(clock), new PasswordGenerator(10, "a", "a"), null, null);
+        ClusterCa clusterCa = new ClusterCa(Reconciliation.DUMMY_RECONCILIATION, new OpenSslCertIssuer(clock), new PasswordGenerator(10, "a", "a"), null, null);
         clusterCa.setClock(clock);
         clusterCa.createRenewOrReplace(true, false, false);
         assertThat(clusterCa.caCertData().size(), is(3));
@@ -99,7 +99,7 @@ public class ClusterCaTest {
         instantExpected = "2022-03-23T11:00:00Z";
         clock = Clock.fixed(Instant.parse(instantExpected), Clock.systemUTC().getZone());
 
-        clusterCa = new ClusterCa(Reconciliation.DUMMY_RECONCILIATION, new OpenSslCertManager(clock), new PasswordGenerator(10, "a", "a"), buildCertSecret(clusterCa), buildKeySecret(clusterCa));
+        clusterCa = new ClusterCa(Reconciliation.DUMMY_RECONCILIATION, new OpenSslCertIssuer(clock), new PasswordGenerator(10, "a", "a"), buildCertSecret(clusterCa), buildKeySecret(clusterCa));
         clusterCa.setClock(clock);
         // force key replacement so certificate renewal ...
         clusterCa.createRenewOrReplace(true, true, false);
@@ -187,7 +187,7 @@ public class ClusterCaTest {
                 .withData(clusterCaKeyData)
                 .build();
 
-        ClusterCa clusterCa = new ClusterCa(Reconciliation.DUMMY_RECONCILIATION, new OpenSslCertManager(), new PasswordGenerator(10, "a", "a"), clusterCaCert, clusterCaKey, new CaConfig(new CertificateAuthorityBuilder().withGenerateCertificateAuthority(false).build(), true));
+        ClusterCa clusterCa = new ClusterCa(Reconciliation.DUMMY_RECONCILIATION, new OpenSslCertIssuer(), new PasswordGenerator(10, "a", "a"), clusterCaCert, clusterCaKey, new CaConfig(new CertificateAuthorityBuilder().withGenerateCertificateAuthority(false).build(), true));
 
         clusterCa.maybeDeleteOldCerts();
 

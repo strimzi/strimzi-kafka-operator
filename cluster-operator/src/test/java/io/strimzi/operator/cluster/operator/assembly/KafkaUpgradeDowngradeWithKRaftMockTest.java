@@ -32,7 +32,7 @@ import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.PasswordGenerator;
-import io.strimzi.operator.common.operator.MockCertManager;
+import io.strimzi.operator.common.operator.MockCertIssuer;
 import io.strimzi.platform.KubernetesVersion;
 import io.strimzi.test.mockkube3.MockKube3;
 import io.vertx.core.Future;
@@ -188,7 +188,7 @@ public class KafkaUpgradeDowngradeWithKRaftMockTest {
                 .with(ClusterOperatorConfig.OPERATION_TIMEOUT_MS.key(), "10000")
                 .build();
 
-        operator = new KafkaAssemblyOperator(vertx, PFA, new MockCertManager(),
+        operator = new KafkaAssemblyOperator(vertx, PFA, new MockCertIssuer(),
                 new PasswordGenerator(10, "a", "a"), supplier, config);
 
         LOGGER.info("Reconciling initially -> create");

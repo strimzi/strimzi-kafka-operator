@@ -85,7 +85,7 @@ import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.PasswordGenerator;
-import io.strimzi.operator.common.operator.MockCertManager;
+import io.strimzi.operator.common.operator.MockCertIssuer;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.concurrent.CrdOperator;
 import io.strimzi.platform.KubernetesVersion;
@@ -142,7 +142,7 @@ import static org.mockito.Mockito.when;
 public class KafkaAssemblyOperatorTest {
     private static final String NAMESPACE = "my-namespace";
     private static final String CLUSTER_NAME = "my-cluster";
-    private static final MockCertManager CERT_MANAGER = new MockCertManager();
+    private static final MockCertIssuer CERT_ISSUER = new MockCertIssuer();
     private static final PasswordGenerator PASSWORD_GENERATOR = new PasswordGenerator(10, "a", "a");
     private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
     private static final SharedEnvironmentProvider SHARED_ENV_PROVIDER = new MockSharedEnvironmentProvider();
@@ -613,7 +613,7 @@ public class KafkaAssemblyOperatorTest {
         when(mockIngressOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(CompletableFuture.completedFuture(emptyList()));
 
         KafkaAssemblyOperator ops = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(openShift, kubernetesVersion),
-                CERT_MANAGER,
+                CERT_ISSUER,
                 PASSWORD_GENERATOR,
                 supplier,
                 config
@@ -667,7 +667,7 @@ public class KafkaAssemblyOperatorTest {
                     assertNotNull(caTypeTag);
 
                     // The actual type of the ca does not matter, as MockCertManager is using CLUSTER_CERT for both cluster and client
-                    String expectedCa = MockCertManager.clusterCaCert();
+                    String expectedCa = MockCertIssuer.clusterCaCert();
                     try {
                         X509Certificate x509Certificate = x509Certificate(Base64.getDecoder().decode(expectedCa));
                         assertThat(metricValue, is(x509Certificate.getNotAfter().getTime()));
@@ -1085,7 +1085,7 @@ public class KafkaAssemblyOperatorTest {
         when(operations.brokersInUse(any(), any(), any(), any())).thenReturn(Future.succeededFuture(Set.of()));
 
         KafkaAssemblyOperator ops = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(openShift, kubernetesVersion),
-                CERT_MANAGER,
+                CERT_ISSUER,
                 PASSWORD_GENERATOR,
                 supplier,
                 config

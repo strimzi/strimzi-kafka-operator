@@ -9,7 +9,7 @@
     </parent>
     <name>Strimzi Certificates Manager</name>
     <modelVersion>4.0.0</modelVersion>
-    <artifactId>certificate-manager</artifactId>
+    <artifactId>certificate-issuer</artifactId>
 
     <licenses>
         <license>

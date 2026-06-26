@@ -16,7 +16,7 @@ import io.strimzi.api.kafka.model.bridge.KafkaBridgeSpec;
 import io.strimzi.api.kafka.model.bridge.KafkaBridgeStatus;
 import io.strimzi.api.kafka.model.common.CertSecretSource;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthentication;
-import io.strimzi.certs.CertManager;
+import io.strimzi.certs.CertIssuer;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.model.KafkaBridgeCluster;
@@ -63,16 +63,16 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
      *
      * @param vertx The Vertx instance
      * @param pfa Platform features availability properties
-     * @param certManager Certificate manager
+     * @param certIssuer Certificate issuer
      * @param passwordGenerator Password generator
      * @param supplier Supplies the operators for different resources
      * @param config ClusterOperator configuration. Used to get the user-configured image pull policy and the secrets.
      */
     public KafkaBridgeAssemblyOperator(Vertx vertx, PlatformFeaturesAvailability pfa,
-                                       CertManager certManager, PasswordGenerator passwordGenerator,
+                                       CertIssuer certIssuer, PasswordGenerator passwordGenerator,
                                        ResourceOperatorSupplier supplier,
                                        ClusterOperatorConfig config) {
-        super(vertx, pfa, KafkaBridge.RESOURCE_KIND, certManager, passwordGenerator, supplier.kafkaBridgeOperator, supplier, config);
+        super(vertx, pfa, KafkaBridge.RESOURCE_KIND, certIssuer, passwordGenerator, supplier.kafkaBridgeOperator, supplier, config);
         this.deploymentOperations = supplier.deploymentOperations;
         this.sharedEnvironmentProvider = supplier.sharedEnvironmentProvider;
         this.isPodDisruptionBudgetGeneration = config.isPodDisruptionBudgetGeneration();

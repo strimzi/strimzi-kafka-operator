@@ -1,4 +1,4 @@
-PROJECT_NAME=certificate-manager
+PROJECT_NAME=certificate-issuer
 
 docker_build: java_install
 docker_push:

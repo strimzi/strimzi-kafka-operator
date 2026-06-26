@@ -37,7 +37,7 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Ca;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.PasswordGenerator;
-import io.strimzi.operator.common.operator.MockCertManager;
+import io.strimzi.operator.common.operator.MockCertIssuer;
 import io.strimzi.platform.KubernetesVersion;
 import io.strimzi.test.mockkube3.MockKube3;
 import io.vertx.core.Vertx;
@@ -73,7 +73,7 @@ import static org.hamcrest.Matchers.hasEntry;
 public class KafkaAssemblyOperatorKRaftMockTest {
     private static final String CLUSTER_NAME = "my-cluster";
     private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
-    private static final MockCertManager CERT_MANAGER = new MockCertManager();
+    private static final MockCertIssuer CERT_ISSUER = new MockCertIssuer();
     private static final PasswordGenerator PASSWORD_GENERATOR = new PasswordGenerator(10, "a", "a");
 
     private static KubernetesClient client;
@@ -189,7 +189,7 @@ public class KafkaAssemblyOperatorKRaftMockTest {
         ClusterOperatorConfig config = new ClusterOperatorConfig.ClusterOperatorConfigBuilder(ResourceUtils.dummyClusterOperatorConfig(), VERSIONS)
                 .with(ClusterOperatorConfig.OPERATION_TIMEOUT_MS.key(), "10000")
                 .build();
-        operator = new KafkaAssemblyOperator(vertx, pfa, CERT_MANAGER, PASSWORD_GENERATOR, supplier, config);
+        operator = new KafkaAssemblyOperator(vertx, pfa, CERT_ISSUER, PASSWORD_GENERATOR, supplier, config);
     }
 
     private ResourceOperatorSupplier supplierWithMocks() {

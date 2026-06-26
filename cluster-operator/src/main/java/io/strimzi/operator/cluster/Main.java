@@ -8,7 +8,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry;
-import io.strimzi.certs.OpenSslCertManager;
+import io.strimzi.certs.OpenSslCertIssuer;
 import io.strimzi.operator.cluster.leaderelection.LeaderElectionManager;
 import io.strimzi.operator.cluster.model.securityprofiles.PodSecurityProviderFactory;
 import io.strimzi.operator.cluster.operator.VertxUtil;
@@ -178,7 +178,7 @@ public class Main {
         KafkaRebalanceAssemblyOperator kafkaRebalanceAssemblyOperator = null;
 
         if (!config.isPodSetReconciliationOnly()) {
-            OpenSslCertManager certManager = new OpenSslCertManager();
+            OpenSslCertIssuer certIssuer = new OpenSslCertIssuer();
             PasswordGenerator passwordGenerator = new PasswordGenerator(12,
                     "abcdefghijklmnopqrstuvwxyz" +
                             "ABCDEFGHIJKLMNOPQRSTUVWXYZ",
@@ -186,10 +186,10 @@ public class Main {
                             "ABCDEFGHIJKLMNOPQRSTUVWXYZ" +
                             "0123456789");
 
-            kafkaClusterOperations = new KafkaAssemblyOperator(vertx, pfa, certManager, passwordGenerator, resourceOperatorSupplier, config);
+            kafkaClusterOperations = new KafkaAssemblyOperator(vertx, pfa, certIssuer, passwordGenerator, resourceOperatorSupplier, config);
             kafkaConnectClusterOperations = new KafkaConnectAssemblyOperator(vertx, pfa, resourceOperatorSupplier, config);
             kafkaMirrorMaker2AssemblyOperator = new KafkaMirrorMaker2AssemblyOperator(vertx, pfa, resourceOperatorSupplier, config);
-            kafkaBridgeAssemblyOperator = new KafkaBridgeAssemblyOperator(vertx, pfa, certManager, passwordGenerator, resourceOperatorSupplier, config);
+            kafkaBridgeAssemblyOperator = new KafkaBridgeAssemblyOperator(vertx, pfa, certIssuer, passwordGenerator, resourceOperatorSupplier, config);
             kafkaRebalanceAssemblyOperator = new KafkaRebalanceAssemblyOperator(vertx, resourceOperatorSupplier, config);
         }
 

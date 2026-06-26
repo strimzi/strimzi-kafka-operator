@@ -10,7 +10,7 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlEndpoints;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlRebalanceKeys;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlUserTaskStatus;
-import io.strimzi.operator.common.operator.MockCertManager;
+import io.strimzi.operator.common.operator.MockCertIssuer;
 import io.strimzi.test.ReadWriteUtils;
 import io.strimzi.test.TestUtils;
 import org.junit.jupiter.api.AfterAll;
@@ -50,7 +50,7 @@ public class CruiseControlClientTest {
         File tlsKeyFile = ReadWriteUtils.tempFile(CruiseControlClientTest.class.getSimpleName(), ".key");
         File tlsCrtFile = ReadWriteUtils.tempFile(CruiseControlClientTest.class.getSimpleName(), ".crt");
         
-        new MockCertManager().generateSelfSignedCert(tlsKeyFile, tlsCrtFile,
+        new MockCertIssuer().generateSelfSignedCert(tlsKeyFile, tlsCrtFile,
             new Subject.Builder().withCommonName("Trusted Test CA").build(), 365);
 
         cruiseControlServer = new MockCruiseControl(cruiseControlPort, tlsKeyFile, tlsCrtFile);

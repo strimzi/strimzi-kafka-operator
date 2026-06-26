@@ -32,7 +32,7 @@ import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControl
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.MockCruiseControl;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.model.Labels;
-import io.strimzi.operator.common.operator.MockCertManager;
+import io.strimzi.operator.common.operator.MockCertIssuer;
 import io.strimzi.platform.KubernetesVersion;
 import io.strimzi.test.ReadWriteUtils;
 import io.strimzi.test.TestUtils;
@@ -113,7 +113,7 @@ public abstract class AbstractKafkaRebalanceAssemblyOperatorTest {
         tlsKeyFile = ReadWriteUtils.tempFile(KafkaRebalanceAssemblyOperatorTest.class.getSimpleName(), ".key");
         tlsCrtFile = ReadWriteUtils.tempFile(KafkaRebalanceAssemblyOperatorTest.class.getSimpleName(), ".crt");
 
-        new MockCertManager().generateSelfSignedCert(tlsKeyFile, tlsCrtFile,
+        new MockCertIssuer().generateSelfSignedCert(tlsKeyFile, tlsCrtFile,
                 new Subject.Builder().withCommonName("Trusted Test CA").build(), 365);
 
         cruiseControlServer = new MockCruiseControl(cruiseControlPort, tlsKeyFile, tlsCrtFile);
@@ -189,7 +189,7 @@ public abstract class AbstractKafkaRebalanceAssemblyOperatorTest {
                     .withName(KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME))
                     .withNamespace(namespace)
                 .endMetadata()
-                .addToData("ca.crt", MockCertManager.clusterCaCert())
+                .addToData("ca.crt", MockCertIssuer.clusterCaCert())
                 .build();
 
         Secret ccApiSecret = new SecretBuilder(MockCruiseControl.CC_API_SECRET)

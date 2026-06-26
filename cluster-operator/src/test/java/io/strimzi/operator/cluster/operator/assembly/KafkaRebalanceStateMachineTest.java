@@ -30,7 +30,7 @@ import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlEndpoints;
-import io.strimzi.operator.common.operator.MockCertManager;
+import io.strimzi.operator.common.operator.MockCertIssuer;
 import io.strimzi.operator.common.operator.resource.concurrent.CrdOperator;
 import io.strimzi.test.ReadWriteUtils;
 import io.strimzi.test.TestUtils;
@@ -100,7 +100,7 @@ public class KafkaRebalanceStateMachineTest {
         File tlsKeyFile = ReadWriteUtils.tempFile(KafkaRebalanceStateMachineTest.class.getSimpleName(), ".key");
         File tlsCrtFile = ReadWriteUtils.tempFile(KafkaRebalanceStateMachineTest.class.getSimpleName(), ".crt");
 
-        new MockCertManager().generateSelfSignedCert(tlsKeyFile, tlsCrtFile,
+        new MockCertIssuer().generateSelfSignedCert(tlsKeyFile, tlsCrtFile,
             new Subject.Builder().withCommonName("Trusted Test CA").build(), 365);
 
         cruiseControlPort = TestUtils.getFreePort();

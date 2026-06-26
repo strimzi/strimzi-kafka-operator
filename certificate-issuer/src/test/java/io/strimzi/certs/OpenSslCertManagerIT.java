@@ -51,13 +51,13 @@ import static org.junit.jupiter.api.Assertions.fail;
 public class OpenSslCertManagerIT {
 
     private static CertificateFactory certFactory;
-    private static OpenSslCertManager ssl;
+    private static OpenSslCertIssuer ssl;
 
     @BeforeAll
     public static void before() throws CertificateException {
         Assumptions.assumeTrue(System.getProperty("os.name").contains("nux"));
         certFactory = CertificateFactory.getInstance("X.509");
-        ssl = new OpenSslCertManager();
+        ssl = new OpenSslCertIssuer();
     }
 
     interface Cmd {

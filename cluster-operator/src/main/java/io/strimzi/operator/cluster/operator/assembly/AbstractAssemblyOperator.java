@@ -11,7 +11,7 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.model.common.Spec;
 import io.strimzi.api.kafka.model.kafka.Status;
-import io.strimzi.certs.CertManager;
+import io.strimzi.certs.CertIssuer;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.model.ImagePullPolicy;
@@ -52,7 +52,7 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
     extends AbstractOperator<T, P, S, AbstractWatchableStatusedNamespacedResourceOperator<C, T, L, R>> {
     protected final PlatformFeaturesAvailability pfa;
     protected final SecretOperator secretOperations;
-    protected final CertManager certManager;
+    protected final CertIssuer certIssuer;
     protected final PasswordGenerator passwordGenerator;
     protected final PodDisruptionBudgetOperator podDisruptionBudgetOperator;
     protected final ServiceOperator serviceOperations;
@@ -70,20 +70,20 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
      * @param vertx The Vertx instance
      * @param pfa Properties with features availability
      * @param kind The kind of watched resource
-     * @param certManager Certificate manager
+     * @param certIssuer Certificate issuer
      * @param passwordGenerator Password generator
      * @param resourceOperator For operating on the desired resource
      * @param supplier Supplies the operators for different resources
      * @param config ClusterOperator configuration. Used to get the user-configured image pull policy and the secrets.
      */
     protected AbstractAssemblyOperator(Vertx vertx, PlatformFeaturesAvailability pfa, String kind,
-                                       CertManager certManager, PasswordGenerator passwordGenerator,
+                                       CertIssuer certIssuer, PasswordGenerator passwordGenerator,
                                        AbstractWatchableStatusedNamespacedResourceOperator<C, T, L, R> resourceOperator,
                                        ResourceOperatorSupplier supplier,
                                        ClusterOperatorConfig config) {
         super(vertx, kind, resourceOperator, supplier.metricsProvider, config.getCustomResourceSelector());
         this.pfa = pfa;
-        this.certManager = certManager;
+        this.certIssuer = certIssuer;
         this.passwordGenerator = passwordGenerator;
         this.secretOperations = supplier.secretOperations;
         this.podDisruptionBudgetOperator = supplier.podDisruptionBudgetOperator;

@@ -15,7 +15,7 @@ import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.api.kafka.model.kafka.listener.ListenerAddressBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.ListenerStatus;
 import io.strimzi.api.kafka.model.kafka.listener.ListenerStatusBuilder;
-import io.strimzi.certs.CertManager;
+import io.strimzi.certs.CertIssuer;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
@@ -25,7 +25,7 @@ import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.PasswordGenerator;
 import io.strimzi.operator.common.model.StatusUtils;
-import io.strimzi.operator.common.operator.MockCertManager;
+import io.strimzi.operator.common.operator.MockCertIssuer;
 import io.strimzi.operator.common.operator.resource.concurrent.CrdOperator;
 import io.strimzi.platform.KubernetesVersion;
 import io.vertx.core.Future;
@@ -58,7 +58,7 @@ import static org.mockito.Mockito.when;
 @ExtendWith(VertxExtension.class)
 public class KafkaStatusTest {
     private final KubernetesVersion kubernetesVersion = KubernetesVersion.MINIMAL_SUPPORTED_VERSION;
-    private final MockCertManager certManager = new MockCertManager();
+    private final MockCertIssuer certIssuer = new MockCertIssuer();
     private final PasswordGenerator passwordGenerator = new PasswordGenerator(10, "a", "a");
     private final ClusterOperatorConfig config = ResourceUtils.dummyClusterOperatorConfig(VERSIONS);
     private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
@@ -120,7 +120,7 @@ public class KafkaStatusTest {
         when(mockKafkaOps.updateStatusAsync(any(), kafkaCaptor.capture())).thenReturn(CompletableFuture.completedFuture(null));
 
         MockWorkingKafkaAssemblyOperator kao = new MockWorkingKafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, kubernetesVersion),
-                certManager,
+                certIssuer,
                 passwordGenerator,
                 supplier,
                 config);
@@ -169,7 +169,7 @@ public class KafkaStatusTest {
         when(mockKafkaOps.updateStatusAsync(any(), kafkaCaptor.capture())).thenReturn(CompletableFuture.completedFuture(null));
 
         MockWorkingKafkaAssemblyOperator kao = new MockWorkingKafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, kubernetesVersion),
-                certManager,
+                certIssuer,
                 passwordGenerator,
                 supplier,
                 config);
@@ -231,7 +231,7 @@ public class KafkaStatusTest {
         when(mockKafkaOps.updateStatusAsync(any(), kafkaCaptor.capture())).thenReturn(CompletableFuture.completedFuture(null));
 
         MockWorkingKafkaAssemblyOperator kao = new MockWorkingKafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, kubernetesVersion),
-                certManager,
+                certIssuer,
                 passwordGenerator,
                 supplier,
                 config);
@@ -274,7 +274,7 @@ public class KafkaStatusTest {
         MockFailingKafkaAssemblyOperator kao = new MockFailingKafkaAssemblyOperator(
                 exception,
                 vertx, new PlatformFeaturesAvailability(false, kubernetesVersion),
-                certManager,
+                certIssuer,
                 passwordGenerator,
                 supplier,
                 config);
@@ -351,7 +351,7 @@ public class KafkaStatusTest {
         MockFailingKafkaAssemblyOperator kao = new MockFailingKafkaAssemblyOperator(
                 new RuntimeException("Something went wrong"),
                 vertx, new PlatformFeaturesAvailability(false, kubernetesVersion),
-                certManager,
+                certIssuer,
                 passwordGenerator,
                 supplier,
                 config);
@@ -400,7 +400,7 @@ public class KafkaStatusTest {
         when(mockKafkaOps.updateStatusAsync(any(), kafkaCaptor.capture())).thenReturn(CompletableFuture.completedFuture(null));
 
         MockInitialStatusKafkaAssemblyOperator kao = new MockInitialStatusKafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, kubernetesVersion),
-                certManager,
+                certIssuer,
                 passwordGenerator,
                 supplier,
                 config);
@@ -437,7 +437,7 @@ public class KafkaStatusTest {
         when(mockKafkaOps.updateStatusAsync(any(), kafkaCaptor.capture())).thenReturn(CompletableFuture.completedFuture(null));
 
         MockInitialStatusKafkaAssemblyOperator kao = new MockInitialStatusKafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, kubernetesVersion),
-                certManager,
+                certIssuer,
                 passwordGenerator,
                 supplier,
                 config);
@@ -451,8 +451,8 @@ public class KafkaStatusTest {
 
     // This allows to test the status handling when reconciliation succeeds
     static class MockWorkingKafkaAssemblyOperator extends KafkaAssemblyOperator  {
-        public MockWorkingKafkaAssemblyOperator(Vertx vertx, PlatformFeaturesAvailability pfa, CertManager certManager, PasswordGenerator passwordGenerator, ResourceOperatorSupplier supplier, ClusterOperatorConfig config) {
-            super(vertx, pfa, certManager, passwordGenerator, supplier, config);
+        public MockWorkingKafkaAssemblyOperator(Vertx vertx, PlatformFeaturesAvailability pfa, CertIssuer certIssuer, PasswordGenerator passwordGenerator, ResourceOperatorSupplier supplier, ClusterOperatorConfig config) {
+            super(vertx, pfa, certIssuer, passwordGenerator, supplier, config);
         }
 
         @Override
@@ -488,8 +488,8 @@ public class KafkaStatusTest {
     static class MockFailingKafkaAssemblyOperator extends KafkaAssemblyOperator  {
         private final Throwable exception;
 
-        public MockFailingKafkaAssemblyOperator(Throwable exception, Vertx vertx, PlatformFeaturesAvailability pfa, CertManager certManager, PasswordGenerator passwordGenerator, ResourceOperatorSupplier supplier, ClusterOperatorConfig config) {
-            super(vertx, pfa, certManager, passwordGenerator, supplier, config);
+        public MockFailingKafkaAssemblyOperator(Throwable exception, Vertx vertx, PlatformFeaturesAvailability pfa, CertIssuer certIssuer, PasswordGenerator passwordGenerator, ResourceOperatorSupplier supplier, ClusterOperatorConfig config) {
+            super(vertx, pfa, certIssuer, passwordGenerator, supplier, config);
             this.exception = exception;
         }
 
@@ -511,8 +511,8 @@ public class KafkaStatusTest {
 
     // This allows to test the initial status handling when new resource is created
     static class MockInitialStatusKafkaAssemblyOperator extends KafkaAssemblyOperator  {
-        public MockInitialStatusKafkaAssemblyOperator(Vertx vertx, PlatformFeaturesAvailability pfa, CertManager certManager, PasswordGenerator passwordGenerator, ResourceOperatorSupplier supplier, ClusterOperatorConfig config) {
-            super(vertx, pfa, certManager, passwordGenerator, supplier, config);
+        public MockInitialStatusKafkaAssemblyOperator(Vertx vertx, PlatformFeaturesAvailability pfa, CertIssuer certIssuer, PasswordGenerator passwordGenerator, ResourceOperatorSupplier supplier, ClusterOperatorConfig config) {
+            super(vertx, pfa, certIssuer, passwordGenerator, supplier, config);
         }
 
         @Override

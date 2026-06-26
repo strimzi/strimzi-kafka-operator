@@ -7,7 +7,7 @@ package io.strimzi.operator.topic.cruisecontrol;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
-import io.strimzi.certs.OpenSslCertManager;
+import io.strimzi.certs.OpenSslCertIssuer;
 import io.strimzi.certs.Subject;
 import io.strimzi.operator.common.CruiseControlUtil;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlEndpoints;
@@ -71,7 +71,7 @@ public class MockCruiseControl {
      */
     private static File createKeystoreFromPem(File caKeyFile, File caCertFile)
             throws IOException, CertificateException, KeyStoreException, NoSuchAlgorithmException, InvalidKeySpecException {
-        OpenSslCertManager certManager = new OpenSslCertManager();
+        OpenSslCertIssuer certIssuer = new OpenSslCertIssuer();
 
         Subject subject = new Subject.Builder()
                 .withCommonName("localhost")
@@ -91,9 +91,9 @@ public class MockCruiseControl {
         keystoreFile.deleteOnExit();
 
         try {
-            certManager.generateCsr(serverKeyFile, csrFile, subject);
-            certManager.generateCert(csrFile, caKeyFile, caCertFile, serverCertFile, subject, 365);
-            certManager.addKeyAndCertToKeyStore(serverKeyFile, serverCertFile, "server", keystoreFile, KEYSTORE_PASSWORD);
+            certIssuer.generateCsr(serverKeyFile, csrFile, subject);
+            certIssuer.generateCert(csrFile, caKeyFile, caCertFile, serverCertFile, subject, 365);
+            certIssuer.addKeyAndCertToKeyStore(serverKeyFile, serverCertFile, "server", keystoreFile, KEYSTORE_PASSWORD);
 
             return keystoreFile;
         } finally {

@@ -13,7 +13,7 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlResources;
-import io.strimzi.certs.OpenSslCertManager;
+import io.strimzi.certs.OpenSslCertIssuer;
 import io.strimzi.certs.Subject;
 import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.common.model.Labels;
@@ -21,7 +21,7 @@ import io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlEndpoints;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlParameters;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlUserTaskStatus;
-import io.strimzi.operator.common.operator.MockCertManager;
+import io.strimzi.operator.common.operator.MockCertIssuer;
 import io.strimzi.test.ReadWriteUtils;
 
 import java.io.File;
@@ -86,7 +86,7 @@ public class MockCruiseControl {
                 .withName(KafkaResources.clusterCaCertificateSecretName(CLUSTER))
                 .withNamespace(NAMESPACE)
             .endMetadata()
-            .addToData("ca.crt", MockCertManager.clusterCaCert())
+            .addToData("ca.crt", MockCertIssuer.clusterCaCert())
             .build();
 
     private static Map<String, String> apiSecretData = Map.of(CruiseControlApiProperties.REBALANCE_OPERATOR_PASSWORD_KEY, "password");
@@ -130,7 +130,7 @@ public class MockCruiseControl {
      */
     private static File createKeystoreFromPem(File caKeyFile, File caCertFile)
             throws IOException, CertificateException, KeyStoreException, NoSuchAlgorithmException, InvalidKeySpecException {
-        OpenSslCertManager certManager = new OpenSslCertManager();
+        OpenSslCertIssuer certIssuer = new OpenSslCertIssuer();
 
         // Create subject with localhost SANs
         Subject subject = new Subject.Builder()
@@ -151,9 +151,9 @@ public class MockCruiseControl {
         keystoreFile.deleteOnExit();
 
         try {
-            certManager.generateCsr(serverKeyFile, csrFile, subject);
-            certManager.generateCert(csrFile, caKeyFile, caCertFile, serverCertFile, subject, 365);
-            certManager.addKeyAndCertToKeyStore(serverKeyFile, serverCertFile, "server", keystoreFile, KEYSTORE_PASSWORD);
+            certIssuer.generateCsr(serverKeyFile, csrFile, subject);
+            certIssuer.generateCert(csrFile, caKeyFile, caCertFile, serverCertFile, subject, 365);
+            certIssuer.addKeyAndCertToKeyStore(serverKeyFile, serverCertFile, "server", keystoreFile, KEYSTORE_PASSWORD);
 
             return keystoreFile;
         } finally {
