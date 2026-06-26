@@ -109,6 +109,12 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
             .compose(i -> bridgeRoleBinding(reconciliation, namespace, bridge))
             .compose(i -> VertxUtil.toFuture(deploymentOperations.scaleDown(reconciliation, namespace, bridge.getComponentName(), bridge.getReplicas(), operationTimeoutMs)))
             .compose(scale -> VertxUtil.toFuture(serviceOperations.reconcile(reconciliation, namespace, KafkaBridgeResources.serviceName(bridge.getCluster()), bridge.generateService())))
+            .compose(i -> tlsTrustedCertsSecret(reconciliation, namespace, bridge))
+            .compose(certs -> ReconcilerUtils.authTlsHash(secretOperations, namespace, auth, certs))
+            .compose(authTlsHash -> {
+                podAnnotations.put(Annotations.ANNO_STRIMZI_AUTH_HASH, Integer.toString(authTlsHash));
+                return Future.succeededFuture();
+            })
             .compose(i -> MetricsAndLoggingUtils.metricsAndLogging(reconciliation, configMapOperations, bridge.logging(), bridge.metrics()))
             .compose(metricsAndLogging -> {
                 ConfigMap configMap = bridge.generateBridgeConfigMap(metricsAndLogging);
@@ -116,12 +122,7 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
                 return VertxUtil.toFuture(configMapOperations.reconcile(reconciliation, namespace, KafkaBridgeResources.configMapName(reconciliation.name()), configMap));
             })
             .compose(i -> isPodDisruptionBudgetGeneration ? VertxUtil.toFuture(podDisruptionBudgetOperator.reconcile(reconciliation, namespace, bridge.getComponentName(), bridge.generatePodDisruptionBudget())) : Future.succeededFuture())
-            .compose(i -> tlsTrustedCertsSecret(reconciliation, namespace, bridge))
-            .compose(certs -> ReconcilerUtils.authTlsHash(secretOperations, namespace, auth, certs))
-            .compose(authTlsHash -> {
-                podAnnotations.put(Annotations.ANNO_STRIMZI_AUTH_HASH, Integer.toString(authTlsHash));
-                return VertxUtil.toFuture(deploymentOperations.reconcile(reconciliation, namespace, bridge.getComponentName(), bridge.generateDeployment(podAnnotations, pfa.isOpenshift(), imagePullPolicy, imagePullSecrets)));
-            })
+            .compose(i -> VertxUtil.toFuture(deploymentOperations.reconcile(reconciliation, namespace, bridge.getComponentName(), bridge.generateDeployment(podAnnotations, pfa.isOpenshift(), imagePullPolicy, imagePullSecrets))))
             .compose(i -> VertxUtil.toFuture(deploymentOperations.scaleUp(reconciliation, namespace, bridge.getComponentName(), bridge.getReplicas(), operationTimeoutMs)))
             .compose(i -> VertxUtil.toFuture(deploymentOperations.waitForObserved(reconciliation, namespace, bridge.getComponentName(), 1_000, operationTimeoutMs)))
             .compose(i -> bridgeHasZeroReplicas ? Future.succeededFuture() : VertxUtil.toFuture(deploymentOperations.readiness(reconciliation, namespace, bridge.getComponentName(), 1_000, operationTimeoutMs)))
@@ -138,7 +139,7 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
                 kafkaBridgeStatus.setReplicas(bridge.getReplicas());
                 kafkaBridgeStatus.setLabelSelector(bridge.getSelectorLabels().toSelectorString());
 
-                if (reconciliationResult.succeeded())   {
+                if (reconciliationResult.succeeded()) {
                     createOrUpdatePromise.complete(kafkaBridgeStatus);
                 } else {
                     createOrUpdatePromise.fail(new ReconciliationException(kafkaBridgeStatus, reconciliationResult.cause()));
