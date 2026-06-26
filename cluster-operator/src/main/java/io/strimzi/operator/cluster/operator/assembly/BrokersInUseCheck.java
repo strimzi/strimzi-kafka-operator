@@ -17,6 +17,7 @@ import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.ListTopicsOptions;
 import org.apache.kafka.clients.admin.TopicDescription;
 import org.apache.kafka.common.KafkaException;
+import org.apache.kafka.common.Node;
 import org.apache.kafka.common.TopicPartitionInfo;
 
 import java.util.HashSet;
@@ -60,7 +61,7 @@ public class BrokersInUseCheck {
 
                         for (TopicDescription td : topicDescriptions.values()) {
                             for (TopicPartitionInfo pd : td.partitions()) {
-                                for (org.apache.kafka.common.Node broker : pd.replicas()) {
+                                for (Node broker : pd.replicas()) {
                                     brokersWithPartitionReplicas.add(broker.id());
                                 }
                             }

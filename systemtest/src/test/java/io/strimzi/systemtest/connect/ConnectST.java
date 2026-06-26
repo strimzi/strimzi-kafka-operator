@@ -151,6 +151,7 @@ class ConnectST extends AbstractST {
 
         final int connectReplicasCount = 2;
 
+        @SuppressWarnings("checkstyle:NoFullyQualifiedClassNames") // False positive, fully qualified class name used in a string
         final Map<String, Object> exceptedConfig = StUtils.loadProperties("bootstrap.servers=" + KafkaResources.tlsBootstrapAddress(testStorage.getClusterName()) + "\n" +
                 "group.id=" + KafkaConnectResources.componentName(testStorage.getClusterName()) + "\n" +
                 "key.converter=org.apache.kafka.connect.json.JsonConverter\n" +

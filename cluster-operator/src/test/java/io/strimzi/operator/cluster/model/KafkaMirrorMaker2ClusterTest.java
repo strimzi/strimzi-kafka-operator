@@ -100,7 +100,7 @@ import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.hasEntry;
 
-@SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "checkstyle:ClassFanOutComplexity"})
+@SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "checkstyle:ClassFanOutComplexity", "checkstyle:NoFullyQualifiedClassNames"}) // False positive, fully qualified class name used in a string
 public class KafkaMirrorMaker2ClusterTest {
     private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
     private static final SharedEnvironmentProvider SHARED_ENV_PROVIDER = new MockSharedEnvironmentProvider();
@@ -240,7 +240,7 @@ public class KafkaMirrorMaker2ClusterTest {
         assertThat(svc.getSpec().getIpFamilyPolicy(), is(nullValue()));
         assertThat(svc.getSpec().getIpFamilies(), is(nullValue()));
 
-        io.strimzi.operator.cluster.TestUtils.checkOwnerReference(svc, RESOURCE);
+        TestUtils.checkOwnerReference(svc, RESOURCE);
     }
 
     @Test
@@ -403,9 +403,9 @@ public class KafkaMirrorMaker2ClusterTest {
         StrimziPodSet podSet = kmm2.generatePodSet(3, Map.of(), Map.of(), false, null, null, null);
         PodSetUtils.podSetToPods(podSet).forEach(pod -> {
             Container cont = pod.getSpec().getContainers().get(0);
-            assertThat(io.strimzi.operator.cluster.TestUtils.containerEnvVars(cont).get(KafkaMirrorMaker2Cluster.ENV_VAR_KAFKA_CONNECT_TRUSTED_CERTS),
+            assertThat(TestUtils.containerEnvVars(cont).get(KafkaMirrorMaker2Cluster.ENV_VAR_KAFKA_CONNECT_TRUSTED_CERTS),
                     is(nullValue()));
-            assertThat(io.strimzi.operator.cluster.TestUtils.containerEnvVars(cont).get(KafkaMirrorMaker2Cluster.ENV_VAR_KAFKA_MIRRORMAKER_2_TRUSTED_CERTS_CLUSTERS),
+            assertThat(TestUtils.containerEnvVars(cont).get(KafkaMirrorMaker2Cluster.ENV_VAR_KAFKA_MIRRORMAKER_2_TRUSTED_CERTS_CLUSTERS),
                     is(nullValue()));
         });
     }

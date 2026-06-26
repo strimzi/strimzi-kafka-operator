@@ -541,6 +541,7 @@ public class KafkaBrokerConfigurationBuilder {
      * @param userConfig    The user configuration to extract the possible user-provided config provider configuration
      *                      from it
      */
+    @SuppressWarnings("checkstyle:NoFullyQualifiedClassNames") // False positive, fully qualified class name used in a string
     private void printConfigProviders(KafkaConfiguration userConfig)    {
         printSectionHeader("Config providers");
         
@@ -740,6 +741,7 @@ public class KafkaBrokerConfigurationBuilder {
      *
      * @return  Returns the builder instance
      */
+    @SuppressWarnings("checkstyle:NoFullyQualifiedClassNames") // False positive, fully qualified class name used in a string
     public KafkaBrokerConfigurationBuilder withTieredStorage(String clusterName, TieredStorage tieredStorage)  {
         if (tieredStorage == null) {
             return this;
@@ -805,6 +807,7 @@ public class KafkaBrokerConfigurationBuilder {
      * @param clusterName           Name of the cluster
      * @param quotasPluginStrimzi   Strimzi quotas plugin configuration
      */
+    @SuppressWarnings("checkstyle:NoFullyQualifiedClassNames") // False positive, fully qualified class name used in a string
     private void configureQuotasPluginStrimzi(String clusterName, QuotasPluginStrimzi quotasPluginStrimzi) {
         // add Kafka broker's and CruiseControl's user to the excluded principals
         List<String> excludedPrincipals = new ArrayList<>(List.of(

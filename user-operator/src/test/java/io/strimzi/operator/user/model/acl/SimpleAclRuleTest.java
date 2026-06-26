@@ -27,6 +27,7 @@ import java.util.stream.Collectors;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
+@SuppressWarnings("checkstyle:NoFullyQualifiedClassNames") // Fully qualified class name used due to a name conflict
 public class SimpleAclRuleTest {
     private static final AclRuleResource ACL_RULE_TOPIC_RESOURCE;
     private static final SimpleAclRuleResource RESOURCE = new SimpleAclRuleResource("my-topic", SimpleAclRuleResourceType.TOPIC, AclResourcePatternType.LITERAL);

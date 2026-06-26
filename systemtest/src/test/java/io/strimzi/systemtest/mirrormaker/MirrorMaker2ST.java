@@ -127,6 +127,7 @@ class MirrorMaker2ST extends AbstractST {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         final int mirrorMakerReplicasCount = 2;
 
+        @SuppressWarnings("checkstyle:NoFullyQualifiedClassNames") // False positive, fully qualified class name used in a string
         Map<String, Object> expectedConfig = StUtils.loadProperties("bootstrap.servers=" + KafkaResources.plainBootstrapAddress(testStorage.getTargetClusterName()) + "\n" +
                 "group.id=mirrormaker2-cluster\n" +
                 "key.converter=org.apache.kafka.connect.converters.ByteArrayConverter\n" +

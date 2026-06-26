@@ -53,7 +53,7 @@ import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-@SuppressWarnings("checkstyle:classdataabstractioncoupling")
+@SuppressWarnings({"checkstyle:classdataabstractioncoupling", "checkstyle:NoFullyQualifiedClassNames"}) // NoFullyQualifiedClassNames is false positive, fully qualified class name used in a string
 public class KafkaBrokerConfigurationBuilderTest {
     private final static NodeRef NODE_REF = new NodeRef("my-cluster-kafka-2", 2, "kafka", false, true);
 

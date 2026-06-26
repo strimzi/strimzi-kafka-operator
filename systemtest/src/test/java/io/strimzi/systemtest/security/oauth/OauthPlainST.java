@@ -186,6 +186,7 @@ public class OauthPlainST extends OauthAbstractST {
         String audienceProducerName = OAUTH_CLIENT_AUDIENCE_PRODUCER + "-" + testStorage.getClusterName();
         String audienceConsumerName = OAUTH_CLIENT_AUDIENCE_CONSUMER + "-" + testStorage.getClusterName();
 
+        @SuppressWarnings("checkstyle:NoFullyQualifiedClassNames") // False positive, fully qualified class name used in a string
         String saslJaasConfig = "sasl.jaas.config=org.apache.kafka.common.security.plain.PlainLoginModule required username=%s password=%s";
         Authentication clientAuthentication = ClientsAuthentication.configureOAuthPlain(OAUTH_CLIENT_NAME, OAUTH_CLIENT_SECRET, keycloakInstance.getOauthTokenEndpointUri());
         clientAuthentication = new AuthenticationBuilder(clientAuthentication)

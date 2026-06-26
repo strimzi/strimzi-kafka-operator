@@ -44,6 +44,7 @@ import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 
+@SuppressWarnings("checkstyle:NoFullyQualifiedClassNames") // False positive, fully qualified class name used in a string
 public class KafkaBridgeConfigurationBuilderTest {
 
     private static final String BRIDGE_CLUSTER = "my-bridge";

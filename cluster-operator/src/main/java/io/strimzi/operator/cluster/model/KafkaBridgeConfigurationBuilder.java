@@ -199,6 +199,7 @@ public class KafkaBridgeConfigurationBuilder {
      *                      to extract the possible user-provided config provider configuration from it
      * @param prefix    prefix for the bridge Kafka client to be configured. It could be "kafka.admin", "kafka.producer" or "kafka.consumer".
      */
+    @SuppressWarnings("checkstyle:NoFullyQualifiedClassNames") // False positive, fully qualified class name used in a string
     private void configProvider(AbstractConfiguration userConfig, String prefix) {
         printSectionHeader("Config providers");
         String strimziConfigProviders = "strimzienv,strimzifile,strimzidir,strimzisecrets";

@@ -18,6 +18,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+@SuppressWarnings("checkstyle:NoFullyQualifiedClassNames") // Fully qualified class name used due to a name conflict
 public class ProbeUtilsTest {
     private static final io.strimzi.api.kafka.model.common.Probe DEFAULT_CONFIG = new io.strimzi.api.kafka.model.common.ProbeBuilder()
             .withInitialDelaySeconds(1)

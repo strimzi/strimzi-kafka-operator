@@ -209,6 +209,7 @@ public class LoggingUtilsTest {
     }
 
     @Test
+    @SuppressWarnings("checkstyle:NoFullyQualifiedClassNames") // False positive, fully qualified class name used in a string
     public void testVarExpansion() {
         String input = "log4j.appender.CONSOLE=org.apache.log4j.ConsoleAppender\n" +
                 "log4j.appender.CONSOLE.layout=org.apache.log4j.PatternLayout\n" +

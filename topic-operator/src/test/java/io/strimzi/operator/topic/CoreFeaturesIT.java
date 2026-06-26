@@ -738,7 +738,7 @@ class CoreFeaturesIT implements TestSeparator {
 
             // then
             try (var ignored = LogCaptor.logMessageMatches(BatchingTopicController.LOGGER,
-                    org.apache.logging.log4j.Level.DEBUG,
+                    Level.DEBUG,
                     "Ignoring KafkaTopic .*? not selected by selector",
                     5L,
                     TimeUnit.SECONDS)) {
@@ -763,7 +763,7 @@ class CoreFeaturesIT implements TestSeparator {
         var expectedTopicName = TopicOperatorUtil.topicName(kt);
         KafkaTopic unmanaged;
         try (var ignored = LogCaptor.logMessageMatches(BatchingTopicController.LOGGER,
-                org.apache.logging.log4j.Level.DEBUG,
+                Level.DEBUG,
                 "Ignoring KafkaTopic .*? not selected by selector",
                 5L,
                 TimeUnit.SECONDS)) {
@@ -814,7 +814,7 @@ class CoreFeaturesIT implements TestSeparator {
 
             KafkaTopic created;
             try (var ignored = LogCaptor.logMessageMatches(BatchingTopicController.LOGGER,
-                    org.apache.logging.log4j.Level.DEBUG,
+                    Level.DEBUG,
                     "Ignoring KafkaTopic .*? not selected by selector",
                     5L,
                     TimeUnit.SECONDS)) {

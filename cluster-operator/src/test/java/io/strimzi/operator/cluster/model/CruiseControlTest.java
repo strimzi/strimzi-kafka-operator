@@ -215,6 +215,7 @@ public class CruiseControlTest {
     }
 
     @Test
+    @SuppressWarnings("checkstyle:NoFullyQualifiedClassNames") // Fully qualified class name used due to a name conflict
     public void testGenerateDeployment() {
         Kafka kafka = new KafkaBuilder(KAFKA)
                 .editSpec()
@@ -362,6 +363,7 @@ public class CruiseControlTest {
     }
 
     @Test
+    @SuppressWarnings("checkstyle:NoFullyQualifiedClassNames") // Fully qualified class name used due to a name conflict
     public void testGenerateService() {
         CruiseControl cc = createCruiseControl(KAFKA, NODES, STORAGE, Map.of());
         Service svc = cc.generateService();

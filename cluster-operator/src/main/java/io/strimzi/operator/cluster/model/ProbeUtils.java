@@ -20,6 +20,7 @@ public class ProbeUtils {
      * Default healthcheck options used by most of our operands with the exception of Mirror Maker (1 and 2), Connect,
      * and User / Topic operators.
      */
+    @SuppressWarnings("checkstyle:NoFullyQualifiedClassNames") // Fully qualified class name used due to a name conflict
     public static final Probe DEFAULT_HEALTHCHECK_OPTIONS = new io.strimzi.api.kafka.model.common.ProbeBuilder().withTimeoutSeconds(5).withInitialDelaySeconds(15).build();
 
     private ProbeUtils() { }
@@ -57,6 +58,7 @@ public class ProbeUtils {
      *
      * @return  Kubernetes Probe
      */
+    @SuppressWarnings("checkstyle:NoFullyQualifiedClassNames") // Fully qualified class name used due to a name conflict
     public static io.fabric8.kubernetes.api.model.Probe httpProbe(Probe probeConfig, String path, String port) {
         if (path == null || path.isEmpty() || port == null || port.isEmpty()) {
             throw new IllegalArgumentException();
@@ -78,6 +80,7 @@ public class ProbeUtils {
      *
      * @return  Kubernetes Probe
      */
+    @SuppressWarnings("checkstyle:NoFullyQualifiedClassNames") // Fully qualified class name used due to a name conflict
     public static io.fabric8.kubernetes.api.model.Probe execProbe(Probe probeConfig, List<String> command) {
         if (command == null || command.isEmpty()) {
             throw new IllegalArgumentException();

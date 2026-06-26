@@ -56,6 +56,7 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+@SuppressWarnings("checkstyle:NoFullyQualifiedClassNames") // Fully qualified class name used due to a name conflict
 public class SimpleAclOperatorTest {
     private final static ExecutorService EXECUTOR = Executors.newSingleThreadExecutor();
 

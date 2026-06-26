@@ -20,6 +20,7 @@ import java.util.List;
  * Immutable class which represents a single ACL rule for Kafka's built-in authorizer.
  * The main reason for not using directly the classes from the api module is that we need immutable objects for use in Sets.
  */
+@SuppressWarnings("checkstyle:NoFullyQualifiedClassNames") // Fully qualified class name used due to a name conflict
 public class SimpleAclRule {
     private final AclRuleType type;
     private final SimpleAclRuleResource resource;

@@ -194,7 +194,7 @@ public class KafkaConnectBuildTest {
         assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(1).getName(), is("docker-credentials"));
         assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(1).getMountPath(), is("/kaniko/.docker"));
         assertThat(pod.getSpec().getContainers().get(0).getEnv().size(), is(0));
-        io.strimzi.operator.cluster.TestUtils.checkOwnerReference(pod, kc);
+        TestUtils.checkOwnerReference(pod, kc);
     }
 
     @Test
@@ -257,7 +257,7 @@ public class KafkaConnectBuildTest {
         assertThat(pod.getSpec().getContainers().get(0).getEnv().size(), is(1));
         assertThat(pod.getSpec().getContainers().get(0).getEnv().get(0).getName(), is("REGISTRY_AUTH_FILE"));
         assertThat(pod.getSpec().getContainers().get(0).getEnv().get(0).getValue(), is("/build/.docker/config.json"));
-        io.strimzi.operator.cluster.TestUtils.checkOwnerReference(pod, kc);
+        TestUtils.checkOwnerReference(pod, kc);
     }
 
     @Test
@@ -323,7 +323,7 @@ public class KafkaConnectBuildTest {
         assertThat(cm.getMetadata().getName(), is(KafkaConnectResources.dockerFileConfigMapName(NAME)));
         assertThat(cm.getMetadata().getNamespace(), is(NAMESPACE));
         assertThat(cm.getData().get("Dockerfile"), is(dockerfile.getDockerfile()));
-        io.strimzi.operator.cluster.TestUtils.checkOwnerReference(cm, RESOURCE);
+        TestUtils.checkOwnerReference(cm, RESOURCE);
     }
 
     @Test
@@ -367,7 +367,7 @@ public class KafkaConnectBuildTest {
         assertThat(bc.getSpec().getStrategy().getDockerStrategy(), is(notNullValue()));
         assertThat(bc.getSpec().getResources().getLimits(), is(limit));
         assertThat(bc.getSpec().getResources().getRequests(), is(request));
-        io.strimzi.operator.cluster.TestUtils.checkOwnerReference(bc, kc);
+        TestUtils.checkOwnerReference(bc, kc);
     }
 
     // Test to validate that .spec.image and spec.build.output.image in Kafka Connect are not pointing to the same image

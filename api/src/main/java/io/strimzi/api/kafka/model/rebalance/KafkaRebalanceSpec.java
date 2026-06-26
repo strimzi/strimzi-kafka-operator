@@ -109,6 +109,7 @@ public class KafkaRebalanceSpec extends Spec {
         this.rebalanceDisk = rebalanceDisk;
     }
 
+    @SuppressWarnings("checkstyle:NoFullyQualifiedClassNames") // False positive, fully qualified class name used in a string
     @Description("A regular expression where any matching topics will be excluded from the calculation of optimization proposals. " +
             "This expression will be parsed by the java.util.regex.Pattern class; for more information on the supported format " +
             "consult the documentation for that class.")
