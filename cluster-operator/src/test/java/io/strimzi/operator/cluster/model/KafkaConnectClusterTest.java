@@ -74,6 +74,7 @@ import io.strimzi.api.kafka.model.connect.MountedPluginBuilder;
 import io.strimzi.api.kafka.model.podset.StrimziPodSet;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
+import io.strimzi.operator.cluster.TestUtils;
 import io.strimzi.operator.cluster.model.logging.LoggingModel;
 import io.strimzi.operator.cluster.model.metrics.JmxPrometheusExporterModel;
 import io.strimzi.operator.cluster.model.metrics.MetricsModel;
@@ -82,7 +83,6 @@ import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.platform.KubernetesVersion;
-import io.strimzi.test.TestUtils;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -108,7 +108,7 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasProperty;
 
-@SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "checkstyle:ClassFanOutComplexity", "checkstyle:NoFullyQualifiedClassNames"}) // Fully qualified class name used due to a name conflict
+@SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "checkstyle:ClassFanOutComplexity", "checkstyle:NoFullyQualifiedClassNames"}) // False positive, fully qualified class name used in a string
 public class KafkaConnectClusterTest {
     private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
     private static final SharedEnvironmentProvider SHARED_ENV_PROVIDER = new MockSharedEnvironmentProvider(Map.of(
@@ -239,7 +239,7 @@ public class KafkaConnectClusterTest {
         assertThat(svc.getSpec().getIpFamilyPolicy(), is(nullValue()));
         assertThat(svc.getSpec().getIpFamilies(), is(nullValue()));
 
-        io.strimzi.operator.cluster.TestUtils.checkOwnerReference(svc, RESOURCE);
+        TestUtils.checkOwnerReference(svc, RESOURCE);
     }
 
     @Test
@@ -272,7 +272,7 @@ public class KafkaConnectClusterTest {
         assertThat(svc.getSpec().getPorts().get(0).getName(), is(KafkaConnectCluster.REST_API_PORT_NAME));
         assertThat(svc.getSpec().getPorts().get(0).getProtocol(), is("TCP"));
 
-        io.strimzi.operator.cluster.TestUtils.checkOwnerReference(svc, resource);
+        TestUtils.checkOwnerReference(svc, resource);
     }
 
     @Test
@@ -684,7 +684,7 @@ public class KafkaConnectClusterTest {
         assertThat(ps.getMetadata().getName(), is(KafkaConnectResources.componentName(NAME)));
         assertThat(ps.getMetadata().getLabels().entrySet().containsAll(kc.labels.withAdditionalLabels(null).toMap().entrySet()), is(true));
         assertThat(ps.getMetadata().getAnnotations(), is(Map.of("anno1", "anno-value1", "anno2", "anno-value2")));
-        io.strimzi.operator.cluster.TestUtils.checkOwnerReference(ps, resource);
+        TestUtils.checkOwnerReference(ps, resource);
         assertThat(ps.getSpec().getSelector().getMatchLabels(), is(kc.getSelectorLabels().withStrimziPodSetController(KafkaConnectResources.componentName(NAME)).toMap()));
         assertThat(ps.getSpec().getPods().size(), is(3));
 

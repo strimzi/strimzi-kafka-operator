@@ -17,8 +17,11 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
@@ -60,6 +63,44 @@ public class TestUtils {
         assertThat(or.getUid(), is(owner.getMetadata().getUid()));
         assertThat(or.getBlockOwnerDeletion(), is(true));
         assertThat(or.getController(), is(false));
+    }
+
+    /**
+     * Creates a modifiable set wit the desired elements. Use {@code Set.of()} if immutable set is sufficient.
+     *
+     * @param elements  The elements that will be added to the Set
+     *
+     * @return  Modifiable set with the elements
+     *
+     * @param <T>       Type of the elements stored in the Set
+     */
+    @SafeVarargs
+    public static <T> Set<T> modifiableSet(T... elements) {
+        return new HashSet<>(asList(elements));
+    }
+
+    /**
+     * Creates a modifiable map wit the desired elements. Use {@code Map.of()} if immutable set is sufficient.
+     *
+     * @param pairs     The key-value pairs that should be added to the Map
+     *
+     * @return  Modifiable map with the desired key-value pairs
+     *
+     * @param <T>   Type of the keys and values
+     */
+    @SafeVarargs
+    public static <T> Map<T, T> modifiableMap(T... pairs) {
+        if (pairs.length % 2 != 0) {
+            throw new IllegalArgumentException();
+        } else {
+            Map<T, T> result = new HashMap<>(pairs.length / 2);
+
+            for (int i = 0; i < pairs.length; i += 2) {
+                result.put(pairs[i], pairs[i + 1]);
+            }
+
+            return result;
+        }
     }
 
     /**
