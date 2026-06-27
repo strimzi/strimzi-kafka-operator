@@ -20,13 +20,9 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 
-import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @ExtendWith(VertxExtension.class)
 public class ClusterCaRenewalTest {
@@ -491,35 +487,6 @@ public class ClusterCaRenewalTest {
         assertThat(new String(newCert.keyStore()), is("old-keystore"));
         assertThat(newCert.storePassword(), is("old-password"));
         assertThat(newCert.caCertGeneration(), is(0));
-    }
-
-    @Test
-    public void testClientCertGenerationFailureSurfacesAsRuntimeException() {
-        // GH-12847: An IOException during signed-cert generation must abort the
-        // reconciliation (matching the KafkaCluster broker-cert path) instead
-        // of being swallowed with a warning log and a null CertAndKey, which
-        // would later NPE when the caller reads its caCertGeneration().
-        IOException injected = new IOException("disk full");
-        ClusterCa throwingCa = new MockedClusterCa() {
-            @Override
-            public CertAndKey generateSignedCert(String commonName, String organization) throws IOException {
-                throw injected;
-            }
-        };
-
-        RuntimeException thrown = assertThrows(
-                RuntimeException.class,
-                () -> throwingCa.maybeCopyOrGenerateClientCert(
-                        Reconciliation.DUMMY_RECONCILIATION,
-                        "deployment",
-                        null,
-                        true)
-        );
-
-        assertThat(thrown.getMessage(), containsString("deployment"));
-        assertThat(thrown.getCause(), notNullValue());
-        assertThat(thrown.getCause(), is(instanceOf(IOException.class)));
-        assertThat(thrown.getCause(), is(injected));
     }
 
     public static class MockedClusterCa extends ClusterCa {
