@@ -168,4 +168,17 @@ rules:
   - delete
   - patch
   - update
+- apiGroups:
+  - gateway.networking.k8s.io
+  resources:
+    # The cluster operator needs to access and manage TLSRoutes to expose Strimzi components for external access
+  - tlsroutes
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - delete
+  - patch
+  - update
 {{- end -}}

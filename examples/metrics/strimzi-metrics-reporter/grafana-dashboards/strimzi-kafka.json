@@ -447,7 +447,7 @@
                 "match": "null",
                 "result": {
                   "color": "#508642",
-                  "text": "0"
+                  "text": "N/A"
                 }
               },
               "type": "special"
@@ -526,7 +526,7 @@
                 "match": "null",
                 "result": {
                   "color": "#508642",
-                  "text": "0"
+                  "text": "N/A"
                 }
               },
               "type": "special"
@@ -1438,7 +1438,7 @@
                 "match": "null",
                 "result": {
                   "color": "rgba(237, 129, 40, 0.89)",
-                  "text": "0"
+                  "text": "N/A"
                 }
               },
               "type": "special"
@@ -1519,7 +1519,7 @@
                 "match": "null",
                 "result": {
                   "color": "rgba(237, 129, 40, 0.89)",
-                  "text": "0"
+                  "text": "N/A"
                 }
               },
               "type": "special"
@@ -1600,7 +1600,7 @@
                 "match": "null",
                 "result": {
                   "color": "rgba(237, 129, 40, 0.89)",
-                  "text": "0"
+                  "text": "N/A"
                 }
               },
               "type": "special"
@@ -1681,7 +1681,7 @@
                 "match": "null",
                 "result": {
                   "color": "rgba(237, 129, 40, 0.89)",
-                  "text": "0"
+                  "text": "N/A"
                 }
               },
               "type": "special"

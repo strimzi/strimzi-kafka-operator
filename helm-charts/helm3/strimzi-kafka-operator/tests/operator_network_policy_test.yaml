@@ -1,0 +1,66 @@
+suite: strimzi operator network policy
+release:
+  name: strimzi-test
+  namespace: strimzi-test-namespace
+templates:
+  - 052-NetworkPolicy-strimzi-cluster-operator.yaml
+tests:
+  - it: should not render the NetworkPolicy by default
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should render the NetworkPolicy when enabled
+    set:
+      operatorNetworkPolicy.enabled: true
+    asserts:
+      - isKind:
+          of: NetworkPolicy
+      - equal:
+          path: metadata.name
+          value: strimzi-cluster-operator-network-policy
+
+  - it: should default egress to a wildcard rule allowing all traffic
+    set:
+      operatorNetworkPolicy.enabled: true
+    asserts:
+      - isKind:
+          of: NetworkPolicy
+      - equal:
+          path: spec.egress
+          value:
+            - {}
+
+  - it: should default ingress to allow the metrics http port
+    set:
+      operatorNetworkPolicy.enabled: true
+    asserts:
+      - isKind:
+          of: NetworkPolicy
+      - equal:
+          path: spec.ingress
+          value:
+            - ports:
+                - protocol: TCP
+                  port: http
+
+  - it: should allow custom egress rules to override the default
+    set:
+      operatorNetworkPolicy.enabled: true
+      operatorNetworkPolicy.egress:
+        - ports:
+            - protocol: UDP
+              port: 53
+            - protocol: TCP
+              port: 53
+    asserts:
+      - isKind:
+          of: NetworkPolicy
+      - equal:
+          path: spec.egress
+          value:
+            - ports:
+                - protocol: UDP
+                  port: 53
+                - protocol: TCP
+                  port: 53

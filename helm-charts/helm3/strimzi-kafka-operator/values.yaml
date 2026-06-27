@@ -9,7 +9,7 @@ watchAnyNamespace: false
 
 defaultImageRegistry: quay.io
 defaultImageRepository: strimzi
-defaultImageTag: 1.0.1
+defaultImageTag: 1.1.0
 
 image:
   registry: ""
@@ -99,7 +99,8 @@ operatorNetworkPolicy:
   #
   # Any meaningful network restrictions must be defined per cluster,
   # with a full knowledge of the Kafka topology and port configuration.
-  egress: {}
+  egress:
+  - {}
 
 # If you are using the grafana dashboard sidecar,
 # you can import some default dashboards here
