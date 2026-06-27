@@ -201,16 +201,15 @@ public class KafkaRebalanceAssemblyOperator
     /**
      * Provides an implementation of the Cruise Control API client
      *
-     * @param trustSecret Secret with certificates used to trust the Cruise Control TLS server.
-     *                    In production this is the Cluster CA certificate Secret (GH-12442).
+     * @param clusterCaCertSecret Cluster CA certificate Secret, used to trust the Cruise Control TLS server (GH-12442)
      * @param ccApiSecret Cruise Control API secret
      * @param apiAuthEnabled if enabled, configures auth
      * @param apiSslEnabled if enabled, configures SSL
      * @return Cruise Control API client instance
      */
-    public CruiseControlApi cruiseControlClientProvider(Secret trustSecret, Secret ccApiSecret,
+    public CruiseControlApi cruiseControlClientProvider(Secret clusterCaCertSecret, Secret ccApiSecret,
                                                            boolean apiAuthEnabled, boolean apiSslEnabled) {
-        return new CruiseControlApiImpl(HTTP_DEFAULT_IDLE_TIMEOUT_SECONDS, trustSecret, ccApiSecret, apiAuthEnabled, apiSslEnabled);
+        return new CruiseControlApiImpl(HTTP_DEFAULT_IDLE_TIMEOUT_SECONDS, clusterCaCertSecret, ccApiSecret, apiAuthEnabled, apiSslEnabled);
     }
 
     /**

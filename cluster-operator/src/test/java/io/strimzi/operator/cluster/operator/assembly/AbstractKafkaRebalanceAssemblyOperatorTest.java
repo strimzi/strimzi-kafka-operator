@@ -162,8 +162,8 @@ public abstract class AbstractKafkaRebalanceAssemblyOperatorTest {
             }
 
             @Override
-            public CruiseControlApi cruiseControlClientProvider(Secret trustSecret, Secret ccApiSecret, boolean apiAuthEnabled, boolean apiSslEnabled) {
-                return new CruiseControlApiImpl(1, trustSecret, ccApiSecret, true, true);
+            public CruiseControlApi cruiseControlClientProvider(Secret clusterCaCertSecret, Secret ccApiSecret, boolean apiAuthEnabled, boolean apiSslEnabled) {
+                return new CruiseControlApiImpl(1, clusterCaCertSecret, ccApiSecret, true, true);
             }
         };
     }
