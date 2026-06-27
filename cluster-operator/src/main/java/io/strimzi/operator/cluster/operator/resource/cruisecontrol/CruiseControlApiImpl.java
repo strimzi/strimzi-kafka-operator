@@ -60,16 +60,19 @@ public class CruiseControlApiImpl implements CruiseControlApi {
      * Constructor
      *
      * @param idleTimeout       Idle timeout
-     * @param ccSecret          Cruise Control Secret
+     * @param trustSecret       Secret containing the certificates used to trust the Cruise Control TLS server.
+     *                          In production this is the Cluster CA certificate Secret, so that a rotated server
+     *                          certificate signed by the same CA stays trusted without the Cluster Operator
+     *                          having to re-pin the server's public key on every rebalance (GH-12442).
      * @param ccApiSecret       Cruise Control API Secret
      * @param apiAuthEnabled    Flag indicating if authentication is enabled
      * @param apiSslEnabled     Flag indicating if TLS is enabled
      */
-    public CruiseControlApiImpl(int idleTimeout, Secret ccSecret, Secret ccApiSecret, Boolean apiAuthEnabled, boolean apiSslEnabled) {
+    public CruiseControlApiImpl(int idleTimeout, Secret trustSecret, Secret ccApiSecret, Boolean apiAuthEnabled, boolean apiSslEnabled) {
         this.idleTimeout = idleTimeout;
         this.apiSslEnabled = apiSslEnabled;
         this.authHttpHeader = getAuthHttpHeader(apiAuthEnabled, ccApiSecret);
-        this.pemTrustSet = new PemTrustSet(ccSecret);
+        this.pemTrustSet = new PemTrustSet(trustSecret);
         this.httpClient = buildHttpClient();
     }
 

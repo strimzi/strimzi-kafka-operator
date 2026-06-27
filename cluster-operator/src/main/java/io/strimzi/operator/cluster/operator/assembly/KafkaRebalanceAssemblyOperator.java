@@ -17,6 +17,7 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.model.common.Condition;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaList;
+import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlResources;
 import io.strimzi.api.kafka.model.rebalance.BrokerAndVolumeIds;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalance;
@@ -200,15 +201,16 @@ public class KafkaRebalanceAssemblyOperator
     /**
      * Provides an implementation of the Cruise Control API client
      *
-     * @param ccSecret Cruise Control secret
+     * @param trustSecret Secret with certificates used to trust the Cruise Control TLS server.
+     *                    In production this is the Cluster CA certificate Secret (GH-12442).
      * @param ccApiSecret Cruise Control API secret
      * @param apiAuthEnabled if enabled, configures auth
      * @param apiSslEnabled if enabled, configures SSL
      * @return Cruise Control API client instance
      */
-    public CruiseControlApi cruiseControlClientProvider(Secret ccSecret, Secret ccApiSecret,
+    public CruiseControlApi cruiseControlClientProvider(Secret trustSecret, Secret ccApiSecret,
                                                            boolean apiAuthEnabled, boolean apiSslEnabled) {
-        return new CruiseControlApiImpl(HTTP_DEFAULT_IDLE_TIMEOUT_SECONDS, ccSecret, ccApiSecret, apiAuthEnabled, apiSslEnabled);
+        return new CruiseControlApiImpl(HTTP_DEFAULT_IDLE_TIMEOUT_SECONDS, trustSecret, ccApiSecret, apiAuthEnabled, apiSslEnabled);
     }
 
     /**
@@ -1198,17 +1200,20 @@ public class KafkaRebalanceAssemblyOperator
                         resourcePatchFuture = Future.succeededFuture();
                     }
 
-                    String ccSecretName =  CruiseControlResources.secretName(clusterName);
+                    // GH-12442: trust the Cluster CA cert rather than pinning Cruise Control's own server
+                    // public key, so a CA-signed server cert rotation does not have to land in lockstep with
+                    // this reconcile.
+                    String clusterCaCertSecretName = KafkaResources.clusterCaCertificateSecretName(clusterName);
                     String ccApiSecretName =  CruiseControlResources.apiSecretName(clusterName);
 
-                    Future<Secret> ccSecretFuture = VertxUtil.toFuture(secretOperations.getAsync(clusterNamespace, ccSecretName));
+                    Future<Secret> clusterCaCertSecretFuture = VertxUtil.toFuture(secretOperations.getAsync(clusterNamespace, clusterCaCertSecretName));
                     Future<Secret> ccApiSecretFuture = VertxUtil.toFuture(secretOperations.getAsync(clusterNamespace, ccApiSecretName));
 
-                    return Future.join(resourcePatchFuture, ccSecretFuture, ccApiSecretFuture)
+                    return Future.join(resourcePatchFuture, clusterCaCertSecretFuture, ccApiSecretFuture)
                             .compose(compositeFuture -> {
-                                Secret ccSecret = compositeFuture.resultAt(1);
-                                if (ccSecret == null) {
-                                    return Future.failedFuture(ReconcilerUtils.missingSecretException(clusterNamespace, ccSecretName));
+                                Secret clusterCaCertSecret = compositeFuture.resultAt(1);
+                                if (clusterCaCertSecret == null) {
+                                    return Future.failedFuture(ReconcilerUtils.missingSecretException(clusterNamespace, clusterCaCertSecretName));
                                 }
 
                                 Secret ccApiSecret = compositeFuture.resultAt(2);
@@ -1219,7 +1224,7 @@ public class KafkaRebalanceAssemblyOperator
                                 CruiseControlConfiguration ccConfig = new CruiseControlConfiguration(reconciliation, kafka.getSpec().getCruiseControl().getConfig().entrySet(), Map.of());
                                 boolean apiAuthEnabled = ccConfig.isApiAuthEnabled();
                                 boolean apiSslEnabled = ccConfig.isApiSslEnabled();
-                                CruiseControlApi apiClient = cruiseControlClientProvider(ccSecret, ccApiSecret, apiAuthEnabled, apiSslEnabled);
+                                CruiseControlApi apiClient = cruiseControlClientProvider(clusterCaCertSecret, ccApiSecret, apiAuthEnabled, apiSslEnabled);
 
                                 // get latest KafkaRebalance state as it may have changed (see the patching above with "refresh" annotation)
                                 return VertxUtil.toFuture(kafkaRebalanceOperator.getAsync(kafkaRebalance.getMetadata().getNamespace(), kafkaRebalance.getMetadata().getName()))
