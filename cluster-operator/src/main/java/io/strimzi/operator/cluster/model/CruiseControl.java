@@ -446,7 +446,7 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
      * @return The generated Secret.
      */
     public Secret generateCertificatesSecret(String namespace, String clusterName, ClusterCa clusterCa, Secret existingSecret, boolean isMaintenanceTimeWindowsSatisfied) {
-        Map<String, CertAndKey> ccCerts = new HashMap<>(4);
+        Map<String, CertAndKey> ccCerts;
         LOGGER.debugCr(reconciliation, "Generating certificates");
         try {
             CertAndKey existingCertAndKey = CertUtils.keyStoreCertAndKey(existingSecret, CruiseControl.COMPONENT_TYPE, clusterCa.caCertGenerationAnnotation());
@@ -456,6 +456,7 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
                     isMaintenanceTimeWindowsSatisfied);
         } catch (IOException e) {
             LOGGER.warnCr(reconciliation, "Error while generating certificates", e);
+            throw new RuntimeException("Failed to prepare Cruise Control certificates", e);
         }
         LOGGER.debugCr(reconciliation, "End generating certificates");
 

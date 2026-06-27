@@ -342,6 +342,7 @@ public class ClusterCa extends Ca {
                 certAndKey = generateSignedCert(commonName, Ca.IO_STRIMZI);
             } catch (IOException e) {
                 LOGGER.warnCr(reconciliation, "Error while generating certificates", e);
+                throw new RuntimeException("Failed to generate signed certificate for " + commonName, e);
             }
 
             LOGGER.debugCr(reconciliation, "End generating certificates");
