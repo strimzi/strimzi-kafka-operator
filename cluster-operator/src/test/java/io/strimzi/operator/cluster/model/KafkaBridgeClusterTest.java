@@ -57,13 +57,13 @@ import io.strimzi.api.kafka.model.common.template.IpFamily;
 import io.strimzi.api.kafka.model.common.template.IpFamilyPolicy;
 import io.strimzi.api.kafka.model.common.tracing.OpenTelemetryTracing;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
+import io.strimzi.operator.cluster.TestUtils;
 import io.strimzi.operator.cluster.model.logging.LoggingModel;
 import io.strimzi.operator.cluster.model.metrics.JmxPrometheusExporterModel;
 import io.strimzi.operator.cluster.model.metrics.StrimziMetricsReporterModel;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.platform.KubernetesVersion;
-import io.strimzi.test.TestUtils;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -91,7 +91,7 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.hasSize;
 
-@SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "checkstyle:ClassFanOutComplexity", "checkstyle:NoFullyQualifiedClassNames"}) // Fully qualified class name used due to a name conflict
+@SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "checkstyle:ClassFanOutComplexity", "checkstyle:NoFullyQualifiedClassNames"}) // False positive, fully qualified class name used in a string
 public class KafkaBridgeClusterTest {
     private static final SharedEnvironmentProvider SHARED_ENV_PROVIDER = new MockSharedEnvironmentProvider();
 
@@ -219,7 +219,7 @@ public class KafkaBridgeClusterTest {
 
         assertThat(svc.getMetadata().getAnnotations(), is(KBC.getDiscoveryAnnotation(KafkaBridgeCluster.DEFAULT_REST_API_PORT, false)));
 
-        io.strimzi.operator.cluster.TestUtils.checkOwnerReference(svc, RESOURCE);
+        TestUtils.checkOwnerReference(svc, RESOURCE);
     }
 
     @Test
@@ -258,7 +258,7 @@ public class KafkaBridgeClusterTest {
             .filter(volume -> volume.getName().equalsIgnoreCase("strimzi-tmp"))
             .findFirst().orElseThrow().getEmptyDir().getSizeLimit(), is(new Quantity(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_SIZE)));
 
-        io.strimzi.operator.cluster.TestUtils.checkOwnerReference(dep, RESOURCE);
+        TestUtils.checkOwnerReference(dep, RESOURCE);
     }
 
     @Test
@@ -1119,7 +1119,7 @@ public class KafkaBridgeClusterTest {
         assertThat(svc.getMetadata().getAnnotations(), is(KBC.getDiscoveryAnnotation(1874, false)));
         assertThat(svc.getSpec().getPorts().get(1).getPort(), is(KafkaBridgeCluster.REST_API_MANAGEMENT_PORT));
         assertThat(svc.getSpec().getPorts().get(1).getName(), is(KafkaBridgeCluster.REST_API_MANAGEMENT_PORT_NAME));
-        io.strimzi.operator.cluster.TestUtils.checkOwnerReference(svc, resource);
+        TestUtils.checkOwnerReference(svc, resource);
     }
 
     @Test

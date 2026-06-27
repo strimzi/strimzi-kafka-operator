@@ -56,6 +56,7 @@ import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ResourceUtils;
+import io.strimzi.operator.cluster.TestUtils;
 import io.strimzi.operator.cluster.model.metrics.JmxPrometheusExporterModel;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.InvalidResourceException;
@@ -63,7 +64,6 @@ import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlConfigurationParameters;
 import io.strimzi.platform.KubernetesVersion;
-import io.strimzi.test.TestUtils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
 
@@ -215,7 +215,6 @@ public class CruiseControlTest {
     }
 
     @Test
-    @SuppressWarnings("checkstyle:NoFullyQualifiedClassNames") // Fully qualified class name used due to a name conflict
     public void testGenerateDeployment() {
         Kafka kafka = new KafkaBuilder(KAFKA)
                 .editSpec()
@@ -234,7 +233,7 @@ public class CruiseControlTest {
         assertThat(dep.getMetadata().getName(), is(CruiseControlResources.componentName(CLUSTER_NAME)));
         assertThat(dep.getMetadata().getNamespace(), is(NAMESPACE));
         assertThat(dep.getSpec().getTemplate().getSpec().getSecurityContext(), is(nullValue()));
-        io.strimzi.operator.cluster.TestUtils.checkOwnerReference(dep, kafka);
+        TestUtils.checkOwnerReference(dep, kafka);
 
         List<Container> containers = dep.getSpec().getTemplate().getSpec().getContainers();
         assertThat(containers.size(), is(1));
@@ -363,7 +362,6 @@ public class CruiseControlTest {
     }
 
     @Test
-    @SuppressWarnings("checkstyle:NoFullyQualifiedClassNames") // Fully qualified class name used due to a name conflict
     public void testGenerateService() {
         CruiseControl cc = createCruiseControl(KAFKA, NODES, STORAGE, Map.of());
         Service svc = cc.generateService();
@@ -378,7 +376,7 @@ public class CruiseControlTest {
         assertThat(svc.getSpec().getIpFamilyPolicy(), is(nullValue()));
         assertThat(svc.getSpec().getIpFamilies(), is(nullValue()));
 
-        io.strimzi.operator.cluster.TestUtils.checkOwnerReference(svc, KAFKA);
+        TestUtils.checkOwnerReference(svc, KAFKA);
     }
 
     @SuppressWarnings("MethodLength")

@@ -56,6 +56,7 @@ import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ResourceUtils;
+import io.strimzi.operator.cluster.TestUtils;
 import io.strimzi.operator.cluster.model.CruiseControl;
 import io.strimzi.operator.cluster.model.EntityOperator;
 import io.strimzi.operator.cluster.model.KafkaCluster;
@@ -118,7 +119,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 import static io.strimzi.operator.common.model.Ca.x509Certificate;
-import static io.strimzi.test.TestUtils.modifiableSet;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonMap;
@@ -530,7 +530,7 @@ public class KafkaAssemblyOperatorTest {
 
         // Secrets
         SecretOperator mockSecretOps = supplier.secretOperations;
-        Set<String> expectedSecrets = modifiableSet(
+        Set<String> expectedSecrets = TestUtils.modifiableSet(
                 KafkaResources.clientsCaKeySecretName(CLUSTER_NAME),
                 KafkaResources.clientsCaCertificateSecretName(CLUSTER_NAME),
                 KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME),
@@ -709,7 +709,7 @@ public class KafkaAssemblyOperatorTest {
 
                 // Check routes
                 if (openShift) {
-                    Set<String> expectedRoutes = modifiableSet(KafkaResources.bootstrapServiceName(CLUSTER_NAME));
+                    Set<String> expectedRoutes = TestUtils.modifiableSet(KafkaResources.bootstrapServiceName(CLUSTER_NAME));
                     for (NodeRef node : kafkaCluster.nodes()) {
                         if (node.broker()) {
                             expectedRoutes.add(node.podName());
@@ -910,13 +910,13 @@ public class KafkaAssemblyOperatorTest {
         when(mockCmOps.listAsync(NAMESPACE, updatedKafkaCluster.getSelectorLabels())).thenReturn(CompletableFuture.completedFuture(List.of()));
         when(mockCmOps.deleteAsync(any(), any(), any(), anyBoolean())).thenReturn(CompletableFuture.completedFuture(null));
 
-        Set<String> metricsCms = modifiableSet();
+        Set<String> metricsCms = TestUtils.modifiableSet();
         doAnswer(invocation -> {
             metricsCms.add(invocation.getArgument(1));
             return CompletableFuture.completedFuture(null);
         }).when(mockCmOps).reconcile(any(), eq(NAMESPACE), any(), any());
 
-        Set<String> logCms = modifiableSet();
+        Set<String> logCms = TestUtils.modifiableSet();
         doAnswer(invocation -> {
             logCms.add(invocation.getArgument(1));
             return CompletableFuture.completedFuture(null);
