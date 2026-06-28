@@ -20,7 +20,6 @@ import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.base.PatchContext;
 import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.test.TestUtils;
 import org.junit.jupiter.api.BeforeAll;
@@ -33,15 +32,16 @@ import org.mockito.ArgumentCaptor;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Stream;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -267,7 +267,8 @@ public abstract class AbstractNamespacedResourceOperatorTest<C extends Kubernete
 
         TestUtils.await(op.createOrUpdate(Reconciliation.DUMMY_RECONCILIATION, resource)
             .<Void>handle((rr, error) -> {
-                assertSame(Util.maybeUnwrapCompletionException(error), ex);
+                assertThat(error, instanceOf(CompletionException.class));
+                assertThat(error.getCause(), is(ex));
                 return null;
             }));
     }
@@ -344,7 +345,8 @@ public abstract class AbstractNamespacedResourceOperatorTest<C extends Kubernete
         AbstractNamespacedResourceOperator<C, T, L, R> op = createResourceOperations(mockClient, useServerSideApply);
         TestUtils.await(op.createOrUpdate(Reconciliation.DUMMY_RECONCILIATION, resource)
             .<Void>handle((rr, error) -> {
-                assertSame(Util.maybeUnwrapCompletionException(error), ex);
+                assertThat(error, instanceOf(CompletionException.class));
+                assertThat(error.getCause(), is(ex));
                 return null;
             }));
     }
@@ -501,7 +503,8 @@ public abstract class AbstractNamespacedResourceOperatorTest<C extends Kubernete
 
         TestUtils.await(op.reconcile(Reconciliation.DUMMY_RECONCILIATION, resource.getMetadata().getNamespace(), resource.getMetadata().getName(), null)
             .<Void>handle((rr, error) -> {
-                assertThat(Util.maybeUnwrapCompletionException(error), is(ex));
+                assertThat(error, instanceOf(CompletionException.class));
+                assertThat(error.getCause(), is(ex));
                 return null;
             }));
     }

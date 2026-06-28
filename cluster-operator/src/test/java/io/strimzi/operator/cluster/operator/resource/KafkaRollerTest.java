@@ -42,6 +42,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -49,7 +50,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static io.strimzi.operator.common.Util.maybeUnwrapCompletionException;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
@@ -835,9 +835,9 @@ public class KafkaRollerTest {
                 }).join();
             throw new AssertionError("Expected exception " + exception.getName() + " but none was thrown");
         } catch (Exception e) {
-            Throwable cause = maybeUnwrapCompletionException(e);
-            assertThat(cause.getClass() + " is not a subclass of " + exception.getName(), cause, instanceOf(exception));
-            assertThat("The exception message was not as expected", cause.getMessage(), is(message));
+            assertThat(e, instanceOf(CompletionException.class));
+            assertThat(e.getCause().getClass() + " is not a subclass of " + exception.getName(), e.getCause(), instanceOf(exception));
+            assertThat("The exception message was not as expected", e.getCause().getMessage(), is(message));
             assertThat("The restarted pods were not as expected", restarted(), is(expectedRestart));
             assertNoUnclosedAdminClient(kafkaRoller);
         }
@@ -874,11 +874,10 @@ public class KafkaRollerTest {
                 readiness.apply(podName2Number(podName)).join();
                 return true;
             } catch (Exception e) {
-                Throwable cause = maybeUnwrapCompletionException(e);
-                if (cause instanceof TimeoutException) {
+                if (e instanceof CompletionException && e.getCause() instanceof TimeoutException) {
                     return false;
                 } else {
-                    throw cause;
+                    throw e.getCause();
                 }
             }
         });

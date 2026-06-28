@@ -29,10 +29,10 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletionException;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static io.strimzi.operator.common.Util.maybeUnwrapCompletionException;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -518,7 +518,10 @@ public class KafkaAvailabilityTest {
         KafkaAvailability kafkaAvailability = new KafkaAvailability(new Reconciliation("dummy", "kind", "namespace", "A"), ksb.ac());
 
         for (Integer brokerId : ksb.brokers.keySet()) {
-            kafkaAvailability.canRoll(brokerId).whenComplete((r, error) -> assertThat(maybeUnwrapCompletionException(error), instanceOf(TimeoutException.class)));
+            kafkaAvailability.canRoll(brokerId).whenComplete((r, error) -> {
+                assertThat(error, instanceOf(CompletionException.class));
+                assertThat(error.getCause(), instanceOf(TimeoutException.class));
+            });
         }
     }
 
@@ -548,7 +551,10 @@ public class KafkaAvailabilityTest {
         KafkaAvailability kafkaAvailability = new KafkaAvailability(new Reconciliation("dummy", "kind", "namespace", "A"), ksb.ac());
 
         for (Integer brokerId : ksb.brokers.keySet()) {
-            kafkaAvailability.canRoll(brokerId).whenComplete((r, error) -> assertThat(maybeUnwrapCompletionException(error), instanceOf(UnknownTopicOrPartitionException.class)));
+            kafkaAvailability.canRoll(brokerId).whenComplete((r, error) -> {
+                assertThat(error, instanceOf(CompletionException.class));
+                assertThat(error.getCause(), instanceOf(UnknownTopicOrPartitionException.class));
+            });
         }
     }
 
@@ -579,8 +585,10 @@ public class KafkaAvailabilityTest {
 
         for (Integer brokerId : ksb.brokers.keySet()) {
             if (brokerId <= 2) {
-                kafkaAvailability.canRoll(brokerId).whenComplete((r, error) ->
-                        assertThat(maybeUnwrapCompletionException(error), instanceOf(UnknownTopicOrPartitionException.class)));
+                kafkaAvailability.canRoll(brokerId).whenComplete((r, error) -> {
+                    assertThat(error, instanceOf(CompletionException.class));
+                    assertThat(error.getCause(), instanceOf(UnknownTopicOrPartitionException.class));
+                });
             }
         }
     }

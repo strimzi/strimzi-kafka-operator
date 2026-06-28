@@ -45,6 +45,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -52,13 +53,13 @@ import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
 import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
-import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -664,8 +665,9 @@ public class KafkaUserOperatorMockTest {
 
         // Assert reconciliation failed with exception
         ExecutionException thrown = assertThrows(ExecutionException.class, futureResult.toCompletableFuture()::get);
-        Throwable rootCause = Util.maybeUnwrapCompletionException(thrown.getCause());
-        assertInstanceOf(InvalidResourceException.class, rootCause);
+        assertThat(thrown.getCause(), instanceOf(CompletionException.class));
+        assertThat(thrown.getCause().getCause(), instanceOf(InvalidResourceException.class));
+
     }
 
     @Test
@@ -1615,8 +1617,8 @@ public class KafkaUserOperatorMockTest {
         CompletionStage<KafkaUserStatus> futureResult = op.reconcile(new Reconciliation("test-trigger", KafkaUser.RESOURCE_KIND, namespace, ResourceUtils.NAME), user, null);
 
         ExecutionException thrown = assertThrows(ExecutionException.class, futureResult.toCompletableFuture()::get);
-        Throwable rootCause = Util.maybeUnwrapCompletionException(thrown.getCause());
-        assertInstanceOf(InvalidConfigurationException.class, rootCause);
-        assertThat(rootCause.getMessage(), containsString(missingSecretName));
+        assertThat(thrown.getCause(), instanceOf(CompletionException.class));
+        assertThat(thrown.getCause().getCause(), instanceOf(InvalidConfigurationException.class));
+        assertThat(thrown.getCause().getCause().getMessage(), containsString(missingSecretName));
     }
 }
