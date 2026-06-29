@@ -255,7 +255,7 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
     @Test
     public void testScaleUpCluster(VertxTestContext context)  {
         KafkaMirrorMaker2 mm2 = new KafkaMirrorMaker2Builder(MM2).build();
-        StrimziPodSet oldPodSet = CLUSTER.generatePodSet(1, null, null, false, null, null, null);
+        StrimziPodSet oldPodSet = CLUSTER.generatePodSet(1, null, null, null, null, null);
         List<Pod> oldPods = PodSetUtils.podSetToPods(oldPodSet);
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
@@ -349,7 +349,7 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
     @Test
     public void testScaleDownCluster(VertxTestContext context)  {
         KafkaMirrorMaker2 mm2 = new KafkaMirrorMaker2Builder(MM2).build();
-        StrimziPodSet oldPodSet = CLUSTER.generatePodSet(5, null, null, false, null, null, null);
+        StrimziPodSet oldPodSet = CLUSTER.generatePodSet(5, null, null, null, null, null);
         List<Pod> oldPods = PodSetUtils.podSetToPods(oldPodSet);
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
@@ -448,7 +448,7 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
                 .endSpec()
                 .build();
 
-        StrimziPodSet oldPodSet = CLUSTER.generatePodSet(3, null, null, false, null, null, null);
+        StrimziPodSet oldPodSet = CLUSTER.generatePodSet(3, null, null, null, null, null);
         List<Pod> oldPods = PodSetUtils.podSetToPods(oldPodSet);
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
@@ -541,7 +541,7 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
     @Test
     public void testUpdateClusterNoDiff(VertxTestContext context)  {
         KafkaMirrorMaker2 mm2 = new KafkaMirrorMaker2Builder(MM2).build();
-        StrimziPodSet oldPodSet = CLUSTER.generatePodSet(3, null, null, false, null, null, null);
+        StrimziPodSet oldPodSet = CLUSTER.generatePodSet(3, null, null, null, null, null);
         List<Pod> oldPods = PodSetUtils.podSetToPods(oldPodSet);
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
@@ -657,7 +657,7 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
                     .withResources(new ResourceRequirementsBuilder().withRequests(Map.of("Memory", new Quantity("1Gi"))).build())
                 .endSpec()
                 .build();
-        StrimziPodSet oldPodSet = CLUSTER.generatePodSet(3, null, null, false, null, null, null);
+        StrimziPodSet oldPodSet = CLUSTER.generatePodSet(3, null, null, null, null, null);
         List<Pod> oldPods = PodSetUtils.podSetToPods(oldPodSet);
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
@@ -771,7 +771,7 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
     @Test
     public void testUpdateWithFailure(VertxTestContext context)  {
         KafkaMirrorMaker2 mm2 = new KafkaMirrorMaker2Builder(MM2).build();
-        StrimziPodSet oldPodSet = CLUSTER.generatePodSet(3, null, null, false, null, null, null);
+        StrimziPodSet oldPodSet = CLUSTER.generatePodSet(3, null, null, null, null, null);
         List<Pod> oldPods = PodSetUtils.podSetToPods(oldPodSet);
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
@@ -996,7 +996,7 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
 
     @Test
     public void testManualRollingUpdate(VertxTestContext context)  {
-        StrimziPodSet oldPodSet = CLUSTER.generatePodSet(3, null, null, false, null, null, null);
+        StrimziPodSet oldPodSet = CLUSTER.generatePodSet(3, null, null, null, null, null);
         oldPodSet.getMetadata().getAnnotations().put(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true"); // We want the pods to roll manually
         List<Pod> oldPods = PodSetUtils.podSetToPods(oldPodSet);
 
@@ -1080,7 +1080,7 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
 
     @Test
     public void testManualRollingUpdateAtScaleUp(VertxTestContext context)  {
-        StrimziPodSet oldPodSet = CLUSTER.generatePodSet(1, null, null, false, null, null, null);
+        StrimziPodSet oldPodSet = CLUSTER.generatePodSet(1, null, null, null, null, null);
         oldPodSet.getMetadata().getAnnotations().put(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true"); // We want the pods to roll manually
         List<Pod> oldPods = PodSetUtils.podSetToPods(oldPodSet);
 
@@ -1165,7 +1165,7 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
 
     @Test
     public void testManualRollingUpdatePerPod(VertxTestContext context)  {
-        StrimziPodSet oldPodSet = CLUSTER.generatePodSet(3, null, null, false, null, null, null);
+        StrimziPodSet oldPodSet = CLUSTER.generatePodSet(3, null, null, null, null, null);
         List<Pod> oldPods = PodSetUtils.podSetToPods(oldPodSet);
         oldPods.get(1).getMetadata().getAnnotations().put(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true"); // We want the pod to roll manually
 
@@ -1249,7 +1249,7 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
 
     @Test
     public void testManualRollingUpdateWithSuppressedFailure(VertxTestContext context)  {
-        StrimziPodSet oldPodSet = CLUSTER.generatePodSet(3, null, null, false, null, null, null);
+        StrimziPodSet oldPodSet = CLUSTER.generatePodSet(3, null, null, null, null, null);
         List<Pod> oldPods = PodSetUtils.podSetToPods(oldPodSet);
         oldPods.get(1).getMetadata().getAnnotations().put(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true"); // We want the pod to roll manually
 

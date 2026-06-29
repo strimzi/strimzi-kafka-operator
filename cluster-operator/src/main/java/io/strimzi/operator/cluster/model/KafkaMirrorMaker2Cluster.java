@@ -226,17 +226,6 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
     }
 
     /**
-     * The command for running Connect has to be passed through a method so that we can handle different run commands
-     * for Connect and Mirror Maker 2 (which inherits from this class) without duplicating the whole container creation.
-     *
-     * @return  Command for starting the Kafka Mirror Maker 2 container
-     */
-    @Override
-    protected String getCommand() {
-        return "/opt/kafka/kafka_connect_run.sh";
-    }
-
-    /**
      * The default labels Connect pod uses have to be passed through a method so that we can handle different labels for
      * Connect and Mirror Maker 2 (which inherits from this class) without duplicating the whole pod creation.
      *

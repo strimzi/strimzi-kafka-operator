@@ -390,7 +390,7 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
         return portList;
     }
 
-    protected List<Volume> getVolumes(boolean isOpenShift) {
+    protected List<Volume> getVolumes() {
         List<Volume> volumeList = new ArrayList<>(2);
         volumeList.add(VolumeUtils.createTempDirVolume(templatePod));
         volumeList.add(VolumeUtils.createConfigMapVolume(KAFKA_CONNECT_CONFIG_VOLUME_NAME, connectConfigMapName));
@@ -482,7 +482,6 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
      *                                  sets with different numbers of pods are generated.
      * @param podSetAnnotations         Map with StrimziPodSet annotations
      * @param podAnnotations            Map with Pod annotations
-     * @param isOpenShift               Flags whether we are on OpenShift or not
      * @param imagePullPolicy           Image pull policy, which will be used by the pods
      * @param imagePullSecrets          List of image pull secrets
      * @param customContainerImage      Custom container image produced by Kafka Connect Build. If null, the default
@@ -493,7 +492,6 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
     public StrimziPodSet generatePodSet(int replicas,
                                         Map<String, String> podSetAnnotations,
                                         Map<String, String> podAnnotations,
-                                        boolean isOpenShift,
                                         ImagePullPolicy imagePullPolicy,
                                         List<LocalObjectReference> imagePullSecrets,
                                         String customContainerImage) {
@@ -530,7 +528,7 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
                         ModelUtils.affinityWithRackLabelSelector(templatePod, rack),
                         ContainerUtils.listOrNull(createInitContainer(imagePullPolicy)),
                         List.of(createContainer(imagePullPolicy, customContainerImage)),
-                        getVolumes(isOpenShift),
+                        getVolumes(),
                         imagePullSecrets,
                         securityProvider.kafkaConnectPodSecurityContext(podSecurityProviderContext),
                         securityProvider.kafkaConnectHostUsers(podSecurityProviderContext))
@@ -561,7 +559,7 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
         return ContainerUtils.createContainer(
                 componentName,
                 customContainerImage != null ? customContainerImage : image,
-                List.of(getCommand()),
+                List.of("/opt/kafka/kafka_connect_run.sh"),
                 securityProvider.kafkaConnectContainerSecurityContext(new ContainerSecurityProviderContextImpl(templateContainer)),
                 resources,
                 getEnvVars(),
@@ -585,17 +583,6 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
         ContainerUtils.addContainerEnvsToExistingEnvs(reconciliation, varList, templateInitContainer);
 
         return varList;
-    }
-
-    /**
-     * The command for running Connect has to be passed through a method so that we can handle different run commands
-     * for Connect and Mirror Maker 2 (which inherits from this class) without duplicating the whole container creation.
-     * This method is overridden in KafkaMirrorMaker2Model.
-     *
-     * @return  Command for starting Kafka Connect container
-     */
-    protected String getCommand() {
-        return "/opt/kafka/kafka_connect_run.sh";
     }
 
     protected List<EnvVar> getEnvVars() {

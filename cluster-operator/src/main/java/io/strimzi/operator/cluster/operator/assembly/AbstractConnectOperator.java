@@ -364,7 +364,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                                          Map<String, String> podAnnotations,
                                          Map<String, String> podSetAnnotations,
                                          String customContainerImage) {
-        return VertxUtil.toFuture(podSetOperations.reconcile(reconciliation, reconciliation.namespace(), connect.getComponentName(), connect.generatePodSet(connect.getReplicas(), podSetAnnotations, podAnnotations, pfa.isOpenshift(), imagePullPolicy, imagePullSecrets, customContainerImage)))
+        return VertxUtil.toFuture(podSetOperations.reconcile(reconciliation, reconciliation.namespace(), connect.getComponentName(), connect.generatePodSet(connect.getReplicas(), podSetAnnotations, podAnnotations, imagePullPolicy, imagePullSecrets, customContainerImage)))
                 .compose(reconciliationResult -> {
                     KafkaConnectRoller roller = new KafkaConnectRoller(reconciliation, connect, operationTimeoutMs, podOperations);
                     return roller.maybeRoll(PodSetUtils.podNames(reconciliationResult.resource()), pod -> KafkaConnectRoller.needsRollingRestart(reconciliation, reconciliationResult.resource(), pod));

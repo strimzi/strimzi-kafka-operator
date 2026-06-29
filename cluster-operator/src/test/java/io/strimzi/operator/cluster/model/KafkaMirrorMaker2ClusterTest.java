@@ -271,7 +271,7 @@ public class KafkaMirrorMaker2ClusterTest {
         KafkaMirrorMaker2Cluster kmm2 = KafkaMirrorMaker2Cluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
 
         // Check PodSet
-        StrimziPodSet ps = kmm2.generatePodSet(3, Map.of("anno2", "anno-value2"), Map.of("anno3", "anno-value3"), false, null, null, null);
+        StrimziPodSet ps = kmm2.generatePodSet(3, Map.of("anno2", "anno-value2"), Map.of("anno3", "anno-value3"), null, null, null);
 
         assertThat(ps.getMetadata().getName(), is(KafkaMirrorMaker2Resources.componentName(NAME)));
         assertThat(ps.getMetadata().getLabels().entrySet().containsAll(kmm2.labels.withAdditionalLabels(null).toMap().entrySet()), is(true));
@@ -351,7 +351,7 @@ public class KafkaMirrorMaker2ClusterTest {
         KafkaMirrorMaker2Cluster kmm2 = KafkaMirrorMaker2Cluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
 
         // Check PodSet
-        StrimziPodSet ps = kmm2.generatePodSet(3, null, null, false, null, null, null);
+        StrimziPodSet ps = kmm2.generatePodSet(3, null, null, null, null, null);
 
         // We need to loop through the pods to make sure they have the right values
         List<Pod> pods = PodSetUtils.podSetToPods(ps);
@@ -400,7 +400,7 @@ public class KafkaMirrorMaker2ClusterTest {
         KafkaMirrorMaker2Cluster kmm2 = KafkaMirrorMaker2Cluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
 
         // Check PodSet
-        StrimziPodSet podSet = kmm2.generatePodSet(3, Map.of(), Map.of(), false, null, null, null);
+        StrimziPodSet podSet = kmm2.generatePodSet(3, Map.of(), Map.of(), null, null, null);
         PodSetUtils.podSetToPods(podSet).forEach(pod -> {
             Container cont = pod.getSpec().getContainers().get(0);
             assertThat(TestUtils.containerEnvVars(cont).get(KafkaMirrorMaker2Cluster.ENV_VAR_KAFKA_CONNECT_TRUSTED_CERTS),
@@ -450,7 +450,7 @@ public class KafkaMirrorMaker2ClusterTest {
         assertThat(secrets, hasItems("foo-connect-tls-trusted-certs", "tuser-secret", "suser-secret"));
 
         // Check PodSet - volumes should only contain base volumes, not TLS/auth secrets
-        StrimziPodSet podSet = kmm2.generatePodSet(3, Map.of(), Map.of(), false, null, null, null);
+        StrimziPodSet podSet = kmm2.generatePodSet(3, Map.of(), Map.of(), null, null, null);
         PodSetUtils.podSetToPods(podSet).forEach(pod -> {
             assertThat(pod.getSpec().getVolumes().size(), is(2));
             assertThat(pod.getSpec().getVolumes().get(0).getName(), is(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME));
@@ -969,7 +969,7 @@ public class KafkaMirrorMaker2ClusterTest {
         KafkaMirrorMaker2Cluster kmm2 = KafkaMirrorMaker2Cluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
 
         // Check PodSet
-        StrimziPodSet podSet = kmm2.generatePodSet(3, Map.of(), Map.of(), false, null, null, null);
+        StrimziPodSet podSet = kmm2.generatePodSet(3, Map.of(), Map.of(), null, null, null);
         assertThat(podSet.getMetadata().getLabels().entrySet().containsAll(expectedPodSetLabels.entrySet()), is(true));
         assertThat(podSet.getMetadata().getAnnotations().entrySet().containsAll(podSetAnnotations.entrySet()), is(true));
 
@@ -1052,7 +1052,7 @@ public class KafkaMirrorMaker2ClusterTest {
         KafkaMirrorMaker2Cluster kmm2 = KafkaMirrorMaker2Cluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
 
         // Check PodSet
-        StrimziPodSet podSet = kmm2.generatePodSet(3, Map.of(), Map.of(), false, null, null, null);
+        StrimziPodSet podSet = kmm2.generatePodSet(3, Map.of(), Map.of(), null, null, null);
         PodSetUtils.podSetToPods(podSet).forEach(pod -> {
             assertThat(pod.getSpec().getTerminationGracePeriodSeconds(), is(123L));
         });
@@ -1061,7 +1061,7 @@ public class KafkaMirrorMaker2ClusterTest {
     @Test
     public void testDefaultGracePeriod() {
         // Check PodSet
-        StrimziPodSet podSet = KMM2.generatePodSet(3, Map.of(), Map.of(), false, null, null, null);
+        StrimziPodSet podSet = KMM2.generatePodSet(3, Map.of(), Map.of(), null, null, null);
         PodSetUtils.podSetToPods(podSet).forEach(pod -> {
             assertThat(pod.getSpec().getTerminationGracePeriodSeconds(), is(30L));
         });
@@ -1084,7 +1084,7 @@ public class KafkaMirrorMaker2ClusterTest {
         KafkaMirrorMaker2Cluster kmm2 = KafkaMirrorMaker2Cluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
 
         // Check PodSet
-        StrimziPodSet podSet = kmm2.generatePodSet(3, Map.of(), Map.of(), false, null, null, null);
+        StrimziPodSet podSet = kmm2.generatePodSet(3, Map.of(), Map.of(), null, null, null);
         PodSetUtils.podSetToPods(podSet).forEach(pod -> {
             assertThat(pod.getSpec().getImagePullSecrets().size(), is(2));
             assertThat(pod.getSpec().getImagePullSecrets().contains(secret1), is(true));
@@ -1098,7 +1098,7 @@ public class KafkaMirrorMaker2ClusterTest {
         LocalObjectReference secret2 = new LocalObjectReference("some-other-pull-secret");
 
         // Check PodSet
-        StrimziPodSet podSet = KMM2.generatePodSet(3, Map.of(), Map.of(), false, null, List.of(secret1, secret2), null);
+        StrimziPodSet podSet = KMM2.generatePodSet(3, Map.of(), Map.of(), null, List.of(secret1, secret2), null);
         PodSetUtils.podSetToPods(podSet).forEach(pod -> {
             assertThat(pod.getSpec().getImagePullSecrets().size(), is(2));
             assertThat(pod.getSpec().getImagePullSecrets().contains(secret1), is(true));
@@ -1123,7 +1123,7 @@ public class KafkaMirrorMaker2ClusterTest {
         KafkaMirrorMaker2Cluster kmm2 = KafkaMirrorMaker2Cluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
 
         // Check PodSet
-        StrimziPodSet podSet = kmm2.generatePodSet(3, Map.of(), Map.of(), false, null, List.of(secret1), null);
+        StrimziPodSet podSet = kmm2.generatePodSet(3, Map.of(), Map.of(), null, List.of(secret1), null);
         PodSetUtils.podSetToPods(podSet).forEach(pod -> {
             assertThat(pod.getSpec().getImagePullSecrets().size(), is(1));
             assertThat(pod.getSpec().getImagePullSecrets().contains(secret1), is(false));
@@ -1134,7 +1134,7 @@ public class KafkaMirrorMaker2ClusterTest {
     @Test
     public void testDefaultImagePullSecrets() {
         // Check PodSet
-        StrimziPodSet podSet = KMM2.generatePodSet(3, Map.of(), Map.of(), false, null, null, null);
+        StrimziPodSet podSet = KMM2.generatePodSet(3, Map.of(), Map.of(), null, null, null);
         PodSetUtils.podSetToPods(podSet).forEach(pod -> {
             assertThat(pod.getSpec().getImagePullSecrets(), is(List.of()));
         });
@@ -1154,7 +1154,7 @@ public class KafkaMirrorMaker2ClusterTest {
         KafkaMirrorMaker2Cluster kmm2 = KafkaMirrorMaker2Cluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
 
         // Check PodSet
-        StrimziPodSet podSet = kmm2.generatePodSet(3, Map.of(), Map.of(), false, null, null, null);
+        StrimziPodSet podSet = kmm2.generatePodSet(3, Map.of(), Map.of(), null, null, null);
         PodSetUtils.podSetToPods(podSet).forEach(pod -> {
             assertThat(pod.getSpec().getSecurityContext(), is(notNullValue()));
             assertThat(pod.getSpec().getSecurityContext().getFsGroup(), is(123L));
@@ -1166,7 +1166,7 @@ public class KafkaMirrorMaker2ClusterTest {
     @Test
     public void testDefaultSecurityContext() {
         // Check PodSet
-        StrimziPodSet podSet = KMM2.generatePodSet(3, Map.of(), Map.of(), false, null, null, null);
+        StrimziPodSet podSet = KMM2.generatePodSet(3, Map.of(), Map.of(), null, null, null);
         PodSetUtils.podSetToPods(podSet).forEach(pod -> {
             assertThat(pod.getSpec().getSecurityContext(), is(nullValue()));
         });
@@ -1179,7 +1179,7 @@ public class KafkaMirrorMaker2ClusterTest {
         kmm2.securityProvider.configure(new PlatformFeaturesAvailability(false, KubernetesVersion.MINIMAL_SUPPORTED_VERSION));
 
         // Check PodSet
-        StrimziPodSet podSet = kmm2.generatePodSet(3, Map.of(), Map.of(), false, null, null, null);
+        StrimziPodSet podSet = kmm2.generatePodSet(3, Map.of(), Map.of(), null, null, null);
         PodSetUtils.podSetToPods(podSet).forEach(pod -> {
             assertThat(pod.getSpec().getSecurityContext(), is(nullValue()));
             assertThat(pod.getSpec().getHostUsers(), is(false));
@@ -1219,13 +1219,13 @@ public class KafkaMirrorMaker2ClusterTest {
     @Test
     public void testImagePullPolicy() {
         // Check PodSet
-        StrimziPodSet podSet = KMM2.generatePodSet(3, Map.of(), Map.of(), false, ImagePullPolicy.ALWAYS, null, null);
+        StrimziPodSet podSet = KMM2.generatePodSet(3, Map.of(), Map.of(), ImagePullPolicy.ALWAYS, null, null);
         PodSetUtils.podSetToPods(podSet).forEach(pod -> {
             assertThat(pod.getSpec().getContainers().get(0).getImagePullPolicy(), is(ImagePullPolicy.ALWAYS.toString()));
         });
 
         // Check PodSet
-        podSet = KMM2.generatePodSet(3, Map.of(), Map.of(), false, ImagePullPolicy.IFNOTPRESENT, null, null);
+        podSet = KMM2.generatePodSet(3, Map.of(), Map.of(), ImagePullPolicy.IFNOTPRESENT, null, null);
         PodSetUtils.podSetToPods(podSet).forEach(pod -> {
             assertThat(pod.getSpec().getContainers().get(0).getImagePullPolicy(), is(ImagePullPolicy.IFNOTPRESENT.toString()));
         });
@@ -1249,7 +1249,7 @@ public class KafkaMirrorMaker2ClusterTest {
         KafkaMirrorMaker2Cluster kmm2 = KafkaMirrorMaker2Cluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
 
         // Check PodSet
-        StrimziPodSet podSet = kmm2.generatePodSet(3, Map.of(), Map.of(), false, null, null, null);
+        StrimziPodSet podSet = kmm2.generatePodSet(3, Map.of(), Map.of(), null, null, null);
         PodSetUtils.podSetToPods(podSet).forEach(pod -> {
             Container cont = pod.getSpec().getContainers().get(0);
             assertThat(cont.getResources().getLimits(), is(limits));
@@ -1275,7 +1275,7 @@ public class KafkaMirrorMaker2ClusterTest {
         KafkaMirrorMaker2Cluster kmm2 = KafkaMirrorMaker2Cluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
 
         // Check PodSet
-        StrimziPodSet podSet = kmm2.generatePodSet(3, Map.of(), Map.of(), false, null, null, null);
+        StrimziPodSet podSet = kmm2.generatePodSet(3, Map.of(), Map.of(), null, null, null);
         PodSetUtils.podSetToPods(podSet).forEach(pod -> {
             Container cont = pod.getSpec().getContainers().get(0);
             assertThat(cont.getEnv().stream().filter(env -> "KAFKA_JVM_PERFORMANCE_OPTS".equals(env.getName())).map(EnvVar::getValue).findFirst().orElse("").contains("-XX:+UseG1GC"), is(true));
@@ -1341,7 +1341,7 @@ public class KafkaMirrorMaker2ClusterTest {
         assertThat(connectConfigurations, containsString("producer.interceptor.classes=" + OpenTelemetryTracing.PRODUCER_INTERCEPTOR_CLASS_NAME));
 
         // Check PodSet
-        StrimziPodSet podSet = kmm2.generatePodSet(3, Map.of(), Map.of(), false, null, null, null);
+        StrimziPodSet podSet = kmm2.generatePodSet(3, Map.of(), Map.of(), null, null, null);
         PodSetUtils.podSetToPods(podSet).forEach(pod -> {
             Container cont = pod.getSpec().getContainers().get(0);
             assertThat(cont.getEnv().stream().filter(env -> KafkaMirrorMaker2Cluster.ENV_VAR_STRIMZI_TRACING.equals(env.getName())).map(EnvVar::getValue).findFirst().orElse("").equals(OpenTelemetryTracing.TYPE_OPENTELEMETRY), is(true));
@@ -1635,7 +1635,7 @@ public class KafkaMirrorMaker2ClusterTest {
         KafkaMirrorMaker2Cluster kmm2 = KafkaMirrorMaker2Cluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
 
         // Check PodSet
-        StrimziPodSet ps = kmm2.generatePodSet(3, new HashMap<>(), new HashMap<>(), false, null, null, null);
+        StrimziPodSet ps = kmm2.generatePodSet(3, new HashMap<>(), new HashMap<>(), null, null, null);
         assertThat(ps.getMetadata().getAnnotations(), is(Map.of(Annotations.ANNO_STRIMZI_IO_IN_PLACE_RESIZING, "true")));
 
         resource = new KafkaMirrorMaker2Builder(RESOURCE)
@@ -1647,7 +1647,7 @@ public class KafkaMirrorMaker2ClusterTest {
         kmm2 = KafkaMirrorMaker2Cluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
 
         // Check PodSet
-        ps = kmm2.generatePodSet(3, new HashMap<>(), new HashMap<>(), false, null, null, null);
+        ps = kmm2.generatePodSet(3, new HashMap<>(), new HashMap<>(), null, null, null);
         assertThat(ps.getMetadata().getAnnotations(), is(Map.of(Annotations.ANNO_STRIMZI_IO_IN_PLACE_RESIZING_WAIT_FOR_DEFERRED, "true")));
     }
 
@@ -1664,7 +1664,7 @@ public class KafkaMirrorMaker2ClusterTest {
         KafkaMirrorMaker2Cluster kmm2 = KafkaMirrorMaker2Cluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
 
         // Check PodSet
-        StrimziPodSet podSet = kmm2.generatePodSet(3, Map.of(), Map.of(), false, null, null, null);
+        StrimziPodSet podSet = kmm2.generatePodSet(3, Map.of(), Map.of(), null, null, null);
         PodSetUtils.podSetToPods(podSet).forEach(pod -> {
             // Check Init container
             List<Container> initContainers = pod.getSpec().getInitContainers();
@@ -1719,7 +1719,7 @@ public class KafkaMirrorMaker2ClusterTest {
         KafkaMirrorMaker2Cluster kmm2 = KafkaMirrorMaker2Cluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
 
         // Check PodSet
-        StrimziPodSet podSet = kmm2.generatePodSet(3, Map.of(), Map.of(), false, null, null, null);
+        StrimziPodSet podSet = kmm2.generatePodSet(3, Map.of(), Map.of(), null, null, null);
         PodSetUtils.podSetToPods(podSet).forEach(pod -> {
             // Check init container
             assertThat(pod.getSpec().getInitContainers().size(), is(0));

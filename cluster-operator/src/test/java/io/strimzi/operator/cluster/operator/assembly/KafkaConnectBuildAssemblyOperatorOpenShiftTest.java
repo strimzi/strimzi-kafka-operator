@@ -450,7 +450,6 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
                             3,
                             Map.of(Annotations.STRIMZI_IO_CONNECT_BUILD_REVISION, oldBuild.generateDockerfile().hashStub() + Util.hashStub(oldBuild.getBuild().getOutput().getImage()), Annotations.STRIMZI_IO_CONNECT_BUILD_IMAGE, "my-connect-build@sha256:olddigest"),
                             Map.of(Annotations.STRIMZI_IO_CONNECT_BUILD_REVISION, oldBuild.generateDockerfile().hashStub() + Util.hashStub(oldBuild.getBuild().getOutput().getImage()), Annotations.STRIMZI_IO_CONNECT_BUILD_IMAGE, "my-connect-build@sha256:olddigest"),
-                            false,
                             null,
                             null,
                             null);
@@ -628,7 +627,6 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
                             3,
                             Map.of(Annotations.STRIMZI_IO_CONNECT_BUILD_REVISION, oldBuild.generateDockerfile().hashStub() + Util.hashStub(oldBuild.getBuild().getOutput().getImage()), Annotations.STRIMZI_IO_CONNECT_BUILD_IMAGE, "my-connect-build-2@sha256:olddigest"),
                             Map.of(Annotations.STRIMZI_IO_CONNECT_BUILD_REVISION, oldBuild.generateDockerfile().hashStub() + Util.hashStub(oldBuild.getBuild().getOutput().getImage()), Annotations.STRIMZI_IO_CONNECT_BUILD_IMAGE, "my-connect-build-2@sha256:olddigest"),
-                            false,
                             null,
                             null,
                             null);
@@ -791,7 +789,6 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
                             3,
                             Map.of(Annotations.STRIMZI_IO_CONNECT_BUILD_REVISION, build.generateDockerfile().hashStub() + Util.hashStub(build.getBuild().getOutput().getImage()), Annotations.STRIMZI_IO_CONNECT_BUILD_IMAGE, "my-connect-build@sha256:olddigest"),
                             Map.of(Annotations.STRIMZI_IO_CONNECT_BUILD_REVISION, build.generateDockerfile().hashStub() + Util.hashStub(build.getBuild().getOutput().getImage()), Annotations.STRIMZI_IO_CONNECT_BUILD_IMAGE, "my-connect-build@sha256:olddigest"),
-                            false,
                             null,
                             null,
                             null);
@@ -926,7 +923,6 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
                             3,
                             Map.of(Annotations.STRIMZI_IO_CONNECT_FORCE_REBUILD, "true", Annotations.STRIMZI_IO_CONNECT_BUILD_REVISION, build.generateDockerfile().hashStub() + OUTPUT_IMAGE_HASH_STUB, Annotations.STRIMZI_IO_CONNECT_BUILD_IMAGE, "my-connect-build@sha256:blablabla"),
                             Map.of(Annotations.STRIMZI_IO_CONNECT_BUILD_REVISION, build.generateDockerfile().hashStub() + OUTPUT_IMAGE_HASH_STUB, Annotations.STRIMZI_IO_CONNECT_BUILD_IMAGE, "my-connect-build@sha256:blablabla"),
-                            false,
                             null,
                             null,
                             null);
@@ -1102,7 +1098,6 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
                             3,
                             Map.of(Annotations.STRIMZI_IO_CONNECT_BUILD_REVISION, "oldhashstub", Annotations.STRIMZI_IO_CONNECT_BUILD_IMAGE, "my-connect-build@sha256:olddigest"),
                             Map.of(Annotations.STRIMZI_IO_CONNECT_BUILD_REVISION, "oldhashstub", Annotations.STRIMZI_IO_CONNECT_BUILD_IMAGE, "my-connect-build@sha256:olddigest"),
-                            false,
                             null,
                             null,
                             null);
@@ -1302,7 +1297,6 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
                             3,
                             Map.of(Annotations.STRIMZI_IO_CONNECT_BUILD_REVISION, "oldhashstub", Annotations.STRIMZI_IO_CONNECT_BUILD_IMAGE, "my-connect-build@sha256:olddigest"),
                             Map.of(Annotations.STRIMZI_IO_CONNECT_BUILD_REVISION, "oldhashstub", Annotations.STRIMZI_IO_CONNECT_BUILD_IMAGE, "my-connect-build@sha256:olddigest"),
-                            false,
                             null,
                             null,
                             null);
@@ -1504,7 +1498,6 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
                             3,
                             Map.of(Annotations.STRIMZI_IO_CONNECT_BUILD_REVISION, oldBuild.generateDockerfile().hashStub() + OUTPUT_IMAGE_HASH_STUB, Annotations.STRIMZI_IO_CONNECT_BUILD_IMAGE, "my-connect-build@sha256:blablabla"),
                             Map.of(Annotations.STRIMZI_IO_CONNECT_BUILD_REVISION, oldBuild.generateDockerfile().hashStub() + OUTPUT_IMAGE_HASH_STUB, Annotations.STRIMZI_IO_CONNECT_BUILD_IMAGE, "my-connect-build@sha256:blablabla"),
-                            false,
                             null,
                             null,
                             null);
