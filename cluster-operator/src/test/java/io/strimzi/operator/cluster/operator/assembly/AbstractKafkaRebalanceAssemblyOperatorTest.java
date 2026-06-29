@@ -12,6 +12,7 @@ import io.strimzi.api.kafka.model.common.Condition;
 import io.strimzi.api.kafka.model.common.ConditionBuilder;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
+import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlResources;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
@@ -161,8 +162,8 @@ public abstract class AbstractKafkaRebalanceAssemblyOperatorTest {
             }
 
             @Override
-            public CruiseControlApi cruiseControlClientProvider(Secret ccSecret, Secret ccApiSecret, boolean apiAuthEnabled, boolean apiSslEnabled) {
-                return new CruiseControlApiImpl(1, ccSecret, ccApiSecret, true, true);
+            public CruiseControlApi cruiseControlClientProvider(Secret clusterCaCertSecret, Secret ccApiSecret, boolean apiAuthEnabled, boolean apiSslEnabled) {
+                return new CruiseControlApiImpl(1, clusterCaCertSecret, ccApiSecret, true, true);
             }
         };
     }
@@ -183,11 +184,12 @@ public abstract class AbstractKafkaRebalanceAssemblyOperatorTest {
     }
 
     protected void crdCreateCruiseControlSecrets() {
-        Secret ccSecret = new SecretBuilder(MockCruiseControl.CC_SECRET)
-                .editMetadata()
-                    .withName(CruiseControlResources.secretName(CLUSTER_NAME))
+        Secret clusterCaCertSecret = new SecretBuilder()
+                .withNewMetadata()
+                    .withName(KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME))
                     .withNamespace(namespace)
                 .endMetadata()
+                .addToData("ca.crt", MockCertManager.clusterCaCert())
                 .build();
 
         Secret ccApiSecret = new SecretBuilder(MockCruiseControl.CC_API_SECRET)
@@ -197,7 +199,7 @@ public abstract class AbstractKafkaRebalanceAssemblyOperatorTest {
                 .endMetadata()
                 .build();
 
-        client.secrets().inNamespace(namespace).resource(ccSecret).create();
+        client.secrets().inNamespace(namespace).resource(clusterCaCertSecret).create();
         client.secrets().inNamespace(namespace).resource(ccApiSecret).create();
     }
 

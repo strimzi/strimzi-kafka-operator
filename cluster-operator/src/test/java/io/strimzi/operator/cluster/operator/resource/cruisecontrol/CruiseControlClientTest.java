@@ -71,7 +71,7 @@ public class CruiseControlClientTest {
     }
 
     private CruiseControlApi cruiseControlClientProvider() {
-        return new CruiseControlApiImpl(HTTP_DEFAULT_IDLE_TIMEOUT_SECONDS, MockCruiseControl.CC_SECRET, MockCruiseControl.CC_API_SECRET, API_AUTH_ENABLED, API_SSL_ENABLED);
+        return new CruiseControlApiImpl(HTTP_DEFAULT_IDLE_TIMEOUT_SECONDS, MockCruiseControl.CLUSTER_CA_CERT_SECRET, MockCruiseControl.CC_API_SECRET, API_AUTH_ENABLED, API_SSL_ENABLED);
     }
 
     @Test

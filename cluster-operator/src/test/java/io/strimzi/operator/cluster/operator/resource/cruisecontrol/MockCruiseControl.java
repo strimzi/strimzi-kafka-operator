@@ -11,6 +11,7 @@ import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import com.github.tomakehurst.wiremock.stubbing.Scenario;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
+import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlResources;
 import io.strimzi.certs.OpenSslCertManager;
 import io.strimzi.certs.Subject;
@@ -80,12 +81,12 @@ public class MockCruiseControl {
     private static final String USER_TASKS_SCENARIO = "user-tasks-scenario";
     private static final String USER_TASKS_VERBOSE_SCENARIO = "user-tasks-verbose-scenario";
 
-    public static final Secret CC_SECRET = new SecretBuilder()
+    public static final Secret CLUSTER_CA_CERT_SECRET = new SecretBuilder()
             .withNewMetadata()
-                .withName(CruiseControlResources.secretName(CLUSTER))
+                .withName(KafkaResources.clusterCaCertificateSecretName(CLUSTER))
                 .withNamespace(NAMESPACE)
             .endMetadata()
-            .addToData("cruise-control.crt", MockCertManager.clusterCaCert())
+            .addToData("ca.crt", MockCertManager.clusterCaCert())
             .build();
 
     private static Map<String, String> apiSecretData = Map.of(CruiseControlApiProperties.REBALANCE_OPERATOR_PASSWORD_KEY, "password");
