@@ -4,18 +4,9 @@
  */
 package io.strimzi.systemtest.upgrade;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLParser;
-import io.fabric8.kubernetes.api.model.GenericKubernetesResource;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.fabric8.kubernetes.api.model.Pod;
-import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinition;
 import io.skodjob.kubetest4j.resources.KubeResourceManager;
 import io.skodjob.kubetest4j.resources.ResourceItem;
 import io.strimzi.api.kafka.model.common.Constants;
@@ -58,7 +49,6 @@ import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.NamespaceUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
-import io.strimzi.systemtest.utils.kubeUtils.controllers.JobUtils;
 import io.strimzi.systemtest.utils.kubeUtils.crds.CrdUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.ReadWriteUtils;
@@ -91,7 +81,6 @@ import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.fail;
 
 public class AbstractKRaftUpgradeST extends AbstractST {
@@ -420,7 +409,8 @@ public class AbstractKRaftUpgradeST extends AbstractST {
             }
             LOGGER.info("Deploying KafkaTopic from: {}", kafkaTopicYaml.getPath());
             KubeResourceManager.get().kubeCmdClient().inNamespace(componentsNamespaceName).create(kafkaTopicYaml);
-            KafkaTopicUtils.waitForKafkaTopicReady(componentsNamespaceName, TOPIC_NAME);        }
+            KafkaTopicUtils.waitForKafkaTopicReady(componentsNamespaceName, TOPIC_NAME);
+        }
     }
 
     protected void deployKafkaConnectAndKafkaConnectorWithWaitForReadiness(
