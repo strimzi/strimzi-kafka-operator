@@ -201,7 +201,7 @@ public class KafkaRebalanceAssemblyOperator
     /**
      * Provides an implementation of the Cruise Control API client
      *
-     * @param clusterCaCertSecret Cluster CA certificate Secret, used to trust the Cruise Control TLS server (GH-12442)
+     * @param clusterCaCertSecret Cluster CA certificate Secret, used to trust the Cruise Control TLS server
      * @param ccApiSecret Cruise Control API secret
      * @param apiAuthEnabled if enabled, configures auth
      * @param apiSslEnabled if enabled, configures SSL
@@ -1199,9 +1199,6 @@ public class KafkaRebalanceAssemblyOperator
                         resourcePatchFuture = Future.succeededFuture();
                     }
 
-                    // GH-12442: trust the Cluster CA cert rather than pinning Cruise Control's own server
-                    // public key, so a CA-signed server cert rotation does not have to land in lockstep with
-                    // this reconcile.
                     String clusterCaCertSecretName = KafkaResources.clusterCaCertificateSecretName(clusterName);
                     String ccApiSecretName =  CruiseControlResources.apiSecretName(clusterName);
 

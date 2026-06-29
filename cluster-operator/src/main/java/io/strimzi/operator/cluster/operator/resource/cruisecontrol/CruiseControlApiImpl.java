@@ -60,7 +60,7 @@ public class CruiseControlApiImpl implements CruiseControlApi {
      * Constructor
      *
      * @param idleTimeout           Idle timeout
-     * @param clusterCaCertSecret   Cluster CA certificate Secret, used to trust the Cruise Control TLS server (GH-12442)
+     * @param clusterCaCertSecret   Cluster CA certificate Secret, used to trust the Cruise Control TLS server
      * @param ccApiSecret           Cruise Control API Secret
      * @param apiAuthEnabled        Flag indicating if authentication is enabled
      * @param apiSslEnabled         Flag indicating if TLS is enabled
