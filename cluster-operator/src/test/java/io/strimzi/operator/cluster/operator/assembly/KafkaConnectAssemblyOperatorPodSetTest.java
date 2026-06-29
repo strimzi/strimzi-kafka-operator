@@ -459,7 +459,7 @@ public class KafkaConnectAssemblyOperatorPodSetTest {
     @Test
     public void testScaleUpCluster(VertxTestContext context)  {
         KafkaConnect connect = new KafkaConnectBuilder(CONNECT).build();
-        StrimziPodSet oldPodSet = CLUSTER.generatePodSet(1, null, null, false, null, null, null);
+        StrimziPodSet oldPodSet = CLUSTER.generatePodSet(1, null, null, null, null, null);
         List<Pod> oldPods = PodSetUtils.podSetToPods(oldPodSet);
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
@@ -546,7 +546,7 @@ public class KafkaConnectAssemblyOperatorPodSetTest {
     @Test
     public void testScaleDownCluster(VertxTestContext context)  {
         KafkaConnect connect = new KafkaConnectBuilder(CONNECT).build();
-        StrimziPodSet oldPodSet = CLUSTER.generatePodSet(5, null, null, false, null, null, null);
+        StrimziPodSet oldPodSet = CLUSTER.generatePodSet(5, null, null, null, null, null);
         List<Pod> oldPods = PodSetUtils.podSetToPods(oldPodSet);
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
@@ -638,7 +638,7 @@ public class KafkaConnectAssemblyOperatorPodSetTest {
                 .endSpec()
                 .build();
 
-        StrimziPodSet oldPodSet = CLUSTER.generatePodSet(3, null, null, false, null, null, null);
+        StrimziPodSet oldPodSet = CLUSTER.generatePodSet(3, null, null, null, null, null);
         List<Pod> oldPods = PodSetUtils.podSetToPods(oldPodSet);
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
@@ -727,7 +727,7 @@ public class KafkaConnectAssemblyOperatorPodSetTest {
     @Test
     public void testUpdateClusterNoDiff(VertxTestContext context)  {
         KafkaConnect connect = new KafkaConnectBuilder(CONNECT).build();
-        StrimziPodSet oldPodSet = CLUSTER.generatePodSet(3, null, null, false, null, null, null);
+        StrimziPodSet oldPodSet = CLUSTER.generatePodSet(3, null, null, null, null, null);
         List<Pod> oldPods = PodSetUtils.podSetToPods(oldPodSet);
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
@@ -819,7 +819,7 @@ public class KafkaConnectAssemblyOperatorPodSetTest {
                     .withResources(new ResourceRequirementsBuilder().withRequests(Map.of("Memory", new Quantity("1Gi"))).build())
                 .endSpec()
                 .build();
-        StrimziPodSet oldPodSet = CLUSTER.generatePodSet(3, null, null, false, null, null, null);
+        StrimziPodSet oldPodSet = CLUSTER.generatePodSet(3, null, null, null, null, null);
         List<Pod> oldPods = PodSetUtils.podSetToPods(oldPodSet);
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
@@ -927,7 +927,7 @@ public class KafkaConnectAssemblyOperatorPodSetTest {
                     .withResources(new ResourceRequirementsBuilder().withRequests(Map.of("Memory", new Quantity("1Gi"))).build())
                 .endSpec()
                 .build();
-        StrimziPodSet oldPodSet = CLUSTER.generatePodSet(3, null, null, false, null, null, null);
+        StrimziPodSet oldPodSet = CLUSTER.generatePodSet(3, null, null, null, null, null);
         List<Pod> oldPods = PodSetUtils.podSetToPods(oldPodSet);
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
@@ -1051,7 +1051,7 @@ public class KafkaConnectAssemblyOperatorPodSetTest {
                     .endInlineLogging()
                 .endSpec()
                 .build();
-        StrimziPodSet oldPodSet = CLUSTER.generatePodSet(3, null, null, false, null, null, null);
+        StrimziPodSet oldPodSet = CLUSTER.generatePodSet(3, null, null, null, null, null);
         List<Pod> oldPods = PodSetUtils.podSetToPods(oldPodSet);
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
@@ -1156,7 +1156,7 @@ public class KafkaConnectAssemblyOperatorPodSetTest {
                     .endInlineLogging()
                 .endSpec()
                 .build();
-        StrimziPodSet oldPodSet = CLUSTER.generatePodSet(3, null, null, false, null, null, null);
+        StrimziPodSet oldPodSet = CLUSTER.generatePodSet(3, null, null, null, null, null);
         List<Pod> oldPods = PodSetUtils.podSetToPods(oldPodSet);
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
@@ -1267,7 +1267,7 @@ public class KafkaConnectAssemblyOperatorPodSetTest {
     @Test
     public void testUpdateClusterWithFailure(VertxTestContext context)  {
         KafkaConnect connect = new KafkaConnectBuilder(CONNECT).build();
-        StrimziPodSet oldPodSet = CLUSTER.generatePodSet(3, null, null, false, null, null, null);
+        StrimziPodSet oldPodSet = CLUSTER.generatePodSet(3, null, null, null, null, null);
         List<Pod> oldPods = PodSetUtils.podSetToPods(oldPodSet);
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
@@ -1356,7 +1356,7 @@ public class KafkaConnectAssemblyOperatorPodSetTest {
                     .endTopologyLabelRack()
                 .endSpec()
                 .build();
-        StrimziPodSet oldPodSet = CLUSTER.generatePodSet(3, null, null, false, null, null, null);
+        StrimziPodSet oldPodSet = CLUSTER.generatePodSet(3, null, null, null, null, null);
         List<Pod> oldPods = PodSetUtils.podSetToPods(oldPodSet);
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
@@ -1445,7 +1445,7 @@ public class KafkaConnectAssemblyOperatorPodSetTest {
     @Test
     public void testUpdateClusterWithoutOptionalRBACRights(VertxTestContext context)  {
         KafkaConnect connect = new KafkaConnectBuilder(CONNECT).build();
-        StrimziPodSet oldPodSet = CLUSTER.generatePodSet(3, null, null, false, null, null, null);
+        StrimziPodSet oldPodSet = CLUSTER.generatePodSet(3, null, null, null, null, null);
         List<Pod> oldPods = PodSetUtils.podSetToPods(oldPodSet);
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
@@ -1601,7 +1601,7 @@ public class KafkaConnectAssemblyOperatorPodSetTest {
                     .endBuild()
                 .endSpec()
                 .build();
-        StrimziPodSet oldPodSet = CLUSTER.generatePodSet(3, null, null, false, null, null, null);
+        StrimziPodSet oldPodSet = CLUSTER.generatePodSet(3, null, null, null, null, null);
         List<Pod> oldPods = PodSetUtils.podSetToPods(oldPodSet);
         Pod terminatedBuildPod = new PodBuilder()
                 .withNewMetadata()
@@ -1810,7 +1810,7 @@ public class KafkaConnectAssemblyOperatorPodSetTest {
 
     @Test
     public void testManualRollingUpdate(VertxTestContext context)  {
-        StrimziPodSet oldPodSet = CLUSTER.generatePodSet(3, null, null, false, null, null, null);
+        StrimziPodSet oldPodSet = CLUSTER.generatePodSet(3, null, null, null, null, null);
         oldPodSet.getMetadata().getAnnotations().put(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true"); // We want the pods to roll manually
         List<Pod> oldPods = PodSetUtils.podSetToPods(oldPodSet);
 
@@ -1888,7 +1888,7 @@ public class KafkaConnectAssemblyOperatorPodSetTest {
 
     @Test
     public void testManualRollingUpdateAtScaleUp(VertxTestContext context)  {
-        StrimziPodSet oldPodSet = CLUSTER.generatePodSet(1, null, null, false, null, null, null);
+        StrimziPodSet oldPodSet = CLUSTER.generatePodSet(1, null, null, null, null, null);
         oldPodSet.getMetadata().getAnnotations().put(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true"); // We want the pods to roll manually
         List<Pod> oldPods = PodSetUtils.podSetToPods(oldPodSet);
 
@@ -1967,7 +1967,7 @@ public class KafkaConnectAssemblyOperatorPodSetTest {
 
     @Test
     public void testManualRollingUpdatePerPod(VertxTestContext context)  {
-        StrimziPodSet oldPodSet = CLUSTER.generatePodSet(3, null, null, false, null, null, null);
+        StrimziPodSet oldPodSet = CLUSTER.generatePodSet(3, null, null, null, null, null);
         List<Pod> oldPods = PodSetUtils.podSetToPods(oldPodSet);
         oldPods.get(1).getMetadata().getAnnotations().put(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true"); // We want the pod to roll manually
 
@@ -2045,7 +2045,7 @@ public class KafkaConnectAssemblyOperatorPodSetTest {
 
     @Test
     public void testManualRollingUpdateWithSuppressedFailure(VertxTestContext context)  {
-        StrimziPodSet oldPodSet = CLUSTER.generatePodSet(3, null, null, false, null, null, null);
+        StrimziPodSet oldPodSet = CLUSTER.generatePodSet(3, null, null, null, null, null);
         List<Pod> oldPods = PodSetUtils.podSetToPods(oldPodSet);
         oldPods.get(1).getMetadata().getAnnotations().put(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true"); // We want the pod to roll manually
 
