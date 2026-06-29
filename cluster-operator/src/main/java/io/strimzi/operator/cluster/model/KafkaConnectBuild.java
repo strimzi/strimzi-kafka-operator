@@ -283,7 +283,7 @@ public class KafkaConnectBuild extends AbstractModel {
                 templatePod != null ? templatePod.getAffinity() : null,
                 null,
                 List.of(createContainer(imagePullPolicy, isBuildahBuild)),
-                getVolumes(isOpenShift),
+                getVolumes(isOpenShift, isBuildahBuild),
                 imagePullSecrets,
                 securityProvider.kafkaConnectBuildPodSecurityContext(podSecurityProviderContext),
                 securityProvider.kafkaConnectBuildHostUsers(podSecurityProviderContext));
@@ -292,16 +292,21 @@ public class KafkaConnectBuild extends AbstractModel {
     /**
      * Generates a list of volumes used by the builder pod
      *
-     * @param isOpenShift   Flag defining whether we are running on OpenShift
+     * @param isOpenShift       Flag defining whether we are running on OpenShift
+     * @param isBuildahBuild    Flag defining whether we should use Buildah or Kaniko (based on Feature Gate)
      *
      * @return  List of volumes
      */
-    /* test */ List<Volume> getVolumes(boolean isOpenShift) {
+    /* test */ List<Volume> getVolumes(boolean isOpenShift, boolean isBuildahBuild) {
         List<Volume> volumes = new ArrayList<>(2);
 
         volumes.add(VolumeUtils.createConfigMapVolume("dockerfile", KafkaConnectResources.dockerFileConfigMapName(cluster), Collections.singletonMap("Dockerfile", "Dockerfile")));
 
         if (build.getOutput() instanceof DockerOutput output) {
+            if (isBuildahBuild) {
+                // EmptyDir volume used for Buildah's build context (storing temporary build files etc.)
+                volumes.add(VolumeUtils.createEmptyDirVolume("build-context", null, null));
+            }
 
             if (output.getPushSecret() != null) {
                 volumes.add(VolumeUtils.createSecretVolume("docker-credentials", output.getPushSecret(), Collections.singletonMap(".dockerconfigjson", "config.json"), isOpenShift));
@@ -326,6 +331,11 @@ public class KafkaConnectBuild extends AbstractModel {
         volumeMounts.add(new VolumeMountBuilder().withName("dockerfile").withMountPath("/dockerfile").build());
 
         if (build.getOutput() instanceof DockerOutput output) {
+            if (isBuildahBuild) {
+                // /var/tmp is the default directory where Buildah stores the build context. Can be changed through TMPDIR environment variable.
+                volumeMounts.add(new VolumeMountBuilder().withName("build-context").withMountPath("/var/tmp").build());
+            }
+
             if (output.getPushSecret() != null) {
                 String pushSecretPath = isBuildahBuild ? "/build/.docker" : "/kaniko/.docker";
                 volumeMounts.add(new VolumeMountBuilder().withName("docker-credentials").withMountPath(pushSecretPath).build());
@@ -333,6 +343,7 @@ public class KafkaConnectBuild extends AbstractModel {
         } else {
             throw new RuntimeException("Kubernetes build requires output of type `docker`.");
         }
+
         TemplateUtils.addAdditionalVolumeMounts(volumeMounts, templateContainer);
 
         return volumeMounts;
