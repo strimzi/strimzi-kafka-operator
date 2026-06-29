@@ -44,13 +44,6 @@ public class KRaftStrimziUpgradeST extends AbstractKRaftUpgradeST {
 
     private static final Logger LOGGER = LogManager.getLogger(KRaftStrimziUpgradeST.class);
     private final BundleVersionModificationData acrossUpgradeData = new VersionModificationDataLoader(VersionModificationDataLoader.ModificationType.BUNDLE_UPGRADE).buildDataForUpgradeAcrossVersionsForKRaft();
-    // TODO: Remove this after 1.1.0 release - https://github.com/strimzi/strimzi-kafka-operator/issues/12692
-    private final BundleVersionModificationData conversionUpgradeData = new VersionModificationDataLoader(VersionModificationDataLoader.ModificationType.BUNDLE_UPGRADE)
-        .getBundleUpgradeOrDowngradeDataList()
-        .stream()
-        .filter(data -> data.getFromVersion().equals("0.51.0"))
-        .findFirst()
-        .get();
 
     @MicroShiftNotSupported("Due to lack of Kafka Connect build feature")
     @KindIPv6NotSupported("Our current CI setup doesn't allow pushing into internal registries that is needed in this test")
@@ -68,20 +61,6 @@ public class KRaftStrimziUpgradeST extends AbstractKRaftUpgradeST {
         LOGGER.debug("Running upgrade test from version {} to {} (FG: {} -> {})",
             fromVersion, toVersion, fgBefore, fgAfter);
         doKafkaConnectAndKafkaConnectorUpgradeOrDowngradeProcedure(CO_NAMESPACE, testStorage, upgradeData, upgradeKafkaVersion);
-    }
-
-    // TODO: Remove this after 1.1.0 release - https://github.com/strimzi/strimzi-kafka-operator/issues/12692
-    @IsolatedTest
-    void testUpgradeWithCrAndCrdConversion() throws IOException {
-        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
-        BundleVersionModificationData crdUpgradeData = conversionUpgradeData;
-        crdUpgradeData.setConvertCrsAndCrds(true);
-
-        UpgradeKafkaVersion upgradeKafkaVersion = new UpgradeKafkaVersion(crdUpgradeData.getDeployKafkaVersion());
-        // setting metadata version to null, similarly to the examples, which are not configuring metadataVersion
-        upgradeKafkaVersion.setMetadataVersion(null);
-
-        doKafkaConnectAndKafkaConnectorUpgradeOrDowngradeProcedure(CO_NAMESPACE, testStorage, crdUpgradeData, upgradeKafkaVersion);
     }
 
     @IsolatedTest
