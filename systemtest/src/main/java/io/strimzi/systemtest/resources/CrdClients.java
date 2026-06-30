@@ -4,8 +4,6 @@
  */
 package io.strimzi.systemtest.resources;
 
-import io.fabric8.kubernetes.api.model.GenericKubernetesResource;
-import io.fabric8.kubernetes.api.model.GenericKubernetesResourceList;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.skodjob.kubetest4j.resources.KubeResourceManager;
@@ -30,7 +28,6 @@ import io.strimzi.api.kafka.model.topic.KafkaTopic;
 import io.strimzi.api.kafka.model.topic.KafkaTopicList;
 import io.strimzi.api.kafka.model.user.KafkaUser;
 import io.strimzi.api.kafka.model.user.KafkaUserList;
-import io.strimzi.systemtest.TestConstants;
 
 /**
  * Class containing encapsulations of clients for Strimzi's CRs.
@@ -104,15 +101,6 @@ public class CrdClients {
      */
     public static MixedOperation<KafkaTopic, KafkaTopicList, Resource<KafkaTopic>> kafkaTopicClient() {
         return Crds.topicOperation(KubeResourceManager.get().kubeClient().getClient());
-    }
-
-    /**
-     * Encapsulation for {@link KafkaTopic} client for v1beta2 API version.
-     *
-     * @return  {@link KafkaTopic} client for v1beta2 API version.
-     */
-    public static MixedOperation<GenericKubernetesResource, GenericKubernetesResourceList, Resource<GenericKubernetesResource>> kafkaTopicV1Beta2Client() {
-        return KubeResourceManager.get().kubeClient().getClient().genericKubernetesResources(TestConstants.V1_BETA_2_API_VERSION, KafkaTopic.RESOURCE_KIND);
     }
 
     /**

@@ -4,18 +4,9 @@
  */
 package io.strimzi.systemtest.upgrade;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLParser;
-import io.fabric8.kubernetes.api.model.GenericKubernetesResource;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.fabric8.kubernetes.api.model.Pod;
-import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinition;
 import io.skodjob.kubetest4j.resources.KubeResourceManager;
 import io.skodjob.kubetest4j.resources.ResourceItem;
 import io.strimzi.api.kafka.model.common.Constants;
@@ -58,7 +49,6 @@ import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.NamespaceUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
-import io.strimzi.systemtest.utils.kubeUtils.controllers.JobUtils;
 import io.strimzi.systemtest.utils.kubeUtils.crds.CrdUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.ReadWriteUtils;
@@ -91,7 +81,6 @@ import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.fail;
 
 public class AbstractKRaftUpgradeST extends AbstractST {
@@ -123,11 +112,6 @@ public class AbstractKRaftUpgradeST extends AbstractST {
     protected final LabelSelector eoSelector = LabelSelectors.entityOperatorLabelSelector(CLUSTER_NAME);
     protected final LabelSelector coSelector = new LabelSelectorBuilder().withMatchLabels(Map.of(Labels.STRIMZI_KIND_LABEL, "cluster-operator")).build();
     protected final LabelSelector connectLabelSelector = LabelSelectors.connectLabelSelector(CLUSTER_NAME, KafkaConnectResources.componentName(CLUSTER_NAME));
-
-    // TODO: Remove this after 1.1.0 release - https://github.com/strimzi/strimzi-kafka-operator/issues/12692
-    // Plus delete all the files on the path
-    protected static final String PATH_TO_CONVERSION_RESOURCES_FILES = TestUtils.USER_PATH + "/../systemtest/src/test/resources/upgrade/conversion/";
-    protected static final String CONVERSION_TOOL_JOB_NAME = "strimzi-v1-api-conversion";
 
     // We want to keep the default configuration (as configured via the env variables)
     protected final ClusterOperatorConfiguration clusterOperatorConfiguration = new ClusterOperatorConfiguration();
@@ -167,17 +151,6 @@ public class AbstractKRaftUpgradeST extends AbstractST {
 
         // 4. Verify KafkaConnector FileSink
         verifyKafkaConnectorFileSink(testStorage);
-
-        // TODO: Remove this after 1.1.0 release - https://github.com/strimzi/strimzi-kafka-operator/issues/12692
-        if (upgradeDowngradeData.getConvertCrsAndCrds()) {
-            // convert CRs and CRDs to v1
-            convertCrsAndCrds(testStorage.getNamespaceName());
-        } else if (upgradeDowngradeData.getFromVersion().equals("0.51.0")) {
-            // create RBAC resources needed for running the conversion Job
-            createConversionToolRbacResources(testStorage.getNamespaceName());
-            // convert CRDs to v1
-            convertCrds(testStorage.getNamespaceName());
-        }
 
         // 5. Upgrade CO to HEAD and wait for readiness of ClusterOperator
         changeClusterOperator(clusterOperatorNamespaceName, testStorage.getNamespaceName(), upgradeDowngradeData);
@@ -292,9 +265,6 @@ public class AbstractKRaftUpgradeST extends AbstractST {
         if (upgradeData.getAdditionalTopics() != null && upgradeData.getAdditionalTopics() > 0) {
             if (upgradeData.getFromVersion().equals("HEAD")) {
                 kafkaTopicYaml = new File(dir, PATH_TO_PACKAGING_EXAMPLES + "/topic/kafka-topic.yaml");
-            } else if (upgradeData.getConvertCrsAndCrds()) {
-                // TODO: Remove this after 1.1.0 release - https://github.com/strimzi/strimzi-kafka-operator/issues/12692
-                kafkaTopicYaml = new File(PATH_TO_CONVERSION_RESOURCES_FILES + "kafka-topic.yaml");
             } else {
                 kafkaTopicYaml = new File(dir, upgradeData.getFromExamples() + "/examples/topic/kafka-topic.yaml");
             }
@@ -313,7 +283,7 @@ public class AbstractKRaftUpgradeST extends AbstractST {
             // ##############################
             // Setup topic, which has 3 replicas and 2 min.isr to see if producer will be able to work during rolling update
             if (!KubeResourceManager.get().kubeCmdClient().inNamespace(testStorage.getNamespaceName())
-                .getResourcesAsYaml(getResourceApiVersion(KafkaTopic.RESOURCE_PLURAL, upgradeData.getConvertCrsAndCrds())).contains(testStorage.getTopicName())) {
+                .getResourcesAsYaml(getResourceApiVersion(KafkaTopic.RESOURCE_PLURAL)).contains(testStorage.getTopicName())) {
                 String pathToTopicExamples = upgradeData.getFromExamples().equals("HEAD") ? PATH_TO_KAFKA_TOPIC_CONFIG : upgradeData.getFromExamples() + "/examples/topic/kafka-topic.yaml";
 
                 kafkaTopicYaml = new File(dir, pathToTopicExamples);
@@ -323,11 +293,7 @@ public class AbstractKRaftUpgradeST extends AbstractST {
                     .replace("replicas: 1", "replicas: 3") +
                     "    min.insync.replicas: 2");
 
-                if (upgradeData.getConvertCrsAndCrds()) {
-                    KafkaTopicUtils.waitForKafkaTopicReadyForV1Beta2(testStorage.getNamespaceName(), testStorage.getTopicName());
-                } else {
-                    KafkaTopicUtils.waitForKafkaTopicReady(testStorage.getNamespaceName(), testStorage.getTopicName());
-                }
+                KafkaTopicUtils.waitForKafkaTopicReady(testStorage.getNamespaceName(), testStorage.getTopicName());
             }
 
             // 40s is used within TF environment to make upgrade/downgrade more stable on slow env
@@ -380,7 +346,7 @@ public class AbstractKRaftUpgradeST extends AbstractST {
         LOGGER.info("Deploying Kafka: {}/{}", componentsNamespaceName, CLUSTER_NAME);
 
         if (!KubeResourceManager.get().kubeCmdClient().inNamespace(componentsNamespaceName)
-            .getResourcesAsYaml(getResourceApiVersion(Kafka.RESOURCE_PLURAL, upgradeData.getConvertCrsAndCrds())).contains(CLUSTER_NAME)) {
+            .getResourcesAsYaml(getResourceApiVersion(Kafka.RESOURCE_PLURAL)).contains(CLUSTER_NAME)) {
             // Deploy a Kafka cluster
             if (upgradeData.getFromExamples().equals("HEAD")) {
                 KubeResourceManager.get().createResourceWithWait(
@@ -395,12 +361,7 @@ public class AbstractKRaftUpgradeST extends AbstractST {
                         .endSpec()
                         .build());
             } else {
-                // TODO: Remove this after 1.1.0 release - https://github.com/strimzi/strimzi-kafka-operator/issues/12692
-                if (upgradeData.getConvertCrsAndCrds()) {
-                    kafkaYaml = new File(PATH_TO_CONVERSION_RESOURCES_FILES + "kafka.yaml");
-                } else {
-                    kafkaYaml = new File(dir, upgradeData.getFromExamples() + upgradeData.getFromKafkaFilePath());
-                }
+                kafkaYaml = new File(dir, upgradeData.getFromExamples() + upgradeData.getFromKafkaFilePath());
 
                 LOGGER.info("Deploying Kafka from: {}", kafkaYaml.getPath());
                 String kafkaCr;
@@ -423,23 +384,15 @@ public class AbstractKRaftUpgradeST extends AbstractST {
         LOGGER.info("Deploying KafkaUser: {}/{}", componentsNamespaceName, USER_NAME);
 
         if (!KubeResourceManager.get().kubeCmdClient().inNamespace(componentsNamespaceName)
-            .getResourcesAsYaml(getResourceApiVersion(KafkaUser.RESOURCE_PLURAL, upgradeData.getConvertCrsAndCrds())).contains(USER_NAME)) {
+            .getResourcesAsYaml(getResourceApiVersion(KafkaUser.RESOURCE_PLURAL)).contains(USER_NAME)) {
             if (upgradeData.getFromVersion().equals("HEAD")) {
                 KubeResourceManager.get().createResourceWithWait(KafkaUserTemplates.tlsUser(componentsNamespaceName, USER_NAME, CLUSTER_NAME).build());
             } else {
-                // TODO: Remove this after 1.1.0 release - https://github.com/strimzi/strimzi-kafka-operator/issues/12692
-                if (upgradeData.getConvertCrsAndCrds()) {
-                    kafkaUserYaml = new File(PATH_TO_CONVERSION_RESOURCES_FILES + "kafka-user.yaml");
-                } else {
-                    kafkaUserYaml = new File(dir, upgradeData.getFromExamples() + "/examples/user/kafka-user.yaml");
-                }
+                kafkaUserYaml = new File(dir, upgradeData.getFromExamples() + "/examples/user/kafka-user.yaml");
+
                 LOGGER.info("Deploying KafkaUser from: {}", kafkaUserYaml.getPath());
                 KubeResourceManager.get().kubeCmdClient().inNamespace(componentsNamespaceName).applyContent(KafkaUserUtils.removeKafkaUserPart(kafkaUserYaml, "authorization"));
-                if (upgradeData.getConvertCrsAndCrds()) {
-                    KafkaUserUtils.waitForKafkaUserReadyForV1Beta2(componentsNamespaceName, USER_NAME);
-                } else {
-                    KafkaUserUtils.waitForKafkaUserReady(componentsNamespaceName, USER_NAME);
-                }
+                KafkaUserUtils.waitForKafkaUserReady(componentsNamespaceName, USER_NAME);
             }
         }
     }
@@ -448,22 +401,15 @@ public class AbstractKRaftUpgradeST extends AbstractST {
         LOGGER.info("Deploying KafkaTopic: {}/{}", componentsNamespaceName, TOPIC_NAME);
 
         if (!KubeResourceManager.get().kubeCmdClient().inNamespace(componentsNamespaceName)
-            .getResourcesAsYaml(getResourceApiVersion(KafkaTopic.RESOURCE_PLURAL, upgradeData.getConvertCrsAndCrds())).contains(TOPIC_NAME)) {
+            .getResourcesAsYaml(getResourceApiVersion(KafkaTopic.RESOURCE_PLURAL)).contains(TOPIC_NAME)) {
             if (upgradeData.getFromVersion().equals("HEAD")) {
                 kafkaTopicYaml = new File(dir, PATH_TO_PACKAGING_EXAMPLES + "/topic/kafka-topic.yaml");
-            } else if (upgradeData.getConvertCrsAndCrds()) {
-                // TODO: Remove this after 1.1.0 release - https://github.com/strimzi/strimzi-kafka-operator/issues/12692
-                kafkaTopicYaml = new File(PATH_TO_CONVERSION_RESOURCES_FILES + "kafka-topic.yaml");
             } else {
                 kafkaTopicYaml = new File(dir, upgradeData.getFromExamples() + "/examples/topic/kafka-topic.yaml");
             }
             LOGGER.info("Deploying KafkaTopic from: {}", kafkaTopicYaml.getPath());
             KubeResourceManager.get().kubeCmdClient().inNamespace(componentsNamespaceName).create(kafkaTopicYaml);
-            if (upgradeData.getConvertCrsAndCrds()) {
-                KafkaTopicUtils.waitForKafkaTopicReadyForV1Beta2(componentsNamespaceName, TOPIC_NAME);
-            } else {
-                KafkaTopicUtils.waitForKafkaTopicReady(componentsNamespaceName, TOPIC_NAME);
-            }
+            KafkaTopicUtils.waitForKafkaTopicReady(componentsNamespaceName, TOPIC_NAME);
         }
     }
 
@@ -474,7 +420,7 @@ public class AbstractKRaftUpgradeST extends AbstractST {
     ) {
         // setup KafkaConnect + KafkaConnector
         if (!KubeResourceManager.get().kubeCmdClient().inNamespace(testStorage.getNamespaceName())
-            .getResourcesAsYaml(getResourceApiVersion(KafkaConnect.RESOURCE_PLURAL, acrossUpgradeData.getConvertCrsAndCrds())).contains(CLUSTER_NAME)) {
+            .getResourcesAsYaml(getResourceApiVersion(KafkaConnect.RESOURCE_PLURAL)).contains(CLUSTER_NAME)) {
             if (acrossUpgradeData.getFromVersion().equals("HEAD")) {
                 KubeResourceManager.get().createResourceWithWait(KafkaConnectTemplates.kafkaConnectWithFilePlugin(testStorage.getNamespaceName(), CLUSTER_NAME, 1)
                     .editMetadata()
@@ -510,52 +456,27 @@ public class AbstractKRaftUpgradeST extends AbstractST {
                     )
                     .build();
 
-                // In case that we are doing upgrade with checks for conversion tool, we need to specially configure the KafkaConnect
-                // resource stored in `systemtest/src/test/resources/upgrade/conversion/kafka-connect.yaml`
-                // In order to not map the file to v1 KafkaConnect (which is default when you are using the object) we need to use
-                // GenericKubernetesResource and append all the changes related to the Connect Build (for running the file-sink connector).
-                // TODO: Remove this after 1.1.0 release - https://github.com/strimzi/strimzi-kafka-operator/issues/12692
-                if (acrossUpgradeData.getConvertCrsAndCrds()) {
-                    kafkaConnectYaml = new File(PATH_TO_CONVERSION_RESOURCES_FILES + "kafka-connect.yaml");
+                kafkaConnectYaml = new File(dir, acrossUpgradeData.getFromExamples() + "/examples/connect/kafka-connect.yaml");
 
-                    ObjectMapper mapper = new ObjectMapper();
-                    Map<String, Object> connectBuildMap = mapper.convertValue(connectBuild, Map.class);
+                LOGGER.info("Deploying KafkaConnect from: {}", kafkaConnectYaml.getPath());
 
-                    GenericKubernetesResource genericConnect = KubeResourceManager.get().kubeClient().getClient().getKubernetesSerialization()
-                        .convertValue(ReadWriteUtils.readObjectFromYamlFilepath(kafkaConnectYaml, Map.class), GenericKubernetesResource.class);
+                KafkaConnect kafkaConnect = new KafkaConnectBuilder(ReadWriteUtils.readObjectFromYamlFilepath(kafkaConnectYaml, KafkaConnect.class))
+                    .editMetadata()
+                        .withName(CLUSTER_NAME)
+                        .withNamespace(testStorage.getNamespaceName())
+                        .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
+                    .endMetadata()
+                    .editSpec()
+                        .withBuild(connectBuild)
+                        .addToConfig("key.converter.schemas.enable", false)
+                        .addToConfig("value.converter.schemas.enable", false)
+                        .addToConfig("key.converter", "org.apache.kafka.connect.storage.StringConverter")
+                        .addToConfig("value.converter", "org.apache.kafka.connect.storage.StringConverter")
+                        .withVersion(upgradeKafkaVersion.getVersion())
+                    .endSpec()
+                    .build();
 
-                    genericConnect.getMetadata().setName(CLUSTER_NAME);
-                    genericConnect.getMetadata().setNamespace(testStorage.getNamespaceName());
-
-                    Map<String, Object> connectSpec = (Map<String, Object>) genericConnect.getAdditionalProperties().get("spec");
-                    connectSpec.put("build", KubeResourceManager.get().kubeClient().getClient().getKubernetesSerialization().convertValue(connectBuildMap, Map.class));
-                    connectSpec.put("version", upgradeKafkaVersion.getVersion());
-
-                    KubeResourceManager.get().kubeCmdClient().inNamespace(testStorage.getNamespaceName()).applyContent(KubeResourceManager.get().kubeClient().getClient().getKubernetesSerialization().asYaml(genericConnect));
-                    KafkaConnectUtils.waitForConnectReady(testStorage.getNamespaceName(), CLUSTER_NAME);
-                } else {
-                    kafkaConnectYaml = new File(dir, acrossUpgradeData.getFromExamples() + "/examples/connect/kafka-connect.yaml");
-
-                    LOGGER.info("Deploying KafkaConnect from: {}", kafkaConnectYaml.getPath());
-
-                    KafkaConnect kafkaConnect = new KafkaConnectBuilder(ReadWriteUtils.readObjectFromYamlFilepath(kafkaConnectYaml, KafkaConnect.class))
-                        .editMetadata()
-                            .withName(CLUSTER_NAME)
-                            .withNamespace(testStorage.getNamespaceName())
-                            .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
-                        .endMetadata()
-                        .editSpec()
-                            .withBuild(connectBuild)
-                            .addToConfig("key.converter.schemas.enable", false)
-                            .addToConfig("value.converter.schemas.enable", false)
-                            .addToConfig("key.converter", "org.apache.kafka.connect.storage.StringConverter")
-                            .addToConfig("value.converter", "org.apache.kafka.connect.storage.StringConverter")
-                            .withVersion(upgradeKafkaVersion.getVersion())
-                        .endSpec()
-                        .build();
-
-                    KubeResourceManager.get().createResourceWithWait(kafkaConnect);
-                }
+                KubeResourceManager.get().createResourceWithWait(kafkaConnect);
 
                 // in our examples is no sink connector and thus we are using the same as in HEAD verification
                 KubeResourceManager.get().createResourceWithWait(KafkaConnectorTemplates.kafkaConnector(testStorage.getNamespaceName(), CLUSTER_NAME)
@@ -814,7 +735,7 @@ public class AbstractKRaftUpgradeST extends AbstractST {
 
         if (upgradeData.getAdditionalTopics() != null) {
             // Check that topics weren't deleted/duplicated during upgrade procedures
-            String listedTopics = KubeResourceManager.get().kubeCmdClient().inNamespace(componentsNamespaceNames).getResourcesAsYaml(getResourceApiVersion(KafkaTopic.RESOURCE_PLURAL, false));
+            String listedTopics = KubeResourceManager.get().kubeCmdClient().inNamespace(componentsNamespaceNames).getResourcesAsYaml(getResourceApiVersion(KafkaTopic.RESOURCE_PLURAL));
             int additionalTopics = upgradeData.getAdditionalTopics();
             assertThat("KafkaTopic list doesn't have expected size", Long.valueOf(listedTopics.lines().count() - 1).intValue(), greaterThanOrEqualTo(UPGRADE_TOPIC_COUNT + additionalTopics));
             assertThat("KafkaTopic " + TOPIC_NAME + " is not in expected Topic list",
@@ -833,10 +754,7 @@ public class AbstractKRaftUpgradeST extends AbstractST {
         }
     }
 
-    protected String getResourceApiVersion(String resourcePlural, boolean useOlderApiVersion) {
-        if (useOlderApiVersion) {
-            return resourcePlural + "." + Constants.V1BETA2 + "." + Constants.RESOURCE_GROUP_NAME;
-        }
+    protected String getResourceApiVersion(String resourcePlural) {
         return resourcePlural + "." + Constants.V1 + "." + Constants.RESOURCE_GROUP_NAME;
     }
 
@@ -911,188 +829,6 @@ public class AbstractKRaftUpgradeST extends AbstractST {
                     LOGGER.warn("Failed to delete resources: {}", f.getName());
                 }
             });
-        }
-    }
-
-    /**
-     * Step for creating RBACs needed for the conversion tool and then running conversion of CRs and CRDs together
-     * with checks of Jobs success and if CRs and CRDs were really converted.
-     *
-     * @param componentsNamespaceName   Namespace where the conversion tool will run and where are all the operands.
-     */
-    // TODO: Remove this after 1.1.0 release - https://github.com/strimzi/strimzi-kafka-operator/issues/12692
-    protected void convertCrsAndCrds(String componentsNamespaceName) {
-        // create RBAC resources needed for running the conversion Job
-        createConversionToolRbacResources(componentsNamespaceName);
-
-        // convert all CRs to v1 and check that they are successfully converted to v1
-        convertCrs(componentsNamespaceName);
-
-        // convert all CRDs to have storage version set to v1 and check that the conversion was successful
-        convertCrds(componentsNamespaceName);
-    }
-
-    /**
-     * Step for creating RBACs needed for the conversion tool and then running conversion of CRDs together
-     * with checks of Jobs success and if CRDs were really converted.
-     *
-     * @param componentsNamespaceName   Namespace where the conversion tool will run and where are all the operands.
-     */
-    // TODO: Remove this after 1.1.0 release - https://github.com/strimzi/strimzi-kafka-operator/issues/12692
-    protected void convertCrdsOnly(String componentsNamespaceName) {
-        // create RBAC resources needed for running the conversion Job
-        createConversionToolRbacResources(componentsNamespaceName);
-
-        // convert all CRDs to have storage version set to v1 and check that the conversion was successful
-        convertCrds(componentsNamespaceName);
-    }
-
-    /**
-     * Method that runs the conversion tool with `convert-resource` command, converting all CRs to be v1 compliant
-     * and moving the `apiVersion` of the resources to v1.
-     * After the conversion, we are checking that KafkaConnect has configured all the required fields (in v1) and that
-     * the configuration is removed from the `.spec.config` section.
-     * The KafkaConnect is checked here mainly because of the common fields that were changed - for resources like Kafka
-     * we would have to have more changes (like running oauth etc.).
-     *
-     * @param componentsNamespaceName   Namespace where the conversion tool will run and where are all the operands.
-     */
-    // TODO: Remove this after 1.1.0 release - https://github.com/strimzi/strimzi-kafka-operator/issues/12692
-    private void convertCrs(String componentsNamespaceName) {
-        runConversion(componentsNamespaceName, "convert-resource");
-
-        // conversion was successful, now check if KafkaConnect (which in our test had the most changes required) contains
-        // all expected required fields of v1
-        KafkaConnect kafkaConnect = CrdClients.kafkaConnectClient().inNamespace(componentsNamespaceName).withName(CLUSTER_NAME).get();
-
-        assertThat(kafkaConnect.getSpec().getGroupId(), is("connect-cluster"));
-        assertThat(kafkaConnect.getSpec().getOffsetStorageTopic(), is("connect-cluster-offsets"));
-        assertThat(kafkaConnect.getSpec().getConfigStorageTopic(), is("connect-cluster-configs"));
-        assertThat(kafkaConnect.getSpec().getStatusStorageTopic(), is("connect-cluster-status"));
-
-        // and check the fields were removed from the .spec.config section
-        assertNull(kafkaConnect.getSpec().getConfig().get("group.id"));
-        assertNull(kafkaConnect.getSpec().getConfig().get("offset.storage.topic"));
-        assertNull(kafkaConnect.getSpec().getConfig().get("config.storage.topic"));
-        assertNull(kafkaConnect.getSpec().getConfig().get("status.storage.topic"));
-    }
-
-    /**
-     * Method that runs the conversion tool with `crd-upgrade` command, converting all the CRDs to have v1 as storage.
-     * After the conversion, we are checking all the Strimzi CRDs if they have `v1` in `.status.storedVersions`.
-     *
-     * @param componentsNamespaceName Namespace where the conversion tool will run and where are all the operands.
-     */
-    // TODO: Remove this after 1.1.0 release - https://github.com/strimzi/strimzi-kafka-operator/issues/12692
-    private void convertCrds(String componentsNamespaceName) {
-        runConversion(componentsNamespaceName, "crd-upgrade");
-
-        // list all Strimzi CRDs
-        List<CustomResourceDefinition> crds = KubeResourceManager.get().kubeClient().getClient()
-            .apiextensions().v1().customResourceDefinitions().list().getItems()
-            .stream().filter(crd -> crd.getMetadata().getName().contains("strimzi.io")).toList();
-
-        // check that the storage in their `.status` section is set to `v1`
-        crds.forEach(crd ->
-            assertThat(
-                String.format("CRD: %s doesn't contain v1 as a storage version in its status", crd.getMetadata().getName()),
-                crd.getStatus().getStoredVersions().get(0),
-                is("v1")
-            )
-        );
-    }
-
-    /**
-     * Method that prepares the Job resource based on the {@param componentsNamespaceName} and with {@param command}.
-     * After that, it waits for the Job success and then the job is deleted.
-     *
-     * @param componentsNamespaceName   Namespace where the conversion tool will run and where are all the operands.
-     * @param command                   Command that should be executed by the conversion tool.
-     */
-    // TODO: Remove this after 1.1.0 release - https://github.com/strimzi/strimzi-kafka-operator/issues/12692
-    private void runConversion(String componentsNamespaceName, String command) {
-        String jobResourceYaml = buildConversionToolJob(componentsNamespaceName, command);
-        KubeResourceManager.get().kubeCmdClient().inNamespace(componentsNamespaceName).applyContent(jobResourceYaml);
-
-        JobUtils.waitForJobSuccess(componentsNamespaceName, CONVERSION_TOOL_JOB_NAME, TestConstants.GLOBAL_TIMEOUT);
-        JobUtils.deleteJobWithWait(componentsNamespaceName, CONVERSION_TOOL_JOB_NAME);
-    }
-
-    /**
-     * Method that creates all necessary RBAC resources for running the conversion tool in {@param componentsNamespaceName}.
-     *
-     * @param componentsNamespaceName Namespace where the conversion tool will run and where are all the operands.
-     */
-    // TODO: Remove this after 1.1.0 release - https://github.com/strimzi/strimzi-kafka-operator/issues/12692
-    private void createConversionToolRbacResources(String componentsNamespaceName) {
-        File conversionToolFile = new File(PATH_TO_CONVERSION_RESOURCES_FILES + "conversion-tool-rbac.yaml");
-
-        YAMLFactory yamlFactory = new YAMLFactory();
-        ObjectMapper mapper = new ObjectMapper();
-        YAMLMapper yamlMapper = new YAMLMapper();
-
-        try {
-            YAMLParser yamlParser = yamlFactory.createParser(conversionToolFile);
-            List<ObjectNode> objects = mapper.readValues(yamlParser, new TypeReference<ObjectNode>() { }).readAll();
-
-            ObjectNode serviceAccount = objects.get(0);
-            ((ObjectNode) serviceAccount.at("/metadata")).put("namespace", componentsNamespaceName);
-
-            ObjectNode clusterRoleBinding = objects.get(2);
-            ((ObjectNode) clusterRoleBinding.at("/subjects/0")).put("namespace", componentsNamespaceName);
-
-            StringBuilder output = new StringBuilder();
-
-            for (ObjectNode objectNode : objects) {
-                output.append(yamlMapper.writeValueAsString(objectNode));
-            }
-
-            KubeResourceManager.get().kubeCmdClient().applyContent(output.toString());
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    /**
-     * Method for building the Job YAML of the conversion tool - updating the Namespace and command it should use.
-     * It uses the YAML from `systemtest/src/test/resources/upgrade/conversion/conversion-tool.yaml`.
-     *
-     * @param componentsNamespaceName   Namespace where the conversion tool will run and where are all the operands.
-     * @param command                   Command that should be executed by the conversion tool.
-     *
-     * @return  Job YAML of the conversion tool, updated with Namespace and command.
-     */
-    // TODO: Remove this after 1.1.0 release - https://github.com/strimzi/strimzi-kafka-operator/issues/12692
-    private String buildConversionToolJob(String componentsNamespaceName, String command) {
-        File conversionToolFile = new File(PATH_TO_CONVERSION_RESOURCES_FILES + "conversion-tool.yaml");
-
-        YAMLFactory yamlFactory = new YAMLFactory();
-        ObjectMapper mapper = new ObjectMapper();
-        YAMLMapper yamlMapper = new YAMLMapper();
-
-        try {
-            YAMLParser yamlParser = yamlFactory.createParser(conversionToolFile);
-            List<ObjectNode> objects = mapper.readValues(yamlParser, new TypeReference<ObjectNode>() { }).readAll();
-
-            ObjectNode job = objects.get(0);
-            ((ObjectNode) job.at("/metadata")).put("namespace", componentsNamespaceName);
-            ObjectNode jobContainerSpec = (ObjectNode) job.at("/spec/template/spec/containers/0");
-
-            ArrayNode jobCommand = mapper.createArrayNode();
-            jobCommand.add("/opt/v1-api-conversion/bin/v1-api-conversion.sh");
-            jobCommand.add(command);
-
-            jobContainerSpec.set("command", jobCommand);
-
-            StringBuilder output = new StringBuilder();
-
-            for (ObjectNode objectNode : objects) {
-                output.append(yamlMapper.writeValueAsString(objectNode));
-            }
-
-            return output.toString();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
         }
     }
 }

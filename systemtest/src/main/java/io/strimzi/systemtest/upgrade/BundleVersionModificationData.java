@@ -4,7 +4,6 @@
  */
 package io.strimzi.systemtest.upgrade;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.strimzi.systemtest.utils.TestKafkaVersion;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -22,9 +21,6 @@ public class BundleVersionModificationData extends CommonVersionModificationData
     private Map<String, String> imagesAfterOperations;
     private Map<String, Object> client;
     private Map<String, String> environmentInfo;
-    // TODO: Remove this after 1.1.0 release - https://github.com/strimzi/strimzi-kafka-operator/issues/12692
-    @JsonIgnoreProperties
-    private Boolean convertCrsAndCrds = false;
 
     public Integer getAdditionalTopics() {
         return additionalTopics;
@@ -108,20 +104,6 @@ public class BundleVersionModificationData extends CommonVersionModificationData
 
     public void setEnvironmentInfo(Map<String, String> environmentInfo) {
         this.environmentInfo = environmentInfo;
-    }
-
-    // TODO: Remove this after 1.1.0 release - https://github.com/strimzi/strimzi-kafka-operator/issues/12692
-    public Boolean getConvertCrsAndCrds() {
-        return convertCrsAndCrds;
-    }
-
-    // TODO: Remove this after 1.1.0 release - https://github.com/strimzi/strimzi-kafka-operator/issues/12692
-    public void setConvertCrsAndCrds(Boolean convertCrsAndCrds) {
-        if (convertCrsAndCrds == null) {
-            this.convertCrsAndCrds = false;
-        } else {
-            this.convertCrsAndCrds = convertCrsAndCrds;
-        }
     }
 
     public String getDefaultKafkaVersionPerStrimzi() {

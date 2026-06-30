@@ -6,8 +6,6 @@ package io.strimzi.systemtest.utils.kafkaUtils;
 
 import io.skodjob.kubetest4j.executor.ExecResult;
 import io.skodjob.kubetest4j.resources.KubeResourceManager;
-import io.skodjob.kubetest4j.utils.ResourceUtils;
-import io.strimzi.api.kafka.model.common.Constants;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.rebalance.BrokerAndVolumeIds;
 import io.strimzi.api.kafka.model.topic.KafkaTopic;
@@ -42,7 +40,6 @@ import java.util.stream.Collectors;
 
 import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
 import static io.strimzi.systemtest.resources.CrdClients.kafkaTopicClient;
-import static io.strimzi.systemtest.resources.CrdClients.kafkaTopicV1Beta2Client;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.is;
@@ -124,22 +121,6 @@ public class KafkaTopicUtils {
         );
     }
 
-    public static void waitForKafkaTopicDeletionWithV1Beta2(String namespaceName, String topicName) {
-        LOGGER.info("Waiting for KafkaTopic: {}/{} deletion", namespaceName, topicName);
-        TestUtils.waitFor("deletion of KafkaTopic: " + namespaceName + "/" + topicName, TestConstants.POLL_INTERVAL_FOR_RESOURCE_READINESS, DELETION_TIMEOUT,
-            () -> {
-                if (kafkaTopicV1Beta2Client().inNamespace(namespaceName).withName(topicName).get() == null) {
-                    return true;
-                } else {
-                    LOGGER.warn("KafkaTopic: {}/{} is not deleted yet! Triggering force delete by cmd client!", namespaceName, topicName);
-                    KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName).deleteByName(KafkaTopic.RESOURCE_PLURAL + "." + Constants.V1BETA2 + "." + Constants.RESOURCE_GROUP_NAME, topicName);
-                    return false;
-                }
-            },
-            () -> LOGGER.info(kafkaTopicV1Beta2Client().inNamespace(namespaceName).withName(topicName).get())
-        );
-    }
-
     public static void deleteAllKafkaTopics(String namespaceName) {
         List<KafkaTopic> kafkaTopics = kafkaTopicClient().inNamespace(namespaceName).list().getItems();
         kafkaTopics.forEach(kafkaTopic -> {
@@ -185,16 +166,6 @@ public class KafkaTopicUtils {
 
     public static void waitForKafkaTopicNotReady(final String namespaceName, String topicName) {
         waitForKafkaTopicStatus(namespaceName, topicName, Ready, ConditionStatus.False);
-    }
-
-    public static void waitForKafkaTopicReadyForV1Beta2(String namespaceName, String topicName) {
-        KafkaTopic kafkaTopic = ResourceUtils.getGenericResourceReturnSpecific(namespaceName, topicName, TestConstants.V1_BETA_2_API_VERSION, KafkaTopic.RESOURCE_KIND, KafkaTopic.class);
-        KubeResourceManager.get().waitResourceCondition(
-            kafkaTopic,
-            ResourceConditions.resourceHasDesiredState(Ready),
-            ResourceOperation.getTimeoutForResourceReadiness(kafkaTopic.getKind()),
-            () -> ResourceUtils.getGenericResourceReturnSpecific(namespaceName, topicName, TestConstants.V1_BETA_2_API_VERSION, KafkaTopic.RESOURCE_KIND, KafkaTopic.class)
-        );
     }
 
     public static void waitForTopicConfigContains(String namespaceName, String topicName, Map<String, Object> config) {
@@ -325,13 +296,6 @@ public class KafkaTopicUtils {
         LOGGER.info("Removing finalizers from all KafkaTopics in Namespace: {}", namespaceName);
         kafkaTopicClient().inNamespace(namespaceName).list().getItems().forEach(kafkaTopic ->
             KafkaTopicUtils.replace(namespaceName, kafkaTopic.getMetadata().getName(), kt -> kt.getMetadata().setFinalizers(null))
-        );
-    }
-
-    public static void setFinalizersInAllV1Beta2TopicsToNull(String namespaceName) {
-        LOGGER.info("Removing finalizers from all KafkaTopics in Namespace: {}", namespaceName);
-        kafkaTopicV1Beta2Client().inNamespace(namespaceName).list().getItems().forEach(kafkaTopic ->
-            KubeResourceManager.get().replaceResourceWithRetries(kafkaTopic, kt -> kt.getMetadata().setFinalizers(null))
         );
     }
 
