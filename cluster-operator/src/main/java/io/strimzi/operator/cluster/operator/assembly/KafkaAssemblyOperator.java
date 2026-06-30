@@ -516,8 +516,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
                         KafkaClusterCreator kafkaClusterCreator =
                                 new KafkaClusterCreator(reconciliation, config, supplier);
-                        return kafkaClusterCreator
-                                .prepareKafkaCluster(kafkaAssembly, nodePools, oldStorage, versionChange, kafkaStatus, true)
+                        return VertxUtil.toFuture(kafkaClusterCreator
+                                .prepareKafkaCluster(kafkaAssembly, nodePools, oldStorage, versionChange, kafkaStatus, true))
                                 .compose(kafkaCluster -> {
                                     // We store this for use with Cruise Control later. As these configurations might
                                     // not be exactly the same as in the original custom resource (for example because
