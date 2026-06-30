@@ -50,7 +50,7 @@ import java.util.Objects;
 import java.util.stream.Stream;
 
 /**
- * An OpenSSL based certificate manager.
+ * An OpenSSL based certificate issuer.
  * @see "Chapter 11 of 'Bulletproof SSL and TLS' by Ivan Ristic."
  * @see "The man page for <code>config(5)</code>."
  * @see "The man page for <code>openssl-ca(1)</code>."

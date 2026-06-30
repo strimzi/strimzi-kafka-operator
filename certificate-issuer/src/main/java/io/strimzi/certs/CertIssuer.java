@@ -14,7 +14,7 @@ import java.time.ZonedDateTime;
 import java.util.List;
 
 /**
- * Manages the certificates
+ * Issues the certificates
  */
 public interface CertIssuer {
     /**

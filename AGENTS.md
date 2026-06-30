@@ -24,24 +24,24 @@ Multi-module Maven project.
 
 ### Modules
 
-| Module                    | Purpose                                                             |
-|---------------------------|---------------------------------------------------------------------|
-| `cluster-operator/`       | Main operator managing Kafka clusters                               |
-| `topic-operator/`         | Manages Kafka topics via KafkaTopic CRs                             |
-| `user-operator/`          | Manages Kafka users and ACLs via KafkaUser CRs                      |
-| `api/`                    | CRD definitions and API models (Kafka, KafkaTopic, KafkaUser, etc.) |
-| `operator-common/`        | Shared operator code and utilities                                  |
-| `kafka-agent/`            | Java agent running inside Kafka containers (broker config, metrics) |
-| `tracing-agent/`          | OpenTelemetry tracing support                                       |
-| `certificate-issuer/`     | TLS certificate issuing and CA handling                             |
-| `kafka-init/`             | Kafka container initialization logic                                |
-| `crd-generator/`          | Generates CRDs from `api` module via Java annotations               |
-| `crd-annotations/`        | Annotations for CRD generation                                      |
-| `config-model/`           | Kafka configuration models utility classes                          |
-| `config-model-generator/` | Generates Kafka configuration models                                |
-| `mockkube/`               | Mock Kubernetes for unit testing                                    |
-| `test/`                   | Test utilities and helpers                                          |
-| `systemtest/`             | End-to-end system tests                                             |
+| Module | Purpose |
+|--------|---------|
+| `cluster-operator/` | Main operator managing Kafka clusters |
+| `topic-operator/` | Manages Kafka topics via KafkaTopic CRs |
+| `user-operator/` | Manages Kafka users and ACLs via KafkaUser CRs |
+| `api/` | CRD definitions and API models (Kafka, KafkaTopic, KafkaUser, etc.) |
+| `operator-common/` | Shared operator code and utilities |
+| `kafka-agent/` | Java agent running inside Kafka containers (broker config, metrics) |
+| `tracing-agent/` | OpenTelemetry tracing support |
+| `certificate-issuer/` | TLS certificate issuing and CA handling |
+| `kafka-init/` | Kafka container initialization logic |
+| `crd-generator/` | Generates CRDs from `api` module via Java annotations |
+| `crd-annotations/` | Annotations for CRD generation |
+| `config-model/` | Kafka configuration models utility classes |
+| `config-model-generator/` | Generates Kafka configuration models |
+| `mockkube/` | Mock Kubernetes for unit testing |
+| `test/` | Test utilities and helpers |
+| `systemtest/` | End-to-end system tests |
 
 ## Contributing
 

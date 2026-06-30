@@ -59,7 +59,7 @@ public class KafkaUserOperator {
      * Creates the instance of KafkaUserOperator
      *
      * @param config                   User operator configuration
-     * @param certIssuer               For issueing certificates.
+     * @param certIssuer               For issuing certificates.
      * @param secretOperator           For operating on secrets
      * @param kafkaUserCrdOperator     For operating on KafkaUser resources
      * @param scramCredentialsOperator For operating on SCRAM SHA credentials.
