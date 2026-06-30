@@ -18,6 +18,7 @@ import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.KafkaVersionChange;
 import io.strimzi.operator.cluster.model.SharedEnvironmentProvider;
 import io.strimzi.operator.cluster.model.nodepools.NodePoolUtils;
+import io.strimzi.operator.cluster.operator.VertxUtil;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.SecretOperator;
 import io.strimzi.operator.common.AdminClientProvider;
@@ -27,7 +28,6 @@ import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.common.model.StatusUtils;
 import io.vertx.core.Future;
-import io.vertx.core.Vertx;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -47,7 +47,6 @@ public class KafkaClusterCreator {
     private final KafkaVersion.Lookup versions;
 
     // Operators and other tools
-    private final Vertx vertx;
     private final AdminClientProvider adminClientProvider;
     private final SecretOperator secretOperator;
     private final SharedEnvironmentProvider sharedEnvironmentProvider;
@@ -61,13 +60,11 @@ public class KafkaClusterCreator {
     /**
      * Constructor
      *
-     * @param vertx             Vert.x instance
      * @param reconciliation    Reconciliation marker
      * @param config            Cluster Operator configuration
      * @param supplier          Resource Operators supplier
      */
     public KafkaClusterCreator(
-            Vertx vertx,
             Reconciliation reconciliation,
             ClusterOperatorConfig config,
             ResourceOperatorSupplier supplier
@@ -75,7 +72,6 @@ public class KafkaClusterCreator {
         this.reconciliation = reconciliation;
         this.versions = config.versions();
 
-        this.vertx = vertx;
         this.adminClientProvider = supplier.adminClientProvider;
         this.secretOperator = supplier.secretOperations;
         this.sharedEnvironmentProvider = supplier.sharedEnvironmentProvider;
@@ -185,7 +181,7 @@ public class KafkaClusterCreator {
             return Future.succeededFuture(kafka);
         } else {
             return ReconcilerUtils.coTlsPemIdentity(reconciliation, secretOperator)
-                    .compose(coTlsPemIdentity -> brokerScaleDownOperations.brokersInUse(reconciliation, vertx, coTlsPemIdentity, adminClientProvider))
+                    .compose(coTlsPemIdentity -> VertxUtil.toFuture(brokerScaleDownOperations.brokersInUse(reconciliation, coTlsPemIdentity, adminClientProvider)))
                     .compose(brokersInUse -> {
                         // Check nodes that are being scaled down
                         Set<Integer> scaledDownBrokersInUse = kafka.removedNodes().stream().filter(brokersInUse::contains).collect(Collectors.toSet());

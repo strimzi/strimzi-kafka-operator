@@ -21,7 +21,6 @@ import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.InvalidResourceException;
-import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.WorkerExecutor;
 import io.vertx.junit5.Checkpoint;
@@ -35,6 +34,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
@@ -205,7 +205,7 @@ public class KafkaClusterCreatorTest {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
         KafkaStatus kafkaStatus = new KafkaStatus();
-        KafkaClusterCreator creator = new KafkaClusterCreator(vertx, RECONCILIATION, CO_CONFIG, supplier);
+        KafkaClusterCreator creator = new KafkaClusterCreator(RECONCILIATION, CO_CONFIG, supplier);
 
         Checkpoint async = context.checkpoint();
         creator.prepareKafkaCluster(KAFKA, List.of(POOL_CONTROLLERS, POOL_A, POOL_B), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, kafkaStatus, true)
@@ -220,7 +220,7 @@ public class KafkaClusterCreatorTest {
                     assertThat(kafkaStatus.getConditions(), is(nullValue()));
 
                     // No scale-down => scale-down check is not done
-                    verify(supplier.brokersInUseCheck, never()).brokersInUse(any(), any(), any(), any());
+                    verify(supplier.brokersInUseCheck, never()).brokersInUse(any(), any(), any());
 
                     async.flag();
                 })));
@@ -231,7 +231,7 @@ public class KafkaClusterCreatorTest {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
         KafkaStatus kafkaStatus = new KafkaStatus();
-        KafkaClusterCreator creator = new KafkaClusterCreator(vertx, RECONCILIATION, CO_CONFIG, supplier);
+        KafkaClusterCreator creator = new KafkaClusterCreator(RECONCILIATION, CO_CONFIG, supplier);
 
         Checkpoint async = context.checkpoint();
         creator.prepareKafkaCluster(KAFKA, List.of(POOL_MIXED), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, kafkaStatus, true)
@@ -246,7 +246,7 @@ public class KafkaClusterCreatorTest {
                     assertThat(kafkaStatus.getConditions(), is(nullValue()));
 
                     // No scale-down => scale-down check is not done
-                    verify(supplier.brokersInUseCheck, never()).brokersInUse(any(), any(), any(), any());
+                    verify(supplier.brokersInUseCheck, never()).brokersInUse(any(), any(), any());
 
                     async.flag();
                 })));
@@ -257,7 +257,7 @@ public class KafkaClusterCreatorTest {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
         KafkaStatus kafkaStatus = new KafkaStatus();
-        KafkaClusterCreator creator = new KafkaClusterCreator(vertx, RECONCILIATION, CO_CONFIG, supplier);
+        KafkaClusterCreator creator = new KafkaClusterCreator(RECONCILIATION, CO_CONFIG, supplier);
 
         Checkpoint async = context.checkpoint();
         creator.prepareKafkaCluster(KAFKA, List.of(POOL_CONTROLLERS_WITH_STATUS, POOL_A_WITH_STATUS, POOL_B_WITH_STATUS), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, kafkaStatus, true)
@@ -272,7 +272,7 @@ public class KafkaClusterCreatorTest {
                     assertThat(kafkaStatus.getConditions(), is(nullValue()));
 
                     // No scale-down => scale-down check is not done
-                    verify(supplier.brokersInUseCheck, never()).brokersInUse(any(), any(), any(), any());
+                    verify(supplier.brokersInUseCheck, never()).brokersInUse(any(), any(), any());
 
                     async.flag();
                 })));
@@ -283,7 +283,7 @@ public class KafkaClusterCreatorTest {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
         KafkaStatus kafkaStatus = new KafkaStatus();
-        KafkaClusterCreator creator = new KafkaClusterCreator(vertx, RECONCILIATION, CO_CONFIG, supplier);
+        KafkaClusterCreator creator = new KafkaClusterCreator(RECONCILIATION, CO_CONFIG, supplier);
 
         Checkpoint async = context.checkpoint();
         creator.prepareKafkaCluster(KAFKA, List.of(POOL_MIXED_WITH_STATUS), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, kafkaStatus, true)
@@ -298,7 +298,7 @@ public class KafkaClusterCreatorTest {
                     assertThat(kafkaStatus.getConditions(), is(nullValue()));
 
                     // No scale-down => scale-down check is not done
-                    verify(supplier.brokersInUseCheck, never()).brokersInUse(any(), any(), any(), any());
+                    verify(supplier.brokersInUseCheck, never()).brokersInUse(any(), any(), any());
 
                     async.flag();
                 })));
@@ -310,10 +310,10 @@ public class KafkaClusterCreatorTest {
 
         // Mock brokers-in-use check
         BrokersInUseCheck brokersInUseOps = supplier.brokersInUseCheck;
-        when(brokersInUseOps.brokersInUse(any(), any(), any(), any())).thenReturn(Future.succeededFuture(Set.of(1000, 1001, 1002, 1003, 2004)));
+        when(brokersInUseOps.brokersInUse(any(), any(), any())).thenReturn(CompletableFuture.completedFuture(Set.of(1000, 1001, 1002, 1003, 2004)));
 
         KafkaStatus kafkaStatus = new KafkaStatus();
-        KafkaClusterCreator creator = new KafkaClusterCreator(vertx, RECONCILIATION, CO_CONFIG, supplier);
+        KafkaClusterCreator creator = new KafkaClusterCreator(RECONCILIATION, CO_CONFIG, supplier);
 
         Checkpoint async = context.checkpoint();
         creator.prepareKafkaCluster(KAFKA, List.of(POOL_CONTROLLERS_WITH_STATUS_5_NODES, POOL_A_WITH_STATUS_5_NODES, POOL_B_WITH_STATUS_5_NODES), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, kafkaStatus, true)
@@ -336,7 +336,7 @@ public class KafkaClusterCreatorTest {
                     assertThat(kafkaStatus.getConditions().get(1).getMessage(), is("Reverting scale-down of KafkaNodePool pool-b by changing number of replicas to 5"));
 
                     // Scale-down reverted => should be called twice as we still scale down controllers after the revert is done
-                    verify(supplier.brokersInUseCheck, times(2)).brokersInUse(any(), any(), any(), any());
+                    verify(supplier.brokersInUseCheck, times(2)).brokersInUse(any(), any(), any());
 
                     async.flag();
                 })));
@@ -348,10 +348,10 @@ public class KafkaClusterCreatorTest {
 
         // Mock brokers-in-use check
         BrokersInUseCheck brokersInUseOps = supplier.brokersInUseCheck;
-        when(brokersInUseOps.brokersInUse(any(), any(), any(), any())).thenReturn(Future.succeededFuture(Set.of(3000, 3001, 3002, 3003)));
+        when(brokersInUseOps.brokersInUse(any(), any(), any())).thenReturn(CompletableFuture.completedFuture(Set.of(3000, 3001, 3002, 3003)));
 
         KafkaStatus kafkaStatus = new KafkaStatus();
-        KafkaClusterCreator creator = new KafkaClusterCreator(vertx, RECONCILIATION, CO_CONFIG, supplier);
+        KafkaClusterCreator creator = new KafkaClusterCreator(RECONCILIATION, CO_CONFIG, supplier);
 
         Checkpoint async = context.checkpoint();
         creator.prepareKafkaCluster(KAFKA, List.of(POOL_MIXED_WITH_STATUS_5_NODES), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, kafkaStatus, true)
@@ -370,7 +370,7 @@ public class KafkaClusterCreatorTest {
                     assertThat(kafkaStatus.getConditions().get(0).getMessage(), is("Reverting scale-down of KafkaNodePool pool-mixed by changing number of replicas to 5"));
 
                     // Scale-down reverted => should be called twice as we still scale down controllers after the revert is done
-                    verify(supplier.brokersInUseCheck, times(1)).brokersInUse(any(), any(), any(), any());
+                    verify(supplier.brokersInUseCheck, times(1)).brokersInUse(any(), any(), any());
 
                     async.flag();
                 })));
@@ -382,10 +382,10 @@ public class KafkaClusterCreatorTest {
 
         // Mock brokers-in-use check
         BrokersInUseCheck brokersInUseOps = supplier.brokersInUseCheck;
-        when(brokersInUseOps.brokersInUse(any(), any(), any(), any())).thenReturn(Future.succeededFuture(Set.of(1000, 1001, 1002, 2000, 2001, 2002, 3000, 3001, 3002)));
+        when(brokersInUseOps.brokersInUse(any(), any(), any())).thenReturn(CompletableFuture.completedFuture(Set.of(1000, 1001, 1002, 2000, 2001, 2002, 3000, 3001, 3002)));
 
         KafkaStatus kafkaStatus = new KafkaStatus();
-        KafkaClusterCreator creator = new KafkaClusterCreator(vertx, RECONCILIATION, CO_CONFIG, supplier);
+        KafkaClusterCreator creator = new KafkaClusterCreator(RECONCILIATION, CO_CONFIG, supplier);
 
         Checkpoint async = context.checkpoint();
         creator.prepareKafkaCluster(KAFKA, List.of(POOL_CONTROLLERS_WITH_STATUS_5_NODES, POOL_A_WITH_STATUS_5_NODES, POOL_B_WITH_STATUS_5_NODES), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, kafkaStatus, true)
@@ -400,7 +400,7 @@ public class KafkaClusterCreatorTest {
                     assertThat(kafkaStatus.getConditions(), is(nullValue()));
 
                     // Scale-down reverted => should be called once
-                    verify(supplier.brokersInUseCheck, times(1)).brokersInUse(any(), any(), any(), any());
+                    verify(supplier.brokersInUseCheck, times(1)).brokersInUse(any(), any(), any());
 
                     async.flag();
                 })));
@@ -412,10 +412,10 @@ public class KafkaClusterCreatorTest {
 
         // Mock brokers-in-use check
         BrokersInUseCheck brokersInUseOps = supplier.brokersInUseCheck;
-        when(brokersInUseOps.brokersInUse(any(), any(), any(), any())).thenReturn(Future.succeededFuture(Set.of(1003, 1004, 2003, 2004)));
+        when(brokersInUseOps.brokersInUse(any(), any(), any())).thenReturn(CompletableFuture.completedFuture(Set.of(1003, 1004, 2003, 2004)));
 
         KafkaStatus kafkaStatus = new KafkaStatus();
-        KafkaClusterCreator creator = new KafkaClusterCreator(vertx, RECONCILIATION, CO_CONFIG, supplier);
+        KafkaClusterCreator creator = new KafkaClusterCreator(RECONCILIATION, CO_CONFIG, supplier);
 
         Checkpoint async = context.checkpoint();
         creator.prepareKafkaCluster(KAFKA, List.of(POOL_CONTROLLERS_WITH_STATUS_5_NODES, POOL_A_WITH_STATUS_5_NODES, POOL_B_WITH_STATUS_5_NODES), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, kafkaStatus, false)
@@ -428,7 +428,7 @@ public class KafkaClusterCreatorTest {
                     assertThat(kafkaStatus.getConditions(), is(nullValue()));
 
                     // Scale-down failed => should be called once
-                    verify(supplier.brokersInUseCheck, times(1)).brokersInUse(any(), any(), any(), any());
+                    verify(supplier.brokersInUseCheck, times(1)).brokersInUse(any(), any(), any());
 
                     async.flag();
                 })));
@@ -445,7 +445,7 @@ public class KafkaClusterCreatorTest {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
         KafkaStatus kafkaStatus = new KafkaStatus();
-        KafkaClusterCreator creator = new KafkaClusterCreator(vertx, RECONCILIATION, CO_CONFIG, supplier);
+        KafkaClusterCreator creator = new KafkaClusterCreator(RECONCILIATION, CO_CONFIG, supplier);
 
         Checkpoint async = context.checkpoint();
         creator.prepareKafkaCluster(kafka, List.of(POOL_CONTROLLERS_WITH_STATUS_5_NODES, POOL_A_WITH_STATUS_5_NODES, POOL_B_WITH_STATUS_5_NODES), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, kafkaStatus, false)
@@ -460,7 +460,7 @@ public class KafkaClusterCreatorTest {
                     assertThat(kafkaStatus.getConditions(), is(nullValue()));
 
                     // Scale-down check skipped => should be never called
-                    verify(supplier.brokersInUseCheck, never()).brokersInUse(any(), any(), any(), any());
+                    verify(supplier.brokersInUseCheck, never()).brokersInUse(any(), any(), any());
 
                     async.flag();
                 })));
@@ -472,10 +472,10 @@ public class KafkaClusterCreatorTest {
 
         // Mock brokers-in-use check
         BrokersInUseCheck brokersInUseOps = supplier.brokersInUseCheck;
-        when(brokersInUseOps.brokersInUse(any(), any(), any(), any())).thenReturn(Future.succeededFuture(Set.of(1000, 1001, 1002, 2000, 2001, 2002, 3000, 3001, 3002)));
+        when(brokersInUseOps.brokersInUse(any(), any(), any())).thenReturn(CompletableFuture.completedFuture(Set.of(1000, 1001, 1002, 2000, 2001, 2002, 3000, 3001, 3002)));
 
         KafkaStatus kafkaStatus = new KafkaStatus();
-        KafkaClusterCreator creator = new KafkaClusterCreator(vertx, RECONCILIATION, CO_CONFIG, supplier);
+        KafkaClusterCreator creator = new KafkaClusterCreator(RECONCILIATION, CO_CONFIG, supplier);
 
         Checkpoint async = context.checkpoint();
         creator.prepareKafkaCluster(KAFKA, List.of(POOL_MIXED_NOT_MIXED_ANYMORE, POOL_A_WITH_STATUS, POOL_B_WITH_STATUS), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, kafkaStatus, true)
@@ -497,7 +497,7 @@ public class KafkaClusterCreatorTest {
                     assertThat(kafkaStatus.getConditions().get(0).getMessage(), is("Reverting role change of KafkaNodePool pool-mixed (setting roles to [CONTROLLER, BROKER])"));
 
                     // Scale-down reverted => should be called twice as we still scale down controllers after the revert is done
-                    verify(supplier.brokersInUseCheck, times(1)).brokersInUse(any(), any(), any(), any());
+                    verify(supplier.brokersInUseCheck, times(1)).brokersInUse(any(), any(), any());
 
                     async.flag();
                 })));
@@ -515,10 +515,10 @@ public class KafkaClusterCreatorTest {
 
         // Mock brokers-in-use check
         BrokersInUseCheck brokersInUseOps = supplier.brokersInUseCheck;
-        when(brokersInUseOps.brokersInUse(any(), any(), any(), any())).thenReturn(Future.succeededFuture(Set.of(1000, 1001, 1002, 2000, 2001, 2002, 3000, 3001, 3002)));
+        when(brokersInUseOps.brokersInUse(any(), any(), any())).thenReturn(CompletableFuture.completedFuture(Set.of(1000, 1001, 1002, 2000, 2001, 2002, 3000, 3001, 3002)));
 
         KafkaStatus kafkaStatus = new KafkaStatus();
-        KafkaClusterCreator creator = new KafkaClusterCreator(vertx, RECONCILIATION, CO_CONFIG, supplier);
+        KafkaClusterCreator creator = new KafkaClusterCreator(RECONCILIATION, CO_CONFIG, supplier);
 
         Checkpoint async = context.checkpoint();
         creator.prepareKafkaCluster(KAFKA, List.of(POOL_MIXED_WITH_STATUS, POOL_A_WITH_STATUS, poolBFromBrokerToControllerOnly), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, kafkaStatus, true)
@@ -540,7 +540,7 @@ public class KafkaClusterCreatorTest {
                     assertThat(kafkaStatus.getConditions().get(0).getMessage(), is("Reverting role change of KafkaNodePool pool-b (setting roles to [BROKER])"));
 
                     // Scale-down reverted => should be called twice as we still scale down controllers after the revert is done
-                    verify(supplier.brokersInUseCheck, times(1)).brokersInUse(any(), any(), any(), any());
+                    verify(supplier.brokersInUseCheck, times(1)).brokersInUse(any(), any(), any());
 
                     async.flag();
                 })));
@@ -552,10 +552,10 @@ public class KafkaClusterCreatorTest {
 
         // Mock brokers-in-use check
         BrokersInUseCheck brokersInUseOps = supplier.brokersInUseCheck;
-        when(brokersInUseOps.brokersInUse(any(), any(), any(), any())).thenReturn(Future.succeededFuture(Set.of(1000, 1001, 1002, 2000, 2001, 20022)));
+        when(brokersInUseOps.brokersInUse(any(), any(), any())).thenReturn(CompletableFuture.completedFuture(Set.of(1000, 1001, 1002, 2000, 2001, 20022)));
 
         KafkaStatus kafkaStatus = new KafkaStatus();
-        KafkaClusterCreator creator = new KafkaClusterCreator(vertx, RECONCILIATION, CO_CONFIG, supplier);
+        KafkaClusterCreator creator = new KafkaClusterCreator(RECONCILIATION, CO_CONFIG, supplier);
 
         Checkpoint async = context.checkpoint();
         creator.prepareKafkaCluster(KAFKA, List.of(POOL_MIXED_NOT_MIXED_ANYMORE, POOL_A_WITH_STATUS, POOL_B_WITH_STATUS), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, kafkaStatus, true)
@@ -571,7 +571,7 @@ public class KafkaClusterCreatorTest {
                     assertThat(kafkaStatus.getConditions(), is(nullValue()));
 
                     // Scale-down reverted => should be called once
-                    verify(supplier.brokersInUseCheck, times(1)).brokersInUse(any(), any(), any(), any());
+                    verify(supplier.brokersInUseCheck, times(1)).brokersInUse(any(), any(), any());
 
                     async.flag();
                 })));
@@ -583,10 +583,10 @@ public class KafkaClusterCreatorTest {
 
         // Mock brokers-in-use check
         BrokersInUseCheck brokersInUseOps = supplier.brokersInUseCheck;
-        when(brokersInUseOps.brokersInUse(any(), any(), any(), any())).thenReturn(Future.succeededFuture(Set.of(3000, 3002)));
+        when(brokersInUseOps.brokersInUse(any(), any(), any())).thenReturn(CompletableFuture.completedFuture(Set.of(3000, 3002)));
 
         KafkaStatus kafkaStatus = new KafkaStatus();
-        KafkaClusterCreator creator = new KafkaClusterCreator(vertx, RECONCILIATION, CO_CONFIG, supplier);
+        KafkaClusterCreator creator = new KafkaClusterCreator(RECONCILIATION, CO_CONFIG, supplier);
 
         Checkpoint async = context.checkpoint();
         creator.prepareKafkaCluster(KAFKA, List.of(POOL_MIXED_NOT_MIXED_ANYMORE, POOL_A_WITH_STATUS, POOL_B_WITH_STATUS), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, kafkaStatus, false)
@@ -599,7 +599,7 @@ public class KafkaClusterCreatorTest {
                     assertThat(kafkaStatus.getConditions(), is(nullValue()));
 
                     // Scale-down failed => should be called once
-                    verify(supplier.brokersInUseCheck, times(1)).brokersInUse(any(), any(), any(), any());
+                    verify(supplier.brokersInUseCheck, times(1)).brokersInUse(any(), any(), any());
 
                     async.flag();
                 })));
@@ -616,7 +616,7 @@ public class KafkaClusterCreatorTest {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
         KafkaStatus kafkaStatus = new KafkaStatus();
-        KafkaClusterCreator creator = new KafkaClusterCreator(vertx, RECONCILIATION, CO_CONFIG, supplier);
+        KafkaClusterCreator creator = new KafkaClusterCreator(RECONCILIATION, CO_CONFIG, supplier);
 
         Checkpoint async = context.checkpoint();
         creator.prepareKafkaCluster(kafka, List.of(POOL_MIXED_NOT_MIXED_ANYMORE, POOL_A_WITH_STATUS, POOL_B_WITH_STATUS), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, kafkaStatus, false)
@@ -632,7 +632,7 @@ public class KafkaClusterCreatorTest {
                     assertThat(kafkaStatus.getConditions(), is(nullValue()));
 
                     // Scale-down check skipped => should be never called
-                    verify(supplier.brokersInUseCheck, never()).brokersInUse(any(), any(), any(), any());
+                    verify(supplier.brokersInUseCheck, never()).brokersInUse(any(), any(), any());
 
                     async.flag();
                 })));

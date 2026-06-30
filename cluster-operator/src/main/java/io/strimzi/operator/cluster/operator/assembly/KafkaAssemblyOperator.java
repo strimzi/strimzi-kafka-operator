@@ -515,7 +515,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         }
 
                         KafkaClusterCreator kafkaClusterCreator =
-                                new KafkaClusterCreator(vertx, reconciliation, config, supplier);
+                                new KafkaClusterCreator(reconciliation, config, supplier);
                         return kafkaClusterCreator
                                 .prepareKafkaCluster(kafkaAssembly, nodePools, oldStorage, versionChange, kafkaStatus, true)
                                 .compose(kafkaCluster -> {

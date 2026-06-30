@@ -89,7 +89,6 @@ import io.strimzi.operator.common.operator.MockCertManager;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.concurrent.CrdOperator;
 import io.strimzi.platform.KubernetesVersion;
-import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.WorkerExecutor;
 import io.vertx.junit5.Checkpoint;
@@ -1082,7 +1081,7 @@ public class KafkaAssemblyOperatorTest {
 
         // Mock broker scale down operation
         BrokersInUseCheck operations = supplier.brokersInUseCheck;
-        when(operations.brokersInUse(any(), any(), any(), any())).thenReturn(Future.succeededFuture(Set.of()));
+        when(operations.brokersInUse(any(), any(), any())).thenReturn(CompletableFuture.completedFuture(Set.of()));
 
         KafkaAssemblyOperator ops = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(openShift, kubernetesVersion),
                 CERT_MANAGER,

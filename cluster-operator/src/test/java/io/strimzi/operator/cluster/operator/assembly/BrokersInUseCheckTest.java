@@ -5,6 +5,7 @@
 package io.strimzi.operator.cluster.operator.assembly;
 
 import io.strimzi.api.kafka.model.kafka.Kafka;
+import io.strimzi.operator.cluster.operator.VertxUtil;
 import io.strimzi.operator.common.AdminClientProvider;
 import io.strimzi.operator.common.Reconciliation;
 import io.vertx.core.Vertx;
@@ -29,6 +30,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 
 import static io.strimzi.operator.common.auth.TlsPemIdentity.DUMMY_IDENTITY;
@@ -85,7 +87,7 @@ public class BrokersInUseCheckTest {
         // Get brokers in use
         Checkpoint checkpoint = context.checkpoint();
         BrokersInUseCheck operations = new BrokersInUseCheck();
-        operations.brokersInUse(RECONCILIATION, vertx, DUMMY_IDENTITY, mock)
+        VertxUtil.toFuture(operations.brokersInUse(RECONCILIATION, DUMMY_IDENTITY, mock))
                 .onComplete(context.succeeding(brokersInUse -> {
                     Collection<String> topicList = topicListCaptor.getValue();
                     assertThat(topicList.size(), is(3));
@@ -116,7 +118,7 @@ public class BrokersInUseCheckTest {
         ArgumentCaptor<Collection<String>> topicListCaptor = ArgumentCaptor.forClass(Collection.class);
         when(admin.describeTopics(topicListCaptor.capture())).thenReturn(dtr);
 
-        // Mock list topics
+        // Mock ls foist topics
         ListTopicsResult ltr = mock(ListTopicsResult.class);
         when(ltr.names()).thenReturn(KafkaFuture.completedFuture(Set.of("my-topic")));
         when(admin.listTopics(any())).thenReturn(ltr);
@@ -124,7 +126,7 @@ public class BrokersInUseCheckTest {
         // Get brokers in use
         Checkpoint checkpoint = context.checkpoint();
         BrokersInUseCheck operations = new BrokersInUseCheck();
-        operations.brokersInUse(RECONCILIATION, vertx, DUMMY_IDENTITY, mock)
+        VertxUtil.toFuture(operations.brokersInUse(RECONCILIATION, DUMMY_IDENTITY, mock))
                 .onComplete(context.succeeding(brokersInUse -> {
                     Collection<String> topicList = topicListCaptor.getValue();
                     assertThat(topicList.size(), is(1));
@@ -146,11 +148,7 @@ public class BrokersInUseCheckTest {
         // Mock topic description
         @SuppressWarnings(value = "unchecked")
         KafkaFuture<Map<String, TopicDescription>> kf = mock(KafkaFuture.class);
-        when(kf.whenComplete(any())).thenAnswer(i -> {
-            KafkaFuture.BiConsumer<Void, Throwable> action = i.getArgument(0);
-            action.accept(null, new Throwable("Test error ..."));
-            return null;
-        });
+        when(kf.toCompletionStage()).thenReturn(CompletableFuture.failedFuture(new Throwable("Test error ...")));
         DescribeTopicsResult dtr = mock(DescribeTopicsResult.class);
         when(dtr.allTopicNames()).thenReturn(kf);
         when(admin.describeTopics(anyCollection())).thenReturn(dtr);
@@ -163,9 +161,10 @@ public class BrokersInUseCheckTest {
         // Get brokers in use
         Checkpoint checkpoint = context.checkpoint();
         BrokersInUseCheck operations = new BrokersInUseCheck();
-        operations.brokersInUse(RECONCILIATION, vertx, DUMMY_IDENTITY, mock)
+        VertxUtil.toFuture(operations.brokersInUse(RECONCILIATION, DUMMY_IDENTITY, mock))
                 .onComplete(context.failing(e -> {
-                    assertThat(e.getMessage(), is("Test error ..."));
+                    // CompletionStage wraps exceptions in CompletionException, so check the cause
+                    assertThat(e.getCause().getMessage(), is("Test error ..."));
 
                     checkpoint.flag();
                 }));
@@ -180,11 +179,7 @@ public class BrokersInUseCheckTest {
         // Mock list topics
         @SuppressWarnings(value = "unchecked")
         KafkaFuture<Set<String>> kf = mock(KafkaFuture.class);
-        when(kf.whenComplete(any())).thenAnswer(i -> {
-            KafkaFuture.BiConsumer<Void, Throwable> action = i.getArgument(0);
-            action.accept(null, new Throwable("Test error ..."));
-            return null;
-        });
+        when(kf.toCompletionStage()).thenReturn(CompletableFuture.failedFuture(new Throwable("Test error ...")));
         ListTopicsResult ltr = mock(ListTopicsResult.class);
         when(ltr.names()).thenReturn(kf);
         when(admin.listTopics(any())).thenReturn(ltr);
@@ -192,9 +187,10 @@ public class BrokersInUseCheckTest {
         // Get brokers in use
         Checkpoint checkpoint = context.checkpoint();
         BrokersInUseCheck operations = new BrokersInUseCheck();
-        operations.brokersInUse(RECONCILIATION, vertx, DUMMY_IDENTITY, mock)
+        VertxUtil.toFuture(operations.brokersInUse(RECONCILIATION, DUMMY_IDENTITY, mock))
                 .onComplete(context.failing(e -> {
-                    assertThat(e.getMessage(), is("Test error ..."));
+                    // CompletionStage wraps exceptions in CompletionException, so check the cause
+                    assertThat(e.getCause().getMessage(), is("Test error ..."));
 
                     checkpoint.flag();
                 }));
@@ -212,8 +208,10 @@ public class BrokersInUseCheckTest {
         // Get brokers in use
         Checkpoint checkpoint = context.checkpoint();
         BrokersInUseCheck operations = new BrokersInUseCheck();
-        operations.brokersInUse(RECONCILIATION, vertx, DUMMY_IDENTITY, mock)
+        VertxUtil.toFuture(operations.brokersInUse(RECONCILIATION, DUMMY_IDENTITY, mock))
                 .onComplete(context.failing(e -> {
+                    // This exception is thrown in the try-catch block and returned via CompletableFuture.failedFuture()
+                    // which doesn't wrap it in CompletionException, so we check the message directly
                     assertThat(e.getMessage(), is("Test error ..."));
 
                     checkpoint.flag();
