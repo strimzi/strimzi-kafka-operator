@@ -16,6 +16,7 @@ import org.apache.kafka.common.KafkaFuture;
 import org.apache.kafka.common.Node;
 import org.apache.kafka.common.TopicPartitionInfo;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.mockito.ArgumentCaptor;
 
 import java.util.Collection;
@@ -23,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
 import static io.strimzi.operator.common.auth.TlsPemIdentity.DUMMY_IDENTITY;
@@ -43,6 +45,7 @@ public class BrokersInUseCheckTest {
     private static final Function<Integer, Node> NODE = id -> new Node(id, Node.noNode().host(), Node.noNode().port());
 
     @Test
+    @Timeout(value = 30, unit = TimeUnit.SECONDS)
     public void testBrokersInUse() {
         Admin admin = mock(Admin.class);
         AdminClientProvider mock = mock(AdminClientProvider.class);
@@ -79,6 +82,7 @@ public class BrokersInUseCheckTest {
     }
 
     @Test
+    @Timeout(value = 30, unit = TimeUnit.SECONDS)
     public void testBrokersInUseWithSingleTopicAndMultiplePartitions() {
         Admin admin = mock(Admin.class);
         AdminClientProvider mock = mock(AdminClientProvider.class);
@@ -116,6 +120,7 @@ public class BrokersInUseCheckTest {
     }
 
     @Test
+    @Timeout(value = 30, unit = TimeUnit.SECONDS)
     public void testTopicDescriptionFailure() {
         Admin admin = mock(Admin.class);
         AdminClientProvider mock = mock(AdminClientProvider.class);
@@ -145,6 +150,7 @@ public class BrokersInUseCheckTest {
     }
 
     @Test
+    @Timeout(value = 30, unit = TimeUnit.SECONDS)
     public void testListTopicsFailure() {
         Admin admin = mock(Admin.class);
         AdminClientProvider mock = mock(AdminClientProvider.class);
@@ -169,6 +175,7 @@ public class BrokersInUseCheckTest {
     }
 
     @Test
+    @Timeout(value = 30, unit = TimeUnit.SECONDS)
     public void testKafkaClientFailure() {
         Admin admin = mock(Admin.class);
         AdminClientProvider mock = mock(AdminClientProvider.class);

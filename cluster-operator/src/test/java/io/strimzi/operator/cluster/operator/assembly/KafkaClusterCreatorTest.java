@@ -23,11 +23,13 @@ import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.InvalidResourceException;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
@@ -180,6 +182,7 @@ public class KafkaClusterCreatorTest {
     //////////////////////////////////////////////////
 
     @Test
+    @Timeout(value = 30, unit = TimeUnit.SECONDS)
     public void testNewClusterWithKRaft() throws Exception {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
@@ -204,6 +207,7 @@ public class KafkaClusterCreatorTest {
     }
 
     @Test
+    @Timeout(value = 30, unit = TimeUnit.SECONDS)
     public void testNewClusterWithMixedNodesKRaft() throws Exception {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
@@ -228,6 +232,7 @@ public class KafkaClusterCreatorTest {
     }
 
     @Test
+    @Timeout(value = 30, unit = TimeUnit.SECONDS)
     public void testExistingClusterWithKRaft() throws Exception {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
@@ -252,6 +257,7 @@ public class KafkaClusterCreatorTest {
     }
 
     @Test
+    @Timeout(value = 30, unit = TimeUnit.SECONDS)
     public void testExistingClusterWithMixedNodesKRaft() throws Exception {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
@@ -276,6 +282,7 @@ public class KafkaClusterCreatorTest {
     }
 
     @Test
+    @Timeout(value = 30, unit = TimeUnit.SECONDS)
     public void testRevertScaleDownWithKRaft() throws Exception {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
@@ -312,6 +319,7 @@ public class KafkaClusterCreatorTest {
     }
 
     @Test
+    @Timeout(value = 30, unit = TimeUnit.SECONDS)
     public void testRevertScaleDownWithKRaftMixedNodes() throws Exception {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
@@ -344,6 +352,7 @@ public class KafkaClusterCreatorTest {
     }
 
     @Test
+    @Timeout(value = 30, unit = TimeUnit.SECONDS)
     public void testCorrectScaleDownWithKRaft() throws Exception {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
@@ -372,6 +381,7 @@ public class KafkaClusterCreatorTest {
     }
 
     @Test
+    @Timeout(value = 30, unit = TimeUnit.SECONDS)
     public void testThrowsRevertScaleDownFailsWithKRaft() throws Exception {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
@@ -400,6 +410,7 @@ public class KafkaClusterCreatorTest {
     }
 
     @Test
+    @Timeout(value = 30, unit = TimeUnit.SECONDS)
     public void testSkipScaleDownCheckWithKRaft() throws Exception {
         Kafka kafka = new KafkaBuilder(KAFKA)
                 .editMetadata()
@@ -430,6 +441,7 @@ public class KafkaClusterCreatorTest {
     }
 
     @Test
+    @Timeout(value = 30, unit = TimeUnit.SECONDS)
     public void testRevertRoleChangeWithKRaftMixedNodes() throws Exception {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
@@ -465,6 +477,7 @@ public class KafkaClusterCreatorTest {
     }
 
     @Test
+    @Timeout(value = 30, unit = TimeUnit.SECONDS)
     public void testRevertRoleChangeWithKRaftDedicatedNodes() throws Exception {
         KafkaNodePool poolBFromBrokerToControllerOnly = new KafkaNodePoolBuilder(POOL_B_WITH_STATUS)
                 .editSpec()
@@ -506,6 +519,7 @@ public class KafkaClusterCreatorTest {
     }
 
     @Test
+    @Timeout(value = 30, unit = TimeUnit.SECONDS)
     public void testCorrectRoleChangeWithKRaft() throws Exception {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
@@ -535,6 +549,7 @@ public class KafkaClusterCreatorTest {
     }
 
     @Test
+    @Timeout(value = 30, unit = TimeUnit.SECONDS)
     public void testThrowsRevertBrokerChangeFailsWithKRaft() throws Exception {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
@@ -563,6 +578,7 @@ public class KafkaClusterCreatorTest {
     }
 
     @Test
+    @Timeout(value = 30, unit = TimeUnit.SECONDS)
     public void testSkipRoleChangeCheckWithKRaft() throws Exception {
         Kafka kafka = new KafkaBuilder(KAFKA)
                 .editMetadata()
