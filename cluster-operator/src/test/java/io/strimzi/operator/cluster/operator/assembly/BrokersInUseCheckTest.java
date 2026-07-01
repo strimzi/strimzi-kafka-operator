@@ -38,6 +38,7 @@ import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+@Timeout(value = 30, unit = TimeUnit.SECONDS)
 public class BrokersInUseCheckTest {
     private static final String NAMESPACE = "my-namespace";
     private static final String CLUSTER_NAME = "my-cluster";
@@ -45,7 +46,6 @@ public class BrokersInUseCheckTest {
     private static final Function<Integer, Node> NODE = id -> new Node(id, Node.noNode().host(), Node.noNode().port());
 
     @Test
-    @Timeout(value = 30, unit = TimeUnit.SECONDS)
     public void testBrokersInUse() {
         Admin admin = mock(Admin.class);
         AdminClientProvider mock = mock(AdminClientProvider.class);
@@ -82,7 +82,6 @@ public class BrokersInUseCheckTest {
     }
 
     @Test
-    @Timeout(value = 30, unit = TimeUnit.SECONDS)
     public void testBrokersInUseWithSingleTopicAndMultiplePartitions() {
         Admin admin = mock(Admin.class);
         AdminClientProvider mock = mock(AdminClientProvider.class);
@@ -120,7 +119,6 @@ public class BrokersInUseCheckTest {
     }
 
     @Test
-    @Timeout(value = 30, unit = TimeUnit.SECONDS)
     public void testTopicDescriptionFailure() {
         Admin admin = mock(Admin.class);
         AdminClientProvider mock = mock(AdminClientProvider.class);
@@ -150,7 +148,6 @@ public class BrokersInUseCheckTest {
     }
 
     @Test
-    @Timeout(value = 30, unit = TimeUnit.SECONDS)
     public void testListTopicsFailure() {
         Admin admin = mock(Admin.class);
         AdminClientProvider mock = mock(AdminClientProvider.class);
@@ -175,7 +172,6 @@ public class BrokersInUseCheckTest {
     }
 
     @Test
-    @Timeout(value = 30, unit = TimeUnit.SECONDS)
     public void testKafkaClientFailure() {
         Admin admin = mock(Admin.class);
         AdminClientProvider mock = mock(AdminClientProvider.class);
