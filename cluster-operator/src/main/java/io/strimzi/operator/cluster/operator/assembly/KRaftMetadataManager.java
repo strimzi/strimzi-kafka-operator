@@ -7,21 +7,19 @@ package io.strimzi.operator.cluster.operator.assembly;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.KafkaStatus;
 import io.strimzi.operator.cluster.model.KafkaCluster;
-import io.strimzi.operator.cluster.operator.VertxUtil;
 import io.strimzi.operator.common.AdminClientProvider;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.auth.TlsPemIdentity;
 import io.strimzi.operator.common.model.StatusUtils;
-import io.vertx.core.Future;
-import io.vertx.core.Promise;
-import io.vertx.core.Vertx;
 import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.FeatureUpdate;
 import org.apache.kafka.clients.admin.UpdateFeaturesOptions;
 import org.apache.kafka.server.common.MetadataVersion;
 
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 
 /**
  * Utility class for managing the KRaft metadata version. It encapsulates the methods for getting the current metadata
@@ -54,17 +52,15 @@ public class KRaftMetadataManager {
      * manually.
      *
      * @param reconciliation            Reconciliation marker
-     * @param vertx                     Vert.x instance
      * @param coTlsPemIdentity          Trust set and identity for TLS client authentication for connecting to the Kafka cluster
      * @param adminClientProvider       Kafka Admin client provider
      * @param desiredMetadataVersion    Desired metadata version
      * @param status                    Kafka status
      *
-     * @return  Future that completes when the metadata update is finished (or was not needed) and the status is updated
+     * @return  CompletionStage that completes when the metadata update is finished (or was not needed) and the status is updated
      */
-    public static Future<Void> maybeUpdateMetadataVersion(
+    public static CompletionStage<Void> maybeUpdateMetadataVersion(
             Reconciliation reconciliation,
-            Vertx vertx,
             TlsPemIdentity coTlsPemIdentity,
             AdminClientProvider adminClientProvider,
             String desiredMetadataVersion,
@@ -74,29 +70,24 @@ public class KRaftMetadataManager {
         LOGGER.debugCr(reconciliation, "Creating AdminClient for Kafka cluster in namespace {}", reconciliation.namespace());
         Admin kafkaAdmin = adminClientProvider.createAdminClient(bootstrapHostname, coTlsPemIdentity.pemTrustSet(), coTlsPemIdentity.pemAuthIdentity());
 
-        Promise<Void> updatePromise = Promise.promise();
-        maybeUpdateMetadataVersion(reconciliation, vertx, kafkaAdmin, desiredMetadataVersion, status)
-                .onComplete(res -> {
+        return maybeUpdateMetadataVersion(reconciliation, kafkaAdmin, desiredMetadataVersion, status)
+                .whenComplete((result, error) -> {
                     // Close the Admin client and return the original result
                     LOGGER.debugCr(reconciliation, "Closing the Kafka Admin API connection");
                     kafkaAdmin.close();
-                    updatePromise.handle(res);
                 });
-
-        return updatePromise.future();
     }
 
-    private static Future<Void> maybeUpdateMetadataVersion(
+    private static CompletionStage<Void> maybeUpdateMetadataVersion(
             Reconciliation reconciliation,
-            Vertx vertx,
             Admin kafkaAdmin,
             String desiredMetadataVersion,
             KafkaStatus status
     )    {
         short desiredMetadataLevel = MetadataVersion.fromVersionString(desiredMetadataVersion, false).featureLevel();
 
-        return currentVersion(reconciliation, vertx, kafkaAdmin)
-                .compose(currentMetadataLevel -> {
+        return currentVersion(reconciliation, kafkaAdmin)
+                .thenCompose(currentMetadataLevel -> {
                     if (currentMetadataLevel.equals(desiredMetadataLevel))  {
                         // No metadata version change as the current and desired versions are equal
                         // We convert the metadata level to the version for the use in the status instead of using the
@@ -104,58 +95,56 @@ public class KRaftMetadataManager {
                         String metadataVersion = MetadataVersion.fromFeatureLevel(currentMetadataLevel).toString();
                         LOGGER.debugCr(reconciliation, "Metadata version is already set to the desired version {}", metadataVersion);
                         status.setKafkaMetadataVersion(MetadataVersion.fromFeatureLevel(currentMetadataLevel).toString());
-                        return Future.succeededFuture();
+                        return CompletableFuture.completedFuture(null);
                     } else {
-                        Promise<Void> promise = Promise.promise();
-
-                        updateVersion(reconciliation, vertx, kafkaAdmin, currentMetadataLevel, desiredMetadataLevel)
-                                .onComplete(res -> {
-                                    if (res.succeeded())    {
+                        CompletableFuture<Void> result = new CompletableFuture<>();
+                        updateVersion(reconciliation, kafkaAdmin, currentMetadataLevel, desiredMetadataLevel)
+                                .whenComplete((voidResult, error) -> {
+                                    if (error == null) {
                                         // We convert the metadata level to the version for the use in the status instead of using the
                                         // desired version directly in order to get the full version including the subversion
                                         String metadataVersion = MetadataVersion.fromFeatureLevel(desiredMetadataLevel).toString();
                                         LOGGER.infoCr(reconciliation, "Successfully updated metadata version to {}", metadataVersion);
                                         status.setKafkaMetadataVersion(metadataVersion);
-                                        promise.complete();
+                                        result.complete(null);
                                     } else {
                                         // We failed to update the metadata version, but we do not want to break the
                                         // reconciliation. We log the error and update the metadata version status.
-                                        currentVersion(reconciliation, vertx, kafkaAdmin)
-                                                .compose(currentMetadataLevelAfterFailure -> {
-                                                    String metadataVersion = MetadataVersion.fromFeatureLevel(currentMetadataLevelAfterFailure).toString();
-                                                    LOGGER.warnCr(reconciliation, "Failed to update metadata version to {} (the current version is {})", desiredMetadataVersion, metadataVersion, res.cause());
-                                                    status.addCondition(StatusUtils.buildWarningCondition("MetadataUpdateFailed", "Failed to update metadata version to " + desiredMetadataVersion));
-                                                    status.setKafkaMetadataVersion(metadataVersion);
-
-                                                    promise.complete();
-                                                    return Future.succeededFuture();
+                                        currentVersion(reconciliation, kafkaAdmin)
+                                                .whenComplete((currentMetadataLevelAfterFailure, e) -> {
+                                                    if (e == null) {
+                                                        String metadataVersion = MetadataVersion.fromFeatureLevel(currentMetadataLevelAfterFailure).toString();
+                                                        LOGGER.warnCr(reconciliation, "Failed to update metadata version to {} (the current version is {})", desiredMetadataVersion, metadataVersion, error);
+                                                        status.addCondition(StatusUtils.buildWarningCondition("MetadataUpdateFailed", "Failed to update metadata version to " + desiredMetadataVersion));
+                                                        status.setKafkaMetadataVersion(metadataVersion);
+                                                        result.complete(null);
+                                                    } else {
+                                                        result.completeExceptionally(e);
+                                                    }
                                                 });
                                     }
                                 });
-
-                        return promise.future();
+                        return result;
                     }
                 });
     }
 
-    private static Future<Short> currentVersion(
+    private static CompletionStage<Short> currentVersion(
             Reconciliation reconciliation,
-            Vertx vertx,
             Admin kafkaAdmin
     )  {
-        return VertxUtil.kafkaFutureToVertxFuture(reconciliation, vertx, kafkaAdmin.describeFeatures().featureMetadata())
-                .compose(featureMetadata -> {
+        return kafkaAdmin.describeFeatures().featureMetadata().toCompletionStage()
+                .thenCompose(featureMetadata -> {
                     if (featureMetadata.finalizedFeatures().get(METADATA_VERSION_KEY) != null)  {
-                        return Future.succeededFuture(featureMetadata.finalizedFeatures().get(METADATA_VERSION_KEY).maxVersionLevel());
+                        return CompletableFuture.completedFuture(featureMetadata.finalizedFeatures().get(METADATA_VERSION_KEY).maxVersionLevel());
                     } else {
-                        return Future.failedFuture("Failed to describe " + METADATA_VERSION_KEY + " feature");
+                        return CompletableFuture.failedFuture(new RuntimeException("Failed to describe " + METADATA_VERSION_KEY + " feature"));
                     }
                 });
     }
 
-    private static Future<Void> updateVersion(
+    private static CompletionStage<Void> updateVersion(
             Reconciliation reconciliation,
-            Vertx vertx,
             Admin kafkaAdmin,
             short currentMetadataLevel,
             short desiredMetadataLevel
@@ -166,8 +155,6 @@ public class KRaftMetadataManager {
 
         LOGGER.infoCr(reconciliation, "Updating metadata version from {} to {}", MetadataVersion.fromFeatureLevel(currentMetadataLevel), MetadataVersion.fromFeatureLevel(desiredMetadataLevel));
 
-        return VertxUtil
-                .kafkaFutureToVertxFuture(reconciliation, vertx, kafkaAdmin.updateFeatures(Map.of(METADATA_VERSION_KEY, featureUpdate), options).values().get(METADATA_VERSION_KEY))
-                .mapEmpty();
+        return kafkaAdmin.updateFeatures(Map.of(METADATA_VERSION_KEY, featureUpdate), options).values().get(METADATA_VERSION_KEY).toCompletionStage();
     }
 }

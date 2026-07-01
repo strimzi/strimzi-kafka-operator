@@ -7,10 +7,6 @@ package io.strimzi.operator.cluster.operator.assembly;
 import io.strimzi.api.kafka.model.kafka.KafkaStatus;
 import io.strimzi.operator.common.AdminClientProvider;
 import io.strimzi.operator.common.Reconciliation;
-import io.vertx.core.Vertx;
-import io.vertx.junit5.Checkpoint;
-import io.vertx.junit5.VertxExtension;
-import io.vertx.junit5.VertxTestContext;
 import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.DescribeFeaturesResult;
 import org.apache.kafka.clients.admin.FeatureMetadata;
@@ -19,19 +15,20 @@ import org.apache.kafka.clients.admin.FinalizedVersionRange;
 import org.apache.kafka.clients.admin.UpdateFeaturesResult;
 import org.apache.kafka.common.KafkaFuture;
 import org.apache.kafka.common.errors.InvalidUpdateVersionException;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.Timeout;
 import org.mockito.ArgumentCaptor;
 
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
 import static io.strimzi.operator.common.auth.TlsPemIdentity.DUMMY_IDENTITY;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.mock;
@@ -40,19 +37,8 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@ExtendWith(VertxExtension.class)
+@Timeout(value = 30, unit = TimeUnit.SECONDS)
 public class KRaftMetadataManagerTest {
-    private static Vertx vertx;
-
-    @BeforeAll
-    public static void before() {
-        vertx = Vertx.vertx();
-    }
-
-    @AfterAll
-    public static void after() {
-        vertx.close();
-    }
 
     private AdminClientProvider mockAdminClientProvider(Admin adminClient)  {
         AdminClientProvider mockAdminClientProvider = mock(AdminClientProvider.class);
@@ -75,7 +61,7 @@ public class KRaftMetadataManagerTest {
     }
 
     @Test
-    public void testNoMetadataVersionChange(VertxTestContext context)   {
+    public void testNoMetadataVersionChange()   {
         // Mock the Admin client
         Admin mockAdminClient = mock(Admin.class);
 
@@ -88,57 +74,18 @@ public class KRaftMetadataManagerTest {
         // Dummy KafkaStatus to check the values from
         KafkaStatus status = new KafkaStatus();
 
-        Checkpoint checkpoint = context.checkpoint();
-        KRaftMetadataManager.maybeUpdateMetadataVersion(Reconciliation.DUMMY_RECONCILIATION, vertx, DUMMY_IDENTITY, mockAdminClientProvider, "3.6-IV1", status)
-                .onComplete(context.succeeding(s -> {
-                    assertThat(status.getKafkaMetadataVersion(), is("3.6-IV1"));
+        KRaftMetadataManager.maybeUpdateMetadataVersion(Reconciliation.DUMMY_RECONCILIATION, DUMMY_IDENTITY, mockAdminClientProvider, "3.6-IV1", status)
+                .toCompletableFuture()
+                .join();
 
-                    verify(mockAdminClient, never()).updateFeatures(any(), any());
-                    verify(mockAdminClient, times(1)).describeFeatures();
+        assertThat(status.getKafkaMetadataVersion(), is("3.6-IV1"));
 
-                    checkpoint.flag();
-                }));
+        verify(mockAdminClient, never()).updateFeatures(any(), any());
+        verify(mockAdminClient, times(1)).describeFeatures();
     }
 
     @Test
-    public void testSuccessfulMetadataVersionUpgrade(VertxTestContext context)   {
-        // Mock the Admin client
-        Admin mockAdminClient = mock(Admin.class);
-
-        // Mock describing the current metadata version
-        mockDescribeVersion(mockAdminClient);
-
-        // Mock updating metadata version
-        UpdateFeaturesResult ufr = mock(UpdateFeaturesResult.class);
-        when(ufr.values()).thenReturn(Map.of(KRaftMetadataManager.METADATA_VERSION_KEY, KafkaFuture.completedFuture(null)));
-        @SuppressWarnings(value = "unchecked")
-        ArgumentCaptor<Map<String, FeatureUpdate>> updateCaptor = ArgumentCaptor.forClass(Map.class);
-        when(mockAdminClient.updateFeatures(updateCaptor.capture(), any())).thenReturn(ufr);
-
-        // Mock the Admin client provider
-        AdminClientProvider mockAdminClientProvider = mockAdminClientProvider(mockAdminClient);
-
-        // Dummy KafkaStatus to check the values from
-        KafkaStatus status = new KafkaStatus();
-
-        Checkpoint checkpoint = context.checkpoint();
-        KRaftMetadataManager.maybeUpdateMetadataVersion(Reconciliation.DUMMY_RECONCILIATION, vertx, DUMMY_IDENTITY, mockAdminClientProvider, "3.6", status)
-                .onComplete(context.succeeding(s -> {
-                    assertThat(status.getKafkaMetadataVersion(), is("3.6-IV2"));
-
-                    verify(mockAdminClient, times(1)).updateFeatures(any(), any());
-                    verify(mockAdminClient, times(1)).describeFeatures();
-
-                    assertThat(updateCaptor.getAllValues().size(), is(1));
-                    assertThat(updateCaptor.getValue().get(KRaftMetadataManager.METADATA_VERSION_KEY).upgradeType(), is(FeatureUpdate.UpgradeType.UPGRADE));
-                    assertThat(updateCaptor.getValue().get(KRaftMetadataManager.METADATA_VERSION_KEY).maxVersionLevel(), is((short) 14));
-
-                    checkpoint.flag();
-                }));
-    }
-
-    @Test
-    public void testSuccessfulMetadataVersionDowngrade(VertxTestContext context)   {
+    public void testSuccessfulMetadataVersionUpgrade()   {
         // Mock the Admin client
         Admin mockAdminClient = mock(Admin.class);
 
@@ -158,24 +105,57 @@ public class KRaftMetadataManagerTest {
         // Dummy KafkaStatus to check the values from
         KafkaStatus status = new KafkaStatus();
 
-        Checkpoint checkpoint = context.checkpoint();
-        KRaftMetadataManager.maybeUpdateMetadataVersion(Reconciliation.DUMMY_RECONCILIATION, vertx, DUMMY_IDENTITY, mockAdminClientProvider, "3.5", status)
-                .onComplete(context.succeeding(s -> {
-                    assertThat(status.getKafkaMetadataVersion(), is("3.5-IV2"));
+        KRaftMetadataManager.maybeUpdateMetadataVersion(Reconciliation.DUMMY_RECONCILIATION, DUMMY_IDENTITY, mockAdminClientProvider, "3.6", status)
+                .toCompletableFuture()
+                .join();
 
-                    verify(mockAdminClient, times(1)).updateFeatures(any(), any());
-                    verify(mockAdminClient, times(1)).describeFeatures();
+        assertThat(status.getKafkaMetadataVersion(), is("3.6-IV2"));
 
-                    assertThat(updateCaptor.getAllValues().size(), is(1));
-                    assertThat(updateCaptor.getValue().get(KRaftMetadataManager.METADATA_VERSION_KEY).upgradeType(), is(FeatureUpdate.UpgradeType.SAFE_DOWNGRADE));
-                    assertThat(updateCaptor.getValue().get(KRaftMetadataManager.METADATA_VERSION_KEY).maxVersionLevel(), is((short) 11));
+        verify(mockAdminClient, times(1)).updateFeatures(any(), any());
+        verify(mockAdminClient, times(1)).describeFeatures();
 
-                    checkpoint.flag();
-                }));
+        assertThat(updateCaptor.getAllValues().size(), is(1));
+        assertThat(updateCaptor.getValue().get(KRaftMetadataManager.METADATA_VERSION_KEY).upgradeType(), is(FeatureUpdate.UpgradeType.UPGRADE));
+        assertThat(updateCaptor.getValue().get(KRaftMetadataManager.METADATA_VERSION_KEY).maxVersionLevel(), is((short) 14));
     }
 
     @Test
-    public void testUnsuccessfulMetadataVersionChange(VertxTestContext context)   {
+    public void testSuccessfulMetadataVersionDowngrade()   {
+        // Mock the Admin client
+        Admin mockAdminClient = mock(Admin.class);
+
+        // Mock describing the current metadata version
+        mockDescribeVersion(mockAdminClient);
+
+        // Mock updating metadata version
+        UpdateFeaturesResult ufr = mock(UpdateFeaturesResult.class);
+        when(ufr.values()).thenReturn(Map.of(KRaftMetadataManager.METADATA_VERSION_KEY, KafkaFuture.completedFuture(null)));
+        @SuppressWarnings(value = "unchecked")
+        ArgumentCaptor<Map<String, FeatureUpdate>> updateCaptor = ArgumentCaptor.forClass(Map.class);
+        when(mockAdminClient.updateFeatures(updateCaptor.capture(), any())).thenReturn(ufr);
+
+        // Mock the Admin client provider
+        AdminClientProvider mockAdminClientProvider = mockAdminClientProvider(mockAdminClient);
+
+        // Dummy KafkaStatus to check the values from
+        KafkaStatus status = new KafkaStatus();
+
+        KRaftMetadataManager.maybeUpdateMetadataVersion(Reconciliation.DUMMY_RECONCILIATION, DUMMY_IDENTITY, mockAdminClientProvider, "3.5", status)
+                .toCompletableFuture()
+                .join();
+
+        assertThat(status.getKafkaMetadataVersion(), is("3.5-IV2"));
+
+        verify(mockAdminClient, times(1)).updateFeatures(any(), any());
+        verify(mockAdminClient, times(1)).describeFeatures();
+
+        assertThat(updateCaptor.getAllValues().size(), is(1));
+        assertThat(updateCaptor.getValue().get(KRaftMetadataManager.METADATA_VERSION_KEY).upgradeType(), is(FeatureUpdate.UpgradeType.SAFE_DOWNGRADE));
+        assertThat(updateCaptor.getValue().get(KRaftMetadataManager.METADATA_VERSION_KEY).maxVersionLevel(), is((short) 11));
+    }
+
+    @Test
+    public void testUnsuccessfulMetadataVersionChange()   {
         // Mock the Admin client
         Admin mockAdminClient = mock(Admin.class);
 
@@ -185,11 +165,7 @@ public class KRaftMetadataManagerTest {
         // Mock updating metadata version
         @SuppressWarnings(value = "unchecked")
         KafkaFuture<Void> kf = mock(KafkaFuture.class);
-        when(kf.whenComplete(any())).thenAnswer(i -> {
-            KafkaFuture.BiConsumer<Void, Throwable> action = i.getArgument(0);
-            action.accept(null, new InvalidUpdateVersionException("Test error ..."));
-            return null;
-        });
+        when(kf.toCompletionStage()).thenReturn(CompletableFuture.failedFuture(new InvalidUpdateVersionException("Test error ...")));
         UpdateFeaturesResult ufr = mock(UpdateFeaturesResult.class);
         when(ufr.values()).thenReturn(Map.of(KRaftMetadataManager.METADATA_VERSION_KEY, kf));
         when(mockAdminClient.updateFeatures(any(), any())).thenReturn(ufr);
@@ -200,35 +176,29 @@ public class KRaftMetadataManagerTest {
         // Dummy KafkaStatus to check the values from
         KafkaStatus status = new KafkaStatus();
 
-        Checkpoint checkpoint = context.checkpoint();
-        KRaftMetadataManager.maybeUpdateMetadataVersion(Reconciliation.DUMMY_RECONCILIATION, vertx, DUMMY_IDENTITY, mockAdminClientProvider, "3.6", status)
-                .onComplete(context.succeeding(s -> {
-                    assertThat(status.getKafkaMetadataVersion(), is("3.6-IV1"));
-                    assertThat(status.getConditions().size(), is(1));
-                    assertThat(status.getConditions().get(0).getType(), is("Warning"));
-                    assertThat(status.getConditions().get(0).getReason(), is("MetadataUpdateFailed"));
-                    assertThat(status.getConditions().get(0).getMessage(), is("Failed to update metadata version to 3.6"));
+        KRaftMetadataManager.maybeUpdateMetadataVersion(Reconciliation.DUMMY_RECONCILIATION, DUMMY_IDENTITY, mockAdminClientProvider, "3.6", status)
+                .toCompletableFuture()
+                .join();
 
-                    verify(mockAdminClient, times(1)).updateFeatures(any(), any());
-                    verify(mockAdminClient, times(2)).describeFeatures();
+        assertThat(status.getKafkaMetadataVersion(), is("3.6-IV1"));
+        assertThat(status.getConditions().size(), is(1));
+        assertThat(status.getConditions().get(0).getType(), is("Warning"));
+        assertThat(status.getConditions().get(0).getReason(), is("MetadataUpdateFailed"));
+        assertThat(status.getConditions().get(0).getMessage(), is("Failed to update metadata version to 3.6"));
 
-                    checkpoint.flag();
-                }));
+        verify(mockAdminClient, times(1)).updateFeatures(any(), any());
+        verify(mockAdminClient, times(2)).describeFeatures();
     }
 
     @Test
-    public void testUnexpectedError(VertxTestContext context)   {
+    public void testUnexpectedError()   {
         // Mock the Admin client
         Admin mockAdminClient = mock(Admin.class);
 
         // Mock describing the current metadata version
         @SuppressWarnings(value = "unchecked")
         KafkaFuture<FeatureMetadata> kf = mock(KafkaFuture.class);
-        when(kf.whenComplete(any())).thenAnswer(i -> {
-            KafkaFuture.BiConsumer<FeatureMetadata, Throwable> action = i.getArgument(0);
-            action.accept(null, new RuntimeException("Test error ..."));
-            return null;
-        });
+        when(kf.toCompletionStage()).thenReturn(CompletableFuture.failedFuture(new RuntimeException("Test error ...")));
         DescribeFeaturesResult dfr = mock(DescribeFeaturesResult.class);
         when(dfr.featureMetadata()).thenReturn(kf);
         when(mockAdminClient.describeFeatures()).thenReturn(dfr);
@@ -239,19 +209,18 @@ public class KRaftMetadataManagerTest {
         // Dummy KafkaStatus to check the values from
         KafkaStatus status = new KafkaStatus();
 
-        Checkpoint checkpoint = context.checkpoint();
-        KRaftMetadataManager.maybeUpdateMetadataVersion(Reconciliation.DUMMY_RECONCILIATION, vertx, DUMMY_IDENTITY, mockAdminClientProvider, "3.5", status)
-                .onComplete(context.failing(s -> {
-                    assertThat(s, instanceOf(RuntimeException.class));
-                    assertThat(s.getMessage(), is("Test error ..."));
+        Exception e = assertThrows(Exception.class, () ->
+                KRaftMetadataManager.maybeUpdateMetadataVersion(Reconciliation.DUMMY_RECONCILIATION, DUMMY_IDENTITY, mockAdminClientProvider, "3.5", status)
+                        .toCompletableFuture()
+                        .join());
 
-                    assertThat(status.getKafkaMetadataVersion(), is(nullValue()));
+        assertThat(e.getCause(), instanceOf(RuntimeException.class));
+        assertThat(e.getCause().getMessage(), is("Test error ..."));
 
-                    verify(mockAdminClient, never()).updateFeatures(any(), any());
-                    verify(mockAdminClient, times(1)).describeFeatures();
+        assertThat(status.getKafkaMetadataVersion(), is(nullValue()));
 
-                    checkpoint.flag();
-                }));
+        verify(mockAdminClient, never()).updateFeatures(any(), any());
+        verify(mockAdminClient, times(1)).describeFeatures();
     }
 }
 
