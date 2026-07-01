@@ -53,6 +53,7 @@ import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -291,7 +292,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
      * @param certificates       List of trusted certificates
      * @return                   Future for tracking the asynchronous result of generating the TLS auth hash
      */
-    private Future<Integer> generateAuthHash(String namespace, KafkaClientAuthentication authentication, String certificates) {
+    private Future<Integer> generateAuthHash(String namespace, KafkaClientAuthentication authentication, Collection<String> certificates) {
         return ReconcilerUtils.authTlsHash(secretOperations, namespace, authentication, certificates);
     }
 
