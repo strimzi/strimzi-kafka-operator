@@ -37,6 +37,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -155,7 +156,7 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
      *
      * @return  Future which completes when the reconciliation is done
      */
-    private Future<String> tlsTrustedCertsSecret(Reconciliation reconciliation, String namespace, KafkaBridgeCluster bridge) {
+    private Future<Collection<String>> tlsTrustedCertsSecret(Reconciliation reconciliation, String namespace, KafkaBridgeCluster bridge) {
         if (bridge.getTls() != null) {
             return ReconcilerUtils.trustedCertificates(reconciliation, secretOperations, bridge.getTls().getTrustedCertificates())
                     .compose(certificates -> {
@@ -164,7 +165,7 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
                                             reconciliation,
                                             namespace,
                                             KafkaBridgeResources.internalTlsTrustedCertsSecretName(bridge.getCluster()),
-                                            bridge.generateTlsTrustedCertsSecret(Map.of("ca.crt", Util.encodeToBase64(certificates)), KafkaBridgeResources.internalTlsTrustedCertsSecretName(bridge.getCluster()))))
+                                            bridge.generateTlsTrustedCertsSecret(Map.of("ca.crt", Util.encodeToBase64(String.join("\n", certificates))), KafkaBridgeResources.internalTlsTrustedCertsSecretName(bridge.getCluster()))))
                                 .map(certificates);
                         } else {
                             return Future.succeededFuture();

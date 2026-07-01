@@ -50,6 +50,7 @@ import java.nio.file.PathMatcher;
 import java.nio.file.Paths;
 import java.security.cert.CertificateException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -454,17 +455,16 @@ public class ReconcilerUtils {
      * @param secretOperations Secret operator
      * @param namespace namespace to get Secrets in
      * @param auth Authentication object to compute hash from
-     * @param certsBundle certificates bundle String to compute hash from.
-     *                    It is all the certs concatenated.
+     * @param certs certificates list to compute hash from.
      * @return Future computing hash from TLS + Auth
      */
-    public static Future<Integer> authTlsHash(SecretOperator secretOperations, String namespace, KafkaClientAuthentication auth, String certsBundle) {
+    public static Future<Integer> authTlsHash(SecretOperator secretOperations, String namespace, KafkaClientAuthentication auth, Collection<String> certs) {
         Future<Integer> tlsFuture;
-        if (certsBundle == null || certsBundle.isBlank()) {
+        if (certs == null || certs.isEmpty()) {
             tlsFuture = Future.succeededFuture(0);
         } else {
             // get all TLS trusted certs, compute hash from them
-            tlsFuture = Future.succeededFuture(certsBundle.hashCode());
+            tlsFuture = Future.succeededFuture(certs.stream().mapToInt(String::hashCode).sum());
         }
 
         if (auth == null) {
@@ -499,7 +499,7 @@ public class ReconcilerUtils {
      *
      * @return  Certificates extracted from the Secrets
      */
-    public static Future<String> trustedCertificates(Reconciliation reconciliation, SecretOperator secretOperations, List<CertSecretSource> certificateSources)   {
+    public static Future<? extends Collection<String>> trustedCertificates(Reconciliation reconciliation, SecretOperator secretOperations, List<CertSecretSource> certificateSources)   {
         if (certificateSources != null && !certificateSources.isEmpty()) {
             return Future.join(certificateSources
                             .stream()
@@ -509,7 +509,7 @@ public class ReconcilerUtils {
                         if (certificates.list().isEmpty()) {
                             return Future.succeededFuture();
                         } else {
-                            return Future.succeededFuture(String.join("\n", certificates.list()));
+                            return Future.succeededFuture(certificates.list());
                         }
                     });
         } else {

@@ -39,6 +39,7 @@ import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -53,6 +54,7 @@ import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_IO_RESTART_CON
 import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_IO_RESTART_CONNECTOR_TASK_PATTERN;
 import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_IO_RESTART_CONNECTOR_TASK_PATTERN_CONNECTOR;
 import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_IO_RESTART_CONNECTOR_TASK_PATTERN_TASK;
+import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 
 /**
@@ -192,8 +194,8 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
      * @return  Future which completes when the reconciliation is done
      */
     @Override
-    protected Future<String> tlsTrustedCertsSecret(Reconciliation reconciliation, String namespace, KafkaConnectCluster mirrorMaker2Cluster) {
-        Map<String, Future<String>> certificatesFutures = new HashMap<>();
+    protected Future<? extends Collection<String>> tlsTrustedCertsSecret(Reconciliation reconciliation, String namespace, KafkaConnectCluster mirrorMaker2Cluster) {
+        Map<String, Future<? extends Collection<String>>> certificatesFutures = new HashMap<>();
 
         if (mirrorMaker2Cluster.getTls() != null && mirrorMaker2Cluster.getTls().getTrustedCertificates() != null) {
             certificatesFutures.put(
@@ -220,16 +222,16 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
                             namespace,
                             KafkaConnectResources.internalTlsTrustedCertsSecretName(mirrorMaker2Cluster.getCluster()),
                             null))
-                    .mapEmpty();
+                    .map(emptyList());
         }
 
         return Future.join(new ArrayList<>(certificatesFutures.values()))
                 .compose(i -> {
                     Map<String, String> secretData = new HashMap<>();
-                    for (Map.Entry<String, Future<String>> entry : certificatesFutures.entrySet()) {
-                        String certificate = entry.getValue().result();
-                        if (certificate != null && !certificate.isEmpty()) {
-                            secretData.put(entry.getKey(), Util.encodeToBase64(certificate));
+                    for (Map.Entry<String, Future<? extends Collection<String>>> entry : certificatesFutures.entrySet()) {
+                        Collection<String> certificates = entry.getValue().result();
+                        if (certificates != null && !certificates.isEmpty()) {
+                            secretData.put(entry.getKey(), Util.encodeToBase64(String.join("\n", certificates)));
                         }
                     }
 
@@ -241,7 +243,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
                                             secretData,
                                             KafkaConnectResources.internalTlsTrustedCertsSecretName(mirrorMaker2Cluster.getCluster())
                                     )))
-                            .map(String.join("\n", secretData.values()));
+                            .map(secretData.values());
                 });
     }
 
@@ -253,15 +255,15 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
      *
      * @return                        Future for tracking the asynchronous result of generating the TLS auth hash
      */
-    private Future<Integer> generateAuthHash(String namespace, KafkaMirrorMaker2Cluster mirrorMaker2Cluster, String certs) {
+    private Future<Integer> generateAuthHash(String namespace, KafkaMirrorMaker2Cluster mirrorMaker2Cluster, Collection<String> certs) {
         Promise<Integer> authHash = Promise.promise();
 
-        int certsHash = certs == null ? 0 : certs.hashCode();
+        int certsHash = certs.stream().mapToInt(String::hashCode).sum();
 
         Future.join(mirrorMaker2Cluster
                         .clusters()
                         .stream()
-                        .map(cluster -> ReconcilerUtils.authTlsHash(secretOperations, namespace, cluster.getAuthentication(), ""))
+                        .map(cluster -> ReconcilerUtils.authTlsHash(secretOperations, namespace, cluster.getAuthentication(), emptyList()))
                         .collect(Collectors.toList())
                 )
                 .onSuccess(hashes -> {

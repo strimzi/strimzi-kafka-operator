@@ -58,6 +58,7 @@ import java.util.concurrent.CompletionStage;
 
 import static io.strimzi.operator.cluster.ResourceUtils.DUMMY_CERT;
 import static java.util.Collections.emptyMap;
+import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -408,7 +409,7 @@ public class ReconcilerUtilsTest {
         when(secretOps.getAsync(eq(namespace), eq("top-secret-pwd"))).thenReturn(CompletableFuture.completedFuture(secret));
         when(secretOps.getAsync(eq(namespace), eq("css-secret"))).thenReturn(CompletableFuture.completedFuture(cssSecret));
 
-        Future<Integer> res = ReconcilerUtils.authTlsHash(secretOps, "ns", kcu, DUMMY_CERT);
+        Future<Integer> res = ReconcilerUtils.authTlsHash(secretOps, "ns", kcu, List.of(DUMMY_CERT));
         res.onComplete(v -> {
             assertThat(v.succeeded(), is(true));
             // we are summing "value" hash four times
@@ -616,7 +617,7 @@ public class ReconcilerUtilsTest {
 
         Checkpoint async = context.checkpoint();
         ReconcilerUtils.trustedCertificates(Reconciliation.DUMMY_RECONCILIATION, secretOps, List.of(cert1, cert2, cert3)).onComplete(context.succeeding(res -> {
-            assertThat(res, is(String.join("\n", List.of(DUMMY_CERT, DUMMY_CERT, DUMMY_CERT))));
+            assertThat(res, hasItems(DUMMY_CERT, DUMMY_CERT, DUMMY_CERT));
             async.flag();
         }));
     }
