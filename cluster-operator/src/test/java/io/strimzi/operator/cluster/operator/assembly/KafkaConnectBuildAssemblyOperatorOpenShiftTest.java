@@ -41,7 +41,6 @@ import io.strimzi.operator.cluster.operator.resource.kubernetes.ConfigMapOperato
 import io.strimzi.operator.cluster.operator.resource.kubernetes.NetworkPolicyOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.PodDisruptionBudgetOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.PodOperator;
-import io.strimzi.operator.cluster.operator.resource.kubernetes.SecretOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.ServiceOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.StrimziPodSetOperator;
 import io.strimzi.operator.common.Annotations;
@@ -50,6 +49,7 @@ import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.concurrent.CrdOperator;
+import io.strimzi.operator.common.operator.resource.concurrent.SecretOperator;
 import io.strimzi.platform.KubernetesVersion;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.Checkpoint;
