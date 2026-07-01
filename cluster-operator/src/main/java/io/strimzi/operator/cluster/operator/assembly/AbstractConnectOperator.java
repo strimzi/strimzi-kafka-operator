@@ -276,38 +276,28 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
      * Generates or reconciles the secret that combines secrets and certificates
      * provided for Kafka Connect truststore if TLS is enabled.
      *
+     * @param reconciliation The reconcilation.
+     * @param namespace Namespace of the Connect cluster.
+     * @param connect KafkaConectCluster object.
      * @return Future which completes when the reconciliation is done.
      */
     protected Future<? extends Collection<String>> tlsTrustedCertsSecret(Reconciliation reconciliation, String namespace, KafkaConnectCluster connect) {
         if (connect.getTls() != null) {
             return ReconcilerUtils.trustedCertificates(reconciliation, secretOperations, connect.getTls().getTrustedCertificates())
-                    .compose(certificates -> tlsTrustedCertsSecret(reconciliation, namespace, connect, certificates));
-        } else {
-            return Future.succeededFuture();
-        }
-    }
-
-    /**
-     * Reconciles the secret that combines secrets and certificates
-     * provided for Kafka Connect truststore if TLS is enabled. Uses
-     * {@code certificates} instead of fetching secrets in {@code connect}.
-     *
-     * @param reconciliation The reconcilation.
-     * @param namespace Namespace of the Connect cluster.
-     * @param connect KafkaConectCluster object.
-     * @param certificates cert Strings to reconcile with the connect cluster secret.
-     * @return Future which completes when the reconciliation is done
-     */
-    protected Future<? extends Collection<String>> tlsTrustedCertsSecret(Reconciliation reconciliation, String namespace, KafkaConnectCluster connect, Collection<String> certificates) {
-        if (certificates != null) {
-            return VertxUtil.toFuture(secretOperations.reconcile(
-                    reconciliation,
-                    namespace,
-                    KafkaConnectResources.internalTlsTrustedCertsSecretName(connect.getCluster()),
-                    connect.generateTlsTrustedCertsSecret(
-                        Map.of(KafkaConnectCluster.KAFKA_CONNECT_CERTIFICATES_KEY, Util.encodeToBase64(String.join("\n", certificates))),
-                        KafkaConnectResources.internalTlsTrustedCertsSecretName(connect.getCluster()))))
-                .map(certificates);
+                    .compose(certificates -> {
+                        if (certificates != null) {
+                            return VertxUtil.toFuture(secretOperations.reconcile(
+                                            reconciliation,
+                                            namespace,
+                                            KafkaConnectResources.internalTlsTrustedCertsSecretName(connect.getCluster()),
+                                            connect.generateTlsTrustedCertsSecret(
+                                                Map.of(KafkaConnectCluster.KAFKA_CONNECT_CERTIFICATES_KEY, Util.encodeToBase64(String.join("\n", certificates))),
+                                                KafkaConnectResources.internalTlsTrustedCertsSecretName(connect.getCluster()))))
+                                    .map(certificates);
+                        } else {
+                            return Future.succeededFuture();
+                        }
+                    });
         } else {
             return Future.succeededFuture();
         }
