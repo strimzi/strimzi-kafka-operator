@@ -32,7 +32,6 @@ import io.strimzi.operator.cluster.operator.resource.kubernetes.NetworkPolicyOpe
 import io.strimzi.operator.cluster.operator.resource.kubernetes.PodDisruptionBudgetOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.RoleBindingOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.RoleOperator;
-import io.strimzi.operator.cluster.operator.resource.kubernetes.SecretOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.ServiceAccountOperator;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.InvalidConfigurationException;
@@ -41,6 +40,7 @@ import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Ca;
 import io.strimzi.operator.common.model.PasswordGenerator;
 import io.strimzi.operator.common.operator.MockCertIssuer;
+import io.strimzi.operator.common.operator.resource.concurrent.SecretOperator;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
