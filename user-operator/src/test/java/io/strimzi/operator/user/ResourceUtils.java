@@ -17,7 +17,7 @@ import io.strimzi.api.kafka.model.user.KafkaUserTlsClientAuthentication;
 import io.strimzi.api.kafka.model.user.acl.AclOperation;
 import io.strimzi.api.kafka.model.user.acl.AclRule;
 import io.strimzi.operator.common.model.Labels;
-import io.strimzi.operator.common.operator.MockCertManager;
+import io.strimzi.operator.common.operator.MockCertIssuer;
 import io.strimzi.operator.user.UserOperatorConfig.UserOperatorConfigBuilder;
 import io.strimzi.operator.user.model.KafkaUserModel;
 import io.strimzi.operator.user.model.acl.SimpleAclRule;
@@ -161,7 +161,7 @@ public class ResourceUtils {
                     .withName(ResourceUtils.CA_CERT_NAME)
                     .withNamespace(namespace)
                 .endMetadata()
-                .addToData("ca.crt", MockCertManager.clientsCaCert())
+                .addToData("ca.crt", MockCertIssuer.clientsCaCert())
                 .build();
     }
 
@@ -171,7 +171,7 @@ public class ResourceUtils {
                     .withName(ResourceUtils.CA_KEY_NAME)
                     .withNamespace(namespace)
                 .endMetadata()
-                .addToData("ca.key", MockCertManager.clientsCaKey())
+                .addToData("ca.key", MockCertIssuer.clientsCaKey())
                 .build();
     }
 
@@ -188,9 +188,9 @@ public class ResourceUtils {
                         .withStrimziKind(KafkaUser.RESOURCE_KIND)
                         .toMap())
                 .endMetadata()
-                .addToData("ca.crt", MockCertManager.clientsCaCert())
-                .addToData("user.key", MockCertManager.clientsCaKey())
-                .addToData("user.crt", MockCertManager.clientsCaCert())
+                .addToData("ca.crt", MockCertIssuer.clientsCaCert())
+                .addToData("user.key", MockCertIssuer.clientsCaKey())
+                .addToData("user.crt", MockCertIssuer.clientsCaCert())
                 .addToData("user.p12", Base64.getEncoder().encodeToString("expected-p12".getBytes()))
                 .addToData("user.password", Base64.getEncoder().encodeToString("expected-password".getBytes()))
                 .build();

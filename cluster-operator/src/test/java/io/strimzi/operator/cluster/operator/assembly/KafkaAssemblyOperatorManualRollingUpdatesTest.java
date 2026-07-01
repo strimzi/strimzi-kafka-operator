@@ -18,7 +18,7 @@ import io.strimzi.api.kafka.model.nodepool.KafkaNodePool;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePoolBuilder;
 import io.strimzi.api.kafka.model.nodepool.ProcessRoles;
 import io.strimzi.api.kafka.model.podset.StrimziPodSet;
-import io.strimzi.certs.CertManager;
+import io.strimzi.certs.CertIssuer;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
@@ -37,7 +37,7 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.ClientsCa;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.PasswordGenerator;
-import io.strimzi.operator.common.operator.MockCertManager;
+import io.strimzi.operator.common.operator.MockCertIssuer;
 import io.strimzi.operator.common.operator.resource.concurrent.CrdOperator;
 import io.strimzi.platform.KubernetesVersion;
 import io.vertx.core.Future;
@@ -69,7 +69,7 @@ import static org.mockito.Mockito.when;
 @ExtendWith(VertxExtension.class)
 public class KafkaAssemblyOperatorManualRollingUpdatesTest {
     private static final KubernetesVersion KUBERNETES_VERSION = KubernetesVersion.MINIMAL_SUPPORTED_VERSION;
-    private static final MockCertManager CERT_MANAGER = new MockCertManager();
+    private static final MockCertIssuer CERT_ISSUER = new MockCertIssuer();
     private static final PasswordGenerator PASSWORD_GENERATOR = new PasswordGenerator(10, "a", "a");
     private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
     private final static String NAMESPACE = "my-namespace";
@@ -184,7 +184,7 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
         MockKafkaAssemblyOperator kao = new MockKafkaAssemblyOperator(
                 vertx,
                 new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
-                CERT_MANAGER,
+                CERT_ISSUER,
                 PASSWORD_GENERATOR,
                 supplier,
                 config,
@@ -253,7 +253,7 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
         MockKafkaAssemblyOperator kao = new MockKafkaAssemblyOperator(
                 vertx,
                 new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
-                CERT_MANAGER,
+                CERT_ISSUER,
                 PASSWORD_GENERATOR,
                 supplier,
                 config,
@@ -325,7 +325,7 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
         MockKafkaAssemblyOperator kao = new MockKafkaAssemblyOperator(
                 vertx,
                 new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
-                CERT_MANAGER,
+                CERT_ISSUER,
                 PASSWORD_GENERATOR,
                 supplier,
                 config,
@@ -398,7 +398,7 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
         MockKafkaAssemblyOperator kao = new MockKafkaAssemblyOperator(
                 vertx,
                 new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
-                CERT_MANAGER,
+                CERT_ISSUER,
                 PASSWORD_GENERATOR,
                 supplier,
                 config,
@@ -435,8 +435,8 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
     static class MockKafkaAssemblyOperator extends KafkaAssemblyOperator  {
         KafkaReconciler mockKafkaReconciler;
 
-        public MockKafkaAssemblyOperator(Vertx vertx, PlatformFeaturesAvailability pfa, CertManager certManager, PasswordGenerator passwordGenerator, ResourceOperatorSupplier supplier, ClusterOperatorConfig config, KafkaReconciler mockKafkaReconciler) {
-            super(vertx, pfa, certManager, passwordGenerator, supplier, config);
+        public MockKafkaAssemblyOperator(Vertx vertx, PlatformFeaturesAvailability pfa, CertIssuer certIssuer, PasswordGenerator passwordGenerator, ResourceOperatorSupplier supplier, ClusterOperatorConfig config, KafkaReconciler mockKafkaReconciler) {
+            super(vertx, pfa, certIssuer, passwordGenerator, supplier, config);
             this.mockKafkaReconciler = mockKafkaReconciler;
         }
 

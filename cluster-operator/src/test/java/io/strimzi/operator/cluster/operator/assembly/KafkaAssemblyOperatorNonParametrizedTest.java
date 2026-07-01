@@ -12,7 +12,7 @@ import io.strimzi.api.kafka.model.kafka.KafkaList;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
-import io.strimzi.certs.OpenSslCertManager;
+import io.strimzi.certs.OpenSslCertIssuer;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
@@ -52,7 +52,7 @@ import static org.mockito.Mockito.when;
 public class KafkaAssemblyOperatorNonParametrizedTest {
     private static final String NAMESPACE = "test";
     private static final String NAME = "my-kafka";
-    private static final OpenSslCertManager CERT_MANAGER = new OpenSslCertManager();
+    private static final OpenSslCertIssuer CERT_ISSUER = new OpenSslCertIssuer();
     @SuppressWarnings("SpellCheckingInspection")
     private static final PasswordGenerator PASSWORD_GENERATOR = new PasswordGenerator(12,
             "abcdefghijklmnopqrstuvwxyz" +
@@ -83,7 +83,7 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
         ArgumentCaptor<ClusterRoleBinding> desiredCrb = ArgumentCaptor.forClass(ClusterRoleBinding.class);
         when(mockCrbOps.reconcile(any(), eq(KafkaResources.initContainerClusterRoleBindingName(NAME, NAMESPACE)), desiredCrb.capture())).thenReturn(CompletableFuture.completedFuture(null));
 
-        KafkaAssemblyOperator op = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, KubernetesVersion.MINIMAL_SUPPORTED_VERSION), CERT_MANAGER, PASSWORD_GENERATOR,
+        KafkaAssemblyOperator op = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, KubernetesVersion.MINIMAL_SUPPORTED_VERSION), CERT_ISSUER, PASSWORD_GENERATOR,
                 supplier, new ClusterOperatorConfig.ClusterOperatorConfigBuilder(ResourceUtils.dummyClusterOperatorConfig(), KafkaVersionTestUtils.getKafkaVersionLookup()).with(ClusterOperatorConfig.OPERATION_TIMEOUT_MS.key(), "1").build());
         Reconciliation reconciliation = new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, NAME);
 
@@ -129,7 +129,7 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
                 .with(ClusterOperatorConfig.OPERATION_TIMEOUT_MS.key(), "120000")
                 .with(ClusterOperatorConfig.CUSTOM_RESOURCE_SELECTOR.key(), Map.of("selectorLabel", "value").entrySet().stream().map(e -> e.getKey() + "=" + e.getValue()).collect(Collectors.joining(","))).build();
 
-        KafkaAssemblyOperator op = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, KubernetesVersion.MINIMAL_SUPPORTED_VERSION), CERT_MANAGER, PASSWORD_GENERATOR,
+        KafkaAssemblyOperator op = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, KubernetesVersion.MINIMAL_SUPPORTED_VERSION), CERT_ISSUER, PASSWORD_GENERATOR,
                 supplier, config);
         Reconciliation reconciliation = new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, NAME);
 

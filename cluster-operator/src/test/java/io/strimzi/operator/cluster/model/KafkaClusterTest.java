@@ -72,7 +72,7 @@ import io.strimzi.api.kafka.model.nodepool.KafkaNodePoolBuilder;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePoolStatus;
 import io.strimzi.api.kafka.model.nodepool.ProcessRoles;
 import io.strimzi.api.kafka.model.podset.StrimziPodSet;
-import io.strimzi.certs.OpenSslCertManager;
+import io.strimzi.certs.OpenSslCertIssuer;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.TestUtils;
@@ -255,7 +255,7 @@ public class KafkaClusterTest {
     }
 
     private List<Secret> generateBrokerSecrets(Set<String> externalBootstrapAddress, Map<Integer, Set<String>> externalAddresses) {
-        ClusterCa clusterCa = new ClusterCa(Reconciliation.DUMMY_RECONCILIATION, new OpenSslCertManager(), new PasswordGenerator(10, "a", "a"), null, null);
+        ClusterCa clusterCa = new ClusterCa(Reconciliation.DUMMY_RECONCILIATION, new OpenSslCertIssuer(), new PasswordGenerator(10, "a", "a"), null, null);
         clusterCa.createRenewOrReplace(true, false, false);
 
         return KC.generateCertificatesSecrets(clusterCa, List.of(), Map.of(), externalBootstrapAddress, externalAddresses, true);
@@ -1475,7 +1475,7 @@ public class KafkaClusterTest {
 
     @Test
     public void testGenerateBrokerSecretWithCustomCerts() {
-        ClusterCa clusterCa = new ClusterCa(Reconciliation.DUMMY_RECONCILIATION, new OpenSslCertManager(), new PasswordGenerator(10, "a", "a"), null, null);
+        ClusterCa clusterCa = new ClusterCa(Reconciliation.DUMMY_RECONCILIATION, new OpenSslCertIssuer(), new PasswordGenerator(10, "a", "a"), null, null);
         clusterCa.createRenewOrReplace(true, false, false);
 
         List<Secret> secrets = KC.generateCertificatesSecrets(clusterCa, List.of(), Map.of("listener1-9999.crt", "cert", "listener1-9999.key", "key"), null, Map.of(), true);

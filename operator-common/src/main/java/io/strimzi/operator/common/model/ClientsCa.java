@@ -5,7 +5,7 @@
 package io.strimzi.operator.common.model;
 
 import io.fabric8.kubernetes.api.model.Secret;
-import io.strimzi.certs.CertManager;
+import io.strimzi.certs.CertIssuer;
 import io.strimzi.operator.common.Reconciliation;
 
 /**
@@ -16,15 +16,15 @@ public class ClientsCa extends Ca {
      * Creates a ClientsCA instance
      *
      * @param reconciliation        Reconciliation marker
-     * @param certManager           Certificate manager instance
+     * @param certIssuer            Certificate issuer instance
      * @param passwordGenerator     Password generator instance
      * @param clientsCaCert         Kubernetes Secret where the Clients CA public key will be stored
      * @param clientsCaKey          Kubernetes Secret where the Clients CA private key will be stored
      * @param caConfig              Certificate Authority configuration
      */
-    public ClientsCa(Reconciliation reconciliation, CertManager certManager, PasswordGenerator passwordGenerator,
+    public ClientsCa(Reconciliation reconciliation, CertIssuer certIssuer, PasswordGenerator passwordGenerator,
                      Secret clientsCaCert, Secret clientsCaKey, CaConfig caConfig) {
-        super(reconciliation, certManager, passwordGenerator,
+        super(reconciliation, certIssuer, passwordGenerator,
                 "clients-ca",
                 clientsCaCert,
                 clientsCaKey,

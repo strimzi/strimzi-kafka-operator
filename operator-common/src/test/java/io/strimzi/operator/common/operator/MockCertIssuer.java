@@ -4,7 +4,7 @@
  */
 package io.strimzi.operator.common.operator;
 
-import io.strimzi.certs.CertManager;
+import io.strimzi.certs.CertIssuer;
 import io.strimzi.certs.Subject;
 
 import java.io.ByteArrayOutputStream;
@@ -21,7 +21,7 @@ import java.time.ZonedDateTime;
 import java.util.Base64;
 import java.util.List;
 
-public class MockCertManager implements CertManager {
+public class MockCertIssuer implements CertIssuer {
 
     private static final String CLUSTER_KEY = """
             -----BEGIN PRIVATE KEY-----
@@ -265,9 +265,9 @@ public class MockCertManager implements CertManager {
 
 
     static {
-        InputStream is = MockCertManager.class.getClassLoader().getResourceAsStream("CLUSTER_CERT.str");
+        InputStream is = MockCertIssuer.class.getClassLoader().getResourceAsStream("CLUSTER_CERT.str");
         CLUSTER_CERT_STORE = loadResource(is);
-        is = MockCertManager.class.getClassLoader().getResourceAsStream("CLIENTS_CERT.str");
+        is = MockCertIssuer.class.getClassLoader().getResourceAsStream("CLIENTS_CERT.str");
         CLIENTS_CERT_STORE = loadResource(is);
     }
 

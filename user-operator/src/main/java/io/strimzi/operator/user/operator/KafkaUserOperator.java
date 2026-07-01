@@ -11,7 +11,7 @@ import io.strimzi.api.kafka.model.user.KafkaUser;
 import io.strimzi.api.kafka.model.user.KafkaUserList;
 import io.strimzi.api.kafka.model.user.KafkaUserQuotas;
 import io.strimzi.api.kafka.model.user.KafkaUserStatus;
-import io.strimzi.certs.CertManager;
+import io.strimzi.certs.CertIssuer;
 import io.strimzi.operator.common.InvalidConfigurationException;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationException;
@@ -45,7 +45,7 @@ import java.util.stream.Collectors;
 public class KafkaUserOperator {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(KafkaUserOperator.class.getName());
 
-    private final CertManager certManager;
+    private final CertIssuer certIssuer;
     private final AdminApiOperator<Set<SimpleAclRule>, Set<String>> aclOperator;
     private final AdminApiOperator<String, Set<String>> scramCredentialsOperator;
     private final AdminApiOperator<KafkaUserQuotas, Set<String>> quotasOperator;
@@ -59,7 +59,7 @@ public class KafkaUserOperator {
      * Creates the instance of KafkaUserOperator
      *
      * @param config                   User operator configuration
-     * @param certManager              For managing certificates.
+     * @param certIssuer               For issuing certificates.
      * @param secretOperator           For operating on secrets
      * @param kafkaUserCrdOperator     For operating on KafkaUser resources
      * @param scramCredentialsOperator For operating on SCRAM SHA credentials.
@@ -68,14 +68,14 @@ public class KafkaUserOperator {
      */
     public KafkaUserOperator(
             UserOperatorConfig config,
-            CertManager certManager,
+            CertIssuer certIssuer,
             SecretOperator secretOperator,
             CrdOperator<KubernetesClient, KafkaUser, KafkaUserList> kafkaUserCrdOperator,
             AdminApiOperator<String, Set<String>> scramCredentialsOperator,
             AdminApiOperator<KafkaUserQuotas, Set<String>> quotasOperator,
             AdminApiOperator<Set<SimpleAclRule>, Set<String>> aclOperator
     ) {
-        this.certManager = certManager;
+        this.certIssuer = certIssuer;
         this.scramCredentialsOperator = scramCredentialsOperator;
         this.quotasOperator = quotasOperator;
         this.aclOperator = aclOperator;
@@ -330,7 +330,7 @@ public class KafkaUserOperator {
         return CompletableFuture.allOf(caCertPromise, caKeyPromise)
                 .thenRun(() -> user.maybeGenerateCertificates(
                         reconciliation,
-                        certManager,
+                        certIssuer,
                         passwordGenerator,
                         caCertPromise.join(),
                         caKeyPromise.join(),

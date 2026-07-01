@@ -140,7 +140,7 @@
         <module>cluster-operator</module>
         <module>user-operator</module>
         <module>kafka-init</module>
-        <module>certificate-manager</module>
+        <module>certificate-issuer</module>
         <module>systemtest</module>
     </modules>
 
@@ -198,7 +198,7 @@
             </dependency>
             <dependency>
                 <groupId>io.strimzi</groupId>
-                <artifactId>certificate-manager</artifactId>
+                <artifactId>certificate-issuer</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

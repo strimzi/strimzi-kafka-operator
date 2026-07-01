@@ -7,7 +7,7 @@ package io.strimzi.operator.common.model;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.strimzi.certs.CertAndKey;
-import io.strimzi.certs.CertManager;
+import io.strimzi.certs.CertIssuer;
 import io.strimzi.certs.Subject;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
@@ -292,7 +292,7 @@ public abstract class Ca {
     }
 
     protected final String commonName;
-    protected final CertManager certManager;
+    protected final CertIssuer certIssuer;
     protected int caCertGeneration;
     protected int caKeyGeneration;
     protected Map<String, String> caCertData;
@@ -305,7 +305,7 @@ public abstract class Ca {
      * Constructs the CA object
      *
      * @param reconciliation        Reconciliation marker
-     * @param certManager           Certificate manager instance
+     * @param certIssuer            Certificate issuer instance
      * @param passwordGenerator     Password generator instance
      * @param commonName            Common name which should be used by this CA
      * @param caCertSecret          Kubernetes Secret where the CA public key is stored
@@ -313,7 +313,7 @@ public abstract class Ca {
      * @param caConfig              Certificate Authority configuration
      */
     public Ca(Reconciliation reconciliation,
-              CertManager certManager,
+              CertIssuer certIssuer,
               PasswordGenerator passwordGenerator,
               String commonName,
               Secret caCertSecret,
@@ -330,7 +330,7 @@ public abstract class Ca {
         this.caCertData = initCaCertData(isGenerateCa, caCertSecret);
         this.caKeyGeneration = initCaKeyGeneration(caKeySecret);
         this.caKeyData = initCaKeyData(isGenerateCa, caKeySecret);
-        this.certManager = certManager;
+        this.certIssuer = certIssuer;
         this.passwordGenerator = passwordGenerator;
         this.caConfig = caConfig;
         this.renewalType = RenewalType.NOOP;
@@ -431,7 +431,7 @@ public abstract class Ca {
                     keyStoreFile = Files.createTempFile("tls", "p12").toFile();
 
                     String keyStorePassword = passwordGenerator.generate();
-                    certManager.addKeyAndCertToKeyStore(keyFile, certFile, alias, keyStoreFile, keyStorePassword);
+                    certIssuer.addKeyAndCertToKeyStore(keyFile, certFile, alias, keyStoreFile, keyStorePassword);
 
                     return new CertAndKey(
                             Files.readAllBytes(keyFile.toPath()),
@@ -463,8 +463,8 @@ public abstract class Ca {
 
         try {
             byte[] caCertBytes = currentCaCertBytes();
-            certManager.generateCsr(keyFile, csrFile, subject);
-            certManager.generateCert(csrFile, currentCaKey(), caCertBytes,
+            certIssuer.generateCsr(keyFile, csrFile, subject);
+            certIssuer.generateCert(csrFile, currentCaKey(), caCertBytes,
                     certFile, subject, caConfig.getValidityDays());
 
             byte[] certChain;
@@ -479,7 +479,7 @@ public abstract class Ca {
 
             if (caConfig.isGeneratePkcs12Stores()) {
                 String keyStorePassword = passwordGenerator.generate();
-                certManager.addKeyAndCertToKeyStore(keyFile, certFile, subject.commonName(), keyStoreFile, keyStorePassword);
+                certIssuer.addKeyAndCertToKeyStore(keyFile, certFile, subject.commonName(), keyStoreFile, keyStorePassword);
 
                 return new CertAndKey(
                         Files.readAllBytes(keyFile.toPath()),
@@ -974,7 +974,7 @@ public abstract class Ca {
                     Files.write(trustStoreFile.toPath(), Util.decodeBytesFromBase64(newData.get(CA_STORE)));
                     try {
                         String trustStorePassword = Util.decodeFromBase64(newData.get(CA_STORE_PASSWORD));
-                        certManager.deleteFromTrustStore(removed, trustStoreFile, trustStorePassword);
+                        certIssuer.deleteFromTrustStore(removed, trustStoreFile, trustStorePassword);
                         newData.put(CA_STORE, Base64.getEncoder().encodeToString(Files.readAllBytes(trustStoreFile.toPath())));
                     } finally {
                         delete(reconciliation, trustStoreFile);
@@ -1064,7 +1064,7 @@ public abstract class Ca {
                     String trustStorePassword = certData.containsKey(CA_STORE_PASSWORD) ?
                             Util.decodeFromBase64(certData.get(CA_STORE_PASSWORD)) :
                             passwordGenerator.generate();
-                    certManager.addCertToTrustStore(certFile, alias, trustStoreFile, trustStorePassword);
+                    certIssuer.addCertToTrustStore(certFile, alias, trustStoreFile, trustStorePassword);
                     certData.put(CA_STORE, Base64.getEncoder().encodeToString(Files.readAllBytes(trustStoreFile.toPath())));
                     certData.put(CA_STORE_PASSWORD, Base64.getEncoder().encodeToString(trustStorePassword.getBytes(StandardCharsets.US_ASCII)));
                 } finally {
@@ -1087,7 +1087,7 @@ public abstract class Ca {
             File certFile = Files.createTempFile("tls", subject.commonName() + "-cert").toFile();
 
             try {
-                certManager.generateSelfSignedCert(keyFile, certFile, subject, caConfig.getValidityDays());
+                certIssuer.generateSelfSignedCert(keyFile, certFile, subject, caConfig.getValidityDays());
                 CertAndKey ca;
 
                 if (caConfig.isGeneratePkcs12Stores()) {
@@ -1101,7 +1101,7 @@ public abstract class Ca {
                         trustStorePassword = passwordGenerator.generate();
                     }
                     try {
-                        certManager.addCertToTrustStore(certFile, CA_CRT, trustStoreFile, trustStorePassword);
+                        certIssuer.addCertToTrustStore(certFile, CA_CRT, trustStoreFile, trustStorePassword);
                         ca = new CertAndKey(
                                 Files.readAllBytes(keyFile.toPath()),
                                 Files.readAllBytes(certFile.toPath()),
@@ -1144,14 +1144,14 @@ public abstract class Ca {
             File certFile = Files.createTempFile("tls", subject.commonName() + "-cert").toFile();
 
             try {
-                certManager.renewSelfSignedCert(keyFile, certFile, subject, caConfig.getValidityDays());
+                certIssuer.renewSelfSignedCert(keyFile, certFile, subject, caConfig.getValidityDays());
                 CertAndKey ca;
 
                 if (caConfig.isGeneratePkcs12Stores()) {
                     File trustStoreFile = Files.createTempFile("tls", subject.commonName() + "-truststore").toFile();
                     try {
                         String trustStorePassword = passwordGenerator.generate();
-                        certManager.addCertToTrustStore(certFile, CA_CRT, trustStoreFile, trustStorePassword);
+                        certIssuer.addCertToTrustStore(certFile, CA_CRT, trustStoreFile, trustStorePassword);
                         ca = new CertAndKey(
                                 bytes,
                                 Files.readAllBytes(certFile.toPath()),

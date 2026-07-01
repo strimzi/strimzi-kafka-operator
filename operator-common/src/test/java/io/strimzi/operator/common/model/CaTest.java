@@ -8,8 +8,8 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.strimzi.api.kafka.model.common.CertificateAuthority;
 import io.strimzi.api.kafka.model.common.CertificateAuthorityBuilder;
-import io.strimzi.certs.CertManager;
-import io.strimzi.certs.OpenSslCertManager;
+import io.strimzi.certs.CertIssuer;
+import io.strimzi.certs.OpenSslCertIssuer;
 import io.strimzi.certs.Subject;
 import io.strimzi.operator.common.Reconciliation;
 import org.junit.jupiter.api.BeforeEach;
@@ -52,13 +52,13 @@ class CaTest {
          * Constructs the CA object
          *
          * @param reconciliation    Reconciliation marker
-         * @param certManager       Certificate manager instance
+         * @param certIssuer        Certificate issuer instance
          * @param passwordGenerator Password generator instance
          * @param caCertSecret      Kubernetes Secret where the CA public key will be stored
          * @param caKeySecret       Kubernetes Secret where the CA private key will be stored
          */
-        public MockCa(Reconciliation reconciliation, CertManager certManager, PasswordGenerator passwordGenerator, Secret caCertSecret, Secret caKeySecret, boolean generateCa) {
-            super(reconciliation, certManager, passwordGenerator, "mock", caCertSecret, caKeySecret, new CaConfig(new CertificateAuthorityBuilder().withGenerateCertificateAuthority(generateCa).build(), true));
+        public MockCa(Reconciliation reconciliation, CertIssuer certIssuer, PasswordGenerator passwordGenerator, Secret caCertSecret, Secret caKeySecret, boolean generateCa) {
+            super(reconciliation, certIssuer, passwordGenerator, "mock", caCertSecret, caKeySecret, new CaConfig(new CertificateAuthorityBuilder().withGenerateCertificateAuthority(generateCa).build(), true));
         }
 
         @Override
@@ -80,7 +80,7 @@ class CaTest {
     public void setup() {
         now = Clock.fixed(new Date().toInstant(), Clock.systemUTC().getZone());
         oneYear = Duration.ofDays(CertificateAuthority.DEFAULT_CERTS_VALIDITY_DAYS);
-        ca = new MockCa(Reconciliation.DUMMY_RECONCILIATION, new OpenSslCertManager(now), new PasswordGenerator(10, "a", "a"), null, null, true);
+        ca = new MockCa(Reconciliation.DUMMY_RECONCILIATION, new OpenSslCertIssuer(now), new PasswordGenerator(10, "a", "a"), null, null, true);
     }
 
     @Test
@@ -155,7 +155,7 @@ class CaTest {
     @Test
     @DisplayName("When certIsTrusted is called it correctly identifies whether the end entity certificate is issued by the CA cert")
     public void testCertIsTrusted() throws IOException, CertificateException {
-        OpenSslCertManager ssl = new OpenSslCertManager();
+        OpenSslCertIssuer ssl = new OpenSslCertIssuer();
         CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
 
         File rootKey = createTempFile("key-", ".key");
@@ -198,7 +198,7 @@ class CaTest {
     @Test
     @DisplayName("When certIsTrusted is called it correctly identifies whether the end entity certificate is valid against a chain with intermediate certificates")
     public void testCertChainWithIntermediateIsTrusted() throws IOException, CertificateException {
-        OpenSslCertManager ssl = new OpenSslCertManager();
+        OpenSslCertIssuer ssl = new OpenSslCertIssuer();
         CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
 
         File rootKey = createTempFile("key-", ".key");
@@ -268,14 +268,14 @@ class CaTest {
                 .endMetadata()
                 .withData(Map.of("ca.key", "ca-key"))
                 .build();
-        Exception exception = assertThrows(RuntimeException.class, () -> new MockCa(Reconciliation.DUMMY_RECONCILIATION, new OpenSslCertManager(now), new PasswordGenerator(10, "a", "a"), certSecret, keySecret, false));
+        Exception exception = assertThrows(RuntimeException.class, () -> new MockCa(Reconciliation.DUMMY_RECONCILIATION, new OpenSslCertIssuer(now), new PasswordGenerator(10, "a", "a"), certSecret, keySecret, false));
         assertEquals("Failed to validate User supplied Mock CA cert chain in ca.crt", exception.getMessage());
     }
 
     @Test
     @DisplayName("When the CA data contains a single cert then validateUserCaCertChain does not throw an exception")
     public void testValidateUserCaCertChainWhenSingleCert() throws IOException {
-        OpenSslCertManager ssl = new OpenSslCertManager();
+        OpenSslCertIssuer ssl = new OpenSslCertIssuer();
 
         File rootKey = createTempFile("key-", ".key");
         File rootCert = createTempFile("crt-", ".crt");
@@ -303,13 +303,13 @@ class CaTest {
                     .build();
         }
 
-        assertDoesNotThrow(() -> new MockCa(Reconciliation.DUMMY_RECONCILIATION, new OpenSslCertManager(now), new PasswordGenerator(10, "a", "a"), certSecret, keySecret, false));
+        assertDoesNotThrow(() -> new MockCa(Reconciliation.DUMMY_RECONCILIATION, new OpenSslCertIssuer(now), new PasswordGenerator(10, "a", "a"), certSecret, keySecret, false));
     }
 
     @Test
     @DisplayName("When the CA data contains a chain then validateUserCaCertChain throws an exception when it is invalid")
     public void testValidateUserCaCertChain() throws IOException {
-        OpenSslCertManager ssl = new OpenSslCertManager();
+        OpenSslCertIssuer ssl = new OpenSslCertIssuer();
 
         File rootKey = createTempFile("key-", ".key");
         File rootCert = createTempFile("crt-", ".crt");
@@ -370,14 +370,14 @@ class CaTest {
                 .withData(Map.of("ca.crt", validCombinedPem,
                         "ca-2026-02-01T09-00-00.crt", validCombinedPem))
                 .build();
-        assertDoesNotThrow(() -> new MockCa(Reconciliation.DUMMY_RECONCILIATION, new OpenSslCertManager(now), new PasswordGenerator(10, "a", "a"), validCertSecret, keySecret, false));
+        assertDoesNotThrow(() -> new MockCa(Reconciliation.DUMMY_RECONCILIATION, new OpenSslCertIssuer(now), new PasswordGenerator(10, "a", "a"), validCertSecret, keySecret, false));
 
         Secret invalidCertSecret = new SecretBuilder()
                 .withNewMetadata()
                 .endMetadata()
                 .withData(Map.of("ca.crt", invalidCombinedPem))
                 .build();
-        Exception exception = assertThrows(RuntimeException.class, () -> new MockCa(Reconciliation.DUMMY_RECONCILIATION, new OpenSslCertManager(now), new PasswordGenerator(10, "a", "a"), invalidCertSecret, keySecret, false));
+        Exception exception = assertThrows(RuntimeException.class, () -> new MockCa(Reconciliation.DUMMY_RECONCILIATION, new OpenSslCertIssuer(now), new PasswordGenerator(10, "a", "a"), invalidCertSecret, keySecret, false));
         assertEquals("User supplied Mock CA cert chain ca.crt is not valid. Certificates must be provided in the correct order.", exception.getMessage());
 
         Secret partiallyValidCertSecret = new SecretBuilder()
@@ -386,7 +386,7 @@ class CaTest {
                 .withData(Map.of("ca.crt", validCombinedPem,
                         "ca-2026-02-01T09-00-00.crt", invalidCombinedPem))
                 .build();
-        Exception exception1 = assertThrows(RuntimeException.class, () -> new MockCa(Reconciliation.DUMMY_RECONCILIATION, new OpenSslCertManager(now), new PasswordGenerator(10, "a", "a"), partiallyValidCertSecret, keySecret, false));
+        Exception exception1 = assertThrows(RuntimeException.class, () -> new MockCa(Reconciliation.DUMMY_RECONCILIATION, new OpenSslCertIssuer(now), new PasswordGenerator(10, "a", "a"), partiallyValidCertSecret, keySecret, false));
         assertEquals("User supplied Mock CA cert chain ca-2026-02-01T09-00-00.crt is not valid. Certificates must be provided in the correct order.", exception1.getMessage());
     }
 

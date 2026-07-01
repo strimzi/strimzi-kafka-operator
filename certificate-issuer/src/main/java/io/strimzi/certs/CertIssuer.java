@@ -14,9 +14,9 @@ import java.time.ZonedDateTime;
 import java.util.List;
 
 /**
- * Manages the certificates
+ * Issues the certificates
  */
-public interface CertManager {
+public interface CertIssuer {
     /**
      * Generate a self-signed certificate
      *

@@ -15,7 +15,7 @@ import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlResources;
 import io.strimzi.api.kafka.model.kafka.exporter.KafkaExporterResources;
 import io.strimzi.api.kafka.model.podset.StrimziPodSet;
 import io.strimzi.certs.CertAndKey;
-import io.strimzi.certs.CertManager;
+import io.strimzi.certs.CertIssuer;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.model.CertUtils;
@@ -81,7 +81,7 @@ public class CaReconciler {
     /* test */ final PodOperator podOperator;
     private final AdminClientProvider adminClientProvider;
     private final KafkaAgentClientProvider kafkaAgentClientProvider;
-    private final CertManager certManager;
+    private final CertIssuer certIssuer;
     private final PasswordGenerator passwordGenerator;
     private final KubernetesRestartEventPublisher eventPublisher;
 
@@ -112,7 +112,7 @@ public class CaReconciler {
      * @param kafkaCr           The Kafka custom resource
      * @param config            Cluster Operator Configuration
      * @param supplier          Supplier with Kubernetes Resource Operators
-     * @param certManager       Certificate Manager for managing certificates
+     * @param certIssuer        Certificate Issuer for issuing certificates
      * @param passwordGenerator Password generator for generating passwords
      */
     public CaReconciler(
@@ -120,7 +120,7 @@ public class CaReconciler {
             Kafka kafkaCr,
             ClusterOperatorConfig config,
             ResourceOperatorSupplier supplier,
-            CertManager certManager,
+            CertIssuer certIssuer,
             PasswordGenerator passwordGenerator
     ) {
         this.reconciliation = reconciliation;
@@ -133,7 +133,7 @@ public class CaReconciler {
 
         this.adminClientProvider = supplier.adminClientProvider;
         this.kafkaAgentClientProvider = supplier.kafkaAgentClientProvider;
-        this.certManager = certManager;
+        this.certIssuer = certIssuer;
         this.passwordGenerator = passwordGenerator;
 
         this.eventPublisher = supplier.restartEventsPublisher;
@@ -251,12 +251,12 @@ public class CaReconciler {
                         }
                     }
 
-                    clusterCa = new ClusterCa(reconciliation, certManager, passwordGenerator,
+                    clusterCa = new ClusterCa(reconciliation, certIssuer, passwordGenerator,
                             existingClusterCaCertSecret,
                             existingClusterCaKeySecret,
                             clusterCaConfig);
 
-                    clientsCa = new ClientsCa(reconciliation, certManager, passwordGenerator,
+                    clientsCa = new ClientsCa(reconciliation, certIssuer, passwordGenerator,
                             existingClientsCaCertSecret,
                             existingClientsCaKeySecret,
                             clientsCaConfig

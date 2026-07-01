@@ -50,13 +50,13 @@ import java.util.Objects;
 import java.util.stream.Stream;
 
 /**
- * An OpenSSL based certificate manager.
+ * An OpenSSL based certificate issuer.
  * @see "Chapter 11 of 'Bulletproof SSL and TLS' by Ivan Ristic."
  * @see "The man page for <code>config(5)</code>."
  * @see "The man page for <code>openssl-ca(1)</code>."
  * @see "The man page for <code>openssl-req(1)</code>."
  */
-public class OpenSslCertManager implements CertManager {
+public class OpenSslCertIssuer implements CertIssuer {
     /**
      * Formatter for the timestamp
      */
@@ -74,7 +74,7 @@ public class OpenSslCertManager implements CertManager {
      */
     public static final int MAXIMUM_CN_LENGTH = 64;
 
-    private static final Logger LOGGER = LogManager.getLogger(OpenSslCertManager.class);
+    private static final Logger LOGGER = LogManager.getLogger(OpenSslCertIssuer.class);
     private final Clock clock;
 
     private static final SecureRandom RANDOM = new SecureRandom();
@@ -82,7 +82,7 @@ public class OpenSslCertManager implements CertManager {
     /**
      * Constructs the OpenSslCertManager with the system time
      */
-    public OpenSslCertManager() {
+    public OpenSslCertIssuer() {
         this(Clock.systemUTC());
     }
 
@@ -91,7 +91,7 @@ public class OpenSslCertManager implements CertManager {
      *
      * @param clock     Clock / Time which should be used by the manager
      */
-    public OpenSslCertManager(Clock clock) {
+    public OpenSslCertIssuer(Clock clock) {
         this.clock = clock;
     }
 
@@ -578,7 +578,7 @@ public class OpenSslCertManager implements CertManager {
      * Helper for building arg lists and environments.
      * The environment is used so that the config file can be parameterised for things like basic constraints.
      * But it's still necessary to use dynamically generated configs for specifying SANs
-     * (see {@link OpenSslCertManager#buildConfigFile(Subject, boolean)}).
+     * (see {@link OpenSslCertIssuer#buildConfigFile(Subject, boolean)}).
      */
     private static class OpensslArgs {
         ProcessBuilder pb = new ProcessBuilder();

@@ -18,8 +18,8 @@ import io.strimzi.api.kafka.model.user.KafkaUserTlsClientAuthentication;
 import io.strimzi.api.kafka.model.user.KafkaUserTlsExternalClientAuthentication;
 import io.strimzi.api.kafka.model.user.acl.AclRule;
 import io.strimzi.certs.CertAndKey;
-import io.strimzi.certs.CertManager;
-import io.strimzi.certs.OpenSslCertManager;
+import io.strimzi.certs.CertIssuer;
+import io.strimzi.certs.OpenSslCertIssuer;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
@@ -157,7 +157,7 @@ public class KafkaUserModel {
      */
     private static void validateTlsUsername(KafkaUser user)  {
         if (user.getSpec().getAuthentication() instanceof KafkaUserTlsClientAuthentication) {
-            if (user.getMetadata().getName().length() > OpenSslCertManager.MAXIMUM_CN_LENGTH)    {
+            if (user.getMetadata().getName().length() > OpenSslCertIssuer.MAXIMUM_CN_LENGTH)    {
                 throw new InvalidResourceException("Users with TLS client authentication can have a username (name of the KafkaUser custom resource) only up to 64 characters long.");
             }
         }
@@ -216,7 +216,7 @@ public class KafkaUserModel {
      * Manage certificates generation based on those already present in the Secrets
      *
      * @param reconciliation        The reconciliation
-     * @param certManager           CertManager instance for handling certificates creation
+     * @param certIssuer            CertIssuer instance for handling certificates creation
      * @param passwordGenerator     PasswordGenerator instance for generating passwords
      * @param clientsCaCertSecret   The clients CA certificate Secret.
      * @param clientsCaKeySecret    The clients CA key Secret.
@@ -229,7 +229,7 @@ public class KafkaUserModel {
      * @param generatePkcs12Stores  Flag indicating whether PKCS12 keystores should be generated for the user certificates
      */
     @SuppressWarnings("checkstyle:BooleanExpressionComplexity")
-    public void maybeGenerateCertificates(Reconciliation reconciliation, CertManager certManager, PasswordGenerator passwordGenerator,
+    public void maybeGenerateCertificates(Reconciliation reconciliation, CertIssuer certIssuer, PasswordGenerator passwordGenerator,
                                           Secret clientsCaCertSecret, Secret clientsCaKeySecret, Secret userSecret, int caValidityDays,
                                           int caRenewalDays, List<String> maintenanceWindows, Clock clock, boolean generatePkcs12Stores) {
         // in case that validityDays and renewalDays are configured inside the authentication part of KafkaUser,
@@ -243,7 +243,7 @@ public class KafkaUserModel {
 
         ClientsCa clientsCa = new ClientsCa(
                 reconciliation,
-                certManager,
+                certIssuer,
                 passwordGenerator,
                 clientsCaCertSecret,
                 clientsCaKeySecret,
