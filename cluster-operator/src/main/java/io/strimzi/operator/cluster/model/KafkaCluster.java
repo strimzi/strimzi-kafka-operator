@@ -117,8 +117,42 @@ import static java.util.Collections.singletonMap;
 @SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "checkstyle:ClassFanOutComplexity"})
 public class KafkaCluster extends AbstractModel implements SupportsMetrics, SupportsLogging, SupportsJmx {
     /**
-     * Default Strimzi Metrics Reporter allow list.
+     * Default Strimzi Metrics Reporter allow list shared by broker and controller nodes.
      * If modifying this list, make sure example dashboards are compatible with the regexes.
+     */
+    private static final List<String> DEFAULT_SHARED_METRICS_ALLOW_LIST = List.of(
+            "kafka_network_requestmetrics.*",
+            "kafka_network_socketserver_networkprocessoravgidlepercent",
+            "kafka_server_app_info.*",
+            "kafka_server_kafkarequesthandlerpool_requesthandleravgidlepercent",
+            "kafka_server_kafkaserver_clusterid",
+            "kafka_server_kafkaserver_linux.*",
+            "kafka_server_request_queue_size",
+            "kafka_server_socket_server.*"
+    );
+
+    /**
+     * Default Strimzi Metrics Reporter allow list used by broker nodes.
+     */
+    private static final List<String> DEFAULT_BROKER_METRICS_ALLOW_LIST = metricsAllowList(DEFAULT_SHARED_METRICS_ALLOW_LIST, List.of(
+            "kafka_cluster_partition.*",
+            "kafka_log_log_size",
+            "kafka_server_brokertopicmetrics.*",
+            "kafka_server_kafkaserver_brokerstate",
+            "kafka_server_replicamanager.*"
+    ));
+
+    /**
+     * Default Strimzi Metrics Reporter allow list used by controller nodes.
+     */
+    private static final List<String> DEFAULT_CONTROLLER_METRICS_ALLOW_LIST = metricsAllowList(DEFAULT_SHARED_METRICS_ALLOW_LIST, List.of(
+            "kafka_controller_kafkacontroller.*",
+            "kafka_controller_controllerstats_uncleanleaderelectionspersec",
+            "kafka_server_raft.*"
+    ));
+
+    /**
+     * Default Strimzi Metrics Reporter allow list used by mixed broker/controller nodes.
      */
     private static final List<String> DEFAULT_METRICS_ALLOW_LIST = List.of(
             "kafka_cluster_partition.*",
@@ -337,7 +371,12 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
         if (kafkaClusterSpec.getMetricsConfig() instanceof JmxPrometheusExporterMetrics) {
             result.metrics = new JmxPrometheusExporterModel(kafkaClusterSpec);
         } else if (kafkaClusterSpec.getMetricsConfig() instanceof StrimziMetricsReporter) {
-            result.metrics = new StrimziMetricsReporterModel(kafkaClusterSpec, DEFAULT_METRICS_ALLOW_LIST);
+            result.metrics = new StrimziMetricsReporterModel(
+                    kafkaClusterSpec,
+                    DEFAULT_METRICS_ALLOW_LIST,
+                    DEFAULT_BROKER_METRICS_ALLOW_LIST,
+                    DEFAULT_CONTROLLER_METRICS_ALLOW_LIST
+            );
         }
 
         result.logging = new LoggingModel(kafkaClusterSpec, result.getClass().getSimpleName());
@@ -495,6 +534,13 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
         }
 
         return controllers;
+    }
+
+    private static List<String> metricsAllowList(List<String> firstAllowList, List<String> secondAllowList) {
+        Set<String> allowList = new LinkedHashSet<>();
+        allowList.addAll(firstAllowList);
+        allowList.addAll(secondAllowList);
+        return List.copyOf(allowList);
     }
 
     /**

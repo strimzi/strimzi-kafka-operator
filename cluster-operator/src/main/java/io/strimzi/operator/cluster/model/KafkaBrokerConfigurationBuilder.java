@@ -145,7 +145,7 @@ public class KafkaBrokerConfigurationBuilder {
             printSectionHeader("Strimzi Metrics Reporter configuration");
             writer.println(StrimziMetricsReporterConfig.LISTENER_ENABLE + "=true");
             writer.println(StrimziMetricsReporterConfig.LISTENER + "=http://:" + MetricsModel.METRICS_PORT);
-            writer.println(StrimziMetricsReporterConfig.ALLOW_LIST + "=" + reporterModel.getAllowList());
+            writer.println(StrimziMetricsReporterConfig.ALLOW_LIST + "=" + reporterModel.getAllowList(node));
             writer.println();
         }
         return this;
