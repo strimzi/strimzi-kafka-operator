@@ -184,7 +184,10 @@ public class KafkaUserOperator {
      * @return  CompletionStage which completes when the reconciliation is done
      */
     public CompletionStage<KafkaUserStatus> reconcile(Reconciliation reconciliation, KafkaUser kafkaUser, Secret userSecret)  {
-        if (kafkaUser != null)  {
+        if (kafkaUser != null && kafkaUser.getMetadata().getDeletionTimestamp() != null) {
+            LOGGER.infoCr(reconciliation, "User {} in namespace {} is being deleted, skipping reconciliation", reconciliation.name(), reconciliation.namespace());
+            return CompletableFuture.completedFuture(null);
+        } else if (kafkaUser != null)  {
             // Create or update
             return createOrUpdate(reconciliation, kafkaUser, userSecret);
         } else {

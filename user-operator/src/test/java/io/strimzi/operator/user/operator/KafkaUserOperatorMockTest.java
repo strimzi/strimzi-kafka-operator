@@ -63,6 +63,8 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 public class KafkaUserOperatorMockTest {
@@ -169,6 +171,31 @@ public class KafkaUserOperatorMockTest {
             }
         });
         when(quotasOps.getAllUsers()).thenReturn(CompletableFuture.completedStage(Set.of("quotas-user-1", "quotas-user-2")));
+    }
+
+    @Test
+    public void testReconcileSkipsWhenUserIsBeingDeleted() throws ExecutionException, InterruptedException {
+        // KafkaUser pending deletion (deletionTimestamp set): must not recreate the Secret.
+        KafkaUser user = new KafkaUserBuilder(ResourceUtils.createKafkaUserTls(namespace))
+                .editMetadata()
+                    .withDeletionTimestamp("2026-06-17T12:00:00Z")
+                .endMetadata()
+                .build();
+
+        KafkaUserOperator op = new KafkaUserOperator(ResourceUtils.createUserOperatorConfig(namespace), mockCertManager, secretOps, kafkaUserOps, scramOps, quotasOps, aclOps);
+        CompletionStage<KafkaUserStatus> futureResult = op.reconcile(new Reconciliation("test-trigger", KafkaUser.RESOURCE_KIND, namespace, ResourceUtils.NAME), user, null);
+        KafkaUserStatus status = futureResult.toCompletableFuture().get();
+
+        // No reconciliation happened => null status, so the controller loop skips the status update
+        assertThat(status, is(nullValue()));
+
+        // The Secret must NOT be created/recreated
+        assertThat(secretOps.get(namespace, ResourceUtils.NAME), is(nullValue()));
+
+        // No Kafka-side resources may be touched
+        verify(aclOps, never()).reconcile(any(), any(), any());
+        verify(scramOps, never()).reconcile(any(), any(), any());
+        verify(quotasOps, never()).reconcile(any(), any(), any());
     }
 
     @Test
