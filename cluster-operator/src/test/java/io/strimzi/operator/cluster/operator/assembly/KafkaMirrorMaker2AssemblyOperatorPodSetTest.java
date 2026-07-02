@@ -1433,7 +1433,7 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
             Map.of(
                 Annotations.ANNO_STRIMZI_IO_CONFIGURATION_HASH, Util.hashStub(logAndMetricsConfigMap.getData().get(KafkaConnectCluster.KAFKA_CONNECT_CONFIGURATION_FILENAME)),
                 Annotations.ANNO_STRIMZI_AUTH_HASH, "0"
-            ), false, null, null, null);
+            ), null, null, null);
         List<Pod> oldPods = PodSetUtils.podSetToPods(oldPodSet);
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);

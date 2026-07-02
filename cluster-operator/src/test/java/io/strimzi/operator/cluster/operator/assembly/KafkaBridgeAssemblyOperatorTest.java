@@ -840,7 +840,7 @@ public class KafkaBridgeAssemblyOperatorTest {
 
         KafkaBridgeAssemblyOperator ops = new KafkaBridgeAssemblyOperator(vertx,
                 new PlatformFeaturesAvailability(true, kubernetesVersion),
-                new MockCertManager(), new PasswordGenerator(10, "a", "a"),
+                new MockCertIssuer(), new PasswordGenerator(10, "a", "a"),
                 supplier,
                 ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
 
