@@ -47,6 +47,7 @@ deploymentStrategy: {}
 priorityClassName: ""
 
 hostUsers: NULL
+enableServiceLinks: NULL
 podSecurityContext: {}
 securityContext: {}
 rbac:

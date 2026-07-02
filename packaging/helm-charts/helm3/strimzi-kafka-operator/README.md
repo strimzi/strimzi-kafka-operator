@@ -120,6 +120,7 @@ the documentation for more details.
 | `deploymentStrategy`                             | Adjust the Kubernetes rollout strategy of the Cluster Operator Deployment       | `nil`                        |
 | `priorityClassName`                              | Cluster Operator pod's priority class name                                      | `nil`                        |
 | `hostUsers`                                      | Set hostUsers value on the Cluster Operator container                           | `nil`                       |
+| `enableServiceLinks`                             | Set enableServiceLinks value on the Cluster Operator pod                         | `nil`                        |
 | `securityContext`                                | Cluster Operator container's security context                                   | `nil`                        |
 | `rbac.create`                                    | Whether to create RBAC related resources                                        | `yes`                        |
 | `serviceAccountCreate`                           | Whether to create a service account                                             | `yes`                        |

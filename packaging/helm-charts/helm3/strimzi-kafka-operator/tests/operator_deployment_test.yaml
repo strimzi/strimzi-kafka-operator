@@ -67,6 +67,23 @@ tests:
           path: spec.template.spec.hostUsers
           value: true
 
+  - it: should not set enableServiceLinks by default
+    asserts:
+      - isKind:
+          of: Deployment
+      - notExists:
+          path: spec.template.spec.enableServiceLinks
+
+  - it: should allow override of enableServiceLinks to false
+    set:
+      enableServiceLinks: false
+    asserts:
+      - isKind:
+          of: Deployment
+      - equal:
+          path: spec.template.spec.enableServiceLinks
+          value: false
+
   - it: should have custom image if details are provided
     set:
       image:
