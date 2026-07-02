@@ -45,7 +45,7 @@ import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.NamespaceAndName;
 import io.strimzi.operator.common.model.StatusDiff;
 import io.strimzi.operator.common.model.StatusUtils;
-import io.strimzi.operator.common.operator.resource.concurrent.CrdOperator;
+import io.strimzi.operator.common.operator.resource.kubernetes.CrdOperator;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;

@@ -12,8 +12,8 @@ import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.StorageAPIGroupDSL;
 import io.fabric8.kubernetes.client.dsl.V1StorageAPIGroupDSL;
-import io.strimzi.operator.common.operator.resource.concurrent.AbstractNonNamespacedResourceOperator;
-import io.strimzi.operator.common.operator.resource.concurrent.AbstractNonNamespacedResourceOperatorTest;
+import io.strimzi.operator.common.operator.resource.kubernetes.AbstractNonNamespacedResourceOperator;
+import io.strimzi.operator.common.operator.resource.kubernetes.AbstractNonNamespacedResourceOperatorTest;
 
 import static java.util.Collections.singletonMap;
 import static org.mockito.Mockito.mock;

@@ -41,7 +41,7 @@ import io.strimzi.operator.common.MetricsProvider;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.metrics.MetricsHolder;
 import io.strimzi.operator.common.model.Labels;
-import io.strimzi.operator.common.operator.resource.concurrent.CrdOperator;
+import io.strimzi.operator.common.operator.resource.kubernetes.CrdOperator;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.mockkube3.MockKube3;
 import io.vertx.core.Vertx;

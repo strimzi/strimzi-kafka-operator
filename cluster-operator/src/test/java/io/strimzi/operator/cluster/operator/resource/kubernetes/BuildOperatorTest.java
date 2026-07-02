@@ -10,7 +10,7 @@ import io.fabric8.openshift.api.model.BuildBuilder;
 import io.fabric8.openshift.api.model.BuildList;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.fabric8.openshift.client.dsl.BuildResource;
-import io.strimzi.operator.common.operator.resource.concurrent.AbstractNamespacedResourceOperatorTest;
+import io.strimzi.operator.common.operator.resource.kubernetes.AbstractNamespacedResourceOperatorTest;
 
 import static org.mockito.Mockito.when;
 

@@ -9,7 +9,7 @@ import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBindingList;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.strimzi.operator.common.operator.resource.concurrent.AbstractNonNamespacedResourceOperator;
+import io.strimzi.operator.common.operator.resource.kubernetes.AbstractNonNamespacedResourceOperator;
 
 import java.util.concurrent.Executor;
 

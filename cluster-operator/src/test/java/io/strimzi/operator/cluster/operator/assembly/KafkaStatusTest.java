@@ -26,7 +26,7 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.PasswordGenerator;
 import io.strimzi.operator.common.model.StatusUtils;
 import io.strimzi.operator.common.operator.MockCertIssuer;
-import io.strimzi.operator.common.operator.resource.concurrent.CrdOperator;
+import io.strimzi.operator.common.operator.resource.kubernetes.CrdOperator;
 import io.strimzi.platform.KubernetesVersion;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;

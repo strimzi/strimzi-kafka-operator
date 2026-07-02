@@ -10,8 +10,8 @@ import io.fabric8.openshift.api.model.ImageStream;
 import io.fabric8.openshift.api.model.ImageStreamBuilder;
 import io.fabric8.openshift.api.model.ImageStreamList;
 import io.fabric8.openshift.client.OpenShiftClient;
-import io.strimzi.operator.common.operator.resource.concurrent.AbstractNamespacedResourceOperator;
-import io.strimzi.operator.common.operator.resource.concurrent.AbstractNamespacedResourceOperatorTest;
+import io.strimzi.operator.common.operator.resource.kubernetes.AbstractNamespacedResourceOperator;
+import io.strimzi.operator.common.operator.resource.kubernetes.AbstractNamespacedResourceOperatorTest;
 
 import static org.mockito.Mockito.when;
 

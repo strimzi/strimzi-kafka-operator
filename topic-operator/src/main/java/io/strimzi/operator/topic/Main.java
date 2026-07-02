@@ -12,7 +12,7 @@ import io.strimzi.operator.common.OperatorKubernetesClientBuilder;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.auth.PemAuthIdentity;
 import io.strimzi.operator.common.auth.PemTrustSet;
-import io.strimzi.operator.common.operator.resource.concurrent.SecretOperator;
+import io.strimzi.operator.common.operator.resource.kubernetes.SecretOperator;
 import org.apache.kafka.clients.admin.Admin;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;

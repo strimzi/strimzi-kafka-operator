@@ -23,7 +23,7 @@ import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
-import io.strimzi.operator.common.operator.resource.concurrent.CrdOperator;
+import io.strimzi.operator.common.operator.resource.kubernetes.CrdOperator;
 import io.vertx.core.Vertx;
 import org.junit.jupiter.api.Test;
 

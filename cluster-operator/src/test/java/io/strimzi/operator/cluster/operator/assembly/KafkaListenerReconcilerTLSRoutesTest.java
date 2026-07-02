@@ -31,7 +31,7 @@ import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
-import io.strimzi.operator.common.operator.resource.concurrent.SecretOperator;
+import io.strimzi.operator.common.operator.resource.kubernetes.SecretOperator;
 import io.strimzi.platform.KubernetesVersion;
 import io.vertx.core.Future;
 import io.vertx.junit5.Checkpoint;

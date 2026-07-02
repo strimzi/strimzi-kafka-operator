@@ -9,7 +9,7 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.openshift.api.model.ImageStream;
 import io.fabric8.openshift.api.model.ImageStreamList;
 import io.fabric8.openshift.client.OpenShiftClient;
-import io.strimzi.operator.common.operator.resource.concurrent.AbstractNamespacedResourceOperator;
+import io.strimzi.operator.common.operator.resource.kubernetes.AbstractNamespacedResourceOperator;
 
 import java.util.concurrent.Executor;
 

@@ -15,8 +15,8 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.RbacAPIGroupDSL;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.strimzi.operator.common.operator.resource.concurrent.AbstractNamespacedResourceOperator;
-import io.strimzi.operator.common.operator.resource.concurrent.AbstractNamespacedResourceOperatorTest;
+import io.strimzi.operator.common.operator.resource.kubernetes.AbstractNamespacedResourceOperator;
+import io.strimzi.operator.common.operator.resource.kubernetes.AbstractNamespacedResourceOperatorTest;
 
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;

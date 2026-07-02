@@ -12,7 +12,7 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.PodResource;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.strimzi.operator.common.operator.resource.concurrent.AbstractReadyResourceOperatorTest;
+import io.strimzi.operator.common.operator.resource.kubernetes.AbstractReadyResourceOperatorTest;
 import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.ForkJoinPool;

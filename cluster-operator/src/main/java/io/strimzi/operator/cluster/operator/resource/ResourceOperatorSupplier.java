@@ -49,8 +49,8 @@ import io.strimzi.operator.common.AdminClientProvider;
 import io.strimzi.operator.common.DefaultAdminClientProvider;
 import io.strimzi.operator.common.MetricsProvider;
 import io.strimzi.operator.common.featuregates.FeatureGates;
-import io.strimzi.operator.common.operator.resource.concurrent.CrdOperator;
-import io.strimzi.operator.common.operator.resource.concurrent.SecretOperator;
+import io.strimzi.operator.common.operator.resource.kubernetes.CrdOperator;
+import io.strimzi.operator.common.operator.resource.kubernetes.SecretOperator;
 
 import java.util.concurrent.Executor;
 

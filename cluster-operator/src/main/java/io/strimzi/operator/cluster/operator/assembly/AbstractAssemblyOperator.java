@@ -24,8 +24,8 @@ import io.strimzi.operator.cluster.operator.resource.kubernetes.ServiceAccountOp
 import io.strimzi.operator.cluster.operator.resource.kubernetes.ServiceOperator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.PasswordGenerator;
-import io.strimzi.operator.common.operator.resource.concurrent.AbstractWatchableStatusedNamespacedResourceOperator;
-import io.strimzi.operator.common.operator.resource.concurrent.SecretOperator;
+import io.strimzi.operator.common.operator.resource.kubernetes.AbstractWatchableStatusedNamespacedResourceOperator;
+import io.strimzi.operator.common.operator.resource.kubernetes.SecretOperator;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 

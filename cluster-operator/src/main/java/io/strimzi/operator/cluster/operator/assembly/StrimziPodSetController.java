@@ -42,8 +42,8 @@ import io.strimzi.operator.common.metrics.ControllerMetricsHolder;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.StatusDiff;
 import io.strimzi.operator.common.model.StatusUtils;
-import io.strimzi.operator.common.operator.resource.concurrent.CrdOperator;
-import io.strimzi.operator.common.operator.resource.concurrent.Informer;
+import io.strimzi.operator.common.operator.resource.kubernetes.CrdOperator;
+import io.strimzi.operator.common.operator.resource.kubernetes.Informer;
 
 import java.util.Collection;
 import java.util.HashSet;

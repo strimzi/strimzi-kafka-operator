@@ -40,7 +40,7 @@ import io.strimzi.operator.cluster.operator.resource.kubernetes.StrimziPodSetOpe
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
-import io.strimzi.operator.common.operator.resource.concurrent.CrdOperator;
+import io.strimzi.operator.common.operator.resource.kubernetes.CrdOperator;
 import io.strimzi.test.CrdUtils;
 import io.strimzi.test.TestUtils;
 import io.vertx.core.Vertx;

@@ -33,7 +33,7 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.InvalidResourceException;
-import io.strimzi.operator.common.operator.resource.concurrent.SecretOperator;
+import io.strimzi.operator.common.operator.resource.kubernetes.SecretOperator;
 import io.vertx.core.Future;
 
 import java.nio.charset.StandardCharsets;

@@ -13,8 +13,8 @@ import io.fabric8.kubernetes.api.model.rbac.Subject;
 import io.fabric8.kubernetes.api.model.rbac.SubjectBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.strimzi.operator.common.operator.resource.concurrent.AbstractNamespacedResourceOperator;
-import io.strimzi.operator.common.operator.resource.concurrent.AbstractNamespacedResourceOperatorIT;
+import io.strimzi.operator.common.operator.resource.kubernetes.AbstractNamespacedResourceOperator;
+import io.strimzi.operator.common.operator.resource.kubernetes.AbstractNamespacedResourceOperatorIT;
 
 import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.is;

@@ -31,7 +31,7 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlEndpoints;
 import io.strimzi.operator.common.operator.MockCertIssuer;
-import io.strimzi.operator.common.operator.resource.concurrent.CrdOperator;
+import io.strimzi.operator.common.operator.resource.kubernetes.CrdOperator;
 import io.strimzi.test.ReadWriteUtils;
 import io.strimzi.test.TestUtils;
 import io.vertx.core.AsyncResult;

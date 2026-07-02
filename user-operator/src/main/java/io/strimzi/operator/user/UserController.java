@@ -23,9 +23,9 @@ import io.strimzi.operator.common.http.Readiness;
 import io.strimzi.operator.common.metrics.ControllerMetricsHolder;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.NamespaceAndName;
-import io.strimzi.operator.common.operator.resource.concurrent.CrdOperator;
-import io.strimzi.operator.common.operator.resource.concurrent.Informer;
-import io.strimzi.operator.common.operator.resource.concurrent.SecretOperator;
+import io.strimzi.operator.common.operator.resource.kubernetes.CrdOperator;
+import io.strimzi.operator.common.operator.resource.kubernetes.Informer;
+import io.strimzi.operator.common.operator.resource.kubernetes.SecretOperator;
 import io.strimzi.operator.user.operator.KafkaUserOperator;
 
 import java.util.ArrayList;

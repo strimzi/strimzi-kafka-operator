@@ -40,7 +40,7 @@ import io.strimzi.operator.common.model.Ca;
 import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
-import io.strimzi.operator.common.operator.resource.concurrent.SecretOperator;
+import io.strimzi.operator.common.operator.resource.kubernetes.SecretOperator;
 import io.vertx.core.Future;
 
 import java.nio.charset.StandardCharsets;
