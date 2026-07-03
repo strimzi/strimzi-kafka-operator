@@ -143,18 +143,8 @@ pipelines:
   ##################
   # Acceptance pipelines can use smaller agents as the tests are not running in parallel even if configured
   # x86-64
-  - agent: "cncf-ubuntu-4-16-x86"
+  - agent: "ubuntu-latest"
     arch: "amd64"
-    pipeline: "acceptance"
-    profile: "acceptance"
-    timeout: 180
-    strimzi_feature_gates: ""
-    strimzi_rbac_scope: "CLUSTER"
-    cluster_operator_install_type: "yaml"
-    parallel: 2
-  # arm64
-  - agent: "cncf-ubuntu-4-16-arm"
-    arch: "arm64"
     pipeline: "acceptance"
     profile: "acceptance"
     timeout: 180
