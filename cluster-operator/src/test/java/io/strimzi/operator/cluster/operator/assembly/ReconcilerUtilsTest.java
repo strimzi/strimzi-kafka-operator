@@ -433,7 +433,7 @@ public class ReconcilerUtilsTest {
         SecretOperator secretOps = mock(SecretOperator.class);
         when(secretOps.getAsync(eq(namespace), eq("top-secret-pwd"))).thenReturn(CompletableFuture.completedFuture(null));
 
-        Future<Integer> res = ReconcilerUtils.authTlsHash(secretOps, "ns", kcu, null);
+        Future<Integer> res = ReconcilerUtils.authTlsHash(secretOps, "ns", kcu, List.of());
         res.onComplete(v -> {
             assertThat(v.succeeded(), is(false));
             assertThat(v.cause().getMessage(), is("Secret top-secret-pwd not found in namespace ns"));
@@ -454,7 +454,7 @@ public class ReconcilerUtilsTest {
         passwordSecretSource.setSecretName("my-secret");
         passwordSecretSource.setPassword("password1");
         auth.setPasswordSecret(passwordSecretSource);
-        Future<Integer> result = ReconcilerUtils.authTlsHash(secretOperator, "anyNamespace", auth, null);
+        Future<Integer> result = ReconcilerUtils.authTlsHash(secretOperator, "anyNamespace", auth, List.of());
         result.onComplete(handler -> {
             assertTrue(handler.failed());
             assertEquals("Items with key(s) [password1] are missing in Secret my-secret", handler.cause().getMessage());
@@ -475,7 +475,7 @@ public class ReconcilerUtilsTest {
         passwordSecretSource.setSecretName("my-secret");
         passwordSecretSource.setPassword("passwordKey");
         auth.setPasswordSecret(passwordSecretSource);
-        Future<Integer> result = ReconcilerUtils.authTlsHash(secretOperator, "anyNamespace", auth, null);
+        Future<Integer> result = ReconcilerUtils.authTlsHash(secretOperator, "anyNamespace", auth, List.of());
         result.onComplete(handler -> {
             assertTrue(handler.succeeded());
             assertEquals("my-password".hashCode(), handler.result());
@@ -496,7 +496,7 @@ public class ReconcilerUtilsTest {
         passwordSecretSource.setSecretName("my-secret");
         passwordSecretSource.setPassword("password1");
         auth.setPasswordSecret(passwordSecretSource);
-        Future<Integer> result = ReconcilerUtils.authTlsHash(secretOperator, "anyNamespace", auth, null);
+        Future<Integer> result = ReconcilerUtils.authTlsHash(secretOperator, "anyNamespace", auth, List.of());
         result.onComplete(handler -> {
             assertTrue(handler.failed());
             assertEquals("Items with key(s) [password1] are missing in Secret my-secret", handler.cause().getMessage());
@@ -517,7 +517,7 @@ public class ReconcilerUtilsTest {
         passwordSecretSource.setSecretName("my-secret");
         passwordSecretSource.setPassword("passwordKey");
         auth.setPasswordSecret(passwordSecretSource);
-        Future<Integer> result = ReconcilerUtils.authTlsHash(secretOperator, "anyNamespace", auth, null);
+        Future<Integer> result = ReconcilerUtils.authTlsHash(secretOperator, "anyNamespace", auth, List.of());
         result.onComplete(handler -> {
             assertTrue(handler.succeeded());
             assertEquals("my-password".hashCode(), handler.result());

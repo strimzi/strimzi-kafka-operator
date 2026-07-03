@@ -281,7 +281,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
      * @param connect KafkaConectCluster object.
      * @return Future which completes when the reconciliation is done.
      */
-    protected Future<? extends Collection<String>> tlsTrustedCertsSecret(Reconciliation reconciliation, String namespace, KafkaConnectCluster connect) {
+    protected Future<Collection<String>> tlsTrustedCertsSecret(Reconciliation reconciliation, String namespace, KafkaConnectCluster connect) {
         if (connect.getTls() != null) {
             return ReconcilerUtils.trustedCertificates(reconciliation, secretOperations, connect.getTls().getTrustedCertificates())
                     .compose(certificates -> {

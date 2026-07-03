@@ -499,7 +499,7 @@ public class ReconcilerUtils {
      *
      * @return  Certificates extracted from the Secrets
      */
-    public static Future<? extends Collection<String>> trustedCertificates(Reconciliation reconciliation, SecretOperator secretOperations, List<CertSecretSource> certificateSources)   {
+    public static Future<List<String>> trustedCertificates(Reconciliation reconciliation, SecretOperator secretOperations, List<CertSecretSource> certificateSources)   {
         if (certificateSources != null && !certificateSources.isEmpty()) {
             return Future.join(certificateSources
                             .stream()
