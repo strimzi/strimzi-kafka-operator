@@ -41,8 +41,10 @@ import io.vertx.core.Vertx;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.stream.Collectors;
@@ -228,10 +230,13 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
         return Future.join(new ArrayList<>(certificatesFutures.values()))
                 .compose(i -> {
                     Map<String, String> secretData = new HashMap<>();
+                    Set<String> certs = new HashSet<>();
                     for (Map.Entry<String, Future<? extends Collection<String>>> entry : certificatesFutures.entrySet()) {
                         Collection<String> certificates = entry.getValue().result();
                         if (certificates != null && !certificates.isEmpty()) {
-                            secretData.put(entry.getKey(), Util.encodeToBase64(String.join("\n", certificates)));
+                            String certBundle = String.join("\n", certificates);
+                            secretData.put(entry.getKey(), Util.encodeToBase64(certBundle));
+                            certs.add(certBundle);
                         }
                     }
 
@@ -243,7 +248,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
                                             secretData,
                                             KafkaConnectResources.internalTlsTrustedCertsSecretName(mirrorMaker2Cluster.getCluster())
                                     )))
-                            .map(secretData.values());
+                            .map(ignore -> certs);
                 });
     }
 
