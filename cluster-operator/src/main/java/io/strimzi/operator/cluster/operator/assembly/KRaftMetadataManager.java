@@ -97,34 +97,27 @@ public class KRaftMetadataManager {
                         status.setKafkaMetadataVersion(MetadataVersion.fromFeatureLevel(currentMetadataLevel).toString());
                         return CompletableFuture.completedFuture(null);
                     } else {
-                        CompletableFuture<Void> result = new CompletableFuture<>();
-                        updateVersion(reconciliation, kafkaAdmin, currentMetadataLevel, desiredMetadataLevel)
-                                .whenComplete((voidResult, error) -> {
-                                    if (error == null) {
-                                        // We convert the metadata level to the version for the use in the status instead of using the
-                                        // desired version directly in order to get the full version including the subversion
-                                        String metadataVersion = MetadataVersion.fromFeatureLevel(desiredMetadataLevel).toString();
-                                        LOGGER.infoCr(reconciliation, "Successfully updated metadata version to {}", metadataVersion);
-                                        status.setKafkaMetadataVersion(metadataVersion);
-                                        result.complete(null);
-                                    } else {
-                                        // We failed to update the metadata version, but we do not want to break the
-                                        // reconciliation. We log the error and update the metadata version status.
-                                        currentVersion(reconciliation, kafkaAdmin)
-                                                .whenComplete((currentMetadataLevelAfterFailure, e) -> {
-                                                    if (e == null) {
-                                                        String metadataVersion = MetadataVersion.fromFeatureLevel(currentMetadataLevelAfterFailure).toString();
-                                                        LOGGER.warnCr(reconciliation, "Failed to update metadata version to {} (the current version is {})", desiredMetadataVersion, metadataVersion, error);
-                                                        status.addCondition(StatusUtils.buildWarningCondition("MetadataUpdateFailed", "Failed to update metadata version to " + desiredMetadataVersion));
-                                                        status.setKafkaMetadataVersion(metadataVersion);
-                                                        result.complete(null);
-                                                    } else {
-                                                        result.completeExceptionally(e);
-                                                    }
-                                                });
-                                    }
+                        return updateVersion(reconciliation, kafkaAdmin, currentMetadataLevel, desiredMetadataLevel)
+                                .thenCompose(voidResult -> {
+                                    // We convert the metadata level to the version for the use in the status instead of using the
+                                    // desired version directly in order to get the full version including the subversion
+                                    String metadataVersion = MetadataVersion.fromFeatureLevel(desiredMetadataLevel).toString();
+                                    LOGGER.infoCr(reconciliation, "Successfully updated metadata version to {}", metadataVersion);
+                                    status.setKafkaMetadataVersion(metadataVersion);
+                                    return CompletableFuture.<Void>completedFuture(null);
+                                })
+                                .exceptionallyCompose(error -> {
+                                    // We failed to update the metadata version, but we do not want to break the
+                                    // reconciliation. We log the error and update the metadata version status.
+                                    return currentVersion(reconciliation, kafkaAdmin)
+                                            .thenCompose(currentMetadataLevelAfterFailure -> {
+                                                String metadataVersion = MetadataVersion.fromFeatureLevel(currentMetadataLevelAfterFailure).toString();
+                                                LOGGER.warnCr(reconciliation, "Failed to update metadata version to {} (the current version is {})", desiredMetadataVersion, metadataVersion, error);
+                                                status.addCondition(StatusUtils.buildWarningCondition("MetadataUpdateFailed", "Failed to update metadata version to " + desiredMetadataVersion));
+                                                status.setKafkaMetadataVersion(metadataVersion);
+                                                return CompletableFuture.completedFuture(null);
+                                            });
                                 });
-                        return result;
                     }
                 });
     }
