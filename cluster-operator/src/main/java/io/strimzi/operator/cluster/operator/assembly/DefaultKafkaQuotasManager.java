@@ -15,7 +15,6 @@ import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.auth.PemAuthIdentity;
 import io.strimzi.operator.common.auth.PemTrustSet;
 import io.vertx.core.Future;
-import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.common.quota.ClientQuotaAlteration;
@@ -121,29 +120,19 @@ public class DefaultKafkaQuotasManager {
         return shouldAlterDefaultQuotasConfig(reconciliation, vertx, kafkaAdmin, ops, isNotKafkaPlugin)
             .compose(shouldUpdateQuotas -> {
                 if (shouldUpdateQuotas) {
-                    Promise<Void> promise = Promise.promise();
-
                     ClientQuotaAlteration clientQuotaAlteration = new ClientQuotaAlteration(DEFAULT_USER_ENTITY, ops);
 
                     LOGGER.debugCr(reconciliation, "Default user quotas differ and will be updated");
-                    alterQuotas(reconciliation, vertx, kafkaAdmin, clientQuotaAlteration)
-                        .onComplete(result -> {
-                            if (result.succeeded()) {
-                                LOGGER.debugCr(reconciliation, "Successfully altered default user quotas");
-                                promise.complete();
-                            } else {
-                                LOGGER.errorCr(reconciliation, "Failed to alter default user quotas", result.cause());
-                                promise.fail(result.cause());
-                            }
-
-                            kafkaAdmin.close();
-                        });
-
-                    return promise.future();
+                    return alterQuotas(reconciliation, vertx, kafkaAdmin, clientQuotaAlteration)
+                        .onSuccess(result -> LOGGER.debugCr(reconciliation, "Successfully altered default user quotas"))
+                        .onFailure(cause -> LOGGER.errorCr(reconciliation, "Failed to alter default user quotas", cause));
                 } else {
-                    kafkaAdmin.close();
                     return Future.succeededFuture();
                 }
+            })
+            .onComplete(result -> {
+                LOGGER.debugCr(reconciliation, "Closing the Kafka Admin API connection");
+                kafkaAdmin.close();
             });
     }
 
