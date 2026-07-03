@@ -76,10 +76,12 @@ public class KafkaAgent {
     static final SecureRandom RANDOM = new SecureRandom();
     private final Secret caCertSecret;
     private final Secret nodeCertSecret;
-    private MetricName brokerStateName;
-    private Gauge brokerState;
-    private Gauge remainingLogsToRecover;
-    private Gauge remainingSegmentsToRecover;
+    // These metric references are written by the Yammer metrics-registry listener thread and read by the
+    // Jetty request-handling threads, so they are volatile to guarantee visibility of the published values.
+    private volatile MetricName brokerStateName;
+    private volatile Gauge brokerState;
+    private volatile Gauge remainingLogsToRecover;
+    private volatile Gauge remainingSegmentsToRecover;
 
     /**
      * Constructor of the KafkaAgent
@@ -132,18 +134,31 @@ public class KafkaAgent {
             }
 
             @Override
-            public synchronized void onMetricAdded(MetricName metricName, Metric metric) {
-                LOGGER.debug("Metric added {}", metricName);
-                if (isBrokerState(metricName) && metric instanceof Gauge) {
-                    brokerStateName = metricName;
-                    brokerState = (Gauge) metric;
-                } else if (isRemainingLogsToRecover(metricName) && metric instanceof Gauge) {
-                    remainingLogsToRecover = (Gauge) metric;
-                } else if (isRemainingSegmentsToRecover(metricName) && metric instanceof Gauge) {
-                    remainingSegmentsToRecover = (Gauge) metric;
-                }
+            public void onMetricAdded(MetricName metricName, Metric metric) {
+                handleMetricAdded(metricName, metric);
             }
         });
+    }
+
+    /**
+     * Records the broker-state metrics published by the Kafka metrics registry so that they can be served by the
+     * broker-state and readiness endpoints. This is invoked from the metrics-registry listener thread while the Jetty
+     * request-handling threads read the same fields, so the fields it writes are {@code volatile} to make the published
+     * references visible to those reader threads.
+     *
+     * @param metricName    Name of the metric that was added to the registry
+     * @param metric        The metric that was added to the registry
+     */
+    /* test */ synchronized void handleMetricAdded(MetricName metricName, Metric metric) {
+        LOGGER.debug("Metric added {}", metricName);
+        if (isBrokerState(metricName) && metric instanceof Gauge) {
+            brokerStateName = metricName;
+            brokerState = (Gauge) metric;
+        } else if (isRemainingLogsToRecover(metricName) && metric instanceof Gauge) {
+            remainingLogsToRecover = (Gauge) metric;
+        } else if (isRemainingSegmentsToRecover(metricName) && metric instanceof Gauge) {
+            remainingSegmentsToRecover = (Gauge) metric;
+        }
     }
 
     /**

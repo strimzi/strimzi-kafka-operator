@@ -5,6 +5,7 @@
 package io.strimzi.kafka.agent;
 
 import com.yammer.metrics.core.Gauge;
+import com.yammer.metrics.core.MetricName;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import jakarta.servlet.http.HttpServletResponse;
@@ -222,5 +223,28 @@ public class KafkaAgentTest {
                 .send(httpReq, HttpResponse.BodyHandlers.ofString());
 
         assertThat(HttpServletResponse.SC_SERVICE_UNAVAILABLE, is(response.statusCode()));
+    }
+
+    @Test
+    public void testReadinessReflectsBrokerStatePublishedByMetricsListener() throws Exception {
+        @SuppressWarnings({ "rawtypes" })
+        final Gauge brokerState = mock(Gauge.class);
+        when(brokerState.value()).thenReturn((byte) 3);
+
+        // The HTTP server starts serving requests before the BrokerState metric is registered, so the metric is
+        // published to the agent later, from the metrics-registry listener thread. Simulate that registration and
+        // check the readiness endpoint then observes the running broker and reports it as ready.
+        KafkaAgent agent = new KafkaAgent(caCertSecret, nodeCertSecret, null, null, null);
+        agent.handleMetricAdded(new MetricName("kafka.server", "KafkaServer", "BrokerState"), brokerState);
+
+        context.setHandler(agent.getReadinessHandler());
+        server.setHandler(context);
+        server.start();
+
+        HttpResponse<String> response = HttpClient.newBuilder()
+                .build()
+                .send(httpReq, HttpResponse.BodyHandlers.ofString());
+
+        assertThat(response.statusCode(), is(HttpServletResponse.SC_NO_CONTENT));
     }
 }
