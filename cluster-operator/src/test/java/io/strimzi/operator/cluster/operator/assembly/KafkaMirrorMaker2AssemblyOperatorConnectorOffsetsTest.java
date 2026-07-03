@@ -8,7 +8,6 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.strimzi.api.ResourceAnnotations;
-import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.common.Condition;
 import io.strimzi.api.kafka.model.connector.AlterOffsets;
 import io.strimzi.api.kafka.model.connector.AlterOffsetsBuilder;
@@ -454,7 +453,7 @@ public class KafkaMirrorMaker2AssemblyOperatorConnectorOffsetsTest {
                     List<OwnerReference> ownerReferenceList = configMap.getMetadata().getOwnerReferences();
                     assertThat(ownerReferenceList, hasSize(1));
                     assertThat(ownerReferenceList.get(0).getName(), is(MM2_NAME));
-                    assertThat(ownerReferenceList.get(0).getKind(), is(Crds.kind(KafkaMirrorMaker2.class)));
+                    assertThat(ownerReferenceList.get(0).getKind(), is(KafkaMirrorMaker2.RESOURCE_KIND));
                     Map<String, String> configMapData = configMap.getData();
                     assertThat(configMapData, hasEntry(getConfigmapEntryName(connector), OFFSETS_JSON));
 
@@ -530,7 +529,7 @@ public class KafkaMirrorMaker2AssemblyOperatorConnectorOffsetsTest {
                     assertThat(ownerReferenceList.get(0).getName(), is(ResourceUtils.DUMMY_OWNER_REFERENCE.getName()));
                     assertThat(ownerReferenceList.get(0).getKind(), is(ResourceUtils.DUMMY_OWNER_REFERENCE.getKind()));
                     assertThat(ownerReferenceList.get(1).getName(), is(MM2_NAME));
-                    assertThat(ownerReferenceList.get(1).getKind(), is(Crds.kind(KafkaMirrorMaker2.class)));
+                    assertThat(ownerReferenceList.get(1).getKind(), is(KafkaMirrorMaker2.RESOURCE_KIND));
 
                     Map<String, String> configMapData = configMap.getData();
                     assertThat(configMapData, hasEntry(getConfigmapEntryName(connector), OFFSETS_JSON));
