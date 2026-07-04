@@ -44,29 +44,11 @@ public record CruiseControlMetricsReporter(String topicName, Integer numPartitio
                 topicName = kafka.getSpec().getCruiseControl().getConfig().get(CruiseControlConfigurationParameters.METRIC_REPORTER_TOPIC_NAME.getValue()).toString();
             }
 
-            int numPartitions;
-            if (configuration.getConfigOption(CruiseControlConfigurationParameters.METRICS_TOPIC_NUM_PARTITIONS.getValue()) == null) {
-                numPartitions = Integer.parseInt(configuration.getConfigOption(KAFKA_NUM_PARTITIONS_CONFIG_FIELD, "1"));
-            } else {
-                numPartitions = Integer.parseInt(configuration.getConfigOption(CruiseControlConfigurationParameters.METRICS_TOPIC_NUM_PARTITIONS.getValue()));
-                configuration.removeConfigOption(CruiseControlConfigurationParameters.METRICS_TOPIC_NUM_PARTITIONS.getValue());
-            }
-
-            int replicationFactor;
-            if (configuration.getConfigOption(CruiseControlConfigurationParameters.METRICS_TOPIC_REPLICATION_FACTOR.getValue()) == null) {
-                replicationFactor = Integer.parseInt(configuration.getConfigOption(KAFKA_REPLICATION_FACTOR_CONFIG_FIELD, "1"));
-            } else {
-                replicationFactor = Integer.parseInt(configuration.getConfigOption(CruiseControlConfigurationParameters.METRICS_TOPIC_REPLICATION_FACTOR.getValue()));
-                configuration.removeConfigOption(CruiseControlConfigurationParameters.METRICS_TOPIC_REPLICATION_FACTOR.getValue());
-            }
-
-            int minInSyncReplicas;
-            if (configuration.getConfigOption(CruiseControlConfigurationParameters.METRICS_TOPIC_MIN_ISR.getValue()) == null) {
-                minInSyncReplicas = 1;
-            } else {
-                minInSyncReplicas = Integer.parseInt(configuration.getConfigOption(CruiseControlConfigurationParameters.METRICS_TOPIC_MIN_ISR.getValue()));
-                configuration.removeConfigOption(CruiseControlConfigurationParameters.METRICS_TOPIC_MIN_ISR.getValue());
-            }
+            int numPartitions = intConfigOption(configuration, CruiseControlConfigurationParameters.METRICS_TOPIC_NUM_PARTITIONS.getValue(),
+                    Integer.parseInt(configuration.getConfigOption(KAFKA_NUM_PARTITIONS_CONFIG_FIELD, "1")));
+            int replicationFactor = intConfigOption(configuration, CruiseControlConfigurationParameters.METRICS_TOPIC_REPLICATION_FACTOR.getValue(),
+                    Integer.parseInt(configuration.getConfigOption(KAFKA_REPLICATION_FACTOR_CONFIG_FIELD, "1")));
+            int minInSyncReplicas = intConfigOption(configuration, CruiseControlConfigurationParameters.METRICS_TOPIC_MIN_ISR.getValue(), 1);
 
             validateCruiseControl(kafka, numberOfBrokers, replicationFactor, minInSyncReplicas);
 
@@ -74,6 +56,35 @@ public record CruiseControlMetricsReporter(String topicName, Integer numPartitio
         } else {
             // Cruise Control is not enabled
             return null;
+        }
+    }
+
+    /**
+     * Resolves an integer configuration option from the user-provided configuration. When the option is set, its value
+     * is parsed as an integer and the option is removed from the configuration so that it is not passed on as a Kafka
+     * broker property. When the option is not set, the supplied default value is used. A non-integer value is reported
+     * as an {@link InvalidResourceException} instead of letting the raw {@link NumberFormatException} propagate, so that
+     * a typo in the Kafka custom resource is reported as a clear configuration error.
+     *
+     * @param configuration     The user-provided configuration of the Kafka cluster
+     * @param configOption      The name of the configuration option
+     * @param defaultValue      The value used when the configuration option is not set
+     *
+     * @return  The integer value of the configuration option, or the default value when the option is not set
+     */
+    private static int intConfigOption(KafkaConfiguration configuration, String configOption, int defaultValue) {
+        String value = configuration.getConfigOption(configOption);
+
+        if (value == null) {
+            return defaultValue;
+        }
+
+        configuration.removeConfigOption(configOption);
+
+        try {
+            return Integer.parseInt(value);
+        } catch (NumberFormatException e) {
+            throw new InvalidResourceException("Cruise Control configuration option '" + configOption + "' should be an integer but was set to '" + value + "'.", e);
         }
     }
 
