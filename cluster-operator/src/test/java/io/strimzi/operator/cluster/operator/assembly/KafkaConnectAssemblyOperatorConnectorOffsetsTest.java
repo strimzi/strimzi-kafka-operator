@@ -8,7 +8,6 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.strimzi.api.ResourceAnnotations;
-import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.common.Condition;
 import io.strimzi.api.kafka.model.connector.KafkaConnector;
 import io.strimzi.api.kafka.model.connector.KafkaConnectorBuilder;
@@ -292,7 +291,7 @@ public class KafkaConnectAssemblyOperatorConnectorOffsetsTest {
                     List<OwnerReference> ownerReferenceList = configMap.getMetadata().getOwnerReferences();
                     assertThat(ownerReferenceList, hasSize(1));
                     assertThat(ownerReferenceList.get(0).getName(), is(CONNECTOR_NAME));
-                    assertThat(ownerReferenceList.get(0).getKind(), is(Crds.kind(KafkaConnector.class)));
+                    assertThat(ownerReferenceList.get(0).getKind(), is(KafkaConnector.RESOURCE_KIND));
                     Map<String, String> configMapData = configMap.getData();
                     assertThat(configMapData, hasEntry("offsets.json", OFFSETS_JSON));
 

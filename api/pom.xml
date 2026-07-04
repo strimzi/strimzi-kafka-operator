@@ -52,6 +52,7 @@
         <dependency>
             <groupId>io.fabric8</groupId>
             <artifactId>kubernetes-model-apiextensions</artifactId>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>io.fabric8</groupId>
