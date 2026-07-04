@@ -16,6 +16,7 @@ import io.strimzi.operator.topic.model.TopicEvent;
 import io.strimzi.operator.topic.model.TopicEvent.TopicDelete;
 import io.strimzi.operator.topic.model.TopicEvent.TopicUpsert;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -160,6 +161,15 @@ public class BatchingLoop {
     }
 
     /**
+     * Removes the topic from the {@link #inFlight} set together with the metric tracking the start time of its
+     * in-progress reconciliation.
+     */
+    private void removeFromInFlight(KubeRef ref) {
+        inFlight.remove(ref);
+        metricsHolder.removeReconciliationsInProgressStartTime(ref.namespace(), ref.name());
+    }
+
+    /**
      * A thread that services the head of the {@link #queue}.
      */
     class LoopRunnable extends Thread {
@@ -205,8 +215,8 @@ public class BatchingLoop {
                 synchronized (BatchingLoop.this) {
                     // remove the old batch from the inflight set and reset the batch
                     LOGGER.traceOp("[Batch #{}] Removing batch from inflight", batchId - 1);
-                    batch.toUpdate.stream().map(TopicEvent::toRef).forEach(inFlight::remove);
-                    batch.toDelete.stream().map(TopicEvent::toRef).forEach(inFlight::remove);
+                    batch.toUpdate.stream().map(TopicEvent::toRef).forEach(BatchingLoop.this::removeFromInFlight);
+                    batch.toDelete.stream().map(TopicEvent::toRef).forEach(BatchingLoop.this::removeFromInFlight);
                     batch.clear();
                     // fill a new batch
                     fillBatch(batchId, batch);
@@ -299,6 +309,7 @@ public class BatchingLoop {
             if (inFlight.add(ref)) {
                 // wasn't already inflight
                 LOGGER.debugOp("[Batch #{}] Adding {}", batchId, topicEvent);
+                metricsHolder.reconciliationsInProgressStartTime(ref.namespace(), ref.name()).set(Instant.now().getEpochSecond());
                 if (topicEvent instanceof TopicUpsert) {
                     batch.toUpdate.add((TopicUpsert) topicEvent);
                 } else {

@@ -21,6 +21,7 @@ import io.strimzi.operator.common.metrics.MetricsHolder;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.NamespaceAndName;
 import io.strimzi.operator.common.operator.resource.kubernetes.AbstractWatchableStatusedNamespacedResourceOperator;
+import io.strimzi.test.TestUtils;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
@@ -36,6 +37,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
+import java.time.Instant;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
@@ -49,6 +51,8 @@ import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
+import static org.hamcrest.Matchers.lessThanOrEqualTo;
 
 @ExtendWith(VertxExtension.class)
 @Group("strimzi")
@@ -225,6 +229,69 @@ public class OperatorMetricsTest {
 
                     async.flag();
                 })));
+    }
+
+    public void inProgressStartTimeMetric(VertxTestContext context, boolean successfulReconciliation)  {
+        MetricsProvider metricsProvider = createCleanMetricsProvider();
+
+        AbstractWatchableStatusedNamespacedResourceOperator resourceOperator = resourceOperatorWithExistingResourceWithoutSelectorLabel();
+
+        Promise<Void> blockedReconciliation = Promise.promise();
+        AbstractOperator operator = new AbstractOperator(vertx, "TestResource", resourceOperator, metricsProvider, null) {
+            @Override
+            protected Future createOrUpdate(Reconciliation reconciliation, CustomResource resource) {
+                return blockedReconciliation.future();
+            }
+
+            @Override
+            protected Future<Boolean> delete(Reconciliation reconciliation) {
+                return null;
+            }
+
+            @Override
+            protected Status createStatus(CustomResource ignored) {
+                return new Status() { };
+            }
+        };
+
+        MeterRegistry registry = metricsProvider.meterRegistry();
+        long beforeReconcile = Instant.now().getEpochSecond();
+
+        Checkpoint async = context.checkpoint();
+        operator.reconcile(new Reconciliation("test", "TestResource", "my-namespace", "my-resource"))
+                .onComplete(ignored -> async.flag());
+
+        // The metric is registered asynchronously after the reconciliation lock is acquired
+        TestUtils.waitFor("in-progress start time metric to be registered", 100, 10_000,
+                () -> !registry.find(MetricsHolder.METRICS_RECONCILIATIONS_IN_PROGRESS_START_TIME).gauges().isEmpty());
+
+        double startTime = registry.get(MetricsHolder.METRICS_RECONCILIATIONS_IN_PROGRESS_START_TIME)
+                .tag("kind", "TestResource")
+                .tag("namespace", "my-namespace")
+                .tag("name", "my-resource")
+                .gauge().value();
+        assertThat(startTime, is(greaterThanOrEqualTo((double) beforeReconcile)));
+        assertThat(startTime, is(lessThanOrEqualTo((double) Instant.now().getEpochSecond())));
+
+        if (successfulReconciliation) {
+            blockedReconciliation.complete();
+        } else {
+            blockedReconciliation.fail(new RuntimeException("Test error"));
+        }
+
+        // The metric is removed asynchronously when the reconciliation completes
+        TestUtils.waitFor("in-progress start time metric to be removed", 100, 10_000,
+                () -> registry.find(MetricsHolder.METRICS_RECONCILIATIONS_IN_PROGRESS_START_TIME).gauges().isEmpty());
+    }
+
+    @Test
+    public void testInProgressStartTimeMetricWithSuccessfulReconcile(VertxTestContext context)  {
+        inProgressStartTimeMetric(context, true);
+    }
+
+    @Test
+    public void testInProgressStartTimeMetricWithFailingReconcile(VertxTestContext context)  {
+        inProgressStartTimeMetric(context, false);
     }
 
     @Test

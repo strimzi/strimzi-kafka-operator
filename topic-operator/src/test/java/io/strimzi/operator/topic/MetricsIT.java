@@ -33,15 +33,18 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.function.UnaryOperator;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.lessThanOrEqualTo;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.mock;
@@ -149,6 +152,50 @@ public class MetricsIT implements TestSeparator {
         assertMetricMatches(metricsHolder, TopicOperatorMetricsHolder.METRICS_RECONCILIATIONS_MAX_BATCH_SIZE, "gauge", lessThanOrEqualTo((double) MAX_BATCH_SIZE));
         assertMetricMatches(metricsHolder, MetricsHolder.METRICS_RECONCILIATIONS_LOCKED, "counter", greaterThan(0.0));
         batchingLoop.stop();
+    }
+
+    @Test
+    public void batchingLoopInProgressStartTimeMetric() throws InterruptedException {
+        var config = TopicOperatorConfig.buildFromMap(Map.of(
+            TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:9092",
+            TopicOperatorConfig.WATCHED_NAMESPACE.key(), NAMESPACE,
+            TopicOperatorConfig.MAX_QUEUE_SIZE.key(), String.valueOf(MAX_QUEUE_SIZE),
+            TopicOperatorConfig.MAX_BATCH_SIZE.key(), String.valueOf(MAX_BATCH_SIZE),
+            TopicOperatorConfig.MAX_BATCH_LINGER_MS.key(), "100"
+        ));
+        var metricsHolder = new TopicOperatorMetricsHolder(KafkaTopic.RESOURCE_KIND, null, new TopicOperatorMetricsProvider(new SimpleMeterRegistry()));
+
+        var reconciliationBlocked = new CountDownLatch(1);
+        var controller = mock(BatchingTopicController.class);
+        Mockito.doAnswer(invocation -> {
+            reconciliationBlocked.await();
+            return null;
+        }).when(controller).onUpdate(anyList());
+
+        var batchingLoop = new BatchingLoop(config, controller, 1, mock(ItemStore.class), mock(Runnable.class), metricsHolder);
+        batchingLoop.start();
+
+        try {
+            long beforeReconcile = Instant.now().getEpochSecond();
+            batchingLoop.offer(new TopicUpsert(0, NAMESPACE, "my-topic", "100100"));
+
+            // The metric exists while the topic is in flight and the reconciliation is blocked
+            assertMetricMatches(metricsHolder, MetricsHolder.METRICS_RECONCILIATIONS_IN_PROGRESS_START_TIME, "gauge", greaterThan(0.0));
+            var startTime = metricsHolder.metricsProvider().meterRegistry()
+                .get(MetricsHolder.METRICS_RECONCILIATIONS_IN_PROGRESS_START_TIME)
+                .tags("kind", KafkaTopic.RESOURCE_KIND, "namespace", NAMESPACE, "name", "my-topic")
+                .gauge().value();
+            assertThat(startTime, greaterThanOrEqualTo((double) beforeReconcile));
+            assertThat(startTime, lessThanOrEqualTo((double) Instant.now().getEpochSecond()));
+
+            reconciliationBlocked.countDown();
+
+            // Once the reconciliation completes, the metric is removed
+            assertMetricAbsent(metricsHolder, MetricsHolder.METRICS_RECONCILIATIONS_IN_PROGRESS_START_TIME);
+        } finally {
+            reconciliationBlocked.countDown();
+            batchingLoop.stop();
+        }
     }
 
     @Test
@@ -352,6 +399,20 @@ public class MetricsIT implements TestSeparator {
     private KafkaTopic updateTopic(String name, UnaryOperator<KafkaTopic> changer) {
         var kafkaTopic = Crds.topicOperation(kubernetesClient).inNamespace(NAMESPACE).withName(name).get();
         return TestUtil.changeTopic(kubernetesClient, kafkaTopic, changer);
+    }
+
+    private void assertMetricAbsent(MetricsHolder metricsHolder, String name) throws InterruptedException {
+        var timeoutSec = 30;
+        while (--timeoutSec > 0) {
+            try {
+                metricsHolder.metricsProvider().meterRegistry().get(name).meter();
+                LOGGER.info("Metric {} is still present", name);
+                TimeUnit.SECONDS.sleep(1);
+            } catch (MeterNotFoundException mnfe) {
+                return;
+            }
+        }
+        throw new RuntimeException(String.format("Metric %s was not removed", name));
     }
 
     private void assertMetricMatches(MetricsHolder metricsHolder, String name, String type, Matcher<Double> matcher) throws InterruptedException {

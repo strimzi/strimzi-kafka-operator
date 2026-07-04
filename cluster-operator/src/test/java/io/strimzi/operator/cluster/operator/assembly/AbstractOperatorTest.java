@@ -10,6 +10,7 @@ import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import io.strimzi.api.kafka.model.common.Spec;
 import io.strimzi.api.kafka.model.kafka.KafkaStatus;
 import io.strimzi.api.kafka.model.kafka.Status;
@@ -26,7 +27,6 @@ import io.vertx.core.shareddata.Lock;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
-import io.vertx.micrometer.backends.BackendRegistries;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -68,7 +68,7 @@ class AbstractOperatorTest {
     void testWithLockCallableSuccessfulReleasesLock(VertxTestContext context) {
         var resourceOperator = new DefaultWatchableStatusedResourceOperator<>(vertx, null, "TestResource");
         @SuppressWarnings({ "unchecked", "rawtypes" })
-        var target = new DefaultOperator(vertx, "Test", resourceOperator, new MicrometerMetricsProvider(BackendRegistries.getDefaultNow()), null);
+        var target = new DefaultOperator(vertx, "Test", resourceOperator, new MicrometerMetricsProvider(new SimpleMeterRegistry()), null);
         Reconciliation reconciliation = new Reconciliation("test", "TestResource", "my-namespace", "my-resource");
         String lockName = target.getLockName(reconciliation);
 
@@ -101,7 +101,7 @@ class AbstractOperatorTest {
     void testWithLockCallableHandledExceptionReleasesLock(VertxTestContext context) {
         var resourceOperator = new DefaultWatchableStatusedResourceOperator<>(vertx, null, "TestResource");
         @SuppressWarnings({ "unchecked", "rawtypes" })
-        var target = new DefaultOperator(vertx, "Test", resourceOperator, new MicrometerMetricsProvider(BackendRegistries.getDefaultNow()), null);
+        var target = new DefaultOperator(vertx, "Test", resourceOperator, new MicrometerMetricsProvider(new SimpleMeterRegistry()), null);
         Reconciliation reconciliation = new Reconciliation("test", "TestResource", "my-namespace", "my-resource");
         String lockName = target.getLockName(reconciliation);
 
@@ -136,7 +136,7 @@ class AbstractOperatorTest {
     void testWithLockCallableUnhandledExceptionReleasesLock(VertxTestContext context) {
         var resourceOperator = new DefaultWatchableStatusedResourceOperator<>(vertx, null, "TestResource");
         @SuppressWarnings({ "unchecked", "rawtypes" })
-        var target = new DefaultOperator(vertx, "Test", resourceOperator, new MicrometerMetricsProvider(BackendRegistries.getDefaultNow()), null);
+        var target = new DefaultOperator(vertx, "Test", resourceOperator, new MicrometerMetricsProvider(new SimpleMeterRegistry()), null);
         Reconciliation reconciliation = new Reconciliation("test", "TestResource", "my-namespace", "my-resource");
         String lockName = target.getLockName(reconciliation);
 
@@ -174,7 +174,7 @@ class AbstractOperatorTest {
     void testWithLockFailHandlerUnhandledExceptionReleasesLock(VertxTestContext context) {
         var resourceOperator = new DefaultWatchableStatusedResourceOperator<>(vertx, null, "TestResource");
         @SuppressWarnings({ "unchecked", "rawtypes" })
-        var target = new DefaultOperator(vertx, "Test", resourceOperator, new MicrometerMetricsProvider(BackendRegistries.getDefaultNow()), null);
+        var target = new DefaultOperator(vertx, "Test", resourceOperator, new MicrometerMetricsProvider(new SimpleMeterRegistry()), null);
         Reconciliation reconciliation = new Reconciliation("test", "TestResource", "my-namespace", "my-resource");
         String lockName = target.getLockName(reconciliation);
 
