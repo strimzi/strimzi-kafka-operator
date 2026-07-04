@@ -17,3 +17,11 @@ spec:
       annotations:
         summary: 'Cluster Operator down'
         description: 'The Cluster Operator has been down for longer than 90 seconds'
+    - alert: StuckReconciliation
+      expr: time() - strimzi_reconciliations_in_progress_start_time_seconds > 6 * 60 * 60
+      for: 1m
+      labels:
+        severity: warning
+      annotations:
+        summary: 'Reconciliation is stuck'
+        description: 'The reconciliation of the {{ $labels.kind }} resource {{ $labels.name }} in namespace {{ $labels.namespace }} has been running for more than 6 hours'
