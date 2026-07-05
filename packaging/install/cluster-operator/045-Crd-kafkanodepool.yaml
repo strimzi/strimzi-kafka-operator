@@ -86,6 +86,7 @@ spec:
                     description: Specifies a specific persistent volume to use. It contains key:value pairs representing labels for selecting such a volume.
                   size:
                     type: string
+                    pattern: "^([0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$"
                     description: "When `type=persistent-claim`, defines the size of the persistent volume claim, such as 100Gi. Mandatory when `type=persistent-claim`."
                   sizeLimit:
                     type: string
@@ -128,6 +129,7 @@ spec:
                           description: Specifies a specific persistent volume to use. It contains key:value pairs representing labels for selecting such a volume.
                         size:
                           type: string
+                          pattern: "^([0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$"
                           description: "When `type=persistent-claim`, defines the size of the persistent volume claim, such as 100Gi. Mandatory when `type=persistent-claim`."
                         sizeLimit:
                           type: string

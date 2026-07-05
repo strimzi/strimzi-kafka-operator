@@ -10,6 +10,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.strimzi.api.kafka.model.common.Constants;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.Minimum;
+import io.strimzi.crdgenerator.annotations.Pattern;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -54,6 +55,7 @@ public class PersistentClaimStorage extends SingleVolumeStorage {
         super.setId(id);
     }
 
+    @Pattern(Constants.MEMORY_REGEX)
     @Description("When `type=persistent-claim`, defines the size of the persistent volume claim, such as 100Gi. " +
             "Mandatory when `type=persistent-claim`.")
     public String getSize() {

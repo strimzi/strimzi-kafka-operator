@@ -3,6 +3,7 @@
 ## 1.2.0
 
 * Add support for Apache Kafka 4.3.1
+* Validate the format of the `size` field in persistent-claim storage in the CRD, so malformed values (for example `100XYZ`) are rejected on admission instead of failing later during reconciliation. This matches the existing validation on the ephemeral storage `sizeLimit` field.
 
 ### Major changes, deprecations, and removals
 
