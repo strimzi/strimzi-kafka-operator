@@ -27,56 +27,58 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 @ExtendWith(VertxExtension.class)
 public class ClusterCaRenewalTest {
-    private static final Function<NodeRef, Subject> SUBJECT_FN = node -> new Subject.Builder().build();
+    private static final Function<NodeRef, Subject> SUBJECT_FN = node -> {
+        Subject.Builder subject = new Subject.Builder();
+        subject.addDnsName("example.local");
+        subject.addIpAddress("127.0.0.1");
+        return subject.build();
+    };
     private static final Set<NodeRef> NODES = new LinkedHashSet<>();
 
-    // This certificate is used for testing purposes only. It is valid until 2119, so it should not cause any issues with the tests.
+    // This certificate is used for testing purposes only. It is valid until 2126 and includes SANs (DNS: example.local; IP: 127.0.0.1).
     private final static String DUMMY_CERT = "-----BEGIN CERTIFICATE-----\n" +
-            "MIIDLDCCAhSgAwIBAgIUAw8AFcPvJkD5ijYTuT5KBt6sUX8wDQYJKoZIhvcNAQEL\n" +
+            "MIIDTDCCAjSgAwIBAgIUWAVui97Rf8gVcC/s5QL+L4OL04cwDQYJKoZIhvcNAQEL\n" +
             "BQAwLTETMBEGA1UECgwKaW8uc3RyaW16aTEWMBQGA1UEAwwNY2x1c3Rlci1jYSB2\n" +
-            "MDAgFw0yNjA2MzAxMjU0MTNaGA8yMTE5MDYwODEyNTQxM1owFTETMBEGA1UEAwwK\n" +
-            "dmFsaWQtdXNlcjCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAJvaDeKe\n" +
-            "8XQgS8bwp8XTjnaO07+sVufu9vg/2HuDExn5oG2OFYSIZzS6Sl03xrsoQXBw8LLy\n" +
-            "XExmem+iZM1r5zVAvqrmD4GIdc+SRalpGdA1STm3PUUUiAVAaM2wlrXMQm8xSIjL\n" +
-            "tMUcLSsg8zzbCjwiTQ4F8svvFGBSEkLfuxYzonQlp6pfRhS66Hl1GAY7lOBlXmwy\n" +
-            "5rZbJkJMy+vVt/6uQe4gJonRmOPqofeGEVPmfyPCNgl1cIETMxv1JJS74hFM3pSf\n" +
-            "w1zl4WEAuVNA04tIMrFCQC8vMmxs0/spMzNt9adVnHDWE0/FwExYWKPNFYXPt3nW\n" +
-            "O3nljkEYNlFcUhcCAwEAAaNaMFgwCQYDVR0TBAIwADALBgNVHQ8EBAMCBaAwHQYD\n" +
-            "VR0OBBYEFPhOVigIhxQpcTlsrM68V9M7k2IaMB8GA1UdIwQYMBaAFJXl3KBqS4/x\n" +
-            "rjOAskayMxAzPjWQMA0GCSqGSIb3DQEBCwUAA4IBAQAZqNkA/cl0AWKhbYLPiOVM\n" +
-            "cVbjO5cKeaiKOswLyUlRDUElBPv0+zV2Q7x1JckxP/5nKo1CIQMHaWuYnrdnEBZc\n" +
-            "6xmS/DCtgD7+FWUpbMdD4cL+iFYkH5DsnG0D5AYo73/wbg/+e+38YPdYUYz94rG/\n" +
-            "1YfY/7+U2lXpncPkqIMwDiJBBKvCVCEyY/KOqbq4urEYUVHXNlZ1YcSOTqHYyY2C\n" +
-            "WpP//JDkel5JYikIMqp5BE9HKWBkZVkSS9kisHJkskbcKcCW1jCWwHE2hRqWE0WZ\n" +
-            "91mD7YKS3VB3cQ/mBqYpf2bCf1zQZtqOB7dfbRevHMYlfKyH+qX7rlfujF8nOP/g\n" +
+            "MDAgFw0yNjA3MDYwOTAyMzBaGA8yMTI2MDYxMjA5MDIzMFowFTETMBEGA1UEAwwK\n" +
+            "dmFsaWQtdXNlcjCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAO5t4wYz\n" +
+            "10K39pRlxNy3LXa6nFsnRi7g+C2h5X1Hbu/9Lv2mSVy0MmLWNw/Nx8qbdprdgBlt\n" +
+            "GnmEz2e435g6tg354qlyb/pMSEE6v1tXpY68+p882tDFY/+2y1YEcseQUXd70H7T\n" +
+            "pT+Go/Bqj5e4YpsZPUtPw0NSDJAp0DYwcJFeVtrltv11CWX6A8p0LaqaTT/gewKP\n" +
+            "D19Z6tQ/LOQpMHRXwcKpk8Xwuoj6iV5SuhYa/Tvmz6h/vedDftcUEVbmyQLXLyUf\n" +
+            "o+4QLGyTtQqJ11B5ssKhAsB4DSd7WIfuZSUo8sykGeoVJ2bNF+RmQtvRBt0xYWgq\n" +
+            "CoTrTgs2q7zsAU8CAwEAAaN6MHgwCQYDVR0TBAIwADALBgNVHQ8EBAMCBaAwHgYD\n" +
+            "VR0RBBcwFYINZXhhbXBsZS5sb2NhbIcEfwAAATAdBgNVHQ4EFgQUcWpAdlVDH5RL\n" +
+            "TAntb4q2Bqkt3YowHwYDVR0jBBgwFoAURtdYM1go6ehB9x21eBjupnzy1pAwDQYJ\n" +
+            "KoZIhvcNAQELBQADggEBAEBQ0ptk3cMCLQNG8IT5kkSruvoxov+mDDh4YLLTp9qQ\n" +
+            "+nfCwFDyaDrGeQ8aKds5VF53lLdZV/s6L2oxjVdysrI6FMd2asUubbME0BitPsrS\n" +
+            "qwWdasACBpQUM8JwZURVQHA0fCfdAB6v3kds5kz4QZ22FQI0I6HQ9ZGqsYIpHrA7\n" +
+            "ZoGmkRZHnDhqw7VGDkyRaCjxSu8hMaYgorFhMFnoRflbCh44lJcv16hudyvt+v4l\n" +
+            "Mmat3ZFEVzjyiKA/bSQKveGfS9D+LQedVRitZq15qh4heoc78pdxDZV664nttAgp\n" +
+            "dl8yPaW/n+jon4ZQ1CEW6NVh3YHDFGcs5KHgdSNuL80=\n" +
             "-----END CERTIFICATE-----\n";
 
 
-    // Certificate used for expiration tests where actual expiration is needed. This certificate expires on 27th March 2023.
+    // Certificate used for expiration tests where actual expiration is needed. This certificate expires on 27th March 2023 and includes SANs (DNS: example.local; IP: 127.0.0.1).
     // But with correct configuration or renewal days before expiration, it can be used to trigger expiration,
     private final static String EXPIRED_DUMMY_CERT = "-----BEGIN CERTIFICATE-----\n" +
-            "MIIECTCCAfGgAwIBAgIUAw8AFcPvJkD5ijYTuT5KBt6sUX4wDQYJKoZIhvcNAQEN\n" +
+            "MIIDRDCCAiygAwIBAgIUAw8AFcPvJkD5ijYTuT5KBt6sUX4wDQYJKoZIhvcNAQEL\n" +
             "BQAwLTETMBEGA1UECgwKaW8uc3RyaW16aTEWMBQGA1UEAwwNY2xpZW50cy1jYSB2\n" +
             "MDAeFw0yMjAzMjcxNTQyNTBaFw0yMzAzMjcxNTQyNTBaMA8xDTALBgNVBAMMBHVz\n" +
-            "ZXIwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQC8cpNdaHYyZuPJ2p1I\n" +
-            "2LpEN5nwrE6Bys79ITbfwj+C12O5wyLp+n0VNr/7DPZUQP71vwWDdSmrP2gW6OSV\n" +
-            "EOb40mjLvRSRRDrcowNXL6NlV+tzd7QuNgBilWssBfpvBGYHsux7dA7Qf+DGv/Wp\n" +
-            "Wqw31ybPk5NqQXzRjJ+6xVLjERlLuIGy0s4XsO4Grfuwa1Le40KVoHNR+BRft+H6\n" +
-            "wajKnUP/j0hJHOgYmYNeuB6Aw8T49HctKJzay/b/0Jud1Vre3/cS4l5EyKpq1H3l\n" +
-            "DWPShSY0CdcvmVkSoqRJeRbqeRrUrAdzWtOIXVBuI9SonAov5RHBtaX+rZldALZD\n" +
-            "o3FrAgMBAAGjPzA9MB0GA1UdDgQWBBTO8o3wkH+x7WSJNO9Gi316f5SBADAMBgNV\n" +
-            "HRMBAf8EAjAAMA4GA1UdDwEB/wQEAwIFoDANBgkqhkiG9w0BAQ0FAAOCAgEAjGBr\n" +
-            "wBlL2Bxcqo8BbRsLtQyRjiOtG+K0gniMAJaX5T6zUxPouzw4fkz+FMlyU+/SGYHt\n" +
-            "wDKhe6pNqls5If884i2R/Vkl4PpX1WMi1BewzdENIGkQFKzjRQd/yCKqlW2+QaNM\n" +
-            "H+u+K5l6yxyZ0FWH5pf7XVMpgs8MI/0Hq1349Lh56Ekcna8MZNxg1wBjMQzSrv9U\n" +
-            "QUV7ITOCt4ghYsUx3gaoehLt9lXnnNWCW7o/7VcZEfxV1Cr6pm+cgfvqS+sTeb8E\n" +
-            "xxlIVuwhVuT6kxzepjEceXrletj66aITAZlg3xPQwzw3jYX354HXkmpDox2KvcLK\n" +
-            "xKhBfbqbEZbI/kVKZF6XQEWmflnz/kiy1hTfHBNRuOTu/pHb4LHXW0b4qUcljxRR\n" +
-            "412HUn/OTulvqtU9pQi442+KzxFX+bm6mQwO95eZbte8omK5EzWZkvop6CjT4V9a\n" +
-            "Rnb2PLgqNCSBkp4XhR77bdWI8y569y+lcMckj6xK2ct1OGNpudClkd0oeUb/MZnT\n" +
-            "4ebFTZY24EM5LNmWXaR6RVmbg0Xc1kSR8DqUzTaNA2s8lbtQId4yvzxOP5Lkcq/G\n" +
-            "dJl3QtzbWBWFW2bU8MHZ2bUQsmw0RtmTg9tDMCHLAH+9Mw7yMWsEg5iX0H7hnwJA\n" +
-            "T/DiI+A2t2dGukf5qfzqgiXkq4XqM6+p0zY1Cv0=\n" +
+            "ZXIwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDG+c0r8BqSSttN3glQ\n" +
+            "u1rhodlB3+Q4XTLMmpX1kvzaeMHGLS/D6gmu2X1Ox7QJkb5Sv9pq7ufUuSFXzWPV\n" +
+            "Kyi4BrrrQH5ysKoaeEY8oZFZZjsD0FmAsh7NTzXCy4rXzj+p3zCZvJ/W3njsBhuW\n" +
+            "ed/Cpbx/fJEfD8IzK3qpjDBFYgkhxOMuObiEar49rbFVs4lsP9wu+NwXIOKufCAj\n" +
+            "EdQxTkcqR4Qt88g/DfJN0tP4bro2gdvbF6tlbFidFV0hXwQoN1oEflWU3Wc8gry7\n" +
+            "cRSA0myTJKORgtQrBsv4+i42RbcqOFyYgAdYqkh4s/BQQHCHsU8uCewPA4Cc/xkV\n" +
+            "kTFnAgMBAAGjejB4MAkGA1UdEwQCMAAwCwYDVR0PBAQDAgWgMB4GA1UdEQQXMBWC\n" +
+            "DWV4YW1wbGUubG9jYWyHBH8AAAEwHQYDVR0OBBYEFCEHtiyjUqOmlZjAEOdNhpoU\n" +
+            "QAb+MB8GA1UdIwQYMBaAFPEx+LWO3ZmV78yRt+1BMu/LB9LmMA0GCSqGSIb3DQEB\n" +
+            "CwUAA4IBAQAK3NIyn7jBDniyTVkNvC0RMO4SqIAU7pzwFo575YrUizweYc7xdV2V\n" +
+            "23zR9M4gIfom1Cjccws8ZgvHUsNR1UidewyEt4pihsiNB2ad6W6Ft+4CKbHTFd0g\n" +
+            "Geu1S58duUJhIPHzRHkSYKGHqt0N6WYwYAgsWH4rJlL59Rkpv9IokW2C6ST2102H\n" +
+            "0q7axKbD8nWiXpTfID8ei723u1imNKEg/2z60CgJPfDg8DscbhaoRpgND0XlcB3J\n" +
+            "xxKC9M18nAM4kikCp0Cx4UvQbwdzNwjmDfQpmTwLCOfC88ZYYgEju0+rjna5caOb\n" +
+            "2CTLAx8SYKOGBTzflSuvKzib0gSoXZUW\n" +
             "-----END CERTIFICATE-----\n";
 
     // LinkedHashSet is used to maintain ordering and have predictable test results
