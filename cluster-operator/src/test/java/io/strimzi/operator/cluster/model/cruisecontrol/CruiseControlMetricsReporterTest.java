@@ -151,4 +151,14 @@ public class CruiseControlMetricsReporterTest {
 
         assertThat(e.getMessage(), is("The Cruise Control metric topic minISR was set to a value (4) which is higher than the number of replicas for that topic (3). Please ensure that the Cruise Control metrics topic minISR is <= to the topic's replication factor."));
     }
+
+    @Test
+    public void testNonIntegerCruiseControlMetricsTopicConfig() {
+        Map<String, Object> userConfiguration = new HashMap<>();
+        userConfiguration.put("cruise.control.metrics.topic.num.partitions", "not-a-number");
+
+        InvalidResourceException e = assertThrows(InvalidResourceException.class, () -> CruiseControlMetricsReporter.fromCrd(KAFKA, new KafkaConfiguration(Reconciliation.DUMMY_RECONCILIATION, userConfiguration.entrySet()), 3));
+
+        assertThat(e.getMessage(), is("Cruise Control configuration option 'cruise.control.metrics.topic.num.partitions' should be an integer but was set to 'not-a-number'."));
+    }
 }
