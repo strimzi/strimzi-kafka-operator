@@ -13,7 +13,7 @@ import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.PodResource;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
-import io.strimzi.operator.common.operator.resource.concurrent.AbstractReadyNamespacedResourceOperator;
+import io.strimzi.operator.common.operator.resource.kubernetes.AbstractReadyNamespacedResourceOperator;
 
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executor;

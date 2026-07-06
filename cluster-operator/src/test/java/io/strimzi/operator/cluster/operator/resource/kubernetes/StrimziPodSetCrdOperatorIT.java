@@ -16,7 +16,7 @@ import io.strimzi.api.kafka.model.podset.StrimziPodSet;
 import io.strimzi.api.kafka.model.podset.StrimziPodSetBuilder;
 import io.strimzi.api.kafka.model.podset.StrimziPodSetList;
 import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.operator.common.operator.resource.concurrent.AbstractCustomResourceOperatorIT;
+import io.strimzi.operator.common.operator.resource.kubernetes.AbstractCustomResourceOperatorIT;
 import io.strimzi.test.CrdUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;

@@ -4,7 +4,7 @@
  */
 package io.strimzi.operator.common;
 
-import io.strimzi.operator.common.operator.resource.concurrent.Informer;
+import io.strimzi.operator.common.operator.resource.kubernetes.Informer;
 
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;

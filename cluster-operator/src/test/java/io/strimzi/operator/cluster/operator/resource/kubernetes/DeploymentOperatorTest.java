@@ -20,7 +20,7 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.operator.common.operator.resource.concurrent.ScalableResourceOperatorTest;
+import io.strimzi.operator.common.operator.resource.kubernetes.ScalableResourceOperatorTest;
 import io.strimzi.test.TestUtils;
 import org.junit.jupiter.api.Test;
 

@@ -10,8 +10,8 @@ import io.fabric8.kubernetes.api.model.NodeList;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.strimzi.operator.common.operator.resource.concurrent.AbstractNonNamespacedResourceOperator;
-import io.strimzi.operator.common.operator.resource.concurrent.AbstractNonNamespacedResourceOperatorTest;
+import io.strimzi.operator.common.operator.resource.kubernetes.AbstractNonNamespacedResourceOperator;
+import io.strimzi.operator.common.operator.resource.kubernetes.AbstractNonNamespacedResourceOperatorTest;
 
 import static java.util.Collections.singletonMap;
 import static org.mockito.Mockito.when;
