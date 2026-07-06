@@ -17,7 +17,7 @@ import io.strimzi.api.kafka.model.kafka.listener.ListenerStatus;
 import io.strimzi.api.kafka.model.kafka.listener.ListenerStatusBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.NodeAddressType;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
-import io.strimzi.operator.cluster.model.CertUtils;
+import io.strimzi.operator.cluster.model.CertSecretUtils;
 import io.strimzi.operator.cluster.model.ClusterCa;
 import io.strimzi.operator.cluster.model.DnsNameGenerator;
 import io.strimzi.operator.cluster.model.KafkaCluster;
@@ -850,7 +850,7 @@ public class KafkaListenersReconciler {
                                 } else  {
                                     String publicKey = Util.decodeFromBase64(secret.getData().get(customCert.getCertificate()));
                                     customListenerCertificates.put(listener.getName(), publicKey);
-                                    result.customListenerCertificateThumbprints.put(listener.getName(), CertUtils.getCertificateShortThumbprint(secret, customCert.getCertificate()));
+                                    result.customListenerCertificateThumbprints.put(listener.getName(), CertSecretUtils.getCertificateShortThumbprint(secret, customCert.getCertificate()));
                                 }
                             } else {
                                 errors.add("Secret " + customCert.getSecretName() + " with custom TLS certificate does not exist.");

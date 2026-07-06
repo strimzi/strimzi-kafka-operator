@@ -1318,7 +1318,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
             // Reuse existing certificate if it exists
             if (existingSecretWithName.get(podName) != null) {
                 Secret existingSecret = existingSecretWithName.get(podName);
-                CertAndKey nodeCertAndKey = CertUtils.keyStoreCertAndKey(existingSecret, podName, clusterCa.caCertGenerationAnnotation());
+                CertAndKey nodeCertAndKey = CertSecretUtils.keyStoreCertAndKey(existingSecret, podName, clusterCa.caCertGenerationAnnotation());
                 existingCerts.put(podName, nodeCertAndKey);
             } else {
                 LOGGER.debugCr(reconciliation, "No existing certificate found for pod {}/{}", namespace, podName);
@@ -1337,7 +1337,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
         return updatedCerts.entrySet()
                 .stream()
                 .map(entry -> {
-                    Map<String, String> secretData = new HashMap<>(CertUtils.buildSecretData(entry.getKey(), entry.getValue()));
+                    Map<String, String> secretData = new HashMap<>(CertSecretUtils.buildSecretData(entry.getKey(), entry.getValue()));
                     if (customCertsData != null && !customCertsData.isEmpty()) {
                         secretData.putAll(customCertsData);
                     }

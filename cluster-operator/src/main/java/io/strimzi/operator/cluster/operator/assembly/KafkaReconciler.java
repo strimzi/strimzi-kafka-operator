@@ -33,7 +33,7 @@ import io.strimzi.api.kafka.model.podset.StrimziPodSet;
 import io.strimzi.api.kafka.model.podset.StrimziPodSetBuilder;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
-import io.strimzi.operator.cluster.model.CertUtils;
+import io.strimzi.operator.cluster.model.CertSecretUtils;
 import io.strimzi.operator.cluster.model.ClusterCa;
 import io.strimzi.operator.cluster.model.ImagePullPolicy;
 import io.strimzi.operator.cluster.model.KafkaCluster;
@@ -796,7 +796,7 @@ public class KafkaReconciler {
                 .filter(l -> l.isTls() && l.getConfiguration() != null && l.getConfiguration().getBrokerCertChainAndKey() != null)
                 .map(l ->
                         ReconcilerUtils.getCertificateAndKeyAsync(secretOperator, reconciliation.namespace(), l.getConfiguration().getBrokerCertChainAndKey())
-                                .onSuccess(certAndKey -> customCertsData.putAll(CertUtils.buildSecretData(ListenersUtils.identifier(l), certAndKey)))
+                                .onSuccess(certAndKey -> customCertsData.putAll(CertSecretUtils.buildSecretData(ListenersUtils.identifier(l), certAndKey)))
                                 .mapEmpty()
                 ).toList();
         return Future.all(futures)
@@ -834,7 +834,7 @@ public class KafkaReconciler {
                                 if (patchResult != null) {
                                     kafkaServerCertificateHash.put(
                                             ReconcilerUtils.getPodIndexFromPodName(secretName),
-                                            CertUtils.getCertificateThumbprint(patchResult.resource(),
+                                            CertSecretUtils.getCertificateThumbprint(patchResult.resource(),
                                                     Ca.SecretEntry.CRT.asKey(secretName)
                                             ));
                                 }
