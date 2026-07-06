@@ -1088,7 +1088,7 @@ public class KafkaReconciler {
      * @return  Future which completes when the KRaft metadata version is set to the current version or updated.
      */
     protected Future<Void> metadataVersion(KafkaStatus kafkaStatus) {
-        return KRaftMetadataManager.maybeUpdateMetadataVersion(reconciliation, vertx, this.coTlsPemIdentity, adminClientProvider, kafka.getMetadataVersion(), kafkaStatus);
+        return VertxUtil.toFuture(KRaftMetadataManager.maybeUpdateMetadataVersion(reconciliation, this.coTlsPemIdentity, adminClientProvider, kafka.getMetadataVersion(), kafkaStatus));
     }
 
     /**
