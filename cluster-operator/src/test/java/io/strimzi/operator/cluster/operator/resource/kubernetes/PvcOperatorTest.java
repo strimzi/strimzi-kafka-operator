@@ -11,8 +11,11 @@ import io.fabric8.kubernetes.api.model.PersistentVolumeClaimList;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
+import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
+import io.fabric8.kubernetes.client.dsl.base.PatchContext;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.kubernetes.AbstractNamespacedResourceOperator;
 import io.strimzi.operator.common.operator.resource.kubernetes.AbstractNamespacedResourceOperatorTest;
 import org.junit.jupiter.api.Test;
@@ -20,8 +23,11 @@ import org.junit.jupiter.api.Test;
 import java.util.Collections;
 import java.util.Map;
 
+import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -140,11 +146,30 @@ public class PvcOperatorTest extends AbstractNamespacedResourceOperatorTest<Kube
                 .endMetadata()
                 .build();
 
-        PvcOperator op = createResourceOperations(mock(KubernetesClient.class), false);
+        KubernetesClient mockClient = mock(KubernetesClient.class);
+        PvcOperator op = createResourceOperations(mockClient, false);
 
-        assertThat(op.diff(Reconciliation.DUMMY_RECONCILIATION, "my-pvc", pvcWithDefaultAnnos, pvcWithDefaultAnnos).isEmpty(), is(true));
-        assertThat(op.diff(Reconciliation.DUMMY_RECONCILIATION, "my-pvc", pvcWithDefaultAnnos, pvcWithIgnoredAnnos).isEmpty(), is(true));
-        assertThat(op.diff(Reconciliation.DUMMY_RECONCILIATION, "my-pvc", pvcWithDefaultAnnos, pvcWithOtherAnnos).isEmpty(), is(false));
+        // This tests check that the AbstractResourceoperator.diff(...) method to verify that IGNORABLE_PATHS is respected.
+        // But because it is not accessible directly, it checks it through the internalUpdate method that is accessible.
+        @SuppressWarnings("unchecked")
+        MixedOperation<PersistentVolumeClaim, PersistentVolumeClaimList, Resource<PersistentVolumeClaim>> pvcOp = mock(MixedOperation.class);
+        @SuppressWarnings("unchecked")
+        NonNamespaceOperation<PersistentVolumeClaim, PersistentVolumeClaimList, Resource<PersistentVolumeClaim>> nsOp = mock(NonNamespaceOperation.class);
+        @SuppressWarnings("unchecked")
+        Resource<PersistentVolumeClaim> resourceOp = mock(Resource.class);
+        when(mockClient.persistentVolumeClaims()).thenReturn(pvcOp);
+        when(nsOp.withName(anyString())).thenReturn(resourceOp);
+        when(pvcOp.inNamespace(anyString())).thenReturn(nsOp);
+        when(resourceOp.patch(any(PatchContext.class), any(PersistentVolumeClaim.class))).thenAnswer(i -> new PersistentVolumeClaimBuilder((PersistentVolumeClaim) i.getArgument(1))
+                .editMetadata()
+                    .withResourceVersion("new-version")
+                .endMetadata()
+                .build());
+
+        assertThat(op.internalUpdate(Reconciliation.DUMMY_RECONCILIATION, "my-namespace", "my-pvc", pvcWithDefaultAnnos, pvcWithDefaultAnnos).toCompletableFuture().join(), is(ReconcileResult.noop(pvcWithDefaultAnnos)));
+        assertThat(op.internalUpdate(Reconciliation.DUMMY_RECONCILIATION, "my-namespace", "my-pvc", pvcWithDefaultAnnos, pvcWithIgnoredAnnos).toCompletableFuture().join(), is(ReconcileResult.noop(pvcWithDefaultAnnos)));
+        assertThat(op.internalUpdate(Reconciliation.DUMMY_RECONCILIATION, "my-namespace", "my-pvc", pvcWithDefaultAnnos, pvcWithOtherAnnos).toCompletableFuture().join(), is(instanceOf(ReconcileResult.Patched.class)));
+        assertThat(op.internalUpdate(Reconciliation.DUMMY_RECONCILIATION, "my-namespace", "my-pvc", pvcWithDefaultAnnos, pvcWithOtherAnnos).toCompletableFuture().join().resource().getMetadata().getAnnotations().get("some.annotation.io/key"), is("value"));
     }
 
     @Test
