@@ -16,9 +16,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.OptionalLong;
+import java.util.concurrent.CompletionException;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -52,7 +55,7 @@ class KafkaQuorumCheckTest {
         controllers.put(3, OptionalLong.of(9700L));
         Admin admin = setUpMocks(1, controllers);
         KafkaQuorumCheck quorumCheck = new KafkaQuorumCheck(Reconciliation.DUMMY_RECONCILIATION, admin, CONTROLLER_QUORUM_FETCH_TIMEOUT_MS);
-        quorumCheck.canRollController(1).whenComplete((result, err) -> assertTrue(result));
+        quorumCheck.canRollController(1).whenComplete((result, err) -> assertTrue(result)).join();
     }
 
     @Test
@@ -64,7 +67,7 @@ class KafkaQuorumCheckTest {
         controllers.put(4, OptionalLong.of(9600L));
         Admin admin = setUpMocks(1, controllers);
         KafkaQuorumCheck quorumCheck = new KafkaQuorumCheck(Reconciliation.DUMMY_RECONCILIATION, admin, CONTROLLER_QUORUM_FETCH_TIMEOUT_MS);
-        quorumCheck.canRollController(1).whenComplete((result, err) -> assertTrue(result));
+        quorumCheck.canRollController(1).whenComplete((result, err) -> assertTrue(result)).join();
     }
 
     @Test
@@ -75,7 +78,7 @@ class KafkaQuorumCheckTest {
         controllers.put(3, OptionalLong.of(8200L));
         Admin admin = setUpMocks(1, controllers);
         KafkaQuorumCheck quorumCheck = new KafkaQuorumCheck(Reconciliation.DUMMY_RECONCILIATION, admin, CONTROLLER_QUORUM_FETCH_TIMEOUT_MS);
-        quorumCheck.canRollController(1).whenComplete((result, err) -> assertTrue(result));
+        quorumCheck.canRollController(1).whenComplete((result, err) -> assertFalse(result)).join();
     }
 
     @Test
@@ -87,7 +90,7 @@ class KafkaQuorumCheckTest {
         controllers.put(4, OptionalLong.of(9000L));
         Admin admin = setUpMocks(1, controllers);
         KafkaQuorumCheck quorumCheck = new KafkaQuorumCheck(Reconciliation.DUMMY_RECONCILIATION, admin, CONTROLLER_QUORUM_FETCH_TIMEOUT_MS);
-        quorumCheck.canRollController(1).whenComplete((result, err) -> assertTrue(result));
+        quorumCheck.canRollController(1).whenComplete((result, err) -> assertFalse(result)).join();
     }
 
     @Test
@@ -98,7 +101,7 @@ class KafkaQuorumCheckTest {
         controllers.put(3, OptionalLong.of(10000L));
         Admin admin = setUpMocks(1, controllers);
         KafkaQuorumCheck quorumCheck = new KafkaQuorumCheck(Reconciliation.DUMMY_RECONCILIATION, admin, CONTROLLER_QUORUM_FETCH_TIMEOUT_MS);
-        quorumCheck.canRollController(2).whenComplete((result, err) -> assertTrue(result));
+        quorumCheck.canRollController(2).whenComplete((result, err) -> assertTrue(result)).join();
     }
 
     @Test
@@ -109,7 +112,7 @@ class KafkaQuorumCheckTest {
         controllers.put(3, OptionalLong.of(10000L));
         Admin admin = setUpMocks(1, controllers);
         KafkaQuorumCheck quorumCheck = new KafkaQuorumCheck(Reconciliation.DUMMY_RECONCILIATION, admin, CONTROLLER_QUORUM_FETCH_TIMEOUT_MS);
-        quorumCheck.canRollController(3).whenComplete((result, err) -> assertTrue(result));
+        quorumCheck.canRollController(3).whenComplete((result, err) -> assertFalse(result)).join();
     }
 
     @Test
@@ -120,7 +123,7 @@ class KafkaQuorumCheckTest {
         controllers.put(3, OptionalLong.of(-1));
         Admin admin = setUpMocks(1, controllers);
         KafkaQuorumCheck quorumCheck = new KafkaQuorumCheck(Reconciliation.DUMMY_RECONCILIATION, admin, CONTROLLER_QUORUM_FETCH_TIMEOUT_MS);
-        quorumCheck.canRollController(3).whenComplete((result, err) -> assertTrue(result));
+        quorumCheck.canRollController(3).whenComplete((result, err) -> assertFalse(result)).join();
     }
 
     @Test
@@ -133,7 +136,8 @@ class KafkaQuorumCheckTest {
         kafkaFuture.completeExceptionally(new Exception(expectedError));
         when(qrmResult.quorumInfo()).thenReturn(kafkaFuture);
         KafkaQuorumCheck quorumCheck = new KafkaQuorumCheck(Reconciliation.DUMMY_RECONCILIATION, admin, CONTROLLER_QUORUM_FETCH_TIMEOUT_MS);
-        quorumCheck.canRollController(1).whenComplete((r, error) -> assertThat(error.getMessage(), is(expectedError)));
+        CompletionException exception = assertThrows(CompletionException.class, () -> quorumCheck.canRollController(1).join());
+        assertThat(exception.getCause().getMessage(), is(expectedError));
     }
 
     @Test
@@ -142,7 +146,7 @@ class KafkaQuorumCheckTest {
         controllers.put(1, OptionalLong.of(10000L));
         Admin admin = setUpMocks(1, controllers);
         KafkaQuorumCheck quorumCheck = new KafkaQuorumCheck(Reconciliation.DUMMY_RECONCILIATION, admin, CONTROLLER_QUORUM_FETCH_TIMEOUT_MS);
-        quorumCheck.canRollController(1).whenComplete((result, err) -> assertTrue(result));
+        quorumCheck.canRollController(1).whenComplete((result, err) -> assertTrue(result)).join();
     }
 
     @Test
@@ -152,7 +156,7 @@ class KafkaQuorumCheckTest {
         controllers.put(2, OptionalLong.of(9500L));
         Admin admin = setUpMocks(1, controllers);
         KafkaQuorumCheck quorumCheck = new KafkaQuorumCheck(Reconciliation.DUMMY_RECONCILIATION, admin, CONTROLLER_QUORUM_FETCH_TIMEOUT_MS);
-        quorumCheck.canRollController(1).whenComplete((result, err) -> assertTrue(result));
+        quorumCheck.canRollController(1).whenComplete((result, err) -> assertTrue(result)).join();
     }
 
     @Test
@@ -162,7 +166,7 @@ class KafkaQuorumCheckTest {
         controllers.put(2, OptionalLong.of(7000L));
         Admin admin = setUpMocks(1, controllers);
         KafkaQuorumCheck quorumCheck = new KafkaQuorumCheck(Reconciliation.DUMMY_RECONCILIATION, admin, CONTROLLER_QUORUM_FETCH_TIMEOUT_MS);
-        quorumCheck.canRollController(1).whenComplete((result, err) -> assertTrue(result));
+        quorumCheck.canRollController(1).whenComplete((result, err) -> assertFalse(result)).join();
     }
 
     @Test
@@ -173,7 +177,7 @@ class KafkaQuorumCheckTest {
         controllers.put(3, OptionalLong.of(9500L));
         Admin admin = setUpMocks(1, controllers);
         KafkaQuorumCheck quorumCheck = new KafkaQuorumCheck(Reconciliation.DUMMY_RECONCILIATION, admin, CONTROLLER_QUORUM_FETCH_TIMEOUT_MS);
-        quorumCheck.canRollController(1).whenComplete((result, err) -> assertTrue(result));
+        quorumCheck.canRollController(1).whenComplete((result, err) -> assertFalse(result)).join();
     }
 
     @Test
@@ -188,7 +192,7 @@ class KafkaQuorumCheckTest {
         Admin admin = setUpMocks(-1, controllers);
         KafkaQuorumCheck quorumCheck = new KafkaQuorumCheck(Reconciliation.DUMMY_RECONCILIATION, admin, CONTROLLER_QUORUM_FETCH_TIMEOUT_MS);
 
-        quorumCheck.canRollController(1).whenComplete((result, err) -> assertTrue(result));
+        quorumCheck.canRollController(1).whenComplete((result, err) -> assertFalse(result)).join();
     }
 
     @Test
@@ -199,6 +203,6 @@ class KafkaQuorumCheckTest {
         Admin admin = setUpMocks(1, controllers);
         long dynamicTimeout = 100L; // Dynamic timeout value
         KafkaQuorumCheck quorumCheck = new KafkaQuorumCheck(Reconciliation.DUMMY_RECONCILIATION, admin, dynamicTimeout);
-        quorumCheck.canRollController(1).whenComplete((result, err) -> assertTrue(result));
+        quorumCheck.canRollController(1).whenComplete((result, err) -> assertTrue(result)).join();
     }
 }
