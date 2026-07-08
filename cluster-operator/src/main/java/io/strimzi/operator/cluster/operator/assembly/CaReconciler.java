@@ -18,7 +18,7 @@ import io.strimzi.certs.CertAndKey;
 import io.strimzi.certs.CertIssuer;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.model.AbstractModel;
-import io.strimzi.operator.cluster.model.CertUtils;
+import io.strimzi.operator.cluster.model.CertSecretUtils;
 import io.strimzi.operator.cluster.model.ClusterCa;
 import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.cluster.model.NodeRef;
@@ -345,11 +345,11 @@ public class CaReconciler {
                         return Future.succeededFuture();
                     }
 
-                    CertAndKey oldCertAndKey = CertUtils.keyStoreCertAndKey(oldSecret, componentName, Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION);
+                    CertAndKey oldCertAndKey = CertSecretUtils.keyStoreCertAndKey(oldSecret, componentName, Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION);
 
                     CertAndKey updatedCert = clusterCa.maybeCopyOrGenerateClientCert(reconciliation, componentName, oldCertAndKey, Util.isMaintenanceTimeWindowsSatisfied(reconciliation, maintenanceWindows, clock.instant()));
 
-                    Map<String, String> secretData = CertUtils.buildSecretData(componentName, updatedCert);
+                    Map<String, String> secretData = CertSecretUtils.buildSecretData(componentName, updatedCert);
                     coSecret = ModelUtils.createSecret(
                             KafkaResources.clusterOperatorCertsSecretName(reconciliation.name()),
                             reconciliation.namespace(),

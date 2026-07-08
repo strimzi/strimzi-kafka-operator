@@ -448,7 +448,7 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
     public Secret generateCertificatesSecret(String namespace, String clusterName, ClusterCa clusterCa, Secret existingSecret, boolean isMaintenanceTimeWindowsSatisfied) {
         LOGGER.debugCr(reconciliation, "Generating certificates");
         try {
-            CertAndKey existingCertAndKey = CertUtils.keyStoreCertAndKey(existingSecret, CruiseControl.COMPONENT_TYPE, clusterCa.caCertGenerationAnnotation());
+            CertAndKey existingCertAndKey = CertSecretUtils.keyStoreCertAndKey(existingSecret, CruiseControl.COMPONENT_TYPE, clusterCa.caCertGenerationAnnotation());
 
             Map<String, CertAndKey> ccCerts = clusterCa.generateCcCerts(namespace, clusterName, existingCertAndKey,
                     new NodeRef(CruiseControl.COMPONENT_TYPE, 0, null, false, false),
@@ -456,7 +456,7 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
             LOGGER.debugCr(reconciliation, "End generating certificates");
 
             return ModelUtils.createSecret(CruiseControlResources.secretName(cluster), namespace, labels, ownerReference,
-                    CertUtils.buildSecretData(ccCerts),
+                    CertSecretUtils.buildSecretData(ccCerts),
                     Map.of(clusterCa.caCertGenerationAnnotation(), String.valueOf(ccCerts.get(CruiseControl.COMPONENT_TYPE).caCertGeneration())),
                     Map.of());
         } catch (IOException e) {

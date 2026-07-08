@@ -117,7 +117,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
-import static io.strimzi.operator.common.model.Ca.x509Certificate;
+import static io.strimzi.operator.common.model.CertificateUtils.x509Certificate;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonMap;

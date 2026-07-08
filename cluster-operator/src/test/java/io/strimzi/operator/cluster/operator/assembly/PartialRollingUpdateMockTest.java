@@ -23,7 +23,7 @@ import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ResourceUtils;
-import io.strimzi.operator.cluster.model.CertUtils;
+import io.strimzi.operator.cluster.model.CertSecretUtils;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.PodRevision;
 import io.strimzi.operator.cluster.model.PodSetUtils;
@@ -268,7 +268,7 @@ public class PartialRollingUpdateMockTest {
 
         for (Pod pod : initialPods) {
             String podCertHash = pod.getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_SERVER_CERT_HASH);
-            String expectedCertHash = CertUtils.getCertificateThumbprint(certSecrets.get(pod.getMetadata().getName()), Ca.SecretEntry.CRT.asKey(pod.getMetadata().getName()));
+            String expectedCertHash = CertSecretUtils.getCertificateThumbprint(certSecrets.get(pod.getMetadata().getName()), Ca.SecretEntry.CRT.asKey(pod.getMetadata().getName()));
             context.verify(() -> assertThat(podCertHash, is(expectedCertHash)));
         }
 
@@ -284,7 +284,7 @@ public class PartialRollingUpdateMockTest {
 
                     for (Pod pod : initialPods) {
                         String podCertHash = pod.getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_SERVER_CERT_HASH);
-                        String expectedCertHash = CertUtils.getCertificateThumbprint(certSecrets.get(pod.getMetadata().getName()), Ca.SecretEntry.CRT.asKey(pod.getMetadata().getName()));
+                        String expectedCertHash = CertSecretUtils.getCertificateThumbprint(certSecrets.get(pod.getMetadata().getName()), Ca.SecretEntry.CRT.asKey(pod.getMetadata().getName()));
                         assertThat(podCertHash, is(expectedCertHash));
                     }
 

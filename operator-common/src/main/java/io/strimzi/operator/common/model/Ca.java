@@ -14,23 +14,13 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
 
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.security.InvalidAlgorithmParameterException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
-import java.security.cert.CertPath;
-import java.security.cert.CertPathValidator;
-import java.security.cert.CertPathValidatorException;
-import java.security.cert.Certificate;
-import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
-import java.security.cert.CertificateFactory;
-import java.security.cert.PKIXParameters;
-import java.security.cert.TrustAnchor;
 import java.security.cert.X509Certificate;
 import java.security.spec.InvalidKeySpecException;
 import java.time.Clock;
@@ -43,8 +33,6 @@ import java.time.format.SignStyle;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Base64;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -553,7 +541,7 @@ public abstract class Ca {
      * @return  True when the certificate should be renewed. False otherwise.
      */
     public boolean isExpiring(Secret secret, String certKey)  {
-        X509Certificate currentCert = cert(secret, certKey);
+        X509Certificate currentCert = CertificateUtils.cert(secret, certKey);
         return certNeedsRenewal(currentCert);
     }
 
@@ -566,7 +554,7 @@ public abstract class Ca {
      */
     public boolean isExpiring(byte[] certificate)  {
         try {
-            X509Certificate currentCert = x509Certificate(certificate);
+            X509Certificate currentCert = CertificateUtils.x509Certificate(certificate);
             return certNeedsRenewal(currentCert);
         } catch (CertificateException e) {
             LOGGER.errorCr(reconciliation, "Failed to parse existing certificate", e);
@@ -657,7 +645,7 @@ public abstract class Ca {
                 .stream()
                 .filter(entry -> SecretEntry.CRT.matchesType(entry.getKey()))
                 .forEach(entry -> {
-                    List<X509Certificate> certChain = extractCaCertChain(entry.getKey(), Util.decodeBytesFromBase64(entry.getValue()));
+                    List<X509Certificate> certChain = CertificateUtils.extractCertChain(entry.getKey(), Util.decodeBytesFromBase64(entry.getValue()));
                     if (certChain.isEmpty()) {
                         LOGGER.errorCr(reconciliation, "{} certificate chain in {} is empty", caName(), entry.getKey());
                         throw new RuntimeException("Failed to validate User supplied " + caName() + " cert chain in " + entry.getKey());
@@ -665,7 +653,7 @@ public abstract class Ca {
                         LOGGER.debugCr(reconciliation, "{} certificate {} contains a single certificate", caName(), entry.getKey());
                         return;
                     }
-                    if (!certIsTrusted(reconciliation, certChain.subList(0, certChain.size() - 1), certChain.getLast())) {
+                    if (!CertificateUtils.certIsTrusted(reconciliation, certChain.subList(0, certChain.size() - 1), certChain.getLast())) {
                         String errorMessage = "User supplied " + caName() + " cert chain " + entry.getKey() + " is not valid. Certificates must be provided in the correct order.";
                         LOGGER.errorCr(reconciliation, errorMessage);
                         throw new RuntimeException(errorMessage);
@@ -771,29 +759,12 @@ public abstract class Ca {
     private X509Certificate currentCaCertX509() {
         if (caCertData.get(CA_CRT) != null) {
             try {
-                return x509Certificate(currentCaCertBytes());
+                return CertificateUtils.x509Certificate(currentCaCertBytes());
             } catch (CertificateException e) {
                 throw new RuntimeException("Failed to decode "  + CA_CRT + " in Secret for " + caName(), e);
             }
         } else {
             return null;
-        }
-    }
-
-    private List<X509Certificate> extractCaCertChain(String key, byte[] caCertBytes) {
-        try (ByteArrayInputStream bis = new ByteArrayInputStream(caCertBytes)) {
-            Collection<? extends Certificate> certificates = certificateFactory().generateCertificates(bis);
-            List<X509Certificate> x509Certificates = new ArrayList<>(certificates.size());
-            for (Certificate certificate : certificates) {
-                if (certificate instanceof X509Certificate) {
-                    x509Certificates.add((X509Certificate) certificate);
-                } else {
-                    throw new CertificateException("Not an X509Certificate: " + certificate);
-                }
-            }
-            return x509Certificates;
-        } catch (CertificateException | IOException e) {
-            throw new RuntimeException("Failed to decode "  + key + " in Secret for " + caName(), e);
         }
     }
 
@@ -808,29 +779,12 @@ public abstract class Ca {
                 .filter(e -> e.getKey().endsWith(SecretEntry.CRT.suffix) && e.getValue() != null && !e.getValue().isBlank())
                 .map(e -> {
                     try {
-                        return x509CertificateToPem(x509Certificate(Util.decodeBytesFromBase64(e.getValue())));
+                        return CertificateUtils.x509CertificateToPem(CertificateUtils.x509Certificate(Util.decodeBytesFromBase64(e.getValue())));
                     } catch (CertificateException ex) {
                         throw new RuntimeException("Failed to decode " + e.getKey() + " in Secret for " + caName(), ex);
                     }
                 })
                 .collect(Collectors.joining(System.lineSeparator()));
-    }
-
-    /**
-     * Converts the Java X509Certificate into the proper PEM format.
-     *
-     * @param cert  X509 certificate to convert
-     *
-     * @return  String with PEM encoded certificate
-     *
-     * @throws CertificateEncodingException An exception might be thrown if the certificate encoding fails
-     */
-    public static String x509CertificateToPem(X509Certificate cert) throws CertificateEncodingException {
-        Base64.Encoder encoder = Base64.getMimeEncoder(64, System.lineSeparator().getBytes(StandardCharsets.US_ASCII));
-
-        return "-----BEGIN CERTIFICATE-----\n"
-                + new String(encoder.encode(cert.getEncoded()), StandardCharsets.US_ASCII)
-                + "\n-----END CERTIFICATE-----";
     }
 
     /**
@@ -925,7 +879,7 @@ public abstract class Ca {
         String certName = entry.getKey();
         String certText = entry.getValue();
         try {
-            X509Certificate cert = x509Certificate(Util.decodeBytesFromBase64(certText));
+            X509Certificate cert = CertificateUtils.x509Certificate(Util.decodeBytesFromBase64(certText));
             Instant expiryDate = cert.getNotAfter().toInstant();
             remove = expiryDate.isBefore(clock.instant());
             if (remove) {
@@ -993,62 +947,6 @@ public abstract class Ca {
         Instant renewalPeriodBegin = notAfter.minus(caConfig.getRenewalDays(), ChronoUnit.DAYS);
         LOGGER.traceCr(reconciliation, "Certificate {} expires on {} renewal period begins on {}", cert.getSubjectX500Principal(), notAfter, renewalPeriodBegin);
         return this.clock.instant().isAfter(renewalPeriodBegin);
-    }
-
-    /**
-     * Extracts X509 certificate from a Kubernetes Secret
-     *
-     * @param secret    Kubernetes Secret with the certificate
-     * @param key       Key under which the certificate is stored in the Secret
-     *
-     * @return  An X509Certificate instance with the certificate
-     */
-    public static X509Certificate cert(Secret secret, String key)  {
-        if (secret == null || secret.getData() == null || secret.getData().get(key) == null) {
-            return null;
-        }
-        byte[] bytes = Util.decodeBytesFromBase64(secret.getData().get(key));
-        try {
-            return x509Certificate(bytes);
-        } catch (CertificateException e) {
-            throw new RuntimeException("Failed to decode certificate in data." + key.replace(".", "\\.") + " of Secret " + secret.getMetadata().getName(), e);
-        }
-    }
-
-    /**
-     * Creates X509Certificate instance from a byte array containing a certificate.
-     *
-     * @param bytes     Bytes with the X509 certificate
-     *
-     * @throws CertificateException     Thrown when the creation of the X509Certificate instance fails. Typically, this
-     *                                  would happen because the bytes do not contain a valid X509 certificate.
-     *
-     * @return  X509Certificate instance created based on the Certificate bytes
-     */
-    public static X509Certificate x509Certificate(byte[] bytes) throws CertificateException {
-        CertificateFactory factory = certificateFactory();
-        return x509Certificate(factory, bytes);
-    }
-
-    static X509Certificate x509Certificate(CertificateFactory factory, byte[] bytes) throws CertificateException {
-        // When bytes contain a certificate chain, read only the first certificate
-        // to get thumbprints of the leaf certificate
-        Certificate certificate = factory.generateCertificates(new ByteArrayInputStream(bytes)).stream().findFirst().orElse(null);
-        if (certificate instanceof X509Certificate) {
-            return (X509Certificate) certificate;
-        } else {
-            throw new CertificateException("Not an X509Certificate: " + certificate);
-        }
-    }
-
-    static CertificateFactory certificateFactory() {
-        CertificateFactory factory;
-        try {
-            factory = CertificateFactory.getInstance("X.509");
-        } catch (CertificateException e) {
-            throw new RuntimeException("No security provider with support for X.509 certificates", e);
-        }
-        return factory;
     }
 
     private void addCertCaToTrustStore(String alias, Map<String, String> certData) {
@@ -1219,48 +1117,5 @@ public abstract class Ca {
             throw new RuntimeException(CA_CRT + " does not exist in the secret for " + caName());
         }
         return cert.getNotAfter().getTime();
-    }
-
-    /**
-     * Validates whether the provided cert chain is trusted and valid using the provided CA certificate.
-     * <p>
-     * Uses the <code>CertPathValidator.validate</code> method to check if a cert chain
-     * can be validated with the provided caCert. If the cert chain contains more than one
-     * certificate the first certificate should be the end entity (or leaf) certificate, while
-     * the final certificate should be the one issued by the root Ca. The root Ca should not be
-     * included in the cert chain list.
-     *
-     * @param reconciliation Reconciliation marker
-     * @param certChainToValidate Certificates to validate. Can be a single certificate or a chain of ordered certificates.
-     * @param caCert The root Ca certificate to use for validation.
-     *
-     * @return True if the CA certificate can be used to validate the provided certificate or certificate chain. False otherwise.
-     */
-    protected static boolean certIsTrusted(Reconciliation reconciliation, List<X509Certificate> certChainToValidate, X509Certificate caCert) {
-        CertPathValidator certPathValidator;
-        CertPath eeCertPath;
-        PKIXParameters pkixParams;
-        try {
-            certPathValidator = CertPathValidator.getInstance("PKIX");
-            CertificateFactory factory = CertificateFactory.getInstance("X.509");
-            TrustAnchor trustAnchor = new TrustAnchor(caCert, null);
-            pkixParams = new PKIXParameters(Collections.singleton(trustAnchor));
-            pkixParams.setRevocationEnabled(false);
-            eeCertPath = factory.generateCertPath(certChainToValidate);
-        } catch (NoSuchAlgorithmException | CertificateException | InvalidAlgorithmParameterException e) {
-            LOGGER.errorCr(reconciliation, "Error constructing objects to validate certificate chain.", e);
-            throw new RuntimeException(e);
-        }
-        try {
-            certPathValidator.validate(eeCertPath, pkixParams);
-            LOGGER.debugCr(reconciliation, "Certificate chain validated using supplied CA cert.");
-            return true;
-        } catch (CertPathValidatorException e) {
-            LOGGER.errorCr(reconciliation, "Certificate chain cannot be validated with supplied CA cert.", e);
-            return false;
-        } catch (InvalidAlgorithmParameterException e) {
-            LOGGER.errorCr(reconciliation, "Error validating the certificate chain.", e);
-            throw new RuntimeException(e);
-        }
     }
 }

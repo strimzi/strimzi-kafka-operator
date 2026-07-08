@@ -14,6 +14,7 @@ import io.strimzi.certs.Subject;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Ca;
 import io.strimzi.operator.common.model.CaConfig;
+import io.strimzi.operator.common.model.CertificateUtils;
 import io.strimzi.operator.common.model.PasswordGenerator;
 
 import java.io.File;
@@ -414,7 +415,7 @@ public class ClusterCa extends Ca {
         List<String> subjectAltNames = new ArrayList<>();
 
         try {
-            X509Certificate cert = x509Certificate(certificate);
+            X509Certificate cert = CertificateUtils.x509Certificate(certificate);
             Collection<List<?>> altNames = cert.getSubjectAlternativeNames();
             if (altNames != null) {
                 subjectAltNames = altNames.stream()
