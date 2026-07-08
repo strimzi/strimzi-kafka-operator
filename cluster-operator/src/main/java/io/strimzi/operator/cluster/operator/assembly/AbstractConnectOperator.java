@@ -278,7 +278,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
      *
      * @param reconciliation The reconcilation.
      * @param namespace Namespace of the Connect cluster.
-     * @param connect KafkaConectCluster object.
+     * @param connect KafkaConnectCluster object.
      * @return Future which completes when the reconciliation is done.
      */
     protected Future<Collection<String>> tlsTrustedCertsSecret(Reconciliation reconciliation, String namespace, KafkaConnectCluster connect) {

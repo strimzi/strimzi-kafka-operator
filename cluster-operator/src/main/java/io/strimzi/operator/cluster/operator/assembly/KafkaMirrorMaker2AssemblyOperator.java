@@ -197,7 +197,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
      */
     @Override
     protected Future<Collection<String>> tlsTrustedCertsSecret(Reconciliation reconciliation, String namespace, KafkaConnectCluster mirrorMaker2Cluster) {
-        Map<String, Future<? extends Collection<String>>> certificatesFutures = new HashMap<>();
+        Map<String, Future<List<String>>> certificatesFutures = new HashMap<>();
 
         if (mirrorMaker2Cluster.getTls() != null && mirrorMaker2Cluster.getTls().getTrustedCertificates() != null) {
             certificatesFutures.put(
@@ -231,7 +231,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
                 .compose(i -> {
                     Map<String, String> secretData = new HashMap<>();
                     Set<String> certs = new HashSet<>();
-                    for (Map.Entry<String, Future<? extends Collection<String>>> entry : certificatesFutures.entrySet()) {
+                    for (Map.Entry<String, Future<List<String>>> entry : certificatesFutures.entrySet()) {
                         Collection<String> certificates = entry.getValue().result();
                         if (certificates != null && !certificates.isEmpty()) {
                             String certBundle = String.join("\n", certificates);

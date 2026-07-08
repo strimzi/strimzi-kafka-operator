@@ -15,7 +15,6 @@ import io.fabric8.kubernetes.client.Watcher;
 import io.micrometer.core.instrument.Timer;
 import io.netty.channel.ConnectTimeoutException;
 import io.strimzi.api.kafka.model.common.Condition;
-import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthentication;
 import io.strimzi.api.kafka.model.connect.KafkaConnect;
 import io.strimzi.api.kafka.model.connect.KafkaConnectList;
 import io.strimzi.api.kafka.model.connect.KafkaConnectResources;
@@ -53,7 +52,6 @@ import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -184,7 +182,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
                 .compose(i -> VertxUtil.toFuture(serviceOperations.reconcile(reconciliation, namespace, connect.getServiceName(), connect.generateService())))
                 .compose(i -> VertxUtil.toFuture(serviceOperations.reconcile(reconciliation, namespace, connect.getComponentName(), connect.generateHeadlessService())))
                 .compose(i -> tlsTrustedCertsSecret(reconciliation, namespace, connect))
-                .compose(certs -> generateAuthHash(namespace, kafkaConnect.getSpec().getAuthentication(), certs))
+                .compose(certs -> ReconcilerUtils.authTlsHash(secretOperations, namespace, kafkaConnect.getSpec().getAuthentication(), certs))
                 .compose(hash -> {
                     podAnnotations.put(Annotations.ANNO_STRIMZI_AUTH_HASH, Integer.toString(hash));
                     return Future.succeededFuture();
@@ -282,18 +280,6 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
             }
             return Future.join(connectorFutures);
         }).mapEmpty();
-    }
-
-    /**
-     * Generates a hash from the trusted TLS certificates that can be used to spot if it has changed.
-     *
-     * @param namespace          Namespace of the Connect cluster
-     * @param authentication     KafkaClientAuthentication object
-     * @param certificates       List of trusted certificates
-     * @return                   Future for tracking the asynchronous result of generating the TLS auth hash
-     */
-    private Future<Integer> generateAuthHash(String namespace, KafkaClientAuthentication authentication, Collection<String> certificates) {
-        return ReconcilerUtils.authTlsHash(secretOperations, namespace, authentication, certificates);
     }
 
     /**
