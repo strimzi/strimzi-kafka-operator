@@ -217,9 +217,9 @@ public class KafkaRoller {
      * Which pods get rolled is determined by {@code podNeedsRestart}.
      * The pods may not be rolled in id order, due to the {@linkplain KafkaRoller rolling algorithm}.
      * @param podNeedsRestart Predicate for determining whether a pod should be rolled.
-     * @return A CompletableFuture completed when rolling is complete.
+     * @return A CompletionStage completed when rolling is complete.
      */
-    public CompletableFuture<Void> rollingRestart(Function<Pod, RestartReasons> podNeedsRestart) {
+    public CompletionStage<Void> rollingRestart(Function<Pod, RestartReasons> podNeedsRestart) {
         this.podNeedsRestart = podNeedsRestart;
         CompletableFuture<Void> result = new CompletableFuture<>();
         singleExecutor.submit(() -> {

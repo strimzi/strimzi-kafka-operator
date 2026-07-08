@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.stream.Collectors;
 
 import static io.strimzi.operator.common.Util.maybeUnwrapCompletionException;
@@ -45,20 +46,20 @@ class KafkaAvailability {
         this.ac = ac;
         this.reconciliation = reconciliation;
         // 1. Get all topic names
-        CompletableFuture<Set<String>> topicNames = topicNames();
+        CompletionStage<Set<String>> topicNames = topicNames();
         // 2. Get topic descriptions
         descriptions = topicNames.thenCompose(names -> {
             LOGGER.debugCr(reconciliation, "Got {} topic names", names.size());
             LOGGER.traceCr(reconciliation, "Topic names {}", names);
             return describeTopics(names);
-        });
+        }).toCompletableFuture();
     }
 
     /**
      * Determine whether the given broker can be rolled without affecting
      * producers with acks=all publishing to topics with a {@code min.in.sync.replicas}.
      */
-    CompletableFuture<Boolean> canRoll(int podId) {
+    CompletionStage<Boolean> canRoll(int podId) {
         LOGGER.debugCr(reconciliation, "Determining whether broker {} can be rolled", podId);
         return canRollBroker(descriptions, podId);
     }
@@ -195,7 +196,7 @@ class KafkaAvailability {
         return topicPartitionInfos;
     }
 
-    protected CompletableFuture<Collection<TopicDescription>> describeTopics(Set<String> names) {
+    protected CompletionStage<Collection<TopicDescription>> describeTopics(Set<String> names) {
         CompletableFuture<Collection<TopicDescription>> descFuture = new CompletableFuture<>();
         ac.describeTopics(names).allTopicNames()
                 .whenComplete((tds, error) -> {
@@ -209,7 +210,7 @@ class KafkaAvailability {
         return descFuture;
     }
 
-    protected CompletableFuture<Set<String>> topicNames() {
+    protected CompletionStage<Set<String>> topicNames() {
         CompletableFuture<Set<String>> namesFuture = new CompletableFuture<>();
         ac.listTopics(new ListTopicsOptions().listInternal(true)).names()
                 .whenComplete((names, error) -> {

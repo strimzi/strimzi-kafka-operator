@@ -12,6 +12,7 @@ import org.apache.kafka.clients.admin.QuorumInfo;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.CompletionStage;
 import java.util.stream.Collectors;
 
 import static io.strimzi.operator.common.Util.maybeUnwrapCompletionException;
@@ -40,7 +41,7 @@ class KafkaQuorumCheck {
      * healthy if the majority of controllers, excluding the given node, have caught up with the quorum leader within the
      * controller.quorum.fetch.timeout.ms.
      */
-    CompletableFuture<Boolean> canRollController(int nodeId) {
+    CompletionStage<Boolean> canRollController(int nodeId) {
         LOGGER.debugCr(reconciliation, "Determining whether controller pod {} can be rolled", nodeId);
         return describeMetadataQuorum().whenComplete((qrmInfo, error) -> {
             if (error != null) {
@@ -62,7 +63,7 @@ class KafkaQuorumCheck {
     /**
      * Returns id of the active controller/quorum leader.
      **/
-    CompletableFuture<Integer> quorumLeaderId() {
+    CompletionStage<Integer> quorumLeaderId() {
         LOGGER.debugCr(reconciliation, "Determining the active controller");
         return describeMetadataQuorum()
                 .whenComplete((qrmInfo, error) -> {
