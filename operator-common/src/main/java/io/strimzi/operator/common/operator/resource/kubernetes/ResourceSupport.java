@@ -16,7 +16,7 @@ import io.fabric8.kubernetes.client.dsl.Listable;
 import io.fabric8.kubernetes.client.dsl.Watchable;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
-import io.strimzi.operator.common.TimeoutException;
+import io.strimzi.operator.common.StrimziTimeoutException;
 import io.strimzi.operator.common.Util;
 
 import java.io.Closeable;
@@ -177,8 +177,8 @@ public class ResourceSupport {
                         } else {
                             Throwable primary;
 
-                            if (Util.maybeUnwrapCompletionException(thrown) instanceof TimeoutException) {
-                                primary = new TimeoutException("\"" + watchFnDescription + "\" timed out after " + operationTimeoutMs + "ms");
+                            if (Util.maybeUnwrapCompletionException(thrown) instanceof StrimziTimeoutException) {
+                                primary = new StrimziTimeoutException("\"" + watchFnDescription + "\" timed out after " + operationTimeoutMs + "ms");
                             } else {
                                 primary = thrown;
                             }
@@ -327,7 +327,7 @@ public class ResourceSupport {
                                 "Exceeded timeout of %dms while waiting for %s to be %s", timeoutMs, logContext,
                                 logState);
                         LOGGER.errorCr(reconciliation, exceptionMessage);
-                        promise.completeExceptionally(new TimeoutException(exceptionMessage));
+                        promise.completeExceptionally(new StrimziTimeoutException(exceptionMessage));
                     } else {
                         // Schedule ourselves to run again
                         CompletableFuture.delayedExecutor(

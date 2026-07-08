@@ -6,7 +6,7 @@ package io.strimzi.operator.cluster.operator;
 
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
-import io.strimzi.operator.common.TimeoutException;
+import io.strimzi.operator.common.StrimziTimeoutException;
 import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -156,7 +156,7 @@ public final class VertxUtil {
                                     if (timeLeft <= 0) {
                                         String exceptionMessage = String.format("Exceeded timeout of %dms while waiting for %s to be %s", timeoutMs, logContext, logState);
                                         LOGGER.errorCr(reconciliation, exceptionMessage);
-                                        promise.fail(new TimeoutException(exceptionMessage));
+                                        promise.fail(new StrimziTimeoutException(exceptionMessage));
                                     } else {
                                         // Schedule ourselves to run again
                                         vertx.setTimer(Math.min(pollIntervalMs, timeLeft), this);

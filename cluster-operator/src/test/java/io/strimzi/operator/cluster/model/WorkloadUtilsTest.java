@@ -35,6 +35,7 @@ import io.strimzi.api.kafka.model.common.template.DnsPolicy;
 import io.strimzi.api.kafka.model.common.template.PodTemplate;
 import io.strimzi.api.kafka.model.common.template.PodTemplateBuilder;
 import io.strimzi.api.kafka.model.common.template.ResourceTemplateBuilder;
+import io.strimzi.api.kafka.model.common.template.StrimziDeploymentStrategy;
 import io.strimzi.api.kafka.model.kafka.PersistentClaimStorageBuilder;
 import io.strimzi.api.kafka.model.kafka.Storage;
 import io.strimzi.api.kafka.model.podset.StrimziPodSet;
@@ -139,7 +140,6 @@ public class WorkloadUtilsTest {
 
     @Test
     public void testCreateDeploymentWithNullTemplateAndRecreateStrategy()  {
-        @SuppressWarnings("checkstyle:NoFullyQualifiedClassNames") // Fully qualified class name used due to a name conflict
         Deployment dep = WorkloadUtils.createDeployment(
                 NAME,
                 NAMESPACE,
@@ -148,7 +148,7 @@ public class WorkloadUtilsTest {
                 null,
                 REPLICAS,
                 Map.of("extra", "annotations"),
-                WorkloadUtils.deploymentStrategy(io.strimzi.api.kafka.model.common.template.DeploymentStrategy.RECREATE),
+                WorkloadUtils.deploymentStrategy(StrimziDeploymentStrategy.RECREATE),
                 DUMMY_POD_TEMPLATE_SPEC
         );
 
@@ -183,7 +183,7 @@ public class WorkloadUtilsTest {
                         .build(),
                 REPLICAS,
                 Map.of("extra", "annotations"),
-                WorkloadUtils.deploymentStrategy(io.strimzi.api.kafka.model.common.template.DeploymentStrategy.ROLLING_UPDATE),
+                WorkloadUtils.deploymentStrategy(StrimziDeploymentStrategy.ROLLING_UPDATE),
                 DUMMY_POD_TEMPLATE_SPEC
         );
 
@@ -1033,8 +1033,7 @@ public class WorkloadUtilsTest {
 
     @Test
     public void testDeploymentStrategyRecreate()    {
-        @SuppressWarnings("checkstyle:NoFullyQualifiedClassNames") // Fully qualified class name used due to a name conflict
-        DeploymentStrategy strategy = WorkloadUtils.deploymentStrategy(io.strimzi.api.kafka.model.common.template.DeploymentStrategy.RECREATE);
+        DeploymentStrategy strategy = WorkloadUtils.deploymentStrategy(StrimziDeploymentStrategy.RECREATE);
 
         assertThat(strategy.getType(), is("Recreate"));
         assertThat(strategy.getRollingUpdate(), is(nullValue()));
@@ -1042,8 +1041,7 @@ public class WorkloadUtilsTest {
 
     @Test
     public void testDeploymentStrategyRollingUpdate()    {
-        @SuppressWarnings("checkstyle:NoFullyQualifiedClassNames") // Fully qualified class name used due to a name conflict
-        DeploymentStrategy strategy = WorkloadUtils.deploymentStrategy(io.strimzi.api.kafka.model.common.template.DeploymentStrategy.ROLLING_UPDATE);
+        DeploymentStrategy strategy = WorkloadUtils.deploymentStrategy(StrimziDeploymentStrategy.ROLLING_UPDATE);
 
         assertThat(strategy.getType(), is("RollingUpdate"));
         assertThat(strategy.getRollingUpdate().getMaxSurge(), is(new IntOrString(1)));

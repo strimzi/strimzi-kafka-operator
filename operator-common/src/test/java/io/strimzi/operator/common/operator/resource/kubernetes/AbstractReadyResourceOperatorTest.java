@@ -11,7 +11,7 @@ import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.operator.common.TimeoutException;
+import io.strimzi.operator.common.StrimziTimeoutException;
 import io.strimzi.test.TestUtils;
 import org.junit.jupiter.api.Test;
 
@@ -56,7 +56,7 @@ public abstract class AbstractReadyResourceOperatorTest<C extends KubernetesClie
         TestUtils.await(op.readiness(Reconciliation.DUMMY_RECONCILIATION, NAMESPACE, RESOURCE_NAME, 20, 100)
             .<Void>handle((v, error) -> {
                 assertThat(error, is(notNullValue()));
-                assertThat(error, is(instanceOf(TimeoutException.class)));
+                assertThat(error, is(instanceOf(StrimziTimeoutException.class)));
 
                 verify(mockResource, atLeastOnce()).get();
                 verify(mockResource, never()).isReady();
@@ -86,7 +86,7 @@ public abstract class AbstractReadyResourceOperatorTest<C extends KubernetesClie
         TestUtils.await(op.readiness(Reconciliation.DUMMY_RECONCILIATION, NAMESPACE, RESOURCE_NAME, 20, 100)
             .<Void>handle((v, error) -> {
                 assertThat(error, is(notNullValue()));
-                assertThat(error, is(instanceOf(TimeoutException.class)));
+                assertThat(error, is(instanceOf(StrimziTimeoutException.class)));
 
                 verify(mockResource, never()).isReady();
                 return null;
@@ -165,7 +165,7 @@ public abstract class AbstractReadyResourceOperatorTest<C extends KubernetesClie
         TestUtils.await(op.readiness(Reconciliation.DUMMY_RECONCILIATION, NAMESPACE, RESOURCE_NAME, 20, 100)
             .<Void>handle((v, error) -> {
                 assertThat(error, is(notNullValue()));
-                assertThat(error, is(instanceOf(TimeoutException.class)));
+                assertThat(error, is(instanceOf(StrimziTimeoutException.class)));
 
                 verify(mockResource, atLeastOnce()).get();
                 verify(mockResource, atLeastOnce()).isReady();
@@ -197,7 +197,7 @@ public abstract class AbstractReadyResourceOperatorTest<C extends KubernetesClie
         TestUtils.await(op.readiness(Reconciliation.DUMMY_RECONCILIATION, NAMESPACE, RESOURCE_NAME, 20, 100)
             .<Void>handle((v, error) -> {
                 assertThat(error, is(notNullValue()));
-                assertThat(error, is(instanceOf(TimeoutException.class)));
+                assertThat(error, is(instanceOf(StrimziTimeoutException.class)));
 
                 return null;
             }));

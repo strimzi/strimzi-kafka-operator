@@ -7,11 +7,11 @@ package io.strimzi.operator.common;
 /**
  * Thrown to indicate that timeout has been exceeded.
  */
-public class TimeoutException extends RuntimeException {
+public class StrimziTimeoutException extends RuntimeException {
     /**
      * Constructs the TimeoutException
      */
-    public TimeoutException() {
+    public StrimziTimeoutException() {
         super();
     }
 
@@ -20,7 +20,7 @@ public class TimeoutException extends RuntimeException {
      *
      * @param message   Error message
      */
-    public TimeoutException(String message) {
+    public StrimziTimeoutException(String message) {
         super(message);
     }
 }

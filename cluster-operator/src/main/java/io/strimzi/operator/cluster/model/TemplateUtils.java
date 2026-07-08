@@ -10,10 +10,10 @@ import io.fabric8.kubernetes.api.model.VolumeBuilder;
 import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.strimzi.api.kafka.model.common.template.AdditionalVolume;
 import io.strimzi.api.kafka.model.common.template.ContainerTemplate;
-import io.strimzi.api.kafka.model.common.template.DeploymentStrategy;
 import io.strimzi.api.kafka.model.common.template.DeploymentTemplate;
 import io.strimzi.api.kafka.model.common.template.HasMetadataTemplate;
 import io.strimzi.api.kafka.model.common.template.PodTemplate;
+import io.strimzi.api.kafka.model.common.template.StrimziDeploymentStrategy;
 import io.strimzi.operator.common.model.InvalidResourceException;
 
 import java.util.List;
@@ -169,7 +169,7 @@ public class TemplateUtils {
      *
      * @return  Custom deployment strategy or default value if not defined
      */
-    public static DeploymentStrategy deploymentStrategy(DeploymentTemplate template, DeploymentStrategy defaultValue) {
+    public static StrimziDeploymentStrategy deploymentStrategy(DeploymentTemplate template, StrimziDeploymentStrategy defaultValue) {
         return template != null && template.getDeploymentStrategy() != null ? template.getDeploymentStrategy() : defaultValue;
     }
 }

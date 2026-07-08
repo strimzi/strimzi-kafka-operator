@@ -16,7 +16,7 @@ import io.skodjob.kubetest4j.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.bridge.KafkaBridge;
 import io.strimzi.api.kafka.model.bridge.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.bridge.KafkaBridgeStatus;
-import io.strimzi.api.kafka.model.common.template.DeploymentStrategy;
+import io.strimzi.api.kafka.model.common.template.StrimziDeploymentStrategy;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
@@ -412,7 +412,7 @@ class HttpBridgeST extends AbstractST {
             .editSpec()
                 .editOrNewTemplate()
                     .editOrNewDeployment()
-                        .withDeploymentStrategy(DeploymentStrategy.RECREATE)
+                        .withDeploymentStrategy(StrimziDeploymentStrategy.RECREATE)
                     .endDeployment()
                 .endTemplate()
             .endSpec()
@@ -430,11 +430,11 @@ class HttpBridgeST extends AbstractST {
         LOGGER.info("Checking that observed gen. is still on 1 (recreation) and new label is present");
         assertThat(kafkaBridge.getStatus().getObservedGeneration(), is(1L));
         assertThat(kafkaBridge.getMetadata().getLabels().toString(), containsString("some=label"));
-        assertThat(kafkaBridge.getSpec().getTemplate().getDeployment().getDeploymentStrategy(), is(DeploymentStrategy.RECREATE));
+        assertThat(kafkaBridge.getSpec().getTemplate().getDeployment().getDeploymentStrategy(), is(StrimziDeploymentStrategy.RECREATE));
 
-        LOGGER.info("Changing Deployment strategy to {}", DeploymentStrategy.ROLLING_UPDATE);
+        LOGGER.info("Changing Deployment strategy to {}", StrimziDeploymentStrategy.ROLLING_UPDATE);
         KafkaBridgeUtils.replace(Environment.TEST_SUITE_NAMESPACE, bridgeName,
-            kb -> kb.getSpec().getTemplate().getDeployment().setDeploymentStrategy(DeploymentStrategy.ROLLING_UPDATE));
+            kb -> kb.getSpec().getTemplate().getDeployment().setDeploymentStrategy(StrimziDeploymentStrategy.ROLLING_UPDATE));
         KafkaBridgeUtils.waitForKafkaBridgeReady(Environment.TEST_SUITE_NAMESPACE, bridgeName);
 
         LOGGER.info("Adding another label to KafkaBridge resource, Pods should be rolled");
@@ -448,7 +448,7 @@ class HttpBridgeST extends AbstractST {
 
             return kB.getStatus().getObservedGeneration() == 2L &&
                 kB.getMetadata().getLabels().toString().contains("another=label") &&
-                kB.getSpec().getTemplate().getDeployment().getDeploymentStrategy().equals(DeploymentStrategy.ROLLING_UPDATE);
+                kB.getSpec().getTemplate().getDeployment().getDeploymentStrategy().equals(StrimziDeploymentStrategy.ROLLING_UPDATE);
         });
     }
 
