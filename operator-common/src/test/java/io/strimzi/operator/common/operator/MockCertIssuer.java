@@ -381,7 +381,7 @@ public class MockCertIssuer implements CertIssuer {
     @Override
     public void deleteFromTrustStore(List<String> aliases, File trustStoreFile, String trustStorePassword)
             throws IOException, CertificateException, KeyStoreException, NoSuchAlgorithmException {
-        // never called during the tests which use this MockCertManager
+        // never called during the tests which use this MockCertIssuer
         throw new RuntimeException("Not implemented");
     }
 
