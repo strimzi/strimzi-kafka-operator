@@ -243,18 +243,18 @@ public class KafkaRoller {
 
                 LOGGER.debugCr(reconciliation, "Initial order for updating pods (rolling restart or dynamic update) is controller pods={}, broker pods={}", controllerPods, brokerPods);
 
-                List<CompletableFuture<Void>> controllerFutures = new ArrayList<>(controllerPods.size());
+                List<CompletionStage<Void>> controllerFutures = new ArrayList<>(controllerPods.size());
                 for (NodeRef node : controllerPods) {
                     controllerFutures.add(schedule(node, 0));
                 }
 
-                CompletableFuture.allOf(controllerFutures.toArray(new CompletableFuture[0]))
+                CompletableFuture.allOf(controllerFutures.stream().map(CompletionStage::toCompletableFuture).toArray(CompletableFuture[]::new))
                         .thenCompose(i -> {
-                            List<CompletableFuture<Void>> brokerFutures = new ArrayList<>(nodes.size());
+                            List<CompletionStage<Void>> brokerFutures = new ArrayList<>(nodes.size());
                             for (NodeRef node : brokerPods) {
                                 brokerFutures.add(schedule(node, 0));
                             }
-                            return CompletableFuture.allOf(brokerFutures.toArray(new CompletableFuture[0]));
+                            return CompletableFuture.allOf(brokerFutures.stream().map(CompletionStage::toCompletableFuture).toArray(CompletableFuture[]::new));
                         }).whenComplete((i, error) -> {
                             singleExecutor.shutdown();
                             publishEventExecutor.shutdown();
@@ -332,7 +332,7 @@ public class KafkaRoller {
      * @return A future which completes when the pod has been rolled.
      */
     @SuppressWarnings("checkstyle:NoFullyQualifiedClassNames") // Fully qualified class name used due to a name conflict
-    private CompletableFuture<Void> schedule(NodeRef nodeRef, long delayMs) {
+    private CompletionStage<Void> schedule(NodeRef nodeRef, long delayMs) {
         RestartContext ctx = podToContext.computeIfAbsent(nodeRef.podName(),
             k -> new RestartContext(backoffSupplier));
         singleExecutor.schedule(() -> {

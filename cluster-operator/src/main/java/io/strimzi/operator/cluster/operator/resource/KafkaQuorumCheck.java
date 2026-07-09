@@ -139,7 +139,7 @@ class KafkaQuorumCheck {
         }
     }
 
-    private CompletableFuture<QuorumInfo> describeMetadataQuorum() {
-        return admin.describeMetadataQuorum().quorumInfo().toCompletionStage().toCompletableFuture();
+    private CompletionStage<QuorumInfo> describeMetadataQuorum() {
+        return admin.describeMetadataQuorum().quorumInfo().toCompletionStage();
     }
 }
