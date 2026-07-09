@@ -10,7 +10,6 @@ import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.QuorumInfo;
 
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
 import java.util.stream.Collectors;
