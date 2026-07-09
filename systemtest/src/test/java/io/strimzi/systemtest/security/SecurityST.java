@@ -24,7 +24,7 @@ import io.strimzi.api.kafka.model.kafka.exporter.KafkaExporterResources;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthenticationTls;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
-import io.strimzi.api.kafka.model.user.acl.AclOperation;
+import io.strimzi.api.kafka.model.user.acl.StrimziAclOperation;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.model.Ca;
 import io.strimzi.systemtest.AbstractST;
@@ -815,7 +815,7 @@ class SecurityST extends AbstractST {
                         .withNewAclRuleTopicResource()
                             .withName(testStorage.getTopicName())
                         .endAclRuleTopicResource()
-                        .withOperations(AclOperation.WRITE, AclOperation.DESCRIBE, AclOperation.CREATE)
+                        .withOperations(StrimziAclOperation.WRITE, StrimziAclOperation.DESCRIBE, StrimziAclOperation.CREATE)
                     .endAcl()
                 .endKafkaUserAuthorizationSimple()
             .endSpec()
@@ -844,13 +844,13 @@ class SecurityST extends AbstractST {
                         .withNewAclRuleTopicResource()
                             .withName(testStorage.getTopicName())
                         .endAclRuleTopicResource()
-                        .withOperations(AclOperation.READ, AclOperation.DESCRIBE)
+                        .withOperations(StrimziAclOperation.READ, StrimziAclOperation.DESCRIBE)
                     .endAcl()
                     .addNewAcl()
                         .withNewAclRuleGroupResource()
                             .withName(consumerGroupName)
                         .endAclRuleGroupResource()
-                        .withOperations(AclOperation.READ)
+                        .withOperations(StrimziAclOperation.READ)
                     .endAcl()
                 .endKafkaUserAuthorizationSimple()
             .endSpec()
@@ -902,7 +902,7 @@ class SecurityST extends AbstractST {
                         .withNewAclRuleTopicResource()
                             .withName(testStorage.getTopicName())
                         .endAclRuleTopicResource()
-                        .withOperations(AclOperation.WRITE, AclOperation.DESCRIBE)
+                        .withOperations(StrimziAclOperation.WRITE, StrimziAclOperation.DESCRIBE)
                     .endAcl()
                 .endKafkaUserAuthorizationSimple()
             .endSpec()
@@ -936,7 +936,7 @@ class SecurityST extends AbstractST {
                         .withNewAclRuleTopicResource()
                             .withName(testStorage.getTopicName())
                         .endAclRuleTopicResource()
-                        .withOperations(AclOperation.WRITE, AclOperation.DESCRIBE)
+                        .withOperations(StrimziAclOperation.WRITE, StrimziAclOperation.DESCRIBE)
                     .endAcl()
                 .endKafkaUserAuthorizationSimple()
             .endSpec()

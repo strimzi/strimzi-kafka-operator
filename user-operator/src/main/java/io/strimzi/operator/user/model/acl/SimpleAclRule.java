@@ -4,11 +4,12 @@
  */
 package io.strimzi.operator.user.model.acl;
 
-import io.strimzi.api.kafka.model.user.acl.AclOperation;
 import io.strimzi.api.kafka.model.user.acl.AclRule;
 import io.strimzi.api.kafka.model.user.acl.AclRuleType;
+import io.strimzi.api.kafka.model.user.acl.StrimziAclOperation;
 import org.apache.kafka.common.acl.AccessControlEntry;
 import org.apache.kafka.common.acl.AclBinding;
+import org.apache.kafka.common.acl.AclOperation;
 import org.apache.kafka.common.acl.AclPermissionType;
 import org.apache.kafka.common.resource.ResourcePattern;
 import org.apache.kafka.common.security.auth.KafkaPrincipal;
@@ -20,12 +21,11 @@ import java.util.List;
  * Immutable class which represents a single ACL rule for Kafka's built-in authorizer.
  * The main reason for not using directly the classes from the api module is that we need immutable objects for use in Sets.
  */
-@SuppressWarnings("checkstyle:NoFullyQualifiedClassNames") // Fully qualified class name used due to a name conflict
 public class SimpleAclRule {
     private final AclRuleType type;
     private final SimpleAclRuleResource resource;
     private final String host;
-    private final AclOperation operation;
+    private final StrimziAclOperation operation;
 
     /**
      * Constructor
@@ -35,7 +35,7 @@ public class SimpleAclRule {
      * @param host      The host from which is this rule allowed / denied
      * @param operation The Operation which is allowed or denied
      */
-    public SimpleAclRule(AclRuleType type, SimpleAclRuleResource resource, String host, AclOperation operation) {
+    public SimpleAclRule(AclRuleType type, SimpleAclRuleResource resource, String host, StrimziAclOperation operation) {
         this.type = type;
         this.resource = resource;
         this.host = host;
@@ -74,7 +74,7 @@ public class SimpleAclRule {
      *
      * @return The operation.
      */
-    public AclOperation getOperation() {
+    public StrimziAclOperation getOperation() {
         return operation;
     }
 
@@ -118,7 +118,7 @@ public class SimpleAclRule {
     public AclBinding toKafkaAclBinding(KafkaPrincipal principal) {
         ResourcePattern resourcePattern = resource.toKafkaResourcePattern();
         AclPermissionType kafkaType = toKafkaAclPermissionType(type);
-        org.apache.kafka.common.acl.AclOperation kafkaOperation = toKafkaAclOperation(operation);
+        AclOperation kafkaOperation = toKafkaAclOperation(operation);
         return new AclBinding(resourcePattern, new AccessControlEntry(principal.toString(), getHost(), kafkaOperation, kafkaType));
     }
 
@@ -131,7 +131,7 @@ public class SimpleAclRule {
     public static SimpleAclRule fromAclBinding(AclBinding aclBinding) {
         SimpleAclRuleResource resource = SimpleAclRuleResource.fromKafkaResourcePattern(aclBinding.pattern());
         AclRuleType type = fromKafkaAclPermissionType(aclBinding.entry().permissionType());
-        AclOperation operation = fromKafkaAclOperation(aclBinding.entry().operation());
+        StrimziAclOperation operation = fromKafkaAclOperation(aclBinding.entry().operation());
         return new SimpleAclRule(type, resource, aclBinding.entry().host(), operation);
     }
 
@@ -144,7 +144,7 @@ public class SimpleAclRule {
     public static List<SimpleAclRule> fromCrd(AclRule rule) {
         if (rule.getOperations() != null) {
             List<SimpleAclRule> simpleAclRules = new ArrayList<>();
-            for (AclOperation operation : rule.getOperations()) {
+            for (StrimziAclOperation operation : rule.getOperations()) {
                 simpleAclRules.add(new SimpleAclRule(rule.getType(), SimpleAclRuleResource.fromCrd(rule.getResource()), rule.getHost(), operation));
             }
             return simpleAclRules;
@@ -162,19 +162,19 @@ public class SimpleAclRule {
         };
     }
 
-    private org.apache.kafka.common.acl.AclOperation toKafkaAclOperation(AclOperation operation) {
+    private AclOperation toKafkaAclOperation(StrimziAclOperation operation) {
         return switch (operation) {
-            case READ -> org.apache.kafka.common.acl.AclOperation.READ;
-            case WRITE -> org.apache.kafka.common.acl.AclOperation.WRITE;
-            case CREATE -> org.apache.kafka.common.acl.AclOperation.CREATE;
-            case DELETE -> org.apache.kafka.common.acl.AclOperation.DELETE;
-            case ALTER -> org.apache.kafka.common.acl.AclOperation.ALTER;
-            case DESCRIBE -> org.apache.kafka.common.acl.AclOperation.DESCRIBE;
-            case CLUSTERACTION -> org.apache.kafka.common.acl.AclOperation.CLUSTER_ACTION;
-            case ALTERCONFIGS -> org.apache.kafka.common.acl.AclOperation.ALTER_CONFIGS;
-            case DESCRIBECONFIGS -> org.apache.kafka.common.acl.AclOperation.DESCRIBE_CONFIGS;
-            case IDEMPOTENTWRITE -> org.apache.kafka.common.acl.AclOperation.IDEMPOTENT_WRITE;
-            case ALL -> org.apache.kafka.common.acl.AclOperation.ALL;
+            case READ -> AclOperation.READ;
+            case WRITE -> AclOperation.WRITE;
+            case CREATE -> AclOperation.CREATE;
+            case DELETE -> AclOperation.DELETE;
+            case ALTER -> AclOperation.ALTER;
+            case DESCRIBE -> AclOperation.DESCRIBE;
+            case CLUSTERACTION -> AclOperation.CLUSTER_ACTION;
+            case ALTERCONFIGS -> AclOperation.ALTER_CONFIGS;
+            case DESCRIBECONFIGS -> AclOperation.DESCRIBE_CONFIGS;
+            case IDEMPOTENTWRITE -> AclOperation.IDEMPOTENT_WRITE;
+            case ALL -> AclOperation.ALL;
         };
     }
 
@@ -186,19 +186,19 @@ public class SimpleAclRule {
         };
     }
 
-    private static AclOperation fromKafkaAclOperation(org.apache.kafka.common.acl.AclOperation aclOperation) {
+    private static StrimziAclOperation fromKafkaAclOperation(AclOperation aclOperation) {
         return switch (aclOperation) {
-            case READ -> AclOperation.READ;
-            case WRITE -> AclOperation.WRITE;
-            case CREATE -> AclOperation.CREATE;
-            case DELETE -> AclOperation.DELETE;
-            case ALTER -> AclOperation.ALTER;
-            case DESCRIBE -> AclOperation.DESCRIBE;
-            case CLUSTER_ACTION -> AclOperation.CLUSTERACTION;
-            case ALTER_CONFIGS -> AclOperation.ALTERCONFIGS;
-            case DESCRIBE_CONFIGS -> AclOperation.DESCRIBECONFIGS;
-            case IDEMPOTENT_WRITE -> AclOperation.IDEMPOTENTWRITE;
-            case ALL -> AclOperation.ALL;
+            case READ -> StrimziAclOperation.READ;
+            case WRITE -> StrimziAclOperation.WRITE;
+            case CREATE -> StrimziAclOperation.CREATE;
+            case DELETE -> StrimziAclOperation.DELETE;
+            case ALTER -> StrimziAclOperation.ALTER;
+            case DESCRIBE -> StrimziAclOperation.DESCRIBE;
+            case CLUSTER_ACTION -> StrimziAclOperation.CLUSTERACTION;
+            case ALTER_CONFIGS -> StrimziAclOperation.ALTERCONFIGS;
+            case DESCRIBE_CONFIGS -> StrimziAclOperation.DESCRIBECONFIGS;
+            case IDEMPOTENT_WRITE -> StrimziAclOperation.IDEMPOTENTWRITE;
+            case ALL -> StrimziAclOperation.ALL;
             default -> throw new IllegalArgumentException("Invalid AclRule operation: " + aclOperation);
         };
     }

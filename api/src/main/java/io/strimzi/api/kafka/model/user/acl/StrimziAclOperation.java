@@ -7,7 +7,7 @@ package io.strimzi.api.kafka.model.user.acl;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 
-public enum AclOperation {
+public enum StrimziAclOperation {
     READ,
     WRITE,
     CREATE,
@@ -21,7 +21,7 @@ public enum AclOperation {
     ALL;
 
     @JsonCreator
-    public static AclOperation forValue(String value) {
+    public static StrimziAclOperation forValue(String value) {
         switch (value) {
             case "Read":
                 return READ;

@@ -4,9 +4,9 @@
  */
 package io.strimzi.operator.user.operator;
 
-import io.strimzi.api.kafka.model.user.acl.AclOperation;
 import io.strimzi.api.kafka.model.user.acl.AclResourcePatternType;
 import io.strimzi.api.kafka.model.user.acl.AclRuleType;
+import io.strimzi.api.kafka.model.user.acl.StrimziAclOperation;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.user.ResourceUtils;
@@ -22,6 +22,7 @@ import org.apache.kafka.common.KafkaFuture;
 import org.apache.kafka.common.acl.AccessControlEntry;
 import org.apache.kafka.common.acl.AclBinding;
 import org.apache.kafka.common.acl.AclBindingFilter;
+import org.apache.kafka.common.acl.AclOperation;
 import org.apache.kafka.common.acl.AclPermissionType;
 import org.apache.kafka.common.resource.PatternType;
 import org.apache.kafka.common.resource.ResourcePattern;
@@ -56,7 +57,6 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-@SuppressWarnings("checkstyle:NoFullyQualifiedClassNames") // Fully qualified class name used due to a name conflict
 public class SimpleAclOperatorTest {
     private final static ExecutorService EXECUTOR = Executors.newSingleThreadExecutor();
 
@@ -116,17 +116,17 @@ public class SimpleAclOperatorTest {
 
         KafkaPrincipal foo = new KafkaPrincipal(KafkaPrincipal.USER_TYPE, "CN=foo");
         AclBinding describeAclBinding = new AclBinding(resource1, new AccessControlEntry(foo.toString(), "*",
-                org.apache.kafka.common.acl.AclOperation.DESCRIBE, AclPermissionType.ALLOW));
+                AclOperation.DESCRIBE, AclPermissionType.ALLOW));
         AclBinding readAclBinding = new AclBinding(resource2, new AccessControlEntry(foo.toString(), "*",
-                org.apache.kafka.common.acl.AclOperation.READ, AclPermissionType.ALLOW));
+                AclOperation.READ, AclPermissionType.ALLOW));
         AclBinding writeAclBinding = new AclBinding(resource2, new AccessControlEntry(foo.toString(), "*",
-                org.apache.kafka.common.acl.AclOperation.WRITE, AclPermissionType.ALLOW));
+                AclOperation.WRITE, AclPermissionType.ALLOW));
 
         SimpleAclRuleResource ruleResource1 = new SimpleAclRuleResource("kafka-cluster", SimpleAclRuleResourceType.CLUSTER, AclResourcePatternType.LITERAL);
         SimpleAclRuleResource ruleResource2 = new SimpleAclRuleResource("my-topic", SimpleAclRuleResourceType.TOPIC, AclResourcePatternType.LITERAL);
-        SimpleAclRule resource1DescribeRule = new SimpleAclRule(AclRuleType.ALLOW, ruleResource1, "*", AclOperation.DESCRIBE);
-        SimpleAclRule resource2ReadRule = new SimpleAclRule(AclRuleType.ALLOW, ruleResource2, "*", AclOperation.READ);
-        SimpleAclRule resource2WriteRule = new SimpleAclRule(AclRuleType.ALLOW, ruleResource2, "*", AclOperation.WRITE);
+        SimpleAclRule resource1DescribeRule = new SimpleAclRule(AclRuleType.ALLOW, ruleResource1, "*", StrimziAclOperation.DESCRIBE);
+        SimpleAclRule resource2ReadRule = new SimpleAclRule(AclRuleType.ALLOW, ruleResource2, "*", StrimziAclOperation.READ);
+        SimpleAclRule resource2WriteRule = new SimpleAclRule(AclRuleType.ALLOW, ruleResource2, "*", StrimziAclOperation.WRITE);
 
         @SuppressWarnings("unchecked")
         ArgumentCaptor<Collection<AclBinding>> aclBindingsCaptor = ArgumentCaptor.forClass(Collection.class);
@@ -165,11 +165,11 @@ public class SimpleAclOperatorTest {
         ResourcePattern resource2 = new ResourcePattern(ResourceType.TOPIC, "my-topic2", PatternType.LITERAL);
 
         KafkaPrincipal foo = new KafkaPrincipal(KafkaPrincipal.USER_TYPE, "CN=foo");
-        AclBinding readAclBinding = new AclBinding(resource1, new AccessControlEntry(foo.toString(), "*", org.apache.kafka.common.acl.AclOperation.READ, AclPermissionType.ALLOW));
-        AclBinding writeAclBinding = new AclBinding(resource2, new AccessControlEntry(foo.toString(), "*", org.apache.kafka.common.acl.AclOperation.WRITE, AclPermissionType.ALLOW));
+        AclBinding readAclBinding = new AclBinding(resource1, new AccessControlEntry(foo.toString(), "*", AclOperation.READ, AclPermissionType.ALLOW));
+        AclBinding writeAclBinding = new AclBinding(resource2, new AccessControlEntry(foo.toString(), "*", AclOperation.WRITE, AclPermissionType.ALLOW));
 
         SimpleAclRuleResource resource = new SimpleAclRuleResource("my-topic2", SimpleAclRuleResourceType.TOPIC, AclResourcePatternType.LITERAL);
-        SimpleAclRule rule1 = new SimpleAclRule(AclRuleType.ALLOW, resource, "*", AclOperation.WRITE);
+        SimpleAclRule rule1 = new SimpleAclRule(AclRuleType.ALLOW, resource, "*", StrimziAclOperation.WRITE);
 
         @SuppressWarnings("unchecked")
         ArgumentCaptor<Collection<AclBinding>> aclBindingsCaptor = ArgumentCaptor.forClass(Collection.class);
@@ -219,7 +219,7 @@ public class SimpleAclOperatorTest {
         ResourcePattern resource = new ResourcePattern(ResourceType.TOPIC, "my-topic", PatternType.LITERAL);
 
         KafkaPrincipal foo = new KafkaPrincipal("User", "CN=foo");
-        AclBinding readAclBinding = new AclBinding(resource, new AccessControlEntry(foo.toString(), "*", org.apache.kafka.common.acl.AclOperation.READ, AclPermissionType.ALLOW));
+        AclBinding readAclBinding = new AclBinding(resource, new AccessControlEntry(foo.toString(), "*", AclOperation.READ, AclPermissionType.ALLOW));
 
         @SuppressWarnings("unchecked")
         ArgumentCaptor<Collection<AclBindingFilter>> aclBindingFiltersCaptor = ArgumentCaptor.forClass(Collection.class);
@@ -285,19 +285,19 @@ public class SimpleAclOperatorTest {
 
         KafkaPrincipal foo = new KafkaPrincipal(KafkaPrincipal.USER_TYPE, "CN=foo");
         AclBinding fooAclBinding = new AclBinding(res1, new AccessControlEntry(foo.toString(), "*",
-                org.apache.kafka.common.acl.AclOperation.READ, AclPermissionType.ALLOW));
+                AclOperation.READ, AclPermissionType.ALLOW));
         KafkaPrincipal bar = new KafkaPrincipal(KafkaPrincipal.USER_TYPE, "CN=bar");
         AclBinding barAclBinding = new AclBinding(res1, new AccessControlEntry(bar.toString(), "*",
-                org.apache.kafka.common.acl.AclOperation.READ, AclPermissionType.ALLOW));
+                AclOperation.READ, AclPermissionType.ALLOW));
         KafkaPrincipal baz = new KafkaPrincipal(KafkaPrincipal.USER_TYPE, "baz");
         AclBinding bazAclBinding = new AclBinding(res2, new AccessControlEntry(baz.toString(), "*",
-                org.apache.kafka.common.acl.AclOperation.READ, AclPermissionType.ALLOW));
+                AclOperation.READ, AclPermissionType.ALLOW));
         KafkaPrincipal all = new KafkaPrincipal(KafkaPrincipal.USER_TYPE, "*");
         AclBinding allAclBinding = new AclBinding(res1, new AccessControlEntry(all.toString(), "*",
-                org.apache.kafka.common.acl.AclOperation.READ, AclPermissionType.ALLOW));
+                AclOperation.READ, AclPermissionType.ALLOW));
         KafkaPrincipal anonymous = new KafkaPrincipal(KafkaPrincipal.USER_TYPE, "ANONYMOUS");
         AclBinding anonymousAclBinding = new AclBinding(res2, new AccessControlEntry(anonymous.toString(), "*",
-                org.apache.kafka.common.acl.AclOperation.READ, AclPermissionType.ALLOW));
+                AclOperation.READ, AclPermissionType.ALLOW));
 
         Collection<AclBinding> aclBindings =
                 asList(fooAclBinding, barAclBinding, bazAclBinding, allAclBinding, anonymousAclBinding);

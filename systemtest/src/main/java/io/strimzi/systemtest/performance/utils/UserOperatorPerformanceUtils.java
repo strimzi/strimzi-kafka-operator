@@ -10,7 +10,7 @@ import io.strimzi.api.kafka.model.user.KafkaUserAuthorizationSimple;
 import io.strimzi.api.kafka.model.user.KafkaUserAuthorizationSimpleBuilder;
 import io.strimzi.api.kafka.model.user.KafkaUserQuotas;
 import io.strimzi.api.kafka.model.user.KafkaUserQuotasBuilder;
-import io.strimzi.api.kafka.model.user.acl.AclOperation;
+import io.strimzi.api.kafka.model.user.acl.StrimziAclOperation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.enums.UserAuthType;
@@ -57,7 +57,7 @@ public class UserOperatorPerformanceUtils {
                 .withNewAclRuleTopicResource()
                 .withName(testStorage.getTopicName())
             .endAclRuleTopicResource()
-            .withOperations(AclOperation.READ, AclOperation.DESCRIBE)
+            .withOperations(StrimziAclOperation.READ, StrimziAclOperation.DESCRIBE)
             .endAcl()
             .build();
 
@@ -88,7 +88,7 @@ public class UserOperatorPerformanceUtils {
                 .withNewAclRuleTopicResource()
                     .withName(testStorage.getTopicName())
                 .endAclRuleTopicResource()
-                .withOperations(AclOperation.WRITE, AclOperation.DESCRIBE)
+                .withOperations(StrimziAclOperation.WRITE, StrimziAclOperation.DESCRIBE)
             .endAcl()
             .build();
 
@@ -404,7 +404,7 @@ public class UserOperatorPerformanceUtils {
                     .withNewAclRuleTopicResource()
                         .withName(testStorage.getTopicName())
                     .endAclRuleTopicResource()
-                    .withOperations(AclOperation.READ, AclOperation.DESCRIBE, AclOperation.WRITE)
+                    .withOperations(StrimziAclOperation.READ, StrimziAclOperation.DESCRIBE, StrimziAclOperation.WRITE)
                 .endAcl()
                 .build();
 
