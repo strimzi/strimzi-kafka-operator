@@ -332,7 +332,6 @@ public class KafkaRoller {
      *
      * @return A future which completes when the pod has been rolled.
      */
-    @SuppressWarnings("checkstyle:NoFullyQualifiedClassNames") // Fully qualified class name used due to a name conflict
     private CompletionStage<Void> schedule(NodeRef nodeRef, long delayMs) {
         RestartContext ctx = podToContext.computeIfAbsent(nodeRef.podName(),
             k -> new RestartContext(backoffSupplier));
@@ -652,7 +651,7 @@ public class KafkaRoller {
         if (isPureController) {
             KafkaFuture<Config> configFuture = controllerAdminClient.describeConfigs(singletonList(resource)).values().get(resource);
             if (configFuture != null) {
-                return await(configFuture.toCompletionStage().toCompletableFuture(),
+                return await(configFuture.toCompletionStage(),
                         30_000,
                         error -> new ForceableProblem("Error getting controller config: " + error, error)
                 );
@@ -661,7 +660,7 @@ public class KafkaRoller {
         } else {
             KafkaFuture<Config> configFuture = brokerAdminClient.describeConfigs(singletonList(resource)).values().get(resource);
             if (configFuture != null) {
-                return await(configFuture.toCompletionStage().toCompletableFuture(),
+                return await(configFuture.toCompletionStage(),
                         30_000,
                         error -> new ForceableProblem("Error getting broker config: " + error, error)
                 );
@@ -687,7 +686,7 @@ public class KafkaRoller {
             KafkaFuture<Void> brokerConfigFuture = alterBrokerConfigResult.values().get(getBrokersConfig(nodeRef.nodeId()));
 
             if (brokerConfigFuture != null) {
-                await(brokerConfigFuture.toCompletionStage().toCompletableFuture(), 30_000, error -> {
+                await(brokerConfigFuture.toCompletionStage(), 30_000, error -> {
                     LOGGER.errorCr(reconciliation, "Error updating Kafka configuration for pod {}", nodeRef, error);
                     return new ForceableProblem("Error updating Kafka configuration for pod " + nodeRef, error);
                 });
@@ -709,7 +708,7 @@ public class KafkaRoller {
             KafkaFuture<Void> clusterConfigFuture = alterClusterConfigResult.values().get(getClusterWideConfig());
 
             if (clusterConfigFuture != null) {
-                await(clusterConfigFuture.toCompletionStage().toCompletableFuture(), 30_000, error -> {
+                await(clusterConfigFuture.toCompletionStage(), 30_000, error -> {
                     LOGGER.errorCr(reconciliation, "Error updating cluster-wide configuration", error);
                     return new ForceableProblem("Error updating cluster-wide configuration", error);
                 });
