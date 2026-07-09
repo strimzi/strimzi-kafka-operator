@@ -27,7 +27,7 @@ import java.util.Map;
 @JsonPropertyOrder({"initialDelaySeconds", "timeoutSeconds", "periodSeconds", "successThreshold", "failureThreshold"})
 @EqualsAndHashCode
 @ToString
-public class Probe implements UnknownPropertyPreserving {
+public class StrimziProbe implements UnknownPropertyPreserving {
     private int initialDelaySeconds = 15;
     private int timeoutSeconds = 5;
     private Integer periodSeconds;
@@ -35,9 +35,9 @@ public class Probe implements UnknownPropertyPreserving {
     private Integer failureThreshold;
     private Map<String, Object> additionalProperties;
 
-    public Probe() { }
+    public StrimziProbe() { }
 
-    public Probe(int initialDelaySeconds, int timeoutSeconds) {
+    public StrimziProbe(int initialDelaySeconds, int timeoutSeconds) {
         this.initialDelaySeconds = initialDelaySeconds;
         this.timeoutSeconds = timeoutSeconds;
     }

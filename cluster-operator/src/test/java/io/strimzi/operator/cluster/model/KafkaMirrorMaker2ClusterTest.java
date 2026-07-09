@@ -43,7 +43,7 @@ import io.fabric8.kubernetes.api.model.rbac.Role;
 import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
 import io.strimzi.api.kafka.model.common.CertSecretSourceBuilder;
 import io.strimzi.api.kafka.model.common.JvmOptions;
-import io.strimzi.api.kafka.model.common.Probe;
+import io.strimzi.api.kafka.model.common.StrimziProbe;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationTlsBuilder;
 import io.strimzi.api.kafka.model.common.jmx.KafkaJmxAuthenticationPasswordBuilder;
 import io.strimzi.api.kafka.model.common.jmx.KafkaJmxOptionsBuilder;
@@ -248,8 +248,8 @@ public class KafkaMirrorMaker2ClusterTest {
         KafkaMirrorMaker2 resource = new KafkaMirrorMaker2Builder(RESOURCE)
                 .editSpec()
                     .withImage("my-image:latest")
-                    .withReadinessProbe(new Probe(123, 456))
-                    .withLivenessProbe(new Probe(321, 654))
+                    .withReadinessProbe(new StrimziProbe(123, 456))
+                    .withLivenessProbe(new StrimziProbe(321, 654))
                     .withNewJmxPrometheusExporterMetricsConfig()
                         .withNewValueFrom()
                         .withConfigMapKeyRef(new ConfigMapKeySelectorBuilder()

@@ -9,7 +9,7 @@ import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.ServiceAccount;
 import io.strimzi.api.kafka.model.common.JvmOptions;
-import io.strimzi.api.kafka.model.common.Probe;
+import io.strimzi.api.kafka.model.common.StrimziProbe;
 import io.strimzi.api.kafka.model.common.template.ContainerTemplate;
 import io.strimzi.api.kafka.model.common.template.ResourceTemplate;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
@@ -66,8 +66,8 @@ public abstract class AbstractModel {
      * Container configuration
      */
     protected ResourceRequirements resources;
-    protected Probe readinessProbeOptions;
-    protected Probe livenessProbeOptions;
+    protected StrimziProbe readinessProbeOptions;
+    protected StrimziProbe livenessProbeOptions;
 
     /**
      * PodSecurityProvider

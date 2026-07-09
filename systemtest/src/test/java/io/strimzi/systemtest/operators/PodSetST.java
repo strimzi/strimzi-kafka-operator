@@ -11,7 +11,7 @@ import io.skodjob.annotations.Step;
 import io.skodjob.annotations.SuiteDoc;
 import io.skodjob.annotations.TestDoc;
 import io.skodjob.kubetest4j.resources.KubeResourceManager;
-import io.strimzi.api.kafka.model.common.ProbeBuilder;
+import io.strimzi.api.kafka.model.common.StrimziProbeBuilder;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
@@ -126,7 +126,7 @@ public class PodSetST extends AbstractST {
         LOGGER.info("Changing Kafka resource configuration, the Pods should not be rolled");
 
         KafkaUtils.replace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> {
-            kafka.getSpec().getKafka().setReadinessProbe(new ProbeBuilder().withTimeoutSeconds(probeTimeoutSeconds).build());
+            kafka.getSpec().getKafka().setReadinessProbe(new StrimziProbeBuilder().withTimeoutSeconds(probeTimeoutSeconds).build());
         });
 
         RollingUpdateUtils.waitForNoKafkaRollingUpdate(testStorage.getNamespaceName(), testStorage.getClusterName(), brokerPods);

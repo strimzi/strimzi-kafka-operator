@@ -13,12 +13,12 @@ public interface HasLivenessProbe {
      *
      * @return  Liveness probe configuration
      */
-    Probe getLivenessProbe();
+    StrimziProbe getLivenessProbe();
 
     /**
      * Sets the liveness probe configuration
      *
      * @param livenessProbe     Liveness probe configuration
      */
-    void setLivenessProbe(Probe livenessProbe);
+    void setLivenessProbe(StrimziProbe livenessProbe);
 }

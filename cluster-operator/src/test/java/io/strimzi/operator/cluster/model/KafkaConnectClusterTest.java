@@ -48,7 +48,7 @@ import io.fabric8.kubernetes.api.model.rbac.Role;
 import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
 import io.strimzi.api.kafka.model.common.CertSecretSourceBuilder;
 import io.strimzi.api.kafka.model.common.JvmOptions;
-import io.strimzi.api.kafka.model.common.Probe;
+import io.strimzi.api.kafka.model.common.StrimziProbe;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationTlsBuilder;
 import io.strimzi.api.kafka.model.common.jmx.KafkaJmxAuthenticationPasswordBuilder;
 import io.strimzi.api.kafka.model.common.jmx.KafkaJmxOptionsBuilder;
@@ -208,8 +208,8 @@ public class KafkaConnectClusterTest {
         KafkaConnect resource = new KafkaConnectBuilder(RESOURCE)
             .editSpec()
                 .withImage("my-image:latest")
-                .withReadinessProbe(new Probe(200, 20))
-                .withLivenessProbe(new Probe(100, 10))
+                .withReadinessProbe(new StrimziProbe(200, 20))
+                .withLivenessProbe(new StrimziProbe(100, 10))
             .endSpec()
             .build();
         KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
@@ -659,8 +659,8 @@ public class KafkaConnectClusterTest {
         KafkaConnect resource = new KafkaConnectBuilder(RESOURCE)
                 .editSpec()
                     .withImage("my-image:latest")
-                    .withReadinessProbe(new Probe(200, 20))
-                    .withLivenessProbe(new Probe(100, 10))
+                    .withReadinessProbe(new StrimziProbe(200, 20))
+                    .withLivenessProbe(new StrimziProbe(100, 10))
                     .withNewJmxPrometheusExporterMetricsConfig()
                         .withNewValueFrom()
                             .withConfigMapKeyRef(new ConfigMapKeySelectorBuilder().withName("metrics-cm").withKey("metrics-config.yml").withOptional(true).build())

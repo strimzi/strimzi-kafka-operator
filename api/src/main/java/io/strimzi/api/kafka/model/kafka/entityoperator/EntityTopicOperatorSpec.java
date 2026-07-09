@@ -14,7 +14,7 @@ import io.strimzi.api.kafka.model.common.HasReadinessProbe;
 import io.strimzi.api.kafka.model.common.HasStartupProbe;
 import io.strimzi.api.kafka.model.common.JvmOptions;
 import io.strimzi.api.kafka.model.common.Logging;
-import io.strimzi.api.kafka.model.common.Probe;
+import io.strimzi.api.kafka.model.common.StrimziProbe;
 import io.strimzi.api.kafka.model.common.UnknownPropertyPreserving;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.DescriptionFile;
@@ -46,9 +46,9 @@ public class EntityTopicOperatorSpec implements HasConfigurableLogging, HasLiven
     protected String watchedNamespace;
     protected String image;
     private Long reconciliationIntervalMs;
-    private Probe startupProbe;
-    private Probe livenessProbe;
-    private Probe readinessProbe;
+    private StrimziProbe startupProbe;
+    private StrimziProbe livenessProbe;
+    private StrimziProbe readinessProbe;
     protected ResourceRequirements resources;
     protected Logging logging;
     private JvmOptions jvmOptions;
@@ -95,31 +95,31 @@ public class EntityTopicOperatorSpec implements HasConfigurableLogging, HasLiven
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     @Description("Pod startup checking.")
-    public Probe getStartupProbe() {
+    public StrimziProbe getStartupProbe() {
         return startupProbe;
     }
 
-    public void setStartupProbe(Probe startupProbe) {
+    public void setStartupProbe(StrimziProbe startupProbe) {
         this.startupProbe = startupProbe;
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     @Description("Pod liveness checking.")
-    public Probe getLivenessProbe() {
+    public StrimziProbe getLivenessProbe() {
         return livenessProbe;
     }
 
-    public void setLivenessProbe(Probe livenessProbe) {
+    public void setLivenessProbe(StrimziProbe livenessProbe) {
         this.livenessProbe = livenessProbe;
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     @Description("Pod readiness checking.")
-    public Probe getReadinessProbe() {
+    public StrimziProbe getReadinessProbe() {
         return readinessProbe;
     }
 
-    public void setReadinessProbe(Probe readinessProbe) {
+    public void setReadinessProbe(StrimziProbe readinessProbe) {
         this.readinessProbe = readinessProbe;
     }
 

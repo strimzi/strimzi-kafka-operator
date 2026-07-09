@@ -169,7 +169,6 @@ public class WorkloadUtilsTest {
 
     @Test
     public void testCreateDeploymentWithTemplateAndRollingUpdateStrategy()  {
-        @SuppressWarnings("checkstyle:NoFullyQualifiedClassNames") // Fully qualified class name used due to a name conflict
         Deployment dep = WorkloadUtils.createDeployment(
                 NAME,
                 NAMESPACE,

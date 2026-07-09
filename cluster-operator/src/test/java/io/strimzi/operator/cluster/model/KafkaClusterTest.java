@@ -47,8 +47,8 @@ import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.Role;
 import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
 import io.strimzi.api.kafka.model.common.JvmOptions;
-import io.strimzi.api.kafka.model.common.Probe;
-import io.strimzi.api.kafka.model.common.ProbeBuilder;
+import io.strimzi.api.kafka.model.common.StrimziProbe;
+import io.strimzi.api.kafka.model.common.StrimziProbeBuilder;
 import io.strimzi.api.kafka.model.common.SystemPropertyBuilder;
 import io.strimzi.api.kafka.model.common.jmx.KafkaJmxAuthenticationPasswordBuilder;
 import io.strimzi.api.kafka.model.common.jmx.KafkaJmxOptionsBuilder;
@@ -485,14 +485,14 @@ public class KafkaClusterTest {
         Kafka kafkaAssembly = new KafkaBuilder(KAFKA)
                 .editSpec()
                     .editKafka()
-                        .withLivenessProbe(new ProbeBuilder()
+                        .withLivenessProbe(new StrimziProbeBuilder()
                                 .withInitialDelaySeconds(1)
                                 .withPeriodSeconds(2)
                                 .withTimeoutSeconds(3)
                                 .withSuccessThreshold(4)
                                 .withFailureThreshold(5)
                                 .build())
-                        .withReadinessProbe(new ProbeBuilder()
+                        .withReadinessProbe(new StrimziProbeBuilder()
                                 .withInitialDelaySeconds(6)
                                 .withPeriodSeconds(7)
                                 .withTimeoutSeconds(8)
@@ -3608,14 +3608,14 @@ public class KafkaClusterTest {
 
         String image = "my-custom-image:latest";
 
-        Probe livenessProbe = new Probe();
+        StrimziProbe livenessProbe = new StrimziProbe();
         livenessProbe.setInitialDelaySeconds(1);
         livenessProbe.setTimeoutSeconds(2);
         livenessProbe.setSuccessThreshold(3);
         livenessProbe.setFailureThreshold(4);
         livenessProbe.setPeriodSeconds(5);
 
-        Probe readinessProbe = new Probe();
+        StrimziProbe readinessProbe = new StrimziProbe();
         readinessProbe.setInitialDelaySeconds(6);
         readinessProbe.setTimeoutSeconds(7);
         readinessProbe.setSuccessThreshold(8);
