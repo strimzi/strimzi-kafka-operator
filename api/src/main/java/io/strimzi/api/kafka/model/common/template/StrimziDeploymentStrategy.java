@@ -9,12 +9,12 @@ import com.fasterxml.jackson.annotation.JsonValue;
 
 import java.util.Locale;
 
-public enum DeploymentStrategy {
+public enum StrimziDeploymentStrategy {
     ROLLING_UPDATE,
     RECREATE;
 
     @JsonCreator
-    public static DeploymentStrategy forValue(String value) {
+    public static StrimziDeploymentStrategy forValue(String value) {
         switch (value.toLowerCase(Locale.ENGLISH)) {
             case "rollingupdate":
                 return ROLLING_UPDATE;

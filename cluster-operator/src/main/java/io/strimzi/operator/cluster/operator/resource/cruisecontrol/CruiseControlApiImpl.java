@@ -14,7 +14,7 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.strimzi.operator.common.CruiseControlUtil;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
-import io.strimzi.operator.common.TimeoutException;
+import io.strimzi.operator.common.StrimziTimeoutException;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.auth.PemTrustSet;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties;
@@ -487,7 +487,7 @@ public class CruiseControlApiImpl implements CruiseControlApi {
 
     private RuntimeException httpExceptionHandler(Throwable ex, String requestMethod, long timeout) {
         if (ex.getCause() instanceof HttpTimeoutException) {
-            return new TimeoutException("The timeout period of " + timeout * 1000 + "ms has been exceeded while executing " + requestMethod);
+            return new StrimziTimeoutException("The timeout period of " + timeout * 1000 + "ms has been exceeded while executing " + requestMethod);
         } else if (ex.getCause() instanceof NoRouteToHostException || ex.getCause() instanceof ConnectException) {
             return new CruiseControlRetriableConnectionException(ex.getCause());
         } else {

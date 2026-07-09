@@ -20,7 +20,7 @@ import io.strimzi.operator.common.MetricsProvider;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationException;
 import io.strimzi.operator.common.ReconciliationLogger;
-import io.strimzi.operator.common.TimeoutException;
+import io.strimzi.operator.common.StrimziTimeoutException;
 import io.strimzi.operator.common.metrics.MetricsHolder;
 import io.strimzi.operator.common.metrics.OperatorMetricsHolder;
 import io.strimzi.operator.common.model.InvalidConfigParameterException;
@@ -371,7 +371,7 @@ public abstract class AbstractOperator<
      * The exception by which Futures returned by {@link #withLock(Reconciliation, long, Callable)} are failed when
      * the lock cannot be acquired within the timeout.
      */
-    static class UnableToAcquireLockException extends TimeoutException {
+    static class UnableToAcquireLockException extends StrimziTimeoutException {
         UnableToAcquireLockException() { }
     }
 

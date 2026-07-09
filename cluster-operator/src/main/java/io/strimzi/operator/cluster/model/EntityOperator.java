@@ -23,6 +23,7 @@ import io.strimzi.api.kafka.model.common.template.DeploymentTemplate;
 import io.strimzi.api.kafka.model.common.template.PodDisruptionBudgetTemplate;
 import io.strimzi.api.kafka.model.common.template.PodTemplate;
 import io.strimzi.api.kafka.model.common.template.ResourceTemplate;
+import io.strimzi.api.kafka.model.common.template.StrimziDeploymentStrategy;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.entityoperator.EntityOperatorSpec;
@@ -44,7 +45,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static io.strimzi.api.kafka.model.common.template.DeploymentStrategy.RECREATE;
 import static io.strimzi.operator.cluster.model.TemplateUtils.addAdditionalVolumes;
 
 /**
@@ -205,7 +205,7 @@ public class EntityOperator extends AbstractModel {
                 templateDeployment,
                 1,
                 null,
-                WorkloadUtils.deploymentStrategy(RECREATE), // we intentionally ignore the template here as EO doesn't support RU strategy
+                WorkloadUtils.deploymentStrategy(StrimziDeploymentStrategy.RECREATE), // we intentionally ignore the template here as EO doesn't support RU strategy
                 WorkloadUtils.createPodTemplateSpec(
                         componentName,
                         labels,
