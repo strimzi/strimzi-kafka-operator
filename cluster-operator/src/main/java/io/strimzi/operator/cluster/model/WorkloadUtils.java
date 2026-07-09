@@ -24,6 +24,7 @@ import io.fabric8.kubernetes.api.model.apps.RollingUpdateDeploymentBuilder;
 import io.strimzi.api.kafka.model.common.template.DeploymentTemplate;
 import io.strimzi.api.kafka.model.common.template.PodTemplate;
 import io.strimzi.api.kafka.model.common.template.ResourceTemplate;
+import io.strimzi.api.kafka.model.common.template.StrimziDeploymentStrategy;
 import io.strimzi.api.kafka.model.podset.StrimziPodSet;
 import io.strimzi.api.kafka.model.podset.StrimziPodSetBuilder;
 import io.strimzi.operator.common.Reconciliation;
@@ -431,8 +432,7 @@ public class WorkloadUtils {
      *
      * @return  Created deployment strategy
      */
-    @SuppressWarnings("checkstyle:NoFullyQualifiedClassNames") // Fully qualified class name used due to a name conflict
-    public static DeploymentStrategy deploymentStrategy(io.strimzi.api.kafka.model.common.template.DeploymentStrategy strategy) {
+    public static DeploymentStrategy deploymentStrategy(StrimziDeploymentStrategy strategy) {
         return switch (strategy) {
             case ROLLING_UPDATE -> rollingUpdateStrategy();
             case RECREATE -> recreateStrategy();

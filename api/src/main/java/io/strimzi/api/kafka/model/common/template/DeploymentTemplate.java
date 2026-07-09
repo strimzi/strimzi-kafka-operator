@@ -31,7 +31,7 @@ import java.util.Map;
 @ToString
 public class DeploymentTemplate implements HasMetadataTemplate, UnknownPropertyPreserving {
     private MetadataTemplate metadata;
-    private DeploymentStrategy deploymentStrategy;
+    private StrimziDeploymentStrategy deploymentStrategy;
     private Map<String, Object> additionalProperties;
 
     @Description("Metadata applied to the resource.")
@@ -48,11 +48,11 @@ public class DeploymentTemplate implements HasMetadataTemplate, UnknownPropertyP
             "Valid values are `RollingUpdate` and `Recreate`. " +
             "Defaults to `RollingUpdate`.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public DeploymentStrategy getDeploymentStrategy() {
+    public StrimziDeploymentStrategy getDeploymentStrategy() {
         return deploymentStrategy;
     }
 
-    public void setDeploymentStrategy(DeploymentStrategy deploymentStrategy) {
+    public void setDeploymentStrategy(StrimziDeploymentStrategy deploymentStrategy) {
         this.deploymentStrategy = deploymentStrategy;
     }
 

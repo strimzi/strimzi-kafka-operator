@@ -52,9 +52,9 @@ import io.strimzi.api.kafka.model.common.template.AdditionalVolume;
 import io.strimzi.api.kafka.model.common.template.AdditionalVolumeBuilder;
 import io.strimzi.api.kafka.model.common.template.ContainerEnvVar;
 import io.strimzi.api.kafka.model.common.template.ContainerTemplate;
-import io.strimzi.api.kafka.model.common.template.DeploymentStrategy;
 import io.strimzi.api.kafka.model.common.template.IpFamily;
 import io.strimzi.api.kafka.model.common.template.IpFamilyPolicy;
+import io.strimzi.api.kafka.model.common.template.StrimziDeploymentStrategy;
 import io.strimzi.api.kafka.model.common.tracing.OpenTelemetryTracing;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.TestUtils;
@@ -536,7 +536,7 @@ public class KafkaBridgeClusterTest {
                                 .withLabels(depLabels)
                                 .withAnnotations(depAnots)
                             .endMetadata()
-                            .withDeploymentStrategy(DeploymentStrategy.RECREATE)
+                            .withDeploymentStrategy(StrimziDeploymentStrategy.RECREATE)
                         .endDeployment()
                         .withNewPod()
                             .withNewMetadata()

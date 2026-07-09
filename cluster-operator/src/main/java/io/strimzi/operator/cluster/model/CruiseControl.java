@@ -28,6 +28,7 @@ import io.strimzi.api.kafka.model.common.template.DeploymentTemplate;
 import io.strimzi.api.kafka.model.common.template.InternalServiceTemplate;
 import io.strimzi.api.kafka.model.common.template.PodDisruptionBudgetTemplate;
 import io.strimzi.api.kafka.model.common.template.PodTemplate;
+import io.strimzi.api.kafka.model.common.template.StrimziDeploymentStrategy;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaClusterSpec;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
@@ -65,7 +66,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static io.strimzi.api.kafka.model.common.template.DeploymentStrategy.ROLLING_UPDATE;
 import static io.strimzi.operator.cluster.model.cruisecontrol.CruiseControlConfiguration.CRUISE_CONTROL_DEFAULT_ANOMALY_DETECTION_GOALS;
 import static io.strimzi.operator.cluster.model.cruisecontrol.CruiseControlConfiguration.CRUISE_CONTROL_GOALS;
 import static java.lang.String.format;
@@ -374,7 +374,7 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
                 templateDeployment,
                 1,
                 null,
-                WorkloadUtils.deploymentStrategy(TemplateUtils.deploymentStrategy(templateDeployment, ROLLING_UPDATE)),
+                WorkloadUtils.deploymentStrategy(TemplateUtils.deploymentStrategy(templateDeployment, StrimziDeploymentStrategy.ROLLING_UPDATE)),
                 WorkloadUtils.createPodTemplateSpec(
                         componentName,
                         labels,

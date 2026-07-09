@@ -23,6 +23,7 @@ import io.strimzi.operator.common.AdminClientProvider;
 import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
+import io.strimzi.operator.common.StrimziTimeoutException;
 import io.strimzi.operator.common.auth.TlsPemIdentity;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.OrderedProperties;
@@ -354,7 +355,7 @@ public class KafkaRoller {
                     LOGGER.infoCr(reconciliation, "Could not verify pod {} is up-to-date, giving up after {} attempts. Total delay between attempts {}ms",
                             nodeRef, ctx.backOff.maxAttempts(), ctx.backOff.totalDelayMs(), e);
                     ctx.completableFuture.completeExceptionally(e instanceof TimeoutException ?
-                            new io.strimzi.operator.common.TimeoutException() :
+                            new StrimziTimeoutException() :
                             e);
                 } else {
                     long delay1Ms = ctx.backOff.delayMs();

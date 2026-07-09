@@ -30,7 +30,7 @@ import io.fabric8.kubernetes.api.model.policy.v1.PodDisruptionBudget;
 import io.strimzi.api.kafka.model.common.template.AdditionalVolume;
 import io.strimzi.api.kafka.model.common.template.AdditionalVolumeBuilder;
 import io.strimzi.api.kafka.model.common.template.ContainerEnvVar;
-import io.strimzi.api.kafka.model.common.template.DeploymentStrategy;
+import io.strimzi.api.kafka.model.common.template.StrimziDeploymentStrategy;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
@@ -448,7 +448,7 @@ public class KafkaExporterTest {
                     .withNewKafkaExporter()
                         .withNewTemplate()
                             .withNewDeployment()
-                                .withDeploymentStrategy(DeploymentStrategy.RECREATE)
+                                .withDeploymentStrategy(StrimziDeploymentStrategy.RECREATE)
                             .endDeployment()
                         .endTemplate()
                     .endKafkaExporter()

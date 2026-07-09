@@ -41,12 +41,12 @@ import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticatio
 import io.strimzi.api.kafka.model.common.metrics.JmxPrometheusExporterMetrics;
 import io.strimzi.api.kafka.model.common.metrics.StrimziMetricsReporter;
 import io.strimzi.api.kafka.model.common.template.ContainerTemplate;
-import io.strimzi.api.kafka.model.common.template.DeploymentStrategy;
 import io.strimzi.api.kafka.model.common.template.DeploymentTemplate;
 import io.strimzi.api.kafka.model.common.template.InternalServiceTemplate;
 import io.strimzi.api.kafka.model.common.template.PodDisruptionBudgetTemplate;
 import io.strimzi.api.kafka.model.common.template.PodTemplate;
 import io.strimzi.api.kafka.model.common.template.ResourceTemplate;
+import io.strimzi.api.kafka.model.common.template.StrimziDeploymentStrategy;
 import io.strimzi.api.kafka.model.common.tracing.Tracing;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.model.logging.LoggingModel;
@@ -395,7 +395,7 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
                 templateDeployment,
                 replicas,
                 null,
-                WorkloadUtils.deploymentStrategy(TemplateUtils.deploymentStrategy(templateDeployment, DeploymentStrategy.ROLLING_UPDATE)),
+                WorkloadUtils.deploymentStrategy(TemplateUtils.deploymentStrategy(templateDeployment, StrimziDeploymentStrategy.ROLLING_UPDATE)),
                 WorkloadUtils.createPodTemplateSpec(
                         componentName,
                         labels,
