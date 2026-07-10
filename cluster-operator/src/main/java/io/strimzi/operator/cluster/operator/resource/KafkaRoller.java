@@ -218,9 +218,9 @@ public class KafkaRoller {
      * Which pods get rolled is determined by {@code podNeedsRestart}.
      * The pods may not be rolled in id order, due to the {@linkplain KafkaRoller rolling algorithm}.
      * @param podNeedsRestart Predicate for determining whether a pod should be rolled.
-     * @return A CompletableFuture completed when rolling is complete.
+     * @return A CompletionStage completed when rolling is complete.
      */
-    public CompletableFuture<Void> rollingRestart(Function<Pod, RestartReasons> podNeedsRestart) {
+    public CompletionStage<Void> rollingRestart(Function<Pod, RestartReasons> podNeedsRestart) {
         this.podNeedsRestart = podNeedsRestart;
         CompletableFuture<Void> result = new CompletableFuture<>();
         singleExecutor.submit(() -> {
@@ -244,18 +244,18 @@ public class KafkaRoller {
 
                 LOGGER.debugCr(reconciliation, "Initial order for updating pods (rolling restart or dynamic update) is controller pods={}, broker pods={}", controllerPods, brokerPods);
 
-                List<CompletableFuture<Void>> controllerFutures = new ArrayList<>(controllerPods.size());
+                List<CompletionStage<Void>> controllerFutures = new ArrayList<>(controllerPods.size());
                 for (NodeRef node : controllerPods) {
                     controllerFutures.add(schedule(node, 0));
                 }
 
-                CompletableFuture.allOf(controllerFutures.toArray(new CompletableFuture[0]))
+                CompletableFuture.allOf(controllerFutures.stream().map(CompletionStage::toCompletableFuture).toArray(CompletableFuture[]::new))
                         .thenCompose(i -> {
-                            List<CompletableFuture<Void>> brokerFutures = new ArrayList<>(nodes.size());
+                            List<CompletionStage<Void>> brokerFutures = new ArrayList<>(nodes.size());
                             for (NodeRef node : brokerPods) {
                                 brokerFutures.add(schedule(node, 0));
                             }
-                            return CompletableFuture.allOf(brokerFutures.toArray(new CompletableFuture[0]));
+                            return CompletableFuture.allOf(brokerFutures.stream().map(CompletionStage::toCompletableFuture).toArray(CompletableFuture[]::new));
                         }).whenComplete((i, error) -> {
                             singleExecutor.shutdown();
                             publishEventExecutor.shutdown();
@@ -332,7 +332,7 @@ public class KafkaRoller {
      *
      * @return A future which completes when the pod has been rolled.
      */
-    private CompletableFuture<Void> schedule(NodeRef nodeRef, long delayMs) {
+    private CompletionStage<Void> schedule(NodeRef nodeRef, long delayMs) {
         RestartContext ctx = podToContext.computeIfAbsent(nodeRef.podName(),
             k -> new RestartContext(backoffSupplier));
         singleExecutor.schedule(() -> {
@@ -651,7 +651,7 @@ public class KafkaRoller {
         if (isPureController) {
             KafkaFuture<Config> configFuture = controllerAdminClient.describeConfigs(singletonList(resource)).values().get(resource);
             if (configFuture != null) {
-                return await(configFuture.toCompletionStage().toCompletableFuture(),
+                return await(configFuture.toCompletionStage(),
                         30_000,
                         error -> new ForceableProblem("Error getting controller config: " + error, error)
                 );
@@ -660,7 +660,7 @@ public class KafkaRoller {
         } else {
             KafkaFuture<Config> configFuture = brokerAdminClient.describeConfigs(singletonList(resource)).values().get(resource);
             if (configFuture != null) {
-                return await(configFuture.toCompletionStage().toCompletableFuture(),
+                return await(configFuture.toCompletionStage(),
                         30_000,
                         error -> new ForceableProblem("Error getting broker config: " + error, error)
                 );
@@ -686,7 +686,7 @@ public class KafkaRoller {
             KafkaFuture<Void> brokerConfigFuture = alterBrokerConfigResult.values().get(getBrokersConfig(nodeRef.nodeId()));
 
             if (brokerConfigFuture != null) {
-                await(brokerConfigFuture.toCompletionStage().toCompletableFuture(), 30_000, error -> {
+                await(brokerConfigFuture.toCompletionStage(), 30_000, error -> {
                     LOGGER.errorCr(reconciliation, "Error updating Kafka configuration for pod {}", nodeRef, error);
                     return new ForceableProblem("Error updating Kafka configuration for pod " + nodeRef, error);
                 });
@@ -708,7 +708,7 @@ public class KafkaRoller {
             KafkaFuture<Void> clusterConfigFuture = alterClusterConfigResult.values().get(getClusterWideConfig());
 
             if (clusterConfigFuture != null) {
-                await(clusterConfigFuture.toCompletionStage().toCompletableFuture(), 30_000, error -> {
+                await(clusterConfigFuture.toCompletionStage(), 30_000, error -> {
                     LOGGER.errorCr(reconciliation, "Error updating cluster-wide configuration", error);
                     return new ForceableProblem("Error updating cluster-wide configuration", error);
                 });

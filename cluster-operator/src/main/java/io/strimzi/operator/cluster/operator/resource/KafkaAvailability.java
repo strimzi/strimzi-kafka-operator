@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.stream.Collectors;
 
 import static io.strimzi.operator.common.Util.maybeUnwrapCompletionException;
@@ -39,13 +40,13 @@ class KafkaAvailability {
 
     private final Reconciliation reconciliation;
 
-    private final CompletableFuture<Collection<TopicDescription>> descriptions;
+    private final CompletionStage<Collection<TopicDescription>> descriptions;
 
     KafkaAvailability(Reconciliation reconciliation, Admin ac) {
         this.ac = ac;
         this.reconciliation = reconciliation;
         // 1. Get all topic names
-        CompletableFuture<Set<String>> topicNames = topicNames();
+        CompletionStage<Set<String>> topicNames = topicNames();
         // 2. Get topic descriptions
         descriptions = topicNames.thenCompose(names -> {
             LOGGER.debugCr(reconciliation, "Got {} topic names", names.size());
@@ -58,13 +59,13 @@ class KafkaAvailability {
      * Determine whether the given broker can be rolled without affecting
      * producers with acks=all publishing to topics with a {@code min.in.sync.replicas}.
      */
-    CompletableFuture<Boolean> canRoll(int podId) {
+    CompletionStage<Boolean> canRoll(int podId) {
         LOGGER.debugCr(reconciliation, "Determining whether broker {} can be rolled", podId);
         return canRollBroker(descriptions, podId);
     }
 
-    private CompletableFuture<Boolean> canRollBroker(CompletableFuture<Collection<TopicDescription>> descriptions, int podId) {
-        CompletableFuture<Set<TopicDescription>> topicsOnGivenBroker = descriptions
+    private CompletionStage<Boolean> canRollBroker(CompletionStage<Collection<TopicDescription>> descriptions, int podId) {
+        CompletionStage<Set<TopicDescription>> topicsOnGivenBroker = descriptions
                 .whenComplete((r, error) -> {
                     if (error != null) {
                         Throwable cause = maybeUnwrapCompletionException(error);
@@ -76,7 +77,7 @@ class KafkaAvailability {
                 });
 
         // 4. Get topic configs (for those on $broker)
-        CompletableFuture<Map<String, Config>> topicConfigsOnGivenBroker = topicsOnGivenBroker
+        CompletionStage<Map<String, Config>> topicConfigsOnGivenBroker = topicsOnGivenBroker
                 .thenCompose(td -> topicConfigs(td.stream().map(t -> t.name()).collect(Collectors.toSet())));
 
         // 5. join
@@ -160,7 +161,7 @@ class KafkaAvailability {
         return isr.stream().anyMatch(node -> node.id() == broker);
     }
 
-    private CompletableFuture<Map<String, Config>> topicConfigs(Collection<String> topicNames) {
+    private CompletionStage<Map<String, Config>> topicConfigs(Collection<String> topicNames) {
         LOGGER.debugCr(reconciliation, "Getting topic configs for {} topics", topicNames.size());
         List<ConfigResource> configs = topicNames.stream()
                 .map((String topicName) -> new ConfigResource(ConfigResource.Type.TOPIC, topicName))
@@ -195,7 +196,7 @@ class KafkaAvailability {
         return topicPartitionInfos;
     }
 
-    protected CompletableFuture<Collection<TopicDescription>> describeTopics(Set<String> names) {
+    protected CompletionStage<Collection<TopicDescription>> describeTopics(Set<String> names) {
         CompletableFuture<Collection<TopicDescription>> descFuture = new CompletableFuture<>();
         ac.describeTopics(names).allTopicNames()
                 .whenComplete((tds, error) -> {
@@ -209,7 +210,7 @@ class KafkaAvailability {
         return descFuture;
     }
 
-    protected CompletableFuture<Set<String>> topicNames() {
+    protected CompletionStage<Set<String>> topicNames() {
         CompletableFuture<Set<String>> namesFuture = new CompletableFuture<>();
         ac.listTopics(new ListTopicsOptions().listInternal(true)).names()
                 .whenComplete((names, error) -> {

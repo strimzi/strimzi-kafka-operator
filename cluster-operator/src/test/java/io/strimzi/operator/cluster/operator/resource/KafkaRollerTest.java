@@ -776,7 +776,7 @@ public class KafkaRollerTest {
             .whenComplete((v, err) -> {
                 assertThat(restarted(), is(asList(0, 1, 2, 3, 4)));
                 assertNoUnclosedAdminClient(kafkaRoller);
-            }).join();
+            }).toCompletableFuture().join();
     }
 
     private TestingKafkaRoller rollerWithActiveController(PodOperator podOps, Set<NodeRef> nodes, int activeController) {
@@ -792,7 +792,7 @@ public class KafkaRollerTest {
                 .whenComplete((v, error) -> {
                     assertThat(restarted(), is(expected));
                     assertNoUnclosedAdminClient(kafkaRoller);
-                }).join();
+                }).toCompletableFuture().join();
     }
 
     private void doSuccessfulRollingRestart(TestingKafkaRoller kafkaRoller,
@@ -809,7 +809,7 @@ public class KafkaRollerTest {
                 .whenComplete((v, err) -> {
                     assertThat(restarted(), is(expected));
                     assertNoUnclosedAdminClient(kafkaRoller);
-                }).join();
+                }).toCompletableFuture().join();
     }
 
     private void assertNoUnclosedAdminClient(TestingKafkaRoller kafkaRoller) {
@@ -832,7 +832,7 @@ public class KafkaRollerTest {
                     } else {
                         return RestartReasons.empty();
                     }
-                }).join();
+                }).toCompletableFuture().join();
             throw new AssertionError("Expected exception " + exception.getName() + " but none was thrown");
         } catch (Exception e) {
             assertThat(e, instanceOf(CompletionException.class));

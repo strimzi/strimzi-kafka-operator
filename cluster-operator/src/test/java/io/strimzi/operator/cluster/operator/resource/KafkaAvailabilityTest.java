@@ -291,7 +291,7 @@ public class KafkaAvailabilityTest {
                     assertFalse(canRoll,
                             "broker " + brokerId + " should not be rollable, being minisr = 2 and it's only replicated on two brokers");
                 }
-            }).join();
+            }).toCompletableFuture().join();
         }
     }
 
@@ -328,7 +328,7 @@ public class KafkaAvailabilityTest {
                     assertTrue(canRoll,
                             "broker " + brokerId + " should be rollable, because although rolling it will impact availability minisr=|replicas|");
                 }
-            }).join();
+            }).toCompletableFuture().join();
         }
     }
 
@@ -358,7 +358,7 @@ public class KafkaAvailabilityTest {
 
         for (Integer brokerId : ksb.brokers.keySet()) {
             kafkaAvailability.canRoll(brokerId).whenComplete((canRoll, err) -> assertTrue(canRoll,
-                    "broker " + brokerId + " should be rollable, being minisr = 1 and having two brokers in its isr")).join();
+                    "broker " + brokerId + " should be rollable, being minisr = 1 and having two brokers in its isr")).toCompletableFuture().join();
         }
     }
 
@@ -380,7 +380,7 @@ public class KafkaAvailabilityTest {
 
         for (Integer brokerId : ksb.brokers.keySet()) {
             kafkaAvailability.canRoll(brokerId).whenComplete((canRoll, err) -> assertTrue(canRoll,
-                        "broker " + brokerId + " should be rollable, being minisr = 3, but only 3 replicas")).join();
+                        "broker " + brokerId + " should be rollable, being minisr = 3, but only 3 replicas")).toCompletableFuture().join();
         }
     }
 
@@ -402,7 +402,7 @@ public class KafkaAvailabilityTest {
 
         for (Integer brokerId : ksb.brokers.keySet()) {
             kafkaAvailability.canRoll(brokerId).whenComplete((canRoll, err) -> assertTrue(canRoll,
-                        "broker " + brokerId + " should be rollable, being minisr = 3, but only 3 replicas")).join();
+                        "broker " + brokerId + " should be rollable, being minisr = 3, but only 3 replicas")).toCompletableFuture().join();
         }
     }
 
@@ -423,7 +423,7 @@ public class KafkaAvailabilityTest {
 
         for (Integer brokerId : ksb.brokers.keySet()) {
             kafkaAvailability.canRoll(brokerId).whenComplete((canRoll, err) -> assertTrue(canRoll,
-                        "broker " + brokerId + " should be rollable, being minisr = 2, but only 1 replicas")).join();
+                        "broker " + brokerId + " should be rollable, being minisr = 2, but only 1 replicas")).toCompletableFuture().join();
         }
     }
 
@@ -460,7 +460,7 @@ public class KafkaAvailabilityTest {
                     assertTrue(canRoll,
                             "broker " + brokerId + " should be rollable, being minisr = 1 and having two brokers in its isr");
                 }
-            }).join();
+            }).toCompletableFuture().join();
         }
     }
 
@@ -488,7 +488,7 @@ public class KafkaAvailabilityTest {
 
         for (Integer brokerId : ksb.brokers.keySet()) {
             kafkaAvailability.canRoll(brokerId).whenComplete((canRoll, err) -> assertTrue(canRoll,
-                        "broker " + brokerId + " should be rollable, being minisr = 1 and having two brokers in its isr")).join();
+                        "broker " + brokerId + " should be rollable, being minisr = 1 and having two brokers in its isr")).toCompletableFuture().join();
         }
     }
 
@@ -519,7 +519,7 @@ public class KafkaAvailabilityTest {
         KafkaAvailability kafkaAvailability = new KafkaAvailability(new Reconciliation("dummy", "kind", "namespace", "A"), ksb.ac());
 
         for (Integer brokerId : ksb.brokers.keySet()) {
-            Throwable error = assertThrows(CompletionException.class, () -> kafkaAvailability.canRoll(brokerId).join());
+            Throwable error = assertThrows(CompletionException.class, () -> kafkaAvailability.canRoll(brokerId).toCompletableFuture().join());
             assertThat(error.getCause(), instanceOf(TimeoutException.class));
         }
     }
@@ -550,7 +550,7 @@ public class KafkaAvailabilityTest {
         KafkaAvailability kafkaAvailability = new KafkaAvailability(new Reconciliation("dummy", "kind", "namespace", "A"), ksb.ac());
 
         for (Integer brokerId : ksb.brokers.keySet()) {
-            Throwable error = assertThrows(CompletionException.class, () -> kafkaAvailability.canRoll(brokerId).join());
+            Throwable error = assertThrows(CompletionException.class, () -> kafkaAvailability.canRoll(brokerId).toCompletableFuture().join());
             assertThat(error.getCause(), instanceOf(UnknownTopicOrPartitionException.class));
         }
     }
@@ -582,7 +582,7 @@ public class KafkaAvailabilityTest {
 
         for (Integer brokerId : ksb.brokers.keySet()) {
             if (brokerId <= 2) {
-                Throwable error = assertThrows(CompletionException.class, () -> kafkaAvailability.canRoll(brokerId).join());
+                Throwable error = assertThrows(CompletionException.class, () -> kafkaAvailability.canRoll(brokerId).toCompletableFuture().join());
                 assertThat(error.getCause(), instanceOf(UnknownTopicOrPartitionException.class));
             }
         }
