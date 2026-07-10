@@ -1,0 +1,141 @@
+name: FOSSA Scanning
+
+on:
+  # Run after build workflow finishes in non-blocking way
+  workflow_run:
+    workflows: ["Build"]
+    types:
+      - completed
+    branches:
+      - main
+  # Allow to run it also as reusable workflow from releases
+  workflow_call:
+    inputs:
+      releaseVersion:
+        description: 'Release version for FOSSA branch reference'
+        required: false
+        type: string
+        default: ''
+      sourceBuildRunId:
+        description: 'Build workflow run ID for artifact download'
+        required: true
+        type: string
+    secrets:
+      FOSSA_API_KEY:
+        required: true
+
+# Declare default permissions as read only
+permissions:
+  contents: read
+
+# Cancel previous scans on the same branch
+concurrency:
+  group: fossa-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Scan Maven dependencies using FOSSA
+  fossa-maven-scan:
+    name: FOSSA Maven Scan
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name != 'workflow_run' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      actions: read
+    env:
+      FOSSA_API_KEY: ${{ secrets.FOSSA_API_KEY }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+
+      - name: Setup Java and Maven
+        uses: strimzi/github-actions/.github/actions/dependencies/setup-java@v2
+        with:
+          javaVersion: "21"
+
+      - name: Install yq
+        uses: strimzi/github-actions/.github/actions/dependencies/install-yq@v2
+        with:
+          version: "v4.6.3"
+
+      - name: Build Java code
+        run: mvn -B -DskipTests -Dmaven.javadoc.skip=true clean install
+
+      - name: Run FOSSA Maven scan
+        uses: strimzi/github-actions/.github/actions/security/fossa-maven-scan@main
+        with:
+          scanName: operators
+          fossaTest: "true"
+          branch: ${{ inputs.releaseVersion || github.ref_name }}
+
+  # Discover container images from build artifacts for matrix scanning
+  prepare-container-scan:
+    name: Prepare Container Scan
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name != 'workflow_run' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      actions: read
+    outputs:
+      images: ${{ steps.list-images.outputs.images }}
+    steps:
+      - name: Download container archive
+        uses: actions/download-artifact@v7
+        with:
+          name: containers-operators-amd64.tar
+          run-id: ${{ inputs.sourceBuildRunId || github.event.workflow_run.id }}
+          github-token: ${{ github.token }}
+
+      - name: Untar container archive
+        run: tar -xvf containers-operators-amd64.tar
+
+      - name: List container images
+        id: list-images
+        run: |
+          IMAGES=$(find docker-images/container-archives -name '*.tar.gz' ! -name 'base-*' -print0 | \
+            xargs -0 -I{} basename {} | \
+            sed 's/\.tar\.gz$//' | \
+            jq -R -s -c 'split("\n") | map(select(. != ""))')
+          echo "images=$IMAGES" >> "$GITHUB_OUTPUT"
+          echo "Found images: $IMAGES"
+
+  # Scan each container image using FOSSA
+  fossa-container-scan:
+    name: FOSSA Container Scan (${{ matrix.image }})
+    needs:
+      - prepare-container-scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      actions: read
+    env:
+      FOSSA_API_KEY: ${{ secrets.FOSSA_API_KEY }}
+      CONTAINERS_ARCHIVE: "containers-operators-amd64.tar"
+    strategy:
+      fail-fast: false
+      matrix:
+        image: ${{ fromJson(needs.prepare-container-scan.outputs.images) }}
+    steps:
+      - name: Download container archive
+        uses: actions/download-artifact@v7
+        with:
+          name: ${{ env.CONTAINERS_ARCHIVE }}
+          run-id: ${{ inputs.sourceBuildRunId || github.event.workflow_run.id }}
+          github-token: ${{ github.token }}
+
+      - name: Untar container archive
+        run: tar -xvf "$CONTAINERS_ARCHIVE"
+
+      - name: Install Docker
+        uses: strimzi/github-actions/.github/actions/dependencies/install-docker@v2
+
+      - name: Run FOSSA container scan
+        uses: strimzi/github-actions/.github/actions/security/fossa-container-scan@main
+        with:
+          imageFile: docker-images/container-archives/${{ matrix.image }}.tar.gz
+          image: ${{ matrix.image }}
+          fossaTest: "true"
+          branch: ${{ inputs.releaseVersion || github.ref_name }}

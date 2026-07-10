@@ -244,3 +244,19 @@ jobs:
       sourceBuildRunId: ${{ inputs.sourceBuildRunId }}
     secrets:
       SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+
+  # Run FOSSA scans on Maven dependencies and container images
+  fossa-scan:
+    name: FOSSA Scan
+    needs:
+      - prepare-release-artifacts
+    if: ${{ startsWith(github.ref, 'refs/heads/release-') }}
+    permissions:
+      contents: read
+      actions: read
+    uses: ./.github/workflows/fossa.yml
+    with:
+      releaseVersion: ${{ inputs.releaseVersion }}
+      sourceBuildRunId: ${{ inputs.sourceBuildRunId }}
+    secrets:
+      FOSSA_API_KEY: ${{ secrets.FOSSA_API_KEY }}
