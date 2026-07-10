@@ -72,7 +72,6 @@ import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.hasSize;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -144,13 +143,11 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
         StrimziPodSetOperator mockPodSetOps = supplier.strimziPodSetOperator;
         when(mockPodSetOps.getAsync(eq(NAMESPACE), eq(COMPONENT_NAME))).thenReturn(CompletableFuture.completedFuture(null));
         when(mockPodSetOps.readiness(any(), eq(NAMESPACE), eq(COMPONENT_NAME), anyLong(), anyLong())).thenReturn(CompletableFuture.completedFuture(null));
-        ArgumentCaptor<StrimziPodSet> podSetCaptor = ArgumentCaptor.forClass(StrimziPodSet.class);
-        when(mockPodSetOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), podSetCaptor.capture())).thenAnswer(i -> CompletableFuture.completedFuture(ReconcileResult.created(i.getArgument(3))));
+        when(mockPodSetOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), any())).thenAnswer(i -> CompletableFuture.completedFuture(ReconcileResult.created(i.getArgument(3))));
 
         // Mock PDBs
         PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
-        ArgumentCaptor<PodDisruptionBudget> pdbCaptor = ArgumentCaptor.forClass(PodDisruptionBudget.class);
-        when(mockPdbOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), pdbCaptor.capture())).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockPdbOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), any())).thenReturn(CompletableFuture.completedFuture(null));
 
         // Mock Config Maps
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
@@ -158,8 +155,7 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
 
         // Mock Services
         ServiceOperator mockServiceOps = supplier.serviceOperations;
-        ArgumentCaptor<Service> serviceCaptor = ArgumentCaptor.forClass(Service.class);
-        when(mockServiceOps.reconcile(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), serviceCaptor.capture())).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockServiceOps.reconcile(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), any())).thenReturn(CompletableFuture.completedFuture(null));
 
         // Mock Network Policies
         NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
@@ -181,8 +177,7 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
         CrdOperator<KubernetesClient, KafkaMirrorMaker2, KafkaMirrorMaker2List> mockConnectOps = supplier.mirrorMaker2Operator;
         when(mockConnectOps.get(eq(NAMESPACE), eq(NAME))).thenReturn(mm2);
         when(mockConnectOps.getAsync(eq(NAMESPACE), eq(NAME))).thenReturn(CompletableFuture.completedFuture(mm2));
-        ArgumentCaptor<KafkaMirrorMaker2> mm2StatusCaptor = ArgumentCaptor.forClass(KafkaMirrorMaker2.class);
-        when(mockConnectOps.updateStatusAsync(any(), mm2StatusCaptor.capture())).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockConnectOps.updateStatusAsync(any(), any())).thenReturn(CompletableFuture.completedFuture(null));
 
         // Mock Connect API
         KafkaConnectApi mockConnectClient = mock(KafkaConnectApi.class);
@@ -200,9 +195,9 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
         ops.reconcile(new Reconciliation("test-trigger", KafkaMirrorMaker2.RESOURCE_KIND, NAMESPACE, NAME))
                 .onComplete(context.succeeding(v -> context.verify(() -> {
                     // Verify PodSets
-                    List<StrimziPodSet> capturesPodSets = podSetCaptor.getAllValues();
-                    assertThat(capturesPodSets.size(), is(1));
-                    StrimziPodSet podSet = capturesPodSets.get(0);
+                    ArgumentCaptor<StrimziPodSet> podSetCaptor = ArgumentCaptor.forClass(StrimziPodSet.class);
+                    verify(mockPodSetOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), podSetCaptor.capture());
+                    StrimziPodSet podSet = podSetCaptor.getValue();
                     assertThat(podSet.getMetadata().getName(), is(COMPONENT_NAME));
                     assertThat(podSet.getSpec().getPods().size(), is(3));
 
@@ -216,8 +211,9 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
                     }
 
                     // Verify services => one regular and one headless
+                    ArgumentCaptor<Service> serviceCaptor = ArgumentCaptor.forClass(Service.class);
+                    verify(mockServiceOps, times(2)).reconcile(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), serviceCaptor.capture());
                     List<Service> capturedServices = serviceCaptor.getAllValues();
-                    assertThat(capturedServices, hasSize(2));
 
                     Service service = capturedServices.get(0);
                     assertThat(service.getMetadata().getName(), is(KafkaMirrorMaker2Resources.serviceName(NAME)));
@@ -230,16 +226,16 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
                     assertThat(headlessService.getSpec().getClusterIP(), is("None"));
 
                     // Verify PDB => should be set up for a custom controller
-                    List<PodDisruptionBudget> capturedPdb = pdbCaptor.getAllValues();
-                    assertThat(capturedPdb.size(), is(1));
-                    PodDisruptionBudget pdb = capturedPdb.get(0);
+                    ArgumentCaptor<PodDisruptionBudget> pdbCaptor = ArgumentCaptor.forClass(PodDisruptionBudget.class);
+                    verify(mockPdbOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), pdbCaptor.capture());
+                    PodDisruptionBudget pdb = pdbCaptor.getValue();
                     assertThat(pdb.getMetadata().getName(), is(COMPONENT_NAME));
                     assertThat(pdb.getSpec().getMinAvailable().getIntVal(), is(2));
 
                     // Verify CR status
-                    List<KafkaMirrorMaker2> capturedMm2Statuses = mm2StatusCaptor.getAllValues();
-                    assertThat(capturedMm2Statuses, hasSize(1));
-                    KafkaMirrorMaker2Status mm2Status = capturedMm2Statuses.get(0).getStatus();
+                    ArgumentCaptor<KafkaMirrorMaker2> mm2StatusCaptor = ArgumentCaptor.forClass(KafkaMirrorMaker2.class);
+                    verify(mockConnectOps, times(1)).updateStatusAsync(any(), mm2StatusCaptor.capture());
+                    KafkaMirrorMaker2Status mm2Status = mm2StatusCaptor.getValue().getStatus();
 
                     assertThat(mm2Status.getUrl(), is("http://my-mm2-mirrormaker2-api.my-namespace.svc:8083"));
                     assertThat(mm2Status.getReplicas(), is(3));
@@ -264,13 +260,11 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
         StrimziPodSetOperator mockPodSetOps = supplier.strimziPodSetOperator;
         when(mockPodSetOps.getAsync(eq(NAMESPACE), eq(COMPONENT_NAME))).thenReturn(CompletableFuture.completedFuture(oldPodSet));
         when(mockPodSetOps.readiness(any(), eq(NAMESPACE), eq(COMPONENT_NAME), anyLong(), anyLong())).thenReturn(CompletableFuture.completedFuture(null));
-        ArgumentCaptor<StrimziPodSet> podSetCaptor = ArgumentCaptor.forClass(StrimziPodSet.class);
-        when(mockPodSetOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), podSetCaptor.capture())).thenAnswer(i -> CompletableFuture.completedFuture(ReconcileResult.created(i.getArgument(3))));
+        when(mockPodSetOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), any())).thenAnswer(i -> CompletableFuture.completedFuture(ReconcileResult.created(i.getArgument(3))));
 
         // Mock PDBs
         PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
-        ArgumentCaptor<PodDisruptionBudget> pdbCaptor = ArgumentCaptor.forClass(PodDisruptionBudget.class);
-        when(mockPdbOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), pdbCaptor.capture())).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockPdbOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), any())).thenReturn(CompletableFuture.completedFuture(null));
 
         // Mock Config Maps
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
@@ -278,8 +272,7 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
 
         // Mock Services
         ServiceOperator mockServiceOps = supplier.serviceOperations;
-        ArgumentCaptor<Service> serviceCaptor = ArgumentCaptor.forClass(Service.class);
-        when(mockServiceOps.reconcile(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), serviceCaptor.capture())).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockServiceOps.reconcile(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), any())).thenReturn(CompletableFuture.completedFuture(null));
 
         // Mock Network Policies
         NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
@@ -305,8 +298,7 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
         CrdOperator<KubernetesClient, KafkaMirrorMaker2, KafkaMirrorMaker2List> mockConnectOps = supplier.mirrorMaker2Operator;
         when(mockConnectOps.get(eq(NAMESPACE), eq(NAME))).thenReturn(mm2);
         when(mockConnectOps.getAsync(eq(NAMESPACE), eq(NAME))).thenReturn(CompletableFuture.completedFuture(mm2));
-        ArgumentCaptor<KafkaMirrorMaker2> mm2StatusCaptor = ArgumentCaptor.forClass(KafkaMirrorMaker2.class);
-        when(mockConnectOps.updateStatusAsync(any(), mm2StatusCaptor.capture())).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockConnectOps.updateStatusAsync(any(), any())).thenReturn(CompletableFuture.completedFuture(null));
 
         // Mock Connect API
         KafkaConnectApi mockConnectClient = mock(KafkaConnectApi.class);
@@ -324,16 +316,16 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
         ops.reconcile(new Reconciliation("test-trigger", KafkaMirrorMaker2.RESOURCE_KIND, NAMESPACE, NAME))
                 .onComplete(context.succeeding(v -> context.verify(() -> {
                     // Verify PodSets
-                    List<StrimziPodSet> capturesPodSets = podSetCaptor.getAllValues();
-                    assertThat(capturesPodSets.size(), is(1));
-                    StrimziPodSet podSet = capturesPodSets.get(0);
+                    ArgumentCaptor<StrimziPodSet> podSetCaptor = ArgumentCaptor.forClass(StrimziPodSet.class);
+                    verify(mockPodSetOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), podSetCaptor.capture());
+                    StrimziPodSet podSet = podSetCaptor.getValue();
                     assertThat(podSet.getMetadata().getName(), is(COMPONENT_NAME));
                     assertThat(podSet.getSpec().getPods().size(), is(3));
 
                     // Verify CR status
-                    List<KafkaMirrorMaker2> capturedMm2Statuses = mm2StatusCaptor.getAllValues();
-                    assertThat(capturedMm2Statuses, hasSize(1));
-                    KafkaMirrorMaker2Status mm2Status = capturedMm2Statuses.get(0).getStatus();
+                    ArgumentCaptor<KafkaMirrorMaker2> mm2StatusCaptor = ArgumentCaptor.forClass(KafkaMirrorMaker2.class);
+                    verify(mockConnectOps, times(1)).updateStatusAsync(any(), mm2StatusCaptor.capture());
+                    KafkaMirrorMaker2Status mm2Status = mm2StatusCaptor.getValue().getStatus();
 
                     assertThat(mm2Status.getUrl(), is("http://my-mm2-mirrormaker2-api.my-namespace.svc:8083"));
                     assertThat(mm2Status.getReplicas(), is(3));
@@ -358,13 +350,11 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
         StrimziPodSetOperator mockPodSetOps = supplier.strimziPodSetOperator;
         when(mockPodSetOps.getAsync(eq(NAMESPACE), eq(COMPONENT_NAME))).thenReturn(CompletableFuture.completedFuture(oldPodSet));
         when(mockPodSetOps.readiness(any(), eq(NAMESPACE), eq(COMPONENT_NAME), anyLong(), anyLong())).thenReturn(CompletableFuture.completedFuture(null));
-        ArgumentCaptor<StrimziPodSet> podSetCaptor = ArgumentCaptor.forClass(StrimziPodSet.class);
-        when(mockPodSetOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), podSetCaptor.capture())).thenAnswer(i -> CompletableFuture.completedFuture(ReconcileResult.created(i.getArgument(3))));
+        when(mockPodSetOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), any())).thenAnswer(i -> CompletableFuture.completedFuture(ReconcileResult.created(i.getArgument(3))));
 
         // Mock PDBs
         PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
-        ArgumentCaptor<PodDisruptionBudget> pdbCaptor = ArgumentCaptor.forClass(PodDisruptionBudget.class);
-        when(mockPdbOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), pdbCaptor.capture())).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockPdbOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), any())).thenReturn(CompletableFuture.completedFuture(null));
 
         // Mock Config Maps
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
@@ -372,8 +362,7 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
 
         // Mock Services
         ServiceOperator mockServiceOps = supplier.serviceOperations;
-        ArgumentCaptor<Service> serviceCaptor = ArgumentCaptor.forClass(Service.class);
-        when(mockServiceOps.reconcile(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), serviceCaptor.capture())).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockServiceOps.reconcile(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), any())).thenReturn(CompletableFuture.completedFuture(null));
 
         // Mock Network Policies
         NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
@@ -399,8 +388,7 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
         CrdOperator<KubernetesClient, KafkaMirrorMaker2, KafkaMirrorMaker2List> mockConnectOps = supplier.mirrorMaker2Operator;
         when(mockConnectOps.get(eq(NAMESPACE), eq(NAME))).thenReturn(mm2);
         when(mockConnectOps.getAsync(eq(NAMESPACE), eq(NAME))).thenReturn(CompletableFuture.completedFuture(mm2));
-        ArgumentCaptor<KafkaMirrorMaker2> mm2StatusCaptor = ArgumentCaptor.forClass(KafkaMirrorMaker2.class);
-        when(mockConnectOps.updateStatusAsync(any(), mm2StatusCaptor.capture())).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockConnectOps.updateStatusAsync(any(), any())).thenReturn(CompletableFuture.completedFuture(null));
 
         // Mock Connect API
         KafkaConnectApi mockConnectClient = mock(KafkaConnectApi.class);
@@ -418,16 +406,16 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
         ops.reconcile(new Reconciliation("test-trigger", KafkaMirrorMaker2.RESOURCE_KIND, NAMESPACE, NAME))
                 .onComplete(context.succeeding(v -> context.verify(() -> {
                     // Verify PodSets
-                    List<StrimziPodSet> capturesPodSets = podSetCaptor.getAllValues();
-                    assertThat(capturesPodSets.size(), is(1));
-                    StrimziPodSet podSet = capturesPodSets.get(0);
+                    ArgumentCaptor<StrimziPodSet> podSetCaptor = ArgumentCaptor.forClass(StrimziPodSet.class);
+                    verify(mockPodSetOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), podSetCaptor.capture());
+                    StrimziPodSet podSet = podSetCaptor.getValue();
                     assertThat(podSet.getMetadata().getName(), is(COMPONENT_NAME));
                     assertThat(podSet.getSpec().getPods().size(), is(3));
 
                     // Verify CR status
-                    List<KafkaMirrorMaker2> capturedMm2Statuses = mm2StatusCaptor.getAllValues();
-                    assertThat(capturedMm2Statuses, hasSize(1));
-                    KafkaMirrorMaker2Status mm2Status = capturedMm2Statuses.get(0).getStatus();
+                    ArgumentCaptor<KafkaMirrorMaker2> mm2StatusCaptor = ArgumentCaptor.forClass(KafkaMirrorMaker2.class);
+                    verify(mockConnectOps, times(1)).updateStatusAsync(any(), mm2StatusCaptor.capture());
+                    KafkaMirrorMaker2Status mm2Status = mm2StatusCaptor.getValue().getStatus();
 
                     assertThat(mm2Status.getUrl(), is("http://my-mm2-mirrormaker2-api.my-namespace.svc:8083"));
                     assertThat(mm2Status.getReplicas(), is(3));
@@ -457,13 +445,11 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
         StrimziPodSetOperator mockPodSetOps = supplier.strimziPodSetOperator;
         when(mockPodSetOps.getAsync(eq(NAMESPACE), eq(COMPONENT_NAME))).thenReturn(CompletableFuture.completedFuture(oldPodSet));
         when(mockPodSetOps.readiness(any(), eq(NAMESPACE), eq(COMPONENT_NAME), anyLong(), anyLong())).thenReturn(CompletableFuture.completedFuture(null));
-        ArgumentCaptor<StrimziPodSet> podSetCaptor = ArgumentCaptor.forClass(StrimziPodSet.class);
-        when(mockPodSetOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), podSetCaptor.capture())).thenAnswer(i -> CompletableFuture.completedFuture(ReconcileResult.created(i.getArgument(3))));
+        when(mockPodSetOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), any())).thenAnswer(i -> CompletableFuture.completedFuture(ReconcileResult.created(i.getArgument(3))));
 
         // Mock PDBs
         PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
-        ArgumentCaptor<PodDisruptionBudget> pdbCaptor = ArgumentCaptor.forClass(PodDisruptionBudget.class);
-        when(mockPdbOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), pdbCaptor.capture())).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockPdbOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), any())).thenReturn(CompletableFuture.completedFuture(null));
 
         // Mock Config Maps
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
@@ -471,8 +457,7 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
 
         // Mock Services
         ServiceOperator mockServiceOps = supplier.serviceOperations;
-        ArgumentCaptor<Service> serviceCaptor = ArgumentCaptor.forClass(Service.class);
-        when(mockServiceOps.reconcile(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), serviceCaptor.capture())).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockServiceOps.reconcile(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), any())).thenReturn(CompletableFuture.completedFuture(null));
 
         // Mock Network Policies
         NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
@@ -498,8 +483,7 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
         CrdOperator<KubernetesClient, KafkaMirrorMaker2, KafkaMirrorMaker2List> mockConnectOps = supplier.mirrorMaker2Operator;
         when(mockConnectOps.get(eq(NAMESPACE), eq(NAME))).thenReturn(mm2);
         when(mockConnectOps.getAsync(eq(NAMESPACE), eq(NAME))).thenReturn(CompletableFuture.completedFuture(mm2));
-        ArgumentCaptor<KafkaMirrorMaker2> mm2StatusCaptor = ArgumentCaptor.forClass(KafkaMirrorMaker2.class);
-        when(mockConnectOps.updateStatusAsync(any(), mm2StatusCaptor.capture())).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockConnectOps.updateStatusAsync(any(), any())).thenReturn(CompletableFuture.completedFuture(null));
 
         // Mock Connect API
         KafkaConnectApi mockConnectClient = mock(KafkaConnectApi.class);
@@ -517,16 +501,16 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
         ops.reconcile(new Reconciliation("test-trigger", KafkaMirrorMaker2.RESOURCE_KIND, NAMESPACE, NAME))
                 .onComplete(context.succeeding(v -> context.verify(() -> {
                     // Verify PodSets
-                    List<StrimziPodSet> capturesPodSets = podSetCaptor.getAllValues();
-                    assertThat(capturesPodSets.size(), is(1));
-                    StrimziPodSet podSet = capturesPodSets.get(0);
+                    ArgumentCaptor<StrimziPodSet> podSetCaptor = ArgumentCaptor.forClass(StrimziPodSet.class);
+                    verify(mockPodSetOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), podSetCaptor.capture());
+                    StrimziPodSet podSet = podSetCaptor.getValue();
                     assertThat(podSet.getMetadata().getName(), is(COMPONENT_NAME));
                     assertThat(podSet.getSpec().getPods().size(), is(0));
 
                     // Verify CR status
-                    List<KafkaMirrorMaker2> capturedMm2Statuses = mm2StatusCaptor.getAllValues();
-                    assertThat(capturedMm2Statuses, hasSize(1));
-                    KafkaMirrorMaker2Status mm2Status = capturedMm2Statuses.get(0).getStatus();
+                    ArgumentCaptor<KafkaMirrorMaker2> mm2StatusCaptor = ArgumentCaptor.forClass(KafkaMirrorMaker2.class);
+                    verify(mockConnectOps, times(1)).updateStatusAsync(any(), mm2StatusCaptor.capture());
+                    KafkaMirrorMaker2Status mm2Status = mm2StatusCaptor.getValue().getStatus();
 
                     assertThat(mm2Status.getUrl(), is(nullValue()));
                     assertThat(mm2Status.getReplicas(), is(0));
@@ -550,13 +534,11 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
         StrimziPodSetOperator mockPodSetOps = supplier.strimziPodSetOperator;
         when(mockPodSetOps.getAsync(eq(NAMESPACE), eq(COMPONENT_NAME))).thenReturn(CompletableFuture.completedFuture(oldPodSet));
         when(mockPodSetOps.readiness(any(), eq(NAMESPACE), eq(COMPONENT_NAME), anyLong(), anyLong())).thenReturn(CompletableFuture.completedFuture(null));
-        ArgumentCaptor<StrimziPodSet> podSetCaptor = ArgumentCaptor.forClass(StrimziPodSet.class);
-        when(mockPodSetOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), podSetCaptor.capture())).thenAnswer(i -> CompletableFuture.completedFuture(ReconcileResult.created(i.getArgument(3))));
+        when(mockPodSetOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), any())).thenAnswer(i -> CompletableFuture.completedFuture(ReconcileResult.created(i.getArgument(3))));
 
         // Mock PDBs
         PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
-        ArgumentCaptor<PodDisruptionBudget> pdbCaptor = ArgumentCaptor.forClass(PodDisruptionBudget.class);
-        when(mockPdbOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), pdbCaptor.capture())).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockPdbOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), any())).thenReturn(CompletableFuture.completedFuture(null));
 
         // Mock Config Maps
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
@@ -564,8 +546,7 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
 
         // Mock Services
         ServiceOperator mockServiceOps = supplier.serviceOperations;
-        ArgumentCaptor<Service> serviceCaptor = ArgumentCaptor.forClass(Service.class);
-        when(mockServiceOps.reconcile(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), serviceCaptor.capture())).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockServiceOps.reconcile(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), any())).thenReturn(CompletableFuture.completedFuture(null));
 
         // Mock Network Policies
         NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
@@ -591,8 +572,7 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
         CrdOperator<KubernetesClient, KafkaMirrorMaker2, KafkaMirrorMaker2List> mockConnectOps = supplier.mirrorMaker2Operator;
         when(mockConnectOps.get(eq(NAMESPACE), eq(NAME))).thenReturn(mm2);
         when(mockConnectOps.getAsync(eq(NAMESPACE), eq(NAME))).thenReturn(CompletableFuture.completedFuture(mm2));
-        ArgumentCaptor<KafkaMirrorMaker2> mm2StatusCaptor = ArgumentCaptor.forClass(KafkaMirrorMaker2.class);
-        when(mockConnectOps.updateStatusAsync(any(), mm2StatusCaptor.capture())).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockConnectOps.updateStatusAsync(any(), any())).thenReturn(CompletableFuture.completedFuture(null));
 
         // Mock Connect API
         KafkaConnectApi mockConnectClient = mock(KafkaConnectApi.class);
@@ -613,15 +593,16 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
                     verify(mockPodOps, times(3)).deleteAsync(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), eq(false));
 
                     // Verify PodSets
-                    List<StrimziPodSet> capturesPodSets = podSetCaptor.getAllValues();
-                    assertThat(capturesPodSets.size(), is(1));
-                    StrimziPodSet podSet = capturesPodSets.get(0);
+                    ArgumentCaptor<StrimziPodSet> podSetCaptor = ArgumentCaptor.forClass(StrimziPodSet.class);
+                    verify(mockPodSetOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), podSetCaptor.capture());
+                    StrimziPodSet podSet = podSetCaptor.getValue();
                     assertThat(podSet.getMetadata().getName(), is(COMPONENT_NAME));
                     assertThat(podSet.getSpec().getPods().size(), is(3));
 
                     // Verify services => one regular and one headless
+                    ArgumentCaptor<Service> serviceCaptor = ArgumentCaptor.forClass(Service.class);
+                    verify(mockServiceOps, times(2)).reconcile(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), serviceCaptor.capture());
                     List<Service> capturedServices = serviceCaptor.getAllValues();
-                    assertThat(capturedServices, hasSize(2));
 
                     Service service = capturedServices.get(0);
                     assertThat(service.getMetadata().getName(), is(KafkaMirrorMaker2Resources.serviceName(NAME)));
@@ -634,9 +615,9 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
                     assertThat(headlessService.getSpec().getClusterIP(), is("None"));
 
                     // Verify CR status
-                    List<KafkaMirrorMaker2> capturedMm2Statuses = mm2StatusCaptor.getAllValues();
-                    assertThat(capturedMm2Statuses, hasSize(1));
-                    KafkaMirrorMaker2Status mm2Status = capturedMm2Statuses.get(0).getStatus();
+                    ArgumentCaptor<KafkaMirrorMaker2> mm2StatusCaptor = ArgumentCaptor.forClass(KafkaMirrorMaker2.class);
+                    verify(mockConnectOps, times(1)).updateStatusAsync(any(), mm2StatusCaptor.capture());
+                    KafkaMirrorMaker2Status mm2Status = mm2StatusCaptor.getValue().getStatus();
 
                     assertThat(mm2Status.getUrl(), is("http://my-mm2-mirrormaker2-api.my-namespace.svc:8083"));
                     assertThat(mm2Status.getReplicas(), is(3));
@@ -666,13 +647,11 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
         StrimziPodSetOperator mockPodSetOps = supplier.strimziPodSetOperator;
         when(mockPodSetOps.getAsync(eq(NAMESPACE), eq(COMPONENT_NAME))).thenReturn(CompletableFuture.completedFuture(oldPodSet));
         when(mockPodSetOps.readiness(any(), eq(NAMESPACE), eq(COMPONENT_NAME), anyLong(), anyLong())).thenReturn(CompletableFuture.completedFuture(null));
-        ArgumentCaptor<StrimziPodSet> podSetCaptor = ArgumentCaptor.forClass(StrimziPodSet.class);
-        when(mockPodSetOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), podSetCaptor.capture())).thenAnswer(i -> CompletableFuture.completedFuture(ReconcileResult.created(i.getArgument(3))));
+        when(mockPodSetOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), any())).thenAnswer(i -> CompletableFuture.completedFuture(ReconcileResult.created(i.getArgument(3))));
 
         // Mock PDBs
         PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
-        ArgumentCaptor<PodDisruptionBudget> pdbCaptor = ArgumentCaptor.forClass(PodDisruptionBudget.class);
-        when(mockPdbOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), pdbCaptor.capture())).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockPdbOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), any())).thenReturn(CompletableFuture.completedFuture(null));
 
         // Mock Config Maps
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
@@ -680,8 +659,7 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
 
         // Mock Services
         ServiceOperator mockServiceOps = supplier.serviceOperations;
-        ArgumentCaptor<Service> serviceCaptor = ArgumentCaptor.forClass(Service.class);
-        when(mockServiceOps.reconcile(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), serviceCaptor.capture())).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockServiceOps.reconcile(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), any())).thenReturn(CompletableFuture.completedFuture(null));
 
         // Mock Network Policies
         NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
@@ -707,8 +685,7 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
         CrdOperator<KubernetesClient, KafkaMirrorMaker2, KafkaMirrorMaker2List> mockConnectOps = supplier.mirrorMaker2Operator;
         when(mockConnectOps.get(eq(NAMESPACE), eq(NAME))).thenReturn(mm2);
         when(mockConnectOps.getAsync(eq(NAMESPACE), eq(NAME))).thenReturn(CompletableFuture.completedFuture(mm2));
-        ArgumentCaptor<KafkaMirrorMaker2> mm2StatusCaptor = ArgumentCaptor.forClass(KafkaMirrorMaker2.class);
-        when(mockConnectOps.updateStatusAsync(any(), mm2StatusCaptor.capture())).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockConnectOps.updateStatusAsync(any(), any())).thenReturn(CompletableFuture.completedFuture(null));
 
         // Mock Connect API
         KafkaConnectApi mockConnectClient = mock(KafkaConnectApi.class);
@@ -729,9 +706,9 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
                     verify(mockPodOps, times(3)).deleteAsync(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), eq(false));
 
                     // Verify PodSets
-                    List<StrimziPodSet> capturesPodSets = podSetCaptor.getAllValues();
-                    assertThat(capturesPodSets.size(), is(1));
-                    StrimziPodSet podSet = capturesPodSets.get(0);
+                    ArgumentCaptor<StrimziPodSet> podSetCaptor = ArgumentCaptor.forClass(StrimziPodSet.class);
+                    verify(mockPodSetOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), podSetCaptor.capture());
+                    StrimziPodSet podSet = podSetCaptor.getValue();
                     assertThat(podSet.getMetadata().getName(), is(COMPONENT_NAME));
                     assertThat(podSet.getSpec().getPods().size(), is(3));
                     PodSetUtils.podSetToPods(podSet).forEach(pod -> {
@@ -740,8 +717,9 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
                     });
 
                     // Verify services => one regular and one headless
+                    ArgumentCaptor<Service> serviceCaptor = ArgumentCaptor.forClass(Service.class);
+                    verify(mockServiceOps, times(2)).reconcile(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), serviceCaptor.capture());
                     List<Service> capturedServices = serviceCaptor.getAllValues();
-                    assertThat(capturedServices, hasSize(2));
 
                     Service service = capturedServices.get(0);
                     assertThat(service.getMetadata().getName(), is(KafkaMirrorMaker2Resources.serviceName(NAME)));
@@ -754,9 +732,9 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
                     assertThat(headlessService.getSpec().getClusterIP(), is("None"));
 
                     // Verify CR status
-                    List<KafkaMirrorMaker2> capturedMm2Statuses = mm2StatusCaptor.getAllValues();
-                    assertThat(capturedMm2Statuses, hasSize(1));
-                    KafkaMirrorMaker2Status mm2Status = capturedMm2Statuses.get(0).getStatus();
+                    ArgumentCaptor<KafkaMirrorMaker2> mm2StatusCaptor = ArgumentCaptor.forClass(KafkaMirrorMaker2.class);
+                    verify(mockConnectOps, times(1)).updateStatusAsync(any(), mm2StatusCaptor.capture());
+                    KafkaMirrorMaker2Status mm2Status = mm2StatusCaptor.getValue().getStatus();
 
                     assertThat(mm2Status.getUrl(), is("http://my-mm2-mirrormaker2-api.my-namespace.svc:8083"));
                     assertThat(mm2Status.getReplicas(), is(3));
@@ -780,13 +758,11 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
         StrimziPodSetOperator mockPodSetOps = supplier.strimziPodSetOperator;
         when(mockPodSetOps.getAsync(eq(NAMESPACE), eq(COMPONENT_NAME))).thenReturn(CompletableFuture.completedFuture(oldPodSet));
         when(mockPodSetOps.readiness(any(), eq(NAMESPACE), eq(COMPONENT_NAME), anyLong(), anyLong())).thenReturn(CompletableFuture.completedFuture(null));
-        ArgumentCaptor<StrimziPodSet> podSetCaptor = ArgumentCaptor.forClass(StrimziPodSet.class);
-        when(mockPodSetOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), podSetCaptor.capture())).thenAnswer(i -> CompletableFuture.failedFuture(new RuntimeException("Test failure")));
+        when(mockPodSetOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), any())).thenAnswer(i -> CompletableFuture.failedFuture(new RuntimeException("Test failure")));
 
         // Mock PDBs
         PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
-        ArgumentCaptor<PodDisruptionBudget> pdbCaptor = ArgumentCaptor.forClass(PodDisruptionBudget.class);
-        when(mockPdbOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), pdbCaptor.capture())).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockPdbOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), any())).thenReturn(CompletableFuture.completedFuture(null));
 
         // Mock Config Maps
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
@@ -794,8 +770,7 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
 
         // Mock Services
         ServiceOperator mockServiceOps = supplier.serviceOperations;
-        ArgumentCaptor<Service> serviceCaptor = ArgumentCaptor.forClass(Service.class);
-        when(mockServiceOps.reconcile(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), serviceCaptor.capture())).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockServiceOps.reconcile(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), any())).thenReturn(CompletableFuture.completedFuture(null));
 
         // Mock Network Policies
         NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
@@ -821,8 +796,7 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
         CrdOperator<KubernetesClient, KafkaMirrorMaker2, KafkaMirrorMaker2List> mockConnectOps = supplier.mirrorMaker2Operator;
         when(mockConnectOps.get(eq(NAMESPACE), eq(NAME))).thenReturn(mm2);
         when(mockConnectOps.getAsync(eq(NAMESPACE), eq(NAME))).thenReturn(CompletableFuture.completedFuture(mm2));
-        ArgumentCaptor<KafkaMirrorMaker2> mm2StatusCaptor = ArgumentCaptor.forClass(KafkaMirrorMaker2.class);
-        when(mockConnectOps.updateStatusAsync(any(), mm2StatusCaptor.capture())).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockConnectOps.updateStatusAsync(any(), any())).thenReturn(CompletableFuture.completedFuture(null));
 
         // Mock Connect API
         KafkaConnectApi mockConnectClient = mock(KafkaConnectApi.class);
@@ -842,9 +816,9 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
                     assertThat(v.getMessage(), is("Test failure"));
 
                     // Verify CR status
-                    List<KafkaMirrorMaker2> capturedMm2Statuses = mm2StatusCaptor.getAllValues();
-                    assertThat(capturedMm2Statuses, hasSize(1));
-                    KafkaMirrorMaker2Status mm2Status = capturedMm2Statuses.get(0).getStatus();
+                    ArgumentCaptor<KafkaMirrorMaker2> mm2StatusCaptor = ArgumentCaptor.forClass(KafkaMirrorMaker2.class);
+                    verify(mockConnectOps, times(1)).updateStatusAsync(any(), mm2StatusCaptor.capture());
+                    KafkaMirrorMaker2Status mm2Status = mm2StatusCaptor.getValue().getStatus();
 
                     assertThat(mm2Status.getUrl(), is("http://my-mm2-mirrormaker2-api.my-namespace.svc:8083"));
                     assertThat(mm2Status.getReplicas(), is(3));
@@ -914,8 +888,48 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
                     .endMirror()
                 .endSpec()
                 .build();
-        ArgumentCaptor<KafkaMirrorMaker2> mirrorMaker2Captor = createMirrorMaker2CaptorMock(kmm2, supplier);
-        KafkaConnectApi mockConnectClient = createConnectClientMock();
+        // Mock KafkaMirrorMaker2 CRs
+        CrdOperator<KubernetesClient, KafkaMirrorMaker2, KafkaMirrorMaker2List> mockConnectOps = supplier.mirrorMaker2Operator;
+        when(mockConnectOps.get(NAMESPACE, NAME)).thenReturn(kmm2);
+        when(mockConnectOps.getAsync(anyString(), anyString())).thenReturn(CompletableFuture.completedFuture(kmm2));
+        when(mockConnectOps.updateStatusAsync(any(), any())).thenReturn(CompletableFuture.completedFuture(null));
+
+        // Mock Services
+        ServiceOperator mockServiceOps = supplier.serviceOperations;
+        when(mockServiceOps.reconcile(any(), anyString(), anyString(), any())).thenReturn(CompletableFuture.completedFuture(null));
+
+        // Mock Config Maps
+        ConfigMapOperator mockCmOps = supplier.configMapOperations;
+        when(mockCmOps.reconcile(any(), anyString(), any(), any())).thenReturn(CompletableFuture.completedFuture(ReconcileResult.created(new ConfigMap())));
+
+        // Mock Network Policies
+        NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
+        when(mockNetPolOps.reconcile(any(), eq(kmm2.getMetadata().getNamespace()), eq(KafkaMirrorMaker2Resources.componentName(
+                kmm2.getMetadata().getName())), any())).thenReturn(CompletableFuture.completedFuture(ReconcileResult.created(new NetworkPolicy())));
+
+        // Mock Secrets
+        SecretOperator mockSecretOps = supplier.secretOperations;
+        when(mockSecretOps.reconcile(any(), anyString(), any(), any())).thenReturn(CompletableFuture.completedFuture(null));
+
+        // Mock PodSets
+        StrimziPodSetOperator mockPodSetOps = supplier.strimziPodSetOperator;
+        when(mockPodSetOps.getAsync(any(), any())).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockPodSetOps.reconcile(any(), anyString(), anyString(), any())).thenAnswer(i -> CompletableFuture.completedFuture(ReconcileResult.created(i.getArgument(3))));
+        when(mockPodSetOps.readiness(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(CompletableFuture.completedFuture(null));
+
+        // Mock Pods
+        PodOperator mockPodOps = supplier.podOperations;
+        when(mockPodOps.listAsync(any(), any(Labels.class))).thenReturn(CompletableFuture.completedFuture(List.of()));
+        when(mockPodOps.getAsync(any(), any())).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockPodOps.readiness(any(), any(), any(), anyLong(), anyLong())).thenReturn(CompletableFuture.completedFuture(null));
+
+        // Mock PDBs
+        PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
+        when(mockPdbOps.reconcile(any(), anyString(), any(), any())).thenReturn(CompletableFuture.completedFuture(null));
+
+        // Mock Connect API
+        KafkaConnectApi mockConnectClient = mock(KafkaConnectApi.class);
+        when(mockConnectClient.list(any(), anyString(), anyInt())).thenReturn(CompletableFuture.completedFuture(emptyList()));
 
         KafkaMirrorMaker2AssemblyOperator mm2AssemblyOperator = new KafkaMirrorMaker2AssemblyOperator(vertx, new PlatformFeaturesAvailability(true, KubernetesVersion.MINIMAL_SUPPORTED_VERSION),
                 supplier, ResourceUtils.dummyClusterOperatorConfig(), x -> mockConnectClient);
@@ -924,7 +938,10 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
         KafkaMirrorMaker2Cluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kmm2, VERSIONS, supplier.sharedEnvironmentProvider);
         mm2AssemblyOperator.reconcile(new Reconciliation("test-exclude", KafkaMirrorMaker2.RESOURCE_KIND, NAMESPACE, NAME))
                 .onComplete(context.succeeding(v -> context.verify(() -> {
-                    KafkaMirrorMaker2MirrorSpec capturedMirrorConnector = mirrorMaker2Captor.getAllValues().get(0).getSpec().getMirrors().get(0);
+                    ArgumentCaptor<KafkaMirrorMaker2> mirrorMaker2Captor = ArgumentCaptor.forClass(KafkaMirrorMaker2.class);
+                    verify(mockConnectOps, times(1)).updateStatusAsync(any(), mirrorMaker2Captor.capture());
+
+                    KafkaMirrorMaker2MirrorSpec capturedMirrorConnector = mirrorMaker2Captor.getValue().getSpec().getMirrors().get(0);
                     assertThat(capturedMirrorConnector.getTopicsExcludePattern(), is(excludedTopicList));
                     assertThat(capturedMirrorConnector.getGroupsExcludePattern(), is(excludedGroupList));
                     async.flag();
@@ -955,45 +972,6 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
                 })));
     }
 
-    private ArgumentCaptor<KafkaMirrorMaker2> createMirrorMaker2CaptorMock(KafkaMirrorMaker2 kmm2, ResourceOperatorSupplier supplier) {
-        CrdOperator<KubernetesClient, KafkaMirrorMaker2, KafkaMirrorMaker2List> mockMirrorMaker2Ops = supplier.mirrorMaker2Operator;
-        StrimziPodSetOperator mockPodSetOps = supplier.strimziPodSetOperator;
-        PodOperator mockPodOps = supplier.podOperations;
-        PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
-        ConfigMapOperator mockCmOps = supplier.configMapOperations;
-        ServiceOperator mockServiceOps = supplier.serviceOperations;
-        NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
-        SecretOperator mockSecretOps = supplier.secretOperations;
-
-        when(mockMirrorMaker2Ops.get(NAMESPACE, NAME)).thenReturn(kmm2);
-        when(mockMirrorMaker2Ops.getAsync(anyString(), anyString())).thenReturn(CompletableFuture.completedFuture(kmm2));
-
-        when(mockServiceOps.reconcile(any(), anyString(), anyString(), any())).thenReturn(CompletableFuture.completedFuture(null));
-
-        when(mockCmOps.reconcile(any(), anyString(), any(), any())).thenReturn(CompletableFuture.completedFuture(ReconcileResult.created(new ConfigMap())));
-
-        when(mockNetPolOps.reconcile(any(), eq(kmm2.getMetadata().getNamespace()), eq(KafkaMirrorMaker2Resources.componentName(
-                kmm2.getMetadata().getName())), any())).thenReturn(CompletableFuture.completedFuture(ReconcileResult.created(new NetworkPolicy())));
-
-        when(mockSecretOps.reconcile(any(), anyString(), any(), any())).thenReturn(CompletableFuture.completedFuture(null));
-
-        when(mockPodSetOps.getAsync(any(), any())).thenReturn(CompletableFuture.completedFuture(null));
-        when(mockPodSetOps.reconcile(any(), anyString(), anyString(), any())).thenAnswer(i -> CompletableFuture.completedFuture(ReconcileResult.created(i.getArgument(3))));
-        when(mockPodSetOps.readiness(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(CompletableFuture.completedFuture(null));
-
-        when(mockPodOps.listAsync(any(), any(Labels.class))).thenReturn(CompletableFuture.completedFuture(List.of()));
-        when(mockPodOps.getAsync(any(), any())).thenReturn(CompletableFuture.completedFuture(null));
-        when(mockPodOps.readiness(any(), any(), any(), anyLong(), anyLong())).thenReturn(CompletableFuture.completedFuture(null));
-
-        ArgumentCaptor<PodDisruptionBudget> pdbCaptor = ArgumentCaptor.forClass(PodDisruptionBudget.class);
-        when(mockPdbOps.reconcile(any(), anyString(), any(), pdbCaptor.capture())).thenReturn(CompletableFuture.completedFuture(null));
-
-        ArgumentCaptor<KafkaMirrorMaker2> mirrorMaker2Captor = ArgumentCaptor.forClass(KafkaMirrorMaker2.class);
-        when(mockMirrorMaker2Ops.updateStatusAsync(any(), mirrorMaker2Captor.capture())).thenReturn(CompletableFuture.completedFuture(null));
-
-        return mirrorMaker2Captor;
-    }
-
     @Test
     public void testManualRollingUpdate(VertxTestContext context)  {
         StrimziPodSet oldPodSet = CLUSTER.generatePodSet(3, null, null, null, null, null);
@@ -1006,13 +984,11 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
         StrimziPodSetOperator mockPodSetOps = supplier.strimziPodSetOperator;
         when(mockPodSetOps.getAsync(eq(NAMESPACE), eq(COMPONENT_NAME))).thenReturn(CompletableFuture.completedFuture(oldPodSet));
         when(mockPodSetOps.readiness(any(), eq(NAMESPACE), eq(COMPONENT_NAME), anyLong(), anyLong())).thenReturn(CompletableFuture.completedFuture(null));
-        ArgumentCaptor<StrimziPodSet> podSetCaptor = ArgumentCaptor.forClass(StrimziPodSet.class);
-        when(mockPodSetOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), podSetCaptor.capture())).thenAnswer(i -> CompletableFuture.completedFuture(ReconcileResult.created(i.getArgument(3))));
+        when(mockPodSetOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), any())).thenAnswer(i -> CompletableFuture.completedFuture(ReconcileResult.created(i.getArgument(3))));
 
         // Mock PDBs
         PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
-        ArgumentCaptor<PodDisruptionBudget> pdbCaptor = ArgumentCaptor.forClass(PodDisruptionBudget.class);
-        when(mockPdbOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), pdbCaptor.capture())).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockPdbOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), any())).thenReturn(CompletableFuture.completedFuture(null));
 
         // Mock Config Maps
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
@@ -1020,8 +996,7 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
 
         // Mock Services
         ServiceOperator mockServiceOps = supplier.serviceOperations;
-        ArgumentCaptor<Service> serviceCaptor = ArgumentCaptor.forClass(Service.class);
-        when(mockServiceOps.reconcile(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), serviceCaptor.capture())).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockServiceOps.reconcile(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), any())).thenReturn(CompletableFuture.completedFuture(null));
 
         // Mock Network Policies
         NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
@@ -1047,8 +1022,7 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
         CrdOperator<KubernetesClient, KafkaMirrorMaker2, KafkaMirrorMaker2List> mockConnectOps = supplier.mirrorMaker2Operator;
         when(mockConnectOps.get(eq(NAMESPACE), eq(NAME))).thenReturn(new KafkaMirrorMaker2Builder(MM2).build());
         when(mockConnectOps.getAsync(eq(NAMESPACE), eq(NAME))).thenReturn(CompletableFuture.completedFuture(new KafkaMirrorMaker2Builder(MM2).build()));
-        ArgumentCaptor<KafkaMirrorMaker2> mm2StatusCaptor = ArgumentCaptor.forClass(KafkaMirrorMaker2.class);
-        when(mockConnectOps.updateStatusAsync(any(), mm2StatusCaptor.capture())).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockConnectOps.updateStatusAsync(any(), any())).thenReturn(CompletableFuture.completedFuture(null));
 
         // Mock Connect API
         KafkaConnectApi mockConnectClient = mock(KafkaConnectApi.class);
@@ -1071,8 +1045,7 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
                     verify(mockPodOps, times(6)).deleteAsync(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), eq(false));
 
                     // Verify CR status
-                    List<KafkaMirrorMaker2> capturedMm2Statuses = mm2StatusCaptor.getAllValues();
-                    assertThat(capturedMm2Statuses, hasSize(1));
+                    verify(mockConnectOps, times(1)).updateStatusAsync(any(), any());
 
                     async.flag();
                 })));
@@ -1090,13 +1063,11 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
         StrimziPodSetOperator mockPodSetOps = supplier.strimziPodSetOperator;
         when(mockPodSetOps.getAsync(eq(NAMESPACE), eq(COMPONENT_NAME))).thenReturn(CompletableFuture.completedFuture(oldPodSet));
         when(mockPodSetOps.readiness(any(), eq(NAMESPACE), eq(COMPONENT_NAME), anyLong(), anyLong())).thenReturn(CompletableFuture.completedFuture(null));
-        ArgumentCaptor<StrimziPodSet> podSetCaptor = ArgumentCaptor.forClass(StrimziPodSet.class);
-        when(mockPodSetOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), podSetCaptor.capture())).thenAnswer(i -> CompletableFuture.completedFuture(ReconcileResult.created(i.getArgument(3))));
+        when(mockPodSetOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), any())).thenAnswer(i -> CompletableFuture.completedFuture(ReconcileResult.created(i.getArgument(3))));
 
         // Mock PDBs
         PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
-        ArgumentCaptor<PodDisruptionBudget> pdbCaptor = ArgumentCaptor.forClass(PodDisruptionBudget.class);
-        when(mockPdbOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), pdbCaptor.capture())).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockPdbOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), any())).thenReturn(CompletableFuture.completedFuture(null));
 
         // Mock Config Maps
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
@@ -1104,8 +1075,7 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
 
         // Mock Services
         ServiceOperator mockServiceOps = supplier.serviceOperations;
-        ArgumentCaptor<Service> serviceCaptor = ArgumentCaptor.forClass(Service.class);
-        when(mockServiceOps.reconcile(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), serviceCaptor.capture())).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockServiceOps.reconcile(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), any())).thenReturn(CompletableFuture.completedFuture(null));
 
         // Mock Network Policies
         NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
@@ -1131,8 +1101,7 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
         CrdOperator<KubernetesClient, KafkaMirrorMaker2, KafkaMirrorMaker2List> mockConnectOps = supplier.mirrorMaker2Operator;
         when(mockConnectOps.get(eq(NAMESPACE), eq(NAME))).thenReturn(new KafkaMirrorMaker2Builder(MM2).build());
         when(mockConnectOps.getAsync(eq(NAMESPACE), eq(NAME))).thenReturn(CompletableFuture.completedFuture(new KafkaMirrorMaker2Builder(MM2).build()));
-        ArgumentCaptor<KafkaMirrorMaker2> mm2StatusCaptor = ArgumentCaptor.forClass(KafkaMirrorMaker2.class);
-        when(mockConnectOps.updateStatusAsync(any(), mm2StatusCaptor.capture())).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockConnectOps.updateStatusAsync(any(), any())).thenReturn(CompletableFuture.completedFuture(null));
 
         // Mock Connect API
         KafkaConnectApi mockConnectClient = mock(KafkaConnectApi.class);
@@ -1156,8 +1125,7 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
                     verify(mockPodOps, times(2)).deleteAsync(any(), eq(NAMESPACE), eq(COMPONENT_NAME + "-0"), eq(false));
 
                     // Verify CR status
-                    List<KafkaMirrorMaker2> capturedMm2Statuses = mm2StatusCaptor.getAllValues();
-                    assertThat(capturedMm2Statuses, hasSize(1));
+                    verify(mockConnectOps, times(1)).updateStatusAsync(any(), any());
 
                     async.flag();
                 })));
@@ -1175,13 +1143,11 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
         StrimziPodSetOperator mockPodSetOps = supplier.strimziPodSetOperator;
         when(mockPodSetOps.getAsync(eq(NAMESPACE), eq(COMPONENT_NAME))).thenReturn(CompletableFuture.completedFuture(oldPodSet));
         when(mockPodSetOps.readiness(any(), eq(NAMESPACE), eq(COMPONENT_NAME), anyLong(), anyLong())).thenReturn(CompletableFuture.completedFuture(null));
-        ArgumentCaptor<StrimziPodSet> podSetCaptor = ArgumentCaptor.forClass(StrimziPodSet.class);
-        when(mockPodSetOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), podSetCaptor.capture())).thenAnswer(i -> CompletableFuture.completedFuture(ReconcileResult.created(i.getArgument(3))));
+        when(mockPodSetOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), any())).thenAnswer(i -> CompletableFuture.completedFuture(ReconcileResult.created(i.getArgument(3))));
 
         // Mock PDBs
         PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
-        ArgumentCaptor<PodDisruptionBudget> pdbCaptor = ArgumentCaptor.forClass(PodDisruptionBudget.class);
-        when(mockPdbOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), pdbCaptor.capture())).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockPdbOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), any())).thenReturn(CompletableFuture.completedFuture(null));
 
         // Mock Config Maps
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
@@ -1189,8 +1155,7 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
 
         // Mock Services
         ServiceOperator mockServiceOps = supplier.serviceOperations;
-        ArgumentCaptor<Service> serviceCaptor = ArgumentCaptor.forClass(Service.class);
-        when(mockServiceOps.reconcile(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), serviceCaptor.capture())).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockServiceOps.reconcile(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), any())).thenReturn(CompletableFuture.completedFuture(null));
 
         // Mock Network Policies
         NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
@@ -1216,8 +1181,7 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
         CrdOperator<KubernetesClient, KafkaMirrorMaker2, KafkaMirrorMaker2List> mockConnectOps = supplier.mirrorMaker2Operator;
         when(mockConnectOps.get(eq(NAMESPACE), eq(NAME))).thenReturn(new KafkaMirrorMaker2Builder(MM2).build());
         when(mockConnectOps.getAsync(eq(NAMESPACE), eq(NAME))).thenReturn(CompletableFuture.completedFuture(new KafkaMirrorMaker2Builder(MM2).build()));
-        ArgumentCaptor<KafkaMirrorMaker2> mm2StatusCaptor = ArgumentCaptor.forClass(KafkaMirrorMaker2.class);
-        when(mockConnectOps.updateStatusAsync(any(), mm2StatusCaptor.capture())).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockConnectOps.updateStatusAsync(any(), any())).thenReturn(CompletableFuture.completedFuture(null));
 
         // Mock Connect API
         KafkaConnectApi mockConnectClient = mock(KafkaConnectApi.class);
@@ -1240,8 +1204,7 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
                     verify(mockPodOps, times(1)).deleteAsync(any(), eq(NAMESPACE), eq(COMPONENT_NAME + "-2"), eq(false));
 
                     // Verify CR status
-                    List<KafkaMirrorMaker2> capturedMm2Statuses = mm2StatusCaptor.getAllValues();
-                    assertThat(capturedMm2Statuses, hasSize(1));
+                    verify(mockConnectOps, times(1)).updateStatusAsync(any(), any());
 
                     async.flag();
                 })));
@@ -1259,13 +1222,11 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
         StrimziPodSetOperator mockPodSetOps = supplier.strimziPodSetOperator;
         when(mockPodSetOps.getAsync(eq(NAMESPACE), eq(COMPONENT_NAME))).thenReturn(CompletableFuture.completedFuture(oldPodSet));
         when(mockPodSetOps.readiness(any(), eq(NAMESPACE), eq(COMPONENT_NAME), anyLong(), anyLong())).thenReturn(CompletableFuture.completedFuture(null));
-        ArgumentCaptor<StrimziPodSet> podSetCaptor = ArgumentCaptor.forClass(StrimziPodSet.class);
-        when(mockPodSetOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), podSetCaptor.capture())).thenAnswer(i -> CompletableFuture.completedFuture(ReconcileResult.created(i.getArgument(3))));
+        when(mockPodSetOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), any())).thenAnswer(i -> CompletableFuture.completedFuture(ReconcileResult.created(i.getArgument(3))));
 
         // Mock PDBs
         PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
-        ArgumentCaptor<PodDisruptionBudget> pdbCaptor = ArgumentCaptor.forClass(PodDisruptionBudget.class);
-        when(mockPdbOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), pdbCaptor.capture())).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockPdbOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), any())).thenReturn(CompletableFuture.completedFuture(null));
 
         // Mock Config Maps
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
@@ -1273,8 +1234,7 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
 
         // Mock Services
         ServiceOperator mockServiceOps = supplier.serviceOperations;
-        ArgumentCaptor<Service> serviceCaptor = ArgumentCaptor.forClass(Service.class);
-        when(mockServiceOps.reconcile(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), serviceCaptor.capture())).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockServiceOps.reconcile(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), any())).thenReturn(CompletableFuture.completedFuture(null));
 
         // Mock Network Policies
         NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
@@ -1308,8 +1268,7 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
         CrdOperator<KubernetesClient, KafkaMirrorMaker2, KafkaMirrorMaker2List> mockConnectOps = supplier.mirrorMaker2Operator;
         when(mockConnectOps.get(eq(NAMESPACE), eq(NAME))).thenReturn(new KafkaMirrorMaker2Builder(MM2).build());
         when(mockConnectOps.getAsync(eq(NAMESPACE), eq(NAME))).thenReturn(CompletableFuture.completedFuture(new KafkaMirrorMaker2Builder(MM2).build()));
-        ArgumentCaptor<KafkaMirrorMaker2> mm2StatusCaptor = ArgumentCaptor.forClass(KafkaMirrorMaker2.class);
-        when(mockConnectOps.updateStatusAsync(any(), mm2StatusCaptor.capture())).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockConnectOps.updateStatusAsync(any(), any())).thenReturn(CompletableFuture.completedFuture(null));
 
         // Mock Connect API
         KafkaConnectApi mockConnectClient = mock(KafkaConnectApi.class);
@@ -1332,16 +1291,9 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
                     verify(mockPodOps, times(1)).deleteAsync(any(), eq(NAMESPACE), eq(COMPONENT_NAME + "-2"), eq(false));
 
                     // Verify CR status
-                    List<KafkaMirrorMaker2> capturedMm2Statuses = mm2StatusCaptor.getAllValues();
-                    assertThat(capturedMm2Statuses, hasSize(1));
+                    verify(mockConnectOps, times(1)).updateStatusAsync(any(), any());
 
                     async.flag();
                 })));
-    }
-
-    private KafkaConnectApi createConnectClientMock() {
-        KafkaConnectApi mockConnectClient = mock(KafkaConnectApi.class);
-        when(mockConnectClient.list(any(), anyString(), anyInt())).thenReturn(CompletableFuture.completedFuture(emptyList()));
-        return mockConnectClient;
     }
 }
