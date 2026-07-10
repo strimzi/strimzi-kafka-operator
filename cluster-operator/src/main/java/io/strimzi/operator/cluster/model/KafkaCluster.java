@@ -310,10 +310,8 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
         result.kafkaVersion = versions.supportedVersion(kafkaClusterSpec.getVersion());
 
         // Validates and sets the metadata version used in KRaft
-        if (versionChange.metadataVersion() != null) {
-            validateMetadataVersion(versionChange.metadataVersion());
-            result.metadataVersion = versionChange.metadataVersion();
-        }
+        validateMetadataVersion(versionChange.metadataVersion());
+        result.metadataVersion = versionChange.metadataVersion();
 
         // Number of broker nodes => used later in various validation methods
         long numberOfBrokers = result.brokerNodes().size();
