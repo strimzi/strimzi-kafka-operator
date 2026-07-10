@@ -1,0 +1,117 @@
+:_mod-docs-content-type: PROCEDURE
+
+// Module included in the following assembly:
+//
+// assembly-upgrade-cluster-operator.adoc
+
+[id='proc-upgrade-cluster-operator-olm-v1-{context}']
+= Upgrading from Strimzi 0.51.x to 1.x using OLM
+
+[role="_abstract"]
+Upgrade an OLM-based Strimzi installation from 0.51.x on the `stable` channel to 1.x on the `strimzi-1.x` channel by replacing the OLM subscription.
+This procedure is intended primarily for the OperatorHub integrated into OpenShift.
+You can also use it with OLM on another Kubernetes platform if the catalog that provides Strimzi contains the `stable` and `strimzi-1.x` channels.
+It does not apply to installations that use the Strimzi YAML files or Helm chart.
+
+To accommodate the removal of the older CRD API versions, Strimzi 1.x releases are published in a separate channel that has no OLM upgrade edge from the `stable` channel.
+As a result, changing the channel on the existing `Subscription` does not create an InstallPlan.
+Remove only the existing `Subscription` and CSV, and then create a subscription to the `strimzi-1.x` channel.
+
+Removing only the `Subscription` and CSV leaves the Strimzi custom resources, CRDs, and running Kafka components in place.
+The components continue to run while the Cluster Operator is unavailable, but they are not reconciled until the Strimzi 1.x Cluster Operator is installed.
+
+The commands in this procedure use `kubectl`.
+On OpenShift, you can use `oc` instead.
+
+.Prerequisites
+
+* The Cluster Operator has been upgraded to the latest Strimzi 0.51.x release on the `stable` channel.
+* You have xref:con-api-conversion-v1-{context}[converted all Strimzi custom resources and CRDs to the `v1` API].
+If the resources and CRDs are not converted, the Strimzi 1.x installation remains in a pending state.
+* You have read the Strimzi 1.x release notes and completed any other required pre-upgrade steps.
+* You have access to the Kubernetes cluster with permissions to manage OLM resources in the namespace where Strimzi is installed.
+* If a GitOps tool manages the OLM resources, you have paused reconciliation for them.
+* You have tested the procedure in a non-production environment.
+
+.Procedure
+
+. Record the name of the installed CSV from the current Strimzi subscription.
++
+[source,shell,subs="+quotes,-attributes"]
+----
+kubectl get subscription _<subscription_name>_ -n _<namespace>_ -o jsonpath='{.status.installedCSV}{"\n"}'
+----
+
+. Delete the existing Strimzi subscription.
++
+[source,shell,subs="+quotes"]
+----
+kubectl delete subscription _<subscription_name>_ -n _<namespace>_
+----
+
+. Delete the CSV recorded in the first step.
++
+[source,shell,subs="+quotes"]
+----
+kubectl delete csv _<installed_csv_name>_ -n _<namespace>_
+----
++
+IMPORTANT: Do not delete any Strimzi custom resources or CRDs.
+Deleting a CRD also deletes all custom resources of that type and can cause the Kubernetes resources managed by them to be deleted.
+
+. Create a `Subscription` custom resource that changes the channel from `stable` to `strimzi-1.x`.
++
+For example, the following subscription uses manual InstallPlan approval:
++
+[source,yaml,subs="+quotes"]
+----
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  name: _<subscription_name>_
+  namespace: _<namespace>_
+spec:
+  channel: strimzi-1.x
+  installPlanApproval: Manual
+  name: strimzi-kafka-operator
+  source: _<catalog_source>_
+  sourceNamespace: _<catalog_source_namespace>_
+----
++
+Create the subscription by using the same management method as the existing OLM resources.
++
+If you use GitOps, update the `Subscription` manifest in the Git repository and resume reconciliation.
+Otherwise, apply the resource from the command line:
++
+[source,shell,subs="+quotes"]
+----
+kubectl apply -f _<subscription_file>_
+----
+
+. If you use manual approval, get and approve the InstallPlan created by OLM.
++
+[source,shell,subs="+quotes,-attributes"]
+----
+kubectl get installplan -n _<namespace>_
+kubectl patch installplan _<install_plan_name>_ -n _<namespace>_ --type merge -p '{"spec":{"approved":true}}'
+----
+
+. Verify that the Strimzi 1.x CSV reaches the `Succeeded` phase and that the Cluster Operator is running.
++
+[source,shell,subs="+quotes"]
+----
+kubectl get csv -n _<namespace>_
+kubectl get pods -n _<namespace>_ -l name=strimzi-cluster-operator
+----
+
+. Verify the status of each `Kafka` resource and wait for any rolling updates to finish.
++
+[source,shell,subs="+quotes"]
+----
+kubectl get kafka -A
+----
+
+.Additional resources
+
+* xref:con-upgrade-status-{context}[]
+* {OLMOperatorDocs}
