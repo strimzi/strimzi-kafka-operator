@@ -10,7 +10,7 @@ import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.strimzi.api.kafka.model.common.Constants;
 import io.strimzi.api.kafka.model.common.HasLivenessProbe;
 import io.strimzi.api.kafka.model.common.HasReadinessProbe;
-import io.strimzi.api.kafka.model.common.Probe;
+import io.strimzi.api.kafka.model.common.StrimziProbe;
 import io.strimzi.api.kafka.model.common.UnknownPropertyPreserving;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.KubeLink;
@@ -44,8 +44,8 @@ public class KafkaExporterSpec implements HasLivenessProbe, HasReadinessProbe, U
     private String groupExcludeRegex;
 
     private ResourceRequirements resources;
-    private Probe livenessProbe;
-    private Probe readinessProbe;
+    private StrimziProbe livenessProbe;
+    private StrimziProbe readinessProbe;
     private String logging = "info";
     private boolean enableSaramaLogging;
     private boolean showAllOffsets = true;
@@ -152,21 +152,21 @@ public class KafkaExporterSpec implements HasLivenessProbe, HasReadinessProbe, U
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     @Description("Pod liveness check.")
-    public Probe getLivenessProbe() {
+    public StrimziProbe getLivenessProbe() {
         return livenessProbe;
     }
 
-    public void setLivenessProbe(Probe livenessProbe) {
+    public void setLivenessProbe(StrimziProbe livenessProbe) {
         this.livenessProbe = livenessProbe;
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     @Description("Pod readiness check.")
-    public Probe getReadinessProbe() {
+    public StrimziProbe getReadinessProbe() {
         return readinessProbe;
     }
 
-    public void setReadinessProbe(Probe readinessProbe) {
+    public void setReadinessProbe(StrimziProbe readinessProbe) {
         this.readinessProbe = readinessProbe;
     }
 

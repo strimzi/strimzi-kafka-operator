@@ -14,8 +14,8 @@ import io.strimzi.api.kafka.model.common.HasLivenessProbe;
 import io.strimzi.api.kafka.model.common.HasReadinessProbe;
 import io.strimzi.api.kafka.model.common.JvmOptions;
 import io.strimzi.api.kafka.model.common.Logging;
-import io.strimzi.api.kafka.model.common.Probe;
 import io.strimzi.api.kafka.model.common.Rack;
+import io.strimzi.api.kafka.model.common.StrimziProbe;
 import io.strimzi.api.kafka.model.common.UnknownPropertyPreserving;
 import io.strimzi.api.kafka.model.common.jmx.HasJmxOptions;
 import io.strimzi.api.kafka.model.common.jmx.KafkaJmxOptions;
@@ -81,8 +81,8 @@ public class KafkaClusterSpec implements HasConfigurableMetrics, HasConfigurable
     private Rack rack;
     private Logging logging;
     private String image;
-    private Probe livenessProbe;
-    private Probe readinessProbe;
+    private StrimziProbe livenessProbe;
+    private StrimziProbe readinessProbe;
     private JvmOptions jvmOptions;
     private KafkaJmxOptions jmxOptions;
     private MetricsConfig metricsConfig;
@@ -173,21 +173,21 @@ public class KafkaClusterSpec implements HasConfigurableMetrics, HasConfigurable
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     @Description("Pod liveness checking.")
-    public Probe getLivenessProbe() {
+    public StrimziProbe getLivenessProbe() {
         return livenessProbe;
     }
 
-    public void setLivenessProbe(Probe livenessProbe) {
+    public void setLivenessProbe(StrimziProbe livenessProbe) {
         this.livenessProbe = livenessProbe;
     }
 
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     @Description("Pod readiness checking.")
-    public Probe getReadinessProbe() {
+    public StrimziProbe getReadinessProbe() {
         return readinessProbe;
     }
 
-    public void setReadinessProbe(Probe readinessProbe) {
+    public void setReadinessProbe(StrimziProbe readinessProbe) {
         this.readinessProbe = readinessProbe;
     }
 

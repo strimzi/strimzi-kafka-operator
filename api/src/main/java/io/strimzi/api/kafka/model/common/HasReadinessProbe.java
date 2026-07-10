@@ -13,12 +13,12 @@ public interface HasReadinessProbe {
      *
      * @return  Readiness probe configuration
      */
-    Probe getReadinessProbe();
+    StrimziProbe getReadinessProbe();
 
     /**
      * Sets the readiness probe configuration
      *
      * @param readinessProbe    Readiness probe configuration
      */
-    void setReadinessProbe(Probe readinessProbe);
+    void setReadinessProbe(StrimziProbe readinessProbe);
 }

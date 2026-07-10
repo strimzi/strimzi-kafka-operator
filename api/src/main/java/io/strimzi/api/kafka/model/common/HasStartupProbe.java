@@ -13,12 +13,12 @@ public interface HasStartupProbe {
      *
      * @return  Startup probe configuration
      */
-    Probe getStartupProbe();
+    StrimziProbe getStartupProbe();
 
     /**
      * Sets the startup probe configuration
      *
      * @param startupProbe    Startup probe configuration
      */
-    void setStartupProbe(Probe startupProbe);
+    void setStartupProbe(StrimziProbe startupProbe);
 }

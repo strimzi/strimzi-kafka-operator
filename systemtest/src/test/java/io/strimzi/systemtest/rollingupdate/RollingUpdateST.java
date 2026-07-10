@@ -17,7 +17,7 @@ import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.skodjob.kubetest4j.MetricsCollector;
 import io.skodjob.kubetest4j.resources.KubeResourceManager;
-import io.strimzi.api.kafka.model.common.ProbeBuilder;
+import io.strimzi.api.kafka.model.common.StrimziProbeBuilder;
 import io.strimzi.api.kafka.model.common.metrics.JmxPrometheusExporterMetrics;
 import io.strimzi.api.kafka.model.common.metrics.JmxPrometheusExporterMetricsBuilder;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
@@ -323,7 +323,7 @@ class RollingUpdateST extends AbstractST {
 
         // Changes to readiness probe should trigger a rolling update
         KafkaUtils.replace(Environment.TEST_SUITE_NAMESPACE, testStorage.getClusterName(), kafka -> {
-            kafka.getSpec().getKafka().setReadinessProbe(new ProbeBuilder().withTimeoutSeconds(6).build());
+            kafka.getSpec().getKafka().setReadinessProbe(new StrimziProbeBuilder().withTimeoutSeconds(6).build());
         });
 
         TestUtils.waitFor("rolling update starts", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_STATUS_TIMEOUT,

@@ -91,10 +91,10 @@ include::../api/io.strimzi.api.kafka.model.kafka.KafkaClusterSpec.adoc[leveloffs
 |string
 |The image of the init container used for initializing the `broker.rack`.
 |livenessProbe
-|xref:type-Probe-{context}[`Probe`]
+|xref:type-StrimziProbe-{context}[`StrimziProbe`]
 |Pod liveness checking.
 |readinessProbe
-|xref:type-Probe-{context}[`Probe`]
+|xref:type-StrimziProbe-{context}[`StrimziProbe`]
 |Pod readiness checking.
 |jvmOptions
 |xref:type-JvmOptions-{context}[`JvmOptions`]
@@ -558,8 +558,8 @@ It must have the value `environment-variable` for the type `EnvironmentVariableR
 |The name of the environment variable that defines the rack ID. Its value sets the `broker.rack` configuration for Kafka brokers and the `client.rack` configuration for Kafka Connect or MirrorMaker 2.
 |====
 
-[id='type-Probe-{context}']
-= `Probe` schema reference
+[id='type-StrimziProbe-{context}']
+= `StrimziProbe` schema reference
 
 Used in: xref:type-CruiseControlSpec-{context}[`CruiseControlSpec`], xref:type-EntityTopicOperatorSpec-{context}[`EntityTopicOperatorSpec`], xref:type-EntityUserOperatorSpec-{context}[`EntityUserOperatorSpec`], xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaExporterSpec-{context}[`KafkaExporterSpec`], xref:type-KafkaMirrorMaker2Spec-{context}[`KafkaMirrorMaker2Spec`]
 
@@ -1245,13 +1245,13 @@ include::../api/io.strimzi.api.kafka.model.kafka.entityoperator.EntityTopicOpera
 |integer
 |Interval between periodic reconciliations in milliseconds.
 |startupProbe
-|xref:type-Probe-{context}[`Probe`]
+|xref:type-StrimziProbe-{context}[`StrimziProbe`]
 |Pod startup checking.
 |livenessProbe
-|xref:type-Probe-{context}[`Probe`]
+|xref:type-StrimziProbe-{context}[`StrimziProbe`]
 |Pod liveness checking.
 |readinessProbe
-|xref:type-Probe-{context}[`Probe`]
+|xref:type-StrimziProbe-{context}[`StrimziProbe`]
 |Pod readiness checking.
 |resources
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#resourcerequirements-v1-core[ResourceRequirements]
@@ -1293,10 +1293,10 @@ include::../api/io.strimzi.api.kafka.model.kafka.entityoperator.EntityUserOperat
 |string
 |The prefix that will be added to the KafkaUser name to be used as the Secret name.
 |livenessProbe
-|xref:type-Probe-{context}[`Probe`]
+|xref:type-StrimziProbe-{context}[`StrimziProbe`]
 |Pod liveness checking.
 |readinessProbe
-|xref:type-Probe-{context}[`Probe`]
+|xref:type-StrimziProbe-{context}[`StrimziProbe`]
 |Pod readiness checking.
 |resources
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#resourcerequirements-v1-core[ResourceRequirements]
@@ -1421,10 +1421,10 @@ include::../api/io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlSpec
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#resourcerequirements-v1-core[ResourceRequirements]
 |CPU and memory resources to reserve for the Cruise Control container.
 |livenessProbe
-|xref:type-Probe-{context}[`Probe`]
+|xref:type-StrimziProbe-{context}[`StrimziProbe`]
 |Pod liveness checking for the Cruise Control container.
 |readinessProbe
-|xref:type-Probe-{context}[`Probe`]
+|xref:type-StrimziProbe-{context}[`StrimziProbe`]
 |Pod readiness checking for the Cruise Control container.
 |jvmOptions
 |xref:type-JvmOptions-{context}[`JvmOptions`]
@@ -1623,10 +1623,10 @@ Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 |string
 |Only log messages with the given severity or above. Valid levels: [`info`, `debug`, `trace`]. Default log level is `info`.
 |livenessProbe
-|xref:type-Probe-{context}[`Probe`]
+|xref:type-StrimziProbe-{context}[`StrimziProbe`]
 |Pod liveness check.
 |readinessProbe
-|xref:type-Probe-{context}[`Probe`]
+|xref:type-StrimziProbe-{context}[`StrimziProbe`]
 |Pod readiness check.
 |enableSaramaLogging
 |boolean
@@ -1901,10 +1901,10 @@ include::../api/io.strimzi.api.kafka.model.connect.KafkaConnectSpec.adoc[levelof
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#resourcerequirements-v1-core[ResourceRequirements]
 |The maximum limits for CPU and memory resources and the requested initial resources.
 |livenessProbe
-|xref:type-Probe-{context}[`Probe`]
+|xref:type-StrimziProbe-{context}[`StrimziProbe`]
 |Pod liveness checking.
 |readinessProbe
-|xref:type-Probe-{context}[`Probe`]
+|xref:type-StrimziProbe-{context}[`StrimziProbe`]
 |Pod readiness checking.
 |jvmOptions
 |xref:type-JvmOptions-{context}[`JvmOptions`]
@@ -3028,10 +3028,10 @@ include::../api/io.strimzi.api.kafka.model.bridge.KafkaBridgeSpec.adoc[leveloffs
 |xref:type-JmxPrometheusExporterMetrics-{context}[`JmxPrometheusExporterMetrics`], xref:type-StrimziMetricsReporter-{context}[`StrimziMetricsReporter`]
 |Metrics configuration.
 |livenessProbe
-|xref:type-Probe-{context}[`Probe`]
+|xref:type-StrimziProbe-{context}[`StrimziProbe`]
 |Pod liveness checking.
 |readinessProbe
-|xref:type-Probe-{context}[`Probe`]
+|xref:type-StrimziProbe-{context}[`StrimziProbe`]
 |Pod readiness checking.
 |template
 |xref:type-KafkaBridgeTemplate-{context}[`KafkaBridgeTemplate`]
@@ -3425,10 +3425,10 @@ Used in: xref:type-KafkaMirrorMaker2-{context}[`KafkaMirrorMaker2`]
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#resourcerequirements-v1-core[ResourceRequirements]
 |The maximum limits for CPU and memory resources and the requested initial resources.
 |livenessProbe
-|xref:type-Probe-{context}[`Probe`]
+|xref:type-StrimziProbe-{context}[`StrimziProbe`]
 |Pod liveness checking.
 |readinessProbe
-|xref:type-Probe-{context}[`Probe`]
+|xref:type-StrimziProbe-{context}[`StrimziProbe`]
 |Pod readiness checking.
 |jvmOptions
 |xref:type-JvmOptions-{context}[`JvmOptions`]
