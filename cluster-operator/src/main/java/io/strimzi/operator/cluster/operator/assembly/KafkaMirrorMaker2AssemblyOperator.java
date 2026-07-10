@@ -234,9 +234,8 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
                     for (Map.Entry<String, Future<List<String>>> entry : certificatesFutures.entrySet()) {
                         Collection<String> certificates = entry.getValue().result();
                         if (certificates != null && !certificates.isEmpty()) {
-                            String certBundle = String.join("\n", certificates);
-                            secretData.put(entry.getKey(), Util.encodeToBase64(certBundle));
-                            certs.add(certBundle);
+                            secretData.put(entry.getKey(), Util.encodeToBase64(String.join("\n", certificates)));
+                            certs.addAll(certificates);
                         }
                     }
 
@@ -248,6 +247,8 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
                                             secretData,
                                             KafkaConnectResources.internalTlsTrustedCertsSecretName(mirrorMaker2Cluster.getCluster())
                                     )))
+                            // This will be used to calculate auth hash. Hence, a unique collection
+                            // is required for the hash function.
                             .map(ignore -> certs);
                 });
     }

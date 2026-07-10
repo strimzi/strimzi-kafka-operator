@@ -505,13 +505,7 @@ public class ReconcilerUtils {
                             .stream()
                             .map(certSecretSource -> ReconcilerUtils.getTrustedCertificateAsync(secretOperations, reconciliation.namespace(), certSecretSource))
                             .toList())
-                    .compose(certificates -> {
-                        if (certificates.list().isEmpty()) {
-                            return Future.succeededFuture();
-                        } else {
-                            return Future.succeededFuture(certificates.list());
-                        }
-                    });
+                    .compose(certificates -> Future.succeededFuture(certificates.list()));
         } else {
             // No trusted certificates to extract.
             return Future.succeededFuture();
