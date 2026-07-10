@@ -4,15 +4,16 @@
  */
 package io.strimzi.operator.user.model.acl;
 
-import io.strimzi.api.kafka.model.user.acl.AclOperation;
 import io.strimzi.api.kafka.model.user.acl.AclResourcePatternType;
 import io.strimzi.api.kafka.model.user.acl.AclRule;
 import io.strimzi.api.kafka.model.user.acl.AclRuleBuilder;
 import io.strimzi.api.kafka.model.user.acl.AclRuleResource;
 import io.strimzi.api.kafka.model.user.acl.AclRuleTopicResourceBuilder;
 import io.strimzi.api.kafka.model.user.acl.AclRuleType;
+import io.strimzi.api.kafka.model.user.acl.StrimziAclOperation;
 import org.apache.kafka.common.acl.AccessControlEntry;
 import org.apache.kafka.common.acl.AclBinding;
+import org.apache.kafka.common.acl.AclOperation;
 import org.apache.kafka.common.acl.AclPermissionType;
 import org.apache.kafka.common.resource.PatternType;
 import org.apache.kafka.common.resource.ResourcePattern;
@@ -27,7 +28,6 @@ import java.util.stream.Collectors;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-@SuppressWarnings("checkstyle:NoFullyQualifiedClassNames") // Fully qualified class name used due to a name conflict
 public class SimpleAclRuleTest {
     private static final AclRuleResource ACL_RULE_TOPIC_RESOURCE;
     private static final SimpleAclRuleResource RESOURCE = new SimpleAclRuleResource("my-topic", SimpleAclRuleResourceType.TOPIC, AclResourcePatternType.LITERAL);
@@ -47,11 +47,11 @@ public class SimpleAclRuleTest {
             .withType(AclRuleType.ALLOW)
             .withResource(ACL_RULE_TOPIC_RESOURCE)
             .withHost("127.0.0.1")
-            .withOperations(AclOperation.READ)
+            .withOperations(StrimziAclOperation.READ)
             .build();
 
         List<SimpleAclRule> simpleAclRules = SimpleAclRule.fromCrd(rule);
-        assertThat(simpleAclRules.get(0).getOperation(), is(AclOperation.READ));
+        assertThat(simpleAclRules.get(0).getOperation(), is(StrimziAclOperation.READ));
         assertThat(simpleAclRules.get(0).getType(), is(AclRuleType.ALLOW));
         assertThat(simpleAclRules.get(0).getHost(), is("127.0.0.1"));
         assertThat(simpleAclRules.get(0).getResource(), is(RESOURCE));
@@ -74,14 +74,14 @@ public class SimpleAclRuleTest {
             .withType(AclRuleType.ALLOW)
             .withResource(ACL_RULE_TOPIC_RESOURCE)
             .withHost("127.0.0.1")
-            .withOperations(AclOperation.READ, AclOperation.WRITE, AclOperation.DESCRIBE)
+            .withOperations(StrimziAclOperation.READ, StrimziAclOperation.WRITE, StrimziAclOperation.DESCRIBE)
             .build();
 
         List<SimpleAclRule> simpleAclRules = SimpleAclRule.fromCrd(rule);
         assertThat(simpleAclRules.size(), is(3));
-        assertThat(simpleAclRules.get(0).getOperation(), is(AclOperation.READ));
-        assertThat(simpleAclRules.get(1).getOperation(), is(AclOperation.WRITE));
-        assertThat(simpleAclRules.get(2).getOperation(), is(AclOperation.DESCRIBE));
+        assertThat(simpleAclRules.get(0).getOperation(), is(StrimziAclOperation.READ));
+        assertThat(simpleAclRules.get(1).getOperation(), is(StrimziAclOperation.WRITE));
+        assertThat(simpleAclRules.get(2).getOperation(), is(StrimziAclOperation.DESCRIBE));
         assertThat(simpleAclRules.stream().map(SimpleAclRule::getHost).collect(Collectors.toSet()), is(Set.of("127.0.0.1")));
         assertThat(simpleAclRules.stream().map(SimpleAclRule::getResource).collect(Collectors.toSet()), is(Set.of(RESOURCE)));
         assertThat(simpleAclRules.stream().map(SimpleAclRule::getType).collect(Collectors.toSet()), is(Set.of(AclRuleType.ALLOW)));
@@ -89,11 +89,11 @@ public class SimpleAclRuleTest {
 
     @Test
     public void testToKafkaAclBindingForSpecifiedKafkaPrincipalReturnsKafkaAclBindingForKafkaPrincipal() {
-        SimpleAclRule kafkaTopicSimpleAclRule = new SimpleAclRule(AclRuleType.ALLOW, RESOURCE, "127.0.0.1", AclOperation.READ);
+        SimpleAclRule kafkaTopicSimpleAclRule = new SimpleAclRule(AclRuleType.ALLOW, RESOURCE, "127.0.0.1", StrimziAclOperation.READ);
         AclBinding expectedAclBinding = new AclBinding(
                 KAFKA_RESOURCE_PATTERN,
                 new AccessControlEntry(KAFKA_PRINCIPAL.toString(), "127.0.0.1",
-                        org.apache.kafka.common.acl.AclOperation.READ, AclPermissionType.ALLOW)
+                        AclOperation.READ, AclPermissionType.ALLOW)
         );
         assertThat(kafkaTopicSimpleAclRule.toKafkaAclBinding(KAFKA_PRINCIPAL), is(expectedAclBinding));
     }
@@ -103,9 +103,9 @@ public class SimpleAclRuleTest {
         AclBinding aclBinding = new AclBinding(
                 KAFKA_RESOURCE_PATTERN,
                 new AccessControlEntry(KAFKA_PRINCIPAL.toString(), "127.0.0.1",
-                        org.apache.kafka.common.acl.AclOperation.READ, AclPermissionType.ALLOW)
+                        AclOperation.READ, AclPermissionType.ALLOW)
         );
-        SimpleAclRule expectedSimpleAclRule = new SimpleAclRule(AclRuleType.ALLOW, RESOURCE, "127.0.0.1", AclOperation.READ);
+        SimpleAclRule expectedSimpleAclRule = new SimpleAclRule(AclRuleType.ALLOW, RESOURCE, "127.0.0.1", StrimziAclOperation.READ);
         assertThat(SimpleAclRule.fromAclBinding(aclBinding), is(expectedSimpleAclRule));
     }
 
@@ -114,7 +114,7 @@ public class SimpleAclRuleTest {
         AclBinding kafkaAclBinding = new AclBinding(
                 KAFKA_RESOURCE_PATTERN,
                 new AccessControlEntry(KAFKA_PRINCIPAL.toString(), "127.0.0.1",
-                        org.apache.kafka.common.acl.AclOperation.READ, AclPermissionType.ALLOW)
+                        AclOperation.READ, AclPermissionType.ALLOW)
         );
         assertThat(SimpleAclRule.fromAclBinding(kafkaAclBinding).toKafkaAclBinding(KAFKA_PRINCIPAL), is(kafkaAclBinding));
     }
@@ -125,13 +125,13 @@ public class SimpleAclRuleTest {
             .withType(AclRuleType.ALLOW)
             .withResource(ACL_RULE_TOPIC_RESOURCE)
             .withHost("127.0.0.1")
-            .withOperations(AclOperation.READ)
+            .withOperations(StrimziAclOperation.READ)
             .build();
 
         AclBinding expectedKafkaAclBinding = new AclBinding(
                 KAFKA_RESOURCE_PATTERN,
                 new AccessControlEntry(KAFKA_PRINCIPAL.toString(), "127.0.0.1",
-                        org.apache.kafka.common.acl.AclOperation.READ, AclPermissionType.ALLOW)
+                        AclOperation.READ, AclPermissionType.ALLOW)
         );
         assertThat(SimpleAclRule.fromCrd(rule).stream().map(simpleAclRule -> simpleAclRule.toKafkaAclBinding(KAFKA_PRINCIPAL)).collect(Collectors.toSet()), is(Set.of(expectedKafkaAclBinding)));
     }
@@ -142,23 +142,23 @@ public class SimpleAclRuleTest {
             .withType(AclRuleType.ALLOW)
             .withResource(ACL_RULE_TOPIC_RESOURCE)
             .withHost("127.0.0.1")
-            .withOperations(AclOperation.READ, AclOperation.WRITE, AclOperation.DESCRIBE)
+            .withOperations(StrimziAclOperation.READ, StrimziAclOperation.WRITE, StrimziAclOperation.DESCRIBE)
             .build();
 
         AclBinding expectedKafkaAclBindingWithReadOperation = new AclBinding(
                 KAFKA_RESOURCE_PATTERN,
                 new AccessControlEntry(KAFKA_PRINCIPAL.toString(), "127.0.0.1",
-                        org.apache.kafka.common.acl.AclOperation.READ, AclPermissionType.ALLOW)
+                        AclOperation.READ, AclPermissionType.ALLOW)
         );
         AclBinding expectedKafkaAclBindingWithWriteOperation = new AclBinding(
                 KAFKA_RESOURCE_PATTERN,
                 new AccessControlEntry(KAFKA_PRINCIPAL.toString(), "127.0.0.1",
-                        org.apache.kafka.common.acl.AclOperation.WRITE, AclPermissionType.ALLOW)
+                        AclOperation.WRITE, AclPermissionType.ALLOW)
         );
         AclBinding expectedKafkaAclBindingWithDescribeOperation = new AclBinding(
                 KAFKA_RESOURCE_PATTERN,
                 new AccessControlEntry(KAFKA_PRINCIPAL.toString(), "127.0.0.1",
-                        org.apache.kafka.common.acl.AclOperation.DESCRIBE, AclPermissionType.ALLOW)
+                        AclOperation.DESCRIBE, AclPermissionType.ALLOW)
         );
         assertThat(SimpleAclRule.fromCrd(rule).stream().map(simpleAclRule -> simpleAclRule.toKafkaAclBinding(KAFKA_PRINCIPAL)).collect(Collectors.toList()), is(List.of(expectedKafkaAclBindingWithReadOperation, expectedKafkaAclBindingWithWriteOperation, expectedKafkaAclBindingWithDescribeOperation)));
     }

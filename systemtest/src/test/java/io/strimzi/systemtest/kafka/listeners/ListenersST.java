@@ -28,7 +28,7 @@ import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.api.kafka.model.kafka.listener.ListenerAddress;
 import io.strimzi.api.kafka.model.kafka.listener.ListenerStatus;
 import io.strimzi.api.kafka.model.user.KafkaUser;
-import io.strimzi.api.kafka.model.user.acl.AclOperation;
+import io.strimzi.api.kafka.model.user.acl.StrimziAclOperation;
 import io.strimzi.operator.common.Util;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
@@ -585,13 +585,13 @@ public class ListenersST extends AbstractST {
                             .withNewAclRuleTopicResource()
                                 .withName(testStorage.getTopicName())
                             .endAclRuleTopicResource()
-                            .withOperations(AclOperation.READ, AclOperation.WRITE, AclOperation.DESCRIBE, AclOperation.CREATE)
+                            .withOperations(StrimziAclOperation.READ, StrimziAclOperation.WRITE, StrimziAclOperation.DESCRIBE, StrimziAclOperation.CREATE)
                         .endAcl()
                         .addNewAcl()
                             .withNewAclRuleGroupResource()
                                 .withName("*")
                             .endAclRuleGroupResource()
-                            .withOperations(AclOperation.READ, AclOperation.WRITE, AclOperation.DESCRIBE, AclOperation.CREATE)
+                            .withOperations(StrimziAclOperation.READ, StrimziAclOperation.WRITE, StrimziAclOperation.DESCRIBE, StrimziAclOperation.CREATE)
                         .endAcl()
                     .endKafkaUserAuthorizationSimple()
                 .endSpec().build(),

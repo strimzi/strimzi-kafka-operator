@@ -12,6 +12,7 @@ import io.strimzi.api.kafka.model.user.acl.AclRuleTopicResource;
 import io.strimzi.api.kafka.model.user.acl.AclRuleTransactionalIdResource;
 import org.apache.kafka.common.resource.PatternType;
 import org.apache.kafka.common.resource.ResourcePattern;
+import org.apache.kafka.common.resource.ResourceType;
 
 /**
  * This class represents Kafka resource and is used in the SimpleAclRule objects.
@@ -95,15 +96,14 @@ public class SimpleAclRuleResource {
      *
      * @return the ResourcePattern instance
      */
-    @SuppressWarnings("checkstyle:NoFullyQualifiedClassNames") // Fully qualified class name used due to a name conflict
     public ResourcePattern toKafkaResourcePattern() {
-        org.apache.kafka.common.resource.ResourceType kafkaType;
+        ResourceType kafkaType;
         String kafkaName;
         PatternType kafkaPattern = PatternType.LITERAL;
 
         switch (type) {
             case TOPIC:
-                kafkaType = org.apache.kafka.common.resource.ResourceType.TOPIC;
+                kafkaType = ResourceType.TOPIC;
                 kafkaName = name;
 
                 if (AclResourcePatternType.PREFIX.equals(pattern))   {
@@ -112,7 +112,7 @@ public class SimpleAclRuleResource {
 
                 break;
             case GROUP:
-                kafkaType = org.apache.kafka.common.resource.ResourceType.GROUP;
+                kafkaType = ResourceType.GROUP;
                 kafkaName = name;
 
                 if (AclResourcePatternType.PREFIX.equals(pattern))   {
@@ -121,11 +121,11 @@ public class SimpleAclRuleResource {
 
                 break;
             case CLUSTER:
-                kafkaType = org.apache.kafka.common.resource.ResourceType.CLUSTER;
+                kafkaType = ResourceType.CLUSTER;
                 kafkaName = "kafka-cluster";
                 break;
             case TRANSACTIONAL_ID:
-                kafkaType = org.apache.kafka.common.resource.ResourceType.TRANSACTIONAL_ID;
+                kafkaType = ResourceType.TRANSACTIONAL_ID;
                 kafkaName = name;
 
                 if (AclResourcePatternType.PREFIX.equals(pattern))   {

@@ -37,12 +37,12 @@ public class AclRule implements UnknownPropertyPreserving {
     private AclRuleType type = AclRuleType.ALLOW;
     private AclRuleResource resource;
     private String host = "*";
-    private List<AclOperation> operations;
+    private List<StrimziAclOperation> operations;
     private Map<String, Object> additionalProperties;
 
     public AclRule() { }
 
-    public AclRule(AclRuleType type, AclRuleResource resource, String host, List<AclOperation> operations) {
+    public AclRule(AclRuleType type, AclRuleResource resource, String host, List<StrimziAclOperation> operations) {
         this.type = type;
         this.resource = resource;
         this.host = host;
@@ -90,11 +90,11 @@ public class AclRule implements UnknownPropertyPreserving {
             "Only certain operations work with the specified resource.")
     @Example("operations: [\"Read\",\"Write\"]")
     @RequiredInVersions("v1+")
-    public List<AclOperation> getOperations() {
+    public List<StrimziAclOperation> getOperations() {
         return operations;
     }
 
-    public void setOperations(List<AclOperation> operations) {
+    public void setOperations(List<StrimziAclOperation> operations) {
         this.operations = operations;
     }
 

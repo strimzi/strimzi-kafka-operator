@@ -23,8 +23,8 @@ import io.strimzi.api.kafka.model.user.KafkaUserBuilder;
 import io.strimzi.api.kafka.model.user.KafkaUserScramSha512ClientAuthentication;
 import io.strimzi.api.kafka.model.user.KafkaUserTlsClientAuthentication;
 import io.strimzi.api.kafka.model.user.KafkaUserTlsExternalClientAuthentication;
-import io.strimzi.api.kafka.model.user.acl.AclOperation;
 import io.strimzi.api.kafka.model.user.acl.AclResourcePatternType;
+import io.strimzi.api.kafka.model.user.acl.StrimziAclOperation;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Util;
 import io.strimzi.systemtest.AbstractST;
@@ -504,14 +504,14 @@ class UserST extends AbstractST {
                             .withPatternType(AclResourcePatternType.LITERAL)
                             .withName(testStorage.getTopicName())
                         .endAclRuleTopicResource()
-                        .withOperations(AclOperation.READ, AclOperation.WRITE, AclOperation.DESCRIBE, AclOperation.CREATE)
+                        .withOperations(StrimziAclOperation.READ, StrimziAclOperation.WRITE, StrimziAclOperation.DESCRIBE, StrimziAclOperation.CREATE)
                     .endAcl()
                     .addNewAcl()
                         .withNewAclRuleGroupResource()
                             .withPatternType(AclResourcePatternType.LITERAL)
                             .withName(consumerGroupName)
                         .endAclRuleGroupResource()
-                        .withOperations(AclOperation.READ)
+                        .withOperations(StrimziAclOperation.READ)
                     .endAcl()
                 .endKafkaUserAuthorizationSimple()
             .endSpec()
@@ -550,7 +550,7 @@ class UserST extends AbstractST {
                             .withPatternType(AclResourcePatternType.LITERAL)
                             .withName(testStorage.getTopicName())
                         .endAclRuleTopicResource()
-                        .withOperations(AclOperation.READ, AclOperation.DESCRIBE)
+                        .withOperations(StrimziAclOperation.READ, StrimziAclOperation.DESCRIBE)
                     .endAcl()
                     .build());
         }

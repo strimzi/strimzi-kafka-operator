@@ -14,8 +14,8 @@ import io.strimzi.api.kafka.model.user.KafkaUserQuotas;
 import io.strimzi.api.kafka.model.user.KafkaUserQuotasBuilder;
 import io.strimzi.api.kafka.model.user.KafkaUserScramSha512ClientAuthentication;
 import io.strimzi.api.kafka.model.user.KafkaUserTlsClientAuthentication;
-import io.strimzi.api.kafka.model.user.acl.AclOperation;
 import io.strimzi.api.kafka.model.user.acl.AclRule;
+import io.strimzi.api.kafka.model.user.acl.StrimziAclOperation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.MockCertIssuer;
 import io.strimzi.operator.user.UserOperatorConfig.UserOperatorConfigBuilder;
@@ -92,13 +92,13 @@ public class ResourceUtils {
                         .addNewAcl()
                             .withNewAclRuleTopicResource()
                                 .withName("my-topic11").endAclRuleTopicResource()
-                            .withOperations(AclOperation.READ, AclOperation.CREATE, AclOperation.WRITE)
+                            .withOperations(StrimziAclOperation.READ, StrimziAclOperation.CREATE, StrimziAclOperation.WRITE)
                         .endAcl()
                         .addNewAcl()
                             .withNewAclRuleTopicResource()
                                 .withName("my-topic")
                             .endAclRuleTopicResource()
-                            .withOperations(AclOperation.DESCRIBE, AclOperation.READ)
+                            .withOperations(StrimziAclOperation.DESCRIBE, StrimziAclOperation.READ)
                         .endAcl()
                     .endKafkaUserAuthorizationSimple()
                     .withNewQuotas()
@@ -123,13 +123,13 @@ public class ResourceUtils {
                             .withNewAclRuleTopicResource()
                                 .withName("my-topic")
                             .endAclRuleTopicResource()
-                        .withOperations(AclOperation.READ, AclOperation.DESCRIBE)
+                        .withOperations(StrimziAclOperation.READ, StrimziAclOperation.DESCRIBE)
                         .endAcl()
                         .addNewAcl()
                             .withNewAclRuleGroupResource()
                                 .withName("my-group")
                             .endAclRuleGroupResource()
-                            .withOperations(AclOperation.READ)
+                            .withOperations(StrimziAclOperation.READ)
                         .endAcl()
                     .endKafkaUserAuthorizationSimple()
                 .endSpec()

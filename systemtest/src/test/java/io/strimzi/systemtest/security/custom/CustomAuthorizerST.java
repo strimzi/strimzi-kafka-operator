@@ -16,7 +16,7 @@ import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthenticationTls;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.api.kafka.model.user.KafkaUser;
-import io.strimzi.api.kafka.model.user.acl.AclOperation;
+import io.strimzi.api.kafka.model.user.acl.StrimziAclOperation;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
@@ -83,7 +83,7 @@ public class CustomAuthorizerST extends AbstractST {
                         .withNewAclRuleTopicResource()
                             .withName(testStorage.getTopicName())
                         .endAclRuleTopicResource()
-                        .withOperations(AclOperation.WRITE, AclOperation.DESCRIBE, AclOperation.CREATE) // create is necessary if topic does not exist prior to data production
+                        .withOperations(StrimziAclOperation.WRITE, StrimziAclOperation.DESCRIBE, StrimziAclOperation.CREATE) // create is necessary if topic does not exist prior to data production
                     .endAcl()
                 .endKafkaUserAuthorizationSimple()
             .endSpec()
@@ -96,13 +96,13 @@ public class CustomAuthorizerST extends AbstractST {
                         .withNewAclRuleTopicResource()
                             .withName(testStorage.getTopicName())
                         .endAclRuleTopicResource()
-                        .withOperations(AclOperation.READ, AclOperation.DESCRIBE)
+                        .withOperations(StrimziAclOperation.READ, StrimziAclOperation.DESCRIBE)
                     .endAcl()
                     .addNewAcl()
                         .withNewAclRuleGroupResource()
                             .withName(consumerGroupName)
                         .endAclRuleGroupResource()
-                        .withOperations(AclOperation.READ)
+                        .withOperations(StrimziAclOperation.READ)
                     .endAcl()
                 .endKafkaUserAuthorizationSimple()
             .endSpec()

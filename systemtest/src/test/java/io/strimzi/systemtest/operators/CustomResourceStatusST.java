@@ -31,9 +31,9 @@ import io.strimzi.api.kafka.model.kafka.listener.ListenerStatus;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2Resources;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2Status;
-import io.strimzi.api.kafka.model.user.acl.AclOperation;
 import io.strimzi.api.kafka.model.user.acl.AclRule;
 import io.strimzi.api.kafka.model.user.acl.AclRuleBuilder;
+import io.strimzi.api.kafka.model.user.acl.StrimziAclOperation;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
@@ -180,7 +180,7 @@ class CustomResourceStatusST extends AbstractST {
             .withNewAclRuleTopicResource()
                 .withName(testStorage.getTopicName())
             .endAclRuleTopicResource()
-            .withOperations(AclOperation.WRITE, AclOperation.DESCRIBE)
+            .withOperations(StrimziAclOperation.WRITE, StrimziAclOperation.DESCRIBE)
             .build();
 
         KubeResourceManager.get().createResourceWithoutWait(KafkaUserTemplates.tlsUser(Environment.TEST_SUITE_NAMESPACE, testStorage.getKafkaUsername(), sharedTestStorage.getClusterName())

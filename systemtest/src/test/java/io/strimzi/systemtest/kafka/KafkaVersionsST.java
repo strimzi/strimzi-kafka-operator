@@ -14,7 +14,7 @@ import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.api.kafka.model.user.KafkaUser;
-import io.strimzi.api.kafka.model.user.acl.AclOperation;
+import io.strimzi.api.kafka.model.user.acl.StrimziAclOperation;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.docs.TestDocsLabels;
@@ -123,7 +123,7 @@ public class KafkaVersionsST extends AbstractST {
                             .withName(testStorage.getTopicName())
                         .endAclRuleTopicResource()
                         // we need CREATE for topic creation in Kafka (auto.create.topics.enable - true)
-                        .withOperations(AclOperation.WRITE, AclOperation.DESCRIBE, AclOperation.CREATE)
+                        .withOperations(StrimziAclOperation.WRITE, StrimziAclOperation.DESCRIBE, StrimziAclOperation.CREATE)
                     .endAcl()
                 .endKafkaUserAuthorizationSimple()
             .endSpec()
@@ -136,13 +136,13 @@ public class KafkaVersionsST extends AbstractST {
                         .withNewAclRuleTopicResource()
                             .withName(testStorage.getTopicName())
                         .endAclRuleTopicResource()
-                        .withOperations(AclOperation.READ, AclOperation.DESCRIBE)
+                        .withOperations(StrimziAclOperation.READ, StrimziAclOperation.DESCRIBE)
                     .endAcl()
                     .addNewAcl()
                         .withNewAclRuleGroupResource()
                             .withName(readConsumerGroup)
                         .endAclRuleGroupResource()
-                        .withOperations(AclOperation.READ)
+                        .withOperations(StrimziAclOperation.READ)
                     .endAcl()
                 .endKafkaUserAuthorizationSimple()
             .endSpec()
@@ -155,13 +155,13 @@ public class KafkaVersionsST extends AbstractST {
                             .withNewAclRuleTopicResource()
                                 .withName(testStorage.getTopicName())
                             .endAclRuleTopicResource()
-                            .withOperations(AclOperation.WRITE, AclOperation.READ, AclOperation.DESCRIBE)
+                            .withOperations(StrimziAclOperation.WRITE, StrimziAclOperation.READ, StrimziAclOperation.DESCRIBE)
                         .endAcl()
                         .addNewAcl()
                             .withNewAclRuleGroupResource()
                                 .withName(readConsumerGroup)
                             .endAclRuleGroupResource()
-                            .withOperations(AclOperation.READ)
+                            .withOperations(StrimziAclOperation.READ)
                         .endAcl()
                     .endKafkaUserAuthorizationSimple()
                 .endSpec()

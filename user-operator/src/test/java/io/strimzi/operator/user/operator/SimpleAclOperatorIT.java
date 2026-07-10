@@ -4,9 +4,9 @@
  */
 package io.strimzi.operator.user.operator;
 
-import io.strimzi.api.kafka.model.user.acl.AclOperation;
 import io.strimzi.api.kafka.model.user.acl.AclResourcePatternType;
 import io.strimzi.api.kafka.model.user.acl.AclRuleType;
+import io.strimzi.api.kafka.model.user.acl.StrimziAclOperation;
 import io.strimzi.operator.user.ResourceUtils;
 import io.strimzi.operator.user.model.acl.SimpleAclRule;
 import io.strimzi.operator.user.model.acl.SimpleAclRuleResource;
@@ -14,6 +14,7 @@ import io.strimzi.operator.user.model.acl.SimpleAclRuleResourceType;
 import org.apache.kafka.common.acl.AccessControlEntryFilter;
 import org.apache.kafka.common.acl.AclBinding;
 import org.apache.kafka.common.acl.AclBindingFilter;
+import org.apache.kafka.common.acl.AclOperation;
 import org.apache.kafka.common.acl.AclPermissionType;
 import org.apache.kafka.common.resource.ResourcePatternFilter;
 import org.apache.kafka.common.security.auth.KafkaPrincipal;
@@ -44,21 +45,21 @@ public class SimpleAclOperatorIT extends AdminApiOperatorIT<Set<SimpleAclRule>, 
                 AclRuleType.ALLOW,
                 new SimpleAclRuleResource("my-topic", SimpleAclRuleResourceType.TOPIC, AclResourcePatternType.LITERAL),
                 "*",
-                AclOperation.DESCRIBE)
+                StrimziAclOperation.DESCRIBE)
         );
 
         acls.add(new SimpleAclRule(
                 AclRuleType.ALLOW,
                 new SimpleAclRuleResource("my-topic", SimpleAclRuleResourceType.TOPIC, AclResourcePatternType.LITERAL),
                 "*",
-                AclOperation.READ)
+                StrimziAclOperation.READ)
         );
 
         acls.add(new SimpleAclRule(
                 AclRuleType.ALLOW,
                 new SimpleAclRuleResource("my-group", SimpleAclRuleResourceType.GROUP, AclResourcePatternType.LITERAL),
                 "*",
-                AclOperation.READ)
+                StrimziAclOperation.READ)
         );
 
         return acls;
@@ -72,21 +73,21 @@ public class SimpleAclOperatorIT extends AdminApiOperatorIT<Set<SimpleAclRule>, 
                 AclRuleType.ALLOW,
                 new SimpleAclRuleResource("my-topic", SimpleAclRuleResourceType.TOPIC, AclResourcePatternType.LITERAL),
                 "*",
-                AclOperation.DESCRIBE)
+                StrimziAclOperation.DESCRIBE)
         );
 
         acls.add(new SimpleAclRule(
                 AclRuleType.ALLOW,
                 new SimpleAclRuleResource("my-topic", SimpleAclRuleResourceType.TOPIC, AclResourcePatternType.LITERAL),
                 "*",
-                AclOperation.WRITE)
+                StrimziAclOperation.WRITE)
         );
 
         acls.add(new SimpleAclRule(
                 AclRuleType.ALLOW,
                 new SimpleAclRuleResource("my-topic", SimpleAclRuleResourceType.TOPIC, AclResourcePatternType.LITERAL),
                 "*",
-                AclOperation.CREATE)
+                StrimziAclOperation.CREATE)
         );
 
         return acls;
@@ -106,9 +107,8 @@ public class SimpleAclOperatorIT extends AdminApiOperatorIT<Set<SimpleAclRule>, 
 
     private Set<SimpleAclRule> get(String username) {
         KafkaPrincipal principal = new KafkaPrincipal("User", username);
-        @SuppressWarnings("checkstyle:NoFullyQualifiedClassNames") // Fully qualified class name used due to a name conflict
         AclBindingFilter aclBindingFilter = new AclBindingFilter(ResourcePatternFilter.ANY,
-                new AccessControlEntryFilter(principal.toString(), null, org.apache.kafka.common.acl.AclOperation.ANY, AclPermissionType.ANY));
+                new AccessControlEntryFilter(principal.toString(), null, AclOperation.ANY, AclPermissionType.ANY));
 
         Collection<AclBinding> aclBindings;
         try {
