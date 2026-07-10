@@ -276,6 +276,12 @@ public class CaReconciler {
      */
     Future<Void> reconcileClusterOperatorSecret(Clock clock) {
         String componentName = "cluster-operator";
+
+        if (coSecret != null && this.isClusterCaNeedFullTrust) {
+            LOGGER.warnCr(reconciliation, "Cluster CA needs to be fully trusted across the cluster, keeping current CO secret and certs");
+            return Future.succeededFuture();
+        }
+
         CertAndKey oldCertAndKey = CertSecretUtils.keyStoreCertAndKey(coSecret, componentName, Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION);
 
         return VertxUtil.toFuture(clusterCa.maybeCopyOrGenerateClientCert(
