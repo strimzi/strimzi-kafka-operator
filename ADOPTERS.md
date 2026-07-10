@@ -41,6 +41,8 @@ Please let us know by adding your company name and, if you want, a description o
     * Use Strimzi to run Kafka Connect as part of the data platform for queueing, event notifications, logging, and CDC pipelines.
 * [Vera C. Rubin Observatory](https://rubinobservatory.org)
     * Strimzi is used to deploy and manage Kafka for the Observatory Control System and the telemetry and metrics infrastructure that supports the Rubin Science Platform.
+* [REWE digital GmbH](https://www.rewe-digital.com/)
+    * Use Strimzi to operate cloud native data streaming platform (Kafka, Connect, MirrorMaker2, KafkaBridge)
 
 ### Vendors
 
