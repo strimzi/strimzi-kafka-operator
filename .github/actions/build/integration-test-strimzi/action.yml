@@ -48,7 +48,6 @@ runs:
       shell: bash
       run: |
         mvn -e -V -B -Dmaven.javadoc.skip=true \
-          -DskipTests \
           -Dfailsafe.rerunFailingTestsCount=2 \
           verify
       env:
