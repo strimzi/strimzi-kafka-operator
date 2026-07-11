@@ -1,0 +1,74 @@
+name: "Integration Test Strimzi"
+description: "Runs Strimzi integration tests with Maven (Failsafe only) against a Kind cluster"
+
+inputs:
+  kindNodeImage:
+    description: "Kubernetes node image for Kind cluster (e.g., kindest/node:v1.30.13@sha256:...)"
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Setup Java and Maven
+      uses: strimzi/github-actions/.github/actions/dependencies/setup-java@v2
+      with:
+        javaVersion: "21"
+
+    - name: Install Docker
+      uses: strimzi/github-actions/.github/actions/dependencies/install-docker@v2
+
+    - name: Install yq
+      uses: strimzi/github-actions/.github/actions/dependencies/install-yq@v2
+      with:
+        version: "v4.6.3"
+
+    - name: Install Helm
+      uses: strimzi/github-actions/.github/actions/dependencies/install-helm@v2
+      with:
+        helmVersion: "v3.16.0"
+
+    - name: Restore Maven cache
+      uses: actions/cache/restore@v5
+      with:
+        path: ~/.m2/repository
+        key: maven-${{ hashFiles('**/pom.xml') }}
+        restore-keys: |
+          maven-
+
+    - name: Setup Kind cluster
+      uses: strimzi/github-actions/.github/actions/dependencies/setup-kind@v2
+      with:
+        controlNodes: 1
+        workerNodes: 3
+        kindVersion: 0.31.0
+      env:
+        KIND_NODE_IMAGE: ${{ inputs.kindNodeImage }}
+
+    - name: Run integration tests
+      shell: bash
+      run: |
+        mvn -e -V -B -Dmaven.javadoc.skip=true \
+          -DskipTests \
+          -Dfailsafe.rerunFailingTestsCount=2 \
+          verify
+      env:
+        TESTCONTAINERS_RYUK_DISABLED: true
+        TESTCONTAINERS_CHECKS_DISABLE: true
+        STRIMZI_TEST_CONTAINER_LOGGING_ENABLED: false
+
+    - name: Publish test results
+      uses: dorny/test-reporter@v3
+      if: always()
+      with:
+        name: 'Integration Tests (${{ inputs.kindNodeImage }})'
+        path: '**/TEST-*.xml'
+        reporter: java-junit
+        fail-on-error: false
+
+    - name: Upload test coverage to Codecov
+      uses: codecov/codecov-action@v6
+      with:
+        files: ./**/target/site/jacoco/jacoco.xml
+        flags: integrationtests
+        name: codecov-integration
+        fail_ci_if_error: false

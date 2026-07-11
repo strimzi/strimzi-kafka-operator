@@ -1,5 +1,5 @@
-name: "Test Strimzi"
-description: "Runs Strimzi unit and integration tests with Maven"
+name: "Unit Test Strimzi"
+description: "Runs Strimzi unit tests with Maven (Surefire only, no Kind cluster needed)"
 
 runs:
   using: "composite"
@@ -30,38 +30,27 @@ runs:
         restore-keys: |
           maven-
 
-    - name: Setup Kind cluster
-      uses: strimzi/github-actions/.github/actions/dependencies/setup-kind@v2
-      with:
-        controlNodes: 1
-        workerNodes: 3
-        kindVersion: 0.31.0
-      env:
-        KIND_NODE_IMAGE: "oldest"
-        
-    - name: Run unit and integration tests
+    - name: Run unit tests
       shell: bash
       run: |
         mvn -e -V -B -Dmaven.javadoc.skip=true \
+          -DskipITs \
           -Dsurefire.rerunFailingTestsCount=5 \
-          -Dfailsafe.rerunFailingTestsCount=2 \
-          install
+          verify
       env:
-        # Test container optimization and eliminate pulling RYUK image from DockerHub to prevent limits
         TESTCONTAINERS_RYUK_DISABLED: true
         TESTCONTAINERS_CHECKS_DISABLE: true
-        # Disable container logging for cleaner test output
         STRIMZI_TEST_CONTAINER_LOGGING_ENABLED: false
-        
+
     - name: Publish test results
       uses: dorny/test-reporter@v3
       if: always()
       with:
-        name: 'Unit & Integration Tests'
+        name: 'Unit Tests'
         path: '**/TEST-*.xml'
         reporter: java-junit
         fail-on-error: false
-        
+
     - name: Upload test coverage to Codecov
       uses: codecov/codecov-action@v6
       with:
