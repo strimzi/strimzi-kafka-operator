@@ -89,16 +89,37 @@ jobs:
           path: docker-images/artifacts/binaries/kafka/archives
           key: kafka-binaries-${{ hashFiles('kafka-versions.yaml') }}
 
-  # Runs Strimzi unit and integration tests
-  test-strimzi:
-    name: Strimzi Unit & IT tests
+  # Runs Strimzi unit tests (Surefire only, no Kind cluster needed)
+  unit-test-strimzi:
+    name: Unit Tests
     needs:
       - build-strimzi
     runs-on: ubuntu-latest
-    timeout-minutes: 80
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v6
-      - uses: ./.github/actions/build/test-strimzi
+      - uses: ./.github/actions/build/unit-test-strimzi
+
+  # Runs Strimzi integration tests (Failsafe only) against multiple Kubernetes versions
+  integration-test-strimzi:
+    name: Integration Tests (${{ matrix.kindNodeImage }})
+    needs:
+      - build-strimzi
+    strategy:
+      fail-fast: false
+      matrix:
+        kindNodeImage:
+          # Oldest Kube version we support
+          - "kindest/node:v1.30.13@sha256:397209b3d947d154f6641f2d0ce8d473732bd91c87d9575ade99049aa33cd648"
+          # Latest Kube version we support
+          - "kindest/node:v1.35.0@sha256:452d707d4862f52530247495d180205e029056831160e22870e37e3f6c1ac31f"
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/build/integration-test-strimzi
+        with:
+          kindNodeImage: ${{ matrix.kindNodeImage }}
 
   # Builds Strimzi docs
   build-docs:
@@ -165,7 +186,8 @@ jobs:
     name: Push Containers
     needs:
       - build-strimzi
-      - test-strimzi
+      - unit-test-strimzi
+      - integration-test-strimzi
       - build-containers
       - build-docs
     if: ${{ github.ref == 'refs/heads/main' }}
@@ -207,7 +229,8 @@ jobs:
     name: Publish Docs
     needs:
       - build-strimzi
-      - test-strimzi
+      - unit-test-strimzi
+      - integration-test-strimzi
       - build-containers
       - build-docs
     if: ${{ github.ref == 'refs/heads/main' }}
@@ -225,7 +248,8 @@ jobs:
     name: Deploy Java artifacts
     needs:
       - build-strimzi
-      - test-strimzi
+      - unit-test-strimzi
+      - integration-test-strimzi
       - build-containers
       - build-docs
     if: ${{ github.ref == 'refs/heads/main' }}
