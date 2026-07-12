@@ -908,6 +908,7 @@
                                 <exclude>io/strimzi/api/**/*Builder*.class</exclude>
                                 <exclude>io/strimzi/api/kafka/model/**/*.class</exclude>
                                 <exclude>io/strimzi/api/annotations/**/*.class</exclude>
+                                <exclude>io/strimzi/plugin/**/*.class</exclude>
                                 <exclude>io/strimzi/test/**/*.class</exclude>
                                 <exclude>io/strimzi/systemtest/**/*.class</exclude>
                                 <exclude>io/strimzi/build/**/*.class</exclude>
