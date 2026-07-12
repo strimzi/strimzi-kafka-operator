@@ -23,13 +23,16 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 public class UtilTest {
     @Test
     public void testParseMap() {
-        String stringMap = "key1=value1\n" +
-                "key2=value2";
+        String stringMap = """
+                key1=value1
+                    key2=value2
+                key3=value3""";
 
         Map<String, String> m = parseMap(stringMap);
-        assertThat(m, aMapWithSize(2));
+        assertThat(m, aMapWithSize(3));
         assertThat(m, hasEntry("key1", "value1"));
         assertThat(m, hasEntry("key2", "value2"));
+        assertThat(m, hasEntry("key3", "value3"));
     }
 
     @Test

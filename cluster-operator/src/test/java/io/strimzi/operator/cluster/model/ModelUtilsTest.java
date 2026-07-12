@@ -58,23 +58,6 @@ public class ModelUtilsTest {
     }
 
     @Test
-    public void testAnnotationsOrLabelsImageMap() {
-        Map<String, String> m = parseMap(" discovery.3scale.net=true");
-        assertThat(m.size(), is(1));
-        assertThat(m.get("discovery.3scale.net"), is("true"));
-
-        m = parseMap(" discovery.3scale.net/scheme=http\n" +
-                "        discovery.3scale.net/port=8080\n" +
-                "        discovery.3scale.net/path=path/\n" +
-                "        discovery.3scale.net/description-path=oapi/");
-        assertThat(m.size(), is(4));
-        assertThat(m.get("discovery.3scale.net/scheme"), is("http"));
-        assertThat(m.get("discovery.3scale.net/port"), is("8080"));
-        assertThat(m.get("discovery.3scale.net/path"), is("path/"));
-        assertThat(m.get("discovery.3scale.net/description-path"), is("oapi/"));
-    }
-
-    @Test
     public void testStorageSerializationAndDeserialization()    {
         Storage jbod = new JbodStorageBuilder().withVolumes(
                 new PersistentClaimStorageBuilder().withStorageClass("gp2-ssd").withDeleteClaim(false).withId(0).withSize("100Gi").build(),
