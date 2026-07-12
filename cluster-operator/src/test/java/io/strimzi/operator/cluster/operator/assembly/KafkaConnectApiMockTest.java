@@ -14,6 +14,7 @@ import java.util.Queue;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.CompletionStage;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
@@ -31,7 +32,7 @@ public class KafkaConnectApiMockTest {
 
         KafkaConnectApi api = new MockKafkaConnectApi(statusResults);
         api.statusWithBackOff(Reconciliation.DUMMY_RECONCILIATION, backOff, "some-host", 8083, "some-connector")
-                .whenComplete((r, e) -> assertThat(e, nullValue())).join();
+                .whenComplete((r, e) -> assertThat(e, nullValue())).toCompletableFuture().join();
     }
 
     @Test
@@ -44,7 +45,7 @@ public class KafkaConnectApiMockTest {
         KafkaConnectApi api = new MockKafkaConnectApi(statusResults);
 
         api.statusWithBackOff(Reconciliation.DUMMY_RECONCILIATION, backOff, "some-host", 8083, "some-connector")
-                .whenComplete((r, e) -> assertThat(e, nullValue())).join();
+                .whenComplete((r, e) -> assertThat(e, nullValue())).toCompletableFuture().join();
     }
 
     @Test
@@ -60,7 +61,7 @@ public class KafkaConnectApiMockTest {
                 .whenComplete((r, e) -> {
                     assertThat(e.getMessage(), containsString("404"));
                     assertThat(statusResults.size(), is(0));
-                })::join);
+                }).toCompletableFuture()::join);
     }
 
     @Test
@@ -71,7 +72,7 @@ public class KafkaConnectApiMockTest {
         KafkaConnectApi api = new MockKafkaConnectApi(statusResults);
 
         assertThrows(Exception.class, api.statusWithBackOff(Reconciliation.DUMMY_RECONCILIATION, backOff, "some-host", 8083, "some-connector")
-                .whenComplete((r, e) -> assertThat(e.getMessage(), containsString("500")))::join);
+                .whenComplete((r, e) -> assertThat(e.getMessage(), containsString("500"))).toCompletableFuture()::join);
     }
 
     static class MockKafkaConnectApi extends KafkaConnectApiImpl   {
@@ -83,7 +84,7 @@ public class KafkaConnectApiMockTest {
         }
 
         @Override
-        public CompletableFuture<Map<String, Object>> status(Reconciliation reconciliation, String host, int port, String connectorName) {
+        public CompletionStage<Map<String, Object>> status(Reconciliation reconciliation, String host, int port, String connectorName) {
             return statusResults.remove();
         }
     }

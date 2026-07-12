@@ -73,7 +73,7 @@ public class KafkaConnectApiImplTest {
         KafkaConnectApi api = new KafkaConnectApiImpl();
 
         assertThrows(Exception.class, api.createOrUpdatePutRequest(Reconciliation.DUMMY_RECONCILIATION, "127.0.0.1", server.port(), "my-connector", new JsonObject())
-                .whenComplete((res, ex) -> assertThat(ex.getMessage(), containsString("Unknown error message")))::join);
+                .whenComplete((res, ex) -> assertThat(ex.getMessage(), containsString("Unknown error message"))).toCompletableFuture()::join);
     }
 
     @Test
@@ -86,7 +86,7 @@ public class KafkaConnectApiImplTest {
         KafkaConnectApi api = new KafkaConnectApiImpl();
 
         assertThrows(Exception.class, api.createOrUpdatePutRequest(Reconciliation.DUMMY_RECONCILIATION, "127.0.0.1", server.port(), "my-connector", new JsonObject())
-                .whenComplete((res, ex) -> assertThat(ex.getMessage(), containsString("This is the error")))::join);
+                .whenComplete((res, ex) -> assertThat(ex.getMessage(), containsString("This is the error"))).toCompletableFuture()::join);
     }
 
     @Test
@@ -105,7 +105,7 @@ public class KafkaConnectApiImplTest {
                 () -> api.status(
                         Reconciliation.DUMMY_RECONCILIATION, "127.0.0.1", server.port(),
                         "my-connector", Collections.singleton(404))
-                        .get());
+                        .toCompletableFuture().get());
         assertThat(ex.getCause(), instanceOf(ConnectRestException.class));
         assertThat(ex.getCause().getMessage(), containsString("Unexpected HTTP status code 200"));
     }
@@ -123,7 +123,7 @@ public class KafkaConnectApiImplTest {
                 () -> api.status(
                         Reconciliation.DUMMY_RECONCILIATION, "127.0.0.1", server.port(),
                         "c", Collections.singleton(200))
-                        .get());
+                        .toCompletableFuture().get());
         assertThat(ex.getCause(), instanceOf(ConnectRestException.class));
         assertThat(ex.getCause().getMessage(), containsString("Connect cluster error"));
     }
@@ -148,7 +148,7 @@ public class KafkaConnectApiImplTest {
                 .whenComplete((res, ex) -> assertThat(res, allOf(
                         aMapWithSize(1),
                         hasEntry("org.apache.kafka.connect", "INFO")
-                ))).join();
+                ))).toCompletableFuture().join();
     }
 
     @Test
@@ -172,6 +172,6 @@ public class KafkaConnectApiImplTest {
                 .whenComplete((res, ex) -> assertThat(res, allOf(
                         aMapWithSize(1),
                         hasEntry("org.apache.kafka.connect", "WARN")))
-                ).join();
+                ).toCompletableFuture().join();
     }
 }

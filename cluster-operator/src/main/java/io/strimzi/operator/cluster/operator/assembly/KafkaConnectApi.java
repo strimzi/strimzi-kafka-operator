@@ -13,7 +13,7 @@ import java.net.http.HttpResponse;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 
 /**
  * A Java client for the Kafka Connect REST API.
@@ -29,7 +29,7 @@ public interface KafkaConnectApi {
      * @return A Future which completes with the result of the request. If the request was successful,
      * this returns information about the connector, including its name, config and tasks.
      */
-    CompletableFuture<Map<String, Object>> createOrUpdatePutRequest(Reconciliation reconciliation, String host, int port, String connectorName, JsonObject configJson);
+    CompletionStage<Map<String, Object>> createOrUpdatePutRequest(Reconciliation reconciliation, String host, int port, String connectorName, JsonObject configJson);
 
     /**
      * Make a {@code GET} request to {@code /connectors/${connectorName}/config}.
@@ -40,7 +40,7 @@ public interface KafkaConnectApi {
      * @return A Future which completes with the result of the request. If the request was successful,
      * this returns the connector's config.
      */
-    CompletableFuture<Map<String, String>> getConnectorConfig(Reconciliation reconciliation, String host, int port, String connectorName);
+    CompletionStage<Map<String, String>> getConnectorConfig(Reconciliation reconciliation, String host, int port, String connectorName);
 
     /**
      * Make a {@code GET} request to {@code /connectors/${connectorName}/config}.
@@ -53,7 +53,7 @@ public interface KafkaConnectApi {
      *
      * @return A Future which completes with the result of the request. If the request was successful, this returns the connector's config.
      */
-    CompletableFuture<Map<String, String>> getConnectorConfig(Reconciliation reconciliation, BackOff backOff, String host, int port, String connectorName);
+    CompletionStage<Map<String, String>> getConnectorConfig(Reconciliation reconciliation, BackOff backOff, String host, int port, String connectorName);
 
     /**
      * Make a {@code GET} request to {@code /connectors/${connectorName}}.
@@ -64,7 +64,7 @@ public interface KafkaConnectApi {
      * @return A Future which completes with the result of the request. If the request was successful,
      * this returns information about the connector, including its name, config and tasks.
      */
-    CompletableFuture<Map<String, Object>> getConnector(Reconciliation reconciliation, String host, int port, String connectorName);
+    CompletionStage<Map<String, Object>> getConnector(Reconciliation reconciliation, String host, int port, String connectorName);
 
     /**
      * Make a {@code DELETE} request to {@code /connectors/${connectorName}}.
@@ -74,7 +74,7 @@ public interface KafkaConnectApi {
      * @param connectorName The name of the connector to delete.
      * @return A Future which completes with the result of the request.
      */
-    CompletableFuture<Void> delete(Reconciliation reconciliation, String host, int port, String connectorName);
+    CompletionStage<Void> delete(Reconciliation reconciliation, String host, int port, String connectorName);
 
     /**
      * Make a {@code GET} request to {@code /connectors/${connectorName}/status}.
@@ -85,7 +85,7 @@ public interface KafkaConnectApi {
      * @return A Future which completes with the result of the request. If the request was successful,
      * this returns the connector's status.
      */
-    CompletableFuture<Map<String, Object>> status(Reconciliation reconciliation, String host, int port, String connectorName);
+    CompletionStage<Map<String, Object>> status(Reconciliation reconciliation, String host, int port, String connectorName);
 
     /**
      * Make a {@code GET} request to {@code /connectors/${connectorName}/status}.
@@ -97,7 +97,7 @@ public interface KafkaConnectApi {
      * @return A Future which completes with the result of the request. If the request was successful,
      * this returns the connector's status.
      */
-    CompletableFuture<Map<String, Object>> status(Reconciliation reconciliation, String host, int port, String connectorName, Set<Integer> okStatusCodes);
+    CompletionStage<Map<String, Object>> status(Reconciliation reconciliation, String host, int port, String connectorName, Set<Integer> okStatusCodes);
 
     /**
      * Make a {@code GET} request to {@code /connectors/${connectorName}/status}, retrying according to {@code backoff}.
@@ -109,7 +109,7 @@ public interface KafkaConnectApi {
      * @return A Future which completes with the result of the request. If the request was successful,
      * this returns the connector's status.
      */
-    CompletableFuture<Map<String, Object>> statusWithBackOff(Reconciliation reconciliation, BackOff backOff, String host, int port, String connectorName);
+    CompletionStage<Map<String, Object>> statusWithBackOff(Reconciliation reconciliation, BackOff backOff, String host, int port, String connectorName);
 
     /**
      * Make a {@code PUT} request to {@code /connectors/${connectorName}/pause}.
@@ -119,7 +119,7 @@ public interface KafkaConnectApi {
      * @param connectorName The name of the connector to pause.
      * @return A Future which completes with the result of the request.
      */
-    CompletableFuture<Void> pause(Reconciliation reconciliation, String host, int port, String connectorName);
+    CompletionStage<Void> pause(Reconciliation reconciliation, String host, int port, String connectorName);
 
     /**
      * Make a {@code PUT} request to {@code /connectors/${connectorName}/stop}.
@@ -129,7 +129,7 @@ public interface KafkaConnectApi {
      * @param connectorName The name of the connector to pause.
      * @return A Future which completes with the result of the request.
      */
-    CompletableFuture<Void> stop(Reconciliation reconciliation, String host, int port, String connectorName);
+    CompletionStage<Void> stop(Reconciliation reconciliation, String host, int port, String connectorName);
 
     /**
      * Make a {@code PUT} request to {@code /connectors/${connectorName}/resume}.
@@ -139,7 +139,7 @@ public interface KafkaConnectApi {
      * @param connectorName The name of the connector to resume.
      * @return A Future which completes with the result of the request.
      */
-    CompletableFuture<Void> resume(Reconciliation reconciliation,  String host, int port, String connectorName);
+    CompletionStage<Void> resume(Reconciliation reconciliation,  String host, int port, String connectorName);
 
     /**
      * Make a {@code GET} request to {@code /connectors}
@@ -149,7 +149,7 @@ public interface KafkaConnectApi {
      * @return A Future which completes with the result of the request. If the request was successful,
      * this returns the list of connectors.
      */
-    CompletableFuture<List<String>> list(Reconciliation reconciliation, String host, int port);
+    CompletionStage<List<String>> list(Reconciliation reconciliation, String host, int port);
 
     /**
      * Make a {@code GET} request to {@code /connector-plugins}.
@@ -159,7 +159,7 @@ public interface KafkaConnectApi {
      * @return A Future which completes with the result of the request. If the request was successful,
      * this returns the list of connector plugins.
      */
-    CompletableFuture<List<ConnectorPlugin>> listConnectorPlugins(Reconciliation reconciliation, String host, int port);
+    CompletionStage<List<ConnectorPlugin>> listConnectorPlugins(Reconciliation reconciliation, String host, int port);
 
     /**
      * Make a {@code GET} request to {@code /admin/loggers}.
@@ -169,7 +169,7 @@ public interface KafkaConnectApi {
      * @return A Future which completes with the result of the request. If the request was successful,
      * this returns the list of connect loggers.
      */
-    CompletableFuture<Map<String, String>> listConnectLoggers(Reconciliation reconciliation, String host, int port);
+    CompletionStage<Map<String, String>> listConnectLoggers(Reconciliation reconciliation, String host, int port);
 
     /**
      * Make a {@code POST} request to {@code /connectors/${connectorName}/restart}.
@@ -181,7 +181,7 @@ public interface KafkaConnectApi {
      * @param onlyFailed    Specifies whether to restart just the instances with a FAILED status or all instances.
      * @return A Future which completes with the result of the request and the new status of the connector
      */
-    CompletableFuture<Map<String, Object>> restart(String host, int port, String connectorName, boolean includeTasks, boolean onlyFailed);
+    CompletionStage<Map<String, Object>> restart(String host, int port, String connectorName, boolean includeTasks, boolean onlyFailed);
 
     /**
      * Make a {@code POST} request to {@code /connectors/${connectorName}/tasks/${taskID}/restart}.
@@ -191,7 +191,7 @@ public interface KafkaConnectApi {
      * @param taskID The ID of the connector task to restart.
      * @return A Future which completes with the result of the request.
      */
-    CompletableFuture<Void> restartTask(String host, int port, String connectorName, int taskID);
+    CompletionStage<Void> restartTask(String host, int port, String connectorName, int taskID);
 
     /**
      * Make a {@code GET} request to {@code /connectors/${connectorName}/topics}.
@@ -202,7 +202,7 @@ public interface KafkaConnectApi {
      * @return A Future which completes with the result of the request. If the request was successful,
      * this returns the connector's topics.
      */
-    CompletableFuture<List<String>> getConnectorTopics(Reconciliation reconciliation, String host, int port, String connectorName);
+    CompletionStage<List<String>> getConnectorTopics(Reconciliation reconciliation, String host, int port, String connectorName);
 
     /**
      * Make a {@code GET} request to {@code /connectors/${connectorName}/offsets}.
@@ -213,7 +213,7 @@ public interface KafkaConnectApi {
      * @return A Future which completes with the result of the request. If the request was successful,
      * this returns the connector's offsets.
      */
-    CompletableFuture<String> getConnectorOffsets(Reconciliation reconciliation, String host, int port, String connectorName);
+    CompletionStage<String> getConnectorOffsets(Reconciliation reconciliation, String host, int port, String connectorName);
 
     /**
      * Make a {@code PATCH} request to {@code /connectors/${connectorName}/offsets}.
@@ -224,7 +224,7 @@ public interface KafkaConnectApi {
      * @param newOffsets The new offsets for the connector.
      * @return A Future which completes with the result of the request.
      */
-    CompletableFuture<Void> alterConnectorOffsets(Reconciliation reconciliation, String host, int port, String connectorName, String newOffsets);
+    CompletionStage<Void> alterConnectorOffsets(Reconciliation reconciliation, String host, int port, String connectorName, String newOffsets);
 
     /**
      * Make a {@code DELETE} request to {@code /connectors/${connectorName}/offsets}.
@@ -234,7 +234,7 @@ public interface KafkaConnectApi {
      * @param connectorName The name of the connector to reset the offsets of.
      * @return A Future which completes with the result of the request.
      */
-    CompletableFuture<Void> resetConnectorOffsets(Reconciliation reconciliation, String host, int port, String connectorName);
+    CompletionStage<Void> resetConnectorOffsets(Reconciliation reconciliation, String host, int port, String connectorName);
 }
 
 class ConnectRestException extends RuntimeException {

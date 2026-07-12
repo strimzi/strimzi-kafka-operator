@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -55,7 +56,7 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
     }
 
     @Override
-    public CompletableFuture<Map<String, Object>> createOrUpdatePutRequest(
+    public CompletionStage<Map<String, Object>> createOrUpdatePutRequest(
             Reconciliation reconciliation,
             String host, int port,
             String connectorName, JsonObject configJson) {
@@ -89,7 +90,7 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
     }
 
     @Override
-    public CompletableFuture<Map<String, Object>> getConnector(
+    public CompletionStage<Map<String, Object>> getConnector(
             Reconciliation reconciliation,
             String host, int port,
             String connectorName) {
@@ -114,7 +115,7 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
     }
 
 
-    private <T> CompletableFuture<T> doGet(Reconciliation reconciliation, String host, int port, String path, Set<Integer> okStatusCodes, TypeReference<T> type) {
+    private <T> CompletionStage<T> doGet(Reconciliation reconciliation, String host, int port, String path, Set<Integer> okStatusCodes, TypeReference<T> type) {
         LOGGER.debugCr(reconciliation, "Making GET request to {}", path);
 
         HttpRequest request = HttpRequest.newBuilder()
@@ -146,7 +147,7 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
     }
 
     @Override
-    public CompletableFuture<Map<String, String>> getConnectorConfig(
+    public CompletionStage<Map<String, String>> getConnectorConfig(
             Reconciliation reconciliation,
             String host, int port,
             String connectorName) {
@@ -156,13 +157,13 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
     }
 
     @Override
-    public CompletableFuture<Map<String, String>> getConnectorConfig(Reconciliation reconciliation, BackOff backOff, String host, int port, String connectorName) {
+    public CompletionStage<Map<String, String>> getConnectorConfig(Reconciliation reconciliation, BackOff backOff, String host, int port, String connectorName) {
         return withBackoff(reconciliation, backOff, connectorName, Collections.singleton(409),
             () -> getConnectorConfig(reconciliation, host, port, connectorName), "config");
     }
 
     @Override
-    public CompletableFuture<Void> delete(Reconciliation reconciliation, String host, int port, String connectorName) {
+    public CompletionStage<Void> delete(Reconciliation reconciliation, String host, int port, String connectorName) {
         String path = "/connectors/" + connectorName;
         LOGGER.debugCr(reconciliation, "Making DELETE request to {}", path);
 
@@ -191,15 +192,15 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
     }
 
     @Override
-    public CompletableFuture<Map<String, Object>> statusWithBackOff(Reconciliation reconciliation, BackOff backOff, String host, int port, String connectorName) {
+    public CompletionStage<Map<String, Object>> statusWithBackOff(Reconciliation reconciliation, BackOff backOff, String host, int port, String connectorName) {
         return withBackoff(reconciliation, backOff, connectorName, Collections.singleton(404),
             () -> status(reconciliation, host, port, connectorName), "status");
     }
 
-    private <T> CompletableFuture<T> withBackoff(Reconciliation reconciliation,
+    private <T> CompletionStage<T> withBackoff(Reconciliation reconciliation,
                                                  BackOff backOff, String connectorName,
                                                  Set<Integer> retriableStatusCodes,
-                                                 Supplier<CompletableFuture<T>> supplier,
+                                                 Supplier<? extends CompletionStage<T>> supplier,
                                                  String attribute) {
         CompletableFuture<T> statusFuture = new CompletableFuture<>();
         ScheduledExecutorService singleExecutor = Executors.newSingleThreadScheduledExecutor(
@@ -215,7 +216,7 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
                                                  Set<Integer> retriableStatusCodes,
                                                  ScheduledExecutorService singleExecutor,
                                                  CompletableFuture<T> statusFuture,
-                                                 Supplier<CompletableFuture<T>> supplier,
+                                                 Supplier<? extends CompletionStage<T>> supplier,
                                                  String attribute, long delay) {
         singleExecutor.schedule(() -> {
             supplier.get().whenComplete((result, error) -> {
@@ -246,32 +247,32 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
     }
 
     @Override
-    public CompletableFuture<Map<String, Object>> status(Reconciliation reconciliation, String host, int port, String connectorName) {
+    public CompletionStage<Map<String, Object>> status(Reconciliation reconciliation, String host, int port, String connectorName) {
         return status(reconciliation, host, port, connectorName, Collections.singleton(200));
     }
 
     @Override
-    public CompletableFuture<Map<String, Object>> status(Reconciliation reconciliation, String host, int port, String connectorName, Set<Integer> okStatusCodes) {
+    public CompletionStage<Map<String, Object>> status(Reconciliation reconciliation, String host, int port, String connectorName, Set<Integer> okStatusCodes) {
         String path = "/connectors/" + connectorName + "/status";
         return doGet(reconciliation, host, port, path, okStatusCodes, TREE_TYPE);
     }
 
     @Override
-    public CompletableFuture<Void> pause(Reconciliation reconciliation, String host, int port, String connectorName) {
+    public CompletionStage<Void> pause(Reconciliation reconciliation, String host, int port, String connectorName) {
         return updateState(reconciliation, host, port, "/connectors/" + connectorName + "/pause", 202);
     }
 
     @Override
-    public CompletableFuture<Void> stop(Reconciliation reconciliation, String host, int port, String connectorName) {
+    public CompletionStage<Void> stop(Reconciliation reconciliation, String host, int port, String connectorName) {
         return updateState(reconciliation, host, port, "/connectors/" + connectorName + "/stop", 204);
     }
 
     @Override
-    public CompletableFuture<Void> resume(Reconciliation reconciliation, String host, int port, String connectorName) {
+    public CompletionStage<Void> resume(Reconciliation reconciliation, String host, int port, String connectorName) {
         return updateState(reconciliation, host, port, "/connectors/" + connectorName + "/resume", 202);
     }
 
-    private CompletableFuture<Void> updateState(Reconciliation reconciliation, String host, int port, String path, int expectedStatusCode) {
+    private CompletionStage<Void> updateState(Reconciliation reconciliation, String host, int port, String path, int expectedStatusCode) {
         LOGGER.debugCr(reconciliation, "Making PUT request to {} ", path);
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(String.format("http://%s:%d%s", host, port, encodeURLString(path))))
@@ -290,7 +291,7 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
     }
 
     @Override
-    public CompletableFuture<List<String>> list(Reconciliation reconciliation, String host, int port) {
+    public CompletionStage<List<String>> list(Reconciliation reconciliation, String host, int port) {
         String path = "/connectors";
         LOGGER.debugCr(reconciliation, "Making GET request to {} ", path);
         HttpRequest request = HttpRequest.newBuilder()
@@ -325,7 +326,7 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
     }
 
     @Override
-    public CompletableFuture<List<ConnectorPlugin>> listConnectorPlugins(Reconciliation reconciliation, String host, int port) {
+    public CompletionStage<List<ConnectorPlugin>> listConnectorPlugins(Reconciliation reconciliation, String host, int port) {
         String path = "/connector-plugins";
         LOGGER.debugCr(reconciliation, "Making GET request to {}", path);
 
@@ -352,7 +353,7 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
                 });
     }
 
-    private CompletableFuture<Void> updateConnectorLogger(Reconciliation reconciliation, String host, int port, String logger, String level) {
+    private CompletionStage<Void> updateConnectorLogger(Reconciliation reconciliation, String host, int port, String logger, String level) {
         String path = "/admin/loggers/" + logger + "?scope=cluster";
 
         ObjectNode levelJO = OBJECT_MAPPER.createObjectNode();
@@ -386,7 +387,7 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
     }
 
     @Override
-    public CompletableFuture<Map<String, String>> listConnectLoggers(Reconciliation reconciliation, String host, int port) {
+    public CompletionStage<Map<String, String>> listConnectLoggers(Reconciliation reconciliation, String host, int port) {
         String path = "/admin/loggers/";
         LOGGER.debugCr(reconciliation, "Making GET request to {}", path);
         HttpRequest request = HttpRequest.newBuilder()
@@ -435,17 +436,17 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
     }
 
     @Override
-    public CompletableFuture<Map<String, Object>> restart(String host, int port, String connectorName, boolean includeTasks, boolean onlyFailed) {
+    public CompletionStage<Map<String, Object>> restart(String host, int port, String connectorName, boolean includeTasks, boolean onlyFailed) {
         return restartConnectorOrTask(host, port, "/connectors/" + connectorName + "/restart?includeTasks=" + includeTasks + "&onlyFailed=" + onlyFailed);
     }
 
     @Override
-    public CompletableFuture<Void> restartTask(String host, int port, String connectorName, int taskID) {
+    public CompletionStage<Void> restartTask(String host, int port, String connectorName, int taskID) {
         return restartConnectorOrTask(host, port, "/connectors/" + connectorName + "/tasks/" + taskID + "/restart")
             .thenCompose(result -> CompletableFuture.completedFuture(null));
     }
 
-    private CompletableFuture<Map<String, Object>> restartConnectorOrTask(String host, int port, String path) {
+    private CompletionStage<Map<String, Object>> restartConnectorOrTask(String host, int port, String path) {
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(String.format("http://%s:%d%s", host, port, encodeURLString(path))))
                 .POST(HttpRequest.BodyPublishers.noBody())
@@ -469,7 +470,7 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
     }
 
     @Override
-    public CompletableFuture<List<String>> getConnectorTopics(Reconciliation reconciliation, String host, int port, String connectorName) {
+    public CompletionStage<List<String>> getConnectorTopics(Reconciliation reconciliation, String host, int port, String connectorName) {
         String path = String.format("/connectors/%s/topics", connectorName);
         LOGGER.debugCr(reconciliation, "Making GET request to {}", path);
 
@@ -498,7 +499,7 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
     }
 
     @Override
-    public CompletableFuture<String> getConnectorOffsets(Reconciliation reconciliation, String host, int port, String connectorName) {
+    public CompletionStage<String> getConnectorOffsets(Reconciliation reconciliation, String host, int port, String connectorName) {
         String path = String.format("/connectors/%s/offsets", connectorName);
         LOGGER.debugCr(reconciliation, "Making GET request to {}", path);
 
@@ -529,7 +530,7 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
     }
 
     @Override
-    public CompletableFuture<Void> alterConnectorOffsets(Reconciliation reconciliation, String host, int port, String connectorName, String newOffsets) {
+    public CompletionStage<Void> alterConnectorOffsets(Reconciliation reconciliation, String host, int port, String connectorName, String newOffsets) {
         String path = String.format("/connectors/%s/offsets", connectorName);
         LOGGER.debugCr(reconciliation, "Making PATCH request to {}", path);
 
@@ -560,7 +561,7 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
     }
 
     @Override
-    public CompletableFuture<Void> resetConnectorOffsets(Reconciliation reconciliation, String host, int port, String connectorName) {
+    public CompletionStage<Void> resetConnectorOffsets(Reconciliation reconciliation, String host, int port, String connectorName) {
         String path = String.format("/connectors/%s/offsets", connectorName);
         LOGGER.debugCr(reconciliation, "Making DELETE request to {}", path);
 
