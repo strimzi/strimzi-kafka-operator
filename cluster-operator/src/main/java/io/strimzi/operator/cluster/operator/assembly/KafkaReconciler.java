@@ -167,8 +167,10 @@ public class KafkaReconciler {
     private final List<String> secretsToDelete = new ArrayList<>();
     /* test */ TlsPemIdentity coTlsPemIdentity;
     /* test */ KafkaListenersReconciler.ReconciliationResult listenerReconciliationResults; // Result of the listener reconciliation with the listener details
+    /* test */ RollingUpdateSkips rollingUpdateSkips = RollingUpdateSkips.EMPTY; // Nodes excluded from automatic rolling updates, resolved at the start of the reconciliation
 
     private final KafkaAutoRebalanceStatus kafkaAutoRebalanceStatus;
+    private final Condition previousRollingUpdateSkippedCondition;
 
     /**
      * Constructs the Kafka reconciler
@@ -213,6 +215,9 @@ public class KafkaReconciler {
         this.imagePullSecrets = config.getImagePullSecrets();
         this.isPodDisruptionBudgetGeneration = config.isPodDisruptionBudgetGeneration();
         this.kafkaAutoRebalanceStatus = kafkaCr.getStatus() != null ? kafkaCr.getStatus().getAutoRebalance() : null;
+        this.previousRollingUpdateSkippedCondition = kafkaCr.getStatus() != null && kafkaCr.getStatus().getConditions() != null
+                ? kafkaCr.getStatus().getConditions().stream().filter(condition -> RollingUpdateSkips.ROLLING_UPDATE_SKIPPED_CONDITION_TYPE.equals(condition.getType())).findFirst().orElse(null)
+                : null;
 
         this.strimziPodSetOperator = supplier.strimziPodSetOperator;
         this.secretOperator = supplier.secretOperations;
@@ -250,6 +255,7 @@ public class KafkaReconciler {
      */
     public Future<Void> reconcile(KafkaStatus kafkaStatus, Clock clock)    {
         return modelWarnings(kafkaStatus)
+                .compose(i -> resolveRollingUpdateSkips(kafkaStatus))
                 .compose(i -> initClientAuthenticationCertificates())
                 .compose(i -> manualPodCleaning())
                 .compose(i -> networkPolicy())
@@ -313,6 +319,64 @@ public class KafkaReconciler {
         kafkaStatus.addConditions(conditions);
 
         return Future.succeededFuture();
+    }
+
+    /**
+     * Resolves the strimzi.io/skip-rolling-update annotations from the KafkaNodePool resources into the set of node
+     * IDs which are excluded from automatic rolling updates during this reconciliation. When any node is skipped (or
+     * any requested skip had to be ignored or rejected), a RollingUpdateSkipped condition is added to the Kafka status
+     * and Kubernetes Events are emitted when nodes enter or leave the skipped state.
+     *
+     * @param kafkaStatus   The Kafka Status where the RollingUpdateSkipped condition will be added
+     *
+     * @return  Completes when the skips are resolved
+     */
+    protected Future<Void> resolveRollingUpdateSkips(KafkaStatus kafkaStatus) {
+        boolean anySkipAnnotation = kafkaNodePoolCrs != null
+                && kafkaNodePoolCrs.stream().anyMatch(pool -> Annotations.hasAnnotation(pool, Annotations.ANNO_STRIMZI_IO_SKIP_ROLLING_UPDATE));
+
+        if (!anySkipAnnotation) {
+            this.rollingUpdateSkips = RollingUpdateSkips.EMPTY;
+            handleRollingUpdateSkips(kafkaStatus);
+            return Future.succeededFuture();
+        } else {
+            // The role check considers the role labels of the existing Pods in addition to the desired roles, so we
+            // list the current Kafka pods
+            return VertxUtil.toFuture(podOperator.listAsync(reconciliation.namespace(), kafka.getSelectorLabels()))
+                    .map(pods -> {
+                        this.rollingUpdateSkips = RollingUpdateSkips.resolve(reconciliation, kafkaNodePoolCrs, kafka.nodes(), pods);
+                        handleRollingUpdateSkips(kafkaStatus);
+                        return null;
+                    })
+                    .mapEmpty();
+        }
+    }
+
+    /**
+     * Adds the RollingUpdateSkipped condition to the Kafka status, logs a warning on every reconciliation while a skip
+     * is active, and emits Kubernetes Events when the set of skipped nodes changes compared to the previous
+     * reconciliation.
+     *
+     * @param kafkaStatus   The Kafka Status where the RollingUpdateSkipped condition will be added
+     */
+    private void handleRollingUpdateSkips(KafkaStatus kafkaStatus) {
+        if (rollingUpdateSkips.shouldReportCondition()) {
+            kafkaStatus.addCondition(rollingUpdateSkips.kafkaStatusCondition());
+        }
+
+        if (rollingUpdateSkips.hasSkippedNodes()) {
+            LOGGER.warnCr(reconciliation, "Nodes {} are excluded from automatic rolling updates through the {} annotation. The skip should be short-lived and must not be held across an upgrade or CA renewal.", rollingUpdateSkips.skippedNodeIds(), Annotations.ANNO_STRIMZI_IO_SKIP_ROLLING_UPDATE);
+        }
+
+        Set<Integer> previouslySkippedNodeIds = RollingUpdateSkips.skippedNodeIdsFromCondition(previousRollingUpdateSkippedCondition);
+
+        if (rollingUpdateSkips.hasSkippedNodes() && !rollingUpdateSkips.skippedNodeIds().equals(previouslySkippedNodeIds)) {
+            eventsPublisher.publishClusterEvent(reconciliation, "StrimziSkipRollingUpdate", "RollingUpdateSkipEnabled", "Warning",
+                    "Nodes " + rollingUpdateSkips.skippedNodeIds() + " are excluded from automatic rolling updates");
+        } else if (!rollingUpdateSkips.hasSkippedNodes() && !previouslySkippedNodeIds.isEmpty()) {
+            eventsPublisher.publishClusterEvent(reconciliation, "StrimziSkipRollingUpdate", "RollingUpdateSkipDisabled", "Normal",
+                    "All nodes are again included in automatic rolling updates");
+        }
     }
 
     /**
@@ -936,8 +1000,19 @@ public class KafkaReconciler {
      * @return  Future which completes when any of the Kafka pods which need rolling is rolled
      */
     protected Future<Void> rollingUpdate(Map<String, ReconcileResult<StrimziPodSet>> podSetDiffs) {
+        Set<NodeRef> nodes = kafka.nodes();
+
+        if (rollingUpdateSkips.hasSkippedNodes())   {
+            // Nodes excluded from automatic rolling updates are removed from the working set, so the roller never
+            // considers them and none of its internal not-ready / force-restart paths can fire for them
+            nodes = nodes.stream()
+                    .filter(node -> !rollingUpdateSkips.skippedNodeIds().contains(node.nodeId()))
+                    .collect(Collectors.toCollection(LinkedHashSet::new));
+            LOGGER.infoCr(reconciliation, "Nodes {} are excluded from this rolling update because of the {} annotation", rollingUpdateSkips.skippedNodeIds(), Annotations.ANNO_STRIMZI_IO_SKIP_ROLLING_UPDATE);
+        }
+
         return maybeRollKafka(
-                kafka.nodes(),
+                nodes,
                 pod -> ReconcilerUtils.reasonsToRestartPod(
                         reconciliation,
                         podSetDiffs.get(ReconcilerUtils.getControllerNameFromPodName(pod.getMetadata().getName())).resource(),
@@ -964,7 +1039,12 @@ public class KafkaReconciler {
                         reconciliation,
                         podOperator,
                         operationTimeoutMs,
-                        kafka.nodes().stream().map(node -> node.podName()).toList()
+                        // Nodes excluded from automatic rolling updates are not waited on, otherwise a NotReady
+                        // skipped Pod would time this stage out on every reconciliation
+                        kafka.nodes().stream()
+                                .filter(node -> !rollingUpdateSkips.skippedNodeIds().contains(node.nodeId()))
+                                .map(node -> node.podName())
+                                .toList()
                 );
     }
 
@@ -1088,7 +1168,9 @@ public class KafkaReconciler {
      * @return  Future which completes when the KRaft metadata version is set to the current version or updated.
      */
     protected Future<Void> metadataVersion(KafkaStatus kafkaStatus) {
-        return VertxUtil.toFuture(KRaftMetadataManager.maybeUpdateMetadataVersion(reconciliation, this.coTlsPemIdentity, adminClientProvider, kafka.getMetadataVersion(), kafkaStatus));
+        // While any node is excluded from automatic rolling updates, a metadata version change is deferred: the
+        // skipped node stays on its old version and finalizing the change without it could leave it unable to rejoin
+        return VertxUtil.toFuture(KRaftMetadataManager.maybeUpdateMetadataVersion(reconciliation, this.coTlsPemIdentity, adminClientProvider, kafka.getMetadataVersion(), kafkaStatus, rollingUpdateSkips.hasSkippedNodes()));
     }
 
     /**
@@ -1251,11 +1333,17 @@ public class KafkaReconciler {
         for (KafkaNodePool nodePool : kafkaNodePoolCrs) {
             statusesForKafka.add(new UsedNodePoolStatusBuilder().withName(nodePool.getMetadata().getName()).build());
 
+            KafkaNodePoolStatusBuilder statusBuilder = new KafkaNodePoolStatusBuilder(statuses.get(nodePool.getMetadata().getName()))
+                    .withObservedGeneration(nodePool.getMetadata().getGeneration());
+
+            // Mirror the details about nodes excluded from automatic rolling updates on the owning node pool
+            Set<Integer> skippedNodeIdsInPool = rollingUpdateSkips.skippedNodeIdsByPool().get(nodePool.getMetadata().getName());
+            if (skippedNodeIdsInPool != null && !skippedNodeIdsInPool.isEmpty()) {
+                statusBuilder.addToConditions(RollingUpdateSkips.nodePoolStatusCondition(skippedNodeIdsInPool));
+            }
+
             KafkaNodePool updatedNodePool = new KafkaNodePoolBuilder(nodePool)
-                    .withStatus(
-                            new KafkaNodePoolStatusBuilder(statuses.get(nodePool.getMetadata().getName()))
-                                    .withObservedGeneration(nodePool.getMetadata().getGeneration())
-                                    .build())
+                    .withStatus(statusBuilder.build())
                     .build();
 
             StatusDiff diff = new StatusDiff(nodePool.getStatus(), updatedNodePool.getStatus());

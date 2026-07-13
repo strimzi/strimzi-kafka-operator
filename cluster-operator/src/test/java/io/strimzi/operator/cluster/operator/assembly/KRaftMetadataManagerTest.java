@@ -85,6 +85,43 @@ public class KRaftMetadataManagerTest {
     }
 
     @Test
+    public void testMetadataVersionChangeIsDeferredWhileNodesAreSkipped()   {
+        // Mock the Admin client
+        Admin mockAdminClient = mock(Admin.class);
+
+        // Mock describing the current metadata version
+        mockDescribeVersion(mockAdminClient);
+
+        // Mock the Admin client provider
+        AdminClientProvider mockAdminClientProvider = mockAdminClientProvider(mockAdminClient);
+
+        // Dummy KafkaStatus to check the values from
+        KafkaStatus status = new KafkaStatus();
+
+        // A metadata version change is needed, but it is deferred because nodes are excluded from rolling updates
+        KRaftMetadataManager.maybeUpdateMetadataVersion(Reconciliation.DUMMY_RECONCILIATION, DUMMY_IDENTITY, mockAdminClientProvider, "3.6", status, true)
+                .toCompletableFuture()
+                .join();
+
+        // The current version is kept and no update is attempted
+        assertThat(status.getKafkaMetadataVersion(), is("3.6-IV1"));
+        verify(mockAdminClient, never()).updateFeatures(any(), any());
+
+        // A warning condition is added to the status
+        assertThat(status.getConditions().size(), is(1));
+        assertThat(status.getConditions().get(0).getReason(), is("MetadataVersionChangeDeferred"));
+
+        // When no metadata version change is needed, no condition is added even when deferring is requested
+        KafkaStatus statusWithoutChange = new KafkaStatus();
+        KRaftMetadataManager.maybeUpdateMetadataVersion(Reconciliation.DUMMY_RECONCILIATION, DUMMY_IDENTITY, mockAdminClientProvider, "3.6-IV1", statusWithoutChange, true)
+                .toCompletableFuture()
+                .join();
+
+        assertThat(statusWithoutChange.getKafkaMetadataVersion(), is("3.6-IV1"));
+        assertThat(statusWithoutChange.getConditions(), is(nullValue()));
+    }
+
+    @Test
     public void testSuccessfulMetadataVersionUpgrade()   {
         // Mock the Admin client
         Admin mockAdminClient = mock(Admin.class);

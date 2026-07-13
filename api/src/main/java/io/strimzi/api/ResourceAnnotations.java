@@ -126,4 +126,11 @@ public class ResourceAnnotations {
      * Annotation used to skip the check on broker scale-down
      */
     public static final String ANNO_STRIMZI_IO_SKIP_BROKER_SCALEDOWN_CHECK = STRIMZI_DOMAIN + "skip-broker-scaledown-check";
+
+    /**
+     * Annotation set on a KafkaNodePool to exclude the listed node IDs (for example `[2,5]` or `[2,4-6]`) from
+     * automatic rolling updates driven by the operator. Manual rolling updates requested through the
+     * strimzi.io/manual-rolling-update annotation are not affected by this annotation.
+     */
+    public static final String ANNO_STRIMZI_IO_SKIP_ROLLING_UPDATE = STRIMZI_DOMAIN + "skip-rolling-update";
 }

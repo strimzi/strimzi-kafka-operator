@@ -66,11 +66,41 @@ public class KRaftMetadataManager {
             String desiredMetadataVersion,
             KafkaStatus status
     ) {
+        return maybeUpdateMetadataVersion(reconciliation, coTlsPemIdentity, adminClientProvider, desiredMetadataVersion, status, false);
+    }
+
+    /**
+     * Utility method for managing the KRaft metadata version with support for deferring any version change.
+     *
+     * This method behaves like {@link #maybeUpdateMetadataVersion(Reconciliation, TlsPemIdentity, AdminClientProvider, String, KafkaStatus)}.
+     * But when {@code deferVersionChange} is true and the current and desired metadata versions differ, the change is
+     * not applied. Instead, a warning condition is added to the Kafka custom resource status and the currently used
+     * metadata version is kept. This is used while one or more nodes are excluded from automatic rolling updates,
+     * because finalizing a metadata version change without the excluded nodes could leave them unable to rejoin the
+     * cluster.
+     *
+     * @param reconciliation            Reconciliation marker
+     * @param coTlsPemIdentity          Trust set and identity for TLS client authentication for connecting to the Kafka cluster
+     * @param adminClientProvider       Kafka Admin client provider
+     * @param desiredMetadataVersion    Desired metadata version
+     * @param status                    Kafka status
+     * @param deferVersionChange        When true, any metadata version change is deferred instead of applied
+     *
+     * @return  CompletionStage that completes when the metadata update is finished (or was not needed or was deferred) and the status is updated
+     */
+    public static CompletionStage<Void> maybeUpdateMetadataVersion(
+            Reconciliation reconciliation,
+            TlsPemIdentity coTlsPemIdentity,
+            AdminClientProvider adminClientProvider,
+            String desiredMetadataVersion,
+            KafkaStatus status,
+            boolean deferVersionChange
+    ) {
         String bootstrapHostname = KafkaResources.bootstrapServiceName(reconciliation.name()) + "." + reconciliation.namespace() + ".svc:" + KafkaCluster.REPLICATION_PORT;
         LOGGER.debugCr(reconciliation, "Creating AdminClient for Kafka cluster in namespace {}", reconciliation.namespace());
         Admin kafkaAdmin = adminClientProvider.createAdminClient(bootstrapHostname, coTlsPemIdentity.pemTrustSet(), coTlsPemIdentity.pemAuthIdentity());
 
-        return maybeUpdateMetadataVersion(reconciliation, kafkaAdmin, desiredMetadataVersion, status)
+        return maybeUpdateMetadataVersion(reconciliation, kafkaAdmin, desiredMetadataVersion, status, deferVersionChange)
                 .whenComplete((result, error) -> {
                     // Close the Admin client and return the original result
                     LOGGER.debugCr(reconciliation, "Closing the Kafka Admin API connection");
@@ -82,7 +112,8 @@ public class KRaftMetadataManager {
             Reconciliation reconciliation,
             Admin kafkaAdmin,
             String desiredMetadataVersion,
-            KafkaStatus status
+            KafkaStatus status,
+            boolean deferVersionChange
     )    {
         short desiredMetadataLevel = MetadataVersion.fromVersionString(desiredMetadataVersion, false).featureLevel();
 
@@ -95,6 +126,15 @@ public class KRaftMetadataManager {
                         String metadataVersion = MetadataVersion.fromFeatureLevel(currentMetadataLevel).toString();
                         LOGGER.debugCr(reconciliation, "Metadata version is already set to the desired version {}", metadataVersion);
                         status.setKafkaMetadataVersion(MetadataVersion.fromFeatureLevel(currentMetadataLevel).toString());
+                        return CompletableFuture.completedFuture(null);
+                    } else if (deferVersionChange)  {
+                        // A metadata version change is needed, but one or more nodes are excluded from automatic
+                        // rolling updates. Changing the metadata version without them could leave them unable to
+                        // rejoin the cluster, so the change is deferred until all nodes are managed again.
+                        String metadataVersion = MetadataVersion.fromFeatureLevel(currentMetadataLevel).toString();
+                        LOGGER.warnCr(reconciliation, "Deferring the metadata version change to {} because one or more nodes are excluded from automatic rolling updates (the current version {} will be kept)", desiredMetadataVersion, metadataVersion);
+                        status.addCondition(StatusUtils.buildWarningCondition("MetadataVersionChangeDeferred", "The metadata version change to " + desiredMetadataVersion + " is deferred because one or more nodes are excluded from automatic rolling updates"));
+                        status.setKafkaMetadataVersion(metadataVersion);
                         return CompletableFuture.completedFuture(null);
                     } else {
                         return updateVersion(reconciliation, kafkaAdmin, currentMetadataLevel, desiredMetadataLevel)

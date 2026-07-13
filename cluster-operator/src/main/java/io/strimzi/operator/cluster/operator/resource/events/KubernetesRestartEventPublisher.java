@@ -84,6 +84,43 @@ public class KubernetesRestartEventPublisher {
     }
 
     /**
+     * Publishes a Kubernetes Event about the cluster custom resource being reconciled, for example when nodes are
+     * excluded from or again included in automatic rolling updates.
+     *
+     * @param reconciliation    Reconciliation marker identifying the custom resource the event is about
+     * @param action            The action which is being taken by the operator
+     * @param reason            The reason for the event in PascalCase
+     * @param type              The type of the Kubernetes event: "Normal", or "Warning"
+     * @param note              The note to attach to the event
+     */
+    public void publishClusterEvent(Reconciliation reconciliation, String action, String reason, String type, String note) {
+        MicroTime k8sEventTime = new MicroTime(K8S_MICROTIME.format(ZonedDateTime.now(clock)));
+        ObjectReference resourceReference = createResourceReference(reconciliation);
+
+        try {
+            EventBuilder builder = new EventBuilder();
+
+            builder.withNewMetadata()
+                    .withGenerateName("strimzi-event")
+                    .endMetadata()
+                    .withAction(action)
+                    .withReportingController(CONTROLLER)
+                    .withReportingInstance(operatorName)
+                    .withRegarding(resourceReference)
+                    .withReason(reason)
+                    .withType(type)
+                    .withEventTime(k8sEventTime)
+                    .withNote(maybeTruncated(note));
+
+            LOG.debug("Publishing K8s event, time={}, type={}, reason={}, note={}, resource={}",
+                    k8sEventTime, type, reason, note, resourceReference);
+            client.events().v1().events().inNamespace(reconciliation.namespace()).resource(builder.build()).create();
+        } catch (Exception e) {
+            LOG.error("Exception on K8s event publication", e);
+        }
+    }
+
+    /**
      * Publish a Kubernetes Event referring to certain KafkaRoller pod action
      *
      * @param eventTime         - Microtime to use for event
