@@ -511,7 +511,7 @@ public class KubernetesRestartEventsMockTest {
 
     @Test
     void testEventEmittedWhenKafkaBrokerCertsChanged(Vertx vertx, VertxTestContext context) {
-        // Using the real SSL cert manager (after the cluster was created using the mock cert manager) will cause the desired Kafka broker certs to change,
+        // Using the real SSL cert issuer (after the cluster was created using the mock cert issuer) will cause the desired Kafka broker certs to change,
         // thus the reconciliation will schedule the restart needed to pick them up
         ClusterCa changedCa = new ClusterCa(
                 Reconciliation.DUMMY_RECONCILIATION,

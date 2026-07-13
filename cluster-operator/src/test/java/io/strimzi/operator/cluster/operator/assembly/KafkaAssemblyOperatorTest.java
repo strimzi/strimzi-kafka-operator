@@ -665,7 +665,7 @@ public class KafkaAssemblyOperatorTest {
                     String caTypeTag = expectedMetric.getId().getTag("type");
                     assertNotNull(caTypeTag);
 
-                    // The actual type of the ca does not matter, as MockCertManager is using CLUSTER_CERT for both cluster and client
+                    // The actual type of the ca does not matter, as MockCertIssuer is using CLUSTER_CERT for both cluster and client
                     String expectedCa = MockCertIssuer.clusterCaCert();
                     try {
                         X509Certificate x509Certificate = x509Certificate(Base64.getDecoder().decode(expectedCa));

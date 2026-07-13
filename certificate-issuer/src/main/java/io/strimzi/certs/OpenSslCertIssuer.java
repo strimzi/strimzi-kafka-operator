@@ -80,14 +80,14 @@ public class OpenSslCertIssuer implements CertIssuer {
     private static final SecureRandom RANDOM = new SecureRandom();
 
     /**
-     * Constructs the OpenSslCertManager with the system time
+     * Constructs the OpenSslCertIssuer with the system time
      */
     public OpenSslCertIssuer() {
         this(Clock.systemUTC());
     }
 
     /**
-     * Configures the OpenSslCertManager with time passed as a parameter
+     * Configures the OpenSslCertIssuer with time passed as a parameter
      *
      * @param clock     Clock / Time which should be used by the manager
      */
