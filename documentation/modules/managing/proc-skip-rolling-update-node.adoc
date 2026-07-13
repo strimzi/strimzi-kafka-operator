@@ -1,0 +1,60 @@
+:_mod-docs-content-type: PROCEDURE
+
+// Module included in the following assemblies:
+//
+// deploying/assembly-rolling-updates.adoc
+
+[id='proc-skip-rolling-update-node-{context}']
+= Excluding Kafka nodes from automatic rolling updates
+
+[role="_abstract"]
+This procedure describes how to temporarily exclude individual Kafka broker nodes from automatic rolling updates driven by the Cluster Operator using the `strimzi.io/skip-rolling-update` annotation on a `KafkaNodePool` resource.
+
+Use this annotation in exceptional situations only, for example to protect a broker performing a long log recovery from being restarted.
+While a node is excluded, the operator continues to reconcile everything else: configuration, certificates, scaling, storage, and rolling updates of all other nodes.
+
+The exclusion applies only to *automatic* rolling updates and only to *broker* nodes:
+
+* A manual rolling update requested through the `strimzi.io/manual-rolling-update` annotation still rolls the node. This includes the annotation set on a `StrimziPodSet`, which applies to all its pods, and evictions handled by the Strimzi Drain Cleaner, which use the same mechanism.
+* A node ID that resolves to a controller (including combined broker and controller nodes) is ignored and the node remains fully managed.
+* The exclusion does not prevent Kubernetes itself from restarting or evicting the pod, and it does not prevent the pod being deleted by a scale-down. Do not scale down a node pool while one of its nodes is excluded.
+
+While any node is excluded, the operator:
+
+* Sets a `RollingUpdateSkipped` condition on the `Kafka` and owning `KafkaNodePool` statuses, and emits `RollingUpdateSkipEnabled` and `RollingUpdateSkipDisabled` Kubernetes events when nodes enter or leave the excluded state.
+* Defers any `metadata.version` change and surfaces it with a `MetadataVersionChangeDeferred` warning condition, because finalizing the change without the excluded node could leave it unable to rejoin the cluster.
+* Does not wait for the readiness of the excluded pods, so the `Kafka` resource can become `Ready` while an excluded node is down. If an excluded node holds the sole in-sync replica of any partition, the operator flags it with a `SkippedNodeSoleInSyncReplica` warning condition.
+* Excludes the node from the rolling update for a replaced CA key. The node is rolled to trust the new CA once it is no longer excluded.
+
+The exclusion is intended to be short-lived.
+Do not keep it in place across a Kafka version upgrade or a CA renewal.
+
+.Prerequisites
+
+* A running Cluster Operator and Kafka cluster.
+
+.Procedure
+
+. Annotate the `KafkaNodePool` resource with the IDs of the broker nodes to exclude.
+Node IDs can be listed individually or as ranges, using the same format as the `strimzi.io/next-node-ids` annotation:
++
+[source,shell,subs=+quotes]
+----
+kubectl annotate kafkanodepool _<node_pool_name>_ strimzi.io/skip-rolling-update="[2]"
+----
+
+. Check the `RollingUpdateSkipped` condition in the `Kafka` resource status to confirm the exclusion is active:
++
+[source,shell,subs=+quotes]
+----
+kubectl get kafka _<cluster_name>_ -o jsonpath='{.status.conditions}'
+----
+
+. When the node no longer needs protection, remove the annotation:
++
+[source,shell,subs=+quotes]
+----
+kubectl annotate kafkanodepool _<node_pool_name>_ strimzi.io/skip-rolling-update-
+----
++
+On the next reconciliation, the operator rolls the node if it has any pending changes and applies any deferred `metadata.version` change.

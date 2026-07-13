@@ -17,6 +17,9 @@ import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
+import io.strimzi.api.kafka.model.nodepool.KafkaNodePool;
+import io.strimzi.api.kafka.model.nodepool.KafkaNodePoolBuilder;
+import io.strimzi.api.kafka.model.nodepool.ProcessRoles;
 import io.strimzi.api.kafka.model.podset.StrimziPodSet;
 import io.strimzi.api.kafka.model.podset.StrimziPodSetBuilder;
 import io.strimzi.certs.CertAndKey;
@@ -969,6 +972,58 @@ public class CaReconcilerTest {
         deps.put("my-cluster-kafka-exporter", deploymentWithName("my-cluster-kafka-exporter"));
         DeploymentOperator depsOperator = supplier.deploymentOperations;
         when(depsOperator.getAsync(any(), any())).thenAnswer(i -> CompletableFuture.completedFuture(deps.get(i.getArgument(1, String.class))));
+    }
+
+    @Test
+    public void testNodesSkippedFromRollingUpdatesAreFilteredOutOfCaKeyReplacementRoll(VertxTestContext context) {
+        KafkaNodePool brokersPool = new KafkaNodePoolBuilder()
+                .withNewMetadata()
+                    .withName("brokers")
+                    .withNamespace(NAMESPACE)
+                    .withAnnotations(Map.of(ResourceAnnotations.ANNO_STRIMZI_IO_SKIP_ROLLING_UPDATE, "[1]"))
+                .endMetadata()
+                .withNewSpec()
+                    .withReplicas(2)
+                    .withRoles(ProcessRoles.BROKER)
+                .endSpec()
+                .build();
+
+        when(supplier.kafkaNodePoolOperator.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(CompletableFuture.completedFuture(List.of(brokersPool)));
+
+        Set<NodeRef> nodes = Set.of(
+                new NodeRef(NAME + "-brokers-0", 0, "brokers", false, true),
+                new NodeRef(NAME + "-brokers-1", 1, "brokers", false, true),
+                new NodeRef(NAME + "-controllers-2", 2, "controllers", true, false));
+
+        MockCaReconciler mockCaReconciler = new MockCaReconciler(KAFKA, supplier);
+
+        Checkpoint async = context.checkpoint();
+        mockCaReconciler.filterOutNodesSkippedFromRollingUpdates(nodes)
+                .onComplete(context.succeeding(filteredNodes -> context.verify(() -> {
+                    // Node 1 is excluded from automatic rolling updates and is not rolled for the new CA key either
+                    assertThat(filteredNodes.stream().map(NodeRef::nodeId).collect(Collectors.toSet()), is(Set.of(0, 2)));
+
+                    async.flag();
+                })));
+    }
+
+    @Test
+    public void testNoSkipAnnotationKeepsCaKeyReplacementRollUnfiltered(VertxTestContext context) {
+        when(supplier.kafkaNodePoolOperator.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(CompletableFuture.completedFuture(List.of()));
+
+        Set<NodeRef> nodes = Set.of(
+                new NodeRef(NAME + "-brokers-0", 0, "brokers", false, true),
+                new NodeRef(NAME + "-brokers-1", 1, "brokers", false, true));
+
+        MockCaReconciler mockCaReconciler = new MockCaReconciler(KAFKA, supplier);
+
+        Checkpoint async = context.checkpoint();
+        mockCaReconciler.filterOutNodesSkippedFromRollingUpdates(nodes)
+                .onComplete(context.succeeding(filteredNodes -> context.verify(() -> {
+                    assertThat(filteredNodes, is(nodes));
+
+                    async.flag();
+                })));
     }
 
     static class MockCaReconciler extends CaReconciler {

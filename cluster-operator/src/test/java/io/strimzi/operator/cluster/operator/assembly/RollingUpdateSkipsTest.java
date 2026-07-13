@@ -65,7 +65,8 @@ public class RollingUpdateSkipsTest {
         );
 
         assertThat(skips.hasSkippedNodes(), is(false));
-        assertThat(skips.shouldReportCondition(), is(false));
+        assertThat(skips.hasRejectedNodeIds(), is(false));
+        assertThat(skips.hasIgnoredControllerNodeIds(), is(false));
         assertThat(skips.skippedNodeIds(), is(Set.of()));
     }
 
@@ -121,7 +122,7 @@ public class RollingUpdateSkipsTest {
         );
 
         assertThat(skips.hasSkippedNodes(), is(false));
-        assertThat(skips.shouldReportCondition(), is(true));
+        assertThat(skips.hasRejectedNodeIds(), is(true));
         assertThat(skips.rejectedNodeIds(), is(List.of("brokers: 10,11")));
     }
 
@@ -135,7 +136,8 @@ public class RollingUpdateSkipsTest {
         );
 
         assertThat(skips.hasSkippedNodes(), is(false));
-        assertThat(skips.shouldReportCondition(), is(false));
+        assertThat(skips.hasRejectedNodeIds(), is(false));
+        assertThat(skips.hasIgnoredControllerNodeIds(), is(false));
     }
 
     @Test
@@ -206,8 +208,17 @@ public class RollingUpdateSkipsTest {
         assertThat(condition.getType(), is("RollingUpdateSkipped"));
         assertThat(condition.getStatus(), is("True"));
         assertThat(condition.getMessage(), containsString("Nodes [10, 12] are excluded from automatic rolling updates"));
-        assertThat(condition.getMessage(), containsString("controller role: [0]"));
-        assertThat(condition.getMessage(), containsString("Rejected invalid node IDs: [brokers: 99]"));
+
+        // The ignored and rejected node IDs are reported through separate warning conditions
+        Condition ignoredCondition = skips.ignoredControllersWarningCondition();
+        assertThat(ignoredCondition.getType(), is("Warning"));
+        assertThat(ignoredCondition.getReason(), is("SkipRollingUpdateControllersIgnored"));
+        assertThat(ignoredCondition.getMessage(), containsString("[0]"));
+
+        Condition rejectedCondition = skips.rejectedNodeIdsWarningCondition();
+        assertThat(rejectedCondition.getType(), is("Warning"));
+        assertThat(rejectedCondition.getReason(), is("InvalidSkipRollingUpdateAnnotation"));
+        assertThat(rejectedCondition.getMessage(), containsString("[brokers: 99]"));
 
         // The skipped node IDs can be extracted back from the condition of the previous reconciliation
         assertThat(RollingUpdateSkips.skippedNodeIdsFromCondition(condition), is(Set.of(10, 12)));

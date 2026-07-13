@@ -9,10 +9,13 @@ import io.fabric8.kubernetes.api.model.OwnerReferenceBuilder;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
+import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlResources;
 import io.strimzi.api.kafka.model.kafka.exporter.KafkaExporterResources;
+import io.strimzi.api.kafka.model.nodepool.KafkaNodePool;
+import io.strimzi.api.kafka.model.nodepool.KafkaNodePoolList;
 import io.strimzi.api.kafka.model.podset.StrimziPodSet;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.certs.CertIssuer;
@@ -48,6 +51,7 @@ import io.strimzi.operator.common.model.ClientsCa;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.PasswordGenerator;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
+import io.strimzi.operator.common.operator.resource.kubernetes.CrdOperator;
 import io.strimzi.operator.common.operator.resource.kubernetes.SecretOperator;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
@@ -79,6 +83,7 @@ public class CaReconciler {
     private final StrimziPodSetOperator strimziPodSetOperator;
     private final SecretOperator secretOperator;
     /* test */ final PodOperator podOperator;
+    private final CrdOperator<KubernetesClient, KafkaNodePool, KafkaNodePoolList> kafkaNodePoolOperator;
     private final AdminClientProvider adminClientProvider;
     private final KafkaAgentClientProvider kafkaAgentClientProvider;
     private final CertIssuer certIssuer;
@@ -130,6 +135,7 @@ public class CaReconciler {
         this.strimziPodSetOperator = supplier.strimziPodSetOperator;
         this.secretOperator = supplier.secretOperations;
         this.podOperator = supplier.podOperations;
+        this.kafkaNodePoolOperator = supplier.kafkaNodePoolOperator;
 
         this.adminClientProvider = supplier.adminClientProvider;
         this.kafkaAgentClientProvider = supplier.kafkaAgentClientProvider;
@@ -382,6 +388,7 @@ public class CaReconciler {
             RestartReason restartReason = RestartReason.CLUSTER_CA_CERT_KEY_REPLACED;
             TlsPemIdentity coTlsPemIdentity = new TlsPemIdentity(new PemTrustSet(clusterCaCertSecret), PemAuthIdentity.clusterOperator(coSecret));
             return patchClusterCaKeyGenerationAndReturnNodes()
+                    .compose(nodes -> filterOutNodesSkippedFromRollingUpdates(nodes))
                     .compose(nodes -> rollKafkaBrokers(nodes, RestartReasons.of(restartReason), coTlsPemIdentity))
                     .compose(i -> rollDeploymentIfExists(KafkaResources.entityOperatorDeploymentName(reconciliation.name()), restartReason))
                     .compose(i -> rollDeploymentIfExists(KafkaExporterResources.componentName(reconciliation.name()), restartReason))
@@ -487,6 +494,33 @@ public class CaReconciler {
                                 .collect(Collectors.toSet()));
                     } else {
                         return Future.succeededFuture(Set.of());
+                    }
+                });
+    }
+
+    /**
+     * Filters out the nodes which are excluded from automatic rolling updates through the
+     * strimzi.io/skip-rolling-update annotations on the KafkaNodePool resources. A CA key replacement roll is an
+     * automatic rolling update, so it must honor the skips the same way the regular rolling update does. Because
+     * {@code isClusterCaNeedFullTrust} stays set until every node trusts the new CA, the skipped nodes are rolled
+     * in a later reconciliation once they are no longer skipped.
+     *
+     * @param nodes The set of the Kafka nodes to roll
+     *
+     * @return  Future with the set of the Kafka nodes without the nodes excluded from automatic rolling updates
+     */
+    /* test */ Future<Set<NodeRef>> filterOutNodesSkippedFromRollingUpdates(Set<NodeRef> nodes) {
+        return VertxUtil.toFuture(kafkaNodePoolOperator.listAsync(reconciliation.namespace(), Labels.fromMap(Map.of(Labels.STRIMZI_CLUSTER_LABEL, reconciliation.name()))))
+                .map(nodePools -> {
+                    RollingUpdateSkips skips = RollingUpdateSkips.resolve(reconciliation, nodePools != null ? nodePools : List.of(), nodes, List.of());
+
+                    if (skips.hasSkippedNodes()) {
+                        LOGGER.warnCr(reconciliation, "Nodes {} are excluded from the rolling update for the new Cluster CA key because of the {} annotation. They will be rolled once they are no longer excluded.", skips.skippedNodeIds(), Annotations.ANNO_STRIMZI_IO_SKIP_ROLLING_UPDATE);
+                        return nodes.stream()
+                                .filter(node -> !skips.skippedNodeIds().contains(node.nodeId()))
+                                .collect(Collectors.toSet());
+                    } else {
+                        return nodes;
                     }
                 });
     }

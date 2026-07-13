@@ -21,3 +21,5 @@ However, rather than deleting the pods directly, if you perform the rolling upda
 include::../../modules/managing/proc-manual-rolling-update-strimzipodset.adoc[leveloffset=+1]
 //steps for manual rolling update with pods
 include::../../modules/managing/proc-manual-rolling-update-pods.adoc[leveloffset=+1]
+//steps for excluding nodes from automatic rolling updates
+include::../../modules/managing/proc-skip-rolling-update-node.adoc[leveloffset=+1]

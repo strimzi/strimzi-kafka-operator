@@ -28,6 +28,7 @@ import io.strimzi.operator.cluster.operator.resource.kubernetes.PodOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.StrimziPodSetOperator;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.auth.TlsPemIdentity;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.platform.KubernetesVersion;
 import io.vertx.core.Future;
@@ -36,6 +37,13 @@ import io.vertx.core.WorkerExecutor;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
+import org.apache.kafka.clients.admin.Admin;
+import org.apache.kafka.clients.admin.DescribeTopicsResult;
+import org.apache.kafka.clients.admin.ListTopicsResult;
+import org.apache.kafka.clients.admin.TopicDescription;
+import org.apache.kafka.common.KafkaFuture;
+import org.apache.kafka.common.Node;
+import org.apache.kafka.common.TopicPartitionInfo;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -57,10 +65,12 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -142,11 +152,15 @@ public class KafkaReconcilerSkipRollingUpdateTest {
     }
 
     private MockKafkaReconciler prepareReconciler(ResourceOperatorSupplier supplier, List<KafkaNodePool> nodePools)  {
+        return prepareReconciler(supplier, KAFKA, nodePools);
+    }
+
+    private MockKafkaReconciler prepareReconciler(ResourceOperatorSupplier supplier, Kafka kafka, List<KafkaNodePool> nodePools)  {
         Reconciliation reconciliation = new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME);
 
         KafkaCluster kafkaCluster = KafkaClusterCreator.createKafkaCluster(
                 reconciliation,
-                KAFKA,
+                kafka,
                 nodePools,
                 Map.of(),
                 KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE,
@@ -169,7 +183,7 @@ public class KafkaReconcilerSkipRollingUpdateTest {
                 config,
                 supplier,
                 new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
-                KAFKA,
+                kafka,
                 nodePools,
                 kafkaCluster);
     }
@@ -282,10 +296,11 @@ public class KafkaReconcilerSkipRollingUpdateTest {
                     assertThat(kr.rollingUpdateSkips.ignoredControllerNodeIds(), is(Set.of(0, 1)));
                     assertThat(kr.kafkaNodesConsideredForRolling, hasItems("my-cluster-controllers-0", "my-cluster-controllers-1", "my-cluster-controllers-2", "my-cluster-brokers-10", "my-cluster-brokers-11", "my-cluster-brokers-12"));
 
-                    // The condition reports the ignored controller IDs
-                    Condition condition = skippedCondition(status);
-                    assertThat(condition, is(notNullValue()));
-                    assertThat(condition.getMessage(), containsString("controller role: [0, 1]"));
+                    // No node is skipped => no RollingUpdateSkipped condition, but a warning reports the ignored IDs
+                    assertThat(skippedCondition(status), is(nullValue()));
+                    Condition warning = warningCondition(status, "SkipRollingUpdateControllersIgnored");
+                    assertThat(warning, is(notNullValue()));
+                    assertThat(warning.getMessage(), containsString("[0, 1]"));
 
                     // No skip event was published as no node entered the skipped state
                     verify(supplier.restartEventsPublisher, never()).publishClusterEvent(any(), anyString(), anyString(), anyString(), anyString());
@@ -313,10 +328,84 @@ public class KafkaReconcilerSkipRollingUpdateTest {
                 })));
     }
 
+    @Test
+    public void testChangedSkipSetEmitsChangedEvent(VertxTestContext context)  {
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
+
+        // The previous reconciliation skipped node 10 only
+        Kafka kafkaWithStatus = new KafkaBuilder(KAFKA)
+                .withNewStatus()
+                    .addNewCondition()
+                        .withType(RollingUpdateSkips.ROLLING_UPDATE_SKIPPED_CONDITION_TYPE)
+                        .withStatus("True")
+                        .withMessage("Nodes [10] are excluded from automatic rolling updates through the strimzi.io/skip-rolling-update annotation.")
+                    .endCondition()
+                .endStatus()
+                .build();
+
+        MockKafkaReconciler kr = prepareReconciler(supplier, kafkaWithStatus, List.of(controllersPool(), brokersPool("[10,12]")));
+
+        KafkaStatus status = new KafkaStatus();
+
+        Checkpoint async = context.checkpoint();
+        kr.reconcile(status, Clock.systemUTC())
+                .onComplete(context.succeeding(v -> context.verify(() -> {
+                    verify(supplier.restartEventsPublisher).publishClusterEvent(any(), anyString(), eq("RollingUpdateSkipChanged"), eq("Warning"), contains("[10, 12]"));
+                    verify(supplier.restartEventsPublisher, never()).publishClusterEvent(any(), anyString(), eq("RollingUpdateSkipEnabled"), anyString(), anyString());
+
+                    async.flag();
+                })));
+    }
+
+    @Test
+    public void testSkippedNodeSoleInSyncReplicaIsFlagged(VertxTestContext context)  {
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
+
+        // Partition my-topic-0 has node 10 (which is skipped) as its only in-sync replica. Partition my-topic-1 is
+        // fully in-sync and must not be flagged.
+        Node node10 = new Node(10, "broker-10", 9092);
+        Node node11 = new Node(11, "broker-11", 9092);
+        TopicDescription topicDescription = new TopicDescription("my-topic", false, List.of(
+                new TopicPartitionInfo(0, node10, List.of(node10, node11), List.of(node10)),
+                new TopicPartitionInfo(1, node11, List.of(node10, node11), List.of(node10, node11))
+        ));
+
+        Admin mockAdmin = supplier.adminClientProvider.createAdminClient(null, null, null);
+        ListTopicsResult ltr = mock(ListTopicsResult.class);
+        when(ltr.names()).thenReturn(KafkaFuture.completedFuture(Set.of("my-topic")));
+        when(mockAdmin.listTopics()).thenReturn(ltr);
+        DescribeTopicsResult dtr = mock(DescribeTopicsResult.class);
+        when(dtr.allTopicNames()).thenReturn(KafkaFuture.completedFuture(Map.of("my-topic", topicDescription)));
+        when(mockAdmin.describeTopics(anyCollection())).thenReturn(dtr);
+
+        MockKafkaReconciler kr = prepareReconciler(supplier, List.of(controllersPool(), brokersPool("[10,12]")));
+        kr.coTlsPemIdentity = new TlsPemIdentity(null, null);
+
+        KafkaStatus status = new KafkaStatus();
+
+        Checkpoint async = context.checkpoint();
+        kr.reconcile(status, Clock.systemUTC())
+                .onComplete(context.succeeding(v -> context.verify(() -> {
+                    Condition warning = warningCondition(status, "SkippedNodeSoleInSyncReplica");
+                    assertThat(warning, is(notNullValue()));
+                    assertThat(warning.getMessage(), containsString("my-topic-0"));
+                    assertThat(warning.getMessage(), not(containsString("my-topic-1")));
+
+                    async.flag();
+                })));
+    }
+
     // Internal utility methods
     private static Condition skippedCondition(KafkaStatus status)   {
         return status.getConditions() == null ? null : status.getConditions().stream()
                 .filter(condition -> RollingUpdateSkips.ROLLING_UPDATE_SKIPPED_CONDITION_TYPE.equals(condition.getType()))
+                .findFirst()
+                .orElse(null);
+    }
+
+    private static Condition warningCondition(KafkaStatus status, String reason)   {
+        return status.getConditions() == null ? null : status.getConditions().stream()
+                .filter(condition -> "Warning".equals(condition.getType()) && reason.equals(condition.getReason()))
                 .findFirst()
                 .orElse(null);
     }
@@ -334,7 +423,8 @@ public class KafkaReconcilerSkipRollingUpdateTest {
             return resolveRollingUpdateSkips(kafkaStatus)
                     .compose(i -> manualRollingUpdate())
                     .compose(i -> rollingUpdate(Map.of()))
-                    .compose(i -> podsReady());
+                    .compose(i -> podsReady())
+                    .compose(i -> skippedNodesSoleInSyncReplicaCheck(kafkaStatus));
         }
 
         @Override

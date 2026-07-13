@@ -3,6 +3,7 @@
 ## 1.2.0
 
 * Add support for Apache Kafka 4.3.1
+* Add the `strimzi.io/skip-rolling-update` annotation on `KafkaNodePool` resources to exclude individual broker nodes from automatic rolling updates
 
 ### Major changes, deprecations, and removals
 

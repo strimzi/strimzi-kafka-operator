@@ -51,7 +51,10 @@ public record RollingUpdateSkips(Set<Integer> skippedNodeIds, Map<String, Set<In
 
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(RollingUpdateSkips.class.getName());
 
-    // Used to extract the skipped node IDs back from the message of a previously set RollingUpdateSkipped condition
+    // The message of the RollingUpdateSkipped condition is also parsed back by skippedNodeIdsFromCondition() to detect
+    // changes to the set of skipped nodes between reconciliations. CONDITION_MESSAGE_PATTERN must always match the
+    // message generated from CONDITION_MESSAGE_FORMAT.
+    private static final String CONDITION_MESSAGE_FORMAT = "Nodes %s are excluded from automatic rolling updates through the " + Annotations.ANNO_STRIMZI_IO_SKIP_ROLLING_UPDATE + " annotation.";
     private static final Pattern CONDITION_MESSAGE_PATTERN = Pattern.compile("^Nodes \\[([0-9, ]*)] are excluded");
 
     /**
@@ -174,38 +177,59 @@ public record RollingUpdateSkips(Set<Integer> skippedNodeIds, Map<String, Set<In
     }
 
     /**
-     * Indicates whether the RollingUpdateSkipped condition should be set on the Kafka custom resource status
+     * Indicates whether any requested node ID had to be ignored because of the controller role
      *
-     * @return  True when the resolution found any skipped, ignored or rejected node IDs and the status condition
-     *          should be set. False otherwise.
+     * @return  True when at least one node ID was ignored. False otherwise.
      */
-    public boolean shouldReportCondition()    {
-        return !skippedNodeIds.isEmpty() || !ignoredControllerNodeIds.isEmpty() || !rejectedNodeIds.isEmpty();
+    public boolean hasIgnoredControllerNodeIds()    {
+        return !ignoredControllerNodeIds.isEmpty();
     }
 
     /**
-     * Generates the RollingUpdateSkipped condition for the Kafka custom resource status
+     * Indicates whether any annotation value or node ID was rejected as invalid
+     *
+     * @return  True when at least one value was rejected. False otherwise.
+     */
+    public boolean hasRejectedNodeIds()    {
+        return !rejectedNodeIds.isEmpty();
+    }
+
+    /**
+     * Generates the RollingUpdateSkipped condition for the Kafka custom resource status. Should be used only when
+     * some nodes are actually skipped.
      *
      * @return  The condition describing the active skips
      */
     public Condition kafkaStatusCondition()   {
-        StringBuilder message = new StringBuilder("Nodes ").append(skippedNodeIds).append(" are excluded from automatic rolling updates through the ").append(Annotations.ANNO_STRIMZI_IO_SKIP_ROLLING_UPDATE).append(" annotation.");
-
-        if (!ignoredControllerNodeIds.isEmpty())    {
-            message.append(" Node IDs ignored because of the controller role: ").append(ignoredControllerNodeIds).append(".");
-        }
-
-        if (!rejectedNodeIds.isEmpty())    {
-            message.append(" Rejected invalid node IDs: ").append(rejectedNodeIds).append(".");
-        }
-
         return new ConditionBuilder()
                 .withLastTransitionTime(StatusUtils.iso8601Now())
                 .withType(ROLLING_UPDATE_SKIPPED_CONDITION_TYPE)
                 .withStatus("True")
                 .withReason("SkipRollingUpdateAnnotation")
-                .withMessage(message.toString())
+                .withMessage(CONDITION_MESSAGE_FORMAT.formatted(skippedNodeIds))
                 .build();
+    }
+
+    /**
+     * Generates a warning condition about node IDs which were requested to be skipped but are ignored because they
+     * have the controller role. Should be used only when some node IDs were ignored.
+     *
+     * @return  The warning condition listing the ignored node IDs
+     */
+    public Condition ignoredControllersWarningCondition()   {
+        return StatusUtils.buildWarningCondition("SkipRollingUpdateControllersIgnored",
+                "Node IDs " + ignoredControllerNodeIds + " from the " + Annotations.ANNO_STRIMZI_IO_SKIP_ROLLING_UPDATE + " annotation are ignored because they have the controller role and remain fully managed.");
+    }
+
+    /**
+     * Generates a warning condition about annotation values or node IDs which were rejected as invalid. Should be
+     * used only when some values were rejected.
+     *
+     * @return  The warning condition listing the rejected values
+     */
+    public Condition rejectedNodeIdsWarningCondition()   {
+        return StatusUtils.buildWarningCondition("InvalidSkipRollingUpdateAnnotation",
+                "The following node IDs from the " + Annotations.ANNO_STRIMZI_IO_SKIP_ROLLING_UPDATE + " annotations are invalid or do not belong to the annotated node pool and are ignored: " + rejectedNodeIds + ".");
     }
 
     /**
@@ -221,7 +245,7 @@ public record RollingUpdateSkips(Set<Integer> skippedNodeIds, Map<String, Set<In
                 .withType(ROLLING_UPDATE_SKIPPED_CONDITION_TYPE)
                 .withStatus("True")
                 .withReason("SkipRollingUpdateAnnotation")
-                .withMessage("Nodes " + skippedNodeIdsInPool + " are excluded from automatic rolling updates through the " + Annotations.ANNO_STRIMZI_IO_SKIP_ROLLING_UPDATE + " annotation.")
+                .withMessage(CONDITION_MESSAGE_FORMAT.formatted(skippedNodeIdsInPool))
                 .build();
     }
 

@@ -79,6 +79,7 @@ import io.strimzi.operator.common.model.ClientsCa;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.NodeUtils;
 import io.strimzi.operator.common.model.StatusDiff;
+import io.strimzi.operator.common.model.StatusUtils;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.kubernetes.CrdOperator;
 import io.strimzi.operator.common.operator.resource.kubernetes.SecretOperator;
@@ -86,7 +87,9 @@ import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import org.apache.kafka.clients.admin.Admin;
+import org.apache.kafka.clients.admin.TopicDescription;
 import org.apache.kafka.common.KafkaException;
+import org.apache.kafka.common.TopicPartitionInfo;
 
 import java.time.Clock;
 import java.util.ArrayList;
@@ -115,6 +118,9 @@ import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_SERVER_CERT_HA
 @SuppressWarnings({"checkstyle:ClassFanOutComplexity"})
 public class KafkaReconciler {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(KafkaReconciler.class.getName());
+
+    // Maximal number of partitions listed in the SkippedNodeSoleInSyncReplica warning condition
+    private static final int SOLE_ISR_PARTITIONS_IN_CONDITION = 10;
 
     // Various settings
     private final long operationTimeoutMs;
@@ -282,6 +288,7 @@ public class KafkaReconciler {
                 .compose(i -> defaultKafkaQuotas())
                 .compose(i -> nodeUnregistration())
                 .compose(i -> metadataVersion(kafkaStatus))
+                .compose(i -> skippedNodesSoleInSyncReplicaCheck(kafkaStatus))
                 .compose(i -> deletePersistentClaims())
                 .compose(i -> sharedKafkaConfigurationCleanup())
                 .compose(i -> deleteOldCertificateSecrets())
@@ -360,18 +367,24 @@ public class KafkaReconciler {
      * @param kafkaStatus   The Kafka Status where the RollingUpdateSkipped condition will be added
      */
     private void handleRollingUpdateSkips(KafkaStatus kafkaStatus) {
-        if (rollingUpdateSkips.shouldReportCondition()) {
+        if (rollingUpdateSkips.hasSkippedNodes()) {
             kafkaStatus.addCondition(rollingUpdateSkips.kafkaStatusCondition());
+            LOGGER.warnCr(reconciliation, "Nodes {} are excluded from automatic rolling updates through the {} annotation. The skip should be short-lived and must not be held across an upgrade or CA renewal.", rollingUpdateSkips.skippedNodeIds(), Annotations.ANNO_STRIMZI_IO_SKIP_ROLLING_UPDATE);
         }
 
-        if (rollingUpdateSkips.hasSkippedNodes()) {
-            LOGGER.warnCr(reconciliation, "Nodes {} are excluded from automatic rolling updates through the {} annotation. The skip should be short-lived and must not be held across an upgrade or CA renewal.", rollingUpdateSkips.skippedNodeIds(), Annotations.ANNO_STRIMZI_IO_SKIP_ROLLING_UPDATE);
+        if (rollingUpdateSkips.hasIgnoredControllerNodeIds()) {
+            kafkaStatus.addCondition(rollingUpdateSkips.ignoredControllersWarningCondition());
+        }
+
+        if (rollingUpdateSkips.hasRejectedNodeIds()) {
+            kafkaStatus.addCondition(rollingUpdateSkips.rejectedNodeIdsWarningCondition());
         }
 
         Set<Integer> previouslySkippedNodeIds = RollingUpdateSkips.skippedNodeIdsFromCondition(previousRollingUpdateSkippedCondition);
 
         if (rollingUpdateSkips.hasSkippedNodes() && !rollingUpdateSkips.skippedNodeIds().equals(previouslySkippedNodeIds)) {
-            eventsPublisher.publishClusterEvent(reconciliation, "StrimziSkipRollingUpdate", "RollingUpdateSkipEnabled", "Warning",
+            String reason = previouslySkippedNodeIds.isEmpty() ? "RollingUpdateSkipEnabled" : "RollingUpdateSkipChanged";
+            eventsPublisher.publishClusterEvent(reconciliation, "StrimziSkipRollingUpdate", reason, "Warning",
                     "Nodes " + rollingUpdateSkips.skippedNodeIds() + " are excluded from automatic rolling updates");
         } else if (!rollingUpdateSkips.hasSkippedNodes() && !previouslySkippedNodeIds.isEmpty()) {
             eventsPublisher.publishClusterEvent(reconciliation, "StrimziSkipRollingUpdate", "RollingUpdateSkipDisabled", "Normal",
@@ -1088,6 +1101,65 @@ public class KafkaReconciler {
                         LOGGER.warnCr(reconciliation, "Interrupted exception getting clusterId {}", e.getMessage());
                     } catch (ExecutionException e) {
                         LOGGER.warnCr(reconciliation, "Execution exception getting clusterId {}", e.getMessage());
+                    } finally {
+                        if (kafkaAdmin != null) {
+                            kafkaAdmin.close();
+                        }
+                    }
+
+                    return null;
+                });
+    }
+
+    /**
+     * While any node is excluded from automatic rolling updates, checks whether a skipped node is the sole in-sync
+     * replica of any partition and surfaces it as a warning condition. Because podsReady() does not wait for skipped
+     * nodes, the Kafka custom resource can become Ready while a skipped node is down. This check keeps the status
+     * honest by flagging the partitions which are unavailable (or would become unavailable) without the skipped node.
+     * The check is best-effort and never fails the reconciliation.
+     *
+     * @param kafkaStatus   The Kafka Status where the warning condition will be added
+     *
+     * @return  Future which completes when the check is finished
+     */
+    protected Future<Void> skippedNodesSoleInSyncReplicaCheck(KafkaStatus kafkaStatus) {
+        if (!rollingUpdateSkips.hasSkippedNodes()) {
+            return Future.succeededFuture();
+        }
+
+        return vertx.createSharedWorkerExecutor("kubernetes-ops-pool")
+                .executeBlocking(() -> {
+                    Admin kafkaAdmin = null;
+
+                    try {
+                        String bootstrapHostname = KafkaResources.bootstrapServiceName(reconciliation.name()) + "." + reconciliation.namespace() + ".svc:" + KafkaCluster.REPLICATION_PORT;
+                        LOGGER.debugCr(reconciliation, "Creating AdminClient for checking in-sync replicas of the nodes excluded from automatic rolling updates using {}", bootstrapHostname);
+                        kafkaAdmin = adminClientProvider.createAdminClient(bootstrapHostname, this.coTlsPemIdentity.pemTrustSet(), this.coTlsPemIdentity.pemAuthIdentity());
+
+                        Set<String> topicNames = kafkaAdmin.listTopics().names().get();
+                        List<String> soleIsrPartitions = new ArrayList<>();
+
+                        for (TopicDescription topic : kafkaAdmin.describeTopics(topicNames).allTopicNames().get().values()) {
+                            for (TopicPartitionInfo partition : topic.partitions()) {
+                                if (partition.isr().size() == 1 && rollingUpdateSkips.skippedNodeIds().contains(partition.isr().get(0).id())) {
+                                    soleIsrPartitions.add(topic.name() + "-" + partition.partition());
+                                }
+                            }
+                        }
+
+                        if (!soleIsrPartitions.isEmpty()) {
+                            String partitions = soleIsrPartitions.size() > SOLE_ISR_PARTITIONS_IN_CONDITION
+                                    ? soleIsrPartitions.subList(0, SOLE_ISR_PARTITIONS_IN_CONDITION) + " and " + (soleIsrPartitions.size() - SOLE_ISR_PARTITIONS_IN_CONDITION) + " more"
+                                    : soleIsrPartitions.toString();
+                            LOGGER.warnCr(reconciliation, "Nodes excluded from automatic rolling updates hold the sole in-sync replica of partitions {}", partitions);
+                            kafkaStatus.addCondition(StatusUtils.buildWarningCondition("SkippedNodeSoleInSyncReplica",
+                                    "Nodes excluded from automatic rolling updates through the " + Annotations.ANNO_STRIMZI_IO_SKIP_ROLLING_UPDATE + " annotation hold the sole in-sync replica of the following partitions: " + partitions));
+                        }
+                    } catch (InterruptedException e) {
+                        LOGGER.warnCr(reconciliation, "Interrupted while checking the in-sync replicas of the nodes excluded from automatic rolling updates", e);
+                    } catch (Exception e) {
+                        // The check is best-effort and must never fail the reconciliation
+                        LOGGER.warnCr(reconciliation, "Failed to check the in-sync replicas of the nodes excluded from automatic rolling updates", e);
                     } finally {
                         if (kafkaAdmin != null) {
                             kafkaAdmin.close();
