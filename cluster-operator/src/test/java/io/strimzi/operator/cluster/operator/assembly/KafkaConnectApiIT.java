@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -80,7 +81,7 @@ public class KafkaConnectApiIT {
         cluster.stop();
     }
 
-    private void checkStatusWithDelay(Supplier<CompletableFuture<Map<String, Object>>> statusSupplier,
+    private void checkStatusWithDelay(Supplier<? extends CompletionStage<Map<String, Object>>> statusSupplier,
                                       ScheduledExecutorService singleExecutor,
                                       CompletableFuture<Map<String, Object>> completableFuture,
                                       long delay) {
@@ -241,6 +242,6 @@ public class KafkaConnectApiIT {
                         }
                         return null;
                     }))
-            .join();
+            .toCompletableFuture().join();
     }
 }
