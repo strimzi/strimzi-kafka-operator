@@ -58,6 +58,7 @@ import java.util.concurrent.CompletionStage;
 
 import static io.strimzi.operator.cluster.ResourceUtils.DUMMY_CERT;
 import static java.util.Collections.emptyMap;
+import static java.util.Collections.singletonList;
 import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -694,6 +695,28 @@ public class ReconcilerUtilsTest {
         Checkpoint async = context.checkpoint();
         ReconcilerUtils.trustedCertificates(Reconciliation.DUMMY_RECONCILIATION, secretOps, List.of(cert1)).onComplete(context.failing(res -> {
             assertThat(res.getMessage(), is("Failed to load certificate from Secret cert-secret from namespace namespace"));
+            async.flag();
+        }));
+    }
+
+    @Test
+    void testTrustedCertificatesNotMatchingPattern(VertxTestContext context) {
+        CertSecretSource cert1 = new CertSecretSourceBuilder()
+            .withSecretName("cert-secret")
+            .withPattern("*.pem")
+            .build();
+
+        Secret secret = new SecretBuilder()
+            .withData(Map.of("ca.crt", "value", "ca2.crt", "value2"))
+            .build();
+
+        SecretOperator secretOps = mock(SecretOperator.class);
+        when(secretOps.getAsync(eq(NAMESPACE), eq("cert-secret"))).thenReturn(CompletableFuture.completedFuture(secret));
+
+        Checkpoint async = context.checkpoint();
+        ReconcilerUtils.trustedCertificates(Reconciliation.DUMMY_RECONCILIATION, secretOps, singletonList(cert1)).onComplete(context.succeeding(res -> {
+            assertThat(res, is(List.of("")));
+            verify(secretOps).getAsync(any(), eq("cert-secret"));
             async.flag();
         }));
     }
