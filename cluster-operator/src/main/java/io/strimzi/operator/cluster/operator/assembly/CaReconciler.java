@@ -51,6 +51,8 @@ import java.time.Clock;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.stream.Collectors;
 
 /**
@@ -177,8 +179,8 @@ public class CaReconciler {
         String clientsCaKeyName = KafkaResources.clientsCaKeySecretName(reconciliation.name());
         String clusterOperatorName = KafkaResources.clusterOperatorCertsSecretName(reconciliation.name());
 
-        return VertxUtil.toFuture(secretOperator.listAsync(reconciliation.namespace(), Labels.EMPTY.withStrimziKind(reconciliation.kind()).withStrimziCluster(reconciliation.name())))
-                .compose(clusterSecrets -> {
+        return VertxUtil.toFuture(secretOperator.listAsync(reconciliation.namespace(), Labels.EMPTY.withStrimziKind(reconciliation.kind()).withStrimziCluster(reconciliation.name()))
+                .thenCompose(clusterSecrets -> {
                     Secret existingClusterCaCertSecret = null;
                     Secret existingClusterCaKeySecret = null;
                     Secret existingClientsCaCertSecret = null;
@@ -200,22 +202,24 @@ public class CaReconciler {
                     }
 
                     CaProvider clusterCaProvider = getCaProvider(Ca.CaRole.CLUSTER_CA, clusterCaConfig, existingClusterCaCertSecret, existingClusterCaKeySecret, clock);
-                    Future<Void> clusterCaFuture = VertxUtil.toFuture(clusterCaProvider.createCa())
-                            .compose(ca -> {
+                    CompletionStage<Void> clusterCaFuture = clusterCaProvider.createCa()
+                            .thenCompose(ca -> {
                                 clusterCa = ca;
-                                return VertxUtil.toFuture(clusterCaProvider.reconcileCaSecrets());
+                                return clusterCaProvider.reconcileCaSecrets();
                             })
-                            .onSuccess(secret -> clusterCaCertSecret = secret)
-                            .mapEmpty();
+                            .thenApply(secret -> {
+                                clusterCaCertSecret = secret;
+                                return null;
+                            });
 
                     CaProvider clientsCaProvider = getCaProvider(Ca.CaRole.CLIENTS_CA, clientsCaConfig, existingClientsCaCertSecret, existingClientsCaKeySecret, clock);
-                    Future<Void> clientsCaFuture = VertxUtil.toFuture(clientsCaProvider.createCa())
-                            .compose(ca -> {
+                    CompletionStage<Void> clientsCaFuture = clientsCaProvider.createCa()
+                            .thenCompose(ca -> {
                                 clientsCa = ca;
-                                return VertxUtil.toFuture(clientsCaProvider.reconcileCaSecrets());
-                            }).mapEmpty();
-                    return Future.join(clusterCaFuture, clientsCaFuture).mapEmpty();
-                });
+                                return clientsCaProvider.reconcileCaSecrets();
+                            }).thenApply(secret -> null);
+                    return CompletableFuture.allOf(clusterCaFuture.toCompletableFuture(), clientsCaFuture.toCompletableFuture());
+                }));
     }
 
     private CaProvider getCaProvider(Ca.CaRole caRole, CaConfig caConfig, Secret existingCaCertSecret, Secret existingCaKeySecret, Clock clock) {
@@ -234,7 +238,7 @@ public class CaReconciler {
                     existingCaKeySecret
             );
         } else {
-            caProvider = new UserCaProvider(
+            caProvider = new CustomCaProvider(
                     reconciliation,
                     caRole,
                     caConfig,
@@ -257,7 +261,8 @@ public class CaReconciler {
                 trustBundleLabels,
                 ownerRef,
                 Map.of("cluster-ca.crt", Util.encodeToBase64(clusterCa.trustedCaCerts()), "clients-ca.crt", Util.encodeToBase64(clientsCa.trustedCaCerts())),
-                Map.ofEntries(clusterCa.caCertGenerationFullAnnotation(), clientsCa.caCertGenerationFullAnnotation()),
+                Map.of(clusterCa.caCertGenerationAnnotation(), String.valueOf(clusterCa.caCertGeneration()),
+                        clientsCa.caCertGenerationAnnotation(), String.valueOf(clientsCa.caCertGeneration())),
                 Map.of()
         );
 

@@ -257,7 +257,6 @@ public class KafkaUserModel {
 
         CertAndKey existingUserCertAndKey = null;
         if (userSecret != null) {
-
             if (userSecret.getMetadata() != null
                     && Annotations.booleanAnnotation(userSecret, Annotations.ANNO_STRIMZI_IO_FORCE_RENEW, false)) {
                 // The user secret has the annotation which forces replacement => we have to generate a new user certificate
@@ -281,8 +280,14 @@ public class KafkaUserModel {
     }
 
     private CertAndKey getExistingCertificateAndKey(Reconciliation reconciliation, InternalCa clientsStrimziCa, Secret userSecret, boolean generatePkcs12Stores) {
-        byte[] key = decodeFromSecret(userSecret, "user.key");
-        byte[] cert = decodeFromSecret(userSecret, "user.crt");
+        String userCrt = userSecret.getData().get("user.crt");
+        String userKey = userSecret.getData().get("user.key");
+        if (userCrt == null || userCrt.isEmpty() || userKey == null || userKey.isEmpty()) {
+            return null;
+        }
+
+        byte[] key = Util.decodeBytesFromBase64(userKey);
+        byte[] cert = Util.decodeBytesFromBase64(userCrt);
         int caCertGeneration = clientsStrimziCa.caCertGeneration();
 
         if (!generatePkcs12Stores) {
@@ -298,8 +303,8 @@ public class KafkaUserModel {
                     key,
                     cert,
                     null,
-                    decodeFromSecret(userSecret, "user.p12"),
-                    new String(decodeFromSecret(userSecret, "user.password"), StandardCharsets.US_ASCII),
+                    Util.decodeBytesFromBase64(userKeyStore),
+                    new String(Util.decodeBytesFromBase64(userKeyStorePassword), StandardCharsets.US_ASCII),
                     caCertGeneration);
         }
 
@@ -367,17 +372,6 @@ public class KafkaUserModel {
 
         LOGGER.debugCr(reconciliation, "Generating user password");
         this.scramSha512Password = generator.generate();
-    }
-
-    /**
-     * Decode from Base64 a keyed value from a Secret
-     *
-     * @param secret Secret from which decoding the value
-     * @param key Key of the value to decode
-     * @return decoded value
-     */
-    protected byte[] decodeFromSecret(Secret secret, String key) {
-        return Util.decodeBytesFromBase64(secret.getData().get(key));
     }
 
     /**

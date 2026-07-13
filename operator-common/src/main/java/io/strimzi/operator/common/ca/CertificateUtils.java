@@ -163,7 +163,7 @@ public class CertificateUtils {
      */
     public static List<X509Certificate> extractCertChain(String key, byte[] certBytes) {
         try (ByteArrayInputStream bis = new ByteArrayInputStream(certBytes)) {
-            Collection<? extends Certificate> certificates = CertificateUtils.certificateFactory().generateCertificates(bis);
+            Collection<? extends Certificate> certificates = certificateFactory().generateCertificates(bis);
             List<X509Certificate> x509Certificates = new ArrayList<>(certificates.size());
             for (Certificate certificate : certificates) {
                 if (certificate instanceof X509Certificate) {

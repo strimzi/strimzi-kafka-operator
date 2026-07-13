@@ -760,7 +760,7 @@ public class KafkaReconciler {
     protected Future<Void> certificateSecrets(Clock clock) {
         return VertxUtil.toFuture(secretOperator.listAsync(reconciliation.namespace(), kafka.getSelectorLabels().withStrimziComponentType(KafkaCluster.COMPONENT_TYPE)))
                 .compose(existingSecrets -> collectListenerCustomCerts()
-                        .compose(customCertsData -> Future.fromCompletionStage(
+                        .compose(customCertsData -> VertxUtil.toFuture(
                             kafka.generateCertificatesSecrets(clusterCa,
                                 existingSecrets, 
                                 customCertsData, 

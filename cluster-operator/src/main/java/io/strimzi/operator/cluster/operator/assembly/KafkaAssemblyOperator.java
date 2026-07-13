@@ -265,8 +265,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
         /* test */ KafkaVersionChange versionChange;
 
-        /* test */ Ca clusterCa;
-        /* test */ Ca clientsCa;
+        private Ca clusterCa;
+        private Ca clientsCa;
 
         // Needed by Cruise control to configure the cluster, its nodes and their storage and resource configuration
         private Set<NodeRef> kafkaBrokerNodes;

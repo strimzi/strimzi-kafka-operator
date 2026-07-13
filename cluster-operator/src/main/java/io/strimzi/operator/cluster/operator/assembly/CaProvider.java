@@ -33,6 +33,8 @@ import static java.util.Collections.singletonList;
  * Provides common functionality for managing CA certificates and secrets.
  */
 public abstract class CaProvider {
+    private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(CaProvider.class);
+
     protected final Reconciliation reconciliation;
     protected final Ca.CaRole caRole;
     protected final CaConfig caConfig;
@@ -41,8 +43,6 @@ public abstract class CaProvider {
     protected final Secret existingCaCertSecret;
     protected final Secret existingCaKeySecret;
     protected Ca ca;
-
-    protected static final ReconciliationLogger LOGGER = ReconciliationLogger.create(CaProvider.class);
 
     /**
      * Constructor.
@@ -83,7 +83,7 @@ public abstract class CaProvider {
      *
      * @return  Map with the labels from the Kafka CR or empty map if the template is not set
      */
-    protected Map<String, String> clusterCaCertLabels()    {
+    private Map<String, String> clusterCaCertLabels() {
         if (kafkaCr.getSpec().getKafka() != null
                 && kafkaCr.getSpec().getKafka().getTemplate() != null
                 && kafkaCr.getSpec().getKafka().getTemplate().getClusterCaCert() != null
@@ -100,7 +100,7 @@ public abstract class CaProvider {
      *
      * @return  Map with the annotation from the Kafka CR or empty map if the template is not set
      */
-    protected Map<String, String> clusterCaCertAnnotations()    {
+    private Map<String, String> clusterCaCertAnnotations() {
         if (kafkaCr.getSpec().getKafka() != null
                 && kafkaCr.getSpec().getKafka().getTemplate() != null
                 && kafkaCr.getSpec().getKafka().getTemplate().getClusterCaCert() != null

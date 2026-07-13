@@ -37,6 +37,7 @@ import java.time.Clock;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Class used for reconciliation of Entity Operator. This class contains both the steps of the Entity Operator
@@ -436,25 +437,23 @@ public class EntityOperatorReconciler {
      */
     protected Future<Void> topicOperatorSecret(Clock clock) {
         if (shouldInstallEntityOperator() && entityOperator.topicOperator() != null) {
-            return VertxUtil.toFuture(secretOperator.getAsync(reconciliation.namespace(), KafkaResources.entityTopicOperatorSecretName(reconciliation.name())))
-                    .compose(oldSecret -> Future.fromCompletionStage(entityOperator.topicOperator().generateCertificatesSecret(clusterCa, oldSecret, Util.isMaintenanceTimeWindowsSatisfied(reconciliation, maintenanceWindows, clock.instant()))))
-                    .compose(newSecret ->  VertxUtil.toFuture(secretOperator
-                                .reconcile(reconciliation, reconciliation.namespace(), KafkaResources.entityTopicOperatorSecretName(reconciliation.name()), newSecret))
-                                .compose(i -> {
-                                    toCertificateHash = CertSecretUtils.getCertificateShortThumbprint(newSecret, Ca.SecretEntry.CRT.asKey(EntityOperator.COMPONENT_TYPE));
-
-                                    return Future.succeededFuture();
-                                }))
-                    .compose(i -> {
+            return VertxUtil.toFuture(secretOperator.getAsync(reconciliation.namespace(), KafkaResources.entityTopicOperatorSecretName(reconciliation.name()))
+                    .thenCompose(oldSecret -> entityOperator.topicOperator().generateCertificatesSecret(clusterCa, oldSecret, Util.isMaintenanceTimeWindowsSatisfied(reconciliation, maintenanceWindows, clock.instant())))
+                    .thenCompose(newSecret ->  secretOperator.reconcile(reconciliation, reconciliation.namespace(), KafkaResources.entityTopicOperatorSecretName(reconciliation.name()), newSecret)
+                            .thenApply(i -> {
+                                toCertificateHash = CertSecretUtils.getCertificateShortThumbprint(newSecret, Ca.SecretEntry.CRT.asKey(EntityOperator.COMPONENT_TYPE));
+                                return null;
+                            }))
+                    .thenCompose(i -> {
                         if (isCruiseControlEnabled) {
-                            return VertxUtil.toFuture(secretOperator.getAsync(reconciliation.namespace(), KafkaResources.entityTopicOperatorCcApiSecretName(reconciliation.name())))
-                                    .compose(secret -> {
+                            return secretOperator.getAsync(reconciliation.namespace(), KafkaResources.entityTopicOperatorCcApiSecretName(reconciliation.name()))
+                                    .thenApply(secret -> {
                                         toApiSecretHash = ReconcilerUtils.hashSecretContent(secret);
-                                        return Future.succeededFuture();
+                                        return null;
                                     });
                         }
-                        return Future.succeededFuture();
-                    });
+                        return CompletableFuture.completedFuture(null);
+                    }));
         } else {
             return VertxUtil.toFuture(secretOperator
                     .reconcile(reconciliation, reconciliation.namespace(), KafkaResources.entityTopicOperatorSecretName(reconciliation.name()), null))
@@ -472,16 +471,14 @@ public class EntityOperatorReconciler {
      */
     protected Future<Void> userOperatorSecret(Clock clock) {
         if (shouldInstallEntityOperator() && entityOperator.userOperator() != null) {
-            return VertxUtil.toFuture(secretOperator.getAsync(reconciliation.namespace(), KafkaResources.entityUserOperatorSecretName(reconciliation.name())))
-                    .compose(oldSecret -> Future.fromCompletionStage(entityOperator.userOperator().generateCertificatesSecret(clusterCa, oldSecret, Util.isMaintenanceTimeWindowsSatisfied(reconciliation, maintenanceWindows, clock.instant()))))
-                    .compose(newSecret -> VertxUtil.toFuture(secretOperator
-                                .reconcile(reconciliation, reconciliation.namespace(), KafkaResources.entityUserOperatorSecretName(reconciliation.name()), newSecret))
-                                .compose(i -> {
-                                    uoCertificateHash = CertSecretUtils.getCertificateShortThumbprint(newSecret, Ca.SecretEntry.CRT.asKey(EntityOperator.COMPONENT_TYPE));
-
-                                    return Future.succeededFuture();
-                                })
-                    );
+            return VertxUtil.toFuture(secretOperator.getAsync(reconciliation.namespace(), KafkaResources.entityUserOperatorSecretName(reconciliation.name()))
+                    .thenCompose(oldSecret -> entityOperator.userOperator().generateCertificatesSecret(clusterCa, oldSecret, Util.isMaintenanceTimeWindowsSatisfied(reconciliation, maintenanceWindows, clock.instant())))
+                    .thenCompose(newSecret -> secretOperator.reconcile(reconciliation, reconciliation.namespace(), KafkaResources.entityUserOperatorSecretName(reconciliation.name()), newSecret)
+                            .thenApply(i -> {
+                                uoCertificateHash = CertSecretUtils.getCertificateShortThumbprint(newSecret, Ca.SecretEntry.CRT.asKey(EntityOperator.COMPONENT_TYPE));
+                                return null;
+                            })
+                    ));
         } else {
             return VertxUtil.toFuture(secretOperator
                     .reconcile(reconciliation, reconciliation.namespace(), KafkaResources.entityUserOperatorSecretName(reconciliation.name()), null))

@@ -18,10 +18,10 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
 /**
- * CA provider for user-provided CAs.
+ * CA provider for custom CAs provided by users.
  * Uses existing CA certificates and keys provided by the user.
  */
-public class UserCaProvider extends CaProvider {
+public class CustomCaProvider extends CaProvider {
     private final CertIssuer certIssuer;
     private final PasswordGenerator passwordGenerator;
 
@@ -37,7 +37,7 @@ public class UserCaProvider extends CaProvider {
      * @param existingCaCert    Existing CA certificate secret
      * @param existingCaKey     Existing CA key secret
      */
-    public UserCaProvider(Reconciliation reconciliation, Ca.CaRole caRole, CaConfig caConfig, Kafka kafkaCr, CertIssuer certIssuer, PasswordGenerator passwordGenerator, Secret existingCaCert, Secret existingCaKey) {
+    public CustomCaProvider(Reconciliation reconciliation, Ca.CaRole caRole, CaConfig caConfig, Kafka kafkaCr, CertIssuer certIssuer, PasswordGenerator passwordGenerator, Secret existingCaCert, Secret existingCaKey) {
         super(reconciliation, caRole, caConfig, kafkaCr, existingCaCert, existingCaKey);
         this.certIssuer = certIssuer;
         this.passwordGenerator = passwordGenerator;

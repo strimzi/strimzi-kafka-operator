@@ -40,7 +40,6 @@ import static java.time.temporal.ChronoField.YEAR;
  */
 @SuppressWarnings("checkstyle:CyclomaticComplexity")
 public abstract class Ca {
-
     /**
      * A certificate entry in a Kubernetes Secret. Used to construct the keys in the Secret data where certificates are stored.
      */
@@ -88,7 +87,6 @@ public abstract class Ca {
         public boolean matchesType(String key) {
             return key.endsWith(suffix);
         }
-
     }
 
     protected static final ReconciliationLogger LOGGER = ReconciliationLogger.create(Ca.class);
@@ -365,8 +363,8 @@ public abstract class Ca {
     /**
      * Extracts the CA key generation from the CA cert or CA key Secret
      *
-     * @param caKeySecret CA cert Secret
-     * @param caCertSecret CA key Secret
+     * @param caKeySecret CA key Secret
+     * @param caCertSecret CA cert Secret
      * @return CA key generation
      */
     protected abstract int initCaKeyGeneration(Secret caKeySecret, Secret caCertSecret);
@@ -492,15 +490,6 @@ public abstract class Ca {
      */
     public int caCertGeneration() {
         return caCertGeneration;
-    }
-
-    /**
-     * Gets the generation of the current CA certificate as an annotation.
-     *
-     * @return the generation of the current CA certificate as an annotation
-     */
-    public Map.Entry<String, String> caCertGenerationFullAnnotation() {
-        return Map.entry(caCertGenerationAnnotation(), String.valueOf(caCertGeneration));
     }
 
     /**

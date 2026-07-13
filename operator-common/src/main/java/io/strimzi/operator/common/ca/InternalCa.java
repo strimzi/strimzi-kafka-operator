@@ -136,7 +136,7 @@ public class InternalCa extends Ca {
                 certAndKey = generateSignedCert(subject, includeCaChain);
             } catch (IOException e) {
                 LOGGER.errorCr(reconciliation, "Error while generating certificates", e);
-                return CompletableFuture.failedStage(new RuntimeException("Failed to prepare certificate for" + podName, e));
+                return CompletableFuture.failedStage(new RuntimeException("Failed to prepare certificate for " + podName, e));
             }
         }  else {
             certAndKey = existingCertAndKey;
@@ -251,7 +251,8 @@ public class InternalCa extends Ca {
                 Subject subject = CertificateUtils.getSubject(commonName, org);
                 certAndKey = generateSignedCert(subject);
             } catch (IOException e) {
-                LOGGER.warnCr(reconciliation, "Error while generating certificates", e);
+                LOGGER.errorCr(reconciliation, "Error while generating certificates", e);
+                return CompletableFuture.failedStage(new RuntimeException("Failed to generate signed certificate for " + commonName, e));
             }
 
             LOGGER.debugCr(reconciliation, "End generating certificates");
