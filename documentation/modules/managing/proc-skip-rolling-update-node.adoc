@@ -21,7 +21,7 @@ The exclusion applies only to *automatic* rolling updates and only to *broker* n
 
 While any node is excluded, the operator:
 
-* Sets a `RollingUpdateSkipped` condition on the `Kafka` and owning `KafkaNodePool` statuses, and emits `RollingUpdateSkipEnabled` and `RollingUpdateSkipDisabled` Kubernetes events when nodes enter or leave the excluded state.
+* Sets a `RollingUpdateSkipped` condition on the `Kafka` and owning `KafkaNodePool` statuses, and emits `RollingUpdateSkipEnabled`, `RollingUpdateSkipChanged`, and `RollingUpdateSkipDisabled` Kubernetes events when the set of excluded nodes changes.
 * Defers any `metadata.version` change and surfaces it with a `MetadataVersionChangeDeferred` warning condition, because finalizing the change without the excluded node could leave it unable to rejoin the cluster.
 * Does not wait for the readiness of the excluded pods, so the `Kafka` resource can become `Ready` while an excluded node is down. If an excluded node holds the sole in-sync replica of any partition, the operator flags it with a `SkippedNodeSoleInSyncReplica` warning condition.
 * Excludes the node from the rolling update for a replaced CA key. The node is rolled to trust the new CA once it is no longer excluded.

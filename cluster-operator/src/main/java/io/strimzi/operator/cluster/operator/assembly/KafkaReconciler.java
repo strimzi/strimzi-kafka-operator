@@ -330,11 +330,12 @@ public class KafkaReconciler {
 
     /**
      * Resolves the strimzi.io/skip-rolling-update annotations from the KafkaNodePool resources into the set of node
-     * IDs which are excluded from automatic rolling updates during this reconciliation. When any node is skipped (or
-     * any requested skip had to be ignored or rejected), a RollingUpdateSkipped condition is added to the Kafka status
-     * and Kubernetes Events are emitted when nodes enter or leave the skipped state.
+     * IDs which are excluded from automatic rolling updates during this reconciliation. When any node is skipped, a
+     * RollingUpdateSkipped condition is added to the Kafka status and Kubernetes Events are emitted when the set of
+     * skipped nodes changes. Node IDs which had to be ignored (controller role) or rejected (invalid values) are
+     * reported through separate Warning conditions.
      *
-     * @param kafkaStatus   The Kafka Status where the RollingUpdateSkipped condition will be added
+     * @param kafkaStatus   The Kafka Status where the conditions will be added
      *
      * @return  Completes when the skips are resolved
      */
@@ -360,11 +361,11 @@ public class KafkaReconciler {
     }
 
     /**
-     * Adds the RollingUpdateSkipped condition to the Kafka status, logs a warning on every reconciliation while a skip
-     * is active, and emits Kubernetes Events when the set of skipped nodes changes compared to the previous
-     * reconciliation.
+     * Adds the RollingUpdateSkipped condition (and the warning conditions about ignored or rejected node IDs) to the
+     * Kafka status, logs a warning on every reconciliation while a skip is active, and emits Kubernetes Events when
+     * the set of skipped nodes changes compared to the previous reconciliation.
      *
-     * @param kafkaStatus   The Kafka Status where the RollingUpdateSkipped condition will be added
+     * @param kafkaStatus   The Kafka Status where the conditions will be added
      */
     private void handleRollingUpdateSkips(KafkaStatus kafkaStatus) {
         if (rollingUpdateSkips.hasSkippedNodes()) {

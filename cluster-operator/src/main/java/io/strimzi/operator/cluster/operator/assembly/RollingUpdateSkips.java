@@ -267,7 +267,14 @@ public record RollingUpdateSkips(Set<Integer> skippedNodeIds, Map<String, Set<In
                 for (String id : matcher.group(1).split(","))   {
                     String trimmedId = id.trim();
                     if (!trimmedId.isEmpty())   {
-                        nodeIds.add(Integer.parseInt(trimmedId));
+                        try {
+                            nodeIds.add(Integer.parseInt(trimmedId));
+                        } catch (NumberFormatException e) {
+                            // The status could have been modified by something else. A corrupted message must never
+                            // fail the reconciliation => the unparseable ID is ignored (worst case, a duplicate
+                            // Kubernetes Event is emitted).
+                            LOGGER.warnOp("Ignoring unparseable node ID {} from the {} condition message", trimmedId, ROLLING_UPDATE_SKIPPED_CONDITION_TYPE);
+                        }
                     }
                 }
             }

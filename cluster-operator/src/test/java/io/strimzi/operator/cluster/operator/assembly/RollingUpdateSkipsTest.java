@@ -7,6 +7,7 @@ package io.strimzi.operator.cluster.operator.assembly;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodBuilder;
 import io.strimzi.api.kafka.model.common.Condition;
+import io.strimzi.api.kafka.model.common.ConditionBuilder;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePool;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePoolBuilder;
 import io.strimzi.api.kafka.model.nodepool.ProcessRoles;
@@ -223,5 +224,18 @@ public class RollingUpdateSkipsTest {
         // The skipped node IDs can be extracted back from the condition of the previous reconciliation
         assertThat(RollingUpdateSkips.skippedNodeIdsFromCondition(condition), is(Set.of(10, 12)));
         assertThat(RollingUpdateSkips.skippedNodeIdsFromCondition(null), is(Set.of()));
+    }
+
+    @Test
+    public void testCorruptedConditionMessageDoesNotThrow()   {
+        // The status could have been modified by something else => an unparseable ID (e.g. an int overflow) must be
+        // ignored instead of failing the reconciliation
+        Condition corrupted = new ConditionBuilder()
+                .withType("RollingUpdateSkipped")
+                .withStatus("True")
+                .withMessage("Nodes [10, 99999999999999999999] are excluded from automatic rolling updates through the strimzi.io/skip-rolling-update annotation.")
+                .build();
+
+        assertThat(RollingUpdateSkips.skippedNodeIdsFromCondition(corrupted), is(Set.of(10)));
     }
 }
