@@ -8,14 +8,11 @@ import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.quotas.QuotasPlugin;
 import io.strimzi.api.kafka.model.kafka.quotas.QuotasPluginKafka;
 import io.strimzi.operator.cluster.model.KafkaCluster;
-import io.strimzi.operator.cluster.operator.VertxUtil;
 import io.strimzi.operator.common.AdminClientProvider;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.auth.PemAuthIdentity;
 import io.strimzi.operator.common.auth.PemTrustSet;
-import io.vertx.core.Future;
-import io.vertx.core.Vertx;
 import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.common.quota.ClientQuotaAlteration;
 import org.apache.kafka.common.quota.ClientQuotaEntity;
@@ -27,6 +24,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 
 /**
  * Class containing methods for handling the configuration around {@link QuotasPluginKafka}
@@ -90,17 +89,15 @@ public class DefaultKafkaQuotasManager {
      * Based on configuration in {@param quotasPlugin}, it configures the default user quota in Kafka.
      *
      * @param reconciliation            Reconciliation marker
-     * @param vertx                     Vert.x instance
      * @param adminClientProvider       Kafka Admin client provider
      * @param pemTrustSet               Trust set for TLS authentication in PEM format
      * @param pemAuthIdentity           Identity for TLS client authentication in PEM format
      * @param quotasPlugin              Configuration of Kafka quotas plugin
      *
-     * @return  Future that completes when the default user quota configuration is completed
+     * @return  CompletionStage that completes when the default user quota configuration is completed
      */
-    public static Future<Void> reconcileDefaultUserQuotas(
+    public static CompletionStage<Void> reconcileDefaultUserQuotas(
         Reconciliation reconciliation,
-        Vertx vertx,
         AdminClientProvider adminClientProvider,
         PemTrustSet pemTrustSet,
         PemAuthIdentity pemAuthIdentity,
@@ -117,20 +114,23 @@ public class DefaultKafkaQuotasManager {
 
         List<ClientQuotaAlteration.Op> ops = prepareQuotaConfigurationRequest(quotasPluginKafka);
 
-        return shouldAlterDefaultQuotasConfig(reconciliation, vertx, kafkaAdmin, ops, isNotKafkaPlugin)
-            .compose(shouldUpdateQuotas -> {
+        return shouldAlterDefaultQuotasConfig(reconciliation, kafkaAdmin, ops, isNotKafkaPlugin)
+            .thenCompose(shouldUpdateQuotas -> {
                 if (shouldUpdateQuotas) {
                     ClientQuotaAlteration clientQuotaAlteration = new ClientQuotaAlteration(DEFAULT_USER_ENTITY, ops);
 
                     LOGGER.debugCr(reconciliation, "Default user quotas differ and will be updated");
-                    return alterQuotas(reconciliation, vertx, kafkaAdmin, clientQuotaAlteration)
-                        .onSuccess(result -> LOGGER.debugCr(reconciliation, "Successfully altered default user quotas"))
-                        .onFailure(cause -> LOGGER.errorCr(reconciliation, "Failed to alter default user quotas", cause));
+                    return alterQuotas(reconciliation, kafkaAdmin, clientQuotaAlteration);
                 } else {
-                    return Future.succeededFuture();
+                    return CompletableFuture.completedFuture(null);
                 }
             })
-            .onComplete(result -> {
+            .whenComplete((result, error) -> {
+                if (error != null) {
+                    LOGGER.errorCr(reconciliation, "Failed to alter default user quotas", error);
+                } else {
+                    LOGGER.debugCr(reconciliation, "Successfully altered default user quotas");
+                }
                 LOGGER.debugCr(reconciliation, "Closing the Kafka Admin API connection");
                 kafkaAdmin.close();
             });
@@ -141,35 +141,32 @@ public class DefaultKafkaQuotasManager {
      * It gets the current default quotas for users from Kafka and compares them with the desired configuration
      *
      * @param reconciliation          Reconciliation marker
-     * @param vertx                   Vert.x instance
      * @param kafkaAdmin              Kafka Admin object
      * @param ops                     List of {@link ClientQuotaAlteration.Op}
      * @param isNotKafkaPlugin        boolean parameter determining if the Kafka built-in quotas plugin is used
      *
      * @return  result determining if the new quotas configuration should be applied or not
      */
-    /* test */ static Future<Boolean> shouldAlterDefaultQuotasConfig(Reconciliation reconciliation, Vertx vertx, Admin kafkaAdmin, List<ClientQuotaAlteration.Op> ops, boolean isNotKafkaPlugin) {
-        return VertxUtil.kafkaFutureToVertxFuture(reconciliation,
-                vertx,
-                kafkaAdmin.describeClientQuotas(ClientQuotaFilter.containsOnly(List.of(ClientQuotaFilterComponent.ofDefaultEntity(ClientQuotaEntity.USER)))).entities())
-            .compose(clientQuotaEntityMapMap -> {
+    /* test */ static CompletionStage<Boolean> shouldAlterDefaultQuotasConfig(Reconciliation reconciliation, Admin kafkaAdmin, List<ClientQuotaAlteration.Op> ops, boolean isNotKafkaPlugin) {
+        return kafkaAdmin.describeClientQuotas(ClientQuotaFilter.containsOnly(List.of(ClientQuotaFilterComponent.ofDefaultEntity(ClientQuotaEntity.USER)))).entities().toCompletionStage()
+            .thenApply(clientQuotaEntityMapMap -> {
                 Map<String, Double> currentQuotas = clientQuotaEntityMapMap.get(DEFAULT_USER_ENTITY);
 
                 if (currentQuotas == null) {
                     if (isNotKafkaPlugin) {
                         // 1. if the current quotas set in Kafka are null and quotas configuration in Kafka CR is not of type `QuotasPluginKafka`, skip alteration
                         LOGGER.debugCr(reconciliation, "There are no default user quotas set in Kafka and the Kafka built-in plugin is not configured, skipping the alteration");
-                        return Future.succeededFuture(false);
+                        return false;
                     } else if (ops.stream().allMatch(op -> Objects.isNull(op.value()))) {
                         // 2. if the current quotas set in Kafka are null and quotas configuration in Kafka CR is type of `QuotasPluginKafka`, but there is no fields configured, skip alteration
                         LOGGER.debugCr(reconciliation, "There are no default user quotas set in Kafka and no quotas are configured, skipping the alteration");
-                        return Future.succeededFuture(false);
+                        return false;
                     } else {
                         // 3. in case that the current quotas are null, but desired quotas contains some non-null values, we should alter the quotas
-                        return Future.succeededFuture(true);
+                        return true;
                     }
                 } else {
-                    return Future.succeededFuture(currentAndDesiredQuotasDiffer(currentQuotas, ops));
+                    return currentAndDesiredQuotasDiffer(currentQuotas, ops);
                 }
             });
     }
@@ -178,23 +175,19 @@ public class DefaultKafkaQuotasManager {
      * Method for altering the default Kafka user quotas using Kafka Admin client
      *
      * @param reconciliation            Reconciliation marker
-     * @param vertx                     Vert.x instance
      * @param kafkaAdmin                Kafka Admin object
      * @param clientQuotaAlteration     Quota alteration operation
      *
-     * @return  Future after completion of the alter operation
+     * @return  CompletionStage after completion of the alter operation
      */
-    private static Future<Void> alterQuotas(
+    private static CompletionStage<Void> alterQuotas(
         Reconciliation reconciliation,
-        Vertx vertx,
         Admin kafkaAdmin,
         ClientQuotaAlteration clientQuotaAlteration
     ) {
         LOGGER.debugCr(reconciliation, "Altering default user quotas to: {}", clientQuotaAlteration.toString());
 
-        return VertxUtil
-            .kafkaFutureToVertxFuture(reconciliation, vertx, kafkaAdmin.alterClientQuotas(List.of(clientQuotaAlteration)).values().get(DEFAULT_USER_ENTITY))
-            .mapEmpty();
+        return kafkaAdmin.alterClientQuotas(List.of(clientQuotaAlteration)).values().get(DEFAULT_USER_ENTITY).toCompletionStage();
     }
 
     /**

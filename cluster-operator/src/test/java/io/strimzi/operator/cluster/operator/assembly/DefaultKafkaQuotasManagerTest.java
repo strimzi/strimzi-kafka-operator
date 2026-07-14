@@ -9,10 +9,6 @@ import io.strimzi.api.kafka.model.kafka.quotas.QuotasPluginKafkaBuilder;
 import io.strimzi.api.kafka.model.kafka.quotas.QuotasPluginStrimzi;
 import io.strimzi.operator.common.AdminClientProvider;
 import io.strimzi.operator.common.Reconciliation;
-import io.vertx.core.Vertx;
-import io.vertx.junit5.Checkpoint;
-import io.vertx.junit5.VertxExtension;
-import io.vertx.junit5.VertxTestContext;
 import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.AlterClientQuotasResult;
 import org.apache.kafka.clients.admin.DescribeClientQuotasResult;
@@ -21,16 +17,15 @@ import org.apache.kafka.common.quota.ClientQuotaAlteration;
 import org.apache.kafka.common.quota.ClientQuotaEntity;
 import org.apache.kafka.common.quota.ClientQuotaFilter;
 import org.apache.kafka.common.quota.ClientQuotaFilterComponent;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.Timeout;
 import org.mockito.ArgumentCaptor;
 
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import static io.strimzi.operator.common.auth.TlsPemIdentity.DUMMY_IDENTITY;
 import static org.hamcrest.CoreMatchers.is;
@@ -43,24 +38,12 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@ExtendWith(VertxExtension.class)
+@Timeout(value = 30, unit = TimeUnit.SECONDS)
 public class DefaultKafkaQuotasManagerTest {
     private final static Long DEFAULT_PRODUCER_BYTE_RATE = 2000L;
     private final static Long DEFAULT_CONSUMER_BYTE_RATE = 2000L;
     private final static Double DEFAULT_MUTATION_RATE = 0.5;
     private final static Integer DEFAULT_REQUEST_PERCENTAGE = 25;
-
-    private static Vertx vertx;
-
-    @BeforeAll
-    public static void before() {
-        vertx = Vertx.vertx();
-    }
-
-    @AfterAll
-    public static void after() {
-        vertx.close();
-    }
 
     /**
      * Checks whether {@link DefaultKafkaQuotasManager#currentAndDesiredQuotasDiffer(Map, List)} is able to handle the
@@ -116,14 +99,12 @@ public class DefaultKafkaQuotasManagerTest {
     }
 
     /**
-     * Checks if the result of {@link DefaultKafkaQuotasManager#shouldAlterDefaultQuotasConfig(Reconciliation, Vertx, Admin, List, boolean)}
+     * Checks if the result of {@link DefaultKafkaQuotasManager#shouldAlterDefaultQuotasConfig(Reconciliation, Admin, List, boolean)}
      * when there are no default Kafka quotas set and none (or Strimzi Quotas plugin) are desired.
      * The result of this check should be false.
-     *
-     * @param context   Vertx test context
      */
     @Test
-    void testShouldAlterQuotasWithNoneCurrentAndNotAKafkaQuotasPlugin(VertxTestContext context) {
+    void testShouldAlterQuotasWithNoneCurrentAndNotAKafkaQuotasPlugin() {
         // Mock the Admin client
         Admin mockAdminClient = mock(Admin.class);
 
@@ -132,25 +113,20 @@ public class DefaultKafkaQuotasManagerTest {
 
         List<ClientQuotaAlteration.Op> noneQuotas = DefaultKafkaQuotasManager.prepareQuotaConfigurationRequest(DefaultKafkaQuotasManager.emptyQuotasPluginKafka());
 
-        Checkpoint checkpoint = context.checkpoint();
+        Boolean result = DefaultKafkaQuotasManager.shouldAlterDefaultQuotasConfig(Reconciliation.DUMMY_RECONCILIATION, mockAdminClient, noneQuotas, true)
+            .toCompletableFuture()
+            .join();
 
-        DefaultKafkaQuotasManager.shouldAlterDefaultQuotasConfig(Reconciliation.DUMMY_RECONCILIATION, vertx, mockAdminClient, noneQuotas, true)
-            .onComplete(context.succeeding(result -> {
-                assertThat(result, is(false));
-
-                checkpoint.flag();
-            }));
+        assertThat(result, is(false));
     }
 
     /**
-     * Checks if the result of {@link DefaultKafkaQuotasManager#shouldAlterDefaultQuotasConfig(Reconciliation, Vertx, Admin, List, boolean)}
+     * Checks if the result of {@link DefaultKafkaQuotasManager#shouldAlterDefaultQuotasConfig(Reconciliation, Admin, List, boolean)}
      * when there are no default Kafka quotas set and there are Kafka quotas specified.
      * The result of this check should be true.
-     *
-     * @param context   Vertx test context
      */
     @Test
-    void testShouldAlterQuotasWithNoneCurrentAndFilledKafkaQuotas(VertxTestContext context) {
+    void testShouldAlterQuotasWithNoneCurrentAndFilledKafkaQuotas() {
         // Mock the Admin client
         Admin mockAdminClient = mock(Admin.class);
 
@@ -163,25 +139,20 @@ public class DefaultKafkaQuotasManagerTest {
 
         List<ClientQuotaAlteration.Op> desiredQuotas = DefaultKafkaQuotasManager.prepareQuotaConfigurationRequest(quotasPluginKafka);
 
-        Checkpoint checkpoint = context.checkpoint();
+        Boolean result = DefaultKafkaQuotasManager.shouldAlterDefaultQuotasConfig(Reconciliation.DUMMY_RECONCILIATION, mockAdminClient, desiredQuotas, false)
+            .toCompletableFuture()
+            .join();
 
-        DefaultKafkaQuotasManager.shouldAlterDefaultQuotasConfig(Reconciliation.DUMMY_RECONCILIATION, vertx, mockAdminClient, desiredQuotas, false)
-            .onComplete(context.succeeding(result -> {
-                assertThat(result, is(true));
-
-                checkpoint.flag();
-            }));
+        assertThat(result, is(true));
     }
 
     /**
-     * Checks if the result of {@link DefaultKafkaQuotasManager#shouldAlterDefaultQuotasConfig(Reconciliation, Vertx, Admin, List, boolean)}
+     * Checks if the result of {@link DefaultKafkaQuotasManager#shouldAlterDefaultQuotasConfig(Reconciliation, Admin, List, boolean)}
      * when there are default Kafka quotas set and none (or Strimzi Quotas plugin) are desired.
      * The result of this check should be true.
-     *
-     * @param context   Vertx test context
      */
     @Test
-    void testShouldAlterQuotasWithFilledCurrentAndNotAKafkaQuotasPlugin(VertxTestContext context) {
+    void testShouldAlterQuotasWithFilledCurrentAndNotAKafkaQuotasPlugin() {
         // Mock the Admin client
         Admin mockAdminClient = mock(Admin.class);
 
@@ -190,25 +161,20 @@ public class DefaultKafkaQuotasManagerTest {
 
         List<ClientQuotaAlteration.Op> noneQuotas = DefaultKafkaQuotasManager.prepareQuotaConfigurationRequest(DefaultKafkaQuotasManager.emptyQuotasPluginKafka());
 
-        Checkpoint checkpoint = context.checkpoint();
+        Boolean result = DefaultKafkaQuotasManager.shouldAlterDefaultQuotasConfig(Reconciliation.DUMMY_RECONCILIATION, mockAdminClient, noneQuotas, true)
+            .toCompletableFuture()
+            .join();
 
-        DefaultKafkaQuotasManager.shouldAlterDefaultQuotasConfig(Reconciliation.DUMMY_RECONCILIATION, vertx, mockAdminClient, noneQuotas, true)
-            .onComplete(context.succeeding(result -> {
-                assertThat(result, is(true));
-
-                checkpoint.flag();
-            }));
+        assertThat(result, is(true));
     }
 
     /**
-     * Checks if the result of {@link DefaultKafkaQuotasManager#shouldAlterDefaultQuotasConfig(Reconciliation, Vertx, Admin, List, boolean)}
+     * Checks if the result of {@link DefaultKafkaQuotasManager#shouldAlterDefaultQuotasConfig(Reconciliation, Admin, List, boolean)}
      * when there are default Kafka quotas set and different Kafka quotas are desired.
      * The result of this check should be true.
-     *
-     * @param context   Vertx test context
      */
     @Test
-    void testShouldAlterQuotasWithFilledCurrentAndDifferentKafkaQuotas(VertxTestContext context) {
+    void testShouldAlterQuotasWithFilledCurrentAndDifferentKafkaQuotas() {
         // Mock the Admin client
         Admin mockAdminClient = mock(Admin.class);
 
@@ -221,25 +187,20 @@ public class DefaultKafkaQuotasManagerTest {
 
         List<ClientQuotaAlteration.Op> desiredQuotas = DefaultKafkaQuotasManager.prepareQuotaConfigurationRequest(quotasPluginKafka);
 
-        Checkpoint checkpoint = context.checkpoint();
+        Boolean result = DefaultKafkaQuotasManager.shouldAlterDefaultQuotasConfig(Reconciliation.DUMMY_RECONCILIATION, mockAdminClient, desiredQuotas, false)
+            .toCompletableFuture()
+            .join();
 
-        DefaultKafkaQuotasManager.shouldAlterDefaultQuotasConfig(Reconciliation.DUMMY_RECONCILIATION, vertx, mockAdminClient, desiredQuotas, false)
-            .onComplete(context.succeeding(result -> {
-                assertThat(result, is(true));
-
-                checkpoint.flag();
-            }));
+        assertThat(result, is(true));
     }
 
     /**
-     * Checks if the result of {@link DefaultKafkaQuotasManager#shouldAlterDefaultQuotasConfig(Reconciliation, Vertx, Admin, List, boolean)}
+     * Checks if the result of {@link DefaultKafkaQuotasManager#shouldAlterDefaultQuotasConfig(Reconciliation, Admin, List, boolean)}
      * when there are default Kafka quotas set and same Kafka quotas are desired.
      * The result of this check should be false.
-     *
-     * @param context   Vertx test context
      */
     @Test
-    void testShouldAlterQuotasWithSameCurrentAndDesiredKafkaQuotas(VertxTestContext context) {
+    void testShouldAlterQuotasWithSameCurrentAndDesiredKafkaQuotas() {
         // Mock the Admin client
         Admin mockAdminClient = mock(Admin.class);
 
@@ -255,29 +216,22 @@ public class DefaultKafkaQuotasManagerTest {
 
         List<ClientQuotaAlteration.Op> desiredQuotas = DefaultKafkaQuotasManager.prepareQuotaConfigurationRequest(quotasPluginKafka);
 
-        Checkpoint checkpoint = context.checkpoint();
+        Boolean result = DefaultKafkaQuotasManager.shouldAlterDefaultQuotasConfig(Reconciliation.DUMMY_RECONCILIATION, mockAdminClient, desiredQuotas, false)
+            .toCompletableFuture()
+            .join();
 
-        DefaultKafkaQuotasManager.shouldAlterDefaultQuotasConfig(Reconciliation.DUMMY_RECONCILIATION, vertx, mockAdminClient, desiredQuotas, false)
-            .onComplete(context.succeeding(result -> {
-                assertThat(result, is(false));
-
-                checkpoint.flag();
-            }));
+        assertThat(result, is(false));
     }
 
     /**
      * Tests that the default Kafka quotas are altered in case of different configuration specified by user.
-     *
-     * @param context   Vertx test context
      */
     @Test
-    void testReconfigureDefaultQuotasSetInKafka(VertxTestContext context) {
+    void testReconfigureDefaultQuotasSetInKafka() {
         long consumerByteRate = 1000;
         long producerByteRate = 1000;
         double mutationRate = 0.1;
         int requestPercentage = 33;
-
-        Checkpoint checkpoint = context.checkpoint();
 
         // Mock the Admin client
         Admin mockAdminClient = mock(Admin.class);
@@ -303,29 +257,24 @@ public class DefaultKafkaQuotasManagerTest {
         List<ClientQuotaAlteration.Op> expectedResult = DefaultKafkaQuotasManager.prepareQuotaConfigurationRequest(quotasPluginKafka);
 
         // Scenario with configured QuotasPluginKafka and default user quota set in Kafka (all options) -> but with different values in both configurations
-        DefaultKafkaQuotasManager.reconcileDefaultUserQuotas(Reconciliation.DUMMY_RECONCILIATION, vertx, mockAdminClientProvider, DUMMY_IDENTITY.pemTrustSet(), DUMMY_IDENTITY.pemAuthIdentity(), quotasPluginKafka)
-            .onComplete(context.succeeding(s -> {
-                verify(mockAdminClient, times(1)).describeClientQuotas(any());
-                verify(mockAdminClient, times(1)).alterClientQuotas(any());
+        DefaultKafkaQuotasManager.reconcileDefaultUserQuotas(Reconciliation.DUMMY_RECONCILIATION, mockAdminClientProvider, DUMMY_IDENTITY.pemTrustSet(), DUMMY_IDENTITY.pemAuthIdentity(), quotasPluginKafka)
+            .toCompletableFuture()
+            .join();
 
-                assertThat(quotaAlterationCaptor.getValue().isEmpty(), is(false));
+        verify(mockAdminClient, times(1)).describeClientQuotas(any());
+        verify(mockAdminClient, times(1)).alterClientQuotas(any());
 
-                List<ClientQuotaAlteration.Op> valuesSet = quotaAlterationCaptor.getValue().get(0).ops().stream().toList();
-                assertEquals(expectedResult, valuesSet);
+        assertThat(quotaAlterationCaptor.getValue().isEmpty(), is(false));
 
-                checkpoint.flag();
-            }));
+        List<ClientQuotaAlteration.Op> valuesSet = quotaAlterationCaptor.getValue().get(0).ops().stream().toList();
+        assertEquals(expectedResult, valuesSet);
     }
 
     /**
      * Tests that the default Kafka quotas are set to null (deleted) in case that none quotas plugin is specified by user.
-     *
-     * @param context   Vertx test context
      */
     @Test
-    void testRemoveDefaultQuotasIfNoneQuotasPluginIsDesired(VertxTestContext context) {
-        Checkpoint checkpoint = context.checkpoint();
-
+    void testRemoveDefaultQuotasIfNoneQuotasPluginIsDesired() {
         // Mock the Admin client
         Admin mockAdminClient = mock(Admin.class);
 
@@ -343,28 +292,24 @@ public class DefaultKafkaQuotasManagerTest {
         List<ClientQuotaAlteration.Op> expectedResult = DefaultKafkaQuotasManager.prepareQuotaConfigurationRequest(DefaultKafkaQuotasManager.emptyQuotasPluginKafka());
 
         // Scenario with configured QuotasPluginKafka and default user quota set in Kafka (all options) -> but with different values in both configurations
-        DefaultKafkaQuotasManager.reconcileDefaultUserQuotas(Reconciliation.DUMMY_RECONCILIATION, vertx, mockAdminClientProvider, DUMMY_IDENTITY.pemTrustSet(), DUMMY_IDENTITY.pemAuthIdentity(), null)
-            .onComplete(context.succeeding(s -> {
-                verify(mockAdminClient, times(1)).describeClientQuotas(any());
-                verify(mockAdminClient, times(1)).alterClientQuotas(any());
+        DefaultKafkaQuotasManager.reconcileDefaultUserQuotas(Reconciliation.DUMMY_RECONCILIATION, mockAdminClientProvider, DUMMY_IDENTITY.pemTrustSet(), DUMMY_IDENTITY.pemAuthIdentity(), null)
+            .toCompletableFuture()
+            .join();
 
-                assertThat(quotaAlterationCaptor.getValue().isEmpty(), is(false));
+        verify(mockAdminClient, times(1)).describeClientQuotas(any());
+        verify(mockAdminClient, times(1)).alterClientQuotas(any());
 
-                List<ClientQuotaAlteration.Op> valuesSet = quotaAlterationCaptor.getValue().get(0).ops().stream().toList();
-                assertEquals(expectedResult, valuesSet);
-                checkpoint.flag();
-            }));
+        assertThat(quotaAlterationCaptor.getValue().isEmpty(), is(false));
+
+        List<ClientQuotaAlteration.Op> valuesSet = quotaAlterationCaptor.getValue().get(0).ops().stream().toList();
+        assertEquals(expectedResult, valuesSet);
     }
 
     /**
      * Tests that the default Kafka quotas are set to null (deleted) in case that Strimzi quotas plugin is specified by user.
-     *
-     * @param context   Vertx test context
      */
     @Test
-    void testRemoveDefaultQuotasIfStrimziQuotasPluginIsDesired(VertxTestContext context) {
-        Checkpoint checkpoint = context.checkpoint();
-
+    void testRemoveDefaultQuotasIfStrimziQuotasPluginIsDesired() {
         // Mock the Admin client
         Admin mockAdminClient = mock(Admin.class);
 
@@ -382,17 +327,17 @@ public class DefaultKafkaQuotasManagerTest {
         List<ClientQuotaAlteration.Op> expectedResult = DefaultKafkaQuotasManager.prepareQuotaConfigurationRequest(DefaultKafkaQuotasManager.emptyQuotasPluginKafka());
 
         // Scenario with configured QuotasPluginKafka and default user quota set in Kafka (all options) -> but with different values in both configurations
-        DefaultKafkaQuotasManager.reconcileDefaultUserQuotas(Reconciliation.DUMMY_RECONCILIATION, vertx, mockAdminClientProvider, DUMMY_IDENTITY.pemTrustSet(), DUMMY_IDENTITY.pemAuthIdentity(), new QuotasPluginStrimzi())
-            .onComplete(context.succeeding(s -> {
-                verify(mockAdminClient, times(1)).describeClientQuotas(any());
-                verify(mockAdminClient, times(1)).alterClientQuotas(any());
+        DefaultKafkaQuotasManager.reconcileDefaultUserQuotas(Reconciliation.DUMMY_RECONCILIATION, mockAdminClientProvider, DUMMY_IDENTITY.pemTrustSet(), DUMMY_IDENTITY.pemAuthIdentity(), new QuotasPluginStrimzi())
+            .toCompletableFuture()
+            .join();
 
-                assertThat(quotaAlterationCaptor.getValue().isEmpty(), is(false));
+        verify(mockAdminClient, times(1)).describeClientQuotas(any());
+        verify(mockAdminClient, times(1)).alterClientQuotas(any());
 
-                List<ClientQuotaAlteration.Op> valuesSet = quotaAlterationCaptor.getValue().get(0).ops().stream().toList();
-                assertEquals(expectedResult, valuesSet);
-                checkpoint.flag();
-            }));
+        assertThat(quotaAlterationCaptor.getValue().isEmpty(), is(false));
+
+        List<ClientQuotaAlteration.Op> valuesSet = quotaAlterationCaptor.getValue().get(0).ops().stream().toList();
+        assertEquals(expectedResult, valuesSet);
     }
 
     private Map<String, Double> createMapOfCurrentQuotas(
@@ -428,7 +373,8 @@ public class DefaultKafkaQuotasManagerTest {
     }
 
     private void mockAlterQuotas(Admin mockAdminClient, ArgumentCaptor<List<ClientQuotaAlteration>> quotaAlterationCaptor) {
-        when(mockAdminClient.alterClientQuotas(quotaAlterationCaptor.capture())).thenAnswer(i -> new AlterClientQuotasResult(Map.of()));
+        ClientQuotaEntity defaultUserEntity = new ClientQuotaEntity(Collections.singletonMap(ClientQuotaEntity.USER, null));
+        when(mockAdminClient.alterClientQuotas(quotaAlterationCaptor.capture())).thenReturn(new AlterClientQuotasResult(Map.of(defaultUserEntity, KafkaFuture.completedFuture(null))));
     }
 
     private AdminClientProvider mockAdminClientProvider(Admin adminClient)  {

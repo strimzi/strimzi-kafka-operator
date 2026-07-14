@@ -13,7 +13,6 @@ import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.WorkerExecutor;
-import org.apache.kafka.common.KafkaFuture;
 
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executor;
@@ -171,38 +170,5 @@ public final class VertxUtil {
         handler.handle(null);
 
         return promise.future();
-    }
-
-    /**
-     * Converts Kafka Future to Vert.x future
-     *
-     * @param reconciliation    Reconciliation marker
-     * @param vertx             Vert.x instance
-     * @param kf                Kafka future
-     *
-     * @return  Vert.x future based on the Kafka future
-     *
-     * @param <T>   Return type of the future
-     */
-    public static <T> Future<T> kafkaFutureToVertxFuture(Reconciliation reconciliation, Vertx vertx, KafkaFuture<T> kf) {
-        Promise<T> promise = Promise.promise();
-        if (kf != null) {
-            kf.whenComplete((result, error) -> vertx.runOnContext(ignored -> {
-                if (error != null) {
-                    promise.fail(error);
-                } else {
-                    promise.complete(result);
-                }
-            }));
-            return promise.future();
-        } else {
-            if (reconciliation != null) {
-                LOGGER.traceCr(reconciliation, "KafkaFuture is null");
-            } else {
-                LOGGER.traceOp("KafkaFuture is null");
-            }
-
-            return Future.succeededFuture();
-        }
     }
 }
