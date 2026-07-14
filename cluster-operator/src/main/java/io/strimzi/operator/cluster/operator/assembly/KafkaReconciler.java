@@ -1157,8 +1157,9 @@ public class KafkaReconciler {
                                     "Nodes excluded from automatic rolling updates through the " + Annotations.ANNO_STRIMZI_IO_SKIP_ROLLING_UPDATE + " annotation hold the sole in-sync replica of the following partitions: " + partitions));
                         }
                     } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
                         LOGGER.warnCr(reconciliation, "Interrupted while checking the in-sync replicas of the nodes excluded from automatic rolling updates", e);
-                    } catch (Exception e) {
+                    } catch (ExecutionException | RuntimeException e) {
                         // The check is best-effort and must never fail the reconciliation
                         LOGGER.warnCr(reconciliation, "Failed to check the in-sync replicas of the nodes excluded from automatic rolling updates", e);
                     } finally {
