@@ -1024,7 +1024,7 @@ public class KafkaReconciler {
      * @return  Future which completes when the default quotas are configured
      */
     protected Future<Void> defaultKafkaQuotas() {
-        return DefaultKafkaQuotasManager.reconcileDefaultUserQuotas(reconciliation, vertx, adminClientProvider, this.coTlsPemIdentity.pemTrustSet(), this.coTlsPemIdentity.pemAuthIdentity(), kafka.quotas());
+        return VertxUtil.toFuture(DefaultKafkaQuotasManager.reconcileDefaultUserQuotas(reconciliation, adminClientProvider, this.coTlsPemIdentity.pemTrustSet(), this.coTlsPemIdentity.pemAuthIdentity(), kafka.quotas()));
     }
 
     /**
