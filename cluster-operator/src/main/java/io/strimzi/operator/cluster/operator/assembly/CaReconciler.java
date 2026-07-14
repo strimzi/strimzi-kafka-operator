@@ -289,11 +289,7 @@ public class CaReconciler {
 
         CertAndKey oldCertAndKey = CertSecretUtils.keyStoreCertAndKey(coSecret, componentName, Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION);
 
-        return VertxUtil.toFuture(clusterCa.maybeCopyOrGenerateClientCert(
-                        reconciliation,
-                        componentName,
-                        oldCertAndKey,
-                        Util.isMaintenanceTimeWindowsSatisfied(reconciliation, maintenanceWindows, clock.instant()))
+        return VertxUtil.toFuture(clusterCa.maybeCopyOrGenerateClientCert(reconciliation, componentName, oldCertAndKey, Util.isMaintenanceTimeWindowsSatisfied(reconciliation, maintenanceWindows, clock.instant()))
                 .thenCompose(updatedCert -> {
                     Map<String, String> secretData = CertSecretUtils.buildSecretData(componentName, updatedCert);
                     coSecret = ModelUtils.createSecret(

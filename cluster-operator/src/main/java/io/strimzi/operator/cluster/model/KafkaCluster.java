@@ -1347,10 +1347,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
     }
 
     @SuppressWarnings("checkstyle:NoFullyQualifiedClassNames") // Fully qualified class name used due to conflict with Fabric8
-    private io.strimzi.certs.Subject buildKafkaNodeCertsSubject(NodeRef node,
-                                                                                Set<String> externalBootstrapAddresses,
-                                                                                Map<Integer, Set<String>> externalAddresses
-    ) {
+    private io.strimzi.certs.Subject buildKafkaNodeCertsSubject(NodeRef node, Set<String> externalBootstrapAddresses, Map<Integer, Set<String>> externalAddresses) {
         io.strimzi.certs.Subject.Builder subject = new io.strimzi.certs.Subject.Builder()
                 .withOrganizationName(Ca.IO_STRIMZI)
                 .withCommonName(KafkaResources.kafkaComponentName(cluster));

@@ -441,38 +441,32 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
      *
      * @param namespace                             Namespace in which the Cruise Control cluster runs
      * @param clusterName                           Name of the Kafka cluster (it is used for the SANs in the certificate)
-     * @param ca                                    The cluster CA.
+     * @param clusterCa                             The cluster CA.
      * @param existingSecret                        The existing secret with Kafka certificates
      * @param isMaintenanceTimeWindowsSatisfied     Indicates whether we are in the maintenance window or not.
      *                                              This is used for certificate renewals
      *
      * @return The generated Secret.
      */
-    public CompletionStage<Secret> generateCertificatesSecret(String namespace, String clusterName, Ca ca, Secret existingSecret, boolean isMaintenanceTimeWindowsSatisfied) {
+    public CompletionStage<Secret> generateCertificatesSecret(String namespace, String clusterName, Ca clusterCa, Secret existingSecret, boolean isMaintenanceTimeWindowsSatisfied) {
         LOGGER.debugCr(reconciliation, "Generating certificates");
-        CertAndKey existingCertAndKey = CertSecretUtils.keyStoreCertAndKey(existingSecret, CruiseControl.COMPONENT_TYPE, ca.caCertGenerationAnnotation());
+        CertAndKey existingCertAndKey = CertSecretUtils.keyStoreCertAndKey(existingSecret, CruiseControl.COMPONENT_TYPE, clusterCa.caCertGenerationAnnotation());
 
         Subject subject = buildCruiseControlCertSubject(namespace, clusterName);
 
-        return ca.maybeCopyOrGenerateServerCerts(
-                reconciliation,
-                CruiseControl.COMPONENT_TYPE,
-                subject,
-                existingCertAndKey,
-                isMaintenanceTimeWindowsSatisfied,
-                false
-        ).thenApply(ccCerts -> {
-            LOGGER.debugCr(reconciliation, "End generating certificates");
-            return ModelUtils.createSecret(
-                    CruiseControlResources.secretName(cluster),
-                    namespace,
-                    labels,
-                    ownerReference,
-                    CertSecretUtils.buildSecretData(Map.of(CruiseControl.COMPONENT_TYPE, ccCerts)),
-                    Map.of(ca.caCertGenerationAnnotation(), String.valueOf(ccCerts.caCertGeneration())),
-                    Map.of()
-            );
-        });
+        return clusterCa.maybeCopyOrGenerateServerCerts(reconciliation, CruiseControl.COMPONENT_TYPE, subject, existingCertAndKey, isMaintenanceTimeWindowsSatisfied, false)
+                .thenApply(ccCerts -> {
+                    LOGGER.debugCr(reconciliation, "End generating certificates");
+                    return ModelUtils.createSecret(
+                            CruiseControlResources.secretName(cluster),
+                            namespace,
+                            labels,
+                            ownerReference,
+                            CertSecretUtils.buildSecretData(Map.of(CruiseControl.COMPONENT_TYPE, ccCerts)),
+                            Map.of(clusterCa.caCertGenerationAnnotation(), String.valueOf(ccCerts.caCertGeneration())),
+                            Map.of()
+                    );
+                });
     }
 
     private Subject buildCruiseControlCertSubject(String namespace, String clusterName) {
