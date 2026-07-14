@@ -2,7 +2,7 @@
 
 // Module included in the following assemblies:
 //
-// deploying/assembly-rolling-updates.adoc
+// managing/assembly-rolling-updates.adoc
 
 [id='proc-skip-rolling-update-node-{context}']
 = Excluding Kafka nodes from automatic rolling updates

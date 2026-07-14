@@ -12,6 +12,7 @@ import io.fabric8.kubernetes.api.model.NodeSelectorRequirement;
 import io.fabric8.kubernetes.api.model.NodeSelectorRequirementBuilder;
 import io.fabric8.kubernetes.api.model.NodeSelectorTerm;
 import io.fabric8.kubernetes.api.model.NodeSelectorTermBuilder;
+import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodAffinity;
 import io.fabric8.kubernetes.api.model.PodAffinityBuilder;
@@ -46,6 +47,7 @@ import io.strimzi.systemtest.utils.kafkaUtils.KafkaNodePoolUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
+import io.strimzi.test.TestUtils;
 import io.strimzi.testclients.clients.kafka.KafkaProducerConsumer;
 import io.strimzi.testclients.clients.kafka.KafkaProducerConsumerBuilder;
 import org.apache.logging.log4j.LogManager;
@@ -56,6 +58,7 @@ import org.junit.jupiter.api.Tag;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -524,6 +527,90 @@ public class KafkaRollerST extends AbstractST {
 
         // The cluster should remain Ready and CO should not be stuck with TimeoutException
         KafkaUtils.waitForKafkaReady(testStorage.getNamespaceName(), testStorage.getClusterName());
+    }
+
+    /**
+     * @description This test case verifies that a broker node annotated through the strimzi.io/skip-rolling-update
+     * annotation on its KafkaNodePool is excluded from automatic rolling updates, and catches up on the pending
+     * changes once the annotation is removed.
+     *
+     * @steps
+     *  1. - Deploy a Kafka cluster with dedicated controller and broker KafkaNodePools, each with 3 replicas.
+     *  2. - Annotate the broker KafkaNodePool with strimzi.io/skip-rolling-update listing one broker node ID.
+     *  3. - Trigger an automatic rolling update through a broker-only Kafka configuration change.
+     *     - All broker nodes except the skipped one are rolled.
+     *  4. - Verify the RollingUpdateSkipped condition on the Kafka and KafkaNodePool statuses and that the skipped
+     *       Pod was not restarted.
+     *  5. - Remove the annotation.
+     *     - The skipped node catches up on the pending configuration change and is rolled.
+     *  6. - Verify the RollingUpdateSkipped condition is removed from the Kafka status.
+     *
+     * @usecase
+     *  - kafka-node-skip-rolling-update
+     *  - kafka-node-pool-management
+     */
+    @ParallelNamespaceTest
+    void testSkipRollingUpdateOfAnnotatedBrokerNode() {
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
+        final int brokerReplicas = 3;
+        final int controllerReplicas = 3;
+
+        KubeResourceManager.get().createResourceWithWait(
+            KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), brokerReplicas).build(),
+            KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), controllerReplicas).build()
+        );
+        KubeResourceManager.get().createResourceWithWait(KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getClusterName(), brokerReplicas).build());
+
+        Map<String, String> brokerPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getBrokerSelector());
+
+        // The broker Pods are named <cluster>-<pool>-<nodeId> => the node ID is taken from the Pod name
+        final String skippedPodName = brokerPods.keySet().stream().sorted().findFirst().orElseThrow();
+        final int skippedNodeId = Integer.parseInt(skippedPodName.substring(skippedPodName.lastIndexOf('-') + 1));
+        final Map<String, String> skippedPodSnapshot = Map.of(skippedPodName, brokerPods.get(skippedPodName));
+
+        LOGGER.info("Excluding node {} (Pod: {}/{}) from automatic rolling updates", skippedNodeId, testStorage.getNamespaceName(), skippedPodName);
+        KafkaNodePoolUtils.replace(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(),
+            knp -> knp.setMetadata(new ObjectMetaBuilder(knp.getMetadata())
+                .addToAnnotations(Annotations.ANNO_STRIMZI_IO_SKIP_ROLLING_UPDATE, "[" + skippedNodeId + "]")
+                .build()));
+
+        LOGGER.info("Triggering an automatic rolling update through a broker-only configuration change");
+        KafkaUtils.updateSpecificConfiguration(testStorage.getNamespaceName(), testStorage.getClusterName(), "initial.broker.registration.timeout.ms", 33500);
+
+        LOGGER.info("Waiting for all broker nodes except node {} to roll", skippedNodeId);
+        Map<String, String> nonSkippedBrokerPods = new HashMap<>(brokerPods);
+        nonSkippedBrokerPods.remove(skippedPodName);
+        RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), nonSkippedBrokerPods);
+        PodUtils.waitForPodsReady(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), brokerReplicas, true);
+        KafkaUtils.waitForKafkaReady(testStorage.getNamespaceName(), testStorage.getClusterName());
+
+        LOGGER.info("Verifying the RollingUpdateSkipped condition on the Kafka and KafkaNodePool statuses");
+        KafkaUtils.waitUntilKafkaStatusConditionContainsMessage(testStorage.getNamespaceName(), testStorage.getClusterName(),
+            ".*Nodes \\[" + skippedNodeId + "\\] are excluded from automatic rolling updates.*");
+        TestUtils.waitFor("RollingUpdateSkipped condition on the KafkaNodePool status", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_STATUS_TIMEOUT,
+            () -> KafkaNodePoolUtils.getKafkaNodePool(testStorage.getNamespaceName(), testStorage.getBrokerPoolName()).getStatus().getConditions() != null
+                && KafkaNodePoolUtils.getKafkaNodePool(testStorage.getNamespaceName(), testStorage.getBrokerPoolName()).getStatus().getConditions().stream()
+                    .anyMatch(condition -> "RollingUpdateSkipped".equals(condition.getType())));
+
+        LOGGER.info("Verifying the skipped Pod {} is not rolled", skippedPodName);
+        RollingUpdateUtils.waitForNoRollingUpdate(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), skippedPodSnapshot);
+        assertThat("The skipped node should not be rolled",
+            PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getBrokerSelector()).get(skippedPodName), is(brokerPods.get(skippedPodName)));
+
+        LOGGER.info("Removing the skip annotation; node {} should catch up on the pending configuration change", skippedNodeId);
+        KafkaNodePoolUtils.replace(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(),
+            knp -> knp.setMetadata(new ObjectMetaBuilder(knp.getMetadata())
+                .removeFromAnnotations(Annotations.ANNO_STRIMZI_IO_SKIP_ROLLING_UPDATE)
+                .build()));
+
+        RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), skippedPodSnapshot);
+        PodUtils.waitForPodsReady(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), brokerReplicas, true);
+        KafkaUtils.waitForKafkaReady(testStorage.getNamespaceName(), testStorage.getClusterName());
+
+        LOGGER.info("Verifying the RollingUpdateSkipped condition is removed from the Kafka status");
+        TestUtils.waitFor("RollingUpdateSkipped condition to be removed from the Kafka status", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_STATUS_TIMEOUT,
+            () -> CrdClients.kafkaClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getStatus().getConditions().stream()
+                .noneMatch(condition -> "RollingUpdateSkipped".equals(condition.getType())));
     }
 
     @BeforeAll
