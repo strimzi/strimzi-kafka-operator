@@ -4,31 +4,31 @@
 //
 // assembly-upgrade-cluster-operator.adoc
 
-[id='proc-upgrade-cluster-operator-olm-v1-{context}']
-= Upgrading from Strimzi 0.51.x to 1.x using OLM
+[id='proc-upgrade-cluster-operator-olm-no-upgrade-path-{context}']
+= Upgrading Strimzi when an OLM upgrade path is not available
 
 [role="_abstract"]
-Upgrade an OLM-based Strimzi installation from 0.51.x on the `stable` channel to 1.x on the `strimzi-1.x` channel by replacing the OLM subscription.
-This procedure is intended primarily for the OperatorHub integrated into OpenShift.
-You can also use it with OLM on another Kubernetes platform if the catalog that provides Strimzi contains the `stable` and `strimzi-1.x` channels.
+Upgrade an OLM-based Strimzi installation by replacing the OLM subscription when the catalog does not provide a direct upgrade path between the installed and target versions.
+For example, you can use this procedure to move from the `stable` channel to a version-specific channel such as `strimzi-1.x` when changing the channel on the existing subscription does not create an InstallPlan.
+This procedure applies to OperatorHub on OpenShift and other Kubernetes platforms that use OLM.
 It does not apply to installations that use the Strimzi YAML files or Helm chart.
 
-To accommodate the removal of the older CRD API versions, Strimzi 1.x releases are published in a separate channel that has no OLM upgrade edge from the `stable` channel.
-As a result, changing the channel on the existing `Subscription` does not create an InstallPlan.
-Remove only the existing `Subscription` and CSV, and then create a subscription to the `strimzi-1.x` channel.
+When an OLM upgrade path is not available, remove only the existing `Subscription` and CSV, and then create a subscription to the target channel.
 
 Removing only the `Subscription` and CSV leaves the Strimzi custom resources, CRDs, and running Kafka components in place.
-The components continue to run while the Cluster Operator is unavailable, but they are not reconciled until the Strimzi 1.x Cluster Operator is installed.
+The components continue to run while the Cluster Operator is unavailable, but they are not reconciled until the target Cluster Operator is installed.
 
 The commands in this procedure use `kubectl`.
 On OpenShift, you can use `oc` instead.
 
 .Prerequisites
 
-* The Cluster Operator has been upgraded to the latest Strimzi 0.51.x release on the `stable` channel.
-* You have xref:con-api-conversion-v1-{context}[converted all Strimzi custom resources and CRDs to the `v1` API].
-If the resources and CRDs are not converted, the Strimzi 1.x installation remains in a pending state.
-* You have read the Strimzi 1.x release notes and completed any other required pre-upgrade steps.
+* You have identified the target Strimzi version and the channel that provides it.
+* You have confirmed that OLM does not provide a direct upgrade path to the target version.
+* You have read the release notes for all Strimzi versions in the upgrade path and completed the required pre-upgrade steps.
++
+If the target version removes a CRD API version, migrate the custom resources and the CRD storage version before starting this procedure.
+The versions listed in `status.storedVersions` for an existing CRD must be supported by the CRD supplied with the target version.
 * You have access to the Kubernetes cluster with permissions to manage OLM resources in the namespace where Strimzi is installed.
 * If a GitOps tool manages the OLM resources, you have paused reconciliation for them.
 * You have tested the procedure in a non-production environment.
@@ -37,7 +37,7 @@ If the resources and CRDs are not converted, the Strimzi 1.x installation remain
 
 . Record the name of the installed CSV from the current Strimzi subscription.
 +
-[source,shell,subs="+quotes,-attributes"]
+[source,shell,subs="+quotes"]
 ----
 kubectl get subscription _<subscription_name>_ -n _<namespace>_ -o jsonpath='{.status.installedCSV}{"\n"}'
 ----
@@ -59,7 +59,7 @@ kubectl delete csv _<installed_csv_name>_ -n _<namespace>_
 IMPORTANT: Do not delete any Strimzi custom resources or CRDs.
 Deleting a CRD also deletes all custom resources of that type and can cause the Kubernetes resources managed by them to be deleted.
 
-. Create a `Subscription` custom resource that changes the channel from `stable` to `strimzi-1.x`.
+. Create a `Subscription` custom resource that uses the target channel.
 +
 For example, the following subscription uses manual InstallPlan approval:
 +
@@ -71,7 +71,7 @@ metadata:
   name: _<subscription_name>_
   namespace: _<namespace>_
 spec:
-  channel: strimzi-1.x
+  channel: _<target_channel>_
   installPlanApproval: Manual
   name: strimzi-kafka-operator
   source: _<catalog_source>_
@@ -90,13 +90,13 @@ kubectl apply -f _<subscription_file>_
 
 . If you use manual approval, get and approve the InstallPlan created by OLM.
 +
-[source,shell,subs="+quotes,-attributes"]
+[source,shell,subs="+quotes"]
 ----
 kubectl get installplan -n _<namespace>_
 kubectl patch installplan _<install_plan_name>_ -n _<namespace>_ --type merge -p '{"spec":{"approved":true}}'
 ----
 
-. Verify that the Strimzi 1.x CSV reaches the `Succeeded` phase and that the Cluster Operator is running.
+. Verify that the CSV for the target Strimzi version reaches the `Succeeded` phase and that the Cluster Operator is running.
 +
 [source,shell,subs="+quotes"]
 ----
