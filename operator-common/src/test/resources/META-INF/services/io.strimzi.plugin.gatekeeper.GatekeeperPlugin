@@ -1,0 +1,2 @@
+io.strimzi.operator.common.gatekeeper.TestGatekeeperPluginA
+io.strimzi.operator.common.gatekeeper.TestGatekeeperPluginB
