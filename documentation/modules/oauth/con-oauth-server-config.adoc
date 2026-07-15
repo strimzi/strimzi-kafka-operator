@@ -78,6 +78,10 @@ listeners:
             oauth.ssl.truststore.location="/mnt/oauth-certs/tls.crt"
             oauth.ssl.truststore.type="PEM";
         connections.max.reauth.ms: 3600
+config:
+  # Needed for OAuth authentication
+  principal.builder.class: io.strimzi.kafka.oauth.server.OAuthKafkaPrincipalBuilder
+# ...
 ----
 
 In this configuration:
@@ -88,6 +92,7 @@ In this configuration:
 * The truststore is mounted into the Kafka pod and used for TLS connections to the JWKS endpoint.
 * The listener requires periodic re-authentication.
 The `connections.max.reauth.ms` setting ensures that the broker prompts clients to re-authenticate at regular intervals, allowing expiring OAuth access tokens to be refreshed without closing the connection.
+* The `principal.builder.class` maps validated OAuth tokens to Kafka principals.
 
 === Token introspection example
 
@@ -120,7 +125,10 @@ spec:
                 oauth.username.claim="preferred_username"
                 oauth.ssl.truststore.location="/opt/oauth-certs/tls.crt"
                 oauth.ssl.truststore.type="PEM";
-    # ...            
+    config:
+      # Needed for OAuth authentication
+      principal.builder.class: io.strimzi.kafka.oauth.server.OAuthKafkaPrincipalBuilder
+    # ...
 ----
 
 In this configuration:
@@ -131,6 +139,7 @@ In this configuration:
 * The JAAS login module and callback handler perform token validation and map the `preferred_username` value from the introspection endpoint response to a Kafka principal.
 * The truststore used for TLS connections to the authorization server is specified by `oauth.ssl.truststore.location` and `oauth.ssl.truststore.type`.
 * The `oauth.access.token.is.jwt="false"` setting ensures that the broker does not attempt to interpret access tokens as JWTs (for example, if debug logging is enabled).
+* The `principal.builder.class` maps validated OAuth tokens to Kafka principals.
 
 NOTE: In production deployments, store the client secret securely, such as in a `Secret`, and inject it through an environment variable or other secure mechanism.
 For more information, see xref:assembly-loading-config-with-providers-{context}[Loading configuration values from external sources].
