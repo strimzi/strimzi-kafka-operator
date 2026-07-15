@@ -26,6 +26,7 @@ import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.ca.Ca;
 import io.strimzi.operator.common.ca.CaConfig;
+import io.strimzi.operator.common.ca.CertificateUtils;
 import io.strimzi.operator.common.ca.InternalCa;
 import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.common.model.Labels;
@@ -242,7 +243,7 @@ public class KafkaUserModel {
 
         int validityDays = kafkaUserTlsClientAuthentication.getValidityDays() != null ? kafkaUserTlsClientAuthentication.getValidityDays() : caValidityDays;
         int renewalDays = kafkaUserTlsClientAuthentication.getRenewalDays() != null ? kafkaUserTlsClientAuthentication.getRenewalDays() : caRenewalDays;
-        validateCACertificates(clientsCaCertSecret, clientsCaKeySecret);
+        validateCACertificates(reconciliation, clientsCaCertSecret, clientsCaKeySecret);
 
         InternalCa clientsCa = new InternalCa(
                 reconciliation,
@@ -317,7 +318,7 @@ public class KafkaUserModel {
         }
     }
 
-    void validateCACertificates(Secret clientsCaCertSecret, Secret clientsCaKeySecret)   {
+    void validateCACertificates(Reconciliation reconciliation, Secret clientsCaCertSecret, Secret clientsCaKeySecret)   {
         if (clientsCaCertSecret == null) {
             // CA certificate secret does not exist
             throw new InvalidCertificateException("The Clients CA Cert Secret is missing");
@@ -331,6 +332,7 @@ public class KafkaUserModel {
             // CA private key secret exists, but does not have the ca.crt key
             throw new InvalidCertificateException("The Clients CA Key Secret is missing the ca.key file");
         }
+        CertificateUtils.validateUserCaCertChain(reconciliation, Ca.CaRole.CLIENTS_CA, clientsCaCertSecret.getData());
     }
 
     /**

@@ -30,6 +30,7 @@ import java.util.Base64;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Utility class for handling certificate objects
@@ -110,6 +111,35 @@ public class CertificateUtils {
         } catch (CertificateException e) {
             throw new RuntimeException("Failed to decode certificate in data." + key.replace(".", "\\.") + " of Secret " + secret.getMetadata().getName(), e);
         }
+    }
+
+    /**
+     * Validates whether each of the user provided CA certs has a valid chain. Any intermediate CAs should be provided first,
+     * in order, with the root CA being the last certificate.
+     *
+     * @param reconciliation Reconciliation marker.
+     * @param caRole The role of the CA.
+     * @param userCaCertData The CA cert data provided by the user.
+     */
+    public static void validateUserCaCertChain(Reconciliation reconciliation, Ca.CaRole caRole, Map<String, String> userCaCertData) {
+        userCaCertData.entrySet()
+                .stream()
+                .filter(entry -> Ca.SecretEntry.CRT.matchesType(entry.getKey()))
+                .forEach(entry -> {
+                    List<X509Certificate> certChain = extractCertChain(entry.getKey(), Util.decodeBytesFromBase64(entry.getValue()));
+                    if (certChain.isEmpty()) {
+                        LOGGER.errorCr(reconciliation, "{} certificate chain in {} is empty", caRole.caName(), entry.getKey());
+                        throw new RuntimeException("Failed to validate User supplied " + caRole.caName() + " cert chain in " + entry.getKey());
+                    } else if (certChain.size() == 1) {
+                        LOGGER.debugCr(reconciliation, "{} certificate {} contains a single certificate", caRole.caName(), entry.getKey());
+                        return;
+                    }
+                    if (!certIsTrusted(reconciliation, certChain.subList(0, certChain.size() - 1), certChain.getLast())) {
+                        String errorMessage = "User supplied " + caRole.caName() + " cert chain " + entry.getKey() + " is not valid. Certificates must be provided in the correct order.";
+                        LOGGER.errorCr(reconciliation, errorMessage);
+                        throw new RuntimeException(errorMessage);
+                    }
+                });
     }
 
     /**

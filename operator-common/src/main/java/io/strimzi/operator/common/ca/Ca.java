@@ -328,7 +328,7 @@ public abstract class Ca {
         this.caCertGeneration = initCaCertGeneration(caCertSecret);
         this.caCertData = caCertSecret == null ? new HashMap<>() : caCertSecret.getData();
         this.caKeyGeneration = initCaKeyGeneration(caKeySecret, caCertSecret);
-        this.caKeyData = caKeySecret == null ? new HashMap<>() : Map.of(CA_KEY, caKeySecret.getData().get(CA_KEY));
+        this.caKeyData = initCaKeyData(caKeySecret);
         this.renewalType = RenewalType.NOOP;
         this.clock = Clock.systemUTC();
     }
@@ -368,6 +368,21 @@ public abstract class Ca {
      * @return CA key generation
      */
     protected abstract int initCaKeyGeneration(Secret caKeySecret, Secret caCertSecret);
+
+
+    private Map<String, String> initCaKeyData(Secret caKeySecret) {
+        if (caKeySecret != null) {
+            if (caKeySecret.getData() == null || !caKeySecret.getData().containsKey(CA_KEY)) {
+                String error = String.format("Secret %s/%s for CA %s does not contain %s", caKeySecret.getMetadata().getNamespace(), caKeySecret.getMetadata().getName(), caRole, CA_KEY);
+                LOGGER.errorCr(reconciliation, error);
+                throw new RuntimeException(error);
+            } else {
+                return Map.of(CA_KEY, caKeySecret.getData().get(CA_KEY));
+            }
+        } else {
+            return new HashMap<>();
+        }
+    }
 
     /**
      * Gets the CA certificate data, which contains both the current CA cert and also previous, still valid certs.

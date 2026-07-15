@@ -15,10 +15,8 @@ import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.ca.Ca;
 import io.strimzi.operator.common.ca.CaConfig;
-import io.strimzi.operator.common.ca.CertificateUtils;
 import io.strimzi.operator.common.model.Labels;
 
-import java.security.cert.X509Certificate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -110,33 +108,6 @@ public abstract class CaProvider {
         } else {
             return Map.of();
         }
-    }
-
-    /**
-     * Validates whether each of the user provided CA certs has a valid chain. Any intermediate CAs should be provided first,
-     * in order, with the root CA being the last certificate.
-     *
-     * @param userCaCertData The CA cert data provided by the user.
-     */
-    protected void validateUserCaCertChain(Map<String, String> userCaCertData) {
-        userCaCertData.entrySet()
-                .stream()
-                .filter(entry -> Ca.SecretEntry.CRT.matchesType(entry.getKey()))
-                .forEach(entry -> {
-                    List<X509Certificate> certChain = CertificateUtils.extractCertChain(entry.getKey(), Util.decodeBytesFromBase64(entry.getValue()));
-                    if (certChain.isEmpty()) {
-                        LOGGER.errorCr(reconciliation, "{} certificate chain in {} is empty", caRole.caName(), entry.getKey());
-                        throw new RuntimeException("Failed to validate User supplied " + caRole.caName() + " cert chain in " + entry.getKey());
-                    } else if (certChain.size() == 1) {
-                        LOGGER.debugCr(reconciliation, "{} certificate {} contains a single certificate", caRole.caName(), entry.getKey());
-                        return;
-                    }
-                    if (!CertificateUtils.certIsTrusted(reconciliation, certChain.subList(0, certChain.size() - 1), certChain.getLast())) {
-                        String errorMessage = "User supplied " + caRole.caName() + " cert chain " + entry.getKey() + " is not valid. Certificates must be provided in the correct order.";
-                        LOGGER.errorCr(reconciliation, errorMessage);
-                        throw new RuntimeException(errorMessage);
-                    }
-                });
     }
 
     protected Secret createCaCertSecret(Ca.CaRole caRole, String name, Map<String, String> data, Map<String, String> certAnnotations, int caCertGeneration) {

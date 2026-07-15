@@ -13,6 +13,7 @@ import org.junit.jupiter.api.Test;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
@@ -20,11 +21,16 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.Base64;
 import java.util.List;
+import java.util.Map;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class CertificateUtilsTest {
@@ -169,6 +175,101 @@ class CertificateUtilsTest {
         assertFalse(CertificateUtils.certIsTrusted(Reconciliation.DUMMY_RECONCILIATION, List.of(x509LeafCert, x509IntermediateCert1, x509IntermediateCert2), x509RootCert));
         assertFalse(CertificateUtils.certIsTrusted(Reconciliation.DUMMY_RECONCILIATION, List.of(x509LeafCert, x509IntermediateCert2), x509RootCert));
         assertFalse(CertificateUtils.certIsTrusted(Reconciliation.DUMMY_RECONCILIATION, List.of(x509IntermediateCert2, x509IntermediateCert1, x509LeafCert), x509RootCert));
+    }
+
+    @Test
+    @DisplayName("When the CA data is empty then validateUserCaCertChain throws an exception")
+    public void testValidateUserCaCertChainWhenEmpty() {
+        Exception exception = assertThrows(RuntimeException.class, () -> CertificateUtils.validateUserCaCertChain(Reconciliation.DUMMY_RECONCILIATION, Ca.CaRole.CLUSTER_CA, Map.of("ca.crt", "")));
+        assertEquals("Failed to validate User supplied Cluster CA cert chain in ca.crt", exception.getMessage());
+    }
+
+    @Test
+    @DisplayName("When the CA data contains a single cert then validateUserCaCertChain does not throw an exception")
+    public void testValidateUserCaCertChainWhenSingleCert() throws IOException {
+        OpenSslCertIssuer ssl = new OpenSslCertIssuer();
+
+        File rootKey = createTempFile("key-", ".key");
+        File rootCert = createTempFile("crt-", ".crt");
+
+        Subject rootSubject = new Subject.Builder().withCommonName("RootCn").withOrganizationName("MyOrganization").build();
+
+        // Generate a root cert
+        Instant instant = Instant.now();
+        ZonedDateTime notBefore = instant.truncatedTo(ChronoUnit.SECONDS).atZone(Clock.systemUTC().getZone());
+        ZonedDateTime notAfter = instant.plus(2, ChronoUnit.HOURS).truncatedTo(ChronoUnit.SECONDS).atZone(Clock.systemUTC().getZone());
+        ssl.generateRootCaCert(rootSubject, rootKey, rootCert, notBefore, notAfter, 1);
+
+        Map<String, String> cert;
+        try (FileInputStream fis = new FileInputStream(rootCert)) {
+            cert = Map.of("ca.crt", Base64.getEncoder().encodeToString(fis.readAllBytes()));
+        }
+
+        assertDoesNotThrow(() -> CertificateUtils.validateUserCaCertChain(Reconciliation.DUMMY_RECONCILIATION, Ca.CaRole.CLUSTER_CA, cert));
+    }
+
+    @Test
+    @DisplayName("When the CA data contains a chain then validateUserCaCertChain throws an exception when it is invalid")
+    public void testValidateUserCaCertChain() throws IOException {
+        OpenSslCertIssuer ssl = new OpenSslCertIssuer();
+
+        File rootKey = createTempFile("key-", ".key");
+        File rootCert = createTempFile("crt-", ".crt");
+        File intermediateKey1 = createTempFile("key-", ".key");
+        File intermediateCert1 = createTempFile("crt-", ".crt");
+        File intermediateKey2 = createTempFile("key-", ".key");
+        File intermediateCert2 = createTempFile("crt-", ".crt");
+
+        Subject rootSubject = new Subject.Builder().withCommonName("RootCn").withOrganizationName("MyOrganization").build();
+
+        // Generate a root cert
+        Instant instant = Instant.now();
+        ZonedDateTime notBefore = instant.truncatedTo(ChronoUnit.SECONDS).atZone(Clock.systemUTC().getZone());
+        ZonedDateTime notAfter = instant.plus(2, ChronoUnit.HOURS).truncatedTo(ChronoUnit.SECONDS).atZone(Clock.systemUTC().getZone());
+        ssl.generateRootCaCert(rootSubject, rootKey, rootCert, notBefore, notAfter, 1);
+
+        // Generate an intermediate cert
+        Subject intermediateSubject1 = new Subject.Builder().withCommonName("IntermediateCn1").withOrganizationName("MyOrganization").build();
+        ssl.generateIntermediateCaCert(rootKey, rootCert, intermediateSubject1, intermediateKey1, intermediateCert1, notBefore, notAfter, 1);
+
+        // Generate an additional intermediate cert
+        Subject intermediateSubject2 = new Subject.Builder().withCommonName("IntermediateCn2").withOrganizationName("MyOrganization").build();
+        ssl.generateIntermediateCaCert(intermediateKey1, intermediateCert1, intermediateSubject2, intermediateKey2, intermediateCert2, notBefore, notAfter, 1);
+
+        // Generate combined Pem files with CA chain in correct order
+        String validCombinedPem;
+        try (FileInputStream int2CertFis = new FileInputStream(intermediateCert2);
+             FileInputStream int1CertFis = new FileInputStream(intermediateCert1);
+             FileInputStream rootCertFis = new FileInputStream(rootCert)) {
+            String combinedPem = String.join("\n",
+                    new String(int2CertFis.readAllBytes(), StandardCharsets.US_ASCII),
+                    new String(int1CertFis.readAllBytes(), StandardCharsets.US_ASCII),
+                    new String(rootCertFis.readAllBytes(), StandardCharsets.US_ASCII));
+            validCombinedPem = Base64.getEncoder().encodeToString(combinedPem.getBytes(StandardCharsets.US_ASCII));
+        }
+
+        // Generate combined Pem files with CA chain in wrong order
+        String invalidCombinedPem;
+        try (FileInputStream int2CertFis = new FileInputStream(intermediateCert2);
+             FileInputStream int1CertFis = new FileInputStream(intermediateCert1);
+             FileInputStream rootCertFis = new FileInputStream(rootCert)) {
+            String combinedPem = String.join("\n",
+                    new String(rootCertFis.readAllBytes(), StandardCharsets.US_ASCII),
+                    new String(int1CertFis.readAllBytes(), StandardCharsets.US_ASCII),
+                    new String(int2CertFis.readAllBytes(), StandardCharsets.US_ASCII));
+            invalidCombinedPem = Base64.getEncoder().encodeToString(combinedPem.getBytes(StandardCharsets.US_ASCII));
+        }
+
+        Map<String, String> validCert = Map.of("ca.crt", validCombinedPem, "ca-2026-02-01T09-00-00.crt", validCombinedPem);
+        assertDoesNotThrow(() -> CertificateUtils.validateUserCaCertChain(Reconciliation.DUMMY_RECONCILIATION, Ca.CaRole.CLUSTER_CA, validCert));
+
+        Map<String, String> invalidCert = Map.of("ca.crt", invalidCombinedPem);
+        Exception exception = assertThrows(RuntimeException.class, () -> CertificateUtils.validateUserCaCertChain(Reconciliation.DUMMY_RECONCILIATION, Ca.CaRole.CLUSTER_CA, invalidCert));
+        assertEquals("User supplied Cluster CA cert chain ca.crt is not valid. Certificates must be provided in the correct order.", exception.getMessage());
+
+        Map<String, String> partiallyValidCert = Map.of("ca.crt", validCombinedPem, "ca-2026-02-01T09-00-00.crt", invalidCombinedPem);
+        Exception exception1 = assertThrows(RuntimeException.class, () -> CertificateUtils.validateUserCaCertChain(Reconciliation.DUMMY_RECONCILIATION, Ca.CaRole.CLUSTER_CA, partiallyValidCert));
+        assertEquals("User supplied Cluster CA cert chain ca-2026-02-01T09-00-00.crt is not valid. Certificates must be provided in the correct order.", exception1.getMessage());
     }
 
     private File createTempFile(String prefix, String suffix) throws IOException {

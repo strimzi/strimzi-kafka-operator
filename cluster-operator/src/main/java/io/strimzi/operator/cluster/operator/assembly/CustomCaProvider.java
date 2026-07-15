@@ -10,6 +10,7 @@ import io.strimzi.certs.CertIssuer;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ca.Ca;
 import io.strimzi.operator.common.ca.CaConfig;
+import io.strimzi.operator.common.ca.CertificateUtils;
 import io.strimzi.operator.common.ca.InternalCa;
 import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.common.model.PasswordGenerator;
@@ -48,7 +49,8 @@ public class CustomCaProvider extends CaProvider {
         if (existingCaCertSecret == null || existingCaKeySecret == null)   {
             throw new InvalidResourceException(caRole.caName() + " should not be generated, but the secrets were not found.");
         }
-        validateUserCaCertChain(existingCaCertSecret.getData());
+        CertificateUtils.validateUserCaCertChain(reconciliation, caRole, existingCaCertSecret.getData());
+        // Since reconcileCaSecrets just returns the existing Secret there is no need to store the ca
         return CompletableFuture.completedStage(new InternalCa(reconciliation, caRole, certIssuer, passwordGenerator, existingCaCertSecret, existingCaKeySecret, caConfig));
     }
 
