@@ -158,7 +158,7 @@ public class SimpleAclOperator implements AdminApiOperator<Set<SimpleAclRule>, S
      *
      * @return the Future with reconcile result
      */
-    private CompletableFuture<ReconcileResult<Collection<AclBinding>>> createAcls(Reconciliation reconciliation, String username, Set<SimpleAclRule> desired) {
+    private CompletionStage<ReconcileResult<Collection<AclBinding>>> createAcls(Reconciliation reconciliation, String username, Set<SimpleAclRule> desired) {
         LOGGER.debugCr(reconciliation, "Creating ACLs for user {}", username);
 
         CompletableFuture<ReconcileResult<Collection<AclBinding>>> future = new CompletableFuture<>();
@@ -289,7 +289,7 @@ public class SimpleAclOperator implements AdminApiOperator<Set<SimpleAclRule>, S
      *
      * @return  The Future with reconcile result
      */
-    private CompletableFuture<ReconcileResult<Collection<AclBindingFilter>>> deleteAcls(Reconciliation reconciliation, String username, Set<SimpleAclRule> current)   {
+    private CompletionStage<ReconcileResult<Collection<AclBindingFilter>>> deleteAcls(Reconciliation reconciliation, String username, Set<SimpleAclRule> current)   {
         LOGGER.debugCr(reconciliation, "Deleting ACLs of user {}", username);
 
         CompletableFuture<ReconcileResult<Collection<AclBindingFilter>>> future = new CompletableFuture<>();
