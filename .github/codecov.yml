@@ -1,4 +1,13 @@
-# Validate changes with curl -X POST --data-binary @.github/codecov.yaml https://codecov.io/validate
+# Validate changes with curl -X POST --data-binary @.github/codecov.yml https://codecov.io/validate
+
+# Wait for all test uploads before posting status checks.
+# Count = 1 (unit-test-strimzi) + 2 (integration-test-strimzi matrix entries).
+# Update if the matrix in build.yml changes.
+codecov:
+  notify:
+    after_n_builds: 3
+    wait_for_ci: true
+
 coverage:
   precision: 2
   round: down
