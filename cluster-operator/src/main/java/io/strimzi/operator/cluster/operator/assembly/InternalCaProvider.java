@@ -51,7 +51,7 @@ public class InternalCaProvider extends CaProvider {
      * @param existingCaCertSecret  Existing CA certificate secret
      * @param existingCaKeySecret   Existing CA key secret
      */
-    public InternalCaProvider(Reconciliation reconciliation, Ca.CaRole caRole, CaConfig caConfig, Kafka kafkaCr, SecretOperator secretOperator, CertIssuer certIssuer, PasswordGenerator passwordGenerator, Clock clock, Secret existingCaCertSecret, Secret existingCaKeySecret) {
+    InternalCaProvider(Reconciliation reconciliation, Ca.CaRole caRole, CaConfig caConfig, Kafka kafkaCr, SecretOperator secretOperator, CertIssuer certIssuer, PasswordGenerator passwordGenerator, Clock clock, Secret existingCaCertSecret, Secret existingCaKeySecret) {
         super(reconciliation, caRole, caConfig, kafkaCr, existingCaCertSecret, existingCaKeySecret);
         this.secretOperator = secretOperator;
         this.certIssuer = certIssuer;
@@ -60,26 +60,21 @@ public class InternalCaProvider extends CaProvider {
     }
 
     @Override
-    public CompletionStage<Ca> createCa() {
+    public CompletionStage<CaProviderResult> createAndReconcileCa() {
         InternalCa internalCa = new InternalCa(reconciliation, caRole, certIssuer, passwordGenerator, existingCaCertSecret, existingCaKeySecret, caConfig);
         internalCa.createRenewOrReplace(Util.isMaintenanceTimeWindowsSatisfied(reconciliation, kafkaCr.getSpec().getMaintenanceTimeWindows(), clock.instant()),
                 isForceReplace(existingCaKeySecret),
                 isForceRenew(existingCaCertSecret));
-        ca = internalCa;
-        return CompletableFuture.completedStage(ca);
-    }
 
-    @Override
-    public CompletionStage<Secret> reconcileCaSecrets() {
-        Secret caKeySecret = createCaKeySecret();
-        Secret caCertSecret = createCaCertSecret();
+        Secret caKeySecret = createCaKeySecret(internalCa);
+        Secret caCertSecret = createCaCertSecret(internalCa);
 
         CompletableFuture<ReconcileResult<Secret>> caCertSecretFuture = secretOperator.reconcile(reconciliation, reconciliation.namespace(),
                 caCertSecret.getMetadata().getName(), caCertSecret).toCompletableFuture();
         CompletableFuture<ReconcileResult<Secret>> caKeySecretFuture = secretOperator.reconcile(reconciliation, reconciliation.namespace(),
                 caKeySecret.getMetadata().getName(), caKeySecret).toCompletableFuture();
         return CompletableFuture.allOf(caCertSecretFuture, caKeySecretFuture)
-                .thenApply(v -> caCertSecret);
+                .thenApply(v -> new CaProviderResult(internalCa, caCertSecret));
     }
 
     private boolean isForceReplace(Secret caSecret) {
@@ -100,24 +95,24 @@ public class InternalCaProvider extends CaProvider {
         }
     }
 
-    private Secret createCaCertSecret() {
+    private Secret createCaCertSecret(InternalCa internalCa) {
         Map<String, String> certAnnotations = new HashMap<>(1);
 
-        if (((InternalCa) ca).postponed() && Annotations.hasAnnotation(existingCaCertSecret, Annotations.ANNO_STRIMZI_IO_FORCE_RENEW))   {
+        if (internalCa.postponed() && Annotations.hasAnnotation(existingCaCertSecret, Annotations.ANNO_STRIMZI_IO_FORCE_RENEW))   {
             certAnnotations.put(Annotations.ANNO_STRIMZI_IO_FORCE_RENEW, Annotations.stringAnnotation(existingCaCertSecret, Annotations.ANNO_STRIMZI_IO_FORCE_RENEW, "false"));
         }
         String caCertSecretName = switch (caRole) {
             case CLUSTER_CA -> AbstractModel.clusterCaCertSecretName(reconciliation.name());
             case CLIENTS_CA -> KafkaResources.clientsCaCertificateSecretName(reconciliation.name());
         };
-        return createCaCertSecret(caRole, caCertSecretName, ca.caCertData(), certAnnotations, ca.caCertGeneration());
+        return createCaCertSecret(caRole, caCertSecretName, internalCa.caCertData(), certAnnotations, internalCa.caCertGeneration());
     }
 
-    private Secret createCaKeySecret() {
+    private Secret createCaKeySecret(InternalCa internalCa) {
         Map<String, String> keyAnnotations = new HashMap<>(2);
-        keyAnnotations.put(ANNO_STRIMZI_IO_CA_KEY_GENERATION, String.valueOf(ca.caKeyGeneration()));
+        keyAnnotations.put(ANNO_STRIMZI_IO_CA_KEY_GENERATION, String.valueOf(internalCa.caKeyGeneration()));
 
-        if (((InternalCa) ca).postponed()
+        if (internalCa.postponed()
                 && existingCaKeySecret != null
                 && Annotations.hasAnnotation(existingCaKeySecret, Annotations.ANNO_STRIMZI_IO_FORCE_REPLACE))   {
             keyAnnotations.put(Annotations.ANNO_STRIMZI_IO_FORCE_REPLACE, Annotations.stringAnnotation(existingCaKeySecret, Annotations.ANNO_STRIMZI_IO_FORCE_REPLACE, "false"));
@@ -126,6 +121,6 @@ public class InternalCaProvider extends CaProvider {
             case CLUSTER_CA -> AbstractModel.clusterCaKeySecretName(reconciliation.name());
             case CLIENTS_CA -> KafkaResources.clientsCaKeySecretName(reconciliation.name());
         };
-        return createCaSecret(caKeySecretName, ca.caKeyData(), caLabels, keyAnnotations);
+        return createCaSecret(caKeySecretName, internalCa.caKeyData(), caLabels, keyAnnotations);
     }
 }

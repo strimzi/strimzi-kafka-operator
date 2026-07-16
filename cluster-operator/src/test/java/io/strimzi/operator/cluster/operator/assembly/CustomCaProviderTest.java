@@ -60,7 +60,7 @@ public class CustomCaProviderTest {
     @Test
     public void testInitCaSecretsWhenUserManagedCertsAreMissingThrows() {
         CustomCaProvider userCaSecretProvider = new CustomCaProvider(Reconciliation.DUMMY_RECONCILIATION, Ca.CaRole.CLUSTER_CA, CA_CONFIG, KAFKA, null, null, null, null);
-        Exception exception = assertThrows(InvalidResourceException.class, () -> userCaSecretProvider.createCa().toCompletableFuture().join());
+        Exception exception = assertThrows(InvalidResourceException.class, () -> userCaSecretProvider.createAndReconcileCa().toCompletableFuture().join());
         assertThat(exception.getMessage(), is("Cluster CA should not be generated, but the secrets were not found."));
     }
 
@@ -109,21 +109,33 @@ public class CustomCaProviderTest {
             validCombinedPem = Base64.getEncoder().encodeToString(combinedPem.getBytes(StandardCharsets.US_ASCII));
         }
 
-        Secret initialClusterCaKeySecret = ResourceUtils.createInitialCaKeySecret(NAMESPACE, NAME, AbstractModel.clusterCaKeySecretName(NAME), caKey);
-        Secret initialClusterCaCertSecret = ResourceUtils.createInitialCaCertSecret(NAMESPACE, NAME, AbstractModel.clusterCaCertSecretName(NAME), validCombinedPem, null, null);
+        Secret initialClusterCaKeySecret = ResourceUtils.createInitialCaKeySecret(NAMESPACE, NAME, AbstractModel.clusterCaKeySecretName(NAME), caKey)
+                .edit()
+                .editMetadata()
+                    .addToAnnotations(Ca.ANNO_STRIMZI_IO_CA_KEY_GENERATION, "3")
+                .endMetadata()
+                .build();
+        Secret initialClusterCaCertSecret = ResourceUtils.createInitialCaCertSecret(NAMESPACE, NAME, AbstractModel.clusterCaCertSecretName(NAME), validCombinedPem, null, null)
+                .edit()
+                .editMetadata()
+                    .addToAnnotations(Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION, "5")
+                .endMetadata()
+                .build();
 
         CustomCaProvider clusterCaProvider = new CustomCaProvider(Reconciliation.DUMMY_RECONCILIATION, Ca.CaRole.CLUSTER_CA, CA_CONFIG, KAFKA, null, null, initialClusterCaCertSecret, initialClusterCaKeySecret);
-        clusterCaProvider.createCa().toCompletableFuture().join();
-        Secret clusterCaCertSecret = clusterCaProvider.reconcileCaSecrets().toCompletableFuture().join();
-        assertThat(clusterCaCertSecret, is(initialClusterCaCertSecret));
+        CaProviderResult clusterCaProviderResult = clusterCaProvider.createAndReconcileCa().toCompletableFuture().join();
+        Ca clusterCa = clusterCaProviderResult.ca();
+        assertThat(clusterCa.caCertGeneration(), is(5));
+        assertThat(clusterCa.caKeyGeneration(), is(3));
+
+        assertThat(clusterCaProviderResult.certSecret(), is(initialClusterCaCertSecret));
 
         Secret initialClientsCaKeySecret = ResourceUtils.createInitialCaKeySecret(NAMESPACE, NAME, KafkaResources.clientsCaKeySecretName(NAME), caKey);
         Secret initialClientsCaCertSecret = ResourceUtils.createInitialCaCertSecret(NAMESPACE, NAME, KafkaResources.clientsCaCertificateSecretName(NAME), validCombinedPem, null, null);
 
         CustomCaProvider clientsCaProvider = new CustomCaProvider(Reconciliation.DUMMY_RECONCILIATION, Ca.CaRole.CLIENTS_CA, CA_CONFIG, KAFKA, null, null, initialClientsCaCertSecret, initialClientsCaKeySecret);
-        clientsCaProvider.createCa().toCompletableFuture().join();
-        Secret clientsCaCertSecret = clientsCaProvider.reconcileCaSecrets().toCompletableFuture().join();
-        assertThat(clientsCaCertSecret, is(initialClientsCaCertSecret));
+        CaProviderResult clientsCaProviderResult = clientsCaProvider.createAndReconcileCa().toCompletableFuture().join();
+        assertThat(clientsCaProviderResult.certSecret(), is(initialClientsCaCertSecret));
     }
 
     @Test
@@ -176,14 +188,14 @@ public class CustomCaProviderTest {
         Secret initialClusterCaCertSecret = ResourceUtils.createInitialCaCertSecret(NAMESPACE, NAME, AbstractModel.clusterCaCertSecretName(NAME), invalidCombinedPem, null, null);
 
         CustomCaProvider clusterCaProvider = new CustomCaProvider(Reconciliation.DUMMY_RECONCILIATION, Ca.CaRole.CLUSTER_CA, CA_CONFIG, KAFKA, null, null, initialClusterCaCertSecret, initialClusterCaKeySecret);
-        Exception clusterCaException = assertThrows(RuntimeException.class, () -> clusterCaProvider.createCa().toCompletableFuture().join());
+        Exception clusterCaException = assertThrows(RuntimeException.class, () -> clusterCaProvider.createAndReconcileCa().toCompletableFuture().join());
         assertThat(clusterCaException.getMessage(), is("User supplied Cluster CA cert chain ca.crt is not valid. Certificates must be provided in the correct order."));
 
         Secret initialClientsCaKeySecret = ResourceUtils.createInitialCaKeySecret(NAMESPACE, NAME, KafkaResources.clientsCaKeySecretName(NAME), caKey);
         Secret initialClientsCaCertSecret = ResourceUtils.createInitialCaCertSecret(NAMESPACE, NAME, KafkaResources.clientsCaCertificateSecretName(NAME), invalidCombinedPem, null, null);
 
         CustomCaProvider clientsCaProvider = new CustomCaProvider(Reconciliation.DUMMY_RECONCILIATION, Ca.CaRole.CLIENTS_CA, CA_CONFIG, KAFKA, null, null, initialClientsCaCertSecret, initialClientsCaKeySecret);
-        Exception clientsCaException = assertThrows(RuntimeException.class, () -> clientsCaProvider.createCa().toCompletableFuture().join());
+        Exception clientsCaException = assertThrows(RuntimeException.class, () -> clientsCaProvider.createAndReconcileCa().toCompletableFuture().join());
         assertThat(clientsCaException.getMessage(), is("User supplied Clients CA cert chain ca.crt is not valid. Certificates must be provided in the correct order."));
     }
 }

@@ -201,54 +201,39 @@ public class CaReconciler {
                         }
                     }
 
-                    CaProvider clusterCaProvider = getCaProvider(Ca.CaRole.CLUSTER_CA, clusterCaConfig, existingClusterCaCertSecret, existingClusterCaKeySecret, clock);
-                    CompletionStage<Void> clusterCaFuture = clusterCaProvider.createCa()
-                            .thenCompose(ca -> {
-                                clusterCa = ca;
-                                return clusterCaProvider.reconcileCaSecrets();
-                            })
-                            .thenApply(secret -> {
-                                clusterCaCertSecret = secret;
-                                return null;
-                            });
+                    CompletionStage<Void> clusterCaFuture = createCaProvider(
+                            Ca.CaRole.CLUSTER_CA,
+                            clusterCaConfig,
+                            existingClusterCaCertSecret,
+                            existingClusterCaKeySecret,
+                            clock
+                    ).createAndReconcileCa().thenApply(result -> {
+                        clusterCa = result.ca();
+                        clusterCaCertSecret = result.certSecret();
+                        return null;
+                    });
 
-                    CaProvider clientsCaProvider = getCaProvider(Ca.CaRole.CLIENTS_CA, clientsCaConfig, existingClientsCaCertSecret, existingClientsCaKeySecret, clock);
-                    CompletionStage<Void> clientsCaFuture = clientsCaProvider.createCa()
-                            .thenCompose(ca -> {
-                                clientsCa = ca;
-                                return clientsCaProvider.reconcileCaSecrets();
-                            }).thenApply(secret -> null);
+                    CompletionStage<Void> clientsCaFuture = createCaProvider(
+                            Ca.CaRole.CLIENTS_CA,
+                            clientsCaConfig,
+                            existingClientsCaCertSecret,
+                            existingClientsCaKeySecret,
+                            clock
+                    ).createAndReconcileCa().thenApply(result -> {
+                        clientsCa = result.ca();
+                        return null;
+                    });
                     return CompletableFuture.allOf(clusterCaFuture.toCompletableFuture(), clientsCaFuture.toCompletableFuture());
                 }));
     }
 
-    private CaProvider getCaProvider(Ca.CaRole caRole, CaConfig caConfig, Secret existingCaCertSecret, Secret existingCaKeySecret, Clock clock) {
-        CaProvider caProvider;
-        if (caConfig.isGenerateCa()) {
-            caProvider = new InternalCaProvider(
-                    reconciliation,
-                    caRole,
-                    caConfig,
-                    kafkaCr,
-                    secretOperator,
-                    certIssuer,
-                    passwordGenerator,
-                    clock,
-                    existingCaCertSecret,
-                    existingCaKeySecret
-            );
-        } else {
-            caProvider = new CustomCaProvider(
-                    reconciliation,
-                    caRole,
-                    caConfig,
-                    kafkaCr,
-                    certIssuer,
-                    passwordGenerator,
-                    existingCaCertSecret,
-                    existingCaKeySecret);
-        }
-        return caProvider;
+    /**
+     * Creator method for CaProvider. Overriding this method can be used to get mocked provider.
+     *
+     * @return  CaProvider instance
+     */
+    /*test*/ CaProvider createCaProvider(Ca.CaRole caRole, CaConfig caConfig, Secret existingCaCertSecret, Secret existingCaKeySecret, Clock clock) {
+        return CaProvider.create(reconciliation, caRole, caConfig, kafkaCr, secretOperator, certIssuer, passwordGenerator, clock, existingCaCertSecret, existingCaKeySecret);
     }
 
     /**

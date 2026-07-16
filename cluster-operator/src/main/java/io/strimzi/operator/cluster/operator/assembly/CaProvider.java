@@ -9,6 +9,7 @@ import io.fabric8.kubernetes.api.model.OwnerReferenceBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.strimzi.api.kafka.model.kafka.Kafka;
+import io.strimzi.certs.CertIssuer;
 import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
@@ -16,7 +17,10 @@ import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.ca.Ca;
 import io.strimzi.operator.common.ca.CaConfig;
 import io.strimzi.operator.common.model.Labels;
+import io.strimzi.operator.common.model.PasswordGenerator;
+import io.strimzi.operator.common.operator.resource.kubernetes.SecretOperator;
 
+import java.time.Clock;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -40,19 +44,57 @@ public abstract class CaProvider {
     protected final Map<String, String> caLabels;
     protected final Secret existingCaCertSecret;
     protected final Secret existingCaKeySecret;
-    protected Ca ca;
+
+    /**
+     * Creates a CA provider.
+     *
+     * @param reconciliation        Reconciliation marker
+     * @param caRole                The role of the CA
+     * @param caConfig              CA configuration
+     * @param kafkaCr               The Kafka custom resource
+     * @param secretOperator        Secret operator for managing secrets
+     * @param certIssuer            Certificate issuer
+     * @param passwordGenerator     Password generator
+     * @param clock                 Clock for time-based operations
+     * @param existingCaCertSecret  Existing CA certificate secret
+     * @param existingCaKeySecret   Existing CA key secret
+     *
+     * @return The created CaProvider instance
+     */
+    static CaProvider create(
+            Reconciliation reconciliation,
+            Ca.CaRole caRole,
+            CaConfig caConfig,
+            Kafka kafkaCr,
+            SecretOperator secretOperator,
+            CertIssuer certIssuer,
+            PasswordGenerator passwordGenerator,
+            Clock clock,
+            Secret existingCaCertSecret,
+            Secret existingCaKeySecret
+    ) {
+        if (caConfig.isGenerateCa()) {
+            return new InternalCaProvider(reconciliation, caRole, caConfig, kafkaCr, secretOperator, certIssuer,
+                    passwordGenerator, clock, existingCaCertSecret, existingCaKeySecret
+            );
+        } else {
+            return new CustomCaProvider(reconciliation, caRole, caConfig, kafkaCr, certIssuer, passwordGenerator,
+                    existingCaCertSecret, existingCaKeySecret
+            );
+        }
+    }
 
     /**
      * Constructor.
      *
      * @param reconciliation        Reconciliation marker
-     * @param caRole                The role of this CA
+     * @param caRole                The role of the CA
      * @param caConfig              CA configuration
      * @param kafkaCr               The Kafka custom resource
      * @param existingCaCertSecret  Existing CA certificate secret
      * @param existingCaKeySecret   Existing CA key secret
      */
-    public CaProvider(Reconciliation reconciliation, Ca.CaRole caRole, CaConfig caConfig, Kafka kafkaCr, Secret existingCaCertSecret, Secret existingCaKeySecret) {
+    CaProvider(Reconciliation reconciliation, Ca.CaRole caRole, CaConfig caConfig, Kafka kafkaCr, Secret existingCaCertSecret, Secret existingCaKeySecret) {
         this.reconciliation = reconciliation;
         this.caRole = caRole;
         this.caConfig = caConfig;
@@ -63,18 +105,11 @@ public abstract class CaProvider {
     }
 
     /**
-     * Creates or loads the CA instance.
+     * Creates or loads the CA instance and reconciles the CA secrets with the Kubernetes cluster.
      *
-     * @return CompletionStage that completes with the CA instance
+     * @return CompletionStage that completes with the CA instance and reconciled CA certificate secret
      */
-    public abstract CompletionStage<Ca> createCa();
-
-    /**
-     * Reconciles the CA secrets with the Kubernetes cluster.
-     *
-     * @return CompletionStage that completes with the reconciled CA certificate secret
-     */
-    public abstract CompletionStage<Secret> reconcileCaSecrets();
+    public abstract CompletionStage<CaProviderResult> createAndReconcileCa();
 
     /**
      * Method to extract the template labels from the Kafka CR.

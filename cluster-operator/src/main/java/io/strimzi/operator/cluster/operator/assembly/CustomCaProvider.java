@@ -38,24 +38,19 @@ public class CustomCaProvider extends CaProvider {
      * @param existingCaCert    Existing CA certificate secret
      * @param existingCaKey     Existing CA key secret
      */
-    public CustomCaProvider(Reconciliation reconciliation, Ca.CaRole caRole, CaConfig caConfig, Kafka kafkaCr, CertIssuer certIssuer, PasswordGenerator passwordGenerator, Secret existingCaCert, Secret existingCaKey) {
+    CustomCaProvider(Reconciliation reconciliation, Ca.CaRole caRole, CaConfig caConfig, Kafka kafkaCr, CertIssuer certIssuer, PasswordGenerator passwordGenerator, Secret existingCaCert, Secret existingCaKey) {
         super(reconciliation, caRole, caConfig, kafkaCr, existingCaCert, existingCaKey);
         this.certIssuer = certIssuer;
         this.passwordGenerator = passwordGenerator;
     }
 
     @Override
-    public CompletionStage<Ca> createCa() {
+    public CompletionStage<CaProviderResult> createAndReconcileCa() {
         if (existingCaCertSecret == null || existingCaKeySecret == null)   {
             throw new InvalidResourceException(caRole.caName() + " should not be generated, but the secrets were not found.");
         }
         CertificateUtils.validateUserCaCertChain(reconciliation, caRole, existingCaCertSecret.getData());
-        // Since reconcileCaSecrets just returns the existing Secret there is no need to store the ca
-        return CompletableFuture.completedStage(new InternalCa(reconciliation, caRole, certIssuer, passwordGenerator, existingCaCertSecret, existingCaKeySecret, caConfig));
-    }
-
-    @Override
-    public CompletionStage<Secret> reconcileCaSecrets() {
-        return CompletableFuture.completedStage(existingCaCertSecret);
+        InternalCa internalCa = new InternalCa(reconciliation, caRole, certIssuer, passwordGenerator, existingCaCertSecret, existingCaKeySecret, caConfig);
+        return CompletableFuture.completedStage(new CaProviderResult(internalCa, existingCaCertSecret));
     }
 }

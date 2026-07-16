@@ -5,6 +5,7 @@
 package io.strimzi.operator.cluster.operator.assembly;
 
 import io.fabric8.kubernetes.api.model.Secret;
+import io.strimzi.api.ResourceAnnotations;
 import io.strimzi.api.kafka.model.common.CertificateAuthority;
 import io.strimzi.api.kafka.model.common.CertificateAuthorityBuilder;
 import io.strimzi.api.kafka.model.common.CertificateExpirationPolicy;
@@ -130,8 +131,7 @@ public class InternalCaProviderTest {
                 caSecrets == null ? null : caSecrets.clusterCaKey
         );
 
-        clusterCaProvider.createCa().toCompletableFuture().join();
-        clusterCaProvider.reconcileCaSecrets().toCompletableFuture().join();
+        clusterCaProvider.createAndReconcileCa().toCompletableFuture().join();
 
         InternalCaProvider clientsCaProvider = new InternalCaProvider(Reconciliation.DUMMY_RECONCILIATION,
                 Ca.CaRole.CLIENTS_CA,
@@ -145,8 +145,7 @@ public class InternalCaProviderTest {
                 caSecrets == null ? null : caSecrets.clientsCaKey
         );
 
-        clientsCaProvider.createCa().toCompletableFuture().join();
-        clientsCaProvider.reconcileCaSecrets().toCompletableFuture().join();
+        clientsCaProvider.createAndReconcileCa().toCompletableFuture().join();
     }
 
     private CertAndKey generateCa(CertificateAuthority certificateAuthority, String commonName)
@@ -968,5 +967,67 @@ public class InternalCaProviderTest {
 
         TestUtils.checkOwnerReference(captorSecrets.clusterCaCert(), kafka);
         TestUtils.checkOwnerReference(captorSecrets.clusterCaKey(), kafka);
+    }
+
+    @Test
+    public void testForceReplaceAnnotationIncrementsKeyAndCertGeneration()
+            throws IOException, CertificateException, KeyStoreException, NoSuchAlgorithmException {
+        CertificateAuthority certificateAuthority = new CertificateAuthorityBuilder()
+                .withValidityDays(100)
+                .withRenewalDays(10)
+                .withGenerateCertificateAuthority(true)
+                .build();
+
+        List<Secret> clusterCaSecrets = initialClusterCaSecrets(certificateAuthority);
+        Secret initialClusterCaKeySecret = clusterCaSecrets.get(0).edit()
+                .editMetadata()
+                    .addToAnnotations(ResourceAnnotations.ANNO_STRIMZI_IO_FORCE_REPLACE, "true")
+                .endMetadata()
+                .build();
+        Secret initialClusterCaCertSecret = clusterCaSecrets.get(1);
+
+        List<Secret> clientsCaSecrets = initialClientsCaSecrets(certificateAuthority);
+
+        reconcileCas(certificateAuthority, certificateAuthority, new CaSecrets(initialClusterCaCertSecret, initialClusterCaKeySecret,
+                clientsCaSecrets.get(1), clientsCaSecrets.get(0)));
+
+        CaSecrets captorSecrets = verifyCaSecretReconcileCalls(secretOperations);
+        assertCaptorSecretsNotNull(captorSecrets);
+
+        assertThat(captorSecrets.clusterCaKey().getMetadata().getAnnotations().get(Ca.ANNO_STRIMZI_IO_CA_KEY_GENERATION), is("1"));
+        assertThat(captorSecrets.clusterCaCert().getMetadata().getAnnotations().get(Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION), is("1"));
+        assertThat(captorSecrets.clusterCaCert().getData().get(CA_CRT), is(not(initialClusterCaCertSecret.getData().get(CA_CRT))));
+        assertThat(captorSecrets.clusterCaKey().getData().get(CA_KEY), is(not(initialClusterCaKeySecret.getData().get(CA_KEY))));
+    }
+
+    @Test
+    public void testForceRenewAnnotationIncrementsCertGeneration()
+            throws IOException, CertificateException, KeyStoreException, NoSuchAlgorithmException {
+        CertificateAuthority certificateAuthority = new CertificateAuthorityBuilder()
+                .withValidityDays(100)
+                .withRenewalDays(10)
+                .withGenerateCertificateAuthority(true)
+                .build();
+
+        List<Secret> clusterCaSecrets = initialClusterCaSecrets(certificateAuthority);
+        Secret initialClusterCaKeySecret = clusterCaSecrets.get(0);
+        Secret initialClusterCaCertSecret = clusterCaSecrets.get(1).edit()
+                .editMetadata()
+                    .addToAnnotations(ResourceAnnotations.ANNO_STRIMZI_IO_FORCE_RENEW, "true")
+                .endMetadata()
+                .build();
+
+        List<Secret> clientsCaSecrets = initialClientsCaSecrets(certificateAuthority);
+
+        reconcileCas(certificateAuthority, certificateAuthority, new CaSecrets(initialClusterCaCertSecret, initialClusterCaKeySecret,
+                clientsCaSecrets.get(1), clientsCaSecrets.get(0)));
+
+        CaSecrets captorSecrets = verifyCaSecretReconcileCalls(secretOperations);
+        assertCaptorSecretsNotNull(captorSecrets);
+
+        assertThat(captorSecrets.clusterCaCert().getMetadata().getAnnotations().get(Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION), is("1"));
+        assertThat(captorSecrets.clusterCaKey().getMetadata().getAnnotations().get(Ca.ANNO_STRIMZI_IO_CA_KEY_GENERATION), is("0"));
+        assertThat(captorSecrets.clusterCaCert().getData().get(CA_CRT), is(not(initialClusterCaCertSecret.getData().get(CA_CRT))));
+        assertThat(captorSecrets.clusterCaKey().getData().get(CA_KEY), is(initialClusterCaKeySecret.getData().get(CA_KEY)));
     }
 }
