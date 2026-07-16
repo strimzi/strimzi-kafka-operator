@@ -1,0 +1,42 @@
+name: GitHub Actions Integration
+
+on:
+  pull_request:
+    paths:
+      - 'pom.xml'
+      - 'Makefile'
+      - 'Makefile.docker'
+      - 'Makefile.maven'
+      - 'Makefile.os'
+      - 'docker-images/**'
+      - '.github/workflows/github-actions-integration.yml'
+    branches:
+      - "*"
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test-github-actions-integration:
+    uses: strimzi/github-actions/.github/workflows/reusable-test-integrations.yml@v2
+    with:
+      repo: ${{ github.repository }}
+      ref: ${{ github.sha }}
+      architecture: "amd64"
+      artifactSuffix: "operators"
+      buildContainers: true
+      modules: "./,crd-annotations,crd-generator,test,api"
+      nexusCheck: "strimzi"
+      javaVersion: "21"
+      helmChartName: "strimzi-kafka-operator-helm-3-chart"
+      releaseVersion: "6.6.6"
+      imagesLocation: "./docker-images/container-archives"
+      clusterOperatorBuild: true
+      checkTests: false
+      githubActionsRef: "v2"
+    secrets: inherit
