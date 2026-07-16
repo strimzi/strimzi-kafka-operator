@@ -27,6 +27,11 @@ Use automatic upgrades only on version-specific channels.
 
 For more information on using OperatorHub to upgrade Operators, see the {OLMOperatorDocs}.
 
+If OLM does not provide a direct upgrade path between the installed and target Strimzi versions, replace the OLM subscription and select the target channel while retaining all Strimzi custom resources and CRDs.
+For example, this might be required when moving from the `stable` channel to a version-specific channel.
+
+include::../../modules/upgrading/proc-upgrade-cluster-operator-olm-no-upgrade-path.adoc[leveloffset=+1]
+
 == Upgrading the Cluster Operator using a Helm chart
 
 If you deployed the Cluster Operator using a Helm chart, use `helm upgrade`.
