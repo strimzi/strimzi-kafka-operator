@@ -14,7 +14,6 @@ import io.strimzi.plugin.gatekeeper.GatekeeperKafkaUserEntryContext;
 import io.strimzi.plugin.gatekeeper.GatekeeperKafkaUserExitContext;
 import io.strimzi.plugin.gatekeeper.GatekeeperKafkaUserMutatingPlugin;
 import io.strimzi.plugin.gatekeeper.GatekeeperKafkaUserValidatingPlugin;
-import io.strimzi.plugin.gatekeeper.GatekeeperPluginConfigurationContext;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
@@ -221,11 +220,6 @@ public class UserOperatorGatekeeperPluginInvokerTest {
         }
 
         @Override
-        public void configure(GatekeeperPluginConfigurationContext context) {
-            // not used in these tests
-        }
-
-        @Override
         public CompletionStage<KafkaUser> kafkaUserEntry(GatekeeperKafkaUserEntryContext context, KafkaUser kafkaUser) {
             order.add(tag);
             return CompletableFuture.completedFuture(new KafkaUserBuilder(kafkaUser)
@@ -252,11 +246,6 @@ public class UserOperatorGatekeeperPluginInvokerTest {
         }
 
         @Override
-        public void configure(GatekeeperPluginConfigurationContext context) {
-            // not used in these tests
-        }
-
-        @Override
         public CompletionStage<Void> kafkaUserEntry(GatekeeperKafkaUserEntryContext context, KafkaUser kafkaUser) {
             order.add(tag);
             return fail
@@ -266,11 +255,6 @@ public class UserOperatorGatekeeperPluginInvokerTest {
     }
 
     private static final class UserResourceMutatingValidator implements GatekeeperKafkaUserValidatingPlugin {
-        @Override
-        public void configure(GatekeeperPluginConfigurationContext context) {
-            // not used in these tests
-        }
-
         @Override
         public CompletionStage<Void> kafkaUserEntry(GatekeeperKafkaUserEntryContext context, KafkaUser kafkaUser) {
             kafkaUser.getMetadata().setName("HACKED");
@@ -283,11 +267,6 @@ public class UserOperatorGatekeeperPluginInvokerTest {
         private KafkaUser receivedUser;
 
         @Override
-        public void configure(GatekeeperPluginConfigurationContext context) {
-            // not used in these tests
-        }
-
-        @Override
         public CompletionStage<Void> kafkaUserEntry(GatekeeperKafkaUserEntryContext context, KafkaUser kafkaUser) {
             invoked = true;
             receivedUser = kafkaUser;
@@ -297,11 +276,6 @@ public class UserOperatorGatekeeperPluginInvokerTest {
 
     private static final class StatusMutator implements GatekeeperKafkaUserMutatingPlugin {
         @Override
-        public void configure(GatekeeperPluginConfigurationContext context) {
-            // not used in these tests
-        }
-
-        @Override
         public CompletionStage<KafkaUserStatus> kafkaUserExit(GatekeeperKafkaUserExitContext context, KafkaUser kafkaUser, KafkaUserStatus newKafkaUserStatus) {
             newKafkaUserStatus.setObservedGeneration(1874L);
             return CompletableFuture.completedFuture(newKafkaUserStatus);
@@ -309,11 +283,6 @@ public class UserOperatorGatekeeperPluginInvokerTest {
     }
 
     private static final class StatusMutatingValidator implements GatekeeperKafkaUserValidatingPlugin {
-        @Override
-        public void configure(GatekeeperPluginConfigurationContext context) {
-            // not used in these tests
-        }
-
         @Override
         public CompletionStage<Void> kafkaUserExit(GatekeeperKafkaUserExitContext context, KafkaUser kafkaUser, KafkaUserStatus newKafkaUserStatus) {
             newKafkaUserStatus.setObservedGeneration(1919L);
@@ -330,11 +299,6 @@ public class UserOperatorGatekeeperPluginInvokerTest {
         private UserDeletionPlugin(String tag, boolean fail) {
             this.tag = tag;
             this.fail = fail;
-        }
-
-        @Override
-        public void configure(GatekeeperPluginConfigurationContext context) {
-            // not used in these tests
         }
 
         @Override
@@ -357,11 +321,6 @@ public class UserOperatorGatekeeperPluginInvokerTest {
         private UserValidatingDeletionPlugin(String tag, boolean fail) {
             this.tag = tag;
             this.fail = fail;
-        }
-
-        @Override
-        public void configure(GatekeeperPluginConfigurationContext context) {
-            // not used in these tests
         }
 
         @Override

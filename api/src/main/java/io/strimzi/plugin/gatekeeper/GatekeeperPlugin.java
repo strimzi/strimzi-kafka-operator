@@ -22,5 +22,5 @@ public interface GatekeeperPlugin {
      * @param context   Context providing the resources (such as the Kubernetes client and the platform features) the
      *                  plugin can use to configure itself
      */
-    void configure(GatekeeperPluginConfigurationContext context);
+    default void configure(GatekeeperPluginConfigurationContext context) { }
 }
