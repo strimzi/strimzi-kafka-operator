@@ -75,14 +75,11 @@ public class CaReconciler {
     private final PasswordGenerator passwordGenerator;
     private final KubernetesRestartEventPublisher eventPublisher;
 
-    // Fields based on the Kafka CR required for the reconciliation
+    // Fields based on the Kafka CR config required for the reconciliation
     private final Kafka kafkaCr;
-    private final List<String> maintenanceWindows;
     private final OwnerReference ownerRef;
     private final CaConfig clusterCaConfig;
     private final CaConfig clientsCaConfig;
-    private final Labels clusterOperatorSecretLabels;
-    private final Labels trustBundleLabels;
 
     // Fields used to store state during the reconciliation
     private Ca clusterCa;
@@ -126,9 +123,7 @@ public class CaReconciler {
 
         this.eventPublisher = supplier.restartEventsPublisher;
 
-        // Extract required information from the Kafka CR
         this.kafkaCr = kafkaCr;
-        this.maintenanceWindows = kafkaCr.getSpec().getMaintenanceTimeWindows();
         this.ownerRef = new OwnerReferenceBuilder()
                 .withApiVersion(kafkaCr.getApiVersion())
                 .withKind(kafkaCr.getKind())
@@ -139,8 +134,6 @@ public class CaReconciler {
                 .build();
         this.clusterCaConfig = new CaConfig(kafkaCr.getSpec().getClusterCa(), config.isPkcs12KeystoreGeneration());
         this.clientsCaConfig = new CaConfig(kafkaCr.getSpec().getClientsCa(), config.isPkcs12KeystoreGeneration());
-        this.clusterOperatorSecretLabels = Labels.generateDefaultLabels(kafkaCr, Labels.APPLICATION_NAME, Labels.APPLICATION_NAME, AbstractModel.STRIMZI_CLUSTER_OPERATOR_NAME);
-        this.trustBundleLabels = Labels.generateDefaultLabels(kafkaCr, Labels.APPLICATION_NAME, "trust-bundle", AbstractModel.STRIMZI_CLUSTER_OPERATOR_NAME);
     }
 
     /**
@@ -243,7 +236,7 @@ public class CaReconciler {
         Secret trustBundleSecret = ModelUtils.createSecret(
                 KafkaResources.trustBundleSecretName(reconciliation.name()),
                 reconciliation.namespace(),
-                trustBundleLabels,
+                Labels.generateDefaultLabels(kafkaCr, Labels.APPLICATION_NAME, "trust-bundle", AbstractModel.STRIMZI_CLUSTER_OPERATOR_NAME),
                 ownerRef,
                 Map.of("cluster-ca.crt", Util.encodeToBase64(clusterCa.trustedCaCerts()), "clients-ca.crt", Util.encodeToBase64(clientsCa.trustedCaCerts())),
                 Map.of(clusterCa.caCertGenerationAnnotation(), String.valueOf(clusterCa.caCertGeneration()),
@@ -274,13 +267,13 @@ public class CaReconciler {
 
         CertAndKey oldCertAndKey = CertSecretUtils.keyStoreCertAndKey(coSecret, componentName, Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION);
 
-        return VertxUtil.toFuture(clusterCa.maybeCopyOrGenerateClientCert(reconciliation, componentName, oldCertAndKey, Util.isMaintenanceTimeWindowsSatisfied(reconciliation, maintenanceWindows, clock.instant()))
+        return VertxUtil.toFuture(clusterCa.maybeCopyOrGenerateClientCert(reconciliation, componentName, oldCertAndKey, Util.isMaintenanceTimeWindowsSatisfied(reconciliation, kafkaCr.getSpec().getMaintenanceTimeWindows(), clock.instant()))
                 .thenCompose(updatedCert -> {
                     Map<String, String> secretData = CertSecretUtils.buildSecretData(componentName, updatedCert);
                     coSecret = ModelUtils.createSecret(
                             KafkaResources.clusterOperatorCertsSecretName(reconciliation.name()),
                             reconciliation.namespace(),
-                            clusterOperatorSecretLabels,
+                            Labels.generateDefaultLabels(kafkaCr, Labels.APPLICATION_NAME, Labels.APPLICATION_NAME, AbstractModel.STRIMZI_CLUSTER_OPERATOR_NAME),
                             ownerRef,
                             secretData,
                             Map.of(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, String.valueOf(updatedCert.caCertGeneration())),

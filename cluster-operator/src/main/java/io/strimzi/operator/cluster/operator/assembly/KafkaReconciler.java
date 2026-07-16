@@ -762,10 +762,10 @@ public class KafkaReconciler {
                 .compose(existingSecrets -> collectListenerCustomCerts()
                         .compose(customCertsData -> VertxUtil.toFuture(
                             kafka.generateCertificatesSecrets(clusterCa,
-                                existingSecrets, 
-                                customCertsData, 
-                                listenerReconciliationResults.bootstrapDnsNames, 
-                                listenerReconciliationResults.brokerDnsNames, 
+                                existingSecrets,
+                                customCertsData,
+                                listenerReconciliationResults.bootstrapDnsNames,
+                                listenerReconciliationResults.brokerDnsNames,
                                 Util.isMaintenanceTimeWindowsSatisfied(reconciliation, maintenanceWindows, clock.instant()))
                         ).compose(desiredCertSecrets -> {
                             List<String> desiredCertSecretNames = desiredCertSecrets.stream().map(secret -> secret.getMetadata().getName()).toList();
