@@ -107,10 +107,12 @@
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-core</artifactId>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-slf4j2-impl</artifactId>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
@@ -185,8 +187,6 @@
                                 <!-- Fabric8 Kubernetes Client and HttpClient are required by the tests -->
                                 <ignoredUnusedDeclaredDependency>io.fabric8:kubernetes-client</ignoredUnusedDeclaredDependency>
                                 <ignoredUnusedDeclaredDependency>io.fabric8:kubernetes-httpclient-jdk</ignoredUnusedDeclaredDependency>
-                                <!-- Needed for logging in tests -->
-                                <ignoredUnusedDeclaredDependency>org.apache.logging.log4j:log4j-core</ignoredUnusedDeclaredDependency>
                                 <!-- Needed for logging in tests using the Kubernetes Client (uses SLF4J) -->
                                 <ignoredUnusedDeclaredDependency>org.apache.logging.log4j:log4j-slf4j2-impl</ignoredUnusedDeclaredDependency>
                             </ignoredUnusedDeclaredDependencies>
