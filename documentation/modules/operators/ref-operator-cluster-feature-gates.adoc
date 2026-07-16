@@ -93,7 +93,7 @@ The following table shows the maturity of the feature gates introduced across St
 ¦`ServerSideApplyPhase1`
 ¦0.48
 ¦0.51
-¦1.2 (planned)
+¦1.2
 
 ifdef::Section[]
 ¦`UseConnectBuildWithBuildah`
@@ -118,34 +118,6 @@ For information on feature gates that have reached GA, see the documentation for
 
 Stable feature gates have reached a beta level of maturity, and are generally enabled by default for all users.
 Stable feature gates are production-ready, but they can still be disabled.
-
-[id='ref-operator-server-side-apply-phase-1-feature-gate-{context}']
-=== `ServerSideApplyPhase1` feature gate
-
-The `ServerSideApplyPhase1` feature gate has a default state of _enabled_.
-
-When enabled, the Cluster Operator uses Server-Side Apply (SSA) for creating and updating certain resources.
-SSA is a Kubernetes feature that provides better tracking of field ownership and more controlled resource updates.
-In Phase 1, Server-Side Apply is used for the following resources:
-
-- `PersistentVolumeClaim`
-- `ConfigMap`
-- `Ingress`
-- `ServiceAccount`
-- `Service`
-
-All other resources continue to be reconciled using the existing mechanism - client-side apply.
-If users change the fields of operator-managed resources, the operator reverts these changes.
-
-With SSA, the Cluster Operator modifies only the fields it manages.
-User changes to the other fields are preserved as long as they don't conflict.
-On the first update attempt, the Cluster Operator sets `force = false` when applying changes, respecting user changes.
-If a conflict occurs in a managed field, the update is retried with `force = true`.
-The conflict and the switch to forced apply are logged by the Cluster Operator.
-
-Ownership of individual fields is tracked through the `.metadata.managedFields` property of the resource being updated.
-
-To disable the `ServerSideApplyPhase1` feature gate, specify `-ServerSideApplyPhase1` in the `STRIMZI_FEATURE_GATES` environment variable in the Cluster Operator configuration.
 
 ifdef::Section[]
 [id='ref-operator-use-connect-build-with-buildah-feature-gate-{context}']

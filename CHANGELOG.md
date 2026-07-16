@@ -3,6 +3,7 @@
 ## 1.2.0
 
 * Add support for Apache Kafka 4.3.1
+* The `ServerSideApplyPhase1` feature gate moves to GA stage and is permanently enabled without the possibility to disable it.
 
 ### Major changes, deprecations, and removals
 

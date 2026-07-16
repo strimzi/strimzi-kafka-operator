@@ -113,7 +113,6 @@ These tests are crucial to ensure that Kafka clusters can handle production work
 - [testSendMessagesPlainScramSha](../io.strimzi.systemtest.kafka.listeners.ListenersST.md)
 - [testSendMessagesTlsAuthenticated](../io.strimzi.systemtest.kafka.listeners.ListenersST.md)
 - [testSendMessagesTlsScramSha](../io.strimzi.systemtest.kafka.listeners.ListenersST.md)
-- [testServerSideApply](../io.strimzi.systemtest.operators.FeatureGatesST.md)
 - [testSimpleDynamicConfiguration](../io.strimzi.systemtest.kafka.dynamicconfiguration.DynamicConfST.md)
 - [testTieredStorageWithAivenFileSystemPlugin](../io.strimzi.systemtest.kafka.TieredStorageST.md)
 - [testTieredStorageWithAivenS3Plugin](../io.strimzi.systemtest.kafka.TieredStorageST.md)
