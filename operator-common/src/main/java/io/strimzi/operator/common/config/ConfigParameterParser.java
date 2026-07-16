@@ -69,6 +69,17 @@ public interface ConfigParameterParser<T> {
     };
 
     /**
+     * A comma-delimited list of strings. Surrounding whitespace around the separators is trimmed.
+     */
+    ConfigParameterParser<List<String>> COMMA_SEPARATED_LIST = configValue -> {
+        List<String> commaSeparatedList = null;
+        if (configValue != null && !configValue.trim().isEmpty()) {
+            commaSeparatedList = asList(configValue.trim().split("\\s*,+\\s*"));
+        }
+        return commaSeparatedList;
+    };
+
+    /**
      * Returns Properties based on its String format
      */
     ConfigParameterParser<Properties> PROPERTIES = configValue -> {

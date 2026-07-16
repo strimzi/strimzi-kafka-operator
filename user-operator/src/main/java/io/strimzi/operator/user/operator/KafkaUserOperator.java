@@ -26,6 +26,10 @@ import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.kubernetes.CrdOperator;
 import io.strimzi.operator.common.operator.resource.kubernetes.SecretOperator;
 import io.strimzi.operator.user.UserOperatorConfig;
+import io.strimzi.operator.user.gatekeeper.UserOperatorGatekeeperPluginInvoker;
+import io.strimzi.operator.user.gatekeeper.impl.GatekeeperKafkaUserDeletionContextImpl;
+import io.strimzi.operator.user.gatekeeper.impl.GatekeeperKafkaUserEntryContextImpl;
+import io.strimzi.operator.user.gatekeeper.impl.GatekeeperKafkaUserExitContextImpl;
 import io.strimzi.operator.user.model.KafkaUserModel;
 import io.strimzi.operator.user.model.acl.SimpleAclRule;
 
@@ -186,9 +190,11 @@ public class KafkaUserOperator {
     public CompletionStage<KafkaUserStatus> reconcile(Reconciliation reconciliation, KafkaUser kafkaUser, Secret userSecret)  {
         if (kafkaUser != null)  {
             // Create or update
-            return createOrUpdate(reconciliation, kafkaUser, userSecret);
+            return UserOperatorGatekeeperPluginInvoker.kafkaUserEntry(new GatekeeperKafkaUserEntryContextImpl(), kafkaUser) // Gatekeeper invocation
+                    .thenCompose(user -> createOrUpdate(reconciliation, user, userSecret)
+                            .thenCompose(status -> UserOperatorGatekeeperPluginInvoker.kafkaUserExit(new GatekeeperKafkaUserExitContextImpl(), user, status))); // Gatekeeper invocation
         } else {
-            // Delete the user from everywhere with both the TLS and SCRAM-SHa name variants
+            // Delete the user from everywhere with both the TLS and SCRAM-SHA name variants
             return delete(reconciliation).thenApply(i -> null);
         }
     }
@@ -214,7 +220,8 @@ public class KafkaUserOperator {
                 config.isAclsAdminApiSupported() ? aclOperator.reconcile(reconciliation, KafkaUserModel.getScramUserName(user), null).toCompletableFuture() : CompletableFuture.completedFuture(ReconcileResult.noop(null)),
                 scramCredentialsOperator.reconcile(reconciliation, KafkaUserModel.getScramUserName(user), null).toCompletableFuture(),
                 quotasOperator.reconcile(reconciliation, KafkaUserModel.getTlsUserName(user), null).toCompletableFuture(),
-                quotasOperator.reconcile(reconciliation, KafkaUserModel.getScramUserName(user), null).toCompletableFuture()
+                quotasOperator.reconcile(reconciliation, KafkaUserModel.getScramUserName(user), null).toCompletableFuture(),
+                UserOperatorGatekeeperPluginInvoker.kafkaUserDeletion(new GatekeeperKafkaUserDeletionContextImpl(), reconciliation.namespace(), reconciliation.name()).toCompletableFuture() // Gatekeeper invocation
         );
     }
 
@@ -230,6 +237,7 @@ public class KafkaUserOperator {
      * @return a CompletionStage
      */
     private CompletionStage<KafkaUserStatus> createOrUpdate(Reconciliation reconciliation, KafkaUser kafkaUser, Secret userSecret) {
+        // Reconciliation is not paused => we do the actual work
         KafkaUserModel user;
         KafkaUserStatus userStatus = new KafkaUserStatus();
 
@@ -248,7 +256,7 @@ public class KafkaUserOperator {
                 // Reconcile the user: update everything in Kafka and in the Secret
                 .thenCompose(i -> reconcileCredentialsQuotasAndAcls(reconciliation, user, userSecret, userStatus))
                 .handle((i, e) -> {
-                    if (e != null)  {
+                    if (e != null) {
                         throw new CompletionException(e);
                     } else {
                         StatusUtils.setStatusConditionAndObservedGeneration(kafkaUser, userStatus, (Throwable) null);

@@ -118,6 +118,7 @@ public class GatekeeperPluginFactory {
                     LOGGER.error("Gatekeeper plugin {} was not found", pluginClass);
                     throw new InvalidConfigurationException("Gatekeeper plugin " + pluginClass + " was not found.");
                 } else {
+                    LOGGER.info("Using Gatekeeper plugin {}", plugin.getClass().getCanonicalName());
                     ordered.add(plugin);
                 }
             }

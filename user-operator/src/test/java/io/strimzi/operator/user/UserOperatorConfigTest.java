@@ -20,8 +20,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class UserOperatorConfigTest {
     private static final Map<String, String> ENV_VARS = new HashMap<>(8);
-    private static final Labels EXPECTED_LABELS;
-
     static {
         ENV_VARS.put(UserOperatorConfig.NAMESPACE.key(), "namespace");
         ENV_VARS.put(UserOperatorConfig.RECONCILIATION_INTERVAL_MS.key(), "30000");
@@ -34,14 +32,21 @@ public class UserOperatorConfigTest {
         ENV_VARS.put(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.key(), "false");
         ENV_VARS.put(UserOperatorConfig.SCRAM_SHA_PASSWORD_LENGTH.key(), "20");
         ENV_VARS.put(UserOperatorConfig.PKCS12_KEYSTORE_GENERATION.key(), "false");
+    }
 
-
+    private static final Labels EXPECTED_LABELS;
+    static {
         Map<String, String> labels = new HashMap<>(2);
         labels.put("label1", "value1");
         labels.put("label2", "value2");
 
         EXPECTED_LABELS = Labels.fromMap(labels);
     }
+
+    private static final String CUSTOM_PLUGIN_1 = "io.strimzi.Custom1";
+    private static final String CUSTOM_PLUGIN_2 = "io.strimzi.Custom2";
+    private static final String DEFAULT_PLUGIN_1 = "io.strimzi.Default1";
+    private static final String DEFAULT_PLUGIN_2 = "io.strimzi.Default2";
 
     @Test
     public void testDefaults() {
@@ -272,11 +277,38 @@ public class UserOperatorConfigTest {
     @Test
     public void testFeatureGatesParsing()    {
         // We test that the configuration is really parsing the feature gates environment variable. We test it on
-        // non-existing feature gate instead of a real one so that we do not have to change it when the FGs are promoted
+        // a non-existing feature gate instead of a real one so that we do not have to change it when the FGs are promoted
         Map<String, String> envVars = new HashMap<>(UserOperatorConfigTest.ENV_VARS);
         envVars.put(UserOperatorConfig.FEATURE_GATES.key(), "-NonExistingGate");
 
         InvalidConfigurationException e = assertThrows(InvalidConfigurationException.class, () -> UserOperatorConfig.buildFromMap(envVars));
         assertThat(e.getMessage(), is("Unknown feature gate NonExistingGate found in the configuration"));
+    }
+
+    // TODO: Once we have some mandatory and default default plugins (i.e. default plugins configured by default),
+    //       we should add dedicated tests for their handling as well. But as they are currently empty, it cannot be
+    //       checked right now
+
+    @Test
+    public void testGatekeeperPluginsDefaultToEmpty() {
+        UserOperatorConfig config = UserOperatorConfig.buildFromMap(ENV_VARS);
+
+        assertThat(config.getGatekeeperCustomPlugins(), is(nullValue()));
+        assertThat(config.getGatekeeperDefaultPlugins(), is(nullValue()));
+        assertThat(config.getGatekeeperPlugins(), is(List.of()));
+    }
+
+    @Test
+    public void testGatekeeperPluginsOrdering() {
+        // The custom plugins are invoked first, then the default plugins. The User Operator has no mandatory plugins.
+        Map<String, String> envVars = new HashMap<>(ENV_VARS);
+        envVars.put(UserOperatorConfig.GATEKEEPER_DEFAULT_PLUGINS.key(), DEFAULT_PLUGIN_2 + ", " + DEFAULT_PLUGIN_1);
+        envVars.put(UserOperatorConfig.GATEKEEPER_CUSTOM_PLUGINS.key(), CUSTOM_PLUGIN_1 + "," + CUSTOM_PLUGIN_2);
+
+        UserOperatorConfig config = UserOperatorConfig.buildFromMap(envVars);
+
+        assertThat(config.getGatekeeperCustomPlugins(), is(List.of(CUSTOM_PLUGIN_1, CUSTOM_PLUGIN_2)));
+        assertThat(config.getGatekeeperDefaultPlugins(), is(List.of(DEFAULT_PLUGIN_2, DEFAULT_PLUGIN_1)));
+        assertThat(config.getGatekeeperPlugins(), is(List.of(CUSTOM_PLUGIN_1, CUSTOM_PLUGIN_2, DEFAULT_PLUGIN_2, DEFAULT_PLUGIN_1)));
     }
 }
