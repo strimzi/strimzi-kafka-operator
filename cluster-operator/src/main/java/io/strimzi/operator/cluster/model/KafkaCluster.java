@@ -107,6 +107,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonMap;
@@ -117,13 +118,11 @@ import static java.util.Collections.singletonMap;
 @SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "checkstyle:ClassFanOutComplexity"})
 public class KafkaCluster extends AbstractModel implements SupportsMetrics, SupportsLogging, SupportsJmx {
     /**
-     * Default Strimzi Metrics Reporter allow list.
+     * Default Strimzi Metrics Reporter allow list for broker nodes.
      * If modifying this list, make sure example dashboards are compatible with the regexes.
      */
-    private static final List<String> DEFAULT_METRICS_ALLOW_LIST = List.of(
+    private static final List<String> BROKER_DEFAULT_METRICS_ALLOW_LIST = List.of(
             "kafka_cluster_partition.*",
-            "kafka_controller_kafkacontroller.*",
-            "kafka_controller_controllerstats_uncleanleaderelectionspersec",
             "kafka_log_log_size",
             "kafka_network_requestmetrics.*",
             "kafka_network_socketserver_networkprocessoravgidlepercent",
@@ -133,11 +132,38 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
             "kafka_server_kafkaserver_brokerstate",
             "kafka_server_kafkaserver_clusterid",
             "kafka_server_kafkaserver_linux.*",
-            "kafka_server_raft.*",
             "kafka_server_replicamanager.*",
             "kafka_server_request_queue_size",
             "kafka_server_socket_server.*"
     );
+
+    /**
+     * Default Strimzi Metrics Reporter allow list for controller nodes.
+     * If modifying this list, make sure example dashboards are compatible with the regexes.
+     */
+    private static final List<String> CONTROLLER_DEFAULT_METRICS_ALLOW_LIST = List.of(
+            "kafka_controller_kafkacontroller.*",
+            "kafka_controller_controllerstats_uncleanleaderelectionspersec",
+            "kafka_network_requestmetrics.*",
+            "kafka_network_socketserver_networkprocessoravgidlepercent",
+            "kafka_server_app_info.*",
+            "kafka_server_kafkarequesthandlerpool_requesthandleravgidlepercent",
+            "kafka_server_kafkaserver_clusterid",
+            "kafka_server_kafkaserver_linux.*",
+            "kafka_server_raft.*",
+            "kafka_server_request_queue_size",
+            "kafka_server_socket_server.*"
+    );
+
+    /**
+     * Default Strimzi Metrics Reporter allow list for mixed (broker + controller) nodes.
+     * This is the union of broker and controller allow lists.
+     * If modifying this list, make sure example dashboards are compatible with the regexes.
+     */
+    private static final List<String> MIXED_DEFAULT_METRICS_ALLOW_LIST = Stream.concat(
+            BROKER_DEFAULT_METRICS_ALLOW_LIST.stream(),
+            CONTROLLER_DEFAULT_METRICS_ALLOW_LIST.stream()
+    ).distinct().toList();
 
     /**
      * Component type used by Kubernetes labels
@@ -335,7 +361,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
         if (kafkaClusterSpec.getMetricsConfig() instanceof JmxPrometheusExporterMetrics) {
             result.metrics = new JmxPrometheusExporterModel(kafkaClusterSpec);
         } else if (kafkaClusterSpec.getMetricsConfig() instanceof StrimziMetricsReporter) {
-            result.metrics = new StrimziMetricsReporterModel(kafkaClusterSpec, DEFAULT_METRICS_ALLOW_LIST);
+            result.metrics = new StrimziMetricsReporterModel(kafkaClusterSpec, MIXED_DEFAULT_METRICS_ALLOW_LIST);
         }
 
         result.logging = new LoggingModel(kafkaClusterSpec, result.getClass().getSimpleName());
@@ -1800,6 +1826,44 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
     }
 
     /**
+     * Returns the metrics model for the given pool. If the cluster uses StrimziMetricsReporter with a
+     * user-defined allowlist, that is returned as-is. If the default allowlist is in use, a role-specific
+     * default is returned instead.
+     *
+     * @param pool  The Kafka node pool
+     * @return      MetricsModel appropriate for the pool role
+     */
+    private MetricsModel metricsForPool(KafkaPool pool) {
+        if (metrics instanceof StrimziMetricsReporterModel reporterModel) {
+            // If user specified a custom allowlist, use it as-is for all pools
+            if (reporterModel.isCustomAllowList()) {
+                return metrics;
+            }
+            // Otherwise return a new model with the role-specific default
+            return new StrimziMetricsReporterModel(defaultMetricsAllowListForPool(pool));
+        }
+        return metrics;
+    }
+
+    /**
+     * Returns the default metrics allow list for the given pool based on its role.
+     * Broker-only pools get the broker list, controller-only pools get the controller list,
+     * and mixed pools get the union of both.
+     *
+     * @param pool  The Kafka node pool
+     * @return      The appropriate default metrics allow list
+     */
+    private static List<String> defaultMetricsAllowListForPool(KafkaPool pool) {
+        if (pool.isBroker() && pool.isController()) {
+            return MIXED_DEFAULT_METRICS_ALLOW_LIST;
+        } else if (pool.isBroker()) {
+            return BROKER_DEFAULT_METRICS_ALLOW_LIST;
+        } else {
+            return CONTROLLER_DEFAULT_METRICS_ALLOW_LIST;
+        }
+    }
+
+    /**
      * Internal method used to generate a Kafka configuration for given broker node.
      *
      * @param node                  Node reference with Node ID and pod name
@@ -1825,7 +1889,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
                 .withCruiseControl(cluster, ccMetricsReporter, node.broker())
                 .withTieredStorage(cluster, tieredStorage)
                 .withQuotas(cluster, quotas)
-                .withStrimziMetricsReporter(metrics)
+                .withStrimziMetricsReporter(metricsForPool(pool))
                 .withUserConfiguration(
                         configuration,
                         node.broker() && ccMetricsReporter != null,

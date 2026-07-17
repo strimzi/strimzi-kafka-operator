@@ -19,25 +19,51 @@ import java.util.regex.PatternSyntaxException;
  */
 public class StrimziMetricsReporterModel implements MetricsModel {
     /**
-     * Fully qualified class name of the Strimzi Metrics Reporter.
+     * The allow list of regex patterns for metrics collection.
      */
     private final List<String> allowList;
 
-        /**
-         * Constructs the Metrics Model for managing configurable metrics to Strimzi.
-         *
-         * @param spec Custom resource section configuring metrics.
-         * @param defaultAllowList Default allow list to be used when no value is provided.
-         */
+    /**
+     * Whether the allow list was explicitly set by the user (true) or is a role-based default (false).
+     */
+    private final boolean customAllowList;
+
+    /**
+     * Constructs the Metrics Model from a custom resource spec.
+     * If the user provided an explicit allowlist, it is used; otherwise the provided default is used.
+     *
+     * @param spec             Custom resource section configuring metrics.
+     * @param defaultAllowList Default allow list to be used when no value is provided.
+     */
     public StrimziMetricsReporterModel(HasConfigurableMetrics spec, List<String> defaultAllowList) {
         if (spec.getMetricsConfig() != null) {
             StrimziMetricsReporter config = (StrimziMetricsReporter) spec.getMetricsConfig();
             validate(config);
-            this.allowList = config.getValues() != null && config.getValues().getAllowList() != null
-                    ? config.getValues().getAllowList() : defaultAllowList;
+            boolean hasCustomList = config.getValues() != null && config.getValues().getAllowList() != null;
+            this.allowList = hasCustomList ? config.getValues().getAllowList() : defaultAllowList;
+            this.customAllowList = hasCustomList;
         } else {
             throw new InvalidConfigurationException("Unexpected empty metrics config");
         }
+    }
+
+    /**
+     * Constructs the Metrics Model directly from a default allow list (used for role-based defaults).
+     *
+     * @param defaultAllowList The role-specific default allow list.
+     */
+    public StrimziMetricsReporterModel(List<String> defaultAllowList) {
+        this.allowList = defaultAllowList;
+        this.customAllowList = false;
+    }
+
+    /**
+     * Returns whether the allow list was explicitly configured by the user.
+     *
+     * @return true if the user provided a custom allowlist, false if using a role-based default.
+     */
+    public boolean isCustomAllowList() {
+        return customAllowList;
     }
 
     /**
