@@ -28,7 +28,7 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       - uses: docker://rhysd/actionlint:1.7.10
         with:
           args: -color
@@ -38,7 +38,7 @@ jobs:
       - lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
       # Install dependencies
       - name: Install act
@@ -48,7 +48,7 @@ jobs:
           sudo install -m 0755 ./bin/act /usr/local/bin/act
 
       - name: Install yq
-        uses: strimzi/github-actions/.github/actions/dependencies/install-yq@v2
+        uses: strimzi/github-actions/.github/actions/dependencies/install-yq@0b7212d193ac3ab199e0dfef2a9cbd0229a15820 # v2.1
         with:
           version: "v4.6.3"
 
@@ -124,7 +124,7 @@ jobs:
       - lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
       # Install dependencies
       - name: Install act
@@ -134,7 +134,7 @@ jobs:
           sudo install -m 0755 ./bin/act /usr/local/bin/act
 
       - name: Install yq
-        uses: strimzi/github-actions/.github/actions/dependencies/install-yq@v2
+        uses: strimzi/github-actions/.github/actions/dependencies/install-yq@0b7212d193ac3ab199e0dfef2a9cbd0229a15820 # v2.1
         with:
           version: "v4.6.3"
 
@@ -211,7 +211,7 @@ jobs:
       - lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
       # Install dependencies
       - name: Install act
@@ -221,7 +221,7 @@ jobs:
           sudo install -m 0755 ./bin/act /usr/local/bin/act
 
       - name: Install yq
-        uses: strimzi/github-actions/.github/actions/dependencies/install-yq@v2
+        uses: strimzi/github-actions/.github/actions/dependencies/install-yq@0b7212d193ac3ab199e0dfef2a9cbd0229a15820 # v2.1
         with:
           version: "v4.6.3"
 
@@ -308,7 +308,7 @@ jobs:
       - lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
       # Install dependencies
       - name: Install act
@@ -318,7 +318,7 @@ jobs:
           sudo install -m 0755 ./bin/act /usr/local/bin/act
 
       - name: Install yq
-        uses: strimzi/github-actions/.github/actions/dependencies/install-yq@v2
+        uses: strimzi/github-actions/.github/actions/dependencies/install-yq@0b7212d193ac3ab199e0dfef2a9cbd0229a15820 # v2.1
         with:
           version: "v4.6.3"
 
@@ -399,7 +399,7 @@ jobs:
           echo "🎉 All $TOTAL perf-report scenarios passed!"
 
   test-github-actions-integration:
-    uses: strimzi/github-actions/.github/workflows/reusable-test-integrations.yml@v2
+    uses: strimzi/github-actions/.github/workflows/reusable-test-integrations.yml@0b7212d193ac3ab199e0dfef2a9cbd0229a15820 # v2.1
     with:
       repo: ${{ github.repository }}
       ref: ${{ github.sha }}

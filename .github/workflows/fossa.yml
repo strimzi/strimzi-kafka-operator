@@ -46,17 +46,17 @@ jobs:
     env:
       FOSSA_API_KEY: ${{ secrets.FOSSA_API_KEY }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           ref: ${{ github.event.workflow_run.head_sha || github.sha }}
 
       - name: Setup Java and Maven
-        uses: strimzi/github-actions/.github/actions/dependencies/setup-java@v2
+        uses: strimzi/github-actions/.github/actions/dependencies/setup-java@0b7212d193ac3ab199e0dfef2a9cbd0229a15820 # v2.1
         with:
           javaVersion: "21"
 
       - name: Install yq
-        uses: strimzi/github-actions/.github/actions/dependencies/install-yq@v2
+        uses: strimzi/github-actions/.github/actions/dependencies/install-yq@0b7212d193ac3ab199e0dfef2a9cbd0229a15820 # v2.1
         with:
           version: "v4.6.3"
 
@@ -64,7 +64,7 @@ jobs:
         run: mvn -B -DskipTests -Dmaven.javadoc.skip=true clean install
 
       - name: Run FOSSA Maven scan
-        uses: strimzi/github-actions/.github/actions/security/fossa-maven-scan@main
+        uses: strimzi/github-actions/.github/actions/security/fossa-maven-scan@0b7212d193ac3ab199e0dfef2a9cbd0229a15820 # v2.1
         with:
           scanName: operators
           fossaTest: "true"
@@ -82,7 +82,7 @@ jobs:
       images: ${{ steps.list-images.outputs.images }}
     steps:
       - name: Download container archive
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: containers-operators-amd64.tar
           run-id: ${{ inputs.sourceBuildRunId || github.event.workflow_run.id }}
@@ -120,7 +120,7 @@ jobs:
         image: ${{ fromJson(needs.prepare-container-scan.outputs.images) }}
     steps:
       - name: Download container archive
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: ${{ env.CONTAINERS_ARCHIVE }}
           run-id: ${{ inputs.sourceBuildRunId || github.event.workflow_run.id }}
@@ -130,10 +130,10 @@ jobs:
         run: tar -xvf "$CONTAINERS_ARCHIVE"
 
       - name: Install Docker
-        uses: strimzi/github-actions/.github/actions/dependencies/install-docker@v2
+        uses: strimzi/github-actions/.github/actions/dependencies/install-docker@0b7212d193ac3ab199e0dfef2a9cbd0229a15820 # v2.1
 
       - name: Run FOSSA container scan
-        uses: strimzi/github-actions/.github/actions/security/fossa-container-scan@main
+        uses: strimzi/github-actions/.github/actions/security/fossa-container-scan@0b7212d193ac3ab199e0dfef2a9cbd0229a15820 # v2.1
         with:
           imageFile: docker-images/container-archives/${{ matrix.image }}.tar.gz
           image: ${{ matrix.image }}
