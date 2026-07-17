@@ -25,7 +25,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
       # Build workflow trigger via pull_request will have merge commit sha in github.sha
       - name: Store build commit sha
@@ -34,7 +34,7 @@ jobs:
           echo "Stored commit SHA: ${{ github.sha }}"
 
       - name: Upload build metadata
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: commit-sha.txt
           path: commit-sha.txt
@@ -44,27 +44,27 @@ jobs:
           rm -rf commit-sha.txt
 
       - name: Setup Java and Maven
-        uses: strimzi/github-actions/.github/actions/dependencies/setup-java@v2
+        uses: strimzi/github-actions/.github/actions/dependencies/setup-java@0b7212d193ac3ab199e0dfef2a9cbd0229a15820 # v2.1
         with:
           javaVersion: "21"
 
       - name: Install yq
-        uses: strimzi/github-actions/.github/actions/dependencies/install-yq@v2
+        uses: strimzi/github-actions/.github/actions/dependencies/install-yq@0b7212d193ac3ab199e0dfef2a9cbd0229a15820 # v2.1
         with:
           version: "v4.6.3"
 
       - name: Install Shellcheck
-        uses: strimzi/github-actions/.github/actions/dependencies/install-shellcheck@v2
+        uses: strimzi/github-actions/.github/actions/dependencies/install-shellcheck@0b7212d193ac3ab199e0dfef2a9cbd0229a15820 # v2.1
         with:
           version: "0.11.0"
 
       - name: Install Helm
-        uses: strimzi/github-actions/.github/actions/dependencies/install-helm@v2
+        uses: strimzi/github-actions/.github/actions/dependencies/install-helm@0b7212d193ac3ab199e0dfef2a9cbd0229a15820 # v2.1
         with:
           helmVersion: "v3.16.0"
 
       - name: Restore Kafka binaries cache
-        uses: actions/cache/restore@v5
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: docker-images/artifacts/binaries/kafka/archives
           key: kafka-binaries-${{ hashFiles('kafka-versions.yaml') }}
@@ -72,7 +72,7 @@ jobs:
             kafka-binaries-
 
       - name: Build binaries using build-binaries action
-        uses: strimzi/github-actions/.github/actions/build/build-binaries@v2
+        uses: strimzi/github-actions/.github/actions/build/build-binaries@0b7212d193ac3ab199e0dfef2a9cbd0229a15820 # v2.1
         with:
           mainJavaBuild: "true"
           artifactSuffix: "operators"
@@ -84,7 +84,7 @@ jobs:
       - name: Save Kafka binaries cache
         # Save maven cache only after pushes into default branch
         if: ${{ github.event_name == 'push' && github.ref_name == github.event.repository.default_branch }}
-        uses: actions/cache/save@v5
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: docker-images/artifacts/binaries/kafka/archives
           key: kafka-binaries-${{ hashFiles('kafka-versions.yaml') }}
@@ -97,7 +97,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       - uses: ./.github/actions/build/unit-test-strimzi
 
   # Runs Strimzi integration tests (Failsafe only) against multiple Kubernetes versions
@@ -116,7 +116,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       - uses: ./.github/actions/build/integration-test-strimzi
         with:
           kindNodeImage: ${{ matrix.kindNodeImage }}
@@ -129,15 +129,15 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
       - name: Install yq
-        uses: strimzi/github-actions/.github/actions/dependencies/install-yq@v2
+        uses: strimzi/github-actions/.github/actions/dependencies/install-yq@0b7212d193ac3ab199e0dfef2a9cbd0229a15820 # v2.1
         with:
           version: "v4.6.3"
 
       - name: Install AsciiDoctor
-        uses: strimzi/github-actions/.github/actions/dependencies/install-ascii-doctor@v2
+        uses: strimzi/github-actions/.github/actions/dependencies/install-ascii-doctor@0b7212d193ac3ab199e0dfef2a9cbd0229a15820 # v2.1
         with:
           rubyVersion: "3.2"
 
@@ -160,22 +160,22 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
       - name: Install Docker
-        uses: strimzi/github-actions/.github/actions/dependencies/install-docker@v2
+        uses: strimzi/github-actions/.github/actions/dependencies/install-docker@0b7212d193ac3ab199e0dfef2a9cbd0229a15820 # v2.1
 
       - name: Install yq
-        uses: strimzi/github-actions/.github/actions/dependencies/install-yq@v2
+        uses: strimzi/github-actions/.github/actions/dependencies/install-yq@0b7212d193ac3ab199e0dfef2a9cbd0229a15820 # v2.1
         with:
           version: "v4.6.3"
 
       - name: Install Shellcheck
-        uses: strimzi/github-actions/.github/actions/dependencies/install-shellcheck@v2
+        uses: strimzi/github-actions/.github/actions/dependencies/install-shellcheck@0b7212d193ac3ab199e0dfef2a9cbd0229a15820 # v2.1
         with:
           version: "0.11.0"
 
-      - uses: strimzi/github-actions/.github/actions/build/build-containers@v2
+      - uses: strimzi/github-actions/.github/actions/build/build-containers@0b7212d193ac3ab199e0dfef2a9cbd0229a15820 # v2.1
         with:
           architecture: ${{ matrix.architecture }}
           imagesLocation: "./docker-images/container-archives"
@@ -198,23 +198,23 @@ jobs:
       # Required for keyless signing with GitHub OIDC
       id-token: write
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
       - name: Install Docker
-        uses: strimzi/github-actions/.github/actions/dependencies/install-docker@v2
+        uses: strimzi/github-actions/.github/actions/dependencies/install-docker@0b7212d193ac3ab199e0dfef2a9cbd0229a15820 # v2.1
 
       - name: Install yq
-        uses: strimzi/github-actions/.github/actions/dependencies/install-yq@v2
+        uses: strimzi/github-actions/.github/actions/dependencies/install-yq@0b7212d193ac3ab199e0dfef2a9cbd0229a15820 # v2.1
         with:
           version: "v4.6.3"
 
       - name: Install Syft
-        uses: strimzi/github-actions/.github/actions/dependencies/install-syft@v2
+        uses: strimzi/github-actions/.github/actions/dependencies/install-syft@0b7212d193ac3ab199e0dfef2a9cbd0229a15820 # v2.1
         with:
           version: "1.20.0"
 
       - name: Push containers using push-containers action
-        uses: strimzi/github-actions/.github/actions/build/push-containers@v2
+        uses: strimzi/github-actions/.github/actions/build/push-containers@0b7212d193ac3ab199e0dfef2a9cbd0229a15820 # v2.1
         with:
           registryUser: ${{ secrets.QUAY_USER }}
           registryPassword: ${{ secrets.QUAY_PASS }}
@@ -237,7 +237,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       - uses: ./.github/actions/build/publish-docs
         with:
           artifactName: "documentation.tar"
@@ -256,20 +256,20 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
       - name: Setup Java and Maven
-        uses: strimzi/github-actions/.github/actions/dependencies/setup-java@v2
+        uses: strimzi/github-actions/.github/actions/dependencies/setup-java@0b7212d193ac3ab199e0dfef2a9cbd0229a15820 # v2.1
         with:
           javaVersion: "21"
 
       - name: Install yq
-        uses: strimzi/github-actions/.github/actions/dependencies/install-yq@v2
+        uses: strimzi/github-actions/.github/actions/dependencies/install-yq@0b7212d193ac3ab199e0dfef2a9cbd0229a15820 # v2.1
         with:
           version: "v4.6.3"
 
       - name: Deploy to Maven Central
-        uses: strimzi/github-actions/.github/actions/build/deploy-java@v2
+        uses: strimzi/github-actions/.github/actions/build/deploy-java@0b7212d193ac3ab199e0dfef2a9cbd0229a15820 # v2.1
         with:
           modules: "./,crd-annotations,crd-generator,test,api"
           gpgPassphrase: ${{ secrets.GPG_PASSPHRASE }}

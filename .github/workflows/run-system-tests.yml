@@ -81,7 +81,7 @@ jobs:
       KUBE_VERSION: ${{ inputs.kubeVersion }}
     # Job steps
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           ref: ${{ inputs.ref }}
 
@@ -94,28 +94,28 @@ jobs:
           checkDescription: "Test run for ${{ matrix.config.jobName }}"
 
       - name: Setup Java and Maven
-        uses: strimzi/github-actions/.github/actions/dependencies/setup-java@v2
+        uses: strimzi/github-actions/.github/actions/dependencies/setup-java@0b7212d193ac3ab199e0dfef2a9cbd0229a15820 # v2.1
         with:
           javaVersion: "21"
 
       - name: Install yq
-        uses: strimzi/github-actions/.github/actions/dependencies/install-yq@v2
+        uses: strimzi/github-actions/.github/actions/dependencies/install-yq@0b7212d193ac3ab199e0dfef2a9cbd0229a15820 # v2.1
         with:
           version: "v4.6.3"
           architecture: ${{ matrix.config.arch }}
 
       - name: Install Shellcheck
-        uses: strimzi/github-actions/.github/actions/dependencies/install-shellcheck@v2
+        uses: strimzi/github-actions/.github/actions/dependencies/install-shellcheck@0b7212d193ac3ab199e0dfef2a9cbd0229a15820 # v2.1
         with:
           version: "0.11.0"
 
       - name: Install Helm
-        uses: strimzi/github-actions/.github/actions/dependencies/install-helm@v2
+        uses: strimzi/github-actions/.github/actions/dependencies/install-helm@0b7212d193ac3ab199e0dfef2a9cbd0229a15820 # v2.1
         with:
           helmVersion: "v3.16.0"
 
       - name: Setup Kind cluster
-        uses: strimzi/github-actions/.github/actions/dependencies/setup-kind@v2
+        uses: strimzi/github-actions/.github/actions/dependencies/setup-kind@0b7212d193ac3ab199e0dfef2a9cbd0229a15820 # v2.1
         with:
           architecture: ${{ matrix.config.arch }}
           controlNodes: 1
@@ -153,7 +153,7 @@ jobs:
       - name: Download container images from Build workflow
         id: download-containers
         if: ${{ inputs.buildRunId != '' }}
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: "containers-operators-${{ matrix.config.arch }}.tar"
           run-id: ${{ inputs.buildRunId }}
@@ -162,7 +162,7 @@ jobs:
       - name: Download container images from this build
         id: download-containers-local
         if: ${{ inputs.buildRunId == '' }}
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: "containers-operators-${{ matrix.config.arch }}.tar"
 
@@ -175,14 +175,14 @@ jobs:
           registry: "kind"
 
       - name: Restore Maven cache
-        uses: actions/cache/restore@v5
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.m2/repository
           key: maven-${{ hashFiles('**/pom.xml') }}
           restore-keys: |
             maven-
       - name: Restore Kafka cache
-        uses: actions/cache/restore@v5
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: docker-images/artifacts/binaries/kafka/archives
           key: kafka-binaries-${{ hashFiles('kafka-versions.yaml') }}
@@ -287,27 +287,27 @@ jobs:
 
       - name: Archive JUnit test results
         if: ${{ always() }}
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: junit-results-${{ matrix.config.pipeline }}-${{ matrix.config.profile }}-${{ matrix.config.agent }}
           path: systemtest/target/failsafe-reports/**/TEST-*.xml
 
       - name: Archive systemtest logs
         if: ${{ always() }}
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: systemtest-logs-${{ matrix.config.pipeline }}-${{ matrix.config.profile }}-${{ matrix.config.agent }}
           path: systemtest-logs
 
       - name: Archive performance results
         if: ${{ always() && matrix.config.profile == 'performance' }}
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: performance-results-${{ matrix.config.pipeline }}-${{ matrix.config.profile }}-${{ matrix.config.agent }}
           path: systemtest/target/performance
 
       - name: Publish test results
-        uses: dorny/test-reporter@v3
+        uses: dorny/test-reporter@a43b3a5f7366b97d083190328d2c652e1a8b6aa2 # v3.0.0
         if: always()
         with:
           name: 'System tests'
