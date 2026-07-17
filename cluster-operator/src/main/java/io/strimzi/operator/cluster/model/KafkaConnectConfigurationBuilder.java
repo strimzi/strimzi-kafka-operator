@@ -383,23 +383,25 @@ public class KafkaConnectConfigurationBuilder {
      *
      * @param model Strimzi Metrics Reporter configuration
      *
+     * @param defaultAllowList Role-specific default allow list used when the user has not configured one
+     *
      * @return Returns the builder instance
      */
-    public KafkaConnectConfigurationBuilder withStrimziMetricsReporter(MetricsModel model) {
+    public KafkaConnectConfigurationBuilder withStrimziMetricsReporter(MetricsModel model, List<String> defaultAllowList) {
         if (model instanceof StrimziMetricsReporterModel reporterModel) {
             printSectionHeader("Strimzi Metrics Reporter configuration");
             writer.println(StrimziMetricsReporterConfig.LISTENER_ENABLE + "=true");
             writer.println(StrimziMetricsReporterConfig.LISTENER + "=http://:" + MetricsModel.METRICS_PORT);
-            writer.println(StrimziMetricsReporterConfig.ALLOW_LIST + "=" + reporterModel.getAllowList());
+            writer.println(StrimziMetricsReporterConfig.ALLOW_LIST + "=" + reporterModel.getAllowListOrDefault(defaultAllowList));
             writer.println("admin." + StrimziMetricsReporterConfig.LISTENER_ENABLE + "=true");
             writer.println("admin." + StrimziMetricsReporterConfig.LISTENER + "=http://:" + MetricsModel.METRICS_PORT);
-            writer.println("admin." + StrimziMetricsReporterConfig.ALLOW_LIST + "=" + reporterModel.getAllowList());
+            writer.println("admin." + StrimziMetricsReporterConfig.ALLOW_LIST + "=" + reporterModel.getAllowListOrDefault(defaultAllowList));
             writer.println("producer." + StrimziMetricsReporterConfig.LISTENER_ENABLE + "=true");
             writer.println("producer." + StrimziMetricsReporterConfig.LISTENER + "=http://:" + MetricsModel.METRICS_PORT);
-            writer.println("producer." + StrimziMetricsReporterConfig.ALLOW_LIST + "=" + reporterModel.getAllowList());
+            writer.println("producer." + StrimziMetricsReporterConfig.ALLOW_LIST + "=" + reporterModel.getAllowListOrDefault(defaultAllowList));
             writer.println("consumer." + StrimziMetricsReporterConfig.LISTENER_ENABLE + "=true");
             writer.println("consumer." + StrimziMetricsReporterConfig.LISTENER + "=http://:" + MetricsModel.METRICS_PORT);
-            writer.println("consumer." + StrimziMetricsReporterConfig.ALLOW_LIST + "=" + reporterModel.getAllowList());
+            writer.println("consumer." + StrimziMetricsReporterConfig.ALLOW_LIST + "=" + reporterModel.getAllowListOrDefault(defaultAllowList));
             writer.println();
         }
         return this;

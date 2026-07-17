@@ -1519,7 +1519,7 @@ public class KafkaMirrorMaker2ClusterTest {
         KafkaMirrorMaker2Cluster kc = KafkaMirrorMaker2Cluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaMirrorMaker2, VERSIONS, SHARED_ENV_PROVIDER);
 
         assertThat(kc.metrics(), is(notNullValue()));
-        assertThat(((StrimziMetricsReporterModel) kc.metrics()).getAllowList(), is("kafka_log.*,kafka_network.*"));
+        assertThat(((StrimziMetricsReporterModel) kc.metrics()).getAllowListOrDefault(List.of()), is("kafka_log.*,kafka_network.*"));
 
         NetworkPolicy np = kc.generateNetworkPolicy(true, null, null);
         List<NetworkPolicyIngressRule> rules = np.getSpec().getIngress().stream()
@@ -1613,7 +1613,7 @@ public class KafkaMirrorMaker2ClusterTest {
         KafkaMirrorMaker2Cluster kmm2 = KafkaMirrorMaker2Cluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaMirrorMaker2, VERSIONS, SHARED_ENV_PROVIDER);
 
         assertThat(kmm2.metrics(), is(notNullValue()));
-        String allowList = ((StrimziMetricsReporterModel) kmm2.metrics()).getAllowList();
+        String allowList = ((StrimziMetricsReporterModel) kmm2.metrics()).getAllowListOrDefault(kmm2.getDefaultMetricsAllowList());
         
         // Verify MM2 metrics ARE included in MirrorMaker 2 default configuration
         assertThat(allowList, containsString("mirrorcheckpointconnector"));

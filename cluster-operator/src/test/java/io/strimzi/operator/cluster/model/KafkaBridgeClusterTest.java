@@ -1285,7 +1285,7 @@ public class KafkaBridgeClusterTest {
         KafkaBridgeCluster kbc = KafkaBridgeCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, SHARED_ENV_PROVIDER);
 
         assertThat(kbc.metrics(), is(notNullValue()));
-        assertThat(((StrimziMetricsReporterModel) kbc.metrics()).getAllowList(), is("kafka_producer_producer_metrics.*,kafka_producer_kafka_metrics_count_count"));
+        assertThat(((StrimziMetricsReporterModel) kbc.metrics()).getAllowListOrDefault(List.of()), is("kafka_producer_producer_metrics.*,kafka_producer_kafka_metrics_count_count"));
     }
 
     @Test

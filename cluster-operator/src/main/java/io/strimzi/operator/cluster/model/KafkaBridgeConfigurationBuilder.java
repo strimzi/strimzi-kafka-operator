@@ -29,6 +29,7 @@ import io.strimzi.operator.common.Reconciliation;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.List;
 import java.util.Map;
 
 import static io.strimzi.api.kafka.model.common.metrics.StrimziMetricsReporter.TYPE_STRIMZI_METRICS_REPORTER;
@@ -353,18 +354,19 @@ public class KafkaBridgeConfigurationBuilder {
     /**
      * Configures the Strimzi Metrics Reporter. It is set only if user enables Strimzi Metrics Reporter.
      *
-     * @param model     Strimzi Metrics Reporter configuration
+     * @param model            Strimzi Metrics Reporter configuration
+     * @param defaultAllowList Role-specific default allow list used when the user has not configured one
      *
      * @return Returns the builder instance
      */
-    public KafkaBridgeConfigurationBuilder withStrimziMetricsReporter(StrimziMetricsReporterModel model)   {
+    public KafkaBridgeConfigurationBuilder withStrimziMetricsReporter(StrimziMetricsReporterModel model, List<String> defaultAllowList)   {
         if (model != null) {
             printSectionHeader("Strimzi Metrics Reporter configuration");
             writer.println("bridge.metrics=" + TYPE_STRIMZI_METRICS_REPORTER);
             // the kafka. prefix is required by the Bridge to pass Kafka client configurations
             writer.println("kafka.metric.reporters=" + StrimziMetricsReporterConfig.CLIENT_CLASS);
             writer.println("kafka." + StrimziMetricsReporterConfig.LISTENER_ENABLE + "=false");
-            writer.println("kafka." + StrimziMetricsReporterConfig.ALLOW_LIST + "=" + model.getAllowList());
+            writer.println("kafka." + StrimziMetricsReporterConfig.ALLOW_LIST + "=" + model.getAllowListOrDefault(defaultAllowList));
             writer.println();
         }
         return this;

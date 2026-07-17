@@ -23,7 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 public class StrimziMetricsReporterModelTest {
     @Test
     public void testDisabled() {
-        InvalidConfigurationException ex = assertThrows(InvalidConfigurationException.class, () -> new StrimziMetricsReporterModel(new KafkaConnectSpecBuilder().build(), List.of(".*")));
+        InvalidConfigurationException ex = assertThrows(InvalidConfigurationException.class, () -> new StrimziMetricsReporterModel(new KafkaConnectSpecBuilder().build()));
         assertThat(ex.getMessage(), is("Unexpected empty metrics config"));
     }
 
@@ -35,10 +35,10 @@ public class StrimziMetricsReporterModelTest {
                 .endValues()
                 .build();
         StrimziMetricsReporterModel metrics = new StrimziMetricsReporterModel(new KafkaClusterSpecBuilder()
-                .withMetricsConfig(metricsConfig).build(), List.of(".*"));
+                .withMetricsConfig(metricsConfig).build());
 
-        assertThat(metrics.getAllowList().isEmpty(), is(false));
-        assertThat(metrics.getAllowList(), is("kafka_log.*,kafka_network.*"));
+        assertThat(metrics.getAllowListOrDefault(List.of()).isEmpty(), is(false));
+        assertThat(metrics.getAllowListOrDefault(List.of()), is("kafka_log.*,kafka_network.*"));
     }
 
     @Test

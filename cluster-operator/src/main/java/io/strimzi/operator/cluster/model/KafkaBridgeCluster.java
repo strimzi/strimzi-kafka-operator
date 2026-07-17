@@ -206,7 +206,7 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
         if (spec.getMetricsConfig() instanceof JmxPrometheusExporterMetrics) {
             result.metrics = new JmxPrometheusExporterModel(spec);
         } else if (spec.getMetricsConfig() instanceof StrimziMetricsReporter) {
-            result.metrics = new StrimziMetricsReporterModel(spec, DEFAULT_METRICS_ALLOW_LIST);
+            result.metrics = new StrimziMetricsReporterModel(spec);
         }
 
         result.setTls(spec.getTls() != null ? spec.getTls() : null);
@@ -672,7 +672,7 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
         if (metrics instanceof JmxPrometheusExporterModel jmxPrometheusExporterModel) {
             builder.withJmxPrometheusExporter(jmxPrometheusExporterModel);
         } else if (metrics instanceof StrimziMetricsReporterModel strimziMetricsReporterModel) {
-            builder.withStrimziMetricsReporter(strimziMetricsReporterModel);
+            builder.withStrimziMetricsReporter(strimziMetricsReporterModel, DEFAULT_METRICS_ALLOW_LIST);
         }
 
         data.put(BRIDGE_CONFIGURATION_FILENAME, builder.build());
