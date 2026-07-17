@@ -68,52 +68,7 @@ import static org.junit.jupiter.api.Assumptions.assumeFalse;
 )
 public class FeatureGatesST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(FeatureGatesST.class);
-    private static final String SERVER_SIDE_APPLY_PHASE_1_DISABLED = "-ServerSideApplyPhase1";
     private static final String USE_BACKGROUND_POD_DELETION_ENABLED = "+UseBackgroundPodDeletion";
-
-    @IsolatedTest("Creates ClusterOperator with Server Side Apply FG enabled")
-    @TestDoc(
-        description = @Desc("This test verifies that Server Side Apply Phase 1 feature gate works correctly by testing annotation preservation behavior. When SSA is disabled, manual annotations are removed during reconciliation. When SSA is enabled, manual annotations are preserved."),
-        steps = {
-            @Step(value = "Deploy Cluster Operator with Server Side Apply Phase 1 disabled.", expected = "Cluster Operator is deployed without SSA feature gate."),
-            @Step(value = "Create Kafka cluster with broker and controller node pools.", expected = "Kafka cluster is deployed and ready."),
-            @Step(value = "Add manual annotations to Kafka resources and verify they are removed.", expected = "Manual annotations are removed during reconciliation when SSA is disabled."),
-            @Step(value = "Enable Server Side Apply Phase 1 feature gate.", expected = "Cluster Operator is reconfigured with SSA enabled and redeployed."),
-            @Step(value = "Add manual annotations to Kafka resources and verify they are preserved.", expected = "Manual annotations are preserved during reconciliation when SSA is enabled."),
-            @Step(value = "Disable Server Side Apply Phase 1 feature gate.", expected = "Cluster Operator is reconfigured with SSA disabled and rolled."),
-            @Step(value = "Add manual annotations to Kafka resources and verify they are removed again.", expected = "Manual annotations are removed during reconciliation when SSA is disabled again.")
-        },
-        labels = {
-            @Label(value = TestDocsLabels.KAFKA)
-        }
-    )
-    void testServerSideApply() {
-        TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
-
-        LOGGER.info("Deploying CO with SSA Phase 1 disabled");
-
-        // Firstly deploy CO without SSA enabled to check that changes to the resources will be re-written
-        setupClusterOperatorWithFeatureGate(SERVER_SIDE_APPLY_PHASE_1_DISABLED);
-
-        KubeResourceManager.get().createResourceWithWait(
-            KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
-            KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 3).build()
-        );
-        KubeResourceManager.get().createResourceWithWait(KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getClusterName(), 3).build());
-
-        annotateResourcesAndCheckIfPresent(testStorage, false);
-
-        LOGGER.info("Enabling Server Side Apply Phase 1");
-        changeFeatureGatesAndWaitForCoRollingUpdate("");
-
-        annotateResourcesAndCheckIfPresent(testStorage, true);
-
-        LOGGER.info("Finally, changing back to SSA disabled");
-
-        changeFeatureGatesAndWaitForCoRollingUpdate(SERVER_SIDE_APPLY_PHASE_1_DISABLED);
-
-        annotateResourcesAndCheckIfPresent(testStorage, false);
-    }
 
     @IsolatedTest("Enables UseConnectBuildWithBuildah feature gate in CO")
     void testUseConnectBuildWithBuildah() {

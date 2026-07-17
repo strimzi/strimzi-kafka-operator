@@ -51,10 +51,6 @@ public class FeatureGatesTest {
 
     @Test
     public void testFeatureGatesParsing() {
-        assertThat(new FeatureGates("+ServerSideApplyPhase1").serverSideApplyPhase1Enabled(), is(true));
-        assertThat(new FeatureGates("-ServerSideApplyPhase1").serverSideApplyPhase1Enabled(), is(false));
-        assertThat(new FeatureGates("   -ServerSideApplyPhase1   ").serverSideApplyPhase1Enabled(), is(false));
-
         assertThat(new FeatureGates("+UseConnectBuildWithBuildah").useConnectBuildWithBuildahEnabled(), is(true));
         assertThat(new FeatureGates("-UseConnectBuildWithBuildah").useConnectBuildWithBuildahEnabled(), is(false));
         assertThat(new FeatureGates("   -UseConnectBuildWithBuildah   ").useConnectBuildWithBuildahEnabled(), is(false));
@@ -63,20 +59,20 @@ public class FeatureGatesTest {
         assertThat(new FeatureGates("-UseBackgroundPodDeletion").useBackgroundPodDeletionEnabled(), is(false));
         assertThat(new FeatureGates("   +UseBackgroundPodDeletion   ").useBackgroundPodDeletionEnabled(), is(true));
 
-        assertThat(new FeatureGates("-ServerSideApplyPhase1,-UseConnectBuildWithBuildah").serverSideApplyPhase1Enabled(), is(false));
-        assertThat(new FeatureGates("-ServerSideApplyPhase1,-UseConnectBuildWithBuildah").useConnectBuildWithBuildahEnabled(), is(false));
-        assertThat(new FeatureGates("  +ServerSideApplyPhase1    ,    +UseConnectBuildWithBuildah").serverSideApplyPhase1Enabled(), is(true));
-        assertThat(new FeatureGates("  +ServerSideApplyPhase1    ,    +UseConnectBuildWithBuildah").useConnectBuildWithBuildahEnabled(), is(true));
-        assertThat(new FeatureGates("+UseConnectBuildWithBuildah,-ServerSideApplyPhase1").serverSideApplyPhase1Enabled(), is(false));
-        assertThat(new FeatureGates("+UseConnectBuildWithBuildah,-ServerSideApplyPhase1").useConnectBuildWithBuildahEnabled(), is(true));
+        assertThat(new FeatureGates("-UseBackgroundPodDeletion,-UseConnectBuildWithBuildah").useConnectBuildWithBuildahEnabled(), is(false));
+        assertThat(new FeatureGates("-UseBackgroundPodDeletion,-UseConnectBuildWithBuildah").useConnectBuildWithBuildahEnabled(), is(false));
+        assertThat(new FeatureGates("  +UseBackgroundPodDeletion    ,    +UseConnectBuildWithBuildah").useBackgroundPodDeletionEnabled(), is(true));
+        assertThat(new FeatureGates("  +UseBackgroundPodDeletion    ,    +UseConnectBuildWithBuildah").useConnectBuildWithBuildahEnabled(), is(true));
+        assertThat(new FeatureGates("+UseConnectBuildWithBuildah,-UseBackgroundPodDeletion").useBackgroundPodDeletionEnabled(), is(false));
+        assertThat(new FeatureGates("+UseConnectBuildWithBuildah,-UseBackgroundPodDeletion").useConnectBuildWithBuildahEnabled(), is(true));
     }
 
     @Test
     public void testFeatureGatesEquals() {
-        FeatureGates fg = new FeatureGates("+ServerSideApplyPhase1");
+        FeatureGates fg = new FeatureGates("+UseBackgroundPodDeletion");
         assertThat(fg, is(fg));
-        assertThat(fg, is(new FeatureGates("+ServerSideApplyPhase1")));
-        assertThat(fg, is(not(new FeatureGates("-ServerSideApplyPhase1"))));
+        assertThat(fg, is(new FeatureGates("+UseBackgroundPodDeletion")));
+        assertThat(fg, is(not(new FeatureGates("-UseBackgroundPodDeletion"))));
     }
 
     @Test
@@ -97,20 +93,20 @@ public class FeatureGatesTest {
 
     @Test
     public void testDuplicateFeatureGateWithSameValue() {
-        InvalidConfigurationException e = assertThrows(InvalidConfigurationException.class, () -> new FeatureGates("+ServerSideApplyPhase1,+ServerSideApplyPhase1"));
-        assertThat(e.getMessage(), containsString("Feature gate ServerSideApplyPhase1 is configured multiple times"));
+        InvalidConfigurationException e = assertThrows(InvalidConfigurationException.class, () -> new FeatureGates("+UseBackgroundPodDeletion,+UseBackgroundPodDeletion"));
+        assertThat(e.getMessage(), containsString("Feature gate UseBackgroundPodDeletion is configured multiple times"));
     }
 
     @Test
     public void testDuplicateFeatureGateWithDifferentValue() {
-        InvalidConfigurationException e = assertThrows(InvalidConfigurationException.class, () -> new FeatureGates("+ServerSideApplyPhase1,-ServerSideApplyPhase1"));
-        assertThat(e.getMessage(), containsString("Feature gate ServerSideApplyPhase1 is configured multiple times"));
+        InvalidConfigurationException e = assertThrows(InvalidConfigurationException.class, () -> new FeatureGates("+UseBackgroundPodDeletion,-UseBackgroundPodDeletion"));
+        assertThat(e.getMessage(), containsString("Feature gate UseBackgroundPodDeletion is configured multiple times"));
     }
 
     @Test
     public void testMissingSign() {
-        InvalidConfigurationException e = assertThrows(InvalidConfigurationException.class, () -> new FeatureGates("ServerSideApplyPhase1"));
-        assertThat(e.getMessage(), containsString("ServerSideApplyPhase1 is not a valid feature gate configuration"));
+        InvalidConfigurationException e = assertThrows(InvalidConfigurationException.class, () -> new FeatureGates("UseBackgroundPodDeletion"));
+        assertThat(e.getMessage(), containsString("UseBackgroundPodDeletion is not a valid feature gate configuration"));
     }
 
     @Test
@@ -122,8 +118,6 @@ public class FeatureGatesTest {
     @Test
     public void testEnvironmentVariable()   {
         assertThat(new FeatureGates("").toEnvironmentVariable(), is(""));
-        assertThat(new FeatureGates("+ServerSideApplyPhase1").toEnvironmentVariable(), is(""));
-        assertThat(new FeatureGates("-ServerSideApplyPhase1").toEnvironmentVariable(), is("-ServerSideApplyPhase1"));
 
         assertThat(new FeatureGates("+UseConnectBuildWithBuildah").toEnvironmentVariable(), is(""));
         assertThat(new FeatureGates("-UseConnectBuildWithBuildah").toEnvironmentVariable(), is("-UseConnectBuildWithBuildah"));

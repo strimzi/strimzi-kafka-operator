@@ -24,5 +24,5 @@ fromKafkaVersionsUrl: https://raw.githubusercontent.com/strimzi/strimzi-kafka-op
 filePaths:
   fromKafka: "/examples/kafka/kafka-persistent.yaml"
   toKafka: "/examples/kafka/kafka-persistent.yaml"
-fromFeatureGates: "-ServerSideApplyPhase1,-UseConnectBuildWithBuildah"
+fromFeatureGates: "-UseConnectBuildWithBuildah"
 toFeatureGates: ""
