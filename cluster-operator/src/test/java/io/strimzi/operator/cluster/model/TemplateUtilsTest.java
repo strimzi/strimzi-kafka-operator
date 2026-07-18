@@ -82,8 +82,7 @@ public class TemplateUtilsTest {
     @Test
     public void testAddAdditionalVolumes_InvalidNames() {
         List<Volume> existingVolumes = new ArrayList<>();
-        existingVolumes.add(new VolumeBuilder().withName("invalid_name!").build());
-        PodTemplate templatePod = new PodTemplateBuilder().withVolumes(new ArrayList<>()).build();
+        PodTemplate templatePod = new PodTemplateBuilder().withVolumes(new AdditionalVolumeBuilder().withName("invalid_name!").build()).build();
 
         InvalidResourceException exception = assertThrows(InvalidResourceException.class, () -> TemplateUtils.addAdditionalVolumes(templatePod, existingVolumes));
 
