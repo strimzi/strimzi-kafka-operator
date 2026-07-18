@@ -27,6 +27,6 @@ template:
     #...
 ----
 
-Use the `hostAliases` property to a specify a list of hosts and IP addresses,
+Use the `hostAliases` property to specify a list of hosts and IP addresses,
 which are injected into the `/etc/hosts` file of the pod.
 This configuration is especially useful for Kafka Connect or MirrorMaker when a connection outside of the cluster is also requested by users.

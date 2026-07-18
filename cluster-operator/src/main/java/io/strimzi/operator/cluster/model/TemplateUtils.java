@@ -4,13 +4,11 @@
  */
 package io.strimzi.operator.cluster.model;
 
-import io.fabric8.kubernetes.api.model.ConfigMapVolumeSource;
 import io.fabric8.kubernetes.api.model.ConfigMapVolumeSourceBuilder;
 import io.fabric8.kubernetes.api.model.KeyToPathBuilder;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaimVolumeSource;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaimVolumeSourceBuilder;
 import io.fabric8.kubernetes.api.model.Quantity;
-import io.fabric8.kubernetes.api.model.SecretVolumeSource;
 import io.fabric8.kubernetes.api.model.SecretVolumeSourceBuilder;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeBuilder;
@@ -205,17 +203,23 @@ public class TemplateUtils {
         VolumeBuilder volumeBuilder = new VolumeBuilder().withName(volumeConfig.getName());
 
         if (volumeConfig.getConfigMap() != null) {
-            ConfigMapVolumeSource configMap = new ConfigMapVolumeSourceBuilder(volumeConfig.getConfigMap())
-                    .withName(ModelUtils.renderTemplate(volumeConfig.getConfigMap().getName(), node))
-                    .withItems(volumeConfig.getConfigMap().getItems().stream().map(item -> new KeyToPathBuilder(item).withKey(ModelUtils.renderTemplate(item.getKey(), node)).withPath(ModelUtils.renderTemplate(item.getPath(), node)).build()).toList())
-                    .build();
-            volumeBuilder.withConfigMap(configMap);
+            ConfigMapVolumeSourceBuilder configMapBuilder = new ConfigMapVolumeSourceBuilder(volumeConfig.getConfigMap())
+                    .withName(ModelUtils.renderTemplate(volumeConfig.getConfigMap().getName(), node));
+
+            if (volumeConfig.getConfigMap().getItems() != null && !volumeConfig.getConfigMap().getItems().isEmpty()) {
+                configMapBuilder.withItems(volumeConfig.getConfigMap().getItems().stream().map(item -> new KeyToPathBuilder(item).withKey(ModelUtils.renderTemplate(item.getKey(), node)).withPath(ModelUtils.renderTemplate(item.getPath(), node)).build()).toList());
+            }
+
+            volumeBuilder.withConfigMap(configMapBuilder.build());
         } else if (volumeConfig.getSecret() != null) {
-            SecretVolumeSource secret = new SecretVolumeSourceBuilder(volumeConfig.getSecret())
-                    .withSecretName(ModelUtils.renderTemplate(volumeConfig.getSecret().getSecretName(), node))
-                    .withItems(volumeConfig.getSecret().getItems().stream().map(item -> new KeyToPathBuilder(item).withKey(ModelUtils.renderTemplate(item.getKey(), node)).withPath(ModelUtils.renderTemplate(item.getPath(), node)).build()).toList())
-                    .build();
-            volumeBuilder.withSecret(secret);
+            SecretVolumeSourceBuilder secretBuilder = new SecretVolumeSourceBuilder(volumeConfig.getSecret())
+                    .withSecretName(ModelUtils.renderTemplate(volumeConfig.getSecret().getSecretName(), node));
+
+            if (volumeConfig.getSecret().getItems() != null)    {
+                secretBuilder.withItems(volumeConfig.getSecret().getItems().stream().map(item -> new KeyToPathBuilder(item).withKey(ModelUtils.renderTemplate(item.getKey(), node)).withPath(ModelUtils.renderTemplate(item.getPath(), node)).build()).toList());
+            }
+
+            volumeBuilder.withSecret(secretBuilder.build());
         } else if (volumeConfig.getPersistentVolumeClaim() != null) {
             PersistentVolumeClaimVolumeSource pvc = new PersistentVolumeClaimVolumeSourceBuilder(volumeConfig.getPersistentVolumeClaim())
                     .withClaimName(ModelUtils.renderTemplate(volumeConfig.getPersistentVolumeClaim().getClaimName(), node))

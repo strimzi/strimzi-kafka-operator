@@ -375,7 +375,6 @@ public class ModelUtils {
      * @return  The rendered template
      */
     static String renderTemplate(String template, NodeRef node) {
-        // TODO: Fix the duplication with ListenerUtils
         return template
                 .replace("{nodeId}", Integer.toString(node.nodeId()))
                 .replace("{nodePodName}", node.podName());
