@@ -221,7 +221,7 @@ jobs:
           ref: ${{ needs.parse-params.outputs.ref }}
 
       - name: Setup Java and Maven
-        uses: frawless/github-actions/.github/actions/dependencies/setup-java@897fd114058a9a3b32fd4fd8cbb1de5c49352b29 # v6.7
+        uses: strimzi/github-actions/.github/actions/dependencies/setup-java@0b7212d193ac3ab199e0dfef2a9cbd0229a15820 # v2.1
         with:
           javaVersion: "21"
 

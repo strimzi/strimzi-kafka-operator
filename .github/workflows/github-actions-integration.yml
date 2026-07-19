@@ -29,7 +29,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
-      - uses: docker://rhysd/actionlint:1.7.10
+      - uses: docker://rhysd/actionlint:1.7.10@sha256:20cec9f5d4a3cc6d32634105b1b5ec71241258bf69866bf0fe4b9803e7c034d9
         with:
           args: -color
 
@@ -44,7 +44,7 @@ jobs:
       - name: Install act
         run: |
           # Install act for workflow testing
-          curl -s https://raw.githubusercontent.com/nektos/act/master/install.sh | sudo bash
+          curl -s https://raw.githubusercontent.com/nektos/act/4f411281417e88660bea1c1a1749aa71ae0bd60f/install.sh | sudo bash # v0.2.89
           sudo install -m 0755 ./bin/act /usr/local/bin/act
 
       - name: Install yq
@@ -130,7 +130,7 @@ jobs:
       - name: Install act
         run: |
           # Install act for workflow testing
-          curl -s https://raw.githubusercontent.com/nektos/act/master/install.sh | sudo bash
+          curl -s https://raw.githubusercontent.com/nektos/act/4f411281417e88660bea1c1a1749aa71ae0bd60f/install.sh | sudo bash # v0.2.89
           sudo install -m 0755 ./bin/act /usr/local/bin/act
 
       - name: Install yq
@@ -217,7 +217,7 @@ jobs:
       - name: Install act
         run: |
           # Install act for workflow testing
-          curl -s https://raw.githubusercontent.com/nektos/act/master/install.sh | sudo bash
+          curl -s https://raw.githubusercontent.com/nektos/act/4f411281417e88660bea1c1a1749aa71ae0bd60f/install.sh | sudo bash # v0.2.89
           sudo install -m 0755 ./bin/act /usr/local/bin/act
 
       - name: Install yq
@@ -314,7 +314,7 @@ jobs:
       - name: Install act
         run: |
           # Install act for workflow testing
-          curl -s https://raw.githubusercontent.com/nektos/act/master/install.sh | sudo bash
+          curl -s https://raw.githubusercontent.com/nektos/act/4f411281417e88660bea1c1a1749aa71ae0bd60f/install.sh | sudo bash # v0.2.89
           sudo install -m 0755 ./bin/act /usr/local/bin/act
 
       - name: Install yq
