@@ -136,16 +136,21 @@ public class KafkaBrokerConfigurationBuilder {
     /**
      * Configures the Strimzi Metrics Reporter. It is set only if user enables Strimzi Metrics Reporter.
      *
-     * @param model Strimzi Metrics Reporter configuration
+     * @param model              Strimzi Metrics Reporter configuration
+     * @param defaultAllowList   Default allow list to use when the user did not configure a custom one.
+     *                           The caller (which knows whether this node is a broker, a controller,
+     *                           or both) decides which default is appropriate and passes it in here.
      *
      * @return Returns the builder instance
      */
-    public KafkaBrokerConfigurationBuilder withStrimziMetricsReporter(MetricsModel model) {
+    public KafkaBrokerConfigurationBuilder withStrimziMetricsReporter(
+            final MetricsModel model,
+            final List<String> defaultAllowList) {
         if (model instanceof StrimziMetricsReporterModel reporterModel) {
             printSectionHeader("Strimzi Metrics Reporter configuration");
             writer.println(StrimziMetricsReporterConfig.LISTENER_ENABLE + "=true");
             writer.println(StrimziMetricsReporterConfig.LISTENER + "=http://:" + MetricsModel.METRICS_PORT);
-            writer.println(StrimziMetricsReporterConfig.ALLOW_LIST + "=" + reporterModel.getAllowList());
+            writer.println(StrimziMetricsReporterConfig.ALLOW_LIST + "=" + reporterModel.getAllowList(defaultAllowList));
             writer.println();
         }
         return this;
@@ -544,7 +549,7 @@ public class KafkaBrokerConfigurationBuilder {
     @SuppressWarnings("checkstyle:NoFullyQualifiedClassNames") // False positive, fully qualified class name used in a string
     private void printConfigProviders(KafkaConfiguration userConfig)    {
         printSectionHeader("Config providers");
-        
+
         writer.println("# Configuration providers configured by the user and by Strimzi");
         writer.println("config.providers=" + getConfigProviderAliases(userConfig));
 
@@ -562,10 +567,10 @@ public class KafkaBrokerConfigurationBuilder {
 
         writer.println();
     }
-    
+
     /**
      * Get the Kafka configuration provider aliases, throwing an InvalidConfigurationException if any user provided aliases are found that would overwrite the Strimzi defined configuration providers
-     * 
+     *
      * @param userConfig                The user configuration to extract the possible user-provided config provider configuration from
      * @return                          The Kafka configuration provider aliases
      */
@@ -578,15 +583,15 @@ public class KafkaBrokerConfigurationBuilder {
             strimziAliases.add("strimzifile");
             strimziAliases.add("strimzidir");
         }
-        
+
         if (userConfig != null
                 && !userConfig.getConfiguration().isEmpty()
                 && userConfig.getConfigOption("config.providers") != null) {
             String userAliases = userConfig.getConfigOption("config.providers");
-            
+
             Arrays.asList(userAliases.split(",")).stream().forEach(userAlias -> {
                 if (strimziAliases.contains(userAlias)) {
-                    throw new InvalidConfigurationException("config.provider " + userAlias + " not permitted as it reserved for Strimzi. Not permitted aliases: " + strimziAliases); 
+                    throw new InvalidConfigurationException("config.provider " + userAlias + " not permitted as it reserved for Strimzi. Not permitted aliases: " + strimziAliases);
                 }
             });
 
@@ -595,7 +600,7 @@ public class KafkaBrokerConfigurationBuilder {
         } else {
             return String.join(",", strimziAliases);
         }
-        
+
     }
 
     /**

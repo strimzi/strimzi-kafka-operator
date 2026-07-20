@@ -23,6 +23,15 @@ public class StrimziMetricsReporterModel implements MetricsModel {
      */
     private final List<String> allowList;
 
+    /**
+     * Allow list explicitly configured by the user, or {@code null} when
+     * the user relied on the default. Tracked separately from
+     * {@link #allowList} (which already has the constructor's default list
+     * mixed in) so that {@link #getAllowList(List)} can later be given a
+     * different default without losing the ability to tell whether the user
+     * actually customized the value.
+     */
+    private final List<String> customAllowList;
         /**
          * Constructs the Metrics Model for managing configurable metrics to Strimzi.
          *
@@ -33,8 +42,8 @@ public class StrimziMetricsReporterModel implements MetricsModel {
         if (spec.getMetricsConfig() != null) {
             StrimziMetricsReporter config = (StrimziMetricsReporter) spec.getMetricsConfig();
             validate(config);
-            this.allowList = config.getValues() != null && config.getValues().getAllowList() != null
-                    ? config.getValues().getAllowList() : defaultAllowList;
+            this.customAllowList = config.getValues() != null ? config.getValues().getAllowList() : null;
+            this.allowList = customAllowList != null ? customAllowList : defaultAllowList;
         } else {
             throw new InvalidConfigurationException("Unexpected empty metrics config");
         }
@@ -48,7 +57,25 @@ public class StrimziMetricsReporterModel implements MetricsModel {
     public String getAllowList() {
         return String.join(",", allowList);
     }
-
+    /**
+     * Gets the comma-separated list of allow regex expressions, falling back
+     * to the given default allow list instead of the one passed to the
+     * constructor when the user did not configure a custom allow list.
+     * <p>
+     * This lets a single model instance serve callers that manage several
+     * kinds of nodes with different default allow lists (for example Kafka
+     * brokers vs. controllers), without this generic model class needing any
+     * knowledge of those roles - the caller decides which default is
+     * appropriate for the current context and passes it in here. A
+     * user-configured allow list always takes precedence, regardless of
+     * which default is passed.
+     *
+     * @param defaultAllowList Default allow list to be used when no custom value was configured by the user.
+     * @return Comma separated list of allow regex expressions.
+     */
+    public String getAllowList(final List<String> defaultAllowList) {
+        return String.join(",", customAllowList != null ? customAllowList : defaultAllowList);
+    }
     /**
      * Validates user configuration.
      *

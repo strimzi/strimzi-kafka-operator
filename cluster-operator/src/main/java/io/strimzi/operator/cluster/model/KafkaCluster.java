@@ -117,7 +117,55 @@ import static java.util.Collections.singletonMap;
 @SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "checkstyle:ClassFanOutComplexity"})
 public class KafkaCluster extends AbstractModel implements SupportsMetrics, SupportsLogging, SupportsJmx {
     /**
-     * Default Strimzi Metrics Reporter allow list.
+     * Default Strimzi Metrics Reporter allow list entries shared by broker
+     * and controller nodes. Used to build
+     * {@link #DEFAULT_BROKER_METRICS_ALLOW_LIST} and
+     * {@link #DEFAULT_CONTROLLER_METRICS_ALLOW_LIST}.
+     */
+    private static final List<String> DEFAULT_SHARED_METRICS_ALLOW_LIST = List.of(
+            "kafka_network_requestmetrics.*",
+            "kafka_network_socketserver_networkprocessoravgidlepercent",
+            "kafka_server_app_info.*",
+            "kafka_server_kafkarequesthandlerpool_requesthandleravgidlepercent",
+            "kafka_server_kafkaserver_clusterid",
+            "kafka_server_kafkaserver_linux.*",
+            "kafka_server_request_queue_size",
+            "kafka_server_socket_server.*"
+    );
+
+    /**
+     * Default Strimzi Metrics Reporter allow list used for nodes which are
+     * brokers only (combines the broker-only metrics with
+     * {@link #DEFAULT_SHARED_METRICS_ALLOW_LIST}). If modifying this list,
+     * make sure example dashboards are compatible with the regexes.
+     */
+    private static final List<String> DEFAULT_BROKER_METRICS_ALLOW_LIST =
+            metricsAllowList(DEFAULT_SHARED_METRICS_ALLOW_LIST, List.of(
+                    "kafka_cluster_partition.*",
+                    "kafka_log_log_size",
+                    "kafka_server_brokertopicmetrics.*",
+                    "kafka_server_kafkaserver_brokerstate",
+                    "kafka_server_replicamanager.*"
+            ));
+
+    /**
+     * Default Strimzi Metrics Reporter allow list used for nodes which are
+     * controllers only (combines the controller-only metrics with
+     * {@link #DEFAULT_SHARED_METRICS_ALLOW_LIST}). If modifying this list,
+     * make sure example dashboards are compatible with the regexes.
+     */
+    private static final List<String> DEFAULT_CONTROLLER_METRICS_ALLOW_LIST =
+            metricsAllowList(DEFAULT_SHARED_METRICS_ALLOW_LIST, List.of(
+                    "kafka_controller_kafkacontroller.*",
+                    "kafka_controller_controllerstats_uncleanleaderelectionspersec",
+                    "kafka_server_raft.*"
+            ));
+
+    /**
+     * Default Strimzi Metrics Reporter allow list used for mixed nodes (both
+     * broker and controller). Also used as the fallback default passed to the
+     * {@link io.strimzi.operator.cluster.model.metrics.StrimziMetricsReporterModel}
+     * constructor.
      * If modifying this list, make sure example dashboards are compatible with the regexes.
      */
     private static final List<String> DEFAULT_METRICS_ALLOW_LIST = List.of(
@@ -396,6 +444,44 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
         return result;
     }
 
+    /**
+     * Merges the shared Strimzi Metrics Reporter allow list with a
+     * role-specific allow list, removing duplicates while preserving
+     * insertion order.
+     *
+     * @param sharedAllowList        Allow list entries shared across node roles.
+     * @param roleSpecificAllowList  Allow list entries specific to a single node role.
+     *
+     * @return Combined allow list with duplicates removed.
+     */
+    private static List<String> metricsAllowList(
+            final List<String> sharedAllowList,
+            final List<String> roleSpecificAllowList) {
+        Set<String> allowList = new LinkedHashSet<>();
+        allowList.addAll(sharedAllowList);
+        allowList.addAll(roleSpecificAllowList);
+        return List.copyOf(allowList);
+    }
+
+    /**
+     * Picks the default Strimzi Metrics Reporter allow list appropriate for
+     * the given node, based on whether it is a broker, a controller, or both
+     * (mixed node). This is where the "generic" {@code StrimziMetricsReporterModel}
+     * is told which default applies - the model itself has no notion of node roles.
+     *
+     * @param node  Node for which the default allow list should be picked.
+     *
+     * @return Default allow list to use for this node when the user did not configure a custom one.
+     */
+    private static List<String> defaultMetricsAllowList(final NodeRef node) {
+        if (node.broker() && !node.controller()) {
+            return DEFAULT_BROKER_METRICS_ALLOW_LIST;
+        } else if (!node.broker() && node.controller()) {
+            return DEFAULT_CONTROLLER_METRICS_ALLOW_LIST;
+        } else {
+            return DEFAULT_METRICS_ALLOW_LIST;
+        }
+    }
     /**
      * Generates list of references to Kafka nodes for this Kafka cluster. The references contain both the pod name and
      * the ID of the Kafka node.
@@ -1825,7 +1911,9 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
                 .withCruiseControl(cluster, ccMetricsReporter, node.broker())
                 .withTieredStorage(cluster, tieredStorage)
                 .withQuotas(cluster, quotas)
-                .withStrimziMetricsReporter(metrics)
+                .withStrimziMetricsReporter(
+                        metrics,
+                        defaultMetricsAllowList(node))
                 .withUserConfiguration(
                         configuration,
                         node.broker() && ccMetricsReporter != null,

@@ -219,7 +219,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                         .build(), List.of(".*"));
 
         String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
-                .withStrimziMetricsReporter(model)
+                .withStrimziMetricsReporter(model, List.of(".*"))
                 .build();
 
         assertThat(configuration, isEquivalent("node.id=2",
@@ -460,7 +460,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "config.providers.strimzisecrets.class=io.strimzi.kafka.KubernetesSecretConfigProvider",
                 "min.insync.replicas=1"));
     }
-    
+
     @Test
     public void testUserConfigurationWithInvalidConfigProviders()  {
         Map<String, Object> userConfiguration = new HashMap<>();
@@ -498,8 +498,14 @@ public class KafkaBrokerConfigurationBuilderTest {
 
     @Test
     public void testNullUserConfigurationWithStrimziMetricsReporter() {
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
-                .withUserConfiguration(null, false, false, true)
+        String configuration = new KafkaBrokerConfigurationBuilder(
+                Reconciliation.DUMMY_RECONCILIATION,
+                NODE_REF)
+                .withUserConfiguration(
+                        null,
+                        false,
+                        false,
+                        true)
                 .build();
         assertThat(configuration, isEquivalent("node.id=2",
                 "config.providers=strimzienv,strimzisecrets,strimzifile,strimzidir",

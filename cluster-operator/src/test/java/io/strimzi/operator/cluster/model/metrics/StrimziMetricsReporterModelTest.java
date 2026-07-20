@@ -42,6 +42,45 @@ public class StrimziMetricsReporterModelTest {
     }
 
     @Test
+    public void testDefaultAllowListCanBeOverriddenPerCall() {
+        // No custom allow list configured => getAllowList(List) should use
+        // whatever default the caller passes in, regardless of what default
+        // was passed to the constructor. This is what lets a single model
+        // instance serve callers such as KafkaCluster that need a different
+        // default per node role, without this class having any notion of
+        // node roles itself.
+        StrimziMetricsReporter metricsConfig = new StrimziMetricsReporterBuilder().build();
+        StrimziMetricsReporterModel metrics = new StrimziMetricsReporterModel(
+                new KafkaClusterSpecBuilder()
+                        .withMetricsConfig(metricsConfig)
+                        .build(),
+                List.of("mixed.*"));
+
+        assertThat(metrics.getAllowList(), is("mixed.*"));
+        assertThat(metrics.getAllowList(List.of("broker.*")), is("broker.*"));
+        assertThat(metrics.getAllowList(List.of("controller.*")), is("controller.*"));
+    }
+
+    @Test
+    public void testCustomAllowListAlwaysWinsOverAnyDefault() {
+        // A user-configured allow list must take precedence no matter which
+        // default is passed to getAllowList(List).
+        StrimziMetricsReporter metricsConfig = new StrimziMetricsReporterBuilder()
+                .withNewValues()
+                .withAllowList(List.of("kafka_log.*", "kafka_network.*"))
+                .endValues()
+                .build();
+        StrimziMetricsReporterModel metrics = new StrimziMetricsReporterModel(
+                new KafkaClusterSpecBuilder()
+                        .withMetricsConfig(metricsConfig)
+                        .build(),
+                List.of("mixed.*"));
+
+        assertThat(metrics.getAllowList(List.of("broker.*")), is("kafka_log.*,kafka_network.*"));
+        assertThat(metrics.getAllowList(List.of("controller.*")), is("kafka_log.*,kafka_network.*"));
+    }
+
+    @Test
     public void testValidation() {
         assertDoesNotThrow(() -> StrimziMetricsReporterModel.validate(new StrimziMetricsReporterBuilder()
                 .withNewValues()

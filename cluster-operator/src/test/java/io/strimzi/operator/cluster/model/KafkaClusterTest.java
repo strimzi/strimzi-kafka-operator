@@ -54,6 +54,7 @@ import io.strimzi.api.kafka.model.common.jmx.KafkaJmxAuthenticationPasswordBuild
 import io.strimzi.api.kafka.model.common.jmx.KafkaJmxOptionsBuilder;
 import io.strimzi.api.kafka.model.common.metrics.JmxPrometheusExporterMetricsBuilder;
 import io.strimzi.api.kafka.model.common.metrics.MetricsConfig;
+import io.strimzi.api.kafka.model.common.metrics.StrimziMetricsReporterBuilder;
 import io.strimzi.api.kafka.model.common.template.AdditionalVolume;
 import io.strimzi.api.kafka.model.common.template.AdditionalVolumeBuilder;
 import io.strimzi.api.kafka.model.common.template.ContainerEnvVar;
@@ -335,6 +336,123 @@ public class KafkaClusterTest {
         List<NetworkPolicyIngressRule> rules = np.getSpec().getIngress().stream().filter(ing -> ing.getPorts().get(0).getPort().equals(new IntOrString(StrimziMetricsReporterModel.METRICS_PORT))).toList();
 
         assertThat(rules.size(), is(1));
+    }
+
+    @Test
+    public void testStrimziMetricsReporterDefaultAllowListPerNodeRole() {
+        Kafka kafkaAssembly = new KafkaBuilder(KAFKA)
+                .editSpec()
+                .editKafka()
+                .withMetricsConfig(new StrimziMetricsReporterBuilder().build())
+                .endKafka()
+                .endSpec()
+                .build();
+
+        List<KafkaPool> pools = NodePoolUtils.createKafkaPools(
+                Reconciliation.DUMMY_RECONCILIATION,
+                kafkaAssembly,
+                List.of(POOL_CONTROLLERS, POOL_MIXED, POOL_BROKERS),
+                Map.of(),
+                KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE,
+                SHARED_ENV_PROVIDER);
+
+        KafkaCluster kafkaCluster = KafkaCluster.fromCrd(
+                Reconciliation.DUMMY_RECONCILIATION,
+                kafkaAssembly,
+                pools,
+                VERSIONS,
+                KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE,
+                null,
+                SHARED_ENV_PROVIDER);
+
+        // Controller-only node (from POOL_CONTROLLERS) => controller metrics only, no broker-only metrics
+        String controllerConfig = kafkaCluster.generatePerBrokerConfiguration(
+                1,
+                ADVERTISED_HOSTNAMES,
+                ADVERTISED_PORTS);
+        assertThat(controllerConfig, containsString(StrimziMetricsReporterConfig.ALLOW_LIST + "="));
+        assertThat(controllerConfig, containsString("kafka_controller_kafkacontroller.*"));
+        assertThat(controllerConfig, containsString("kafka_server_raft.*"));
+        assertThat(controllerConfig, not(containsString("kafka_server_brokertopicmetrics.*")));
+        assertThat(controllerConfig, not(containsString("kafka_server_replicamanager.*")));
+        assertThat(controllerConfig, not(containsString("kafka_log_log_size")));
+
+        // Broker-only node (from POOL_BROKERS) => broker metrics only, no controller-only metrics
+        String brokerConfig = kafkaCluster.generatePerBrokerConfiguration(
+                6,
+                ADVERTISED_HOSTNAMES,
+                ADVERTISED_PORTS);
+        assertThat(brokerConfig, containsString(StrimziMetricsReporterConfig.ALLOW_LIST + "="));
+        assertThat(brokerConfig, containsString("kafka_server_brokertopicmetrics.*"));
+        assertThat(brokerConfig, containsString("kafka_server_replicamanager.*"));
+        assertThat(brokerConfig, containsString("kafka_log_log_size"));
+        assertThat(brokerConfig, not(containsString("kafka_controller_kafkacontroller.*")));
+        assertThat(brokerConfig, not(containsString("kafka_server_raft.*")));
+
+        // Mixed node (from POOL_MIXED) => both broker and controller metrics, unchanged from before this change
+        String mixedConfig = kafkaCluster.generatePerBrokerConfiguration(
+                3,
+                ADVERTISED_HOSTNAMES,
+                ADVERTISED_PORTS);
+        assertThat(mixedConfig, containsString(StrimziMetricsReporterConfig.ALLOW_LIST + "="));
+        assertThat(mixedConfig, containsString("kafka_controller_kafkacontroller.*"));
+        assertThat(mixedConfig, containsString("kafka_server_raft.*"));
+        assertThat(mixedConfig, containsString("kafka_server_brokertopicmetrics.*"));
+        assertThat(mixedConfig, containsString("kafka_server_replicamanager.*"));
+        assertThat(mixedConfig, containsString("kafka_log_log_size"));
+    }
+
+    @Test
+    public void testStrimziMetricsReporterCustomAllowListAppliesToAllNodeRoles() {
+        Kafka kafkaAssembly = new KafkaBuilder(KAFKA)
+                .editSpec()
+                .editKafka()
+                .withMetricsConfig(new StrimziMetricsReporterBuilder()
+                        .withNewValues()
+                        .withAllowList(List.of("custom_metric.*"))
+                        .endValues()
+                        .build())
+                .endKafka()
+                .endSpec()
+                .build();
+
+        List<KafkaPool> pools = NodePoolUtils.createKafkaPools(
+                Reconciliation.DUMMY_RECONCILIATION,
+                kafkaAssembly,
+                List.of(POOL_CONTROLLERS, POOL_MIXED, POOL_BROKERS),
+                Map.of(),
+                KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE,
+                SHARED_ENV_PROVIDER);
+
+        KafkaCluster kafkaCluster = KafkaCluster.fromCrd(
+                Reconciliation.DUMMY_RECONCILIATION,
+                kafkaAssembly,
+                pools,
+                VERSIONS,
+                KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE,
+                null,
+                SHARED_ENV_PROVIDER);
+
+        // A custom allow list must apply as-is to every node role - controller, broker, and mixed alike
+        String expectedAllowList = StrimziMetricsReporterConfig.ALLOW_LIST + "=custom_metric.*";
+
+        assertThat(kafkaCluster.generatePerBrokerConfiguration(
+                        1,
+                        ADVERTISED_HOSTNAMES,
+                        ADVERTISED_PORTS),
+                containsString(expectedAllowList));
+
+        assertThat(kafkaCluster.generatePerBrokerConfiguration(
+                        3,
+                        ADVERTISED_HOSTNAMES,
+                        ADVERTISED_PORTS),
+                containsString(expectedAllowList));
+
+        assertThat(kafkaCluster.generatePerBrokerConfiguration(
+                        6,
+                        ADVERTISED_HOSTNAMES,
+                        ADVERTISED_PORTS),
+                containsString(expectedAllowList));
     }
 
     @Test
