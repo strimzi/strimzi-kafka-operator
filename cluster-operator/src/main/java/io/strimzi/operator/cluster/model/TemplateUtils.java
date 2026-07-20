@@ -72,7 +72,10 @@ public class TemplateUtils {
         List<String> existingVolumeNames = existingVolumes.stream().map(Volume::getName).toList();
 
         // Check if there are any invalid volume names
-        List<String> invalidNames = existingVolumeNames.stream().filter(name -> !VOLUME_NAME_REGEX.matcher(name).matches()).toList();
+        List<String> invalidNames = templatePod.getVolumes().stream()
+                .map(AdditionalVolume::getName)
+                .filter(name -> !VOLUME_NAME_REGEX.matcher(name).matches())
+                .toList();
 
         // Find duplicate names in the additional volumes
         List<String> duplicateNames = templatePod.getVolumes().stream()
