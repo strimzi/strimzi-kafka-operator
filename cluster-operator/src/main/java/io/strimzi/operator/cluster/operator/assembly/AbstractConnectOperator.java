@@ -391,9 +391,10 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
     }
 
     /**
-     * Try to get the current connector config. If the connector does not exist, or its config differs from the
-     * {@code connectorSpec}'s, then call
-     * {@link #createOrUpdateConnector(Reconciliation, String, KafkaConnectApi, String, KafkaConnectorSpec, KafkaConnectorConfiguration)}
+     * Try to get the current connector config. If the connector does not exist, call
+     * {@link #createConnector(Reconciliation, String, KafkaConnectApi, String, KafkaConnectorSpec, KafkaConnectorConfiguration)};
+     * if it exists but its config differs from the {@code connectorSpec}'s, call
+     * {@link #updateConnector(Reconciliation, String, KafkaConnectApi, String, KafkaConnectorSpec, KafkaConnectorConfiguration)};
      * otherwise, just return the connectors current state.
      * @param reconciliation The reconciliation.
      * @param host The REST API host.
@@ -423,7 +424,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                         .compose(status -> updateConnectorTopics(reconciliation, host, apiClient, connectorName, status));
                 } else {
                     LOGGER.debugCr(reconciliation, "Connector {} exists but does not have desired config, {}!={}", connectorName, desiredConfig.asOrderedProperties().asMap(), currentConfig);
-                    return createOrUpdateConnector(reconciliation, host, apiClient, connectorName, connectorSpec, desiredConfig)
+                    return updateConnector(reconciliation, host, apiClient, connectorName, connectorSpec, desiredConfig)
                         .compose(createConnectorStatusAndConditions())
                         .compose(status -> updateConnectorTopics(reconciliation, host, apiClient, connectorName, status));
                 }
@@ -432,7 +433,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                 if (error instanceof ConnectRestException connectRestException
                         && connectRestException.getStatusCode() == 404) {
                     LOGGER.debugCr(reconciliation, "Connector {} does not exist", connectorName);
-                    return createOrUpdateConnector(reconciliation, host, apiClient, connectorName, connectorSpec, desiredConfig)
+                    return createConnector(reconciliation, host, apiClient, connectorName, connectorSpec, desiredConfig)
                         .compose(createConnectorStatusAndConditions())
                         .compose(status -> autoRestartFailedConnectorAndTasks(reconciliation, host, apiClient, connectorName, connectorSpec, status, resource))
                         .compose(status -> updateConnectorTopics(reconciliation, host, apiClient, connectorName, status));
@@ -465,13 +466,46 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         return !desiredConfig.equals(actualConfig);
     }
 
-    private Future<Map<String, Object>> createOrUpdateConnector(Reconciliation reconciliation, String host, KafkaConnectApi apiClient,
-                                                                  String connectorName, KafkaConnectorSpec connectorSpec, KafkaConnectorConfiguration desiredConfig) {
+    /**
+     * Updates an existing connector's config via PUT, then reconciles its running/paused/stopped state to
+     * match {@code spec.state}. Used only when the connector already exists and its config has changed.
+     *
+     * @param reconciliation    Reconciliation marker
+     * @param host              Kafka Connect host
+     * @param apiClient         Kafka Connect REST API client
+     * @param connectorName     Name of the connector
+     * @param connectorSpec     Spec of the connector
+     * @param desiredConfig     Desired connector configuration
+     *
+     * @return  Future with the connector status which completes when the connector is updated
+     */
+    private Future<Map<String, Object>> updateConnector(Reconciliation reconciliation, String host, KafkaConnectApi apiClient,
+                                                         String connectorName, KafkaConnectorSpec connectorSpec, KafkaConnectorConfiguration desiredConfig) {
         return Future.fromCompletionStage(apiClient.createOrUpdatePutRequest(reconciliation, host, port, connectorName, asJson(connectorSpec, desiredConfig)))
             .compose(ignored -> Future.fromCompletionStage(apiClient.statusWithBackOff(reconciliation, new BackOff(200L, 2, 10), host, port,
                     connectorName)))
             .compose(status -> updateState(reconciliation, host, apiClient, connectorName, connectorSpec, status, new ArrayList<>()))
             .compose(ignored ->  Future.fromCompletionStage(apiClient.status(reconciliation, host, port, connectorName)));
+    }
+
+    /**
+     * Creates a brand-new connector via POST, in the state requested by {@code spec.state} (KIP-980),
+     * so a paused or stopped connector is never started first. Used only when the connector does not
+     * exist yet.
+     *
+     * @param reconciliation    Reconciliation marker
+     * @param host              Kafka Connect host
+     * @param apiClient         Kafka Connect REST API client
+     * @param connectorName     Name of the connector
+     * @param connectorSpec     Spec of the connector
+     * @param desiredConfig     Desired connector configuration
+     *
+     * @return  Future with the connector status which completes when the connector is created
+     */
+    private Future<Map<String, Object>> createConnector(Reconciliation reconciliation, String host, KafkaConnectApi apiClient,
+                                                         String connectorName, KafkaConnectorSpec connectorSpec, KafkaConnectorConfiguration desiredConfig) {
+        return Future.fromCompletionStage(apiClient.createConnector(reconciliation, host, port, connectorName, asJson(connectorSpec, desiredConfig), connectorSpec.getState()))
+            .compose(ignored -> Future.fromCompletionStage(apiClient.statusWithBackOff(reconciliation, new BackOff(200L, 2, 10), host, port, connectorName)));
     }
 
     private Future<List<Condition>> updateState(Reconciliation reconciliation, String host, KafkaConnectApi apiClient, String connectorName, KafkaConnectorSpec connectorSpec, Map<String, Object> status, List<Condition> conditions) {

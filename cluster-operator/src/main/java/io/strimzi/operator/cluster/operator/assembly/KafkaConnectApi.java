@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
+import io.strimzi.api.kafka.model.common.ConnectorState;
 import io.strimzi.api.kafka.model.connect.ConnectorPlugin;
 import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.Reconciliation;
@@ -30,6 +31,23 @@ public interface KafkaConnectApi {
      * this returns information about the connector, including its name, config and tasks.
      */
     CompletionStage<Map<String, Object>> createOrUpdatePutRequest(Reconciliation reconciliation, String host, int port, String connectorName, JsonObject configJson);
+
+    /**
+     * Make a {@code POST} request to {@code /connectors} to create a brand-new connector, optionally
+     * in a given initial state (KIP-980, Kafka 3.7+). Unlike {@link #createOrUpdatePutRequest}, this
+     * can create a connector directly {@code paused} or {@code stopped} instead of starting it first.
+     *
+     * @param reconciliation The reconciliation
+     * @param host The host to make the request to.
+     * @param port The port to make the request to.
+     * @param connectorName The name of the connector to create.
+     * @param configJson The connector configuration.
+     * @param initialState The state the connector should be created in, or {@code null} to use the
+     *                     Kafka Connect default (running).
+     * @return A Future which completes with the result of the request. If the request was successful,
+     * this returns information about the connector, including its name, config and tasks.
+     */
+    CompletionStage<Map<String, Object>> createConnector(Reconciliation reconciliation, String host, int port, String connectorName, JsonObject configJson, ConnectorState initialState);
 
     /**
      * Make a {@code GET} request to {@code /connectors/${connectorName}/config}.
