@@ -84,9 +84,9 @@ public class NetworkPoliciesST extends AbstractST {
             @Step(value = "Deploy KafkaTopics, KafkaUser, metric scraper Pod, and all Kafka producer and consumer clients.", expected = "All resources are deployed."),
             @Step(value = "Produce and consume messages with clients allowed by the network policies on both plain and TLS listeners.", expected = "Allowed clients successfully produce and consume messages."),
             @Step(value = "Verify that clients not included in the network policies are denied access on both plain and TLS listeners.", expected = "Denied clients time out and cannot connect to Kafka."),
-            @Step(value = "Scrape KafkaExporter metrics and verify topic partition metrics for accessed topics.", expected = "Metrics are present and have expected values."),
-            @Step(value = "Verify that expected network policies exist in the namespace.", expected = "Network policies for Kafka and Entity Operator are present."),
-            @Step(value = "Change Kafka log configuration and verify observed generation increases without a rolling update.", expected = "Observed generation is higher than before the config change.")
+            @Step(value = "Scrape KafkaExporter metrics from a scraper Pod to verify that the KafkaExporter network policy allows access to the metrics port and that KafkaExporter can connect to the Kafka brokers.", expected = "Metrics are successfully scraped and contain expected topic partition values."),
+            @Step(value = "Verify that expected network policies exist in the namespace.", expected = "Network policies for Kafka, Entity Operator, and KafkaExporter are present."),
+            @Step(value = "Apply a dynamic Kafka log configuration change to verify that network policies do not block the Cluster Operator from reconciling the Kafka CR and reaching the brokers.", expected = "Observed generation increases without a rolling update, confirming operator-to-broker connectivity.")
         },
         labels = {
             @Label(value = TestDocsLabels.SECURITY)
@@ -281,11 +281,11 @@ public class NetworkPoliciesST extends AbstractST {
     @TestDoc(
         description = @Desc("Test verifying network policies when the Cluster Operator is deployed in a different namespace than the operands, using namespace labels and watching all namespaces."),
         steps = {
-            @Step(value = "Deploy Cluster Operator in the test suite namespace configured to watch all namespaces with operator namespace labels.", expected = "Cluster Operator is deployed and watching all namespaces."),
+            @Step(value = "Deploy Cluster Operator in the test suite namespace configured to watch all namespaces, with STRIMZI_OPERATOR_NAMESPACE_LABELS set so that generated network policies allow ingress from the operator's namespace.", expected = "Cluster Operator is deployed and watching all namespaces."),
             @Step(value = "Label the operator namespace and create a second namespace for operands.", expected = "Both namespaces are configured."),
             @Step(value = "Deploy Kafka cluster with metrics in the second namespace.", expected = "Kafka cluster is deployed in the second namespace."),
             @Step(value = "Verify that expected network policies exist in the second namespace.", expected = "Network policies for Kafka, Entity Operator, and KafkaExporter are present."),
-            @Step(value = "Change Kafka log configuration and verify observed generation increases without a rolling update.", expected = "Observed generation is higher than before the config change.")
+            @Step(value = "Apply a dynamic Kafka log configuration change to verify that network policies do not block the Cluster Operator from reconciling the Kafka CR and reaching the brokers.", expected = "Observed generation increases without a rolling update, confirming operator-to-broker connectivity.")
         },
         labels = {
             @Label(value = TestDocsLabels.SECURITY)

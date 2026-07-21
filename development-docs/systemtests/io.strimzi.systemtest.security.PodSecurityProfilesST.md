@@ -23,7 +23,7 @@
 | Step | Action | Result |
 | - | - | - |
 | 1. | Label the test namespace with pod-security.kubernetes.io/enforce: restricted. | Namespace is labeled with restricted Pod Security profile. |
-| 2. | Deploy three Kafka clusters: one source and two targets for MirrorMaker2. | Kafka clusters are deployed. |
+| 2. | Deploy two Kafka clusters: one source and one target for MirrorMaker2. | Kafka clusters are deployed. |
 | 3. | Deploy KafkaConnect with file plugin, KafkaBridge, KafkaMirrorMaker2, and a FileSink KafkaConnector. | All additional operands are deployed. |
 | 4. | Produce and consume messages in the source Kafka cluster using clients with restricted security profile applied. | Messages are produced and consumed successfully. |
 | 5. | Verify that all Pod containers for Kafka, KafkaConnect, KafkaBridge, and KafkaMirrorMaker2 have proper security context settings. | All containers have expected security context properties. |

@@ -70,7 +70,7 @@ public class PodSecurityProfilesST extends AbstractST {
         description = @Desc("Test verifying that all Strimzi operands function correctly under the Kubernetes restricted Pod Security profile, including proper security context generation for all containers and successful message exchange across Kafka, KafkaConnect, KafkaBridge, and KafkaMirrorMaker2 components."),
         steps = {
             @Step(value = "Label the test namespace with pod-security.kubernetes.io/enforce: restricted.", expected = "Namespace is labeled with restricted Pod Security profile."),
-            @Step(value = "Deploy three Kafka clusters: one source and two targets for MirrorMaker2.", expected = "Kafka clusters are deployed."),
+            @Step(value = "Deploy two Kafka clusters: one source and one target for MirrorMaker2.", expected = "Kafka clusters are deployed."),
             @Step(value = "Deploy KafkaConnect with file plugin, KafkaBridge, KafkaMirrorMaker2, and a FileSink KafkaConnector.", expected = "All additional operands are deployed."),
             @Step(value = "Produce and consume messages in the source Kafka cluster using clients with restricted security profile applied.", expected = "Messages are produced and consumed successfully."),
             @Step(value = "Verify that all Pod containers for Kafka, KafkaConnect, KafkaBridge, and KafkaMirrorMaker2 have proper security context settings.", expected = "All containers have expected security context properties."),

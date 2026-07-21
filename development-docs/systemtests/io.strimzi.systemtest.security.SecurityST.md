@@ -55,11 +55,11 @@
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Deploy Kafka cluster with TLS listener, Cruise Control, and KafkaExporter. | Kafka cluster is deployed. |
+| 1. | Deploy Kafka cluster with TLS listener, Entity Operator, Cruise Control, and KafkaExporter. | Kafka cluster is deployed. |
 | 2. | Create KafkaUser and KafkaTopic, produce and consume messages over TLS. | Messages are exchanged successfully. |
 | 3. | Annotate both cluster and clients CA certificate secrets with strimzi.io/force-renew. | CA cert renewal is triggered for both CAs. |
 | 4. | Wait for rolling updates of all components. | All components roll. |
-| 5. | Verify both CA certificates have changed and clients can still consume messages. | New certificates are in use and messaging works. |
+| 5. | Verify both CA certificates have changed, the original client can still consume, and a newly created KafkaUser can also consume. | New certificates are in use, existing client works, and new user receives a valid cert signed by the renewed CAs. |
 
 **Labels:**
 
@@ -68,17 +68,17 @@
 
 ## testAutoRenewCaCertsTriggerByExpiredCertificate
 
-**Description:** Test verifying that a cluster deployed with an already-expired cluster CA certificate automatically triggers certificate renewal, and that messaging works after renewal completes.
+**Description:** Test verifying that when a pre-existing Kubernetes secret contains an already-expired cluster CA certificate, the Cluster Operator automatically renews it during initial reconciliation and the cluster becomes fully functional.
 
 **Steps:**
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Create a Kubernetes secret with an already-expired cluster CA certificate. | Secret with expired certificate is created. |
-| 2. | Deploy Kafka cluster which uses the expired certificate. | Kafka cluster is deployed. |
-| 3. | Create KafkaUser and KafkaTopic, produce and consume messages over TLS. | Messages are exchanged successfully. |
-| 4. | Wait for the expired certificate to be automatically renewed and cluster to stabilize. | Certificate is renewed and cluster is stable. |
-| 5. | Produce and consume messages again after renewal. | Messages are exchanged successfully with renewed certificates. |
+| 1. | Create a Kubernetes secret containing an already-expired cluster CA certificate before the Kafka CR exists. | Secret with expired certificate is created. |
+| 2. | Deploy Kafka cluster; the CO detects the expired CA during reconciliation and renews it as part of the initial deployment. | Kafka cluster is deployed with a renewed CA certificate. |
+| 3. | Create KafkaUser and KafkaTopic, produce and consume messages over TLS. | Messages are exchanged successfully using the renewed certificate. |
+| 4. | Wait for the expired certificate to be fully replaced in the Secret and the cluster to stabilize. | CA certificate in the Secret has changed and all pods are ready. |
+| 5. | Produce and consume messages again after stabilization. | Messages are exchanged successfully with renewed certificates. |
 
 **Labels:**
 
@@ -93,11 +93,11 @@
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Deploy Kafka cluster with TLS listener, Cruise Control, and KafkaExporter. | Kafka cluster is deployed. |
+| 1. | Deploy Kafka cluster with TLS listener, Entity Operator, Cruise Control, and KafkaExporter. | Kafka cluster is deployed. |
 | 2. | Create KafkaUser and KafkaTopic, produce and consume messages over TLS. | Messages are exchanged successfully. |
 | 3. | Annotate the clients CA certificate secret with strimzi.io/force-renew. | CA cert renewal is triggered. |
 | 4. | Wait for Kafka rolling update; verify Entity Operator, KafkaExporter, and Cruise Control do not roll. | Only Kafka rolls. |
-| 5. | Verify the CA certificate has changed and clients can still consume messages. | New certificate is in use and messaging works. |
+| 5. | Verify the CA certificate has changed, the original client can still consume, and a newly created KafkaUser can also consume. | New certificate is in use, existing client works, and new user receives a valid cert signed by the renewed CA. |
 
 **Labels:**
 
@@ -112,11 +112,11 @@
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Deploy Kafka cluster with TLS listener, Cruise Control, and KafkaExporter. | Kafka cluster is deployed. |
+| 1. | Deploy Kafka cluster with TLS listener, Entity Operator, Cruise Control, and KafkaExporter. | Kafka cluster is deployed. |
 | 2. | Create KafkaUser and KafkaTopic, produce and consume messages over TLS. | Messages are exchanged successfully. |
 | 3. | Annotate the cluster CA certificate secret with strimzi.io/force-renew. | CA cert renewal is triggered. |
 | 4. | Wait for rolling updates of Kafka, Entity Operator, KafkaExporter, and Cruise Control. | All components roll. |
-| 5. | Verify the CA certificate has changed and clients can still consume messages. | New certificate is in use and messaging works. |
+| 5. | Verify the CA certificate has changed, the original client can still consume, and a newly created KafkaUser can also consume. | New certificate is in use, existing client works, and new user receives a valid cert signed by the renewed CA. |
 
 **Labels:**
 
@@ -125,17 +125,17 @@
 
 ## testAutoReplaceAllCaKeysTriggeredByAnno
 
-**Description:** Test verifying that annotating both cluster and clients CA key secrets with strimzi.io/force-replace triggers automatic replacement of all CA key pairs, causing multiple rolling updates of all components.
+**Description:** Test verifying that annotating both cluster and clients CA key secrets with strimzi.io/force-replace triggers automatic replacement of all CA key pairs, causing 3 rolling updates of all components (including a final roll for old certificate removal), with a CO pod restart between rolls to verify recovery.
 
 **Steps:**
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Deploy Kafka cluster with TLS listener, Cruise Control, and KafkaExporter. | Kafka cluster is deployed. |
+| 1. | Deploy Kafka cluster with TLS listener, Entity Operator, Cruise Control, and KafkaExporter. | Kafka cluster is deployed. |
 | 2. | Create KafkaUser and KafkaTopic, produce and consume messages over TLS. | Messages are exchanged successfully. |
 | 3. | Annotate both cluster and clients CA key secrets with strimzi.io/force-replace. | CA key replacement is triggered for both CAs. |
-| 4. | Wait for multiple rolling updates of all components. | All components complete multiple rolling updates. |
-| 5. | Verify both CA keys have changed and clients can still consume messages. | New keys are in use and messaging works. |
+| 4. | Wait for 3 rolling updates of all components; delete the CO pod after the first roll to verify recovery. | All components complete 3 rolling updates and the CO recovers. |
+| 5. | Verify both CA keys have changed, the original client can still consume, and a newly created KafkaUser can also consume. | New keys are in use, existing client works, and new user receives a valid cert signed by the new CA keys. |
 
 **Labels:**
 
@@ -144,17 +144,17 @@
 
 ## testAutoReplaceClientsCaKeysTriggeredByAnno
 
-**Description:** Test verifying that annotating the clients CA key secret with strimzi.io/force-replace triggers automatic replacement of the clients CA key pair, causing a rolling update of Kafka brokers without rolling Entity Operator, KafkaExporter, or Cruise Control.
+**Description:** Test verifying that annotating the clients CA key secret with strimzi.io/force-replace triggers automatic replacement of the clients CA key pair, causing 1 rolling update of Kafka brokers without rolling Entity Operator, KafkaExporter, or Cruise Control.
 
 **Steps:**
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Deploy Kafka cluster with TLS listener, Cruise Control, and KafkaExporter. | Kafka cluster is deployed. |
+| 1. | Deploy Kafka cluster with TLS listener, Entity Operator, Cruise Control, and KafkaExporter. | Kafka cluster is deployed. |
 | 2. | Create KafkaUser and KafkaTopic, produce and consume messages over TLS. | Messages are exchanged successfully. |
 | 3. | Annotate the clients CA key secret with strimzi.io/force-replace. | CA key replacement is triggered. |
-| 4. | Wait for Kafka rolling update; verify Entity Operator, KafkaExporter, and Cruise Control do not roll. | Only Kafka rolls. |
-| 5. | Verify the CA key has changed and clients can still consume messages. | New key is in use and messaging works. |
+| 4. | Wait for 1 Kafka rolling update; verify Entity Operator, KafkaExporter, and Cruise Control do not roll. | Only Kafka rolls once. |
+| 5. | Verify the CA key has changed, the original client can still consume, and a newly created KafkaUser can also consume. | New key is in use, existing client works, and new user receives a valid cert signed by the new CA key. |
 
 **Labels:**
 
@@ -163,17 +163,17 @@
 
 ## testAutoReplaceClusterCaKeysTriggeredByAnno
 
-**Description:** Test verifying that annotating the cluster CA key secret with strimzi.io/force-replace triggers automatic replacement of the cluster CA key pair, causing multiple rolling updates including removal of the old cluster CA certificate.
+**Description:** Test verifying that annotating the cluster CA key secret with strimzi.io/force-replace triggers automatic replacement of the cluster CA key pair, causing 3 rolling updates of all components (including a final roll for old certificate removal), with a CO pod restart between rolls to verify recovery.
 
 **Steps:**
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Deploy Kafka cluster with TLS listener, Cruise Control, and KafkaExporter. | Kafka cluster is deployed. |
+| 1. | Deploy Kafka cluster with TLS listener, Entity Operator, Cruise Control, and KafkaExporter. | Kafka cluster is deployed. |
 | 2. | Create KafkaUser and KafkaTopic, produce and consume messages over TLS. | Messages are exchanged successfully. |
 | 3. | Annotate the cluster CA key secret with strimzi.io/force-replace. | CA key replacement is triggered. |
-| 4. | Wait for multiple rolling updates of all components including an additional roll for old certificate removal. | All components complete multiple rolling updates. |
-| 5. | Verify the CA key has changed and clients can still consume messages. | New key is in use and messaging works. |
+| 4. | Wait for 3 rolling updates of all components; delete the CO pod after the first roll to verify recovery. | All components complete 3 rolling updates and the CO recovers. |
+| 5. | Verify the CA key has changed, the original client can still consume, and a newly created KafkaUser can also consume. | New key is in use, existing client works, and new user receives a valid cert signed by the new CA key. |
 
 **Labels:**
 
@@ -206,7 +206,7 @@
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Deploy Kafka cluster with short CA validity and renewal days and replication factor of 3. | Kafka cluster is deployed with short-lived certificates. |
+| 1. | Deploy Kafka cluster with cluster CA validity of 3 days / renewal at 1 day and replication factor of 3. | Kafka cluster is deployed with short-lived certificates. |
 | 2. | Create KafkaUser and KafkaTopic, produce and consume messages over TLS. | Messages are exchanged successfully. |
 | 3. | Set impossibly high CPU resource requirements on brokers and update CA configuration to trigger renewal. | Broker Pods enter Pending state during rolling update. |
 | 4. | Verify a consumer can still read previously produced messages. | Consumer reads messages from available replicas. |
@@ -247,10 +247,10 @@
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Deploy Kafka cluster with a maintenance time window set 15 minutes in the future and short CA validity and renewal days. | Kafka cluster is deployed with maintenance window configured. |
+| 1. | Deploy Kafka cluster with a maintenance time window set 15 minutes in the future and CA validity of 20 days / renewal at 15 days for both cluster and clients CA. | Kafka cluster is deployed with maintenance window configured. |
 | 2. | Create KafkaUser and KafkaTopic. | Resources are created. |
 | 3. | Update CA validity and renewal days to trigger renewal. | CA configuration is updated. |
-| 4. | Verify that CA certificate generation remains unchanged and no rolling update occurs outside the maintenance window. | No renewal or rolling update happens. |
+| 4. | Verify that CA certificate generation annotations remain at 0 and broker pod UIDs are unchanged, confirming no renewal or rolling update outside the maintenance window. | CA cert generation is still 0 and pods have not restarted. |
 | 5. | Add a new maintenance window starting at the current time. | Maintenance window is updated to start now. |
 | 6. | Wait for rolling update to occur within the maintenance window. | Kafka rolls within the maintenance window. |
 | 7. | Verify CA certificate generations have incremented and KafkaUser certificate has been renewed. | Certificates are renewed. |
@@ -289,7 +289,7 @@
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Deploy Kafka cluster with short cluster CA validity and renewal periods. | Kafka cluster is deployed. |
+| 1. | Deploy Kafka cluster with cluster CA validity of 20 days and renewal at 15 days. | Kafka cluster is deployed. |
 | 2. | Record initial CA and broker certificate start and end dates. | Certificate dates are captured. |
 | 3. | Update cluster CA validity to 200 days and renewal to 150 days. | CA configuration is updated. |
 | 4. | Wait for rolling updates of controllers, brokers, and Entity Operator. | All components roll. |
@@ -302,7 +302,7 @@
 
 ## testKafkaAndKafkaConnectCipherSuites
 
-**Description:** Test verifying that KafkaConnect cannot connect to a Kafka cluster when configured with an incompatible cipher suite, and recovers when updated to use a matching cipher suite.
+**Description:** Test verifying that TLS cipher suite configuration in Strimzi is enforced by deploying Kafka with a specific cipher suite and confirming KafkaConnect fails with a mismatched suite, then succeeds after switching to the same one.
 
 **Steps:**
 
@@ -320,7 +320,7 @@
 
 ## testKafkaAndKafkaConnectTlsVersion
 
-**Description:** Test verifying that KafkaConnect cannot connect to a Kafka cluster when configured with an incompatible TLS version, and recovers when updated to use a matching TLS version.
+**Description:** Test verifying that TLS version configuration in Strimzi is enforced by deploying Kafka with TLSv1.2 only and confirming KafkaConnect fails with TLSv1, then succeeds after switching to TLSv1.2.
 
 **Steps:**
 

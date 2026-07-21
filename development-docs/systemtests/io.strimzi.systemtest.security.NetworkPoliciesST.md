@@ -20,9 +20,9 @@
 | 2. | Deploy KafkaTopics, KafkaUser, metric scraper Pod, and all Kafka producer and consumer clients. | All resources are deployed. |
 | 3. | Produce and consume messages with clients allowed by the network policies on both plain and TLS listeners. | Allowed clients successfully produce and consume messages. |
 | 4. | Verify that clients not included in the network policies are denied access on both plain and TLS listeners. | Denied clients time out and cannot connect to Kafka. |
-| 5. | Scrape KafkaExporter metrics and verify topic partition metrics for accessed topics. | Metrics are present and have expected values. |
-| 6. | Verify that expected network policies exist in the namespace. | Network policies for Kafka and Entity Operator are present. |
-| 7. | Change Kafka log configuration and verify observed generation increases without a rolling update. | Observed generation is higher than before the config change. |
+| 5. | Scrape KafkaExporter metrics from a scraper Pod to verify that the KafkaExporter network policy allows access to the metrics port and that KafkaExporter can connect to the Kafka brokers. | Metrics are successfully scraped and contain expected topic partition values. |
+| 6. | Verify that expected network policies exist in the namespace. | Network policies for Kafka, Entity Operator, and KafkaExporter are present. |
+| 7. | Apply a dynamic Kafka log configuration change to verify that network policies do not block the Cluster Operator from reconciling the Kafka CR and reaching the brokers. | Observed generation increases without a rolling update, confirming operator-to-broker connectivity. |
 
 **Labels:**
 
@@ -55,11 +55,11 @@
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Deploy Cluster Operator in the test suite namespace configured to watch all namespaces with operator namespace labels. | Cluster Operator is deployed and watching all namespaces. |
+| 1. | Deploy Cluster Operator in the test suite namespace configured to watch all namespaces, with STRIMZI_OPERATOR_NAMESPACE_LABELS set so that generated network policies allow ingress from the operator's namespace. | Cluster Operator is deployed and watching all namespaces. |
 | 2. | Label the operator namespace and create a second namespace for operands. | Both namespaces are configured. |
 | 3. | Deploy Kafka cluster with metrics in the second namespace. | Kafka cluster is deployed in the second namespace. |
 | 4. | Verify that expected network policies exist in the second namespace. | Network policies for Kafka, Entity Operator, and KafkaExporter are present. |
-| 5. | Change Kafka log configuration and verify observed generation increases without a rolling update. | Observed generation is higher than before the config change. |
+| 5. | Apply a dynamic Kafka log configuration change to verify that network policies do not block the Cluster Operator from reconciling the Kafka CR and reaching the brokers. | Observed generation increases without a rolling update, confirming operator-to-broker connectivity. |
 
 **Labels:**
 
