@@ -7,12 +7,14 @@ package io.strimzi.systemtest.kafka;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapVolumeSourceBuilder;
 import io.fabric8.kubernetes.api.model.Container;
+import io.fabric8.kubernetes.api.model.KeyToPathBuilder;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
+import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.api.model.SecretVolumeSourceBuilder;
 import io.fabric8.kubernetes.api.model.SecurityContextBuilder;
 import io.fabric8.kubernetes.api.model.Service;
@@ -30,6 +32,8 @@ import io.strimzi.api.kafka.model.common.JvmOptions;
 import io.strimzi.api.kafka.model.common.JvmOptionsBuilder;
 import io.strimzi.api.kafka.model.common.SystemProperty;
 import io.strimzi.api.kafka.model.common.SystemPropertyBuilder;
+import io.strimzi.api.kafka.model.common.template.AdditionalTemplatedVolume;
+import io.strimzi.api.kafka.model.common.template.AdditionalTemplatedVolumeBuilder;
 import io.strimzi.api.kafka.model.common.template.AdditionalVolume;
 import io.strimzi.api.kafka.model.common.template.AdditionalVolumeBuilder;
 import io.strimzi.api.kafka.model.common.template.ResourceTemplate;
@@ -47,6 +51,7 @@ import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListener;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePool;
+import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
@@ -108,7 +113,7 @@ import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 
 @Tag(REGRESSION)
-@SuppressWarnings("checkstyle:ClassFanOutComplexity")
+@SuppressWarnings({"checkstyle:ClassFanOutComplexity", "checkstyle:ClassDataAbstractionCoupling"})
 @SuiteDoc(
     description = @Desc("Test suite containing Kafka related stuff (i.e., JVM resources, EO, TO or UO removal from Kafka cluster), which ensures proper functioning of Kafka clusters."),
     beforeTestSteps = {
@@ -1179,17 +1184,20 @@ class KafkaST extends AbstractST {
     @Tag(CONNECT)
     @Tag(BRIDGE)
     @TestDoc(
-        description = @Desc("This test validates the mounting and usage of additional volumes for Kafka, Kafka Connect, and Kafka Bridge components. It tests whether secret and config map volumes are correctly created, mounted, and accessible across various deployments."),
+        description = @Desc("This test validates the mounting and usage of additional volumes for Kafka, Kafka Connect, and Kafka Bridge components. It tests whether secret and config map volumes are correctly created, mounted, and accessible across various deployments. For Kafka and Kafka Connect, it also validates the additional templated volumes that use the {nodeId} and {nodePodName} placeholders to mount different content into each Pod."),
         steps = {
             @Step(value = "Setup environment prerequisites and configure test storage.", expected = "Ensure the environment is in KRaft mode."),
             @Step(value = "Create necessary Kafka resources with additional volumes for secrets and config maps.", expected = "Resources are correctly instantiated with specified volumes."),
+            @Step(value = "Create the Secret and ConfigMaps used by the additional templated volumes.", expected = "Resources referenced by the templated volumes exist before the Pods are started."),
             @Step(value = "Deploy Kafka, Kafka Connect, and Kafka Bridge with these volumes.", expected = "Components are correctly configured with additional volumes."),
-            @Step(value = "Verify that all pods (Kafka, Connect, and Bridge) have additional volumes mounted and accessible.", expected = "Volumes are correctly mounted and usable within pods.")
+            @Step(value = "Verify that all pods (Kafka, Connect, and Bridge) have additional volumes mounted and accessible.", expected = "Volumes are correctly mounted and usable within pods."),
+            @Step(value = "Verify that Kafka and Connect pods have the additional templated volumes mounted with per-node content.", expected = "Templated volumes are correctly mounted and each Pod sees the content belonging to its node ID and Pod name.")
         },
         labels = {
             @Label(value = TestDocsLabels.KAFKA)
         }
     )
+    @SuppressWarnings("checkstyle:MethodLength")
     void testAdditionalVolumes() {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         final int numberOfKafkaReplicas = 3;
@@ -1205,14 +1213,64 @@ class KafkaST extends AbstractST {
         final String configMapValue = "VALUE";
         final String configMapMountPath = "/mnt/configmap-volume";
 
+        final String templatedSecretName = "templated-secret";
+        final String templatedSecretItemPath = "node-id";
+        final String templatedSecretMountPath = "/mnt/templated-secret-volume";
+
+        final String templatedConfigMapName = "templated-configmap";
+        final String templatedConfigMapKey = "NODE_POD_NAME";
+        final String templatedConfigMapMountPath = "/mnt/templated-configmap-volume";
+
+        // The node IDs are pre-configured through the strimzi.io/next-node-ids annotations, so that the node IDs and
+        // Pod names are known upfront and the resources used by the templated volumes can be prepared before the Pods
+        // are started
         KubeResourceManager.get().createResourceWithWait(
-            KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), numberOfKafkaReplicas).build(),
-            KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 3).build()
+            KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), numberOfKafkaReplicas)
+                .editOrNewMetadata()
+                    .addToAnnotations(Annotations.ANNO_STRIMZI_IO_NEXT_NODE_IDS, "[0-2]")
+                .endMetadata()
+                .build(),
+            KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 3)
+                .editOrNewMetadata()
+                    .addToAnnotations(Annotations.ANNO_STRIMZI_IO_NEXT_NODE_IDS, "[100-102]")
+                .endMetadata()
+                .build()
         );
 
         SecretUtils.createSecret(testStorage.getNamespaceName(), secretName, secretKeyBase64, secretValueBase64);
         KubeResourceManager.get().createResourceWithWait(ConfigMapTemplates.buildConfigMap(testStorage.getNamespaceName(), configMapName,
             configMapKey, configMapValue));
+
+        // Pods with stable identities that will use the templated volumes: Kafka brokers (node IDs 0-2), Kafka
+        // controllers (node IDs 100-102), and Kafka Connect (node ID 0)
+        final List<String> statefulPodNames = new ArrayList<>();
+        for (int nodeId = 0; nodeId < numberOfKafkaReplicas; nodeId++) {
+            statefulPodNames.add(testStorage.getBrokerComponentName() + "-" + nodeId);
+        }
+        for (int nodeId = 100; nodeId <= 102; nodeId++) {
+            statefulPodNames.add(testStorage.getControllerComponentName() + "-" + nodeId);
+        }
+        statefulPodNames.add(KafkaConnectResources.componentName(testStorage.getClusterName()) + "-0");
+
+        // Secret with one key per node ID that is mounted through a templated volume using the {nodeId} placeholder in
+        // the item key, and one ConfigMap per Pod that is mounted through a templated volume using the {nodePodName}
+        // placeholder in the ConfigMap name
+        final Map<String, String> templatedSecretData = new HashMap<>();
+        for (String podName : statefulPodNames) {
+            final String nodeId = podName.substring(podName.lastIndexOf('-') + 1);
+            templatedSecretData.put("node-" + nodeId, nodeId);
+            KubeResourceManager.get().createResourceWithWait(ConfigMapTemplates.buildConfigMap(testStorage.getNamespaceName(), templatedConfigMapName + "-" + podName,
+                templatedConfigMapKey, podName));
+        }
+
+        KubeResourceManager.get().createResourceWithWait(new SecretBuilder()
+            .withNewMetadata()
+                .withName(templatedSecretName)
+                .withNamespace(testStorage.getNamespaceName())
+            .endMetadata()
+            .withType("Opaque")
+            .withStringData(templatedSecretData)
+            .build());
 
         AdditionalVolume[] additionalVolumes = new AdditionalVolume[]{
             // Secret additional volume
@@ -1241,15 +1299,48 @@ class KafkaST extends AbstractST {
                 .build()
         };
 
+        AdditionalTemplatedVolume[] templatedVolumes = new AdditionalTemplatedVolume[]{
+            // Secret templated volume with the {nodeId} placeholder in the item key
+            new AdditionalTemplatedVolumeBuilder()
+                .withName(templatedSecretName)
+                .withSecret(new SecretVolumeSourceBuilder()
+                    .withSecretName(templatedSecretName)
+                    .withItems(new KeyToPathBuilder()
+                        .withKey("node-{nodeId}")
+                        .withPath(templatedSecretItemPath)
+                        .build())
+                    .build())
+                .build(),
+            // ConfigMap templated volume with the {nodePodName} placeholder in the ConfigMap name
+            new AdditionalTemplatedVolumeBuilder()
+                .withName(templatedConfigMapName)
+                .withConfigMap(new ConfigMapVolumeSourceBuilder()
+                    .withName(templatedConfigMapName + "-{nodePodName}")
+                    .build())
+                .build()
+        };
+        VolumeMount[] templatedVolumeMounts = new VolumeMount[]{
+            new VolumeMountBuilder()
+                .withName(templatedSecretName)
+                .withMountPath(templatedSecretMountPath)
+                .build(),
+            new VolumeMountBuilder()
+                .withName(templatedConfigMapName)
+                .withMountPath(templatedConfigMapMountPath)
+                .build()
+        };
+
         KubeResourceManager.get().createResourceWithWait(KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getClusterName(), numberOfKafkaReplicas)
             .editSpec()
                 .editKafka()
                     .editTemplate()
                         .editPod()
                             .addToVolumes(additionalVolumes)
+                            .addToTemplatedVolumes(templatedVolumes)
                         .endPod()
                         .editKafkaContainer()
                             .addToVolumeMounts(volumeMounts)
+                            .addToVolumeMounts(templatedVolumeMounts)
                         .endKafkaContainer()
                     .endTemplate()
                 .endKafka()
@@ -1261,9 +1352,11 @@ class KafkaST extends AbstractST {
                 .editTemplate()
                     .editPod()
                         .addToVolumes(additionalVolumes)
+                        .addToTemplatedVolumes(templatedVolumes)
                     .endPod()
                     .editConnectContainer()
                         .addToVolumeMounts(volumeMounts)
+                        .addToVolumeMounts(templatedVolumeMounts)
                     .endConnectContainer()
                 .endTemplate()
             .endSpec()
@@ -1291,6 +1384,12 @@ class KafkaST extends AbstractST {
         for (Pod kafkaPod : kafkaPods) {
             verifyPodSecretVolume(testStorage.getNamespaceName(), kafkaPod, "kafka", secretMountPath, secretValueBase64, secretKeyBase64);
             verifyPodConfigMapVolume(testStorage.getNamespaceName(), kafkaPod, "kafka", configMapMountPath, configMapValue, configMapKey);
+
+            // Check the templated volumes => each Pod should see the content belonging to its own node ID and Pod name
+            final String kafkaPodName = kafkaPod.getMetadata().getName();
+            final String kafkaNodeId = kafkaPodName.substring(kafkaPodName.lastIndexOf('-') + 1);
+            verifyPodSecretVolume(testStorage.getNamespaceName(), kafkaPod, "kafka", templatedSecretMountPath, kafkaNodeId, templatedSecretItemPath);
+            verifyPodConfigMapVolume(testStorage.getNamespaceName(), kafkaPod, "kafka", templatedConfigMapMountPath, kafkaPodName, templatedConfigMapKey);
         }
 
         // 2. check Connect pods
@@ -1298,9 +1397,15 @@ class KafkaST extends AbstractST {
         for (Pod connectPod : connectPods) {
             verifyPodSecretVolume(testStorage.getNamespaceName(), connectPod, KafkaConnectResources.componentName(testStorage.getClusterName()), secretMountPath, secretValueBase64, secretKeyBase64);
             verifyPodConfigMapVolume(testStorage.getNamespaceName(), connectPod, KafkaConnectResources.componentName(testStorage.getClusterName()), configMapMountPath, configMapValue, configMapKey);
+
+            // Check the templated volumes => each Pod should see the content belonging to its own node ID and Pod name
+            final String connectPodName = connectPod.getMetadata().getName();
+            final String connectNodeId = connectPodName.substring(connectPodName.lastIndexOf('-') + 1);
+            verifyPodSecretVolume(testStorage.getNamespaceName(), connectPod, KafkaConnectResources.componentName(testStorage.getClusterName()), templatedSecretMountPath, connectNodeId, templatedSecretItemPath);
+            verifyPodConfigMapVolume(testStorage.getNamespaceName(), connectPod, KafkaConnectResources.componentName(testStorage.getClusterName()), templatedConfigMapMountPath, connectPodName, templatedConfigMapKey);
         }
 
-        // 3. check Bridge pods
+        // 3. check Bridge pods (Bridge Pods do not have stable identities, so the templated volumes are not supported there)
         List<Pod> bridgePods = KubeResourceManager.get().kubeClient().listPods(testStorage.getNamespaceName(),
             testStorage.getBridgeSelector());
 

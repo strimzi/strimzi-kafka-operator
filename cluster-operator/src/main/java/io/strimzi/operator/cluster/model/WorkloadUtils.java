@@ -24,6 +24,7 @@ import io.fabric8.kubernetes.api.model.apps.RollingUpdateDeploymentBuilder;
 import io.strimzi.api.kafka.model.common.template.DeploymentTemplate;
 import io.strimzi.api.kafka.model.common.template.PodTemplate;
 import io.strimzi.api.kafka.model.common.template.ResourceTemplate;
+import io.strimzi.api.kafka.model.common.template.StatefulPodTemplate;
 import io.strimzi.api.kafka.model.common.template.StrimziDeploymentStrategy;
 import io.strimzi.api.kafka.model.podset.StrimziPodSet;
 import io.strimzi.api.kafka.model.podset.StrimziPodSetBuilder;
@@ -249,7 +250,7 @@ public class WorkloadUtils {
             Labels labels,
             String strimziPodSetName,
             String serviceAccountName,
-            PodTemplate template,
+            StatefulPodTemplate template,
             Map<String, String> defaultPodLabels,
             Map<String, String> podAnnotations,
             String headlessServiceName,

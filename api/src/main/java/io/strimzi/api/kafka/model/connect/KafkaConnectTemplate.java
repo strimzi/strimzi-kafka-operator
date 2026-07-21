@@ -15,6 +15,7 @@ import io.strimzi.api.kafka.model.common.template.InternalServiceTemplate;
 import io.strimzi.api.kafka.model.common.template.PodDisruptionBudgetTemplate;
 import io.strimzi.api.kafka.model.common.template.PodTemplate;
 import io.strimzi.api.kafka.model.common.template.ResourceTemplate;
+import io.strimzi.api.kafka.model.common.template.StatefulPodTemplate;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
@@ -38,7 +39,7 @@ import java.util.Map;
 @ToString
 public class KafkaConnectTemplate implements HasJmxSecretTemplate, UnknownPropertyPreserving {
     private ResourceTemplate podSet;
-    private PodTemplate pod;
+    private StatefulPodTemplate pod;
     private PodTemplate buildPod;
     private InternalServiceTemplate apiService;
     private InternalServiceTemplate headlessService;
@@ -65,11 +66,11 @@ public class KafkaConnectTemplate implements HasJmxSecretTemplate, UnknownProper
 
     @Description("Template for Kafka Connect `Pods`.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public PodTemplate getPod() {
+    public StatefulPodTemplate getPod() {
         return pod;
     }
 
-    public void setPod(PodTemplate pod) {
+    public void setPod(StatefulPodTemplate pod) {
         this.pod = pod;
     }
 

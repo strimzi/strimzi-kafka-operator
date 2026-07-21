@@ -18,7 +18,7 @@ import io.fabric8.kubernetes.api.model.PodAffinityBuilder;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.skodjob.kubetest4j.resources.KubeResourceManager;
-import io.strimzi.api.kafka.model.common.template.PodTemplate;
+import io.strimzi.api.kafka.model.common.template.StatefulPodTemplate;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaClusterTemplate;
 import io.strimzi.api.kafka.model.kafka.KafkaClusterTemplateBuilder;
@@ -315,7 +315,7 @@ public class KafkaRollerST extends AbstractST {
                 .endNodeAffinity()
                 .build();
 
-        PodTemplate pt = new PodTemplate();
+        StatefulPodTemplate pt = new StatefulPodTemplate();
         pt.setAffinity(affinity);
 
         KafkaClusterTemplate kct = new KafkaClusterTemplateBuilder()

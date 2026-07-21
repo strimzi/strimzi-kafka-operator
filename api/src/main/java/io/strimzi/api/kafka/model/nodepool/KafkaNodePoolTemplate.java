@@ -9,8 +9,8 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.strimzi.api.kafka.model.common.Constants;
 import io.strimzi.api.kafka.model.common.Spec;
 import io.strimzi.api.kafka.model.common.template.ContainerTemplate;
-import io.strimzi.api.kafka.model.common.template.PodTemplate;
 import io.strimzi.api.kafka.model.common.template.ResourceTemplate;
+import io.strimzi.api.kafka.model.common.template.StatefulPodTemplate;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
@@ -33,7 +33,7 @@ import java.util.Map;
 @ToString(callSuper = true)
 public class KafkaNodePoolTemplate extends Spec {
     private ResourceTemplate podSet;
-    private PodTemplate pod;
+    private StatefulPodTemplate pod;
     private ResourceTemplate perPodService;
     private ResourceTemplate perPodRoute;
     private ResourceTemplate perPodIngress;
@@ -54,11 +54,11 @@ public class KafkaNodePoolTemplate extends Spec {
 
     @Description("Template for Kafka `Pods`.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public PodTemplate getPod() {
+    public StatefulPodTemplate getPod() {
         return pod;
     }
 
-    public void setPod(PodTemplate pod) {
+    public void setPod(StatefulPodTemplate pod) {
         this.pod = pod;
     }
 

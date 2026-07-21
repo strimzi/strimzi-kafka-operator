@@ -4,15 +4,22 @@
  */
 package io.strimzi.operator.cluster.model;
 
+import io.fabric8.kubernetes.api.model.ConfigMapVolumeSourceBuilder;
+import io.fabric8.kubernetes.api.model.KeyToPathBuilder;
+import io.fabric8.kubernetes.api.model.PersistentVolumeClaimVolumeSource;
+import io.fabric8.kubernetes.api.model.PersistentVolumeClaimVolumeSourceBuilder;
 import io.fabric8.kubernetes.api.model.Quantity;
+import io.fabric8.kubernetes.api.model.SecretVolumeSourceBuilder;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeBuilder;
 import io.fabric8.kubernetes.api.model.VolumeMount;
+import io.strimzi.api.kafka.model.common.template.AdditionalTemplatedVolume;
 import io.strimzi.api.kafka.model.common.template.AdditionalVolume;
 import io.strimzi.api.kafka.model.common.template.ContainerTemplate;
 import io.strimzi.api.kafka.model.common.template.DeploymentTemplate;
 import io.strimzi.api.kafka.model.common.template.HasMetadataTemplate;
 import io.strimzi.api.kafka.model.common.template.PodTemplate;
+import io.strimzi.api.kafka.model.common.template.StatefulPodTemplate;
 import io.strimzi.api.kafka.model.common.template.StrimziDeploymentStrategy;
 import io.strimzi.operator.common.model.InvalidResourceException;
 
@@ -97,6 +104,46 @@ public class TemplateUtils {
     }
 
     /**
+     * Add additional templated volumes for a given pod template and a list of existing volumes.
+     *
+     * @param node              The node for which these volumes are used
+     * @param templatePod       The pod template that contains the additional volumes.
+     * @param existingVolumes   The list of existing volumes to which the additional volumes will be added.
+     */
+    public static void addAdditionalTemplatedVolumes(NodeRef node, StatefulPodTemplate templatePod, List<Volume> existingVolumes) {
+        if (templatePod == null || templatePod.getTemplatedVolumes() == null) {
+            return;
+        }
+
+        // Extract the names and paths of the existing volumes
+        List<String> existingVolumeNames = existingVolumes.stream().map(Volume::getName).toList();
+
+        // Check if there are any invalid volume names
+        List<String> invalidNames = templatePod.getTemplatedVolumes().stream()
+                .map(AdditionalTemplatedVolume::getName)
+                .filter(name -> !VOLUME_NAME_REGEX.matcher(name).matches())
+                .toList();
+
+        // Find duplicate names in the additional volumes
+        List<String> duplicateNames = templatePod.getTemplatedVolumes().stream()
+                .map(AdditionalTemplatedVolume::getName)
+                .filter(existingVolumeNames::contains)
+                .toList();
+
+        // Throw an exception if there are any invalid volume names
+        if (!invalidNames.isEmpty()) {
+            throw new InvalidResourceException("Volume names " + invalidNames + " are invalid and do not match the pattern " + VOLUME_NAME_REGEX);
+        }
+
+        // Throw an exception if duplicates are found
+        if (!duplicateNames.isEmpty()) {
+            throw new InvalidResourceException("Duplicate volume names found in additional volumes: " + duplicateNames);
+        }
+
+        templatePod.getTemplatedVolumes().forEach(volumeConfig -> existingVolumes.add(createTemplatedVolumeFromConfig(node, volumeConfig)));
+    }
+
+    /**
      * Add additional volume mounts to the given list of volume mounts. Validation is performed to ensure none of the
      * additional volume mount paths are forbidden.
      *
@@ -119,7 +166,7 @@ public class TemplateUtils {
     }
 
     /**
-     * Creates a kubernetes Volume object from the provided Volume configuration
+     * Creates a Kubernetes Volume object from the provided Volume configuration
      *
      * @param volumeConfig The configuration for the additional volume
      * @return A Volume object
@@ -142,6 +189,45 @@ public class TemplateUtils {
             volumeBuilder.withCsi(volumeConfig.getCsi());
         } else if (volumeConfig.getImage() != null) {
             volumeBuilder.withImage(volumeConfig.getImage());
+        }
+
+        return volumeBuilder.build();
+    }
+
+    /**
+     * Creates a Templated Kubernetes Volume object from the provided Volume configuration
+     *
+     * @param node          The node for which these volumes are used
+     * @param volumeConfig  The configuration for the additional volume
+     *
+     * @return  A Volume object
+     */
+    private static Volume createTemplatedVolumeFromConfig(NodeRef node, AdditionalTemplatedVolume volumeConfig) {
+        VolumeBuilder volumeBuilder = new VolumeBuilder().withName(volumeConfig.getName());
+
+        if (volumeConfig.getConfigMap() != null) {
+            ConfigMapVolumeSourceBuilder configMapBuilder = new ConfigMapVolumeSourceBuilder(volumeConfig.getConfigMap())
+                    .withName(ModelUtils.renderTemplate(volumeConfig.getConfigMap().getName(), node));
+
+            if (volumeConfig.getConfigMap().getItems() != null && !volumeConfig.getConfigMap().getItems().isEmpty()) {
+                configMapBuilder.withItems(volumeConfig.getConfigMap().getItems().stream().map(item -> new KeyToPathBuilder(item).withKey(ModelUtils.renderTemplate(item.getKey(), node)).withPath(ModelUtils.renderTemplate(item.getPath(), node)).build()).toList());
+            }
+
+            volumeBuilder.withConfigMap(configMapBuilder.build());
+        } else if (volumeConfig.getSecret() != null) {
+            SecretVolumeSourceBuilder secretBuilder = new SecretVolumeSourceBuilder(volumeConfig.getSecret())
+                    .withSecretName(ModelUtils.renderTemplate(volumeConfig.getSecret().getSecretName(), node));
+
+            if (volumeConfig.getSecret().getItems() != null)    {
+                secretBuilder.withItems(volumeConfig.getSecret().getItems().stream().map(item -> new KeyToPathBuilder(item).withKey(ModelUtils.renderTemplate(item.getKey(), node)).withPath(ModelUtils.renderTemplate(item.getPath(), node)).build()).toList());
+            }
+
+            volumeBuilder.withSecret(secretBuilder.build());
+        } else if (volumeConfig.getPersistentVolumeClaim() != null) {
+            PersistentVolumeClaimVolumeSource pvc = new PersistentVolumeClaimVolumeSourceBuilder(volumeConfig.getPersistentVolumeClaim())
+                    .withClaimName(ModelUtils.renderTemplate(volumeConfig.getPersistentVolumeClaim().getClaimName(), node))
+                    .build();
+            volumeBuilder.withPersistentVolumeClaim(pvc);
         }
 
         return volumeBuilder.build();

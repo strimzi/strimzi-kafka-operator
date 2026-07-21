@@ -364,4 +364,19 @@ public class ModelUtils {
         }
         return errors;
     }
+
+    /**
+     * Replaces the template fields in the template string with the corresponding values from the node reference. This
+     * method is currently used in listener and volume templates.
+     *
+     * @param template  Template with the placeholders
+     * @param node      Node reference that should be used to provide the final values
+     *
+     * @return  The rendered template
+     */
+    static String renderTemplate(String template, NodeRef node) {
+        return template
+                .replace("{nodeId}", Integer.toString(node.nodeId()))
+                .replace("{nodePodName}", node.podName());
+    }
 }

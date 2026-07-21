@@ -50,6 +50,8 @@ import io.strimzi.api.kafka.model.common.jmx.KafkaJmxOptionsBuilder;
 import io.strimzi.api.kafka.model.common.metrics.JmxPrometheusExporterMetricsBuilder;
 import io.strimzi.api.kafka.model.common.metrics.MetricsConfig;
 import io.strimzi.api.kafka.model.common.metrics.StrimziMetricsReporterBuilder;
+import io.strimzi.api.kafka.model.common.template.AdditionalTemplatedVolume;
+import io.strimzi.api.kafka.model.common.template.AdditionalTemplatedVolumeBuilder;
 import io.strimzi.api.kafka.model.common.template.AdditionalVolume;
 import io.strimzi.api.kafka.model.common.template.AdditionalVolumeBuilder;
 import io.strimzi.api.kafka.model.common.template.ContainerEnvVar;
@@ -904,6 +906,16 @@ public class KafkaMirrorMaker2ClusterTest {
                 .withMountPath("/mnt/mypvc")
                 .build();
 
+        AdditionalTemplatedVolume additionalTemplatedVolume  = new AdditionalTemplatedVolumeBuilder()
+                .withName("pvc-templated-volume-name")
+                .withPersistentVolumeClaim(new PersistentVolumeClaimVolumeSourceBuilder().withClaimName("my-pvc-{nodeId}").build())
+                .build();
+
+        VolumeMount additionalTemplatedVolumeMount = new VolumeMountBuilder()
+                .withName("pvc-templated-volume-name")
+                .withMountPath("/mnt/pvc-templated-volume-name")
+                .build();
+
         KafkaMirrorMaker2 resource = new KafkaMirrorMaker2Builder(RESOURCE)
                 .editSpec()
                     .withNewTopologyLabelRack()
@@ -929,13 +941,14 @@ public class KafkaMirrorMaker2ClusterTest {
                             .withEnableServiceLinks(false)
                             .withTmpDirSizeLimit("10Mi")
                             .withVolumes(additionalVolumeConfigMap, additionalVolumePvc)
+                            .withTemplatedVolumes(additionalTemplatedVolume)
                             .withHostUsers(false)
                         .endPod()
                         .withNewInitContainer()
                             .withVolumeMounts(additionalVolumeMountPvc)
                         .endInitContainer()
                         .withNewConnectContainer()
-                            .withVolumeMounts(additionalVolumeMountConfigMap)
+                            .withVolumeMounts(additionalVolumeMountConfigMap, additionalTemplatedVolumeMount)
                         .endConnectContainer()
                         .withNewApiService()
                             .withNewMetadata()
@@ -984,7 +997,7 @@ public class KafkaMirrorMaker2ClusterTest {
             assertThat(pod.getSpec().getEnableServiceLinks(), is(false));
             assertThat(pod.getSpec().getHostUsers(), is(false));
 
-            assertThat(pod.getSpec().getVolumes().size(), is(5));
+            assertThat(pod.getSpec().getVolumes().size(), is(6));
             assertThat(pod.getSpec().getVolumes().get(0).getName(), is(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME));
             assertThat(pod.getSpec().getVolumes().get(0).getEmptyDir(), is(notNullValue()));
             assertThat(pod.getSpec().getVolumes().get(0).getEmptyDir().getSizeLimit(), is(new Quantity("10Mi")));
@@ -997,6 +1010,8 @@ public class KafkaMirrorMaker2ClusterTest {
             assertThat(pod.getSpec().getVolumes().get(3).getConfigMap().getName(), is("configMap1"));
             assertThat(pod.getSpec().getVolumes().get(4).getName(), is("pvc-volume-name"));
             assertThat(pod.getSpec().getVolumes().get(4).getPersistentVolumeClaim().getClaimName(), is("pvc-name"));
+            assertThat(pod.getSpec().getVolumes().get(5).getName(), is("pvc-templated-volume-name"));
+            assertThat(pod.getSpec().getVolumes().get(5).getPersistentVolumeClaim().getClaimName(), is("my-pvc-" + pod.getMetadata().getName().substring(pod.getMetadata().getName().lastIndexOf("-") + 1)));
 
             assertThat(pod.getSpec().getInitContainers().get(0).getVolumeMounts().size(), is(2));
             assertThat(pod.getSpec().getInitContainers().get(0).getVolumeMounts().get(0).getName(), is("rack-volume"));
@@ -1004,7 +1019,7 @@ public class KafkaMirrorMaker2ClusterTest {
             assertThat(pod.getSpec().getInitContainers().get(0).getVolumeMounts().get(1).getName(), is("pvc-volume-name"));
             assertThat(pod.getSpec().getInitContainers().get(0).getVolumeMounts().get(1).getMountPath(), is("/mnt/mypvc"));
 
-            assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().size(), is(4));
+            assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().size(), is(5));
             assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(0).getName(), is(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME));
             assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(0).getMountPath(), is(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_MOUNT_PATH));
             assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(1).getName(), is("kafka-connect-configurations"));
@@ -1013,6 +1028,8 @@ public class KafkaMirrorMaker2ClusterTest {
             assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(2).getMountPath(), is("/opt/kafka/init"));
             assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(3).getName(), is("config-map-volume-name"));
             assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(3).getMountPath(), is("/mnt/myconfigmap"));
+            assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(4).getName(), is("pvc-templated-volume-name"));
+            assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(4).getMountPath(), is("/mnt/pvc-templated-volume-name"));
         });
 
         // Check Service

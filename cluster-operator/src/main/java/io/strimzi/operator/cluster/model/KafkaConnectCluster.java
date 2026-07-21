@@ -39,8 +39,8 @@ import io.strimzi.api.kafka.model.common.metrics.StrimziMetricsReporter;
 import io.strimzi.api.kafka.model.common.template.ContainerTemplate;
 import io.strimzi.api.kafka.model.common.template.InternalServiceTemplate;
 import io.strimzi.api.kafka.model.common.template.PodDisruptionBudgetTemplate;
-import io.strimzi.api.kafka.model.common.template.PodTemplate;
 import io.strimzi.api.kafka.model.common.template.ResourceTemplate;
+import io.strimzi.api.kafka.model.common.template.StatefulPodTemplate;
 import io.strimzi.api.kafka.model.common.tracing.OpenTelemetryTracing;
 import io.strimzi.api.kafka.model.common.tracing.Tracing;
 import io.strimzi.api.kafka.model.connect.ImageArtifact;
@@ -166,7 +166,7 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
     protected PodDisruptionBudgetTemplate templatePodDisruptionBudget;
     protected ResourceTemplate templateInitClusterRoleBinding;
     protected ResourceTemplate templatePodSet;
-    protected PodTemplate templatePod;
+    protected StatefulPodTemplate templatePod;
     protected InternalServiceTemplate templateService;
     protected InternalServiceTemplate templateHeadlessService;
     protected ContainerTemplate templateInitContainer;
@@ -390,7 +390,7 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
         return portList;
     }
 
-    protected List<Volume> getVolumes() {
+    protected List<Volume> getVolumes(NodeRef node) {
         List<Volume> volumeList = new ArrayList<>(2);
         volumeList.add(VolumeUtils.createTempDirVolume(templatePod));
         volumeList.add(VolumeUtils.createConfigMapVolume(KAFKA_CONNECT_CONFIG_VOLUME_NAME, connectConfigMapName));
@@ -402,6 +402,7 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
         volumeList.addAll(getMountedPluginVolumes());
         
         TemplateUtils.addAdditionalVolumes(templatePod, volumeList);
+        TemplateUtils.addAdditionalTemplatedVolumes(node, templatePod, volumeList);
 
         return volumeList;
     }
@@ -528,7 +529,7 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
                         ModelUtils.affinityWithRackLabelSelector(templatePod, rack),
                         ContainerUtils.listOrNull(createInitContainer(imagePullPolicy)),
                         List.of(createContainer(imagePullPolicy, customContainerImage)),
-                        getVolumes(),
+                        getVolumes(new NodeRef(componentName + "-" + podId, podId, null, false, false)),
                         imagePullSecrets,
                         securityProvider.kafkaConnectPodSecurityContext(podSecurityProviderContext),
                         securityProvider.kafkaConnectHostUsers(podSecurityProviderContext))

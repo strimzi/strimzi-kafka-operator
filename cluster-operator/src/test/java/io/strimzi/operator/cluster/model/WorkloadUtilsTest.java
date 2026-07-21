@@ -35,6 +35,8 @@ import io.strimzi.api.kafka.model.common.template.DnsPolicy;
 import io.strimzi.api.kafka.model.common.template.PodTemplate;
 import io.strimzi.api.kafka.model.common.template.PodTemplateBuilder;
 import io.strimzi.api.kafka.model.common.template.ResourceTemplateBuilder;
+import io.strimzi.api.kafka.model.common.template.StatefulPodTemplate;
+import io.strimzi.api.kafka.model.common.template.StatefulPodTemplateBuilder;
 import io.strimzi.api.kafka.model.common.template.StrimziDeploymentStrategy;
 import io.strimzi.api.kafka.model.kafka.PersistentClaimStorageBuilder;
 import io.strimzi.api.kafka.model.kafka.Storage;
@@ -529,7 +531,7 @@ public class WorkloadUtilsTest {
                 LABELS,
                 NAME,   // => Workload name
                 NAME + "-sa",   // => Service Account name
-                new PodTemplate(),
+                new StatefulPodTemplate(),
                 Map.of("default-label", "default-value"),
                 Map.of("extra", "annotations"),
                 HEADLESS_SERVICE_NAME,
@@ -584,7 +586,7 @@ public class WorkloadUtilsTest {
                 LABELS,
                 NAME,   // => Workload name
                 NAME + "-sa",   // => Service Account name
-                new PodTemplateBuilder()
+                new StatefulPodTemplateBuilder()
                         .withNewMetadata()
                             .withLabels(Map.of("label-3", "value-3", "label-4", "value-4"))
                             .withAnnotations(Map.of("anno-1", "value-1", "anno-2", "value-2"))
