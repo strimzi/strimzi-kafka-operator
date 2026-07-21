@@ -39,7 +39,7 @@ import io.strimzi.operator.cluster.operator.resource.kubernetes.StrimziPodSetOpe
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.auth.TlsPemIdentity;
-import io.strimzi.operator.common.model.Ca;
+import io.strimzi.operator.common.ca.Ca;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.PasswordGenerator;
 import io.strimzi.operator.common.operator.resource.kubernetes.SecretOperator;
@@ -76,9 +76,9 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static io.strimzi.operator.common.model.Ca.CA_CRT;
-import static io.strimzi.operator.common.model.Ca.CA_STORE;
-import static io.strimzi.operator.common.model.Ca.CA_STORE_PASSWORD;
+import static io.strimzi.operator.common.ca.InternalCa.CA_CRT;
+import static io.strimzi.operator.common.ca.InternalCa.CA_STORE;
+import static io.strimzi.operator.common.ca.InternalCa.CA_STORE_PASSWORD;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.aMapWithSize;
@@ -99,7 +99,8 @@ import static org.mockito.Mockito.when;
  * The test cases use a mock CaReconciler class to capture when Kafka pods and
  * other deployment (Kafka Exporter etc) are rolled.
  * <p>
- * Use CaReconcilerReconcileCasTest for testing the reconcileCas method in isolation.
+ * The tests for creating or updating the CA certs and reconciling the CA cert
+ * Secrets are in the test class for each CaProvider.
  */
 @ExtendWith(VertxExtension.class)
 public class CaReconcilerTest {

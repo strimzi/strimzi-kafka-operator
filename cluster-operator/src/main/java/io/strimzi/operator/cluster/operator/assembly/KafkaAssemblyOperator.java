@@ -25,7 +25,6 @@ import io.strimzi.api.kafka.model.podset.StrimziPodSet;
 import io.strimzi.certs.CertIssuer;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
-import io.strimzi.operator.cluster.model.ClusterCa;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaVersionChange;
 import io.strimzi.operator.cluster.model.ModelUtils;
@@ -38,8 +37,8 @@ import io.strimzi.operator.common.InvalidConfigurationException;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationException;
 import io.strimzi.operator.common.ReconciliationLogger;
+import io.strimzi.operator.common.ca.Ca;
 import io.strimzi.operator.common.config.ConfigParameter;
-import io.strimzi.operator.common.model.ClientsCa;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.NamespaceAndName;
 import io.strimzi.operator.common.model.PasswordGenerator;
@@ -266,8 +265,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
         /* test */ KafkaVersionChange versionChange;
 
-        /* test */ ClusterCa clusterCa;
-        /* test */ ClientsCa clientsCa;
+        private Ca clusterCa;
+        private Ca clientsCa;
 
         // Needed by Cruise control to configure the cluster, its nodes and their storage and resource configuration
         private Set<NodeRef> kafkaBrokerNodes;

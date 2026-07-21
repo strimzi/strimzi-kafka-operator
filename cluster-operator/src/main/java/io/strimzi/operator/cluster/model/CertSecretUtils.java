@@ -9,8 +9,8 @@ import io.strimzi.certs.CertAndKey;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
-import io.strimzi.operator.common.model.Ca;
-import io.strimzi.operator.common.model.CertificateUtils;
+import io.strimzi.operator.common.ca.Ca;
+import io.strimzi.operator.common.ca.CertificateUtils;
 
 import java.math.BigInteger;
 import java.security.cert.CertificateEncodingException;

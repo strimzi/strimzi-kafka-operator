@@ -34,7 +34,6 @@ import io.strimzi.api.kafka.model.podset.StrimziPodSetBuilder;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.model.CertSecretUtils;
-import io.strimzi.operator.cluster.model.ClusterCa;
 import io.strimzi.operator.cluster.model.ImagePullPolicy;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaConfiguration;
@@ -74,8 +73,7 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.auth.TlsPemIdentity;
-import io.strimzi.operator.common.model.Ca;
-import io.strimzi.operator.common.model.ClientsCa;
+import io.strimzi.operator.common.ca.Ca;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.NodeUtils;
 import io.strimzi.operator.common.model.StatusDiff;
@@ -131,8 +129,8 @@ public class KafkaReconciler {
     /* test */ final Reconciliation reconciliation;
     private final KafkaCluster kafka;
     private final List<KafkaNodePool> kafkaNodePoolCrs;
-    private final ClusterCa clusterCa;
-    private final ClientsCa clientsCa;
+    private final Ca clusterCa;
+    private final Ca clientsCa;
 
     // Tools for operating and managing various resources
     private final Vertx vertx;
@@ -189,8 +187,8 @@ public class KafkaReconciler {
             Kafka kafkaCr,
             List<KafkaNodePool> nodePools,
             KafkaCluster kafka,
-            ClusterCa clusterCa,
-            ClientsCa clientsCa,
+            Ca clusterCa,
+            Ca clientsCa,
             ClusterOperatorConfig config,
             ResourceOperatorSupplier supplier,
             PlatformFeaturesAvailability pfa,
@@ -762,23 +760,32 @@ public class KafkaReconciler {
     protected Future<Void> certificateSecrets(Clock clock) {
         return VertxUtil.toFuture(secretOperator.listAsync(reconciliation.namespace(), kafka.getSelectorLabels().withStrimziComponentType(KafkaCluster.COMPONENT_TYPE)))
                 .compose(existingSecrets -> collectListenerCustomCerts()
-                        .compose(customCertsData -> {
-                            List<Secret> desiredCertSecrets = kafka.generateCertificatesSecrets(clusterCa, existingSecrets, customCertsData,
-                                    listenerReconciliationResults.bootstrapDnsNames, listenerReconciliationResults.brokerDnsNames,
-                                    Util.isMaintenanceTimeWindowsSatisfied(reconciliation, maintenanceWindows, clock.instant()));
-
+                        .compose(customCertsData -> VertxUtil.toFuture(
+                            kafka.generateCertificatesSecrets(clusterCa,
+                                existingSecrets,
+                                customCertsData,
+                                listenerReconciliationResults.bootstrapDnsNames,
+                                listenerReconciliationResults.brokerDnsNames,
+                                Util.isMaintenanceTimeWindowsSatisfied(reconciliation, maintenanceWindows, clock.instant()))
+                        ).compose(desiredCertSecrets -> {
                             List<String> desiredCertSecretNames = desiredCertSecrets.stream().map(secret -> secret.getMetadata().getName()).toList();
                             existingSecrets.forEach(secret -> {
                                 String secretName = secret.getMetadata().getName();
-                                // Don't delete desired secrets or jmx secrets
-                                if (!desiredCertSecretNames.contains(secretName) && !KafkaResources.kafkaJmxSecretName(reconciliation.name()).equals(secretName)) {
+                                boolean secretIsDesired = false;
+                                if (desiredCertSecretNames.contains(secretName)) {
+                                    //Don't delete desired secrets
+                                    secretIsDesired = true;
+                                } else if (KafkaResources.kafkaJmxSecretName(reconciliation.name()).equals(secretName)) {
+                                    //Don't delete jmx secrets
+                                    secretIsDesired = true;
+                                }
+                                if (!secretIsDesired) {
                                     secretsToDelete.add(secretName);
                                 }
                             });
                             return updateCertificateSecrets(desiredCertSecrets);
-                        }).mapEmpty())
+                        })).mapEmpty())
                 .mapEmpty();
-
     }
 
     /**

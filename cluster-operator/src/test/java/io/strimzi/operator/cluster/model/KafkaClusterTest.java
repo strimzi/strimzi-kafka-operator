@@ -85,7 +85,10 @@ import io.strimzi.operator.cluster.model.metrics.StrimziMetricsReporterModel;
 import io.strimzi.operator.cluster.model.nodepools.NodePoolUtils;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.operator.common.model.CertificateUtils;
+import io.strimzi.operator.common.ca.Ca;
+import io.strimzi.operator.common.ca.CaConfig;
+import io.strimzi.operator.common.ca.CertificateUtils;
+import io.strimzi.operator.common.ca.InternalCa;
 import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.PasswordGenerator;
@@ -255,10 +258,9 @@ public class KafkaClusterTest {
     }
 
     private List<Secret> generateBrokerSecrets(Set<String> externalBootstrapAddress, Map<Integer, Set<String>> externalAddresses) {
-        ClusterCa clusterCa = new ClusterCa(Reconciliation.DUMMY_RECONCILIATION, new OpenSslCertIssuer(), new PasswordGenerator(10, "a", "a"), null, null);
+        InternalCa clusterCa = new InternalCa(Reconciliation.DUMMY_RECONCILIATION, Ca.CaRole.CLUSTER_CA, new OpenSslCertIssuer(), new PasswordGenerator(10, "a", "a"), null, null, CaConfig.createDefault());
         clusterCa.createRenewOrReplace(true, false, false);
-
-        return KC.generateCertificatesSecrets(clusterCa, List.of(), Map.of(), externalBootstrapAddress, externalAddresses, true);
+        return KC.generateCertificatesSecrets(clusterCa, List.of(), Map.of(), externalBootstrapAddress, externalAddresses, true).toCompletableFuture().join();
     }
 
     //////////
@@ -1475,10 +1477,10 @@ public class KafkaClusterTest {
 
     @Test
     public void testGenerateBrokerSecretWithCustomCerts() {
-        ClusterCa clusterCa = new ClusterCa(Reconciliation.DUMMY_RECONCILIATION, new OpenSslCertIssuer(), new PasswordGenerator(10, "a", "a"), null, null);
+        InternalCa clusterCa = new InternalCa(Reconciliation.DUMMY_RECONCILIATION, Ca.CaRole.CLUSTER_CA, new OpenSslCertIssuer(), new PasswordGenerator(10, "a", "a"), null, null, CaConfig.createDefault());
         clusterCa.createRenewOrReplace(true, false, false);
 
-        List<Secret> secrets = KC.generateCertificatesSecrets(clusterCa, List.of(), Map.of("listener1-9999.crt", "cert", "listener1-9999.key", "key"), null, Map.of(), true);
+        List<Secret> secrets = KC.generateCertificatesSecrets(clusterCa, List.of(), Map.of("listener1-9999.crt", "cert", "listener1-9999.key", "key"), null, Map.of(), true).toCompletableFuture().join();
         secrets.forEach(secret -> {
             assertThat(secret.getData().get("listener1-9999.crt"), is("cert"));
             assertThat(secret.getData().get("listener1-9999.key"), is("key"));

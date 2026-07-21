@@ -2,9 +2,10 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.operator.common.model;
+package io.strimzi.operator.common.ca;
 
 import io.fabric8.kubernetes.api.model.Secret;
+import io.strimzi.certs.Subject;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
@@ -29,6 +30,7 @@ import java.util.Base64;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Utility class for handling certificate objects
@@ -112,6 +114,35 @@ public class CertificateUtils {
     }
 
     /**
+     * Validates whether each of the user provided CA certs has a valid chain. Any intermediate CAs should be provided first,
+     * in order, with the root CA being the last certificate.
+     *
+     * @param reconciliation Reconciliation marker.
+     * @param caRole The role of the CA.
+     * @param userCaCertData The CA cert data provided by the user.
+     */
+    public static void validateUserCaCertChain(Reconciliation reconciliation, Ca.CaRole caRole, Map<String, String> userCaCertData) {
+        userCaCertData.entrySet()
+                .stream()
+                .filter(entry -> Ca.SecretEntry.CRT.matchesType(entry.getKey()))
+                .forEach(entry -> {
+                    List<X509Certificate> certChain = extractCertChain(entry.getKey(), Util.decodeBytesFromBase64(entry.getValue()));
+                    if (certChain.isEmpty()) {
+                        LOGGER.errorCr(reconciliation, "{} certificate chain in {} is empty", caRole.caName(), entry.getKey());
+                        throw new RuntimeException("Failed to validate User supplied " + caRole.caName() + " cert chain in " + entry.getKey());
+                    } else if (certChain.size() == 1) {
+                        LOGGER.debugCr(reconciliation, "{} certificate {} contains a single certificate", caRole.caName(), entry.getKey());
+                        return;
+                    }
+                    if (!certIsTrusted(reconciliation, certChain.subList(0, certChain.size() - 1), certChain.getLast())) {
+                        String errorMessage = "User supplied " + caRole.caName() + " cert chain " + entry.getKey() + " is not valid. Certificates must be provided in the correct order.";
+                        LOGGER.errorCr(reconciliation, errorMessage);
+                        throw new RuntimeException(errorMessage);
+                    }
+                });
+    }
+
+    /**
      * Validates whether the provided cert chain is trusted and valid using the provided CA certificate.
      * <p>
      * Uses the <code>CertPathValidator.validate</code> method to check if a cert chain
@@ -175,5 +206,21 @@ public class CertificateUtils {
         } catch (CertificateException | IOException e) {
             throw new RuntimeException("Failed to decode "  + key, e);
         }
+    }
+
+    /**
+     * Create a subject
+     *
+     * @param commonName The CN of the certificate to be created.
+     * @param organization The O of the certificate to be created. May be null.
+     * @return The subject created with the given CN and O
+     */
+    public static Subject getSubject(String commonName, String organization) {
+        Subject.Builder subject = new Subject.Builder();
+        if (organization != null) {
+            subject.withOrganizationName(organization);
+        }
+        subject.withCommonName(commonName);
+        return subject.build();
     }
 }
