@@ -25,6 +25,8 @@ import io.strimzi.operator.common.OperatorKubernetesClientBuilder;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.auth.PemAuthIdentity;
 import io.strimzi.operator.common.auth.PemTrustSet;
+import io.strimzi.operator.common.gatekeeper.GatekeeperPluginFactory;
+import io.strimzi.operator.common.gatekeeper.impl.GatekeeperPluginConfigurationContextImpl;
 import io.strimzi.operator.common.http.HealthCheckAndMetricsServer;
 import io.strimzi.operator.common.operator.resource.kubernetes.CrdOperator;
 import io.strimzi.operator.common.operator.resource.kubernetes.SecretOperator;
@@ -80,6 +82,10 @@ public class Main {
         // Create KubernetesClient, AdminClient and KafkaUserOperator classes
         ExecutorService kafkaUserOperatorExecutor = Executors.newFixedThreadPool(config.getUserOperationsThreadPoolSize(), new OperatorWorkThreadFactory());
         KubernetesClient client = new OperatorKubernetesClientBuilder("strimzi-user-operator", Main.class.getPackage().getImplementationVersion()).build();
+
+        // Load and configure the Gatekeeper plugins
+        GatekeeperPluginFactory.initialize(config.getGatekeeperPlugins(), new GatekeeperPluginConfigurationContextImpl(client));
+
         SecretOperator secretOperator = new SecretOperator(kafkaUserOperatorExecutor, client);
         Admin adminClient = createAdminClient(config, secretOperator, new DefaultAdminClientProvider());
         var kafkaUserCrdOperator = new CrdOperator<>(kafkaUserOperatorExecutor, client, KafkaUser.class, KafkaUserList.class, "KafkaUser");

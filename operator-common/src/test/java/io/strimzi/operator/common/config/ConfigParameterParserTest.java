@@ -7,6 +7,7 @@ package io.strimzi.operator.common.config;
 import io.strimzi.operator.common.InvalidConfigurationException;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
 import java.util.regex.Pattern;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -16,6 +17,17 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class ConfigParameterParserTest {
+    @Test
+    public void testCommaSeparatedList() {
+        assertThat(ConfigParameterParser.COMMA_SEPARATED_LIST.parse(null), is(nullValue()));
+        assertThat(ConfigParameterParser.COMMA_SEPARATED_LIST.parse(""), is(nullValue()));
+        assertThat(ConfigParameterParser.COMMA_SEPARATED_LIST.parse("   "), is(nullValue()));
+        assertThat(ConfigParameterParser.COMMA_SEPARATED_LIST.parse("a"), is(List.of("a")));
+        assertThat(ConfigParameterParser.COMMA_SEPARATED_LIST.parse("a,b,c"), is(List.of("a", "b", "c")));
+        // Surrounding whitespace and repeated separators are collapsed and the order is preserved
+        assertThat(ConfigParameterParser.COMMA_SEPARATED_LIST.parse("  a , b ,c  "), is(List.of("a", "b", "c")));
+    }
+
     @Test
     public void testPatternConfig() {
         assertThat(ConfigParameterParser.PATTERN.parse(null), is(nullValue()));
