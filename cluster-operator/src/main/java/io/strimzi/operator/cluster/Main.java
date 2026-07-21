@@ -22,6 +22,8 @@ import io.strimzi.operator.common.MetricsProvider;
 import io.strimzi.operator.common.MicrometerMetricsProvider;
 import io.strimzi.operator.common.OperatorKubernetesClientBuilder;
 import io.strimzi.operator.common.Util;
+import io.strimzi.operator.common.gatekeeper.GatekeeperPluginFactory;
+import io.strimzi.operator.common.gatekeeper.impl.GatekeeperPluginConfigurationContextImpl;
 import io.strimzi.operator.common.model.PasswordGenerator;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
@@ -170,6 +172,9 @@ public class Main {
 
         // Initialize the PodSecurityProvider factory to provide the user configured provider
         PodSecurityProviderFactory.initialize(config.getPodSecurityProviderClass(), pfa);
+
+        // Load and configure the Gatekeeper plugins
+        GatekeeperPluginFactory.initialize(config.getGatekeeperPlugins(), new GatekeeperPluginConfigurationContextImpl(client));
 
         KafkaAssemblyOperator kafkaClusterOperations = null;
         KafkaConnectAssemblyOperator kafkaConnectClusterOperations = null;
