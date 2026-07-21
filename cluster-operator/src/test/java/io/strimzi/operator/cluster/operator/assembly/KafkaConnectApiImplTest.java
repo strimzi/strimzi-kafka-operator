@@ -7,6 +7,7 @@ package io.strimzi.operator.cluster.operator.assembly;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
+import com.github.tomakehurst.wiremock.stubbing.Scenario;
 import io.strimzi.api.kafka.model.common.ConnectorState;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.test.TestUtils;
@@ -218,6 +219,49 @@ public class KafkaConnectApiImplTest {
         server.verify(postRequestedFor(urlPathEqualTo("/connectors"))
                 .withRequestBody(matchingJsonPath("$.name", equalTo("my-connector")))
                 .withRequestBody(notMatching("(?s).*initial_state.*")));
+    }
+
+    @Test
+    public void testCreateConnectorFailsOnServerError() {
+        server.stubFor(post(urlPathEqualTo("/connectors"))
+                .willReturn(aResponse()
+                        .withStatus(500)
+                        .withBody("{\"message\": \"Connect cluster error\"}")));
+
+        KafkaConnectApi api = new KafkaConnectApiImpl();
+
+        ExecutionException ex = assertThrows(ExecutionException.class,
+                () -> api.createConnector(Reconciliation.DUMMY_RECONCILIATION, "127.0.0.1", server.port(),
+                        "my-connector", new JsonObject(), ConnectorState.STOPPED)
+                        .toCompletableFuture().get());
+        assertThat(ex.getCause(), instanceOf(ConnectRestException.class));
+        assertThat(ex.getCause().getMessage(), containsString("Connect cluster error"));
+    }
+
+    @Test
+    public void testCreateConnectorRetriesOn409() {
+        // A 409 means the Connect cluster is rebalancing; the request is retried with back off.
+        // The first POST returns 409, the second returns 201.
+        String scenario = "rebalance-then-created";
+        server.stubFor(post(urlPathEqualTo("/connectors"))
+                .inScenario(scenario)
+                .whenScenarioStateIs(Scenario.STARTED)
+                .willReturn(aResponse().withStatus(409).withBody("{\"message\": \"rebalancing\"}"))
+                .willSetStateTo("created"));
+        server.stubFor(post(urlPathEqualTo("/connectors"))
+                .inScenario(scenario)
+                .whenScenarioStateIs("created")
+                .willReturn(aResponse().withStatus(201)
+                        .withBody("{\"name\":\"my-connector\",\"config\":{},\"tasks\":[]}")));
+
+        KafkaConnectApi api = new KafkaConnectApiImpl();
+
+        Map<String, Object> result = api.createConnector(Reconciliation.DUMMY_RECONCILIATION, "127.0.0.1", server.port(),
+                "my-connector", new JsonObject(), ConnectorState.STOPPED).toCompletableFuture().join();
+
+        assertThat(result, hasEntry("name", "my-connector"));
+        // It retried after the 409: the connector was POSTed twice.
+        server.verify(2, postRequestedFor(urlPathEqualTo("/connectors")));
     }
 
 }
