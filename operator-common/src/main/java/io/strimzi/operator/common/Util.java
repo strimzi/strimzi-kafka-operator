@@ -89,17 +89,19 @@ public class Util {
     }
 
     /**
-     * Decode binary item from Kubernetes Secret from base64 into byte array
+     * Decode an item from Kubernetes Secret (where it is stored in base64) to String. This method should be used only
+     * for things that are stored in the Secrets as Strings and not for binary data where entropy might be lost.
      *
      * @param secret    Kubernetes Secret
-     * @param field     Field which should be retrieved and decoded
-     * @return          Decoded bytes
+     * @param field     Field that should be retrieved and decoded
+     *
+     * @return          Decoded String
      */
-    public static byte[] decodeBase64FieldFromSecret(Secret secret, String field) {
+    public static String decodeStringFieldFromSecret(Secret secret, String field) {
         Objects.requireNonNull(secret);
         String data = secret.getData().get(field);
         if (data != null) {
-            return Base64.getDecoder().decode(data);
+            return decodeFromBase64(data);
         } else {
             throw new RuntimeException(String.format("The Secret %s/%s is missing the field %s",
                     secret.getMetadata().getNamespace(),
@@ -310,14 +312,5 @@ public class Util {
      */
     public static String decodeFromBase64(String data, Charset charset)  {
         return new String(decodeBytesFromBase64(data), charset);
-    }
-
-    /**
-     * Decodes the provided byte array using the charset StandardCharsets.US_ASCII
-     * @param bytes Byte array to convert to String
-     * @return New String object containing the provided byte array
-     */
-    public static String fromAsciiBytes(byte[] bytes) {
-        return new String(bytes, StandardCharsets.US_ASCII);
     }
 }
