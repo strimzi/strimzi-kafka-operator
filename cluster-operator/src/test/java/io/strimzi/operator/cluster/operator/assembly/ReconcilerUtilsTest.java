@@ -602,7 +602,8 @@ public class ReconcilerUtilsTest {
                 .build();
 
         Secret secret = new SecretBuilder()
-                .withData(Map.of("ca.key", "dmFsdWUz", "ca2.crt", Util.encodeToBase64(DUMMY_CERT)))
+                .withData(Map.of("ca.key", "dmFsdWUz", "ca2.crt", Util.encodeToBase64(DUMMY_CERT),
+                    "cert.crt", Util.encodeToBase64(DUMMY_CERT)))
                 .build();
         Secret secret2 = new SecretBuilder()
                 .withData(Map.of("ca3.crt", Util.encodeToBase64(DUMMY_CERT), "ca4.crt", Util.encodeToBase64(DUMMY_CERT)))
@@ -618,7 +619,7 @@ public class ReconcilerUtilsTest {
 
         Checkpoint async = context.checkpoint();
         ReconcilerUtils.trustedCertificates(Reconciliation.DUMMY_RECONCILIATION, secretOps, List.of(cert1, cert2, cert3)).onComplete(context.succeeding(res -> {
-            assertThat(res, hasItems(DUMMY_CERT, DUMMY_CERT, DUMMY_CERT));
+            assertThat(res, hasItems(DUMMY_CERT + "\n" + DUMMY_CERT, DUMMY_CERT, DUMMY_CERT));
             async.flag();
         }));
     }

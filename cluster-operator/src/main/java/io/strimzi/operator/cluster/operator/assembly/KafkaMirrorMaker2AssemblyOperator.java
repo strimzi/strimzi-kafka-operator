@@ -258,6 +258,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
      *
      * @param namespace               Namespace of the MirrorMaker2 cluster
      * @param mirrorMaker2Cluster     KafkaMirrorMaker2 cluster model
+     * @param certs                   certificate Strings to calculate hash for
      *
      * @return                        Future for tracking the asynchronous result of generating the TLS auth hash
      */
