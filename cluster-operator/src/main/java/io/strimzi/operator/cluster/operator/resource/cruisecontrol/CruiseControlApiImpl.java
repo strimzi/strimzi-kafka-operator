@@ -132,7 +132,7 @@ public class CruiseControlApiImpl implements CruiseControlApi {
 
     protected static HTTPHeader getAuthHttpHeader(boolean apiAuthEnabled, Secret apiSecret) {
         if (apiAuthEnabled) {
-            String password = Util.fromAsciiBytes(Util.decodeBase64FieldFromSecret(apiSecret, CruiseControlApiProperties.REBALANCE_OPERATOR_PASSWORD_KEY));
+            String password = Util.decodeStringFieldFromSecret(apiSecret, CruiseControlApiProperties.REBALANCE_OPERATOR_PASSWORD_KEY);
             return generateAuthHttpHeader(CruiseControlApiProperties.REBALANCE_OPERATOR_USERNAME, password);
         } else {
             return null;
