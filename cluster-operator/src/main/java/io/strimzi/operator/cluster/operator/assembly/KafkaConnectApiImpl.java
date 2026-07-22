@@ -99,9 +99,6 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
                 .put("name", connectorName)
                 .put("config", configJson);
         if (initialState != null) {
-            // KIP-980: create the connector directly in the wanted state. Kafka Connect expects the
-            // upper-case form (STOPPED / PAUSED / RUNNING). The enum constant names already match
-            // those values, so name() gives the exact wire value with no conversion.
             request.put("initial_state", initialState.name());
         }
         String data = request.toString();
@@ -118,15 +115,12 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
         return httpClient.sendAsync(httpRequest, HttpResponse.BodyHandlers.ofString())
                 .thenCompose(response -> {
                     int statusCode = response.statusCode();
-                    if (statusCode == 200 || statusCode == 201) {
+                    if (statusCode == 201) {
                         JsonNode json = parseToJsonNode(response);
                         Map<String, Object> t = OBJECT_MAPPER.convertValue(json, TREE_TYPE);
                         LOGGER.debugCr(reconciliation, "Got {} response to POST request to {}: {}", statusCode, path, t);
                         return CompletableFuture.completedFuture(t);
                     } else if (statusCode == 409) {
-                        // 409 means the Connect cluster is rebalancing, or a connector with this name already exists.
-                        // Retrying rides out a rebalance. An "already exists" 409 will not clear on retry, so it uses up
-                        // the back off and fails this reconcile; the connector is then reconciled on the next one.
                         return withBackoff(reconciliation, new BackOff(200L, 2, 10), connectorName, Collections.singleton(409),
                                 () -> createConnector(reconciliation, host, port, connectorName, configJson, initialState), "create");
                     } else {

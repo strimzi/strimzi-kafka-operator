@@ -637,9 +637,28 @@ public class KafkaMirrorMaker2AssemblyOperatorMockTest {
                 })));
     }
 
-    /** A brand-new MirrorMaker2 connector asking for the stopped state (KIP-980) must never be started first */
+    /** A brand-new MirrorMaker2 connector asking for the stopped state must never be started first */
     @Test
     public void testConnectorCreatedInStoppedState(VertxTestContext context) {
+        assertConnectorCreatedInInitialState(context, ConnectorState.STOPPED, "STOPPED");
+    }
+
+    /** A brand-new MirrorMaker2 connector asking for the paused state must never be started first */
+    @Test
+    public void testConnectorCreatedInPausedState(VertxTestContext context) {
+        assertConnectorCreatedInInitialState(context, ConnectorState.PAUSED, "PAUSED");
+    }
+
+    /**
+     * Shared check: a MirrorMaker2 source connector whose spec asks for a non-running state must be
+     * created directly in that state via POST, and never started first (no PUT-config create and no
+     * separate stop or pause call).
+     *
+     * @param context        The Vert.x test context
+     * @param state          The state requested via spec.state
+     * @param expectedState  The connector state string Kafka Connect reports back
+     */
+    private void assertConnectorCreatedInInitialState(VertxTestContext context, ConnectorState state, String expectedState) {
         String connectorName = "source->target.MirrorSourceConnector";
         Crds.kafkaMirrorMaker2Operation(client).resource(new KafkaMirrorMaker2Builder()
                 .withNewMetadata()
@@ -666,7 +685,7 @@ public class KafkaMirrorMaker2AssemblyOperatorMockTest {
                                     .withNewSourceConnector()
                                         .withTasksMax(1)
                                         .withConfig(Map.of("replication.factor", -1))
-                                        .withState(ConnectorState.STOPPED)
+                                        .withState(state)
                                     .endSourceConnector()
                                     .build()
                     )
@@ -677,8 +696,8 @@ public class KafkaMirrorMaker2AssemblyOperatorMockTest {
         when(connectApi.list(any(), anyString(), anyInt())).thenReturn(CompletableFuture.completedFuture(emptyList()));
         when(connectApi.getConnectorConfig(any(), any(), any(), anyInt(), eq(connectorName))).thenReturn(CompletableFuture.failedFuture(new ConnectRestException("maybeCreateOrUpdateConnector", "", 404, "error", "error")));
         when(connectApi.createConnector(any(), any(), anyInt(), anyString(), any(), any())).thenReturn(CompletableFuture.completedFuture(Map.of()));
-        when(connectApi.status(any(), any(), anyInt(), eq(connectorName))).thenReturn(CompletableFuture.completedFuture(Map.of("connector", Map.of("state", "STOPPED"))));
-        when(connectApi.statusWithBackOff(any(), any(), any(), anyInt(), eq(connectorName))).thenReturn(CompletableFuture.completedFuture(Map.of("connector", Map.of("state", "STOPPED"))));
+        when(connectApi.status(any(), any(), anyInt(), eq(connectorName))).thenReturn(CompletableFuture.completedFuture(Map.of("connector", Map.of("state", expectedState))));
+        when(connectApi.statusWithBackOff(any(), any(), any(), anyInt(), eq(connectorName))).thenReturn(CompletableFuture.completedFuture(Map.of("connector", Map.of("state", expectedState))));
         when(connectApi.getConnectorTopics(any(), any(), anyInt(), eq(connectorName))).thenReturn(CompletableFuture.completedFuture(List.of()));
 
         Checkpoint async = context.checkpoint();
@@ -686,7 +705,7 @@ public class KafkaMirrorMaker2AssemblyOperatorMockTest {
         createMirrorMaker2Cluster(context, connectApi, false)
                 .onComplete(context.succeeding(v -> context.verify(() -> {
                     // The connector must be created via POST with the requested initial state
-                    verify(connectApi).createConnector(any(), any(), anyInt(), eq(connectorName), any(), eq(ConnectorState.STOPPED));
+                    verify(connectApi).createConnector(any(), any(), anyInt(), eq(connectorName), any(), eq(state));
                     // ... and never started first: no PUT-config create and no separate stop or pause call
                     verify(connectApi, never()).createOrUpdatePutRequest(any(), any(), anyInt(), eq(connectorName), any());
                     verify(connectApi, never()).stop(any(), any(), anyInt(), eq(connectorName));

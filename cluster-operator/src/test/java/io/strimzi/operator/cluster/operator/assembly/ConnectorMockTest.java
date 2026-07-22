@@ -286,23 +286,21 @@ public class ConnectorMockTest {
                     "tasks", Map.of()));
         });
         when(api.createOrUpdatePutRequest(any(), any(), anyInt(), anyString(), any())).thenAnswer(invocation -> {
+            LOGGER.info((String) invocation.getArgument(1) + invocation.getArgument(2) + invocation.getArgument(3) + invocation.getArgument(4));
             String host = invocation.getArgument(1);
-            LOGGER.debug("Mock PUT create/update for connector on {}", host);
+            LOGGER.info("###### create " + host);
             String connectorName = invocation.getArgument(3);
             JsonObject connectorConfig = invocation.getArgument(4);
             ConnectorStatus existing = connectors.get(key(host, connectorName));
-            // PUT /config creates or updates the config, keeping the connector's current state
             connectors.put(key(host, connectorName), new ConnectorStatus(existing != null ? existing.state : "RUNNING", connectorConfig));
             return CompletableFuture.completedFuture(null);
         });
         when(api.createConnector(any(), any(), anyInt(), anyString(), any(), any())).thenAnswer(invocation -> {
             String host = invocation.getArgument(1);
-            LOGGER.debug("Mock POST create for connector on {}", host);
+            LOGGER.info("###### create " + host);
             String connectorName = invocation.getArgument(3);
             JsonObject connectorConfig = invocation.getArgument(4);
             ConnectorState initialState = invocation.getArgument(5);
-            // KIP-980: a connector created via POST starts in its initial state (running when not set).
-            // The enum constant name is the state string Kafka Connect uses (see KafkaConnectApiImpl.createConnector).
             connectors.putIfAbsent(key(host, connectorName), new ConnectorStatus(initialState != null ? initialState.name() : "RUNNING", connectorConfig));
             return CompletableFuture.completedFuture(null);
         });
@@ -783,7 +781,7 @@ public class ConnectorMockTest {
         // could be triggered twice (creation followed by status update) but waitForConnectReady could be satisfied with single
         verify(api, atLeastOnce()).list(any(),
                 eq(KafkaConnectResources.qualifiedServiceName(connectName, namespace)), eq(KafkaConnectCluster.REST_API_PORT));
-        // createConnector runs on the 404 (connector missing); it may be attempted more than once if reconciles race, so at least once
+        // createConnector may be called more than once across reconciles depending on timing
         verify(api, atLeastOnce()).createConnector(any(),
                 eq(KafkaConnectResources.qualifiedServiceName(connectName, namespace)), eq(KafkaConnectCluster.REST_API_PORT),
                 eq(connectorName), any(), any());
@@ -851,7 +849,7 @@ public class ConnectorMockTest {
         // could be triggered twice (creation followed by status update) but waitForConnectReady could be satisfied with single
         verify(api, atLeastOnce()).list(any(),
                 eq(KafkaConnectResources.qualifiedServiceName(connectName, namespace)), eq(KafkaConnectCluster.REST_API_PORT));
-        // createConnector runs exactly once - the connector is created on the first reconcile that sees it missing
+        // createConnector is called exactly once, when the connector is first found missing
         verify(api, times(1)).createConnector(any(),
                 eq(KafkaConnectResources.qualifiedServiceName(connectName, namespace)), eq(KafkaConnectCluster.REST_API_PORT),
                 eq(connectorName), any(), any());
@@ -923,7 +921,7 @@ public class ConnectorMockTest {
         // could be triggered twice (creation followed by status update) but waitForConnectReady could be satisfied with single
         verify(api, atLeastOnce()).list(any(),
                 eq(KafkaConnectResources.qualifiedServiceName(connectName, namespace)), eq(KafkaConnectCluster.REST_API_PORT));
-        // Triggered once or twice (Connect creation, Connector Status update), depending on the timing
+        // createConnector may be called more than once across reconciles depending on timing
         verify(api, atLeastOnce()).createConnector(any(),
                 eq(KafkaConnectResources.qualifiedServiceName(connectName, namespace)), eq(KafkaConnectCluster.REST_API_PORT),
                 eq(connectorName), any(), any());
@@ -1005,7 +1003,7 @@ public class ConnectorMockTest {
         Crds.kafkaConnectorOperation(client).inNamespace(namespace).resource(connector).create();
         waitForConnectorReady(connectorName);
 
-        // createConnector runs once for the first cluster - the connector is created on the first reconcile
+        // createConnector is called exactly once for the first cluster, when it is first found missing
         verify(api, times(1)).createConnector(any(),
                 eq(KafkaConnectResources.qualifiedServiceName(oldConnectClusterName, namespace)), eq(KafkaConnectCluster.REST_API_PORT),
                 eq(connectorName), any(), any());
@@ -1103,7 +1101,7 @@ public class ConnectorMockTest {
 
         verify(api, times(2)).list(any(),
                 eq(KafkaConnectResources.qualifiedServiceName(connectName, namespace)), eq(KafkaConnectCluster.REST_API_PORT));
-        // Might be triggered multiple times depending on the timing
+        // createConnector may be called more than once across reconciles depending on timing
         verify(api, atLeastOnce()).createConnector(any(),
                 eq(KafkaConnectResources.qualifiedServiceName(connectName, namespace)), eq(KafkaConnectCluster.REST_API_PORT),
                 eq(connectorName), any(), any());

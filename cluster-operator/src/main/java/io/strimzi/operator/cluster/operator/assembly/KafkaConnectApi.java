@@ -33,9 +33,9 @@ public interface KafkaConnectApi {
     CompletionStage<Map<String, Object>> createOrUpdatePutRequest(Reconciliation reconciliation, String host, int port, String connectorName, JsonObject configJson);
 
     /**
-     * Make a {@code POST} request to {@code /connectors} to create a brand-new connector, optionally
-     * in a given initial state (KIP-980, Kafka 3.7+). Unlike {@link #createOrUpdatePutRequest}, this
-     * can create a connector directly {@code paused} or {@code stopped} instead of starting it first.
+     * Make a {@code POST} request to {@code /connectors}.
+     * Unlike {@link #createOrUpdatePutRequest}, this can create a connector directly in a
+     * {@code paused} or {@code stopped} state.
      *
      * @param reconciliation The reconciliation
      * @param host The host to make the request to.
