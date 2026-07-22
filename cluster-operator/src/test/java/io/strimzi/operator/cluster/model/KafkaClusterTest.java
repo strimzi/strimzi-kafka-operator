@@ -343,6 +343,62 @@ public class KafkaClusterTest {
     }
 
     @Test
+    public void testStrimziMetricsReporterDefaultAllowListIsRoleBased() {
+        // When no custom allowlist is set, each node pool should receive a role-specific default allowlist
+        Kafka kafkaAssembly = new KafkaBuilder(KAFKA)
+                .editSpec()
+                    .editKafka()
+                        .withNewStrimziMetricsReporterConfig()
+                        .endStrimziMetricsReporterConfig()
+                    .endKafka()
+                .endSpec()
+                .build();
+
+        List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, List.of(POOL_CONTROLLERS, POOL_MIXED, POOL_BROKERS), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, SHARED_ENV_PROVIDER);
+        KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, null, SHARED_ENV_PROVIDER);
+
+        List<ConfigMap> cms = kc.generatePerBrokerConfigurationConfigMaps(new MetricsAndLogging(null, null), ADVERTISED_HOSTNAMES, ADVERTISED_PORTS);
+        assertThat(cms.size(), is(8));
+
+        for (ConfigMap cm : cms) {
+            String podName = cm.getMetadata().getName();
+            String data = cm.getData().toString();
+
+            if (podName.startsWith("controllers-")) {
+                // Controller-only nodes: must have controller metrics, must NOT have broker-only metrics
+                assertThat(podName + " should have controller metrics",
+                        data, containsString("kafka_controller_kafkacontroller"));
+                assertThat(podName + " should have raft metrics",
+                        data, containsString("kafka_server_raft"));
+                assertThat(podName + " should NOT have broker-only partition metrics",
+                        data, not(containsString("kafka_cluster_partition")));
+                assertThat(podName + " should NOT have broker topic metrics",
+                        data, not(containsString("kafka_server_brokertopicmetrics")));
+            } else if (podName.startsWith("mixed-")) {
+                // Mixed nodes: must have both broker and controller metrics
+                assertThat(podName + " should have controller metrics",
+                        data, containsString("kafka_controller_kafkacontroller"));
+                assertThat(podName + " should have raft metrics",
+                        data, containsString("kafka_server_raft"));
+                assertThat(podName + " should have broker partition metrics",
+                        data, containsString("kafka_cluster_partition"));
+                assertThat(podName + " should have broker topic metrics",
+                        data, containsString("kafka_server_brokertopicmetrics"));
+            } else if (podName.startsWith("brokers-")) {
+                // Broker-only nodes: must have broker metrics, must NOT have controller-only metrics
+                assertThat(podName + " should have broker partition metrics",
+                        data, containsString("kafka_cluster_partition"));
+                assertThat(podName + " should have broker topic metrics",
+                        data, containsString("kafka_server_brokertopicmetrics"));
+                assertThat(podName + " should NOT have controller metrics",
+                        data, not(containsString("kafka_controller_kafkacontroller")));
+                assertThat(podName + " should NOT have raft metrics",
+                        data, not(containsString("kafka_server_raft")));
+            }
+        }
+    }
+
+    @Test
     public void  testJavaSystemProperties() {
         Kafka kafka = new KafkaBuilder(KAFKA)
                 .editSpec()
