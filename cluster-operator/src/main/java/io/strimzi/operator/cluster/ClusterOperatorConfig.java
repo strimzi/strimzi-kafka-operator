@@ -125,14 +125,9 @@ public class ClusterOperatorConfig {
     public static final String HTTPS_PROXY = "HTTPS_PROXY";
 
     /**
-     * Server which should not use proxy to connect to
+     * Server that should not use proxy to connect to
      */
     public static final String NO_PROXY = "NO_PROXY";
-
-    /**
-     * Enabled or disables the FIPS mode
-     */
-    public static final String FIPS_MODE = "FIPS_MODE";
 
     // Default values
     /**
@@ -213,7 +208,7 @@ public class ClusterOperatorConfig {
 
 
     /**
-     * The Pod name of the cluster operator, used to identify source of K8s events the operator creates
+     * The Pod name of the cluster operator, used as the source of Kubernetes events the operator creates
      */
     public static final ConfigParameter<String> OPERATOR_NAME = new ConfigParameter<>("STRIMZI_OPERATOR_NAME", STRING, "cluster-operator-name-unset", CONFIG_VALUES);
 
@@ -381,7 +376,7 @@ public class ClusterOperatorConfig {
      * Container Security Contexts
      *
      * @param envVar The value of the environment variable configuring the Pod Security Provider
-     * @return The full name of the class which should be used as the Pod security Provider
+     * @return The full name of the class that should be used as the Pod security Provider
      */
     /* test */ static String parsePodSecurityProviderClass(String envVar) {
         String value = envVar != null ? envVar : POD_SECURITY_PROVIDER_CLASS.defaultValue();
@@ -475,7 +470,7 @@ public class ClusterOperatorConfig {
     /**
      * Gets the timeout in milliseconds for Kubernetes operations.
      *
-     * @return  how many milliseconds should we wait for Kubernetes operations
+     * @return  Number of milliseconds to wait for Kubernetes operations
      */
     public long getOperationTimeoutMs() {
         return get(OPERATION_TIMEOUT_MS);
@@ -484,7 +479,7 @@ public class ClusterOperatorConfig {
     /**
      * Gets the timeout in milliseconds for Kafka Connect build completion.
      *
-     * @return  How many milliseconds should we wait for Kafka Connect build to complete
+     * @return  Number of milliseconds to wait for a Kafka Connect build to complete
      */
     public long getConnectBuildTimeoutMs() {
         return get(CONNECT_BUILD_TIMEOUT_MS);
