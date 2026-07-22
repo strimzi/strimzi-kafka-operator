@@ -32,7 +32,6 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class ClusterOperatorConfigTest {
-
     private static final Map<String, String> ENV_VARS = new HashMap<>(8);
     static {
         ENV_VARS.put(ClusterOperatorConfig.NAMESPACE.key(), "namespace");
@@ -50,6 +49,11 @@ public class ClusterOperatorConfigTest {
         ENV_VARS.put(ClusterOperatorConfig.PKCS12_KEYSTORE_GENERATION.key(), "false");
         ENV_VARS.put(ClusterOperatorConfig.ENTITY_OPERATOR_WATCHED_NAMESPACE_ENABLED.key(), "true");
     }
+
+    private static final String CUSTOM_PLUGIN_1 = "io.strimzi.Custom1";
+    private static final String CUSTOM_PLUGIN_2 = "io.strimzi.Custom2";
+    private static final String DEFAULT_PLUGIN_1 = "io.strimzi.Default1";
+    private static final String DEFAULT_PLUGIN_2 = "io.strimzi.Default2";
 
     @Test
     public void testDefaultConfig() {
@@ -387,5 +391,32 @@ public class ClusterOperatorConfigTest {
 
         config.getLeaderElectionConfig();
         assertThat(ClusterOperatorConfig.buildFromMap(envVars, KafkaVersionTestUtils.getKafkaVersionLookup()).getLeaderElectionConfig(), is(notNullValue()));
+    }
+
+    // TODO: Once we have some mandatory and default default plugins (i.e. default plugins configured by default),
+    //       we should add dedicated tests for their handling as well. But as they are currently empty, it cannot be
+    //       checked right now
+
+    @Test
+    public void testGatekeeperPluginsDefaultToEmpty() {
+        ClusterOperatorConfig config = ClusterOperatorConfig.buildFromMap(ENV_VARS);
+
+        assertThat(config.getGatekeeperCustomPlugins(), is(nullValue()));
+        assertThat(config.getGatekeeperDefaultPlugins(), is(nullValue()));
+        assertThat(config.getGatekeeperPlugins(), is(List.of()));
+    }
+
+    @Test
+    public void testGatekeeperPluginsOrdering() {
+        // The custom plugins are invoked first, then the default plugins. The User Operator has no mandatory plugins.
+        Map<String, String> envVars = new HashMap<>(ENV_VARS);
+        envVars.put(ClusterOperatorConfig.GATEKEEPER_DEFAULT_PLUGINS.key(), DEFAULT_PLUGIN_2 + ", " + DEFAULT_PLUGIN_1);
+        envVars.put(ClusterOperatorConfig.GATEKEEPER_CUSTOM_PLUGINS.key(), CUSTOM_PLUGIN_1 + "," + CUSTOM_PLUGIN_2);
+
+        ClusterOperatorConfig config = ClusterOperatorConfig.buildFromMap(envVars);
+
+        assertThat(config.getGatekeeperCustomPlugins(), is(List.of(CUSTOM_PLUGIN_1, CUSTOM_PLUGIN_2)));
+        assertThat(config.getGatekeeperDefaultPlugins(), is(List.of(DEFAULT_PLUGIN_2, DEFAULT_PLUGIN_1)));
+        assertThat(config.getGatekeeperPlugins(), is(List.of(CUSTOM_PLUGIN_1, CUSTOM_PLUGIN_2, DEFAULT_PLUGIN_2, DEFAULT_PLUGIN_1)));
     }
 }

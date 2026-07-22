@@ -19,6 +19,7 @@ import io.strimzi.operator.common.model.Labels;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -27,6 +28,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static io.strimzi.operator.common.config.ConfigParameterParser.BOOLEAN;
+import static io.strimzi.operator.common.config.ConfigParameterParser.COMMA_SEPARATED_LIST;
 import static io.strimzi.operator.common.config.ConfigParameterParser.INTEGER;
 import static io.strimzi.operator.common.config.ConfigParameterParser.LABEL_PREDICATE;
 import static io.strimzi.operator.common.config.ConfigParameterParser.LOCAL_OBJECT_REFERENCE_LIST;
@@ -67,6 +69,15 @@ public class ClusterOperatorConfig {
     private static final String STRIMZI_DEFAULT_TLS_SIDECAR_KAFKA_IMAGE = "STRIMZI_DEFAULT_TLS_SIDECAR_KAFKA_IMAGE";
     private static final String STRIMZI_DEFAULT_TLS_SIDECAR_CRUISE_CONTROL_IMAGE = "STRIMZI_DEFAULT_TLS_SIDECAR_CRUISE_CONTROL_IMAGE";
     private static final String STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE = "STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE";
+
+    /**
+     * List of mandatory Gatekeeper plugins that are not user-configurable but are hardcoded by Strimzi
+     */
+    private static final List<String> MANDATORY_GATEKEEPER_PLUGINS = List.of();
+    /**
+     * List of default Gatekeeper plugins that are used by default, but users can change / reconfigure them.
+     */
+    private static final List<String> DEFAULT_GATEKEEPER_PLUGINS = List.of();
 
     /**
      * Configures the Kafka Exporter container image
@@ -253,6 +264,16 @@ public class ClusterOperatorConfig {
      * Set true to enable watched namespace feature for Entity Operators (Topic Operator and User Operator)
      */
     public static final ConfigParameter<Boolean> ENTITY_OPERATOR_WATCHED_NAMESPACE_ENABLED = new ConfigParameter<>("STRIMZI_ENTITY_OPERATOR_WATCHED_NAMESPACE_ENABLED", BOOLEAN, "false", CONFIG_VALUES);
+
+    /**
+     * Comma-separated list of custom Gatekeeper plugins that should be enabled
+     */
+    public static final ConfigParameter<List<String>> GATEKEEPER_CUSTOM_PLUGINS = new ConfigParameter<>("STRIMZI_GATEKEEPER_CUSTOM_PLUGINS", COMMA_SEPARATED_LIST, "", CONFIG_VALUES);
+
+    /**
+     * Comma-separated list of default Gatekeeper plugins. If not set, the default list of default plugins is used.
+     */
+    public static final ConfigParameter<List<String>> GATEKEEPER_DEFAULT_PLUGINS = new ConfigParameter<>("STRIMZI_GATEKEEPER_DEFAULT_PLUGINS", COMMA_SEPARATED_LIST, "", CONFIG_VALUES);
 
     /**
      * The configured Kafka versions
@@ -651,6 +672,52 @@ public class ClusterOperatorConfig {
         return get(ENTITY_OPERATOR_WATCHED_NAMESPACE_ENABLED);
     }
 
+    /**
+     * Gets the list of custom Gatekeeper plugins.
+     *
+     * @return List of custom Gatekeeper plugins
+     */
+    public List<String> getGatekeeperCustomPlugins() {
+        return get(GATEKEEPER_CUSTOM_PLUGINS);
+    }
+
+    /**
+     * Gets the list of default Gatekeeper plugins.
+     *
+     * @return List of default Gatekeeper plugins
+     */
+    public List<String> getGatekeeperDefaultPlugins() {
+        return get(GATEKEEPER_DEFAULT_PLUGINS);
+    }
+
+    /**
+     * Gets the full list of the Gatekeeper plugins that should be used. This is constructed from the partial lists:
+     *   - Custom
+     *   - Default
+     *   - Mandatory
+     *
+     * @return  List of all Gatekeeper plugins that should be used
+     */
+    public List<String> getGatekeeperPlugins() {
+        List<String> plugins = new ArrayList<>();
+
+        List<String> customPlugins = get(GATEKEEPER_CUSTOM_PLUGINS);
+        if (customPlugins != null) {
+            plugins.addAll(customPlugins);
+        }
+
+        List<String> defaultPlugins = get(GATEKEEPER_DEFAULT_PLUGINS);
+        if (defaultPlugins != null) {
+            plugins.addAll(defaultPlugins);
+        } else {
+            plugins.addAll(DEFAULT_GATEKEEPER_PLUGINS);
+        }
+
+        plugins.addAll(MANDATORY_GATEKEEPER_PLUGINS);
+
+        return plugins;
+    }
+
     @Override
     public String toString() {
         return "ClusterOperatorConfig{" +
@@ -675,6 +742,9 @@ public class ClusterOperatorConfig {
                 "\n\tpodDisruptionBudgetGeneration=" + isPodDisruptionBudgetGeneration() + '\'' +
                 "\n\tisPkcs12KeystoreGeneration='" + isPkcs12KeystoreGeneration() +
                 "\n\tisEntityOperatorWatchedNamespaceEnabled='" + isEntityOperatorWatchedNamespaceEnabled() +
+                "\n\tgatekeeperCustomPlugins='" + getGatekeeperCustomPlugins() + "'" +
+                "\n\tgatekeeperDefaultPlugins='" + getGatekeeperDefaultPlugins() + "'" +
+                "\n\tgatekeeperPlugins='" + getGatekeeperPlugins() + "'" +
                 "}";
     }
 }
