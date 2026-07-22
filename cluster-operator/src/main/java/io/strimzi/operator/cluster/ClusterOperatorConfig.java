@@ -140,6 +140,11 @@ public class ClusterOperatorConfig {
      */
     public static final String NO_PROXY = "NO_PROXY";
 
+    /**
+     * Enabled or disables the FIPS mode
+     */
+    public static final String FIPS_MODE = "FIPS_MODE";
+
     // Default values
     /**
      * Namespace in which the operator will run and create resources

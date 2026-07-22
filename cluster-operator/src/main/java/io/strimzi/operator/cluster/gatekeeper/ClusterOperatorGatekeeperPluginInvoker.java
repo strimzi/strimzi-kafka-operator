@@ -66,10 +66,10 @@ import java.util.List;
 import java.util.concurrent.CompletionStage;
 
 /**
- * Invokes the Strimzi Gatekeeper plugins for Kafka, KafkaConnect, KafkaMirrorMaker2, and KafkaRebalance reconciliations.
- * It provides entry, exit, and deletion methods which invoke all the Kafka, KafkaConnect, KafkaMirrorMaker2,
- * and KafkaRebalance plugins - both mutating and validating - as one ordered chain. The plugins (and their order) are
- * provided by the {@link GatekeeperPluginFactory}.
+ * Invokes the Strimzi Gatekeeper plugins for Kafka (+KafkaNodePools), KafkaConnect (+KafkaConnectors),
+ * KafkaMirrorMaker2, KafkaBridge, and KafkaRebalance reconciliations. It provides entry, exit, and deletion methods
+ * which invoke all the Kafka, KafkaConnect, KafkaMirrorMaker2, KafkaBridge, and KafkaRebalance plugins (both mutating
+ * and validating) as one ordered chain. The plugins (and their order) are provided by the {@link GatekeeperPluginFactory}.
  */
 @SuppressWarnings({"checkstyle:ClassFanOutComplexity"})
 public class ClusterOperatorGatekeeperPluginInvoker extends AbstractGatekeeperPluginInvoker {
