@@ -34,7 +34,6 @@ public class KafkaAgentClient {
 
     private static final String BROKER_STATE_REST_PATH = "/v1/broker-state/";
     private static final int KAFKA_AGENT_HTTPS_PORT = 8443;
-    private static final char[] KEYSTORE_PASSWORD = "changeit".toCharArray();
     // Bounds the connect and full HTTP request lifecycle so that a broker which accepts the TCP connection but
     // never produces a response (e.g. alive but stuck on IO) cannot block the KafkaRoller's single-threaded
     // executor indefinitely. The Kafka Agent only serves a small broker-state JSON, so 10 seconds is well above
@@ -93,7 +92,7 @@ public class KafkaAgentClient {
             }
             String keyManagerFactoryAlgorithm = KeyManagerFactory.getDefaultAlgorithm();
             KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(keyManagerFactoryAlgorithm);
-            keyManagerFactory.init(tlsPemIdentity.pemAuthIdentity().keyStore(KEYSTORE_PASSWORD), KEYSTORE_PASSWORD);
+            keyManagerFactory.init(tlsPemIdentity.pemAuthIdentity().keyStore(), null);
 
             SSLContext sslContext = SSLContext.getInstance("TLSv1.3");
             sslContext.init(keyManagerFactory.getKeyManagers(), trustManagerFactory.getTrustManagers(), null);

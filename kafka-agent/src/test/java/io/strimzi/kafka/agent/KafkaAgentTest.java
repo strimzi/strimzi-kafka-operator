@@ -31,7 +31,6 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.security.GeneralSecurityException;
 import java.time.Duration;
-import java.util.Base64;
 import java.util.Map;
 
 import static io.strimzi.kafka.agent.KafkaAgent.RANDOM;
@@ -99,10 +98,7 @@ public class KafkaAgentTest {
         tmf.init(KafkaAgentUtils.trustStore(caCertSecret));
 
         KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
-        byte[] random = new byte[24];
-        RANDOM.nextBytes(random);
-        String password = Base64.getUrlEncoder().withoutPadding().encodeToString(random).substring(0, 32);
-        kmf.init(KafkaAgentUtils.keyStore(nodeCertSecret, password.toCharArray()), password.toCharArray());
+        kmf.init(KafkaAgentUtils.keyStore(nodeCertSecret), null);
 
         SSLContext sslContext = SSLContext.getInstance("TLSv1.3");
         sslContext.init(kmf.getKeyManagers(), tmf.getTrustManagers(), RANDOM);
