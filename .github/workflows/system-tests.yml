@@ -46,11 +46,11 @@ jobs:
     steps:
       - name: Should Run
         id: should_run
-        uses: strimzi/github-actions/.github/actions/utils/should-run@0b7212d193ac3ab199e0dfef2a9cbd0229a15820 # v2.1
+        uses: strimzi/github-actions/.github/actions/utils/should-run@af789b85722d00ba9de34ad8b3a32292e4e628e3 # v2.2
       - name: Determine checkout ref
         id: determine_ref
         if: steps.should_run.outputs.shouldRun == 'true'
-        uses: strimzi/github-actions/.github/actions/utils/determine-ref@0b7212d193ac3ab199e0dfef2a9cbd0229a15820 # v2.1
+        uses: strimzi/github-actions/.github/actions/utils/determine-ref@af789b85722d00ba9de34ad8b3a32292e4e628e3 # v2.2
 
   check-rights:
     needs:
@@ -63,7 +63,7 @@ jobs:
       pull-requests: write
       statuses: write
     steps:
-      - uses: strimzi/github-actions/.github/actions/utils/check-permissions@0b7212d193ac3ab199e0dfef2a9cbd0229a15820 # v2.1
+      - uses: strimzi/github-actions/.github/actions/utils/check-permissions@af789b85722d00ba9de34ad8b3a32292e4e628e3 # v2.2
 
   check-build:
     needs:
@@ -84,7 +84,7 @@ jobs:
       buildMetadataSha: ${{ steps.verify.outputs.buildMetadataSha }}
       commentId: ${{ steps.initial-comment.outputs.commentId }}
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ needs.parse-params.outputs.ref }}
       - name: Add initial comment
@@ -145,7 +145,7 @@ jobs:
       message: ${{ steps.validate.outputs.message }}
       matrix: ${{ steps.gen.outputs.matrix }}
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ needs.parse-params.outputs.ref }}
       - name: Parse Comment
@@ -216,32 +216,32 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ needs.parse-params.outputs.ref }}
 
       - name: Setup Java and Maven
-        uses: strimzi/github-actions/.github/actions/dependencies/setup-java@0b7212d193ac3ab199e0dfef2a9cbd0229a15820 # v2.1
+        uses: strimzi/github-actions/.github/actions/dependencies/setup-java@af789b85722d00ba9de34ad8b3a32292e4e628e3 # v2.2
         with:
           javaVersion: "21"
 
       - name: Install yq
-        uses: strimzi/github-actions/.github/actions/dependencies/install-yq@0b7212d193ac3ab199e0dfef2a9cbd0229a15820 # v2.1
+        uses: strimzi/github-actions/.github/actions/dependencies/install-yq@af789b85722d00ba9de34ad8b3a32292e4e628e3 # v2.2
         with:
           version: "v4.6.3"
 
       - name: Install Shellcheck
-        uses: strimzi/github-actions/.github/actions/dependencies/install-shellcheck@0b7212d193ac3ab199e0dfef2a9cbd0229a15820 # v2.1
+        uses: strimzi/github-actions/.github/actions/dependencies/install-shellcheck@af789b85722d00ba9de34ad8b3a32292e4e628e3 # v2.2
         with:
           version: "0.11.0"
 
       - name: Install Helm
-        uses: strimzi/github-actions/.github/actions/dependencies/install-helm@0b7212d193ac3ab199e0dfef2a9cbd0229a15820 # v2.1
+        uses: strimzi/github-actions/.github/actions/dependencies/install-helm@af789b85722d00ba9de34ad8b3a32292e4e628e3 # v2.2
         with:
           helmVersion: "v3.16.0"
 
       - name: Build binaries using build-binaries action
-        uses: strimzi/github-actions/.github/actions/build/build-binaries@0b7212d193ac3ab199e0dfef2a9cbd0229a15820 # v2.1
+        uses: strimzi/github-actions/.github/actions/build/build-binaries@af789b85722d00ba9de34ad8b3a32292e4e628e3 # v2.2
         with:
           mainJavaBuild: "true"
           artifactSuffix: "operators"
@@ -273,24 +273,24 @@ jobs:
     runs-on: cncf-ubuntu-2-8-arm
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ needs.parse-params.outputs.ref }}
 
       - name: Install Docker
-        uses: strimzi/github-actions/.github/actions/dependencies/install-docker@0b7212d193ac3ab199e0dfef2a9cbd0229a15820 # v2.1
+        uses: strimzi/github-actions/.github/actions/dependencies/install-docker@af789b85722d00ba9de34ad8b3a32292e4e628e3 # v2.2
 
       - name: Install yq
-        uses: strimzi/github-actions/.github/actions/dependencies/install-yq@0b7212d193ac3ab199e0dfef2a9cbd0229a15820 # v2.1
+        uses: strimzi/github-actions/.github/actions/dependencies/install-yq@af789b85722d00ba9de34ad8b3a32292e4e628e3 # v2.2
         with:
           version: "v4.6.3"
 
       - name: Install Shellcheck
-        uses: strimzi/github-actions/.github/actions/dependencies/install-shellcheck@0b7212d193ac3ab199e0dfef2a9cbd0229a15820 # v2.1
+        uses: strimzi/github-actions/.github/actions/dependencies/install-shellcheck@af789b85722d00ba9de34ad8b3a32292e4e628e3 # v2.2
         with:
           version: "0.11.0"
 
-      - uses: strimzi/github-actions/.github/actions/build/build-containers@0b7212d193ac3ab199e0dfef2a9cbd0229a15820 # v2.1
+      - uses: strimzi/github-actions/.github/actions/build/build-containers@af789b85722d00ba9de34ad8b3a32292e4e628e3 # v2.2
         with:
           architecture: ${{ matrix.architecture }}
           imagesLocation: "./docker-images/container-archives"
@@ -355,7 +355,7 @@ jobs:
       pull-requests: write
       statuses: write
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ needs.parse-params.outputs.ref }}
       - name: Add comment
@@ -397,7 +397,7 @@ jobs:
       contents: read
       pull-requests: write
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ needs.parse-params.outputs.ref }}
       - uses: ./.github/actions/systemtests/run-perf-report

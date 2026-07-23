@@ -46,15 +46,15 @@ jobs:
     env:
       FOSSA_API_KEY: ${{ secrets.FOSSA_API_KEY }}
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Setup Java and Maven
-        uses: strimzi/github-actions/.github/actions/dependencies/setup-java@0b7212d193ac3ab199e0dfef2a9cbd0229a15820 # v2.1
+        uses: strimzi/github-actions/.github/actions/dependencies/setup-java@af789b85722d00ba9de34ad8b3a32292e4e628e3 # v2.2
         with:
           javaVersion: "21"
 
       - name: Install yq
-        uses: strimzi/github-actions/.github/actions/dependencies/install-yq@0b7212d193ac3ab199e0dfef2a9cbd0229a15820 # v2.1
+        uses: strimzi/github-actions/.github/actions/dependencies/install-yq@af789b85722d00ba9de34ad8b3a32292e4e628e3 # v2.2
         with:
           version: "v4.6.3"
 
@@ -62,7 +62,7 @@ jobs:
         run: mvn -B -DskipTests -Dmaven.javadoc.skip=true clean install
 
       - name: Run FOSSA Maven scan
-        uses: strimzi/github-actions/.github/actions/security/fossa-maven-scan@0b7212d193ac3ab199e0dfef2a9cbd0229a15820 # v2.1
+        uses: strimzi/github-actions/.github/actions/security/fossa-maven-scan@af789b85722d00ba9de34ad8b3a32292e4e628e3 # v2.2
         with:
           scanName: operators
           fossaTest: "true"
@@ -128,10 +128,10 @@ jobs:
         run: tar -xvf "$CONTAINERS_ARCHIVE"
 
       - name: Install Docker
-        uses: strimzi/github-actions/.github/actions/dependencies/install-docker@0b7212d193ac3ab199e0dfef2a9cbd0229a15820 # v2.1
+        uses: strimzi/github-actions/.github/actions/dependencies/install-docker@af789b85722d00ba9de34ad8b3a32292e4e628e3 # v2.2
 
       - name: Run FOSSA container scan
-        uses: strimzi/github-actions/.github/actions/security/fossa-container-scan@0b7212d193ac3ab199e0dfef2a9cbd0229a15820 # v2.1
+        uses: strimzi/github-actions/.github/actions/security/fossa-container-scan@af789b85722d00ba9de34ad8b3a32292e4e628e3 # v2.2
         with:
           imageFile: docker-images/container-archives/${{ matrix.image }}.tar.gz
           image: ${{ matrix.image }}
