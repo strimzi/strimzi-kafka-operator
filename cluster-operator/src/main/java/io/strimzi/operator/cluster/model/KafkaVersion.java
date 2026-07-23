@@ -13,6 +13,7 @@ import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.common.model.InvalidResourceException;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.nio.charset.StandardCharsets;
@@ -20,6 +21,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.regex.Matcher;
@@ -97,25 +99,17 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
         public Lookup(Map<String, String> kafkaImages,
                       Map<String, String> kafkaConnectImages,
                       Map<String, String> kafkaMirrorMaker2Images) {
-            this(new InputStreamReader(
-                    KafkaVersion.class.getResourceAsStream("/" + KAFKA_VERSIONS_RESOURCE),
-                    StandardCharsets.UTF_8),
-                    kafkaImages, kafkaConnectImages, kafkaMirrorMaker2Images);
-        }
-
-        protected Lookup(Reader reader,
-                         Map<String, String> kafkaImages,
-                         Map<String, String> kafkaConnectImages,
-                         Map<String, String> kafkaMirrorMaker2Images) {
-            map = new HashMap<>();
-            try {
-                defaultVersion = parseKafkaVersions(reader, map);
-            } catch (Exception e) {
-                throw new RuntimeException("Error reading " + KAFKA_VERSIONS_RESOURCE, e);
-            }
+            this.map = new HashMap<>();
             this.kafkaImages = kafkaImages;
             this.kafkaConnectImages = kafkaConnectImages;
             this.kafkaMirrorMaker2Images = kafkaMirrorMaker2Images;
+
+            InputStream versions = Objects.requireNonNull(KafkaVersion.class.getResourceAsStream("/" + KAFKA_VERSIONS_RESOURCE), KAFKA_VERSIONS_RESOURCE + " file was not found in resources");
+            try (InputStreamReader reader = new InputStreamReader(versions, StandardCharsets.UTF_8))    {
+                this.defaultVersion = parseKafkaVersions(reader, this.map);
+            } catch (IOException | IllegalArgumentException e) {
+                throw new RuntimeException("Error reading " + KAFKA_VERSIONS_RESOURCE, e);
+            }
         }
 
         /**
