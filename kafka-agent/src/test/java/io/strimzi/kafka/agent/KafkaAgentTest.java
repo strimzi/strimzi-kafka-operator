@@ -104,7 +104,7 @@ public class KafkaAgentTest {
         String password = Base64.getUrlEncoder().withoutPadding().encodeToString(random).substring(0, 32);
         kmf.init(KafkaAgentUtils.keyStore(nodeCertSecret, password.toCharArray()), password.toCharArray());
 
-        SSLContext sslContext = SSLContext.getInstance("TLS");
+        SSLContext sslContext = SSLContext.getInstance("TLSv1.3");
         sslContext.init(kmf.getKeyManagers(), tmf.getTrustManagers(), RANDOM);
         return sslContext;
     }

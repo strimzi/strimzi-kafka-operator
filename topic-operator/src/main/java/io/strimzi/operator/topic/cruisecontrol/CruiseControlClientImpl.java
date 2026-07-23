@@ -250,7 +250,7 @@ public class CruiseControlClientImpl implements CruiseControlClient {
                 tmf.init(keyStore);
 
                 // create an SSL context that uses our trust manager
-                SSLContext sslContext = SSLContext.getInstance("TLS");
+                SSLContext sslContext = SSLContext.getInstance("TLSv1.3");
                 sslContext.init(null, tmf.getTrustManagers(), null);
                 builder.sslContext(sslContext);
             }
