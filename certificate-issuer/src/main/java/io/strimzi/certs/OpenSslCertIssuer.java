@@ -15,7 +15,6 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -103,6 +102,23 @@ public class OpenSslCertIssuer implements CertIssuer {
         }
     }
 
+    /**
+     * Best-effort deletion of temporary files or directories used during certificate generation. A failure to delete
+     * one of the paths is logged and does not prevent deletion of the remaining paths or mask the exception which
+     * might have caused the cleanup to run.
+     *
+     * @param filesOrDirs   Files or directories to delete. Null entries are skipped.
+     */
+    private static void deleteAll(Path... filesOrDirs) {
+        for (Path fileOrDir : filesOrDirs) {
+            try {
+                delete(fileOrDir);
+            } catch (IOException e) {
+                LOGGER.warn("Failed to delete temporary file or directory {}", fileOrDir, e);
+            }
+        }
+    }
+
     static void delete(Path fileOrDir) throws IOException {
         if (fileOrDir != null)
             if (Files.isDirectory(fileOrDir)) {
@@ -125,8 +141,17 @@ public class OpenSslCertIssuer implements CertIssuer {
 
     private Path createDefaultConfig() throws IOException {
         try (InputStream is = getClass().getClassLoader().getResourceAsStream("openssl.conf")) {
+            if (is == null) {
+                throw new IOException("Failed to load openssl.conf from the classpath");
+            }
+
             Path openSslConf = Files.createTempFile(null, null);
-            Files.copy(is, openSslConf, StandardCopyOption.REPLACE_EXISTING);
+            try {
+                Files.copy(is, openSslConf, StandardCopyOption.REPLACE_EXISTING);
+            } catch (IOException | RuntimeException e) {
+                deleteAll(openSslConf);
+                throw e;
+            }
             return openSslConf;
         }
     }
@@ -161,6 +186,9 @@ public class OpenSslCertIssuer implements CertIssuer {
                     }
                 }
             }
+        } catch (IOException | RuntimeException e) {
+            deleteAll(sna);
+            throw e;
         }
         return sna;
     }
@@ -327,21 +355,16 @@ public class OpenSslCertIssuer implements CertIssuer {
                         .exec();
             }
         } finally {
-            delete(tmpKey);
-            delete(database);
-            if (database != null) {
-                // File created by OpenSSL
-                delete(new File(database + ".old").toPath());
-            }
-            delete(attr);
-            if (attr != null) {
-                // File created by OpenSSL
-                delete(new File(attr + ".old").toPath());
-            }
-            delete(newCertsDir);
-            delete(csrFile);
-            delete(defaultConfig);
-            delete(sna);
+            deleteAll(tmpKey,
+                    database,
+                    // The .old files are created by OpenSSL
+                    database != null ? Paths.get(database + ".old") : null,
+                    attr,
+                    attr != null ? Paths.get(attr + ".old") : null,
+                    newCertsDir,
+                    csrFile,
+                    defaultConfig,
+                    sna);
         }
     }
 
@@ -354,30 +377,19 @@ public class OpenSslCertIssuer implements CertIssuer {
         Objects.requireNonNull(trustStoreFile);
         Objects.requireNonNull(trustStorePassword);
 
-        FileInputStream isTrustStore = null;
-        try {
-            // check if the truststore file is empty or not, for loading its content eventually
-            // the KeyStore class is able to create an empty store if the input stream is null
-            if (trustStoreFile.length() > 0) {
-                isTrustStore = new FileInputStream(trustStoreFile);
-            }
+        // check if the truststore file is empty or not, for loading its content eventually
+        // the KeyStore class is able to create an empty store if the input stream is null
+        try (FileInputStream isTrustStore = trustStoreFile.length() > 0 ? new FileInputStream(trustStoreFile) : null;
+             FileInputStream isCertificate = new FileInputStream(certFile)) {
+            CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
+            X509Certificate certificate = (X509Certificate) certFactory.generateCertificate(isCertificate);
 
-            try (FileInputStream isCertificate = new FileInputStream(certFile)) {
+            KeyStore trustStore = KeyStore.getInstance("PKCS12");
+            trustStore.load(isTrustStore, trustStorePassword.toCharArray());
+            trustStore.setEntry(certAlias, new KeyStore.TrustedCertificateEntry(certificate), null);
 
-                CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
-                X509Certificate certificate = (X509Certificate) certFactory.generateCertificate(isCertificate);
-
-                KeyStore trustStore = KeyStore.getInstance("PKCS12");
-                trustStore.load(isTrustStore, trustStorePassword.toCharArray());
-                trustStore.setEntry(certAlias, new KeyStore.TrustedCertificateEntry(certificate), null);
-
-                try (FileOutputStream osTrustStore = new FileOutputStream(trustStoreFile)) {
-                    trustStore.store(osTrustStore, trustStorePassword.toCharArray());
-                }
-            }
-        } finally {
-            if (isTrustStore != null) {
-                isTrustStore.close();
+            try (FileOutputStream osTrustStore = new FileOutputStream(trustStoreFile)) {
+                trustStore.store(osTrustStore, trustStorePassword.toCharArray());
             }
         }
     }
@@ -475,7 +487,7 @@ public class OpenSslCertIssuer implements CertIssuer {
             cmd.optArg("-subj", subject);
             cmd.exec();
         } finally {
-            delete(sna);
+            deleteAll(sna);
         }
     }
 
@@ -539,24 +551,17 @@ public class OpenSslCertIssuer implements CertIssuer {
             cmd.database(database, attr).newCertsDir(newCertsDir);
             cmd.exec(false);
         } finally {
-            delete(database);
-            if (database != null) {
-                // File created by OpenSSL
-                delete(new File(database + ".old").toPath());
-            }
-            delete(attr);
-            if (attr != null) {
-                // File created by OpenSSL
-                delete(new File(attr + ".old").toPath());
-            }
-            delete(newCertsDir);
-            delete(defaultConfig);
-            delete(sna);
+            deleteAll(database,
+                    // The .old files are created by OpenSSL
+                    database != null ? Paths.get(database + ".old") : null,
+                    attr,
+                    attr != null ? Paths.get(attr + ".old") : null,
+                    newCertsDir,
+                    defaultConfig,
+                    sna,
+                    // The CA serial file is created by OpenSSL next to the CA certificate
+                    Paths.get(caCert.getPath().replaceAll(".[a-zA-Z0-9]+$", ".srl")));
         }
-
-        // We need to remove CA serial file
-        Path path = Paths.get(caCert.getPath().replaceAll(".[a-zA-Z0-9]+$", ".srl"));
-        delete(path);
     }
 
 
@@ -569,8 +574,7 @@ public class OpenSslCertIssuer implements CertIssuer {
             caCertFile = Files.write(Files.createTempFile(null, null), caCert);
             generateCert(csrFile, caKeyFile.toFile(), caCertFile.toFile(), crtFile, sbj, days);
         } finally {
-            delete(caKeyFile);
-            delete(caCertFile);
+            deleteAll(caKeyFile, caCertFile);
         }
     }
 
@@ -665,6 +669,7 @@ public class OpenSslCertIssuer implements CertIssuer {
             }
 
             Path out = null;
+            Process proc = null;
             try {
                 out = Files.createTempFile(null, null);
                 pb.redirectErrorStream(true)
@@ -672,11 +677,10 @@ public class OpenSslCertIssuer implements CertIssuer {
 
                 LOGGER.debug("Running command {}", pb.command());
 
-                Process proc = pb.start();
+                proc = pb.start();
 
-                OutputStream outputStream = proc.getOutputStream();
                 // close subprocess' stdin
-                outputStream.close();
+                proc.getOutputStream().close();
 
                 int result = proc.waitFor();
 
@@ -695,12 +699,17 @@ public class OpenSslCertIssuer implements CertIssuer {
                     }
                     LOGGER.debug("Got result {}", result);
                 }
-
-            } catch (InterruptedException ignored) {
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new IOException("Interrupted while waiting for the openssl command to complete", e);
             } finally {
-                delete(out);
+                if (proc != null) {
+                    // Makes sure the openssl process does not keep running when the command did not complete
+                    // (e.g. when the thread was interrupted or closing its stdin failed)
+                    proc.destroy();
+                }
+                deleteAll(out);
             }
-
         }
     }
 
