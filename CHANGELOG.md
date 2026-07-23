@@ -8,7 +8,8 @@
 
 ### Major changes, deprecations, and removals
 
-* n/a
+* The Cluster, Topic, and User Operator YAML installation files and the Cluster Operator Helm Chart now use the default container security context that matches the [Restricted Kubernetes Pod Security Standard](https://kubernetes.io/docs/concepts/security/pod-security-standards/).
+  If needed, you can override the default security context by updating the `securityContext` property in the YAML installation files or use the `securityContext` property in the Cluster Operator Helm Chart values.
 
 ## 1.1.0
 
