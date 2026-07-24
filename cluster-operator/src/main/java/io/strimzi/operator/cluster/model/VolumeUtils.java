@@ -4,19 +4,26 @@
  */
 package io.strimzi.operator.cluster.model;
 
+import io.fabric8.kubernetes.api.model.ConfigMapProjectionBuilder;
 import io.fabric8.kubernetes.api.model.ConfigMapVolumeSource;
 import io.fabric8.kubernetes.api.model.ConfigMapVolumeSourceBuilder;
+import io.fabric8.kubernetes.api.model.DownwardAPIProjectionBuilder;
+import io.fabric8.kubernetes.api.model.DownwardAPIVolumeFileBuilder;
 import io.fabric8.kubernetes.api.model.EmptyDirVolumeSource;
 import io.fabric8.kubernetes.api.model.EmptyDirVolumeSourceBuilder;
 import io.fabric8.kubernetes.api.model.KeyToPath;
 import io.fabric8.kubernetes.api.model.KeyToPathBuilder;
+import io.fabric8.kubernetes.api.model.ObjectFieldSelectorBuilder;
+import io.fabric8.kubernetes.api.model.ProjectedVolumeSourceBuilder;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.SecretVolumeSource;
 import io.fabric8.kubernetes.api.model.SecretVolumeSourceBuilder;
+import io.fabric8.kubernetes.api.model.ServiceAccountTokenProjectionBuilder;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeBuilder;
 import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.VolumeMountBuilder;
+import io.fabric8.kubernetes.api.model.VolumeProjectionBuilder;
 import io.strimzi.api.kafka.model.common.template.PodTemplate;
 import io.strimzi.api.kafka.model.kafka.EphemeralStorage;
 import io.strimzi.api.kafka.model.kafka.JbodStorage;
@@ -41,6 +48,8 @@ public class VolumeUtils {
      * Base name used to name data volumes
      */
     public static final String DATA_VOLUME_NAME = "data";
+
+    /* test */ static final String SERVICE_ACCOUNT_TOKEN_VOLUME_NAME = "kube-api-access";
 
     /**
      * The path where the Kafka data volumes are mounted
@@ -250,6 +259,47 @@ public class VolumeUtils {
     }
 
     /**
+     * Creates a volume for mounting Service Account token.
+     *
+     * @return  Service Account token volume
+     */
+    public static Volume createServiceAccountVolume() {
+        return new VolumeBuilder()
+                .withName(SERVICE_ACCOUNT_TOKEN_VOLUME_NAME)
+                .withProjected(new ProjectedVolumeSourceBuilder()
+                        .withDefaultMode(420)
+                        .withSources(
+                                new VolumeProjectionBuilder()
+                                        .withServiceAccountToken(new ServiceAccountTokenProjectionBuilder()
+                                                .withPath("token")
+                                                .build())
+                                        .build(),
+                                new VolumeProjectionBuilder()
+                                        .withConfigMap(new ConfigMapProjectionBuilder()
+                                                .withName("kube-root-ca.crt")
+                                                .withItems(new KeyToPathBuilder()
+                                                        .withKey("ca.crt")
+                                                        .withPath("ca.crt")
+                                                        .build())
+                                                .build())
+                                        .build(),
+                                new VolumeProjectionBuilder()
+                                        .withDownwardAPI(new DownwardAPIProjectionBuilder()
+                                                .withItems(new DownwardAPIVolumeFileBuilder()
+                                                        .withPath("namespace")
+                                                        .withFieldRef(new ObjectFieldSelectorBuilder()
+                                                                .withApiVersion("v1")
+                                                                .withFieldPath("metadata.namespace")
+                                                                .build())
+                                                        .build())
+                                                .build())
+                                        .build()
+                        )
+                        .build())
+                .build();
+    }
+
+    /**
      * Creates a Volume mount
      *
      * @param name Name of the Volume mount
@@ -284,6 +334,19 @@ public class VolumeUtils {
      */
     public static VolumeMount createTempDirVolumeMount(String volumeName) {
         return createVolumeMount(volumeName, STRIMZI_TMP_DIRECTORY_DEFAULT_MOUNT_PATH);
+    }
+
+    /**
+     * Creates the volume mount for the Service Account token.
+     *
+     * @return  Service Account token volume mount
+     */
+    public static VolumeMount createServiceAccountVolumeMount() {
+        return new VolumeMountBuilder()
+                .withName(SERVICE_ACCOUNT_TOKEN_VOLUME_NAME)
+                .withReadOnly(true)
+                .withMountPath("/var/run/secrets/kubernetes.io/serviceaccount")
+                .build();
     }
 
     /**

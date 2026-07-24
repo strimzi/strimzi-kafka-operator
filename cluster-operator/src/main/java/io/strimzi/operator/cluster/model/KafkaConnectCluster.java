@@ -391,7 +391,8 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
     }
 
     protected List<Volume> getVolumes(NodeRef node) {
-        List<Volume> volumeList = new ArrayList<>(2);
+        List<Volume> volumeList = new ArrayList<>(3);
+        volumeList.add(VolumeUtils.createServiceAccountVolume());
         volumeList.add(VolumeUtils.createTempDirVolume(templatePod));
         volumeList.add(VolumeUtils.createConfigMapVolume(KAFKA_CONNECT_CONFIG_VOLUME_NAME, connectConfigMapName));
 
@@ -435,6 +436,7 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
 
     protected List<VolumeMount> getVolumeMounts() {
         List<VolumeMount> volumeMountList = new ArrayList<>(2);
+        volumeMountList.add(VolumeUtils.createServiceAccountVolumeMount());
         volumeMountList.add(VolumeUtils.createTempDirVolumeMount());
         volumeMountList.add(VolumeUtils.createVolumeMount(KAFKA_CONNECT_CONFIG_VOLUME_NAME, KAFKA_CONNECT_CONFIG_VOLUME_MOUNT));
 
@@ -451,6 +453,7 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
 
     private List<VolumeMount> getInitContainerVolumeMounts() {
         List<VolumeMount> volumeMountList = new ArrayList<>();
+        volumeMountList.add(VolumeUtils.createServiceAccountVolumeMount());
         volumeMountList.add(VolumeUtils.createVolumeMount(INIT_VOLUME_NAME, INIT_VOLUME_MOUNT));
         TemplateUtils.addAdditionalVolumeMounts(volumeMountList, templateInitContainer);
         return volumeMountList;

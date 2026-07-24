@@ -7,6 +7,7 @@ package io.strimzi.operator.cluster.model;
 import io.fabric8.kubernetes.api.model.KeyToPathBuilder;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.Volume;
+import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.strimzi.api.kafka.model.kafka.EphemeralStorageBuilder;
 import io.strimzi.api.kafka.model.kafka.JbodStorage;
 import io.strimzi.api.kafka.model.kafka.JbodStorageBuilder;
@@ -155,6 +156,33 @@ public class VolumeUtilsTest {
         assertThat(volume.getConfigMap().getName(), is("my-cm"));
         assertThat(volume.getConfigMap().getItems().size(), is(1));
         assertThat(volume.getConfigMap().getItems().get(0), is(new KeyToPathBuilder().withKey("fileName.txt").withPath("/path/to/fileName.txt").build()));
+    }
+
+    @Test
+    public void testCreateServiceAccountVolume()   {
+        Volume volume = VolumeUtils.createServiceAccountVolume();
+
+        assertThat(volume.getName(), is(VolumeUtils.SERVICE_ACCOUNT_TOKEN_VOLUME_NAME));
+        assertThat(volume.getProjected(), is(notNullValue()));
+        assertThat(volume.getProjected().getDefaultMode(), is(420));
+        assertThat(volume.getProjected().getSources().size(), is(3));
+        assertThat(volume.getProjected().getSources().get(0).getServiceAccountToken().getPath(), is("token"));
+        assertThat(volume.getProjected().getSources().get(1).getConfigMap().getName(), is("kube-root-ca.crt"));
+        assertThat(volume.getProjected().getSources().get(1).getConfigMap().getItems().size(), is(1));
+        assertThat(volume.getProjected().getSources().get(1).getConfigMap().getItems().get(0), is(new KeyToPathBuilder().withKey("ca.crt").withPath("ca.crt").build()));
+        assertThat(volume.getProjected().getSources().get(2).getDownwardAPI().getItems().size(), is(1));
+        assertThat(volume.getProjected().getSources().get(2).getDownwardAPI().getItems().get(0).getPath(), is("namespace"));
+        assertThat(volume.getProjected().getSources().get(2).getDownwardAPI().getItems().get(0).getFieldRef().getApiVersion(), is("v1"));
+        assertThat(volume.getProjected().getSources().get(2).getDownwardAPI().getItems().get(0).getFieldRef().getFieldPath(), is("metadata.namespace"));
+    }
+
+    @Test
+    public void testCreateServiceAccountVolumeMount()   {
+        VolumeMount volumeMount = VolumeUtils.createServiceAccountVolumeMount();
+
+        assertThat(volumeMount.getName(), is(VolumeUtils.SERVICE_ACCOUNT_TOKEN_VOLUME_NAME));
+        assertThat(volumeMount.getMountPath(), is("/var/run/secrets/kubernetes.io/serviceaccount"));
+        assertThat(volumeMount.getReadOnly(), is(true));
     }
 
     @Test

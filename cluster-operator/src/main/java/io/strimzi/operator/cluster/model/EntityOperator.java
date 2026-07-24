@@ -238,6 +238,8 @@ public class EntityOperator extends AbstractModel {
     private List<Volume> getVolumes(boolean isOpenShift) {
         List<Volume> volumeList = new ArrayList<>();
 
+        volumeList.add(VolumeUtils.createServiceAccountVolume());
+
         if (topicOperator != null) {
             volumeList.addAll(topicOperator.getVolumes(templatePod, isOpenShift));
         }

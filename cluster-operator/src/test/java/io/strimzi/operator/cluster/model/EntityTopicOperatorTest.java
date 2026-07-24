@@ -229,6 +229,7 @@ public class EntityTopicOperatorTest {
         assertThat(container.getPorts().get(0).getName(), is(EntityTopicOperator.HEALTHCHECK_PORT_NAME));
         assertThat(container.getPorts().get(0).getProtocol(), is("TCP"));
         assertThat(EntityOperatorTest.volumeMounts(container.getVolumeMounts()), is(Map.of(
+                VolumeUtils.SERVICE_ACCOUNT_TOKEN_VOLUME_NAME, "/var/run/secrets/kubernetes.io/serviceaccount",
                 EntityTopicOperator.TOPIC_OPERATOR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME, VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_MOUNT_PATH,
                 "entity-topic-operator-metrics-and-logging", "/opt/topic-operator/custom-config/")));
     }
@@ -299,6 +300,7 @@ public class EntityTopicOperatorTest {
 
         Container container = entityTopicOperator.createContainer(null);
         assertThat(EntityOperatorTest.volumeMounts(container.getVolumeMounts()), is(Map.of(
+            VolumeUtils.SERVICE_ACCOUNT_TOKEN_VOLUME_NAME, "/var/run/secrets/kubernetes.io/serviceaccount",
             EntityTopicOperator.TOPIC_OPERATOR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME, VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_MOUNT_PATH,
             "entity-topic-operator-metrics-and-logging", "/opt/topic-operator/custom-config/",
             EntityTopicOperator.ETO_CA_CERTS_VOLUME_NAME, EntityTopicOperator.ETO_CA_CERTS_VOLUME_MOUNT,

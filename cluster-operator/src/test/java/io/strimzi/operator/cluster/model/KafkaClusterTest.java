@@ -604,11 +604,13 @@ public class KafkaClusterTest {
                 assertThat(initCont.getEnv().stream().filter(e -> envVar2.getName().equals(e.getName())).findFirst().orElseThrow().getValue(), is(envVar2.getValue()));
                 assertThat(initCont.getEnv().stream().filter(e -> KafkaCluster.ENV_VAR_KAFKA_INIT_NODE_NAME.equals(e.getName())).findFirst().orElseThrow().getValue(), is(not(envVar3.getValue())));
 
-                assertThat(initCont.getVolumeMounts().size(), is(2));
-                assertThat(initCont.getVolumeMounts().get(0).getName(), is("rack-volume"));
-                assertThat(initCont.getVolumeMounts().get(0).getMountPath(), is("/opt/kafka/init"));
-                assertThat(initCont.getVolumeMounts().get(1).getName(), is("secret-volume-name"));
-                assertThat(initCont.getVolumeMounts().get(1).getMountPath(), is("/mnt/secret-volume"));
+                assertThat(initCont.getVolumeMounts().size(), is(3));
+                assertThat(initCont.getVolumeMounts().get(0).getName(), is(VolumeUtils.SERVICE_ACCOUNT_TOKEN_VOLUME_NAME));
+                assertThat(initCont.getVolumeMounts().get(0).getMountPath(), is("/var/run/secrets/kubernetes.io/serviceaccount"));
+                assertThat(initCont.getVolumeMounts().get(1).getName(), is("rack-volume"));
+                assertThat(initCont.getVolumeMounts().get(1).getMountPath(), is("/opt/kafka/init"));
+                assertThat(initCont.getVolumeMounts().get(2).getName(), is("secret-volume-name"));
+                assertThat(initCont.getVolumeMounts().get(2).getMountPath(), is("/mnt/secret-volume"));
             }
         }));
     }
@@ -711,9 +713,11 @@ public class KafkaClusterTest {
                 assertThat(initCont.getEnv().stream().filter(e -> envVar2.getName().equals(e.getName())).findFirst().orElseThrow().getValue(), is(envVar2.getValue()));
                 assertThat(initCont.getEnv().stream().filter(e -> KafkaCluster.ENV_VAR_KAFKA_INIT_NODE_NAME.equals(e.getName())).findFirst().orElseThrow().getValue(), is(not(envVar3.getValue())));
 
-                assertThat(initCont.getVolumeMounts().size(), is(1));
-                assertThat(initCont.getVolumeMounts().get(0).getName(), is("rack-volume"));
-                assertThat(initCont.getVolumeMounts().get(0).getMountPath(), is("/opt/kafka/init"));
+                assertThat(initCont.getVolumeMounts().size(), is(2));
+                assertThat(initCont.getVolumeMounts().get(0).getName(), is(VolumeUtils.SERVICE_ACCOUNT_TOKEN_VOLUME_NAME));
+                assertThat(initCont.getVolumeMounts().get(0).getMountPath(), is("/var/run/secrets/kubernetes.io/serviceaccount"));
+                assertThat(initCont.getVolumeMounts().get(1).getName(), is("rack-volume"));
+                assertThat(initCont.getVolumeMounts().get(1).getMountPath(), is("/opt/kafka/init"));
             } else {
                 assertThat(initCont, is(notNullValue()));
                 assertThat(initCont.getName(), is(KafkaCluster.INIT_NAME));
@@ -722,11 +726,13 @@ public class KafkaClusterTest {
                 assertThat(initCont.getEnv().stream().filter(e -> envVar2.getName().equals(e.getName())).findFirst().orElse(null), is(nullValue()));
                 assertThat(initCont.getEnv().stream().filter(e -> KafkaCluster.ENV_VAR_KAFKA_INIT_NODE_NAME.equals(e.getName())).findFirst().orElseThrow().getValue(), is(not(envVar3.getValue())));
 
-                assertThat(initCont.getVolumeMounts().size(), is(2));
-                assertThat(initCont.getVolumeMounts().get(0).getName(), is("rack-volume"));
-                assertThat(initCont.getVolumeMounts().get(0).getMountPath(), is("/opt/kafka/init"));
-                assertThat(initCont.getVolumeMounts().get(1).getName(), is("secret-volume-name"));
-                assertThat(initCont.getVolumeMounts().get(1).getMountPath(), is("/mnt/secret-volume"));
+                assertThat(initCont.getVolumeMounts().size(), is(3));
+                assertThat(initCont.getVolumeMounts().get(0).getName(), is(VolumeUtils.SERVICE_ACCOUNT_TOKEN_VOLUME_NAME));
+                assertThat(initCont.getVolumeMounts().get(0).getMountPath(), is("/var/run/secrets/kubernetes.io/serviceaccount"));
+                assertThat(initCont.getVolumeMounts().get(1).getName(), is("rack-volume"));
+                assertThat(initCont.getVolumeMounts().get(1).getMountPath(), is("/opt/kafka/init"));
+                assertThat(initCont.getVolumeMounts().get(2).getName(), is("secret-volume-name"));
+                assertThat(initCont.getVolumeMounts().get(2).getMountPath(), is("/mnt/secret-volume"));
             }
         }));
     }
@@ -833,9 +839,11 @@ public class KafkaClusterTest {
                 assertThat(initCont.getEnv().stream().filter(e -> envVar2.getName().equals(e.getName())).findFirst().orElseThrow().getValue(), is(envVar2.getValue()));
                 assertThat(initCont.getEnv().stream().filter(e -> KafkaCluster.ENV_VAR_KAFKA_INIT_NODE_NAME.equals(e.getName())).findFirst().orElseThrow().getValue(), is(not(envVar3.getValue())));
 
-                assertThat(initCont.getVolumeMounts().size(), is(1));
-                assertThat(initCont.getVolumeMounts().get(0).getName(), is("rack-volume"));
-                assertThat(initCont.getVolumeMounts().get(0).getMountPath(), is("/opt/kafka/init"));
+                assertThat(initCont.getVolumeMounts().size(), is(2));
+                assertThat(initCont.getVolumeMounts().get(0).getName(), is(VolumeUtils.SERVICE_ACCOUNT_TOKEN_VOLUME_NAME));
+                assertThat(initCont.getVolumeMounts().get(0).getMountPath(), is("/var/run/secrets/kubernetes.io/serviceaccount"));
+                assertThat(initCont.getVolumeMounts().get(1).getName(), is("rack-volume"));
+                assertThat(initCont.getVolumeMounts().get(1).getMountPath(), is("/opt/kafka/init"));
             } else {
                 assertThat(initCont, is(notNullValue()));
                 assertThat(initCont.getName(), is(KafkaCluster.INIT_NAME));
@@ -844,11 +852,13 @@ public class KafkaClusterTest {
                 assertThat(initCont.getEnv().stream().filter(e -> envVar2.getName().equals(e.getName())).findFirst().orElse(null), is(nullValue()));
                 assertThat(initCont.getEnv().stream().filter(e -> KafkaCluster.ENV_VAR_KAFKA_INIT_NODE_NAME.equals(e.getName())).findFirst().orElseThrow().getValue(), is(not(envVar3.getValue())));
 
-                assertThat(initCont.getVolumeMounts().size(), is(2));
-                assertThat(initCont.getVolumeMounts().get(0).getName(), is("rack-volume"));
-                assertThat(initCont.getVolumeMounts().get(0).getMountPath(), is("/opt/kafka/init"));
-                assertThat(initCont.getVolumeMounts().get(1).getName(), is("secret-volume-name"));
-                assertThat(initCont.getVolumeMounts().get(1).getMountPath(), is("/mnt/secret-volume"));
+                assertThat(initCont.getVolumeMounts().size(), is(3));
+                assertThat(initCont.getVolumeMounts().get(0).getName(), is(VolumeUtils.SERVICE_ACCOUNT_TOKEN_VOLUME_NAME));
+                assertThat(initCont.getVolumeMounts().get(0).getMountPath(), is("/var/run/secrets/kubernetes.io/serviceaccount"));
+                assertThat(initCont.getVolumeMounts().get(1).getName(), is("rack-volume"));
+                assertThat(initCont.getVolumeMounts().get(1).getMountPath(), is("/opt/kafka/init"));
+                assertThat(initCont.getVolumeMounts().get(2).getName(), is("secret-volume-name"));
+                assertThat(initCont.getVolumeMounts().get(2).getMountPath(), is("/mnt/secret-volume"));
             }
         }));
     }
@@ -3392,22 +3402,26 @@ public class KafkaClusterTest {
             assertThat(pod.getSpec().getContainers().get(0).getEnv().stream().filter(e -> AbstractModel.ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED.equals(e.getName())).findFirst().orElseThrow().getValue(), is(Boolean.toString(JvmOptions.DEFAULT_GC_LOGGING_ENABLED)));
             assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(0).getName(), is("data-0"));
             assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(0).getMountPath(), is("/var/lib/kafka/data-0"));
-            assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(1).getName(), is(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME));
-            assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(1).getMountPath(), is(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_MOUNT_PATH));
-            assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(2).getName(), is("kafka-metrics-and-logging"));
-            assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(2).getMountPath(), is("/opt/kafka/custom-config/"));
-            assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(3).getName(), is("ready-files"));
-            assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(3).getMountPath(), is("/var/opt/kafka"));
+            assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(1).getName(), is(VolumeUtils.SERVICE_ACCOUNT_TOKEN_VOLUME_NAME));
+            assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(1).getMountPath(), is("/var/run/secrets/kubernetes.io/serviceaccount"));
+            assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(2).getName(), is(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME));
+            assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(2).getMountPath(), is(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_MOUNT_PATH));
+            assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(3).getName(), is("kafka-metrics-and-logging"));
+            assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(3).getMountPath(), is("/opt/kafka/custom-config/"));
+            assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(4).getName(), is("ready-files"));
+            assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(4).getMountPath(), is("/var/opt/kafka"));
 
-            assertThat(pod.getSpec().getVolumes().size(), is(4));
+            assertThat(pod.getSpec().getVolumes().size(), is(5));
             assertThat(pod.getSpec().getVolumes().get(0).getName(), is("data-0"));
             assertThat(pod.getSpec().getVolumes().get(0).getPersistentVolumeClaim(), is(notNullValue()));
-            assertThat(pod.getSpec().getVolumes().get(1).getName(), is(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME));
-            assertThat(pod.getSpec().getVolumes().get(1).getEmptyDir(), is(notNullValue()));
-            assertThat(pod.getSpec().getVolumes().get(2).getName(), is("kafka-metrics-and-logging"));
-            assertThat(pod.getSpec().getVolumes().get(2).getConfigMap().getName(), is(pod.getMetadata().getName()));
-            assertThat(pod.getSpec().getVolumes().get(3).getName(), is("ready-files"));
-            assertThat(pod.getSpec().getVolumes().get(3).getEmptyDir(), is(notNullValue()));
+            assertThat(pod.getSpec().getVolumes().get(1).getName(), is(VolumeUtils.SERVICE_ACCOUNT_TOKEN_VOLUME_NAME));
+            assertThat(pod.getSpec().getVolumes().get(1).getProjected(), is(notNullValue()));
+            assertThat(pod.getSpec().getVolumes().get(2).getName(), is(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME));
+            assertThat(pod.getSpec().getVolumes().get(2).getEmptyDir(), is(notNullValue()));
+            assertThat(pod.getSpec().getVolumes().get(3).getName(), is("kafka-metrics-and-logging"));
+            assertThat(pod.getSpec().getVolumes().get(3).getConfigMap().getName(), is(pod.getMetadata().getName()));
+            assertThat(pod.getSpec().getVolumes().get(4).getName(), is("ready-files"));
+            assertThat(pod.getSpec().getVolumes().get(4).getEmptyDir(), is(notNullValue()));
         }
 
         // Mixed nodes
@@ -3449,22 +3463,26 @@ public class KafkaClusterTest {
             assertThat(pod.getSpec().getContainers().get(0).getEnv().stream().filter(e -> AbstractModel.ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED.equals(e.getName())).findFirst().orElseThrow().getValue(), is(Boolean.toString(JvmOptions.DEFAULT_GC_LOGGING_ENABLED)));
             assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(0).getName(), is("data-0"));
             assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(0).getMountPath(), is("/var/lib/kafka/data-0"));
-            assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(1).getName(), is(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME));
-            assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(1).getMountPath(), is(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_MOUNT_PATH));
-            assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(2).getName(), is("kafka-metrics-and-logging"));
-            assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(2).getMountPath(), is("/opt/kafka/custom-config/"));
-            assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(3).getName(), is("ready-files"));
-            assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(3).getMountPath(), is("/var/opt/kafka"));
+            assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(1).getName(), is(VolumeUtils.SERVICE_ACCOUNT_TOKEN_VOLUME_NAME));
+            assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(1).getMountPath(), is("/var/run/secrets/kubernetes.io/serviceaccount"));
+            assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(2).getName(), is(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME));
+            assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(2).getMountPath(), is(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_MOUNT_PATH));
+            assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(3).getName(), is("kafka-metrics-and-logging"));
+            assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(3).getMountPath(), is("/opt/kafka/custom-config/"));
+            assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(4).getName(), is("ready-files"));
+            assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(4).getMountPath(), is("/var/opt/kafka"));
 
-            assertThat(pod.getSpec().getVolumes().size(), is(4));
+            assertThat(pod.getSpec().getVolumes().size(), is(5));
             assertThat(pod.getSpec().getVolumes().get(0).getName(), is("data-0"));
             assertThat(pod.getSpec().getVolumes().get(0).getPersistentVolumeClaim(), is(notNullValue()));
-            assertThat(pod.getSpec().getVolumes().get(1).getName(), is(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME));
-            assertThat(pod.getSpec().getVolumes().get(1).getEmptyDir(), is(notNullValue()));
-            assertThat(pod.getSpec().getVolumes().get(2).getName(), is("kafka-metrics-and-logging"));
-            assertThat(pod.getSpec().getVolumes().get(2).getConfigMap().getName(), is(pod.getMetadata().getName()));
-            assertThat(pod.getSpec().getVolumes().get(3).getName(), is("ready-files"));
-            assertThat(pod.getSpec().getVolumes().get(3).getEmptyDir(), is(notNullValue()));
+            assertThat(pod.getSpec().getVolumes().get(1).getName(), is(VolumeUtils.SERVICE_ACCOUNT_TOKEN_VOLUME_NAME));
+            assertThat(pod.getSpec().getVolumes().get(1).getProjected(), is(notNullValue()));
+            assertThat(pod.getSpec().getVolumes().get(2).getName(), is(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME));
+            assertThat(pod.getSpec().getVolumes().get(2).getEmptyDir(), is(notNullValue()));
+            assertThat(pod.getSpec().getVolumes().get(3).getName(), is("kafka-metrics-and-logging"));
+            assertThat(pod.getSpec().getVolumes().get(3).getConfigMap().getName(), is(pod.getMetadata().getName()));
+            assertThat(pod.getSpec().getVolumes().get(4).getName(), is("ready-files"));
+            assertThat(pod.getSpec().getVolumes().get(4).getEmptyDir(), is(notNullValue()));
         }
 
         // Brokers
@@ -3506,22 +3524,26 @@ public class KafkaClusterTest {
             assertThat(pod.getSpec().getContainers().get(0).getEnv().stream().filter(e -> AbstractModel.ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED.equals(e.getName())).findFirst().orElseThrow().getValue(), is(Boolean.toString(JvmOptions.DEFAULT_GC_LOGGING_ENABLED)));
             assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(0).getName(), is("data-0"));
             assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(0).getMountPath(), is("/var/lib/kafka/data-0"));
-            assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(1).getName(), is(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME));
-            assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(1).getMountPath(), is(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_MOUNT_PATH));
-            assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(2).getName(), is("kafka-metrics-and-logging"));
-            assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(2).getMountPath(), is("/opt/kafka/custom-config/"));
-            assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(3).getName(), is("ready-files"));
-            assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(3).getMountPath(), is("/var/opt/kafka"));
+            assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(1).getName(), is(VolumeUtils.SERVICE_ACCOUNT_TOKEN_VOLUME_NAME));
+            assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(1).getMountPath(), is("/var/run/secrets/kubernetes.io/serviceaccount"));
+            assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(2).getName(), is(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME));
+            assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(2).getMountPath(), is(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_MOUNT_PATH));
+            assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(3).getName(), is("kafka-metrics-and-logging"));
+            assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(3).getMountPath(), is("/opt/kafka/custom-config/"));
+            assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(4).getName(), is("ready-files"));
+            assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(4).getMountPath(), is("/var/opt/kafka"));
 
-            assertThat(pod.getSpec().getVolumes().size(), is(4));
+            assertThat(pod.getSpec().getVolumes().size(), is(5));
             assertThat(pod.getSpec().getVolumes().get(0).getName(), is("data-0"));
             assertThat(pod.getSpec().getVolumes().get(0).getPersistentVolumeClaim(), is(notNullValue()));
-            assertThat(pod.getSpec().getVolumes().get(1).getName(), is(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME));
-            assertThat(pod.getSpec().getVolumes().get(1).getEmptyDir(), is(notNullValue()));
-            assertThat(pod.getSpec().getVolumes().get(2).getName(), is("kafka-metrics-and-logging"));
-            assertThat(pod.getSpec().getVolumes().get(2).getConfigMap().getName(), is(pod.getMetadata().getName()));
-            assertThat(pod.getSpec().getVolumes().get(3).getName(), is("ready-files"));
-            assertThat(pod.getSpec().getVolumes().get(3).getEmptyDir(), is(notNullValue()));
+            assertThat(pod.getSpec().getVolumes().get(1).getName(), is(VolumeUtils.SERVICE_ACCOUNT_TOKEN_VOLUME_NAME));
+            assertThat(pod.getSpec().getVolumes().get(1).getProjected(), is(notNullValue()));
+            assertThat(pod.getSpec().getVolumes().get(2).getName(), is(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME));
+            assertThat(pod.getSpec().getVolumes().get(2).getEmptyDir(), is(notNullValue()));
+            assertThat(pod.getSpec().getVolumes().get(3).getName(), is("kafka-metrics-and-logging"));
+            assertThat(pod.getSpec().getVolumes().get(3).getConfigMap().getName(), is(pod.getMetadata().getName()));
+            assertThat(pod.getSpec().getVolumes().get(4).getName(), is("ready-files"));
+            assertThat(pod.getSpec().getVolumes().get(4).getEmptyDir(), is(notNullValue()));
         }
     }
 
@@ -3739,20 +3761,22 @@ public class KafkaClusterTest {
                 assertThat(pod.getSpec().getTolerations(), is(toleration));
                 assertThat(pod.getSpec().getHostUsers(), is(false));
 
-                assertThat(pod.getSpec().getVolumes().size(), is(6));
+                assertThat(pod.getSpec().getVolumes().size(), is(7));
                 assertThat(pod.getSpec().getVolumes().get(0).getName(), is("data-0"));
                 assertThat(pod.getSpec().getVolumes().get(0).getPersistentVolumeClaim(), is(notNullValue()));
-                assertThat(pod.getSpec().getVolumes().get(1).getName(), is(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME));
-                assertThat(pod.getSpec().getVolumes().get(1).getEmptyDir(), is(notNullValue()));
-                assertThat(pod.getSpec().getVolumes().get(1).getEmptyDir().getSizeLimit(), is(new Quantity("10Mi")));
-                assertThat(pod.getSpec().getVolumes().get(2).getName(), is("kafka-metrics-and-logging"));
-                assertThat(pod.getSpec().getVolumes().get(2).getConfigMap().getName(), is(pod.getMetadata().getName()));
-                assertThat(pod.getSpec().getVolumes().get(3).getName(), is("ready-files"));
-                assertThat(pod.getSpec().getVolumes().get(3).getEmptyDir(), is(notNullValue()));
-                assertThat(pod.getSpec().getVolumes().get(4).getName(), is("secret-volume-name"));
-                assertThat(pod.getSpec().getVolumes().get(4).getSecret(), is(notNullValue()));
-                assertThat(pod.getSpec().getVolumes().get(5).getName(), is("pvc-volume-name"));
-                assertThat(pod.getSpec().getVolumes().get(5).getPersistentVolumeClaim().getClaimName(), is("my-pvc-" + pod.getMetadata().getName().substring(pod.getMetadata().getName().lastIndexOf("-") + 1)));
+                assertThat(pod.getSpec().getVolumes().get(1).getName(), is(VolumeUtils.SERVICE_ACCOUNT_TOKEN_VOLUME_NAME));
+                assertThat(pod.getSpec().getVolumes().get(1).getProjected(), is(notNullValue()));
+                assertThat(pod.getSpec().getVolumes().get(2).getName(), is(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME));
+                assertThat(pod.getSpec().getVolumes().get(2).getEmptyDir(), is(notNullValue()));
+                assertThat(pod.getSpec().getVolumes().get(2).getEmptyDir().getSizeLimit(), is(new Quantity("10Mi")));
+                assertThat(pod.getSpec().getVolumes().get(3).getName(), is("kafka-metrics-and-logging"));
+                assertThat(pod.getSpec().getVolumes().get(3).getConfigMap().getName(), is(pod.getMetadata().getName()));
+                assertThat(pod.getSpec().getVolumes().get(4).getName(), is("ready-files"));
+                assertThat(pod.getSpec().getVolumes().get(4).getEmptyDir(), is(notNullValue()));
+                assertThat(pod.getSpec().getVolumes().get(5).getName(), is("secret-volume-name"));
+                assertThat(pod.getSpec().getVolumes().get(5).getSecret(), is(notNullValue()));
+                assertThat(pod.getSpec().getVolumes().get(6).getName(), is("pvc-volume-name"));
+                assertThat(pod.getSpec().getVolumes().get(6).getPersistentVolumeClaim().getClaimName(), is("my-pvc-" + pod.getMetadata().getName().substring(pod.getMetadata().getName().lastIndexOf("-") + 1)));
 
                 // Containers
                 assertThat(pod.getSpec().getContainers().size(), is(1));
@@ -3773,19 +3797,21 @@ public class KafkaClusterTest {
                 assertThat(pod.getSpec().getContainers().get(0).getEnv().stream().filter(e -> envVar2.getName().equals(e.getName())).findFirst().orElseThrow().getValue(), is(envVar2.getValue()));
                 assertThat(pod.getSpec().getContainers().get(0).getEnv().stream().filter(e -> envVar3.getName().equals(e.getName())).findFirst().orElseThrow().getValue(), is(not(envVar3.getValue())));
 
-                assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().size(), is(6));
+                assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().size(), is(7));
                 assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(0).getName(), is("data-0"));
                 assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(0).getMountPath(), is("/var/lib/kafka/data-0"));
-                assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(1).getName(), is(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME));
-                assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(1).getMountPath(), is(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_MOUNT_PATH));
-                assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(2).getName(), is("kafka-metrics-and-logging"));
-                assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(2).getMountPath(), is("/opt/kafka/custom-config/"));
-                assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(3).getName(), is("ready-files"));
-                assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(3).getMountPath(), is("/var/opt/kafka"));
-                assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(4).getName(), is("secret-volume-name"));
-                assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(4).getMountPath(), is("/mnt/secret-volume"));
-                assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(5).getName(), is("pvc-volume-name"));
-                assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(5).getMountPath(), is("/mnt/pvc-volume-name"));
+                assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(1).getName(), is(VolumeUtils.SERVICE_ACCOUNT_TOKEN_VOLUME_NAME));
+                assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(1).getMountPath(), is("/var/run/secrets/kubernetes.io/serviceaccount"));
+                assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(2).getName(), is(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME));
+                assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(2).getMountPath(), is(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_MOUNT_PATH));
+                assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(3).getName(), is("kafka-metrics-and-logging"));
+                assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(3).getMountPath(), is("/opt/kafka/custom-config/"));
+                assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(4).getName(), is("ready-files"));
+                assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(4).getMountPath(), is("/var/opt/kafka"));
+                assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(5).getName(), is("secret-volume-name"));
+                assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(5).getMountPath(), is("/mnt/secret-volume"));
+                assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(6).getName(), is("pvc-volume-name"));
+                assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(6).getMountPath(), is("/mnt/pvc-volume-name"));
             }
         }
     }
@@ -4068,18 +4094,20 @@ public class KafkaClusterTest {
                     assertThat(pod.getSpec().getAffinity(), is(poolAffinity));
                     assertThat(pod.getSpec().getTolerations(), is(poolToleration));
 
-                    assertThat(pod.getSpec().getVolumes().size(), is(5));
+                    assertThat(pod.getSpec().getVolumes().size(), is(6));
                     assertThat(pod.getSpec().getVolumes().get(0).getName(), is("data-0"));
                     assertThat(pod.getSpec().getVolumes().get(0).getPersistentVolumeClaim(), is(notNullValue()));
-                    assertThat(pod.getSpec().getVolumes().get(1).getName(), is(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME));
-                    assertThat(pod.getSpec().getVolumes().get(1).getEmptyDir(), is(notNullValue()));
-                    assertThat(pod.getSpec().getVolumes().get(1).getEmptyDir().getSizeLimit(), is(new Quantity("10Mi")));
-                    assertThat(pod.getSpec().getVolumes().get(2).getName(), is("kafka-metrics-and-logging"));
-                    assertThat(pod.getSpec().getVolumes().get(2).getConfigMap().getName(), is(pod.getMetadata().getName()));
-                    assertThat(pod.getSpec().getVolumes().get(3).getName(), is("ready-files"));
-                    assertThat(pod.getSpec().getVolumes().get(3).getEmptyDir(), is(notNullValue()));
-                    assertThat(pod.getSpec().getVolumes().get(4).getName(), is("secret-volume-name2"));
-                    assertThat(pod.getSpec().getVolumes().get(4).getSecret(), is(notNullValue()));
+                    assertThat(pod.getSpec().getVolumes().get(1).getName(), is(VolumeUtils.SERVICE_ACCOUNT_TOKEN_VOLUME_NAME));
+                    assertThat(pod.getSpec().getVolumes().get(1).getProjected(), is(notNullValue()));
+                    assertThat(pod.getSpec().getVolumes().get(2).getName(), is(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME));
+                    assertThat(pod.getSpec().getVolumes().get(2).getEmptyDir(), is(notNullValue()));
+                    assertThat(pod.getSpec().getVolumes().get(2).getEmptyDir().getSizeLimit(), is(new Quantity("10Mi")));
+                    assertThat(pod.getSpec().getVolumes().get(3).getName(), is("kafka-metrics-and-logging"));
+                    assertThat(pod.getSpec().getVolumes().get(3).getConfigMap().getName(), is(pod.getMetadata().getName()));
+                    assertThat(pod.getSpec().getVolumes().get(4).getName(), is("ready-files"));
+                    assertThat(pod.getSpec().getVolumes().get(4).getEmptyDir(), is(notNullValue()));
+                    assertThat(pod.getSpec().getVolumes().get(5).getName(), is("secret-volume-name2"));
+                    assertThat(pod.getSpec().getVolumes().get(5).getSecret(), is(notNullValue()));
 
                     // Containers
                     assertThat(pod.getSpec().getContainers().size(), is(1));
@@ -4091,17 +4119,19 @@ public class KafkaClusterTest {
                     assertThat(pod.getSpec().getContainers().get(0).getResources().getRequests(), is(Map.of("cpu", new Quantity("100m"), "memory", new Quantity("4Gi"))));
                     assertThat(pod.getSpec().getContainers().get(0).getResources().getLimits(), is(Map.of("cpu", new Quantity("500m"), "memory", new Quantity("8Gi"))));
 
-                    assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().size(), is(5));
+                    assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().size(), is(6));
                     assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(0).getName(), is("data-0"));
                     assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(0).getMountPath(), is("/var/lib/kafka/data-0"));
-                    assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(1).getName(), is(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME));
-                    assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(1).getMountPath(), is(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_MOUNT_PATH));
-                    assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(2).getName(), is("kafka-metrics-and-logging"));
-                    assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(2).getMountPath(), is("/opt/kafka/custom-config/"));
-                    assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(3).getName(), is("ready-files"));
-                    assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(3).getMountPath(), is("/var/opt/kafka"));
-                    assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(4).getName(), is("secret-volume-name2"));
-                    assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(4).getMountPath(), is("/mnt/secret-volume2"));
+                    assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(1).getName(), is(VolumeUtils.SERVICE_ACCOUNT_TOKEN_VOLUME_NAME));
+                    assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(1).getMountPath(), is("/var/run/secrets/kubernetes.io/serviceaccount"));
+                    assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(2).getName(), is(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME));
+                    assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(2).getMountPath(), is(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_MOUNT_PATH));
+                    assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(3).getName(), is("kafka-metrics-and-logging"));
+                    assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(3).getMountPath(), is("/opt/kafka/custom-config/"));
+                    assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(4).getName(), is("ready-files"));
+                    assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(4).getMountPath(), is("/var/opt/kafka"));
+                    assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(5).getName(), is("secret-volume-name2"));
+                    assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(5).getMountPath(), is("/mnt/secret-volume2"));
                 } else {
                     assertThat(pod.getSpec().getPriorityClassName(), is("top-priority"));
                     assertThat(pod.getSpec().getSchedulerName(), is("my-scheduler"));
@@ -4118,18 +4148,20 @@ public class KafkaClusterTest {
                     assertThat(pod.getSpec().getAffinity(), is(affinity));
                     assertThat(pod.getSpec().getTolerations(), is(toleration));
 
-                    assertThat(pod.getSpec().getVolumes().size(), is(5));
+                    assertThat(pod.getSpec().getVolumes().size(), is(6));
                     assertThat(pod.getSpec().getVolumes().get(0).getName(), is("data-0"));
                     assertThat(pod.getSpec().getVolumes().get(0).getPersistentVolumeClaim(), is(notNullValue()));
-                    assertThat(pod.getSpec().getVolumes().get(1).getName(), is(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME));
-                    assertThat(pod.getSpec().getVolumes().get(1).getEmptyDir(), is(notNullValue()));
-                    assertThat(pod.getSpec().getVolumes().get(1).getEmptyDir().getSizeLimit(), is(new Quantity("13Mi")));
-                    assertThat(pod.getSpec().getVolumes().get(2).getName(), is("kafka-metrics-and-logging"));
-                    assertThat(pod.getSpec().getVolumes().get(2).getConfigMap().getName(), is(pod.getMetadata().getName()));
-                    assertThat(pod.getSpec().getVolumes().get(3).getName(), is("ready-files"));
-                    assertThat(pod.getSpec().getVolumes().get(3).getEmptyDir(), is(notNullValue()));
-                    assertThat(pod.getSpec().getVolumes().get(4).getName(), is("secret-volume-name"));
-                    assertThat(pod.getSpec().getVolumes().get(4).getSecret(), is(notNullValue()));
+                    assertThat(pod.getSpec().getVolumes().get(1).getName(), is(VolumeUtils.SERVICE_ACCOUNT_TOKEN_VOLUME_NAME));
+                    assertThat(pod.getSpec().getVolumes().get(1).getProjected(), is(notNullValue()));
+                    assertThat(pod.getSpec().getVolumes().get(2).getName(), is(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME));
+                    assertThat(pod.getSpec().getVolumes().get(2).getEmptyDir(), is(notNullValue()));
+                    assertThat(pod.getSpec().getVolumes().get(2).getEmptyDir().getSizeLimit(), is(new Quantity("13Mi")));
+                    assertThat(pod.getSpec().getVolumes().get(3).getName(), is("kafka-metrics-and-logging"));
+                    assertThat(pod.getSpec().getVolumes().get(3).getConfigMap().getName(), is(pod.getMetadata().getName()));
+                    assertThat(pod.getSpec().getVolumes().get(4).getName(), is("ready-files"));
+                    assertThat(pod.getSpec().getVolumes().get(4).getEmptyDir(), is(notNullValue()));
+                    assertThat(pod.getSpec().getVolumes().get(5).getName(), is("secret-volume-name"));
+                    assertThat(pod.getSpec().getVolumes().get(5).getSecret(), is(notNullValue()));
 
                     // Containers
                     assertThat(pod.getSpec().getContainers().size(), is(1));
@@ -4140,17 +4172,19 @@ public class KafkaClusterTest {
                     assertThat(pod.getSpec().getContainers().get(0).getEnv().stream().filter(e -> envVar3.getName().equals(e.getName())).findFirst().orElseThrow().getValue(), is(not(envVar3.getValue())));
                     assertThat(pod.getSpec().getContainers().get(0).getResources(), is(nullValue()));
 
-                    assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().size(), is(5));
+                    assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().size(), is(6));
                     assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(0).getName(), is("data-0"));
                     assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(0).getMountPath(), is("/var/lib/kafka/data-0"));
-                    assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(1).getName(), is(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME));
-                    assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(1).getMountPath(), is(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_MOUNT_PATH));
-                    assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(2).getName(), is("kafka-metrics-and-logging"));
-                    assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(2).getMountPath(), is("/opt/kafka/custom-config/"));
-                    assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(3).getName(), is("ready-files"));
-                    assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(3).getMountPath(), is("/var/opt/kafka"));
-                    assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(4).getName(), is("secret-volume-name"));
-                    assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(4).getMountPath(), is("/mnt/secret-volume"));
+                    assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(1).getName(), is(VolumeUtils.SERVICE_ACCOUNT_TOKEN_VOLUME_NAME));
+                    assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(1).getMountPath(), is("/var/run/secrets/kubernetes.io/serviceaccount"));
+                    assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(2).getName(), is(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME));
+                    assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(2).getMountPath(), is(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_MOUNT_PATH));
+                    assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(3).getName(), is("kafka-metrics-and-logging"));
+                    assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(3).getMountPath(), is("/opt/kafka/custom-config/"));
+                    assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(4).getName(), is("ready-files"));
+                    assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(4).getMountPath(), is("/var/opt/kafka"));
+                    assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(5).getName(), is("secret-volume-name"));
+                    assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(5).getMountPath(), is("/mnt/secret-volume"));
                 }
             }
         }
@@ -4345,18 +4379,20 @@ public class KafkaClusterTest {
                     assertThat(pod.getSpec().getAffinity(), is(affinity));
                     assertThat(pod.getSpec().getTolerations(), is(toleration));
 
-                    assertThat(pod.getSpec().getVolumes().size(), is(5));
+                    assertThat(pod.getSpec().getVolumes().size(), is(6));
                     assertThat(pod.getSpec().getVolumes().get(0).getName(), is("data-0"));
                     assertThat(pod.getSpec().getVolumes().get(0).getPersistentVolumeClaim(), is(notNullValue()));
-                    assertThat(pod.getSpec().getVolumes().get(1).getName(), is(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME));
-                    assertThat(pod.getSpec().getVolumes().get(1).getEmptyDir(), is(notNullValue()));
-                    assertThat(pod.getSpec().getVolumes().get(1).getEmptyDir().getSizeLimit(), is(new Quantity("10Mi")));
-                    assertThat(pod.getSpec().getVolumes().get(2).getName(), is("kafka-metrics-and-logging"));
-                    assertThat(pod.getSpec().getVolumes().get(2).getConfigMap().getName(), is(pod.getMetadata().getName()));
-                    assertThat(pod.getSpec().getVolumes().get(3).getName(), is("ready-files"));
-                    assertThat(pod.getSpec().getVolumes().get(3).getEmptyDir(), is(notNullValue()));
-                    assertThat(pod.getSpec().getVolumes().get(4).getName(), is("secret-volume-name"));
-                    assertThat(pod.getSpec().getVolumes().get(4).getSecret(), is(notNullValue()));
+                    assertThat(pod.getSpec().getVolumes().get(1).getName(), is(VolumeUtils.SERVICE_ACCOUNT_TOKEN_VOLUME_NAME));
+                    assertThat(pod.getSpec().getVolumes().get(1).getProjected(), is(notNullValue()));
+                    assertThat(pod.getSpec().getVolumes().get(2).getName(), is(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME));
+                    assertThat(pod.getSpec().getVolumes().get(2).getEmptyDir(), is(notNullValue()));
+                    assertThat(pod.getSpec().getVolumes().get(2).getEmptyDir().getSizeLimit(), is(new Quantity("10Mi")));
+                    assertThat(pod.getSpec().getVolumes().get(3).getName(), is("kafka-metrics-and-logging"));
+                    assertThat(pod.getSpec().getVolumes().get(3).getConfigMap().getName(), is(pod.getMetadata().getName()));
+                    assertThat(pod.getSpec().getVolumes().get(4).getName(), is("ready-files"));
+                    assertThat(pod.getSpec().getVolumes().get(4).getEmptyDir(), is(notNullValue()));
+                    assertThat(pod.getSpec().getVolumes().get(5).getName(), is("secret-volume-name"));
+                    assertThat(pod.getSpec().getVolumes().get(5).getSecret(), is(notNullValue()));
 
                     // Containers
                     assertThat(pod.getSpec().getContainers().size(), is(1));
@@ -4368,17 +4404,19 @@ public class KafkaClusterTest {
                     assertThat(pod.getSpec().getContainers().get(0).getResources().getRequests(), is(Map.of("cpu", new Quantity("100m"), "memory", new Quantity("4Gi"))));
                     assertThat(pod.getSpec().getContainers().get(0).getResources().getLimits(), is(Map.of("cpu", new Quantity("500m"), "memory", new Quantity("8Gi"))));
 
-                    assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().size(), is(5));
+                    assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().size(), is(6));
                     assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(0).getName(), is("data-0"));
                     assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(0).getMountPath(), is("/var/lib/kafka/data-0"));
-                    assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(1).getName(), is(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME));
-                    assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(1).getMountPath(), is(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_MOUNT_PATH));
-                    assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(2).getName(), is("kafka-metrics-and-logging"));
-                    assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(2).getMountPath(), is("/opt/kafka/custom-config/"));
-                    assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(3).getName(), is("ready-files"));
-                    assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(3).getMountPath(), is("/var/opt/kafka"));
-                    assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(4).getName(), is("secret-volume-name"));
-                    assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(4).getMountPath(), is("/mnt/secret-volume"));
+                    assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(1).getName(), is(VolumeUtils.SERVICE_ACCOUNT_TOKEN_VOLUME_NAME));
+                    assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(1).getMountPath(), is("/var/run/secrets/kubernetes.io/serviceaccount"));
+                    assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(2).getName(), is(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME));
+                    assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(2).getMountPath(), is(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_MOUNT_PATH));
+                    assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(3).getName(), is("kafka-metrics-and-logging"));
+                    assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(3).getMountPath(), is("/opt/kafka/custom-config/"));
+                    assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(4).getName(), is("ready-files"));
+                    assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(4).getMountPath(), is("/var/opt/kafka"));
+                    assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(5).getName(), is("secret-volume-name"));
+                    assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(5).getMountPath(), is("/mnt/secret-volume"));
                 } else {
                     // Metadata
                     assertThat(pod.getMetadata().getLabels().entrySet().containsAll(podLabels.entrySet()), is(false));
@@ -4397,16 +4435,18 @@ public class KafkaClusterTest {
                     assertThat(pod.getSpec().getAffinity(), is(nullValue()));
                     assertThat(pod.getSpec().getTolerations(), is(List.of()));
 
-                    assertThat(pod.getSpec().getVolumes().size(), is(4));
+                    assertThat(pod.getSpec().getVolumes().size(), is(5));
                     assertThat(pod.getSpec().getVolumes().get(0).getName(), is("data-0"));
                     assertThat(pod.getSpec().getVolumes().get(0).getPersistentVolumeClaim(), is(notNullValue()));
-                    assertThat(pod.getSpec().getVolumes().get(1).getName(), is(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME));
-                    assertThat(pod.getSpec().getVolumes().get(1).getEmptyDir(), is(notNullValue()));
-                    assertThat(pod.getSpec().getVolumes().get(1).getEmptyDir().getSizeLimit(), is(new Quantity("5Mi")));
-                    assertThat(pod.getSpec().getVolumes().get(2).getName(), is("kafka-metrics-and-logging"));
-                    assertThat(pod.getSpec().getVolumes().get(2).getConfigMap().getName(), is(pod.getMetadata().getName()));
-                    assertThat(pod.getSpec().getVolumes().get(3).getName(), is("ready-files"));
-                    assertThat(pod.getSpec().getVolumes().get(3).getEmptyDir(), is(notNullValue()));
+                    assertThat(pod.getSpec().getVolumes().get(1).getName(), is(VolumeUtils.SERVICE_ACCOUNT_TOKEN_VOLUME_NAME));
+                    assertThat(pod.getSpec().getVolumes().get(1).getProjected(), is(notNullValue()));
+                    assertThat(pod.getSpec().getVolumes().get(2).getName(), is(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME));
+                    assertThat(pod.getSpec().getVolumes().get(2).getEmptyDir(), is(notNullValue()));
+                    assertThat(pod.getSpec().getVolumes().get(2).getEmptyDir().getSizeLimit(), is(new Quantity("5Mi")));
+                    assertThat(pod.getSpec().getVolumes().get(3).getName(), is("kafka-metrics-and-logging"));
+                    assertThat(pod.getSpec().getVolumes().get(3).getConfigMap().getName(), is(pod.getMetadata().getName()));
+                    assertThat(pod.getSpec().getVolumes().get(4).getName(), is("ready-files"));
+                    assertThat(pod.getSpec().getVolumes().get(4).getEmptyDir(), is(notNullValue()));
 
                     // Containers
                     assertThat(pod.getSpec().getContainers().size(), is(1));
@@ -4417,15 +4457,17 @@ public class KafkaClusterTest {
                     assertThat(pod.getSpec().getContainers().get(0).getEnv().stream().filter(e -> envVar3.getName().equals(e.getName())).findFirst().orElseThrow().getValue(), is("false"));
                     assertThat(pod.getSpec().getContainers().get(0).getResources(), is(nullValue()));
 
-                    assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().size(), is(4));
+                    assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().size(), is(5));
                     assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(0).getName(), is("data-0"));
                     assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(0).getMountPath(), is("/var/lib/kafka/data-0"));
-                    assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(1).getName(), is(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME));
-                    assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(1).getMountPath(), is(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_MOUNT_PATH));
-                    assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(2).getName(), is("kafka-metrics-and-logging"));
-                    assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(2).getMountPath(), is("/opt/kafka/custom-config/"));
-                    assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(3).getName(), is("ready-files"));
-                    assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(3).getMountPath(), is("/var/opt/kafka"));
+                    assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(1).getName(), is(VolumeUtils.SERVICE_ACCOUNT_TOKEN_VOLUME_NAME));
+                    assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(1).getMountPath(), is("/var/run/secrets/kubernetes.io/serviceaccount"));
+                    assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(2).getName(), is(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME));
+                    assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(2).getMountPath(), is(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_MOUNT_PATH));
+                    assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(3).getName(), is("kafka-metrics-and-logging"));
+                    assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(3).getMountPath(), is("/opt/kafka/custom-config/"));
+                    assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(4).getName(), is("ready-files"));
+                    assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(4).getMountPath(), is("/var/opt/kafka"));
                 }
             }
         }
@@ -4554,28 +4596,32 @@ public class KafkaClusterTest {
                 assertThat(pod.getSpec().getInitContainers().size(), is(0));
 
                 // Check volumes
-                assertThat(pod.getSpec().getVolumes().size(), is(4));
+                assertThat(pod.getSpec().getVolumes().size(), is(5));
                 assertThat(pod.getSpec().getVolumes().get(0).getName(), is("data-0"));
                 assertThat(pod.getSpec().getVolumes().get(0).getPersistentVolumeClaim(), is(notNullValue()));
-                assertThat(pod.getSpec().getVolumes().get(1).getName(), is(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME));
-                assertThat(pod.getSpec().getVolumes().get(1).getEmptyDir(), is(notNullValue()));
-                assertThat(pod.getSpec().getVolumes().get(1).getEmptyDir().getSizeLimit(), is(new Quantity("5Mi")));
-                assertThat(pod.getSpec().getVolumes().get(2).getName(), is("kafka-metrics-and-logging"));
-                assertThat(pod.getSpec().getVolumes().get(2).getConfigMap().getName(), is(pod.getMetadata().getName()));
-                assertThat(pod.getSpec().getVolumes().get(3).getName(), is("ready-files"));
-                assertThat(pod.getSpec().getVolumes().get(3).getEmptyDir(), is(notNullValue()));
+                assertThat(pod.getSpec().getVolumes().get(1).getName(), is(VolumeUtils.SERVICE_ACCOUNT_TOKEN_VOLUME_NAME));
+                assertThat(pod.getSpec().getVolumes().get(1).getProjected(), is(notNullValue()));
+                assertThat(pod.getSpec().getVolumes().get(2).getName(), is(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME));
+                assertThat(pod.getSpec().getVolumes().get(2).getEmptyDir(), is(notNullValue()));
+                assertThat(pod.getSpec().getVolumes().get(2).getEmptyDir().getSizeLimit(), is(new Quantity("5Mi")));
+                assertThat(pod.getSpec().getVolumes().get(3).getName(), is("kafka-metrics-and-logging"));
+                assertThat(pod.getSpec().getVolumes().get(3).getConfigMap().getName(), is(pod.getMetadata().getName()));
+                assertThat(pod.getSpec().getVolumes().get(4).getName(), is("ready-files"));
+                assertThat(pod.getSpec().getVolumes().get(4).getEmptyDir(), is(notNullValue()));
 
                 // Check volume mounts
                 assertThat(pod.getSpec().getContainers().size(), is(1));
-                assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().size(), is(4));
+                assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().size(), is(5));
                 assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(0).getName(), is("data-0"));
                 assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(0).getMountPath(), is("/var/lib/kafka/data-0"));
-                assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(1).getName(), is(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME));
-                assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(1).getMountPath(), is(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_MOUNT_PATH));
-                assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(2).getName(), is("kafka-metrics-and-logging"));
-                assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(2).getMountPath(), is("/opt/kafka/custom-config/"));
-                assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(3).getName(), is("ready-files"));
-                assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(3).getMountPath(), is("/var/opt/kafka"));
+                assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(1).getName(), is(VolumeUtils.SERVICE_ACCOUNT_TOKEN_VOLUME_NAME));
+                assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(1).getMountPath(), is("/var/run/secrets/kubernetes.io/serviceaccount"));
+                assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(2).getName(), is(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME));
+                assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(2).getMountPath(), is(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_MOUNT_PATH));
+                assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(3).getName(), is("kafka-metrics-and-logging"));
+                assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(3).getMountPath(), is("/opt/kafka/custom-config/"));
+                assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(4).getName(), is("ready-files"));
+                assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(4).getMountPath(), is("/var/opt/kafka"));
             }
         }
 
