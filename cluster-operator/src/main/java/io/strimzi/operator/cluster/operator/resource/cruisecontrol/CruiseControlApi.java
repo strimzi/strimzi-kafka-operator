@@ -6,7 +6,7 @@ package io.strimzi.operator.cluster.operator.resource.cruisecontrol;
 
 import io.strimzi.operator.common.Reconciliation;
 
-import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 
 /**
  * Cruise Control REST API interface definition
@@ -31,7 +31,7 @@ public interface CruiseControlApi {
      * @param verbose Whether the response from state endpoint should include more details.
      * @return A future for the response from the Cruise Control server with details of the Cruise Control server state.
      */
-    CompletableFuture<CruiseControlStateResponse> getCruiseControlState(Reconciliation reconciliation, String host, int port, boolean verbose);
+    CompletionStage<CruiseControlStateResponse> getCruiseControlState(Reconciliation reconciliation, String host, int port, boolean verbose);
 
     /**
      * Send a request to the Cruise Control server to perform a cluster rebalance.
@@ -45,7 +45,7 @@ public interface CruiseControlApi {
      *                       request.
      * @return A future for the rebalance response from the Cruise Control server containing details of the optimization.
      */
-    CompletableFuture<CruiseControlRebalanceResponse> rebalance(Reconciliation reconciliation, String host, int port, RebalanceOptions options, String userTaskId);
+    CompletionStage<CruiseControlRebalanceResponse> rebalance(Reconciliation reconciliation, String host, int port, RebalanceOptions options, String userTaskId);
 
     /**
      * Send a request to the Cruise Control server to perform a cluster rebalance when adding new brokers.
@@ -61,7 +61,7 @@ public interface CruiseControlApi {
      *                   request.
      * @return A future for the rebalance response from the Cruise Control server containing details of the optimization.
      */
-    CompletableFuture<CruiseControlRebalanceResponse> addBroker(Reconciliation reconciliation, String host, int port, AddBrokerOptions options, String userTaskId);
+    CompletionStage<CruiseControlRebalanceResponse> addBroker(Reconciliation reconciliation, String host, int port, AddBrokerOptions options, String userTaskId);
 
     /**
      * Send a request to the Cruise Control server to perform a cluster rebalance when removing existing brokers.
@@ -76,7 +76,7 @@ public interface CruiseControlApi {
      *                   request.
      * @return A future for the rebalance response from the Cruise Control server containing details of the optimization.
      */
-    CompletableFuture<CruiseControlRebalanceResponse> removeBroker(Reconciliation reconciliation, String host, int port, RemoveBrokerOptions options, String userTaskId);
+    CompletionStage<CruiseControlRebalanceResponse> removeBroker(Reconciliation reconciliation, String host, int port, RemoveBrokerOptions options, String userTaskId);
 
     /**
      * Send a request to the Cruise Control server to perform a cluster rebalance when moving replicas off a broker's volumes.
@@ -91,7 +91,7 @@ public interface CruiseControlApi {
      *                   request.
      * @return A future for the rebalance response from the Cruise Control server containing details of the optimization.
      */
-    CompletableFuture<CruiseControlRebalanceResponse> removeDisks(Reconciliation reconciliation, String host, int port, RemoveDisksOptions options, String userTaskId);
+    CompletionStage<CruiseControlRebalanceResponse> removeDisks(Reconciliation reconciliation, String host, int port, RemoveDisksOptions options, String userTaskId);
 
     /**
      *  Get the state of a specific task (e.g. a rebalance) from the Cruise Control server.
@@ -103,7 +103,7 @@ public interface CruiseControlApi {
      *                   This is used to retrieve the task's current state.
      * @return A future for the state of the specified task.
      */
-    CompletableFuture<CruiseControlUserTasksResponse> getUserTaskStatus(Reconciliation reconciliation, String host, int port, String userTaskID);
+    CompletionStage<CruiseControlUserTasksResponse> getUserTaskStatus(Reconciliation reconciliation, String host, int port, String userTaskID);
 
     /**
      *  Issue a stop command to the Cruise Control server. This will halt any task (e.g. a rebalance) which is currently
@@ -114,6 +114,6 @@ public interface CruiseControlApi {
      * @param port The port the Cruise Control Server is listening on.
      * @return A future for the response from the Cruise Control server indicating if the stop command was issued.
      */
-    CompletableFuture<CruiseControlResponse> stopExecution(Reconciliation reconciliation, String host, int port);
+    CompletionStage<CruiseControlResponse> stopExecution(Reconciliation reconciliation, String host, int port);
 }
 
