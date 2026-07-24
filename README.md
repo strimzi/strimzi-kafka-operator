@@ -2,12 +2,15 @@
 
 # Run Apache Kafka on Kubernetes and OpenShift
 
+[![OpenSSF Best Practices](https://www.bestpractices.dev/projects/13184/badge)](https://www.bestpractices.dev/projects/13184)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/strimzi/strimzi-kafka-operator/badge)](https://scorecard.dev/viewer/?uri=github.com/strimzi/strimzi-kafka-operator)
 [![Build Status](https://github.com/strimzi/strimzi-kafka-operator/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/strimzi/strimzi-kafka-operator/actions/workflows/build.yml?query=branch%3Amain)
 [![GitHub release](https://img.shields.io/github/release/strimzi/strimzi-kafka-operator.svg)](https://github.com/strimzi/strimzi-kafka-operator/releases/latest)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](http://www.apache.org/licenses/LICENSE-2.0)
 [![Twitter Follow](https://img.shields.io/twitter/follow/strimziio?style=social)](https://twitter.com/strimziio)
 [![Artifact Hub](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/strimzi-kafka-operator)](https://artifacthub.io/packages/search?repo=strimzi-kafka-operator)
+[![FOSSA Status](https://app.fossa.com/api/projects/custom%2B162%2Ftest-container-drain-cleaner-amd64.svg?type=shield&issueType=license)](https://app.fossa.com/projects/custom%2B162%2Ftest-container-drain-cleaner-amd64?ref=badge_shield&issueType=license)
+[![Known Vulnerabilities](https://snyk.io/test/github/strimzi/strimzi-kafka-operator/badge.svg)](https://snyk.io/test/github/strimzi/strimzi-kafka-operator)
 
 Strimzi provides a way to run an [Apache Kafka®][kafka] cluster on 
 [Kubernetes][k8s] or [OpenShift][os] in various deployment configurations.
