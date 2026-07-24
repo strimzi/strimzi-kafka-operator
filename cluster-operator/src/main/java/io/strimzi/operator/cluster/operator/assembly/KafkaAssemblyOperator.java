@@ -475,7 +475,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     config,
                     supplier,
                     pfa,
-                    vertx
+                    vertx,
+                    scalingDownBlockedNodes
             );
         }
 

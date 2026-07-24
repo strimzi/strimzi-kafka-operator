@@ -60,7 +60,7 @@ public class KafkaClusterSpec implements HasConfigurableMetrics, HasConfigurable
             + "node.id, process.roles, controller., metadata.log.dir, zookeeper.metadata.migration.enable, " // KRaft options
             + "client.quota.callback.static.kafka.admin., client.quota.callback.static.produce, client.quota.callback.static.fetch, "
             + "client.quota.callback.static.storage.per.volume.limit.min.available., client.quota.callback.static.excluded.principal.name.list, "
-            + "prometheus.metrics.reporter.";
+            + "prometheus.metrics.reporter., cordoned.log.dirs";
 
     /* When FORBIDDEN_PREFIX_EXCEPTIONS is updated, documentation/api/io.strimzi.api.kafka.model.kafka.KafkaClusterSpec.adoc must be updated accordingly. */
     public static final String FORBIDDEN_PREFIX_EXCEPTIONS = "zookeeper.connection.timeout.ms, sasl.server.max.receive.size, "

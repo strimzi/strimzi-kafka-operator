@@ -1842,17 +1842,19 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
      * @param nodeId              ID of the broker for which is this configuration generated
      * @param advertisedHostnames Map with advertised hostnames for different listeners
      * @param advertisedPorts     Map with advertised ports for different listeners
+     * @param cordoned            Whether the broker should be cordoned
      *
      * @return The Kafka broker configuration as a String
      */
-    public String generatePerBrokerConfiguration(int nodeId, Map<Integer, Map<String, String>> advertisedHostnames, Map<Integer, Map<String, String>> advertisedPorts)   {
+    public String generatePerBrokerConfiguration(int nodeId, Map<Integer, Map<String, String>> advertisedHostnames, Map<Integer, Map<String, String>> advertisedPorts, boolean cordoned)   {
         KafkaPool pool = nodePoolForNodeId(nodeId);
 
         return generatePerBrokerConfiguration(
                 pool.nodeRef(nodeId),
                 pool,
                 advertisedHostnames,
-                advertisedPorts
+                advertisedPorts,
+                cordoned
         );
     }
 
@@ -1863,14 +1865,16 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
      * @param pool                  Pool to which this node belongs - this is used to get pool-specific settings such as storage
      * @param advertisedHostnames   Map with advertised hostnames
      * @param advertisedPorts       Map with advertised ports
+     * @param cordoned              Whether the broker should be cordoned
      *
      * @return  String with the Kafka broker configuration
      */
-    private String generatePerBrokerConfiguration(NodeRef node, KafkaPool pool, Map<Integer, Map<String, String>> advertisedHostnames, Map<Integer, Map<String, String>> advertisedPorts)   {
+    private String generatePerBrokerConfiguration(NodeRef node, KafkaPool pool, Map<Integer, Map<String, String>> advertisedHostnames, Map<Integer, Map<String, String>> advertisedPorts, boolean cordoned)   {
         return new KafkaBrokerConfigurationBuilder(reconciliation, node)
                 .withRackId(rack)
                 .withKRaft(cluster, namespace, nodes())
                 .withKRaftMetadataLogDir(VolumeUtils.kraftMetadataPath(pool.storage))
+                .withCordonedLogDirs(cordoned, kafkaVersion)
                 .withLogDirs(VolumeUtils.createVolumeMounts(pool.storage, false))
                 .withListeners(cluster,
                         namespace,
@@ -1895,13 +1899,14 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
      * Generates a list of configuration ConfigMaps - one for each broker in the cluster. The ConfigMaps contain the
      * configurations which should be used by given broker. This is used with StrimziPodSets.
      *
-     * @param metricsAndLogging   Object with logging and metrics configuration collected from external user-provided config maps
-     * @param advertisedHostnames Map with advertised hostnames for different brokers and listeners
-     * @param advertisedPorts     Map with advertised ports for different brokers and listeners
+     * @param metricsAndLogging         Object with logging and metrics configuration collected from external user-provided config maps
+     * @param advertisedHostnames       Map with advertised hostnames for different brokers and listeners
+     * @param advertisedPorts           Map with advertised ports for different brokers and listeners
+     * @param scalingDownBlockedNodes   Set of node IDs that are blocked from scaling down and should be cordoned
      *
      * @return ConfigMap with the shared configuration.
      */
-    public List<ConfigMap> generatePerBrokerConfigurationConfigMaps(MetricsAndLogging metricsAndLogging, Map<Integer, Map<String, String>> advertisedHostnames, Map<Integer, Map<String, String>> advertisedPorts)   {
+    public List<ConfigMap> generatePerBrokerConfigurationConfigMaps(MetricsAndLogging metricsAndLogging, Map<Integer, Map<String, String>> advertisedHostnames, Map<Integer, Map<String, String>> advertisedPorts, Set<Integer> scalingDownBlockedNodes)   {
         String parsedMetrics = null;
         if (metrics instanceof JmxPrometheusExporterModel exporter) {
             parsedMetrics = exporter.metricsJson(reconciliation, metricsAndLogging.metricsCm());
@@ -1918,7 +1923,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
                 }
 
                 data.put(LoggingModel.LOG4J2_CONFIG_MAP_KEY, parsedLogging);
-                data.put(BROKER_CONFIGURATION_FILENAME, generatePerBrokerConfiguration(node, pool, advertisedHostnames, advertisedPorts));
+                data.put(BROKER_CONFIGURATION_FILENAME, generatePerBrokerConfiguration(node, pool, advertisedHostnames, advertisedPorts, scalingDownBlockedNodes.contains(node.nodeId())));
                 data.put(BROKER_CLUSTER_ID_FILENAME, clusterId);
                 data.put(BROKER_METADATA_VERSION_FILENAME, metadataVersion);
 

@@ -2312,13 +2312,13 @@ public class KafkaClusterListenersTest {
                 .build();
         List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, List.of(POOL_CONTROLLERS, POOL_MIXED, POOL_BROKERS), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, SHARED_ENV_PROVIDER);
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, null, SHARED_ENV_PROVIDER);
-        String brokerConfig = kc.generatePerBrokerConfiguration(5, ADVERTISED_HOSTNAMES, ADVERTISED_PORTS);
+        String brokerConfig = kc.generatePerBrokerConfiguration(5, ADVERTISED_HOSTNAMES, ADVERTISED_PORTS, false);
 
         assertThat(brokerConfig, is(containsString("listener.name.external-9094.ssl.keystore.certificate.chain=${strimzisecrets:namespace/foo-brokers-5:external-9094.crt}")));
         assertThat(brokerConfig, is(containsString("listener.name.external-9094.ssl.keystore.key=${strimzisecrets:namespace/foo-brokers-5:external-9094.key}")));
         assertThat(brokerConfig, is(containsString("listener.name.external-9094.ssl.keystore.type=PEM")));
 
-        String controllerConfig = kc.generatePerBrokerConfiguration(0, Map.of(0, Map.of("CONTROLPLANE_9090", "controller-0")), Map.of(0, Map.of("CONTROLPLANE_9090", "9090")));
+        String controllerConfig = kc.generatePerBrokerConfiguration(0, Map.of(0, Map.of("CONTROLPLANE_9090", "controller-0")), Map.of(0, Map.of("CONTROLPLANE_9090", "9090")), false);
         assertThat(controllerConfig, not(containsString("listener.name.external-9094")));
     }
 
@@ -2349,13 +2349,13 @@ public class KafkaClusterListenersTest {
                 .build();
         List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, List.of(POOL_CONTROLLERS, POOL_MIXED, POOL_BROKERS), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, SHARED_ENV_PROVIDER);
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, null, SHARED_ENV_PROVIDER);
-        String mixedConfig = kc.generatePerBrokerConfiguration(4, ADVERTISED_HOSTNAMES, ADVERTISED_PORTS);
+        String mixedConfig = kc.generatePerBrokerConfiguration(4, ADVERTISED_HOSTNAMES, ADVERTISED_PORTS, false);
 
         assertThat(mixedConfig, is(containsString("listener.name.tls-9093.ssl.keystore.certificate.chain=${strimzisecrets:namespace/foo-mixed-4:tls-9093.crt}")));
         assertThat(mixedConfig, is(containsString("listener.name.tls-9093.ssl.keystore.key=${strimzisecrets:namespace/foo-mixed-4:tls-9093.key}")));
         assertThat(mixedConfig, is(containsString("listener.name.tls-9093.ssl.keystore.type=PEM")));
 
-        String controllerConfig = kc.generatePerBrokerConfiguration(0, Map.of(0, Map.of("CONTROLPLANE_9090", "controller-0")), Map.of(0, Map.of("CONTROLPLANE_9090", "9090")));
+        String controllerConfig = kc.generatePerBrokerConfiguration(0, Map.of(0, Map.of("CONTROLPLANE_9090", "controller-0")), Map.of(0, Map.of("CONTROLPLANE_9090", "9090")), false);
         assertThat(controllerConfig, not(containsString("listener.name.tls-9093")));
     }
 

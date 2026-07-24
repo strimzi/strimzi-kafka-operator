@@ -167,6 +167,7 @@ public class KafkaReconciler {
     /* test */ KafkaListenersReconciler.ReconciliationResult listenerReconciliationResults; // Result of the listener reconciliation with the listener details
 
     private final KafkaAutoRebalanceStatus kafkaAutoRebalanceStatus;
+    private final Set<Integer> scalingDownBlockedNodes;
 
     /**
      * Constructs the Kafka reconciler
@@ -181,6 +182,7 @@ public class KafkaReconciler {
      * @param supplier                  Supplier with Kubernetes Resource Operators
      * @param pfa                       PlatformFeaturesAvailability describing the environment we run in
      * @param vertx                     Vert.x instance
+     * @param scalingDownBlockedNodes   Set of node IDs that are blocked from scaling down and should be cordoned
      */
     public KafkaReconciler(
             Reconciliation reconciliation,
@@ -192,7 +194,8 @@ public class KafkaReconciler {
             ClusterOperatorConfig config,
             ResourceOperatorSupplier supplier,
             PlatformFeaturesAvailability pfa,
-            Vertx vertx
+            Vertx vertx,
+            Set<Integer> scalingDownBlockedNodes
     ) {
         this.reconciliation = reconciliation;
         this.vertx = vertx;
@@ -234,6 +237,8 @@ public class KafkaReconciler {
 
         this.adminClientProvider = supplier.adminClientProvider;
         this.kafkaAgentClientProvider = supplier.kafkaAgentClientProvider;
+
+        this.scalingDownBlockedNodes = scalingDownBlockedNodes;
     }
 
     /**
@@ -477,7 +482,7 @@ public class KafkaReconciler {
                     this.coTlsPemIdentity,
                     adminClientProvider,
                     kafkaAgentClientProvider,
-                    brokerId -> kafka.generatePerBrokerConfiguration(brokerId, kafkaAdvertisedHostnames, kafkaAdvertisedPorts),
+                    brokerId -> kafka.generatePerBrokerConfiguration(brokerId, kafkaAdvertisedHostnames, kafkaAdvertisedPorts, scalingDownBlockedNodes.contains(brokerId)),
                     kafka.getKafkaVersion(),
                     allowReconfiguration,
                     eventsPublisher
@@ -672,7 +677,7 @@ public class KafkaReconciler {
     protected Future<Void> perBrokerKafkaConfiguration(MetricsAndLogging metricsAndLogging) {
         return VertxUtil.toFuture(configMapOperator.listAsync(reconciliation.namespace(), kafka.getSelectorLabels()))
                 .compose(existingConfigMaps -> {
-                    List<ConfigMap> desiredConfigMaps = kafka.generatePerBrokerConfigurationConfigMaps(metricsAndLogging, listenerReconciliationResults.advertisedHostnames, listenerReconciliationResults.advertisedPorts);
+                    List<ConfigMap> desiredConfigMaps = kafka.generatePerBrokerConfigurationConfigMaps(metricsAndLogging, listenerReconciliationResults.advertisedHostnames, listenerReconciliationResults.advertisedPorts, scalingDownBlockedNodes);
                     List<Future<?>> ops = new ArrayList<>();
 
                     // Delete all existing ConfigMaps which are not desired and are not the shared config map

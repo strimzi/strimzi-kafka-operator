@@ -56,6 +56,9 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 @SuppressWarnings({"checkstyle:classdataabstractioncoupling", "checkstyle:NoFullyQualifiedClassNames"}) // NoFullyQualifiedClassNames is false positive, fully qualified class name used in a string
 public class KafkaBrokerConfigurationBuilderTest {
     private final static NodeRef NODE_REF = new NodeRef("my-cluster-kafka-2", 2, "kafka", false, true);
+    private final static KafkaVersion KAFKA_4_2_0 = new KafkaVersion("4.2.0", "", "", false, false, "");
+    private final static KafkaVersion KAFKA_4_3_0 = new KafkaVersion("4.3.0", "", "", false, false, "");
+    private final static KafkaVersion KAFKA_4_3_1 = new KafkaVersion("4.3.1", "", "", false, false, "");
 
     @Test
     public void testBrokerId()  {
@@ -1964,5 +1967,44 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "min.insync.replicas=1",
                 "auto.create.topics.enable=false",
                 "offsets.topic.replication.factor=3"));
+    }
+
+    @Test
+    public void testCordonedLogDirs() {
+        // Kafka 4.3.1 and cordoned: cordoned.log.dirs=* should be present
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
+                .withCordonedLogDirs(true, KAFKA_4_3_1)
+                .build();
+        assertThat(configuration, containsString("cordoned.log.dirs=*"));
+
+        // Kafka 4.3.1 and not cordoned: cordoned.log.dirs should not be present
+        configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
+                .withCordonedLogDirs(false, KAFKA_4_3_1)
+                .build();
+        assertThat(configuration, not(containsString("cordoned.log.dirs")));
+
+        // Kafka 4.3.0 (boundary) and cordoned: cordoned.log.dirs=* should be present
+        configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
+                .withCordonedLogDirs(true, KAFKA_4_3_0)
+                .build();
+        assertThat(configuration, containsString("cordoned.log.dirs=*"));
+
+        // Kafka 4.3.0 (boundary) and not cordoned: cordoned.log.dirs should not be present
+        configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
+                .withCordonedLogDirs(false, KAFKA_4_3_0)
+                .build();
+        assertThat(configuration, not(containsString("cordoned.log.dirs")));
+
+        // Kafka 4.2.0 and cordoned: version gating prevents cordoned.log.dirs
+        configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
+                .withCordonedLogDirs(true, KAFKA_4_2_0)
+                .build();
+        assertThat(configuration, not(containsString("cordoned.log.dirs")));
+
+        // Kafka 4.2.0 and not cordoned: cordoned.log.dirs should not be present
+        configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
+                .withCordonedLogDirs(false, KAFKA_4_2_0)
+                .build();
+        assertThat(configuration, not(containsString("cordoned.log.dirs")));
     }
 }
