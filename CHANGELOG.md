@@ -5,6 +5,7 @@
 * Add support for Apache Kafka 4.3.1
 * Support templated (per-pod) additional volumes for Kafka, Kafka Connect and Kafka MirrorMaker 2 operands
 * The `ServerSideApplyPhase1` feature gate moves to GA stage and is permanently enabled without the possibility to disable it.
+* Connectors that request the `stopped` or `paused` state via `spec.state` are now created directly in that state instead of being started first and then stopped or paused.
 
 ### Major changes, deprecations, and removals
 

@@ -12,6 +12,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
+import io.strimzi.api.kafka.model.common.ConnectorState;
 import io.strimzi.api.kafka.model.connect.ConnectorPlugin;
 import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.Reconciliation;
@@ -84,6 +85,46 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
                                 () -> createOrUpdatePutRequest(reconciliation, host, port, connectorName, configJson), "create/update");
                     } else {
                         LOGGER.debugCr(reconciliation, "Got {} response to PUT request to {}", statusCode, path);
+                        return CompletableFuture.failedFuture(new ConnectRestException(response, tryToExtractErrorMessage(reconciliation, response.body())));
+                    }
+                });
+    }
+
+    @Override
+    public CompletionStage<Map<String, Object>> createConnector(
+            Reconciliation reconciliation,
+            String host, int port,
+            String connectorName, JsonObject configJson, ConnectorState initialState) {
+        JsonObject request = new JsonObject()
+                .put("name", connectorName)
+                .put("config", configJson);
+        if (initialState != null) {
+            request.put("initial_state", initialState.name());
+        }
+        String data = request.toString();
+        String path = "/connectors";
+        LOGGER.debugCr(reconciliation, "Making POST request to {} with body {}", path, request);
+
+        HttpRequest httpRequest = HttpRequest.newBuilder()
+                .uri(URI.create(String.format("http://%s:%d%s", host, port, encodeURLString(path))))
+                .POST(HttpRequest.BodyPublishers.ofString(data))
+                .setHeader("Accept", "application/json")
+                .setHeader("Content-Type", "application/json")
+                .build();
+
+        return httpClient.sendAsync(httpRequest, HttpResponse.BodyHandlers.ofString())
+                .thenCompose(response -> {
+                    int statusCode = response.statusCode();
+                    if (statusCode == 201) {
+                        JsonNode json = parseToJsonNode(response);
+                        Map<String, Object> t = OBJECT_MAPPER.convertValue(json, TREE_TYPE);
+                        LOGGER.debugCr(reconciliation, "Got {} response to POST request to {}: {}", statusCode, path, t);
+                        return CompletableFuture.completedFuture(t);
+                    } else if (statusCode == 409) {
+                        return withBackoff(reconciliation, new BackOff(200L, 2, 10), connectorName, Collections.singleton(409),
+                                () -> createConnector(reconciliation, host, port, connectorName, configJson, initialState), "create");
+                    } else {
+                        LOGGER.debugCr(reconciliation, "Got {} response to POST request to {}", statusCode, path);
                         return CompletableFuture.failedFuture(new ConnectRestException(response, tryToExtractErrorMessage(reconciliation, response.body())));
                     }
                 });
