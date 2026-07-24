@@ -5,6 +5,7 @@
 * Add support for Apache Kafka 4.3.1
 * Support templated (per-pod) additional volumes for Kafka, Kafka Connect and Kafka MirrorMaker 2 operands
 * The `ServerSideApplyPhase1` feature gate moves to GA stage and is permanently enabled without the possibility to disable it.
+* Support for configuring Maven mirrors for Kafka Connect Build
 
 ### Major changes, deprecations, and removals
 

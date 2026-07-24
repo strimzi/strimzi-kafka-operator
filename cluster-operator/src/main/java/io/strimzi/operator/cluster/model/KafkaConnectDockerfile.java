@@ -151,7 +151,7 @@ public class KafkaConnectDockerfile {
 
                     // For handling custom repositories, we need to write custom Maven settings file
                     String settingsFile = "/tmp/" + artifactHash + ".xml";
-                    String settingsXml = "<settings xmlns=\"http://maven.apache.org/SETTINGS/1.0.0\"><profiles><profile><id>download</id><repositories><repository><id>custom-repo</id><url>" + escapeXml(repo) + "</url></repository></repositories></profile></profiles><activeProfiles><activeProfile>download</activeProfile></activeProfiles></settings>";
+                    String settingsXml = "<settings xmlns=\"http://maven.apache.org/SETTINGS/1.0.0\">" + mirrors(mvn) + "<profiles><profile><id>download</id><repositories><repository><id>custom-repo</id><url>" + escapeXml(repo) + "</url></repository></repositories></profile></profiles><activeProfiles><activeProfile>download</activeProfile></activeProfiles></settings>";
 
                     Cmd cmd;
                     String includeScopeParam = "-DincludeScope=" + (mvn.getIncludeScope() != null ? mvn.getIncludeScope().toValue() : "");
@@ -181,6 +181,21 @@ public class KafkaConnectDockerfile {
                 })
             );
         }
+    }
+
+    private String mirrors(MavenArtifact mvn) {
+        if (mvn.getMirrors() == null || mvn.getMirrors().isEmpty()) {
+            return "";
+        }
+
+        StringBuilder mirrors = new StringBuilder("<mirrors>");
+        for (int i = 0; i < mvn.getMirrors().size(); i++) {
+            mirrors.append("<mirror><id>strimzi-mirror-").append(i).append("</id><url>")
+                    .append(escapeXml(mvn.getMirrors().get(i).getUrl()))
+                    .append("</url><mirrorOf>*</mirrorOf></mirror>");
+        }
+        mirrors.append("</mirrors>");
+        return mirrors.toString();
     }
 
     private String assembleResourceUrl(String repo, MavenArtifact mvn, String extension) {
