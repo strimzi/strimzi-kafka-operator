@@ -13,6 +13,8 @@ import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
+import java.util.List;
+
 /**
  * Maven artifact represents an artifact which is downloaded from Maven repository
  */
@@ -21,7 +23,7 @@ import lombok.ToString;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({ "type", "repository", "group", "artifact", "version", "insecure", "includeScope" })
+@JsonPropertyOrder({ "type", "repository", "mirrors", "group", "artifact", "version", "insecure", "includeScope" })
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class MavenArtifact extends Artifact {
@@ -31,6 +33,7 @@ public class MavenArtifact extends Artifact {
     private String artifact;
     private String version;
     private String repository;
+    private List<MavenMirror> mirrors;
     private Boolean insecure;
     private MavenArtifactIncludeScope includeScope;
 
@@ -76,6 +79,18 @@ public class MavenArtifact extends Artifact {
 
     public void setRepository(String repository) {
         this.repository = repository;
+    }
+
+    @Description("List of Maven mirrors used to download the artifact and its dependencies. " +
+            "All repository requests during the build, including plugin repositories and Maven Central, are redirected to the configured mirror(s). " +
+            "Applicable to the `maven` artifact type only.")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public List<MavenMirror> getMirrors() {
+        return mirrors;
+    }
+
+    public void setMirrors(List<MavenMirror> mirrors) {
+        this.mirrors = mirrors;
     }
 
     @Description("By default, connections using TLS are verified to check they are secure. " +

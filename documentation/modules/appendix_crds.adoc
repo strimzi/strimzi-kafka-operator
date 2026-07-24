@@ -2489,6 +2489,9 @@ It must have the value `maven` for the type `MavenArtifact`.
 |repository
 |string
 |Maven repository to download the artifact from. Applicable to the `maven` artifact type only.
+|mirrors
+|xref:type-MavenMirror-{context}[`MavenMirror`] array
+|List of Maven mirrors used to download the artifact and its dependencies. All repository requests during the build, including plugin repositories and Maven Central, are redirected to the configured mirror(s). Applicable to the `maven` artifact type only.
 |group
 |string
 |Maven group id. Applicable to the `maven` artifact type only.
@@ -2504,6 +2507,20 @@ It must have the value `maven` for the type `MavenArtifact`.
 |includeScope
 |string (one of [system, compile, test, provided, runtime])
 |Maven scope for including dependencies for the artifact. Valid values are `compile`, `provided`, `runtime`, `test`, and `system`. When not configured, no scope is set, and all dependencies are included. Applicable to the `maven` artifact type only.
+|====
+
+[id='type-MavenMirror-{context}']
+= `MavenMirror` schema reference
+
+Used in: xref:type-MavenArtifact-{context}[`MavenArtifact`]
+
+
+[cols="2,2,3a",options="header"]
+|====
+|Property |Property type |Description
+|url
+|string
+|The URL of the Maven mirror. All repository requests during the build, including plugin repositories and Maven Central, are redirected to this mirror. Applicable to the `maven` artifact type only.
 |====
 
 [id='type-OtherArtifact-{context}']
