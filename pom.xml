@@ -91,7 +91,7 @@
         <log4j.version>2.25.4</log4j.version>
         <quartz.version>2.5.0</quartz.version>
         <opentelemetry.version>1.63.0</opentelemetry.version>
-        <jetty.version>12.0.35</jetty.version>
+        <jetty.version>12.0.36</jetty.version>
         <jakarta-servlet.version>6.1.0</jakarta-servlet.version>
         <netty.version>4.2.16.Final</netty.version>
         <micrometer.version>1.16.6</micrometer.version>
