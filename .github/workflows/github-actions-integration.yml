@@ -49,7 +49,7 @@ jobs:
           sudo install -m 0755 ./bin/act /usr/local/bin/act
 
       - name: Install yq
-        uses: strimzi/github-actions/.github/actions/dependencies/install-yq@af789b85722d00ba9de34ad8b3a32292e4e628e3 # v2.2
+        uses: strimzi/github-actions/.github/actions/dependencies/install-yq@52b17c19f3687e37b47c9c64696b96f28f53625b # v2.3
         with:
           version: "v4.6.3"
 
@@ -135,7 +135,7 @@ jobs:
           sudo install -m 0755 ./bin/act /usr/local/bin/act
 
       - name: Install yq
-        uses: strimzi/github-actions/.github/actions/dependencies/install-yq@af789b85722d00ba9de34ad8b3a32292e4e628e3 # v2.2
+        uses: strimzi/github-actions/.github/actions/dependencies/install-yq@52b17c19f3687e37b47c9c64696b96f28f53625b # v2.3
         with:
           version: "v4.6.3"
 
@@ -222,7 +222,7 @@ jobs:
           sudo install -m 0755 ./bin/act /usr/local/bin/act
 
       - name: Install yq
-        uses: strimzi/github-actions/.github/actions/dependencies/install-yq@af789b85722d00ba9de34ad8b3a32292e4e628e3 # v2.2
+        uses: strimzi/github-actions/.github/actions/dependencies/install-yq@52b17c19f3687e37b47c9c64696b96f28f53625b # v2.3
         with:
           version: "v4.6.3"
 
@@ -319,7 +319,7 @@ jobs:
           sudo install -m 0755 ./bin/act /usr/local/bin/act
 
       - name: Install yq
-        uses: strimzi/github-actions/.github/actions/dependencies/install-yq@af789b85722d00ba9de34ad8b3a32292e4e628e3 # v2.2
+        uses: strimzi/github-actions/.github/actions/dependencies/install-yq@52b17c19f3687e37b47c9c64696b96f28f53625b # v2.3
         with:
           version: "v4.6.3"
 
@@ -400,7 +400,7 @@ jobs:
           echo "🎉 All $TOTAL perf-report scenarios passed!"
 
   test-github-actions-integration:
-    uses: strimzi/github-actions/.github/workflows/reusable-test-integrations.yml@af789b85722d00ba9de34ad8b3a32292e4e628e3 # v2.2
+    uses: strimzi/github-actions/.github/workflows/reusable-test-integrations.yml@52b17c19f3687e37b47c9c64696b96f28f53625b # v2.3
     with:
       repo: ${{ github.repository }}
       ref: ${{ github.sha }}

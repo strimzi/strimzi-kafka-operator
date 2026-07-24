@@ -94,28 +94,28 @@ jobs:
           checkDescription: "Test run for ${{ matrix.config.jobName }}"
 
       - name: Setup Java and Maven
-        uses: strimzi/github-actions/.github/actions/dependencies/setup-java@af789b85722d00ba9de34ad8b3a32292e4e628e3 # v2.2
+        uses: strimzi/github-actions/.github/actions/dependencies/setup-java@52b17c19f3687e37b47c9c64696b96f28f53625b # v2.3
         with:
           javaVersion: "21"
 
       - name: Install yq
-        uses: strimzi/github-actions/.github/actions/dependencies/install-yq@af789b85722d00ba9de34ad8b3a32292e4e628e3 # v2.2
+        uses: strimzi/github-actions/.github/actions/dependencies/install-yq@52b17c19f3687e37b47c9c64696b96f28f53625b # v2.3
         with:
           version: "v4.6.3"
           architecture: ${{ matrix.config.arch }}
 
       - name: Install Shellcheck
-        uses: strimzi/github-actions/.github/actions/dependencies/install-shellcheck@af789b85722d00ba9de34ad8b3a32292e4e628e3 # v2.2
+        uses: strimzi/github-actions/.github/actions/dependencies/install-shellcheck@52b17c19f3687e37b47c9c64696b96f28f53625b # v2.3
         with:
           version: "0.11.0"
 
       - name: Install Helm
-        uses: strimzi/github-actions/.github/actions/dependencies/install-helm@af789b85722d00ba9de34ad8b3a32292e4e628e3 # v2.2
+        uses: strimzi/github-actions/.github/actions/dependencies/install-helm@52b17c19f3687e37b47c9c64696b96f28f53625b # v2.3
         with:
           helmVersion: "v3.16.0"
 
       - name: Setup Kind cluster
-        uses: strimzi/github-actions/.github/actions/dependencies/setup-kind@af789b85722d00ba9de34ad8b3a32292e4e628e3 # v2.2
+        uses: strimzi/github-actions/.github/actions/dependencies/setup-kind@52b17c19f3687e37b47c9c64696b96f28f53625b # v2.3
         with:
           architecture: ${{ matrix.config.arch }}
           controlNodes: 1
