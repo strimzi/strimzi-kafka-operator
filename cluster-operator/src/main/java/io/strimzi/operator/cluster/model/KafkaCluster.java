@@ -1490,6 +1490,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
     private List<Volume> getNonDataVolumes(NodeRef node, StatefulPodTemplate templatePod) {
         List<Volume> volumeList = new ArrayList<>();
 
+        volumeList.add(VolumeUtils.createServiceAccountVolume());
         volumeList.add(VolumeUtils.createTempDirVolume(templatePod));
         volumeList.add(VolumeUtils.createConfigMapVolume(LOG_AND_METRICS_CONFIG_VOLUME_NAME, node.podName()));
         volumeList.add(VolumeUtils.createEmptyDirVolume("ready-files", "1Ki", "Memory"));
@@ -1538,6 +1539,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
      */
     private List<VolumeMount> getVolumeMounts(Storage storage, ContainerTemplate containerTemplate, boolean isBroker) {
         List<VolumeMount> volumeMountList = new ArrayList<>(VolumeUtils.createVolumeMounts(storage, false));
+        volumeMountList.add(VolumeUtils.createServiceAccountVolumeMount());
         volumeMountList.add(VolumeUtils.createTempDirVolumeMount());
         volumeMountList.add(VolumeUtils.createVolumeMount(LOG_AND_METRICS_CONFIG_VOLUME_NAME, LOG_AND_METRICS_CONFIG_VOLUME_MOUNT));
         volumeMountList.add(VolumeUtils.createVolumeMount("ready-files", "/var/opt/kafka"));
@@ -1557,6 +1559,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
 
     private List<VolumeMount> getInitContainerVolumeMounts(KafkaPool pool) {
         List<VolumeMount> volumeMountList = new ArrayList<>();
+        volumeMountList.add(VolumeUtils.createServiceAccountVolumeMount());
         volumeMountList.add(VolumeUtils.createVolumeMount(INIT_VOLUME_NAME, INIT_VOLUME_MOUNT));
         TemplateUtils.addAdditionalVolumeMounts(volumeMountList, pool.templateInitContainer);
         return volumeMountList;

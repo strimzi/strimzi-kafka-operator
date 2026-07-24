@@ -216,6 +216,7 @@ public class EntityUserOperatorTest {
         assertThat(container.getPorts().get(0).getName(), is(EntityUserOperator.HEALTHCHECK_PORT_NAME));
         assertThat(container.getPorts().get(0).getProtocol(), is("TCP"));
         assertThat(EntityOperatorTest.volumeMounts(container.getVolumeMounts()), is(Map.of(
+                VolumeUtils.SERVICE_ACCOUNT_TOKEN_VOLUME_NAME, "/var/run/secrets/kubernetes.io/serviceaccount",
                 EntityUserOperator.USER_OPERATOR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME, VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_MOUNT_PATH,
                 "entity-user-operator-metrics-and-logging", "/opt/user-operator/custom-config/")));
     }

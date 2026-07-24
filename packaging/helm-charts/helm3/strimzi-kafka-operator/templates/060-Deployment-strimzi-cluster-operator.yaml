@@ -44,6 +44,7 @@ spec:
       {{- end }}
     spec:
       serviceAccountName: {{ .Values.serviceAccount }}
+      automountServiceAccountToken: false
       {{- /* imagePullSecrets is allowed to be for backwards compatibility */ -}}
       {{- if kindIs "string" .Values.image.imagePullSecrets }}
       imagePullSecrets:
@@ -67,6 +68,23 @@ spec:
       priorityClassName: {{ .Values.priorityClassName }}
       {{- end }}
       volumes:
+        - name: kube-api-access
+          projected:
+            defaultMode: 420
+            sources:
+              - serviceAccountToken:
+                  path: token
+              - configMap:
+                  name: kube-root-ca.crt
+                  items:
+                    - key: ca.crt
+                      path: ca.crt
+              - downwardAPI:
+                  items:
+                    - path: namespace
+                      fieldRef:
+                        apiVersion: v1
+                        fieldPath: metadata.namespace
         - name: strimzi-tmp
           emptyDir:
             medium: Memory
@@ -86,6 +104,9 @@ spec:
           args:
             - /opt/strimzi/bin/cluster_operator_run.sh
           volumeMounts:
+            - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+              name: kube-api-access
+              readOnly: true
             - name: strimzi-tmp
               mountPath: /tmp
             - name: {{ .Values.logVolume }}

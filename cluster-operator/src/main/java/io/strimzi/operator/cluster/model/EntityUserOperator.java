@@ -241,6 +241,7 @@ public class EntityUserOperator extends AbstractModel implements SupportsLogging
 
     private List<VolumeMount> getVolumeMounts() {
         List<VolumeMount> volumeMounts = new ArrayList<>();
+        volumeMounts.add(VolumeUtils.createServiceAccountVolumeMount());
         volumeMounts.add(VolumeUtils.createTempDirVolumeMount(USER_OPERATOR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME));
         volumeMounts.add(VolumeUtils.createVolumeMount(LOG_AND_METRICS_CONFIG_VOLUME_NAME, LOG_AND_METRICS_CONFIG_VOLUME_MOUNT));
 

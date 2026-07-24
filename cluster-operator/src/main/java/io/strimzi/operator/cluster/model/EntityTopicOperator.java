@@ -245,6 +245,7 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
 
     private List<VolumeMount> getVolumeMounts() {
         List<VolumeMount> result = new ArrayList<>();
+        result.add(VolumeUtils.createServiceAccountVolumeMount());
         result.add(VolumeUtils.createTempDirVolumeMount(TOPIC_OPERATOR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME));
         result.add(VolumeUtils.createVolumeMount(LOG_AND_METRICS_CONFIG_VOLUME_NAME, LOG_AND_METRICS_CONFIG_VOLUME_MOUNT));
 

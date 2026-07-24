@@ -441,11 +441,11 @@ public class KafkaBridgeClusterTest {
         KafkaBridgeCluster kbc = KafkaBridgeCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, SHARED_ENV_PROVIDER);
         Deployment dep = kbc.generateDeployment(emptyMap(), true, null, null);
 
-        assertThat(dep.getSpec().getTemplate().getSpec().getVolumes().get(2).getName(), is("my-secret"));
+        assertThat(dep.getSpec().getTemplate().getSpec().getVolumes().get(3).getName(), is("my-secret"));
 
         List<Container> containers = dep.getSpec().getTemplate().getSpec().getContainers();
 
-        assertThat(containers.get(0).getVolumeMounts().get(2).getMountPath(), is(KafkaBridgeCluster.HTTP_SERVER_CERTS_BASE_VOLUME_MOUNT + "my-secret"));
+        assertThat(containers.get(0).getVolumeMounts().get(3).getMountPath(), is(KafkaBridgeCluster.HTTP_SERVER_CERTS_BASE_VOLUME_MOUNT + "my-secret"));
 
         ConfigMap configMap = kbc.generateBridgeConfigMap(METRICS_AND_LOGGING);
         String bridgeConfigurations = configMap.getData().get(BRIDGE_CONFIGURATION_FILENAME);
@@ -941,7 +941,7 @@ public class KafkaBridgeClusterTest {
         assertThat(maybeContainer.isPresent(), is(true));
         final Container bridgeContainer = maybeContainer.get();
 
-        assertThat(bridgeContainer.getVolumeMounts(), hasSize(3));
+        assertThat(bridgeContainer.getVolumeMounts(), hasSize(4));
         final Optional<VolumeMount> volumeMountOptional = bridgeContainer.getVolumeMounts().stream().filter(volumeMount -> volumeMount.getName().equals("rack-volume")).findFirst();
         assertThat(volumeMountOptional.isPresent(), is(true));
         final VolumeMount bridgeVolumeMount = volumeMountOptional.get();
@@ -984,12 +984,14 @@ public class KafkaBridgeClusterTest {
         PodSpec podSpec = deployment.getSpec().getTemplate().getSpec();
         assertThat(podSpec.getContainers(), is(notNullValue()));
         assertThat(podSpec.getContainers(), hasSize(1));
-        assertThat(podSpec.getContainers().get(0).getVolumeMounts(), hasSize(2));
-        assertThat(podSpec.getContainers().get(0).getVolumeMounts().get(0).getName(), is("strimzi-tmp"));
-        assertThat(podSpec.getContainers().get(0).getVolumeMounts().get(1).getName(), is("kafka-bridge-configurations"));
-        assertThat(podSpec.getVolumes(), hasSize(2));
-        assertThat(podSpec.getVolumes().get(0).getName(), is("strimzi-tmp"));
-        assertThat(podSpec.getVolumes().get(1).getName(), is("kafka-bridge-configurations"));
+        assertThat(podSpec.getContainers().get(0).getVolumeMounts(), hasSize(3));
+        assertThat(podSpec.getContainers().get(0).getVolumeMounts().get(0).getName(), is(VolumeUtils.SERVICE_ACCOUNT_TOKEN_VOLUME_NAME));
+        assertThat(podSpec.getContainers().get(0).getVolumeMounts().get(1).getName(), is("strimzi-tmp"));
+        assertThat(podSpec.getContainers().get(0).getVolumeMounts().get(2).getName(), is("kafka-bridge-configurations"));
+        assertThat(podSpec.getVolumes(), hasSize(3));
+        assertThat(podSpec.getVolumes().get(0).getName(), is(VolumeUtils.SERVICE_ACCOUNT_TOKEN_VOLUME_NAME));
+        assertThat(podSpec.getVolumes().get(1).getName(), is("strimzi-tmp"));
+        assertThat(podSpec.getVolumes().get(2).getName(), is("kafka-bridge-configurations"));
         assertThat(podSpec.getInitContainers(), is(nullValue()));
 
         // Test ClusterRoleBinding
