@@ -74,6 +74,7 @@ import io.vertx.core.json.JsonObject;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -275,9 +276,12 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
      * Generates or reconciles the secret that combines secrets and certificates
      * provided for Kafka Connect truststore if TLS is enabled.
      *
-     * @return  Future which completes when the reconciliation is done
+     * @param reconciliation The reconcilation.
+     * @param namespace Namespace of the Connect cluster.
+     * @param connect KafkaConnectCluster object.
+     * @return Future which completes when the reconciliation is done.
      */
-    protected Future<Void> tlsTrustedCertsSecret(Reconciliation reconciliation, String namespace, KafkaConnectCluster connect) {
+    protected Future<Collection<String>> tlsTrustedCertsSecret(Reconciliation reconciliation, String namespace, KafkaConnectCluster connect) {
         if (connect.getTls() != null) {
             return ReconcilerUtils.trustedCertificates(reconciliation, secretOperations, connect.getTls().getTrustedCertificates())
                     .compose(certificates -> {
@@ -286,8 +290,10 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                                             reconciliation,
                                             namespace,
                                             KafkaConnectResources.internalTlsTrustedCertsSecretName(connect.getCluster()),
-                                            connect.generateTlsTrustedCertsSecret(Map.of(KafkaConnectCluster.KAFKA_CONNECT_CERTIFICATES_KEY, Util.encodeToBase64(certificates)), KafkaConnectResources.internalTlsTrustedCertsSecretName(connect.getCluster()))))
-                                    .mapEmpty();
+                                            connect.generateTlsTrustedCertsSecret(
+                                                Map.of(KafkaConnectCluster.KAFKA_CONNECT_CERTIFICATES_KEY, Util.encodeToBase64(String.join("\n", certificates))),
+                                                KafkaConnectResources.internalTlsTrustedCertsSecretName(connect.getCluster()))))
+                                    .map(certificates);
                         } else {
                             return Future.succeededFuture();
                         }
