@@ -16,8 +16,6 @@ import io.strimzi.operator.common.config.ConfigParameter;
 import io.strimzi.operator.common.config.ConfigParameterParser;
 import io.strimzi.operator.common.featuregates.FeatureGates;
 import io.strimzi.operator.common.model.Labels;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -41,10 +39,7 @@ import static io.strimzi.operator.common.config.ConfigParameterParser.parseFeatu
  * Cluster Operator configuration
  */
 public class ClusterOperatorConfig {
-
     private static final Map<String, ConfigParameter<?>> CONFIG_VALUES = new HashMap<>();
-
-    private static final Logger LOGGER = LogManager.getLogger(ClusterOperatorConfig.class.getName());
 
     // Env vars for configuring images
     /**
@@ -61,14 +56,6 @@ public class ClusterOperatorConfig {
      * Configures the Kafka Mirror Maker 2 container images
      */
     public static final String STRIMZI_KAFKA_MIRROR_MAKER_2_IMAGES = "STRIMZI_KAFKA_MIRROR_MAKER_2_IMAGES";
-
-    /**
-     * Configures the Entity Operator TLS sidecar container images.
-     * Used only to produce warning if defined at startup.
-     */
-    private static final String STRIMZI_DEFAULT_TLS_SIDECAR_KAFKA_IMAGE = "STRIMZI_DEFAULT_TLS_SIDECAR_KAFKA_IMAGE";
-    private static final String STRIMZI_DEFAULT_TLS_SIDECAR_CRUISE_CONTROL_IMAGE = "STRIMZI_DEFAULT_TLS_SIDECAR_CRUISE_CONTROL_IMAGE";
-    private static final String STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE = "STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE";
 
     /**
      * List of mandatory Gatekeeper plugins that are not user-configurable but are hardcoded by Strimzi
@@ -281,26 +268,6 @@ public class ClusterOperatorConfig {
     private final KafkaVersion.Lookup versions;
 
     /**
-     * Logs warnings for removed / deprecated environment variables
-     *
-     * @param map   map from which loading configuration parameters
-     */
-    private static void warningsForRemovedEndVars(Map<String, String> map) {
-        if (map.containsKey(STRIMZI_DEFAULT_TLS_SIDECAR_KAFKA_IMAGE))    {
-            LOGGER.warn("Kafka TLS sidecar container has been removed and the environment variable {} is not used anymore. " +
-                    "You can remove it from the Strimzi Cluster Operator deployment.", STRIMZI_DEFAULT_TLS_SIDECAR_KAFKA_IMAGE);
-        }
-        if (map.containsKey(STRIMZI_DEFAULT_TLS_SIDECAR_CRUISE_CONTROL_IMAGE))    {
-            LOGGER.warn("Cruise Control TLS sidecar container has been removed and the environment variable {} is not used anymore. " +
-                    "You can remove it from the Strimzi Cluster Operator deployment.", STRIMZI_DEFAULT_TLS_SIDECAR_CRUISE_CONTROL_IMAGE);
-        }
-        if (map.containsKey(STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE))    {
-            LOGGER.warn("Entity Operator TLS sidecar container has been removed and the environment variable {} is not used anymore. " +
-                "You can remove it from the Strimzi Cluster Operator deployment.", STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE);
-        }
-    }
-
-    /**
      * Loads configuration parameters from a related map
      *
      * @param map   map from which loading configuration parameters
@@ -308,7 +275,6 @@ public class ClusterOperatorConfig {
      */
 
     public static ClusterOperatorConfig buildFromMap(Map<String, String> map) {
-        warningsForRemovedEndVars(map);
         KafkaVersion.Lookup lookup = parseKafkaVersions(map.get(STRIMZI_KAFKA_IMAGES), map.get(STRIMZI_KAFKA_CONNECT_IMAGES), map.get(STRIMZI_KAFKA_MIRROR_MAKER_2_IMAGES));
         return buildFromMap(map, lookup);
 
