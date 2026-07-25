@@ -117,6 +117,12 @@ public class Environment {
     public static final String ST_FILE_PLUGIN_URL_ENV = "ST_FILE_SINK_PLUGIN_URL";
 
     /**
+     * User-specific Maven mirror for tests using Connect build with Maven artifacts. Should end without a trailing
+     * slash ("/"). E.g. "https://repo.maven.apache.org/maven2".
+     */
+    public static final String ST_MAVEN_MIRROR_URL_ENV = "ST_MAVEN_MIRROR_URL";
+
+    /**
      * Resource allocation strategy
      */
     public static final String RESOURCE_ALLOCATION_STRATEGY_ENV = "RESOURCE_ALLOCATION_STRATEGY";
@@ -166,7 +172,7 @@ public class Environment {
 
     private static final String ST_KAFKA_VERSION_DEFAULT = TestKafkaVersion.getDefaultSupportedKafkaVersion();
     private static final String ST_KAFKA_MAVEN_VERSION_DEFAULT = TestKafkaVersion.getSpecificVersion(ST_KAFKA_VERSION_DEFAULT).mavenVersion();
-    public static final String ST_FILE_PLUGIN_URL_DEFAULT = "https://repo1.maven.org/maven2/org/apache/kafka/connect-file/" + ST_KAFKA_MAVEN_VERSION_DEFAULT + "/connect-file-" + ST_KAFKA_MAVEN_VERSION_DEFAULT + ".jar";
+    public static final String ST_FILE_PLUGIN_URL_DEFAULT = (Environment.ST_MAVEN_MIRROR_URL != null ? Environment.ST_MAVEN_MIRROR_URL : "https://repo.maven.apache.org/maven2") + "/org/apache/kafka/connect-file/" + ST_KAFKA_MAVEN_VERSION_DEFAULT + "/connect-file-" + ST_KAFKA_MAVEN_VERSION_DEFAULT + ".jar";
 
     public static final String IP_FAMILY_DEFAULT = "ipv4";
     public static final String IP_FAMILY_VERSION_6 = "ipv6";
@@ -220,8 +226,9 @@ public class Environment {
     public static final boolean LB_FINALIZERS = ENVIRONMENT_VARIABLES.getOrDefault(LB_FINALIZERS_ENV, Boolean::parseBoolean, LB_FINALIZERS_DEFAULT);
     public static final String RESOURCE_ALLOCATION_STRATEGY = ENVIRONMENT_VARIABLES.getOrDefault(RESOURCE_ALLOCATION_STRATEGY_ENV, RESOURCE_ALLOCATION_STRATEGY_DEFAULT);
 
-    // Connect build related variables
+    // Connect build-related variables
     public static final String ST_FILE_PLUGIN_URL = ENVIRONMENT_VARIABLES.getOrDefault(ST_FILE_PLUGIN_URL_ENV, ST_FILE_PLUGIN_URL_DEFAULT);
+    public static final String ST_MAVEN_MIRROR_URL = ENVIRONMENT_VARIABLES.getOrDefault(ST_MAVEN_MIRROR_URL_ENV, null);
 
     public static final String CONNECT_BUILD_IMAGE_PATH = ENVIRONMENT_VARIABLES.getOrDefault(CONNECT_BUILD_IMAGE_PATH_ENV, "");
     public static final String CONNECT_BUILD_REGISTRY_SECRET = ENVIRONMENT_VARIABLES.getOrDefault(CONNECT_BUILD_REGISTRY_SECRET_ENV, "");

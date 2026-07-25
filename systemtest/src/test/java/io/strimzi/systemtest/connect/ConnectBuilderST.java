@@ -19,7 +19,9 @@ import io.strimzi.api.kafka.model.connect.KafkaConnect;
 import io.strimzi.api.kafka.model.connect.KafkaConnectResources;
 import io.strimzi.api.kafka.model.connect.MountedPluginBuilder;
 import io.strimzi.api.kafka.model.connect.build.JarArtifactBuilder;
+import io.strimzi.api.kafka.model.connect.build.MavenArtifact;
 import io.strimzi.api.kafka.model.connect.build.MavenArtifactBuilder;
+import io.strimzi.api.kafka.model.connect.build.MavenMirrorBuilder;
 import io.strimzi.api.kafka.model.connect.build.OtherArtifactBuilder;
 import io.strimzi.api.kafka.model.connect.build.Plugin;
 import io.strimzi.api.kafka.model.connect.build.PluginBuilder;
@@ -65,6 +67,7 @@ import org.junit.jupiter.api.Tag;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
@@ -99,9 +102,9 @@ class ConnectBuilderST extends AbstractST {
 
     private static final String CAMEL_CONNECTOR_HTTP_SINK_CLASS_NAME = "org.apache.camel.kafkaconnector.http.CamelHttpSinkConnector";
     private static final String CAMEL_CONNECTOR_TIMER_CLASS_NAME = "org.apache.camel.kafkaconnector.timer.CamelTimerSourceConnector";
-    private static final String CAMEL_CONNECTOR_TGZ_URL = "https://repo.maven.apache.org/maven2/org/apache/camel/kafkaconnector/camel-http-kafka-connector/0.7.0/camel-http-kafka-connector-0.7.0-package.tar.gz";
+    private static final String CAMEL_CONNECTOR_TGZ_URL = (Environment.ST_MAVEN_MIRROR_URL != null ? Environment.ST_MAVEN_MIRROR_URL : "https://repo.maven.apache.org/maven2") + "/org/apache/camel/kafkaconnector/camel-http-kafka-connector/0.7.0/camel-http-kafka-connector-0.7.0-package.tar.gz";
     private static final String CAMEL_CONNECTOR_TGZ_CHECKSUM = "d0bb8c6a9e50b68eee3e4d70b6b7e5ae361373883ed3156bc11771330095b66195ac1c12480a0669712da4e5f38e64f004ffecabca4bf70d312f3f7ae0ad51b5";
-    private static final String CAMEL_CONNECTOR_ZIP_URL = "https://repo.maven.apache.org/maven2/org/apache/camel/kafkaconnector/camel-http-kafka-connector/0.7.0/camel-http-kafka-connector-0.7.0-package.zip";
+    private static final String CAMEL_CONNECTOR_ZIP_URL = (Environment.ST_MAVEN_MIRROR_URL != null ? Environment.ST_MAVEN_MIRROR_URL : "https://repo.maven.apache.org/maven2") + "/org/apache/camel/kafkaconnector/camel-http-kafka-connector/0.7.0/camel-http-kafka-connector-0.7.0-package.zip";
     private static final String CAMEL_CONNECTOR_ZIP_CHECKSUM = "bc15135b8ef7faccd073508da0510c023c0f6fa3ec7e48c98ad880dd112b53bf106ad0a47bcb353eed3ec03bb3d273da7de356f3f7f1766a13a234a6bc28d602";
     private static final String CAMEL_CONNECTOR_MAVEN_GROUP_ID = "org.apache.camel.kafkaconnector";
     private static final String CAMEL_CONNECTOR_MAVEN_ARTIFACT_ID = "camel-timer-kafka-connector";
@@ -149,16 +152,23 @@ class ConnectBuilderST extends AbstractST {
         )
         .build();
 
-    private static final Plugin PLUGIN_WITH_MAVEN_TYPE = new PluginBuilder()
-        .withName(PLUGIN_WITH_MAVEN_NAME)
-        .withArtifacts(
-            new MavenArtifactBuilder()
+    private static final Plugin PLUGIN_WITH_MAVEN_TYPE;
+    static {
+        MavenArtifact mavenArtifact = new MavenArtifactBuilder()
                 .withVersion(CAMEL_CONNECTOR_MAVEN_VERSION)
                 .withArtifact(CAMEL_CONNECTOR_MAVEN_ARTIFACT_ID)
                 .withGroup(CAMEL_CONNECTOR_MAVEN_GROUP_ID)
-                .build()
-        )
-        .build();
+                .build();
+
+        if (Environment.ST_MAVEN_MIRROR_URL != null)    {
+            mavenArtifact.setMirrors(List.of(new MavenMirrorBuilder().withUrl(Environment.ST_MAVEN_MIRROR_URL).build()));
+        }
+
+        PLUGIN_WITH_MAVEN_TYPE = new PluginBuilder()
+                .withName(PLUGIN_WITH_MAVEN_NAME)
+                .withArtifacts(mavenArtifact)
+                .build();
+    }
 
     @ParallelTest
     @TestDoc(
