@@ -36,6 +36,7 @@ import java.net.http.HttpResponse;
 import java.net.http.HttpTimeoutException;
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 
 import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlHeaders.USER_TASK_ID_HEADER;
 
@@ -74,7 +75,7 @@ public class CruiseControlApiImpl implements CruiseControlApi {
     }
 
     @Override
-    public CompletableFuture<CruiseControlStateResponse> getCruiseControlState(Reconciliation reconciliation, String host, int port, boolean verbose) {
+    public CompletionStage<CruiseControlStateResponse> getCruiseControlState(Reconciliation reconciliation, String host, int port, boolean verbose) {
         String path = new PathBuilder(CruiseControlEndpoints.STATE)
                 .withParameter(CruiseControlParameters.VERBOSE, String.valueOf(verbose))
                 .withParameter(CruiseControlParameters.JSON, "true")
@@ -169,7 +170,7 @@ public class CruiseControlApiImpl implements CruiseControlApi {
         return json;
     }
 
-    private CompletableFuture<CruiseControlRebalanceResponse> internalRebalance(Reconciliation reconciliation, String host, int port, String path, String userTaskId) {
+    private CompletionStage<CruiseControlRebalanceResponse> internalRebalance(Reconciliation reconciliation, String host, int port, String path, String userTaskId) {
         HttpRequest.Builder builder = HttpRequest.newBuilder()
                 .uri(URI.create(String.format("%s://%s:%d%s", apiSslEnabled ? "https" : "http", host, port, path)))
                 .POST(HttpRequest.BodyPublishers.noBody());
@@ -257,7 +258,7 @@ public class CruiseControlApiImpl implements CruiseControlApi {
     }
 
     @Override
-    public CompletableFuture<CruiseControlRebalanceResponse> rebalance(Reconciliation reconciliation, String host, int port, RebalanceOptions options, String userTaskId) {
+    public CompletionStage<CruiseControlRebalanceResponse> rebalance(Reconciliation reconciliation, String host, int port, RebalanceOptions options, String userTaskId) {
         if (options == null && userTaskId == null) {
             return CompletableFuture.failedFuture(
                     new IllegalArgumentException("Either rebalance options or user task ID should be supplied, both were null"));
@@ -272,7 +273,7 @@ public class CruiseControlApiImpl implements CruiseControlApi {
     }
 
     @Override
-    public CompletableFuture<CruiseControlRebalanceResponse> addBroker(Reconciliation reconciliation, String host, int port, AddBrokerOptions options, String userTaskId) {
+    public CompletionStage<CruiseControlRebalanceResponse> addBroker(Reconciliation reconciliation, String host, int port, AddBrokerOptions options, String userTaskId) {
         if (options == null && userTaskId == null) {
             return CompletableFuture.failedFuture(
                     new IllegalArgumentException("Either add broker options or user task ID should be supplied, both were null"));
@@ -287,7 +288,7 @@ public class CruiseControlApiImpl implements CruiseControlApi {
     }
 
     @Override
-    public CompletableFuture<CruiseControlRebalanceResponse> removeBroker(Reconciliation reconciliation, String host, int port, RemoveBrokerOptions options, String userTaskId) {
+    public CompletionStage<CruiseControlRebalanceResponse> removeBroker(Reconciliation reconciliation, String host, int port, RemoveBrokerOptions options, String userTaskId) {
         if (options == null && userTaskId == null) {
             return CompletableFuture.failedFuture(
                     new IllegalArgumentException("Either remove broker options or user task ID should be supplied, both were null"));
@@ -302,7 +303,7 @@ public class CruiseControlApiImpl implements CruiseControlApi {
     }
 
     @Override
-    public CompletableFuture<CruiseControlRebalanceResponse> removeDisks(Reconciliation reconciliation, String host, int port, RemoveDisksOptions options, String userTaskId) {
+    public CompletionStage<CruiseControlRebalanceResponse> removeDisks(Reconciliation reconciliation, String host, int port, RemoveDisksOptions options, String userTaskId) {
         if (options == null && userTaskId == null) {
             return CompletableFuture.failedFuture(
                     new IllegalArgumentException("Either remove disks options or user task ID should be supplied, both were null"));
@@ -317,7 +318,7 @@ public class CruiseControlApiImpl implements CruiseControlApi {
     }
 
     @Override
-    public CompletableFuture<CruiseControlUserTasksResponse> getUserTaskStatus(Reconciliation reconciliation, String host, int port, String userTaskId) {
+    public CompletionStage<CruiseControlUserTasksResponse> getUserTaskStatus(Reconciliation reconciliation, String host, int port, String userTaskId) {
         PathBuilder pathBuilder = new PathBuilder(CruiseControlEndpoints.USER_TASKS)
                         .withParameter(CruiseControlParameters.JSON, "true")
                         .withParameter(CruiseControlParameters.FETCH_COMPLETE, "true");
@@ -437,7 +438,7 @@ public class CruiseControlApiImpl implements CruiseControlApi {
     }
 
     @Override
-    public CompletableFuture<CruiseControlResponse> stopExecution(Reconciliation reconciliation, String host, int port) {
+    public CompletionStage<CruiseControlResponse> stopExecution(Reconciliation reconciliation, String host, int port) {
         String path = new PathBuilder(CruiseControlEndpoints.STOP)
                         .withParameter(CruiseControlParameters.JSON, "true").build();
 

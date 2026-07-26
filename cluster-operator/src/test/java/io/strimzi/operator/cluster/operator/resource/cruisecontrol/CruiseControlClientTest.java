@@ -22,6 +22,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.function.Consumer;
 
 import static io.strimzi.operator.cluster.JSONObjectMatchers.hasEntry;
@@ -81,7 +82,7 @@ public class CruiseControlClientTest {
         CruiseControlApi client = cruiseControlClientProvider();
         client.getCruiseControlState(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, false)
                 .whenComplete((result, ex) -> assertThat(result.getExecutorStatus().getJson(),
-                        hasEntry("state", "NO_TASK_IN_PROGRESS"))).join();
+                        hasEntry("state", "NO_TASK_IN_PROGRESS"))).toCompletableFuture().join();
     }
 
     @Test
@@ -129,7 +130,7 @@ public class CruiseControlClientTest {
         client.getUserTaskStatus(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, userTaskID).whenComplete((result, ex) -> {
             assertThat(result.getUserTaskId(), is(MockCruiseControl.USER_TASK_REBALANCE_NO_GOALS_RESPONSE_UTID));
             assertThat(result.getJson().get(CruiseControlRebalanceKeys.SUMMARY.getKey()), is(notNullValue()));
-        }).join();
+        }).toCompletableFuture().join();
     }
 
     @Test
@@ -323,25 +324,25 @@ public class CruiseControlClientTest {
                 client.rebalance(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, (RebalanceOptions) options, null)
                         .whenComplete((result, ex) -> {
                             assertion.accept(result);
-                        }).join();
+                        }).toCompletableFuture().join();
                 break;
             case ADD_BROKER:
                 client.addBroker(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, (AddBrokerOptions) options, null)
                         .whenComplete((result, ex) -> {
                             assertion.accept(result);
-                        }).join();
+                        }).toCompletableFuture().join();
                 break;
             case REMOVE_BROKER:
                 client.removeBroker(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, (RemoveBrokerOptions) options, null)
                         .whenComplete((result, ex) -> {
                             assertion.accept(result);
-                        }).join();
+                        }).toCompletableFuture().join();
                 break;
             case REMOVE_DISKS:
                 client.removeDisks(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, (RemoveDisksOptions) options, null)
                         .whenComplete((result, ex) -> {
                             assertion.accept(result);
-                        }).join();
+                        }).toCompletableFuture().join();
         }
     }
 
@@ -354,19 +355,19 @@ public class CruiseControlClientTest {
                 client.rebalance(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, (RebalanceOptions) options, null)
                         .whenComplete((result, ex) -> {
                             assertion.accept(result);
-                        }).join();
+                        }).toCompletableFuture().join();
                 break;
             case ADD_BROKER:
                 client.addBroker(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, (AddBrokerOptions) options, null)
                         .whenComplete((result, ex) -> {
                             assertion.accept(result);
-                        }).join();
+                        }).toCompletableFuture().join();
                 break;
             case REMOVE_BROKER:
                 client.removeBroker(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, (RemoveBrokerOptions) options, null)
                         .whenComplete((result, ex) -> {
                             assertion.accept(result);
-                        }).join();
+                        }).toCompletableFuture().join();
                 break;
         }
     }
@@ -385,25 +386,25 @@ public class CruiseControlClientTest {
                 client.rebalance(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, (RebalanceOptions) options, MockCruiseControl.REBALANCE_NOT_ENOUGH_VALID_WINDOWS_ERROR)
                         .whenComplete((result, ex) -> {
                             assertion.accept(result);
-                        }).join();
+                        }).toCompletableFuture().join();
                 break;
             case ADD_BROKER:
                 client.addBroker(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, (AddBrokerOptions) options, MockCruiseControl.REBALANCE_NOT_ENOUGH_VALID_WINDOWS_ERROR)
                         .whenComplete((result, ex) -> {
                             assertion.accept(result);
-                        }).join();
+                        }).toCompletableFuture().join();
                 break;
             case REMOVE_BROKER:
                 client.removeBroker(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, (RemoveBrokerOptions) options, MockCruiseControl.REBALANCE_NOT_ENOUGH_VALID_WINDOWS_ERROR)
                         .whenComplete((result, ex) -> {
                             assertion.accept(result);
-                        }).join();
+                        }).toCompletableFuture().join();
                 break;
             case REMOVE_DISKS:
                 client.removeDisks(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, (RemoveDisksOptions) options, MockCruiseControl.REBALANCE_NOT_ENOUGH_VALID_WINDOWS_ERROR)
                         .whenComplete((result, ex) -> {
                             assertion.accept(result);
-                        }).join();
+                        }).toCompletableFuture().join();
                 break;
         }
     }
@@ -420,21 +421,21 @@ public class CruiseControlClientTest {
         switch (endpoint) {
             case REBALANCE:
                 client.rebalance(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, (RebalanceOptions) options, MockCruiseControl.REBALANCE_NOT_ENOUGH_VALID_WINDOWS_ERROR)
-                        .whenComplete((result, ex) -> assertion.accept(result)).join();
+                        .whenComplete((result, ex) -> assertion.accept(result)).toCompletableFuture().join();
                 break;
             case ADD_BROKER:
                 client.addBroker(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, (AddBrokerOptions) options, MockCruiseControl.REBALANCE_NOT_ENOUGH_VALID_WINDOWS_ERROR)
-                        .whenComplete((result, ex) -> assertion.accept(result)).join();
+                        .whenComplete((result, ex) -> assertion.accept(result)).toCompletableFuture().join();
                 break;
             case REMOVE_BROKER:
                 client.removeBroker(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, (RemoveBrokerOptions) options, MockCruiseControl.REBALANCE_NOT_ENOUGH_VALID_WINDOWS_ERROR)
-                        .whenComplete((result, ex) -> assertion.accept(result)).join();
+                        .whenComplete((result, ex) -> assertion.accept(result)).toCompletableFuture().join();
                 break;
             case REMOVE_DISKS:
                 client.removeDisks(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, (RemoveDisksOptions) options, MockCruiseControl.REBALANCE_NOT_ENOUGH_VALID_WINDOWS_ERROR)
                         .whenComplete((result, ex) -> {
                             assertion.accept(result);
-                        }).join();
+                        }).toCompletableFuture().join();
                 break;
         }
     }
@@ -451,15 +452,15 @@ public class CruiseControlClientTest {
         switch (endpoint) {
             case ADD_BROKER:
                 assertThrows(Exception.class, client.addBroker(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, (AddBrokerOptions) options, MockCruiseControl.BROKERS_NOT_EXIST_ERROR)
-                        .whenComplete((result, ex) -> assertion.accept(ex))::join);
+                        .whenComplete((result, ex) -> assertion.accept(ex)).toCompletableFuture()::join);
                 break;
             case REMOVE_BROKER:
                 assertThrows(Exception.class, client.removeBroker(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, (RemoveBrokerOptions) options, MockCruiseControl.BROKERS_NOT_EXIST_ERROR)
-                        .whenComplete((result, ex) -> assertion.accept(ex))::join);
+                        .whenComplete((result, ex) -> assertion.accept(ex)).toCompletableFuture()::join);
                 break;
             case REMOVE_DISKS:
                 assertThrows(Exception.class, client.removeDisks(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, (RemoveDisksOptions) options, MockCruiseControl.BROKERS_NOT_EXIST_ERROR)
-                        .whenComplete((result, ex) -> assertion.accept(ex))::join);
+                        .whenComplete((result, ex) -> assertion.accept(ex)).toCompletableFuture()::join);
                 break;
             default:
                 throw new IllegalArgumentException("The " + endpoint + " endpoint is invalid for this test");
@@ -496,7 +497,7 @@ public class CruiseControlClientTest {
 
         cruiseControlServer.setupCCUserTasksResponseNoGoals(0, pendingCalls1);
 
-        CompletableFuture<CruiseControlUserTasksResponse> statusFuture = client.getUserTaskStatus(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, userTaskID);
+        CompletionStage<CruiseControlUserTasksResponse> statusFuture = client.getUserTaskStatus(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, userTaskID);
 
         for (int i = 1; i <= pendingCalls1; i++) {
             statusFuture = statusFuture.thenCompose(response -> {
@@ -536,7 +537,7 @@ public class CruiseControlClientTest {
                 response.getJson().get("Status").asText(),
                 is(CruiseControlUserTaskStatus.COMPLETED.toString()));
             return CompletableFuture.completedFuture(response);
-        }).join();
+        }).toCompletableFuture().join();
     }
 
     private void runTest(String userTaskID, int pendingCalls)  {
@@ -544,7 +545,7 @@ public class CruiseControlClientTest {
 
         CruiseControlApi client = cruiseControlClientProvider();
 
-        CompletableFuture<CruiseControlUserTasksResponse> statusFuture = client.getUserTaskStatus(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, userTaskID);
+        CompletionStage<CruiseControlUserTasksResponse> statusFuture = client.getUserTaskStatus(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, userTaskID);
 
         for (int i = 1; i <= pendingCalls; i++) {
             statusFuture = statusFuture.thenCompose(response -> {
@@ -560,6 +561,6 @@ public class CruiseControlClientTest {
                     response.getJson().get("Status").asText(),
                     is(CruiseControlUserTaskStatus.COMPLETED.toString()));
             return CompletableFuture.completedFuture(response);
-        }).join();
+        }).toCompletableFuture().join();
     }
 }
