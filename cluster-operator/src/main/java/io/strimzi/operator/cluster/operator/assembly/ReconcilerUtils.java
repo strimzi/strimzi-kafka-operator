@@ -50,6 +50,7 @@ import java.nio.file.PathMatcher;
 import java.nio.file.Paths;
 import java.security.cert.CertificateException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -454,19 +455,16 @@ public class ReconcilerUtils {
      * @param secretOperations Secret operator
      * @param namespace namespace to get Secrets in
      * @param auth Authentication object to compute hash from
-     * @param certSecretSources TLS trusted certificates whose hashes are joined to result
+     * @param certs certificates list to compute hash from.
      * @return Future computing hash from TLS + Auth
      */
-    public static Future<Integer> authTlsHash(SecretOperator secretOperations, String namespace, KafkaClientAuthentication auth, List<CertSecretSource> certSecretSources) {
+    public static Future<Integer> authTlsHash(SecretOperator secretOperations, String namespace, KafkaClientAuthentication auth, Collection<String> certs) {
         Future<Integer> tlsFuture;
-        if (certSecretSources == null || certSecretSources.isEmpty()) {
+        if (certs == null || certs.isEmpty()) {
             tlsFuture = Future.succeededFuture(0);
         } else {
             // get all TLS trusted certs, compute hash from them
-            tlsFuture = Future.join(certSecretSources.stream().map(certSecretSource ->
-                            getTrustedCertificateAsync(secretOperations, namespace, certSecretSource)
-                                    .compose(cert -> Future.succeededFuture(cert.hashCode()))).collect(Collectors.toList()))
-                    .compose(hashes -> Future.succeededFuture(hashes.list().stream().mapToInt(e -> (int) e).sum()));
+            tlsFuture = Future.succeededFuture(certs.stream().mapToInt(String::hashCode).sum());
         }
 
         if (auth == null) {
@@ -493,7 +491,7 @@ public class ReconcilerUtils {
     }
 
     /**
-     * Gets trusted certificates from Secrets and merges them into a single String.
+     * Gets trusted certificates from Secrets and merges them into a single List of Strings.
      *
      * @param reconciliation        Reconciliation marker
      * @param secretOperations      Secrets operator
@@ -501,19 +499,13 @@ public class ReconcilerUtils {
      *
      * @return  Certificates extracted from the Secrets
      */
-    public static Future<String> trustedCertificates(Reconciliation reconciliation, SecretOperator secretOperations, List<CertSecretSource> certificateSources)   {
+    public static Future<List<String>> trustedCertificates(Reconciliation reconciliation, SecretOperator secretOperations, List<CertSecretSource> certificateSources)   {
         if (certificateSources != null && !certificateSources.isEmpty()) {
             return Future.join(certificateSources
                             .stream()
                             .map(certSecretSource -> ReconcilerUtils.getTrustedCertificateAsync(secretOperations, reconciliation.namespace(), certSecretSource))
                             .toList())
-                    .compose(certificates -> {
-                        if (certificates.list().isEmpty()) {
-                            return Future.succeededFuture();
-                        } else {
-                            return Future.succeededFuture(String.join("\n", certificates.list()));
-                        }
-                    });
+                    .compose(certificates -> Future.succeededFuture(certificates.list()));
         } else {
             // No trusted certificates to extract.
             return Future.succeededFuture();

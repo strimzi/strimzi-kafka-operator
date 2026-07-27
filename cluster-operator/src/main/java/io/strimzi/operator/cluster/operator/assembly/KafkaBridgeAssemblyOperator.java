@@ -14,7 +14,6 @@ import io.strimzi.api.kafka.model.bridge.KafkaBridgeList;
 import io.strimzi.api.kafka.model.bridge.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.bridge.KafkaBridgeSpec;
 import io.strimzi.api.kafka.model.bridge.KafkaBridgeStatus;
-import io.strimzi.api.kafka.model.common.CertSecretSource;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthentication;
 import io.strimzi.certs.CertIssuer;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
@@ -38,9 +37,8 @@ import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 
-import java.util.Collections;
+import java.util.Collection;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -97,7 +95,6 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
             return Future.failedFuture(new ReconciliationException(kafkaBridgeStatus, e));
         }
         KafkaClientAuthentication auth = assemblyResource.getSpec().getAuthentication();
-        List<CertSecretSource> trustedCertificates = assemblyResource.getSpec().getTls() == null ? Collections.emptyList() : assemblyResource.getSpec().getTls().getTrustedCertificates();
 
         Promise<KafkaBridgeStatus> createOrUpdatePromise = Promise.promise();
 
@@ -114,6 +111,11 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
             .compose(i -> VertxUtil.toFuture(deploymentOperations.scaleDown(reconciliation, namespace, bridge.getComponentName(), bridge.getReplicas(), operationTimeoutMs)))
             .compose(scale -> VertxUtil.toFuture(serviceOperations.reconcile(reconciliation, namespace, KafkaBridgeResources.serviceName(bridge.getCluster()), bridge.generateService())))
             .compose(i -> tlsTrustedCertsSecret(reconciliation, namespace, bridge))
+            .compose(certs -> ReconcilerUtils.authTlsHash(secretOperations, namespace, auth, certs))
+            .compose(authTlsHash -> {
+                podAnnotations.put(Annotations.ANNO_STRIMZI_AUTH_HASH, Integer.toString(authTlsHash));
+                return Future.succeededFuture();
+            })
             .compose(i -> MetricsAndLoggingUtils.metricsAndLogging(reconciliation, configMapOperations, bridge.logging(), bridge.metrics()))
             .compose(metricsAndLogging -> {
                 ConfigMap configMap = bridge.generateBridgeConfigMap(metricsAndLogging);
@@ -121,11 +123,7 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
                 return VertxUtil.toFuture(configMapOperations.reconcile(reconciliation, namespace, KafkaBridgeResources.configMapName(reconciliation.name()), configMap));
             })
             .compose(i -> isPodDisruptionBudgetGeneration ? VertxUtil.toFuture(podDisruptionBudgetOperator.reconcile(reconciliation, namespace, bridge.getComponentName(), bridge.generatePodDisruptionBudget())) : Future.succeededFuture())
-            .compose(i -> ReconcilerUtils.authTlsHash(secretOperations, namespace, auth, trustedCertificates))
-            .compose(authTlsHash -> {
-                podAnnotations.put(Annotations.ANNO_STRIMZI_AUTH_HASH, Integer.toString(authTlsHash));
-                return VertxUtil.toFuture(deploymentOperations.reconcile(reconciliation, namespace, bridge.getComponentName(), bridge.generateDeployment(podAnnotations, pfa.isOpenshift(), imagePullPolicy, imagePullSecrets)));
-            })
+            .compose(i -> VertxUtil.toFuture(deploymentOperations.reconcile(reconciliation, namespace, bridge.getComponentName(), bridge.generateDeployment(podAnnotations, pfa.isOpenshift(), imagePullPolicy, imagePullSecrets))))
             .compose(i -> VertxUtil.toFuture(deploymentOperations.scaleUp(reconciliation, namespace, bridge.getComponentName(), bridge.getReplicas(), operationTimeoutMs)))
             .compose(i -> VertxUtil.toFuture(deploymentOperations.waitForObserved(reconciliation, namespace, bridge.getComponentName(), 1_000, operationTimeoutMs)))
             .compose(i -> bridgeHasZeroReplicas ? Future.succeededFuture() : VertxUtil.toFuture(deploymentOperations.readiness(reconciliation, namespace, bridge.getComponentName(), 1_000, operationTimeoutMs)))
@@ -142,7 +140,7 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
                 kafkaBridgeStatus.setReplicas(bridge.getReplicas());
                 kafkaBridgeStatus.setLabelSelector(bridge.getSelectorLabels().toSelectorString());
 
-                if (reconciliationResult.succeeded())   {
+                if (reconciliationResult.succeeded()) {
                     createOrUpdatePromise.complete(kafkaBridgeStatus);
                 } else {
                     createOrUpdatePromise.fail(new ReconciliationException(kafkaBridgeStatus, reconciliationResult.cause()));
@@ -158,7 +156,7 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
      *
      * @return  Future which completes when the reconciliation is done
      */
-    private Future<Void> tlsTrustedCertsSecret(Reconciliation reconciliation, String namespace, KafkaBridgeCluster bridge) {
+    private Future<Collection<String>> tlsTrustedCertsSecret(Reconciliation reconciliation, String namespace, KafkaBridgeCluster bridge) {
         if (bridge.getTls() != null) {
             return ReconcilerUtils.trustedCertificates(reconciliation, secretOperations, bridge.getTls().getTrustedCertificates())
                     .compose(certificates -> {
@@ -167,8 +165,8 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
                                             reconciliation,
                                             namespace,
                                             KafkaBridgeResources.internalTlsTrustedCertsSecretName(bridge.getCluster()),
-                                            bridge.generateTlsTrustedCertsSecret(Map.of("ca.crt", Util.encodeToBase64(certificates)), KafkaBridgeResources.internalTlsTrustedCertsSecretName(bridge.getCluster()))))
-                                    .mapEmpty();
+                                            bridge.generateTlsTrustedCertsSecret(Map.of("ca.crt", Util.encodeToBase64(String.join("\n", certificates))), KafkaBridgeResources.internalTlsTrustedCertsSecretName(bridge.getCluster()))))
+                                .map(certificates);
                         } else {
                             return Future.succeededFuture();
                         }
