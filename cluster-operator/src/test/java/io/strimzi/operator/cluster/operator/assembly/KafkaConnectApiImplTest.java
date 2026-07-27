@@ -7,6 +7,8 @@ package io.strimzi.operator.cluster.operator.assembly;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
+import com.github.tomakehurst.wiremock.stubbing.Scenario;
+import io.strimzi.api.kafka.model.common.ConnectorState;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.test.TestUtils;
 import io.vertx.core.json.JsonObject;
@@ -20,8 +22,14 @@ import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
+import static com.github.tomakehurst.wiremock.client.WireMock.matchingJsonPath;
+import static com.github.tomakehurst.wiremock.client.WireMock.notMatching;
+import static com.github.tomakehurst.wiremock.client.WireMock.post;
+import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.put;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathMatching;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.aMapWithSize;
@@ -174,4 +182,86 @@ public class KafkaConnectApiImplTest {
                         hasEntry("org.apache.kafka.connect", "WARN")))
                 ).toCompletableFuture().join();
     }
+
+    @Test
+    public void testCreateConnectorSendsInitialState() {
+        server.stubFor(post(urlPathEqualTo("/connectors"))
+                .willReturn(aResponse()
+                        .withStatus(201)
+                        .withBody("{\"name\":\"my-connector\",\"config\":{},\"tasks\":[]}")));
+
+        KafkaConnectApi api = new KafkaConnectApiImpl();
+        JsonObject config = new JsonObject().put("connector.class", "Dummy");
+
+        api.createConnector(Reconciliation.DUMMY_RECONCILIATION, "127.0.0.1", server.port(),
+                "my-connector", config, ConnectorState.STOPPED).toCompletableFuture().join();
+
+        // The POST body must carry name, config, and the upper-case initial_state
+        server.verify(postRequestedFor(urlPathEqualTo("/connectors"))
+                .withRequestBody(matchingJsonPath("$.name", equalTo("my-connector")))
+                .withRequestBody(matchingJsonPath("$.initial_state", equalTo("STOPPED")))
+                .withRequestBody(matchingJsonPath("$.config['connector.class']", equalTo("Dummy"))));
+    }
+
+    @Test
+    public void testCreateConnectorWithoutStateOmitsInitialState() {
+        server.stubFor(post(urlPathEqualTo("/connectors"))
+                .willReturn(aResponse()
+                        .withStatus(201)
+                        .withBody("{\"name\":\"my-connector\",\"config\":{},\"tasks\":[]}")));
+
+        KafkaConnectApi api = new KafkaConnectApiImpl();
+
+        api.createConnector(Reconciliation.DUMMY_RECONCILIATION, "127.0.0.1", server.port(),
+                "my-connector", new JsonObject(), null).toCompletableFuture().join();
+
+        // With no requested state, the initial_state field must be omitted (Connect defaults to running)
+        server.verify(postRequestedFor(urlPathEqualTo("/connectors"))
+                .withRequestBody(matchingJsonPath("$.name", equalTo("my-connector")))
+                .withRequestBody(notMatching("(?s).*initial_state.*")));
+    }
+
+    @Test
+    public void testCreateConnectorFailsOnServerError() {
+        server.stubFor(post(urlPathEqualTo("/connectors"))
+                .willReturn(aResponse()
+                        .withStatus(500)
+                        .withBody("{\"message\": \"Connect cluster error\"}")));
+
+        KafkaConnectApi api = new KafkaConnectApiImpl();
+
+        ExecutionException ex = assertThrows(ExecutionException.class,
+                () -> api.createConnector(Reconciliation.DUMMY_RECONCILIATION, "127.0.0.1", server.port(),
+                        "my-connector", new JsonObject(), ConnectorState.STOPPED)
+                        .toCompletableFuture().get());
+        assertThat(ex.getCause(), instanceOf(ConnectRestException.class));
+        assertThat(ex.getCause().getMessage(), containsString("Connect cluster error"));
+    }
+
+    @Test
+    public void testCreateConnectorRetriesOn409() {
+        // A 409 means the Connect cluster is rebalancing; the request is retried with back off.
+        // The first POST returns 409, the second returns 201.
+        String scenario = "rebalance-then-created";
+        server.stubFor(post(urlPathEqualTo("/connectors"))
+                .inScenario(scenario)
+                .whenScenarioStateIs(Scenario.STARTED)
+                .willReturn(aResponse().withStatus(409).withBody("{\"message\": \"rebalancing\"}"))
+                .willSetStateTo("created"));
+        server.stubFor(post(urlPathEqualTo("/connectors"))
+                .inScenario(scenario)
+                .whenScenarioStateIs("created")
+                .willReturn(aResponse().withStatus(201)
+                        .withBody("{\"name\":\"my-connector\",\"config\":{},\"tasks\":[]}")));
+
+        KafkaConnectApi api = new KafkaConnectApiImpl();
+
+        Map<String, Object> result = api.createConnector(Reconciliation.DUMMY_RECONCILIATION, "127.0.0.1", server.port(),
+                "my-connector", new JsonObject(), ConnectorState.STOPPED).toCompletableFuture().join();
+
+        assertThat(result, hasEntry("name", "my-connector"));
+        // It retried after the 409: the connector was POSTed twice.
+        server.verify(2, postRequestedFor(urlPathEqualTo("/connectors")));
+    }
+
 }
