@@ -38,7 +38,6 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.security.SecureRandom;
-import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -241,12 +240,7 @@ public class KafkaAgent {
         SslContextFactory.Server sslContextFactory = new SslContextFactory.Server();
         sslContextFactory.setTrustStore(KafkaAgentUtils.trustStore(caCertSecret));
 
-        byte[] random = new byte[24];
-        RANDOM.nextBytes(random);
-        String password = Base64.getUrlEncoder().withoutPadding().encodeToString(random).substring(0, 32);
-
-        sslContextFactory.setKeyStore(KafkaAgentUtils.keyStore(nodeCertSecret, password.toCharArray()));
-        sslContextFactory.setKeyStorePassword(password);
+        sslContextFactory.setKeyStore(KafkaAgentUtils.keyStore(nodeCertSecret));
         sslContextFactory.setNeedClientAuth(true);
         return  sslContextFactory;
     }

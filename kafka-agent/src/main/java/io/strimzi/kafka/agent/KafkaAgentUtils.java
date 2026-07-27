@@ -59,7 +59,7 @@ public class KafkaAgentUtils {
      * @throws GeneralSecurityException if something goes wrong when creating the truststore
      * @throws IOException if there is an I/O or format problem with the data used to load the truststore.
      */
-    static KeyStore keyStore(Secret secret, char[] password) throws GeneralSecurityException, IOException {
+    static KeyStore keyStore(Secret secret) throws GeneralSecurityException, IOException {
         String secretName = secret.getMetadata().getName();
         String strippedPrivateKey = new String(decodeBase64FieldFromSecret(secret, secretName + ".key"), StandardCharsets.US_ASCII)
                 .replace("-----BEGIN PRIVATE KEY-----", "")
@@ -73,7 +73,7 @@ public class KafkaAgentUtils {
         X509Certificate certificateChain = x509Certificate(decodeBase64FieldFromSecret(secret, secretName + ".crt"));
         KeyStore nodeKeyStore = KeyStore.getInstance(KeyStore.getDefaultType());
         nodeKeyStore.load(null);
-        nodeKeyStore.setKeyEntry(secret.getMetadata().getName(), key, password, new Certificate[]{certificateChain});
+        nodeKeyStore.setKeyEntry(secret.getMetadata().getName(), key, null, new Certificate[]{certificateChain});
         return nodeKeyStore;
     }
 

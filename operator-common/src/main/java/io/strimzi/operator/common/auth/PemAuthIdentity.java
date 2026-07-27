@@ -95,13 +95,11 @@ public class PemAuthIdentity {
     /**
      * KeyStore to use for TLS connections.
      *
-     * @param password to use to secure the KeyStore
-     *
      * @return In-memory KeyStore using the JVM's default keystore type
      * @throws GeneralSecurityException if something goes wrong when creating the truststore
      * @throws IOException if there is an I/O or format problem with the data used to load the truststore.
      */
-    public KeyStore keyStore(char[] password) throws GeneralSecurityException, IOException {
+    public KeyStore keyStore() throws GeneralSecurityException, IOException {
         String strippedPrivateKey = privateKeyAsPem()
                 .replace("-----BEGIN PRIVATE KEY-----", "")
                 .replaceAll(System.lineSeparator(), "")
@@ -113,7 +111,7 @@ public class PemAuthIdentity {
 
         KeyStore coKeyStore = KeyStore.getInstance(KeyStore.getDefaultType());
         coKeyStore.load(null);
-        coKeyStore.setKeyEntry("cluster-operator", key, password, new Certificate[]{certificateChain()});
+        coKeyStore.setKeyEntry("cluster-operator", key, null, new Certificate[]{certificateChain()});
         return coKeyStore;
     }
 
