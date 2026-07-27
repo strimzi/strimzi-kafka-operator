@@ -18,6 +18,7 @@ As such, you cannot configure the following options through the `config` propert
 * `listeners` to expose the Kafka cluster to clients
 * `authorization` mechanisms to allow or decline actions executed by users
 * `authentication` mechanisms to prove the identity of users requiring access to Kafka
+* `cordoned.log.dirs` to cordon brokers during scale-down operations
 
 Node IDs start from 0 (zero) and run sequentially across the Kafka cluster.
 Log directories are mounted to `/var/lib/kafka/data/kafka-log<pod_id>` based on the `spec.storage` configuration specified in the `KafkaNodePool` custom resource.

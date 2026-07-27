@@ -8,6 +8,7 @@
 * The `ServerSideApplyPhase1` feature gate moves to GA stage and is permanently enabled without the possibility to disable it.
 * Support for configuring Maven mirrors for Kafka Connect Build
 * Connectors that request the `stopped` or `paused` state via `spec.state` are now created directly in that state instead of being started first and then stopped or paused.
+* Added support for broker cordoning [KIP-1066](https://cwiki.apache.org/confluence/spaces/KAFKA/pages/311627566/KIP-1066+Mechanism+to+cordon+brokers+and+log+directories) during auto-rebalancing on scale down for Kafka 4.3+.
 
 ### Major changes, deprecations, and removals
 

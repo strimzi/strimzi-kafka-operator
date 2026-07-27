@@ -17,6 +17,9 @@ When auto-rebalancing is enabled, the cluster is rebalanced without further inte
 * After adding brokers, topic partitions are redistributed across the new brokers.
 * Before removing brokers, partitions are moved off the brokers being removed.
 
+When running Kafka 4.3 or later, brokers scheduled for removal are automatically _cordoned_ during a scale-down operation.
+Cordoning sets the `cordoned.log.dirs` broker configuration to prevent new partition assignments to the broker while partitions are being moved off it.
+
 Auto-rebalancing is not triggered when creating a new `KafkaNodePool` resource or deleting an existing one. 
 These actions are not treated as scaling events by the auto-rebalancing mechanism.
 
