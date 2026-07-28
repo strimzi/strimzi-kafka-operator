@@ -77,7 +77,7 @@ public class FeatureGatesST extends AbstractST {
 
         TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         final String camelChecksum = "6d1f9311fe10521a5de3262574ad7c21073cd45089fc67245f04a303562b0ea54869c8cd0375ee76de8b5c24d454a0545688018ccdae0563bd5f254aceb98b5e";
-        final String camelConnectorUrl = "https://repo.maven.apache.org/maven2/org/apache/camel/kafkaconnector/camel-timer-kafka-connector/0.9.0/camel-timer-kafka-connector-0.9.0-package.tar.gz";
+        final String camelConnectorUrl = (Environment.ST_MAVEN_MIRROR_URL != null ? Environment.ST_MAVEN_MIRROR_URL : "https://repo.maven.apache.org/maven2") + "/org/apache/camel/kafkaconnector/camel-timer-kafka-connector/0.9.0/camel-timer-kafka-connector-0.9.0-package.tar.gz";
         int randomNum = new Random().nextInt(Integer.MAX_VALUE);
         final String imageName = Environment.getImageOutputRegistry(testStorage.getNamespaceName(), testStorage.getNamespaceName(), String.valueOf(randomNum));
 
