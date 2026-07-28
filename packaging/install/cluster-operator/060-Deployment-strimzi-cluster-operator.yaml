@@ -17,7 +17,25 @@ spec:
         strimzi.io/kind: cluster-operator
     spec:
       serviceAccountName: strimzi-cluster-operator
+      automountServiceAccountToken: false
       volumes:
+        - name: kube-api-access
+          projected:
+            defaultMode: 420
+            sources:
+              - serviceAccountToken:
+                  path: token
+              - configMap:
+                  name: kube-root-ca.crt
+                  items:
+                    - key: ca.crt
+                      path: ca.crt
+              - downwardAPI:
+                  items:
+                    - path: namespace
+                      fieldRef:
+                        apiVersion: v1
+                        fieldPath: metadata.namespace
         - name: strimzi-tmp
           emptyDir:
             medium: Memory
@@ -34,6 +52,9 @@ spec:
           args:
             - /opt/strimzi/bin/cluster_operator_run.sh
           volumeMounts:
+            - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+              name: kube-api-access
+              readOnly: true
             - name: strimzi-tmp
               mountPath: /tmp
             - name: co-config-volume

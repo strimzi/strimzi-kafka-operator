@@ -447,11 +447,12 @@ public class WorkloadUtilsTest {
                 .withStrimziPodSetController(NAME)
                 .withStrimziPodName(NAME + "-0")
                 .toMap()));
-        assertThat(pod.getMetadata().getAnnotations(), is(Map.of(PodRevision.STRIMZI_REVISION_ANNOTATION, "bf07b764", PodRevision.STRIMZI_RESOURCE_REVISION_ANNOTATION, "97d170e1")));
+        assertThat(pod.getMetadata().getAnnotations(), is(Map.of(PodRevision.STRIMZI_REVISION_ANNOTATION, "5eeeb221", PodRevision.STRIMZI_RESOURCE_REVISION_ANNOTATION, "97d170e1")));
 
         assertThat(pod.getSpec().getRestartPolicy(), is("Always"));
         assertThat(pod.getSpec().getHostname(), is(NAME + "-0"));
         assertThat(pod.getSpec().getServiceAccountName(), is(NAME + "-sa"));
+        assertThat(pod.getSpec().getAutomountServiceAccountToken(), is(false));
         assertThat(pod.getSpec().getEnableServiceLinks(), is(nullValue()));
         assertThat(pod.getSpec().getAffinity(), is(nullValue()));
         assertThat(pod.getSpec().getInitContainers(), is(nullValue()));
@@ -498,11 +499,12 @@ public class WorkloadUtilsTest {
                 .withStrimziPodName(NAME + "-0")
                 .withAdditionalLabels(Map.of("default-label", "default-value"))
                 .toMap()));
-        assertThat(pod.getMetadata().getAnnotations(), is(Map.of("extra", "annotations", PodRevision.STRIMZI_REVISION_ANNOTATION, "391a9c84", PodRevision.STRIMZI_RESOURCE_REVISION_ANNOTATION, "97d170e1")));
+        assertThat(pod.getMetadata().getAnnotations(), is(Map.of("extra", "annotations", PodRevision.STRIMZI_REVISION_ANNOTATION, "d136f7e6", PodRevision.STRIMZI_RESOURCE_REVISION_ANNOTATION, "97d170e1")));
 
         assertThat(pod.getSpec().getRestartPolicy(), is("Always"));
         assertThat(pod.getSpec().getHostname(), is(NAME + "-0"));
         assertThat(pod.getSpec().getServiceAccountName(), is(NAME + "-sa"));
+        assertThat(pod.getSpec().getAutomountServiceAccountToken(), is(false));
         assertThat(pod.getSpec().getEnableServiceLinks(), is(nullValue()));
         assertThat(pod.getSpec().getAffinity(), is(DEFAULT_AFFINITY));
         assertThat(pod.getSpec().getInitContainers().size(), is(1));
@@ -552,12 +554,13 @@ public class WorkloadUtilsTest {
                 .toMap()));
         assertThat(pod.getMetadata().getAnnotations(), allOf(
                 hasEntry("extra", "annotations"),
-                hasEntry(PodRevision.STRIMZI_REVISION_ANNOTATION, "391a9c84"),
+                hasEntry(PodRevision.STRIMZI_REVISION_ANNOTATION, "d136f7e6"),
                 hasEntry(PodRevision.STRIMZI_RESOURCE_REVISION_ANNOTATION, "97d170e1")));
 
         assertThat(pod.getSpec().getRestartPolicy(), is("Always"));
         assertThat(pod.getSpec().getHostname(), is(NAME + "-0"));
         assertThat(pod.getSpec().getServiceAccountName(), is(NAME + "-sa"));
+        assertThat(pod.getSpec().getAutomountServiceAccountToken(), is(false));
         assertThat(pod.getSpec().getEnableServiceLinks(), is(nullValue()));
         assertThat(pod.getSpec().getAffinity(), is(DEFAULT_AFFINITY));
         assertThat(pod.getSpec().getInitContainers().size(), is(1));
@@ -622,11 +625,12 @@ public class WorkloadUtilsTest {
                 .withStrimziPodName(NAME + "-0")
                 .withAdditionalLabels(Map.of("default-label", "default-value", "label-3", "value-3", "label-4", "value-4"))
                 .toMap()));
-        assertThat(pod.getMetadata().getAnnotations(), is(Map.of("extra", "annotations", "anno-1", "value-1", "anno-2", "value-2", PodRevision.STRIMZI_REVISION_ANNOTATION, "56e75e98", PodRevision.STRIMZI_RESOURCE_REVISION_ANNOTATION, "97d170e1")));
+        assertThat(pod.getMetadata().getAnnotations(), is(Map.of("extra", "annotations", "anno-1", "value-1", "anno-2", "value-2", PodRevision.STRIMZI_REVISION_ANNOTATION, "a395238d", PodRevision.STRIMZI_RESOURCE_REVISION_ANNOTATION, "97d170e1")));
 
         assertThat(pod.getSpec().getRestartPolicy(), is("Always"));
         assertThat(pod.getSpec().getHostname(), is(NAME + "-0"));
         assertThat(pod.getSpec().getServiceAccountName(), is(NAME + "-sa"));
+        assertThat(pod.getSpec().getAutomountServiceAccountToken(), is(false));
         assertThat(pod.getSpec().getEnableServiceLinks(), is(false));
         assertThat(pod.getSpec().getAffinity(), is(DEFAULT_AFFINITY));
         assertThat(pod.getSpec().getInitContainers().size(), is(1));
@@ -670,6 +674,7 @@ public class WorkloadUtilsTest {
         assertThat(pod.getMetadata().getAnnotations(), is(Map.of()));
 
         assertThat(pod.getSpec().getServiceAccountName(), is(NAME));
+        assertThat(pod.getSpec().getAutomountServiceAccountToken(), is(false));
         assertThat(pod.getSpec().getEnableServiceLinks(), is(nullValue()));
         assertThat(pod.getSpec().getAffinity(), is(nullValue()));
         assertThat(pod.getSpec().getInitContainers(), is(nullValue()));
@@ -708,6 +713,7 @@ public class WorkloadUtilsTest {
         assertThat(pod.getMetadata().getAnnotations(), is(Map.of("extra", "annotations")));
 
         assertThat(pod.getSpec().getServiceAccountName(), is(NAME));
+        assertThat(pod.getSpec().getAutomountServiceAccountToken(), is(false));
         assertThat(pod.getSpec().getEnableServiceLinks(), is(nullValue()));
         assertThat(pod.getSpec().getAffinity(), is(DEFAULT_AFFINITY));
         assertThat(pod.getSpec().getInitContainers().size(), is(1));
@@ -747,6 +753,7 @@ public class WorkloadUtilsTest {
         assertThat(pod.getMetadata().getAnnotations(), is(Map.of("extra", "annotations")));
 
         assertThat(pod.getSpec().getServiceAccountName(), is(NAME));
+        assertThat(pod.getSpec().getAutomountServiceAccountToken(), is(false));
         assertThat(pod.getSpec().getEnableServiceLinks(), is(nullValue()));
         assertThat(pod.getSpec().getAffinity(), is(DEFAULT_AFFINITY));
         assertThat(pod.getSpec().getInitContainers().size(), is(1));
@@ -803,6 +810,7 @@ public class WorkloadUtilsTest {
         assertThat(pod.getMetadata().getAnnotations(), is(Map.of("extra", "annotations", "anno-1", "value-1", "anno-2", "value-2")));
 
         assertThat(pod.getSpec().getServiceAccountName(), is(NAME));
+        assertThat(pod.getSpec().getAutomountServiceAccountToken(), is(false));
         assertThat(pod.getSpec().getEnableServiceLinks(), is(false));
         assertThat(pod.getSpec().getAffinity(), is(DEFAULT_AFFINITY));
         assertThat(pod.getSpec().getInitContainers().size(), is(1));
@@ -851,6 +859,7 @@ public class WorkloadUtilsTest {
 
         assertThat(pod.getSpec().getRestartPolicy(), is("Never"));
         assertThat(pod.getSpec().getServiceAccountName(), is(NAME));
+        assertThat(pod.getSpec().getAutomountServiceAccountToken(), is(false));
         assertThat(pod.getSpec().getEnableServiceLinks(), is(nullValue()));
         assertThat(pod.getSpec().getAffinity(), is(nullValue()));
         assertThat(pod.getSpec().getInitContainers(), is(nullValue()));
@@ -894,6 +903,7 @@ public class WorkloadUtilsTest {
 
         assertThat(pod.getSpec().getRestartPolicy(), is("Never"));
         assertThat(pod.getSpec().getServiceAccountName(), is(NAME));
+        assertThat(pod.getSpec().getAutomountServiceAccountToken(), is(false));
         assertThat(pod.getSpec().getEnableServiceLinks(), is(nullValue()));
         assertThat(pod.getSpec().getAffinity(), is(DEFAULT_AFFINITY));
         assertThat(pod.getSpec().getInitContainers().size(), is(1));
@@ -938,6 +948,7 @@ public class WorkloadUtilsTest {
 
         assertThat(pod.getSpec().getRestartPolicy(), is("Never"));
         assertThat(pod.getSpec().getServiceAccountName(), is(NAME));
+        assertThat(pod.getSpec().getAutomountServiceAccountToken(), is(false));
         assertThat(pod.getSpec().getEnableServiceLinks(), is(nullValue()));
         assertThat(pod.getSpec().getAffinity(), is(DEFAULT_AFFINITY));
         assertThat(pod.getSpec().getInitContainers().size(), is(1));
@@ -999,6 +1010,7 @@ public class WorkloadUtilsTest {
 
         assertThat(pod.getSpec().getRestartPolicy(), is("Never"));
         assertThat(pod.getSpec().getServiceAccountName(), is(NAME));
+        assertThat(pod.getSpec().getAutomountServiceAccountToken(), is(false));
         assertThat(pod.getSpec().getEnableServiceLinks(), is(false));
         assertThat(pod.getSpec().getAffinity(), is(DEFAULT_AFFINITY));
         assertThat(pod.getSpec().getInitContainers().size(), is(1));

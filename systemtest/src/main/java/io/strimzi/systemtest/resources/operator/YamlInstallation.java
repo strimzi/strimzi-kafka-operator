@@ -454,10 +454,10 @@ public class YamlInstallation implements InstallationMethod {
                             .withImage(StUtils.changeOrgAndTag(coImage))
                             .withImagePullPolicy(Environment.OPERATOR_IMAGE_PULL_POLICY)
                         .endContainer()
-                        .editFirstVolume()
+                        .editMatchingVolume(volume -> volume.getName().equals("strimzi-tmp"))
                             .editEmptyDir()
-                            // in case we execute more than 10 test cases in parallel we at least 2Mi storage
-                            .withNewSizeLimit("2Mi")
+                                // in case we execute more than 10 test cases in parallel we at least 2Mi storage
+                                .withNewSizeLimit("2Mi")
                             .endEmptyDir()
                         .endVolume()
                         .editLastVolume()
