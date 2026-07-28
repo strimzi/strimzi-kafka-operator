@@ -93,7 +93,7 @@ kind: KafkaConnector
 metadata:
   name: my-sink-connector
   labels:
-    strimzi.io/cluster: my-connect
+    strimzi.io/cluster: my-connect-cluster
 spec:
   class: org.apache.kafka.connect.file.FileStreamSinkConnector # <1>
   tasksMax: 2
