@@ -406,7 +406,9 @@ public class KafkaConfigurationDiffTest {
     }
 
     @Test
-    public void testCordonedLogDirs() {
+    public void testPerBrokerDynamicConfig() {
+        // using cordoned.log.dirs as a PER_BROKER dynamic config
+
         // SET scenario: desired has cordoned.log.dirs=* but current does not
         KafkaConfigurationDiff kcd = new KafkaConfigurationDiff(Reconciliation.DUMMY_RECONCILIATION, getCurrentConfiguration(emptyList()),
                 getDesiredConfiguration(singletonList(new ConfigEntry("cordoned.log.dirs", "*"))), kafkaVersion, brokerNodeRef, false, true);
