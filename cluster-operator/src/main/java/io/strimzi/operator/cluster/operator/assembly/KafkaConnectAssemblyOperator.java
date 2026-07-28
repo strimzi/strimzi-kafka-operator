@@ -815,7 +815,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
     private static void updateStatus(Reconciliation reconciliation, Throwable error, KafkaConnector kafkaConnector2, CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> connectorOperations) {
         KafkaConnectorStatus status = new KafkaConnectorStatus();
         StatusUtils.setStatusConditionAndObservedGeneration(kafkaConnector2, status, error);
-        StatusDiff diff = new StatusDiff(kafkaConnector2.getStatus(), status);
+        StatusDiff diff = new StatusDiff(reconciliation, kafkaConnector2.getStatus(), status);
         if (!diff.isEmpty()) {
             KafkaConnector copy = new KafkaConnectorBuilder(kafkaConnector2).build();
             copy.setStatus(status);

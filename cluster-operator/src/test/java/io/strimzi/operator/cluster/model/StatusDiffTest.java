@@ -11,6 +11,7 @@ import io.strimzi.api.kafka.model.kafka.KafkaStatusBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.ListenerAddressBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.ListenerStatus;
 import io.strimzi.api.kafka.model.kafka.listener.ListenerStatusBuilder;
+import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.StatusDiff;
 import io.strimzi.operator.common.model.StatusUtils;
 import org.junit.jupiter.api.Test;
@@ -90,28 +91,28 @@ public class StatusDiffTest {
                 .withListeners(ls3, ls1)
                 .build();
 
-        StatusDiff diff = new StatusDiff(null, status1);
+        StatusDiff diff = new StatusDiff(Reconciliation.DUMMY_RECONCILIATION, null, status1);
         assertThat(diff.isEmpty(), is(false));
 
-        diff = new StatusDiff(new KafkaStatus(), status1);
+        diff = new StatusDiff(Reconciliation.DUMMY_RECONCILIATION, new KafkaStatus(), status1);
         assertThat(diff.isEmpty(), is(false));
 
-        diff = new StatusDiff(status1, status2);
+        diff = new StatusDiff(Reconciliation.DUMMY_RECONCILIATION, status1, status2);
         assertThat(diff.isEmpty(), is(true));
 
-        diff = new StatusDiff(status1, status3);
+        diff = new StatusDiff(Reconciliation.DUMMY_RECONCILIATION, status1, status3);
         assertThat(diff.isEmpty(), is(false));
 
-        diff = new StatusDiff(status1, status4);
+        diff = new StatusDiff(Reconciliation.DUMMY_RECONCILIATION, status1, status4);
         assertThat(diff.isEmpty(), is(false));
 
-        diff = new StatusDiff(status3, status4);
+        diff = new StatusDiff(Reconciliation.DUMMY_RECONCILIATION, status3, status4);
         assertThat(diff.isEmpty(), is(false));
 
-        diff = new StatusDiff(status3, status5);
+        diff = new StatusDiff(Reconciliation.DUMMY_RECONCILIATION, status3, status5);
         assertThat(diff.isEmpty(), is(false));
 
-        diff = new StatusDiff(status5, status6);
+        diff = new StatusDiff(Reconciliation.DUMMY_RECONCILIATION, status5, status6);
         assertThat(diff.isEmpty(), is(false));
     }
 
@@ -155,7 +156,7 @@ public class StatusDiffTest {
                 .withListeners(ls1, ls2)
                 .build();
 
-        StatusDiff diff = new StatusDiff(status1, status2);
+        StatusDiff diff = new StatusDiff(Reconciliation.DUMMY_RECONCILIATION, status1, status2);
         assertThat(diff.isEmpty(), is(true));
     }
 }

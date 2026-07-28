@@ -1265,7 +1265,7 @@ public class KafkaReconciler {
                                     .build())
                     .build();
 
-            StatusDiff diff = new StatusDiff(nodePool.getStatus(), updatedNodePool.getStatus());
+            StatusDiff diff = new StatusDiff(reconciliation, nodePool.getStatus(), updatedNodePool.getStatus());
 
             if (!diff.isEmpty()) {
                 // Status changed => we will update it

@@ -338,7 +338,7 @@ public abstract class AbstractOperator<
                 .compose(res -> {
                     if (res != null) {
                         S currentStatus = res.getStatus();
-                        StatusDiff sDiff = new StatusDiff(currentStatus, desiredStatus);
+                        StatusDiff sDiff = new StatusDiff(reconciliation, currentStatus, desiredStatus);
 
                         if (!sDiff.isEmpty()) {
                             res.setStatus(desiredStatus);

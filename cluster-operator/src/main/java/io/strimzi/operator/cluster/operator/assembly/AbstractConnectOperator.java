@@ -1243,7 +1243,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                     } else {
                         V currentStatus = fetchedResource.getStatus();
 
-                        StatusDiff ksDiff = new StatusDiff(currentStatus, desiredStatus);
+                        StatusDiff ksDiff = new StatusDiff(reconciliation, currentStatus, desiredStatus);
 
                         if (!ksDiff.isEmpty()) {
                             U resourceWithNewStatus = copyWithStatus.apply(fetchedResource, desiredStatus);
