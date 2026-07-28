@@ -13,6 +13,11 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.client.dsl.base.PatchContext;
 import io.fabric8.kubernetes.client.dsl.base.PatchType;
+import io.skodjob.annotations.Desc;
+import io.skodjob.annotations.Label;
+import io.skodjob.annotations.Step;
+import io.skodjob.annotations.SuiteDoc;
+import io.skodjob.annotations.TestDoc;
 import io.skodjob.kubetest4j.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.common.CertificateAuthority;
 import io.strimzi.api.kafka.model.common.CertificateAuthorityBuilder;
@@ -30,6 +35,7 @@ import io.strimzi.operator.common.ca.Ca;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
+import io.strimzi.systemtest.docs.TestDocsLabels;
 import io.strimzi.systemtest.kafkaclients.ClientsAuthentication;
 import io.strimzi.systemtest.kafkaclients.externalClients.ExternalKafkaClient;
 import io.strimzi.systemtest.resources.CrdClients;
@@ -95,10 +101,29 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @Tag(REGRESSION)
+@SuiteDoc(
+    description = @Desc("Test suite for verifying TLS certificate management, CA renewal and replacement, certificate maintenance windows, ACL authorization, and TLS configuration for Kafka and KafkaConnect components."),
+    labels = {
+        @Label(value = TestDocsLabels.SECURITY)
+    }
+)
 class SecurityST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(SecurityST.class);
 
+    @TestDoc(
+        description = @Desc("Test verifying that annotating the cluster CA certificate secret with strimzi.io/force-renew triggers automatic renewal of the cluster CA certificate, causing rolling updates of Kafka brokers, controllers, Entity Operator, KafkaExporter, and Cruise Control."),
+        steps = {
+            @Step(value = "Deploy Kafka cluster with TLS listener, Entity Operator, Cruise Control, and KafkaExporter.", expected = "Kafka cluster is deployed."),
+            @Step(value = "Create KafkaUser and KafkaTopic, produce and consume messages over TLS.", expected = "Messages are exchanged successfully."),
+            @Step(value = "Annotate the cluster CA certificate secret with strimzi.io/force-renew.", expected = "CA cert renewal is triggered."),
+            @Step(value = "Wait for rolling updates of Kafka, Entity Operator, KafkaExporter, and Cruise Control.", expected = "All components roll."),
+            @Step(value = "Verify the CA certificate has changed, the original client can still consume, and a newly created KafkaUser can also consume.", expected = "New certificate is in use, existing client works, and new user receives a valid cert signed by the renewed CA.")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.SECURITY)
+        }
+    )
     @ParallelNamespaceTest
     @Tag(ROLLING_UPDATE)
     @Tag(CRUISE_CONTROL)
@@ -112,6 +137,19 @@ class SecurityST extends AbstractST {
                 true);
     }
 
+    @TestDoc(
+        description = @Desc("Test verifying that annotating the clients CA certificate secret with strimzi.io/force-renew triggers automatic renewal of the clients CA certificate, causing rolling updates of Kafka brokers without rolling Entity Operator, KafkaExporter, or Cruise Control."),
+        steps = {
+            @Step(value = "Deploy Kafka cluster with TLS listener, Entity Operator, Cruise Control, and KafkaExporter.", expected = "Kafka cluster is deployed."),
+            @Step(value = "Create KafkaUser and KafkaTopic, produce and consume messages over TLS.", expected = "Messages are exchanged successfully."),
+            @Step(value = "Annotate the clients CA certificate secret with strimzi.io/force-renew.", expected = "CA cert renewal is triggered."),
+            @Step(value = "Wait for Kafka rolling update; verify Entity Operator, KafkaExporter, and Cruise Control do not roll.", expected = "Only Kafka rolls."),
+            @Step(value = "Verify the CA certificate has changed, the original client can still consume, and a newly created KafkaUser can also consume.", expected = "New certificate is in use, existing client works, and new user receives a valid cert signed by the renewed CA.")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.SECURITY)
+        }
+    )
     @ParallelNamespaceTest
     @Tag(ROLLING_UPDATE)
     @Tag(CRUISE_CONTROL)
@@ -125,6 +163,19 @@ class SecurityST extends AbstractST {
                 false);
     }
 
+    @TestDoc(
+        description = @Desc("Test verifying that annotating both cluster and clients CA certificate secrets with strimzi.io/force-renew triggers automatic renewal of all CA certificates, causing rolling updates of all components."),
+        steps = {
+            @Step(value = "Deploy Kafka cluster with TLS listener, Entity Operator, Cruise Control, and KafkaExporter.", expected = "Kafka cluster is deployed."),
+            @Step(value = "Create KafkaUser and KafkaTopic, produce and consume messages over TLS.", expected = "Messages are exchanged successfully."),
+            @Step(value = "Annotate both cluster and clients CA certificate secrets with strimzi.io/force-renew.", expected = "CA cert renewal is triggered for both CAs."),
+            @Step(value = "Wait for rolling updates of all components.", expected = "All components roll."),
+            @Step(value = "Verify both CA certificates have changed, the original client can still consume, and a newly created KafkaUser can also consume.", expected = "New certificates are in use, existing client works, and new user receives a valid cert signed by the renewed CAs.")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.SECURITY)
+        }
+    )
     @ParallelNamespaceTest
     @Tag(SANITY)
     @Tag(ACCEPTANCE)
@@ -261,6 +312,19 @@ class SecurityST extends AbstractST {
         }
     }
 
+    @TestDoc(
+        description = @Desc("Test verifying that annotating the cluster CA key secret with strimzi.io/force-replace triggers automatic replacement of the cluster CA key pair, causing 3 rolling updates of all components (including a final roll for old certificate removal), with a CO pod restart between rolls to verify recovery."),
+        steps = {
+            @Step(value = "Deploy Kafka cluster with TLS listener, Entity Operator, Cruise Control, and KafkaExporter.", expected = "Kafka cluster is deployed."),
+            @Step(value = "Create KafkaUser and KafkaTopic, produce and consume messages over TLS.", expected = "Messages are exchanged successfully."),
+            @Step(value = "Annotate the cluster CA key secret with strimzi.io/force-replace.", expected = "CA key replacement is triggered."),
+            @Step(value = "Wait for 3 rolling updates of all components; delete the CO pod after the first roll to verify recovery.", expected = "All components complete 3 rolling updates and the CO recovers."),
+            @Step(value = "Verify the CA key has changed, the original client can still consume, and a newly created KafkaUser can also consume.", expected = "New key is in use, existing client works, and new user receives a valid cert signed by the new CA key.")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.SECURITY)
+        }
+    )
     @ParallelNamespaceTest
     @Tag(ROLLING_UPDATE)
     @Tag(CRUISE_CONTROL)
@@ -273,6 +337,19 @@ class SecurityST extends AbstractST {
                 true);
     }
 
+    @TestDoc(
+        description = @Desc("Test verifying that annotating the clients CA key secret with strimzi.io/force-replace triggers automatic replacement of the clients CA key pair, causing 1 rolling update of Kafka brokers without rolling Entity Operator, KafkaExporter, or Cruise Control."),
+        steps = {
+            @Step(value = "Deploy Kafka cluster with TLS listener, Entity Operator, Cruise Control, and KafkaExporter.", expected = "Kafka cluster is deployed."),
+            @Step(value = "Create KafkaUser and KafkaTopic, produce and consume messages over TLS.", expected = "Messages are exchanged successfully."),
+            @Step(value = "Annotate the clients CA key secret with strimzi.io/force-replace.", expected = "CA key replacement is triggered."),
+            @Step(value = "Wait for 1 Kafka rolling update; verify Entity Operator, KafkaExporter, and Cruise Control do not roll.", expected = "Only Kafka rolls once."),
+            @Step(value = "Verify the CA key has changed, the original client can still consume, and a newly created KafkaUser can also consume.", expected = "New key is in use, existing client works, and new user receives a valid cert signed by the new CA key.")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.SECURITY)
+        }
+    )
     @ParallelNamespaceTest
     @Tag(ROLLING_UPDATE)
     @Tag(CRUISE_CONTROL)
@@ -285,6 +362,19 @@ class SecurityST extends AbstractST {
                 false);
     }
 
+    @TestDoc(
+        description = @Desc("Test verifying that annotating both cluster and clients CA key secrets with strimzi.io/force-replace triggers automatic replacement of all CA key pairs, causing 3 rolling updates of all components (including a final roll for old certificate removal), with a CO pod restart between rolls to verify recovery."),
+        steps = {
+            @Step(value = "Deploy Kafka cluster with TLS listener, Entity Operator, Cruise Control, and KafkaExporter.", expected = "Kafka cluster is deployed."),
+            @Step(value = "Create KafkaUser and KafkaTopic, produce and consume messages over TLS.", expected = "Messages are exchanged successfully."),
+            @Step(value = "Annotate both cluster and clients CA key secrets with strimzi.io/force-replace.", expected = "CA key replacement is triggered for both CAs."),
+            @Step(value = "Wait for 3 rolling updates of all components; delete the CO pod after the first roll to verify recovery.", expected = "All components complete 3 rolling updates and the CO recovers."),
+            @Step(value = "Verify both CA keys have changed, the original client can still consume, and a newly created KafkaUser can also consume.", expected = "New keys are in use, existing client works, and new user receives a valid cert signed by the new CA keys.")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.SECURITY)
+        }
+    )
     @ParallelNamespaceTest
     @Tag(ROLLING_UPDATE)
     @Tag(CRUISE_CONTROL)
@@ -497,6 +587,19 @@ class SecurityST extends AbstractST {
         KubeResourceManager.get().createResourceWithWait(kafka);
     }
 
+    @TestDoc(
+        description = @Desc("Test verifying that when a pre-existing Kubernetes secret contains an already-expired cluster CA certificate, the Cluster Operator automatically renews it during initial reconciliation and the cluster becomes fully functional."),
+        steps = {
+            @Step(value = "Create a Kubernetes secret containing an already-expired cluster CA certificate before the Kafka CR exists.", expected = "Secret with expired certificate is created."),
+            @Step(value = "Deploy Kafka cluster; the CO detects the expired CA during reconciliation and renews it as part of the initial deployment.", expected = "Kafka cluster is deployed with a renewed CA certificate."),
+            @Step(value = "Create KafkaUser and KafkaTopic, produce and consume messages over TLS.", expected = "Messages are exchanged successfully using the renewed certificate."),
+            @Step(value = "Wait for the expired certificate to be fully replaced in the Secret and the cluster to stabilize.", expected = "CA certificate in the Secret has changed and all pods are ready."),
+            @Step(value = "Produce and consume messages again after stabilization.", expected = "Messages are exchanged successfully with renewed certificates.")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.SECURITY)
+        }
+    )
     @ParallelNamespaceTest
     @Tag(CRUISE_CONTROL)
     void testAutoRenewCaCertsTriggerByExpiredCertificate() {
@@ -547,6 +650,22 @@ class SecurityST extends AbstractST {
         ClientUtils.waitForClientsSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getProducerName(), testStorage.getMessageCount());
     }
 
+    @TestDoc(
+        description = @Desc("Test verifying that CA certificate renewal is deferred until a configured maintenance time window, and that rolling updates only occur within the window."),
+        steps = {
+            @Step(value = "Deploy Kafka cluster with a maintenance time window set 15 minutes in the future and CA validity of 20 days / renewal at 15 days for both cluster and clients CA.", expected = "Kafka cluster is deployed with maintenance window configured."),
+            @Step(value = "Create KafkaUser and KafkaTopic.", expected = "Resources are created."),
+            @Step(value = "Update CA validity and renewal days to trigger renewal.", expected = "CA configuration is updated."),
+            @Step(value = "Verify that CA certificate generation annotations remain at 0 and broker pod UIDs are unchanged, confirming no renewal or rolling update outside the maintenance window.", expected = "CA cert generation is still 0 and pods have not restarted."),
+            @Step(value = "Add a new maintenance window starting at the current time.", expected = "Maintenance window is updated to start now."),
+            @Step(value = "Wait for rolling update to occur within the maintenance window.", expected = "Kafka rolls within the maintenance window."),
+            @Step(value = "Verify CA certificate generations have incremented and KafkaUser certificate has been renewed.", expected = "Certificates are renewed."),
+            @Step(value = "Produce and consume messages over TLS with renewed certificates.", expected = "Messages are exchanged successfully.")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.SECURITY)
+        }
+    )
     @ParallelNamespaceTest
     void testCertRenewalInMaintenanceTimeWindow() {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
@@ -660,6 +779,20 @@ class SecurityST extends AbstractST {
         ClientUtils.waitForClientsSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getProducerName(), testStorage.getMessageCount());
     }
 
+    @TestDoc(
+        description = @Desc("Test verifying that deleting internal CA certificate secrets triggers automatic regeneration of the CA certificates with new certificate data, followed by a rolling update."),
+        steps = {
+            @Step(value = "Deploy Kafka cluster and create KafkaUser and KafkaTopic.", expected = "All resources are deployed."),
+            @Step(value = "Verify CA certificate secrets exist.", expected = "Secrets are present with certificate data."),
+            @Step(value = "Delete all CA certificate secrets.", expected = "Secrets are deleted."),
+            @Step(value = "Wait for Kafka rolling update and secret regeneration.", expected = "Pods roll and secrets are recreated."),
+            @Step(value = "Verify regenerated certificates have different data than the originals.", expected = "New certificates differ from deleted ones."),
+            @Step(value = "Produce and consume messages over TLS with regenerated certificates.", expected = "Messages are exchanged successfully.")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.SECURITY)
+        }
+    )
     @ParallelNamespaceTest
     void testCertRegeneratedAfterInternalCAisDeleted() {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
@@ -730,6 +863,18 @@ class SecurityST extends AbstractST {
         ClientUtils.waitForClientsSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getProducerName(), testStorage.getMessageCount());
     }
 
+    @TestDoc(
+        description = @Desc("Test verifying TLS hostname verification behavior with KafkaConnect, where connecting via IP address fails with default hostname verification and succeeds when ssl.endpoint.identification.algorithm is set to empty."),
+        steps = {
+            @Step(value = "Deploy Kafka cluster and get the bootstrap service IP address.", expected = "Kafka is deployed and IP is retrieved."),
+            @Step(value = "Deploy KafkaConnect configured to connect via IP address without disabling hostname verification.", expected = "KafkaConnect enters CrashLoopBackOff due to hostname verification failure."),
+            @Step(value = "Update KafkaConnect configuration to set ssl.endpoint.identification.algorithm to empty.", expected = "KafkaConnect configuration is updated."),
+            @Step(value = "Verify KafkaConnect recovers and becomes Ready.", expected = "KafkaConnect is in Ready state.")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.SECURITY)
+        }
+    )
     @ParallelNamespaceTest
     @Tag(CONNECT)
     @Tag(CONNECT_COMPONENTS)
@@ -777,6 +922,20 @@ class SecurityST extends AbstractST {
         KafkaConnectUtils.waitForConnectReady(testStorage.getNamespaceName(), testStorage.getClusterName());
     }
 
+    @TestDoc(
+        description = @Desc("Test verifying Kafka ACL authorization with separate read and write users over a NodePort TLS listener, ensuring write-only users cannot consume and read-only users cannot produce."),
+        steps = {
+            @Step(value = "Deploy Kafka cluster with simple authorization and a NodePort TLS listener.", expected = "Kafka cluster is deployed with ACL authorization."),
+            @Step(value = "Create a KafkaUser with write-only ACL permissions and send messages.", expected = "Messages are sent successfully."),
+            @Step(value = "Attempt to receive messages as the write-only user.", expected = "Receive fails with GroupAuthorizationException."),
+            @Step(value = "Create a KafkaUser with read-only ACL permissions for a specific consumer group.", expected = "Read-only user is created."),
+            @Step(value = "Receive messages as the read-only user.", expected = "Messages are received successfully."),
+            @Step(value = "Attempt to send messages as the read-only user.", expected = "Send fails with authorization exception.")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.SECURITY)
+        }
+    )
     @ParallelNamespaceTest
     @Tag(NODEPORT_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
@@ -867,6 +1026,19 @@ class SecurityST extends AbstractST {
         assertThrows(Exception.class, newExternalKafkaClient::sendMessagesTls);
     }
 
+    @TestDoc(
+        description = @Desc("Test verifying that a Kafka super user can both produce and consume messages regardless of ACL restrictions, while a non-super user with write-only ACLs cannot consume."),
+        steps = {
+            @Step(value = "Deploy Kafka cluster with simple authorization, a NodePort TLS listener, and a configured super user.", expected = "Kafka cluster is deployed with super user configured."),
+            @Step(value = "Create a KafkaUser configured as super user with write-only ACL and send messages.", expected = "Messages are sent successfully."),
+            @Step(value = "Receive messages as the super user despite having only write ACL.", expected = "Messages are received successfully due to super user privileges."),
+            @Step(value = "Create a non-super user with write-only ACL and send messages.", expected = "Messages are sent successfully."),
+            @Step(value = "Attempt to receive messages as the non-super user.", expected = "Receive fails with GroupAuthorizationException.")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.SECURITY)
+        }
+    )
     @ParallelNamespaceTest
     @Tag(NODEPORT_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
@@ -960,6 +1132,21 @@ class SecurityST extends AbstractST {
         assertThrows(GroupAuthorizationException.class, newExternalKafkaClient::receiveMessagesTls);
     }
 
+    @TestDoc(
+        description = @Desc("Test verifying that CA certificate renewal completes successfully even when a broker Pod becomes stuck in Pending state during the rolling update, simulating a break-in-the-middle scenario."),
+        steps = {
+            @Step(value = "Deploy Kafka cluster with cluster CA validity of 3 days / renewal at 1 day and replication factor of 3.", expected = "Kafka cluster is deployed with short-lived certificates."),
+            @Step(value = "Create KafkaUser and KafkaTopic, produce and consume messages over TLS.", expected = "Messages are exchanged successfully."),
+            @Step(value = "Set impossibly high CPU resource requirements on brokers and update CA configuration to trigger renewal.", expected = "Broker Pods enter Pending state during rolling update."),
+            @Step(value = "Verify a consumer can still read previously produced messages.", expected = "Consumer reads messages from available replicas."),
+            @Step(value = "Fix CPU resource requirements to allow Pods to schedule.", expected = "Pods become schedulable."),
+            @Step(value = "Wait for certificate renewal and rolling updates to complete.", expected = "All components roll and certificates are renewed."),
+            @Step(value = "Produce and consume messages on a new topic with renewed certificates.", expected = "Messages are exchanged successfully with new certificates.")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.SECURITY)
+        }
+    )
     @ParallelNamespaceTest
     void testCaRenewalBreakInMiddle() {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
@@ -1077,6 +1264,18 @@ class SecurityST extends AbstractST {
         ClientUtils.waitForClientsSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getProducerName(), testStorage.getMessageCount());
     }
 
+    @TestDoc(
+        description = @Desc("Test verifying that TLS version configuration in Strimzi is enforced by deploying Kafka with TLSv1.2 only and confirming KafkaConnect fails with TLSv1, then succeeds after switching to TLSv1.2."),
+        steps = {
+            @Step(value = "Deploy Kafka cluster configured to support only TLSv1.2.", expected = "Kafka cluster is deployed with TLSv1.2."),
+            @Step(value = "Deploy KafkaConnect configured with TLSv1.", expected = "KafkaConnect becomes NotReady due to TLS version mismatch."),
+            @Step(value = "Update KafkaConnect configuration to use TLSv1.2.", expected = "KafkaConnect configuration is updated."),
+            @Step(value = "Verify KafkaConnect becomes Ready and is stable.", expected = "KafkaConnect is Ready and stable.")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.SECURITY)
+        }
+    )
     @ParallelNamespaceTest
     @Tag(CONNECT)
     @Tag(CONNECT_COMPONENTS)
@@ -1154,6 +1353,18 @@ class SecurityST extends AbstractST {
         KafkaConnectUtils.waitForConnectReady(testStorage.getNamespaceName(), testStorage.getClusterName());
     }
 
+    @TestDoc(
+        description = @Desc("Test verifying that TLS cipher suite configuration in Strimzi is enforced by deploying Kafka with a specific cipher suite and confirming KafkaConnect fails with a mismatched suite, then succeeds after switching to the same one."),
+        steps = {
+            @Step(value = "Deploy Kafka cluster configured with TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384 cipher suite.", expected = "Kafka cluster is deployed with specific cipher suite."),
+            @Step(value = "Deploy KafkaConnect configured with TLS_DHE_RSA_WITH_AES_128_GCM_SHA256 cipher suite.", expected = "KafkaConnect becomes NotReady due to cipher suite mismatch."),
+            @Step(value = "Update KafkaConnect configuration to use the same cipher suite as Kafka.", expected = "KafkaConnect configuration is updated."),
+            @Step(value = "Verify KafkaConnect becomes Ready and is stable.", expected = "KafkaConnect is Ready and stable.")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.SECURITY)
+        }
+    )
     @ParallelNamespaceTest
     @Tag(CONNECT)
     @Tag(CONNECT_COMPONENTS)
@@ -1219,6 +1430,21 @@ class SecurityST extends AbstractST {
         KafkaConnectUtils.waitForConnectReady(testStorage.getNamespaceName(), testStorage.getClusterName());
     }
 
+    @TestDoc(
+        description = @Desc("Test verifying that CA secrets with generateSecretOwnerReference set to false persist after Kafka deletion, and CA secrets with generateSecretOwnerReference set to true are automatically deleted with the Kafka cluster."),
+        steps = {
+            @Step(value = "Deploy Kafka cluster with generateSecretOwnerReference set to false for both cluster and clients CAs.", expected = "Kafka cluster is deployed."),
+            @Step(value = "Delete the Kafka cluster.", expected = "Kafka cluster is deleted."),
+            @Step(value = "Verify that CA secrets still exist after Kafka deletion.", expected = "CA secrets persist."),
+            @Step(value = "Delete the persisted CA secrets manually.", expected = "Secrets are deleted."),
+            @Step(value = "Deploy a new Kafka cluster with generateSecretOwnerReference set to true.", expected = "New Kafka cluster is deployed."),
+            @Step(value = "Delete the Kafka cluster.", expected = "Kafka cluster is deleted."),
+            @Step(value = "Verify that CA secrets are automatically deleted with the Kafka cluster.", expected = "CA secrets are deleted.")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.SECURITY)
+        }
+    )
     @ParallelNamespaceTest
     void testOwnerReferenceOfCASecrets() {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
@@ -1296,6 +1522,19 @@ class SecurityST extends AbstractST {
         });
     }
 
+    @TestDoc(
+        description = @Desc("Test verifying that changing cluster CA validity and renewal days triggers certificate renewal via a rolling update, resulting in updated certificate dates for both the CA and broker certificates."),
+        steps = {
+            @Step(value = "Deploy Kafka cluster with cluster CA validity of 20 days and renewal at 15 days.", expected = "Kafka cluster is deployed."),
+            @Step(value = "Record initial CA and broker certificate start and end dates.", expected = "Certificate dates are captured."),
+            @Step(value = "Update cluster CA validity to 200 days and renewal to 150 days.", expected = "CA configuration is updated."),
+            @Step(value = "Wait for rolling updates of controllers, brokers, and Entity Operator.", expected = "All components roll."),
+            @Step(value = "Verify CA and broker certificate end dates have been extended.", expected = "Certificate dates are renewed with longer validity.")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.SECURITY)
+        }
+    )
     @ParallelNamespaceTest
     void testClusterCACertRenew() {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
@@ -1371,6 +1610,20 @@ class SecurityST extends AbstractST {
                 initialKafkaBrokerCertEndTime.compareTo(changedKafkaBrokerCertEndTime) < 0);
     }
 
+    @TestDoc(
+        description = @Desc("Test verifying that changing clients CA validity and renewal days triggers certificate renewal via a rolling update, resulting in updated certificate dates for both the CA and KafkaUser certificates."),
+        steps = {
+            @Step(value = "Deploy Kafka cluster with short clients CA validity and renewal periods.", expected = "Kafka cluster is deployed."),
+            @Step(value = "Create a KafkaUser with TLS authentication.", expected = "KafkaUser is created."),
+            @Step(value = "Record initial CA and user certificate start and end dates.", expected = "Certificate dates are captured."),
+            @Step(value = "Update clients CA validity to 200 days and renewal to 150 days.", expected = "CA configuration is updated."),
+            @Step(value = "Wait for rolling updates of brokers and Entity Operator.", expected = "Components roll."),
+            @Step(value = "Verify CA and user certificate end dates have been extended.", expected = "Certificate dates are renewed with longer validity.")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.SECURITY)
+        }
+    )
     @ParallelNamespaceTest
     void testClientsCACertRenew() {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
@@ -1448,6 +1701,18 @@ class SecurityST extends AbstractST {
                 initialKafkaUserCertEndTime.compareTo(changedKafkaUserCertEndTime) < 0);
     }
 
+    @TestDoc(
+        description = @Desc("Test verifying that broker certificate secrets contain the full CA chain (broker cert + CA cert), with correct subject and issuer fields, and that TLS messaging works with the full chain."),
+        steps = {
+            @Step(value = "Deploy Kafka cluster.", expected = "Kafka cluster is deployed."),
+            @Step(value = "Retrieve the broker certificate chain from the broker secret.", expected = "Certificate chain is retrieved."),
+            @Step(value = "Verify the chain contains exactly 2 certificates (broker cert and CA cert) with correct subject and issuer fields.", expected = "Certificate chain is valid."),
+            @Step(value = "Create KafkaUser and KafkaTopic, produce and consume messages over TLS.", expected = "Messages are exchanged successfully.")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.SECURITY)
+        }
+    )
     @ParallelNamespaceTest
     void testBrokerCertificatesIncludeFullCaChain() {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
