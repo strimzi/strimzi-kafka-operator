@@ -153,7 +153,7 @@ public class UserControllerLoop extends AbstractControllerLoop {
      */
     private void maybeUpdateStatus(Reconciliation reconciliation, KafkaUser kafkaUser, KafkaUserStatus desiredStatus) {
         // KafkaUser or desiredStatus being null means deletion => no status to update
-        if (kafkaUser != null && desiredStatus != null && !new StatusDiff(kafkaUser.getStatus(), desiredStatus).isEmpty()) {
+        if (kafkaUser != null && desiredStatus != null && !new StatusDiff(reconciliation, kafkaUser.getStatus(), desiredStatus).isEmpty()) {
             LOGGER.debugCr(reconciliation, "Updating status of {} {} in namespace {}", reconciliation.kind(), reconciliation.name(), reconciliation.namespace());
             KafkaUser latestKafkaUser = userInformer.get(reconciliation.namespace(), reconciliation.name());
 

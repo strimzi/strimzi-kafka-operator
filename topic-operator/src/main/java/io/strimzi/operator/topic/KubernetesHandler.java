@@ -94,7 +94,7 @@ public class KubernetesHandler {
         // and that it saw the last update to the resource
         reconcilableTopic.kt().getStatus().setObservedGeneration(reconcilableTopic.kt().getMetadata().getGeneration());
 
-        StatusDiff statusDiff = new StatusDiff(oldStatus, reconcilableTopic.kt().getStatus());
+        StatusDiff statusDiff = new StatusDiff(reconcilableTopic.reconciliation(), oldStatus, reconcilableTopic.kt().getStatus());
         if (!statusDiff.isEmpty()) {
             var updatedTopic = new KafkaTopicBuilder(reconcilableTopic.kt())
                 .editOrNewMetadata()

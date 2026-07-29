@@ -302,7 +302,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     if (kafka != null) {
                         KafkaStatus currentStatus = kafka.getStatus();
 
-                        StatusDiff ksDiff = new StatusDiff(currentStatus, desiredStatus);
+                        StatusDiff ksDiff = new StatusDiff(reconciliation, currentStatus, desiredStatus);
 
                         if (!ksDiff.isEmpty()) {
                             Kafka resourceWithNewStatus = new KafkaBuilder(kafka).withStatus(desiredStatus).build();

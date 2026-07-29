@@ -402,7 +402,7 @@ public class StrimziPodSetController implements Runnable {
      * @param desiredStatus     The desired status which should be set if it differs
      */
     private void maybeUpdateStatus(Reconciliation reconciliation, StrimziPodSet podSet, StrimziPodSetStatus desiredStatus) {
-        if (!new StatusDiff(podSet.getStatus(), desiredStatus).isEmpty())  {
+        if (!new StatusDiff(reconciliation, podSet.getStatus(), desiredStatus).isEmpty())  {
             try {
                 LOGGER.debugCr(reconciliation, "Updating status of StrimziPodSet {} in namespace {}", reconciliation.name(), reconciliation.namespace());
                 StrimziPodSet latestPodSet = strimziPodSetInformer.get(reconciliation.namespace(), reconciliation.name());
