@@ -1793,6 +1793,9 @@ Used in: xref:type-Kafka-{context}[`Kafka`]
 |autoRebalance
 |xref:type-KafkaAutoRebalanceStatus-{context}[`KafkaAutoRebalanceStatus`]
 |The status of an auto-rebalancing triggered by a cluster scaling request.
+|clusterSecurity
+|object
+|The current security configuration of the Kafka cluster.
 |====
 
 [id='type-Condition-{context}']

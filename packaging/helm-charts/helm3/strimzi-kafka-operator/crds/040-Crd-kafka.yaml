@@ -5699,6 +5699,11 @@ spec:
                             description: "List of broker IDs involved in an auto-rebalancing operation related to the current mode. \nThe list contains one of the following: \n\n* Broker IDs for a current auto-rebalance. \n* Broker IDs for a queued auto-rebalance (if a previous auto-rebalance is still in progress). \n"
                       description: "List of modes where an auto-rebalancing operation is either running or queued. \nEach mode entry (`add-brokers` or `remove-brokers`) includes one of the following: \n\n* Broker IDs for a current auto-rebalance. \n* Broker IDs for a queued auto-rebalance (if a previous rebalance is still in progress)."
                   description: The status of an auto-rebalancing triggered by a cluster scaling request.
+                clusterSecurity:
+                  type: object
+                  properties: {}
+                  x-kubernetes-preserve-unknown-fields: true
+                  description: The current security configuration of the Kafka cluster.
               description: The status of the Kafka cluster.
           required:
             - spec

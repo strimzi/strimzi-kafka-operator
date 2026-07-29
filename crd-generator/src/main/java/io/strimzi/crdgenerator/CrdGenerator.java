@@ -28,6 +28,7 @@ import io.strimzi.crdgenerator.annotations.Minimum;
 import io.strimzi.crdgenerator.annotations.MinimumItems;
 import io.strimzi.crdgenerator.annotations.OneOf;
 import io.strimzi.crdgenerator.annotations.Pattern;
+import io.strimzi.crdgenerator.annotations.PreserveUnknownFields;
 import io.strimzi.crdgenerator.annotations.RequiredInVersions;
 import io.strimzi.crdgenerator.annotations.Type;
 
@@ -819,6 +820,10 @@ class CrdGenerator {
             schema = buildArraySchema(crApiVersion, property, property.getType(), description);
         } else {
             schema = buildObjectSchema(crApiVersion, returnType, description);
+        }
+
+        if (property.isAnnotationPresent(PreserveUnknownFields.class))  {
+            preserveUnknownFields(schema);
         }
 
         if (description) {

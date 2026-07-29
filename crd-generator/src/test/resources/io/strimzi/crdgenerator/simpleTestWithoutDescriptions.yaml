@@ -564,6 +564,10 @@ spec:
             items:
               type: object
               properties: {}
+          unstructured:
+            type: object
+            properties: {}
+            x-kubernetes-preserve-unknown-fields: true
           listOfWildcardTypeVar1:
             type: array
             items:
@@ -1179,6 +1183,10 @@ spec:
             items:
               type: object
               properties: {}
+          unstructured:
+            type: object
+            properties: {}
+            x-kubernetes-preserve-unknown-fields: true
           listOfWildcardTypeVar1:
             type: array
             items:
