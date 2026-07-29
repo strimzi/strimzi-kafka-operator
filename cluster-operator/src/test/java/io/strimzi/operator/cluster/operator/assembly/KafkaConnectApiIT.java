@@ -91,7 +91,6 @@ public class KafkaConnectApiIT {
                     if ("RUNNING".equals(((Map<String, Object>) status.getOrDefault("connector", emptyMap())).get("state"))) {
                         completableFuture.complete(status);
                     } else {
-                        System.err.println(status);
                         checkStatusWithDelay(statusSupplier, singleExecutor, completableFuture, delay);
                     }
                 } else {

@@ -511,6 +511,7 @@ class DocGenerator {
                         classes.add(cls);
                     } else {
                         System.err.println(arg + " is not a subclass of " + CustomResource.class.getName());
+                        System.exit(1);
                     }
                 }
             }
