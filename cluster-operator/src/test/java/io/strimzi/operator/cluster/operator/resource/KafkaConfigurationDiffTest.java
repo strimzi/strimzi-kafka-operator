@@ -406,6 +406,34 @@ public class KafkaConfigurationDiffTest {
     }
 
     @Test
+    public void testPerBrokerDynamicConfig() {
+        // using cordoned.log.dirs as a PER_BROKER dynamic config
+
+        // SET scenario: desired has cordoned.log.dirs=* but current does not
+        KafkaConfigurationDiff kcd = new KafkaConfigurationDiff(Reconciliation.DUMMY_RECONCILIATION, getCurrentConfiguration(emptyList()),
+                getDesiredConfiguration(singletonList(new ConfigEntry("cordoned.log.dirs", "*"))), kafkaVersion, brokerNodeRef, false, true);
+        assertThat(kcd.getDiffSize(), is(1));
+        assertThat(kcd.canBeUpdatedDynamically(), is(true));
+        assertThat(kcd.getConfigDiff(Scope.PER_BROKER).size(), is(1));
+        assertConfig(kcd, new ConfigEntry("cordoned.log.dirs", "*"));
+
+        // DELETE scenario: current has cordoned.log.dirs=* but desired does not
+        kcd = new KafkaConfigurationDiff(Reconciliation.DUMMY_RECONCILIATION,
+                getCurrentConfiguration(singletonList(new ConfigEntry("cordoned.log.dirs", "*"))),
+                getDesiredConfiguration(emptyList()), kafkaVersion, brokerNodeRef, false, true);
+        assertThat(kcd.getDiffSize(), is(1));
+        assertThat(kcd.canBeUpdatedDynamically(), is(true));
+        assertThat(kcd.getConfigDiff(Scope.PER_BROKER).size(), is(1));
+
+        // No-op scenario: both have cordoned.log.dirs=*
+        kcd = new KafkaConfigurationDiff(Reconciliation.DUMMY_RECONCILIATION,
+                getCurrentConfiguration(singletonList(new ConfigEntry("cordoned.log.dirs", "*"))),
+                getDesiredConfiguration(singletonList(new ConfigEntry("cordoned.log.dirs", "*"))), kafkaVersion, brokerNodeRef, false, true);
+        assertThat(kcd.getDiffSize(), is(0));
+        assertThat(kcd.canBeUpdatedDynamically(), is(true));
+    }
+
+    @Test
     public void testAreDoublesEqual() {
         assertThat(KafkaConfigurationDiff.areDoublesEqual("test.option", Map.of(), Map.of("test.option", "0.8")), is(false));
         assertThat(KafkaConfigurationDiff.areDoublesEqual("test.option", Map.of("test.option", "0.8"), Map.of()), is(false));

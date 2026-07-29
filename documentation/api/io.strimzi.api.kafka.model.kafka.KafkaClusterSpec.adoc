@@ -51,6 +51,7 @@ Properties with the following prefixes cannot be set:
 * `authorizer.`
 * `broker.`
 * `controller`
+* `cordoned.log.dirs`
 * `cruise.control.metrics.reporter.bootstrap.`
 * `cruise.control.metrics.topic`
 * `host.name`

@@ -468,7 +468,7 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
         List<String> kafkaNodesNeedRestart = new ArrayList<>();
         private final boolean forceErrorWhenRollKafka;
         public MockKafkaReconciler(Reconciliation reconciliation, Vertx vertx, ClusterOperatorConfig config, ResourceOperatorSupplier supplier, PlatformFeaturesAvailability pfa, Kafka kafkaAssembly, List<KafkaNodePool> nodePools, KafkaCluster kafkaCluster, Ca clusterCa, Ca clientsCa, boolean forceErrorWhenRollKafka) {
-            super(reconciliation, kafkaAssembly, nodePools, kafkaCluster, clusterCa, clientsCa, config, supplier, pfa, vertx);
+            super(reconciliation, kafkaAssembly, nodePools, kafkaCluster, clusterCa, clientsCa, config, supplier, pfa, vertx, Set.of());
             this.forceErrorWhenRollKafka = forceErrorWhenRollKafka;
         }
 

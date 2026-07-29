@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
+import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.common.ConditionBuilder;
@@ -68,7 +69,9 @@ import static io.strimzi.api.ResourceAnnotations.ANNO_STRIMZI_IO_NEXT_NODE_IDS;
 import static io.strimzi.api.ResourceAnnotations.ANNO_STRIMZI_IO_REBALANCE;
 import static io.strimzi.api.ResourceAnnotations.ANNO_STRIMZI_IO_REBALANCE_TEMPLATE;
 import static io.strimzi.api.ResourceAnnotations.ANNO_STRIMZI_IO_REMOVE_NODE_IDS;
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -1223,6 +1226,44 @@ public class KafkaAutoRebalancingMockTest {
 
                     KafkaRebalance kr = Crds.kafkaRebalanceOperation(client).inNamespace(namespace).withName(KafkaResources.autoRebalancingKafkaRebalanceResourceName(CLUSTER_NAME, KafkaAutoRebalanceMode.ADD_BROKERS)).get();
                     assertThat(kr, is(nullValue()));
+
+                    reconciliation.flag();
+                })));
+    }
+
+    @Test
+    public void testCordoningOnScaleDown(VertxTestContext context) {
+        hostPartitionsOnBrokers(List.of(3, 4));
+
+        KafkaRebalance kafkaRebalanceTemplate = buildKafkaRebalanceTemplate("my-add-remove-brokers-rebalancing-template", List.of("CpuCapacityGoal"));
+        Crds.kafkaRebalanceOperation(client).inNamespace(namespace).resource(kafkaRebalanceTemplate).create();
+
+        Checkpoint reconciliation = context.checkpoint();
+        // 1st reconcile, Kafka cluster creation
+        operator.reconcile(new Reconciliation("initial-reconciliation", Kafka.RESOURCE_KIND, namespace, CLUSTER_NAME))
+                .onComplete(context.succeeding(v -> context.verify(() -> {
+                    // scaling down the brokers
+                    scaleKafkaCluster(3);
+                })))
+                // 2nd reconcile, getting the scaling down with brokers 3 and 4 blocked
+                .compose(v -> operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, CLUSTER_NAME)))
+                .onComplete(context.succeeding(v -> context.verify(() -> {
+                    Kafka k = Crds.kafkaOperation(client).inNamespace(namespace).withName(CLUSTER_NAME).get();
+                    assertKafkaAutoRebalanceStatus(k, KafkaAutoRebalanceState.RebalanceOnScaleDown, KafkaAutoRebalanceMode.REMOVE_BROKERS, List.of(3, 4));
+
+                    // verify cordoned brokers (3, 4) have cordoned.log.dirs=* in their ConfigMap
+                    for (int nodeId : List.of(3, 4)) {
+                        ConfigMap cm = client.configMaps().inNamespace(namespace).withName(CLUSTER_NAME + "-brokers-" + nodeId).get();
+                        assertThat(cm, is(notNullValue()));
+                        assertThat(cm.getData().get("server.config"), containsString("cordoned.log.dirs=*"));
+                    }
+
+                    // verify non-cordoned brokers (0, 1, 2) do not have cordoned.log.dirs in their ConfigMap
+                    for (int nodeId : List.of(0, 1, 2)) {
+                        ConfigMap cm = client.configMaps().inNamespace(namespace).withName(CLUSTER_NAME + "-brokers-" + nodeId).get();
+                        assertThat(cm, is(notNullValue()));
+                        assertThat(cm.getData().get("server.config"), not(containsString("cordoned.log.dirs")));
+                    }
 
                     reconciliation.flag();
                 })));
