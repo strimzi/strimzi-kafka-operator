@@ -804,7 +804,6 @@ class CrdGenerator {
         if (propertyType.getGenericType() instanceof ParameterizedType
                 && ((ParameterizedType) propertyType.getGenericType()).getRawType().equals(Map.class)
                 && ((ParameterizedType) propertyType.getGenericType()).getActualTypeArguments()[0].equals(Integer.class)) {
-            System.err.println("It's OK");
             schema = nf.objectNode();
             schema.put("type", "object");
             schema.putObject("patternProperties").set("-?[0-9]+", buildArraySchema(crApiVersion, property, new PropertyType(null, ((ParameterizedType) propertyType.getGenericType()).getActualTypeArguments()[1]), description));

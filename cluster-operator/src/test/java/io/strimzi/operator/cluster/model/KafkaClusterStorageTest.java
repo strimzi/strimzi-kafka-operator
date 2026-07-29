@@ -576,7 +576,6 @@ public class KafkaClusterStorageTest {
         assertThat(kc.getStorageByPoolName().get("brokers"), is(ephemeral));
 
         // Warning status condition is set
-        System.out.println(kc.getWarningConditions());
         assertThat(kc.getWarningConditions().size(), is(1));
         assertThat(kc.getWarningConditions().get(0).getReason(), is("KafkaStorage"));
 
