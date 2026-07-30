@@ -9,7 +9,7 @@ import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.common.AdminClientProvider;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
-import io.strimzi.operator.common.auth.TlsPemIdentity;
+import io.strimzi.operator.common.auth.Identity;
 import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.ListTopicsOptions;
 import org.apache.kafka.clients.admin.TopicDescription;
@@ -41,16 +41,16 @@ public class BrokersInUseCheck {
      * Checks if broker contains any partition replicas when scaling down
      *
      * @param reconciliation        Reconciliation marker
-     * @param coTlsPemIdentity      Trust set and identity for TLS client authentication for connecting to the Kafka cluster
+     * @param coIdentity      Trust set and identity for TLS client authentication for connecting to the Kafka cluster
      * @param adminClientProvider   Used to create the Admin client instance
      *
      * @return returns CompletionStage with set of node ids containing partition replicas based on the outcome of the check
      */
-    public CompletionStage<Set<Integer>> brokersInUse(Reconciliation reconciliation, TlsPemIdentity coTlsPemIdentity, AdminClientProvider adminClientProvider) {
+    public CompletionStage<Set<Integer>> brokersInUse(Reconciliation reconciliation, Identity coIdentity, AdminClientProvider adminClientProvider) {
         try {
             String bootstrapHostname = KafkaResources.bootstrapServiceName(reconciliation.name()) + "." + reconciliation.namespace() + ".svc:" + KafkaCluster.REPLICATION_PORT;
             LOGGER.debugCr(reconciliation, "Creating AdminClient for Kafka cluster in namespace {}", reconciliation.namespace());
-            Admin kafkaAdmin = adminClientProvider.createAdminClient(bootstrapHostname, coTlsPemIdentity.pemTrustSet(), coTlsPemIdentity.pemAuthIdentity());
+            Admin kafkaAdmin = adminClientProvider.createAdminClient(bootstrapHostname, coIdentity.trustSet(), coIdentity.authIdentity());
 
             return topicNames(kafkaAdmin)
                     .thenCompose(names -> describeTopics(kafkaAdmin, names))

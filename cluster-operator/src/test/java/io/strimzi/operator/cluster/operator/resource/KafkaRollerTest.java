@@ -19,7 +19,7 @@ import io.strimzi.operator.common.AdminClientProvider;
 import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.DefaultAdminClientProvider;
 import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.operator.common.auth.TlsPemIdentity;
+import io.strimzi.operator.common.auth.Identity;
 import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.Config;
 import org.apache.kafka.clients.admin.DescribeMetadataQuorumResult;
@@ -946,7 +946,7 @@ public class KafkaRollerTest {
                     1000,
                     () -> new BackOff(10L, 2, 4),
                     nodes,
-                    new TlsPemIdentity(null, null),
+                    new Identity(null, null),
                     adminClientProvider,
                     kafkaAgentClientProvider,
                     brokerId -> "compression.type=gzip",

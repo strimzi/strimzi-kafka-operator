@@ -33,9 +33,9 @@ import io.strimzi.operator.common.InvalidConfigurationException;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
+import io.strimzi.operator.common.auth.Identity;
 import io.strimzi.operator.common.auth.PemAuthIdentity;
 import io.strimzi.operator.common.auth.PemTrustSet;
-import io.strimzi.operator.common.auth.TlsPemIdentity;
 import io.strimzi.operator.common.ca.Ca;
 import io.strimzi.operator.common.ca.CertificateUtils;
 import io.strimzi.operator.common.model.InvalidResourceException;
@@ -126,11 +126,11 @@ public class ReconcilerUtils {
      *
      * @return  Future containing the TlsPemIdentity to use for client authentication.
      */
-    public static Future<TlsPemIdentity> coTlsPemIdentity(Reconciliation reconciliation, SecretOperator secretOperator) {
+    public static Future<Identity> coTlsPemIdentity(Reconciliation reconciliation, SecretOperator secretOperator) {
         return Future.join(
                 clusterCaPemTrustSet(reconciliation, secretOperator),
                 coPemAuthIdentity(reconciliation, secretOperator)
-        ).compose(res -> Future.succeededFuture(new TlsPemIdentity(res.resultAt(0), res.resultAt(1))));
+        ).compose(res -> Future.succeededFuture(new Identity(res.resultAt(0), res.resultAt(1))));
     }
 
     /**

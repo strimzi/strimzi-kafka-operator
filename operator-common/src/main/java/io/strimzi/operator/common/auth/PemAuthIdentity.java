@@ -26,7 +26,7 @@ import java.util.Objects;
  * Represents the identity used during TLS client authentication.
  * This consists of an X509 end-entity certificate, corresponding private key, and a (possibly empty) chain of X509 intermediate CA certificates, all in PEM format.
  */
-public class PemAuthIdentity {
+public class PemAuthIdentity implements AuthIdentity {
     private final String privateKeyAsPem;
     private final String certificateChainAsPem;
     private final String certificateName;

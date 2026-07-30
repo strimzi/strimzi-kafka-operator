@@ -23,7 +23,7 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
-import static io.strimzi.operator.common.auth.TlsPemIdentity.DUMMY_IDENTITY;
+import static io.strimzi.operator.common.auth.Identity.DUMMY_IDENTITY;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;

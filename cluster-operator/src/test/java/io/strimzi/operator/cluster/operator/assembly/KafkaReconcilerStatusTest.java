@@ -35,7 +35,7 @@ import io.strimzi.operator.cluster.operator.resource.kubernetes.NodeOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.PodOperator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
-import io.strimzi.operator.common.auth.TlsPemIdentity;
+import io.strimzi.operator.common.auth.Identity;
 import io.strimzi.operator.common.ca.Ca;
 import io.strimzi.operator.common.ca.CaConfig;
 import io.strimzi.operator.common.ca.InternalCa;
@@ -965,7 +965,7 @@ public class KafkaReconcilerStatusTest {
 
         @Override
         protected Future<Void> initClientAuthenticationCertificates() {
-            coTlsPemIdentity = new TlsPemIdentity(null, null);
+            coIdentity = new Identity(null, null);
             return Future.succeededFuture();
         }
     }

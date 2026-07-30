@@ -27,7 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import static io.strimzi.operator.common.auth.TlsPemIdentity.DUMMY_IDENTITY;
+import static io.strimzi.operator.common.auth.Identity.DUMMY_IDENTITY;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -257,7 +257,7 @@ public class DefaultKafkaQuotasManagerTest {
         List<ClientQuotaAlteration.Op> expectedResult = DefaultKafkaQuotasManager.prepareQuotaConfigurationRequest(quotasPluginKafka);
 
         // Scenario with configured QuotasPluginKafka and default user quota set in Kafka (all options) -> but with different values in both configurations
-        DefaultKafkaQuotasManager.reconcileDefaultUserQuotas(Reconciliation.DUMMY_RECONCILIATION, mockAdminClientProvider, DUMMY_IDENTITY.pemTrustSet(), DUMMY_IDENTITY.pemAuthIdentity(), quotasPluginKafka)
+        DefaultKafkaQuotasManager.reconcileDefaultUserQuotas(Reconciliation.DUMMY_RECONCILIATION, mockAdminClientProvider, DUMMY_IDENTITY.trustSet(), DUMMY_IDENTITY.authIdentity(), quotasPluginKafka)
             .toCompletableFuture()
             .join();
 
@@ -292,7 +292,7 @@ public class DefaultKafkaQuotasManagerTest {
         List<ClientQuotaAlteration.Op> expectedResult = DefaultKafkaQuotasManager.prepareQuotaConfigurationRequest(DefaultKafkaQuotasManager.emptyQuotasPluginKafka());
 
         // Scenario with configured QuotasPluginKafka and default user quota set in Kafka (all options) -> but with different values in both configurations
-        DefaultKafkaQuotasManager.reconcileDefaultUserQuotas(Reconciliation.DUMMY_RECONCILIATION, mockAdminClientProvider, DUMMY_IDENTITY.pemTrustSet(), DUMMY_IDENTITY.pemAuthIdentity(), null)
+        DefaultKafkaQuotasManager.reconcileDefaultUserQuotas(Reconciliation.DUMMY_RECONCILIATION, mockAdminClientProvider, DUMMY_IDENTITY.trustSet(), DUMMY_IDENTITY.authIdentity(), null)
             .toCompletableFuture()
             .join();
 
@@ -327,7 +327,7 @@ public class DefaultKafkaQuotasManagerTest {
         List<ClientQuotaAlteration.Op> expectedResult = DefaultKafkaQuotasManager.prepareQuotaConfigurationRequest(DefaultKafkaQuotasManager.emptyQuotasPluginKafka());
 
         // Scenario with configured QuotasPluginKafka and default user quota set in Kafka (all options) -> but with different values in both configurations
-        DefaultKafkaQuotasManager.reconcileDefaultUserQuotas(Reconciliation.DUMMY_RECONCILIATION, mockAdminClientProvider, DUMMY_IDENTITY.pemTrustSet(), DUMMY_IDENTITY.pemAuthIdentity(), new QuotasPluginStrimzi())
+        DefaultKafkaQuotasManager.reconcileDefaultUserQuotas(Reconciliation.DUMMY_RECONCILIATION, mockAdminClientProvider, DUMMY_IDENTITY.trustSet(), DUMMY_IDENTITY.authIdentity(), new QuotasPluginStrimzi())
             .toCompletableFuture()
             .join();
 

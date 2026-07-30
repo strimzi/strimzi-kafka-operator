@@ -4,8 +4,8 @@
  */
 package io.strimzi.operator.common;
 
-import io.strimzi.operator.common.auth.PemAuthIdentity;
-import io.strimzi.operator.common.auth.PemTrustSet;
+import io.strimzi.operator.common.auth.AuthIdentity;
+import io.strimzi.operator.common.auth.TrustSet;
 import org.apache.kafka.clients.admin.Admin;
 
 import java.util.Properties;
@@ -19,43 +19,43 @@ public interface AdminClientProvider {
      * Create a Kafka Admin interface instance for brokers
      *
      * @param bootstrapHostnames Kafka hostname to connect to for administration operations
-     * @param kafkaCaTrustSet Trust set for connecting to Kafka
-     * @param authIdentity Identity for TLS client authentication for connecting to Kafka
+     * @param kafkaTrustSet Trust set for connecting to Kafka
+     * @param authIdentity Identity for authentication for connecting to Kafka
      * @return Instance of Kafka Admin interface
      */
-    Admin createAdminClient(String bootstrapHostnames, PemTrustSet kafkaCaTrustSet, PemAuthIdentity authIdentity);
+    Admin createAdminClient(String bootstrapHostnames, TrustSet kafkaTrustSet, AuthIdentity authIdentity);
 
     /**
      * Create a Kafka Admin interface instance for controllers
      *
      * @param controllerBootstrapHostnames Kafka controller hostname to connect to for administration operations
-     * @param kafkaCaTrustSet Trust set for connecting to Kafka
-     * @param authIdentity Identity for TLS client authentication for connecting to Kafka
+     * @param kafkaTrustSet Trust set for connecting to Kafka
+     * @param authIdentity Identity for authentication for connecting to Kafka
      * @return Instance of Kafka Admin interface
      */
-    Admin createControllerAdminClient(String controllerBootstrapHostnames, PemTrustSet kafkaCaTrustSet, PemAuthIdentity authIdentity);
+    Admin createControllerAdminClient(String controllerBootstrapHostnames, TrustSet kafkaTrustSet, AuthIdentity authIdentity);
 
     /**
      * Create a Kafka Admin interface instance for brokers
      *
      * @param bootstrapHostnames Kafka hostname to connect to for administration operations
-     * @param kafkaCaTrustSet Trust set for connecting to Kafka
-     * @param authIdentity Identity for TLS client authentication for connecting to Kafka
+     * @param kafkaTrustSet Trust set for connecting to Kafka
+     * @param authIdentity Identity for authentication for connecting to Kafka
      * @param config Additional configuration for the Kafka Admin Client
      *
      * @return Instance of Kafka Admin interface
      */
-    Admin createAdminClient(String bootstrapHostnames, PemTrustSet kafkaCaTrustSet, PemAuthIdentity authIdentity, Properties config);
+    Admin createAdminClient(String bootstrapHostnames, TrustSet kafkaTrustSet, AuthIdentity authIdentity, Properties config);
 
     /**
      * Create a Kafka Admin interface instance for controllers
      *
      * @param controllerBootstrapHostnames Kafka hostname to connect to for administration operations
-     * @param kafkaCaTrustSet Trust set for connecting to Kafka
-     * @param authIdentity Identity for TLS client authentication for connecting to Kafka
+     * @param kafkaTrustSet Trust set for connecting to Kafka
+     * @param authIdentity Identity for authentication for connecting to Kafka
      * @param config Additional configuration for the Kafka Admin Client
      *
      * @return Instance of Kafka Admin interface
      */
-    Admin createControllerAdminClient(String controllerBootstrapHostnames, PemTrustSet kafkaCaTrustSet, PemAuthIdentity authIdentity, Properties config);
+    Admin createControllerAdminClient(String controllerBootstrapHostnames, TrustSet kafkaTrustSet, AuthIdentity authIdentity, Properties config);
 }

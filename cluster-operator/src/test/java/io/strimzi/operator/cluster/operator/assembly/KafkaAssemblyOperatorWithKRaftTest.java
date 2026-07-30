@@ -51,7 +51,7 @@ import io.strimzi.operator.cluster.operator.resource.kubernetes.PvcOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.StrimziPodSetOperator;
 import io.strimzi.operator.common.InvalidConfigurationException;
 import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.operator.common.auth.TlsPemIdentity;
+import io.strimzi.operator.common.auth.Identity;
 import io.strimzi.operator.common.ca.Ca;
 import io.strimzi.operator.common.ca.CaConfig;
 import io.strimzi.operator.common.ca.InternalCa;
@@ -1824,7 +1824,7 @@ public class KafkaAssemblyOperatorWithKRaftTest {
         public MockKafkaReconciler(Reconciliation reconciliation, Vertx vertx, ClusterOperatorConfig config, ResourceOperatorSupplier supplier, PlatformFeaturesAvailability pfa, Kafka kafkaAssembly, List<KafkaNodePool> nodePools, KafkaCluster kafkaCluster, Ca clusterCa, Ca clientsCa) {
             super(reconciliation, kafkaAssembly, nodePools, kafkaCluster, clusterCa, clientsCa, config, supplier, pfa, vertx, Set.of());
 
-            this.coTlsPemIdentity = new TlsPemIdentity(null, null);
+            this.coIdentity = new Identity(null, null);
         }
 
         @Override

@@ -10,7 +10,9 @@ import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.operator.cluster.model.DnsNameGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
-import io.strimzi.operator.common.auth.TlsPemIdentity;
+import io.strimzi.operator.common.auth.Identity;
+import io.strimzi.operator.common.auth.PemAuthIdentity;
+import io.strimzi.operator.common.auth.PemTrustSet;
 
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
@@ -42,7 +44,7 @@ public class KafkaAgentClient {
     private final String namespace;
     private final Reconciliation reconciliation;
     private final String cluster;
-    private TlsPemIdentity tlsPemIdentity;
+    private Identity identity;
     private HttpClient httpClient;
 
     /**
@@ -51,13 +53,13 @@ public class KafkaAgentClient {
      * @param reconciliation    Reconciliation marker
      * @param cluster   Cluster name
      * @param namespace Cluster namespace
-     * @param tlsPemIdentity Trust set and identity for TLS client authentication for connecting to the Kafka cluster
+     * @param identity Trust set and identity for TLS client authentication for connecting to the Kafka cluster
      */
-    public KafkaAgentClient(Reconciliation reconciliation, String cluster, String namespace, TlsPemIdentity tlsPemIdentity) {
+    public KafkaAgentClient(Reconciliation reconciliation, String cluster, String namespace, Identity identity) {
         this.reconciliation = reconciliation;
         this.cluster = cluster;
         this.namespace = namespace;
-        this.tlsPemIdentity = tlsPemIdentity;
+        this.identity = identity;
         this.httpClient = createHttpClient();
     }
 
@@ -75,31 +77,40 @@ public class KafkaAgentClient {
     }
 
     private HttpClient createHttpClient() {
-        if (tlsPemIdentity == null) {
+        if (identity == null) {
             throw new RuntimeException("Missing cluster CA and operator certificates required to create connection to Kafka Agent");
         }
 
         try {
-            if (tlsPemIdentity.pemTrustSet() == null) {
-                throw new RuntimeException("Missing cluster CA trust set certificates required to create connection to Kafka Agent");
+            HttpClient.Builder httpClientBuilder = HttpClient.newBuilder();
+
+            // If TLS encryption is enabled (we have PemTrustSet), we configure SSL for HTTP Client
+            if (identity.trustSet() instanceof PemTrustSet pemTrustSet) {
+                String trustManagerFactoryAlgorithm = TrustManagerFactory.getDefaultAlgorithm();
+                TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(trustManagerFactoryAlgorithm);
+                trustManagerFactory.init(pemTrustSet.trustStore());
+
+                // If TLS client authentication is enabled (we have PemAuthIdentity), we configure it on top of the TLS encryption
+                KeyManagerFactory keyManagerFactory = null;
+                if (identity.authIdentity() instanceof PemAuthIdentity pemAuthIdentity) {
+                    String keyManagerFactoryAlgorithm = KeyManagerFactory.getDefaultAlgorithm();
+                    keyManagerFactory = KeyManagerFactory.getInstance(keyManagerFactoryAlgorithm);
+                    keyManagerFactory.init(pemAuthIdentity.keyStore(), null);
+                }
+
+                SSLContext sslContext = SSLContext.getInstance("TLSv1.3");
+                sslContext.init(
+                        keyManagerFactory != null ? keyManagerFactory.getKeyManagers() : null,
+                        trustManagerFactory.getTrustManagers(),
+                        null
+                );
+
+                // Configure the SslContext for the HTTP Client
+                httpClientBuilder = httpClientBuilder.sslContext(sslContext);
             }
-            String trustManagerFactoryAlgorithm = TrustManagerFactory.getDefaultAlgorithm();
-            TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(trustManagerFactoryAlgorithm);
-            trustManagerFactory.init(tlsPemIdentity.pemTrustSet().trustStore());
 
-            if (tlsPemIdentity.pemAuthIdentity() == null) {
-                throw new RuntimeException("Missing cluster operator authentication identity certificates required to create connection to Kafka Agent");
-            }
-            String keyManagerFactoryAlgorithm = KeyManagerFactory.getDefaultAlgorithm();
-            KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(keyManagerFactoryAlgorithm);
-            keyManagerFactory.init(tlsPemIdentity.pemAuthIdentity().keyStore(), null);
-
-            SSLContext sslContext = SSLContext.getInstance("TLSv1.3");
-            sslContext.init(keyManagerFactory.getKeyManagers(), trustManagerFactory.getTrustManagers(), null);
-
-            return HttpClient.newBuilder()
+            return httpClientBuilder
                     .connectTimeout(HTTP_REQUEST_TIMEOUT)
-                    .sslContext(sslContext)
                     .build();
         } catch (GeneralSecurityException | IOException e) {
             throw new RuntimeException("Failed to configure HTTP client", e);

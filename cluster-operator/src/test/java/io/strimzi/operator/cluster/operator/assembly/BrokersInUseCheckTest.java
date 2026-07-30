@@ -27,7 +27,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
-import static io.strimzi.operator.common.auth.TlsPemIdentity.DUMMY_IDENTITY;
+import static io.strimzi.operator.common.auth.Identity.DUMMY_IDENTITY;
 import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;

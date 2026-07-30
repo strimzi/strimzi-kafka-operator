@@ -5,7 +5,7 @@
 package io.strimzi.operator.cluster.operator.resource;
 
 import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.operator.common.auth.TlsPemIdentity;
+import io.strimzi.operator.common.auth.Identity;
 
 /**
  * Helper interface to pass different KafkaAgentClient implementations
@@ -16,9 +16,9 @@ public interface KafkaAgentClientProvider {
      * Creates an instance of KafkaAgentClient
      *
      * @param reconciliation    Reconciliation information
-     * @param tlsPemIdentity    Trust set and identity for TLS client authentication for connecting to the Kafka cluster
+     * @param identity    Trust set and identity for TLS client authentication for connecting to the Kafka cluster
      *
      * @return  KafkaAgentClient instance
      */
-    KafkaAgentClient createKafkaAgentClient(Reconciliation reconciliation, TlsPemIdentity tlsPemIdentity);
+    KafkaAgentClient createKafkaAgentClient(Reconciliation reconciliation, Identity identity);
 }

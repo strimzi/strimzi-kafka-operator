@@ -45,8 +45,8 @@ import io.strimzi.operator.cluster.operator.resource.kubernetes.TLSRouteOperator
 import io.strimzi.operator.common.AdminClientProvider;
 import io.strimzi.operator.common.MetricsProvider;
 import io.strimzi.operator.common.MicrometerMetricsProvider;
-import io.strimzi.operator.common.auth.PemAuthIdentity;
-import io.strimzi.operator.common.auth.PemTrustSet;
+import io.strimzi.operator.common.auth.AuthIdentity;
+import io.strimzi.operator.common.auth.TrustSet;
 import io.strimzi.operator.common.ca.Ca;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.kubernetes.CrdOperator;
@@ -327,22 +327,22 @@ public class ResourceUtils {
     public static AdminClientProvider adminClientProvider(Admin mockAdminClient) {
         return new AdminClientProvider() {
             @Override
-            public Admin createAdminClient(String bootstrapHostnames, PemTrustSet kafkaCaTrustSet, PemAuthIdentity authIdentity) {
-                return createAdminClient(bootstrapHostnames, kafkaCaTrustSet, authIdentity, new Properties());
+            public Admin createAdminClient(String bootstrapHostnames, TrustSet kafkaTrustSet, AuthIdentity authIdentity) {
+                return createAdminClient(bootstrapHostnames, kafkaTrustSet, authIdentity, new Properties());
             }
 
             @Override
-            public Admin createControllerAdminClient(String controllerBootstrapHostnames, PemTrustSet kafkaCaTrustSet, PemAuthIdentity authIdentity) {
-                return createControllerAdminClient(controllerBootstrapHostnames, kafkaCaTrustSet, authIdentity, new Properties());
+            public Admin createControllerAdminClient(String controllerBootstrapHostnames, TrustSet kafkaTrustSet, AuthIdentity authIdentity) {
+                return createControllerAdminClient(controllerBootstrapHostnames, kafkaTrustSet, authIdentity, new Properties());
             }
 
             @Override
-            public Admin createAdminClient(String bootstrapHostnames, PemTrustSet kafkaCaTrustSet, PemAuthIdentity authIdentity, Properties config) {
+            public Admin createAdminClient(String bootstrapHostnames, TrustSet kafkaTrustSet, AuthIdentity authIdentity, Properties config) {
                 return mockAdminClient;
             }
 
             @Override
-            public Admin createControllerAdminClient(String controllerBootstrapHostnames, PemTrustSet kafkaCaTrustSet, PemAuthIdentity authIdentity, Properties config) {
+            public Admin createControllerAdminClient(String controllerBootstrapHostnames, TrustSet kafkaTrustSet, AuthIdentity authIdentity, Properties config) {
                 return mockAdminClient;
             }
         };
