@@ -11,6 +11,7 @@ import io.fabric8.kubernetes.api.model.Pod;
 import io.skodjob.kubetest4j.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.podset.StrimziPodSet;
 import io.strimzi.api.kafka.model.podset.StrimziPodSetStatus;
+import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.labels.LabelSelectors;
@@ -128,6 +129,32 @@ public class StrimziPodSetUtils {
      */
     public static Pod mapToPod(Map<String, Object> map) {
         return MAPPER.convertValue(map, Pod.class);
+    }
+
+    public static void annotateStrimziPodSetWithManualRollingUpdate(String namespaceName, String resourceName, LabelSelector podSetLabelSelector) {
+        Map<String, String> originalPods = PodUtils.podSnapshot(namespaceName, podSetLabelSelector);
+        annotateStrimziPodSet(namespaceName, resourceName, Map.of(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true"));
+
+        TestUtils.waitFor("manual rolling update annotation is applied and picked up by operator", TestConstants.GLOBAL_POLL_INTERVAL_5_SECS, TestConstants.GLOBAL_TIMEOUT, () -> {
+            Map<String, String> currentPods = PodUtils.podSnapshot(namespaceName, podSetLabelSelector);
+
+            if (!currentPods.equals(originalPods)) {
+                LOGGER.info("Pods started rolling, going to proceed with regular rolling update wait");
+                // Pods started rolling — annotation was processed
+                return true;
+            }
+
+            // Pods haven't rolled yet — check if annotation is still present
+            Map<String, String> annotations = getAnnotationsOfStrimziPodSet(namespaceName, resourceName);
+
+            if (annotations == null || !annotations.containsKey(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE)) {
+                // Annotation was removed but pods didn't roll — race condition, re-apply
+                LOGGER.info("Manual rolling update annotation was removed without rolling the Pods, re-applying");
+                annotateStrimziPodSet(namespaceName, resourceName, Map.of(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true"));
+            }
+
+            return false;
+        });
     }
 
     public static void annotateStrimziPodSet(String namespaceName, String resourceName, Map<String, String> annotations) {

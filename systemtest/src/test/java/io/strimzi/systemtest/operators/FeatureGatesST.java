@@ -4,8 +4,6 @@
  */
 package io.strimzi.systemtest.operators;
 
-import io.fabric8.kubernetes.api.model.EnvVar;
-import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
 import io.skodjob.annotations.Desc;
 import io.skodjob.annotations.Label;
 import io.skodjob.annotations.Step;
@@ -30,7 +28,6 @@ import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.RollingUpdateUtils;
-import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StrimziPodSetUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.k8s.KubeClusterResource;
@@ -43,8 +40,6 @@ import org.junit.jupiter.api.Tag;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.LockSupport;
 
 import static io.strimzi.systemtest.TestTags.REGRESSION;
 import static org.hamcrest.CoreMatchers.is;
@@ -173,81 +168,11 @@ public class FeatureGatesST extends AbstractST {
         Map<String, String> brokerPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getBrokerSelector());
 
         LOGGER.info("Triggering manual rolling update of broker pods");
-        StrimziPodSetUtils.annotateStrimziPodSet(testStorage.getNamespaceName(), testStorage.getBrokerComponentName(),
-            Map.of(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true"));
+        StrimziPodSetUtils.annotateStrimziPodSetWithManualRollingUpdate(testStorage.getNamespaceName(), testStorage.getBrokerComponentName(), testStorage.getBrokerSelector());
 
         brokerPods = RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), 3, brokerPods);
 
         assertThat("Broker pods were rolled successfully with UseBackgroundPodDeletion enabled", brokerPods.size(), is(3));
-    }
-
-    private static void annotateResourcesAndCheckIfPresent(TestStorage testStorage, boolean shouldBePresent) {
-        final String annotationKey = "my-annotation";
-        final String annotationValue = "my-value";
-        final String annotationFull = String.format("%s=%s", annotationKey, annotationValue);
-
-        String brokerPodName = KubeResourceManager.get().kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getBrokerSelector()).get(0).getMetadata().getName();
-        String controllerPodName = KubeResourceManager.get().kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getControllerSelector()).get(0).getMetadata().getName();
-
-        String bootstrapService = KafkaResources.bootstrapServiceName(testStorage.getClusterName());
-        String controllerPvc = String.format("data-%s", controllerPodName);
-        String kafkaServiceAccount = KafkaResources.kafkaComponentName(testStorage.getClusterName());
-
-        KubeResourceManager.get().kubeCmdClient().inNamespace(testStorage.getNamespaceName())
-            .exec("annotate", "configmap", brokerPodName, annotationFull);
-        KubeResourceManager.get().kubeCmdClient().inNamespace(testStorage.getNamespaceName())
-            .exec("annotate", "service", bootstrapService, annotationFull);
-        KubeResourceManager.get().kubeCmdClient().inNamespace(testStorage.getNamespaceName())
-            .exec("annotate", "pvc", controllerPvc, annotationFull);
-        KubeResourceManager.get().kubeCmdClient().inNamespace(testStorage.getNamespaceName())
-            .exec("annotate", "serviceaccount", kafkaServiceAccount, annotationFull);
-
-        LOGGER.info("Waiting for {} for reconciliation in order to see if the annotation will stay or not.", TestConstants.RECONCILIATION_INTERVAL);
-
-        // Wait for one reconciliation interval to happen
-        LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(TestConstants.RECONCILIATION_INTERVAL));
-
-        Map<String, String> currentAnnotations = KubeResourceManager.get().kubeClient().getClient().configMaps()
-            .inNamespace(testStorage.getNamespaceName()).withName(brokerPodName).get().getMetadata().getAnnotations();
-        assertThat(currentAnnotations.containsKey(annotationKey), is(shouldBePresent));
-
-        currentAnnotations = KubeResourceManager.get().kubeClient().getClient().services()
-            .inNamespace(testStorage.getNamespaceName()).withName(bootstrapService).get().getMetadata().getAnnotations();
-        assertThat(currentAnnotations.containsKey(annotationKey), is(shouldBePresent));
-
-        currentAnnotations = KubeResourceManager.get().kubeClient().getClient().persistentVolumeClaims()
-            .inNamespace(testStorage.getNamespaceName()).withName(controllerPvc).get().getMetadata().getAnnotations();
-        assertThat(currentAnnotations.containsKey(annotationKey), is(shouldBePresent));
-
-        currentAnnotations = KubeResourceManager.get().kubeClient().getClient().serviceAccounts()
-            .inNamespace(testStorage.getNamespaceName()).withName(kafkaServiceAccount).get().getMetadata().getAnnotations();
-        assertThat(currentAnnotations.containsKey(annotationKey), is(shouldBePresent));
-    }
-
-    /**
-     * Changes the feature gate value in `STRIMZI_FEATURE_GATES` env variable to {@param featureGatesValue}.
-     *
-     * @param featureGatesValue     value of FG that should be set in CO's `STRIMZI_FEATURE_GATES` env variable
-     */
-    private void changeFeatureGatesAndWaitForCoRollingUpdate(String featureGatesValue) {
-        LOGGER.info("Changing STRIMZI_FEATURE_GATES to {}", featureGatesValue);
-
-        Map<String, String> coPod = DeploymentUtils.depSnapshot(SetupClusterOperator.getInstance().getOperatorNamespace(), SetupClusterOperator.getInstance().getOperatorDeploymentName());
-
-        KubeResourceManager.get().kubeClient().getClient().apps().deployments().inNamespace(SetupClusterOperator.getInstance().getOperatorNamespace())
-            .withName(SetupClusterOperator.getInstance().getOperatorDeploymentName()).edit(dep -> new DeploymentBuilder(dep)
-                .editSpec()
-                    .editTemplate()
-                        .editSpec()
-                            .editFirstContainer()
-                                .addToEnv(new EnvVar("STRIMZI_FEATURE_GATES", featureGatesValue, null))
-                            .endContainer()
-                        .endSpec()
-                    .endTemplate()
-                .endSpec()
-                .build());
-
-        DeploymentUtils.waitTillDepHasRolled(SetupClusterOperator.getInstance().getOperatorNamespace(), SetupClusterOperator.getInstance().getOperatorDeploymentName(), 1, coPod);
     }
 
     /**
