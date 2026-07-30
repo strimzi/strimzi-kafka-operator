@@ -28,7 +28,6 @@ import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.RollingUpdateUtils;
-import io.strimzi.systemtest.utils.kubeUtils.controllers.StrimziPodSetUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.k8s.KubeClusterResource;
 import io.strimzi.testclients.clients.kafka.KafkaConsumerClient;
@@ -168,7 +167,10 @@ public class FeatureGatesST extends AbstractST {
         Map<String, String> brokerPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getBrokerSelector());
 
         LOGGER.info("Triggering manual rolling update of broker pods");
-        StrimziPodSetUtils.annotateStrimziPodSetWithManualRollingUpdate(testStorage.getNamespaceName(), testStorage.getBrokerComponentName(), testStorage.getBrokerSelector());
+        // annotating Pods and not StrimziPodSet to not hit race condition when applying the manual rolling update annotation
+        for (String brokerPod : brokerPods.keySet()) {
+            PodUtils.annotatePod(testStorage.getNamespaceName(), brokerPod, Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true");
+        }
 
         brokerPods = RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), 3, brokerPods);
 
