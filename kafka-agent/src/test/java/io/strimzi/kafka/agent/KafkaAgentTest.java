@@ -149,10 +149,10 @@ public class KafkaAgentTest {
         server.start();
 
         HttpResponse<String> response = httpsClient.send(httpsReq, HttpResponse.BodyHandlers.ofString());
-        assertThat(HttpServletResponse.SC_OK, is(response.statusCode()));
+        assertThat(response.statusCode(), is(HttpServletResponse.SC_OK));
 
         String expectedResponse = "{\"brokerState\":2,\"recoveryState\":{\"remainingLogsToRecover\":10,\"remainingSegmentsToRecover\":100}}";
-        assertThat(expectedResponse, is(response.body()));
+        assertThat(response.body(), is(expectedResponse));
     }
 
     @Test
@@ -163,7 +163,7 @@ public class KafkaAgentTest {
         server.start();
 
         HttpResponse<String> response = httpsClient.send(httpsReq, HttpResponse.BodyHandlers.ofString());
-        assertThat(HttpServletResponse.SC_NOT_FOUND, is(response.statusCode()));
+        assertThat(response.statusCode(), is(HttpServletResponse.SC_NOT_FOUND));
     }
 
     @Test
@@ -181,7 +181,7 @@ public class KafkaAgentTest {
                 .build()
                 .send(httpReq, HttpResponse.BodyHandlers.ofString());
 
-        assertThat(HttpServletResponse.SC_NO_CONTENT, is(response.statusCode()));
+        assertThat(response.statusCode(), is(HttpServletResponse.SC_NO_CONTENT));
     }
 
     @Test
@@ -199,7 +199,7 @@ public class KafkaAgentTest {
                 .build()
                 .send(httpReq, HttpResponse.BodyHandlers.ofString());
 
-        assertThat(HttpServletResponse.SC_SERVICE_UNAVAILABLE, is(response.statusCode()));
+        assertThat(response.statusCode(), is(HttpServletResponse.SC_SERVICE_UNAVAILABLE));
     }
 
     @Test
@@ -217,6 +217,6 @@ public class KafkaAgentTest {
                 .build()
                 .send(httpReq, HttpResponse.BodyHandlers.ofString());
 
-        assertThat(HttpServletResponse.SC_SERVICE_UNAVAILABLE, is(response.statusCode()));
+        assertThat(response.statusCode(), is(HttpServletResponse.SC_SERVICE_UNAVAILABLE));
     }
 }
