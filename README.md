@@ -32,7 +32,7 @@ The roadmap of the Strimzi Operator project is maintained as [GitHub Project](ht
 
 If you encounter any issues while using Strimzi, you can get help using:
 
-- [#strimzi channel on CNCF Slack](https://slack.cncf.io/)
+- [#strimzi channel on CNCF Slack](https://cloud-native.slack.com/archives/CMH3Q3SNP)
 - [Strimzi Users mailing list](https://lists.cncf.io/g/cncf-strimzi-users/topics)
 - [GitHub Discussions](https://github.com/strimzi/strimzi-kafka-operator/discussions)
 
@@ -56,9 +56,8 @@ You can contribute by:
 - Improving Strimzi documentation
 - Talking about Strimzi
 
-All bugs, tasks or enhancements are tracked as [GitHub issues](https://github.com/strimzi/strimzi-kafka-operator/issues). Issues which 
-might be a good start for new contributors are marked with ["good-start"](https://github.com/strimzi/strimzi-kafka-operator/labels/good-start)
-label.
+All bugs, tasks or enhancements are tracked as [GitHub issues](https://github.com/strimzi/strimzi-kafka-operator/issues). 
+Issues which might be a good start for new contributors are marked with ["good-start"](https://github.com/strimzi/strimzi-kafka-operator/labels/good-start) label.
 
 The [development guide](development-docs/DEV_GUIDE.md) describes how to quickly get set up to build Strimzi from source.
 Before submitting a patch, make sure you understand how to test your changes by reading the [Test guide](development-docs/TESTING.md).
@@ -88,9 +87,11 @@ If you have already made a commit and forgot to include the sign-off, you can am
 git commit --amend -s
 ```
 
+### Getting help with your contributions
+
 If you want to get in touch with us first before contributing, you can use:
 
-- [#strimzi channel on CNCF Slack](https://slack.cncf.io/)
+- [#strimzi-dev channel on CNCF Slack](https://cloud-native.slack.com/archives/C018247K8T0)
 - [Strimzi Dev mailing list](https://lists.cncf.io/g/cncf-strimzi-dev/topics)
 
 ## License
