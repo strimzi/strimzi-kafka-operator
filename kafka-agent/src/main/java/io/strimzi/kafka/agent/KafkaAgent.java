@@ -49,9 +49,9 @@ import java.util.Properties;
  * <dl>
  *     <dt>{@code GET /v1/broker-state}</dt>
  *     <dd>Reflects the BrokerState metric, returning a JSON response e.g. {"brokerState": 3}.
- *      If broker state is RECOVERY(2), it includes remainingLogsToRecover and remainingLogsToRecover in the response e.g.
+ *      If broker state is RECOVERY(2), it includes remainingLogsToRecover and remainingSegmentsToRecover in the response e.g.
  *      {"brokerState": 2,
- *       "recovery": {
+ *       "recoveryState": {
  *          "remainingLogsToRecover": 123,
  *          "remainingSegmentsToRecover": 456
  *        }
@@ -260,7 +260,7 @@ public class KafkaAgent {
                     byte observedState = (byte) brokerState.value();
                     boolean stateIsRunning = BROKER_RUNNING_STATE <= observedState && BROKER_UNKNOWN_STATE != observedState;
                     if (stateIsRunning) {
-                        LOGGER.trace("Broker is in running according to {}. The current state is {}", brokerStateName, observedState);
+                        LOGGER.trace("Broker is running according to {}. The current state is {}", brokerStateName, observedState);
                         response.setStatus(HttpServletResponse.SC_NO_CONTENT);
                         response.write(true, null, callback);
                     } else {
@@ -298,7 +298,7 @@ public class KafkaAgent {
                     agentConfigs.put(key, agentProperties.getProperty(key));
                 }
             } catch (IOException e) {
-                LOGGER.error("Could not read and parse properties file {}", args[0]);
+                LOGGER.error("Could not read and parse properties file {}", args[0], e);
                 System.exit(1);
             }
 
