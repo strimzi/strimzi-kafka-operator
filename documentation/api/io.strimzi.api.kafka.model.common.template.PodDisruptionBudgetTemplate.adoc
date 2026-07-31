@@ -30,7 +30,8 @@ For example:
 * If there are three broker pods and the `maxUnavailable` property is set to `1` in the `Kafka` resource, the `minAvailable` setting is `2`, allowing one pod to be unavailable.
 * If there are three broker pods and the `maxUnavailable` property is set to `0` (zero), the `minAvailable` setting is `3`, requiring all three broker pods to be available and allowing zero pods to be unavailable.
 
-The above examples also applies for the `EntityOperator`, `Cruise Control`, `KafkaExporter` deployments.
+The Entity Operator, Cruise Control, and Kafka Exporter run as `Deployment` resources, which support `maxUnavailable` directly.
+For these components, the value is used as is and no conversion takes place.
 
 .Example `PodDisruptionBudget` template configuration
 [source,yaml,subs=attributes+]

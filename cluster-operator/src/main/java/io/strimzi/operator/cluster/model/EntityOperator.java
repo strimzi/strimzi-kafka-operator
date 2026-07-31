@@ -375,13 +375,12 @@ public class EntityOperator extends AbstractModel {
      * @return The PodDisruptionBudget for the Entity Operator
      */
     public PodDisruptionBudget generatePodDisruptionBudget() {
-        return PodDisruptionBudgetUtils.createCustomControllerPodDisruptionBudget(
+        return PodDisruptionBudgetUtils.createPodDisruptionBudget(
                 componentName,
                 namespace,
                 labels,
                 ownerReference,
-                templatePodDisruptionBudget,
-                1
+                templatePodDisruptionBudget
         );
     }
 }

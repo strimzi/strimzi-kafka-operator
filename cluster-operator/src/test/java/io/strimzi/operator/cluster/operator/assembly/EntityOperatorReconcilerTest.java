@@ -203,7 +203,7 @@ public class EntityOperatorReconcilerTest {
 
                     assertThat(pdbCaptor.getAllValues().size(), is(1));
                     assertThat(pdbCaptor.getValue(), is(notNullValue()));
-                    assertThat(pdbCaptor.getValue().getSpec().getMinAvailable(), is(new IntOrString(0)));
+                    assertThat(pdbCaptor.getValue().getSpec().getMaxUnavailable(), is(new IntOrString(1)));
 
                     async.flag();
                 })));
@@ -327,7 +327,7 @@ public class EntityOperatorReconcilerTest {
 
                     assertThat(pdbCaptor.getAllValues().size(), is(1));
                     assertThat(pdbCaptor.getValue(), is(notNullValue()));
-                    assertThat(pdbCaptor.getValue().getSpec().getMinAvailable(), is(new IntOrString(0)));
+                    assertThat(pdbCaptor.getValue().getSpec().getMaxUnavailable(), is(new IntOrString(1)));
 
                     async.flag();
                 })));
@@ -445,7 +445,7 @@ public class EntityOperatorReconcilerTest {
 
                     assertThat(pdbCaptor.getAllValues().size(), is(1));
                     assertThat(pdbCaptor.getValue(), is(notNullValue()));
-                    assertThat(pdbCaptor.getValue().getSpec().getMinAvailable(), is(new IntOrString(0)));
+                    assertThat(pdbCaptor.getValue().getSpec().getMaxUnavailable(), is(new IntOrString(1)));
 
                     async.flag();
                 })));
@@ -548,7 +548,7 @@ public class EntityOperatorReconcilerTest {
 
                     assertThat(pdbCaptor.getAllValues().size(), is(1));
                     assertThat(pdbCaptor.getValue(), is(notNullValue()));
-                    assertThat(pdbCaptor.getValue().getSpec().getMinAvailable(), is(new IntOrString(0)));
+                    assertThat(pdbCaptor.getValue().getSpec().getMaxUnavailable(), is(new IntOrString(1)));
 
                     async.flag();
                 })));
