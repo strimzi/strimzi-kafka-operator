@@ -17,7 +17,6 @@ For more information about the build process, see [Dev guide document](DEV_GUIDE
 - [Running single test class](#running-single-test-class)
 - [Skip Teardown](#skip-teardown)
 - [Accessing GitHub Actions logs](#accessing-github-actions-logs)
-- [Testing-farm](../systemtest/tmt/README.md)
 - [Running tests with custom images](#running-tests-with-custom-images)
 - [Performance testing](#performance-testing)
 
@@ -583,15 +582,15 @@ This test case runs at most **5 minutes**.
 
 ### Triggering Performance Tests
 
-Performance tests can be triggered using either Testing Farm or Jenkins. 
+Performance tests can be triggered using either GHA or Jenkins. 
 One can also run them locally as our standard system tests using some IDE or directly by maven.
 
-#### Testing Farm
-Currently, there are two possible triggers:
+#### GHA
+
+You can trigger the performance tests by using:
+
 ```
-/packit test --labels performance
-/packit test --labels user-capacity
-/packit test --labels topic-capacity
+/gha run pipeline=performance
 ```
 
 #### Jenkins

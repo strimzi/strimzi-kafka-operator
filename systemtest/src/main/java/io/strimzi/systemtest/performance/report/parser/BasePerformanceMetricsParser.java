@@ -429,11 +429,8 @@ public abstract class BasePerformanceMetricsParser {
      * @return The determined base path as a String.
      */
     private String determineBasePathBasedOnEnvironment() {
-        // resolve path for TestingFarm
-        if (System.getenv().containsKey("TMT_PLAN_DATA")) {
-            this.parentPath = System.getenv().get("TMT_PLAN_DATA") + "/../discover/default-0/tests/systemtest/target/performance";
-            // If running in test, adjust the path accordingly
-        } else if (isRunningInTest()) {
+        // If running in test, adjust the path accordingly
+        if (isRunningInTest()) {
             this.parentPath = TestUtils.USER_PATH + "/target/performance";
         } else {
             // For standalone application run
