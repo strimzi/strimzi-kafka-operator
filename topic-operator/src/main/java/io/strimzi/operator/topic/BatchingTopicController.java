@@ -683,8 +683,7 @@ public class BatchingTopicController {
     private static Either<TopicOperatorException, NewPartitions> partitionChanges(
         Reconciliation reconciliation, KafkaTopic kafkaTopic, int currentNumPartitions
     ) {
-        var requested = kafkaTopic.getSpec() == null || kafkaTopic.getSpec().getPartitions() == null
-            ? KafkaHandler.DEFAULT_PARTITIONS : kafkaTopic.getSpec().getPartitions();
+        var requested = kafkaTopic.getSpec().getPartitions() == null ? KafkaHandler.DEFAULT_PARTITIONS : kafkaTopic.getSpec().getPartitions();
         if (requested > currentNumPartitions) {
             LOGGER.debugCr(reconciliation, "Partition increase from {} to {}", currentNumPartitions, requested);
             return Either.ofRight(NewPartitions.increaseTo(requested));

@@ -11,7 +11,6 @@ import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.Timer;
 import io.strimzi.api.kafka.model.common.Condition;
-import io.strimzi.api.kafka.model.common.ConditionBuilder;
 import io.strimzi.api.kafka.model.common.Spec;
 import io.strimzi.api.kafka.model.kafka.Status;
 import io.strimzi.operator.cluster.operator.VertxUtil;
@@ -24,7 +23,6 @@ import io.strimzi.operator.common.StrimziTimeoutException;
 import io.strimzi.operator.common.metrics.MetricsHolder;
 import io.strimzi.operator.common.metrics.OperatorMetricsHolder;
 import io.strimzi.operator.common.model.InvalidConfigParameterException;
-import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.NamespaceAndName;
 import io.strimzi.operator.common.model.StatusDiff;
@@ -239,24 +237,6 @@ public abstract class AbstractOperator<
             });
             metrics().pausedResourceCounter(namespace).getAndIncrement();
             LOGGER.infoCr(reconciliation, "Reconciliation of {} {} is paused", kind, name);
-            return createOrUpdate.future();
-        } else if (cr.getSpec() == null) {
-            InvalidResourceException exception = new InvalidResourceException("Spec cannot be null");
-
-            S status = createStatus(cr);
-            Condition errorCondition = new ConditionBuilder()
-                    .withLastTransitionTime(StatusUtils.iso8601Now())
-                    .withType("NotReady")
-                    .withStatus("True")
-                    .withReason(exception.getClass().getSimpleName())
-                    .withMessage(exception.getMessage())
-                    .build();
-            status.setObservedGeneration(cr.getMetadata().getGeneration());
-            status.addCondition(errorCondition);
-
-            LOGGER.errorCr(reconciliation, "{} spec cannot be null", cr.getMetadata().getName());
-            updateStatus(reconciliation, status).onComplete(notUsed -> createOrUpdate.fail(exception));
-
             return createOrUpdate.future();
         }
 

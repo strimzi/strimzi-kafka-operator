@@ -443,10 +443,6 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
         } else {
             LOGGER.infoCr(reconciliation, "creating/updating connector: {}", connectorName);
 
-            if (connector.getSpec() == null) {
-                return Future.failedFuture(new InvalidResourceException("spec property is required"));
-            }
-
             if (!useResources) {
                 return Future.failedFuture(new NoSuchResourceException(reconciliation.kind() + " " + reconciliation.name() + " is not configured with annotation " + Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES));
             } else {
