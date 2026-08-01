@@ -33,7 +33,7 @@ public class ClusterSecurityStatus implements UnknownPropertyPreserving {
     private ClusterSecurityAuthenticationStatus authentication;
     private Map<String, Object> additionalProperties;
 
-    @Description("Encryption configuration of the Kafka cluster's internal communication")
+    @Description("Current encryption configuration of the Kafka cluster's internal communication.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @RequiredInVersions("v1+")
     public ClusterSecurityEncryptionStatus getEncryption() {
@@ -44,7 +44,7 @@ public class ClusterSecurityStatus implements UnknownPropertyPreserving {
         this.encryption = encryption;
     }
 
-    @Description("Authentication configuration of the Kafka cluster's internal communication")
+    @Description("Current authentication configuration of the Kafka cluster's internal communication.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @RequiredInVersions("v1+")
     public ClusterSecurityAuthenticationStatus getAuthentication() {

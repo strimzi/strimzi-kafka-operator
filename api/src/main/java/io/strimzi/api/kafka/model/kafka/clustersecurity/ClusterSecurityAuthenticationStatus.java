@@ -32,7 +32,9 @@ public class ClusterSecurityAuthenticationStatus implements UnknownPropertyPrese
     private ClusterSecurityAuthenticationType type;
     private Map<String, Object> additionalProperties;
 
-    @Description("The type of authentication used for this cluster")
+    @Description("The type of authentication currently used for this cluster's internal communication. " +
+            "Supported types are:" +
+            "* `strimzi-mtls` for Strimzi-based mTLS encryption")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @RequiredInVersions("v1+")
     public ClusterSecurityAuthenticationType getType() {
