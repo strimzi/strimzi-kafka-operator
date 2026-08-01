@@ -422,7 +422,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
          * @return  CaReconciler instance
          */
         CaReconciler caReconciler()   {
-            return new CaReconciler(reconciliation, kafkaAssembly, config, supplier, certIssuer, passwordGenerator);
+            return new CaReconciler(reconciliation, kafkaAssembly, config, supplier, certIssuer, passwordGenerator, securityContext);
         }
 
         /**
@@ -545,7 +545,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         KafkaClusterCreator kafkaClusterCreator =
                                 new KafkaClusterCreator(reconciliation, config, supplier);
                         return VertxUtil.toFuture(kafkaClusterCreator
-                                .prepareKafkaCluster(kafkaAssembly, nodePools, oldStorage, versionChange, kafkaStatus, true))
+                                .prepareKafkaCluster(kafkaAssembly, nodePools, oldStorage, versionChange, kafkaStatus, true, securityContext))
                                 .compose(kafkaCluster -> {
                                     // We store this for use with Cruise Control later. As these configurations might
                                     // not be exactly the same as in the original custom resource (for example because

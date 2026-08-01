@@ -20,6 +20,7 @@ import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.podset.StrimziPodSet;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.operator.cluster.model.InPlacePodResizingUtils;
+import io.strimzi.operator.cluster.model.KafkaClusterSecurityContext;
 import io.strimzi.operator.cluster.model.NodeRef;
 import io.strimzi.operator.cluster.model.PodRevision;
 import io.strimzi.operator.cluster.model.PodSetUtils;
@@ -33,9 +34,11 @@ import io.strimzi.operator.common.InvalidConfigurationException;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
+import io.strimzi.operator.common.auth.AuthIdentity;
 import io.strimzi.operator.common.auth.Identity;
 import io.strimzi.operator.common.auth.PemAuthIdentity;
 import io.strimzi.operator.common.auth.PemTrustSet;
+import io.strimzi.operator.common.auth.TrustSet;
 import io.strimzi.operator.common.ca.Ca;
 import io.strimzi.operator.common.ca.CertificateUtils;
 import io.strimzi.operator.common.model.InvalidResourceException;
@@ -121,16 +124,31 @@ public class ReconcilerUtils {
      * Utility method which helps to get the set of trusted certificates and client auth identities for the Cluster Operator
      * needed to bootstrap different clients used during the reconciliation.
      *
-     * @param reconciliation Reconciliation Marker
-     * @param secretOperator Secret operator for working with Kubernetes Secrets that store certificates
+     * @param reconciliation    Reconciliation Marker
+     * @param secretOperator    Secret operator for working with Kubernetes Secrets that store certificates
+     * @param securityContext   Kafka cluster security context
      *
      * @return  Future containing the PemTrustSet and PemAuthIdentity to use for client authentication.
      */
-    public static Future<Identity> coTlsPemIdentity(Reconciliation reconciliation, SecretOperator secretOperator) {
-        return Future.join(
-                clusterCaPemTrustSet(reconciliation, secretOperator),
-                coPemAuthIdentity(reconciliation, secretOperator)
-        ).compose(res -> Future.succeededFuture(new Identity(res.resultAt(0), res.resultAt(1))));
+    public static Future<Identity> coIdentity(Reconciliation reconciliation, SecretOperator secretOperator, KafkaClusterSecurityContext securityContext) {
+        // The trustFuture gets the trust based on the security context
+        Future<? extends TrustSet> trustFuture;
+        if (securityContext.isStrimziTlsEncryption())   {
+            trustFuture = clusterCaPemTrustSet(reconciliation, secretOperator);
+        } else {
+            trustFuture = Future.succeededFuture(null);
+        }
+
+        // The trustFuture gets the authentication details based on the security context
+        Future<? extends AuthIdentity> authFuture;
+        if (securityContext.isStrimziMtlsAuthentication())  {
+            authFuture = coPemAuthIdentity(reconciliation, secretOperator);
+        } else {
+            authFuture = Future.succeededFuture(null);
+        }
+
+        return Future.join(trustFuture, authFuture)
+                .compose(res -> Future.succeededFuture(new Identity(res.resultAt(0), res.resultAt(1))));
     }
 
     /**

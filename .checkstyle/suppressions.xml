@@ -22,6 +22,11 @@
     <suppress checks="JavaNCSS"
               files="io[/\\]strimzi[/\\]operator[/\\]cluster[/\\]operator[/\\]assembly[/\\]KafkaAssemblyOperator.java"/>
 
+    <!-- KafkaClusterTest is currently too big and breaches the file based JavaNCSS limit (2000) which cannot be
+     suppressed by annotation. We override it here, but should be fixed later. -->
+    <suppress checks="JavaNCSS"
+              files="io[/\\]strimzi[/\\]operator[/\\]cluster[/\\]model[/\\]KafkaClusterTest.java"/>
+
     <!-- Generated classes which we do not edit -->
     <suppress checks=".*"
               files="io[/\\]strimzi[/\\]api[/\\]kafka[/\\]model[/\\].*(Builder|Fluent|FluentImpl)\.java"/>

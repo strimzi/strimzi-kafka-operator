@@ -6,6 +6,7 @@ package io.strimzi.operator.cluster.model;
 
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
+import io.strimzi.api.kafka.model.kafka.clustersecurity.ClusterSecurity;
 import io.strimzi.api.kafka.model.kafka.clustersecurity.ClusterSecurityAuthenticationType;
 import io.strimzi.api.kafka.model.kafka.clustersecurity.ClusterSecurityEncryptionType;
 import io.strimzi.api.kafka.model.kafka.clustersecurity.ClusterSecurityStatus;
@@ -25,6 +26,10 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 public class KafkaClusterSecurityContextTest {
     private static final String NAMESPACE = "my-namespace";
     private static final String CLUSTER_NAME = "my-cluster";
+    private static final String INTERNAL_CLUSTER_SECURITY_ANNOTATION = "strimzi.io/internal-cluster-security";
+    private static final String TLS_WITHOUT_AUTHENTICATION = "{\"encryption\":{\"type\":\"strimzi-tls\"},\"authentication\":{\"type\":\"none\"}}";
+    private static final String WITHOUT_ENCRYPTION_OR_AUTHENTICATION = "{\"encryption\":{\"type\":\"none\"},\"authentication\":{\"type\":\"none\"}}";
+    private static final String MTLS_WITHOUT_TLS = "{\"encryption\":{\"type\":\"none\"},\"authentication\":{\"type\":\"strimzi-mtls\"}}";
 
     private static final Map<String, Object> VALID_STATUS = Map.of(
             "encryption", Map.of("type", "strimzi-tls"),
@@ -37,6 +42,32 @@ public class KafkaClusterSecurityContextTest {
                 .withNamespace(NAMESPACE)
             .endMetadata()
             .build();
+
+    private static ClusterSecurityStatus status(ClusterSecurityEncryptionType encryption, ClusterSecurityAuthenticationType authentication) {
+        return new ClusterSecurityStatusBuilder()
+                .withNewEncryption()
+                    .withType(encryption)
+                .endEncryption()
+                .withNewAuthentication()
+                    .withType(authentication)
+                .endAuthentication()
+                .build();
+    }
+
+    private static Kafka kafkaWithClusterSecurity(String clusterSecurity, ClusterSecurityStatus clusterSecurityStatus) {
+        KafkaBuilder builder = new KafkaBuilder(KAFKA)
+                .editOrNewMetadata()
+                    .addToAnnotations(INTERNAL_CLUSTER_SECURITY_ANNOTATION, clusterSecurity)
+                .endMetadata();
+
+        if (clusterSecurityStatus != null) {
+            builder.withNewStatus()
+                    .withClusterSecurity(clusterSecurityStatus)
+                    .endStatus();
+        }
+
+        return builder.build();
+    }
 
     //////////////////////////////////////////////////
     // Tests for the fromCrd method
@@ -111,6 +142,140 @@ public class KafkaClusterSecurityContextTest {
         assertThat(e.getMessage(), is("Invalid ClusterSecurityStatus: encryption or authentication configuration is not set"));
     }
 
+    @Test
+    public void testFromCrdWithClusterSecurityInAnnotation()  {
+        Kafka kafka = kafkaWithClusterSecurity(WITHOUT_ENCRYPTION_OR_AUTHENTICATION, null);
+
+        KafkaClusterSecurityContext context = KafkaClusterSecurityContext.fromCrd(kafka);
+
+        assertThat(context.isStrimziTlsEncryption(), is(false));
+        assertThat(context.isStrimziMtlsAuthentication(), is(false));
+        assertThat(context.toStatus(), is(status(ClusterSecurityEncryptionType.NONE, ClusterSecurityAuthenticationType.NONE)));
+    }
+
+    @Test
+    public void testFromCrdWithMatchingClusterSecurityInAnnotationAndStatus()  {
+        ClusterSecurityStatus status = status(ClusterSecurityEncryptionType.STRIMZI_TLS, ClusterSecurityAuthenticationType.NONE);
+        Kafka kafka = kafkaWithClusterSecurity(TLS_WITHOUT_AUTHENTICATION, status);
+
+        KafkaClusterSecurityContext context = KafkaClusterSecurityContext.fromCrd(kafka);
+
+        assertThat(context.isStrimziTlsEncryption(), is(true));
+        assertThat(context.isStrimziMtlsAuthentication(), is(false));
+        assertThat(context.toStatus(), is(status));
+    }
+
+    @Test
+    public void testFromCrdWithMismatchingClusterSecurityInAnnotationAndStatus()  {
+        ClusterSecurityStatus status = status(ClusterSecurityEncryptionType.NONE, ClusterSecurityAuthenticationType.NONE);
+        Kafka kafka = kafkaWithClusterSecurity(TLS_WITHOUT_AUTHENTICATION, status);
+
+        InvalidResourceException e = assertThrows(InvalidResourceException.class, () -> KafkaClusterSecurityContext.fromCrd(kafka));
+        assertThat(e.getMessage(), is("Desired Cluster Security configuration does not match the current configuration. " +
+                "If you want to change the Cluster Security configuration, please follow the documentation."));
+    }
+
+    @Test
+    public void testFromCrdWithNonDefaultStatusWithoutAnnotation()  {
+        Kafka kafka = new KafkaBuilder(KAFKA)
+                .withNewStatus()
+                    .withClusterSecurity(status(ClusterSecurityEncryptionType.STRIMZI_TLS, ClusterSecurityAuthenticationType.NONE))
+                .endStatus()
+                .build();
+
+        InvalidResourceException e = assertThrows(InvalidResourceException.class, () -> KafkaClusterSecurityContext.fromCrd(kafka));
+        assertThat(e.getMessage(), is("Desired Cluster Security configuration does not match the current configuration. " +
+                "If you want to change the Cluster Security configuration, please follow the documentation."));
+    }
+
+    @Test
+    public void testFromCrdWithMtlsWithoutTls()  {
+        Kafka kafka = kafkaWithClusterSecurity(MTLS_WITHOUT_TLS, null);
+
+        InvalidResourceException e = assertThrows(InvalidResourceException.class, () -> KafkaClusterSecurityContext.fromCrd(kafka));
+        assertThat(e.getMessage(), is("Desired Cluster Security configuration is not valid: mTLS authentication can be used only with enabled TLS encryption."));
+    }
+
+    //////////////////////////////////////////////////
+    // Tests for the constructor and type helpers
+    //////////////////////////////////////////////////
+
+    @Test
+    public void testTlsAndMtls()  {
+        KafkaClusterSecurityContext context = new KafkaClusterSecurityContext(ClusterSecurityEncryptionType.STRIMZI_TLS, ClusterSecurityAuthenticationType.STRIMZI_MTLS);
+
+        assertThat(context.isStrimziTlsEncryption(), is(true));
+        assertThat(context.isStrimziMtlsAuthentication(), is(true));
+        assertThat(context.toStatus(), is(status(ClusterSecurityEncryptionType.STRIMZI_TLS, ClusterSecurityAuthenticationType.STRIMZI_MTLS)));
+    }
+
+    @Test
+    public void testTlsWithoutAuthentication()  {
+        KafkaClusterSecurityContext context = new KafkaClusterSecurityContext(ClusterSecurityEncryptionType.STRIMZI_TLS, ClusterSecurityAuthenticationType.NONE);
+
+        assertThat(context.isStrimziTlsEncryption(), is(true));
+        assertThat(context.isStrimziMtlsAuthentication(), is(false));
+        assertThat(context.toStatus(), is(status(ClusterSecurityEncryptionType.STRIMZI_TLS, ClusterSecurityAuthenticationType.NONE)));
+    }
+
+    @Test
+    public void testWithoutEncryptionOrAuthentication()  {
+        KafkaClusterSecurityContext context = new KafkaClusterSecurityContext(ClusterSecurityEncryptionType.NONE, ClusterSecurityAuthenticationType.NONE);
+
+        assertThat(context.isStrimziTlsEncryption(), is(false));
+        assertThat(context.isStrimziMtlsAuthentication(), is(false));
+        assertThat(context.toStatus(), is(status(ClusterSecurityEncryptionType.NONE, ClusterSecurityAuthenticationType.NONE)));
+    }
+
+    @Test
+    public void testMtlsWithoutTlsIsInvalid()  {
+        InvalidResourceException e = assertThrows(InvalidResourceException.class, () ->
+                new KafkaClusterSecurityContext(ClusterSecurityEncryptionType.NONE, ClusterSecurityAuthenticationType.STRIMZI_MTLS));
+
+        assertThat(e.getMessage(), is("Desired Cluster Security configuration is not valid: mTLS authentication can be used only with enabled TLS encryption."));
+    }
+
+    //////////////////////////////////////////////////
+    // Tests for the deserializeSpec method
+    //////////////////////////////////////////////////
+
+    @Test
+    public void testDeserializeSpec()  {
+        ClusterSecurity clusterSecurity = KafkaClusterSecurityContext.deserializeSpec(WITHOUT_ENCRYPTION_OR_AUTHENTICATION);
+
+        assertThat(clusterSecurity.getEncryption().getType(), is(ClusterSecurityEncryptionType.NONE));
+        assertThat(clusterSecurity.getAuthentication().getType(), is(ClusterSecurityAuthenticationType.NONE));
+    }
+
+    @Test
+    public void testDeserializeSpecWithUnknownFields()  {
+        ClusterSecurity clusterSecurity = KafkaClusterSecurityContext.deserializeSpec("""
+                {
+                    "encryption": {"type": "strimzi-tls", "someEncryptionField": "someEncryptionValue"},
+                    "authentication": {"type": "none"},
+                    "someField": "someValue"
+                }
+                """);
+
+        assertThat(clusterSecurity.getEncryption().getType(), is(ClusterSecurityEncryptionType.STRIMZI_TLS));
+        assertThat(clusterSecurity.getAuthentication().getType(), is(ClusterSecurityAuthenticationType.NONE));
+        assertThat(clusterSecurity.getAdditionalProperties(), is(Map.of("someField", "someValue")));
+        assertThat(clusterSecurity.getEncryption().getAdditionalProperties(), is(Map.of("someEncryptionField", "someEncryptionValue")));
+    }
+
+    @Test
+    public void testDeserializeNullSpec()  {
+        InvalidResourceException e = assertThrows(InvalidResourceException.class, () -> KafkaClusterSecurityContext.deserializeSpec(null));
+        assertThat(e.getMessage(), is("ClusterSecurity is null and cannot be deserialized."));
+    }
+
+    @Test
+    public void testDeserializeInvalidSpec()  {
+        InvalidResourceException e = assertThrows(InvalidResourceException.class, () -> KafkaClusterSecurityContext.deserializeSpec("not-json"));
+        assertThat(e.getMessage(), is("Failed to deserialize ClusterSecurity configuration"));
+        assertThat(e.getCause(), is(notNullValue()));
+    }
+
     //////////////////////////////////////////////////
     // Tests for the deserializeStatus method
     //////////////////////////////////////////////////
@@ -121,6 +286,17 @@ public class KafkaClusterSecurityContextTest {
 
         assertThat(status.getEncryption().getType(), is(ClusterSecurityEncryptionType.STRIMZI_TLS));
         assertThat(status.getAuthentication().getType(), is(ClusterSecurityAuthenticationType.STRIMZI_MTLS));
+    }
+
+    @Test
+    public void testDeserializeStatusWithoutEncryptionOrAuthentication()  {
+        ClusterSecurityStatus status = KafkaClusterSecurityContext.deserializeStatus(Map.of(
+                "encryption", Map.of("type", "none"),
+                "authentication", Map.of("type", "none")
+        ));
+
+        assertThat(status.getEncryption().getType(), is(ClusterSecurityEncryptionType.NONE));
+        assertThat(status.getAuthentication().getType(), is(ClusterSecurityAuthenticationType.NONE));
     }
 
     @Test
