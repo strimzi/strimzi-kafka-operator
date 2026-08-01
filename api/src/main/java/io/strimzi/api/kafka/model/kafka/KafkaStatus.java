@@ -10,6 +10,7 @@ import io.strimzi.api.kafka.model.common.Constants;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.KafkaAutoRebalanceStatus;
 import io.strimzi.api.kafka.model.kafka.listener.ListenerStatus;
 import io.strimzi.crdgenerator.annotations.Description;
+import io.strimzi.crdgenerator.annotations.PreserveUnknownFields;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -25,7 +26,7 @@ import java.util.List;
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({ "conditions", "observedGeneration", "listeners", "kafkaNodePools", "clusterId",
-    "operatorLastSuccessfulVersion", "kafkaVersion", "kafkaMetadataVersion", "autoRebalance" })
+    "operatorLastSuccessfulVersion", "kafkaVersion", "kafkaMetadataVersion", "autoRebalance", "clusterSecurity" })
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class KafkaStatus extends Status {
@@ -36,6 +37,7 @@ public class KafkaStatus extends Status {
     private String kafkaVersion;
     private String kafkaMetadataVersion;
     private KafkaAutoRebalanceStatus autoRebalance;
+    private Object clusterSecurity;
 
     @Description("Addresses of the internal and external listeners")
     public List<ListenerStatus> getListeners() {
@@ -98,5 +100,15 @@ public class KafkaStatus extends Status {
 
     public void setAutoRebalance(KafkaAutoRebalanceStatus autoRebalance) {
         this.autoRebalance = autoRebalance;
+    }
+
+    @Description("The current security configuration of the Kafka cluster.")
+    @PreserveUnknownFields
+    public Object getClusterSecurity() {
+        return clusterSecurity;
+    }
+
+    public void setClusterSecurity(Object clusterSecurity) {
+        this.clusterSecurity = clusterSecurity;
     }
 }

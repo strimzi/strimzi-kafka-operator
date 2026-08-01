@@ -25,6 +25,7 @@ import io.strimzi.crdgenerator.annotations.MinimumItems;
 import io.strimzi.crdgenerator.annotations.OneOf;
 import io.strimzi.crdgenerator.annotations.Pattern;
 import io.strimzi.crdgenerator.annotations.PresentInVersions;
+import io.strimzi.crdgenerator.annotations.PreserveUnknownFields;
 import io.strimzi.crdgenerator.annotations.RequiredInVersions;
 
 import java.util.List;
@@ -65,7 +66,7 @@ import java.util.Map;
     "objectProperty", "mapStringObject", "mapStringString", "mapStringQuantity", "polymorphicProperty", "affinity", "fieldProperty",
     "arrayProperty", "arrayProperty2", "listOfInts", "listOfInts2", "listOfObjects", "listOfPolymorphic", "polymorphicWithOptionalType",
     "rawList", "listOfRawList", "arrayOfList", "arrayOfRawList", "listOfArray", "arrayOfTypeVar", "listOfTypeVar",
-    "arrayOfBoundTypeVar", "listOfBoundTypeVar", "arrayOfBoundTypeVar2", "listOfBoundTypeVar2",
+    "arrayOfBoundTypeVar", "listOfBoundTypeVar", "arrayOfBoundTypeVar2", "listOfBoundTypeVar2", "unstructured",
     "listOfWildcardTypeVar1", "listOfWildcardTypeVar2", "listOfWildcardTypeVar3", "listOfWildcardTypeVar4",
     "listOfCustomizedEnum", "listOfNormalEnum", "listOfMaps", "either", "or", "status", "spec", "external"})
 public class ExampleCrd<T, U extends Number, V extends U> extends CustomResource {
@@ -139,6 +140,9 @@ public class ExampleCrd<T, U extends Number, V extends U> extends CustomResource
     public List<NormalEnum> listOfNormalEnum;
 
     public List<Map<String, Object>> listOfMaps;
+
+    @PreserveUnknownFields
+    public Object unstructured;
 
     public String either;
 

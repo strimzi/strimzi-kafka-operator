@@ -98,6 +98,9 @@
 |listOfBoundTypeVar2
 |xref:type-Number-{context}[`Number`] array
 |
+|unstructured
+|object
+|
 |listOfWildcardTypeVar1
 |string array
 |

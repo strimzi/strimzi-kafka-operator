@@ -26,6 +26,7 @@ import io.strimzi.certs.CertIssuer;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.model.KafkaCluster;
+import io.strimzi.operator.cluster.model.KafkaClusterSecurityContext;
 import io.strimzi.operator.cluster.model.KafkaVersionChange;
 import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.cluster.model.NodeRef;
@@ -39,6 +40,7 @@ import io.strimzi.operator.common.ReconciliationException;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.ca.Ca;
 import io.strimzi.operator.common.config.ConfigParameter;
+import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.NamespaceAndName;
 import io.strimzi.operator.common.model.PasswordGenerator;
@@ -197,6 +199,11 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     // the auto-rebalance is enabled otherwise I could reset it to null if needed
                     status.setAutoRebalance(kafkaAssembly.getStatus().getAutoRebalance());
                 }
+
+                if (status.getClusterSecurity() == null)    {
+                    // Copy the cluster security state if needed
+                    status.setClusterSecurity(kafkaAssembly.getStatus().getClusterSecurity());
+                }
             }
 
             if (reconcileResult.succeeded())    {
@@ -230,7 +237,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
     Future<Void> reconcile(ReconciliationState reconcileState)  {
         Promise<Void> chainPromise = Promise.promise();
 
-        reconcileState.initialStatus()
+        reconcileState.initialize()
+                .compose(state -> state.initialStatus())
                 // Preparation steps => prepare cluster descriptions, handle CA creation or changes
                 .compose(state -> state.reconcileCas(clock))
                 .compose(state -> state.emitCertificateSecretMetrics())
@@ -274,6 +282,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         private Map<String, ResourceRequirements> kafkaBrokerResources;
         // needed to take information for the auto-rebalancing on scaling via Cruise Control
         private Set<Integer> scalingDownBlockedNodes;
+        private KafkaClusterSecurityContext securityContext;
 
         /* test */ KafkaStatus kafkaStatus = new KafkaStatus();
 
@@ -282,6 +291,25 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             this.kafkaAssembly = kafkaAssembly;
             this.namespace = kafkaAssembly.getMetadata().getNamespace();
             this.name = kafkaAssembly.getMetadata().getName();
+        }
+
+        /**
+         * Initializes the reconciliation state.
+         *
+         * @return  Future that returns when the reconciliation state has been initialized
+         */
+        Future<ReconciliationState> initialize() {
+            // Initialize the security context from the Kafka CR and set it in the status.
+            try {
+                this.securityContext = KafkaClusterSecurityContext.fromCrd(kafkaAssembly);
+                this.kafkaStatus.setClusterSecurity(securityContext.toStatus());
+
+                // NOTE: To correctly propagate any possible errors into the Kafka CR, we have to make sure to fail
+                // the Future in case of any errors.
+                return Future.succeededFuture(this);
+            } catch (InvalidResourceException e) {
+                return Future.failedFuture(e);
+            }
         }
 
         /**
@@ -687,6 +715,11 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         // We copy the cluster ID if set
         if (kafka.getStatus() != null && kafka.getStatus().getClusterId() != null)  {
             status.setClusterId(kafka.getStatus().getClusterId());
+        }
+
+        // We copy the cluster security if set
+        if (kafka.getStatus() != null && kafka.getStatus().getClusterSecurity() != null)  {
+            status.setClusterSecurity(kafka.getStatus().getClusterSecurity());
         }
 
         return status;
