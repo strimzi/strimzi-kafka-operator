@@ -13,6 +13,7 @@ import io.strimzi.api.kafka.model.nodepool.KafkaNodePoolBuilder;
 import io.strimzi.api.kafka.model.nodepool.ProcessRoles;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.model.KafkaCluster;
+import io.strimzi.operator.cluster.model.KafkaClusterSecurityContext;
 import io.strimzi.operator.cluster.model.KafkaPool;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.KafkaVersionChange;
@@ -99,6 +100,7 @@ public class KafkaClusterCreator {
      * @param versionChange     Version Change object describing any possible upgrades / downgrades
      * @param kafkaStatus       The KafkaStatus where any possibly warnings will be added
      * @param tryToFixProblems  Flag indicating whether recoverable configuration issues should be fixed or not
+     * @param securityContext   Security context for the Kafka cluster
      *
      * @return  New Kafka Cluster instance
      */
@@ -108,8 +110,9 @@ public class KafkaClusterCreator {
             Map<String, Storage> oldStorage,
             KafkaVersionChange versionChange,
             KafkaStatus kafkaStatus,
-            boolean tryToFixProblems)   {
-        return createKafkaCluster(kafkaCr, nodePools, oldStorage, versionChange)
+            boolean tryToFixProblems,
+            KafkaClusterSecurityContext securityContext)   {
+        return createKafkaCluster(kafkaCr, nodePools, oldStorage, versionChange, securityContext)
                 .thenCompose(kafka -> brokerRemovalCheck(kafkaCr, kafka))
                 .thenCompose(kafka -> {
                     if (checkFailed() && tryToFixProblems)   {
@@ -119,7 +122,7 @@ public class KafkaClusterCreator {
                         // Once we fix it, we call this method again, but this time with tryToFixProblems set to false
                         return revertScaleDown(nodePools)
                                 .thenCompose(revertedNodePools -> revertRoleChange(revertedNodePools))
-                                .thenCompose(revertedNodePools -> prepareKafkaCluster(kafkaCr, revertedNodePools, oldStorage, versionChange, kafkaStatus, false));
+                                .thenCompose(revertedNodePools -> prepareKafkaCluster(kafkaCr, revertedNodePools, oldStorage, versionChange, kafkaStatus, false, securityContext));
                     } else if (checkFailed()) {
                         // We have a failure, but we should not try to fix it
                         List<String> errors = new ArrayList<>();
@@ -152,6 +155,7 @@ public class KafkaClusterCreator {
      * @param nodePoolCrs       List with KafkaNodePool custom resources
      * @param oldStorage        Old storage configuration
      * @param versionChange     Version change descriptor containing any upgrade / downgrade changes
+     * @param securityContext   Security context for the Kafka cluster
      *
      * @return  CompletionStage with the new KafkaCluster object
      */
@@ -159,17 +163,18 @@ public class KafkaClusterCreator {
             Kafka kafkaCr,
             List<KafkaNodePool> nodePoolCrs,
             Map<String, Storage> oldStorage,
-            KafkaVersionChange versionChange
+            KafkaVersionChange versionChange,
+            KafkaClusterSecurityContext securityContext
     )   {
-        return CompletableFuture.completedFuture(createKafkaCluster(reconciliation, kafkaCr, nodePoolCrs, oldStorage, versionChange, versions, sharedEnvironmentProvider));
+        return CompletableFuture.completedFuture(createKafkaCluster(reconciliation, kafkaCr, nodePoolCrs, oldStorage, versionChange, versions, sharedEnvironmentProvider, securityContext));
     }
 
     /**
      * Checks if the broker scale down can be done or not based on whether the nodes are empty or still have some
      * partition-replicas assigned.
      *
-     * @param kafkaCr   Kafka custom resource
-     * @param kafka     Kafka cluster model
+     * @param kafkaCr           Kafka custom resource
+     * @param kafka             Kafka cluster model
      *
      * @return  CompletionStage with the Kafka cluster model
      */
@@ -180,7 +185,7 @@ public class KafkaClusterCreator {
             usedToBeBrokersCheckFailed = false;
             return CompletableFuture.completedFuture(kafka);
         } else {
-            return ReconcilerUtils.coTlsPemIdentity(reconciliation, secretOperator)
+            return ReconcilerUtils.coIdentity(reconciliation, secretOperator, kafka.securityContext())
                     .toCompletionStage()
                     .thenCompose(coTlsPemIdentity -> brokerScaleDownOperations.brokersInUse(reconciliation, coTlsPemIdentity, adminClientProvider))
                     .thenApply(brokersInUse -> {
@@ -311,6 +316,7 @@ public class KafkaClusterCreator {
      * @param versionChange                 Version change descriptor containing any upgrade / downgrade changes
      * @param versions                      List of supported Kafka versions
      * @param sharedEnvironmentProvider     Shared environment variables
+     * @param securityContext               Security context for the Kafka cluster
      *
      * @return  New KafkaCluster object
      */
@@ -321,10 +327,10 @@ public class KafkaClusterCreator {
             Map<String, Storage> oldStorage,
             KafkaVersionChange versionChange,
             KafkaVersion.Lookup versions,
-            SharedEnvironmentProvider sharedEnvironmentProvider
-    ) {
+            SharedEnvironmentProvider sharedEnvironmentProvider,
+            KafkaClusterSecurityContext securityContext) {
         List<KafkaPool> pools = NodePoolUtils.createKafkaPools(reconciliation, kafkaCr, nodePoolCrs, oldStorage, versionChange, sharedEnvironmentProvider);
         String clusterId = NodePoolUtils.getOrGenerateKRaftClusterId(kafkaCr, nodePoolCrs);
-        return KafkaCluster.fromCrd(reconciliation, kafkaCr, pools, versions, versionChange, clusterId, sharedEnvironmentProvider);
+        return KafkaCluster.fromCrd(reconciliation, kafkaCr, pools, versions, versionChange, clusterId, sharedEnvironmentProvider, securityContext);
     }
 }

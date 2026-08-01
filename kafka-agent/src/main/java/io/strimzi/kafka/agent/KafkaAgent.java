@@ -37,7 +37,6 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
-import java.security.SecureRandom;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -65,16 +64,16 @@ public class KafkaAgent {
     private static final Logger LOGGER = LoggerFactory.getLogger(KafkaAgent.class);
     private static final String BROKER_STATE_PATH = "/v1/broker-state";
     private static final String READINESS_ENDPOINT_PATH = "/v1/ready";
-    private static final int HTTPS_PORT = 8443;
-    private static final int HTTP_PORT = 8080;
+    private static final int EXTERNAL_PORT = 8443;
+    private static final int INTERNAL_PORT = 8080;
     private static final long GRACEFUL_SHUTDOWN_TIMEOUT_MS = 30 * 1000;
-
     private static final byte BROKER_RUNNING_STATE = 3;
     private static final byte BROKER_RECOVERY_STATE = 2;
     private static final byte BROKER_UNKNOWN_STATE = 127;
-    static final SecureRandom RANDOM = new SecureRandom();
-    private final Secret caCertSecret;
-    private final Secret nodeCertSecret;
+
+    private final KubernetesClient client;
+    private final Map<String, String> config;
+
     private MetricName brokerStateName;
     private Gauge brokerState;
     private Gauge remainingLogsToRecover;
@@ -83,32 +82,26 @@ public class KafkaAgent {
     /**
      * Constructor of the KafkaAgent
      *
-     * @param client                Kubernetes client instance
-     * @param caCertSecretName      CA certificate Secret name
-     * @param nodeCertSecretName    Node certificate Secret name
-     * @param namespace             Namespace where the Kafka cluster is running
+     * @param client    Kubernetes client instance
+     * @param config    Map with Kafka Agent configurations
      */
-    /* test */ KafkaAgent(KubernetesClient client, String caCertSecretName, String nodeCertSecretName, String namespace) {
-        this.caCertSecret = getKubernetesSecret(client, caCertSecretName, namespace);
-        this.nodeCertSecret = getKubernetesSecret(client, nodeCertSecretName, namespace);
-    }
-
-    private Secret getKubernetesSecret(KubernetesClient client, String caCertSecretName, String namespace) {
-        return client.secrets().inNamespace(namespace).withName(caCertSecretName).get();
+    public KafkaAgent(KubernetesClient client, Map<String, String> config) {
+        this.client = client;
+        this.config = config;
     }
 
     /**
      * Constructor of the KafkaAgent
      *
-     * @param caCertSecret                  CA certificate Secret
-     * @param nodeCertSecret                Node certificate Secret
+     * @param client                        CA certificate Secret
+     * @param config                        Node certificate Secret
      * @param brokerState                   Current state of the broker
      * @param remainingLogsToRecover        Number of remaining logs to recover
      * @param remainingSegmentsToRecover    Number of remaining segments to recover
      */
-    /* test */ KafkaAgent(Secret caCertSecret, Secret nodeCertSecret, Gauge brokerState, Gauge remainingLogsToRecover, Gauge remainingSegmentsToRecover) {
-        this.caCertSecret = caCertSecret;
-        this.nodeCertSecret = nodeCertSecret;
+    /* test */ KafkaAgent(KubernetesClient client, Map<String, String> config, Gauge brokerState, Gauge remainingLogsToRecover, Gauge remainingSegmentsToRecover) {
+        this(client, config);
+
         this.brokerState = brokerState;
         this.remainingLogsToRecover = remainingLogsToRecover;
         this.remainingSegmentsToRecover = remainingSegmentsToRecover;
@@ -170,34 +163,50 @@ public class KafkaAgent {
                 && "LogManager".equals(name.getType());
     }
 
-    private void startHttpServer() throws Exception {
+    /* test */ Server startHttpServer() throws Exception {
         Server server = new Server();
 
-        HttpConfiguration https = new HttpConfiguration();
-        https.addCustomizer(new SecureRequestCustomizer());
-        ServerConnector httpsConn = new ServerConnector(server,
-                new SslConnectionFactory(getSSLContextFactory(caCertSecret, nodeCertSecret), "http/1.1"),
-                new HttpConnectionFactory(https));
-        httpsConn.setHost("0.0.0.0");
-        httpsConn.setPort(HTTPS_PORT);
+        // External connector is used by the Operator to check on the Kafka node
+        // While the port is always 8443, TLS is used optionally depending on the configuration
+        ServerConnector externalHttpConnector = createExternalHttpConnector(server);
+
+        // Internal connector is used within the Pod only for health checks
+        ServerConnector internalConnector  = new ServerConnector(server);
+        internalConnector.setHost("localhost"); // Should not be exposed outside the Pod. So we use localhost only here.
+        internalConnector.setPort(INTERNAL_PORT);
 
         ContextHandler brokerStateContext = new ContextHandler(BROKER_STATE_PATH);
         brokerStateContext.setHandler(getBrokerStateHandler());
 
-        ServerConnector httpConn  = new ServerConnector(server);
-        // The HTTP port should not be exposed outside the Pod, so it listens only on localhost
-        httpConn.setHost("localhost");
-        httpConn.setPort(HTTP_PORT);
-
         ContextHandler readinessContext = new ContextHandler(READINESS_ENDPOINT_PATH);
         readinessContext.setHandler(getReadinessHandler());
 
-        server.setConnectors(new Connector[] {httpsConn, httpConn});
+        server.setConnectors(new Connector[] {externalHttpConnector, internalConnector});
         server.setHandler(new ContextHandlerCollection(brokerStateContext, readinessContext));
 
         server.setStopTimeout(GRACEFUL_SHUTDOWN_TIMEOUT_MS);
         server.setStopAtShutdown(true);
         server.start();
+
+        return server;
+    }
+
+    private ServerConnector createExternalHttpConnector(Server server) throws GeneralSecurityException, IOException {
+        ServerConnector httpConnector;
+        if (config.get("sslKeyStoreSecretName") != null) {
+            HttpConfiguration externalHttp = new HttpConfiguration();
+            externalHttp.addCustomizer(new SecureRequestCustomizer());
+            httpConnector = new ServerConnector(server,
+                    new SslConnectionFactory(getSSLContextFactory(config.get("namespace"), config.get("sslTrustStoreSecretName"), config.get("sslKeyStoreSecretName")), "http/1.1"),
+                    new HttpConnectionFactory(externalHttp));
+        } else {
+            httpConnector  = new ServerConnector(server);
+        }
+
+        httpConnector.setHost("0.0.0.0");
+        httpConnector.setPort(EXTERNAL_PORT);
+
+        return httpConnector;
     }
 
     /**
@@ -205,7 +214,7 @@ public class KafkaAgent {
      *
      * @return Handler
      */
-    /* test */ Handler getBrokerStateHandler() {
+    private Handler getBrokerStateHandler() {
         return new Handler.Abstract() {
             @Override
             public boolean handle(Request request, Response response, Callback callback) throws Exception {
@@ -236,13 +245,20 @@ public class KafkaAgent {
         };
     }
 
-    static SslContextFactory.Server getSSLContextFactory(Secret caCertSecret, Secret nodeCertSecret) throws GeneralSecurityException, IOException {
+    private SslContextFactory.Server getSSLContextFactory(String namespace, String caCertSecretName, String nodeCertSecretName) throws GeneralSecurityException, IOException {
         SslContextFactory.Server sslContextFactory = new SslContextFactory.Server();
-        sslContextFactory.setTrustStore(KafkaAgentUtils.trustStore(caCertSecret));
+        sslContextFactory.setKeyStore(KafkaAgentUtils.keyStore(getKubernetesSecret(namespace, nodeCertSecretName)));
 
-        sslContextFactory.setKeyStore(KafkaAgentUtils.keyStore(nodeCertSecret));
-        sslContextFactory.setNeedClientAuth(true);
+        if (caCertSecretName != null) {
+            sslContextFactory.setTrustStore(KafkaAgentUtils.trustStore(getKubernetesSecret(namespace, caCertSecretName)));
+            sslContextFactory.setNeedClientAuth(true);
+        }
+
         return  sslContextFactory;
+    }
+
+    private Secret getKubernetesSecret(String namespace, String caCertSecretName) {
+        return client.secrets().inNamespace(namespace).withName(caCertSecretName).get();
     }
 
     /**
@@ -250,7 +266,7 @@ public class KafkaAgent {
      *
      * @return Handler
      */
-    /* test */ Handler getReadinessHandler() {
+    private Handler getReadinessHandler() {
         return new Handler.Abstract() {
             @Override
             public boolean handle(Request request, Response response, Callback callback) {
@@ -283,6 +299,7 @@ public class KafkaAgent {
      * Agent entry point
      * @param agentArgs The agent arguments
      */
+    @SuppressWarnings("unused")
     public static void premain(String agentArgs) {
         String[] args = agentArgs.split(":");
         if (args.length != 1) {
@@ -302,17 +319,9 @@ public class KafkaAgent {
                 System.exit(1);
             }
 
-            final String caCertSecretName = agentConfigs.get("sslTrustStoreSecretName");
-            final String nodeCertSecretName = agentConfigs.get("sslKeyStoreSecretName");
-            final String namespace = agentConfigs.get("namespace");
-            if (caCertSecretName.isEmpty() || nodeCertSecretName.isEmpty() || namespace.isEmpty()) {
-                LOGGER.error("Missing the required Secret information: sslTrustStoreSecretName={} sslKeyStoreSecretName={} namespace={}", caCertSecretName, nodeCertSecretName, namespace);
-                System.exit(1);
-            } else {
-                LOGGER.info("Starting KafkaAgent with sslTrustStoreSecretName={} sslKeyStoreSecretName={} namespace={}", caCertSecretName, nodeCertSecretName, namespace);
-                KubernetesClient client = new KubernetesClientBuilder().build();
-                new KafkaAgent(client, caCertSecretName, nodeCertSecretName, namespace).run();
-            }
+            LOGGER.info("Starting KafkaAgent with configuration {}", agentConfigs);
+            KubernetesClient client = new KubernetesClientBuilder().build();
+            new KafkaAgent(client, agentConfigs).run();
         }
     }
 }

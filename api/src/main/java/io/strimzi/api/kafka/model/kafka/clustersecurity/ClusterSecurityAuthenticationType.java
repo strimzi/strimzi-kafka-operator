@@ -11,11 +11,13 @@ import com.fasterxml.jackson.annotation.JsonValue;
  * Represents supported authentication types for ClusterSecurity
  */
 public enum ClusterSecurityAuthenticationType {
+    NONE,
     STRIMZI_MTLS;
 
     @JsonCreator
     public static ClusterSecurityAuthenticationType forValue(String value) {
         return switch (value) {
+            case "none" -> NONE;
             case "strimzi-mtls" -> STRIMZI_MTLS;
             default -> null;
         };
@@ -24,6 +26,7 @@ public enum ClusterSecurityAuthenticationType {
     @JsonValue
     public String toValue() {
         return switch (this) {
+            case NONE -> "none";
             case STRIMZI_MTLS -> "strimzi-mtls";
         };
     }

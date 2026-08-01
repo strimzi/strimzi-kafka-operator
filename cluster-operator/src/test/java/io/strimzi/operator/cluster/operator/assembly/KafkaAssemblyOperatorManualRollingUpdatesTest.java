@@ -24,6 +24,7 @@ import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.KafkaCluster;
+import io.strimzi.operator.cluster.model.KafkaClusterSecurityContext;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.NodeRef;
 import io.strimzi.operator.cluster.model.RestartReason;
@@ -150,8 +151,8 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
                 Map.of(),
                 KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE,
                 VERSIONS,
-                supplier.sharedEnvironmentProvider
-        );
+                supplier.sharedEnvironmentProvider,
+                KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
 
         StrimziPodSetOperator mockPodSetOps = supplier.strimziPodSetOperator;
         when(mockPodSetOps.listAsync(any(), any(Labels.class))).thenReturn(CompletableFuture.completedFuture(kafkaCluster.generatePodSets(null, null, node -> null)));
@@ -211,8 +212,8 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
                 Map.of(),
                 KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE,
                 VERSIONS,
-                supplier.sharedEnvironmentProvider
-        );
+                supplier.sharedEnvironmentProvider,
+                KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
 
         StrimziPodSetOperator mockPodSetOps = supplier.strimziPodSetOperator;
         when(mockPodSetOps.listAsync(any(), any(Labels.class))).thenAnswer(i -> {
@@ -283,8 +284,8 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
                 Map.of(),
                 KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE,
                 VERSIONS,
-                supplier.sharedEnvironmentProvider
-        );
+                supplier.sharedEnvironmentProvider,
+                KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
 
         StrimziPodSetOperator mockPodSetOps = supplier.strimziPodSetOperator;
         when(mockPodSetOps.listAsync(any(), any(Labels.class))).thenReturn(CompletableFuture.completedFuture(kafkaCluster.generatePodSets(null, null, node -> null)));
@@ -355,8 +356,8 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
                 Map.of(),
                 KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE,
                 VERSIONS,
-                supplier.sharedEnvironmentProvider
-        );
+                supplier.sharedEnvironmentProvider,
+                KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
 
         StrimziPodSetOperator mockPodSetOps = supplier.strimziPodSetOperator;
         when(mockPodSetOps.listAsync(any(), any(Labels.class))).thenReturn(CompletableFuture.completedFuture(kafkaCluster.generatePodSets(null, null, node -> null)));
