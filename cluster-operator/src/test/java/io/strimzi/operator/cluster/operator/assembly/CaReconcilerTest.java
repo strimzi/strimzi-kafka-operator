@@ -38,7 +38,7 @@ import io.strimzi.operator.cluster.operator.resource.kubernetes.PodOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.StrimziPodSetOperator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
-import io.strimzi.operator.common.auth.TlsPemIdentity;
+import io.strimzi.operator.common.auth.Identity;
 import io.strimzi.operator.common.ca.Ca;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.PasswordGenerator;
@@ -987,7 +987,7 @@ public class CaReconcilerTest {
         }
 
         @Override
-        KafkaRoller createKafkaRoller(Set<NodeRef> nodes, TlsPemIdentity coTlsPemIdentity) {
+        KafkaRoller createKafkaRoller(Set<NodeRef> nodes, Identity coIdentity) {
             KafkaRoller mockKafkaRoller = mock(KafkaRoller.class);
             when(mockKafkaRoller.rollingRestart(any())).thenAnswer(i -> VertxUtil.toFuture(podOperator.listAsync(NAMESPACE, Labels.EMPTY))
                     .onSuccess(pods -> kafkaRestartReasons = pods.stream().collect(Collectors.toMap(

@@ -9,8 +9,8 @@ import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.common.AdminClientProvider;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
-import io.strimzi.operator.common.auth.PemAuthIdentity;
-import io.strimzi.operator.common.auth.PemTrustSet;
+import io.strimzi.operator.common.auth.AuthIdentity;
+import io.strimzi.operator.common.auth.TrustSet;
 import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.DescribeClusterOptions;
 import org.apache.kafka.common.KafkaException;
@@ -37,8 +37,8 @@ public class KafkaNodeUnregistration {
      *
      * @param reconciliation        Reconciliation marker
      * @param adminClientProvider   Kafka Admin API client provider
-     * @param pemTrustSet           Trust set for the admin client to connect to the Kafka cluster
-     * @param pemAuthIdentity       Key set  for the admin client to connect to the Kafka cluster
+     * @param kafkaTrustSet         Trust set for the admin client to connect to the Kafka cluster
+     * @param authIdentity          Key set  for the admin client to connect to the Kafka cluster
      * @param nodeIdsToUnregister   List of node IDs that should be unregistered
      *
      * @return  CompletableFuture that completes when all broker nodes are unregistered
@@ -46,13 +46,13 @@ public class KafkaNodeUnregistration {
     public static CompletableFuture<Void> unregisterBrokerNodes(
             Reconciliation reconciliation,
             AdminClientProvider adminClientProvider,
-            PemTrustSet pemTrustSet,
-            PemAuthIdentity pemAuthIdentity,
+            TrustSet kafkaTrustSet,
+            AuthIdentity authIdentity,
             Set<Integer> nodeIdsToUnregister
     ) {
         try {
             String bootstrapHostname = KafkaResources.bootstrapServiceName(reconciliation.name()) + "." + reconciliation.namespace() + ".svc:" + KafkaCluster.REPLICATION_PORT;
-            Admin adminClient = adminClientProvider.createAdminClient(bootstrapHostname, pemTrustSet, pemAuthIdentity);
+            Admin adminClient = adminClientProvider.createAdminClient(bootstrapHostname, kafkaTrustSet, authIdentity);
 
             List<CompletableFuture<Void>> futures = new ArrayList<>();
             for (Integer nodeId : nodeIdsToUnregister) {
@@ -73,8 +73,8 @@ public class KafkaNodeUnregistration {
      *
      * @param reconciliation        Reconciliation marker
      * @param adminClientProvider   Kafka Admin API client provider
-     * @param pemTrustSet           Trust set for the admin client to connect to the Kafka cluster
-     * @param pemAuthIdentity       Key set  for the admin client to connect to the Kafka cluster
+     * @param kafkaTrustSet         Trust set for the admin client to connect to the Kafka cluster
+     * @param authIdentity          Key set  for the admin client to connect to the Kafka cluster
      * @param includeFencedBrokers  If listing should include fenced brokers
      *
      * @return  CompletableFuture that completes when all registered broker nodes are listed
@@ -82,13 +82,13 @@ public class KafkaNodeUnregistration {
     public static CompletableFuture<Collection<Node>> listRegisteredBrokerNodes(
             Reconciliation reconciliation,
             AdminClientProvider adminClientProvider,
-            PemTrustSet pemTrustSet,
-            PemAuthIdentity pemAuthIdentity,
+            TrustSet kafkaTrustSet,
+            AuthIdentity authIdentity,
             boolean includeFencedBrokers) {
 
         try {
             String bootstrapHostname = KafkaResources.bootstrapServiceName(reconciliation.name()) + "." + reconciliation.namespace() + ".svc:" + KafkaCluster.REPLICATION_PORT;
-            Admin adminClient = adminClientProvider.createAdminClient(bootstrapHostname, pemTrustSet, pemAuthIdentity);
+            Admin adminClient = adminClientProvider.createAdminClient(bootstrapHostname, kafkaTrustSet, authIdentity);
 
             DescribeClusterOptions option = new DescribeClusterOptions().includeFencedBrokers(includeFencedBrokers);
 

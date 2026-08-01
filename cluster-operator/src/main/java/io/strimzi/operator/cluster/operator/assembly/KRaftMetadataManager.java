@@ -10,7 +10,7 @@ import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.common.AdminClientProvider;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
-import io.strimzi.operator.common.auth.TlsPemIdentity;
+import io.strimzi.operator.common.auth.Identity;
 import io.strimzi.operator.common.model.StatusUtils;
 import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.FeatureUpdate;
@@ -52,7 +52,7 @@ public class KRaftMetadataManager {
      * manually.
      *
      * @param reconciliation            Reconciliation marker
-     * @param coTlsPemIdentity          Trust set and identity for TLS client authentication for connecting to the Kafka cluster
+     * @param coIdentity          Trust set and identity for TLS client authentication for connecting to the Kafka cluster
      * @param adminClientProvider       Kafka Admin client provider
      * @param desiredMetadataVersion    Desired metadata version
      * @param status                    Kafka status
@@ -61,14 +61,14 @@ public class KRaftMetadataManager {
      */
     public static CompletionStage<Void> maybeUpdateMetadataVersion(
             Reconciliation reconciliation,
-            TlsPemIdentity coTlsPemIdentity,
+            Identity coIdentity,
             AdminClientProvider adminClientProvider,
             String desiredMetadataVersion,
             KafkaStatus status
     ) {
         String bootstrapHostname = KafkaResources.bootstrapServiceName(reconciliation.name()) + "." + reconciliation.namespace() + ".svc:" + KafkaCluster.REPLICATION_PORT;
         LOGGER.debugCr(reconciliation, "Creating AdminClient for Kafka cluster in namespace {}", reconciliation.namespace());
-        Admin kafkaAdmin = adminClientProvider.createAdminClient(bootstrapHostname, coTlsPemIdentity.pemTrustSet(), coTlsPemIdentity.pemAuthIdentity());
+        Admin kafkaAdmin = adminClientProvider.createAdminClient(bootstrapHostname, coIdentity.trustSet(), coIdentity.authIdentity());
 
         return maybeUpdateMetadataVersion(reconciliation, kafkaAdmin, desiredMetadataVersion, status)
                 .whenComplete((result, error) -> {

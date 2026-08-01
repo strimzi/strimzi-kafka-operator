@@ -24,7 +24,7 @@ import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.StrimziTimeoutException;
-import io.strimzi.operator.common.auth.TlsPemIdentity;
+import io.strimzi.operator.common.auth.Identity;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.OrderedProperties;
 import org.apache.kafka.clients.admin.Admin;
@@ -109,7 +109,7 @@ public class KafkaRoller {
     private final long pollingIntervalMs;
     protected final long operationTimeoutMs;
     private final String cluster;
-    private final TlsPemIdentity coTlsPemIdentity;
+    private final Identity coIdentity;
     private final Set<NodeRef> nodes;
     private final KubernetesRestartEventPublisher eventsPublisher;
     private final Supplier<BackOff> backoffSupplier;
@@ -140,7 +140,7 @@ public class KafkaRoller {
      * @param operationTimeoutMs        Operation timeout in milliseconds
      * @param backOffSupplier           Backoff supplier
      * @param nodes                     List of Kafka node references to consider rolling
-     * @param coTlsPemIdentity          Trust set and identity for TLS client authentication for connecting to the Kafka cluster
+     * @param coIdentity          Trust set and identity for TLS client authentication for connecting to the Kafka cluster
      * @param adminClientProvider       Kafka Admin client provider
      * @param kafkaAgentClientProvider  Kafka Agent client provider
      * @param kafkaConfigProvider       Kafka configuration provider
@@ -150,7 +150,7 @@ public class KafkaRoller {
      */
     public KafkaRoller(Reconciliation reconciliation, PodOperator podOperations,
                        long pollingIntervalMs, long operationTimeoutMs, Supplier<BackOff> backOffSupplier, Set<NodeRef> nodes,
-                       TlsPemIdentity coTlsPemIdentity, AdminClientProvider adminClientProvider, KafkaAgentClientProvider kafkaAgentClientProvider,
+                       Identity coIdentity, AdminClientProvider adminClientProvider, KafkaAgentClientProvider kafkaAgentClientProvider,
                        Function<Integer, String> kafkaConfigProvider, KafkaVersion kafkaVersion, boolean allowReconfiguration, KubernetesRestartEventPublisher eventsPublisher) {
         this.namespace = reconciliation.namespace();
         this.cluster = reconciliation.name();
@@ -160,7 +160,7 @@ public class KafkaRoller {
             throw new IllegalArgumentException();
         }
         this.backoffSupplier = backOffSupplier;
-        this.coTlsPemIdentity = coTlsPemIdentity;
+        this.coIdentity = coIdentity;
         this.operationTimeoutMs = operationTimeoutMs;
         this.podOperations = podOperations;
         this.pollingIntervalMs = pollingIntervalMs;
@@ -483,7 +483,7 @@ public class KafkaRoller {
 
     KafkaAgentClient initKafkaAgentClient() throws FatalProblem {
         try {
-            return kafkaAgentClientProvider.createKafkaAgentClient(reconciliation, coTlsPemIdentity);
+            return kafkaAgentClientProvider.createKafkaAgentClient(reconciliation, coIdentity);
         } catch (Exception e) {
             throw new FatalProblem("Failed to initialise KafkaAgentClient", e);
         }
@@ -873,11 +873,11 @@ public class KafkaRoller {
             if (isController) {
                 bootstrapHostnames = nodes.stream().filter(NodeRef::controller).map(node -> DnsNameGenerator.podDnsNameWithoutClusterDomain(namespace, KafkaResources.brokersServiceName(cluster), node.podName()) + ":" + KafkaCluster.CONTROLPLANE_PORT).collect(Collectors.joining(","));
                 LOGGER.debugCr(reconciliation, "Creating AdminClient for {}", bootstrapHostnames);
-                return adminClientProvider.createControllerAdminClient(bootstrapHostnames, coTlsPemIdentity.pemTrustSet(), coTlsPemIdentity.pemAuthIdentity());
+                return adminClientProvider.createControllerAdminClient(bootstrapHostnames, coIdentity.trustSet(), coIdentity.authIdentity());
             } else {
                 bootstrapHostnames = nodes.stream().filter(NodeRef::broker).map(node -> DnsNameGenerator.podDnsNameWithoutClusterDomain(namespace, KafkaResources.brokersServiceName(cluster), node.podName()) + ":" + KafkaCluster.REPLICATION_PORT).collect(Collectors.joining(","));
                 LOGGER.debugCr(reconciliation, "Creating AdminClient for {}", bootstrapHostnames);
-                return adminClientProvider.createAdminClient(bootstrapHostnames, coTlsPemIdentity.pemTrustSet(), coTlsPemIdentity.pemAuthIdentity());
+                return adminClientProvider.createAdminClient(bootstrapHostnames, coIdentity.trustSet(), coIdentity.authIdentity());
             }
         } catch (RuntimeException e) {
             throw new ForceableProblem("An error while try to create an admin client with bootstrap " + bootstrapHostnames, e);

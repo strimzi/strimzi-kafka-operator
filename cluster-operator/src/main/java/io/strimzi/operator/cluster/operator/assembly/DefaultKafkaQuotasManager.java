@@ -11,8 +11,8 @@ import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.common.AdminClientProvider;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
-import io.strimzi.operator.common.auth.PemAuthIdentity;
-import io.strimzi.operator.common.auth.PemTrustSet;
+import io.strimzi.operator.common.auth.AuthIdentity;
+import io.strimzi.operator.common.auth.TrustSet;
 import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.common.quota.ClientQuotaAlteration;
 import org.apache.kafka.common.quota.ClientQuotaEntity;
@@ -90,8 +90,8 @@ public class DefaultKafkaQuotasManager {
      *
      * @param reconciliation            Reconciliation marker
      * @param adminClientProvider       Kafka Admin client provider
-     * @param pemTrustSet               Trust set for TLS authentication in PEM format
-     * @param pemAuthIdentity           Identity for TLS client authentication in PEM format
+     * @param kafkaTrustSet             Trust set for TLS authentication
+     * @param authIdentity              Identity for TLS client authentication
      * @param quotasPlugin              Configuration of Kafka quotas plugin
      *
      * @return  CompletionStage that completes when the default user quota configuration is completed
@@ -99,15 +99,15 @@ public class DefaultKafkaQuotasManager {
     public static CompletionStage<Void> reconcileDefaultUserQuotas(
         Reconciliation reconciliation,
         AdminClientProvider adminClientProvider,
-        PemTrustSet pemTrustSet,
-        PemAuthIdentity pemAuthIdentity,
+        TrustSet kafkaTrustSet,
+        AuthIdentity authIdentity,
         QuotasPlugin quotasPlugin
     ) {
         LOGGER.debugCr(reconciliation, "Reconciling default user quotas in Kafka");
         String bootstrapHostname = KafkaResources.bootstrapServiceName(reconciliation.name()) + "." + reconciliation.namespace() + ".svc:" + KafkaCluster.REPLICATION_PORT;
 
         LOGGER.debugCr(reconciliation, "Creating AdminClient for setting default quota using {}", bootstrapHostname);
-        Admin kafkaAdmin = adminClientProvider.createAdminClient(bootstrapHostname, pemTrustSet, pemAuthIdentity);
+        Admin kafkaAdmin = adminClientProvider.createAdminClient(bootstrapHostname, kafkaTrustSet, authIdentity);
 
         boolean isNotKafkaPlugin = !(quotasPlugin instanceof QuotasPluginKafka);
         QuotasPluginKafka quotasPluginKafka = isNotKafkaPlugin ? emptyQuotasPluginKafka() : (QuotasPluginKafka) quotasPlugin;

@@ -72,7 +72,7 @@ import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
-import io.strimzi.operator.common.auth.TlsPemIdentity;
+import io.strimzi.operator.common.auth.Identity;
 import io.strimzi.operator.common.ca.Ca;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.NodeUtils;
@@ -163,7 +163,7 @@ public class KafkaReconciler {
     private final Map<Integer, String> brokerConfigurationHash = new HashMap<>();
     private final Map<Integer, String> kafkaServerCertificateHash = new HashMap<>();
     private final List<String> secretsToDelete = new ArrayList<>();
-    /* test */ TlsPemIdentity coTlsPemIdentity;
+    /* test */ Identity coIdentity;
     /* test */ KafkaListenersReconciler.ReconciliationResult listenerReconciliationResults; // Result of the listener reconciliation with the listener details
 
     private final KafkaAutoRebalanceStatus kafkaAutoRebalanceStatus;
@@ -325,7 +325,7 @@ public class KafkaReconciler {
      */
     protected Future<Void> initClientAuthenticationCertificates() {
         return ReconcilerUtils.coTlsPemIdentity(reconciliation, secretOperator)
-                .onSuccess(coTlsPemIdentity -> this.coTlsPemIdentity = coTlsPemIdentity)
+                .onSuccess(coTlsPemIdentity -> this.coIdentity = coTlsPemIdentity)
                 .mapEmpty();
     }
 
@@ -479,7 +479,7 @@ public class KafkaReconciler {
                     operationTimeoutMs,
                     () -> new BackOff(250, 2, 10),
                     nodes,
-                    this.coTlsPemIdentity,
+                    this.coIdentity,
                     adminClientProvider,
                     kafkaAgentClientProvider,
                     brokerId -> kafka.generatePerBrokerConfiguration(brokerId, kafkaAdvertisedHostnames, kafkaAdvertisedPorts, scalingDownBlockedNodes.contains(brokerId)),
@@ -1012,7 +1012,7 @@ public class KafkaReconciler {
                     try {
                         String bootstrapHostname = KafkaResources.bootstrapServiceName(reconciliation.name()) + "." + reconciliation.namespace() + ".svc:" + KafkaCluster.REPLICATION_PORT;
                         LOGGER.debugCr(reconciliation, "Creating AdminClient for clusterId using {}", bootstrapHostname);
-                        kafkaAdmin = adminClientProvider.createAdminClient(bootstrapHostname, this.coTlsPemIdentity.pemTrustSet(), this.coTlsPemIdentity.pemAuthIdentity());
+                        kafkaAdmin = adminClientProvider.createAdminClient(bootstrapHostname, this.coIdentity.trustSet(), this.coIdentity.authIdentity());
                         kafkaStatus.setClusterId(kafkaAdmin.describeCluster().clusterId().get());
                     } catch (KafkaException e) {
                         LOGGER.warnCr(reconciliation, "Kafka exception getting clusterId {}", e.getMessage());
@@ -1036,7 +1036,7 @@ public class KafkaReconciler {
      * @return  Future which completes when the default quotas are configured
      */
     protected Future<Void> defaultKafkaQuotas() {
-        return VertxUtil.toFuture(DefaultKafkaQuotasManager.reconcileDefaultUserQuotas(reconciliation, adminClientProvider, this.coTlsPemIdentity.pemTrustSet(), this.coTlsPemIdentity.pemAuthIdentity(), kafka.quotas()));
+        return VertxUtil.toFuture(DefaultKafkaQuotasManager.reconcileDefaultUserQuotas(reconciliation, adminClientProvider, this.coIdentity.trustSet(), this.coIdentity.authIdentity(), kafka.quotas()));
     }
 
     /**
@@ -1048,7 +1048,7 @@ public class KafkaReconciler {
         List<Integer> currentBrokerIds = kafka.brokerNodes().stream().map(NodeRef::nodeId).sorted().toList();
         Promise<Void> unregistrationPromise = Promise.promise();
 
-        Future.fromCompletionStage(KafkaNodeUnregistration.listRegisteredBrokerNodes(reconciliation, adminClientProvider, coTlsPemIdentity.pemTrustSet(), coTlsPemIdentity.pemAuthIdentity(), true))
+        Future.fromCompletionStage(KafkaNodeUnregistration.listRegisteredBrokerNodes(reconciliation, adminClientProvider, coIdentity.trustSet(), coIdentity.authIdentity(), true))
                 .onSuccess(registeredBrokerNodes -> {
 
                     // all current registered broker nodes (fenced or not)
@@ -1066,7 +1066,7 @@ public class KafkaReconciler {
                     if (!brokersIdsToUnregister.isEmpty()) {
                         LOGGER.infoCr(reconciliation, "Kafka nodes {} were removed from the Kafka cluster and will be unregistered", brokersIdsToUnregister);
 
-                        Future.fromCompletionStage(KafkaNodeUnregistration.unregisterBrokerNodes(reconciliation, adminClientProvider, coTlsPemIdentity.pemTrustSet(), coTlsPemIdentity.pemAuthIdentity(), brokersIdsToUnregister))
+                        Future.fromCompletionStage(KafkaNodeUnregistration.unregisterBrokerNodes(reconciliation, adminClientProvider, coIdentity.trustSet(), coIdentity.authIdentity(), brokersIdsToUnregister))
                                 .onComplete(res -> {
                                     if (res.succeeded()) {
                                         LOGGER.infoCr(reconciliation, "Kafka nodes {} were successfully unregistered from the Kafka cluster", brokersIdsToUnregister);
@@ -1100,7 +1100,7 @@ public class KafkaReconciler {
      * @return  Future which completes when the KRaft metadata version is set to the current version or updated.
      */
     protected Future<Void> metadataVersion(KafkaStatus kafkaStatus) {
-        return VertxUtil.toFuture(KRaftMetadataManager.maybeUpdateMetadataVersion(reconciliation, this.coTlsPemIdentity, adminClientProvider, kafka.getMetadataVersion(), kafkaStatus));
+        return VertxUtil.toFuture(KRaftMetadataManager.maybeUpdateMetadataVersion(reconciliation, this.coIdentity, adminClientProvider, kafka.getMetadataVersion(), kafkaStatus));
     }
 
     /**

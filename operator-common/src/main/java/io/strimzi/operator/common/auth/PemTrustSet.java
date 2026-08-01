@@ -23,7 +23,7 @@ import java.util.stream.Collectors;
 /**
  * Represents the set of certificates to be trusted by a TLS client or server
  */
-public class PemTrustSet {
+public class PemTrustSet implements TrustSet    {
     private final Map<String, byte[]> trustedCertificateMap;
     private final String secretName;
     private final String secretNamespace;

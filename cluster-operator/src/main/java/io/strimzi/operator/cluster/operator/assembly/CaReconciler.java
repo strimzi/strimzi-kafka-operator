@@ -37,9 +37,9 @@ import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
+import io.strimzi.operator.common.auth.Identity;
 import io.strimzi.operator.common.auth.PemAuthIdentity;
 import io.strimzi.operator.common.auth.PemTrustSet;
-import io.strimzi.operator.common.auth.TlsPemIdentity;
 import io.strimzi.operator.common.ca.Ca;
 import io.strimzi.operator.common.ca.CaConfig;
 import io.strimzi.operator.common.model.Labels;
@@ -299,9 +299,9 @@ public class CaReconciler {
     Future<Void> maybeRollingUpdateForNewClusterCaKey() {
         if (clusterCa.keyReplaced() || isClusterCaNeedFullTrust) {
             RestartReason restartReason = RestartReason.CLUSTER_CA_CERT_KEY_REPLACED;
-            TlsPemIdentity coTlsPemIdentity = new TlsPemIdentity(new PemTrustSet(clusterCaCertSecret), PemAuthIdentity.clusterOperator(coSecret));
+            Identity coIdentity = new Identity(new PemTrustSet(clusterCaCertSecret), PemAuthIdentity.clusterOperator(coSecret));
             return patchClusterCaKeyGenerationAndReturnNodes()
-                    .compose(nodes -> rollKafkaBrokers(nodes, RestartReasons.of(restartReason), coTlsPemIdentity))
+                    .compose(nodes -> rollKafkaBrokers(nodes, RestartReasons.of(restartReason), coIdentity))
                     .compose(i -> rollDeploymentIfExists(KafkaResources.entityOperatorDeploymentName(reconciliation.name()), restartReason))
                     .compose(i -> rollDeploymentIfExists(KafkaExporterResources.componentName(reconciliation.name()), restartReason))
                     .compose(i -> rollDeploymentIfExists(CruiseControlResources.componentName(reconciliation.name()), restartReason));
@@ -410,8 +410,8 @@ public class CaReconciler {
                 });
     }
 
-    /* test */ Future<Void> rollKafkaBrokers(Set<NodeRef> nodes, RestartReasons podRollReasons, TlsPemIdentity coTlsPemIdentity) {
-        return Future.fromCompletionStage(createKafkaRoller(nodes, coTlsPemIdentity).rollingRestart(pod -> {
+    /* test */ Future<Void> rollKafkaBrokers(Set<NodeRef> nodes, RestartReasons podRollReasons, Identity coIdentity) {
+        return Future.fromCompletionStage(createKafkaRoller(nodes, coIdentity).rollingRestart(pod -> {
             int clusterCaKeyGeneration = clusterCa.caKeyGeneration();
             int podClusterCaKeyGeneration = Annotations.intAnnotation(pod, Ca.ANNO_STRIMZI_IO_CLUSTER_CA_KEY_GENERATION, clusterCaKeyGeneration);
             if (clusterCaKeyGeneration == podClusterCaKeyGeneration) {
@@ -424,14 +424,14 @@ public class CaReconciler {
         }));
     }
 
-    /* test */ KafkaRoller createKafkaRoller(Set<NodeRef> nodes, TlsPemIdentity coTlsPemIdentity) {
+    /* test */ KafkaRoller createKafkaRoller(Set<NodeRef> nodes, Identity coIdentity) {
         return new KafkaRoller(reconciliation,
                 podOperator,
                 1_000,
                 operationTimeoutMs,
                 () -> new BackOff(250, 2, 10),
                 nodes,
-                coTlsPemIdentity,
+                coIdentity,
                 adminClientProvider,
                 kafkaAgentClientProvider,
                 brokerId -> null,
