@@ -163,7 +163,7 @@ public class KafkaExporterReconcilerTest {
                     ArgumentCaptor<PodDisruptionBudget> pdbCaptor = ArgumentCaptor.forClass(PodDisruptionBudget.class);
                     verify(mockPodDisruptionBudgetOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(KafkaExporterResources.componentName(NAME)), pdbCaptor.capture());
                     assertThat(pdbCaptor.getValue(), is(notNullValue()));
-                    assertThat(pdbCaptor.getValue().getSpec().getMinAvailable(), is(new IntOrString(0)));
+                    assertThat(pdbCaptor.getValue().getSpec().getMaxUnavailable(), is(new IntOrString(1)));
 
                     async.flag();
                 })));
@@ -231,7 +231,7 @@ public class KafkaExporterReconcilerTest {
                     ArgumentCaptor<PodDisruptionBudget> pdbCaptor = ArgumentCaptor.forClass(PodDisruptionBudget.class);
                     verify(mockPodDisruptionBudgetOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(KafkaExporterResources.componentName(NAME)), pdbCaptor.capture());
                     assertThat(pdbCaptor.getValue(), is(notNullValue()));
-                    assertThat(pdbCaptor.getValue().getSpec().getMinAvailable(), is(new IntOrString(0)));
+                    assertThat(pdbCaptor.getValue().getSpec().getMaxUnavailable(), is(new IntOrString(1)));
 
                     async.flag();
                 })));

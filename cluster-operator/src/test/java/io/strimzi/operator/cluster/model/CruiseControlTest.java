@@ -548,7 +548,7 @@ public class CruiseControlTest {
         PodDisruptionBudget pbd = cc.generatePodDisruptionBudget();
         assertThat(pbd.getMetadata().getLabels().entrySet().containsAll(pbdLabels.entrySet()), is(true));
         assertThat(pbd.getMetadata().getAnnotations().entrySet().containsAll(pbdAnnotations.entrySet()), is(true));
-        assertThat(pbd.getSpec().getMinAvailable(), is(new IntOrString(0)));
+        assertThat(pbd.getSpec().getMaxUnavailable(), is(new IntOrString(1)));
     }
 
     @Test

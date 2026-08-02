@@ -262,7 +262,7 @@ public class CruiseControlReconcilerTest {
                     verify(mockPodDisruptionBudget, times(1)).reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.componentName(NAME)), pdbCaptor.capture());
                     assertThat(pdbCaptor.getValue(), is(notNullValue()));
                     assertThat(pdbCaptor.getValue().getMetadata().getName(), is(CruiseControlResources.componentName(NAME)));
-                    assertThat(pdbCaptor.getValue().getSpec().getMinAvailable(), is(new IntOrString(0)));
+                    assertThat(pdbCaptor.getValue().getSpec().getMaxUnavailable(), is(new IntOrString(1)));
 
                     async.flag();
                 })));

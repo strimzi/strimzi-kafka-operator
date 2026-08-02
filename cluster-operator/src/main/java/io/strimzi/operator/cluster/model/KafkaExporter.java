@@ -342,13 +342,12 @@ public class KafkaExporter extends AbstractModel {
      * @return The PodDisruptionBudget.
      */
     public PodDisruptionBudget generatePodDisruptionBudget() {
-        return PodDisruptionBudgetUtils.createCustomControllerPodDisruptionBudget(
+        return PodDisruptionBudgetUtils.createPodDisruptionBudget(
                 componentName,
                 namespace,
                 labels,
                 ownerReference,
-                templatePodDisruptionBudget,
-                1
+                templatePodDisruptionBudget
         );
     }
 }
