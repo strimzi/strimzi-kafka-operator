@@ -88,7 +88,7 @@
         <yammer-metrics.version>2.2.0</yammer-metrics.version>
         <snappy.version>1.1.10.5</snappy.version>
         <slf4j.version>2.0.17</slf4j.version>
-        <log4j.version>2.25.4</log4j.version>
+        <log4j.version>2.25.5</log4j.version>
         <quartz.version>2.5.0</quartz.version>
         <opentelemetry.version>1.63.0</opentelemetry.version>
         <jetty.version>12.0.36</jetty.version>
