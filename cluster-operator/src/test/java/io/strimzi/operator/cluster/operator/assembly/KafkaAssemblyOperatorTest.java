@@ -409,7 +409,7 @@ public class KafkaAssemblyOperatorTest {
     private void createCluster(VertxTestContext context, Kafka kafka, List<KafkaNodePool> nodePools, List<Secret> secrets) {
         List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafka, nodePools, Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, SHARED_ENV_PROVIDER);
         KafkaCluster kafkaCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, null, SHARED_ENV_PROVIDER, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
-        EntityOperator entityOperator = EntityOperator.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig());
+        EntityOperator entityOperator = EntityOperator.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig(), KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(openShift);
         ClusterOperatorConfig config = ResourceUtils.dummyClusterOperatorConfig(VERSIONS);
 
@@ -842,7 +842,7 @@ public class KafkaAssemblyOperatorTest {
     private void updateCluster(VertxTestContext context, Kafka originalKafka, Kafka updatedKafka, List<KafkaNodePool> originalNodePools, List<KafkaNodePool> updatedNodePools) {
         List<KafkaPool> originalPools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, originalKafka, originalNodePools, Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, SHARED_ENV_PROVIDER);
         KafkaCluster originalKafkaCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, originalKafka, originalPools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, null, SHARED_ENV_PROVIDER, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
-        EntityOperator originalEntityOperator = EntityOperator.fromCrd(new Reconciliation("test", originalKafka.getKind(), originalKafka.getMetadata().getNamespace(), originalKafka.getMetadata().getName()), originalKafka, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig());
+        EntityOperator originalEntityOperator = EntityOperator.fromCrd(new Reconciliation("test", originalKafka.getKind(), originalKafka.getMetadata().getNamespace(), originalKafka.getMetadata().getName()), originalKafka, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig(), KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
         KafkaExporter originalKafkaExporter = KafkaExporter.fromCrd(new Reconciliation("test", originalKafka.getKind(), originalKafka.getMetadata().getNamespace(), originalKafka.getMetadata().getName()), originalKafka, VERSIONS, SHARED_ENV_PROVIDER);
         CruiseControl originalCruiseControl = CruiseControl.fromCrd(Reconciliation.DUMMY_RECONCILIATION, originalKafka, VERSIONS, originalKafkaCluster.nodes(), Map.of(), Map.of(), SHARED_ENV_PROVIDER);
 
