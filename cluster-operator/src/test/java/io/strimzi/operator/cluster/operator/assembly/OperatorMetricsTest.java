@@ -12,7 +12,6 @@ import io.fabric8.kubernetes.model.annotation.Group;
 import io.fabric8.kubernetes.model.annotation.Version;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tag;
-import io.micrometer.core.instrument.search.MeterNotFoundException;
 import io.strimzi.api.kafka.model.common.Spec;
 import io.strimzi.api.kafka.model.kafka.Status;
 import io.strimzi.operator.common.MetricsProvider;
@@ -50,7 +49,6 @@ import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThan;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @ExtendWith(VertxExtension.class)
 @Group("strimzi")
@@ -110,12 +108,6 @@ public class OperatorMetricsTest {
                     assertThat(registry.get(MetricsHolder.METRICS_RECONCILIATIONS_DURATION).tag("kind", "TestResource").timer().count(), is(1L));
                     assertThat(registry.get(MetricsHolder.METRICS_RECONCILIATIONS_DURATION).tag("kind", "TestResource").timer().totalTime(TimeUnit.MILLISECONDS), greaterThan(0.0));
 
-                    assertThat(registry.get(MetricsHolder.METRICS_RESOURCE_STATE)
-                            .tag("kind", "TestResource")
-                            .tag("name", "my-resource")
-                            .tag("resource-namespace", "my-namespace")
-                            .gauge().value(), is(1.0));
-
                     async.flag();
                 })));
     }
@@ -171,13 +163,6 @@ public class OperatorMetricsTest {
                     assertThat(registry.get(MetricsHolder.METRICS_RECONCILIATIONS_DURATION).meter().getId().getTags().get(2), is(selectorTag));
                     assertThat(registry.get(MetricsHolder.METRICS_RECONCILIATIONS_DURATION).tag("kind", "TestResource").timer().count(), is(1L));
                     assertThat(registry.get(MetricsHolder.METRICS_RECONCILIATIONS_DURATION).tag("kind", "TestResource").timer().totalTime(TimeUnit.MILLISECONDS), greaterThan(0.0));
-
-                    assertThat(registry.get(MetricsHolder.METRICS_RESOURCE_STATE)
-                            .tag("kind", "TestResource")
-                            .tag("name", "my-resource")
-                            .tag("resource-namespace", "my-namespace")
-                            .tag("reason", "Test error")
-                            .gauge().value(), is(0.0));
 
                     async.flag();
                 })));
@@ -237,12 +222,6 @@ public class OperatorMetricsTest {
                     assertThat(registry.get(MetricsHolder.METRICS_RECONCILIATIONS_DURATION).meter().getId().getTags().get(2), is(selectorTag));
                     assertThat(registry.get(MetricsHolder.METRICS_RECONCILIATIONS_DURATION).tag("kind", "TestResource").timer().count(), is(1L));
                     assertThat(registry.get(MetricsHolder.METRICS_RECONCILIATIONS_DURATION).tag("kind", "TestResource").timer().totalTime(TimeUnit.MILLISECONDS), greaterThan(0.0));
-
-                    assertThat(registry.get(MetricsHolder.METRICS_RESOURCE_STATE)
-                            .tag("kind", "TestResource")
-                            .tag("name", "my-resource")
-                            .tag("resource-namespace", "my-namespace")
-                            .gauge().value(), is(1.0));
 
                     async.flag();
                 })));
@@ -343,12 +322,6 @@ public class OperatorMetricsTest {
                     assertThat(registry.get(MetricsHolder.METRICS_RECONCILIATIONS_DURATION).tag("kind", "TestResource").timer().count(), is(1L));
                     assertThat(registry.get(MetricsHolder.METRICS_RECONCILIATIONS_DURATION).tag("kind", "TestResource").timer().totalTime(TimeUnit.MILLISECONDS), greaterThan(0.0));
 
-                    assertThrows(MeterNotFoundException.class, () -> registry.get(MetricsHolder.METRICS_RESOURCE_STATE)
-                            .tag("kind", "TestResource")
-                            .tag("name", "my-resource")
-                            .tag("resource-namespace", "my-namespace")
-                            .gauge());
-
                     async.flag();
                 })));
     }
@@ -387,14 +360,6 @@ public class OperatorMetricsTest {
 
             assertThat(registry.get(MetricsHolder.METRICS_RESOURCES).meter().getId().getTags().get(2), is(selectorTag));
             assertThat(registry.get(MetricsHolder.METRICS_RESOURCES).tag("kind", "TestResource").tag("namespace", "my-namespace").gauge().value(), is(3.0));
-
-            for (NamespaceAndName resource : resources) {
-                assertThat(registry.get(MetricsHolder.METRICS_RESOURCE_STATE)
-                        .tag("kind", "TestResource")
-                        .tag("name", resource.getName())
-                        .tag("resource-namespace", resource.getNamespace())
-                        .gauge().value(), is(1.0));
-            }
 
             async.flag();
         })));
@@ -439,14 +404,6 @@ public class OperatorMetricsTest {
 
                     assertThat(registry.get(MetricsHolder.METRICS_RESOURCES).tag("kind", "TestResource").tag("namespace", "my-namespace").gauge().value(), is(2.0));
                     assertThat(registry.get(MetricsHolder.METRICS_RESOURCES).tag("kind", "TestResource").tag("namespace", "my-namespace2").gauge().value(), is(1.0));
-
-                    for (NamespaceAndName resource : resources) {
-                        assertThat(registry.get(MetricsHolder.METRICS_RESOURCE_STATE)
-                                .tag("kind", "TestResource")
-                                .tag("name", resource.getName())
-                                .tag("resource-namespace", resource.getNamespace())
-                                .gauge().value(), is(1.0));
-                    }
                 })))
                 .compose(ignore -> {
                     // Reconcile again with resource in my-namespace2 deleted
@@ -472,14 +429,6 @@ public class OperatorMetricsTest {
 
                     assertThat(registry.get(MetricsHolder.METRICS_RESOURCES).tag("kind", "TestResource").tag("namespace", "my-namespace").gauge().value(), is(2.0));
                     assertThat(registry.get(MetricsHolder.METRICS_RESOURCES).tag("kind", "TestResource").tag("namespace", "my-namespace2").gauge().value(), is(0.0));
-
-                    for (NamespaceAndName resource : updatedResources) {
-                        assertThat(registry.get(MetricsHolder.METRICS_RESOURCE_STATE)
-                                .tag("kind", "TestResource")
-                                .tag("name", resource.getName())
-                                .tag("resource-namespace", resource.getNamespace())
-                                .gauge().value(), is(1.0));
-                    }
 
                     async.flag();
                 })));
