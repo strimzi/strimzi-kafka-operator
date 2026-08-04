@@ -137,6 +137,7 @@ public class KafkaBridgeClusterTest {
     protected List<EnvVar> getExpectedEnvVars() {
         List<EnvVar> expected = new ArrayList<>();
         expected.add(new EnvVarBuilder().withName(KafkaBridgeCluster.ENV_VAR_STRIMZI_GC_LOG_ENABLED).withValue(String.valueOf(JvmOptions.DEFAULT_GC_LOGGING_ENABLED)).build());
+        expected.add(new EnvVarBuilder().withName(AbstractModel.ENV_VAR_KAFKA_HEAP_OPTS).withValue("-Xms" + JvmOptionUtils.DEFAULT_JVM_XMS).build());
         return expected;
     }
 
@@ -1212,11 +1213,14 @@ public class KafkaBridgeClusterTest {
         assertThat(systemProps.getValue(), containsString("-DmyProperty1=myValue1"));
         assertThat(systemProps.getValue(), containsString("-DmyProperty2=myValue2"));
 
-        EnvVar javaOpts = kb.getEnvVars().stream().filter(envVar -> AbstractModel.ENV_VAR_STRIMZI_JAVA_OPTS.equals(envVar.getName())).findFirst().orElse(null);
-        assertThat(javaOpts, is(notNullValue()));
-        assertThat(javaOpts.getValue(), containsString("-Xms128m"));
-        assertThat(javaOpts.getValue(), containsString("-Xmx256m"));
-        assertThat(javaOpts.getValue(), containsString("-XX:InitiatingHeapOccupancyPercent=36"));
+        EnvVar heapOpts = kb.getEnvVars().stream().filter(envVar -> AbstractModel.ENV_VAR_KAFKA_HEAP_OPTS.equals(envVar.getName())).findFirst().orElse(null);
+        assertThat(heapOpts, is(notNullValue()));
+        assertThat(heapOpts.getValue(), containsString("-Xms128m"));
+        assertThat(heapOpts.getValue(), containsString("-Xmx256m"));
+
+        EnvVar perfOptions = kb.getEnvVars().stream().filter(envVar -> AbstractModel.ENV_VAR_KAFKA_JVM_PERFORMANCE_OPTS.equals(envVar.getName())).findFirst().orElse(null);
+        assertThat(perfOptions, is(notNullValue()));
+        assertThat(perfOptions.getValue(), containsString("-XX:InitiatingHeapOccupancyPercent=36"));
     }
 
     @Test

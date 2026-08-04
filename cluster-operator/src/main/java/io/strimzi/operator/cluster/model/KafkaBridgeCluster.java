@@ -454,7 +454,10 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
     protected List<EnvVar> getEnvVars() {
         List<EnvVar> varList = new ArrayList<>();
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_STRIMZI_GC_LOG_ENABLED, String.valueOf(gcLoggingEnabled)));
-        JvmOptionUtils.javaOptions(varList, jvmOptions);
+
+        JvmOptionUtils.heapOptions(varList, 50, 0L, jvmOptions, resources);
+        JvmOptionUtils.jvmPerformanceOptions(varList, jvmOptions);
+        JvmOptionUtils.jvmSystemProperties(varList, jvmOptions);
 
         // Add shared environment variables used for all containers
         varList.addAll(sharedEnvironmentProvider.variables());
