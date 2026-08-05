@@ -455,7 +455,7 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
         List<EnvVar> varList = new ArrayList<>();
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_STRIMZI_GC_LOG_ENABLED, String.valueOf(gcLoggingEnabled)));
 
-        JvmOptionUtils.heapOptions(varList, 50, 0L, jvmOptions, resources);
+        JvmOptionUtils.heapOptions(varList, 75, 0L, jvmOptions, resources);
         JvmOptionUtils.jvmPerformanceOptions(varList, jvmOptions);
         JvmOptionUtils.jvmSystemProperties(varList, jvmOptions);
 
