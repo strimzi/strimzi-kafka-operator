@@ -88,37 +88,31 @@ public class PodSecurityProfilesST extends AbstractST {
 
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
-        final String mm1TargetClusterName = testStorage.getTargetClusterName() + "-mm1";
         final String mm2TargetClusterName = testStorage.getTargetClusterName() + "-mm2";
         final String mm2SourceMirroredTopicName = testStorage.getClusterName() + "." + testStorage.getTopicName();
 
         // Label particular Namespace with pod-security.kubernetes.io/enforce: restricted
         KubeUtils.labelNamespace(testStorage.getNamespaceName(), "pod-security.kubernetes.io/enforce", "restricted");
 
-        // 1 source Kafka Cluster, 2 target Kafka Cluster, 1 for MM1 and MM2 each having different target Kafka Cluster,
+        // 1 source Kafka Cluster, 1 target Kafka Cluster.
 
         LOGGER.info("Deploy Kafka Clusters resources");
         KubeResourceManager.get().createResourceWithWait(
             KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 1).build(),
             KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 1).build(),
 
-            KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), KafkaComponents.getBrokerPoolName(mm1TargetClusterName), mm1TargetClusterName, 1).build(),
-            KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), KafkaComponents.getControllerPoolName(mm1TargetClusterName), mm1TargetClusterName, 1).build(),
-
             KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), KafkaComponents.getBrokerPoolName(mm2TargetClusterName), mm2TargetClusterName, 1).build(),
             KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), KafkaComponents.getControllerPoolName(mm2TargetClusterName), mm2TargetClusterName, 1).build()
         );
         KubeResourceManager.get().createResourceWithWait(
             KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getClusterName(), 1).build(),
-            KafkaTemplates.kafka(testStorage.getNamespaceName(), mm1TargetClusterName, 1).build(),
             KafkaTemplates.kafka(testStorage.getNamespaceName(), mm2TargetClusterName, 1).build(),
             KafkaTopicTemplates.topic(testStorage).build()
         );
 
-        // Kafka Bridge and KafkaConnect use main Kafka Cluster (one serving as source for MM1 and MM2)
-        // MM1 and MM2 shares source Kafka Cluster and each have their own target kafka cluster
+        // Kafka Bridge and KafkaConnect use main Kafka Cluster (serving as source for MM2)
 
-        LOGGER.info("Deploy all additional operands: MM1, MM2, Bridge, KafkaConnect");
+        LOGGER.info("Deploy all additional operands: MM2, Bridge, KafkaConnect");
         KubeResourceManager.get().createResourceWithWait(
             KafkaConnectTemplates.kafkaConnectWithFilePlugin(testStorage.getNamespaceName(), testStorage.getClusterName(), 1)
                 .editMetadata()
