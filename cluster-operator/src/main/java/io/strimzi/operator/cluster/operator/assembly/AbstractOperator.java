@@ -7,8 +7,6 @@ package io.strimzi.operator.cluster.operator.assembly;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.Watcher;
-import io.micrometer.core.instrument.Tag;
-import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.Timer;
 import io.strimzi.api.kafka.model.common.Condition;
 import io.strimzi.api.kafka.model.common.Spec;
@@ -20,7 +18,6 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationException;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.StrimziTimeoutException;
-import io.strimzi.operator.common.metrics.MetricsHolder;
 import io.strimzi.operator.common.metrics.OperatorMetricsHolder;
 import io.strimzi.operator.common.model.InvalidConfigParameterException;
 import io.strimzi.operator.common.model.Labels;
@@ -518,86 +515,26 @@ public abstract class AbstractOperator<
      * Log the reconciliation outcome.
      */
     private Future<Void> handleResult(Reconciliation reconciliation, AsyncResult<Void> result, Timer.Sample reconciliationTimerSample) {
-        Promise<Void> handlingResult = Promise.promise();
-
         if (result.succeeded()) {
-            updateResourceState(reconciliation, true, null).onComplete(stateUpdateResult -> {
-                metrics().successfulReconciliationsCounter(reconciliation.namespace()).increment();
-                reconciliationTimerSample.stop(metrics().reconciliationsTimer(reconciliation.namespace()));
-                LOGGER.infoCr(reconciliation, "reconciled");
-                handlingResult.handle(stateUpdateResult);
-            });
+            metrics().successfulReconciliationsCounter(reconciliation.namespace()).increment();
+            reconciliationTimerSample.stop(metrics().reconciliationsTimer(reconciliation.namespace()));
+            LOGGER.infoCr(reconciliation, "reconciled");
         } else {
             Throwable cause = result.cause();
 
             if (cause instanceof InvalidConfigParameterException) {
-                updateResourceState(reconciliation, false, cause).onComplete(stateUpdateResult -> {
-                    metrics().failedReconciliationsCounter(reconciliation.namespace()).increment();
-                    reconciliationTimerSample.stop(metrics().reconciliationsTimer(reconciliation.namespace()));
-                    LOGGER.warnCr(reconciliation, "Failed to reconcile {}", cause.getMessage());
-                    handlingResult.handle(stateUpdateResult);
-                });
+                metrics().failedReconciliationsCounter(reconciliation.namespace()).increment();
+                reconciliationTimerSample.stop(metrics().reconciliationsTimer(reconciliation.namespace()));
+                LOGGER.warnCr(reconciliation, "Failed to reconcile {}", cause.getMessage());
             } else if (cause instanceof UnableToAcquireLockException) {
                 metrics().lockedReconciliationsCounter(reconciliation.namespace()).increment();
-                handlingResult.complete();
             } else {
-                updateResourceState(reconciliation, false, cause).onComplete(stateUpdateResult -> {
-                    metrics().failedReconciliationsCounter(reconciliation.namespace()).increment();
-                    reconciliationTimerSample.stop(metrics().reconciliationsTimer(reconciliation.namespace()));
-                    LOGGER.warnCr(reconciliation, "Failed to reconcile", cause);
-                    handlingResult.handle(stateUpdateResult);
-                });
+                metrics().failedReconciliationsCounter(reconciliation.namespace()).increment();
+                reconciliationTimerSample.stop(metrics().reconciliationsTimer(reconciliation.namespace()));
+                LOGGER.warnCr(reconciliation, "Failed to reconcile", cause);
             }
         }
 
-        return handlingResult.future();
-    }
-
-    /**
-     * Updates the resource state metric for the provided reconciliation which brings kind, name and namespace
-     * of the custom resource.
-     *
-     * @param reconciliation reconciliation to use to update the resource state metric
-     * @param ready if reconcile was successful and the resource is ready
-     */
-    private Future<Void> updateResourceState(Reconciliation reconciliation, boolean ready, Throwable cause) {
-        String key = reconciliation.namespace() + ":" + reconciliation.kind() + "/" + reconciliation.name();
-
-        String errorReason = "none";
-        if (cause != null) {
-            if (cause.getMessage() != null) {
-                errorReason = cause.getMessage();
-            } else {
-                errorReason = "unknown error";
-            }
-        }
-
-        Tags metricTags = Tags.of(
-                Tag.of("kind", reconciliation.kind()),
-                Tag.of("name", reconciliation.name()),
-                Tag.of("resource-namespace", reconciliation.namespace()),
-                Tag.of("reason", errorReason));
-
-        boolean removed = metrics().removeMetric(MetricsHolder.METRICS_RESOURCE_STATE,
-                Tags.of(Tag.of("kind", reconciliation.kind()),
-                        Tag.of("name", reconciliation.name()),
-                        Tag.of("resource-namespace", reconciliation.namespace())));
-
-        if (removed) {
-            resourcesStateCounter.remove(key);
-            LOGGER.debugCr(reconciliation, "Removed metric " + MetricsHolder.METRICS_PREFIX + "resource.state{}", key);
-        }
-
-        return VertxUtil.toFuture(resourceOperator.getAsync(reconciliation.namespace(), reconciliation.name())).map(cr -> {
-            if (cr != null && ReconcilerUtils.matchesSelector(selector(), cr)) {
-                resourcesStateCounter.computeIfAbsent(key, tags ->
-                        metrics().metricsProvider().gauge(MetricsHolder.METRICS_RESOURCE_STATE, "Current state of the resource: 1 ready, 0 fail", metricTags)
-                );
-                resourcesStateCounter.get(key).set(ready ? 1 : 0);
-                LOGGER.debugCr(reconciliation, "Updated metric " + MetricsHolder.METRICS_PREFIX + "resource.state{} = {}", metricTags, ready ? 1 : 0);
-            }
-
-            return null;
-        });
+        return Future.succeededFuture();
     }
 }

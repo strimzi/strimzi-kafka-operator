@@ -9,6 +9,7 @@
 * Support for configuring Maven mirrors for Kafka Connect Build
 * Connectors that request the `stopped` or `paused` state via `spec.state` are now created directly in that state instead of being started first and then stopped or paused.
 * Added support for broker cordoning [KIP-1066](https://cwiki.apache.org/confluence/spaces/KAFKA/pages/311627566/KIP-1066+Mechanism+to+cordon+brokers+and+log+directories) during auto-rebalancing on scale down for Kafka 4.3+.
+* Removed deprecated resource state metrics - the KSM (kube-state-metrics) should be used instead.
 
 ### Major changes, deprecations, and removals
 

@@ -83,21 +83,6 @@ public class MetricsUtils {
         assertMetricValueNotNull(collector, metrics);
     }
 
-    public static void assertCoMetricResourceStateNotExists(String namespaceName, String kind, String name, BaseMetricsCollector collector) {
-        String metric = "strimzi_resource_state\\{kind=\"" + kind + "\",name=\"" + name + "\",resource_namespace=\"" + namespaceName + "\"}";
-        List<Double> values = createPatternAndCollectWithoutWait(collector, metric);
-        assertThat(values.isEmpty(), is(true));
-    }
-
-    public static void assertCoMetricResourceState(String namespaceName, String kind, String name, BaseMetricsCollector collector, double value, String reason) {
-        assertMetricResourceState(namespaceName, kind, name, collector, value, reason);
-    }
-
-    public static void assertMetricResourceState(String namespaceName, String kind, String name, BaseMetricsCollector collector, double value, String reason) {
-        String metric = "strimzi_resource_state\\{kind=\"" + kind + "\",name=\"" + name + "\",reason=\"" + reason + ".*\",resource_namespace=\"" + namespaceName + "\"}";
-        assertMetricValue(collector, metric, value);
-    }
-
     public static void assertCoMetricResources(String namespaceName, String kind, BaseMetricsCollector collector, double value) {
         assertMetricResources(namespaceName, kind, collector, value);
     }
