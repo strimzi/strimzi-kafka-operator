@@ -210,6 +210,7 @@ public class KafkaBrokerConfigurationBuilderTest {
 
         assertThat(configuration, isEquivalent("node.id=2",
                 CruiseControlConfigurationParameters.METRICS_TOPIC_NAME + "=strimzi.cruisecontrol.metrics",
+                CruiseControlConfigurationParameters.METRICS_REPORTER_BOOTSTRAP_SERVERS + "=my-cluster-kafka-brokers:9091",
                 CruiseControlConfigurationParameters.METRICS_TOPIC_AUTO_CREATE + "=true",
                 CruiseControlConfigurationParameters.METRICS_TOPIC_NUM_PARTITIONS + "=1",
                 CruiseControlConfigurationParameters.METRICS_TOPIC_REPLICATION_FACTOR + "=1",

@@ -93,8 +93,8 @@ public class KafkaAgent {
     /**
      * Constructor of the KafkaAgent
      *
-     * @param client                        CA certificate Secret
-     * @param config                        Node certificate Secret
+     * @param client                        Kubernetes client instance
+     * @param config                        Kafka agent configuration
      * @param brokerState                   Current state of the broker
      * @param remainingLogsToRecover        Number of remaining logs to recover
      * @param remainingSegmentsToRecover    Number of remaining segments to recover
@@ -168,7 +168,7 @@ public class KafkaAgent {
 
         // External connector is used by the Operator to check on the Kafka node
         // While the port is always 8443, TLS is used optionally depending on the configuration
-        ServerConnector externalHttpConnector = createExternalHttpConnector(server);
+        ServerConnector externalConnector = createExternalHttpConnector(server);
 
         // Internal connector is used within the Pod only for health checks
         ServerConnector internalConnector  = new ServerConnector(server);
@@ -181,7 +181,7 @@ public class KafkaAgent {
         ContextHandler readinessContext = new ContextHandler(READINESS_ENDPOINT_PATH);
         readinessContext.setHandler(getReadinessHandler());
 
-        server.setConnectors(new Connector[] {externalHttpConnector, internalConnector});
+        server.setConnectors(new Connector[] {externalConnector, internalConnector});
         server.setHandler(new ContextHandlerCollection(brokerStateContext, readinessContext));
 
         server.setStopTimeout(GRACEFUL_SHUTDOWN_TIMEOUT_MS);

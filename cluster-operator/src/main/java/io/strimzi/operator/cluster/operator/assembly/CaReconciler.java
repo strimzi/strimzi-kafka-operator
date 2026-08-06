@@ -38,11 +38,9 @@ import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
-import io.strimzi.operator.common.auth.AuthIdentity;
 import io.strimzi.operator.common.auth.Identity;
 import io.strimzi.operator.common.auth.PemAuthIdentity;
 import io.strimzi.operator.common.auth.PemTrustSet;
-import io.strimzi.operator.common.auth.TrustSet;
 import io.strimzi.operator.common.ca.Ca;
 import io.strimzi.operator.common.ca.CaConfig;
 import io.strimzi.operator.common.model.Labels;
@@ -495,21 +493,10 @@ public class CaReconciler {
      * @return  Cluster operator identity
      */
     private Identity createCoIdentity() {
-        TrustSet trustSet;
-        if (securityContext.isStrimziTlsEncryption())   {
-            trustSet = new PemTrustSet(clusterCaCertSecret);
-        } else {
-            trustSet = null;
-        }
-
-        AuthIdentity authIdentity;
-        if (securityContext.isStrimziMtlsAuthentication())  {
-            authIdentity = PemAuthIdentity.clusterOperator(coSecret);
-        } else {
-            authIdentity = null;
-        }
-
-        return new Identity(trustSet, authIdentity);
+        return new Identity(
+                securityContext.isStrimziTlsEncryption() ? new PemTrustSet(clusterCaCertSecret) : null,
+                securityContext.isStrimziMtlsAuthentication() ? PemAuthIdentity.clusterOperator(coSecret) : null
+        );
     }
 
     /**

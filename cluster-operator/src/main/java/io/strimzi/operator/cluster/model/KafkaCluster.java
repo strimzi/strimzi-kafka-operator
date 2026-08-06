@@ -2071,7 +2071,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
     }
 
     /**
-     * Returns the securitxy context of this Kafka cluster
+     * Returns the security context of this Kafka cluster
      *
      * @return  Kafka cluster security context
      */
