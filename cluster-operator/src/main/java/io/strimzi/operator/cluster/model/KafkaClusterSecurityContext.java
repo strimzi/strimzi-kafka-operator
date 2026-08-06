@@ -48,7 +48,7 @@ public class KafkaClusterSecurityContext {
      */
     public static KafkaClusterSecurityContext fromCrd(Kafka kafka) {
         ClusterSecurity clusterSecurity = Annotations.hasAnnotation(kafka, INTERNAL_CLUSTER_SECURITY_ANNOTATION) ? deserializeSpec(Annotations.stringAnnotation(kafka, INTERNAL_CLUSTER_SECURITY_ANNOTATION, null)) : null;
-        ClusterSecurityStatus clusterSecurityStatus = kafka.getStatus() != null && kafka.getStatus().getClusterSecurity() != null ? deserializeStatus(kafka.getStatus().getClusterSecurity()) : null;
+        ClusterSecurityStatus clusterSecurityStatus = kafka.getStatus() != null ? deserializeStatus(kafka.getStatus().getClusterSecurity()) : null;
 
         if (clusterSecurity == null && clusterSecurityStatus == null) {
             // Cluster Security does not exist in status, and it is not configured in the annotation either. We create
@@ -87,7 +87,7 @@ public class KafkaClusterSecurityContext {
      */
     public static ClusterSecurityStatus deserializeStatus(Object untypedClusterSecurityStatus) {
         if (untypedClusterSecurityStatus == null) {
-            throw new InvalidResourceException("ClusterSecurityStatus is null and cannot be deserialized.");
+            return null;
         } else {
             try {
                 ClusterSecurityStatus status = OBJECT_MAPPER.convertValue(untypedClusterSecurityStatus, ClusterSecurityStatus.class);

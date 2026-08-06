@@ -98,6 +98,16 @@ public class MockCruiseControl {
     private final WireMockServer server;
 
     /**
+     * Sets up and returns a Cruise Control mock HTTP server.
+     *
+     * @param serverPort The port number the server should listen on.
+     */
+    public MockCruiseControl(int serverPort) {
+        this.server = new WireMockServer(WireMockConfiguration.options().port(serverPort));
+        this.server.start();
+    }
+
+    /**
      * Sets up and returns a Cruise Control mock server.
      *
      * @param serverPort   The port number the server should listen on.
