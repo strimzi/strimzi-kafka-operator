@@ -86,7 +86,7 @@ public class FeatureGatesST extends AbstractST {
         KubeResourceManager.get().createResourceWithWait(KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getClusterName(), 3).build());
         KubeResourceManager.get().createResourceWithWait(
             KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getTopicName(), testStorage.getClusterName()).build(),
-            KafkaConnectTemplates.kafkaConnect(testStorage.getNamespaceName(), testStorage.getClusterName(), testStorage.getClusterName(), 1)
+            KafkaConnectTemplates.kafkaConnectBuild(testStorage.getNamespaceName(), testStorage.getClusterName(), testStorage.getClusterName(), 1)
                 .editMetadata()
                     .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
                 .endMetadata()
@@ -95,7 +95,7 @@ public class FeatureGatesST extends AbstractST {
                     .addToConfig("value.converter.schemas.enable", false)
                     .addToConfig("key.converter", "org.apache.kafka.connect.storage.StringConverter")
                     .addToConfig("value.converter", "org.apache.kafka.connect.storage.StringConverter")
-                    .withNewBuild()
+                    .editBuild()
                         .addNewPlugin()
                             .withName("camel-connector")
                             .withArtifacts(
@@ -105,10 +105,6 @@ public class FeatureGatesST extends AbstractST {
                                     .build()
                             )
                         .endPlugin()
-                        .withNewDockerOutputLike(KafkaConnectTemplates.dockerOutput(imageName))
-                            .withAdditionalPushOptions("--tls-verify=false")
-                            .withAdditionalBuildOptions("--tls-verify=false")
-                        .endDockerOutput()
                     .endBuild()
                 .endSpec()
                 .build());

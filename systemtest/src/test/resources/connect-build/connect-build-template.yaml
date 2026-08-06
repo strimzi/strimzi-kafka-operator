@@ -1,0 +1,48 @@
+# Template for KafkaConnect with build support.
+# Values like name, version, replicas, and bootstrapServers are placeholders
+# overridden at runtime by KafkaConnectTemplates.kafkaConnectBuild().
+# Use this file to configure things like spec.template (e.g. security context)
+# or spec.build.output that should apply to all Connect build tests.
+apiVersion: kafka.strimzi.io/v1
+kind: KafkaConnect
+metadata:
+  name: my-connect-cluster
+  annotations:
+    strimzi.io/use-connector-resources: "true"
+spec:
+  version: 4.3.0
+  replicas: 1
+  bootstrapServers: my-cluster-kafka-bootstrap:9093
+  groupId: my-connect-group
+  configStorageTopic: my-connect-configs
+  statusStorageTopic: my-connect-status
+  offsetStorageTopic: my-connect-offsets
+  tls:
+    trustedCertificates:
+      - secretName: my-cluster-cluster-ca-cert
+        pattern: "*.crt"
+#  build:
+#    output:
+#      type: docker
+#      # ...
+#      additionalBuildOptions:
+#        - --log-format=json
+#        - --ignore-path=/usr/bin/newuidmap
+#        - --ignore-path=/usr/bin/newgidmap
+  config:
+    # -1 means it will use the default replication factor configured in the broker
+    config.storage.replication.factor: -1
+    offset.storage.replication.factor: -1
+    status.storage.replication.factor: -1
+#  template:
+#    buildContainer:
+#      securityContext:
+#        runAsUser: 1000
+#        runAsGroup: 1000
+#        allowPrivilegeEscalation: true
+#        capabilities:
+#          add:
+#            - SETUID
+#            - SETGID
+#            - DAC_OVERRIDE
+#            - SYS_ADMIN
