@@ -49,6 +49,7 @@ import io.strimzi.operator.common.AdminClientProvider;
 import io.strimzi.operator.common.DefaultAdminClientProvider;
 import io.strimzi.operator.common.MetricsProvider;
 import io.strimzi.operator.common.featuregates.FeatureGates;
+import io.strimzi.operator.common.operator.resource.kubernetes.CertManagerCertificateOperator;
 import io.strimzi.operator.common.operator.resource.kubernetes.CrdOperator;
 import io.strimzi.operator.common.operator.resource.kubernetes.SecretOperator;
 
@@ -230,6 +231,11 @@ public class ResourceOperatorSupplier {
     public final BrokersInUseCheck brokersInUseCheck;
 
     /**
+     * cert-manager Certificate operator
+     */
+    public final CertManagerCertificateOperator certManagerCertificateOperator;
+
+    /**
      * Constructor
      *
      * @param asyncExecutor         Executor on which the resource operators run their blocking Kubernetes API calls.
@@ -323,7 +329,8 @@ public class ResourceOperatorSupplier {
                 adminClientProvider,
                 restartEventPublisher,
                 new DefaultSharedEnvironmentProvider(),
-                new BrokersInUseCheck());
+                new BrokersInUseCheck(),
+                new CertManagerCertificateOperator(asyncExecutor, client));
     }
 
     /**
@@ -363,6 +370,7 @@ public class ResourceOperatorSupplier {
      * @param restartEventsPublisher                Kubernetes Events publisher
      * @param sharedEnvironmentProvider             Shared environment provider
      * @param brokersInUseCheck                     Broker scale down operations
+     * @param certManagerCertificateOperator        cert-manager Certificate operator
      */
     @SuppressWarnings({"checkstyle:ParameterNumber"})
     public ResourceOperatorSupplier(ServiceOperator serviceOperations,
@@ -398,7 +406,8 @@ public class ResourceOperatorSupplier {
                                     AdminClientProvider adminClientProvider,
                                     KubernetesRestartEventPublisher restartEventsPublisher,
                                     SharedEnvironmentProvider sharedEnvironmentProvider,
-                                    BrokersInUseCheck brokersInUseCheck) {
+                                    BrokersInUseCheck brokersInUseCheck,
+                                    CertManagerCertificateOperator certManagerCertificateOperator) {
         this.serviceOperations = serviceOperations;
         this.routeOperations = routeOperations;
         this.imageStreamOperations = imageStreamOperations;
@@ -433,5 +442,6 @@ public class ResourceOperatorSupplier {
         this.restartEventsPublisher = restartEventsPublisher;
         this.sharedEnvironmentProvider = sharedEnvironmentProvider;
         this.brokersInUseCheck = brokersInUseCheck;
+        this.certManagerCertificateOperator = certManagerCertificateOperator;
     }
 }

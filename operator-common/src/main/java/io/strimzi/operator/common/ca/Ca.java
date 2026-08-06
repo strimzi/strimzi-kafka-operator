@@ -6,6 +6,7 @@ package io.strimzi.operator.common.ca;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Secret;
+import io.strimzi.api.kafka.model.common.CertificateManagerType;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.certs.Subject;
 import io.strimzi.operator.common.Annotations;
@@ -611,6 +612,15 @@ public abstract class Ca {
             throw new RuntimeException(CA_CRT + " does not exist in the secret for " + caRole.caName());
         }
         return cert.getNotAfter().getTime();
+    }
+
+    /**
+     * Get the CertificateManagerType of this CA.
+     *
+     * @return the CertificateManagerType of this CA.
+     */
+    public CertificateManagerType getType() {
+        return caConfig.getCertificateManagerType();
     }
 
     /**

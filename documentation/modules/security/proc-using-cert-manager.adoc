@@ -1,0 +1,158 @@
+:_mod-docs-content-type: PROCEDURE
+
+// Module included in the following assemblies:
+//
+// assembly-using-your-own-certificates.adoc
+
+[id='proc-using-cert-manager-{context}']
+= Using cert-manager to issue TLS certificates
+
+[role="_abstract"]
+Configure Strimzi to delegate TLS certificate issuing to https://cert-manager.io/[cert-manager] instead of managing it internally.
+When enabled, Strimzi creates cert-manager `Certificate` resources for each component and reads the CA public certificate from a user-provided `Secret` to establish TLS trust.
+cert-manager is responsible for issuing and renewing all end-entity certificates.
+
+This feature requires the `CertManagerCaType` feature gate to be enabled.
+For more information, see xref:ref-operator-cluster-feature-gates-{context}[Feature gates].
+
+NOTE: Strimzi does not install cert-manager and is not responsible for creating `Issuer` or `ClusterIssuer` resources.
+
+.Prerequisites
+
+* cert-manager is installed in the cluster with a ready `Issuer` or `ClusterIssuer` configured.
+* The `CertManagerCaType` feature gate is enabled in the Cluster Operator by setting `+CertManagerCaType` in the `STRIMZI_FEATURE_GATES` environment variable.
+
+.Procedure
+
+. Apply the RBAC resources required for cert-manager integration.
++
+[source,shell,subs="+quotes"]
+kubectl apply -f packaging/install/cert-manager/
+
+. Create a `Secret` containing the CA public certificate that Strimzi should trust.
++
+[source,shell,subs="+quotes"]
+----
+kubectl create secret generic _<ca_cert_secret_name>_ \
+  --from-file=ca.crt=_<path_to_ca_cert_pem>_ \
+  -n _<namespace>_
+----
++
+Replace _<ca_cert_secret_name>_ with a name of your choice, _<path_to_ca_cert_pem>_ with the path to the CA certificate PEM file, and _<namespace>_ with the namespace of the Kafka cluster.
+
+. Create or update the `Kafka` resource, setting `type: cert-manager.io` on `clusterCa`, `clientsCa`, or both.
+Set `generateCertificateAuthority: false` and provide the `certManager.issuerRef` and `certManager.caCert` configuration.
++
+.Example `Kafka` resource using cert-manager for both Cluster CA and Clients CA
+[source,yaml,subs="attributes+"]
+----
+apiVersion: kafka.strimzi.io/v1beta2
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+  clusterCa:
+    generateCertificateAuthority: false <1>
+    type: cert-manager.io <2>
+    certManager:
+      issuerRef:
+        name: my-cluster-issuer <3>
+        kind: ClusterIssuer <4>
+        group: cert-manager.io <5>
+      caCert:
+        secretName: _<ca_cert_secret_name>_ <6>
+        certificate: ca.crt <7>
+  clientsCa:
+    generateCertificateAuthority: false
+    type: cert-manager.io
+    certManager:
+      issuerRef:
+        name: my-cluster-issuer
+        kind: ClusterIssuer
+        group: cert-manager.io
+      caCert:
+        secretName: _<ca_cert_secret_name>_
+        certificate: ca.crt
+  kafka:
+    # ...
+  # ...
+----
+<1> Required. Must be `false` when `type` is `cert-manager.io`.
+<2> Enables cert-manager certificate issuance for this CA role. Requires the `CertManagerCaType` feature gate to be enabled.
+<3> Name of the cert-manager `Issuer` or `ClusterIssuer` to use.
+<4> Kind of the issuer. Must be `Issuer` or `ClusterIssuer`.
+<5> API group of the issuer. Defaults to `cert-manager.io`.
+<6> Name of the `Secret` containing the CA public certificate.
+<7> Key within the `Secret` that holds the CA certificate PEM data.
+
+. Apply the `Kafka` resource.
++
+[source,shell,subs="+quotes"]
+kubectl apply -f _<kafka_resource_file>_ -n _<namespace>_
+
+. Verify that cert-manager `Certificate` resources have been created for each Kafka component.
++
+[source,shell,subs="+quotes"]
+kubectl get certificates -n _<namespace>_
++
+Strimzi creates one `Certificate` resource per Kafka node and one for each enabled component (Cruise Control, Kafka Exporter, Entity Operator), plus one for the cluster operator.
+cert-manager stores the issued certificates in Secrets with a `-cm` suffix (for example, `my-cluster-dual-role-0-cm`).
+During reconciliation, Strimzi copies the certificates from these Secrets into the component Secrets that are used for TLS configuration.
+
+.CA certificate rotation
+
+When the CA public certificate in the user-provided `Secret` changes, Strimzi detects the change on the next reconciliation.
+
+* If the new certificate was signed by the same private key (cert renewal), Strimzi rolls the Kafka pods once to update the truststore.
+* If the new certificate was signed by a new private key (key replacement), Strimzi performs a phased rolling restart.
+  The old CA certificate is retained alongside the new one until all pods have rolled and all components are using certificates issued by the new CA.
+
+.KafkaUser TLS certificates
+
+When `clientsCa.type` is set to `cert-manager.io`, the User Operator also delegates `KafkaUser` TLS certificate issuance to cert-manager.
+Create `KafkaUser` resources with `spec.authentication.type: tls` as usual.
+
+If the User Operator is deployed as part of the Entity Operator, the Cluster Operator configures it automatically.
+If you are running the User Operator as a standalone deployment, set the following environment variables in the User Operator `Deployment`:
+
+[cols="2,4,1",options="header"]
+|===
+|Environment variable |Description |Default
+
+|`STRIMZI_CA_TYPE`
+|Type of certificate manager. Set to `cert-manager.io` to enable cert-manager integration.
+|`strimzi.io`
+
+|`STRIMZI_CM_ISSUER_NAME`
+|Name of the cert-manager `Issuer` or `ClusterIssuer` to use for `KafkaUser` certificates.
+|_(none)_
+
+|`STRIMZI_CM_ISSUER_KIND`
+|Kind of the cert-manager issuer. Must be `Issuer` or `ClusterIssuer`.
+|_(none)_
+
+|`STRIMZI_CM_ISSUER_GROUP`
+|API group of the cert-manager issuer.
+|`cert-manager.io`
+
+|===
+
+.Example standalone User Operator configuration for cert-manager
+[source,yaml]
+----
+env:
+  - name: STRIMZI_CA_TYPE
+    value: cert-manager.io
+  - name: STRIMZI_CM_ISSUER_NAME
+    value: my-cluster-issuer
+  - name: STRIMZI_CM_ISSUER_KIND
+    value: ClusterIssuer
+  - name: STRIMZI_CM_ISSUER_GROUP
+    value: cert-manager.io
+----
+
+[role="_additional-resources"]
+.Additional resources
+
+* xref:ref-operator-cluster-feature-gates-{context}[Feature gates]
+* xref:installing-your-own-ca-certificates-str[]

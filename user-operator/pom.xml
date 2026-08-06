@@ -50,6 +50,10 @@
             <artifactId>kubernetes-model-core</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.fabric8</groupId>
+            <artifactId>certmanager-model</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.strimzi</groupId>
             <artifactId>certificate-issuer</artifactId>
         </dependency>
@@ -172,6 +176,11 @@
                                 <!-- Needed for logging using the Kubernetes Client (uses SLF4J) -->
                                 <ignoredUnusedDeclaredDependency>org.apache.logging.log4j:log4j-slf4j2-impl</ignoredUnusedDeclaredDependency>
                             </ignoredUnusedDeclaredDependencies>
+                            <ignoredNonTestScopedDependencies>
+                                <!-- Used transitively at runtime via CertManagerCertificateOperator in operator-common;
+                                     maven analysis cannot see the indirect usage through operator-common's method signatures -->
+                                <ignoredNonTestScopedDependency>io.fabric8:certmanager-model</ignoredNonTestScopedDependency>
+                            </ignoredNonTestScopedDependencies>
                         </configuration>
                     </execution>
                 </executions>
