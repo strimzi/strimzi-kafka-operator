@@ -69,8 +69,8 @@ public class DefaultAdminClientProvider implements AdminClientProvider {
     /**
      * Utility method for preparing the Admin client configuration
      *
-     * @param kafkaTrustSet       Trust set for connecting to Kafka
-     * @param authIdentity          Identity for TLS client authentication for connecting to Kafka
+     * @param kafkaTrustSet         Trust set for connecting to Kafka
+     * @param authIdentity          Identity for authentication for connecting to Kafka
      * @param config                Custom Admin client configuration or empty properties instance
      *
      * @return  Admin client configuration

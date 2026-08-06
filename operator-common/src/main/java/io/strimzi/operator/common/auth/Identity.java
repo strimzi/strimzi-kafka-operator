@@ -8,7 +8,7 @@ package io.strimzi.operator.common.auth;
  * Represents the operator's identity configuration, including trust material and authentication credentials,
  * used when connecting to operands.
  *
- * @param trustSet      Trust set for esablishing the trust with the operand
+ * @param trustSet      Trust set for establishing the trust with the operand
  * @param authIdentity  Authentication identify for authenticating the operator
  */
 public record Identity(TrustSet trustSet, AuthIdentity authIdentity) {

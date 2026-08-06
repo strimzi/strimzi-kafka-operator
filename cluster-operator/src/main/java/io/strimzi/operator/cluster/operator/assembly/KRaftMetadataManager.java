@@ -52,7 +52,7 @@ public class KRaftMetadataManager {
      * manually.
      *
      * @param reconciliation            Reconciliation marker
-     * @param coIdentity          Trust set and identity for TLS client authentication for connecting to the Kafka cluster
+     * @param coIdentity                Trust set and identity for authentication for connecting to the Kafka cluster
      * @param adminClientProvider       Kafka Admin client provider
      * @param desiredMetadataVersion    Desired metadata version
      * @param status                    Kafka status

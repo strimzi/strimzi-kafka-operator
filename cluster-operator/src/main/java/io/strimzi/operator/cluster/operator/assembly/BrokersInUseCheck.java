@@ -41,7 +41,7 @@ public class BrokersInUseCheck {
      * Checks if broker contains any partition replicas when scaling down
      *
      * @param reconciliation        Reconciliation marker
-     * @param coIdentity      Trust set and identity for TLS client authentication for connecting to the Kafka cluster
+     * @param coIdentity            Trust set and identity for authentication for connecting to the Kafka cluster
      * @param adminClientProvider   Used to create the Admin client instance
      *
      * @return returns CompletionStage with set of node ids containing partition replicas based on the outcome of the check
