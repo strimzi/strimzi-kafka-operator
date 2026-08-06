@@ -116,6 +116,7 @@ public class KafkaReconciler {
 
     // Various settings
     private final long operationTimeoutMs;
+    private final int isrSafetyMargin;
     private final boolean isNetworkPolicyGeneration;
     private final boolean isPodDisruptionBudgetGeneration;
     private final List<String> maintenanceWindows;
@@ -200,6 +201,7 @@ public class KafkaReconciler {
         this.reconciliation = reconciliation;
         this.vertx = vertx;
         this.operationTimeoutMs = config.getOperationTimeoutMs();
+        this.isrSafetyMargin = config.getRollIsrSafetyMargin();
         this.kafkaNodePoolCrs = nodePools;
         this.kafka = kafka;
 
@@ -485,7 +487,8 @@ public class KafkaReconciler {
                     brokerId -> kafka.generatePerBrokerConfiguration(brokerId, kafkaAdvertisedHostnames, kafkaAdvertisedPorts, scalingDownBlockedNodes.contains(brokerId)),
                     kafka.getKafkaVersion(),
                     allowReconfiguration,
-                    eventsPublisher
+                    eventsPublisher,
+                    isrSafetyMargin
             ).rollingRestart(podNeedsRestart));
     }
 

@@ -47,6 +47,12 @@ The timeout for internal operations, in milliseconds. Increase this value when u
 `STRIMZI_OPERATIONS_THREAD_POOL_SIZE`:: Optional, default 10.
 The worker thread pool size, which is used for various asynchronous and blocking operations that are run by the Cluster Operator.
 
+`STRIMZI_ROLL_ISR_SAFETY_MARGIN`:: Optional, default 0.
+The number of in-sync replicas that must remain _above_ `min.insync.replicas` after a Kafka node is rolled.
+With the default of `0`, a node is rolled if doing so leaves each of its partitions with at least `min.insync.replicas` in-sync replicas, which means a partition can sit exactly on the minimum for the duration of the restart.
+Setting this to `1` requires one spare in-sync replica beyond the minimum, so that an unrelated failure during the restart does not immediately stall producers using `acks=all`.
+Partitions without enough replicas to satisfy the margin fall back to the `min.insync.replicas` behavior, so topics with a low replication factor are not blocked from rolling.
+
 `STRIMZI_OPERATOR_NAME`:: Optional, defaults to the pod's hostname.
 The operator name identifies the Strimzi instance when xref:proc-operator-restart-events-str[emitting Kubernetes events].
 

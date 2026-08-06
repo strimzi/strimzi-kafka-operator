@@ -42,9 +42,21 @@ class KafkaAvailability {
 
     private final CompletionStage<Collection<TopicDescription>> descriptions;
 
+    /**
+     * Number of in-sync replicas that must remain <em>above</em> {@code min.insync.replicas} after a
+     * broker is rolled. {@code 0} means a roll may take a partition down to exactly
+     * {@code min.insync.replicas}, which is the historical behaviour.
+     */
+    private final int isrSafetyMargin;
+
     KafkaAvailability(Reconciliation reconciliation, Admin ac) {
+        this(reconciliation, ac, 0);
+    }
+
+    KafkaAvailability(Reconciliation reconciliation, Admin ac, int isrSafetyMargin) {
         this.ac = ac;
         this.reconciliation = reconciliation;
+        this.isrSafetyMargin = isrSafetyMargin;
         // 1. Get all topic names
         CompletionStage<Set<String>> topicNames = topicNames();
         // 2. Get topic descriptions
@@ -111,13 +123,28 @@ class KafkaAvailability {
         for (TopicPartitionInfo pi : td.partitions()) {
             List<Node> isr = pi.isr();
             if (minIsr >= 0) {
-                if (pi.replicas().size() <= minIsr) {
+                // The ISR size this partition must retain after the restart. With a safety margin
+                // configured we require the ISR to stay above min.insync.replicas rather than merely
+                // at it, so that a further unrelated failure during the restart window does not
+                // immediately stall acks=all producers.
+                //
+                // A partition that does not have enough replicas to satisfy the margin falls back to
+                // the plain min.insync.replicas behaviour; otherwise such partitions could never be
+                // rolled at all.
+                int effectiveMinIsr = minIsr;
+                if (isrSafetyMargin > 0 && pi.replicas().size() > minIsr + isrSafetyMargin) {
+                    effectiveMinIsr = minIsr + isrSafetyMargin;
+                    LOGGER.traceCr(reconciliation, "{}/{} requires ISR >= {} after restart ({}={} plus safety margin {}).",
+                            td.name(), pi.partition(), effectiveMinIsr, TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, minIsr, isrSafetyMargin);
+                }
+
+                if (pi.replicas().size() <= effectiveMinIsr) {
                     if (LOGGER.isDebugEnabled()) {
                         LOGGER.debugCr(reconciliation, "{}/{} will be under-replicated (ISR={{}}, replicas=[{}], {}={}) if broker {} is restarted, but there are only {} replicas.",
                                 td.name(), pi.partition(), nodeList(isr), nodeList(pi.replicas()), TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, minIsr, broker,
                                 pi.replicas().size());
                     }
-                } else if (isr.size() < minIsr
+                } else if (isr.size() < effectiveMinIsr
                         && contains(pi.replicas(), broker)) {
                     if (LOGGER.isInfoEnabled()) {
                         String msg;
@@ -132,9 +159,9 @@ class KafkaAvailability {
                                 td.name(), pi.partition(), nodeList(isr), nodeList(pi.replicas()), TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, minIsr, broker);
                     }
                     return true;
-                } else if (isr.size() == minIsr
+                } else if (isr.size() == effectiveMinIsr
                         && contains(isr, broker)) {
-                    if (minIsr < pi.replicas().size()) {
+                    if (effectiveMinIsr < pi.replicas().size()) {
                         if (LOGGER.isInfoEnabled()) {
                             LOGGER.infoCr(reconciliation, "{}/{} will be under-replicated (ISR={{}}, replicas=[{}], {}={}) if broker {} is restarted.",
                                     td.name(), pi.partition(), nodeList(isr), nodeList(pi.replicas()), TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, minIsr, broker);

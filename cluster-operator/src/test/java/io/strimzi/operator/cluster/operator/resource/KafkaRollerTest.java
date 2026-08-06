@@ -952,7 +952,8 @@ public class KafkaRollerTest {
                     brokerId -> "compression.type=gzip",
                     KafkaVersionTestUtils.getLatestVersion(),
                     true,
-                    mock(KubernetesRestartEventPublisher.class));
+                    mock(KubernetesRestartEventPublisher.class),
+                    0);
             this.delegateAdminClientCall = delegateAdminClientCall;
             this.activeController = activeController;
             this.controllerCall = 0;

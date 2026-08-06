@@ -587,4 +587,103 @@ public class KafkaAvailabilityTest {
             }
         }
     }
+
+    @Test
+    public void testSafetyMarginBlocksRollThatWouldLandOnMinIsr() {
+        // RF=4, min.insync.replicas=2, ISR=3 (broker 3 is not in sync).
+        // Without a margin this is rollable: ISR would become 2, which is exactly min.insync.replicas.
+        // With a margin of 1 the ISR must stay at 3, so brokers in the ISR must not be rolled.
+        KSB ksb = new KSB()
+                .addNewTopic("A", false)
+                    .addToConfig(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, "2")
+                    .addNewPartition(0)
+                        .replicaOn(0, 1, 2, 3)
+                        .leader(0)
+                        .isr(0, 1, 2)
+                    .endPartition()
+                .endTopic();
+
+        KafkaAvailability noMargin = new KafkaAvailability(new Reconciliation("dummy", "kind", "namespace", "A"), ksb.ac(), 0);
+        KafkaAvailability withMargin = new KafkaAvailability(new Reconciliation("dummy", "kind", "namespace", "A"), ksb.ac(), 1);
+
+        for (int brokerId = 0; brokerId <= 2; brokerId++) {
+            int id = brokerId;
+            noMargin.canRoll(id).whenComplete((canRoll, err) ->
+                    assertTrue(canRoll, "broker " + id + " should be rollable with no safety margin")
+            ).toCompletableFuture().join();
+
+            withMargin.canRoll(id).whenComplete((canRoll, err) ->
+                    assertFalse(canRoll, "broker " + id + " should not be rollable with a safety margin of 1")
+            ).toCompletableFuture().join();
+        }
+    }
+
+    @Test
+    public void testSafetyMarginIgnoredWhenMarginUnsatisfiable() {
+        // RF=3, min.insync.replicas=2, margin 1. Satisfying the margin would need at least 4 replicas,
+        // so it must fall back to the plain min.insync.replicas behaviour instead of blocking forever.
+        KSB ksb = new KSB()
+                .addNewTopic("A", false)
+                    .addToConfig(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, "2")
+                    .addNewPartition(0)
+                        .replicaOn(0, 1, 2)
+                        .leader(0)
+                        .isr(0, 1, 2)
+                    .endPartition()
+                .endTopic();
+
+        KafkaAvailability kafkaAvailability = new KafkaAvailability(new Reconciliation("dummy", "kind", "namespace", "A"), ksb.ac(), 1);
+
+        for (Integer brokerId : ksb.brokers.keySet()) {
+            kafkaAvailability.canRoll(brokerId).whenComplete((canRoll, err) ->
+                    assertTrue(canRoll, "broker " + brokerId + " should be rollable; a margin of 1 needs RF >= 4")
+            ).toCompletableFuture().join();
+        }
+    }
+
+    @Test
+    public void testSafetyMarginSatisfiedWhenEnoughReplicas() {
+        // RF=4, min.insync.replicas=2, ISR=4. Rolling leaves ISR=3, one above the floor, so a
+        // margin of 1 is satisfied and the roll is allowed.
+        KSB ksb = new KSB()
+                .addNewTopic("A", false)
+                    .addToConfig(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, "2")
+                    .addNewPartition(0)
+                        .replicaOn(0, 1, 2, 3)
+                        .leader(0)
+                        .isr(0, 1, 2, 3)
+                    .endPartition()
+                .endTopic();
+
+        KafkaAvailability kafkaAvailability = new KafkaAvailability(new Reconciliation("dummy", "kind", "namespace", "A"), ksb.ac(), 1);
+
+        for (Integer brokerId : ksb.brokers.keySet()) {
+            kafkaAvailability.canRoll(brokerId).whenComplete((canRoll, err) ->
+                    assertTrue(canRoll, "broker " + brokerId + " should be rollable, ISR would still be above min.insync.replicas")
+            ).toCompletableFuture().join();
+        }
+    }
+
+    @Test
+    public void testSafetyMarginIgnoredWhenNotEnoughReplicas() {
+        // RF=2, min.insync.replicas=1. A margin of 1 cannot be satisfied by any roll, so it must fall
+        // back to the plain min.insync.replicas behaviour rather than blocking the broker forever.
+        KSB ksb = new KSB()
+                .addNewTopic("A", false)
+                    .addToConfig(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, "1")
+                    .addNewPartition(0)
+                        .replicaOn(0, 1)
+                        .leader(0)
+                        .isr(0, 1)
+                    .endPartition()
+                .endTopic();
+
+        KafkaAvailability kafkaAvailability = new KafkaAvailability(new Reconciliation("dummy", "kind", "namespace", "A"), ksb.ac(), 1);
+
+        for (Integer brokerId : ksb.brokers.keySet()) {
+            kafkaAvailability.canRoll(brokerId).whenComplete((canRoll, err) ->
+                    assertTrue(canRoll, "broker " + brokerId + " should be rollable; the margin is unsatisfiable with only 2 replicas")
+            ).toCompletableFuture().join();
+        }
+    }
 }

@@ -120,6 +120,7 @@ public class KafkaRoller {
     private final KafkaVersion kafkaVersion;
     private final Reconciliation reconciliation;
     private final boolean allowReconfiguration;
+    private final int isrSafetyMargin;
     /**
      * Admin client used to send requests that are only relevant for the brokers. It is bootstrapped with broker nodes that might be rolled.
      */
@@ -147,11 +148,13 @@ public class KafkaRoller {
      * @param kafkaVersion              Kafka version
      * @param allowReconfiguration      Flag indicting whether reconfiguration is allowed or not
      * @param eventsPublisher           Kubernetes Events publisher for publishing events about pod restarts
+     * @param isrSafetyMargin           Number of in-sync replicas that must remain above min.insync.replicas after a node is rolled
      */
     public KafkaRoller(Reconciliation reconciliation, PodOperator podOperations,
                        long pollingIntervalMs, long operationTimeoutMs, Supplier<BackOff> backOffSupplier, Set<NodeRef> nodes,
                        Identity coIdentity, AdminClientProvider adminClientProvider, KafkaAgentClientProvider kafkaAgentClientProvider,
-                       Function<Integer, String> kafkaConfigProvider, KafkaVersion kafkaVersion, boolean allowReconfiguration, KubernetesRestartEventPublisher eventsPublisher) {
+                       Function<Integer, String> kafkaConfigProvider, KafkaVersion kafkaVersion, boolean allowReconfiguration, KubernetesRestartEventPublisher eventsPublisher,
+                       int isrSafetyMargin) {
         this.namespace = reconciliation.namespace();
         this.cluster = reconciliation.name();
         this.nodes = nodes;
@@ -170,6 +173,7 @@ public class KafkaRoller {
         this.kafkaVersion = kafkaVersion;
         this.reconciliation = reconciliation;
         this.allowReconfiguration = allowReconfiguration;
+        this.isrSafetyMargin = isrSafetyMargin;
     }
 
     private final ScheduledExecutorService singleExecutor = Executors.newSingleThreadScheduledExecutor(
@@ -897,7 +901,7 @@ public class KafkaRoller {
 
 
     /* test */ KafkaAvailability availability(Admin ac) {
-        return new KafkaAvailability(reconciliation, ac);
+        return new KafkaAvailability(reconciliation, ac, isrSafetyMargin);
     }
 
     /**

@@ -189,6 +189,12 @@ public class ClusterOperatorConfig {
     public static final ConfigParameter<Integer> OPERATIONS_THREAD_POOL_SIZE = new ConfigParameter<>("STRIMZI_OPERATIONS_THREAD_POOL_SIZE", INTEGER, "10", CONFIG_VALUES);
 
     /**
+     * Number of in-sync replicas that must remain above min.insync.replicas after rolling a broker.
+     * 0 (default) keeps the historical behaviour of allowing a roll down to exactly min.insync.replicas.
+     */
+    public static final ConfigParameter<Integer> ROLL_ISR_SAFETY_MARGIN = new ConfigParameter<>("STRIMZI_ROLL_ISR_SAFETY_MARGIN", INTEGER, "0", CONFIG_VALUES);
+
+    /**
      * Number of seconds to cache a successful DNS name lookup
      */
     /* test */ static final ConfigParameter<Integer> DNS_CACHE_TTL = new ConfigParameter<>("STRIMZI_DNS_CACHE_TTL", INTEGER, "30", CONFIG_VALUES);
@@ -551,6 +557,15 @@ public class ClusterOperatorConfig {
      */
     public int getOperationsThreadPoolSize() {
         return get(OPERATIONS_THREAD_POOL_SIZE);
+    }
+
+    /**
+     * Returns the configured ISR safety margin used when deciding whether a Kafka node can be rolled.
+     *
+     * @return  The number of in-sync replicas that must remain above min.insync.replicas after a broker is rolled
+     */
+    public int getRollIsrSafetyMargin() {
+        return get(ROLL_ISR_SAFETY_MARGIN);
     }
 
     /**
