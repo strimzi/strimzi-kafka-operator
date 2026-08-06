@@ -347,6 +347,24 @@ public class EntityTopicOperatorTest {
     }
 
     @Test
+    public void testCruiseControlTlsEnvVarWithoutTls() {
+        Kafka resource = new KafkaBuilder(KAFKA)
+                .editSpec()
+                    .withNewCruiseControl()
+                    .endCruiseControl()
+                .endSpec()
+                .build();
+        KafkaClusterSecurityContext securityContext = new KafkaClusterSecurityContext(ClusterSecurityEncryptionType.NONE, ClusterSecurityAuthenticationType.NONE);
+        EntityTopicOperator entityTopicOperator = EntityTopicOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig(), securityContext);
+
+        EnvVar cruiseControlTlsEnvVar = entityTopicOperator.getEnvVars().stream()
+                .filter(envVar -> EntityTopicOperator.ENV_VAR_CRUISE_CONTROL_SSL_ENABLED.equals(envVar.getName()))
+                .findFirst()
+                .orElseThrow();
+        assertThat(cruiseControlTlsEnvVar.getValue(), is(Boolean.toString(false)));
+    }
+
+    @Test
     public void testSecurityProvider() {
         EntityTopicOperator eto = EntityTopicOperator.fromCrd(new Reconciliation("test", KAFKA.getKind(), KAFKA.getMetadata().getNamespace(), KAFKA.getMetadata().getName()), KAFKA, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig(), KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
         eto.securityProvider = new TestPodSecurityProvider();

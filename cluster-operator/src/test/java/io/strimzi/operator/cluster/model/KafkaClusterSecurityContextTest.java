@@ -21,6 +21,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class KafkaClusterSecurityContextTest {
@@ -315,8 +316,7 @@ public class KafkaClusterSecurityContextTest {
 
     @Test
     public void testDeserializeNullStatus()  {
-        InvalidResourceException e = assertThrows(InvalidResourceException.class, () -> KafkaClusterSecurityContext.deserializeStatus(null));
-        assertThat(e.getMessage(), is("ClusterSecurityStatus is null and cannot be deserialized."));
+        assertThat(KafkaClusterSecurityContext.deserializeStatus(null), is(nullValue()));
     }
 
     @Test

@@ -127,7 +127,7 @@ We recommend that Cruise Control in Strimzi is **only used with these settings e
 However, it is possible to disable these settings by specifying the following Cruise Control configuration:
 
 * To disable the built-in HTTP Basic authentication, set `webserver.security.enable` to `false`.
-* To disable the built-in SSL, set `webserver.ssl.enable` to `false`.
+* To disable the built-in SSL encryption, disable encryption in the Cluster Security configuration.
 
 .Cruise Control configuration to disable API authorization, authentication, and SSL
 [source,yaml,subs="attributes+"]
@@ -141,7 +141,6 @@ spec:
   cruiseControl:
     config:
       webserver.security.enable: false
-      webserver.ssl.enable: false
 # ...
 ----
 
