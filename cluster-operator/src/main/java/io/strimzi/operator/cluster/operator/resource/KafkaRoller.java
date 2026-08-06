@@ -140,7 +140,7 @@ public class KafkaRoller {
      * @param operationTimeoutMs        Operation timeout in milliseconds
      * @param backOffSupplier           Backoff supplier
      * @param nodes                     List of Kafka node references to consider rolling
-     * @param coIdentity          Trust set and identity for TLS client authentication for connecting to the Kafka cluster
+     * @param coIdentity                Trust set and identity for authentication for connecting to the Kafka cluster
      * @param adminClientProvider       Kafka Admin client provider
      * @param kafkaAgentClientProvider  Kafka Agent client provider
      * @param kafkaConfigProvider       Kafka configuration provider

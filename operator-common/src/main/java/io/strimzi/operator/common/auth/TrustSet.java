@@ -5,7 +5,7 @@
 package io.strimzi.operator.common.auth;
 
 /**
- * Interface representing the different ways how a trust can be extablished for an operand. This is used when connecting
+ * Interface representing the different ways that trust can be established for an operand. This is used when connecting
  * from the operators to the operands.
  */
 public interface TrustSet { }

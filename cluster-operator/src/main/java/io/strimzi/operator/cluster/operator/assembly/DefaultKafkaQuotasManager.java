@@ -90,8 +90,8 @@ public class DefaultKafkaQuotasManager {
      *
      * @param reconciliation            Reconciliation marker
      * @param adminClientProvider       Kafka Admin client provider
-     * @param kafkaTrustSet             Trust set for TLS authentication
-     * @param authIdentity              Identity for TLS client authentication
+     * @param kafkaTrustSet             Trust set for connecting to Kafka
+     * @param authIdentity              Identity for authentication for connecting to Kafka
      * @param quotasPlugin              Configuration of Kafka quotas plugin
      *
      * @return  CompletionStage that completes when the default user quota configuration is completed

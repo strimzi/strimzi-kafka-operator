@@ -124,7 +124,7 @@ public class ReconcilerUtils {
      * @param reconciliation Reconciliation Marker
      * @param secretOperator Secret operator for working with Kubernetes Secrets that store certificates
      *
-     * @return  Future containing the TlsPemIdentity to use for client authentication.
+     * @return  Future containing the PemTrustSet and PemAuthIdentity to use for client authentication.
      */
     public static Future<Identity> coTlsPemIdentity(Reconciliation reconciliation, SecretOperator secretOperator) {
         return Future.join(
