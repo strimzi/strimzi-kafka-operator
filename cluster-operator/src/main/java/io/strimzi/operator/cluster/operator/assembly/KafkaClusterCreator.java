@@ -173,8 +173,8 @@ public class KafkaClusterCreator {
      * Checks if the broker scale down can be done or not based on whether the nodes are empty or still have some
      * partition-replicas assigned.
      *
-     * @param kafkaCr           Kafka custom resource
-     * @param kafka             Kafka cluster model
+     * @param kafkaCr   Kafka custom resource
+     * @param kafka     Kafka cluster model
      *
      * @return  CompletionStage with the Kafka cluster model
      */

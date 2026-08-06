@@ -106,12 +106,12 @@ public class KafkaBrokerConfigurationBuilder {
             printSectionHeader("Cruise Control configuration");
             writer.println(CruiseControlConfigurationParameters.METRICS_TOPIC_NAME + "=" + ccMetricsReporter.topicName());
             writer.println(CruiseControlConfigurationParameters.METRICS_TOPIC_AUTO_CREATE + "=true");
+            // using the brokers service because the Admin client, in the Cruise Control metrics reporter, is not able to connect
+            // to the pods behind the bootstrap one when they are not ready during startup.
+            writer.println(CruiseControlConfigurationParameters.METRICS_REPORTER_BOOTSTRAP_SERVERS + "=" + KafkaResources.brokersServiceName(clusterName) + ":9091");
 
             if (securityContext.isStrimziTlsEncryption())   {
                 writer.println(CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_ENDPOINT_ID_ALGO + "=HTTPS");
-                // using the brokers service because the Admin client, in the Cruise Control metrics reporter, is not able to connect
-                // to the pods behind the bootstrap one when they are not ready during startup.
-                writer.println(CruiseControlConfigurationParameters.METRICS_REPORTER_BOOTSTRAP_SERVERS + "=" + KafkaResources.brokersServiceName(clusterName) + ":9091");
                 writer.println(CruiseControlConfigurationParameters.METRICS_REPORTER_SECURITY_PROTOCOL + "=SSL");
                 writer.println(CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_TRUSTSTORE_TYPE + "=PEM");
                 writer.println(CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_TRUSTSTORE_CERTIFICATES + "=" + String.format(PLACEHOLDER_SECRET_TEMPLATE_KUBE_CONFIG_PROVIDER, reconciliation.namespace(), KafkaResources.trustBundleSecretName(clusterName), "cluster-ca.crt"));
@@ -498,7 +498,8 @@ public class KafkaBrokerConfigurationBuilder {
                 superUsers.add(String.format("User:CN=%s-%s,O=io.strimzi", clusterName, "cruise-control"));
                 superUsers.add(String.format("User:CN=%s,O=io.strimzi", "cluster-operator"));
             } else {
-                // TODO: Do we want to do this? Or do we want to validate this and throw an error?
+                // When authentication is disabled, all internal synchronization is using the ANONYMOUS user. In order
+                // to support authorization, we have to make this user a super-user.
                 superUsers.add("ANONYMOUS");
             }
 

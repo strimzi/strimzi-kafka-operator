@@ -141,7 +141,7 @@ public class KafkaClusterSecurityContext {
      * are compatible and so on.
      */
     private void validateDesiredConfiguration() {
-        // Check that mTLS is not
+        // Check that mTLS is not enabled when TLS is disabled
         if (authenticationType == ClusterSecurityAuthenticationType.STRIMZI_MTLS && encryptionType != ClusterSecurityEncryptionType.STRIMZI_TLS) {
             LOGGER.errorOp("Desired Cluster Security configuration (encryption: {}, authentication: {}) is not valid: mTLS authentication can be used only with enabled TLS encryption",
                     encryptionType, authenticationType);
