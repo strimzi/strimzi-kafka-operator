@@ -5,7 +5,7 @@
 package io.strimzi.operator.common.auth;
 
 /**
- * Represents the operator's identity, including trust material and authentication credentials,
+ * Represents the operator's identity configuration, including trust material and authentication credentials,
  * used when connecting to operands.
  *
  * @param trustSet      Trust set for esablishing the trust with the operand
