@@ -7,7 +7,9 @@ package io.strimzi.systemtest.templates.crd;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
+import io.skodjob.kubetest4j.utils.KubeTestUtils;
 import io.strimzi.api.kafka.model.common.CertSecretSourceBuilder;
+import io.strimzi.api.kafka.model.connect.KafkaConnect;
 import io.strimzi.api.kafka.model.connect.KafkaConnectBuilder;
 import io.strimzi.api.kafka.model.connect.KafkaConnectResources;
 import io.strimzi.api.kafka.model.connect.build.DockerOutput;
@@ -19,10 +21,13 @@ import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.utils.FileUtils;
+import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.KubeClusterResource;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Random;
 
 public class KafkaConnectTemplates {
@@ -31,6 +36,7 @@ public class KafkaConnectTemplates {
 
     private static final String METRICS_CONNECT_CONFIG_MAP_SUFFIX = "-connect-metrics";
     private static final String CONFIG_MAP_KEY = "metrics-config.yml";
+    private static final String PATH_TO_CONNECT_BUILD_YAML = TestUtils.USER_PATH + "/../systemtest/src/test/resources/connect-build/connect-build-template.yaml";
 
     private KafkaConnectTemplates() {}
 
@@ -80,14 +86,66 @@ public class KafkaConnectTemplates {
         return kafkaConnectClusterName + METRICS_CONNECT_CONFIG_MAP_SUFFIX;
     }
 
+    @SuppressFBWarnings("DMI_RANDOM_USED_ONLY_ONCE")
+    public static KafkaConnectBuilder kafkaConnectBuild(
+        final String namespaceName,
+        String kafkaConnectClusterName,
+        String kafkaClusterName,
+        int kafkaConnectReplicas
+    ) {
+        final String imageName = Environment.getImageOutputRegistry(namespaceName, TestConstants.ST_CONNECT_BUILD_IMAGE_NAME, String.valueOf(new Random().nextInt(Integer.MAX_VALUE)));
+        return kafkaConnectBuild(namespaceName, kafkaConnectClusterName, kafkaClusterName, kafkaConnectReplicas, imageName);
+    }
+
+    public static KafkaConnectBuilder kafkaConnectBuild(
+        final String namespaceName,
+        String kafkaConnectClusterName,
+        String kafkaClusterName,
+        int kafkaConnectReplicas,
+        String imageName
+    ) {
+        try {
+            String connectFromResourcesYaml = Files.readString(Paths.get(PATH_TO_CONNECT_BUILD_YAML));
+            KafkaConnect connectFromResources = KubeTestUtils.configFromYaml(connectFromResourcesYaml, KafkaConnect.class);
+            DockerOutputBuilder dockerOutputBuilder = new DockerOutputBuilder();
+
+            if (connectFromResources.getSpec() != null
+                && connectFromResources.getSpec().getBuild() != null
+                && connectFromResources.getSpec().getBuild().getOutput() instanceof DockerOutput dockerOutput
+            ) {
+                dockerOutputBuilder = new DockerOutputBuilder(dockerOutput);
+            }
+
+            return configureKafkaConnectBuilderWithDefaults(namespaceName, kafkaConnectClusterName, kafkaClusterName, kafkaConnectReplicas, new KafkaConnectBuilder(connectFromResources))
+                .editSpec()
+                    .editOrNewBuild()
+                        .withOutput(dockerOutput(imageName, dockerOutputBuilder))
+                    .endBuild()
+                .endSpec();
+        } catch (Exception e) {
+            LOGGER.error("Failed to read Connect Build template from: {}, due to: {}", PATH_TO_CONNECT_BUILD_YAML, e.getMessage());
+            throw new RuntimeException(e);
+        }
+    }
+
     private static KafkaConnectBuilder defaultKafkaConnect(
         final String namespaceName,
         String kafkaConnectClusterName,
         String kafkaClusterName,
         int kafkaConnectReplicas
     ) {
-        return new KafkaConnectBuilder()
-            .withNewMetadata()
+        return configureKafkaConnectBuilderWithDefaults(namespaceName, kafkaConnectClusterName, kafkaClusterName, kafkaConnectReplicas, new KafkaConnectBuilder());
+    }
+
+    private static KafkaConnectBuilder configureKafkaConnectBuilderWithDefaults(
+        final String namespaceName,
+        String kafkaConnectClusterName,
+        String kafkaClusterName,
+        int kafkaConnectReplicas,
+        KafkaConnectBuilder connectBuilder
+    ) {
+        return connectBuilder
+            .editOrNewMetadata()
                 .withName(kafkaConnectClusterName)
                 .withNamespace(namespaceName)
             .endMetadata()
@@ -129,18 +187,16 @@ public class KafkaConnectTemplates {
      * @return KafkaConnect builder with File plugin
      */
     public static KafkaConnectBuilder kafkaConnectWithFilePlugin(String namespaceName, String kafkaConnectClusterName, String kafkaClusterName, int replicas) {
-        return addFileSinkPluginOrImage(namespaceName, kafkaConnect(namespaceName, kafkaConnectClusterName, kafkaClusterName, replicas));
+        return addFileSinkPluginOrImage(kafkaConnectBuild(namespaceName, kafkaConnectClusterName, kafkaClusterName, replicas));
     }
 
     /**
      * Method for adding Connect Build with file-sink plugin to the Connect spec or set Connect's image in case that
      * the image is set in `CONNECT_IMAGE_WITH_FILE_SINK_PLUGIN` env. variable
-     * @param namespaceName namespace for output registry
      * @param kafkaConnectBuilder builder of the Connect resource
      * @return updated Connect resource in builder
      */
-    @SuppressFBWarnings("DMI_RANDOM_USED_ONLY_ONCE")
-    public static KafkaConnectBuilder addFileSinkPluginOrImage(String namespaceName, KafkaConnectBuilder kafkaConnectBuilder) {
+    public static KafkaConnectBuilder addFileSinkPluginOrImage(KafkaConnectBuilder kafkaConnectBuilder) {
         if (!KubeClusterResource.getInstance().isMicroShift() && Environment.CONNECT_IMAGE_WITH_FILE_SINK_PLUGIN.isEmpty()) {
             final Plugin fileSinkPlugin = new PluginBuilder()
                 .withName("file-plugin")
@@ -151,13 +207,11 @@ public class KafkaConnectTemplates {
                 )
                 .build();
 
-            final String imageFullPath = Environment.getImageOutputRegistry(namespaceName, TestConstants.ST_CONNECT_BUILD_IMAGE_NAME, String.valueOf(new Random().nextInt(Integer.MAX_VALUE)));
 
             return kafkaConnectBuilder
                 .editOrNewSpec()
-                    .editOrNewBuild()
+                    .editBuild()
                         .withPlugins(fileSinkPlugin)
-                        .withOutput(dockerOutput(imageFullPath))
                     .endBuild()
                 .endSpec();
         } else {
@@ -167,6 +221,8 @@ public class KafkaConnectTemplates {
 
             LOGGER.info("Using {} image from {} env variable", Environment.CONNECT_IMAGE_WITH_FILE_SINK_PLUGIN, Environment.CONNECT_IMAGE_WITH_FILE_SINK_PLUGIN_ENV);
 
+            kafkaConnectBuilder.getSpec().setBuild(null);
+
             return kafkaConnectBuilder
                 .editOrNewSpec()
                     .withImage(Environment.CONNECT_IMAGE_WITH_FILE_SINK_PLUGIN)
@@ -174,19 +230,24 @@ public class KafkaConnectTemplates {
         }
     }
 
-    public static DockerOutput dockerOutput(String imageName) {
-        DockerOutputBuilder dockerOutputBuilder = new DockerOutputBuilder().withImage(imageName);
+    public static DockerOutput dockerOutput(String imageName, DockerOutputBuilder dockerOutputBuilder) {
+        dockerOutputBuilder.withImage(imageName);
+
         if (Environment.CONNECT_BUILD_REGISTRY_SECRET != null && !Environment.CONNECT_BUILD_REGISTRY_SECRET.isEmpty()) {
             dockerOutputBuilder.withPushSecret(Environment.CONNECT_BUILD_REGISTRY_SECRET);
         }
 
         if (Environment.isConnectBuildWithBuildahEnabled() && !KubeClusterResource.getInstance().isOpenShiftLikeCluster()) {
-            // for Buildah on minikube or Kind, we need to add `--tls-verify=false` in order to push via HTTP
-            dockerOutputBuilder.withAdditionalBuildOptions("--tls-verify=false");
-            dockerOutputBuilder.withAdditionalPushOptions("--tls-verify=false");
+            if (dockerOutputBuilder.getAdditionalBuildOptions() == null || !dockerOutputBuilder.getAdditionalBuildOptions().contains("--tls-verify=false")) {
+                // for Buildah on minikube or Kind, we need to add `--tls-verify=false` in order to push via HTTP
+                dockerOutputBuilder.addToAdditionalBuildOptions("--tls-verify=false");
+            }
+            if (dockerOutputBuilder.getAdditionalPushOptions() == null || !dockerOutputBuilder.getAdditionalPushOptions().contains("--tls-verify=false")) {
+                dockerOutputBuilder.addToAdditionalPushOptions("--tls-verify=false");
+            }
         } else if (!Environment.isConnectBuildWithBuildahEnabled() && KubeClusterResource.getInstance().isKind()) {
             // if we use Kind we add insecure option
-            dockerOutputBuilder.withAdditionalBuildOptions(
+            dockerOutputBuilder.addToAdditionalBuildOptions(
                 // --insecure for PUSH via HTTP instead of HTTPS
                 "--insecure");
         }

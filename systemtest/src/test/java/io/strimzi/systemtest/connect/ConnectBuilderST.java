@@ -203,14 +203,13 @@ class ConnectBuilderST extends AbstractST {
 
         KubeResourceManager.get().createResourceWithWait(ScraperTemplates.scraperPod(testStorage.getNamespaceName(), testStorage.getScraperName()).build());
 
-        KubeResourceManager.get().createResourceWithoutWait(KafkaConnectTemplates.kafkaConnect(testStorage.getNamespaceName(), testStorage.getClusterName(), suiteTestStorage.getClusterName(), 1)
+        KubeResourceManager.get().createResourceWithoutWait(KafkaConnectTemplates.kafkaConnectBuild(testStorage.getNamespaceName(), testStorage.getClusterName(), suiteTestStorage.getClusterName(), 1, imageName)
             .editMetadata()
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata()
             .editOrNewSpec()
-                .withNewBuild()
+                .editBuild()
                     .withPlugins(pluginWithWrongChecksum)
-                    .withOutput(KafkaConnectTemplates.dockerOutput(imageName))
                 .endBuild()
             .endSpec()
             .build());
@@ -281,7 +280,7 @@ class ConnectBuilderST extends AbstractST {
         final String imageName = getImageNameForTestCase();
 
         KubeResourceManager.get().createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getTopicName(), suiteTestStorage.getClusterName()).build());
-        KubeResourceManager.get().createResourceWithWait(KafkaConnectTemplates.kafkaConnect(testStorage.getNamespaceName(), testStorage.getClusterName(), suiteTestStorage.getClusterName(), 1)
+        KubeResourceManager.get().createResourceWithWait(KafkaConnectTemplates.kafkaConnectBuild(testStorage.getNamespaceName(), testStorage.getClusterName(), suiteTestStorage.getClusterName(), 1, imageName)
             .editMetadata()
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata()
@@ -290,9 +289,8 @@ class ConnectBuilderST extends AbstractST {
                 .addToConfig("value.converter.schemas.enable", false)
                 .addToConfig("key.converter", "org.apache.kafka.connect.storage.StringConverter")
                 .addToConfig("value.converter", "org.apache.kafka.connect.storage.StringConverter")
-                .withNewBuild()
+                .editBuild()
                     .withPlugins(PLUGIN_WITH_TAR_AND_JAR, PLUGIN_WITH_ZIP)
-                    .withOutput(KafkaConnectTemplates.dockerOutput(imageName))
                 .endBuild()
                 .withNewInlineLogging()
                     .addToLoggers("rootLogger.level", "INFO")
@@ -488,7 +486,7 @@ class ConnectBuilderST extends AbstractST {
 
         KubeResourceManager.get().createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getTopicName(), suiteTestStorage.getClusterName()).build());
 
-        KafkaConnect connect = KafkaConnectTemplates.kafkaConnect(testStorage.getNamespaceName(), testStorage.getClusterName(), suiteTestStorage.getClusterName(), 1)
+        KafkaConnect connect = KafkaConnectTemplates.kafkaConnectBuild(testStorage.getNamespaceName(), testStorage.getClusterName(), suiteTestStorage.getClusterName(), 1, imageName)
             .editMetadata()
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata()
@@ -497,9 +495,8 @@ class ConnectBuilderST extends AbstractST {
                 .addToConfig("value.converter.schemas.enable", false)
                 .addToConfig("key.converter", "org.apache.kafka.connect.storage.StringConverter")
                 .addToConfig("value.converter", "org.apache.kafka.connect.storage.StringConverter")
-                .withNewBuild()
+                .editBuild()
                     .withPlugins(PLUGIN_WITH_TAR_AND_JAR)
-                    .withOutput(KafkaConnectTemplates.dockerOutput(imageName))
                 .endBuild()
             .endSpec()
             .build();
@@ -583,7 +580,7 @@ class ConnectBuilderST extends AbstractST {
 
         KubeResourceManager.get().createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getNamespaceName(), topicName, suiteTestStorage.getClusterName()).build());
 
-        KubeResourceManager.get().createResourceWithWait(KafkaConnectTemplates.kafkaConnect(testStorage.getNamespaceName(), testStorage.getClusterName(), suiteTestStorage.getClusterName(), 1)
+        KubeResourceManager.get().createResourceWithWait(KafkaConnectTemplates.kafkaConnectBuild(testStorage.getNamespaceName(), testStorage.getClusterName(), suiteTestStorage.getClusterName(), 1, imageName)
             .editMetadata()
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata()
@@ -592,9 +589,8 @@ class ConnectBuilderST extends AbstractST {
                 .addToConfig("value.converter.schemas.enable", false)
                 .addToConfig("key.converter", "org.apache.kafka.connect.storage.StringConverter")
                 .addToConfig("value.converter", "org.apache.kafka.connect.storage.StringConverter")
-                    .withNewBuild()
+                    .editBuild()
                         .withPlugins(PLUGIN_WITH_OTHER_TYPE)
-                        .withOutput(KafkaConnectTemplates.dockerOutput(imageName))
                 .endBuild()
             .endSpec()
             .build());
@@ -657,7 +653,7 @@ class ConnectBuilderST extends AbstractST {
 
         KubeResourceManager.get().createResourceWithWait(
             KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getTopicName(), suiteTestStorage.getClusterName()).build(),
-            KafkaConnectTemplates.kafkaConnect(testStorage.getNamespaceName(), testStorage.getClusterName(), suiteTestStorage.getClusterName(), 1)
+            KafkaConnectTemplates.kafkaConnectBuild(testStorage.getNamespaceName(), testStorage.getClusterName(), suiteTestStorage.getClusterName(), 1, imageName)
                 .editMetadata()
                     .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
                 .endMetadata()
@@ -666,9 +662,8 @@ class ConnectBuilderST extends AbstractST {
                     .addToConfig("value.converter.schemas.enable", false)
                     .addToConfig("key.converter", "org.apache.kafka.connect.storage.StringConverter")
                     .addToConfig("value.converter", "org.apache.kafka.connect.storage.StringConverter")
-                    .withNewBuild()
+                    .editBuild()
                         .withPlugins(PLUGIN_WITH_MAVEN_TYPE)
-                        .withOutput(KafkaConnectTemplates.dockerOutput(imageName))
                     .endBuild()
                 .endSpec()
                 .build());
