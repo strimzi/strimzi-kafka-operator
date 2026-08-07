@@ -86,6 +86,7 @@ public class KafkaConnectTemplates {
         return kafkaConnectClusterName + METRICS_CONNECT_CONFIG_MAP_SUFFIX;
     }
 
+    @SuppressFBWarnings("DMI_RANDOM_USED_ONLY_ONCE")
     public static KafkaConnectBuilder kafkaConnectBuild(
         final String namespaceName,
         String kafkaConnectClusterName,
@@ -195,7 +196,6 @@ public class KafkaConnectTemplates {
      * @param kafkaConnectBuilder builder of the Connect resource
      * @return updated Connect resource in builder
      */
-    @SuppressFBWarnings("DMI_RANDOM_USED_ONLY_ONCE")
     public static KafkaConnectBuilder addFileSinkPluginOrImage(KafkaConnectBuilder kafkaConnectBuilder) {
         if (!KubeClusterResource.getInstance().isMicroShift() && Environment.CONNECT_IMAGE_WITH_FILE_SINK_PLUGIN.isEmpty()) {
             final Plugin fileSinkPlugin = new PluginBuilder()
