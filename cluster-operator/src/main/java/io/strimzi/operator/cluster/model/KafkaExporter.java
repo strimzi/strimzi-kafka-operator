@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.cluster.model;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerPort;
 import io.fabric8.kubernetes.api.model.EnvVar;
@@ -85,6 +86,8 @@ public class KafkaExporter extends AbstractModel {
     protected boolean showAllOffsets;
     /* test */ String exporterLogging;
     protected String canonicalKafkaVersion;
+    @SuppressFBWarnings({"UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR"}) // This field is initialized in the fromCrd method
+    private KafkaClusterSecurityContext securityContext;
 
     private DeploymentTemplate templateDeployment;
     private PodTemplate templatePod;
@@ -114,19 +117,22 @@ public class KafkaExporter extends AbstractModel {
     /**
      * Builds the KafkaExporter model from the Kafka custom resource. If KafkaExporter is not enabled, it will return null.
      *
-     * @param reconciliation    Reconciliation marker for logging
-     * @param kafkaAssembly     The Kafka CR
-     * @param versions          The list of supported Kafka versions
-     * @param sharedEnvironmentProvider Shared environment provider
-     * @return                  KafkaExporter model object when Kafka Exporter is enabled or null if it is disabled.
+     * @param reconciliation                Reconciliation marker for logging
+     * @param kafkaAssembly                 The Kafka CR
+     * @param versions                      The list of supported Kafka versions
+     * @param sharedEnvironmentProvider     Shared environment provider
+     * @param securityContext               Kafka cluster security context
+     *
+     * @return  KafkaExporter model object when Kafka Exporter is enabled or null if it is disabled.
      */
-    public static KafkaExporter fromCrd(Reconciliation reconciliation, Kafka kafkaAssembly, KafkaVersion.Lookup versions, SharedEnvironmentProvider sharedEnvironmentProvider) {
+    public static KafkaExporter fromCrd(Reconciliation reconciliation, Kafka kafkaAssembly, KafkaVersion.Lookup versions, SharedEnvironmentProvider sharedEnvironmentProvider, KafkaClusterSecurityContext securityContext) {
         KafkaExporterSpec spec = kafkaAssembly.getSpec().getKafkaExporter();
 
         if (spec != null) {
             ModelUtils.validateComputeResources(spec.getResources(), "Kafka.spec.kafkaExporter.resources");
             KafkaExporter result = new KafkaExporter(reconciliation, kafkaAssembly, sharedEnvironmentProvider);
 
+            result.securityContext = securityContext;
             result.resources = spec.getResources();
             result.readinessProbeOptions = ProbeUtils.extractReadinessProbeOptionsOrDefault(spec, DEFAULT_HEALTHCHECK_OPTIONS);
             result.livenessProbeOptions = ProbeUtils.extractLivenessProbeOptionsOrDefault(spec, DEFAULT_HEALTHCHECK_OPTIONS);
@@ -267,8 +273,14 @@ public class KafkaExporter extends AbstractModel {
         List<Volume> volumeList = new ArrayList<>(3);
 
         volumeList.add(VolumeUtils.createTempDirVolume(templatePod));
-        volumeList.add(VolumeUtils.createSecretVolume(KAFKA_EXPORTER_CERTS_VOLUME_NAME, KafkaExporterResources.secretName(cluster), isOpenShift));
-        volumeList.add(VolumeUtils.createSecretVolume(CLUSTER_CA_CERTS_VOLUME_NAME, KafkaResources.trustBundleSecretName(cluster), isOpenShift));
+
+        if (securityContext.isStrimziTlsEncryption()) {
+            volumeList.add(VolumeUtils.createSecretVolume(CLUSTER_CA_CERTS_VOLUME_NAME, KafkaResources.trustBundleSecretName(cluster), isOpenShift));
+
+            if (securityContext.isStrimziMtlsAuthentication())  {
+                volumeList.add(VolumeUtils.createSecretVolume(KAFKA_EXPORTER_CERTS_VOLUME_NAME, KafkaExporterResources.secretName(cluster), isOpenShift));
+            }
+        }
         
         TemplateUtils.addAdditionalVolumes(templatePod, volumeList);
         
@@ -278,8 +290,14 @@ public class KafkaExporter extends AbstractModel {
     private List<VolumeMount> getVolumeMounts() {
         List<VolumeMount> volumeList = new ArrayList<>(3);
         volumeList.add(VolumeUtils.createTempDirVolumeMount());
-        volumeList.add(VolumeUtils.createVolumeMount(KAFKA_EXPORTER_CERTS_VOLUME_NAME, KAFKA_EXPORTER_CERTS_VOLUME_MOUNT));
-        volumeList.add(VolumeUtils.createVolumeMount(CLUSTER_CA_CERTS_VOLUME_NAME, CLUSTER_CA_CERTS_VOLUME_MOUNT));
+
+        if (securityContext.isStrimziTlsEncryption()) {
+            volumeList.add(VolumeUtils.createVolumeMount(CLUSTER_CA_CERTS_VOLUME_NAME, CLUSTER_CA_CERTS_VOLUME_MOUNT));
+
+            if (securityContext.isStrimziMtlsAuthentication()) {
+                volumeList.add(VolumeUtils.createVolumeMount(KAFKA_EXPORTER_CERTS_VOLUME_NAME, KAFKA_EXPORTER_CERTS_VOLUME_MOUNT));
+            }
+        }
 
         TemplateUtils.addAdditionalVolumeMounts(volumeList, templateContainer);
 
