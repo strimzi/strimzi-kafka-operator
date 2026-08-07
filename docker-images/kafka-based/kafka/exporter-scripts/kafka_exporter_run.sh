@@ -46,7 +46,13 @@ kafkaserver="--kafka.server="$KAFKA_EXPORTER_KAFKA_SERVER
 
 listenaddress="--web.listen-address=:9404"
 
-tls="--tls.enabled --tls.ca-file=/etc/kafka-exporter/cluster-ca-certs/cluster-ca.crt --tls.cert-file=/etc/kafka-exporter/kafka-exporter-certs/kafka-exporter.crt  --tls.key-file=/etc/kafka-exporter/kafka-exporter-certs/kafka-exporter.key"
+if [ -d "/etc/kafka-exporter/cluster-ca-certs/" ] ; then
+    tls="--tls.enabled --tls.ca-file=/etc/kafka-exporter/cluster-ca-certs/cluster-ca.crt"
+
+    if [ -d "/etc/kafka-exporter/kafka-exporter-certs/" ] ; then
+        mtls="--tls.cert-file=/etc/kafka-exporter/kafka-exporter-certs/kafka-exporter.crt  --tls.key-file=/etc/kafka-exporter/kafka-exporter-certs/kafka-exporter.key"
+    fi
+fi
 
 # starting Kafka Exporter with final configuration
 cat <<EOT > /tmp/run.sh
@@ -56,6 +62,7 @@ $topicregex \
 $groupExcludeRegex \
 $topicExcludeRegex \
 $tls \
+$mtls \
 $kafkaserver \
 $saramaenable \
 $listenaddress \

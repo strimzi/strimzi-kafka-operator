@@ -11,6 +11,7 @@ import io.strimzi.api.kafka.model.kafka.exporter.KafkaExporterResources;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.model.CertSecretUtils;
 import io.strimzi.operator.cluster.model.ImagePullPolicy;
+import io.strimzi.operator.cluster.model.KafkaClusterSecurityContext;
 import io.strimzi.operator.cluster.model.KafkaExporter;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.operator.VertxUtil;
@@ -54,12 +55,13 @@ public class KafkaExporterReconciler {
     /**
      * Constructs the Kafka Exporter reconciler
      *
-     * @param reconciliation            Reconciliation marker
-     * @param config                    Cluster Operator Configuration
-     * @param supplier                  Supplier with Kubernetes Resource Operators
-     * @param kafkaAssembly             The Kafka custom resource
-     * @param versions                  The supported Kafka versions
-     * @param clusterCa                 The Cluster CA instance
+     * @param reconciliation    Reconciliation marker
+     * @param config            Cluster Operator Configuration
+     * @param supplier          Supplier with Kubernetes Resource Operators
+     * @param kafkaAssembly     The Kafka custom resource
+     * @param versions          The supported Kafka versions
+     * @param clusterCa         The Cluster CA instance
+     * @param securityContext   Kafka cluster security context
      */
     public KafkaExporterReconciler(
             Reconciliation reconciliation,
@@ -67,11 +69,11 @@ public class KafkaExporterReconciler {
             ResourceOperatorSupplier supplier,
             Kafka kafkaAssembly,
             KafkaVersion.Lookup versions,
-            Ca clusterCa
-    ) {
+            Ca clusterCa,
+            KafkaClusterSecurityContext securityContext) {
         this.reconciliation = reconciliation;
         this.operationTimeoutMs = config.getOperationTimeoutMs();
-        this.kafkaExporter = KafkaExporter.fromCrd(reconciliation, kafkaAssembly, versions, supplier.sharedEnvironmentProvider);
+        this.kafkaExporter = KafkaExporter.fromCrd(reconciliation, kafkaAssembly, versions, supplier.sharedEnvironmentProvider, securityContext);
         this.clusterCa = clusterCa;
         this.maintenanceWindows = kafkaAssembly.getSpec().getMaintenanceTimeWindows();
         this.isNetworkPolicyGeneration = config.isNetworkPolicyGeneration();
