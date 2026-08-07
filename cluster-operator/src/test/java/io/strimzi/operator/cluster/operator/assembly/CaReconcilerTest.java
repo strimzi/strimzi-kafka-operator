@@ -119,9 +119,12 @@ public class CaReconcilerTest {
     private static final String CURRENT_CA_CRT = Util.encodeToBase64("current-ca-crt");
     private static final String OLD_CA_CRT = Util.encodeToBase64("old-ca-crt");
     private static final String OLD_CA_CRT_ALIAS = "ca-2026-01-01T00-00-00Z.crt";
-    // Deliberately different from what the mocked CA issues, so tests can tell them apart
+    // Held by the Cluster Operator Secret before the reconciliation, deliberately different from what the CA issues
     private static final String EXISTING_CLUSTER_OPERATOR_CERT = "existing-cluster-operator-cert";
     private static final String EXISTING_CLUSTER_OPERATOR_KEY = "existing-cluster-operator-key";
+    // Issued by the mocked CA during the reconciliation
+    private static final String ISSUED_CLUSTER_OPERATOR_CERT = "cluster-operator-cert";
+    private static final String ISSUED_CLUSTER_OPERATOR_KEY = "cluster-operator-key";
 
     private WorkerExecutor sharedWorkerExecutor;
     private ResourceOperatorSupplier supplier;
@@ -142,33 +145,36 @@ public class CaReconcilerTest {
         // Replacing the key also renews the cert, so both generations moved on
         Ca clusterCa = mockClusterCa(1, 1, true);
         Ca clientsCa = mockClientsCa(0);
-        mockKubernetesState(controllerPods(0, 0), brokerPods(0, 0));
+        mockKubernetesState(controllerPodsWithCaGenerations(0, 0), brokerPodsWithCaGenerations(0, 0));
 
-        @SuppressWarnings({ "unchecked" })
-        ArgumentCaptor<List<StrimziPodSet>> podSetCaptor = ArgumentCaptor.forClass(List.class);
-        when(supplier.strimziPodSetOperator.batchReconcile(any(), eq(NAMESPACE), podSetCaptor.capture(), any(Labels.class)))
+        when(supplier.strimziPodSetOperator.batchReconcile(any(), eq(NAMESPACE), any(), any(Labels.class)))
                 .thenAnswer(i -> CompletableFuture.completedFuture(null));
 
         Checkpoint async = context.checkpoint();
-        MockCaReconciler caReconciler = new MockCaReconciler(supplier, clusterCa, clientsCa);
-        caReconciler
+        MockCaReconciler mockCaReconciler = new MockCaReconciler(supplier, clusterCa, clientsCa);
+        mockCaReconciler
                 .reconcile(Clock.systemUTC())
                 .onComplete(context.succeeding(c -> context.verify(() -> {
-                    assertThat("Kafka restart reasons", caReconciler.kafkaRestartReasons, aMapWithSize(6));
-                    caReconciler.kafkaRestartReasons.forEach((podName, restartReasons) -> {
+                    assertThat("Kafka restart reasons", mockCaReconciler.kafkaRestartReasons, aMapWithSize(6));
+                    mockCaReconciler.kafkaRestartReasons.forEach((podName, restartReasons) -> {
                         assertThat("Restart reasons for pod " + podName, restartReasons.getReasons(), hasSize(1));
                         assertThat("Restart reasons for pod " + podName, restartReasons.contains(RestartReason.CLUSTER_CA_CERT_KEY_REPLACED), is(true));
                     });
 
-                    assertThat("Deployment restart reasons", caReconciler.deploymentRestartReasons, aMapWithSize(3));
-                    caReconciler.deploymentRestartReasons.forEach((deploymentName, restartReason) ->
+                    assertThat("Deployment restart reasons", mockCaReconciler.deploymentRestartReasons, aMapWithSize(3));
+                    mockCaReconciler.deploymentRestartReasons.forEach((deploymentName, restartReason) ->
                             assertThat("Deployment restart reason for " + deploymentName, restartReason, is(RestartReason.CLUSTER_CA_CERT_KEY_REPLACED.getDefaultNote())));
+
+                    @SuppressWarnings({ "unchecked" })
+                    ArgumentCaptor<List<StrimziPodSet>> podSetCaptor = ArgumentCaptor.forClass(List.class);
+                    verify(supplier.strimziPodSetOperator).batchReconcile(any(), eq(NAMESPACE), podSetCaptor.capture(), any(Labels.class));
 
                     assertThat(podSetCaptor.getValue(), hasSize(2));
                     podsIn(podSetCaptor.getValue()).forEach(pod -> {
                         // Expect that the CA key generation was updated. CA cert generations are updated by component reconcilers
                         assertThat(pod.getMetadata().getAnnotations(), hasEntry(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_KEY_GENERATION, "1"));
                         assertThat(pod.getMetadata().getAnnotations(), hasEntry(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, "0"));
+                        assertThat(pod.getMetadata().getAnnotations(), hasEntry(Ca.ANNO_STRIMZI_IO_CLIENTS_CA_CERT_GENERATION, "0"));
                     });
 
                     // The old CA cert has to survive, the pods have not been rolled yet
@@ -184,27 +190,25 @@ public class CaReconcilerTest {
         Ca clientsCa = mockClientsCa(0);
 
         List<Pod> controllerPods = List.of(
-                pod("my-cluster-controllers-3", false, true, 0, 0),
-                pod("my-cluster-controllers-4", false, true, 0, 1),
-                pod("my-cluster-controllers-5", false, true, 0, 0));
+                controllerPodWithCaGenerations("my-cluster-controllers-3", 0, 0),
+                controllerPodWithCaGenerations("my-cluster-controllers-4", 0, 1),
+                controllerPodWithCaGenerations("my-cluster-controllers-5", 0, 0));
         List<Pod> brokerPods = List.of(
-                pod("my-cluster-brokers-0", true, false, 0, 1),
-                pod("my-cluster-brokers-1", true, false, 0, 0),
-                pod("my-cluster-brokers-2", true, false, 0, 0));
+                brokerPodWithCaGenerations("my-cluster-brokers-0", 0, 1),
+                brokerPodWithCaGenerations("my-cluster-brokers-1", 0, 0),
+                brokerPodWithCaGenerations("my-cluster-brokers-2", 0, 0));
         mockKubernetesState(controllerPods, brokerPods);
 
-        @SuppressWarnings({ "unchecked" })
-        ArgumentCaptor<List<StrimziPodSet>> podSetCaptor = ArgumentCaptor.forClass(List.class);
-        when(supplier.strimziPodSetOperator.batchReconcile(any(), eq(NAMESPACE), podSetCaptor.capture(), any(Labels.class)))
+        when(supplier.strimziPodSetOperator.batchReconcile(any(), eq(NAMESPACE), any(), any(Labels.class)))
                 .thenAnswer(i -> CompletableFuture.completedFuture(null));
 
         Checkpoint async = context.checkpoint();
-        MockCaReconciler caReconciler = new MockCaReconciler(supplier, clusterCa, clientsCa);
-        caReconciler
+        MockCaReconciler mockCaReconciler = new MockCaReconciler(supplier, clusterCa, clientsCa);
+        mockCaReconciler
                 .reconcile(Clock.systemUTC())
                 .onComplete(context.succeeding(c -> context.verify(() -> {
-                    assertThat("Kafka restart reasons", caReconciler.kafkaRestartReasons, aMapWithSize(6));
-                    caReconciler.kafkaRestartReasons.forEach((podName, restartReasons) -> {
+                    assertThat("Kafka restart reasons", mockCaReconciler.kafkaRestartReasons, aMapWithSize(6));
+                    mockCaReconciler.kafkaRestartReasons.forEach((podName, restartReasons) -> {
                         if ("my-cluster-controllers-4".equals(podName) || "my-cluster-brokers-0".equals(podName)) {
                             assertThat("Pod " + podName + " should not be restarted", restartReasons.getReasons(), empty());
                         } else {
@@ -213,11 +217,22 @@ public class CaReconcilerTest {
                         }
                     });
 
-                    assertThat("Deployment restart reasons", caReconciler.deploymentRestartReasons, aMapWithSize(3));
+                    assertThat("Deployment restart reasons", mockCaReconciler.deploymentRestartReasons, aMapWithSize(3));
+                    mockCaReconciler.deploymentRestartReasons.forEach((deploymentName, restartReason) ->
+                            assertThat("Deployment restart reason for " + deploymentName, restartReason, is(RestartReason.CLUSTER_CA_CERT_KEY_REPLACED.getDefaultNote())));
+
+                    @SuppressWarnings({ "unchecked" })
+                    ArgumentCaptor<List<StrimziPodSet>> podSetCaptor = ArgumentCaptor.forClass(List.class);
+                    verify(supplier.strimziPodSetOperator).batchReconcile(any(), eq(NAMESPACE), podSetCaptor.capture(), any(Labels.class));
 
                     assertThat(podSetCaptor.getValue(), hasSize(2));
-                    podsIn(podSetCaptor.getValue()).forEach(pod ->
-                            assertThat(pod.getMetadata().getAnnotations(), hasEntry(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_KEY_GENERATION, "1")));
+                    podsIn(podSetCaptor.getValue()).forEach(pod -> {
+                        assertThat(pod.getMetadata().getAnnotations(), hasEntry(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_KEY_GENERATION, "1"));
+                        assertThat(pod.getMetadata().getAnnotations(), hasEntry(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, "0"));
+                        assertThat(pod.getMetadata().getAnnotations(), hasEntry(Ca.ANNO_STRIMZI_IO_CLIENTS_CA_CERT_GENERATION, "0"));
+                    });
+
+                    verify(clusterCa, never()).maybeDeleteOldCerts();
                     async.flag();
                 })));
     }
@@ -226,15 +241,15 @@ public class CaReconcilerTest {
     public void testNothingRolledWhenClusterCaUnchanged(VertxTestContext context) {
         Ca clusterCa = mockClusterCa(0, 0, false);
         Ca clientsCa = mockClientsCa(0);
-        mockKubernetesState(controllerPods(0, 0), brokerPods(0, 0));
+        mockKubernetesState(controllerPodsWithCaGenerations(0, 0), brokerPodsWithCaGenerations(0, 0));
 
         Checkpoint async = context.checkpoint();
-        MockCaReconciler caReconciler = new MockCaReconciler(supplier, clusterCa, clientsCa);
-        caReconciler
+        MockCaReconciler mockCaReconciler = new MockCaReconciler(supplier, clusterCa, clientsCa);
+        mockCaReconciler
                 .reconcile(Clock.systemUTC())
                 .onComplete(context.succeeding(result -> context.verify(() -> {
-                    assertThat("Kafka restart reasons", caReconciler.kafkaRestartReasons, anEmptyMap());
-                    assertThat("Deployment restart reasons", caReconciler.deploymentRestartReasons, anEmptyMap());
+                    assertThat("Kafka restart reasons", mockCaReconciler.kafkaRestartReasons, anEmptyMap());
+                    assertThat("Deployment restart reasons", mockCaReconciler.deploymentRestartReasons, anEmptyMap());
                     verify(supplier.strimziPodSetOperator, never()).batchReconcile(any(), any(), any(), any(Labels.class));
 
                     assertThat(result.clusterCa(), is(clusterCa));
@@ -247,15 +262,15 @@ public class CaReconcilerTest {
     public void testNothingRolledWhenOnlyClusterCaCertChanged(VertxTestContext context) {
         Ca clusterCa = mockClusterCa(1, 0, false);
         Ca clientsCa = mockClientsCa(0);
-        mockKubernetesState(controllerPods(0, 0), brokerPods(0, 0));
+        mockKubernetesState(controllerPodsWithCaGenerations(0, 0), brokerPodsWithCaGenerations(0, 0));
 
         Checkpoint async = context.checkpoint();
-        MockCaReconciler caReconciler = new MockCaReconciler(supplier, clusterCa, clientsCa);
-        caReconciler
+        MockCaReconciler mockCaReconciler = new MockCaReconciler(supplier, clusterCa, clientsCa);
+        mockCaReconciler
                 .reconcile(Clock.systemUTC())
                 .onComplete(context.succeeding(c -> context.verify(() -> {
-                    assertThat("Kafka restart reasons", caReconciler.kafkaRestartReasons, anEmptyMap());
-                    assertThat("Deployment restart reasons", caReconciler.deploymentRestartReasons, anEmptyMap());
+                    assertThat("Kafka restart reasons", mockCaReconciler.kafkaRestartReasons, anEmptyMap());
+                    assertThat("Deployment restart reasons", mockCaReconciler.deploymentRestartReasons, anEmptyMap());
                     async.flag();
                 })));
     }
@@ -265,15 +280,15 @@ public class CaReconcilerTest {
     public void testNothingRolledWhenOnlyClientsCaChanged(VertxTestContext context) {
         Ca clusterCa = mockClusterCa(0, 0, false);
         Ca clientsCa = mockClientsCa(1);
-        mockKubernetesState(controllerPods(0, 0), brokerPods(0, 0));
+        mockKubernetesState(controllerPodsWithCaGenerations(0, 0), brokerPodsWithCaGenerations(0, 0));
 
         Checkpoint async = context.checkpoint();
-        MockCaReconciler caReconciler = new MockCaReconciler(supplier, clusterCa, clientsCa);
-        caReconciler
+        MockCaReconciler mockCaReconciler = new MockCaReconciler(supplier, clusterCa, clientsCa);
+        mockCaReconciler
                 .reconcile(Clock.systemUTC())
                 .onComplete(context.succeeding(c -> context.verify(() -> {
-                    assertThat("Kafka restart reasons", caReconciler.kafkaRestartReasons, anEmptyMap());
-                    assertThat("Deployment restart reasons", caReconciler.deploymentRestartReasons, anEmptyMap());
+                    assertThat("Kafka restart reasons", mockCaReconciler.kafkaRestartReasons, anEmptyMap());
+                    assertThat("Deployment restart reasons", mockCaReconciler.deploymentRestartReasons, anEmptyMap());
                     async.flag();
                 })));
     }
@@ -285,25 +300,25 @@ public class CaReconcilerTest {
         Ca clientsCa = mockClientsCa(0);
 
         // The terminating pod is the only one behind, every live pod is up to date
-        Pod terminatingPod = new PodBuilder(pod("my-cluster-brokers-2", true, false, 0, 0))
+        Pod terminatingPod = new PodBuilder(brokerPodWithCaGenerations("my-cluster-brokers-2", 0, 0))
                 .editMetadata()
                     .withDeletionTimestamp("2026-01-01T00:00:00Z")
                 .endMetadata()
                 .build();
         List<Pod> brokerPods = List.of(
-                pod("my-cluster-brokers-0", true, false, 1, 1),
-                pod("my-cluster-brokers-1", true, false, 1, 1),
+                brokerPodWithCaGenerations("my-cluster-brokers-0", 1, 1),
+                brokerPodWithCaGenerations("my-cluster-brokers-1", 1, 1),
                 terminatingPod);
-        mockKubernetesState(controllerPods(1, 1), brokerPods);
+        mockKubernetesState(controllerPodsWithCaGenerations(1, 1), brokerPods);
 
         Checkpoint async = context.checkpoint();
-        MockCaReconciler caReconciler = new MockCaReconciler(supplier, clusterCa, clientsCa);
-        caReconciler
+        MockCaReconciler mockCaReconciler = new MockCaReconciler(supplier, clusterCa, clientsCa);
+        mockCaReconciler
                 .reconcile(Clock.systemUTC())
                 .onComplete(context.succeeding(c -> context.verify(() -> {
                     // Its old key generation is ignored, so nothing is rolled
-                    assertThat("Kafka restart reasons", caReconciler.kafkaRestartReasons, anEmptyMap());
-                    assertThat("Deployment restart reasons", caReconciler.deploymentRestartReasons, anEmptyMap());
+                    assertThat("Kafka restart reasons", mockCaReconciler.kafkaRestartReasons, anEmptyMap());
+                    assertThat("Deployment restart reasons", mockCaReconciler.deploymentRestartReasons, anEmptyMap());
 
                     // Its old cert generation is ignored too, so the old cert counts as unused
                     verify(clusterCa).maybeDeleteOldCerts();
@@ -316,7 +331,7 @@ public class CaReconcilerTest {
     public void testTrustBundleSecretReconciled(VertxTestContext context) {
         Ca clusterCa = mockClusterCa(1, 0, false);
         Ca clientsCa = mockClientsCa(2);
-        mockKubernetesState(controllerPods(1, 0), brokerPods(1, 0));
+        mockKubernetesState(controllerPodsWithCaGenerations(1, 0), brokerPodsWithCaGenerations(1, 0));
 
         Checkpoint async = context.checkpoint();
         new MockCaReconciler(supplier, clusterCa, clientsCa)
@@ -338,7 +353,7 @@ public class CaReconcilerTest {
     public void testClusterOperatorSecretCreatedWhenMissing(VertxTestContext context) {
         Ca clusterCa = mockClusterCa(1, 0, false);
         Ca clientsCa = mockClientsCa(0);
-        mockKubernetesState(controllerPods(1, 0), brokerPods(1, 0));
+        mockKubernetesState(controllerPodsWithCaGenerations(1, 0), brokerPodsWithCaGenerations(1, 0));
 
         Checkpoint async = context.checkpoint();
         new MockCaReconciler(supplier, clusterCa, clientsCa)
@@ -361,7 +376,7 @@ public class CaReconcilerTest {
     public void testClusterOperatorSecretRenewedWhenClusterCaFullyTrusted(VertxTestContext context) {
         Ca clusterCa = mockClusterCa(2, 0, false);
         Ca clientsCa = mockClientsCa(0);
-        mockKubernetesState(clusterOperatorSecret(), controllerPods(2, 0), brokerPods(2, 0));
+        mockKubernetesState(clusterOperatorSecret(), controllerPodsWithCaGenerations(2, 0), brokerPodsWithCaGenerations(2, 0));
 
         Checkpoint async = context.checkpoint();
         new MockCaReconciler(supplier, clusterCa, clientsCa)
@@ -377,6 +392,7 @@ public class CaReconcilerTest {
                     ArgumentCaptor<Secret> coSecret = ArgumentCaptor.forClass(Secret.class);
                     verify(supplier.secretOperations).reconcile(any(), eq(NAMESPACE), eq(KafkaResources.clusterOperatorCertsSecretName(NAME)), coSecret.capture());
                     assertThat(coSecret.getValue().getMetadata().getAnnotations(), hasEntry(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, "2"));
+                    assertThat(coSecret.getValue().getData(), hasEntry("cluster-operator.crt", Util.encodeToBase64(ISSUED_CLUSTER_OPERATOR_CERT)));
                     async.flag();
                 })));
     }
@@ -386,7 +402,7 @@ public class CaReconcilerTest {
     public void testClusterOperatorSecretNotUpdatedWhenClusterCaNotFullyTrusted(VertxTestContext context) {
         Ca clusterCa = mockClusterCa(0, 1, false);
         Ca clientsCa = mockClientsCa(0);
-        mockKubernetesState(clusterOperatorSecret(), controllerPods(0, 0), brokerPods(0, 0));
+        mockKubernetesState(clusterOperatorSecret(), controllerPodsWithCaGenerations(0, 0), brokerPodsWithCaGenerations(0, 0));
         when(supplier.strimziPodSetOperator.batchReconcile(any(), eq(NAMESPACE), any(), any(Labels.class)))
                 .thenAnswer(i -> CompletableFuture.completedFuture(null));
 
@@ -402,10 +418,11 @@ public class CaReconcilerTest {
 
     @Test
     public void testOldClusterCaCertsRemovedWhenNewCertFullyUsed(VertxTestContext context) {
-        Ca clusterCa = mockClusterCa(0, 0, false);
+        // The key was replaced in a previous reconcile and every pod has been rolled since
+        Ca clusterCa = mockClusterCa(1, 1, false);
         when(clusterCa.certsRemoved()).thenReturn(true);
         Ca clientsCa = mockClientsCa(0);
-        mockKubernetesState(controllerPods(0, 0), brokerPods(0, 0));
+        mockKubernetesState(controllerPodsWithCaGenerations(1, 1), brokerPodsWithCaGenerations(1, 1));
 
         Checkpoint async = context.checkpoint();
         new MockCaReconciler(supplier, clusterCa, clientsCa)
@@ -432,10 +449,10 @@ public class CaReconcilerTest {
         Ca clientsCa = mockClientsCa(0);
         // One pod still presents a certificate signed by the previous Cluster CA cert
         List<Pod> brokerPods = List.of(
-                pod("my-cluster-brokers-0", true, false, 1, 0),
-                pod("my-cluster-brokers-1", true, false, 1, 0),
-                pod("my-cluster-brokers-2", true, false, 0, 0));
-        mockKubernetesState(controllerPods(1, 0), brokerPods);
+                brokerPodWithCaGenerations("my-cluster-brokers-0", 1, 0),
+                brokerPodWithCaGenerations("my-cluster-brokers-1", 1, 0),
+                brokerPodWithCaGenerations("my-cluster-brokers-2", 0, 0));
+        mockKubernetesState(controllerPodsWithCaGenerations(1, 0), brokerPods);
 
         Checkpoint async = context.checkpoint();
         new MockCaReconciler(supplier, clusterCa, clientsCa)
@@ -449,7 +466,8 @@ public class CaReconcilerTest {
 
     @Test
     public void testOldClusterCaCertsKeptWhenThereAreNoPods(VertxTestContext context) {
-        Ca clusterCa = mockClusterCa(0, 0, false);
+        // The key was replaced in a previous reconcile, so there is an old cert, but no Pod can prove it is unused
+        Ca clusterCa = mockClusterCa(1, 1, false);
         Ca clientsCa = mockClientsCa(0);
         // still no Pods, a new Kafka cluster is under creation
         mockKubernetesState(List.of(), List.of());
@@ -475,8 +493,8 @@ public class CaReconcilerTest {
         when(clusterCa.caCertData()).thenReturn(Map.of(Ca.CA_CRT, CURRENT_CA_CRT));
         when(clusterCa.maybeCopyOrGenerateClientCert(any(), any(), any(), anyBoolean()))
                 .thenReturn(CompletableFuture.completedStage(new CertAndKey(
-                        "cluster-operator-key".getBytes(StandardCharsets.US_ASCII),
-                        "cluster-operator-cert".getBytes(StandardCharsets.US_ASCII),
+                        ISSUED_CLUSTER_OPERATOR_KEY.getBytes(StandardCharsets.US_ASCII),
+                        ISSUED_CLUSTER_OPERATOR_CERT.getBytes(StandardCharsets.US_ASCII),
                         caCertGeneration)));
         return clusterCa;
     }
@@ -573,27 +591,36 @@ public class CaReconcilerTest {
         }
     }
 
-    private static List<Pod> controllerPods(int clusterCaCertGeneration, int clusterCaKeyGeneration) {
+    private static List<Pod> controllerPodsWithCaGenerations(int clusterCaCertGeneration, int clusterCaKeyGeneration) {
         return List.of(
-                pod("my-cluster-controllers-3", false, true, clusterCaCertGeneration, clusterCaKeyGeneration),
-                pod("my-cluster-controllers-4", false, true, clusterCaCertGeneration, clusterCaKeyGeneration),
-                pod("my-cluster-controllers-5", false, true, clusterCaCertGeneration, clusterCaKeyGeneration));
+                controllerPodWithCaGenerations("my-cluster-controllers-3", clusterCaCertGeneration, clusterCaKeyGeneration),
+                controllerPodWithCaGenerations("my-cluster-controllers-4", clusterCaCertGeneration, clusterCaKeyGeneration),
+                controllerPodWithCaGenerations("my-cluster-controllers-5", clusterCaCertGeneration, clusterCaKeyGeneration));
     }
 
-    private static List<Pod> brokerPods(int clusterCaCertGeneration, int clusterCaKeyGeneration) {
+    private static List<Pod> brokerPodsWithCaGenerations(int clusterCaCertGeneration, int clusterCaKeyGeneration) {
         return List.of(
-                pod("my-cluster-brokers-0", true, false, clusterCaCertGeneration, clusterCaKeyGeneration),
-                pod("my-cluster-brokers-1", true, false, clusterCaCertGeneration, clusterCaKeyGeneration),
-                pod("my-cluster-brokers-2", true, false, clusterCaCertGeneration, clusterCaKeyGeneration));
+                brokerPodWithCaGenerations("my-cluster-brokers-0", clusterCaCertGeneration, clusterCaKeyGeneration),
+                brokerPodWithCaGenerations("my-cluster-brokers-1", clusterCaCertGeneration, clusterCaKeyGeneration),
+                brokerPodWithCaGenerations("my-cluster-brokers-2", clusterCaCertGeneration, clusterCaKeyGeneration));
     }
 
-    private static Pod pod(String name, boolean broker, boolean controller, int clusterCaCertGeneration, int clusterCaKeyGeneration) {
+    private static Pod brokerPodWithCaGenerations(String podName, int caCertGeneration, int caKeyGeneration) {
+        return podWithCaGenerations(podName, true, false, caCertGeneration, caKeyGeneration);
+    }
+
+    private static Pod controllerPodWithCaGenerations(String podName, int caCertGeneration, int caKeyGeneration) {
+        return podWithCaGenerations(podName, false, true, caCertGeneration, caKeyGeneration);
+    }
+
+    private static Pod podWithCaGenerations(String name, boolean broker, boolean controller, int clusterCaCertGeneration, int clusterCaKeyGeneration) {
         return new PodBuilder()
                 .withNewMetadata()
                     .withName(name)
                     .withAnnotations(Map.of(
                             Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, String.valueOf(clusterCaCertGeneration),
-                            Ca.ANNO_STRIMZI_IO_CLUSTER_CA_KEY_GENERATION, String.valueOf(clusterCaKeyGeneration)))
+                            Ca.ANNO_STRIMZI_IO_CLUSTER_CA_KEY_GENERATION, String.valueOf(clusterCaKeyGeneration),
+                            Ca.ANNO_STRIMZI_IO_CLIENTS_CA_CERT_GENERATION, "0"))
                     .withLabels(Map.of(
                             Labels.STRIMZI_CLUSTER_LABEL, NAME,
                             Labels.STRIMZI_CONTROLLER_ROLE_LABEL, Boolean.toString(controller),
