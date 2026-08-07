@@ -219,10 +219,10 @@ public class KafkaBrokerConfigurationBuilderTest {
                                 .withAllowList(List.of("kafka_log.*", "kafka_network.*"))
                             .endValues()
                             .build())
-                        .build(), List.of(".*"));
+                        .build());
 
         String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
-                .withStrimziMetricsReporter(model)
+                .withStrimziMetricsReporter(model, List.of())
                 .build();
 
         assertThat(configuration, isEquivalent("node.id=2",

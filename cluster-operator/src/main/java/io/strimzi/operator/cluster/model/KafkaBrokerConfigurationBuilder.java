@@ -136,16 +136,17 @@ public class KafkaBrokerConfigurationBuilder {
     /**
      * Configures the Strimzi Metrics Reporter. It is set only if user enables Strimzi Metrics Reporter.
      *
-     * @param model Strimzi Metrics Reporter configuration
+     * @param model            Strimzi Metrics Reporter configuration
+     * @param defaultAllowList Role-specific default allow list used when the user has not configured one
      *
      * @return Returns the builder instance
      */
-    public KafkaBrokerConfigurationBuilder withStrimziMetricsReporter(MetricsModel model) {
+    public KafkaBrokerConfigurationBuilder withStrimziMetricsReporter(MetricsModel model, List<String> defaultAllowList) {
         if (model instanceof StrimziMetricsReporterModel reporterModel) {
             printSectionHeader("Strimzi Metrics Reporter configuration");
             writer.println(StrimziMetricsReporterConfig.LISTENER_ENABLE + "=true");
             writer.println(StrimziMetricsReporterConfig.LISTENER + "=http://:" + MetricsModel.METRICS_PORT);
-            writer.println(StrimziMetricsReporterConfig.ALLOW_LIST + "=" + reporterModel.getAllowList());
+            writer.println(StrimziMetricsReporterConfig.ALLOW_LIST + "=" + reporterModel.getAllowListOrDefault(defaultAllowList));
             writer.println();
         }
         return this;
