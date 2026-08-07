@@ -284,6 +284,22 @@ public abstract class MetricsHolder {
     }
 
     /**
+     * Creates or gets a counter-type metric with optional tags.
+     *
+     * @param metricKey         Key of the metric
+     * @param metricName        Name of the metric
+     * @param metricHelp        Help description of the metric
+     * @param selectorLabels    Selector labels to select the controller resources
+     * @param counterMap        Map with counters
+     * @param optionalTags      Optional tags to be added to the metric
+     *
+     * @return  Counter metric
+     */
+    protected Counter getCounter(MetricKey metricKey, String metricName, String metricHelp, Optional<String> selectorLabels, Map<MetricKey, Counter> counterMap, Tag... optionalTags) {
+        return metric(metricKey, selectorLabels, counterMap, tags -> metricsProvider.counter(metricName, metricHelp, tags), optionalTags);
+    }
+
+    /**
      * Creates or gets a gauge-type metric.
      *
      * @param metricKey         Key of the metric
