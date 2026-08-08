@@ -1,0 +1,16 @@
+:_mod-docs-content-type: ASSEMBLY
+
+// This assembly is included in the following assemblies:
+//
+// security/assembly-security.adoc
+
+[id='assembly-internal-cluster-security-{context}']
+= Internal cluster security
+
+[role="_abstract"]
+Configure the encryption and authentication used for communication between components of a Kafka cluster.
+The default TLS encryption and mTLS authentication provide secure internal communication, but you can disable mTLS or both options when your environment provides equivalent protection or has other requirements.
+
+include::../../modules/security/con-internal-cluster-security.adoc[leveloffset=+1]
+
+include::../../modules/security/proc-changing-internal-cluster-security.adoc[leveloffset=+1]

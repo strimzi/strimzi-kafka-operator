@@ -1,0 +1,112 @@
+:_mod-docs-content-type: PROCEDURE
+
+// Module included in the following assemblies:
+//
+// assembly-internal-cluster-security.adoc
+
+[id='proc-changing-internal-cluster-security-{context}']
+= Changing the internal cluster security configuration
+
+[role="_abstract"]
+Change the encryption or authentication configuration for an existing Kafka cluster by stopping the cluster and resetting its recorded security status.
+This procedure causes a complete outage of the Kafka cluster.
+
+The Cluster Operator compares the `strimzi.io/internal-cluster-security` annotation with `.status.clusterSecurity` in the `Kafka` resource.
+Changing only the annotation causes reconciliation to fail and does not migrate the cluster.
+
+WARNING: Follow the steps in the specified order.
+Removing `.status.clusterSecurity` while cluster Pods are running can apply an incompatible security configuration and leave the cluster unavailable.
+
+.Prerequisites
+
+* The Cluster Operator is running.
+* A maintenance window allows a complete outage of the Kafka cluster.
+* You have permission to update the `Kafka` status subresource and to delete `StrimziPodSet`, `Deployment`, and `Pod` resources.
+* You have selected a supported encryption and authentication combination.
+
+.Procedure
+
+. Pause reconciliation of the `Kafka` resource:
++
+[source,shell,subs="+quotes"]
+----
+kubectl annotate kafka <cluster_name> \
+  strimzi.io/pause-reconciliation="true" --overwrite
+----
+
+. Check that the status conditions of the `Kafka` resource show a change to `ReconciliationPaused`:
++
+[source,shell,subs="+quotes"]
+----
+kubectl describe kafka <cluster_name>
+----
++
+Continue only after the `ReconciliationPaused` condition has a status of `True`.
+
+. Stop the cluster by deleting its `StrimziPodSet` and `Deployment` resources and their Pods:
++
+[source,shell,subs="+quotes"]
+----
+kubectl delete strimzipodsets,deployments \
+  -l 'strimzi.io/cluster=<cluster_name>,strimzi.io/kind=Kafka' \
+  --cascade=foreground
+----
+
+. Verify that all Pods belonging to the cluster have stopped:
++
+[source,shell,subs="+quotes"]
+----
+kubectl get pods \
+  -l 'strimzi.io/cluster=<cluster_name>,strimzi.io/kind=Kafka'
+----
++
+Continue only when the command returns no Pods.
+
+. Edit the status subresource of the `Kafka` resource:
++
+[source,shell,subs="+quotes"]
+----
+kubectl edit kafka <cluster_name> --subresource status
+----
++
+Remove the complete `.status.clusterSecurity` section, including its `encryption` and `authentication` fields.
+Do not change other status fields.
+
+. Set the `strimzi.io/internal-cluster-security` annotation to the new configuration.
+For example, set both types to `none` to disable TLS encryption and mTLS authentication:
++
+[source,shell,subs="+quotes"]
+----
+kubectl annotate kafka <cluster_name> \
+  strimzi.io/internal-cluster-security='{"encryption":{"type":"none"},"authentication":{"type":"none"}}' \
+  --overwrite
+----
++
+Use one of the combinations described in xref:con-internal-cluster-security-{context}[Internal cluster encryption and authentication].
+
+. Unpause reconciliation of the `Kafka` resource:
++
+[source,shell,subs="+quotes"]
+----
+kubectl annotate kafka <cluster_name> \
+  strimzi.io/pause-reconciliation="false" --overwrite
+----
++
+The Cluster Operator recreates the `StrimziPodSet`, `Deployment`, and `Pod` resources with the new security configuration.
+
+. Verify that the Kafka cluster is ready and that `.status.clusterSecurity` contains the new configuration:
++
+[source,shell,subs="+quotes"]
+----
+kubectl get kafka <cluster_name> -o yaml
+----
+
+. Verify that the cluster Pods are running:
++
+[source,shell,subs="+quotes"]
+----
+kubectl get pods \
+  -l 'strimzi.io/cluster=<cluster_name>,strimzi.io/kind=Kafka'
+----
+
+. Verify that Kafka clients can connect to the cluster.
