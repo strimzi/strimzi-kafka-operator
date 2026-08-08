@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 1.3.0
+
+* (Early Access) Configurable internal cluster security allows users to configure encryption and authentication on the internal connections within the Apache Kafka cluster.
+
 ## 1.2.0
 
 * Add support for Apache Kafka 4.3.1
