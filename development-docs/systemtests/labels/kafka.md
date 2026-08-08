@@ -16,6 +16,8 @@ These tests are crucial to ensure that Kafka clusters can handle production work
 - [testClusterIp](../io.strimzi.systemtest.kafka.listeners.ListenersST.md)
 - [testClusterIpTls](../io.strimzi.systemtest.kafka.listeners.ListenersST.md)
 - [testClusterOperatorMetrics](../io.strimzi.systemtest.metrics.MetricsST.md)
+- [testClusterSecurityConfiguration](../io.strimzi.systemtest.security.ClusterSecurityST.md)
+- [testClusterSecurityMigration](../io.strimzi.systemtest.security.ClusterSecurityST.md)
 - [testClusterWideDynamicConfiguration](../io.strimzi.systemtest.kafka.dynamicconfiguration.DynamicConfST.md)
 - [testCombinationOfEveryKindOfListener](../io.strimzi.systemtest.kafka.listeners.MultipleListenersST.md)
 - [testCombinationOfInternalAndExternalListeners](../io.strimzi.systemtest.kafka.listeners.MultipleListenersST.md)

@@ -23,6 +23,8 @@ They cover authentication and authorization mechanisms (OAuth, ACLs, OPA integra
 - [testCertRenewalInMaintenanceTimeWindow](../io.strimzi.systemtest.security.SecurityST.md)
 - [testClientsCACertRenew](../io.strimzi.systemtest.security.SecurityST.md)
 - [testClusterCACertRenew](../io.strimzi.systemtest.security.SecurityST.md)
+- [testClusterSecurityConfiguration](../io.strimzi.systemtest.security.ClusterSecurityST.md)
+- [testClusterSecurityMigration](../io.strimzi.systemtest.security.ClusterSecurityST.md)
 - [testCustomCaTrustChainOnInternalPort](../io.strimzi.systemtest.security.custom.CustomCaChainST.md)
 - [testCustomClusterCaAndClientsCaCertificates](../io.strimzi.systemtest.security.custom.CustomCaST.md)
 - [testDisabledPKCS12Stores](../io.strimzi.systemtest.security.DisablingPkcs12StoresST.md)
