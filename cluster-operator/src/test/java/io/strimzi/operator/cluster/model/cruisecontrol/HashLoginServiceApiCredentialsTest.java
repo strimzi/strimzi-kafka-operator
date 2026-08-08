@@ -17,6 +17,7 @@ import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.CruiseControl;
+import io.strimzi.operator.cluster.model.KafkaClusterSecurityContext;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.MockSharedEnvironmentProvider;
 import io.strimzi.operator.cluster.model.NodeRef;
@@ -311,7 +312,7 @@ public class HashLoginServiceApiCredentialsTest {
                        TOPIC_OPERATOR_PASSWORD_KEY,  encodeToBase64("password")));
 
         CruiseControlSpec ccSpec = CRUISE_CONTROL_WITH_API_USERS;
-        CruiseControl cc1 = CruiseControl.fromCrd(Reconciliation.DUMMY_RECONCILIATION, createKafka(ccSpec), VERSIONS, NODES, STORAGE, Map.of(), SHARED_ENV_PROVIDER);
+        CruiseControl cc1 = CruiseControl.fromCrd(Reconciliation.DUMMY_RECONCILIATION, createKafka(ccSpec), VERSIONS, NODES, STORAGE, Map.of(), SHARED_ENV_PROVIDER, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
         Secret newCcApiUsersSecret = cc1.apiCredentials().generateApiSecret(
                 new PasswordGenerator(10, "a", "a"),
                 oldCruiseControlApiSecret,
@@ -340,7 +341,7 @@ public class HashLoginServiceApiCredentialsTest {
         assertThat(userEntries.get("username1").role(), is(HashLoginServiceApiCredentials.Role.VIEWER));
 
         ccSpec = new CruiseControlSpec();
-        CruiseControl cc2 = CruiseControl.fromCrd(Reconciliation.DUMMY_RECONCILIATION, createKafka(ccSpec), VERSIONS, NODES, STORAGE, Map.of(), SHARED_ENV_PROVIDER);
+        CruiseControl cc2 = CruiseControl.fromCrd(Reconciliation.DUMMY_RECONCILIATION, createKafka(ccSpec), VERSIONS, NODES, STORAGE, Map.of(), SHARED_ENV_PROVIDER, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
         newCcApiUsersSecret = cc2.apiCredentials().generateApiSecret(
                 new PasswordGenerator(10, "a", "a"),
                 null,
@@ -360,7 +361,7 @@ public class HashLoginServiceApiCredentialsTest {
         assertThat(userEntries.size(), is(2));
 
         // Ensure exception is thrown when secret referenced in the apiUsers config does not exist
-        CruiseControl cc3 = CruiseControl.fromCrd(Reconciliation.DUMMY_RECONCILIATION, createKafka(CRUISE_CONTROL_WITH_API_USERS), VERSIONS, NODES, STORAGE, Map.of(), SHARED_ENV_PROVIDER);
+        CruiseControl cc3 = CruiseControl.fromCrd(Reconciliation.DUMMY_RECONCILIATION, createKafka(CRUISE_CONTROL_WITH_API_USERS), VERSIONS, NODES, STORAGE, Map.of(), SHARED_ENV_PROVIDER, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
         assertThrows(InvalidResourceException.class,  () -> cc3.apiCredentials().generateApiSecret(
                 new PasswordGenerator(10, "a", "a"),
                 null,
@@ -370,7 +371,7 @@ public class HashLoginServiceApiCredentialsTest {
 
     @Test
     public void testGenerateTopicOperatorApiSecret() {
-        CruiseControl cc = CruiseControl.fromCrd(Reconciliation.DUMMY_RECONCILIATION, createKafka(new CruiseControlSpec()), VERSIONS, NODES, STORAGE, Map.of(), SHARED_ENV_PROVIDER);
+        CruiseControl cc = CruiseControl.fromCrd(Reconciliation.DUMMY_RECONCILIATION, createKafka(new CruiseControlSpec()), VERSIONS, NODES, STORAGE, Map.of(), SHARED_ENV_PROVIDER, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
 
         Secret newSecret = cc.apiCredentials().generateTopicOperatorApiSecret(null);
         assertThat(newSecret, is(not(nullValue())));

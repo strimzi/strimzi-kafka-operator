@@ -32,6 +32,7 @@ import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlEndpoints;
 import io.strimzi.test.ReadWriteUtils;
+import io.strimzi.test.TestUtils;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.Timeout;
@@ -90,6 +91,38 @@ public class KafkaRebalanceAssemblyOperatorTest extends AbstractKafkaRebalanceAs
     public void testNewToProposalReadyRebalance(VertxTestContext context) {
         KafkaRebalance kr = createKafkaRebalance(namespace, CLUSTER_NAME, RESOURCE_NAME, EMPTY_KAFKA_REBALANCE_SPEC, false);
         this.krNewToProposalReady(context, CruiseControlEndpoints.REBALANCE, kr, "true");
+    }
+
+    @Test
+    public void testCruiseControlClientWithoutTls(VertxTestContext context) {
+        int httpPort = TestUtils.getFreePort();
+        MockCruiseControl httpCruiseControlServer = new MockCruiseControl(httpPort);
+        httpCruiseControlServer.setupCCRebalanceResponse(0, CruiseControlEndpoints.REBALANCE, "true");
+
+        Kafka kafka = new KafkaBuilder(KAFKA)
+                .editMetadata()
+                    .addToAnnotations("strimzi.io/internal-cluster-security", "{\"encryption\":{\"type\":\"none\"},\"authentication\":{\"type\":\"none\"}}")
+                .endMetadata()
+                .build();
+        KafkaRebalance kr = createKafkaRebalance(namespace, CLUSTER_NAME, RESOURCE_NAME, EMPTY_KAFKA_REBALANCE_SPEC, false);
+
+        Crds.kafkaRebalanceOperation(client).inNamespace(namespace).resource(kr).create();
+        crdCreateKafka(kafka);
+        crdCreateCruiseControlSecrets();
+
+        KafkaRebalanceAssemblyOperator httpKrao = createKafkaRebalanceAssemblyOperator(ResourceUtils.dummyClusterOperatorConfig(), httpPort);
+        Checkpoint checkpoint = context.checkpoint();
+        httpKrao.reconcile(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, kr.getMetadata().getName()))
+                .onComplete(result -> {
+                    httpCruiseControlServer.stop();
+
+                    if (result.succeeded()) {
+                        assertState(context, client, namespace, kr.getMetadata().getName(), KafkaRebalanceState.ProposalReady);
+                        checkpoint.flag();
+                    } else {
+                        context.failNow(result.cause());
+                    }
+                });
     }
 
     /**

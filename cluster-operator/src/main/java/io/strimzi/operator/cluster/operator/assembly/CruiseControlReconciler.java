@@ -17,6 +17,7 @@ import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.model.CertSecretUtils;
 import io.strimzi.operator.cluster.model.CruiseControl;
 import io.strimzi.operator.cluster.model.ImagePullPolicy;
+import io.strimzi.operator.cluster.model.KafkaClusterSecurityContext;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.NodeRef;
 import io.strimzi.operator.cluster.operator.VertxUtil;
@@ -86,6 +87,7 @@ public class CruiseControlReconciler {
      * @param kafkaBrokerStorage        A map with storage configuration used by the Kafka cluster and its broker pools
      * @param kafkaBrokerResources      A map with resource configuration used by the Kafka cluster and its broker pools
      * @param clusterCa                 The Cluster CA instance
+     * @param securityContext           Kafka cluster security context
      */
     @SuppressWarnings({"checkstyle:ParameterNumber"})
     public CruiseControlReconciler(
@@ -98,11 +100,11 @@ public class CruiseControlReconciler {
             Set<NodeRef> kafkaBrokerNodes,
             Map<String, Storage> kafkaBrokerStorage,
             Map<String, ResourceRequirements> kafkaBrokerResources,
-            Ca clusterCa
-    ) {
+            Ca clusterCa,
+            KafkaClusterSecurityContext securityContext) {
         this.reconciliation = reconciliation;
         this.cruiseControl = CruiseControl.fromCrd(reconciliation, kafkaAssembly, versions, kafkaBrokerNodes, kafkaBrokerStorage, 
-            kafkaBrokerResources, supplier.sharedEnvironmentProvider);
+            kafkaBrokerResources, supplier.sharedEnvironmentProvider, securityContext);
         this.clusterCa = clusterCa;
         this.maintenanceWindows = kafkaAssembly.getSpec().getMaintenanceTimeWindows();
         this.operationTimeoutMs = config.getOperationTimeoutMs();

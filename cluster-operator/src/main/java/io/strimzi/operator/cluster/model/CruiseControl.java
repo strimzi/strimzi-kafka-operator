@@ -113,15 +113,16 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
      */
     public static final String ANNO_STRIMZI_CAPACITY_CONFIGURATION_HASH = Annotations.STRIMZI_DOMAIN + "capacity-configuration-hash";
 
-    private boolean sslEnabled;
-    private boolean authEnabled;
     private HashLoginServiceApiCredentials apiCredentials;
     @SuppressFBWarnings({"UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR"}) // This field is initialized in the fromCrd method
     private CapacityConfiguration capacityConfiguration;
     @SuppressFBWarnings({"UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR"}) // This field is initialized in the fromCrd method
     private MetricsModel metrics;
     private LoggingModel logging;
+    @SuppressFBWarnings({"UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR"}) // This field is initialized in the fromCrd method
     /* test */ CruiseControlConfiguration configuration;
+    @SuppressFBWarnings({"UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR"}) // This field is initialized in the fromCrd method
+    private KafkaClusterSecurityContext securityContext;
 
     /**
      * Port of the Cruise Control REST API
@@ -134,7 +135,8 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
     // Cruise Control configuration keys (EnvVariables)
     protected static final String ENV_VAR_STRIMZI_KAFKA_BOOTSTRAP_SERVERS = "STRIMZI_KAFKA_BOOTSTRAP_SERVERS";
 
-    protected static final String ENV_VAR_API_SSL_ENABLED = "STRIMZI_CC_API_SSL_ENABLED";
+    protected static final String ENV_VAR_TLS_ENABLED = "STRIMZI_CC_TLS_ENABLED";
+    protected static final String ENV_VAR_MTLS_ENABLED = "STRIMZI_CC_MTLS_ENABLED";
     protected static final String ENV_VAR_API_AUTH_ENABLED = "STRIMZI_CC_API_AUTH_ENABLED";
     protected static final String ENV_VAR_API_HEALTHCHECK_USERNAME = "API_HEALTHCHECK_USERNAME";
     protected static final String ENV_VAR_API_PORT = "API_PORT";
@@ -178,6 +180,7 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
      * @param kafkaStorage                  A map with storage configuration used by the Kafka cluster and its node pools
      * @param kafkaBrokerResources          A map with resource configuration used by the Kafka cluster and its broker pools
      * @param sharedEnvironmentProvider     Shared environment provider
+     * @param securityContext               Kafka cluster security context
      *
      * @return  Instance of the Cruise Control model
      */
@@ -189,8 +192,8 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
             Set<NodeRef> kafkaBrokerNodes,
             Map<String, Storage> kafkaStorage,
             Map<String, ResourceRequirements> kafkaBrokerResources,
-            SharedEnvironmentProvider sharedEnvironmentProvider
-    ) {
+            SharedEnvironmentProvider sharedEnvironmentProvider,
+            KafkaClusterSecurityContext securityContext) {
         CruiseControlSpec ccSpec = kafkaCr.getSpec().getCruiseControl();
         KafkaClusterSpec kafkaClusterSpec = kafkaCr.getSpec().getKafka();
 
@@ -204,14 +207,8 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
             }
             result.image = image;
 
-            KafkaConfiguration kafkaConfiguration = new KafkaConfiguration(reconciliation, kafkaClusterSpec.getConfig().entrySet());
             result.capacityConfiguration = new CapacityConfiguration(reconciliation, ccSpec, kafkaBrokerNodes, kafkaStorage, kafkaBrokerResources);
-            result.updateConfigurationWithDefaults(ccSpec, kafkaConfiguration);
-
-            CruiseControlConfiguration ccConfiguration = result.configuration;
-            result.sslEnabled = ccConfiguration.isApiSslEnabled();
-            result.authEnabled = ccConfiguration.isApiAuthEnabled();
-
+            result.configuration = updateConfigurationWithDefaults(reconciliation, ccSpec, new KafkaConfiguration(reconciliation, kafkaClusterSpec.getConfig().entrySet()), result.capacityConfiguration);
             result.apiCredentials = new HashLoginServiceApiCredentials(result.namespace, result.cluster, result.labels, result.ownerReference, ccSpec);
 
             // To avoid illegal storage configurations provided by the user,
@@ -220,6 +217,7 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
             result.livenessProbeOptions = ProbeUtils.extractLivenessProbeOptionsOrDefault(ccSpec, ProbeUtils.DEFAULT_HEALTHCHECK_OPTIONS);
             result.gcLoggingEnabled = ccSpec.getJvmOptions() == null ? JvmOptions.DEFAULT_GC_LOGGING_ENABLED : ccSpec.getJvmOptions().isGcLoggingEnabled();
             result.jvmOptions = ccSpec.getJvmOptions();
+            result.securityContext = securityContext;
 
             /*
             Metrics Reporter is not yet supported with CruiseControl as CC's own metrics are only exposed through JMX.
@@ -252,26 +250,29 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
         }
     }
 
-    private void updateConfigurationWithDefaults(CruiseControlSpec ccSpec, KafkaConfiguration kafkaConfiguration) {
+    private static CruiseControlConfiguration updateConfigurationWithDefaults(Reconciliation reconciliation, CruiseControlSpec ccSpec, KafkaConfiguration kafkaConfiguration, CapacityConfiguration capacityConfiguration) {
         Map<String, String> defaultCruiseControlProperties = CruiseControlConfiguration.generateDefaultPropertiesMap(capacityConfiguration);
         if (kafkaConfiguration.getConfigOption(KafkaConfiguration.DEFAULT_REPLICATION_FACTOR) != null)  {
             defaultCruiseControlProperties.put(CruiseControlConfigurationParameters.SAMPLE_STORE_TOPIC_REPLICATION_FACTOR.getValue(), kafkaConfiguration.getConfigOption(KafkaConfiguration.DEFAULT_REPLICATION_FACTOR));
         }
 
         CruiseControlConfiguration cruiseControlConfiguration = new CruiseControlConfiguration(reconciliation, ccSpec.getConfig().entrySet(), defaultCruiseControlProperties);
-        checkGoals(cruiseControlConfiguration);
+        checkGoals(reconciliation, cruiseControlConfiguration);
 
-        this.configuration = cruiseControlConfiguration;
+        return cruiseControlConfiguration;
     }
 
     /**
      *  This method ensures that the checks in cruise-control/src/main/java/com/linkedin/kafka/cruisecontrol/config/KafkaCruiseControlConfig.java
      *  sanityCheckGoalNames() method (L118)  don't fail if a user submits custom default goals that have less members then the default
      *  anomaly.detection.goals.
-     * @param configuration The configuration instance to be checked.
+     *
+     * @param configuration     The configuration instance to be checked.
+     * @param reconciliation    Reconciliation marker
+     *
      * @throws UnsupportedOperationException If the configuration contains self.healing.goals configurations.
      */
-    public void checkGoals(CruiseControlConfiguration configuration) {
+    private static void checkGoals(Reconciliation reconciliation, CruiseControlConfiguration configuration) {
         // If self healing goals are defined then these take precedence.
         // Right now, self.healing.goals must either be null or an empty list
         if (configuration.getConfigOption(CruiseControlConfigurationParameters.SELF_HEALING_CONFIG_KEY.toString()) != null) {
@@ -333,8 +334,15 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
     protected List<Volume> getVolumes(boolean isOpenShift) {
         List<Volume> volumes = new ArrayList<>();
         volumes.add(VolumeUtils.createTempDirVolume(templatePod));
-        volumes.add(VolumeUtils.createSecretVolume(TLS_CC_CERTS_VOLUME_NAME, CruiseControlResources.secretName(cluster), isOpenShift));
-        volumes.add(VolumeUtils.createSecretVolume(TLS_CA_CERTS_VOLUME_NAME, AbstractModel.clusterCaCertSecretName(cluster), isOpenShift));
+
+        if (securityContext.isStrimziTlsEncryption()) {
+            // The CA certificate is used for encryption of Kafka client.
+            // The CC certificate is needed for encryption of the HTTP server.
+            // So we need both volumes regardless whether mTLS is enabled or not.
+            volumes.add(VolumeUtils.createSecretVolume(TLS_CC_CERTS_VOLUME_NAME, CruiseControlResources.secretName(cluster), isOpenShift));
+            volumes.add(VolumeUtils.createSecretVolume(TLS_CA_CERTS_VOLUME_NAME, AbstractModel.clusterCaCertSecretName(cluster), isOpenShift));
+        }
+
         volumes.add(VolumeUtils.createSecretVolume(API_AUTH_CONFIG_VOLUME_NAME, CruiseControlResources.apiSecretName(cluster), isOpenShift));
         volumes.add(VolumeUtils.createConfigMapVolume(CONFIG_VOLUME_NAME, CruiseControlResources.configMapName(cluster)));
 
@@ -346,8 +354,15 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
     protected List<VolumeMount> getVolumeMounts() {
         List<VolumeMount> volumeMounts = new ArrayList<>();
         volumeMounts.add(VolumeUtils.createTempDirVolumeMount());
-        volumeMounts.add(VolumeUtils.createVolumeMount(CruiseControl.TLS_CC_CERTS_VOLUME_NAME, CruiseControl.TLS_CC_CERTS_VOLUME_MOUNT));
-        volumeMounts.add(VolumeUtils.createVolumeMount(CruiseControl.TLS_CA_CERTS_VOLUME_NAME, CruiseControl.TLS_CA_CERTS_VOLUME_MOUNT));
+
+        if (securityContext.isStrimziTlsEncryption()) {
+            // The CA certificate is used for encryption of Kafka client.
+            // The CC certificate is needed for encryption of the HTTP server.
+            // So we need both volume mounts regardless whether mTLS is enabled or not.
+            volumeMounts.add(VolumeUtils.createVolumeMount(CruiseControl.TLS_CC_CERTS_VOLUME_NAME, CruiseControl.TLS_CC_CERTS_VOLUME_MOUNT));
+            volumeMounts.add(VolumeUtils.createVolumeMount(CruiseControl.TLS_CA_CERTS_VOLUME_NAME, CruiseControl.TLS_CA_CERTS_VOLUME_MOUNT));
+        }
+
         volumeMounts.add(VolumeUtils.createVolumeMount(CruiseControl.API_AUTH_CONFIG_VOLUME_NAME, CruiseControl.API_AUTH_CONFIG_VOLUME_MOUNT));
         volumeMounts.add(VolumeUtils.createVolumeMount(CONFIG_VOLUME_NAME, CONFIG_VOLUME_MOUNT));
 
@@ -417,8 +432,9 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_STRIMZI_KAFKA_BOOTSTRAP_SERVERS, KafkaResources.bootstrapServiceName(cluster) + ":" + KafkaCluster.REPLICATION_PORT));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED, String.valueOf(gcLoggingEnabled)));
 
-        varList.add(ContainerUtils.createEnvVar(ENV_VAR_API_SSL_ENABLED, String.valueOf(this.sslEnabled)));
-        varList.add(ContainerUtils.createEnvVar(ENV_VAR_API_AUTH_ENABLED, String.valueOf(this.authEnabled)));
+        varList.add(ContainerUtils.createEnvVar(ENV_VAR_TLS_ENABLED, String.valueOf(securityContext.isStrimziTlsEncryption())));
+        varList.add(ContainerUtils.createEnvVar(ENV_VAR_MTLS_ENABLED, String.valueOf(securityContext.isStrimziMtlsAuthentication())));
+        varList.add(ContainerUtils.createEnvVar(ENV_VAR_API_AUTH_ENABLED, String.valueOf(configuration.isApiAuthEnabled())));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_API_HEALTHCHECK_USERNAME, CruiseControlApiProperties.HEALTHCHECK_USERNAME));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_API_PORT, String.valueOf(REST_API_PORT)));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_API_HEALTHCHECK_PATH, API_HEALTHCHECK_PATH));

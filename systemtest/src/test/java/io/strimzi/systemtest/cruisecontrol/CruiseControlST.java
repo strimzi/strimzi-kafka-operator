@@ -175,7 +175,6 @@ public class CruiseControlST extends AbstractST {
                 .editOrNewSpec()
                     .editCruiseControl()
                         .addToConfig("webserver.security.enable", "false")
-                        .addToConfig("webserver.ssl.enable", "false")
                     .endCruiseControl()
                 .endSpec()
                 .build());

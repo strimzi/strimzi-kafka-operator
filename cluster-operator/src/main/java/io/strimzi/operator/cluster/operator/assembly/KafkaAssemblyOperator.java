@@ -621,8 +621,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     kafkaBrokerNodes,
                     kafkaBrokerStorage,
                     kafkaBrokerResources,
-                    clusterCa
-            );
+                    clusterCa,
+                    securityContext);
         }
 
         /**
