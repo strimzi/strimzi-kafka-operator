@@ -19,6 +19,7 @@ import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.AbstractModel;
+import io.strimzi.operator.cluster.model.KafkaClusterSecurityContext;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.DeploymentOperator;
@@ -134,8 +135,8 @@ public class KafkaExporterReconcilerTest {
                 supplier,
                 kafka,
                 VERSIONS,
-                CLUSTER_CA
-        );
+                CLUSTER_CA,
+                KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
 
         Checkpoint async = context.checkpoint();
         reconciler.reconcile(false, null, null, Clock.systemUTC())
@@ -210,8 +211,8 @@ public class KafkaExporterReconcilerTest {
                 supplier,
                 kafka,
                 VERSIONS,
-                CLUSTER_CA
-        );
+                CLUSTER_CA,
+                KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
 
         Checkpoint async = context.checkpoint();
         reconciler.reconcile(false, null, null, Clock.systemUTC())
@@ -268,8 +269,8 @@ public class KafkaExporterReconcilerTest {
                 supplier,
                 KAFKA,
                 VERSIONS,
-                CLUSTER_CA
-        );
+                CLUSTER_CA,
+                KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
 
         Checkpoint async = context.checkpoint();
         reconciler.reconcile(false, null, null, Clock.systemUTC())
@@ -317,8 +318,8 @@ public class KafkaExporterReconcilerTest {
                 supplier,
                 KAFKA,
                 VERSIONS,
-                CLUSTER_CA
-        );
+                CLUSTER_CA,
+                KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
 
         Checkpoint async = context.checkpoint();
         reconciler.reconcile(false, null, null, Clock.systemUTC())
