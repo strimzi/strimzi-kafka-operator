@@ -1,0 +1,153 @@
+:_mod-docs-content-type: CONCEPT
+
+// Module included in the following assemblies:
+//
+// assembly-internal-cluster-security.adoc
+
+[id='con-internal-cluster-security-{context}']
+= Internal cluster encryption and authentication
+
+[role="_abstract"]
+Use the `strimzi.io/internal-cluster-security` annotation on the `Kafka` resource to configure encryption and authentication for internal cluster communication.
+
+The annotation controls security for the internal control plane and replication listeners and for communication involving the following components:
+
+* Kafka brokers and controllers
+* Cluster Operator
+* Topic Operator and User Operator deployed as part of the Entity Operator
+* Cruise Control
+* Kafka Exporter
+* Kafka Agent
+
+The setting also controls TLS encryption for the Cruise Control REST API.
+It does not change the HTTP Basic authentication configured separately for the Cruise Control REST API.
+
+Standalone deployments of the Topic Operator and User Operator are not affected by the annotation.
+Configure their Kafka connections separately.
+
+The annotation does not configure client listener security, which remains defined by the listener configuration in the `Kafka` resource.
+It also does not disable management of the cluster or clients CAs.
+
+NOTE: Internal cluster security is currently an *Early Access* feature and might be subject to change in future releases.
+The annotation is a temporary configuration interface and might also change.
+
+.Supported internal cluster security types
+[cols="1,1,3",options="header"]
+|===
+|Layer
+|Type
+|Description
+
+|Encryption
+|`strimzi-tls`
+|Encrypts internal communication by using Strimzi-managed TLS certificates.
+
+|Encryption
+|`none`
+|Disables TLS encryption for internal communication.
+
+|Authentication
+|`strimzi-mtls`
+|Authenticates internal components by using Strimzi-managed mTLS certificates.
+
+|Authentication
+|`none`
+|Disables mTLS authentication governed by the internal cluster security configuration.
+|===
+
+The `strimzi-mtls` authentication type requires `strimzi-tls` encryption.
+Consequently, disabling TLS encryption also requires authentication to be disabled.
+The supported combinations are TLS with mTLS, TLS without authentication, and no TLS with no authentication.
+
+WARNING: When the authentication type is `none` and Kafka authorization is configured, Strimzi automatically makes the `ANONYMOUS` user a super user so that internal components can operate.
+This gives unrestricted access to any connection that Kafka identifies as `ANONYMOUS`, including connections through an unauthenticated client listener.
+Disable authentication only if other controls, such as network isolation or a service mesh, prevent unauthorized access.
+
+== Default internal cluster security
+
+If the `strimzi.io/internal-cluster-security` annotation is not present, Strimzi uses `strimzi-tls` encryption with `strimzi-mtls` authentication.
+This behavior is unchanged from previous releases.
+
+The following explicit configuration is equivalent to omitting the annotation:
+
+.Default TLS encryption with mTLS authentication
+[source,yaml,subs="+quotes,attributes"]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+  name: my-cluster
+  annotations:
+    strimzi.io/internal-cluster-security: |
+      {
+        "encryption": {
+          "type": "strimzi-tls"
+        },
+        "authentication": {
+          "type": "strimzi-mtls"
+        }
+      }
+spec:
+  # ...
+----
+
+== Disabling mTLS authentication
+
+Set the authentication type to `none` to disable mTLS authentication while retaining TLS encryption.
+Connections governed by the internal cluster authentication setting remain encrypted, but connecting components are not authenticated with mTLS.
+Separately configured authentication, such as HTTP Basic authentication for the Cruise Control REST API, is unchanged.
+
+.TLS encryption without authentication
+[source,yaml,subs="+quotes,attributes"]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+  name: my-cluster
+  annotations:
+    strimzi.io/internal-cluster-security: |
+      {
+        "encryption": {
+          "type": "strimzi-tls"
+        },
+        "authentication": {
+          "type": "none"
+        }
+      }
+spec:
+  # ...
+----
+
+== Disabling TLS encryption and mTLS authentication
+
+Set both types to `none` to disable TLS encryption and mTLS authentication.
+Kafka protocol communication and communication with Kafka Agent are then unencrypted and unauthenticated.
+Authentication for the Cruise Control REST API remains configured separately.
+
+.Internal communication without encryption or authentication
+[source,yaml,subs="+quotes,attributes"]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+  name: my-cluster
+  annotations:
+    strimzi.io/internal-cluster-security: |
+      {
+        "encryption": {
+          "type": "none"
+        },
+        "authentication": {
+          "type": "none"
+        }
+      }
+spec:
+  # ...
+----
+
+During reconciliation, the Cluster Operator records the selected configuration in `.status.clusterSecurity` of the `Kafka` resource.
+If a subsequent annotation change does not match the recorded configuration, reconciliation fails to protect the running cluster from an incompatible change.
+To change the configuration of an existing cluster, use the required downtime procedure.
+
+Additional authentication types are planned for future releases so that internal components can authenticate without mTLS.
+These authentication types are not currently available.

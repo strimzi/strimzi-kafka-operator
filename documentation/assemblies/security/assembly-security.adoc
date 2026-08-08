@@ -5,12 +5,12 @@
 // configuring/configuring.adoc
 
 [id='security-{context}']
-= Managing TLS certificates
+= Managing internal cluster security and TLS certificates
 
 [role="_abstract"]
-Strimzi supports TLS for encrypted communication between Kafka and Strimzi components.
+By default, Strimzi uses TLS for encrypted communication between Kafka and Strimzi components.
 
-Strimzi establishes encrypted TLS connections for communication between the following components when using Kafka in KRaft mode:
+With the default internal cluster security configuration, Strimzi establishes encrypted TLS connections for communication between the following components when using Kafka in KRaft mode:
 
 * Kafka brokers
 * Kafka controllers
@@ -26,7 +26,7 @@ For more information, see xref:deploy-client-access-str[].
  
 The following diagram shows the connections for secure communication.   
 
-.Kafka communication secured by TLS encryption
+.Kafka communication secured by the default TLS encryption
 image::secure_communication_kraft.png[Secure Communication]
 
 The ports shown in the diagram are used as follows:
@@ -45,9 +45,12 @@ The listeners cannot be configured to use the ports reserved for interbroker com
 
 .Node status monitoring using the `KafkaAgent` (8443)
 
-Strimzi includes a component called `KafkaAgent` that runs inside each Kafka node. 
+Strimzi includes a component called `KafkaAgent` that runs inside each Kafka node.
 The agent is responsible for collecting and providing node-specific information, such as current state and readiness, to the Cluster Operator. 
-It listens on port 8443 for secure HTTPS connections and exposes this information through a REST API, which the Cluster Operator uses to retrieve data from the nodes.
+By default, it listens on port 8443 for HTTPS connections secured by TLS encryption and mTLS authentication.
+The security of this interface follows the internal cluster security configuration.
+
+include::assembly-internal-cluster-security.adoc[leveloffset=+1]
 
 include::../../modules/security/con-certificate-authorities.adoc[leveloffset=+1]
 
@@ -69,4 +72,3 @@ include::../../modules/security/proc-configuring-external-clients-to-trust-clust
 
 //user-supplied certs
 include::assembly-using-your-own-certificates.adoc[leveloffset=+1]
-
