@@ -29,6 +29,7 @@ import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.model.KafkaCluster;
+import io.strimzi.operator.cluster.model.KafkaClusterSecurityContext;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.NodeOperator;
@@ -937,7 +938,8 @@ public class KafkaReconcilerStatusTest {
                     Map.of(),
                     KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE,
                     VERSIONS,
-                    supplier.sharedEnvironmentProvider);
+                    supplier.sharedEnvironmentProvider,
+                    KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
         }
 
         @Override
@@ -985,7 +987,8 @@ public class KafkaReconcilerStatusTest {
                     Map.of(),
                     KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE,
                     VERSIONS,
-                    supplier.sharedEnvironmentProvider);
+                    supplier.sharedEnvironmentProvider,
+                    KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
         }
 
         @Override

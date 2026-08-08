@@ -15,6 +15,8 @@ import io.strimzi.api.kafka.model.kafka.KafkaClusterSpecBuilder;
 import io.strimzi.api.kafka.model.kafka.PersistentClaimStorageBuilder;
 import io.strimzi.api.kafka.model.kafka.SingleVolumeStorage;
 import io.strimzi.api.kafka.model.kafka.Storage;
+import io.strimzi.api.kafka.model.kafka.clustersecurity.ClusterSecurityAuthenticationType;
+import io.strimzi.api.kafka.model.kafka.clustersecurity.ClusterSecurityEncryptionType;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListener;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerConfigurationBroker;
@@ -24,8 +26,7 @@ import io.strimzi.api.kafka.model.kafka.quotas.QuotasPluginKafka;
 import io.strimzi.api.kafka.model.kafka.quotas.QuotasPluginKafkaBuilder;
 import io.strimzi.api.kafka.model.kafka.quotas.QuotasPluginStrimzi;
 import io.strimzi.api.kafka.model.kafka.quotas.QuotasPluginStrimziBuilder;
-import io.strimzi.api.kafka.model.kafka.tieredstorage.RemoteStorageManager;
-import io.strimzi.api.kafka.model.kafka.tieredstorage.TieredStorageCustom;
+import io.strimzi.api.kafka.model.kafka.tieredstorage.TieredStorageCustomBuilder;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.model.cruisecontrol.CruiseControlMetricsReporter;
 import io.strimzi.operator.cluster.model.metrics.MetricsModel;
@@ -62,14 +63,14 @@ public class KafkaBrokerConfigurationBuilderTest {
 
     @Test
     public void testBrokerId()  {
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT)
                 .build();
         // brokers don't have broker.id when in KRaft-mode, only node.id
         assertThat(configuration, not(containsString("broker.id")));
         assertThat(configuration, containsString("node.id=2"));
 
         NodeRef controller = new NodeRef("my-cluster-kafka-3", 3, "kafka", true, false);
-        configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, controller)
+        configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, controller, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT)
                 .build();
         // controllers don't have broker.id at all, only node.id
         assertThat(configuration, not(containsString("broker.id")));
@@ -85,7 +86,7 @@ public class KafkaBrokerConfigurationBuilderTest {
         );
 
         NodeRef nodeRef = nodes.stream().filter(nr -> nr.nodeId() == 2).findFirst().get();
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, nodeRef)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, nodeRef, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT)
                 .withKRaft("my-cluster", "my-namespace", nodes)
                 .build();
 
@@ -108,7 +109,7 @@ public class KafkaBrokerConfigurationBuilderTest {
 
         // Controller-only node
         NodeRef nodeRef = nodes.stream().filter(nr -> nr.nodeId() == 2).findFirst().get();
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, nodeRef)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, nodeRef, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT)
                 .withKRaft("my-cluster", "my-namespace", nodes)
                 .build();
 
@@ -119,7 +120,7 @@ public class KafkaBrokerConfigurationBuilderTest {
 
         nodeRef = nodes.stream().filter(nr -> nr.nodeId() == 11).findFirst().get();
         // Broker-only node
-        configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, nodeRef)
+        configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, nodeRef, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT)
                 .withKRaft("my-cluster", "my-namespace", nodes)
                 .build();
 
@@ -132,14 +133,14 @@ public class KafkaBrokerConfigurationBuilderTest {
     @Test
     public void testNoCruiseControl()  {
         // Broker configuration
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT)
                 .withCruiseControl("my-cluster", null, true)
                 .build();
 
         assertThat(configuration, isEquivalent("node.id=2"));
 
         // Controller configuration
-        configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
+        configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT)
                 .withCruiseControl("my-cluster", null, false)
                 .build();
 
@@ -151,7 +152,7 @@ public class KafkaBrokerConfigurationBuilderTest {
         CruiseControlMetricsReporter ccMetricsReporter = new CruiseControlMetricsReporter("strimzi.cruisecontrol.metrics", 1, 1, 1);
 
         // Broker configuration
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT)
                 .withCruiseControl("my-cluster", ccMetricsReporter, true)
                 .build();
 
@@ -171,7 +172,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 CruiseControlConfigurationParameters.METRICS_TOPIC_MIN_ISR + "=1"));
 
         // Controller configuration
-        configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
+        configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT)
                 .withCruiseControl("my-cluster", ccMetricsReporter, false)
                 .build();
 
@@ -179,11 +180,49 @@ public class KafkaBrokerConfigurationBuilderTest {
     }
 
     @Test
+    public void testCruiseControlWithoutMtls()  {
+        CruiseControlMetricsReporter ccMetricsReporter = new CruiseControlMetricsReporter("strimzi.cruisecontrol.metrics", 1, 1, 1);
+
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, new KafkaClusterSecurityContext(ClusterSecurityEncryptionType.STRIMZI_TLS, ClusterSecurityAuthenticationType.NONE))
+                .withCruiseControl("my-cluster", ccMetricsReporter, true)
+                .build();
+
+        assertThat(configuration, isEquivalent("node.id=2",
+                CruiseControlConfigurationParameters.METRICS_TOPIC_NAME + "=strimzi.cruisecontrol.metrics",
+                CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_ENDPOINT_ID_ALGO + "=HTTPS",
+                CruiseControlConfigurationParameters.METRICS_REPORTER_BOOTSTRAP_SERVERS + "=my-cluster-kafka-brokers:9091",
+                CruiseControlConfigurationParameters.METRICS_REPORTER_SECURITY_PROTOCOL + "=SSL",
+                CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_TRUSTSTORE_TYPE + "=PEM",
+                CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_TRUSTSTORE_CERTIFICATES + "=${strimzisecrets:namespace/my-cluster-trustbundle:cluster-ca.crt}",
+                CruiseControlConfigurationParameters.METRICS_TOPIC_AUTO_CREATE + "=true",
+                CruiseControlConfigurationParameters.METRICS_TOPIC_NUM_PARTITIONS + "=1",
+                CruiseControlConfigurationParameters.METRICS_TOPIC_REPLICATION_FACTOR + "=1",
+                CruiseControlConfigurationParameters.METRICS_TOPIC_MIN_ISR + "=1"));
+    }
+
+    @Test
+    public void testCruiseControlWithoutTlsOrMtls()  {
+        CruiseControlMetricsReporter ccMetricsReporter = new CruiseControlMetricsReporter("strimzi.cruisecontrol.metrics", 1, 1, 1);
+
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, new KafkaClusterSecurityContext(ClusterSecurityEncryptionType.NONE, ClusterSecurityAuthenticationType.NONE))
+                .withCruiseControl("my-cluster", ccMetricsReporter, true)
+                .build();
+
+        assertThat(configuration, isEquivalent("node.id=2",
+                CruiseControlConfigurationParameters.METRICS_TOPIC_NAME + "=strimzi.cruisecontrol.metrics",
+                CruiseControlConfigurationParameters.METRICS_REPORTER_BOOTSTRAP_SERVERS + "=my-cluster-kafka-brokers:9091",
+                CruiseControlConfigurationParameters.METRICS_TOPIC_AUTO_CREATE + "=true",
+                CruiseControlConfigurationParameters.METRICS_TOPIC_NUM_PARTITIONS + "=1",
+                CruiseControlConfigurationParameters.METRICS_TOPIC_REPLICATION_FACTOR + "=1",
+                CruiseControlConfigurationParameters.METRICS_TOPIC_MIN_ISR + "=1"));
+    }
+
+    @Test
     public void testCruiseControlCustomMetricReporterTopic()  {
         CruiseControlMetricsReporter ccMetricsReporter = new CruiseControlMetricsReporter("metric-reporter-topic", 2, 3, 4);
 
         // Broker configuration
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT)
                 .withCruiseControl("my-cluster", ccMetricsReporter, true)
                 .build();
 
@@ -203,7 +242,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 CruiseControlConfigurationParameters.METRICS_TOPIC_MIN_ISR + "=4"));
 
         // Controller configuration
-        configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
+        configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT)
                 .withCruiseControl("my-cluster", ccMetricsReporter, false)
                 .build();
 
@@ -221,7 +260,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                             .build())
                         .build(), List.of(".*"));
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT)
                 .withStrimziMetricsReporter(model)
                 .build();
 
@@ -233,7 +272,7 @@ public class KafkaBrokerConfigurationBuilderTest {
 
     @Test
     public void testNoRackAwareness()  {
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT)
                 .withRackId(null)
                 .build();
 
@@ -242,7 +281,7 @@ public class KafkaBrokerConfigurationBuilderTest {
 
     @Test
     public void testTopologyLabelRackIdInKRaftBrokers()  {
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT)
                 .withRackId(new TopologyLabelRackBuilder().withTopologyKey("failure-domain.kubernetes.io/zone").build())
                 .build();
 
@@ -252,7 +291,7 @@ public class KafkaBrokerConfigurationBuilderTest {
 
     @Test
     public void testTopologyLabelRackIdInKRaftMixedNode()  {
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, new NodeRef("my-cluster-kafka-1", 1, "kafka", true, true))
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, new NodeRef("my-cluster-kafka-1", 1, "kafka", true, true), KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT)
                 .withRackId(new TopologyLabelRackBuilder().withTopologyKey("failure-domain.kubernetes.io/zone").build())
                 .build();
 
@@ -262,7 +301,7 @@ public class KafkaBrokerConfigurationBuilderTest {
 
     @Test
     public void testTopologyLabelRackIdInKRaftControllers()  {
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, new NodeRef("my-cluster-controllers-1", 1, "controllers", true, false))
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, new NodeRef("my-cluster-controllers-1", 1, "controllers", true, false), KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT)
                 .withRackId(new TopologyLabelRackBuilder().withTopologyKey("failure-domain.kubernetes.io/zone").build())
                 .build();
 
@@ -271,7 +310,7 @@ public class KafkaBrokerConfigurationBuilderTest {
 
     @Test
     public void testEnvironmentVariableRackIdInKRaftBrokers()  {
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT)
                 .withRackId(new EnvironmentVariableRackBuilder().withEnvVarName("MY_RACK_ID").build())
                 .build();
 
@@ -281,7 +320,7 @@ public class KafkaBrokerConfigurationBuilderTest {
 
     @Test
     public void testEnvironmentVariableRackIdInKRaftMixedNode()  {
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, new NodeRef("my-cluster-kafka-1", 1, "kafka", true, true))
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, new NodeRef("my-cluster-kafka-1", 1, "kafka", true, true), KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT)
                 .withRackId(new EnvironmentVariableRackBuilder().withEnvVarName("MY_RACK_ID").build())
                 .build();
 
@@ -291,7 +330,7 @@ public class KafkaBrokerConfigurationBuilderTest {
 
     @Test
     public void testEnvironmentVariableRackIdInKRaftControllers()  {
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, new NodeRef("my-cluster-controllers-1", 1, "controllers", true, false))
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, new NodeRef("my-cluster-controllers-1", 1, "controllers", true, false), KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT)
                 .withRackId(new EnvironmentVariableRackBuilder().withEnvVarName("MY_RACK_ID").build())
                 .build();
 
@@ -300,7 +339,7 @@ public class KafkaBrokerConfigurationBuilderTest {
 
     @Test
     public void testNullAuthorization()  {
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT)
                 .withAuthorization("my-cluster", null)
                 .build();
 
@@ -313,7 +352,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .addToSuperUsers("jakub", "CN=kuba")
                 .build();
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT)
                 .withAuthorization("my-cluster", auth)
                 .build();
 
@@ -323,12 +362,27 @@ public class KafkaBrokerConfigurationBuilderTest {
     }
 
     @Test
+    public void testSimpleAuthorizationWithoutMtls()  {
+        KafkaAuthorization auth = new KafkaAuthorizationSimpleBuilder()
+                .addToSuperUsers("jakub", "CN=kuba")
+                .build();
+
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, new KafkaClusterSecurityContext(ClusterSecurityEncryptionType.STRIMZI_TLS, ClusterSecurityAuthenticationType.NONE))
+                .withAuthorization("my-cluster", auth)
+                .build();
+
+        assertThat(configuration, isEquivalent("node.id=2",
+                "authorizer.class.name=org.apache.kafka.metadata.authorizer.StandardAuthorizer",
+                "super.users=ANONYMOUS;User:jakub;User:CN=kuba"));
+    }
+
+    @Test
     public void testSimpleAuthorizationWithSuperUsersAndKRaft()  {
         KafkaAuthorization auth = new KafkaAuthorizationSimpleBuilder()
                 .addToSuperUsers("jakub", "CN=kuba")
                 .build();
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT)
                 .withAuthorization("my-cluster", auth)
                 .build();
 
@@ -339,7 +393,7 @@ public class KafkaBrokerConfigurationBuilderTest {
 
     @Test
     public void testNullUserConfiguration()  {
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT)
                 .withUserConfiguration(null, false, false, false)
                 .build();
 
@@ -357,7 +411,7 @@ public class KafkaBrokerConfigurationBuilderTest {
 
     @Test
     public void testNullUserConfigurationAndCCReporter()  {
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT)
                 .withUserConfiguration(null, true, false, false)
                 .build();
 
@@ -379,7 +433,7 @@ public class KafkaBrokerConfigurationBuilderTest {
         Map<String, Object> userConfiguration = new HashMap<>();
         KafkaConfiguration kafkaConfiguration = new KafkaConfiguration(Reconciliation.DUMMY_RECONCILIATION, userConfiguration.entrySet());
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT)
                 .withUserConfiguration(kafkaConfiguration, false, false, false)
                 .build();
 
@@ -405,7 +459,7 @@ public class KafkaBrokerConfigurationBuilderTest {
 
         KafkaConfiguration kafkaConfiguration = new KafkaConfiguration(Reconciliation.DUMMY_RECONCILIATION, userConfiguration.entrySet());
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT)
                 .withUserConfiguration(kafkaConfiguration, false, false, false)
                 .build();
 
@@ -434,7 +488,7 @@ public class KafkaBrokerConfigurationBuilderTest {
         KafkaConfiguration kafkaConfiguration = new KafkaConfiguration(Reconciliation.DUMMY_RECONCILIATION, userConfiguration.entrySet());
 
         // Broker
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT)
                 .withUserConfiguration(kafkaConfiguration, false, false, false)
                 .build();
 
@@ -451,7 +505,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "min.insync.replicas=1"));
 
         // Controller
-        configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, new NodeRef("my-cluster-kafka-3", 3, "kafka", true, false))
+        configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, new NodeRef("my-cluster-kafka-3", 3, "kafka", true, false), KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT)
                 .withUserConfiguration(kafkaConfiguration, false, false, false)
                 .build();
 
@@ -474,7 +528,7 @@ public class KafkaBrokerConfigurationBuilderTest {
         KafkaConfiguration kafkaConfiguration = new KafkaConfiguration(Reconciliation.DUMMY_RECONCILIATION, userConfiguration.entrySet());
 
         assertThrows(InvalidConfigurationException.class, () -> {
-            new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
+            new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT)
                 .withUserConfiguration(kafkaConfiguration, false, false, false)
                 .build();
         }, "InvalidConfigurationException was expected");
@@ -482,7 +536,7 @@ public class KafkaBrokerConfigurationBuilderTest {
 
     @Test
     public void testNullUserConfigurationWithJmxMetricsReporter()  {
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT)
                 .withUserConfiguration(null, false, true, false)
                 .build();
 
@@ -501,7 +555,7 @@ public class KafkaBrokerConfigurationBuilderTest {
 
     @Test
     public void testNullUserConfigurationWithStrimziMetricsReporter() {
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT)
                 .withUserConfiguration(null, false, false, true)
                 .build();
         assertThat(configuration, isEquivalent("node.id=2",
@@ -521,7 +575,7 @@ public class KafkaBrokerConfigurationBuilderTest {
 
     @Test
     public void testNullUserConfigurationWithCruiseControlAndStrimziMetricsReporters() {
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT)
                 .withUserConfiguration(null, true, false, true)
                 .build();
 
@@ -542,7 +596,7 @@ public class KafkaBrokerConfigurationBuilderTest {
 
     @Test
     public void testNullUserConfigurationWithCruiseControlAndJmxAndStrimziMetricsReporters() {
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT)
                 .withUserConfiguration(null, true, true, true)
                 .build();
 
@@ -624,7 +678,7 @@ public class KafkaBrokerConfigurationBuilderTest {
             boolean injectJmx,
             boolean injectStrimzi,
             String expectedConfig) {
-        String actualConfig = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
+        String actualConfig = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT)
                 .withUserConfiguration(userConfig, injectCruiseControl, injectJmx, injectStrimzi)
                 .build();
 
@@ -638,7 +692,7 @@ public class KafkaBrokerConfigurationBuilderTest {
         configMap.put("kafka.metrics.reporters", StrimziMetricsReporterConfig.SERVER_YAMMER_CLASS);
         KafkaConfiguration userConfig = new KafkaConfiguration(Reconciliation.DUMMY_RECONCILIATION, configMap.entrySet());
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT)
                 .withUserConfiguration(userConfig, false, false, true)
                 .build();
 
@@ -662,7 +716,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .withSizeLimit("5Gi")
                 .build();
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT)
                 .withLogDirs(VolumeUtils.createVolumeMounts(storage, false))
                 .build();
 
@@ -678,7 +732,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .withDeleteClaim(true)
                 .build();
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT)
                 .withLogDirs(VolumeUtils.createVolumeMounts(storage, false))
                 .build();
 
@@ -711,7 +765,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .withVolumes(vol1, vol2, vol5)
                 .build();
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT)
                 .withLogDirs(VolumeUtils.createVolumeMounts(storage, false))
                 .build();
 
@@ -721,7 +775,7 @@ public class KafkaBrokerConfigurationBuilderTest {
 
     @Test
     public void testWithNoListeners() {
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT)
                 .withListeners("my-cluster", "my-namespace", emptyList(), null, null)
                 .build();
 
@@ -741,6 +795,46 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "listeners=REPLICATION-9091://0.0.0.0:9091",
                 "advertised.listeners=REPLICATION-9091://my-cluster-kafka-2.my-cluster-kafka-brokers.my-namespace.svc:9091",
                 "listener.security.protocol.map=CONTROLPLANE-9090:SSL,REPLICATION-9091:SSL",
+                "inter.broker.listener.name=REPLICATION-9091",
+                "sasl.enabled.mechanisms=",
+                "ssl.endpoint.identification.algorithm=HTTPS"));
+    }
+
+    @Test
+    public void testWithNoListenersWithoutMtls() {
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, new KafkaClusterSecurityContext(ClusterSecurityEncryptionType.STRIMZI_TLS, ClusterSecurityAuthenticationType.NONE))
+                .withListeners("my-cluster", "my-namespace", emptyList(), null, null)
+                .build();
+
+        assertThat(configuration, isEquivalent("node.id=2",
+                "listener.name.controlplane-9090.ssl.keystore.certificate.chain=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.crt}",
+                "listener.name.controlplane-9090.ssl.keystore.key=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.key}",
+                "listener.name.controlplane-9090.ssl.keystore.type=PEM",
+                "listener.name.controlplane-9090.ssl.truststore.certificates=${strimzisecrets:namespace/my-cluster-trustbundle:cluster-ca.crt}",
+                "listener.name.controlplane-9090.ssl.truststore.type=PEM",
+                "listener.name.replication-9091.ssl.keystore.certificate.chain=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.crt}",
+                "listener.name.replication-9091.ssl.keystore.key=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.key}",
+                "listener.name.replication-9091.ssl.keystore.type=PEM",
+                "listener.name.replication-9091.ssl.truststore.certificates=${strimzisecrets:namespace/my-cluster-trustbundle:cluster-ca.crt}",
+                "listener.name.replication-9091.ssl.truststore.type=PEM",
+                "listeners=REPLICATION-9091://0.0.0.0:9091",
+                "advertised.listeners=REPLICATION-9091://my-cluster-kafka-2.my-cluster-kafka-brokers.my-namespace.svc:9091",
+                "listener.security.protocol.map=CONTROLPLANE-9090:SSL,REPLICATION-9091:SSL",
+                "inter.broker.listener.name=REPLICATION-9091",
+                "sasl.enabled.mechanisms=",
+                "ssl.endpoint.identification.algorithm=HTTPS"));
+    }
+
+    @Test
+    public void testWithNoListenersWithoutTlsOrMtls() {
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, new KafkaClusterSecurityContext(ClusterSecurityEncryptionType.NONE, ClusterSecurityAuthenticationType.NONE))
+                .withListeners("my-cluster", "my-namespace", emptyList(), null, null)
+                .build();
+
+        assertThat(configuration, isEquivalent("node.id=2",
+                "listeners=REPLICATION-9091://0.0.0.0:9091",
+                "advertised.listeners=REPLICATION-9091://my-cluster-kafka-2.my-cluster-kafka-brokers.my-namespace.svc:9091",
+                "listener.security.protocol.map=CONTROLPLANE-9090:PLAINTEXT,REPLICATION-9091:PLAINTEXT",
                 "inter.broker.listener.name=REPLICATION-9091",
                 "sasl.enabled.mechanisms=",
                 "ssl.endpoint.identification.algorithm=HTTPS"));
@@ -786,7 +880,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .withTls(false)
                 .build();
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT)
                 .withListeners("my-cluster", "my-namespace", asList(listener1, listener2, listener3, listener4), listenerId -> "dummy-advertised-address", listenerId -> "1919")
                 .build();
 
@@ -824,7 +918,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .withTls(false)
                 .build();
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT)
                 .withListeners("my-cluster", "my-namespace", singletonList(listener), listenerId -> "my-cluster-kafka-2.my-cluster-kafka-brokers.my-namespace.svc", listenerId -> "9092")
                 .build();
 
@@ -865,7 +959,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .build();
 
         NodeRef nodeRef = nodes.stream().filter(nr -> nr.nodeId() == 2).findFirst().get();
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, nodeRef)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, nodeRef, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT)
                 .withKRaft("my-cluster", "my-namespace", nodes)
                 .withListeners("my-cluster", "my-namespace", singletonList(listener), listenerId -> "my-cluster-kafka-2.my-cluster-kafka-brokers.my-namespace.svc", listenerId -> "9092")
                 .build();
@@ -915,7 +1009,7 @@ public class KafkaBrokerConfigurationBuilderTest {
 
         // Controller-only node
         NodeRef nodeRef = nodes.stream().filter(nr -> nr.nodeId() == 2).findFirst().get();
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, nodeRef)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, nodeRef, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT)
                 .withKRaft("my-cluster", "my-namespace", nodes)
                 .withListeners("my-cluster", "my-namespace", singletonList(listener), listenerId -> "my-cluster-controllers-2.my-cluster-kafka-brokers.my-namespace.svc", listenerId -> "9092")
                 .build();
@@ -938,7 +1032,7 @@ public class KafkaBrokerConfigurationBuilderTest {
 
         nodeRef = nodes.stream().filter(nr -> nr.nodeId() == 11).findFirst().get();
         // Broker-only node
-        configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, nodeRef)
+        configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, nodeRef, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT)
                 .withKRaft("my-cluster", "my-namespace", nodes)
                 .withListeners("my-cluster", "my-namespace", singletonList(listener), listenerId -> "my-cluster-brokers-11.my-cluster-kafka-brokers.my-namespace.svc", listenerId -> "9092")
                 .build();
@@ -978,7 +1072,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .endKafkaListenerAuthenticationScramSha512Auth()
                 .build();
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT)
                 .withListeners("my-cluster", "my-namespace", singletonList(listener), listenerId -> "dummy-advertised-address", listenerId -> "1919")
                 .build();
 
@@ -1014,7 +1108,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .withTls(true)
                 .build();
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT)
                 .withListeners("my-cluster", "my-namespace", singletonList(listener), listenerId -> "dummy-advertised-address", listenerId -> "1919")
                 .build();
 
@@ -1053,7 +1147,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .endKafkaListenerAuthenticationTlsAuth()
                 .build();
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT)
                 .withListeners("my-cluster", "my-namespace", singletonList(listener), listenerId -> "dummy-advertised-address", listenerId -> "1919")
                 .build();
 
@@ -1100,7 +1194,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .endConfiguration()
                 .build();
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT)
                 .withListeners("my-cluster", "my-namespace", singletonList(listener), listenerId -> "dummy-advertised-address", listenerId -> "1919")
                 .build();
 
@@ -1137,7 +1231,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .withTls(true)
                 .build();
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT)
                 .withListeners("my-cluster", "my-namespace", singletonList(listener), listenerId -> "dummy-advertised-address", listenerId -> "1919")
                 .build();
 
@@ -1176,7 +1270,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .endKafkaListenerAuthenticationTlsAuth()
                 .build();
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT)
                 .withListeners("my-cluster", "my-namespace", singletonList(listener), listenerId -> "dummy-advertised-address", listenerId -> "1919")
                 .build();
 
@@ -1218,7 +1312,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .endKafkaListenerAuthenticationScramSha512Auth()
                 .build();
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT)
                 .withListeners("my-cluster", "my-namespace", singletonList(listener), listenerId -> "dummy-advertised-address", listenerId -> "1919")
                 .build();
 
@@ -1262,7 +1356,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .endConfiguration()
                 .build();
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT)
                 .withListeners("my-cluster", "my-namespace", singletonList(listener), listenerId -> "dummy-advertised-address", listenerId -> "1919")
                 .build();
 
@@ -1299,7 +1393,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .withTls(true)
                 .build();
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT)
                 .withListeners("my-cluster", "my-namespace", singletonList(listener), listenerId -> "dummy-advertised-address", listenerId -> "1919")
                 .build();
 
@@ -1336,7 +1430,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .withTls(true)
                 .build();
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT)
                 .withListeners("my-cluster", "my-namespace", singletonList(listener), listenerId -> "my-lb.com", listenerId -> "9094")
                 .build();
 
@@ -1373,7 +1467,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .withTls(false)
                 .build();
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT)
                 .withListeners("my-cluster", "my-namespace", singletonList(listener), listenerId -> "dummy-advertised-address", listenerId -> "1919")
                 .build();
 
@@ -1407,7 +1501,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .withTls(true)
                 .build();
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT)
                 .withListeners("my-cluster", "my-namespace", singletonList(listener), listenerId -> "dummy-advertised-address", listenerId -> "1919")
                 .build();
 
@@ -1444,7 +1538,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .withTls(false)
                 .build();
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT)
                 .withListeners("my-cluster", "my-namespace", singletonList(listener), listenerId -> "dummy-advertised-address", listenerId -> "1919")
                 .build();
 
@@ -1478,7 +1572,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .withTls(false)
                 .build();
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT)
                 .withListeners("my-cluster", "my-namespace", singletonList(listener), listenerId -> "${strimzienv:STRIMZI_NODEPORT_DEFAULT_ADDRESS}", listenerId -> "31234")
                 .build();
 
@@ -1524,7 +1618,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .endConfiguration()
                 .build();
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT)
                 .withListeners("my-cluster", "my-namespace", singletonList(listener), listenerId -> "dummy-advertised-address", listenerId -> "1919")
                 .build();
 
@@ -1570,7 +1664,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .endConfiguration()
                 .build();
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT)
                 .withListeners("my-cluster", "my-namespace", singletonList(listener), listenerId -> "dummy-advertised-address", listenerId -> "1919")
                 .build();
 
@@ -1616,7 +1710,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .endConfiguration()
                 .build();
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT)
                 .withListeners("my-cluster", "my-namespace", singletonList(listener), listenerId -> "dummy-advertised-address", listenerId -> "1919")
                 .build();
 
@@ -1654,7 +1748,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .endKafkaListenerAuthenticationCustomAuth()
                 .build();
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT)
                 .withListeners("my-cluster", "my-namespace", singletonList(listener), listenerId -> "dummy-advertised-address", listenerId -> "1919")
                 .build();
 
@@ -1674,7 +1768,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .endKafkaListenerAuthenticationCustomAuth()
                 .build();
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT)
                 .withListeners("my-cluster", "my-namespace", singletonList(listener), listenerId -> "dummy-advertised-address", listenerId -> "1919")
                 .build();
 
@@ -1695,7 +1789,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .endKafkaListenerAuthenticationCustomAuth()
                 .build();
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT)
                 .withListeners("my-cluster", "my-namespace", singletonList(listener), listenerId -> "dummy-advertised-address", listenerId -> "1919")
                 .build();
 
@@ -1715,7 +1809,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .endKafkaListenerAuthenticationCustomAuth()
                 .build();
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT)
                 .withListeners("my-cluster", "my-namespace", singletonList(listener), listenerId -> "dummy-advertised-address", listenerId -> "1919")
                 .build();
 
@@ -1740,7 +1834,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .endKafkaListenerAuthenticationCustomAuth()
                 .build();
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT)
                 .withListeners("my-cluster", "my-namespace", singletonList(listener), listenerId -> "dummy-advertised-address", listenerId -> "1919")
                 .build();
 
@@ -1790,7 +1884,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .endKafkaListenerAuthenticationCustomAuth()
                 .build();
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT)
                 .withListeners("my-cluster", "my-namespace", singletonList(listener), listenerId -> "dummy-advertised-address", listenerId -> "1919")
                 .build();
 
@@ -1824,16 +1918,14 @@ public class KafkaBrokerConfigurationBuilderTest {
 
     @Test
     public void testWithTieredStorage() {
-        TieredStorageCustom tieredStorage = new TieredStorageCustom();
-        RemoteStorageManager rsm = new RemoteStorageManager();
-        rsm.setClassName("com.example.kafka.tiered.storage.s3.S3RemoteStorageManager");
-        rsm.setClassPath("/opt/kafka/plugins/tiered-storage-s3/*");
-        Map<String, String> rsmConfigs = new HashMap<>();
-        rsmConfigs.put("storage.bucket.name", "my-bucket");
-        rsm.setConfig(rsmConfigs);
-        tieredStorage.setRemoteStorageManager(rsm);
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
-                .withTieredStorage("test-cluster-1", tieredStorage)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT)
+                .withTieredStorage("test-cluster-1", new TieredStorageCustomBuilder()
+                        .withNewRemoteStorageManager()
+                            .withClassName("com.example.kafka.tiered.storage.s3.S3RemoteStorageManager")
+                            .withClassPath("/opt/kafka/plugins/tiered-storage-s3/*")
+                            .withConfig(Map.of("storage.bucket.name", "my-bucket"))
+                        .endRemoteStorageManager()
+                        .build())
                 .build();
 
         assertThat(configuration, isEquivalent("node.id=2",
@@ -1856,6 +1948,59 @@ public class KafkaBrokerConfigurationBuilderTest {
     }
 
     @Test
+    public void testWithTieredStorageWithoutMtls() {
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, new KafkaClusterSecurityContext(ClusterSecurityEncryptionType.STRIMZI_TLS, ClusterSecurityAuthenticationType.NONE))
+                .withTieredStorage("test-cluster-1", new TieredStorageCustomBuilder()
+                        .withNewRemoteStorageManager()
+                            .withClassName("com.example.kafka.tiered.storage.s3.S3RemoteStorageManager")
+                            .withClassPath("/opt/kafka/plugins/tiered-storage-s3/*")
+                            .withConfig(Map.of("storage.bucket.name", "my-bucket"))
+                        .endRemoteStorageManager()
+                        .build())
+                .build();
+
+        assertThat(configuration, isEquivalent("node.id=2",
+                "remote.log.storage.system.enable=true",
+                "remote.log.metadata.manager.impl.prefix=rlmm.config.",
+                "remote.log.metadata.manager.class.name=org.apache.kafka.server.log.remote.metadata.storage.TopicBasedRemoteLogMetadataManager",
+                "remote.log.metadata.manager.listener.name=REPLICATION-9091",
+                "rlmm.config.remote.log.metadata.common.client.bootstrap.servers=test-cluster-1-kafka-brokers:9091",
+                "rlmm.config.remote.log.metadata.common.client.security.protocol=SSL",
+                "rlmm.config.remote.log.metadata.common.client.ssl.truststore.certificates=${strimzisecrets:namespace/test-cluster-1-trustbundle:cluster-ca.crt}",
+                "rlmm.config.remote.log.metadata.common.client.ssl.truststore.type=PEM",
+                "remote.log.storage.manager.class.name=com.example.kafka.tiered.storage.s3.S3RemoteStorageManager",
+                "remote.log.storage.manager.class.path=/opt/kafka/plugins/tiered-storage-s3/*",
+                "remote.log.storage.manager.impl.prefix=rsm.config.",
+                "rsm.config.storage.bucket.name=my-bucket"
+        ));
+    }
+
+    @Test
+    public void testWithTieredStorageWithoutTlsOrMtls() {
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, new KafkaClusterSecurityContext(ClusterSecurityEncryptionType.NONE, ClusterSecurityAuthenticationType.NONE))
+                .withTieredStorage("test-cluster-1", new TieredStorageCustomBuilder()
+                        .withNewRemoteStorageManager()
+                            .withClassName("com.example.kafka.tiered.storage.s3.S3RemoteStorageManager")
+                            .withClassPath("/opt/kafka/plugins/tiered-storage-s3/*")
+                            .withConfig(Map.of("storage.bucket.name", "my-bucket"))
+                        .endRemoteStorageManager()
+                        .build())
+                .build();
+
+        assertThat(configuration, isEquivalent("node.id=2",
+                "remote.log.storage.system.enable=true",
+                "remote.log.metadata.manager.impl.prefix=rlmm.config.",
+                "remote.log.metadata.manager.class.name=org.apache.kafka.server.log.remote.metadata.storage.TopicBasedRemoteLogMetadataManager",
+                "remote.log.metadata.manager.listener.name=REPLICATION-9091",
+                "rlmm.config.remote.log.metadata.common.client.bootstrap.servers=test-cluster-1-kafka-brokers:9091",
+                "remote.log.storage.manager.class.name=com.example.kafka.tiered.storage.s3.S3RemoteStorageManager",
+                "remote.log.storage.manager.class.path=/opt/kafka/plugins/tiered-storage-s3/*",
+                "remote.log.storage.manager.impl.prefix=rsm.config.",
+                "rsm.config.storage.bucket.name=my-bucket"
+        ));
+    }
+
+    @Test
     public void testSimpleAuthorizationOnMigration() {
         NodeRef broker = new NodeRef("my-cluster-brokers-0", 0, "brokers", false, true);
         NodeRef controller = new NodeRef("my-cluster-controllers-1", 1, "controllers", true, false);
@@ -1863,14 +2008,14 @@ public class KafkaBrokerConfigurationBuilderTest {
         KafkaAuthorization auth = new KafkaAuthorizationSimpleBuilder()
                 .build();
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, controller)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, controller, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT)
                 .withAuthorization("my-cluster", auth)
                 .build();
         assertThat(configuration, isEquivalent("node.id=1",
                 "authorizer.class.name=org.apache.kafka.metadata.authorizer.StandardAuthorizer",
                 "super.users=User:CN=my-cluster-kafka,O=io.strimzi;User:CN=my-cluster-entity-topic-operator,O=io.strimzi;User:CN=my-cluster-entity-user-operator,O=io.strimzi;User:CN=my-cluster-kafka-exporter,O=io.strimzi;User:CN=my-cluster-cruise-control,O=io.strimzi;User:CN=cluster-operator,O=io.strimzi"));
 
-        configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, broker)
+        configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, broker, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT)
                 .withAuthorization("my-cluster", auth)
                 .build();
         assertThat(configuration, containsString("authorizer.class.name=org.apache.kafka.metadata.authorizer.StandardAuthorizer"));
@@ -1885,7 +2030,7 @@ public class KafkaBrokerConfigurationBuilderTest {
             .withMinAvailableBytesPerVolume(200000L)
             .build();
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT)
             .withQuotas("my-personal-cluster", quotasPluginStrimzi)
             .build();
 
@@ -1906,8 +2051,41 @@ public class KafkaBrokerConfigurationBuilderTest {
     }
 
     @Test
+    public void testWithStrimziQuotasWithoutMtls() {
+        QuotasPluginStrimzi quotasPluginStrimzi = new QuotasPluginStrimziBuilder().build();
+
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, new KafkaClusterSecurityContext(ClusterSecurityEncryptionType.STRIMZI_TLS, ClusterSecurityAuthenticationType.NONE))
+            .withQuotas("my-personal-cluster", quotasPluginStrimzi)
+            .build();
+
+        assertThat(configuration, isEquivalent("node.id=2",
+            "client.quota.callback.class=io.strimzi.kafka.quotas.StaticQuotaCallback",
+            "client.quota.callback.static.kafka.admin.bootstrap.servers=my-personal-cluster-kafka-brokers:9091",
+            "client.quota.callback.static.kafka.admin.security.protocol=SSL",
+            "client.quota.callback.static.kafka.admin.ssl.truststore.certificates=${strimzisecrets:namespace/my-personal-cluster-trustbundle:cluster-ca.crt}",
+            "client.quota.callback.static.kafka.admin.ssl.truststore.type=PEM",
+            "client.quota.callback.static.excluded.principal.name.list="
+        ));
+    }
+
+    @Test
+    public void testWithStrimziQuotasWithoutTlsOrMtls() {
+        QuotasPluginStrimzi quotasPluginStrimzi = new QuotasPluginStrimziBuilder().build();
+
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, new KafkaClusterSecurityContext(ClusterSecurityEncryptionType.NONE, ClusterSecurityAuthenticationType.NONE))
+            .withQuotas("my-personal-cluster", quotasPluginStrimzi)
+            .build();
+
+        assertThat(configuration, isEquivalent("node.id=2",
+            "client.quota.callback.class=io.strimzi.kafka.quotas.StaticQuotaCallback",
+            "client.quota.callback.static.kafka.admin.bootstrap.servers=my-personal-cluster-kafka-brokers:9091",
+            "client.quota.callback.static.excluded.principal.name.list="
+        ));
+    }
+
+    @Test
     public void testWithNullQuotas() {
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT)
             .withQuotas("my-personal-cluster", null)
             .build();
 
@@ -1924,7 +2102,7 @@ public class KafkaBrokerConfigurationBuilderTest {
             .withControllerMutationRate(0.5)
             .build();
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT)
             .withQuotas("my-personal-cluster", quotasPluginKafka)
             .build();
 
@@ -1934,7 +2112,7 @@ public class KafkaBrokerConfigurationBuilderTest {
 
     @Test
     public void testWithKRaftMetadataLogDir() {
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT)
                 .withKRaftMetadataLogDir("/my/kraft/metadata")
                 .build();
 
@@ -1951,7 +2129,7 @@ public class KafkaBrokerConfigurationBuilderTest {
 
         KafkaConfiguration kafkaConfiguration = new KafkaConfiguration(Reconciliation.DUMMY_RECONCILIATION, userConfiguration.entrySet());
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT)
                 .withUserConfiguration(kafkaConfiguration, false, false, false)
                 .build();
 
@@ -1972,25 +2150,25 @@ public class KafkaBrokerConfigurationBuilderTest {
     @Test
     public void testCordonedLogDirs() {
         // Latest Kafka and cordoned: cordoned.log.dirs=* should be present
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT)
                 .withCordonedLogDirs(true, KAFKA_LATEST)
                 .build();
         assertThat(configuration, containsString("cordoned.log.dirs=*"));
 
         // Latest Kafka and not cordoned: cordoned.log.dirs should not be present
-        configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
+        configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT)
                 .withCordonedLogDirs(false, KAFKA_LATEST)
                 .build();
         assertThat(configuration, not(containsString("cordoned.log.dirs")));
 
         // Oldest Kafka and cordoned: version gating prevents cordoned.log.dirs
-        configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
+        configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT)
                 .withCordonedLogDirs(true, KAFKA_OLDEST)
                 .build();
         assertThat(configuration, not(containsString("cordoned.log.dirs")));
 
         // Oldest Kafka and not cordoned: cordoned.log.dirs should not be present
-        configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
+        configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT)
                 .withCordonedLogDirs(false, KAFKA_OLDEST)
                 .build();
         assertThat(configuration, not(containsString("cordoned.log.dirs")));

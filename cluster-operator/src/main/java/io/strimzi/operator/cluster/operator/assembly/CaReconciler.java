@@ -18,6 +18,7 @@ import io.strimzi.certs.CertIssuer;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.model.CertSecretUtils;
+import io.strimzi.operator.cluster.model.KafkaClusterSecurityContext;
 import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.cluster.model.NodeRef;
 import io.strimzi.operator.cluster.model.RestartReason;
@@ -80,6 +81,7 @@ public class CaReconciler {
     private final OwnerReference ownerRef;
     private final CaConfig clusterCaConfig;
     private final CaConfig clientsCaConfig;
+    private final KafkaClusterSecurityContext securityContext;
 
     // Fields used to store state during the reconciliation
     private Ca clusterCa;
@@ -99,6 +101,7 @@ public class CaReconciler {
      * @param supplier          Supplier with Kubernetes Resource Operators
      * @param certIssuer        Certificate Issuer for issuing certificates
      * @param passwordGenerator Password generator for generating passwords
+     * @param securityContext   Kafka cluster security context
      */
     public CaReconciler(
             Reconciliation reconciliation,
@@ -106,7 +109,8 @@ public class CaReconciler {
             ClusterOperatorConfig config,
             ResourceOperatorSupplier supplier,
             CertIssuer certIssuer,
-            PasswordGenerator passwordGenerator
+            PasswordGenerator passwordGenerator,
+            KafkaClusterSecurityContext securityContext
     ) {
         this.reconciliation = reconciliation;
         this.operationTimeoutMs = config.getOperationTimeoutMs();
@@ -134,6 +138,7 @@ public class CaReconciler {
                 .build();
         this.clusterCaConfig = new CaConfig(kafkaCr.getSpec().getClusterCa(), config.isPkcs12KeystoreGeneration());
         this.clientsCaConfig = new CaConfig(kafkaCr.getSpec().getClientsCa(), config.isPkcs12KeystoreGeneration());
+        this.securityContext = securityContext;
     }
 
     /**
@@ -299,7 +304,7 @@ public class CaReconciler {
     Future<Void> maybeRollingUpdateForNewClusterCaKey() {
         if (clusterCa.keyReplaced() || isClusterCaNeedFullTrust) {
             RestartReason restartReason = RestartReason.CLUSTER_CA_CERT_KEY_REPLACED;
-            Identity coIdentity = new Identity(new PemTrustSet(clusterCaCertSecret), PemAuthIdentity.clusterOperator(coSecret));
+            Identity coIdentity = createCoIdentity();
             return patchClusterCaKeyGenerationAndReturnNodes()
                     .compose(nodes -> rollKafkaBrokers(nodes, RestartReasons.of(restartReason), coIdentity))
                     .compose(i -> rollDeploymentIfExists(KafkaResources.entityOperatorDeploymentName(reconciliation.name()), restartReason))
@@ -480,6 +485,18 @@ public class CaReconciler {
         } else {
             return Future.succeededFuture();
         }
+    }
+
+    /**
+     * Creates the CO identity for connecting to the operands
+     *
+     * @return  Cluster operator identity
+     */
+    private Identity createCoIdentity() {
+        return new Identity(
+                securityContext.isStrimziTlsEncryption() ? new PemTrustSet(clusterCaCertSecret) : null,
+                securityContext.isStrimziMtlsAuthentication() ? PemAuthIdentity.clusterOperator(coSecret) : null
+        );
     }
 
     /**

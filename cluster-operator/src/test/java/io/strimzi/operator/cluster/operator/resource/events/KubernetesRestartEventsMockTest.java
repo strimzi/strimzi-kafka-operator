@@ -40,6 +40,7 @@ import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.model.KafkaCluster;
+import io.strimzi.operator.cluster.model.KafkaClusterSecurityContext;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.PodRevision;
 import io.strimzi.operator.cluster.model.RestartReason;
@@ -262,7 +263,7 @@ public class KubernetesRestartEventsMockTest {
                 Map.of(),
                 KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE,
                 VERSIONS,
-                supplier.sharedEnvironmentProvider);
+                supplier.sharedEnvironmentProvider, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
         KafkaReconciler lowerVolumes = new KafkaReconciler(reconciliation,
                 kafka,
                 List.of(kafkaNodePool),
@@ -307,7 +308,7 @@ public class KubernetesRestartEventsMockTest {
                 Map.of(),
                 KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE,
                 VERSIONS,
-                supplier.sharedEnvironmentProvider);
+                supplier.sharedEnvironmentProvider, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
         KafkaReconciler reconciler = new KafkaReconciler(reconciliation,
                 kafka,
                 List.of(kafkaNodePool),
@@ -338,7 +339,7 @@ public class KubernetesRestartEventsMockTest {
                 Map.of(),
                 KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE,
                 VERSIONS,
-                supplier.sharedEnvironmentProvider);
+                supplier.sharedEnvironmentProvider, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
         KafkaReconciler reconciler = new KafkaReconciler(reconciliation,
                 kafka,
                 List.of(kafkaNodePool),
@@ -369,7 +370,7 @@ public class KubernetesRestartEventsMockTest {
                 Map.of(),
                 KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE,
                 VERSIONS,
-                supplier.sharedEnvironmentProvider);
+                supplier.sharedEnvironmentProvider, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
         KafkaReconciler reconciler = new KafkaReconciler(reconciliation,
                 kafka,
                 List.of(kafkaNodePool),
@@ -390,7 +391,7 @@ public class KubernetesRestartEventsMockTest {
         // Force replace ca key
         patchClusterCaKeySecretWithAnnotation(ResourceAnnotations.ANNO_STRIMZI_IO_FORCE_REPLACE, "true");
 
-        CaReconciler reconciler = new CaReconciler(reconciliation, kafka, clusterOperatorConfig, supplier, mockCertIssuer, passwordGenerator);
+        CaReconciler reconciler = new CaReconciler(reconciliation, kafka, clusterOperatorConfig, supplier, mockCertIssuer, passwordGenerator, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
         reconciler.reconcile(Clock.systemUTC()).onComplete(verifyEventPublished(CLUSTER_CA_CERT_KEY_REPLACED, context));
     }
 
@@ -406,7 +407,7 @@ public class KubernetesRestartEventsMockTest {
                 Map.of(),
                 KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE,
                 VERSIONS,
-                supplier.sharedEnvironmentProvider);
+                supplier.sharedEnvironmentProvider, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
         KafkaReconciler reconciler = new KafkaReconciler(reconciliation,
                 kafka,
                 List.of(kafkaNodePool),
@@ -472,7 +473,7 @@ public class KubernetesRestartEventsMockTest {
                     Map.of(),
                     KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE,
                     VERSIONS,
-                    supplier.sharedEnvironmentProvider);
+                    supplier.sharedEnvironmentProvider, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
             KafkaReconciler reconciler = new KafkaReconciler(reconciliation,
                     kafka,
                     List.of(kafkaNodePool),
@@ -535,7 +536,7 @@ public class KubernetesRestartEventsMockTest {
                 Map.of(),
                 KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE,
                 VERSIONS,
-                supplier.sharedEnvironmentProvider);
+                supplier.sharedEnvironmentProvider, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
         KafkaReconciler reconciler = new KafkaReconciler(reconciliation,
                 kafka,
                 List.of(kafkaNodePool),
@@ -578,7 +579,7 @@ public class KubernetesRestartEventsMockTest {
                 Map.of(),
                 KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE,
                 VERSIONS,
-                supplier.sharedEnvironmentProvider);
+                supplier.sharedEnvironmentProvider, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
         return new KafkaReconciler(reconciliation,
                 kafka,
                 List.of(kafkaNodePool),

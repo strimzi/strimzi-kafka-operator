@@ -76,16 +76,9 @@ else
   fi
 fi
 
-# Generate the Kafka Agent configuration file
-echo ""
-echo "Preparing Kafka Agent configuration"
-rm -f /tmp/kafka-agent.properties
-NAMESPACE=$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace)
-cat <<EOF > /tmp/kafka-agent.properties
-sslTrustStoreSecretName=${KAFKA_CLUSTER_NAME}-cluster-ca-cert
-sslKeyStoreSecretName=${HOSTNAME}
-namespace=${NAMESPACE}
-EOF
+# Prepare and log the Kafka Agent configuration file
+echo "Starting Kafka Agent with configuration:"
+tee /tmp/kafka-agent.properties < "$KAFKA_HOME/custom-config/agent.config"
 echo ""
 
 KAFKA_OPTS="${KAFKA_OPTS} -javaagent:$(ls "$KAFKA_HOME"/libs/kafka-agent*.jar)=/tmp/kafka-agent.properties"
