@@ -122,21 +122,23 @@ public class EntityOperator extends AbstractModel {
      * @param kafkaAssembly                 Desired resource with cluster configuration containing the Entity Operator one
      * @param sharedEnvironmentProvider     Shared environment provider
      * @param config                        Cluster Operator configuration
+     * @param securityContext               Kafka Cluster Security Context
      *
-     * @return Entity Operator instance, null if not configured in the ConfigMap
+     * @return  Entity Operator instance, null if not configured in the ConfigMap
      */
     public static EntityOperator fromCrd(Reconciliation reconciliation,
                                          Kafka kafkaAssembly,
                                          SharedEnvironmentProvider sharedEnvironmentProvider,
-                                         ClusterOperatorConfig config) {
+                                         ClusterOperatorConfig config,
+                                         KafkaClusterSecurityContext securityContext) {
         EntityOperatorSpec entityOperatorSpec = kafkaAssembly.getSpec().getEntityOperator();
 
         if (entityOperatorSpec != null
                 && (entityOperatorSpec.getUserOperator() != null || entityOperatorSpec.getTopicOperator() != null)) {
             EntityOperator result = new EntityOperator(reconciliation, kafkaAssembly, sharedEnvironmentProvider);
 
-            EntityTopicOperator topicOperator = EntityTopicOperator.fromCrd(reconciliation, kafkaAssembly, sharedEnvironmentProvider, config);
-            EntityUserOperator userOperator = EntityUserOperator.fromCrd(reconciliation, kafkaAssembly, sharedEnvironmentProvider, config);
+            EntityTopicOperator topicOperator = EntityTopicOperator.fromCrd(reconciliation, kafkaAssembly, sharedEnvironmentProvider, config, securityContext);
+            EntityUserOperator userOperator = EntityUserOperator.fromCrd(reconciliation, kafkaAssembly, sharedEnvironmentProvider, config, securityContext);
 
             result.topicOperator = topicOperator;
             result.cruiseControlEnabled = kafkaAssembly.getSpec().getCruiseControl() != null;

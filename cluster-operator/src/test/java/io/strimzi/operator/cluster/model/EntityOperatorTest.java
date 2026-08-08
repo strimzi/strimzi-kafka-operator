@@ -110,7 +110,7 @@ public class EntityOperatorTest {
             .endEntityOperator()
             .endSpec()
             .build();
-    private static final EntityOperator ENTITY_OPERATOR = EntityOperator.fromCrd(new Reconciliation("test", KAFKA.getKind(), KAFKA.getMetadata().getNamespace(), KAFKA.getMetadata().getName()), KAFKA, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig());
+    private static final EntityOperator ENTITY_OPERATOR = EntityOperator.fromCrd(new Reconciliation("test", KAFKA.getKind(), KAFKA.getMetadata().getNamespace(), KAFKA.getMetadata().getName()), KAFKA, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig(), KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
 
     @AfterAll
     public static void cleanUp() {
@@ -132,7 +132,7 @@ public class EntityOperatorTest {
             kafka = KAFKA;
         }
 
-        EntityOperator eo = EntityOperator.fromCrd(new Reconciliation("test", "Kafka", NAMESPACE, CLUSTER_NAME), kafka, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig());
+        EntityOperator eo = EntityOperator.fromCrd(new Reconciliation("test", "Kafka", NAMESPACE, CLUSTER_NAME), kafka, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig(), KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
         Deployment dep = eo.generateDeployment(Map.of(), true, null, null);
 
         List<Container> containers = dep.getSpec().getTemplate().getSpec().getContainers();
@@ -172,7 +172,7 @@ public class EntityOperatorTest {
                 .endSpec()
                 .build();
 
-        EntityOperator entityOperator = EntityOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig());
+        EntityOperator entityOperator = EntityOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig(), KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
 
         assertThat(entityOperator, is(nullValue()));
     }
@@ -188,7 +188,7 @@ public class EntityOperatorTest {
                 .endSpec()
                 .build();
 
-        EntityOperator entityOperator = EntityOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig());
+        EntityOperator entityOperator = EntityOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig(), KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
 
         assertThat(entityOperator.topicOperator(), is(nullValue()));
         assertThat(entityOperator.userOperator(), is(notNullValue()));
@@ -205,7 +205,7 @@ public class EntityOperatorTest {
                 .endSpec()
                 .build();
 
-        EntityOperator entityOperator = EntityOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig());
+        EntityOperator entityOperator = EntityOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig(), KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
 
         assertThat(entityOperator.topicOperator(), is(notNullValue()));
         assertThat(entityOperator.userOperator(), is(nullValue()));
@@ -213,7 +213,7 @@ public class EntityOperatorTest {
 
     @Test
     public void withAffinityAndTolerations() throws IOException {
-        ResourceTester<Kafka, EntityOperator> helper = new ResourceTester<>(Kafka.class, VERSIONS, (kAssembly, versions) -> EntityOperator.fromCrd(new Reconciliation("test", KAFKA.getKind(), KAFKA.getMetadata().getNamespace(), KAFKA.getMetadata().getName()), kAssembly, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig()), this.getClass().getSimpleName() + ".withAffinityAndTolerations");
+        ResourceTester<Kafka, EntityOperator> helper = new ResourceTester<>(Kafka.class, VERSIONS, (kAssembly, versions) -> EntityOperator.fromCrd(new Reconciliation("test", KAFKA.getKind(), KAFKA.getMetadata().getNamespace(), KAFKA.getMetadata().getName()), kAssembly, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig(), KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT), this.getClass().getSimpleName() + ".withAffinityAndTolerations");
         helper.assertDesiredModel("-DeploymentAffinity.yaml", zc -> zc.generateDeployment(Map.of(), true, null, null).getSpec().getTemplate().getSpec().getAffinity());
         helper.assertDesiredModel("-DeploymentTolerations.yaml", zc -> zc.generateDeployment(Map.of(), true, null, null).getSpec().getTemplate().getSpec().getTolerations());
     }
@@ -326,7 +326,7 @@ public class EntityOperatorTest {
                 .endSpec()
                 .build();
 
-        EntityOperator entityOperator = EntityOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig());
+        EntityOperator entityOperator = EntityOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig(), KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
 
         // Check Deployment
         Deployment dep = entityOperator.generateDeployment(Map.of(), true, null, null);
@@ -377,7 +377,7 @@ public class EntityOperatorTest {
                 .endSpec()
                 .build();
 
-        EntityOperator eo = EntityOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig());
+        EntityOperator eo = EntityOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig(), KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
 
         Deployment dep = eo.generateDeployment(Map.of(), true, null, null);
         assertThat(dep.getSpec().getTemplate().getSpec().getTerminationGracePeriodSeconds(), is(123L));
@@ -406,7 +406,7 @@ public class EntityOperatorTest {
                 .endSpec()
                 .build();
 
-        EntityOperator eo = EntityOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig());
+        EntityOperator eo = EntityOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig(), KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
 
         Deployment dep = eo.generateDeployment(Map.of(), true, null, null);
         assertThat(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().size(), is(2));
@@ -446,7 +446,7 @@ public class EntityOperatorTest {
                 .endSpec()
                 .build();
 
-        EntityOperator eo = EntityOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig());
+        EntityOperator eo = EntityOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig(), KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
 
         Deployment dep = eo.generateDeployment(Map.of(), true, null, singletonList(secret1));
         assertThat(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().size(), is(1));
@@ -474,7 +474,7 @@ public class EntityOperatorTest {
                 .endSpec()
                 .build();
 
-        EntityOperator eo = EntityOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig());
+        EntityOperator eo = EntityOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig(), KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
 
         Deployment dep = eo.generateDeployment(Map.of(), true, null, null);
         assertThat(dep.getSpec().getTemplate().getSpec().getSecurityContext(), is(notNullValue()));
@@ -553,7 +553,7 @@ public class EntityOperatorTest {
                 .endSpec()
                 .build();
 
-        List<EnvVar> containerEnvVars = EntityOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig()).topicOperator().getEnvVars();
+        List<EnvVar> containerEnvVars = EntityOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig(), KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT).topicOperator().getEnvVars();
 
         assertThat("Failed to correctly set container environment variable: " + testEnvOneKey,
                 containerEnvVars.stream().filter(env -> testEnvOneKey.equals(env.getName()))
@@ -593,7 +593,7 @@ public class EntityOperatorTest {
                 .endSpec()
                 .build();
 
-        List<EnvVar> containerEnvVars = EntityOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig()).topicOperator().getEnvVars();
+        List<EnvVar> containerEnvVars = EntityOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig(), KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT).topicOperator().getEnvVars();
 
         assertThat("Failed to prevent over writing existing container environment variable: " + testEnvOneKey,
                 containerEnvVars.stream().filter(env -> testEnvOneKey.equals(env.getName()))
@@ -634,7 +634,7 @@ public class EntityOperatorTest {
                 .endSpec()
                 .build();
 
-        List<EnvVar> containerEnvVars = EntityOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig()).userOperator().getEnvVars();
+        List<EnvVar> containerEnvVars = EntityOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig(), KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT).userOperator().getEnvVars();
 
         assertThat("Failed to correctly set container environment variable: " + testEnvOneKey,
                 containerEnvVars.stream().filter(env -> testEnvOneKey.equals(env.getName()))
@@ -668,7 +668,7 @@ public class EntityOperatorTest {
                 .build();
 
         List<EnvVar> containerEnvVars = EntityOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), 
-            resource.getMetadata().getName()), resource, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig()).userOperator().getEnvVars();
+            resource.getMetadata().getName()), resource, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig(), KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT).userOperator().getEnvVars();
         
         assertThat("Failed to prevent over writing existing container environment variable: " + testEnvTwoKey,
                 containerEnvVars.stream().filter(env -> testEnvTwoKey.equals(env.getName()))
@@ -699,7 +699,7 @@ public class EntityOperatorTest {
                 .endSpec()
                 .build();
 
-        EntityOperator eo =  EntityOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig());
+        EntityOperator eo =  EntityOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig(), KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
         Deployment deployment = eo.generateDeployment(Map.of(), false, null, null);
 
         assertThat(deployment.getSpec().getTemplate().getSpec().getContainers(),
@@ -733,7 +733,7 @@ public class EntityOperatorTest {
                 .endSpec()
                 .build();
 
-        EntityOperator eo =  EntityOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig());
+        EntityOperator eo =  EntityOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig(), KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
         Deployment deployment = eo.generateDeployment(Map.of(), false, null, null);
 
         assertThat(deployment.getSpec().getTemplate().getSpec().getContainers(),
@@ -877,7 +877,7 @@ public class EntityOperatorTest {
                 .endSpec()
                 .build();
 
-        EntityOperator eo =  EntityOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig());
+        EntityOperator eo =  EntityOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig(), KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
 
         NetworkPolicy np = eo.generateNetworkPolicy();
         assertThat(np.getSpec().getIngress().stream().filter(ing -> ing.getPorts().get(0).getPort().equals(new IntOrString(EntityTopicOperator.HEALTHCHECK_PORT))).findFirst().orElse(null), is(notNullValue()));
@@ -900,7 +900,7 @@ public class EntityOperatorTest {
                 .endSpec()
                 .build();
 
-        EntityOperator eo =  EntityOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig());
+        EntityOperator eo =  EntityOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig(), KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
 
         NetworkPolicy np = eo.generateNetworkPolicy();
         assertThat(np.getSpec().getIngress().stream().filter(ing -> ing.getPorts().get(0).getPort().equals(new IntOrString(EntityUserOperator.HEALTHCHECK_PORT))).findFirst().orElse(null), is(notNullValue()));
@@ -925,7 +925,7 @@ public class EntityOperatorTest {
                 .with(ClusterOperatorConfig.FEATURE_GATES.key(), "-UseConnectBuildWithBuildah")
                 .build();
 
-        EntityOperator eo = EntityOperator.fromCrd(new Reconciliation("test", KAFKA.getKind(), KAFKA.getMetadata().getNamespace(), KAFKA.getMetadata().getName()), KAFKA, SHARED_ENV_PROVIDER, config);
+        EntityOperator eo = EntityOperator.fromCrd(new Reconciliation("test", KAFKA.getKind(), KAFKA.getMetadata().getNamespace(), KAFKA.getMetadata().getName()), KAFKA, SHARED_ENV_PROVIDER, config, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
         Deployment dep = eo.generateDeployment(Map.of(), false, null, null);
 
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv().stream().filter(env -> "STRIMZI_FEATURE_GATES".equals(env.getName())).map(EnvVar::getValue).findFirst().orElseThrow(), is("-UseConnectBuildWithBuildah"));
@@ -934,7 +934,7 @@ public class EntityOperatorTest {
 
     @Test
     public void testSecurityProvider() {
-        EntityOperator eo = EntityOperator.fromCrd(new Reconciliation("test", KAFKA.getKind(), KAFKA.getMetadata().getNamespace(), KAFKA.getMetadata().getName()), KAFKA, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig());
+        EntityOperator eo = EntityOperator.fromCrd(new Reconciliation("test", KAFKA.getKind(), KAFKA.getMetadata().getNamespace(), KAFKA.getMetadata().getName()), KAFKA, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig(), KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
         eo.securityProvider = new TestPodSecurityProvider();
         eo.securityProvider.configure(new PlatformFeaturesAvailability(false, KubernetesVersion.MINIMAL_SUPPORTED_VERSION));
 

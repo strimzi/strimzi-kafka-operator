@@ -18,6 +18,8 @@ import io.strimzi.api.kafka.model.kafka.KafkaAuthorizationCustomBuilder;
 import io.strimzi.api.kafka.model.kafka.KafkaAuthorizationSimple;
 import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
+import io.strimzi.api.kafka.model.kafka.clustersecurity.ClusterSecurityAuthenticationType;
+import io.strimzi.api.kafka.model.kafka.clustersecurity.ClusterSecurityEncryptionType;
 import io.strimzi.api.kafka.model.kafka.entityoperator.EntityUserOperatorSpec;
 import io.strimzi.api.kafka.model.kafka.entityoperator.EntityUserOperatorSpecBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
@@ -32,6 +34,7 @@ import org.junit.jupiter.api.Test;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -41,6 +44,9 @@ public class EntityUserOperatorTest {
     private static final SharedEnvironmentProvider SHARED_ENV_PROVIDER = new MockSharedEnvironmentProvider();
     private static final String NAMESPACE = "my-namespace";
     private static final String CLUSTER_NAME = "my-cluster";
+    private static final Set<String> SECURITY_ENV_VAR_NAMES = Set.of(
+            EntityUserOperator.ENV_VAR_CLUSTER_CA_CERT_SECRET_NAME,
+            EntityUserOperator.ENV_VAR_EO_KEY_SECRET_NAME);
     private static final Kafka KAFKA = new KafkaBuilder()
             .withNewMetadata()
                 .withNamespace(NAMESPACE)
@@ -96,11 +102,35 @@ public class EntityUserOperatorTest {
                 .endEntityOperator()
             .endSpec()
             .build();
-    private static final EntityUserOperator EUO = EntityUserOperator.fromCrd(new Reconciliation("test", KAFKA.getKind(), KAFKA.getMetadata().getNamespace(), KAFKA.getMetadata().getName()), KAFKA, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig());
+    private static final EntityUserOperator EUO = EntityUserOperator.fromCrd(new Reconciliation("test", KAFKA.getKind(), KAFKA.getMetadata().getNamespace(), KAFKA.getMetadata().getName()), KAFKA, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig(), KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
 
     @Test
     public void testEnvVars()   {
         checkEnvVars(getExpectedEnvVars(), EUO.getEnvVars());
+    }
+
+    @Test
+    public void testSecurityEnvVarsWithTlsAndMtls() {
+        KafkaClusterSecurityContext securityContext = new KafkaClusterSecurityContext(ClusterSecurityEncryptionType.STRIMZI_TLS, ClusterSecurityAuthenticationType.STRIMZI_MTLS);
+
+        assertThat(getSecurityEnvVars(securityContext), is(List.of(
+                new EnvVarBuilder().withName(EntityUserOperator.ENV_VAR_CLUSTER_CA_CERT_SECRET_NAME).withValue(KafkaCluster.clusterCaCertSecretName(CLUSTER_NAME)).build(),
+                new EnvVarBuilder().withName(EntityUserOperator.ENV_VAR_EO_KEY_SECRET_NAME).withValue(KafkaResources.entityUserOperatorSecretName(CLUSTER_NAME)).build())));
+    }
+
+    @Test
+    public void testSecurityEnvVarsWithTlsWithoutAuthentication() {
+        KafkaClusterSecurityContext securityContext = new KafkaClusterSecurityContext(ClusterSecurityEncryptionType.STRIMZI_TLS, ClusterSecurityAuthenticationType.NONE);
+
+        assertThat(getSecurityEnvVars(securityContext), is(List.of(
+                new EnvVarBuilder().withName(EntityUserOperator.ENV_VAR_CLUSTER_CA_CERT_SECRET_NAME).withValue(KafkaCluster.clusterCaCertSecretName(CLUSTER_NAME)).build())));
+    }
+
+    @Test
+    public void testSecurityEnvVarsWithoutEncryptionOrAuthentication() {
+        KafkaClusterSecurityContext securityContext = new KafkaClusterSecurityContext(ClusterSecurityEncryptionType.NONE, ClusterSecurityAuthenticationType.NONE);
+
+        assertThat(getSecurityEnvVars(securityContext), is(List.of()));
     }
 
     @Test
@@ -148,7 +178,7 @@ public class EntityUserOperatorTest {
                 .endSpec()
                 .build();
 
-        return EntityUserOperator.fromCrd(new Reconciliation("test", kafka.getKind(), kafka.getMetadata().getNamespace(), kafka.getMetadata().getName()), kafka, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig());
+        return EntityUserOperator.fromCrd(new Reconciliation("test", kafka.getKind(), kafka.getMetadata().getNamespace(), kafka.getMetadata().getName()), kafka, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig(), KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
     }
 
     @Test
@@ -162,7 +192,7 @@ public class EntityUserOperatorTest {
                 .endSpec()
                 .build();
 
-        EntityUserOperator entityUserOperator = EntityUserOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig());
+        EntityUserOperator entityUserOperator = EntityUserOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig(), KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
 
         assertThat(entityUserOperator.watchedNamespace(), is(NAMESPACE));
         assertThat(entityUserOperator.getImage(), is("quay.io/strimzi/operator:latest"));
@@ -183,7 +213,7 @@ public class EntityUserOperatorTest {
                     .withEntityOperator(null)
                 .endSpec()
                 .build();
-        EntityUserOperator entityUserOperator = EntityUserOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig());
+        EntityUserOperator entityUserOperator = EntityUserOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig(), KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
 
         assertThat(entityUserOperator, is(nullValue()));
     }
@@ -196,7 +226,7 @@ public class EntityUserOperatorTest {
                     .endEntityOperator()
                 .endSpec()
                 .build();
-        EntityUserOperator entityUserOperator = EntityUserOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig());
+        EntityUserOperator entityUserOperator = EntityUserOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig(), KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
 
         assertThat(entityUserOperator, is(nullValue()));
     }
@@ -235,7 +265,7 @@ public class EntityUserOperatorTest {
                     .endClientsCa()
                 .endSpec()
                 .build();
-        EntityUserOperator entityUserOperator = EntityUserOperator.fromCrd(new Reconciliation("test", KAFKA.getKind(), KAFKA.getMetadata().getNamespace(), KAFKA.getMetadata().getName()), customValues, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig());
+        EntityUserOperator entityUserOperator = EntityUserOperator.fromCrd(new Reconciliation("test", KAFKA.getKind(), KAFKA.getMetadata().getNamespace(), KAFKA.getMetadata().getName()), customValues, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig(), KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
 
         Kafka defaultValues = new KafkaBuilder(KAFKA)
                 .editSpec()
@@ -245,7 +275,7 @@ public class EntityUserOperatorTest {
                     .endEntityOperator()
                 .endSpec()
                 .build();
-        EntityUserOperator entityUserOperator2 = EntityUserOperator.fromCrd(new Reconciliation("test", KAFKA.getKind(), KAFKA.getMetadata().getNamespace(), KAFKA.getMetadata().getName()), defaultValues, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig());
+        EntityUserOperator entityUserOperator2 = EntityUserOperator.fromCrd(new Reconciliation("test", KAFKA.getKind(), KAFKA.getMetadata().getNamespace(), KAFKA.getMetadata().getName()), defaultValues, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig(), KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
 
         assertThat(entityUserOperator.clientsCaValidityDays, is(42));
         assertThat(entityUserOperator.clientsCaRenewalDays, is(69));
@@ -307,7 +337,7 @@ public class EntityUserOperatorTest {
                     .endEntityOperator()
                 .endSpec()
                 .build();
-        EntityUserOperator f = EntityUserOperator.fromCrd(new Reconciliation("test", KAFKA.getKind(), KAFKA.getMetadata().getNamespace(), KAFKA.getMetadata().getName()), kafkaAssembly, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig());
+        EntityUserOperator f = EntityUserOperator.fromCrd(new Reconciliation("test", KAFKA.getKind(), KAFKA.getMetadata().getNamespace(), KAFKA.getMetadata().getName()), kafkaAssembly, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig(), KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
 
         assertThat(f.getEnvVars()
                     .stream()
@@ -328,7 +358,7 @@ public class EntityUserOperatorTest {
                     .endEntityOperator()
                 .endSpec()
                 .build();
-        EntityUserOperator f = EntityUserOperator.fromCrd(new Reconciliation("test", KAFKA.getKind(), KAFKA.getMetadata().getNamespace(), KAFKA.getMetadata().getName()), kafkaAssembly, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig());
+        EntityUserOperator f = EntityUserOperator.fromCrd(new Reconciliation("test", KAFKA.getKind(), KAFKA.getMetadata().getNamespace(), KAFKA.getMetadata().getName()), kafkaAssembly, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig(), KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
 
         assertThat(f.getEnvVars().stream().anyMatch(a -> EntityUserOperator.ENV_VAR_MAINTENANCE_TIME_WINDOWS.equals(a.getName())), is(false));
 
@@ -337,7 +367,7 @@ public class EntityUserOperatorTest {
                     .withMaintenanceTimeWindows("* * 8-10 * * ?", "* * 14-15 * * ?")
                 .endSpec()
                 .build();
-        f = EntityUserOperator.fromCrd(new Reconciliation("test", KAFKA.getKind(), KAFKA.getMetadata().getNamespace(), KAFKA.getMetadata().getName()), kafkaAssembly, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig());
+        f = EntityUserOperator.fromCrd(new Reconciliation("test", KAFKA.getKind(), KAFKA.getMetadata().getNamespace(), KAFKA.getMetadata().getName()), kafkaAssembly, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig(), KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
 
         assertThat(f.getEnvVars().stream().filter(a -> EntityUserOperator.ENV_VAR_MAINTENANCE_TIME_WINDOWS.equals(a.getName())).findFirst().orElseThrow().getValue(), is("* * 8-10 * * ?;* * 14-15 * * ?"));
     }
@@ -352,7 +382,7 @@ public class EntityUserOperatorTest {
                     .endEntityOperator()
                 .endSpec()
                 .build();
-        EntityUserOperator entityUserOperator = EntityUserOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig());
+        EntityUserOperator entityUserOperator = EntityUserOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig(), KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
 
         assertThat(entityUserOperator.watchedNamespace(), is(NAMESPACE));
     }
@@ -368,14 +398,14 @@ public class EntityUserOperatorTest {
                     .endEntityOperator()
                 .endSpec()
                 .build();
-        EntityUserOperator entityUserOperator = EntityUserOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig());
+        EntityUserOperator entityUserOperator = EntityUserOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig(), KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
 
         assertThat(entityUserOperator.watchedNamespace(), is("some-other-namespace"));
     }
 
     @Test
     public void testSecurityProvider() {
-        EntityUserOperator euo = EntityUserOperator.fromCrd(new Reconciliation("test", KAFKA.getKind(), KAFKA.getMetadata().getNamespace(), KAFKA.getMetadata().getName()), KAFKA, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig());
+        EntityUserOperator euo = EntityUserOperator.fromCrd(new Reconciliation("test", KAFKA.getKind(), KAFKA.getMetadata().getNamespace(), KAFKA.getMetadata().getName()), KAFKA, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig(), KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
         euo.securityProvider = new TestPodSecurityProvider();
         euo.securityProvider.configure(new PlatformFeaturesAvailability(false, KubernetesVersion.MINIMAL_SUPPORTED_VERSION));
 
@@ -389,6 +419,14 @@ public class EntityUserOperatorTest {
     ////////////////////
     // Utility methods
     ////////////////////
+
+    private List<EnvVar> getSecurityEnvVars(KafkaClusterSecurityContext securityContext) {
+        EntityUserOperator entityUserOperator = EntityUserOperator.fromCrd(new Reconciliation("test", KAFKA.getKind(), NAMESPACE, CLUSTER_NAME), KAFKA, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig(), securityContext);
+
+        return entityUserOperator.getEnvVars().stream()
+                .filter(envVar -> SECURITY_ENV_VAR_NAMES.contains(envVar.getName()))
+                .toList();
+    }
 
     private List<EnvVar> getExpectedEnvVars() {
         List<EnvVar> expected = new ArrayList<>();

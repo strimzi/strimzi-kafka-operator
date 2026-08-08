@@ -24,6 +24,7 @@ import io.strimzi.operator.cluster.ClusterOperatorConfig.ClusterOperatorConfigBu
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.AbstractModel;
+import io.strimzi.operator.cluster.model.KafkaClusterSecurityContext;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.ConfigMapOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.DeploymentOperator;
@@ -165,8 +166,8 @@ public class EntityOperatorReconcilerTest {
                 ResourceUtils.dummyClusterOperatorConfig(),
                 supplier,
                 kafka,
-                CLUSTER_CA
-        );
+                CLUSTER_CA,
+                KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
 
         Checkpoint async = context.checkpoint();
         rcnclr.reconcile(false, null, null, Clock.systemUTC())
@@ -286,8 +287,8 @@ public class EntityOperatorReconcilerTest {
                 config,
                 supplier,
                 kafka,
-                CLUSTER_CA
-        );
+                CLUSTER_CA,
+                KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
 
         Checkpoint async = context.checkpoint();
         rcnclr.reconcile(false, null, null, Clock.systemUTC())
@@ -402,8 +403,8 @@ public class EntityOperatorReconcilerTest {
                 ResourceUtils.dummyClusterOperatorConfig(),
                 supplier,
                 kafka,
-                CLUSTER_CA
-        );
+                CLUSTER_CA,
+                KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
 
         Checkpoint async = context.checkpoint();
         rcnclr.reconcile(false, null, null, Clock.systemUTC())
@@ -510,8 +511,8 @@ public class EntityOperatorReconcilerTest {
                 ResourceUtils.dummyClusterOperatorConfig(),
                 supplier,
                 kafka,
-                CLUSTER_CA
-        );
+                CLUSTER_CA,
+                KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
 
         Checkpoint async = context.checkpoint();
         rcnclr.reconcile(false, null, null, Clock.systemUTC())
@@ -610,8 +611,8 @@ public class EntityOperatorReconcilerTest {
                 ResourceUtils.dummyClusterOperatorConfig(),
                 supplier,
                 kafka,
-                CLUSTER_CA
-        );
+                CLUSTER_CA,
+                KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
 
         Checkpoint async = context.checkpoint();
         rcnclr.reconcile(false, null, null, Clock.systemUTC())
@@ -699,8 +700,8 @@ public class EntityOperatorReconcilerTest {
                 ResourceUtils.dummyClusterOperatorConfig(),
                 supplier,
                 KAFKA,
-                CLUSTER_CA
-        );
+                CLUSTER_CA,
+                KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
 
         Checkpoint async = context.checkpoint();
         rcnclr.reconcile(false, null, null, Clock.systemUTC())
@@ -814,8 +815,8 @@ public class EntityOperatorReconcilerTest {
                 config,
                 supplier,
                 kafka,
-                CLUSTER_CA
-        );
+                CLUSTER_CA,
+                KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
 
         Checkpoint async = context.checkpoint();
         rcnclr.reconcile(false, null, null, Clock.systemUTC())
@@ -941,8 +942,8 @@ public class EntityOperatorReconcilerTest {
                 config,
                 supplier,
                 kafka,
-                CLUSTER_CA
-        );
+                CLUSTER_CA,
+                KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
 
         Checkpoint async = context.checkpoint();
         rcnclr.reconcile(false, null, null, Clock.systemUTC())
