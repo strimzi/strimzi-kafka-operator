@@ -500,7 +500,7 @@ public class KafkaBrokerConfigurationBuilder {
             } else {
                 // When authentication is disabled, all internal synchronization is using the ANONYMOUS user. In order
                 // to support authorization, we have to make this user a super-user.
-                superUsers.add("ANONYMOUS");
+                superUsers.add("User:ANONYMOUS");
             }
 
             printSectionHeader("Authorization");
