@@ -64,8 +64,8 @@ public class KafkaAgent {
     private static final Logger LOGGER = LoggerFactory.getLogger(KafkaAgent.class);
     private static final String BROKER_STATE_PATH = "/v1/broker-state";
     private static final String READINESS_ENDPOINT_PATH = "/v1/ready";
-    private static final int EXTERNAL_PORT = 8443;
-    private static final int INTERNAL_PORT = 8080;
+    private static final int EXTERNAL_HTTP_PORT = 8443;
+    private static final int INTERNAL_HTTP_PORT = 8080;
     private static final long GRACEFUL_SHUTDOWN_TIMEOUT_MS = 30 * 1000;
     private static final byte BROKER_RUNNING_STATE = 3;
     private static final byte BROKER_RECOVERY_STATE = 2;
@@ -173,7 +173,7 @@ public class KafkaAgent {
         // Internal connector is used within the Pod only for health checks
         ServerConnector internalConnector  = new ServerConnector(server);
         internalConnector.setHost("localhost"); // Should not be exposed outside the Pod. So we use localhost only here.
-        internalConnector.setPort(INTERNAL_PORT);
+        internalConnector.setPort(INTERNAL_HTTP_PORT);
 
         ContextHandler brokerStateContext = new ContextHandler(BROKER_STATE_PATH);
         brokerStateContext.setHandler(getBrokerStateHandler());
@@ -204,7 +204,7 @@ public class KafkaAgent {
         }
 
         httpConnector.setHost("0.0.0.0");
-        httpConnector.setPort(EXTERNAL_PORT);
+        httpConnector.setPort(EXTERNAL_HTTP_PORT);
 
         return httpConnector;
     }
