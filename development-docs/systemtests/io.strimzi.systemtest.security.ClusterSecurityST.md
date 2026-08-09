@@ -18,7 +18,7 @@
 | Step | Action | Result |
 | - | - | - |
 | 1. | Deploy Kafka with specified encryption and authentication (including Entity Operator and Cruise Control). | The cluster is ready with the requested security configuration. |
-| 2. | Send and consume messages over mTLS. | The messages are sent and consumed successfully. |
+| 2. | Create a TLS user with ACLs and send and consume messages over mTLS. | The messages are authorized, sent, and consumed successfully. |
 | 3. | Change dynamic Kafka configuration. | The configuration is applied without rolling the Kafka pods. |
 | 4. | Change read-only Kafka configuration. | The Kafka controllers and brokers roll and remain functional. |
 | 5. | Run a Kafka rebalance. | Cruise Control completes the rebalance. |
@@ -38,7 +38,7 @@
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Deploy a persistent Kafka cluster with the default internal security and send and consume messages over mTLS. | The cluster is ready and the messages are available. |
+| 1. | Deploy a persistent Kafka cluster with authorization and send and consume messages using a TLS user with ACLs. | The cluster is ready and the messages are authorized and available. |
 | 2. | Pause reconciliation, stop all cluster workloads, remove status.clusterSecurity, disable TLS and mTLS, and unpause. | The cluster restarts without internal encryption or authentication. |
 | 3. | Consume the existing messages and send and consume new messages. | Both the existing and new messages are available. |
 | 4. | Repeat the stopped migration and remove the internal security annotation. | The cluster restarts with the default TLS and mTLS configuration. |

@@ -21,6 +21,8 @@ import io.strimzi.api.kafka.model.kafka.clustersecurity.ClusterSecurityEncryptio
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceState;
+import io.strimzi.api.kafka.model.user.KafkaUser;
+import io.strimzi.api.kafka.model.user.acl.StrimziAclOperation;
 import io.strimzi.kafka.config.model.Scope;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.model.Labels;
@@ -75,30 +77,6 @@ class ClusterSecurityST extends AbstractST {
     private static final int CONTROLLER_REPLICAS = 3;
     private static final String INTERNAL_CLUSTER_SECURITY_ANNOTATION = "strimzi.io/internal-cluster-security";
 
-    /**
-     * Generates the combinations of encryption and authentication types for testing.
-     *
-     * @return  A stream of arguments containing encryption and authentication type combinations.
-     */
-    private Stream<Arguments> securityConfigurationCombos() {
-        return Stream.of(
-                Arguments.of(ClusterSecurityEncryptionType.STRIMZI_TLS, ClusterSecurityAuthenticationType.NONE),
-                Arguments.of(ClusterSecurityEncryptionType.NONE, ClusterSecurityAuthenticationType.NONE)
-        );
-    }
-
-    /**
-     * Generates the Cluster Security annotation for the given encryption and authentication types
-     *
-     * @param encryption        Encryption type
-     * @param authentication    Authentication type
-     *
-     * @return  Cluster Security annotation as a JSON string
-     */
-    private String clusterSecurityAnnotation(ClusterSecurityEncryptionType encryption, ClusterSecurityAuthenticationType authentication) {
-        return "{\"encryption\":{\"type\":\"" + encryption.toValue() + "\"},\"authentication\":{\"type\":\"" + authentication.toValue() + "\"}}";
-    }
-
     @Tag(CRUISE_CONTROL)
     @Tag(DYNAMIC_CONFIGURATION)
     @Tag(ROLLING_UPDATE)
@@ -106,7 +84,7 @@ class ClusterSecurityST extends AbstractST {
         description = @Desc("Test a Kafka cluster that uses different combinations of authentication and encryption for internal communication."),
         steps = {
             @Step(value = "Deploy Kafka with specified encryption and authentication (including Entity Operator and Cruise Control).", expected = "The cluster is ready with the requested security configuration."),
-            @Step(value = "Send and consume messages over mTLS.", expected = "The messages are sent and consumed successfully."),
+            @Step(value = "Create a TLS user with ACLs and send and consume messages over mTLS.", expected = "The messages are authorized, sent, and consumed successfully."),
             @Step(value = "Change dynamic Kafka configuration.", expected = "The configuration is applied without rolling the Kafka pods."),
             @Step(value = "Change read-only Kafka configuration.", expected = "The Kafka controllers and brokers roll and remain functional."),
             @Step(value = "Run a Kafka rebalance.", expected = "Cruise Control completes the rebalance.")
@@ -134,6 +112,8 @@ class ClusterSecurityST extends AbstractST {
                         .endMetadata()
                         .editSpec()
                             .editKafka()
+                                .withNewKafkaAuthorizationSimple()
+                                .endKafkaAuthorizationSimple()
                                 .withListeners(
                                     new GenericKafkaListenerBuilder()
                                         .withName(TestConstants.PLAIN_LISTENER_DEFAULT_NAME)
@@ -155,7 +135,7 @@ class ClusterSecurityST extends AbstractST {
                 ScraperTemplates.scraperPod(testStorage.getNamespaceName(), testStorage.getScraperName()).build()
         );
         KubeResourceManager.get().createResourceWithWait(
-                KafkaUserTemplates.tlsUser(testStorage).build(),
+                authorizedTlsUser(testStorage),
                 KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getTopicName(), testStorage.getClusterName(), 3, 3, 2).build()
         );
 
@@ -205,7 +185,7 @@ class ClusterSecurityST extends AbstractST {
     @TestDoc(
         description = @Desc("Test migrating internal cluster security from the default TLS and mTLS configuration to no security and back."),
         steps = {
-            @Step(value = "Deploy a persistent Kafka cluster with the default internal security and send and consume messages over mTLS.", expected = "The cluster is ready and the messages are available."),
+            @Step(value = "Deploy a persistent Kafka cluster with authorization and send and consume messages using a TLS user with ACLs.", expected = "The cluster is ready and the messages are authorized and available."),
             @Step(value = "Pause reconciliation, stop all cluster workloads, remove status.clusterSecurity, disable TLS and mTLS, and unpause.", expected = "The cluster restarts without internal encryption or authentication."),
             @Step(value = "Consume the existing messages and send and consume new messages.", expected = "Both the existing and new messages are available."),
             @Step(value = "Repeat the stopped migration and remove the internal security annotation.", expected = "The cluster restarts with the default TLS and mTLS configuration."),
@@ -228,6 +208,8 @@ class ClusterSecurityST extends AbstractST {
             KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getClusterName(), BROKER_REPLICAS)
                     .editSpec()
                         .editKafka()
+                            .withNewKafkaAuthorizationSimple()
+                            .endKafkaAuthorizationSimple()
                             .withListeners(
                                 new GenericKafkaListenerBuilder()
                                     .withName(TestConstants.PLAIN_LISTENER_DEFAULT_NAME)
@@ -248,7 +230,7 @@ class ClusterSecurityST extends AbstractST {
                     .build()
         );
         KubeResourceManager.get().createResourceWithWait(
-            KafkaUserTemplates.tlsUser(testStorage).build(),
+            authorizedTlsUser(testStorage),
             KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getTopicName(), testStorage.getClusterName(), 3, 3, 2).build()
         );
 
@@ -322,6 +304,28 @@ class ClusterSecurityST extends AbstractST {
             .build();
     }
 
+    private KafkaUser authorizedTlsUser(TestStorage testStorage) {
+        return KafkaUserTemplates.tlsUser(testStorage)
+            .editSpec()
+                .withNewKafkaUserAuthorizationSimple()
+                    .addNewAcl()
+                        .withNewAclRuleTopicResource()
+                            .withName(testStorage.getTopicName())
+                        .endAclRuleTopicResource()
+                        .withOperations(StrimziAclOperation.READ, StrimziAclOperation.WRITE,
+                            StrimziAclOperation.DESCRIBE, StrimziAclOperation.CREATE)
+                    .endAcl()
+                    .addNewAcl()
+                        .withNewAclRuleGroupResource()
+                            .withName("*")
+                        .endAclRuleGroupResource()
+                        .withOperations(StrimziAclOperation.READ)
+                    .endAcl()
+                .endKafkaUserAuthorizationSimple()
+            .endSpec()
+            .build();
+    }
+
     private void sendAndReceiveMessages(TestStorage testStorage, KafkaProducerConsumer clients, int messageCount) {
         clients.setMessageCount(messageCount);
         clients.setConsumerGroup(ClientUtils.generateRandomConsumerGroup());
@@ -342,6 +346,38 @@ class ClusterSecurityST extends AbstractST {
         ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), messageCount);
     }
 
+
+    /**
+     * Generates the combinations of encryption and authentication types for testing.
+     *
+     * @return  A stream of arguments containing encryption and authentication type combinations.
+     */
+    private Stream<Arguments> securityConfigurationCombos() {
+        return Stream.of(
+                Arguments.of(ClusterSecurityEncryptionType.STRIMZI_TLS, ClusterSecurityAuthenticationType.NONE),
+                Arguments.of(ClusterSecurityEncryptionType.NONE, ClusterSecurityAuthenticationType.NONE)
+        );
+    }
+
+    /**
+     * Generates the Cluster Security annotation for the given encryption and authentication types
+     *
+     * @param encryption        Encryption type
+     * @param authentication    Authentication type
+     *
+     * @return  Cluster Security annotation as a JSON string
+     */
+    private String clusterSecurityAnnotation(ClusterSecurityEncryptionType encryption, ClusterSecurityAuthenticationType authentication) {
+        return "{\"encryption\":{\"type\":\"" + encryption.toValue() + "\"},\"authentication\":{\"type\":\"" + authentication.toValue() + "\"}}";
+    }
+
+    /**
+     * Checks that the cluster security status corresponds to the desired encryption and authentication types.
+     *
+     * @param testStorage       Test storage containing cluster information
+     * @param encryption        Expected encryption type
+     * @param authentication    Expected authentication type
+     */
     private void assertClusterSecurityStatus(TestStorage testStorage, ClusterSecurityEncryptionType encryption, ClusterSecurityAuthenticationType authentication) {
         assertThat(CrdClients.kafkaClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName())
                 .get().getStatus().getClusterSecurity(),
