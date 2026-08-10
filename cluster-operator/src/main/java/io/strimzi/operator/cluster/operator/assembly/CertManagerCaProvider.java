@@ -7,7 +7,6 @@ package io.strimzi.operator.cluster.operator.assembly;
 import io.fabric8.kubernetes.api.model.OwnerReferenceBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.strimzi.api.kafka.model.common.CertificateAuthority;
-import io.strimzi.api.kafka.model.common.certmanager.IssuerRef;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.operator.cluster.model.AbstractModel;
@@ -25,6 +24,7 @@ import io.strimzi.operator.common.operator.resource.kubernetes.SecretOperator;
 import java.security.cert.CertificateException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
 import static io.strimzi.operator.common.ca.Ca.ANNO_STRIMZI_IO_CA_KEY_GENERATION;
@@ -72,10 +72,11 @@ public class CertManagerCaProvider extends CaProvider {
 
     @Override
     public CompletionStage<CaProviderResult> createAndReconcileCa() {
+        if (certificateAuthority.getCertManager() == null) {
+            return CompletableFuture.failedFuture(new InvalidResourceException("When CA type is set to cert-manager.io, certManager property is required (e.g. clusterCa.certManager)."));
+        }
         return getCaCertForCertManager()
                 .thenCompose(newCaCertAsBase64 -> {
-                    IssuerRef issuerRef = certificateAuthority != null && certificateAuthority.getCertManager() != null
-                            ? certificateAuthority.getCertManager().getIssuerRef() : null;
                     CertManagerCa certManagerCa = new CertManagerCa(reconciliation, caRole,
                             existingCaCertSecret,
                             caConfig,
@@ -90,7 +91,7 @@ public class CertManagerCaProvider extends CaProvider {
                                     .withController(false)
                                     .build()
                                     : null,
-                            issuerRef);
+                            certificateAuthority.getCertManager().getIssuerRef());
                     certManagerCa.maybeUpdateCa(
                             newCaCertAsBase64,
                             existingCaCertSecret == null ? null : Annotations.stringAnnotation(existingCaCertSecret, Annotations.ANNO_STRIMZI_SERVER_CERT_HASH, ""),
