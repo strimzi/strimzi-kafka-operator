@@ -73,7 +73,7 @@ public class OpenSslCertIssuerIT {
         cert.deleteOnExit();
         File store = Files.createTempFile("crt-", ".p12").toFile();
         store.deleteOnExit();
-        Subject sbj = new Subject.Builder().withCommonName("MyCommonName").withOrganizationName("MyOrganization").build();
+        StrimziSubject sbj = new StrimziSubject.Builder().withCommonName("MyCommonName").withOrganizationName("MyOrganization").build();
 
         ((Cmd) () -> ssl.generateSelfSignedCert(key, cert, sbj, 365)).exec();
         ssl.addCertToTrustStore(cert, "ca", store, "123456");
@@ -103,7 +103,7 @@ public class OpenSslCertIssuerIT {
         File key = Files.createTempFile("key-", ".key").toFile();
         File cert = Files.createTempFile("crt-", ".crt").toFile();
         File store = Files.createTempFile("crt-", ".p12").toFile();
-        Subject sbj = new Subject.Builder().withCommonName("MyCommonName").withOrganizationName("MyOrganization").build();
+        StrimziSubject sbj = new StrimziSubject.Builder().withCommonName("MyCommonName").withOrganizationName("MyOrganization").build();
 
         Instant now = Instant.now();
         ZonedDateTime notBefore = now.plus(1, ChronoUnit.HOURS).truncatedTo(ChronoUnit.SECONDS).atZone(Clock.systemUTC().getZone());
@@ -160,14 +160,14 @@ public class OpenSslCertIssuerIT {
         return isSelfSigned;
     }
 
-    private void assertSubject(Subject sbj, X509Certificate x509Certificate) throws CertificateParsingException {
+    private void assertSubject(StrimziSubject sbj, X509Certificate x509Certificate) throws CertificateParsingException {
         Principal p = x509Certificate.getSubjectX500Principal();
         assertThat(String.format("CN=%s,O=%s", sbj.commonName(), sbj.organizationName()), is(p.getName()));
 
         assertSubjectAlternativeNames(sbj, x509Certificate);
     }
 
-    private void assertSubjectAlternativeNames(Subject sbj, X509Certificate x509Certificate) throws CertificateParsingException {
+    private void assertSubjectAlternativeNames(StrimziSubject sbj, X509Certificate x509Certificate) throws CertificateParsingException {
         if (sbj.subjectAltNames() != null && sbj.subjectAltNames().size() > 0) {
             final Collection<List<?>> sans = x509Certificate.getSubjectAlternativeNames();
             assertThat(sans, is(notNullValue()));
@@ -178,7 +178,7 @@ public class OpenSslCertIssuerIT {
         }
     }
 
-    private void assertIssuer(Subject sbj, X509Certificate x509Certificate) {
+    private void assertIssuer(StrimziSubject sbj, X509Certificate x509Certificate) {
         Principal p = x509Certificate.getIssuerX500Principal();
         assertThat(String.format("CN=%s,O=%s", sbj.commonName(), sbj.organizationName()), is(p.getName()));
     }
@@ -190,7 +190,7 @@ public class OpenSslCertIssuerIT {
         File rootCert = Files.createTempFile("crt-", ".crt").toFile();
         File intermediateKey = Files.createTempFile("key-", ".key").toFile();
         File intermediateCert = Files.createTempFile("crt-", ".crt").toFile();
-        Subject rootSubject = new Subject.Builder().withCommonName("RootCn").withOrganizationName("MyOrganization").build();
+        StrimziSubject rootSubject = new StrimziSubject.Builder().withCommonName("RootCn").withOrganizationName("MyOrganization").build();
 
         // Generate a root cert
         Instant now = Instant.now();
@@ -211,7 +211,7 @@ public class OpenSslCertIssuerIT {
         assertEquals(notAfter.toInstant(), rootX509.getNotAfter().toInstant());
 
         // Generate an intermediate cert
-        Subject intermediateSubject = new Subject.Builder().withCommonName("IntermediateCn").withOrganizationName("MyOrganization").build();
+        StrimziSubject intermediateSubject = new StrimziSubject.Builder().withCommonName("IntermediateCn").withOrganizationName("MyOrganization").build();
         int intermediatePathLen = 1;
         ssl.generateIntermediateCaCert(rootKey, rootCert, intermediateSubject, intermediateKey, intermediateCert, notBefore, notAfter, intermediatePathLen);
 
@@ -226,7 +226,7 @@ public class OpenSslCertIssuerIT {
 
         File leafKey = Files.createTempFile("key-", ".key").toFile();
         File csr = Files.createTempFile("csr-", ".csr").toFile();
-        Subject subject = new Subject.Builder()
+        StrimziSubject subject = new StrimziSubject.Builder()
                 .withCommonName("MyCommonName")
                 .withOrganizationName("MyOrganization")
                 .addDnsName("example1.com")
@@ -272,13 +272,13 @@ public class OpenSslCertIssuerIT {
         File store = Files.createTempFile("store-", ".p12").toFile();
         store.deleteOnExit();
 
-        Subject caSbj = new Subject.Builder().withCommonName("CACommonName").withOrganizationName("CAOrganizationName").build();
+        StrimziSubject caSbj = new StrimziSubject.Builder().withCommonName("CACommonName").withOrganizationName("CAOrganizationName").build();
 
         File key = Files.createTempFile("key-", ".key").toFile();
         key.deleteOnExit();
         File csr = Files.createTempFile("csr-", ".csr").toFile();
         csr.deleteOnExit();
-        Subject sbj = new Subject.Builder().withCommonName("MyCommonName").withOrganizationName("MyOrganization").build();
+        StrimziSubject sbj = new StrimziSubject.Builder().withCommonName("MyCommonName").withOrganizationName("MyOrganization").build();
         File cert = Files.createTempFile("crt-", ".crt").toFile();
         cert.deleteOnExit();
 
@@ -305,13 +305,13 @@ public class OpenSslCertIssuerIT {
         File store = Files.createTempFile("store-", ".p12").toFile();
         store.deleteOnExit();
 
-        Subject caSbj = new Subject.Builder().withCommonName("CACommonName").withOrganizationName("CAOrganizationName").build();
+        StrimziSubject caSbj = new StrimziSubject.Builder().withCommonName("CACommonName").withOrganizationName("CAOrganizationName").build();
 
         File key = Files.createTempFile("key-", ".key").toFile();
         key.deleteOnExit();
         File csr = Files.createTempFile("csr-", ".csr").toFile();
         csr.deleteOnExit();
-        Subject subject = new Subject.Builder()
+        StrimziSubject subject = new StrimziSubject.Builder()
                 .withCommonName("MyCommonName")
                 .withOrganizationName("MyOrganization")
                 .addDnsName("example1.com")
@@ -331,8 +331,8 @@ public class OpenSslCertIssuerIT {
         store.delete();
     }
 
-    private void doGenerateSignedCert(File caKey, File caCert, Subject caSbj, File key, File csr, File cert,
-                                      File keyStore, String keyStorePassword, Subject sbj) throws Exception {
+    private void doGenerateSignedCert(File caKey, File caCert, StrimziSubject caSbj, File key, File csr, File cert,
+                                      File keyStore, String keyStorePassword, StrimziSubject sbj) throws Exception {
         ssl.generateCsr(key, csr, sbj);
 
         ssl.generateCert(csr, caKey, caCert, cert, sbj, 365);
@@ -382,11 +382,11 @@ public class OpenSslCertIssuerIT {
 
     @Test
     public void testRenewSelfSignedCertWithSubject() throws Exception {
-        Subject caSubject = new Subject.Builder().withCommonName("MyCommonName").withOrganizationName("MyOrganization").build();
+        StrimziSubject caSubject = new StrimziSubject.Builder().withCommonName("MyCommonName").withOrganizationName("MyOrganization").build();
         doRenewSelfSignedCertWithSubject(caSubject);
     }
 
-    public void doRenewSelfSignedCertWithSubject(Subject caSubject) throws Exception {
+    public void doRenewSelfSignedCertWithSubject(StrimziSubject caSubject) throws Exception {
         // First generate a self-signed cert
         File caKey = Files.createTempFile("key-", ".key").toFile();
         caKey.deleteOnExit();
@@ -420,7 +420,7 @@ public class OpenSslCertIssuerIT {
         File clientKey = Files.createTempFile("client-", ".key").toFile();
         File csr = Files.createTempFile("client-", ".csr").toFile();
         File clientCert = Files.createTempFile("client-", ".crt").toFile();
-        Subject clientSubject = new Subject.Builder().withCommonName("MyCommonName").withOrganizationName("MyOrganization").build();
+        StrimziSubject clientSubject = new StrimziSubject.Builder().withCommonName("MyCommonName").withOrganizationName("MyOrganization").build();
         ssl.generateCsr(clientKey, csr, clientSubject);
 
         ssl.generateCert(csr, caKey, originalCert, clientCert, clientSubject, 365);
@@ -455,7 +455,7 @@ public class OpenSslCertIssuerIT {
 
     @Test
     public void testIPv6SANs() throws Exception {
-        Subject caSubject = new Subject.Builder().withCommonName("MyRootCa").withOrganizationName("MyOrganization").build();
+        StrimziSubject caSubject = new StrimziSubject.Builder().withCommonName("MyRootCa").withOrganizationName("MyOrganization").build();
 
         // First generate the CA
         File caKey = Files.createTempFile("ca-", ".key").toFile();
@@ -473,7 +473,7 @@ public class OpenSslCertIssuerIT {
         File serverCsr = Files.createTempFile("client-", ".serverCsr").toFile();
         File serverCert = Files.createTempFile("client-", ".crt").toFile();
 
-        Subject clientSubject = new Subject.Builder()
+        StrimziSubject clientSubject = new StrimziSubject.Builder()
                 .withCommonName("MyCommonName")
                 .withOrganizationName("MyOrganization")
                 .addIpAddress("AC74::001c")

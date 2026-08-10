@@ -15,7 +15,7 @@ import io.strimzi.api.kafka.model.nodepool.KafkaNodePool;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePoolBuilder;
 import io.strimzi.api.kafka.model.nodepool.ProcessRoles;
 import io.strimzi.certs.CertAndKey;
-import io.strimzi.certs.Subject;
+import io.strimzi.certs.StrimziSubject;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.model.nodepools.NodePoolUtils;
 import io.strimzi.operator.common.Reconciliation;
@@ -240,7 +240,7 @@ public class KafkaClusterCertificateRenewalTest {
         }
 
         @Override
-        public CompletionStage<CertAndKey> maybeCopyOrGenerateServerCerts(Reconciliation reconciliation, String commonName, Subject subject, CertAndKey existingCertAndKey, boolean isMaintenanceTimeWindowsSatisfied, boolean includeCaChain) {
+        public CompletionStage<CertAndKey> maybeCopyOrGenerateServerCerts(Reconciliation reconciliation, String commonName, StrimziSubject subject, CertAndKey existingCertAndKey, boolean isMaintenanceTimeWindowsSatisfied, boolean includeCaChain) {
             if (existingCertAndKey != null) {
                 if (Arrays.equals(existingCertAndKey.cert(), DUMMY_CERT.getBytes(StandardCharsets.UTF_8)) || (Arrays.equals(existingCertAndKey.cert(), EXPIRED_DUMMY_CERT.getBytes(StandardCharsets.UTF_8)) && !isMaintenanceTimeWindowsSatisfied)) {
                     // We either have a valid cert, or we have an expired cert but are outside maintenance window - return existing cert

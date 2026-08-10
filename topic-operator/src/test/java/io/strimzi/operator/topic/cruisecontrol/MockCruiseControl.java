@@ -8,7 +8,7 @@ import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import io.strimzi.certs.OpenSslCertIssuer;
-import io.strimzi.certs.Subject;
+import io.strimzi.certs.StrimziSubject;
 import io.strimzi.operator.common.CruiseControlUtil;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlEndpoints;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlParameters;
@@ -73,7 +73,7 @@ public class MockCruiseControl {
             throws IOException, CertificateException, KeyStoreException, NoSuchAlgorithmException, InvalidKeySpecException {
         OpenSslCertIssuer certIssuer = new OpenSslCertIssuer();
 
-        Subject subject = new Subject.Builder()
+        StrimziSubject subject = new StrimziSubject.Builder()
                 .withCommonName("localhost")
                 .addDnsName("localhost")
                 .addIpAddress("127.0.0.1")

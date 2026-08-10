@@ -26,7 +26,7 @@ public interface CertIssuer {
      * @param days certificate duration
      * @throws IOException If an input or output file could not be read/written.
      */
-    void generateSelfSignedCert(File keyFile, File certFile, Subject sbj, int days) throws IOException;
+    void generateSelfSignedCert(File keyFile, File certFile, StrimziSubject sbj, int days) throws IOException;
 
     /**
      * Renew a new self-signed certificate, keeping the existing private key
@@ -37,7 +37,7 @@ public interface CertIssuer {
      * @param days certificate duration
      * @throws IOException If an input or output file could not be read/written.
      */
-    void renewSelfSignedCert(File keyFile, File certFile, Subject sbj, int days) throws IOException;
+    void renewSelfSignedCert(File keyFile, File certFile, StrimziSubject sbj, int days) throws IOException;
 
     /**
      * Generates the Root CA certificate
@@ -51,7 +51,7 @@ public interface CertIssuer {
      *
      * @throws IOException  If an input or output file cannot be read / written
      */
-    void generateRootCaCert(Subject subject, File subjectKeyFile, File subjectCertFile,
+    void generateRootCaCert(StrimziSubject subject, File subjectKeyFile, File subjectCertFile,
                             ZonedDateTime notBefore, ZonedDateTime notAfter, int pathLength) throws IOException;
 
     /**
@@ -69,7 +69,7 @@ public interface CertIssuer {
      * @throws IOException  If an input or output file cannot be read / written
      */
     void generateIntermediateCaCert(File issuerCaKeyFile, File issuerCaCertFile,
-                                    Subject subject,
+                                    StrimziSubject subject,
                                     File subjectKeyFile, File subjectCertFile,
                                     ZonedDateTime notBefore, ZonedDateTime notAfter, int pathLength) throws IOException;
 
@@ -127,7 +127,7 @@ public interface CertIssuer {
      * @param sbj subject information
      * @throws IOException If an input or output file could not be read/written.
      */
-    void generateCsr(File keyFile, File csrFile, Subject sbj) throws IOException;
+    void generateCsr(File keyFile, File csrFile, StrimziSubject sbj) throws IOException;
 
     /**
      * Generate a certificate signed by a Certificate Authority
@@ -140,7 +140,7 @@ public interface CertIssuer {
      * @param days certificate duration
      * @throws IOException If an input or output file could not be read/written.
      */
-    void generateCert(File csrFile, File caKey, File caCert, File crtFile, Subject sbj, int days) throws IOException;
+    void generateCert(File csrFile, File caKey, File caCert, File crtFile, StrimziSubject sbj, int days) throws IOException;
 
     /**
      * Generate a certificate signed by a Certificate Authority
@@ -153,5 +153,5 @@ public interface CertIssuer {
      * @param days certificate duration
      * @throws IOException If an input or output file could not be read/written.
      */
-    void generateCert(File csrFile, byte[] caKey, byte[] caCert, File crtFile, Subject sbj, int days) throws IOException;
+    void generateCert(File csrFile, byte[] caKey, byte[] caCert, File crtFile, StrimziSubject sbj, int days) throws IOException;
 }

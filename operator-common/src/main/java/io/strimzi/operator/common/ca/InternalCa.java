@@ -7,7 +7,7 @@ package io.strimzi.operator.common.ca;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.certs.CertIssuer;
-import io.strimzi.certs.Subject;
+import io.strimzi.certs.StrimziSubject;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
@@ -94,7 +94,7 @@ public class InternalCa extends Ca {
     @Override
     public CompletionStage<CertAndKey> maybeCopyOrGenerateServerCerts(Reconciliation reconciliation,
                                                                   String podName,
-                                                                  Subject subject,
+                                                                  StrimziSubject subject,
                                                                   CertAndKey existingCertAndKey,
                                                                   boolean isMaintenanceTimeWindowsSatisfied,
                                                                   boolean includeCaChain) {
@@ -155,7 +155,7 @@ public class InternalCa extends Ca {
      * @return  True if the subjects are different, false otherwise
      */
     /* test */
-    static boolean certSubjectChanged(Reconciliation reconciliation, CertAndKey certAndKey, Subject desiredSubject, String podName)    {
+    static boolean certSubjectChanged(Reconciliation reconciliation, CertAndKey certAndKey, StrimziSubject desiredSubject, String podName)    {
         Collection<String> desiredAltNames = desiredSubject.subjectAltNames().values();
         Collection<String> currentAltNames = getSubjectAltNames(reconciliation, certAndKey.cert());
 
@@ -248,7 +248,7 @@ public class InternalCa extends Ca {
 
             try {
                 String org = caRole.equals(CaRole.CLIENTS_CA) ? null : Ca.IO_STRIMZI;
-                Subject subject = CertificateUtils.getSubject(commonName, org);
+                StrimziSubject subject = CertificateUtils.getSubject(commonName, org);
                 certAndKey = generateSignedCert(subject);
             } catch (IOException e) {
                 LOGGER.errorCr(reconciliation, "Error while generating certificates", e);
@@ -322,7 +322,7 @@ public class InternalCa extends Ca {
      * @param includeCaChain Whether include CA chain
      * @return The CertAndKey
      */
-    public CertAndKey generateSignedCert(Subject subject,
+    public CertAndKey generateSignedCert(StrimziSubject subject,
                                          File csrFile, File keyFile, File certFile, File keyStoreFile, boolean includeCaChain) {
         LOGGER.infoCr(reconciliation, "Generating certificate {}, signed by CA {}", subject, caRole.caCommonName());
 
@@ -368,12 +368,12 @@ public class InternalCa extends Ca {
     }
 
 
-    private CertAndKey generateSignedCert(Subject subject) throws IOException {
+    private CertAndKey generateSignedCert(StrimziSubject subject) throws IOException {
         return generateSignedCert(subject, false);
     }
 
 
-    private CertAndKey generateSignedCert(Subject subject, boolean includeCaChain) throws IOException {
+    private CertAndKey generateSignedCert(StrimziSubject subject, boolean includeCaChain) throws IOException {
         File csrFile = Files.createTempFile("tls", "csr").toFile();
         File keyFile = Files.createTempFile("tls", "key").toFile();
         File certFile = Files.createTempFile("tls", "cert").toFile();
@@ -487,8 +487,8 @@ public class InternalCa extends Ca {
         caKeyData = keyData;
     }
 
-    private Subject nextCaSubject(int version) {
-        return new Subject.Builder()
+    private StrimziSubject nextCaSubject(int version) {
+        return new StrimziSubject.Builder()
         // Key replacements does not work if both old and new CA certs have the same subject DN, so include the
         // key generation in the DN so the certificates appear distinct during CA key replacement.
             .withCommonName(caRole.caCommonName() + " v" + version)
@@ -671,7 +671,7 @@ public class InternalCa extends Ca {
         }
     }
 
-    private void generateCaKeyAndCert(Subject subject, Map<String, String> keyData, Map<String, String> certData) {
+    private void generateCaKeyAndCert(StrimziSubject subject, Map<String, String> keyData, Map<String, String> certData) {
         try {
             LOGGER.infoCr(reconciliation, "Generating CA with subject={}", subject);
 
@@ -726,7 +726,7 @@ public class InternalCa extends Ca {
         }
     }
 
-    private void renewCaCert(Subject subject, Map<String, String> certData) {
+    private void renewCaCert(StrimziSubject subject, Map<String, String> certData) {
         try {
             LOGGER.infoCr(reconciliation, "Renewing CA with subject={}", subject);
 

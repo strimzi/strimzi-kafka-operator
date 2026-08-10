@@ -16,18 +16,18 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-public class SubjectTest {
+public class StrimziSubjectTest {
     @Test
     public void testSubjectOpensslDn()   {
-        Subject.Builder subject = new Subject.Builder()
+        StrimziSubject.Builder subject = new StrimziSubject.Builder()
             .withCommonName("joe");
         assertThat(subject.build().opensslDn(), is("/CN=joe"));
 
-        subject = new Subject.Builder()
+        subject = new StrimziSubject.Builder()
             .withOrganizationName("MyOrg");
         assertThat(subject.build().opensslDn(), is("/O=MyOrg"));
 
-        subject = new Subject.Builder()
+        subject = new StrimziSubject.Builder()
             .withCommonName("joe")
             .withOrganizationName("MyOrg");
         assertThat(subject.build().opensslDn(), is("/O=MyOrg/CN=joe"));
@@ -35,7 +35,7 @@ public class SubjectTest {
 
     @Test
     public void testSubjectAlternativeNames()   {
-        Subject subject = new Subject.Builder()
+        StrimziSubject subject = new StrimziSubject.Builder()
                 .withCommonName("joe")
                 .withOrganizationName("MyOrg")
                 .addDnsName("example.com")
@@ -56,7 +56,7 @@ public class SubjectTest {
 
     @Test
     public void testSerialization() throws JsonProcessingException {
-        Subject subject = new Subject.Builder()
+        StrimziSubject subject = new StrimziSubject.Builder()
                 .withCommonName("joe")
                 .withOrganizationName("MyOrg")
                 .addDnsName("example.com")
@@ -66,7 +66,7 @@ public class SubjectTest {
                 .build();
         ObjectMapper mapper = new ObjectMapper();
         String json = mapper.writeValueAsString(subject);
-        assertEquals(subject, mapper.readValue(json, Subject.class));
+        assertEquals(subject, mapper.readValue(json, StrimziSubject.class));
         assertEquals("{\"commonName\":\"joe\"," +
                 "\"organizationName\":\"MyOrg\"," +
                 "\"dnsNames\":[\"example.org\",\"example.com\"]," +
@@ -75,17 +75,17 @@ public class SubjectTest {
 
     @Test
     public void testDnsValidation() {
-        new Subject.Builder().addDnsName("example.com");
-        new Subject.Builder().addDnsName("*.example.com");
-        new Subject.Builder().addDnsName("example.io.");
-        assertThrows(IllegalArgumentException.class, () -> new Subject.Builder().addDnsName("foo.*.example.com"));
-        assertThrows(IllegalArgumentException.class, () -> new Subject.Builder().addDnsName("54t8g#'/.l"));
-        assertThrows(IllegalArgumentException.class, () -> new Subject.Builder().addDnsName("example.io.."));
+        new StrimziSubject.Builder().addDnsName("example.com");
+        new StrimziSubject.Builder().addDnsName("*.example.com");
+        new StrimziSubject.Builder().addDnsName("example.io.");
+        assertThrows(IllegalArgumentException.class, () -> new StrimziSubject.Builder().addDnsName("foo.*.example.com"));
+        assertThrows(IllegalArgumentException.class, () -> new StrimziSubject.Builder().addDnsName("54t8g#'/.l"));
+        assertThrows(IllegalArgumentException.class, () -> new StrimziSubject.Builder().addDnsName("example.io.."));
     }
 
     @Test
     public void testIPV6()   {
-        Subject subject = new Subject.Builder()
+        StrimziSubject subject = new StrimziSubject.Builder()
                 .withCommonName("joe")
                 .addIpAddress("fc01::8d1c")
                 .addIpAddress("1762:0000:0000:00:0000:0B03:0001:AF18")

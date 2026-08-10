@@ -5,7 +5,7 @@
 package io.strimzi.operator.common.ca;
 
 import io.strimzi.certs.CertAndKey;
-import io.strimzi.certs.Subject;
+import io.strimzi.certs.StrimziSubject;
 import io.strimzi.operator.common.Reconciliation;
 import org.junit.jupiter.api.Test;
 
@@ -18,7 +18,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 public class InternalCaCertIssuerTest {
-    private static final Subject SUBJECT = new Subject.Builder().build();
+    private static final StrimziSubject SUBJECT = new StrimziSubject.Builder().build();
     private static final String POD = "pod0";
 
     // This certificate is used for testing purposes only. It is valid until 2119, so it should not cause any issues with the tests.
@@ -181,7 +181,7 @@ public class InternalCaCertIssuerTest {
         CertAndKey newCert = mockedCa.maybeCopyOrGenerateServerCerts(
                 Reconciliation.DUMMY_RECONCILIATION,
                 POD,
-                 new Subject.Builder().addDnsName("pod0.test.com").build(),
+                 new StrimziSubject.Builder().addDnsName("pod0.test.com").build(),
                 initialCert,
                 true,
                 false
@@ -346,8 +346,8 @@ public class InternalCaCertIssuerTest {
         }
 
         @Override
-        public CertAndKey generateSignedCert(Subject subject,
-                                                File csrFile, File keyFile, File certFile, File keyStoreFile, boolean includeCaChain) {
+        public CertAndKey generateSignedCert(StrimziSubject subject,
+                                             File csrFile, File keyFile, File certFile, File keyStoreFile, boolean includeCaChain) {
             int index = invocationCount.getAndIncrement();
 
             byte[] cert;

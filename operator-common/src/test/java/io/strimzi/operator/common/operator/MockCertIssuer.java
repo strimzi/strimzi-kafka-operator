@@ -5,7 +5,7 @@
 package io.strimzi.operator.common.operator;
 
 import io.strimzi.certs.CertIssuer;
-import io.strimzi.certs.Subject;
+import io.strimzi.certs.StrimziSubject;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -333,7 +333,7 @@ public class MockCertIssuer implements CertIssuer {
      * @throws IOException  Thrown when writing to file fails
      */
     @Override
-    public void generateSelfSignedCert(File keyFile, File certFile, Subject sbj, int days) throws IOException {
+    public void generateSelfSignedCert(File keyFile, File certFile, StrimziSubject sbj, int days) throws IOException {
 
         write(keyFile, CLUSTER_KEY);
         write(certFile, CLUSTER_CERT);
@@ -349,17 +349,17 @@ public class MockCertIssuer implements CertIssuer {
      * @throws IOException  Thrown when writing to file fails
      */
     @Override
-    public void renewSelfSignedCert(File keyFile, File certFile, Subject sbj, int days) throws IOException {
+    public void renewSelfSignedCert(File keyFile, File certFile, StrimziSubject sbj, int days) throws IOException {
         generateSelfSignedCert(keyFile, certFile, sbj, days);
     }
 
     @Override
-    public void generateRootCaCert(Subject subject, File subjectKeyFile, File subjectCertFile, ZonedDateTime notBefore, ZonedDateTime notAfter, int pathLength) throws IOException {
+    public void generateRootCaCert(StrimziSubject subject, File subjectKeyFile, File subjectCertFile, ZonedDateTime notBefore, ZonedDateTime notAfter, int pathLength) throws IOException {
         generateSelfSignedCert(subjectKeyFile, subjectCertFile, subject, 1);
     }
 
     @Override
-    public void generateIntermediateCaCert(File issuerCaKeyFile, File issuerCaCertFile, Subject subject, File subjectKeyFile, File subjectCertFile, ZonedDateTime notBefore, ZonedDateTime notAfter, int pathLength) throws IOException {
+    public void generateIntermediateCaCert(File issuerCaKeyFile, File issuerCaCertFile, StrimziSubject subject, File subjectKeyFile, File subjectCertFile, ZonedDateTime notBefore, ZonedDateTime notAfter, int pathLength) throws IOException {
         throw new RuntimeException("Not implemented");
     }
 
@@ -393,19 +393,19 @@ public class MockCertIssuer implements CertIssuer {
      * @param sbj     subject information
      */
     @Override
-    public void generateCsr(File keyFile, File csrFile, Subject sbj) throws IOException {
+    public void generateCsr(File keyFile, File csrFile, StrimziSubject sbj) throws IOException {
         write(keyFile, END_ENTITY_KEY);
         // A real CSR file is not needed for tests to pass
         write(csrFile, "csr file");
     }
 
     @Override
-    public void generateCert(File csrFile, File caKey, File caCert, File crtFile, Subject sbj, int days) throws IOException {
+    public void generateCert(File csrFile, File caKey, File caCert, File crtFile, StrimziSubject sbj, int days) throws IOException {
         write(crtFile, END_ENTITY_CERT);
     }
 
     @Override
-    public void generateCert(File csrFile, byte[] caKey, byte[] caCert, File crtFile, Subject sbj, int days) throws IOException {
+    public void generateCert(File csrFile, byte[] caKey, byte[] caCert, File crtFile, StrimziSubject sbj, int days) throws IOException {
         write(crtFile, END_ENTITY_CERT);
     }
 

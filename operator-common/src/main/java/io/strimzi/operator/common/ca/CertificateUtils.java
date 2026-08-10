@@ -5,7 +5,7 @@
 package io.strimzi.operator.common.ca;
 
 import io.fabric8.kubernetes.api.model.Secret;
-import io.strimzi.certs.Subject;
+import io.strimzi.certs.StrimziSubject;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
@@ -215,8 +215,8 @@ public class CertificateUtils {
      * @param organization The O of the certificate to be created. May be null.
      * @return The subject created with the given CN and O
      */
-    public static Subject getSubject(String commonName, String organization) {
-        Subject.Builder subject = new Subject.Builder();
+    public static StrimziSubject getSubject(String commonName, String organization) {
+        StrimziSubject.Builder subject = new StrimziSubject.Builder();
         if (organization != null) {
             subject.withOrganizationName(organization);
         }

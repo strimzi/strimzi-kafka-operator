@@ -11,7 +11,7 @@ import io.strimzi.api.kafka.model.topic.KafkaTopicBuilder;
 import io.strimzi.api.kafka.model.topic.KafkaTopicStatusBuilder;
 import io.strimzi.api.kafka.model.topic.ReplicasChangeState;
 import io.strimzi.api.kafka.model.topic.ReplicasChangeStatusBuilder;
-import io.strimzi.certs.Subject;
+import io.strimzi.certs.StrimziSubject;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.StatusUtils;
 import io.strimzi.operator.common.operator.MockCertIssuer;
@@ -66,7 +66,7 @@ public class CruiseControlHandlerTest {
         File tlsKeyFile = ReadWriteUtils.tempFile(CruiseControlHandlerTest.class.getSimpleName(), ".key");
         tlsCrtFile = ReadWriteUtils.tempFile(CruiseControlHandlerTest.class.getSimpleName(), ".crt");
         new MockCertIssuer().generateSelfSignedCert(tlsKeyFile, tlsCrtFile,
-            new Subject.Builder().withCommonName("Trusted Test CA").build(), 365);
+            new StrimziSubject.Builder().withCommonName("Trusted Test CA").build(), 365);
         apiUserFile = ReadWriteUtils.tempFile(CruiseControlHandlerTest.class.getSimpleName(), ".username");
         try (PrintWriter out = new PrintWriter(apiUserFile.getAbsolutePath())) {
             out.print("topic-operator-admin");

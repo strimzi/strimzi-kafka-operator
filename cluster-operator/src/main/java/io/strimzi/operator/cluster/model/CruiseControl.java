@@ -37,7 +37,7 @@ import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlResources;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlSpec;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlTemplate;
 import io.strimzi.certs.CertAndKey;
-import io.strimzi.certs.Subject;
+import io.strimzi.certs.StrimziSubject;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.model.cruisecontrol.CapacityConfiguration;
 import io.strimzi.operator.cluster.model.cruisecontrol.CruiseControlConfiguration;
@@ -452,7 +452,7 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
         LOGGER.debugCr(reconciliation, "Generating certificates");
         CertAndKey existingCertAndKey = CertSecretUtils.keyStoreCertAndKey(existingSecret, CruiseControl.COMPONENT_TYPE, clusterCa.caCertGenerationAnnotation());
 
-        Subject subject = buildCruiseControlCertSubject(namespace, clusterName);
+        StrimziSubject subject = buildCruiseControlCertSubject(namespace, clusterName);
 
         return clusterCa.maybeCopyOrGenerateServerCerts(reconciliation, CruiseControl.COMPONENT_TYPE, subject, existingCertAndKey, isMaintenanceTimeWindowsSatisfied, false)
                 .thenApply(ccCerts -> {
@@ -469,10 +469,10 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
                 });
     }
 
-    private Subject buildCruiseControlCertSubject(String namespace, String clusterName) {
+    private StrimziSubject buildCruiseControlCertSubject(String namespace, String clusterName) {
         DnsNameGenerator ccDnsGenerator = DnsNameGenerator.of(namespace, CruiseControlResources.serviceName(clusterName));
 
-        Subject.Builder subject = new Subject.Builder()
+        StrimziSubject.Builder subject = new StrimziSubject.Builder()
                 .withOrganizationName(Ca.IO_STRIMZI)
                 .withCommonName(CruiseControlResources.serviceName(clusterName));
 
