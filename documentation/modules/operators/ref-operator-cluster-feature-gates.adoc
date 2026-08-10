@@ -108,7 +108,7 @@ endif::Section[]
 ¦1.7 (planned)
 
 ¦`CertManagerCaType`
-¦1.2
+¦1.3
 ¦-
 ¦-
 
