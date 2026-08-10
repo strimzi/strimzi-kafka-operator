@@ -67,6 +67,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletionStage;
 
+import static io.strimzi.operator.cluster.model.cruisecontrol.CruiseControlConfiguration.CRUISE_CONTROL_DEFAULT_ANOMALY_DETECTION_GOALS;
 import static java.lang.String.format;
 
 /**
@@ -279,6 +280,11 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
                 throw new UnsupportedOperationException("Cruise Control's self healing functionality is not currently supported. Please remove " +
                         CruiseControlConfigurationParameters.SELF_HEALING_CONFIG_KEY + " config");
             }
+        }
+
+        // If the user has not explicitly configured anomaly detection goals, default them to the default anomaly detection goals
+        if (configuration.getConfigOption(CruiseControlConfigurationParameters.ANOMALY_DETECTION_CONFIG_KEY.toString()) == null) {
+            configuration.setConfigOption(CruiseControlConfigurationParameters.ANOMALY_DETECTION_CONFIG_KEY.toString(), CRUISE_CONTROL_DEFAULT_ANOMALY_DETECTION_GOALS);
         }
     }
 

@@ -80,6 +80,7 @@ import java.util.Properties;
 import java.util.Set;
 
 import static io.strimzi.operator.cluster.model.CruiseControl.API_HEALTHCHECK_PATH;
+import static io.strimzi.operator.cluster.model.cruisecontrol.CruiseControlConfiguration.CRUISE_CONTROL_DEFAULT_ANOMALY_DETECTION_GOALS;
 import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlConfigurationParameters.ANOMALY_DETECTION_CONFIG_KEY;
 import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlConfigurationParameters.DEFAULT_GOALS_CONFIG_KEY;
 import static java.lang.String.format;
@@ -865,7 +866,7 @@ public class CruiseControlTest {
         CruiseControl cc = createCruiseControl(kafka, NODES, STORAGE, Map.of());
 
         String anomalyDetectionGoals =  cc.configuration.asOrderedProperties().asMap().get(ANOMALY_DETECTION_CONFIG_KEY.getValue());
-        assertThat(anomalyDetectionGoals, is(customGoals));
+        assertThat(anomalyDetectionGoals, is(CRUISE_CONTROL_DEFAULT_ANOMALY_DETECTION_GOALS));
     }
 
     @Test
