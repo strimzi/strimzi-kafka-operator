@@ -77,10 +77,7 @@ public class CertManagerCa extends Ca {
 
     @Override
     protected int initCaKeyGeneration(Secret caKeySecret, Secret caCertSecret) {
-        if (caCertSecret != null) {
-            return Annotations.intAnnotation(caCertSecret, ANNO_STRIMZI_IO_CA_KEY_GENERATION, INIT_GENERATION);
-        }
-        return INIT_GENERATION;
+        return caCertSecret != null ? Annotations.intAnnotation(caCertSecret, ANNO_STRIMZI_IO_CA_KEY_GENERATION, INIT_GENERATION) : INIT_GENERATION;
     }
 
     @Override
@@ -90,8 +87,7 @@ public class CertManagerCa extends Ca {
 
     @Override
     public CompletionStage<CertAndKey> maybeCopyOrGenerateClientCert(Reconciliation reconciliation, String componentName, CertAndKey existingCertAndKey, boolean isMaintenanceTimeWindowsSatisfied) {
-        Subject subject = CertificateUtils.getSubject(componentName, Ca.IO_STRIMZI);
-        return maybeCopyOrGenerateCert(componentName, subject, existingCertAndKey);
+        return maybeCopyOrGenerateCert(componentName, CertificateUtils.getSubject(componentName, Ca.IO_STRIMZI), existingCertAndKey);
     }
 
     /**
@@ -294,6 +290,7 @@ public class CertManagerCa extends Ca {
 
     /**
      * Checks if two certs are the same by comparing hashes
+     *
      * @param existingCertAndKey    Existing cert
      * @param newCertAndKey         New cert
      * @return Whether the cert has been updated in the new Secret

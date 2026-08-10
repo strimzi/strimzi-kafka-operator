@@ -24,6 +24,7 @@ import java.util.concurrent.Executor;
 public class CertManagerCertificateOperator extends AbstractNamespacedResourceOperator<KubernetesClient, Certificate, CertificateList, Resource<Certificate>> {
     /**
      * Constructor
+     *
      * @param asyncExecutor Executor to use for asynchronous subroutines
      * @param client The Kubernetes client
      */
@@ -38,6 +39,7 @@ public class CertManagerCertificateOperator extends AbstractNamespacedResourceOp
 
     /**
      * Wait for provided Certificate object to report ready
+     *
      * @param reconciliation Reconciliation marker
      * @param namespace Namespace of the Certificate for
      * @param name Name of the Certificate to wait for
