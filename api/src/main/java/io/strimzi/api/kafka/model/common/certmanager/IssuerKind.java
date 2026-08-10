@@ -7,8 +7,18 @@ package io.strimzi.api.kafka.model.common.certmanager;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 
+/**
+ * The type of Issuer to use for Certificate resources that will be reconciled by cert-manager.
+ * cert-manager supports two kinds: Issuer and ClusterIssuer.
+ */
 public enum IssuerKind {
+    /**
+     * Issuer kind that is referenced by Certificate resources in the same namespace
+     */
     ISSUER,
+    /**
+     * Issuer that kind that can be referenced by Certificate resources in any namespace
+     */
     CLUSTER_ISSUER;
 
     @JsonCreator
