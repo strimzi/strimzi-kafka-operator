@@ -18,7 +18,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Representation of the Cluster Security configuration.
+ * Representation of the desired Cluster Security configuration.
  */
 @Buildable(
         editableEnabled = false,

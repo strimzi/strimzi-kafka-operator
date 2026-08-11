@@ -1906,7 +1906,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
     /**
      * Internal method used to generate a Kafka agent configuration for given Kafka node.
      *
-     * @param node                  Node reference with Node ID and pod name
+     * @param node  Node reference with Node ID and pod name
      *
      * @return  String with the Kafka agent configuration
      */

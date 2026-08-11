@@ -44,8 +44,8 @@ public class KafkaAgentClient {
     private final String namespace;
     private final Reconciliation reconciliation;
     private final String cluster;
-    private Identity identity;
-    private HttpClient httpClient;
+    private final Identity identity;
+    private final HttpClient httpClient;
 
     /**
      * Constructor
@@ -134,8 +134,7 @@ public class KafkaAgentClient {
         BrokerState brokerstate = new BrokerState(-1, null);
         String host = DnsNameGenerator.podDnsName(namespace, KafkaResources.brokersServiceName(cluster), podName);
         try {
-            String scheme = identity.trustSet() instanceof PemTrustSet ? "https" : "http";
-            URI uri = new URI(scheme, null, host, KAFKA_AGENT_HTTPS_PORT, BROKER_STATE_REST_PATH, null, null);
+            URI uri = new URI(identity.trustSet() instanceof PemTrustSet ? "https" : "http", null, host, KAFKA_AGENT_HTTPS_PORT, BROKER_STATE_REST_PATH, null, null);
             brokerstate = MAPPER.readValue(doGet(uri), BrokerState.class);
         } catch (JsonProcessingException e) {
             LOGGER.warnCr(reconciliation, "Failed to parse broker state", e);

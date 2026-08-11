@@ -18,7 +18,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Representation of the Cluster Security authentication status.
+ * Representation of the desired Cluster Security authentication.
  */
 @Buildable(
         editableEnabled = false,
