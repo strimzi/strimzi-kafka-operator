@@ -21,7 +21,7 @@ public class KafkaAgentConfigurationBuilder {
     private final NodeRef node;
 
     /**
-     * Broker configuration template constructor
+     * Constructor of the Kafka Agent configuration builder
      *
      * @param reconciliation    The reconciliation
      * @param node              NodeRef instance

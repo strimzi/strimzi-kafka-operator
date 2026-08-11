@@ -774,7 +774,7 @@ public class KafkaBrokerConfigurationBuilderTest {
     }
 
     @Test
-    public void testWithNoListeners() {
+    public void testOnlyReplicationAndControlPlaneListeners() {
         String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT)
                 .withListeners("my-cluster", "my-namespace", emptyList(), null, null)
                 .build();
@@ -801,7 +801,7 @@ public class KafkaBrokerConfigurationBuilderTest {
     }
 
     @Test
-    public void testWithNoListenersWithoutMtls() {
+    public void testOnlyReplicationAndControlPlaneListenersWithoutMtls() {
         String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, new KafkaClusterSecurityContext(ClusterSecurityEncryptionType.STRIMZI_TLS, ClusterSecurityAuthenticationType.NONE))
                 .withListeners("my-cluster", "my-namespace", emptyList(), null, null)
                 .build();
@@ -826,7 +826,7 @@ public class KafkaBrokerConfigurationBuilderTest {
     }
 
     @Test
-    public void testWithNoListenersWithoutTlsOrMtls() {
+    public void testOnlyReplicationAndControlPlaneListenersWithoutTlsOrMtls() {
         String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, new KafkaClusterSecurityContext(ClusterSecurityEncryptionType.NONE, ClusterSecurityAuthenticationType.NONE))
                 .withListeners("my-cluster", "my-namespace", emptyList(), null, null)
                 .build();
