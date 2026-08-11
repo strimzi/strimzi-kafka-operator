@@ -14,7 +14,7 @@ export CERTS_STORE_PASSWORD
 
 mkdir -p /tmp/cruise-control
 
-# Import certificates into keystore and truststore id TLS is enabled
+# Import certificates into keystore and truststore only if TLS is enabled
 if [ "$STRIMZI_CC_TLS_ENABLED" = true ]; then
   "$CRUISE_CONTROL_HOME"/cruise_control_tls_prepare_certificates.sh
 fi
