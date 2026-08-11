@@ -221,12 +221,9 @@ public class KafkaConnectTemplates {
 
             LOGGER.info("Using {} image from {} env variable", Environment.CONNECT_IMAGE_WITH_FILE_SINK_PLUGIN, Environment.CONNECT_IMAGE_WITH_FILE_SINK_PLUGIN_ENV);
 
-            if (kafkaConnectBuilder.getSpec() != null) {
-                kafkaConnectBuilder.getSpec().setBuild(null);
-            }
-
             return kafkaConnectBuilder
                 .editOrNewSpec()
+                    .withBuild(null)
                     .withImage(Environment.CONNECT_IMAGE_WITH_FILE_SINK_PLUGIN)
                 .endSpec();
         }
