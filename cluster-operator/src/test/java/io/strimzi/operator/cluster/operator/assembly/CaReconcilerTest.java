@@ -119,12 +119,6 @@ public class CaReconcilerTest {
     private static final String CURRENT_CA_CRT = Util.encodeToBase64("current-ca-crt");
     private static final String OLD_CA_CRT = Util.encodeToBase64("old-ca-crt");
     private static final String OLD_CA_CRT_ALIAS = "ca-2026-01-01T00-00-00Z.crt";
-    // Held by the Cluster Operator Secret before the reconciliation, deliberately different from what the CA issues
-    private static final String EXISTING_CLUSTER_OPERATOR_CERT = "existing-cluster-operator-cert";
-    private static final String EXISTING_CLUSTER_OPERATOR_KEY = "existing-cluster-operator-key";
-    // Issued by the mocked CA during the reconciliation
-    private static final String ISSUED_CLUSTER_OPERATOR_CERT = "cluster-operator-cert";
-    private static final String ISSUED_CLUSTER_OPERATOR_KEY = "cluster-operator-key";
 
     private WorkerExecutor sharedWorkerExecutor;
     private ResourceOperatorSupplier supplier;
@@ -145,7 +139,15 @@ public class CaReconcilerTest {
         // Replacing the key also renews the cert, so both generations moved on
         Ca clusterCa = mockClusterCa(1, 1, true);
         Ca clientsCa = mockClientsCa(0);
-        mockKubernetesState(controllerPodsWithCaGenerations(0, 0), brokerPodsWithCaGenerations(0, 0));
+        mockKubernetesState(
+                List.of(
+                        controllerPodWithCaGenerations("my-cluster-controllers-3", 0, 0),
+                        controllerPodWithCaGenerations("my-cluster-controllers-4", 0, 0),
+                        controllerPodWithCaGenerations("my-cluster-controllers-5", 0, 0)),
+                List.of(
+                        brokerPodWithCaGenerations("my-cluster-brokers-0", 0, 0),
+                        brokerPodWithCaGenerations("my-cluster-brokers-1", 0, 0),
+                        brokerPodWithCaGenerations("my-cluster-brokers-2", 0, 0)));
 
         when(supplier.strimziPodSetOperator.batchReconcile(any(), eq(NAMESPACE), any(), any(Labels.class)))
                 .thenAnswer(i -> CompletableFuture.completedFuture(null));
@@ -170,7 +172,7 @@ public class CaReconcilerTest {
                     verify(supplier.strimziPodSetOperator).batchReconcile(any(), eq(NAMESPACE), podSetCaptor.capture(), any(Labels.class));
 
                     assertThat(podSetCaptor.getValue(), hasSize(2));
-                    podsIn(podSetCaptor.getValue()).forEach(pod -> {
+                    podSetCaptor.getValue().stream().flatMap(podSet -> PodSetUtils.podSetToPods(podSet).stream()).forEach(pod -> {
                         // Expect that the CA key generation was updated. CA cert generations are updated by component reconcilers
                         assertThat(pod.getMetadata().getAnnotations(), hasEntry(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_KEY_GENERATION, "1"));
                         assertThat(pod.getMetadata().getAnnotations(), hasEntry(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, "0"));
@@ -226,7 +228,7 @@ public class CaReconcilerTest {
                     verify(supplier.strimziPodSetOperator).batchReconcile(any(), eq(NAMESPACE), podSetCaptor.capture(), any(Labels.class));
 
                     assertThat(podSetCaptor.getValue(), hasSize(2));
-                    podsIn(podSetCaptor.getValue()).forEach(pod -> {
+                    podSetCaptor.getValue().stream().flatMap(podSet -> PodSetUtils.podSetToPods(podSet).stream()).forEach(pod -> {
                         assertThat(pod.getMetadata().getAnnotations(), hasEntry(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_KEY_GENERATION, "1"));
                         assertThat(pod.getMetadata().getAnnotations(), hasEntry(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, "0"));
                         assertThat(pod.getMetadata().getAnnotations(), hasEntry(Ca.ANNO_STRIMZI_IO_CLIENTS_CA_CERT_GENERATION, "0"));
@@ -241,7 +243,15 @@ public class CaReconcilerTest {
     public void testNothingRolledWhenClusterCaUnchanged(VertxTestContext context) {
         Ca clusterCa = mockClusterCa(0, 0, false);
         Ca clientsCa = mockClientsCa(0);
-        mockKubernetesState(controllerPodsWithCaGenerations(0, 0), brokerPodsWithCaGenerations(0, 0));
+        mockKubernetesState(
+                List.of(
+                        controllerPodWithCaGenerations("my-cluster-controllers-3", 0, 0),
+                        controllerPodWithCaGenerations("my-cluster-controllers-4", 0, 0),
+                        controllerPodWithCaGenerations("my-cluster-controllers-5", 0, 0)),
+                List.of(
+                        brokerPodWithCaGenerations("my-cluster-brokers-0", 0, 0),
+                        brokerPodWithCaGenerations("my-cluster-brokers-1", 0, 0),
+                        brokerPodWithCaGenerations("my-cluster-brokers-2", 0, 0)));
 
         Checkpoint async = context.checkpoint();
         MockCaReconciler mockCaReconciler = new MockCaReconciler(supplier, clusterCa, clientsCa);
@@ -262,7 +272,15 @@ public class CaReconcilerTest {
     public void testNothingRolledWhenOnlyClusterCaCertChanged(VertxTestContext context) {
         Ca clusterCa = mockClusterCa(1, 0, false);
         Ca clientsCa = mockClientsCa(0);
-        mockKubernetesState(controllerPodsWithCaGenerations(0, 0), brokerPodsWithCaGenerations(0, 0));
+        mockKubernetesState(
+                List.of(
+                        controllerPodWithCaGenerations("my-cluster-controllers-3", 0, 0),
+                        controllerPodWithCaGenerations("my-cluster-controllers-4", 0, 0),
+                        controllerPodWithCaGenerations("my-cluster-controllers-5", 0, 0)),
+                List.of(
+                        brokerPodWithCaGenerations("my-cluster-brokers-0", 0, 0),
+                        brokerPodWithCaGenerations("my-cluster-brokers-1", 0, 0),
+                        brokerPodWithCaGenerations("my-cluster-brokers-2", 0, 0)));
 
         Checkpoint async = context.checkpoint();
         MockCaReconciler mockCaReconciler = new MockCaReconciler(supplier, clusterCa, clientsCa);
@@ -280,7 +298,15 @@ public class CaReconcilerTest {
     public void testNothingRolledWhenOnlyClientsCaChanged(VertxTestContext context) {
         Ca clusterCa = mockClusterCa(0, 0, false);
         Ca clientsCa = mockClientsCa(1);
-        mockKubernetesState(controllerPodsWithCaGenerations(0, 0), brokerPodsWithCaGenerations(0, 0));
+        mockKubernetesState(
+                List.of(
+                        controllerPodWithCaGenerations("my-cluster-controllers-3", 0, 0),
+                        controllerPodWithCaGenerations("my-cluster-controllers-4", 0, 0),
+                        controllerPodWithCaGenerations("my-cluster-controllers-5", 0, 0)),
+                List.of(
+                        brokerPodWithCaGenerations("my-cluster-brokers-0", 0, 0),
+                        brokerPodWithCaGenerations("my-cluster-brokers-1", 0, 0),
+                        brokerPodWithCaGenerations("my-cluster-brokers-2", 0, 0)));
 
         Checkpoint async = context.checkpoint();
         MockCaReconciler mockCaReconciler = new MockCaReconciler(supplier, clusterCa, clientsCa);
@@ -309,7 +335,12 @@ public class CaReconcilerTest {
                 brokerPodWithCaGenerations("my-cluster-brokers-0", 1, 1),
                 brokerPodWithCaGenerations("my-cluster-brokers-1", 1, 1),
                 terminatingPod);
-        mockKubernetesState(controllerPodsWithCaGenerations(1, 1), brokerPods);
+        mockKubernetesState(
+                List.of(
+                        controllerPodWithCaGenerations("my-cluster-controllers-3", 1, 1),
+                        controllerPodWithCaGenerations("my-cluster-controllers-4", 1, 1),
+                        controllerPodWithCaGenerations("my-cluster-controllers-5", 1, 1)),
+                brokerPods);
 
         Checkpoint async = context.checkpoint();
         MockCaReconciler mockCaReconciler = new MockCaReconciler(supplier, clusterCa, clientsCa);
@@ -331,7 +362,15 @@ public class CaReconcilerTest {
     public void testTrustBundleSecretReconciled(VertxTestContext context) {
         Ca clusterCa = mockClusterCa(1, 0, false);
         Ca clientsCa = mockClientsCa(2);
-        mockKubernetesState(controllerPodsWithCaGenerations(1, 0), brokerPodsWithCaGenerations(1, 0));
+        mockKubernetesState(
+                List.of(
+                        controllerPodWithCaGenerations("my-cluster-controllers-3", 1, 0),
+                        controllerPodWithCaGenerations("my-cluster-controllers-4", 1, 0),
+                        controllerPodWithCaGenerations("my-cluster-controllers-5", 1, 0)),
+                List.of(
+                        brokerPodWithCaGenerations("my-cluster-brokers-0", 1, 0),
+                        brokerPodWithCaGenerations("my-cluster-brokers-1", 1, 0),
+                        brokerPodWithCaGenerations("my-cluster-brokers-2", 1, 0)));
 
         Checkpoint async = context.checkpoint();
         new MockCaReconciler(supplier, clusterCa, clientsCa)
@@ -353,7 +392,15 @@ public class CaReconcilerTest {
     public void testClusterOperatorSecretCreatedWhenMissing(VertxTestContext context) {
         Ca clusterCa = mockClusterCa(1, 0, false);
         Ca clientsCa = mockClientsCa(0);
-        mockKubernetesState(controllerPodsWithCaGenerations(1, 0), brokerPodsWithCaGenerations(1, 0));
+        mockKubernetesState(
+                List.of(
+                        controllerPodWithCaGenerations("my-cluster-controllers-3", 1, 0),
+                        controllerPodWithCaGenerations("my-cluster-controllers-4", 1, 0),
+                        controllerPodWithCaGenerations("my-cluster-controllers-5", 1, 0)),
+                List.of(
+                        brokerPodWithCaGenerations("my-cluster-brokers-0", 1, 0),
+                        brokerPodWithCaGenerations("my-cluster-brokers-1", 1, 0),
+                        brokerPodWithCaGenerations("my-cluster-brokers-2", 1, 0)));
 
         Checkpoint async = context.checkpoint();
         new MockCaReconciler(supplier, clusterCa, clientsCa)
@@ -376,7 +423,26 @@ public class CaReconcilerTest {
     public void testClusterOperatorSecretRenewedWhenClusterCaFullyTrusted(VertxTestContext context) {
         Ca clusterCa = mockClusterCa(2, 0, false);
         Ca clientsCa = mockClientsCa(0);
-        mockKubernetesState(clusterOperatorSecret(), controllerPodsWithCaGenerations(2, 0), brokerPodsWithCaGenerations(2, 0));
+        Secret existingCoSecret = new SecretBuilder()
+                .withNewMetadata()
+                    .withName(KafkaResources.clusterOperatorCertsSecretName(NAME))
+                    .withNamespace(NAMESPACE)
+                    .addToAnnotations(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, "1")
+                .endMetadata()
+                .withData(Map.of(
+                        "cluster-operator.crt", Util.encodeToBase64("old-cert"),
+                        "cluster-operator.key", Util.encodeToBase64("old-key")))
+                .build();
+
+        mockKubernetesState(existingCoSecret,
+                List.of(
+                        controllerPodWithCaGenerations("my-cluster-controllers-3", 2, 0),
+                        controllerPodWithCaGenerations("my-cluster-controllers-4", 2, 0),
+                        controllerPodWithCaGenerations("my-cluster-controllers-5", 2, 0)),
+                List.of(
+                        brokerPodWithCaGenerations("my-cluster-brokers-0", 2, 0),
+                        brokerPodWithCaGenerations("my-cluster-brokers-1", 2, 0),
+                        brokerPodWithCaGenerations("my-cluster-brokers-2", 2, 0)));
 
         Checkpoint async = context.checkpoint();
         new MockCaReconciler(supplier, clusterCa, clientsCa)
@@ -385,14 +451,14 @@ public class CaReconcilerTest {
                     ArgumentCaptor<CertAndKey> oldCertAndKey = ArgumentCaptor.forClass(CertAndKey.class);
                     verify(clusterCa).maybeCopyOrGenerateClientCert(any(), eq("cluster-operator"), oldCertAndKey.capture(), anyBoolean());
 
-                    assertThat(oldCertAndKey.getValue().certAsBase64String(), is(Util.encodeToBase64(EXISTING_CLUSTER_OPERATOR_CERT)));
-                    assertThat(oldCertAndKey.getValue().keyAsBase64String(), is(Util.encodeToBase64(EXISTING_CLUSTER_OPERATOR_KEY)));
+                    assertThat(oldCertAndKey.getValue().certAsBase64String(), is(Util.encodeToBase64("old-cert")));
+                    assertThat(oldCertAndKey.getValue().keyAsBase64String(), is(Util.encodeToBase64("old-key")));
                     assertThat(oldCertAndKey.getValue().caCertGeneration(), is(1));
 
                     ArgumentCaptor<Secret> coSecret = ArgumentCaptor.forClass(Secret.class);
                     verify(supplier.secretOperations).reconcile(any(), eq(NAMESPACE), eq(KafkaResources.clusterOperatorCertsSecretName(NAME)), coSecret.capture());
                     assertThat(coSecret.getValue().getMetadata().getAnnotations(), hasEntry(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, "2"));
-                    assertThat(coSecret.getValue().getData(), hasEntry("cluster-operator.crt", Util.encodeToBase64(ISSUED_CLUSTER_OPERATOR_CERT)));
+                    assertThat(coSecret.getValue().getData(), hasEntry("cluster-operator.crt", Util.encodeToBase64("new-cert")));
                     async.flag();
                 })));
     }
@@ -402,7 +468,26 @@ public class CaReconcilerTest {
     public void testClusterOperatorSecretNotUpdatedWhenClusterCaNotFullyTrusted(VertxTestContext context) {
         Ca clusterCa = mockClusterCa(0, 1, false);
         Ca clientsCa = mockClientsCa(0);
-        mockKubernetesState(clusterOperatorSecret(), controllerPodsWithCaGenerations(0, 0), brokerPodsWithCaGenerations(0, 0));
+        Secret existingCoSecret = new SecretBuilder()
+                .withNewMetadata()
+                    .withName(KafkaResources.clusterOperatorCertsSecretName(NAME))
+                    .withNamespace(NAMESPACE)
+                    .addToAnnotations(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, "1")
+                .endMetadata()
+                .withData(Map.of(
+                        "cluster-operator.crt", Util.encodeToBase64("old-cert"),
+                        "cluster-operator.key", Util.encodeToBase64("old-key")))
+                .build();
+
+        mockKubernetesState(existingCoSecret,
+                List.of(
+                        controllerPodWithCaGenerations("my-cluster-controllers-3", 0, 0),
+                        controllerPodWithCaGenerations("my-cluster-controllers-4", 0, 0),
+                        controllerPodWithCaGenerations("my-cluster-controllers-5", 0, 0)),
+                List.of(
+                        brokerPodWithCaGenerations("my-cluster-brokers-0", 0, 0),
+                        brokerPodWithCaGenerations("my-cluster-brokers-1", 0, 0),
+                        brokerPodWithCaGenerations("my-cluster-brokers-2", 0, 0)));
         when(supplier.strimziPodSetOperator.batchReconcile(any(), eq(NAMESPACE), any(), any(Labels.class)))
                 .thenAnswer(i -> CompletableFuture.completedFuture(null));
 
@@ -422,7 +507,15 @@ public class CaReconcilerTest {
         Ca clusterCa = mockClusterCa(1, 1, false);
         when(clusterCa.certsRemoved()).thenReturn(true);
         Ca clientsCa = mockClientsCa(0);
-        mockKubernetesState(controllerPodsWithCaGenerations(1, 1), brokerPodsWithCaGenerations(1, 1));
+        mockKubernetesState(
+                List.of(
+                        controllerPodWithCaGenerations("my-cluster-controllers-3", 1, 1),
+                        controllerPodWithCaGenerations("my-cluster-controllers-4", 1, 1),
+                        controllerPodWithCaGenerations("my-cluster-controllers-5", 1, 1)),
+                List.of(
+                        brokerPodWithCaGenerations("my-cluster-brokers-0", 1, 1),
+                        brokerPodWithCaGenerations("my-cluster-brokers-1", 1, 1),
+                        brokerPodWithCaGenerations("my-cluster-brokers-2", 1, 1)));
 
         Checkpoint async = context.checkpoint();
         new MockCaReconciler(supplier, clusterCa, clientsCa)
@@ -449,10 +542,15 @@ public class CaReconcilerTest {
         Ca clientsCa = mockClientsCa(0);
         // One pod still presents a certificate signed by the previous Cluster CA cert
         List<Pod> brokerPods = List.of(
-                brokerPodWithCaGenerations("my-cluster-brokers-0", 1, 0),
-                brokerPodWithCaGenerations("my-cluster-brokers-1", 1, 0),
-                brokerPodWithCaGenerations("my-cluster-brokers-2", 0, 0));
-        mockKubernetesState(controllerPodsWithCaGenerations(1, 0), brokerPods);
+                        brokerPodWithCaGenerations("my-cluster-brokers-0", 1, 0),
+                        brokerPodWithCaGenerations("my-cluster-brokers-1", 1, 0),
+                        brokerPodWithCaGenerations("my-cluster-brokers-2", 0, 0));
+        mockKubernetesState(
+                List.of(
+                        controllerPodWithCaGenerations("my-cluster-controllers-3", 1, 0),
+                        controllerPodWithCaGenerations("my-cluster-controllers-4", 1, 0),
+                        controllerPodWithCaGenerations("my-cluster-controllers-5", 1, 0)),
+                brokerPods);
 
         Checkpoint async = context.checkpoint();
         new MockCaReconciler(supplier, clusterCa, clientsCa)
@@ -493,8 +591,8 @@ public class CaReconcilerTest {
         when(clusterCa.caCertData()).thenReturn(Map.of(Ca.CA_CRT, CURRENT_CA_CRT));
         when(clusterCa.maybeCopyOrGenerateClientCert(any(), any(), any(), anyBoolean()))
                 .thenReturn(CompletableFuture.completedStage(new CertAndKey(
-                        ISSUED_CLUSTER_OPERATOR_KEY.getBytes(StandardCharsets.US_ASCII),
-                        ISSUED_CLUSTER_OPERATOR_CERT.getBytes(StandardCharsets.US_ASCII),
+                        "new-key".getBytes(StandardCharsets.US_ASCII),
+                        "new-cert".getBytes(StandardCharsets.US_ASCII),
                         caCertGeneration)));
         return clusterCa;
     }
@@ -525,7 +623,14 @@ public class CaReconcilerTest {
 
         StrimziPodSetOperator spsOps = supplier.strimziPodSetOperator;
         when(spsOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(CompletableFuture.completedFuture(
-                List.of(podSet(NAME + "-controller", controllerPods), podSet(NAME + "-broker", brokerPods))));
+                List.of(new StrimziPodSetBuilder()
+                                .withNewMetadata().withName(NAME + "-controller").endMetadata()
+                                .withNewSpec().withPods(PodSetUtils.podsToMaps(controllerPods)).endSpec()
+                                .build(),
+                        new StrimziPodSetBuilder()
+                                .withNewMetadata().withName(NAME + "-broker").endMetadata()
+                                .withNewSpec().withPods(PodSetUtils.podsToMaps(brokerPods)).endSpec()
+                                .build())));
 
         Map<String, Deployment> deps = new HashMap<>();
         deps.put("my-cluster-entity-operator", deploymentWithName("my-cluster-entity-operator"));
@@ -591,19 +696,7 @@ public class CaReconcilerTest {
         }
     }
 
-    private static List<Pod> controllerPodsWithCaGenerations(int clusterCaCertGeneration, int clusterCaKeyGeneration) {
-        return List.of(
-                controllerPodWithCaGenerations("my-cluster-controllers-3", clusterCaCertGeneration, clusterCaKeyGeneration),
-                controllerPodWithCaGenerations("my-cluster-controllers-4", clusterCaCertGeneration, clusterCaKeyGeneration),
-                controllerPodWithCaGenerations("my-cluster-controllers-5", clusterCaCertGeneration, clusterCaKeyGeneration));
-    }
 
-    private static List<Pod> brokerPodsWithCaGenerations(int clusterCaCertGeneration, int clusterCaKeyGeneration) {
-        return List.of(
-                brokerPodWithCaGenerations("my-cluster-brokers-0", clusterCaCertGeneration, clusterCaKeyGeneration),
-                brokerPodWithCaGenerations("my-cluster-brokers-1", clusterCaCertGeneration, clusterCaKeyGeneration),
-                brokerPodWithCaGenerations("my-cluster-brokers-2", clusterCaCertGeneration, clusterCaKeyGeneration));
-    }
 
     private static Pod brokerPodWithCaGenerations(String podName, int caCertGeneration, int caKeyGeneration) {
         return podWithCaGenerations(podName, true, false, caCertGeneration, caKeyGeneration);
@@ -630,22 +723,7 @@ public class CaReconcilerTest {
                 .build();
     }
 
-    private static StrimziPodSet podSet(String name, List<Pod> pods) {
-        return new StrimziPodSetBuilder()
-                .withNewMetadata()
-                    .withName(name)
-                .endMetadata()
-                .withNewSpec()
-                    .withPods(PodSetUtils.podsToMaps(pods))
-                .endSpec()
-                .build();
-    }
 
-    private static List<Pod> podsIn(List<StrimziPodSet> podSets) {
-        return podSets.stream()
-                .flatMap(podSet -> PodSetUtils.podSetToPods(podSet).stream())
-                .toList();
-    }
 
     private static Deployment deploymentWithName(String name) {
         return new DeploymentBuilder()
@@ -666,16 +744,4 @@ public class CaReconcilerTest {
                 .build();
     }
 
-    private static Secret clusterOperatorSecret() {
-        return new SecretBuilder()
-                .withNewMetadata()
-                    .withName(KafkaResources.clusterOperatorCertsSecretName(NAME))
-                    .withNamespace(NAMESPACE)
-                    .addToAnnotations(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, "1")
-                .endMetadata()
-                .withData(Map.of(
-                        "cluster-operator.crt", Util.encodeToBase64(EXISTING_CLUSTER_OPERATOR_CERT),
-                        "cluster-operator.key", Util.encodeToBase64(EXISTING_CLUSTER_OPERATOR_KEY)))
-                .build();
-    }
 }
