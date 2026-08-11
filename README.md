@@ -9,7 +9,7 @@
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](http://www.apache.org/licenses/LICENSE-2.0)
 [![Twitter Follow](https://img.shields.io/twitter/follow/strimziio?style=social)](https://twitter.com/strimziio)
 [![Artifact Hub](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/strimzi-kafka-operator)](https://artifacthub.io/packages/search?repo=strimzi-kafka-operator)
-[![FOSSA Status](https://app.fossa.com/api/projects/custom%2B162%2Ftest-container-drain-cleaner-amd64.svg?type=shield&issueType=license)](https://app.fossa.com/projects/custom%2B162%2Ftest-container-drain-cleaner-amd64?ref=badge_shield&issueType=license)
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fstrimzi%2Fstrimzi-kafka-operator.svg?type=shield&issueType=license)](https://app.fossa.com/projects/git%2Bgithub.com%2Fstrimzi%2Fstrimzi-kafka-operator?ref=badge_shield&issueType=license)
 [![Known Vulnerabilities](https://snyk.io/test/github/strimzi/strimzi-kafka-operator/badge.svg)](https://snyk.io/test/github/strimzi/strimzi-kafka-operator)
 
 Strimzi provides a way to run an [Apache Kafka®][kafka] cluster on 
