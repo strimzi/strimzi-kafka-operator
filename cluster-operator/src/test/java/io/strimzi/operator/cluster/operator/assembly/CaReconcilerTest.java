@@ -466,13 +466,13 @@ public class CaReconcilerTest {
     // The Cluster Operator keeps its old cert until every pod trusts the new key
     @Test
     public void testClusterOperatorSecretNotUpdatedWhenClusterCaNotFullyTrusted(VertxTestContext context) {
-        Ca clusterCa = mockClusterCa(0, 1, false);
+        Ca clusterCa = mockClusterCa(1, 1, false);
         Ca clientsCa = mockClientsCa(0);
         Secret existingCoSecret = new SecretBuilder()
                 .withNewMetadata()
                     .withName(KafkaResources.clusterOperatorCertsSecretName(NAME))
                     .withNamespace(NAMESPACE)
-                    .addToAnnotations(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, "1")
+                    .addToAnnotations(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, "0")
                 .endMetadata()
                 .withData(Map.of(
                         "cluster-operator.crt", Util.encodeToBase64("old-cert"),
