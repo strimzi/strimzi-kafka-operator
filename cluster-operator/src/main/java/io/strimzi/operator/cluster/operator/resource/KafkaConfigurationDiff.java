@@ -304,12 +304,12 @@ public class KafkaConfigurationDiff extends AbstractJsonDiff {
                     isConfigUpdated = removeProperty(configModel, updatedCE, pathValueWithoutSlash, entry);
                 } else if ("replace".equals(op)) {
                     // entry is in the current, desired is updated value
-                    isConfigUpdated = updateOrAdd(entry.name(), configModel, desiredMap, currentMap, updatedCE);
+                    isConfigUpdated = updateOrAdd(entry.name(), entry.source(), configModel, desiredMap, currentMap, updatedCE);
                 }
             } else {
                 if ("add".equals(op)) {
                     // entry is not in the current, it is added
-                    isConfigUpdated = updateOrAdd(pathValueWithoutSlash, configModel, desiredMap, currentMap, updatedCE);
+                    isConfigUpdated = updateOrAdd(pathValueWithoutSlash, null, configModel, desiredMap, currentMap, updatedCE);
                 }
             }
 
@@ -324,7 +324,7 @@ public class KafkaConfigurationDiff extends AbstractJsonDiff {
         return updatedCE;
     }
 
-    private boolean updateOrAdd(String propertyName, Map<String, ConfigModel> configModel, Map<String, String> desiredMap, Map<String, String> currentMap, Collection<AlterConfigOp> updatedCE) {
+    private boolean updateOrAdd(String propertyName, ConfigEntry.ConfigSource source, Map<String, ConfigModel> configModel, Map<String, String> desiredMap, Map<String, String> currentMap, Collection<AlterConfigOp> updatedCE) {
         if (!isIgnorableProperty(propertyName)) {
             if (KafkaConfiguration.isCustomConfigurationOption(propertyName, configModel)) {
                 LOGGER.traceCr(reconciliation, "custom property {} has been updated/added {}", propertyName, desiredMap.get(propertyName));
@@ -333,7 +333,10 @@ public class KafkaConfigurationDiff extends AbstractJsonDiff {
                 LOGGER.debugCr(reconciliation, "{} is ignorable because the doubles are equal {}=={}", propertyName, currentMap.get(propertyName), desiredMap.get(propertyName));
             } else {
                 LOGGER.traceCr(reconciliation, "property {} has been updated/added {}", propertyName, desiredMap.get(propertyName));
-                updatedCE.add(new AlterConfigOp(new ConfigEntry(propertyName, desiredMap.get(propertyName)), AlterConfigOp.OpType.SET));
+                ConfigEntry configEntry = source != null
+                        ? new ConfigEntry(propertyName, desiredMap.get(propertyName), source, false, false, Collections.emptyList(), ConfigEntry.ConfigType.UNKNOWN, null)
+                        : new ConfigEntry(propertyName, desiredMap.get(propertyName));
+                updatedCE.add(new AlterConfigOp(configEntry, AlterConfigOp.OpType.SET));
                 return true;
             }
         } else {
@@ -356,7 +359,7 @@ public class KafkaConfigurationDiff extends AbstractJsonDiff {
             // entry is in current, is not in desired, is not default -> it was using non-default value and was removed
             // if the entry was custom, it should be deleted
             if (!isIgnorableProperty(pathValueWithoutSlash)) {
-                updatedCE.add(new AlterConfigOp(new ConfigEntry(pathValueWithoutSlash, null), AlterConfigOp.OpType.DELETE));
+                updatedCE.add(new AlterConfigOp(new ConfigEntry(pathValueWithoutSlash, null, entry.source(), false, false, Collections.emptyList(), ConfigEntry.ConfigType.UNKNOWN, null), AlterConfigOp.OpType.DELETE));
                 LOGGER.infoCr(reconciliation, "{} not set in desired, unsetting back to default {}", entry.name(), "deleted entry");
                 return true;
             } else {
