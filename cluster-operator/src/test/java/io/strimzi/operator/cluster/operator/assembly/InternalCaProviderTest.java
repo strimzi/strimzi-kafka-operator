@@ -16,7 +16,7 @@ import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.certs.OpenSslCertIssuer;
-import io.strimzi.certs.Subject;
+import io.strimzi.certs.StrimziSubject;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.TestUtils;
 import io.strimzi.operator.cluster.model.AbstractModel;
@@ -159,7 +159,7 @@ public class InternalCaProviderTest {
         Path clusterCaStoreFile = Files.createTempFile("tls", "cluster-ca-store");
         clusterCaStoreFile.toFile().deleteOnExit();
 
-        Subject sbj = new Subject.Builder()
+        StrimziSubject sbj = new StrimziSubject.Builder()
                 .withOrganizationName("io.strimzi")
                 .withCommonName(commonName).build();
 

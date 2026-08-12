@@ -14,7 +14,7 @@ import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlResources;
 import io.strimzi.certs.OpenSslCertIssuer;
-import io.strimzi.certs.Subject;
+import io.strimzi.certs.StrimziSubject;
 import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties;
@@ -133,7 +133,7 @@ public class MockCruiseControl {
         OpenSslCertIssuer certIssuer = new OpenSslCertIssuer();
 
         // Create subject with localhost SANs
-        Subject subject = new Subject.Builder()
+        StrimziSubject subject = new StrimziSubject.Builder()
                 .withCommonName("localhost")
                 .addDnsName("localhost")
                 .addIpAddress("127.0.0.1")

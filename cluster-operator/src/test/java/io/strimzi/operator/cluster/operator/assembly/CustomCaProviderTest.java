@@ -11,7 +11,7 @@ import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.certs.OpenSslCertIssuer;
-import io.strimzi.certs.Subject;
+import io.strimzi.certs.StrimziSubject;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.common.Reconciliation;
@@ -69,7 +69,7 @@ public class CustomCaProviderTest {
 
     @Test
     public void testInitCaSecrets() throws IOException {
-        Subject sbj = new Subject.Builder()
+        StrimziSubject sbj = new StrimziSubject.Builder()
                 .withOrganizationName("io.strimzi")
                 .withCommonName("ca").build();
 
@@ -91,11 +91,11 @@ public class CustomCaProviderTest {
         CERT_ISSUER.generateRootCaCert(sbj, rootKey, rootCert, notBefore, notAfter, 1);
 
         // Generate an intermediate cert
-        Subject intermediateSubject1 = new Subject.Builder().withCommonName("IntermediateCn1").withOrganizationName("MyOrganization").build();
+        StrimziSubject intermediateSubject1 = new StrimziSubject.Builder().withCommonName("IntermediateCn1").withOrganizationName("MyOrganization").build();
         CERT_ISSUER.generateIntermediateCaCert(rootKey, rootCert, intermediateSubject1, intermediateKey1, intermediateCert1, notBefore, notAfter, 1);
 
         // Generate an additional intermediate cert
-        Subject intermediateSubject2 = new Subject.Builder().withCommonName("IntermediateCn2").withOrganizationName("MyOrganization").build();
+        StrimziSubject intermediateSubject2 = new StrimziSubject.Builder().withCommonName("IntermediateCn2").withOrganizationName("MyOrganization").build();
         CERT_ISSUER.generateIntermediateCaCert(intermediateKey1, intermediateCert1, intermediateSubject2, intermediateKey2, intermediateCert2, notBefore, notAfter, 1);
 
         String caKey = Base64.getEncoder().encodeToString(Files.readAllBytes(rootKey.toPath()));
@@ -143,7 +143,7 @@ public class CustomCaProviderTest {
 
     @Test
     public void testInitCaSecretsWithInvalidCa() throws IOException {
-        Subject sbj = new Subject.Builder()
+        StrimziSubject sbj = new StrimziSubject.Builder()
                 .withOrganizationName("io.strimzi")
                 .withCommonName("ca").build();
 
@@ -165,11 +165,11 @@ public class CustomCaProviderTest {
         CERT_ISSUER.generateRootCaCert(sbj, rootKey, rootCert, notBefore, notAfter, 1);
 
         // Generate an intermediate cert
-        Subject intermediateSubject1 = new Subject.Builder().withCommonName("IntermediateCn1").withOrganizationName("MyOrganization").build();
+        StrimziSubject intermediateSubject1 = new StrimziSubject.Builder().withCommonName("IntermediateCn1").withOrganizationName("MyOrganization").build();
         CERT_ISSUER.generateIntermediateCaCert(rootKey, rootCert, intermediateSubject1, intermediateKey1, intermediateCert1, notBefore, notAfter, 1);
 
         // Generate an additional intermediate cert
-        Subject intermediateSubject2 = new Subject.Builder().withCommonName("IntermediateCn2").withOrganizationName("MyOrganization").build();
+        StrimziSubject intermediateSubject2 = new StrimziSubject.Builder().withCommonName("IntermediateCn2").withOrganizationName("MyOrganization").build();
         CERT_ISSUER.generateIntermediateCaCert(intermediateKey1, intermediateCert1, intermediateSubject2, intermediateKey2, intermediateCert2, notBefore, notAfter, 1);
 
         String caKey = Base64.getEncoder().encodeToString(Files.readAllBytes(rootKey.toPath()));

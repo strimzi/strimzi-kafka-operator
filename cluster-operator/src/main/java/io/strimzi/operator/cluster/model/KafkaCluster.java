@@ -74,6 +74,7 @@ import io.strimzi.api.kafka.model.nodepool.KafkaNodePoolStatus;
 import io.strimzi.api.kafka.model.podset.StrimziPodSet;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.certs.IpAndDnsValidation;
+import io.strimzi.certs.StrimziSubject;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.model.cruisecontrol.CruiseControlMetricsReporter;
 import io.strimzi.operator.cluster.model.jmx.JmxModel;
@@ -1325,8 +1326,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
             } else {
                 LOGGER.debugCr(reconciliation, "No existing certificate found for pod {}/{}", namespace, podName);
             }
-            @SuppressWarnings("checkstyle:NoFullyQualifiedClassNames") // Fully qualified class name used due to conflict with Fabric8
-            io.strimzi.certs.Subject subject = buildKafkaNodeCertsSubject(node, externalBootstrapDnsName, externalDnsNames);
+            StrimziSubject subject = buildKafkaNodeCertsSubject(node, externalBootstrapDnsName, externalDnsNames);
 
             futureList.add(clusterCa.maybeCopyOrGenerateServerCerts(reconciliation, podName, subject, existingCertAndKey, isMaintenanceTimeWindowsSatisfied, true)
                     .thenApply(certAndKey -> Map.entry(podName, certAndKey))
@@ -1344,9 +1344,8 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
                 ));
     }
 
-    @SuppressWarnings("checkstyle:NoFullyQualifiedClassNames") // Fully qualified class name used due to conflict with Fabric8
-    private io.strimzi.certs.Subject buildKafkaNodeCertsSubject(NodeRef node, Set<String> externalBootstrapAddresses, Map<Integer, Set<String>> externalAddresses) {
-        io.strimzi.certs.Subject.Builder subject = new io.strimzi.certs.Subject.Builder()
+    private StrimziSubject buildKafkaNodeCertsSubject(NodeRef node, Set<String> externalBootstrapAddresses, Map<Integer, Set<String>> externalAddresses) {
+        StrimziSubject.Builder subject = new StrimziSubject.Builder()
                 .withOrganizationName(Ca.IO_STRIMZI)
                 .withCommonName(KafkaResources.kafkaComponentName(cluster));
 

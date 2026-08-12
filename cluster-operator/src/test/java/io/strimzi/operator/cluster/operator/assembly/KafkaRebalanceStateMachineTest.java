@@ -17,7 +17,7 @@ import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceSpec;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceSpecBuilder;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceState;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceStatus;
-import io.strimzi.certs.Subject;
+import io.strimzi.certs.StrimziSubject;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
@@ -101,7 +101,7 @@ public class KafkaRebalanceStateMachineTest {
         File tlsCrtFile = ReadWriteUtils.tempFile(KafkaRebalanceStateMachineTest.class.getSimpleName(), ".crt");
 
         new MockCertIssuer().generateSelfSignedCert(tlsKeyFile, tlsCrtFile,
-            new Subject.Builder().withCommonName("Trusted Test CA").build(), 365);
+            new StrimziSubject.Builder().withCommonName("Trusted Test CA").build(), 365);
 
         cruiseControlPort = TestUtils.getFreePort();
         cruiseControlServer = new MockCruiseControl(cruiseControlPort, tlsKeyFile, tlsCrtFile);

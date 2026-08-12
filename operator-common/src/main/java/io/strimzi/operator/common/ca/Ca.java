@@ -7,7 +7,7 @@ package io.strimzi.operator.common.ca;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.strimzi.certs.CertAndKey;
-import io.strimzi.certs.Subject;
+import io.strimzi.certs.StrimziSubject;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
@@ -534,7 +534,7 @@ public abstract class Ca {
     public abstract CompletionStage<CertAndKey> maybeCopyOrGenerateServerCerts(
             Reconciliation reconciliation,
             String commonName,
-            Subject subject,
+            StrimziSubject subject,
             CertAndKey existingCertAndKey,
             boolean isMaintenanceTimeWindowsSatisfied,
             boolean includeCaChain

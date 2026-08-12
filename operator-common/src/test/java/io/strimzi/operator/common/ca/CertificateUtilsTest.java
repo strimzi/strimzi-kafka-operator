@@ -5,7 +5,7 @@
 package io.strimzi.operator.common.ca;
 
 import io.strimzi.certs.OpenSslCertIssuer;
-import io.strimzi.certs.Subject;
+import io.strimzi.certs.StrimziSubject;
 import io.strimzi.operator.common.Reconciliation;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -88,7 +88,7 @@ class CertificateUtilsTest {
         File csr = createTempFile("csr-", ".csr");
         File cert = createTempFile("crt-", ".crt");
 
-        Subject rootSubject = new Subject.Builder().withCommonName("RootCn").withOrganizationName("MyOrganization").build();
+        StrimziSubject rootSubject = new StrimziSubject.Builder().withCommonName("RootCn").withOrganizationName("MyOrganization").build();
 
         // Generate a root cert
         Instant now = Instant.now();
@@ -99,7 +99,7 @@ class CertificateUtilsTest {
         // Generate alternate root cert
         ssl.generateRootCaCert(rootSubject, alternateRootKey, alternateRootCert, notBefore, notAfter, 1);
 
-        Subject subject = new Subject.Builder()
+        StrimziSubject subject = new StrimziSubject.Builder()
                 .withCommonName("MyCommonName")
                 .withOrganizationName("MyOrganization")
                 .addDnsName("example1.com")
@@ -133,7 +133,7 @@ class CertificateUtilsTest {
         File csr = createTempFile("csr-", ".csr");
         File leafCert = createTempFile("crt-", ".crt");
 
-        Subject rootSubject = new Subject.Builder().withCommonName("RootCn").withOrganizationName("MyOrganization").build();
+        StrimziSubject rootSubject = new StrimziSubject.Builder().withCommonName("RootCn").withOrganizationName("MyOrganization").build();
 
         // Generate a root cert
         Instant now = Instant.now();
@@ -142,15 +142,15 @@ class CertificateUtilsTest {
         ssl.generateRootCaCert(rootSubject, rootKey, rootCert, notBefore, notAfter, 1);
 
         // Generate an intermediate cert
-        Subject intermediateSubject1 = new Subject.Builder().withCommonName("IntermediateCn1").withOrganizationName("MyOrganization").build();
+        StrimziSubject intermediateSubject1 = new StrimziSubject.Builder().withCommonName("IntermediateCn1").withOrganizationName("MyOrganization").build();
         ssl.generateIntermediateCaCert(rootKey, rootCert, intermediateSubject1, intermediateKey1, intermediateCert1, notBefore, notAfter, 1);
 
         // Generate an additional intermediate cert
-        Subject intermediateSubject2 = new Subject.Builder().withCommonName("IntermediateCn2").withOrganizationName("MyOrganization").build();
+        StrimziSubject intermediateSubject2 = new StrimziSubject.Builder().withCommonName("IntermediateCn2").withOrganizationName("MyOrganization").build();
         ssl.generateIntermediateCaCert(intermediateKey1, intermediateCert1, intermediateSubject2, intermediateKey2, intermediateCert2, notBefore, notAfter, 1);
 
 
-        Subject subject = new Subject.Builder()
+        StrimziSubject subject = new StrimziSubject.Builder()
                 .withCommonName("MyCommonName")
                 .withOrganizationName("MyOrganization")
                 .addDnsName("example1.com")
@@ -192,7 +192,7 @@ class CertificateUtilsTest {
         File rootKey = createTempFile("key-", ".key");
         File rootCert = createTempFile("crt-", ".crt");
 
-        Subject rootSubject = new Subject.Builder().withCommonName("RootCn").withOrganizationName("MyOrganization").build();
+        StrimziSubject rootSubject = new StrimziSubject.Builder().withCommonName("RootCn").withOrganizationName("MyOrganization").build();
 
         // Generate a root cert
         Instant instant = Instant.now();
@@ -220,7 +220,7 @@ class CertificateUtilsTest {
         File intermediateKey2 = createTempFile("key-", ".key");
         File intermediateCert2 = createTempFile("crt-", ".crt");
 
-        Subject rootSubject = new Subject.Builder().withCommonName("RootCn").withOrganizationName("MyOrganization").build();
+        StrimziSubject rootSubject = new StrimziSubject.Builder().withCommonName("RootCn").withOrganizationName("MyOrganization").build();
 
         // Generate a root cert
         Instant instant = Instant.now();
@@ -229,11 +229,11 @@ class CertificateUtilsTest {
         ssl.generateRootCaCert(rootSubject, rootKey, rootCert, notBefore, notAfter, 1);
 
         // Generate an intermediate cert
-        Subject intermediateSubject1 = new Subject.Builder().withCommonName("IntermediateCn1").withOrganizationName("MyOrganization").build();
+        StrimziSubject intermediateSubject1 = new StrimziSubject.Builder().withCommonName("IntermediateCn1").withOrganizationName("MyOrganization").build();
         ssl.generateIntermediateCaCert(rootKey, rootCert, intermediateSubject1, intermediateKey1, intermediateCert1, notBefore, notAfter, 1);
 
         // Generate an additional intermediate cert
-        Subject intermediateSubject2 = new Subject.Builder().withCommonName("IntermediateCn2").withOrganizationName("MyOrganization").build();
+        StrimziSubject intermediateSubject2 = new StrimziSubject.Builder().withCommonName("IntermediateCn2").withOrganizationName("MyOrganization").build();
         ssl.generateIntermediateCaCert(intermediateKey1, intermediateCert1, intermediateSubject2, intermediateKey2, intermediateCert2, notBefore, notAfter, 1);
 
         // Generate combined Pem files with CA chain in correct order

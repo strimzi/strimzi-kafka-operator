@@ -5,7 +5,7 @@
 package io.strimzi.operator.cluster.operator.resource.cruisecontrol;
 import io.strimzi.api.kafka.model.rebalance.BrokerAndVolumeIds;
 import io.strimzi.api.kafka.model.rebalance.BrokerAndVolumeIdsBuilder;
-import io.strimzi.certs.Subject;
+import io.strimzi.certs.StrimziSubject;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlEndpoints;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlRebalanceKeys;
@@ -52,7 +52,7 @@ public class CruiseControlClientTest {
         File tlsCrtFile = ReadWriteUtils.tempFile(CruiseControlClientTest.class.getSimpleName(), ".crt");
         
         new MockCertIssuer().generateSelfSignedCert(tlsKeyFile, tlsCrtFile,
-            new Subject.Builder().withCommonName("Trusted Test CA").build(), 365);
+            new StrimziSubject.Builder().withCommonName("Trusted Test CA").build(), 365);
 
         cruiseControlServer = new MockCruiseControl(cruiseControlPort, tlsKeyFile, tlsCrtFile);
     }

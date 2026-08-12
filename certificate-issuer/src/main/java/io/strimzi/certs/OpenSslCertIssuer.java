@@ -165,7 +165,7 @@ public class OpenSslCertIssuer implements CertIssuer {
      *
      * @throws IOException  Throws IOException when IO operations fail
      */
-    private Path buildConfigFile(Subject sbj, boolean isCa) throws IOException {
+    private Path buildConfigFile(StrimziSubject sbj, boolean isCa) throws IOException {
         Path sna = createDefaultConfig();
         try (BufferedWriter out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(sna.toFile(), true), StandardCharsets.UTF_8))) {
             if (isCa) {
@@ -194,7 +194,7 @@ public class OpenSslCertIssuer implements CertIssuer {
     }
 
     @Override
-    public void generateSelfSignedCert(File keyFile, File certFile, Subject sbj, int days) throws IOException {
+    public void generateSelfSignedCert(File keyFile, File certFile, StrimziSubject sbj, int days) throws IOException {
         Instant now = clock.instant();
         ZonedDateTime notBefore = now.atZone(Clock.systemUTC().getZone());
         ZonedDateTime notAfter = now.plus(days, ChronoUnit.DAYS).atZone(Clock.systemUTC().getZone());
@@ -217,7 +217,7 @@ public class OpenSslCertIssuer implements CertIssuer {
      * @throws IOException IO problems
      */
     @Override
-    public void generateRootCaCert(Subject subject, File subjectKeyFile, File subjectCertFile,
+    public void generateRootCaCert(StrimziSubject subject, File subjectKeyFile, File subjectCertFile,
                                    ZonedDateTime notBefore, ZonedDateTime notAfter, int pathLength) throws IOException {
         generateCaCert(null, null, subject, subjectKeyFile, subjectCertFile, notBefore, notAfter, pathLength);
     }
@@ -241,7 +241,7 @@ public class OpenSslCertIssuer implements CertIssuer {
      */
     @Override
     public void generateIntermediateCaCert(File issuerCaKeyFile, File issuerCaCertFile,
-                                           Subject subject,
+                                           StrimziSubject subject,
                                            File subjectKeyFile, File subjectCertFile,
                                            ZonedDateTime notBefore, ZonedDateTime notAfter, int pathLength) throws IOException {
         Objects.requireNonNull(issuerCaKeyFile);
@@ -267,7 +267,7 @@ public class OpenSslCertIssuer implements CertIssuer {
      * @throws IOException IO problems
      */
     private void generateCaCert(File issuerCaKeyFile, File issuerCaCertFile,
-                                Subject subject,
+                                StrimziSubject subject,
                                 File subjectKeyFile, File subjectCertFile,
                                 ZonedDateTime notBefore, ZonedDateTime notAfter, int pathLength) throws IOException {
         if (issuerCaKeyFile == null ^ issuerCaCertFile == null) {
@@ -458,7 +458,7 @@ public class OpenSslCertIssuer implements CertIssuer {
     }
 
     @Override
-    public void renewSelfSignedCert(File keyFile, File certFile, Subject subject, int days) throws IOException {
+    public void renewSelfSignedCert(File keyFile, File certFile, StrimziSubject subject, int days) throws IOException {
         Instant now = clock.instant();
         ZonedDateTime notBefore = now.atZone(Clock.systemUTC().getZone());
         ZonedDateTime notAfter = now.plus(days, ChronoUnit.DAYS).atZone(Clock.systemUTC().getZone());
@@ -466,7 +466,7 @@ public class OpenSslCertIssuer implements CertIssuer {
     }
 
     @Override
-    public void generateCsr(File keyFile, File csrFile, Subject subject) throws IOException {
+    public void generateCsr(File keyFile, File csrFile, StrimziSubject subject) throws IOException {
         Objects.requireNonNull(keyFile);
         Objects.requireNonNull(csrFile);
         Objects.requireNonNull(subject);
@@ -492,7 +492,7 @@ public class OpenSslCertIssuer implements CertIssuer {
     }
 
     @Override
-    public void generateCert(File csrFile, File caKey, File caCert, File crtFile, Subject sbj, int days) throws IOException {
+    public void generateCert(File csrFile, File caKey, File caCert, File crtFile, StrimziSubject sbj, int days) throws IOException {
         Instant now = clock.instant();
         ZonedDateTime notBefore = now.atZone(Clock.systemUTC().getZone());
         ZonedDateTime notAfter = now.plus(days, ChronoUnit.DAYS).atZone(Clock.systemUTC().getZone());
@@ -512,7 +512,7 @@ public class OpenSslCertIssuer implements CertIssuer {
      *
      * @throws IOException  Thrown when working with files fails
      */
-    public void generateCert(File csrFile, File caKey, File caCert, File crtFile, Subject sbj, ZonedDateTime notBefore, ZonedDateTime notAfter) throws IOException {
+    public void generateCert(File csrFile, File caKey, File caCert, File crtFile, StrimziSubject sbj, ZonedDateTime notBefore, ZonedDateTime notAfter) throws IOException {
         // Preconditions
         Objects.requireNonNull(csrFile);
         Objects.requireNonNull(caKey);
@@ -566,7 +566,7 @@ public class OpenSslCertIssuer implements CertIssuer {
 
 
     @Override
-    public void generateCert(File csrFile, byte[] caKey, byte[] caCert, File crtFile, Subject sbj, int days) throws IOException {
+    public void generateCert(File csrFile, byte[] caKey, byte[] caCert, File crtFile, StrimziSubject sbj, int days) throws IOException {
         Path caKeyFile = null;
         Path caCertFile = null;
         try {
@@ -582,7 +582,7 @@ public class OpenSslCertIssuer implements CertIssuer {
      * Helper for building arg lists and environments.
      * The environment is used so that the config file can be parameterised for things like basic constraints.
      * But it's still necessary to use dynamically generated configs for specifying SANs
-     * (see {@link OpenSslCertIssuer#buildConfigFile(Subject, boolean)}).
+     * (see {@link OpenSslCertIssuer#buildConfigFile(StrimziSubject, boolean)}).
      */
     private static class OpensslArgs {
         ProcessBuilder pb = new ProcessBuilder();
@@ -617,7 +617,7 @@ public class OpenSslCertIssuer implements CertIssuer {
             return this;
         }
 
-        public OpensslArgs optArg(String opt, Subject subject) {
+        public OpensslArgs optArg(String opt, StrimziSubject subject) {
             opt(opt);
             pb.command().add(subject.opensslDn());
             return this;

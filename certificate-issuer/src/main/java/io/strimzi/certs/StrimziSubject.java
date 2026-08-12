@@ -21,7 +21,7 @@ import java.util.Set;
  * Represents the subject for a certificate.
  * Can be serialized as JSON.
  */
-public class Subject {
+public class StrimziSubject {
     /**
      * Builder class used to build the Subject instance
      */
@@ -104,7 +104,7 @@ public class Subject {
          *
          * @return  The Subject.Builder instance
          */
-        public Subject.Builder addIpAddress(String ip) {
+        public StrimziSubject.Builder addIpAddress(String ip) {
             if (ipAddresses == null) {
                 ipAddresses = new HashSet<>();
             }
@@ -125,8 +125,8 @@ public class Subject {
          *
          * @return  Instance of the Subject class created based on this builder
          */
-        public Subject build() {
-            return new Subject(commonName, organizationName, dnsNames, ipAddresses);
+        public StrimziSubject build() {
+            return new StrimziSubject(commonName, organizationName, dnsNames, ipAddresses);
         }
 
     }
@@ -137,7 +137,7 @@ public class Subject {
     private final Set<String> ipAddresses;
 
     @JsonCreator
-    private Subject(
+    private StrimziSubject(
             @JsonProperty("commonName") String commonName,
             @JsonProperty("organizationName") String organizationName,
             @JsonProperty("dnsNames") Set<String> dnsNames,
@@ -213,7 +213,7 @@ public class Subject {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        Subject subject = (Subject) o;
+        StrimziSubject subject = (StrimziSubject) o;
         return Objects.equals(organizationName, subject.organizationName) &&
                 Objects.equals(commonName, subject.commonName) &&
                 Objects.equals(dnsNames, subject.dnsNames) &&
