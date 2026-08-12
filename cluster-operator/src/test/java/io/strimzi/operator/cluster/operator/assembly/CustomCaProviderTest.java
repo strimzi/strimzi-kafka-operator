@@ -30,7 +30,9 @@ import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Base64;
+import java.util.concurrent.CompletionException;
 
+import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -60,8 +62,9 @@ public class CustomCaProviderTest {
     @Test
     public void testInitCaSecretsWhenUserManagedCertsAreMissingThrows() {
         CustomCaProvider userCaSecretProvider = new CustomCaProvider(Reconciliation.DUMMY_RECONCILIATION, Ca.CaRole.CLUSTER_CA, CA_CONFIG, KAFKA, null, null, null, null);
-        Exception exception = assertThrows(InvalidResourceException.class, () -> userCaSecretProvider.createAndReconcileCa().toCompletableFuture().join());
-        assertThat(exception.getMessage(), is("Cluster CA should not be generated, but the secrets were not found."));
+        CompletionException exception = assertThrows(CompletionException.class, () -> userCaSecretProvider.createAndReconcileCa().toCompletableFuture().join());
+        assertThat(exception.getCause(), instanceOf(InvalidResourceException.class));
+        assertThat(exception.getCause().getMessage(), is("Cluster CA should not be generated, but the secrets were not found."));
     }
 
     @Test
