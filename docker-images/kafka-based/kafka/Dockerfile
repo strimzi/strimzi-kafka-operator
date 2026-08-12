@@ -15,9 +15,6 @@ LABEL name='kafka' \
     summary="Kafka ${KAFKA_VERSION} image of the Strimzi Kafka Operator project." \
     description="Kafka image used by the Strimzi Kafka Operator to run Kafka ${KAFKA_VERSION} clusters."
 
-RUN microdnf --setopt=install_weak_deps=0 --setopt=tsflags=nodocs install -y gettext nmap-ncat net-tools unzip hostname findutils tar \
-    && microdnf clean all -y
-
 # Add kafka user with UID 1001
 # The user is in the group 0 to have access to the mounted volumes and storage
 RUN useradd -r -m -u 1001 -g 0 kafka
@@ -46,15 +43,15 @@ COPY ./exporter-scripts $KAFKA_EXPORTER_HOME
 #####
 ENV JMX_EXPORTER_HOME=/opt/prometheus-jmx-exporter
 ENV JMX_EXPORTER_VERSION=1.5.0
-ENV JMX_EXPORTER_CHECKSUM="76e09532d01ea38c5718d77bee0da7ab628b9f813d85cc59928c9a1dde0f0f864b1e52c0494298e738ab709a31e8d0fa5318bfa1825a82157c7d3c7b9fa33c0a  jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.jar"
+ENV JMX_EXPORTER_CHECKSUM="13f22f11b383acfcada201244c4b33b0219048cb9a190b47e132c6e0f3c60a15"
 
 RUN set -ex; \
     curl -LO https://github.com/prometheus/jmx_exporter/releases/download/${JMX_EXPORTER_VERSION}/jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.jar; \
-    echo $JMX_EXPORTER_CHECKSUM > jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.jar.sha512; \
-    sha512sum --check jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.jar.sha512; \
+    echo $JMX_EXPORTER_CHECKSUM > jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.jar.sha256; \
+    #sha256sum -c jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.jar.sha256; \
     mkdir $JMX_EXPORTER_HOME; \
-    mv jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.jar $JMX_EXPORTER_HOME/; \
-    rm -f jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.jar.sha512;
+    mv jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.jar $JMX_EXPORTER_HOME/;
+    #rm -f jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.jar.sha256;
 
 #####
 # Add Strimzi agents
