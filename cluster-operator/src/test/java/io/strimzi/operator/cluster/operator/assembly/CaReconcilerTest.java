@@ -42,6 +42,7 @@ import io.strimzi.operator.common.model.PasswordGenerator;
 import io.strimzi.operator.common.operator.resource.kubernetes.SecretOperator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.mockito.ArgumentCaptor;
 
 import java.nio.charset.StandardCharsets;
@@ -53,6 +54,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -84,6 +86,7 @@ import static org.mockito.Mockito.when;
  * Secrets are in the test class for each CaProvider. The CaProvider is mocked
  * here, so each test sets the state of the Cluster and Clients CA directly.
  */
+@Timeout(value = 30, unit = TimeUnit.SECONDS)
 public class CaReconcilerTest {
     private static final String NAMESPACE = "test";
     private static final String NAME = "my-cluster";
