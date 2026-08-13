@@ -5,11 +5,15 @@
 // security/assembly-security.adoc
 
 [id='assembly-internal-cluster-security-{context}']
-= Internal cluster security
+= (Early Access) Internal cluster security
 
 [role="_abstract"]
 Configure the encryption and authentication used for communication between components of a Kafka cluster.
-The default TLS encryption and mTLS authentication provide secure internal communication, but you can disable mTLS or both options when your environment provides equivalent protection or has other requirements.
+The default TLS encryption and mTLS authentication provide secure internal communication.
+But you can disable mTLS or both options when your environment provides equivalent protection or has other requirements.
+
+IMPORTANT: Changing the internal cluster security configuration requires downtime of the Kafka cluster.
+Make sure to carefully follow the xref:proc-changing-internal-cluster-security[Changing the internal cluster security configuration] procedure to avoid leaving the cluster in an invalid state.
 
 include::../../modules/security/con-internal-cluster-security.adoc[leveloffset=+1]
 
