@@ -15,6 +15,7 @@ import io.strimzi.api.kafka.model.connect.KafkaConnectBuilder;
 import io.strimzi.api.kafka.model.connect.KafkaConnectResources;
 import io.strimzi.api.kafka.model.connect.build.Build;
 import io.strimzi.api.kafka.model.connect.build.BuildBuilder;
+import io.strimzi.api.kafka.model.connect.build.DockerOutputBuilder;
 import io.strimzi.api.kafka.model.connect.build.JarArtifactBuilder;
 import io.strimzi.api.kafka.model.connect.build.PluginBuilder;
 import io.strimzi.api.kafka.model.kafka.Kafka;
@@ -445,7 +446,7 @@ public class AbstractKRaftUpgradeST extends AbstractST {
                 final String imageFullPath = Environment.getImageOutputRegistry(testStorage.getNamespaceName(), TestConstants.ST_CONNECT_BUILD_IMAGE_NAME, String.valueOf(new Random().nextInt(Integer.MAX_VALUE)));
 
                 final Build connectBuild = new BuildBuilder()
-                    .withOutput(KafkaConnectTemplates.dockerOutput(imageFullPath))
+                    .withOutput(KafkaConnectTemplates.dockerOutput(imageFullPath, new DockerOutputBuilder()))
                     .withPlugins(new PluginBuilder()
                         .withName("file-plugin")
                         .withArtifacts(

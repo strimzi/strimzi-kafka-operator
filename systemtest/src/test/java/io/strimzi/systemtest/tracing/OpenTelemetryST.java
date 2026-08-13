@@ -247,11 +247,11 @@ public class OpenTelemetryST extends AbstractST {
         configOfKafkaConnect.put("key.converter.schemas.enable", "false");
         configOfKafkaConnect.put("value.converter.schemas.enable", "false");
 
-        KafkaConnectBuilder connectBuilder = KafkaConnectTemplates.kafkaConnect(testStorage.getNamespaceName(), testStorage.getClusterName(), 1)
+        KafkaConnectBuilder connectBuilder = KafkaConnectTemplates.kafkaConnectBuild(testStorage.getNamespaceName(), testStorage.getClusterName(), testStorage.getClusterName(), 1)
             .editMetadata()
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata()
-            .withNewSpec()
+            .editOrNewSpec()
                 .withGroupId(KafkaConnectResources.componentName(testStorage.getClusterName()))
                 .withConfigStorageTopic(KafkaConnectResources.configMapName(testStorage.getClusterName()))
                 .withOffsetStorageTopic(KafkaConnectResources.configStorageTopicOffsets(testStorage.getClusterName()))
@@ -261,7 +261,8 @@ public class OpenTelemetryST extends AbstractST {
                 .endOpenTelemetryTracing()
                 .withBootstrapServers(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
                 .withReplicas(1)
-                .withNewTemplate()
+                .withTls(null)
+                .editOrNewTemplate()
                     .withNewConnectContainer()
                         .addNewEnv()
                             .withName(TracingConstants.OTEL_SERVICE_ENV)
@@ -275,7 +276,7 @@ public class OpenTelemetryST extends AbstractST {
                 .endTemplate()
             .endSpec();
 
-        KubeResourceManager.get().createResourceWithWait(KafkaConnectTemplates.addFileSinkPluginOrImage(testStorage.getNamespaceName(), connectBuilder).build());
+        KubeResourceManager.get().createResourceWithWait(KafkaConnectTemplates.addFileSinkPluginOrImage(connectBuilder).build());
 
         KubeResourceManager.get().createResourceWithWait(KafkaConnectorTemplates.kafkaConnector(testStorage.getNamespaceName(), testStorage.getClusterName())
             .editSpec()
