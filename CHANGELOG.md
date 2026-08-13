@@ -11,6 +11,7 @@
 * Added support for broker cordoning [KIP-1066](https://cwiki.apache.org/confluence/spaces/KAFKA/pages/311627566/KIP-1066+Mechanism+to+cordon+brokers+and+log+directories) during auto-rebalancing on scale down for Kafka 4.3+.
 * Removed deprecated resource state metrics - the KSM (kube-state-metrics) should be used instead.
 * Update Strimzi metrics-reporter to 0.4.0
+* Update strimzi-kafka-oauth to 0.18.0
 
 ### Major changes, deprecations, and removals
 
