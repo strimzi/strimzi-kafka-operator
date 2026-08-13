@@ -5,7 +5,7 @@
 // assembly-internal-cluster-security.adoc
 
 [id='con-internal-cluster-security-{context}']
-= Internal cluster encryption and authentication
+= (Early Access) Internal cluster encryption and authentication
 
 [role="_abstract"]
 Use the `strimzi.io/internal-cluster-security` annotation on the `Kafka` resource to configure encryption and authentication for internal cluster communication.
@@ -57,7 +57,11 @@ The annotation is a temporary configuration interface and might also change.
 
 The `strimzi-mtls` authentication type requires `strimzi-tls` encryption.
 Consequently, disabling TLS encryption also requires authentication to be disabled.
-The supported combinations are TLS with mTLS, TLS without authentication, and no TLS with no authentication.
+The supported combinations are:
+
+* TLS encryption with mTLS authentication
+* TLS encryption without authentication
+* And no encryption with no authentication
 
 WARNING: When the authentication type is `none` and Kafka authorization is configured, Strimzi automatically makes the `ANONYMOUS` user a super user so that internal components can operate.
 This gives unrestricted access to any connection that Kafka identifies as `ANONYMOUS`, including connections through an unauthenticated client listener.
@@ -91,7 +95,7 @@ spec:
   # ...
 ----
 
-== Disabling mTLS authentication
+== (Early Access) Disabling mTLS authentication
 
 Set the authentication type to `none` to disable mTLS authentication while retaining TLS encryption.
 Connections governed by the internal cluster authentication setting remain encrypted, but connecting components are not authenticated with mTLS.
@@ -118,7 +122,7 @@ spec:
   # ...
 ----
 
-== Disabling TLS encryption and mTLS authentication
+== (Early Access) Disabling TLS encryption and mTLS authentication
 
 Set both types to `none` to disable TLS encryption and mTLS authentication.
 Kafka protocol communication and communication with Kafka Agent are then unencrypted and unauthenticated.

@@ -5,17 +5,18 @@
 // assembly-internal-cluster-security.adoc
 
 [id='proc-changing-internal-cluster-security-{context}']
-= Changing the internal cluster security configuration
+= (Early Access) Changing the internal cluster security configuration
 
 [role="_abstract"]
 Change the encryption or authentication configuration for an existing Kafka cluster by stopping the cluster and resetting its recorded security status.
-This procedure causes a complete outage of the Kafka cluster.
+
+WARNING: This procedure requires downtime of the Kafka cluster.
 
 The Cluster Operator compares the `strimzi.io/internal-cluster-security` annotation with `.status.clusterSecurity` in the `Kafka` resource.
 Changing only the annotation causes reconciliation to fail and does not migrate the cluster.
 
 WARNING: Follow the steps in the specified order.
-Removing `.status.clusterSecurity` while cluster Pods are running can apply an incompatible security configuration and leave the cluster unavailable.
+Removing `.status.clusterSecurity` while cluster Pods are running can apply an incompatible security configuration and leave the cluster in an invalid state.
 
 .Prerequisites
 
