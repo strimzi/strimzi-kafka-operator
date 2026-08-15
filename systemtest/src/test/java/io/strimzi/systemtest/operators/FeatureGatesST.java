@@ -10,6 +10,8 @@ import io.skodjob.annotations.Step;
 import io.skodjob.annotations.SuiteDoc;
 import io.skodjob.annotations.TestDoc;
 import io.skodjob.kubetest4j.resources.KubeResourceManager;
+import io.strimzi.api.kafka.model.connect.KafkaConnect;
+import io.strimzi.api.kafka.model.connect.build.DockerOutput;
 import io.strimzi.api.kafka.model.connect.build.TgzArtifactBuilder;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.operator.common.Annotations;
@@ -37,6 +39,7 @@ import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.Tag;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
@@ -77,16 +80,9 @@ public class FeatureGatesST extends AbstractST {
 
         LOGGER.info("Deploying CO with UseConnectBuildWithBuildah disabled");
 
-        setupClusterOperatorWithFeatureGate("");
+        setupClusterOperatorWithFeatureGate("-UseConnectBuildWithBuildah");
 
-        KubeResourceManager.get().createResourceWithWait(
-            KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
-            KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 3).build()
-        );
-        KubeResourceManager.get().createResourceWithWait(KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getClusterName(), 3).build());
-        KubeResourceManager.get().createResourceWithWait(
-            KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getTopicName(), testStorage.getClusterName()).build(),
-            KafkaConnectTemplates.kafkaConnectBuild(testStorage.getNamespaceName(), testStorage.getClusterName(), testStorage.getClusterName(), 1)
+        KafkaConnect connect = KafkaConnectTemplates.kafkaConnectBuild(testStorage.getNamespaceName(), testStorage.getClusterName(), testStorage.getClusterName(), 1)
                 .editMetadata()
                     .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
                 .endMetadata()
@@ -107,7 +103,21 @@ public class FeatureGatesST extends AbstractST {
                         .endPlugin()
                     .endBuild()
                 .endSpec()
-                .build());
+                .build();
+
+        // We have to update the secure options for Kaniko
+        DockerOutput dockerOutput = (DockerOutput) connect.getSpec().getBuild().getOutput();
+        dockerOutput.setAdditionalBuildOptions(List.of("--insecure"));
+        dockerOutput.setAdditionalPushOptions(null);
+
+        KubeResourceManager.get().createResourceWithWait(
+            KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
+            KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 3).build()
+        );
+        KubeResourceManager.get().createResourceWithWait(KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getClusterName(), 3).build());
+        KubeResourceManager.get().createResourceWithWait(
+            KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getTopicName(), testStorage.getClusterName()).build(),
+            connect);
 
         Map<String, Object> connectorConfig = new HashMap<>();
         connectorConfig.put("topics", testStorage.getTopicName());
