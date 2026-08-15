@@ -40,79 +40,7 @@ import static java.time.temporal.ChronoField.YEAR;
  */
 @SuppressWarnings("checkstyle:CyclomaticComplexity")
 public abstract class Ca {
-    /**
-     * A certificate entry in a Kubernetes Secret. Used to construct the keys in the Secret data where certificates are stored.
-     */
-    public enum SecretEntry {
-        /**
-         * A 64-bit encoded X509 Certificate
-         */
-        CRT(".crt"),
-        /**
-         * Entity private key
-         */
-        KEY(".key"),
-        /**
-         * Entity certificate and key as a P12 keystore
-         */
-        P12_KEYSTORE(".p12"),
-        /**
-         * P12 keystore password
-         */
-        P12_KEYSTORE_PASSWORD(".password");
-
-        final String suffix;
-
-        SecretEntry(String suffix) {
-            this.suffix = suffix;
-        }
-
-        /**
-         * Build the Kubernetes Secret key to use with this type of SecretEntry.
-         *
-         * @param prefix to use for the certificate Secret key
-         * @return a certificate Secret key with the provided prefix and the suffix of this type of SecretEntry
-         */
-        public String asKey(String prefix) {
-            return prefix + suffix;
-        }
-
-        /**
-         * Checks whether the key has the desired suffix based on the entry.
-         *
-         * @param key   The key that will be checked whether it matches
-         *
-         * @return  True if the key matches. False otherwise.
-         */
-        public boolean matchesType(String key) {
-            return key.endsWith(suffix);
-        }
-    }
-
-    protected static final ReconciliationLogger LOGGER = ReconciliationLogger.create(Ca.class);
-
-    /**
-     * DateTimeFormatter used for renaming old certificates
-     */
-    public static final DateTimeFormatter DATE_TIME_FORMATTER = new DateTimeFormatterBuilder()
-            .appendValue(YEAR, 4, 10, SignStyle.EXCEEDS_PAD)
-            .appendLiteral('-')
-            .appendValue(MONTH_OF_YEAR, 2)
-            .appendLiteral('-')
-            .appendValue(DAY_OF_MONTH, 2)
-            .appendLiteral('T')
-            .appendValue(HOUR_OF_DAY, 2)
-            .appendLiteral('-')
-            .appendValue(MINUTE_OF_HOUR, 2)
-            .optionalStart()
-            .appendLiteral('-')
-            .appendValue(SECOND_OF_MINUTE, 2)
-            .optionalStart()
-            .appendFraction(NANO_OF_SECOND, 0, 9, true)
-            .optionalStart()
-            .appendOffsetId()
-            .toFormatter().withChronology(IsoChronology.INSTANCE);
-
+    // Declared before the public constants because the CA_KEY and CA_CRT initializers reference it
     protected static final String CA_SECRET_PREFIX = "ca";
 
     /**
@@ -156,157 +84,50 @@ public abstract class Ca {
     public static final String ANNO_STRIMZI_IO_CLUSTER_CA_KEY_GENERATION = Annotations.STRIMZI_DOMAIN + "cluster-ca-key-generation";
 
     /**
+     * Initial generation used for the CAs
+     */
+    public static final int INIT_GENERATION = 0;
+
+    /**
+     * DateTimeFormatter used for renaming old certificates
+     */
+    public static final DateTimeFormatter DATE_TIME_FORMATTER = new DateTimeFormatterBuilder()
+            .appendValue(YEAR, 4, 10, SignStyle.EXCEEDS_PAD)
+            .appendLiteral('-')
+            .appendValue(MONTH_OF_YEAR, 2)
+            .appendLiteral('-')
+            .appendValue(DAY_OF_MONTH, 2)
+            .appendLiteral('T')
+            .appendValue(HOUR_OF_DAY, 2)
+            .appendLiteral('-')
+            .appendValue(MINUTE_OF_HOUR, 2)
+            .optionalStart()
+            .appendLiteral('-')
+            .appendValue(SECOND_OF_MINUTE, 2)
+            .optionalStart()
+            .appendFraction(NANO_OF_SECOND, 0, 9, true)
+            .optionalStart()
+            .appendOffsetId()
+            .toFormatter().withChronology(IsoChronology.INSTANCE);
+
+    protected static final ReconciliationLogger LOGGER = ReconciliationLogger.create(Ca.class);
+
+    /**
      * Pattern used for the old CA certificate during CA renewal. This pattern is used to recognize this certificate
      * and delete it when it is not needed anymore.
      */
     private static final Pattern OLD_CA_CERT_PATTERN = Pattern.compile("^ca-\\d{4}-\\d{2}-\\d{2}T\\d{2}-\\d{2}-\\d{2}Z.crt$");
 
-    /**
-     * Initial generation used for the CAs
-     */
-    public static final int INIT_GENERATION = 0;
-
     protected final Reconciliation reconciliation;
-    Clock clock;
-
-    /**
-     * Ca Role
-     */
-    public enum CaRole {
-        /**
-         * Cluster Ca
-         */
-        CLUSTER_CA,
-        /**
-         * Clients Ca
-         */
-        CLIENTS_CA;
-
-        /**
-         * Get Ca name based on the role
-         *
-         * @return Ca name
-         */
-        public String caName() {
-            return switch (this) {
-                case CLUSTER_CA -> "Cluster CA";
-                case CLIENTS_CA -> "Clients CA";
-            };
-        }
-
-        /**
-         * Get Ca common name based on the role
-         *
-         * @return Ca common name
-         */
-        public String caCommonName() {
-            return switch (this) {
-                case CLUSTER_CA -> "cluster-ca";
-                case CLIENTS_CA -> "clients-ca";
-            };
-        }
-    }
-
-    /**
-     * Enum describing whether an event related to a certificate renewal is happening or not.
-     */
-    public enum RenewalType {
-        /**
-         * No changes to the CA, no renewals are happening.
-         */
-        NOOP() {
-            @Override
-            public String preDescription(String caName) {
-                return "CA key and certificate (in " + caName + " Secrets) already exist and do not need replacing or renewing";
-            }
-            @Override
-            public String postDescription(String caName) {
-                return "noop";
-            }
-        },
-        /**
-         * Renewal should be done, but was currently postponed because of the maintenance window configuration
-         */
-        POSTPONED() {
-            @Override
-            public String preDescription(String caName) {
-                return "CA operation was postponed and will be done in the next maintenance window";
-            }
-            @Override
-            public String postDescription(String caName) {
-                return "postponed";
-            }
-        },
-        /**
-         * New CA is being created
-         */
-        CREATE() {
-            @Override
-            public String preDescription(String caName) {
-                return "CA key and certificate (in " + caName + " Secrets) needs to be created";
-            }
-            @Override
-            public String postDescription(String caName) {
-                return "CA key and certificate (in " + caName + " Secrets) created";
-            }
-        },
-        /**
-         * CA is being renewed (new public key s generated using the same private key)
-         */
-        RENEW_CERT() {
-            @Override
-            public String preDescription(String caName) {
-                return "CA certificate (in " + caName + " Secret) needs to be renewed";
-            }
-            @Override
-            public String postDescription(String caName) {
-                return "CA certificate (in " + caName + " Secret) renewed";
-            }
-        },
-        /**
-         * CA is being renewed including new private key
-         */
-        REPLACE_KEY() {
-            @Override
-            public String preDescription(String caName) {
-                return "CA key (in " + caName + " Secret) needs to be replaced";
-            }
-            @Override
-            public String postDescription(String caName) {
-                return "CA key (in " + caName + " Secret) replaced";
-            }
-        };
-
-        RenewalType() {
-        }
-
-        /**
-         * Pre-renewal description which is used to log what is going to happen.
-         *
-         * @param caName The name of the CA being renewed
-         *
-         * @return  String with the description
-         */
-        public abstract String preDescription(String caName);
-
-        /**
-         * Post-renewal description which is used to log what was just done.
-         *
-         * @param caName The name of the CA being renewed
-         *
-         * @return  String with the description
-         */
-        public abstract String postDescription(String caName);
-    }
-
+    protected final CaConfig caConfig;
+    protected final CaRole caRole;
     protected int caCertGeneration;
     protected int caKeyGeneration;
     protected Map<String, String> caCertData;
     protected Map<String, String> caKeyData;
     protected RenewalType renewalType;
     protected boolean caCertsRemoved;
-    protected final CaConfig caConfig;
-    protected final CaRole caRole;
+    Clock clock;
 
     /**
      * Constructs the CA object
@@ -334,16 +155,6 @@ public abstract class Ca {
     }
 
     /**
-     * Sets the clock to some specific value. This method is useful in testing. But it has to be public because of how
-     * the Ca class is shared and inherited between different modules.
-     *
-     * @param clock     Clock instance that should be used to determine time
-     */
-    public void setClock(Clock clock) {
-        this.clock = clock;
-    }
-
-    /**
      * Extracts the CA generation from the CA cert Secret
      *
      * @param caCertSecret Secret to extract the CA cert from
@@ -360,16 +171,6 @@ public abstract class Ca {
         return INIT_GENERATION;
     }
 
-    /**
-     * Extracts the CA key generation from the CA cert or CA key Secret
-     *
-     * @param caKeySecret CA key Secret
-     * @param caCertSecret CA cert Secret
-     * @return CA key generation
-     */
-    protected abstract int initCaKeyGeneration(Secret caKeySecret, Secret caCertSecret);
-
-
     private Map<String, String> initCaKeyData(Secret caKeySecret) {
         if (caKeySecret != null) {
             if (caKeySecret.getData() == null || !caKeySecret.getData().containsKey(CA_KEY)) {
@@ -382,6 +183,16 @@ public abstract class Ca {
         } else {
             return new HashMap<>();
         }
+    }
+
+    /**
+     * Sets the clock to some specific value. This method is useful in testing. But it has to be public because of how
+     * the Ca class is shared and inherited between different modules.
+     *
+     * @param clock     Clock instance that should be used to determine time
+     */
+    public void setClock(Clock clock) {
+        this.clock = clock;
     }
 
     /**
@@ -516,58 +327,6 @@ public abstract class Ca {
         return caKeyGeneration;
     }
 
-
-    /**
-     * Generates or reuses a server certificate signed by this Cluster CA.
-     * Used for Kafka brokers and Cruise Control.
-     *
-     * @param reconciliation                        Reconciliation marker
-     * @param commonName                            Common Name for the certificate
-     * @param subject                               Subject for the certificate
-     * @param existingCertAndKey                    Existing certificate (or null if none exists)
-     * @param isMaintenanceTimeWindowsSatisfied     Whether we are in a maintenance window
-     * @param includeCaChain                        Whether to include CA chain
-     *
-     *
-     * @return CertAndKey object containing the public and private key
-     **/
-    public abstract CompletionStage<CertAndKey> maybeCopyOrGenerateServerCerts(
-            Reconciliation reconciliation,
-            String commonName,
-            StrimziSubject subject,
-            CertAndKey existingCertAndKey,
-            boolean isMaintenanceTimeWindowsSatisfied,
-            boolean includeCaChain
-    );
-
-    /**
-     * Generates or reuses a client certificate signed by this Cluster CA.
-     * Used for components that only act as clients, like Entity Operators and Kafka Exporter.
-     *
-     * @param reconciliation                        Reconciliation marker
-     * @param commonName                            Common Name for the certificate
-     * @param existingCertAndKey                    Existing certificate (or null if none exists)
-     * @param isMaintenanceTimeWindowsSatisfied     Whether we are in a maintenance window
-     *
-     * @return CertAndKey object containing the certificate and key with CA generation set
-     */
-    public abstract CompletionStage<CertAndKey> maybeCopyOrGenerateClientCert(
-            Reconciliation reconciliation,
-            String commonName,
-            CertAndKey existingCertAndKey,
-            boolean isMaintenanceTimeWindowsSatisfied
-    );
-
-    /**
-     * Remove certificates from the CA related Secret and store which match the provided predicate
-     *
-     * @param newData data section of the CA Secret containing certificates
-     * @param predicate predicate to match for removing a certificate
-     * @return boolean indicating whether any certs were removed
-     */
-
-    protected abstract boolean removeCerts(Map<String, String> newData, Predicate<Map.Entry<String, String>> predicate);
-
     /**
      * Gets the name of the annotation bringing the generation of the specific CA certificate type.
      *
@@ -614,11 +373,6 @@ public abstract class Ca {
     }
 
     /**
-     * Remove old certificates that are stored in the CA Secret.
-     */
-    public abstract void maybeDeleteOldCerts();
-
-    /**
      * Remove old certificates that are stored in the CA Secret matching the "ca-YYYY-MM-DDTHH-MM-SSZ.crt" naming pattern.
      * NOTE: mostly used when a CA certificate is renewed by replacing the key
      */
@@ -627,5 +381,248 @@ public abstract class Ca {
             LOGGER.infoCr(reconciliation, "{}: Old CA certificates removed", caRole.caCommonName());
             this.caCertsRemoved = true;
         }
+    }
+
+    /**
+     * Extracts the CA key generation from the CA cert or CA key Secret
+     *
+     * @param caKeySecret CA key Secret
+     * @param caCertSecret CA cert Secret
+     * @return CA key generation
+     */
+    protected abstract int initCaKeyGeneration(Secret caKeySecret, Secret caCertSecret);
+
+    /**
+     * Generates or reuses a server certificate signed by this Cluster CA.
+     * Used for Kafka brokers and Cruise Control.
+     *
+     * @param reconciliation                        Reconciliation marker
+     * @param commonName                            Common Name for the certificate
+     * @param subject                               Subject for the certificate
+     * @param existingCertAndKey                    Existing certificate (or null if none exists)
+     * @param isMaintenanceTimeWindowsSatisfied     Whether we are in a maintenance window
+     * @param includeCaChain                        Whether to include CA chain
+     *
+     *
+     * @return CertAndKey object containing the public and private key
+     **/
+    public abstract CompletionStage<CertAndKey> maybeCopyOrGenerateServerCerts(
+            Reconciliation reconciliation,
+            String commonName,
+            StrimziSubject subject,
+            CertAndKey existingCertAndKey,
+            boolean isMaintenanceTimeWindowsSatisfied,
+            boolean includeCaChain
+    );
+
+    /**
+     * Generates or reuses a client certificate signed by this Cluster CA.
+     * Used for components that only act as clients, like Entity Operators and Kafka Exporter.
+     *
+     * @param reconciliation                        Reconciliation marker
+     * @param commonName                            Common Name for the certificate
+     * @param existingCertAndKey                    Existing certificate (or null if none exists)
+     * @param isMaintenanceTimeWindowsSatisfied     Whether we are in a maintenance window
+     *
+     * @return CertAndKey object containing the certificate and key with CA generation set
+     */
+    public abstract CompletionStage<CertAndKey> maybeCopyOrGenerateClientCert(
+            Reconciliation reconciliation,
+            String commonName,
+            CertAndKey existingCertAndKey,
+            boolean isMaintenanceTimeWindowsSatisfied
+    );
+
+    /**
+     * Remove old certificates that are stored in the CA Secret.
+     */
+    public abstract void maybeDeleteOldCerts();
+
+    /**
+     * Remove certificates from the CA related Secret and store which match the provided predicate
+     *
+     * @param newData data section of the CA Secret containing certificates
+     * @param predicate predicate to match for removing a certificate
+     * @return boolean indicating whether any certs were removed
+     */
+    protected abstract boolean removeCerts(Map<String, String> newData, Predicate<Map.Entry<String, String>> predicate);
+
+    /**
+     * A certificate entry in a Kubernetes Secret. Used to construct the keys in the Secret data where certificates are stored.
+     */
+    public enum SecretEntry {
+        /**
+         * A 64-bit encoded X509 Certificate
+         */
+        CRT(".crt"),
+        /**
+         * Entity private key
+         */
+        KEY(".key"),
+        /**
+         * Entity certificate and key as a P12 keystore
+         */
+        P12_KEYSTORE(".p12"),
+        /**
+         * P12 keystore password
+         */
+        P12_KEYSTORE_PASSWORD(".password");
+
+        final String suffix;
+
+        SecretEntry(String suffix) {
+            this.suffix = suffix;
+        }
+
+        /**
+         * Build the Kubernetes Secret key to use with this type of SecretEntry.
+         *
+         * @param prefix to use for the certificate Secret key
+         * @return a certificate Secret key with the provided prefix and the suffix of this type of SecretEntry
+         */
+        public String asKey(String prefix) {
+            return prefix + suffix;
+        }
+
+        /**
+         * Checks whether the key has the desired suffix based on the entry.
+         *
+         * @param key   The key that will be checked whether it matches
+         *
+         * @return  True if the key matches. False otherwise.
+         */
+        public boolean matchesType(String key) {
+            return key.endsWith(suffix);
+        }
+    }
+
+    /**
+     * Ca Role
+     */
+    public enum CaRole {
+        /**
+         * Cluster Ca
+         */
+        CLUSTER_CA,
+        /**
+         * Clients Ca
+         */
+        CLIENTS_CA;
+
+        /**
+         * Get Ca name based on the role
+         *
+         * @return Ca name
+         */
+        public String caName() {
+            return switch (this) {
+                case CLUSTER_CA -> "Cluster CA";
+                case CLIENTS_CA -> "Clients CA";
+            };
+        }
+
+        /**
+         * Get Ca common name based on the role
+         *
+         * @return Ca common name
+         */
+        public String caCommonName() {
+            return switch (this) {
+                case CLUSTER_CA -> "cluster-ca";
+                case CLIENTS_CA -> "clients-ca";
+            };
+        }
+    }
+
+    /**
+     * Enum describing whether an event related to a certificate renewal is happening or not.
+     */
+    public enum RenewalType {
+        /**
+         * No changes to the CA, no renewals are happening.
+         */
+        NOOP() {
+            @Override
+            public String preDescription(String caName) {
+                return "CA key and certificate (in " + caName + " Secrets) already exist and do not need replacing or renewing";
+            }
+            @Override
+            public String postDescription(String caName) {
+                return "noop";
+            }
+        },
+        /**
+         * Renewal should be done, but was currently postponed because of the maintenance window configuration
+         */
+        POSTPONED() {
+            @Override
+            public String preDescription(String caName) {
+                return "CA operation was postponed and will be done in the next maintenance window";
+            }
+            @Override
+            public String postDescription(String caName) {
+                return "postponed";
+            }
+        },
+        /**
+         * New CA is being created
+         */
+        CREATE() {
+            @Override
+            public String preDescription(String caName) {
+                return "CA key and certificate (in " + caName + " Secrets) needs to be created";
+            }
+            @Override
+            public String postDescription(String caName) {
+                return "CA key and certificate (in " + caName + " Secrets) created";
+            }
+        },
+        /**
+         * CA is being renewed (new public key s generated using the same private key)
+         */
+        RENEW_CERT() {
+            @Override
+            public String preDescription(String caName) {
+                return "CA certificate (in " + caName + " Secret) needs to be renewed";
+            }
+            @Override
+            public String postDescription(String caName) {
+                return "CA certificate (in " + caName + " Secret) renewed";
+            }
+        },
+        /**
+         * CA is being renewed including new private key
+         */
+        REPLACE_KEY() {
+            @Override
+            public String preDescription(String caName) {
+                return "CA key (in " + caName + " Secret) needs to be replaced";
+            }
+            @Override
+            public String postDescription(String caName) {
+                return "CA key (in " + caName + " Secret) replaced";
+            }
+        };
+
+        RenewalType() {
+        }
+
+        /**
+         * Pre-renewal description which is used to log what is going to happen.
+         *
+         * @param caName The name of the CA being renewed
+         *
+         * @return  String with the description
+         */
+        public abstract String preDescription(String caName);
+
+        /**
+         * Post-renewal description which is used to log what was just done.
+         *
+         * @param caName The name of the CA being renewed
+         *
+         * @return  String with the description
+         */
+        public abstract String postDescription(String caName);
     }
 }
