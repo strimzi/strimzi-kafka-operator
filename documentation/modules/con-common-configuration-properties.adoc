@@ -827,6 +827,7 @@ Supported Volume Types
 * PersistentVolumeClaims
 * CSI Volumes
 * Image Volumes
+* Projected Service Account Tokens
 
 .Example configuration for additional volumes
 [source,yaml,subs=attributes+]
@@ -859,6 +860,13 @@ spec:
           - name: example-oci-plugin
             image:
               reference: my-registry.io/oci-artifacts/example-plugin:latest
+          - name: auth-token
+            projected:
+              sources:
+                - serviceAccountToken:
+                    audience: my-internal-listener
+                    expirationSeconds: 3600
+                    path: token
       kafkaContainer:
         volumeMounts:
           - name: example-secret
@@ -873,6 +881,8 @@ spec:
             mountPath: /mnt/certificate
           - name: example-oci-plugin
             mountPath: /mnt/example-plugin
+          - name: auth-token
+            mountPath: /mnt/auth-token
 ----
 
 You can use volumes to store files containing configuration values for a Kafka component and then load those values using a configuration provider.

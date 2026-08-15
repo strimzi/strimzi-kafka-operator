@@ -8,11 +8,14 @@ import io.fabric8.kubernetes.api.model.ConfigMapVolumeSourceBuilder;
 import io.fabric8.kubernetes.api.model.KeyToPathBuilder;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaimVolumeSource;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaimVolumeSourceBuilder;
+import io.fabric8.kubernetes.api.model.ProjectedVolumeSourceBuilder;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.SecretVolumeSourceBuilder;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeBuilder;
 import io.fabric8.kubernetes.api.model.VolumeMount;
+import io.fabric8.kubernetes.api.model.VolumeProjection;
+import io.fabric8.kubernetes.api.model.VolumeProjectionBuilder;
 import io.strimzi.api.kafka.model.common.template.AdditionalTemplatedVolume;
 import io.strimzi.api.kafka.model.common.template.AdditionalVolume;
 import io.strimzi.api.kafka.model.common.template.ContainerTemplate;
@@ -189,6 +192,23 @@ public class TemplateUtils {
             volumeBuilder.withCsi(volumeConfig.getCsi());
         } else if (volumeConfig.getImage() != null) {
             volumeBuilder.withImage(volumeConfig.getImage());
+        } else if (volumeConfig.getProjected() != null
+                && volumeConfig.getProjected().getSources() != null
+                && !volumeConfig.getProjected().getSources().isEmpty())    {
+            // We collect all the different sources. Currently, only Service Account Token sources are supported.
+            // But more might be added in the future.
+            List<VolumeProjection> sources = volumeConfig.getProjected().getSources().stream()
+                    .map(source -> {
+                        if (source.getServiceAccountToken() != null)    {
+                            return new VolumeProjectionBuilder().withServiceAccountToken(source.getServiceAccountToken()).build();
+                        } else {
+                            throw new InvalidResourceException("Only ServiceAccountTokenProjection is supported in projected volumes");
+                        }
+                    })
+                    .toList();
+
+            // Add the sources to the volume
+            volumeBuilder.withProjected(new ProjectedVolumeSourceBuilder().withSources(sources).build());
         }
 
         return volumeBuilder.build();

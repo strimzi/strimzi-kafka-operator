@@ -28,7 +28,7 @@ import java.util.Map;
  */
 @Buildable(editableEnabled = false, builderPackage = Constants.FABRIC8_KUBERNETES_API)
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({ "name", "secret", "configMap", "emptyDir", "persistentVolumeClaim", "csi", "image" })
+@JsonPropertyOrder({ "name", "secret", "configMap", "emptyDir", "persistentVolumeClaim", "csi", "image", "projected" })
 @OneOf({
     @OneOf.Alternative({
         @OneOf.Alternative.Property(value = "secret", required = false),
@@ -36,7 +36,8 @@ import java.util.Map;
         @OneOf.Alternative.Property(value = "emptyDir", required = false),
         @OneOf.Alternative.Property(value = "persistentVolumeClaim", required = false),
         @OneOf.Alternative.Property(value = "csi", required = false),
-        @OneOf.Alternative.Property(value = "image", required = false)
+        @OneOf.Alternative.Property(value = "image", required = false),
+        @OneOf.Alternative.Property(value = "projected", required = false)
         })
 })
 @EqualsAndHashCode
@@ -49,6 +50,7 @@ public class AdditionalVolume implements UnknownPropertyPreserving {
     private PersistentVolumeClaimVolumeSource persistentVolumeClaim;
     private CSIVolumeSource csi;
     private ImageVolumeSource image;
+    private ProjectedVolume projected;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("Name to use for the volume. Required.")
@@ -124,6 +126,16 @@ public class AdditionalVolume implements UnknownPropertyPreserving {
 
     public void setImage(ImageVolumeSource image) {
         this.image = image;
+    }
+
+    @Description("`ProjectedVolume` object to use volume projection.")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public ProjectedVolume getProjected() {
+        return projected;
+    }
+
+    public void setProjected(ProjectedVolume projected) {
+        this.projected = projected;
     }
 
     @Override
