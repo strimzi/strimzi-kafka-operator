@@ -89,86 +89,6 @@ public abstract class Ca {
         }
     }
 
-    protected static final ReconciliationLogger LOGGER = ReconciliationLogger.create(Ca.class);
-
-    /**
-     * DateTimeFormatter used for renaming old certificates
-     */
-    public static final DateTimeFormatter DATE_TIME_FORMATTER = new DateTimeFormatterBuilder()
-            .appendValue(YEAR, 4, 10, SignStyle.EXCEEDS_PAD)
-            .appendLiteral('-')
-            .appendValue(MONTH_OF_YEAR, 2)
-            .appendLiteral('-')
-            .appendValue(DAY_OF_MONTH, 2)
-            .appendLiteral('T')
-            .appendValue(HOUR_OF_DAY, 2)
-            .appendLiteral('-')
-            .appendValue(MINUTE_OF_HOUR, 2)
-            .optionalStart()
-            .appendLiteral('-')
-            .appendValue(SECOND_OF_MINUTE, 2)
-            .optionalStart()
-            .appendFraction(NANO_OF_SECOND, 0, 9, true)
-            .optionalStart()
-            .appendOffsetId()
-            .toFormatter().withChronology(IsoChronology.INSTANCE);
-
-    protected static final String CA_SECRET_PREFIX = "ca";
-
-    /**
-     * Key for storing the CA private key in a Kubernetes Secret
-     */
-    public static final String CA_KEY = SecretEntry.KEY.asKey(CA_SECRET_PREFIX);
-
-    /**
-     * Key for storing the CA public key in a Kubernetes Secret
-     */
-    public static final String CA_CRT = SecretEntry.CRT.asKey(CA_SECRET_PREFIX);
-
-    /**
-     * Organization used in the generated CAs
-     */
-    public static final String IO_STRIMZI = "io.strimzi";
-
-    /**
-     * Annotation for tracking the CA key generation used by Kubernetes resources
-     */
-    public static final String ANNO_STRIMZI_IO_CA_KEY_GENERATION = Annotations.STRIMZI_DOMAIN + "ca-key-generation";
-
-    /**
-     * Annotation for tracking the CA certificate generation used by Kubernetes resources
-     */
-    public static final String ANNO_STRIMZI_IO_CA_CERT_GENERATION = Annotations.STRIMZI_DOMAIN + "ca-cert-generation";
-
-    /**
-     * Annotation for tracking the Cluster CA generation used by Kubernetes resources
-     */
-    public static final String ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION = Annotations.STRIMZI_DOMAIN + "cluster-ca-cert-generation";
-
-    /**
-     * Annotation for tracking the Clients CA generation used by Kubernetes resources
-     */
-    public static final String ANNO_STRIMZI_IO_CLIENTS_CA_CERT_GENERATION = Annotations.STRIMZI_DOMAIN + "clients-ca-cert-generation";
-
-    /**
-     * Annotation for tracking the Cluster CA key generation used by Kubernetes resources
-     */
-    public static final String ANNO_STRIMZI_IO_CLUSTER_CA_KEY_GENERATION = Annotations.STRIMZI_DOMAIN + "cluster-ca-key-generation";
-
-    /**
-     * Pattern used for the old CA certificate during CA renewal. This pattern is used to recognize this certificate
-     * and delete it when it is not needed anymore.
-     */
-    private static final Pattern OLD_CA_CERT_PATTERN = Pattern.compile("^ca-\\d{4}-\\d{2}-\\d{2}T\\d{2}-\\d{2}-\\d{2}Z.crt$");
-
-    /**
-     * Initial generation used for the CAs
-     */
-    public static final int INIT_GENERATION = 0;
-
-    protected final Reconciliation reconciliation;
-    Clock clock;
-
     /**
      * Ca Role
      */
@@ -299,14 +219,93 @@ public abstract class Ca {
         public abstract String postDescription(String caName);
     }
 
+    protected static final String CA_SECRET_PREFIX = "ca";
+
+    /**
+     * Key for storing the CA private key in a Kubernetes Secret
+     */
+    public static final String CA_KEY = SecretEntry.KEY.asKey(CA_SECRET_PREFIX);
+
+    /**
+     * Key for storing the CA public key in a Kubernetes Secret
+     */
+    public static final String CA_CRT = SecretEntry.CRT.asKey(CA_SECRET_PREFIX);
+
+    /**
+     * Organization used in the generated CAs
+     */
+    public static final String IO_STRIMZI = "io.strimzi";
+
+    /**
+     * Annotation for tracking the CA key generation used by Kubernetes resources
+     */
+    public static final String ANNO_STRIMZI_IO_CA_KEY_GENERATION = Annotations.STRIMZI_DOMAIN + "ca-key-generation";
+
+    /**
+     * Annotation for tracking the CA certificate generation used by Kubernetes resources
+     */
+    public static final String ANNO_STRIMZI_IO_CA_CERT_GENERATION = Annotations.STRIMZI_DOMAIN + "ca-cert-generation";
+
+    /**
+     * Annotation for tracking the Cluster CA generation used by Kubernetes resources
+     */
+    public static final String ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION = Annotations.STRIMZI_DOMAIN + "cluster-ca-cert-generation";
+
+    /**
+     * Annotation for tracking the Clients CA generation used by Kubernetes resources
+     */
+    public static final String ANNO_STRIMZI_IO_CLIENTS_CA_CERT_GENERATION = Annotations.STRIMZI_DOMAIN + "clients-ca-cert-generation";
+
+    /**
+     * Annotation for tracking the Cluster CA key generation used by Kubernetes resources
+     */
+    public static final String ANNO_STRIMZI_IO_CLUSTER_CA_KEY_GENERATION = Annotations.STRIMZI_DOMAIN + "cluster-ca-key-generation";
+
+    /**
+     * Initial generation used for the CAs
+     */
+    public static final int INIT_GENERATION = 0;
+
+    /**
+     * DateTimeFormatter used for renaming old certificates
+     */
+    public static final DateTimeFormatter DATE_TIME_FORMATTER = new DateTimeFormatterBuilder()
+            .appendValue(YEAR, 4, 10, SignStyle.EXCEEDS_PAD)
+            .appendLiteral('-')
+            .appendValue(MONTH_OF_YEAR, 2)
+            .appendLiteral('-')
+            .appendValue(DAY_OF_MONTH, 2)
+            .appendLiteral('T')
+            .appendValue(HOUR_OF_DAY, 2)
+            .appendLiteral('-')
+            .appendValue(MINUTE_OF_HOUR, 2)
+            .optionalStart()
+            .appendLiteral('-')
+            .appendValue(SECOND_OF_MINUTE, 2)
+            .optionalStart()
+            .appendFraction(NANO_OF_SECOND, 0, 9, true)
+            .optionalStart()
+            .appendOffsetId()
+            .toFormatter().withChronology(IsoChronology.INSTANCE);
+
+    protected static final ReconciliationLogger LOGGER = ReconciliationLogger.create(Ca.class);
+
+    /**
+     * Pattern used for the old CA certificate during CA renewal. This pattern is used to recognize this certificate
+     * and delete it when it is not needed anymore.
+     */
+    private static final Pattern OLD_CA_CERT_PATTERN = Pattern.compile("^ca-\\d{4}-\\d{2}-\\d{2}T\\d{2}-\\d{2}-\\d{2}Z.crt$");
+
+    protected final Reconciliation reconciliation;
+    protected final CaConfig caConfig;
+    protected final CaRole caRole;
     protected int caCertGeneration;
     protected int caKeyGeneration;
     protected Map<String, String> caCertData;
     protected Map<String, String> caKeyData;
     protected RenewalType renewalType;
     protected boolean caCertsRemoved;
-    protected final CaConfig caConfig;
-    protected final CaRole caRole;
+    Clock clock;
 
     /**
      * Constructs the CA object
@@ -334,14 +333,68 @@ public abstract class Ca {
     }
 
     /**
-     * Sets the clock to some specific value. This method is useful in testing. But it has to be public because of how
-     * the Ca class is shared and inherited between different modules.
+     * Extracts the CA key generation from the CA cert or CA key Secret
      *
-     * @param clock     Clock instance that should be used to determine time
+     * @param caKeySecret CA key Secret
+     * @param caCertSecret CA cert Secret
+     * @return CA key generation
      */
-    public void setClock(Clock clock) {
-        this.clock = clock;
-    }
+    protected abstract int initCaKeyGeneration(Secret caKeySecret, Secret caCertSecret);
+
+    /**
+     * Generates or reuses a server certificate signed by this Cluster CA.
+     * Used for Kafka brokers and Cruise Control.
+     *
+     * @param reconciliation                        Reconciliation marker
+     * @param commonName                            Common Name for the certificate
+     * @param subject                               Subject for the certificate
+     * @param existingCertAndKey                    Existing certificate (or null if none exists)
+     * @param isMaintenanceTimeWindowsSatisfied     Whether we are in a maintenance window
+     * @param includeCaChain                        Whether to include CA chain
+     *
+     *
+     * @return CertAndKey object containing the public and private key
+     **/
+    public abstract CompletionStage<CertAndKey> maybeCopyOrGenerateServerCerts(
+            Reconciliation reconciliation,
+            String commonName,
+            StrimziSubject subject,
+            CertAndKey existingCertAndKey,
+            boolean isMaintenanceTimeWindowsSatisfied,
+            boolean includeCaChain
+    );
+
+    /**
+     * Generates or reuses a client certificate signed by this Cluster CA.
+     * Used for components that only act as clients, like Entity Operators and Kafka Exporter.
+     *
+     * @param reconciliation                        Reconciliation marker
+     * @param commonName                            Common Name for the certificate
+     * @param existingCertAndKey                    Existing certificate (or null if none exists)
+     * @param isMaintenanceTimeWindowsSatisfied     Whether we are in a maintenance window
+     *
+     * @return CertAndKey object containing the certificate and key with CA generation set
+     */
+    public abstract CompletionStage<CertAndKey> maybeCopyOrGenerateClientCert(
+            Reconciliation reconciliation,
+            String commonName,
+            CertAndKey existingCertAndKey,
+            boolean isMaintenanceTimeWindowsSatisfied
+    );
+
+    /**
+     * Remove old certificates that are stored in the CA Secret.
+     */
+    public abstract void maybeDeleteOldCerts();
+
+    /**
+     * Remove certificates from the CA related Secret and store which match the provided predicate
+     *
+     * @param newData data section of the CA Secret containing certificates
+     * @param predicate predicate to match for removing a certificate
+     * @return boolean indicating whether any certs were removed
+     */
+    protected abstract boolean removeCerts(Map<String, String> newData, Predicate<Map.Entry<String, String>> predicate);
 
     /**
      * Extracts the CA generation from the CA cert Secret
@@ -360,16 +413,6 @@ public abstract class Ca {
         return INIT_GENERATION;
     }
 
-    /**
-     * Extracts the CA key generation from the CA cert or CA key Secret
-     *
-     * @param caKeySecret CA key Secret
-     * @param caCertSecret CA cert Secret
-     * @return CA key generation
-     */
-    protected abstract int initCaKeyGeneration(Secret caKeySecret, Secret caCertSecret);
-
-
     private Map<String, String> initCaKeyData(Secret caKeySecret) {
         if (caKeySecret != null) {
             if (caKeySecret.getData() == null || !caKeySecret.getData().containsKey(CA_KEY)) {
@@ -382,6 +425,16 @@ public abstract class Ca {
         } else {
             return new HashMap<>();
         }
+    }
+
+    /**
+     * Sets the clock to some specific value. This method is useful in testing. But it has to be public because of how
+     * the Ca class is shared and inherited between different modules.
+     *
+     * @param clock     Clock instance that should be used to determine time
+     */
+    public void setClock(Clock clock) {
+        this.clock = clock;
     }
 
     /**
@@ -516,58 +569,6 @@ public abstract class Ca {
         return caKeyGeneration;
     }
 
-
-    /**
-     * Generates or reuses a server certificate signed by this Cluster CA.
-     * Used for Kafka brokers and Cruise Control.
-     *
-     * @param reconciliation                        Reconciliation marker
-     * @param commonName                            Common Name for the certificate
-     * @param subject                               Subject for the certificate
-     * @param existingCertAndKey                    Existing certificate (or null if none exists)
-     * @param isMaintenanceTimeWindowsSatisfied     Whether we are in a maintenance window
-     * @param includeCaChain                        Whether to include CA chain
-     *
-     *
-     * @return CertAndKey object containing the public and private key
-     **/
-    public abstract CompletionStage<CertAndKey> maybeCopyOrGenerateServerCerts(
-            Reconciliation reconciliation,
-            String commonName,
-            StrimziSubject subject,
-            CertAndKey existingCertAndKey,
-            boolean isMaintenanceTimeWindowsSatisfied,
-            boolean includeCaChain
-    );
-
-    /**
-     * Generates or reuses a client certificate signed by this Cluster CA.
-     * Used for components that only act as clients, like Entity Operators and Kafka Exporter.
-     *
-     * @param reconciliation                        Reconciliation marker
-     * @param commonName                            Common Name for the certificate
-     * @param existingCertAndKey                    Existing certificate (or null if none exists)
-     * @param isMaintenanceTimeWindowsSatisfied     Whether we are in a maintenance window
-     *
-     * @return CertAndKey object containing the certificate and key with CA generation set
-     */
-    public abstract CompletionStage<CertAndKey> maybeCopyOrGenerateClientCert(
-            Reconciliation reconciliation,
-            String commonName,
-            CertAndKey existingCertAndKey,
-            boolean isMaintenanceTimeWindowsSatisfied
-    );
-
-    /**
-     * Remove certificates from the CA related Secret and store which match the provided predicate
-     *
-     * @param newData data section of the CA Secret containing certificates
-     * @param predicate predicate to match for removing a certificate
-     * @return boolean indicating whether any certs were removed
-     */
-
-    protected abstract boolean removeCerts(Map<String, String> newData, Predicate<Map.Entry<String, String>> predicate);
-
     /**
      * Gets the name of the annotation bringing the generation of the specific CA certificate type.
      *
@@ -612,11 +613,6 @@ public abstract class Ca {
         }
         return cert.getNotAfter().getTime();
     }
-
-    /**
-     * Remove old certificates that are stored in the CA Secret.
-     */
-    public abstract void maybeDeleteOldCerts();
 
     /**
      * Remove old certificates that are stored in the CA Secret matching the "ca-YYYY-MM-DDTHH-MM-SSZ.crt" naming pattern.
