@@ -6,6 +6,7 @@ package io.strimzi.systemtest.templates.crd;
 
 import io.strimzi.api.kafka.model.user.KafkaUser;
 import io.strimzi.api.kafka.model.user.KafkaUserBuilder;
+import io.strimzi.api.kafka.model.user.acl.StrimziAclOperation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.storage.TestStorage;
 
@@ -64,5 +65,33 @@ public class KafkaUserTemplates {
                         .withControllerMutationRate(mutRate)
                     .endQuotas()
                 .endSpec();
+    }
+
+    /**
+     * Returns KafkaUser resource builder with authorization rules for consuming and producing to a topic.
+     *
+     * @param testStorage   TestStorage instances used to gather the username, namespace, cluster name, and topic name from.
+     *
+     * @return  KafkaUserBuilder instance with authorization rules for consuming and producing to a topic.
+     */
+    public static KafkaUserBuilder tlsUserWithAuthorization(TestStorage testStorage) {
+        return tlsUser(testStorage)
+            .editSpec()
+                .withNewKafkaUserAuthorizationSimple()
+                    .addNewAcl()
+                        .withNewAclRuleTopicResource()
+                            .withName(testStorage.getTopicName())
+                        .endAclRuleTopicResource()
+                        .withOperations(StrimziAclOperation.READ, StrimziAclOperation.WRITE,
+                            StrimziAclOperation.DESCRIBE, StrimziAclOperation.CREATE)
+                    .endAcl()
+                    .addNewAcl()
+                        .withNewAclRuleGroupResource()
+                            .withName("*")
+                        .endAclRuleGroupResource()
+                        .withOperations(StrimziAclOperation.READ)
+                    .endAcl()
+                .endKafkaUserAuthorizationSimple()
+            .endSpec();
     }
 }

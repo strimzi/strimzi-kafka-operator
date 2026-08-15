@@ -21,8 +21,6 @@ import io.strimzi.api.kafka.model.kafka.clustersecurity.ClusterSecurityEncryptio
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceState;
-import io.strimzi.api.kafka.model.user.KafkaUser;
-import io.strimzi.api.kafka.model.user.acl.StrimziAclOperation;
 import io.strimzi.kafka.config.model.Scope;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.model.Labels;
@@ -46,6 +44,7 @@ import io.strimzi.systemtest.utils.RollingUpdateUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaRebalanceUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
+import io.strimzi.systemtest.utils.specific.ClusterSecuritySTUtils;
 import io.strimzi.testclients.clients.kafka.KafkaProducerConsumer;
 import io.strimzi.testclients.clients.kafka.KafkaProducerConsumerBuilder;
 import org.junit.jupiter.api.BeforeAll;
@@ -76,6 +75,18 @@ class ClusterSecurityST extends AbstractST {
     private static final int BROKER_REPLICAS = 3;
     private static final int CONTROLLER_REPLICAS = 3;
     private static final String INTERNAL_CLUSTER_SECURITY_ANNOTATION = "strimzi.io/internal-cluster-security";
+
+    /**
+     * Generates the combinations of encryption and authentication types for testing.
+     *
+     * @return  A stream of arguments containing encryption and authentication type combinations.
+     */
+    private Stream<Arguments> securityConfigurationCombos() {
+        return Stream.of(
+                Arguments.of(ClusterSecurityEncryptionType.STRIMZI_TLS, ClusterSecurityAuthenticationType.NONE),
+                Arguments.of(ClusterSecurityEncryptionType.NONE, ClusterSecurityAuthenticationType.NONE)
+        );
+    }
 
     @Tag(CRUISE_CONTROL)
     @Tag(DYNAMIC_CONFIGURATION)
@@ -108,7 +119,7 @@ class ClusterSecurityST extends AbstractST {
         );
         KubeResourceManager.get().createResourceWithWait(KafkaTemplates.kafkaWithCruiseControlTunedForFastModelGeneration(testStorage.getNamespaceName(), testStorage.getClusterName(), BROKER_REPLICAS)
                         .editMetadata()
-                            .addToAnnotations(INTERNAL_CLUSTER_SECURITY_ANNOTATION, clusterSecurityAnnotation(encryption, authentication))
+                            .addToAnnotations(INTERNAL_CLUSTER_SECURITY_ANNOTATION, ClusterSecuritySTUtils.clusterSecurityAnnotation(encryption, authentication))
                         .endMetadata()
                         .editSpec()
                             .editKafka()
@@ -135,16 +146,29 @@ class ClusterSecurityST extends AbstractST {
                 ScraperTemplates.scraperPod(testStorage.getNamespaceName(), testStorage.getScraperName()).build()
         );
         KubeResourceManager.get().createResourceWithWait(
-                authorizedTlsUser(testStorage),
+                KafkaUserTemplates.tlsUserWithAuthorization(testStorage).build(),
                 KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getTopicName(), testStorage.getClusterName(), 3, 3, 2).build()
         );
 
         // Assert security status
-        assertClusterSecurityStatus(testStorage, encryption, authentication);
+        ClusterSecuritySTUtils.assertClusterSecurityStatus(testStorage, encryption, authentication);
 
         // Test message producing and consuming
-        KafkaProducerConsumer clients = kafkaClients(testStorage);
-        sendAndReceiveMessages(testStorage, clients, testStorage.getMessageCount());
+        KafkaProducerConsumer clients = new KafkaProducerConsumerBuilder()
+                .withProducerName(testStorage.getProducerName())
+                .withConsumerName(testStorage.getConsumerName())
+                .withNamespaceName(testStorage.getNamespaceName())
+                .withTopicName(testStorage.getTopicName())
+                .withConsumerGroup(ClientUtils.generateRandomConsumerGroup())
+                .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(testStorage.getClusterName()))
+                .withMessageCount(testStorage.getMessageCount())
+                .withAuthentication(ClientsAuthentication.configureTls(testStorage.getClusterName(), testStorage.getUsername()))
+                .build();
+
+        clients.setMessageCount(testStorage.getMessageCount());
+        clients.setConsumerGroup(ClientUtils.generateRandomConsumerGroup());
+        KubeResourceManager.get().createResourceWithWait(clients.getProducer().getJob(), clients.getConsumer().getJob());
+        ClientUtils.waitForClientsSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getProducerName(), testStorage.getMessageCount());
 
         // Check dynamic configuration update
         Map<String, String> controllerPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getControllerSelector());
@@ -170,9 +194,12 @@ class ClusterSecurityST extends AbstractST {
                 BROKER_REPLICAS, brokerPods);
 
         // Test message consumption
-        consumeMessages(testStorage, clients, testStorage.getMessageCount());
+        clients.setMessageCount(testStorage.getMessageCount());
+        clients.setConsumerGroup(ClientUtils.generateRandomConsumerGroup());
+        KubeResourceManager.get().createResourceWithWait(clients.getConsumer().getJob());
+        ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getMessageCount());
 
-        // Test CRuise Control
+        // Test Cruise Control
         KubeResourceManager.get().createResourceWithWait(
                 KafkaRebalanceTemplates.kafkaRebalance(testStorage.getNamespaceName(), testStorage.getClusterName()).build()
         );
@@ -230,28 +257,61 @@ class ClusterSecurityST extends AbstractST {
                     .build()
         );
         KubeResourceManager.get().createResourceWithWait(
-            authorizedTlsUser(testStorage),
-            KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getTopicName(), testStorage.getClusterName(), 3, 3, 2).build()
+                KafkaUserTemplates.tlsUserWithAuthorization(testStorage).build(),
+                KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getTopicName(), testStorage.getClusterName(), 3, 3, 2).build()
         );
 
-        assertClusterSecurityStatus(testStorage, ClusterSecurityEncryptionType.STRIMZI_TLS, ClusterSecurityAuthenticationType.STRIMZI_MTLS);
+        ClusterSecuritySTUtils.assertClusterSecurityStatus(testStorage, ClusterSecurityEncryptionType.STRIMZI_TLS, ClusterSecurityAuthenticationType.STRIMZI_MTLS);
 
-        KafkaProducerConsumer clients = kafkaClients(testStorage);
-        sendAndReceiveMessages(testStorage, clients, testStorage.getMessageCount());
+        // Test sending and consuming messages works
+        KafkaProducerConsumer clients = new KafkaProducerConsumerBuilder()
+                .withProducerName(testStorage.getProducerName())
+                .withConsumerName(testStorage.getConsumerName())
+                .withNamespaceName(testStorage.getNamespaceName())
+                .withTopicName(testStorage.getTopicName())
+                .withConsumerGroup(ClientUtils.generateRandomConsumerGroup())
+                .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(testStorage.getClusterName()))
+                .withMessageCount(testStorage.getMessageCount())
+                .withAuthentication(ClientsAuthentication.configureTls(testStorage.getClusterName(), testStorage.getUsername()))
+                .build();
+
+        clients.setMessageCount(testStorage.getMessageCount());
+        clients.setConsumerGroup(ClientUtils.generateRandomConsumerGroup());
+        KubeResourceManager.get().createResourceWithWait(clients.getProducer().getJob(), clients.getConsumer().getJob());
+        ClientUtils.waitForClientsSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getProducerName(), testStorage.getMessageCount());
+
+        clients.setMessageCount(testStorage.getMessageCount());
+        clients.setConsumerGroup(ClientUtils.generateRandomConsumerGroup());
+        KubeResourceManager.get().createResourceWithWait(clients.getConsumer().getJob());
+        ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getMessageCount());
 
         // Migrate to different security settings
-        migrateClusterSecurity(testStorage, clusterSecurityAnnotation(ClusterSecurityEncryptionType.NONE, ClusterSecurityAuthenticationType.NONE));
-        assertClusterSecurityStatus(testStorage, ClusterSecurityEncryptionType.NONE, ClusterSecurityAuthenticationType.NONE);
-        consumeMessages(testStorage, clients, testStorage.getMessageCount());
-        sendMessages(testStorage, clients, testStorage.getMessageCount());
-        consumeMessages(testStorage, clients, 2 * testStorage.getMessageCount());
+        migrateClusterSecurity(testStorage, ClusterSecuritySTUtils.clusterSecurityAnnotation(ClusterSecurityEncryptionType.NONE, ClusterSecurityAuthenticationType.NONE));
+        ClusterSecuritySTUtils.assertClusterSecurityStatus(testStorage, ClusterSecurityEncryptionType.NONE, ClusterSecurityAuthenticationType.NONE);
+
+        // Test sending and consuming messages still works
+        clients.setMessageCount(testStorage.getMessageCount());
+        KubeResourceManager.get().createResourceWithWait(clients.getProducer().getJob());
+        ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getProducerName(), testStorage.getMessageCount());
+
+        clients.setMessageCount(2 * testStorage.getMessageCount());
+        clients.setConsumerGroup(ClientUtils.generateRandomConsumerGroup());
+        KubeResourceManager.get().createResourceWithWait(clients.getConsumer().getJob());
+        ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), 2 * testStorage.getMessageCount());
 
         // Migrate back to the original to close the round trip
-        migrateClusterSecurity(testStorage, clusterSecurityAnnotation(ClusterSecurityEncryptionType.STRIMZI_TLS, ClusterSecurityAuthenticationType.STRIMZI_MTLS));
-        assertClusterSecurityStatus(testStorage, ClusterSecurityEncryptionType.STRIMZI_TLS, ClusterSecurityAuthenticationType.STRIMZI_MTLS);
-        consumeMessages(testStorage, clients, 2 * testStorage.getMessageCount());
-        sendMessages(testStorage, clients, testStorage.getMessageCount());
-        consumeMessages(testStorage, clients, 3 * testStorage.getMessageCount());
+        migrateClusterSecurity(testStorage, ClusterSecuritySTUtils.clusterSecurityAnnotation(ClusterSecurityEncryptionType.STRIMZI_TLS, ClusterSecurityAuthenticationType.STRIMZI_MTLS));
+        ClusterSecuritySTUtils.assertClusterSecurityStatus(testStorage, ClusterSecurityEncryptionType.STRIMZI_TLS, ClusterSecurityAuthenticationType.STRIMZI_MTLS);
+
+        // Test sending and consuming messages still works
+        clients.setMessageCount(testStorage.getMessageCount());
+        KubeResourceManager.get().createResourceWithWait(clients.getProducer().getJob());
+        ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getProducerName(), testStorage.getMessageCount());
+
+        clients.setMessageCount(3 * testStorage.getMessageCount());
+        clients.setConsumerGroup(ClientUtils.generateRandomConsumerGroup());
+        KubeResourceManager.get().createResourceWithWait(clients.getConsumer().getJob());
+        ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), 3 * testStorage.getMessageCount());
     }
 
     private void migrateClusterSecurity(TestStorage testStorage, String clusterSecurity) {
@@ -289,102 +349,6 @@ class ClusterSecurityST extends AbstractST {
         PodUtils.waitForPodsReady(namespaceName, testStorage.getControllerSelector(), CONTROLLER_REPLICAS, true);
         PodUtils.waitForPodsReady(namespaceName, testStorage.getBrokerSelector(), BROKER_REPLICAS, true);
         KafkaUtils.waitForKafkaReady(namespaceName, clusterName);
-    }
-
-    private KafkaProducerConsumer kafkaClients(TestStorage testStorage) {
-        return new KafkaProducerConsumerBuilder()
-            .withProducerName(testStorage.getProducerName())
-            .withConsumerName(testStorage.getConsumerName())
-            .withNamespaceName(testStorage.getNamespaceName())
-            .withTopicName(testStorage.getTopicName())
-            .withConsumerGroup(ClientUtils.generateRandomConsumerGroup())
-            .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(testStorage.getClusterName()))
-            .withMessageCount(testStorage.getMessageCount())
-            .withAuthentication(ClientsAuthentication.configureTls(testStorage.getClusterName(), testStorage.getUsername()))
-            .build();
-    }
-
-    private KafkaUser authorizedTlsUser(TestStorage testStorage) {
-        return KafkaUserTemplates.tlsUser(testStorage)
-            .editSpec()
-                .withNewKafkaUserAuthorizationSimple()
-                    .addNewAcl()
-                        .withNewAclRuleTopicResource()
-                            .withName(testStorage.getTopicName())
-                        .endAclRuleTopicResource()
-                        .withOperations(StrimziAclOperation.READ, StrimziAclOperation.WRITE,
-                            StrimziAclOperation.DESCRIBE, StrimziAclOperation.CREATE)
-                    .endAcl()
-                    .addNewAcl()
-                        .withNewAclRuleGroupResource()
-                            .withName("*")
-                        .endAclRuleGroupResource()
-                        .withOperations(StrimziAclOperation.READ)
-                    .endAcl()
-                .endKafkaUserAuthorizationSimple()
-            .endSpec()
-            .build();
-    }
-
-    private void sendAndReceiveMessages(TestStorage testStorage, KafkaProducerConsumer clients, int messageCount) {
-        clients.setMessageCount(messageCount);
-        clients.setConsumerGroup(ClientUtils.generateRandomConsumerGroup());
-        KubeResourceManager.get().createResourceWithWait(clients.getProducer().getJob(), clients.getConsumer().getJob());
-        ClientUtils.waitForClientsSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getProducerName(), messageCount);
-    }
-
-    private void sendMessages(TestStorage testStorage, KafkaProducerConsumer clients, int messageCount) {
-        clients.setMessageCount(messageCount);
-        KubeResourceManager.get().createResourceWithWait(clients.getProducer().getJob());
-        ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getProducerName(), messageCount);
-    }
-
-    private void consumeMessages(TestStorage testStorage, KafkaProducerConsumer clients, int messageCount) {
-        clients.setMessageCount(messageCount);
-        clients.setConsumerGroup(ClientUtils.generateRandomConsumerGroup());
-        KubeResourceManager.get().createResourceWithWait(clients.getConsumer().getJob());
-        ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), messageCount);
-    }
-
-
-    /**
-     * Generates the combinations of encryption and authentication types for testing.
-     *
-     * @return  A stream of arguments containing encryption and authentication type combinations.
-     */
-    private Stream<Arguments> securityConfigurationCombos() {
-        return Stream.of(
-                Arguments.of(ClusterSecurityEncryptionType.STRIMZI_TLS, ClusterSecurityAuthenticationType.NONE),
-                Arguments.of(ClusterSecurityEncryptionType.NONE, ClusterSecurityAuthenticationType.NONE)
-        );
-    }
-
-    /**
-     * Generates the Cluster Security annotation for the given encryption and authentication types
-     *
-     * @param encryption        Encryption type
-     * @param authentication    Authentication type
-     *
-     * @return  Cluster Security annotation as a JSON string
-     */
-    private String clusterSecurityAnnotation(ClusterSecurityEncryptionType encryption, ClusterSecurityAuthenticationType authentication) {
-        return "{\"encryption\":{\"type\":\"" + encryption.toValue() + "\"},\"authentication\":{\"type\":\"" + authentication.toValue() + "\"}}";
-    }
-
-    /**
-     * Checks that the cluster security status corresponds to the desired encryption and authentication types.
-     *
-     * @param testStorage       Test storage containing cluster information
-     * @param encryption        Expected encryption type
-     * @param authentication    Expected authentication type
-     */
-    private void assertClusterSecurityStatus(TestStorage testStorage, ClusterSecurityEncryptionType encryption, ClusterSecurityAuthenticationType authentication) {
-        assertThat(CrdClients.kafkaClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName())
-                .get().getStatus().getClusterSecurity(),
-            is(Map.of(
-                "encryption", Map.of("type", encryption.toValue()),
-                "authentication", Map.of("type", authentication.toValue())
-            )));
     }
 
     @BeforeAll
