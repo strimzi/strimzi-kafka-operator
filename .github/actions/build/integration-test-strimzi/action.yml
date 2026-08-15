@@ -50,7 +50,7 @@ runs:
         mvn -e -V -B -Dmaven.javadoc.skip=true \
           -Dskip.surefire.tests \
           -Dfailsafe.rerunFailingTestsCount=2 \
-          verify
+          install
       env:
         TESTCONTAINERS_RYUK_DISABLED: true
         TESTCONTAINERS_CHECKS_DISABLE: true
