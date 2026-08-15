@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 1.3.0
+
+* _Nothing here yet, but we will surely develop something new pretty soon_ 😉
+
+### Major changes, deprecations, and removals
+
+* n/a
+
 ## 1.2.0
 
 * Add support for Apache Kafka 4.3.1
