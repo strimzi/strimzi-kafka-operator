@@ -673,8 +673,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
          */
         Future<ReconciliationState> reconcileKafkaAutoRebalancing() {
             if (isAutoRebalancingEnabled()) {
-                return kafkaAutoRebalancingReconciler()
-                        .reconcile(kafkaStatus)
+                return VertxUtil.toFuture(kafkaAutoRebalancingReconciler()
+                        .reconcile(kafkaStatus))
                         .map(this);
             } else {
                 LOGGER.debugCr(reconciliation, "Cruise Control or inner autorebalance field not defined in the Kafka custom resource, no auto-rebalancing to reconcile");
