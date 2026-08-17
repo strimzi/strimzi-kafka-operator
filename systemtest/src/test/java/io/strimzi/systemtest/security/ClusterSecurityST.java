@@ -165,8 +165,6 @@ class ClusterSecurityST extends AbstractST {
                 .withAuthentication(ClientsAuthentication.configureTls(testStorage.getClusterName(), testStorage.getUsername()))
                 .build();
 
-        clients.setMessageCount(testStorage.getMessageCount());
-        clients.setConsumerGroup(ClientUtils.generateRandomConsumerGroup());
         KubeResourceManager.get().createResourceWithWait(clients.getProducer().getJob(), clients.getConsumer().getJob());
         ClientUtils.waitForClientsSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getProducerName(), testStorage.getMessageCount());
 
@@ -194,7 +192,6 @@ class ClusterSecurityST extends AbstractST {
                 BROKER_REPLICAS, brokerPods);
 
         // Test message consumption
-        clients.setMessageCount(testStorage.getMessageCount());
         clients.setConsumerGroup(ClientUtils.generateRandomConsumerGroup());
         KubeResourceManager.get().createResourceWithWait(clients.getConsumer().getJob());
         ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getMessageCount());
@@ -275,12 +272,9 @@ class ClusterSecurityST extends AbstractST {
                 .withAuthentication(ClientsAuthentication.configureTls(testStorage.getClusterName(), testStorage.getUsername()))
                 .build();
 
-        clients.setMessageCount(testStorage.getMessageCount());
-        clients.setConsumerGroup(ClientUtils.generateRandomConsumerGroup());
         KubeResourceManager.get().createResourceWithWait(clients.getProducer().getJob(), clients.getConsumer().getJob());
         ClientUtils.waitForClientsSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getProducerName(), testStorage.getMessageCount());
 
-        clients.setMessageCount(testStorage.getMessageCount());
         clients.setConsumerGroup(ClientUtils.generateRandomConsumerGroup());
         KubeResourceManager.get().createResourceWithWait(clients.getConsumer().getJob());
         ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getMessageCount());
@@ -290,7 +284,6 @@ class ClusterSecurityST extends AbstractST {
         ClusterSecuritySTUtils.assertClusterSecurityStatus(testStorage, ClusterSecurityEncryptionType.NONE, ClusterSecurityAuthenticationType.NONE);
 
         // Test sending and consuming messages still works
-        clients.setMessageCount(testStorage.getMessageCount());
         KubeResourceManager.get().createResourceWithWait(clients.getProducer().getJob());
         ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getProducerName(), testStorage.getMessageCount());
 
