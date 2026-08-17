@@ -72,29 +72,6 @@ Disable authentication only if other controls, such as network isolation or a se
 If the `strimzi.io/internal-cluster-security` annotation is not present, Strimzi uses `strimzi-tls` encryption with `strimzi-mtls` authentication.
 This behavior is unchanged from previous releases.
 
-The following explicit configuration is equivalent to omitting the annotation:
-
-.Default TLS encryption with mTLS authentication
-[source,yaml,subs="+quotes,attributes"]
-----
-apiVersion: {KafkaApiVersion}
-kind: Kafka
-metadata:
-  name: my-cluster
-  annotations:
-    strimzi.io/internal-cluster-security: |
-      {
-        "encryption": {
-          "type": "strimzi-tls"
-        },
-        "authentication": {
-          "type": "strimzi-mtls"
-        }
-      }
-spec:
-  # ...
-----
-
 == (Early Access) Disabling mTLS authentication
 
 Set the authentication type to `none` to disable mTLS authentication while retaining TLS encryption.
