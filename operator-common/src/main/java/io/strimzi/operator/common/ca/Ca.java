@@ -628,4 +628,9 @@ public abstract class Ca {
             this.caCertsRemoved = true;
         }
     }
+
+    @Override
+    public String toString() {
+        return caRole.caName();
+    }
 }
