@@ -693,7 +693,7 @@
         {
           "datasource": "${DS_PROMETHEUS}",
           "exemplar": false,
-          "expr": "sum(kafka_consumer_consumer_fetch_manager_metrics_records_lag{strimzi_io_kind=~\"KafkaMirrorMaker2\",strimzi_io_cluster=\"$strimzi_mirror_maker_cluster_name\",clientid=~\".*replication-consumer\\\"\"}) by (topic, partition)",
+          "expr": "sum(kafka_consumer_consumer_fetch_manager_metrics_records_lag{strimzi_io_kind=~\"KafkaMirrorMaker2\",strimzi_io_cluster=\"$strimzi_mirror_maker_cluster_name\",client_id=~\".*replication-consumer\"}) by (topic, partition)",
           "interval": "",
           "legendFormat": "{{topic}} (partition: {{partition}})",
           "refId": "A"
@@ -757,7 +757,7 @@
         {
           "datasource": "${DS_PROMETHEUS}",
           "exemplar": false,
-          "expr": "topk(20, sum(kafka_consumer_consumer_fetch_manager_metrics_records_lag{strimzi_io_kind=~\"KafkaMirrorMaker2\",strimzi_io_cluster=\"$strimzi_mirror_maker_cluster_name\",clientid=~\".*replication-consumer\\\"\"}) by (partition, topic))",
+          "expr": "topk(20, sum(kafka_consumer_consumer_fetch_manager_metrics_records_lag{strimzi_io_kind=~\"KafkaMirrorMaker2\",strimzi_io_cluster=\"$strimzi_mirror_maker_cluster_name\",client_id=~\".*replication-consumer\"}) by (partition, topic))",
           "format": "table",
           "instant": true,
           "interval": "",
@@ -1427,7 +1427,7 @@
           "datasource": "${DS_PROMETHEUS}",
           "expr": "sum(kafka_producer_producer_metrics_buffer_available_bytes) by (client_id)",
           "interval": "",
-          "legendFormat": "{{clientid}}",
+          "legendFormat": "{{client_id}}",
           "refId": "A"
         }
       ],
