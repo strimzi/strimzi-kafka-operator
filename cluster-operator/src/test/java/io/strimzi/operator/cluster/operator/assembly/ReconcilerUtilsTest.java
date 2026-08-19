@@ -26,9 +26,11 @@ import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticatio
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationScramSha512Builder;
 import io.strimzi.api.kafka.model.kafka.KafkaClusterSpec;
 import io.strimzi.api.kafka.model.kafka.KafkaClusterSpecBuilder;
+import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.podset.StrimziPodSet;
 import io.strimzi.api.kafka.model.podset.StrimziPodSetBuilder;
 import io.strimzi.operator.cluster.ResourceUtils;
+import io.strimzi.operator.cluster.model.KafkaClusterSecurityContext;
 import io.strimzi.operator.cluster.model.NodeRef;
 import io.strimzi.operator.cluster.model.PodRevision;
 import io.strimzi.operator.cluster.model.PodSetUtils;
@@ -37,6 +39,9 @@ import io.strimzi.operator.cluster.model.jmx.SupportsJmx;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
+import io.strimzi.operator.common.auth.Identity;
+import io.strimzi.operator.common.auth.PemAuthIdentity;
+import io.strimzi.operator.common.auth.PemTrustSet;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.kubernetes.SecretOperator;
@@ -60,6 +65,7 @@ import static io.strimzi.operator.cluster.ResourceUtils.DUMMY_CERT;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
 import static org.hamcrest.CoreMatchers.hasItems;
+import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -74,12 +80,14 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(VertxExtension.class)
 public class ReconcilerUtilsTest {
-    private final static String NAME = "my-jmx-secret";
+    private final static String JMX_SECRET_NAME = "my-jmx-secret";
     private final static String NAMESPACE = "namespace";
+    private final static String CLUSTER_NAME = "name";
     private static final Labels LABELS = Labels
             .forStrimziKind("my-kind")
             .withStrimziName("my-name")
@@ -87,10 +95,93 @@ public class ReconcilerUtilsTest {
             .withStrimziComponentType("my-component-type");
     private static final Secret EXISTING_JMX_SECRET = new SecretBuilder()
             .withNewMetadata()
-                .withName(NAME)
+                .withName(JMX_SECRET_NAME)
             .endMetadata()
             .withData(Map.of("jmx-username", "username", "jmx-password", "password"))
             .build();
+
+    @Test
+    public void testCoIdentityWithTlsAndMtls(VertxTestContext context) {
+        Secret clusterCaSecret = new SecretBuilder()
+                .withNewMetadata()
+                    .withName(KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME))
+                    .withNamespace(NAMESPACE)
+                .endMetadata()
+                .withData(Map.of("ca.crt", Util.encodeToBase64(DUMMY_CERT)))
+                .build();
+        Secret clusterOperatorSecret = new SecretBuilder()
+                .withNewMetadata()
+                    .withName(KafkaResources.clusterOperatorCertsSecretName(CLUSTER_NAME))
+                    .withNamespace(NAMESPACE)
+                .endMetadata()
+                .withData(Map.of(
+                        "cluster-operator.key", Util.encodeToBase64("key"),
+                        "cluster-operator.crt", Util.encodeToBase64(DUMMY_CERT)))
+                .build();
+
+        SecretOperator mockSecretOps = mock(SecretOperator.class);
+        when(mockSecretOps.getAsync(NAMESPACE, KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME)))
+                .thenReturn(CompletableFuture.completedFuture(clusterCaSecret));
+        when(mockSecretOps.getAsync(NAMESPACE, KafkaResources.clusterOperatorCertsSecretName(CLUSTER_NAME)))
+                .thenReturn(CompletableFuture.completedFuture(clusterOperatorSecret));
+
+        Checkpoint async = context.checkpoint();
+        ReconcilerUtils.coIdentity(Reconciliation.DUMMY_RECONCILIATION, mockSecretOps, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT)
+                .onComplete(context.succeeding(identity -> context.verify(() -> {
+                    assertThat(identity.trustSet(), is(instanceOf(PemTrustSet.class)));
+                    assertThat(((PemTrustSet) identity.trustSet()).trustedCertificatesString(), is(DUMMY_CERT));
+                    assertThat(identity.authIdentity(), is(instanceOf(PemAuthIdentity.class)));
+                    assertThat(((PemAuthIdentity) identity.authIdentity()).privateKeyAsPem(), is("key"));
+                    assertThat(((PemAuthIdentity) identity.authIdentity()).certificateChainAsPem(), is(DUMMY_CERT));
+                    verify(mockSecretOps).getAsync(NAMESPACE, KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME));
+                    verify(mockSecretOps).getAsync(NAMESPACE, KafkaResources.clusterOperatorCertsSecretName(CLUSTER_NAME));
+                    async.flag();
+                })));
+    }
+
+    @Test
+    public void testCoIdentityWithTlsWithoutAuthentication(VertxTestContext context) {
+        Secret clusterCaSecret = new SecretBuilder()
+                .withNewMetadata()
+                    .withName(KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME))
+                    .withNamespace(NAMESPACE)
+                .endMetadata()
+                .withData(Map.of("ca.crt", Util.encodeToBase64(DUMMY_CERT)))
+                .build();
+
+        SecretOperator mockSecretOps = mock(SecretOperator.class);
+        when(mockSecretOps.getAsync(NAMESPACE, KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME)))
+                .thenReturn(CompletableFuture.completedFuture(clusterCaSecret));
+        KafkaClusterSecurityContext securityContext = mock(KafkaClusterSecurityContext.class);
+        when(securityContext.isStrimziTlsEncryption()).thenReturn(true);
+        when(securityContext.isStrimziMtlsAuthentication()).thenReturn(false);
+
+        Checkpoint async = context.checkpoint();
+        ReconcilerUtils.coIdentity(Reconciliation.DUMMY_RECONCILIATION, mockSecretOps, securityContext)
+                .onComplete(context.succeeding(identity -> context.verify(() -> {
+                    assertThat(identity.trustSet(), is(instanceOf(PemTrustSet.class)));
+                    assertThat(identity.authIdentity(), is(nullValue()));
+                    verify(mockSecretOps).getAsync(NAMESPACE, KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME));
+                    verify(mockSecretOps, never()).getAsync(NAMESPACE, KafkaResources.clusterOperatorCertsSecretName(CLUSTER_NAME));
+                    async.flag();
+                })));
+    }
+
+    @Test
+    public void testCoIdentityWithoutTlsOrAuthentication(VertxTestContext context) {
+        SecretOperator mockSecretOps = mock(SecretOperator.class);
+        KafkaClusterSecurityContext securityContext = mock(KafkaClusterSecurityContext.class);
+        when(securityContext.isStrimziTlsEncryption()).thenReturn(false);
+        when(securityContext.isStrimziMtlsAuthentication()).thenReturn(false);
+
+        Checkpoint async = context.checkpoint();
+        ReconcilerUtils.coIdentity(Reconciliation.DUMMY_RECONCILIATION, mockSecretOps, securityContext)
+                .onComplete(context.succeeding(identity -> context.verify(() -> {
+                    assertThat(identity, is(Identity.DUMMY_IDENTITY));
+                    verifyNoInteractions(mockSecretOps);
+                    async.flag();
+                })));
+    }
 
     @Test
     public void testControllerNameFromPodName() {
@@ -168,10 +259,10 @@ public class ReconcilerUtilsTest {
     @Test
     public void testDisabledJmxWithMissingSecret(VertxTestContext context) {
         KafkaClusterSpec spec = new KafkaClusterSpecBuilder().build();
-        JmxModel jmx = new JmxModel(NAMESPACE, NAME, LABELS, ResourceUtils.DUMMY_OWNER_REFERENCE, spec);
+        JmxModel jmx = new JmxModel(NAMESPACE, JMX_SECRET_NAME, LABELS, ResourceUtils.DUMMY_OWNER_REFERENCE, spec);
 
         SecretOperator mockSecretOps = mock(SecretOperator.class);
-        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(NAME))).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(JMX_SECRET_NAME))).thenReturn(CompletableFuture.completedFuture(null));
 
         Checkpoint async = context.checkpoint();
         ReconcilerUtils.reconcileJmxSecret(Reconciliation.DUMMY_RECONCILIATION, mockSecretOps, new MockJmxCluster(jmx))
@@ -185,10 +276,10 @@ public class ReconcilerUtilsTest {
     @Test
     public void testDisabledJmxWithExistingSecret(VertxTestContext context) {
         KafkaClusterSpec spec = new KafkaClusterSpecBuilder().build();
-        JmxModel jmx = new JmxModel(NAMESPACE, NAME, LABELS, ResourceUtils.DUMMY_OWNER_REFERENCE, spec);
+        JmxModel jmx = new JmxModel(NAMESPACE, JMX_SECRET_NAME, LABELS, ResourceUtils.DUMMY_OWNER_REFERENCE, spec);
 
         SecretOperator mockSecretOps = mock(SecretOperator.class);
-        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(NAME))).thenReturn(CompletableFuture.completedFuture(EXISTING_JMX_SECRET));
+        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(JMX_SECRET_NAME))).thenReturn(CompletableFuture.completedFuture(EXISTING_JMX_SECRET));
         when(mockSecretOps.reconcile(any(), any(), any(), any())).thenAnswer(i -> {
             if (i.getArgument(3) == null) {
                 return CompletableFuture.completedFuture(ReconcileResult.deleted());
@@ -200,7 +291,7 @@ public class ReconcilerUtilsTest {
         Checkpoint async = context.checkpoint();
         ReconcilerUtils.reconcileJmxSecret(Reconciliation.DUMMY_RECONCILIATION, mockSecretOps, new MockJmxCluster(jmx))
                 .onComplete(context.succeeding(v -> context.verify(() -> {
-                    verify(mockSecretOps, times(1)).reconcile(eq(Reconciliation.DUMMY_RECONCILIATION), eq(NAMESPACE), eq(NAME), eq(null));
+                    verify(mockSecretOps, times(1)).reconcile(eq(Reconciliation.DUMMY_RECONCILIATION), eq(NAMESPACE), eq(JMX_SECRET_NAME), eq(null));
 
                     async.flag();
                 })));
@@ -209,10 +300,10 @@ public class ReconcilerUtilsTest {
     @Test
     public void testEnabledJmxWithoutAuthWithMissingSecret(VertxTestContext context) {
         KafkaClusterSpec spec = new KafkaClusterSpecBuilder().withNewJmxOptions().endJmxOptions().build();
-        JmxModel jmx = new JmxModel(NAMESPACE, NAME, LABELS, ResourceUtils.DUMMY_OWNER_REFERENCE, spec);
+        JmxModel jmx = new JmxModel(NAMESPACE, JMX_SECRET_NAME, LABELS, ResourceUtils.DUMMY_OWNER_REFERENCE, spec);
 
         SecretOperator mockSecretOps = mock(SecretOperator.class);
-        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(NAME))).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(JMX_SECRET_NAME))).thenReturn(CompletableFuture.completedFuture(null));
 
         Checkpoint async = context.checkpoint();
         ReconcilerUtils.reconcileJmxSecret(Reconciliation.DUMMY_RECONCILIATION, mockSecretOps, new MockJmxCluster(jmx))
@@ -226,10 +317,10 @@ public class ReconcilerUtilsTest {
     @Test
     public void testEnabledJmxWithoutAuthWithExistingSecret(VertxTestContext context) {
         KafkaClusterSpec spec = new KafkaClusterSpecBuilder().withNewJmxOptions().endJmxOptions().build();
-        JmxModel jmx = new JmxModel(NAMESPACE, NAME, LABELS, ResourceUtils.DUMMY_OWNER_REFERENCE, spec);
+        JmxModel jmx = new JmxModel(NAMESPACE, JMX_SECRET_NAME, LABELS, ResourceUtils.DUMMY_OWNER_REFERENCE, spec);
 
         SecretOperator mockSecretOps = mock(SecretOperator.class);
-        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(NAME))).thenReturn(CompletableFuture.completedFuture(EXISTING_JMX_SECRET));
+        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(JMX_SECRET_NAME))).thenReturn(CompletableFuture.completedFuture(EXISTING_JMX_SECRET));
         when(mockSecretOps.reconcile(any(), any(), any(), any())).thenAnswer(i -> {
             if (i.getArgument(3) == null) {
                 return CompletableFuture.completedFuture(ReconcileResult.deleted());
@@ -241,7 +332,7 @@ public class ReconcilerUtilsTest {
         Checkpoint async = context.checkpoint();
         ReconcilerUtils.reconcileJmxSecret(Reconciliation.DUMMY_RECONCILIATION, mockSecretOps, new MockJmxCluster(jmx))
                 .onComplete(context.succeeding(v -> context.verify(() -> {
-                    verify(mockSecretOps, times(1)).reconcile(eq(Reconciliation.DUMMY_RECONCILIATION), eq(NAMESPACE), eq(NAME), eq(null));
+                    verify(mockSecretOps, times(1)).reconcile(eq(Reconciliation.DUMMY_RECONCILIATION), eq(NAMESPACE), eq(JMX_SECRET_NAME), eq(null));
 
                     async.flag();
                 })));
@@ -255,21 +346,21 @@ public class ReconcilerUtilsTest {
                     .endKafkaJmxAuthenticationPassword()
                 .endJmxOptions()
                 .build();
-        JmxModel jmx = new JmxModel(NAMESPACE, NAME, LABELS, ResourceUtils.DUMMY_OWNER_REFERENCE, spec);
+        JmxModel jmx = new JmxModel(NAMESPACE, JMX_SECRET_NAME, LABELS, ResourceUtils.DUMMY_OWNER_REFERENCE, spec);
 
         SecretOperator mockSecretOps = mock(SecretOperator.class);
-        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(NAME))).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(JMX_SECRET_NAME))).thenReturn(CompletableFuture.completedFuture(null));
         ArgumentCaptor<Secret> secretCaptor = ArgumentCaptor.forClass(Secret.class);
         when(mockSecretOps.reconcile(any(), any(), any(), secretCaptor.capture())).thenAnswer(i -> CompletableFuture.completedFuture(ReconcileResult.created(i.getArgument(3))));
 
         Checkpoint async = context.checkpoint();
         ReconcilerUtils.reconcileJmxSecret(Reconciliation.DUMMY_RECONCILIATION, mockSecretOps, new MockJmxCluster(jmx))
                 .onComplete(context.succeeding(v -> context.verify(() -> {
-                    verify(mockSecretOps, times(1)).reconcile(eq(Reconciliation.DUMMY_RECONCILIATION), eq(NAMESPACE), eq(NAME), any());
+                    verify(mockSecretOps, times(1)).reconcile(eq(Reconciliation.DUMMY_RECONCILIATION), eq(NAMESPACE), eq(JMX_SECRET_NAME), any());
 
                     Secret secret = secretCaptor.getValue();
                     assertThat(secret, is(notNullValue()));
-                    assertThat(secret.getMetadata().getName(), is(NAME));
+                    assertThat(secret.getMetadata().getName(), is(JMX_SECRET_NAME));
                     assertThat(secret.getMetadata().getNamespace(), is(NAMESPACE));
                     assertThat(secret.getMetadata().getOwnerReferences(), is(List.of(ResourceUtils.DUMMY_OWNER_REFERENCE)));
                     assertThat(secret.getMetadata().getLabels(), is(LABELS.toMap()));
@@ -290,21 +381,21 @@ public class ReconcilerUtilsTest {
                     .endKafkaJmxAuthenticationPassword()
                 .endJmxOptions()
                 .build();
-        JmxModel jmx = new JmxModel(NAMESPACE, NAME, LABELS, ResourceUtils.DUMMY_OWNER_REFERENCE, spec);
+        JmxModel jmx = new JmxModel(NAMESPACE, JMX_SECRET_NAME, LABELS, ResourceUtils.DUMMY_OWNER_REFERENCE, spec);
 
         SecretOperator mockSecretOps = mock(SecretOperator.class);
-        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(NAME))).thenReturn(CompletableFuture.completedFuture(EXISTING_JMX_SECRET));
+        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(JMX_SECRET_NAME))).thenReturn(CompletableFuture.completedFuture(EXISTING_JMX_SECRET));
         ArgumentCaptor<Secret> secretCaptor = ArgumentCaptor.forClass(Secret.class);
         when(mockSecretOps.reconcile(any(), any(), any(), secretCaptor.capture())).thenAnswer(i -> CompletableFuture.completedFuture(ReconcileResult.patched(i.getArgument(3))));
 
         Checkpoint async = context.checkpoint();
         ReconcilerUtils.reconcileJmxSecret(Reconciliation.DUMMY_RECONCILIATION, mockSecretOps, new MockJmxCluster(jmx))
                 .onComplete(context.succeeding(v -> context.verify(() -> {
-                    verify(mockSecretOps, times(1)).reconcile(eq(Reconciliation.DUMMY_RECONCILIATION), eq(NAMESPACE), eq(NAME), any());
+                    verify(mockSecretOps, times(1)).reconcile(eq(Reconciliation.DUMMY_RECONCILIATION), eq(NAMESPACE), eq(JMX_SECRET_NAME), any());
 
                     Secret secret = secretCaptor.getValue();
                     assertThat(secret, is(notNullValue()));
-                    assertThat(secret.getMetadata().getName(), is(NAME));
+                    assertThat(secret.getMetadata().getName(), is(JMX_SECRET_NAME));
                     assertThat(secret.getMetadata().getNamespace(), is(NAMESPACE));
                     assertThat(secret.getMetadata().getOwnerReferences(), is(List.of(ResourceUtils.DUMMY_OWNER_REFERENCE)));
                     assertThat(secret.getMetadata().getLabels(), is(LABELS.toMap()));

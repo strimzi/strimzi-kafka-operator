@@ -324,7 +324,7 @@ public class KafkaReconciler {
      * @return Completes when the TrustSet and PemAuthIdentity have been created and stored in a record
      */
     protected Future<Void> initClientAuthenticationCertificates() {
-        return ReconcilerUtils.coTlsPemIdentity(reconciliation, secretOperator)
+        return ReconcilerUtils.coIdentity(reconciliation, secretOperator, kafka.securityContext())
                 .onSuccess(coTlsPemIdentity -> this.coIdentity = coTlsPemIdentity)
                 .mapEmpty();
     }

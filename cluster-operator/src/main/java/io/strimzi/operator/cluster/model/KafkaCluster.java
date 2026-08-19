@@ -215,6 +215,11 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
     public static final String BROKER_METADATA_VERSION_FILENAME = "metadata.version";
 
     /**
+     * Key under which the agent configuration is stored in Config Map
+     */
+    /* test */ static final String AGENT_CONFIGURATION_FILENAME = "agent.config";
+
+    /**
      * Key under which the class of the quota plugin can be configured
      */
     private static final String CLIENT_CALLBACK_CLASS_OPTION = "client.quota.callback.class";
@@ -233,6 +238,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
     private LoggingModel logging;
     private QuotasPlugin quotas;
     /* test */ KafkaConfiguration configuration;
+    private KafkaClusterSecurityContext securityContext;
     private final boolean inPlaceResizing;
     private final boolean inPlaceResizingWaitForDeferred;
 
@@ -291,8 +297,9 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
      *                                      various protocol and metadata versions) to be used in this reconciliation
      * @param clusterId                     Kafka cluster Id (or null if it is not known yet)
      * @param sharedEnvironmentProvider     Shared environment provider
+     * @param securityContext               Kafka cluster security context
      *
-     * @return Kafka cluster instance
+     * @return  Kafka cluster instance
      */
     @SuppressWarnings({"NPathComplexity"})
     public static KafkaCluster fromCrd(Reconciliation reconciliation,
@@ -301,7 +308,8 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
                                        KafkaVersion.Lookup versions,
                                        KafkaVersionChange versionChange,
                                        String clusterId,
-                                       SharedEnvironmentProvider sharedEnvironmentProvider) {
+                                       SharedEnvironmentProvider sharedEnvironmentProvider,
+                                       KafkaClusterSecurityContext securityContext) {
         KafkaSpec kafkaSpec = kafka.getSpec();
         KafkaClusterSpec kafkaClusterSpec = kafkaSpec.getKafka();
 
@@ -309,6 +317,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
 
         result.clusterId = clusterId;
         result.nodePools = pools;
+        result.securityContext = securityContext;
 
         // This also validates that the Kafka version is supported
         result.kafkaVersion = versions.supportedVersion(kafkaClusterSpec.getVersion());
@@ -1869,7 +1878,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
      * @return  String with the Kafka broker configuration
      */
     private String generatePerBrokerConfiguration(NodeRef node, KafkaPool pool, Map<Integer, Map<String, String>> advertisedHostnames, Map<Integer, Map<String, String>> advertisedPorts, boolean cordoned)   {
-        return new KafkaBrokerConfigurationBuilder(reconciliation, node)
+        return new KafkaBrokerConfigurationBuilder(reconciliation, node, securityContext)
                 .withRackId(rack)
                 .withKRaft(cluster, namespace, nodes())
                 .withKRaftMetadataLogDir(VolumeUtils.kraftMetadataPath(pool.storage))
@@ -1892,6 +1901,19 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
                         metrics instanceof JmxPrometheusExporterModel,
                         metrics instanceof StrimziMetricsReporterModel
                 ).build().trim();
+    }
+
+    /**
+     * Internal method used to generate a Kafka agent configuration for given Kafka node.
+     *
+     * @param node  Node reference with Node ID and pod name
+     *
+     * @return  String with the Kafka agent configuration
+     */
+    private String generateAgentConfiguration(NodeRef node)   {
+        return new KafkaAgentConfigurationBuilder(reconciliation, node)
+                .withSecurity(securityContext)
+                .build();
     }
 
     /**
@@ -1923,6 +1945,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
 
                 data.put(LoggingModel.LOG4J2_CONFIG_MAP_KEY, parsedLogging);
                 data.put(BROKER_CONFIGURATION_FILENAME, generatePerBrokerConfiguration(node, pool, advertisedHostnames, advertisedPorts, scalingDownBlockedNodes.contains(node.nodeId())));
+                data.put(AGENT_CONFIGURATION_FILENAME, generateAgentConfiguration(node));
                 data.put(BROKER_CLUSTER_ID_FILENAME, clusterId);
                 data.put(BROKER_METADATA_VERSION_FILENAME, metadataVersion);
 
@@ -2044,6 +2067,15 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
         }
 
         return consolidatedWarningConditions;
+    }
+
+    /**
+     * Returns the security context of this Kafka cluster
+     *
+     * @return  Kafka cluster security context
+     */
+    public KafkaClusterSecurityContext securityContext() {
+        return securityContext;
     }
 
     /**

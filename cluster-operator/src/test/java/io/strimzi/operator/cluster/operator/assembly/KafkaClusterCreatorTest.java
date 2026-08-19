@@ -17,6 +17,7 @@ import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.KafkaCluster;
+import io.strimzi.operator.cluster.model.KafkaClusterSecurityContext;
 import io.strimzi.operator.cluster.model.NodeRef;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.Annotations;
@@ -189,7 +190,7 @@ public class KafkaClusterCreatorTest {
         KafkaStatus kafkaStatus = new KafkaStatus();
         KafkaClusterCreator creator = new KafkaClusterCreator(RECONCILIATION, CO_CONFIG, supplier);
 
-        KafkaCluster kc = creator.prepareKafkaCluster(KAFKA, List.of(POOL_CONTROLLERS, POOL_A, POOL_B), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, kafkaStatus, true)
+        KafkaCluster kc = creator.prepareKafkaCluster(KAFKA, List.of(POOL_CONTROLLERS, POOL_A, POOL_B), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, kafkaStatus, true, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT)
                 .toCompletableFuture()
                 .join();
 
@@ -213,7 +214,7 @@ public class KafkaClusterCreatorTest {
         KafkaStatus kafkaStatus = new KafkaStatus();
         KafkaClusterCreator creator = new KafkaClusterCreator(RECONCILIATION, CO_CONFIG, supplier);
 
-        KafkaCluster kc = creator.prepareKafkaCluster(KAFKA, List.of(POOL_MIXED), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, kafkaStatus, true)
+        KafkaCluster kc = creator.prepareKafkaCluster(KAFKA, List.of(POOL_MIXED), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, kafkaStatus, true, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT)
                 .toCompletableFuture()
                 .join();
 
@@ -237,7 +238,7 @@ public class KafkaClusterCreatorTest {
         KafkaStatus kafkaStatus = new KafkaStatus();
         KafkaClusterCreator creator = new KafkaClusterCreator(RECONCILIATION, CO_CONFIG, supplier);
 
-        KafkaCluster kc = creator.prepareKafkaCluster(KAFKA, List.of(POOL_CONTROLLERS_WITH_STATUS, POOL_A_WITH_STATUS, POOL_B_WITH_STATUS), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, kafkaStatus, true)
+        KafkaCluster kc = creator.prepareKafkaCluster(KAFKA, List.of(POOL_CONTROLLERS_WITH_STATUS, POOL_A_WITH_STATUS, POOL_B_WITH_STATUS), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, kafkaStatus, true, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT)
                 .toCompletableFuture()
                 .join();
 
@@ -261,7 +262,7 @@ public class KafkaClusterCreatorTest {
         KafkaStatus kafkaStatus = new KafkaStatus();
         KafkaClusterCreator creator = new KafkaClusterCreator(RECONCILIATION, CO_CONFIG, supplier);
 
-        KafkaCluster kc = creator.prepareKafkaCluster(KAFKA, List.of(POOL_MIXED_WITH_STATUS), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, kafkaStatus, true)
+        KafkaCluster kc = creator.prepareKafkaCluster(KAFKA, List.of(POOL_MIXED_WITH_STATUS), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, kafkaStatus, true, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT)
                 .toCompletableFuture()
                 .join();
 
@@ -289,7 +290,7 @@ public class KafkaClusterCreatorTest {
         KafkaStatus kafkaStatus = new KafkaStatus();
         KafkaClusterCreator creator = new KafkaClusterCreator(RECONCILIATION, CO_CONFIG, supplier);
 
-        KafkaCluster kc = creator.prepareKafkaCluster(KAFKA, List.of(POOL_CONTROLLERS_WITH_STATUS_5_NODES, POOL_A_WITH_STATUS_5_NODES, POOL_B_WITH_STATUS_5_NODES), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, kafkaStatus, true)
+        KafkaCluster kc = creator.prepareKafkaCluster(KAFKA, List.of(POOL_CONTROLLERS_WITH_STATUS_5_NODES, POOL_A_WITH_STATUS_5_NODES, POOL_B_WITH_STATUS_5_NODES), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, kafkaStatus, true, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT)
                 .toCompletableFuture()
                 .join();
 
@@ -325,7 +326,7 @@ public class KafkaClusterCreatorTest {
         KafkaStatus kafkaStatus = new KafkaStatus();
         KafkaClusterCreator creator = new KafkaClusterCreator(RECONCILIATION, CO_CONFIG, supplier);
 
-        KafkaCluster kc = creator.prepareKafkaCluster(KAFKA, List.of(POOL_MIXED_WITH_STATUS_5_NODES), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, kafkaStatus, true)
+        KafkaCluster kc = creator.prepareKafkaCluster(KAFKA, List.of(POOL_MIXED_WITH_STATUS_5_NODES), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, kafkaStatus, true, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT)
                 .toCompletableFuture()
                 .join();
 
@@ -357,7 +358,7 @@ public class KafkaClusterCreatorTest {
         KafkaStatus kafkaStatus = new KafkaStatus();
         KafkaClusterCreator creator = new KafkaClusterCreator(RECONCILIATION, CO_CONFIG, supplier);
 
-        KafkaCluster kc = creator.prepareKafkaCluster(KAFKA, List.of(POOL_CONTROLLERS_WITH_STATUS_5_NODES, POOL_A_WITH_STATUS_5_NODES, POOL_B_WITH_STATUS_5_NODES), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, kafkaStatus, true)
+        KafkaCluster kc = creator.prepareKafkaCluster(KAFKA, List.of(POOL_CONTROLLERS_WITH_STATUS_5_NODES, POOL_A_WITH_STATUS_5_NODES, POOL_B_WITH_STATUS_5_NODES), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, kafkaStatus, true, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT)
                 .toCompletableFuture()
                 .join();
 
@@ -386,7 +387,7 @@ public class KafkaClusterCreatorTest {
         KafkaClusterCreator creator = new KafkaClusterCreator(RECONCILIATION, CO_CONFIG, supplier);
 
         Exception e = assertThrows(Exception.class, () ->
-                creator.prepareKafkaCluster(KAFKA, List.of(POOL_CONTROLLERS_WITH_STATUS_5_NODES, POOL_A_WITH_STATUS_5_NODES, POOL_B_WITH_STATUS_5_NODES), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, kafkaStatus, false)
+                creator.prepareKafkaCluster(KAFKA, List.of(POOL_CONTROLLERS_WITH_STATUS_5_NODES, POOL_A_WITH_STATUS_5_NODES, POOL_B_WITH_STATUS_5_NODES), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, kafkaStatus, false, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT)
                         .toCompletableFuture()
                         .join());
 
@@ -415,7 +416,7 @@ public class KafkaClusterCreatorTest {
         KafkaStatus kafkaStatus = new KafkaStatus();
         KafkaClusterCreator creator = new KafkaClusterCreator(RECONCILIATION, CO_CONFIG, supplier);
 
-        KafkaCluster kc = creator.prepareKafkaCluster(kafka, List.of(POOL_CONTROLLERS_WITH_STATUS_5_NODES, POOL_A_WITH_STATUS_5_NODES, POOL_B_WITH_STATUS_5_NODES), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, kafkaStatus, false)
+        KafkaCluster kc = creator.prepareKafkaCluster(kafka, List.of(POOL_CONTROLLERS_WITH_STATUS_5_NODES, POOL_A_WITH_STATUS_5_NODES, POOL_B_WITH_STATUS_5_NODES), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, kafkaStatus, false, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT)
                 .toCompletableFuture()
                 .join();
 
@@ -443,7 +444,7 @@ public class KafkaClusterCreatorTest {
         KafkaStatus kafkaStatus = new KafkaStatus();
         KafkaClusterCreator creator = new KafkaClusterCreator(RECONCILIATION, CO_CONFIG, supplier);
 
-        KafkaCluster kc = creator.prepareKafkaCluster(KAFKA, List.of(POOL_MIXED_NOT_MIXED_ANYMORE, POOL_A_WITH_STATUS, POOL_B_WITH_STATUS), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, kafkaStatus, true)
+        KafkaCluster kc = creator.prepareKafkaCluster(KAFKA, List.of(POOL_MIXED_NOT_MIXED_ANYMORE, POOL_A_WITH_STATUS, POOL_B_WITH_STATUS), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, kafkaStatus, true, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT)
                 .toCompletableFuture()
                 .join();
 
@@ -484,7 +485,7 @@ public class KafkaClusterCreatorTest {
         KafkaStatus kafkaStatus = new KafkaStatus();
         KafkaClusterCreator creator = new KafkaClusterCreator(RECONCILIATION, CO_CONFIG, supplier);
 
-        KafkaCluster kc = creator.prepareKafkaCluster(KAFKA, List.of(POOL_MIXED_WITH_STATUS, POOL_A_WITH_STATUS, poolBFromBrokerToControllerOnly), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, kafkaStatus, true)
+        KafkaCluster kc = creator.prepareKafkaCluster(KAFKA, List.of(POOL_MIXED_WITH_STATUS, POOL_A_WITH_STATUS, poolBFromBrokerToControllerOnly), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, kafkaStatus, true, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT)
                 .toCompletableFuture()
                 .join();
 
@@ -519,7 +520,7 @@ public class KafkaClusterCreatorTest {
         KafkaStatus kafkaStatus = new KafkaStatus();
         KafkaClusterCreator creator = new KafkaClusterCreator(RECONCILIATION, CO_CONFIG, supplier);
 
-        KafkaCluster kc = creator.prepareKafkaCluster(KAFKA, List.of(POOL_MIXED_NOT_MIXED_ANYMORE, POOL_A_WITH_STATUS, POOL_B_WITH_STATUS), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, kafkaStatus, true)
+        KafkaCluster kc = creator.prepareKafkaCluster(KAFKA, List.of(POOL_MIXED_NOT_MIXED_ANYMORE, POOL_A_WITH_STATUS, POOL_B_WITH_STATUS), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, kafkaStatus, true, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT)
                 .toCompletableFuture()
                 .join();
 
@@ -549,7 +550,7 @@ public class KafkaClusterCreatorTest {
         KafkaClusterCreator creator = new KafkaClusterCreator(RECONCILIATION, CO_CONFIG, supplier);
 
         Exception e = assertThrows(Exception.class, () ->
-                creator.prepareKafkaCluster(KAFKA, List.of(POOL_MIXED_NOT_MIXED_ANYMORE, POOL_A_WITH_STATUS, POOL_B_WITH_STATUS), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, kafkaStatus, false)
+                creator.prepareKafkaCluster(KAFKA, List.of(POOL_MIXED_NOT_MIXED_ANYMORE, POOL_A_WITH_STATUS, POOL_B_WITH_STATUS), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, kafkaStatus, false, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT)
                         .toCompletableFuture()
                         .join());
 
@@ -578,7 +579,7 @@ public class KafkaClusterCreatorTest {
         KafkaStatus kafkaStatus = new KafkaStatus();
         KafkaClusterCreator creator = new KafkaClusterCreator(RECONCILIATION, CO_CONFIG, supplier);
 
-        KafkaCluster kc = creator.prepareKafkaCluster(kafka, List.of(POOL_MIXED_NOT_MIXED_ANYMORE, POOL_A_WITH_STATUS, POOL_B_WITH_STATUS), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, kafkaStatus, false)
+        KafkaCluster kc = creator.prepareKafkaCluster(kafka, List.of(POOL_MIXED_NOT_MIXED_ANYMORE, POOL_A_WITH_STATUS, POOL_B_WITH_STATUS), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, kafkaStatus, false, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT)
                 .toCompletableFuture()
                 .join();
 

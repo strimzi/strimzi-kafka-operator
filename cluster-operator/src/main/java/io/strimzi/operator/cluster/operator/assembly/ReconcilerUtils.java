@@ -20,6 +20,7 @@ import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.podset.StrimziPodSet;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.operator.cluster.model.InPlacePodResizingUtils;
+import io.strimzi.operator.cluster.model.KafkaClusterSecurityContext;
 import io.strimzi.operator.cluster.model.NodeRef;
 import io.strimzi.operator.cluster.model.PodRevision;
 import io.strimzi.operator.cluster.model.PodSetUtils;
@@ -121,16 +122,19 @@ public class ReconcilerUtils {
      * Utility method which helps to get the set of trusted certificates and client auth identities for the Cluster Operator
      * needed to bootstrap different clients used during the reconciliation.
      *
-     * @param reconciliation Reconciliation Marker
-     * @param secretOperator Secret operator for working with Kubernetes Secrets that store certificates
+     * @param reconciliation    Reconciliation Marker
+     * @param secretOperator    Secret operator for working with Kubernetes Secrets that store certificates
+     * @param securityContext   Kafka cluster security context
      *
      * @return  Future containing the PemTrustSet and PemAuthIdentity to use for client authentication.
      */
-    public static Future<Identity> coTlsPemIdentity(Reconciliation reconciliation, SecretOperator secretOperator) {
+    public static Future<Identity> coIdentity(Reconciliation reconciliation, SecretOperator secretOperator, KafkaClusterSecurityContext securityContext) {
         return Future.join(
-                clusterCaPemTrustSet(reconciliation, secretOperator),
-                coPemAuthIdentity(reconciliation, secretOperator)
-        ).compose(res -> Future.succeededFuture(new Identity(res.resultAt(0), res.resultAt(1))));
+                    // The trustFuture gets the trust based on the security context
+                    securityContext.isStrimziTlsEncryption() ? clusterCaPemTrustSet(reconciliation, secretOperator) : Future.succeededFuture(null),
+                    // The trustFuture gets the authentication details based on the security context
+                    securityContext.isStrimziMtlsAuthentication() ? coPemAuthIdentity(reconciliation, secretOperator) : Future.succeededFuture(null)
+                ).compose(res -> Future.succeededFuture(new Identity(res.resultAt(0), res.resultAt(1))));
     }
 
     /**
