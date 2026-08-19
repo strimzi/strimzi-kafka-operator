@@ -11,6 +11,7 @@ Ensuring the correctness of Cruise Control behavior under different configuratio
 **Tests:**
 - [testAutoCreationOfCruiseControlTopicsWithResources](../io.strimzi.systemtest.cruisecontrol.CruiseControlST.md)
 - [testAutoKafkaRebalanceScaleUpScaleDown](../io.strimzi.systemtest.cruisecontrol.CruiseControlST.md)
+- [testClusterSecurityConfiguration](../io.strimzi.systemtest.security.ClusterSecurityST.md)
 - [testConfigurationUpdate](../io.strimzi.systemtest.cruisecontrol.CruiseControlConfigurationST.md)
 - [testCruiseControlAPIUsers](../io.strimzi.systemtest.cruisecontrol.CruiseControlApiST.md)
 - [testCruiseControlBasicAPIRequestsWithSecurityDisabled](../io.strimzi.systemtest.cruisecontrol.CruiseControlApiST.md)
