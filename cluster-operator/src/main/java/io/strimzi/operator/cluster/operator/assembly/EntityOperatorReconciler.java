@@ -387,7 +387,7 @@ public class EntityOperatorReconciler {
      */
     protected Future<Void> topicOperatorConfigMap() {
         if (shouldInstallEntityOperator() && entityOperator.topicOperator() != null) {
-            return MetricsAndLoggingUtils.metricsAndLogging(reconciliation, configMapOperator, entityOperator.topicOperator().logging(), null)
+            return VertxUtil.toFuture(MetricsAndLoggingUtils.metricsAndLogging(reconciliation, configMapOperator, entityOperator.topicOperator().logging(), null))
                     .compose(logging ->
                             VertxUtil.toFuture(configMapOperator.reconcile(
                                     reconciliation,
@@ -411,7 +411,7 @@ public class EntityOperatorReconciler {
      */
     protected Future<Void> userOperatorConfigMap() {
         if (shouldInstallEntityOperator() && entityOperator.userOperator() != null) {
-            return MetricsAndLoggingUtils.metricsAndLogging(reconciliation, configMapOperator, entityOperator.userOperator().logging(), null)
+            return VertxUtil.toFuture(MetricsAndLoggingUtils.metricsAndLogging(reconciliation, configMapOperator, entityOperator.userOperator().logging(), null))
                     .compose(logging ->
                             VertxUtil.toFuture(configMapOperator.reconcile(
                                     reconciliation,
