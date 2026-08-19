@@ -30,18 +30,11 @@ function create_truststore {
 # $5: CA public key to be imported
 # $6: Alias of the certificate
 function create_keystore {
-    # In FIPS mode openssl defaults the PKCS12 integrity MAC to PBMAC1 (needs PKCS12KDF, which
-    # is not FIPS-approved) and the FIPS JVM cannot read it. Skip the MAC instead: the keystore
-    # is ephemeral (regenerated in /tmp on every start from read-only secrets, never persisted),
-    # so its tamper-detection MAC adds no security here. Key material stays encrypted via -keypbe.
-    if [ "$FIPS_MODE" = "disabled" ]; then
-        MAC_OPTS="-macalg sha256"
-    else
-        MAC_OPTS="-nomac"
-    fi
-
-    # shellcheck disable=SC2086
-    PASSWORD=$2 RANDFILE=/tmp/.rnd openssl pkcs12 -export -in "$3" -inkey "$4" -chain -CAfile "$5" -name "$6" -password env:PASSWORD -out "$1" -certpbe aes-128-cbc -keypbe aes-128-cbc $MAC_OPTS
+    # No MAC: in FIPS mode openssl's default PBMAC1 MAC is unreadable by the FIPS JVM (needs
+    # PKCS12KDF, not FIPS-approved). The keystore is ephemeral (regenerated in /tmp on every
+    # start from read-only secrets, never persisted), so a tamper-detection MAC adds nothing;
+    # key material stays encrypted via -keypbe regardless.
+    PASSWORD=$2 RANDFILE=/tmp/.rnd openssl pkcs12 -export -in "$3" -inkey "$4" -chain -CAfile "$5" -name "$6" -password env:PASSWORD -out "$1" -certpbe aes-128-cbc -keypbe aes-128-cbc -nomac
 }
 
 # Parameters:
@@ -51,15 +44,8 @@ function create_keystore {
 # $4: Private key to be imported
 # $5: Alias of the certificate
 function create_keystore_without_ca_file {
-    # See create_keystore: skip the PKCS12 MAC in FIPS mode (PBMAC1 is unreadable by the FIPS JVM).
-    if [ "$FIPS_MODE" = "disabled" ]; then
-        MAC_OPTS="-macalg sha256"
-    else
-        MAC_OPTS="-nomac"
-    fi
-
-    # shellcheck disable=SC2086
-    PASSWORD=$2 RANDFILE=/tmp/.rnd openssl pkcs12 -export -in "$3" -inkey "$4" -name "$5" -password env:PASSWORD -out "$1" -certpbe aes-128-cbc -keypbe aes-128-cbc $MAC_OPTS
+    # See create_keystore: no PKCS12 MAC needed for this ephemeral, in-container-only keystore.
+    PASSWORD=$2 RANDFILE=/tmp/.rnd openssl pkcs12 -export -in "$3" -inkey "$4" -name "$5" -password env:PASSWORD -out "$1" -certpbe aes-128-cbc -keypbe aes-128-cbc -nomac
 }
 
 # Parameters:
