@@ -52,6 +52,8 @@ class FipsDsaWorkaround {
      * Minimal security provider that only registers a DSA KeyFactory service.
      */
     static class NoOpDsaProvider extends Provider {
+        private static final long serialVersionUID = 1L;
+
         NoOpDsaProvider() {
             super("StrimziFipsDsaWorkaround", "1.0", "No-op DSA KeyFactory for FIPS compatibility with Kafka PemStore");
             put("KeyFactory.DSA", NoOpDsaKeyFactorySpi.class.getName());
