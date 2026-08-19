@@ -56,6 +56,10 @@ if [ "$FIPS_MODE" = "disabled" ]; then
     export KAFKA_OPTS="${KAFKA_OPTS} -Dcom.redhat.fips=false"
 fi
 
+# Load FIPS agent for DSA workaround
+KAFKA_OPTS="${KAFKA_OPTS} -javaagent:$(ls "$KAFKA_HOME"/libs/fips-agent*.jar)"
+export KAFKA_OPTS
+
 # Configure heap based on the available resources if needed
 . ./dynamic_resources.sh
 
