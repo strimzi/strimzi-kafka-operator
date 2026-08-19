@@ -82,6 +82,7 @@ public class EntityUserOperator extends AbstractModel implements SupportsLogging
     /* test */ int clientsCaRenewalDays;
     private ResourceTemplate templateRoleBinding;
     private String featureGatesEnvVarValue;
+    private KafkaClusterSecurityContext securityContext;
 
     private boolean aclsAdminApiSupported = false;
     private List<String> maintenanceWindows;
@@ -115,13 +116,15 @@ public class EntityUserOperator extends AbstractModel implements SupportsLogging
      * @param kafkaAssembly                 Desired resource with cluster configuration containing the Entity User Operator one
      * @param sharedEnvironmentProvider     Shared environment provider
      * @param config                        Cluster Operator configuration
+     * @param securityContext               Kafka Cluster Security Context
      *
-     * @return Entity User Operator instance, null if not configured
+     * @return  Entity User Operator instance, null if not configured
      */
     public static EntityUserOperator fromCrd(Reconciliation reconciliation,
                                              Kafka kafkaAssembly,
                                              SharedEnvironmentProvider sharedEnvironmentProvider,
-                                             ClusterOperatorConfig config) {
+                                             ClusterOperatorConfig config,
+                                             KafkaClusterSecurityContext securityContext) {
         if (kafkaAssembly.getSpec().getEntityOperator() != null
                 && kafkaAssembly.getSpec().getEntityOperator().getUserOperator() != null) {
             EntityUserOperatorSpec userOperatorSpec = kafkaAssembly.getSpec().getEntityOperator().getUserOperator();
@@ -145,6 +148,7 @@ public class EntityUserOperator extends AbstractModel implements SupportsLogging
             result.livenessProbeOptions = ProbeUtils.extractLivenessProbeOptionsOrDefault(userOperatorSpec, EntityOperator.DEFAULT_HEALTHCHECK_OPTIONS);
             result.featureGatesEnvVarValue = config.featureGates().toEnvironmentVariable();
             result.generatePkcs12Stores = config.isPkcs12KeystoreGeneration();
+            result.securityContext = securityContext;
 
             if (kafkaAssembly.getSpec().getEntityOperator().getTemplate() != null)  {
                 result.templateRoleBinding = kafkaAssembly.getSpec().getEntityOperator().getTemplate().getUserOperatorRoleBinding();
@@ -205,8 +209,15 @@ public class EntityUserOperator extends AbstractModel implements SupportsLogging
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_CLIENTS_CA_NAMESPACE, namespace));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_CLIENTS_CA_VALIDITY, Integer.toString(clientsCaValidityDays)));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_CLIENTS_CA_RENEWAL, Integer.toString(clientsCaRenewalDays)));
-        varList.add(ContainerUtils.createEnvVar(ENV_VAR_CLUSTER_CA_CERT_SECRET_NAME, KafkaCluster.clusterCaCertSecretName(cluster)));
-        varList.add(ContainerUtils.createEnvVar(ENV_VAR_EO_KEY_SECRET_NAME, KafkaResources.entityUserOperatorSecretName(cluster)));
+
+        if (securityContext.isStrimziTlsEncryption()) {
+            varList.add(ContainerUtils.createEnvVar(ENV_VAR_CLUSTER_CA_CERT_SECRET_NAME, KafkaCluster.clusterCaCertSecretName(cluster)));
+
+            if (securityContext.isStrimziMtlsAuthentication()) {
+                varList.add(ContainerUtils.createEnvVar(ENV_VAR_EO_KEY_SECRET_NAME, KafkaResources.entityUserOperatorSecretName(cluster)));
+            }
+        }
+
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_STRIMZI_GC_LOG_ENABLED, String.valueOf(gcLoggingEnabled)));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_SECRET_PREFIX, secretPrefix));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_ACLS_ADMIN_API_SUPPORTED, String.valueOf(aclsAdminApiSupported)));

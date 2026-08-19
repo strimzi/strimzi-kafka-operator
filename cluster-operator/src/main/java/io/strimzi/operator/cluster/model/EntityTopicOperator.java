@@ -92,6 +92,7 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
     private boolean cruiseControlEnabled;
     private boolean rackAwarenessEnabled;
     private String featureGatesEnvVarValue;
+    private KafkaClusterSecurityContext securityContext;
 
     private String watchedNamespace;
     /* test */ Long reconciliationIntervalMs;
@@ -125,13 +126,15 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
      * @param kafkaAssembly                 Desired resource with cluster configuration containing the Entity Topic Operator one
      * @param sharedEnvironmentProvider     Shared environment provider
      * @param config                        Cluster Operator configuration
+     * @param securityContext               Kafka Cluster Security Context
      *
-     * @return Entity Topic Operator instance, null if not configured
+     * @return  Entity Topic Operator instance, null if not configured
      */
     public static EntityTopicOperator fromCrd(Reconciliation reconciliation,
                                               Kafka kafkaAssembly,
                                               SharedEnvironmentProvider sharedEnvironmentProvider,
-                                              ClusterOperatorConfig config) {
+                                              ClusterOperatorConfig config,
+                                              KafkaClusterSecurityContext securityContext) {
         if (kafkaAssembly.getSpec().getEntityOperator() != null
                 && kafkaAssembly.getSpec().getEntityOperator().getTopicOperator() != null) {
             EntityTopicOperatorSpec topicOperatorSpec = kafkaAssembly.getSpec().getEntityOperator().getTopicOperator();
@@ -160,6 +163,7 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
             result.cruiseControlEnabled = kafkaAssembly.getSpec().getCruiseControl() != null;
             result.rackAwarenessEnabled = result.cruiseControlEnabled && kafkaAssembly.getSpec().getKafka().getRack() != null;
             result.featureGatesEnvVarValue = config.featureGates().toEnvironmentVariable();
+            result.securityContext = securityContext;
 
             return result;
         } else {
@@ -195,11 +199,18 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
             varList.add(ContainerUtils.createEnvVar(ENV_VAR_FULL_RECONCILIATION_INTERVAL_MS, Long.toString(reconciliationIntervalMs)));
         }
 
-        varList.add(ContainerUtils.createEnvVar(ENV_VAR_SECURITY_PROTOCOL, EntityTopicOperatorSpec.DEFAULT_SECURITY_PROTOCOL));
-        varList.add(ContainerUtils.createEnvVar(ENV_VAR_TLS_TRUSTED_CERTS_SECRET_NAME, AbstractModel.clusterCaCertSecretName(cluster)));
-        varList.add(ContainerUtils.createEnvVar(ENV_VAR_TLS_SECRET_NAME, KafkaResources.entityTopicOperatorSecretName(cluster)));
-        varList.add(ContainerUtils.createEnvVar(ENV_VAR_TLS_KEY_NAME, Ca.SecretEntry.KEY.asKey(EntityOperator.COMPONENT_TYPE)));
-        varList.add(ContainerUtils.createEnvVar(ENV_VAR_TLS_CERT_NAME, Ca.SecretEntry.CRT.asKey(EntityOperator.COMPONENT_TYPE)));
+        if (securityContext.isStrimziTlsEncryption()) {
+            varList.add(ContainerUtils.createEnvVar(ENV_VAR_SECURITY_PROTOCOL, "SSL"));
+            varList.add(ContainerUtils.createEnvVar(ENV_VAR_TLS_TRUSTED_CERTS_SECRET_NAME, AbstractModel.clusterCaCertSecretName(cluster)));
+
+            if (securityContext.isStrimziMtlsAuthentication()) {
+                varList.add(ContainerUtils.createEnvVar(ENV_VAR_TLS_SECRET_NAME, KafkaResources.entityTopicOperatorSecretName(cluster)));
+                varList.add(ContainerUtils.createEnvVar(ENV_VAR_TLS_KEY_NAME, Ca.SecretEntry.KEY.asKey(EntityOperator.COMPONENT_TYPE)));
+                varList.add(ContainerUtils.createEnvVar(ENV_VAR_TLS_CERT_NAME, Ca.SecretEntry.CRT.asKey(EntityOperator.COMPONENT_TYPE)));
+            }
+        } else {
+            varList.add(ContainerUtils.createEnvVar(ENV_VAR_SECURITY_PROTOCOL, "PLAINTEXT"));
+        }
 
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_STRIMZI_GC_LOG_ENABLED, Boolean.toString(gcLoggingEnabled)));
 

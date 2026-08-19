@@ -41,8 +41,6 @@ import java.util.Map;
 @EqualsAndHashCode
 @ToString
 public class EntityTopicOperatorSpec implements HasConfigurableLogging, HasLivenessProbe, HasReadinessProbe, HasStartupProbe, UnknownPropertyPreserving {
-    public static final String DEFAULT_SECURITY_PROTOCOL = "SSL";
-
     protected String watchedNamespace;
     protected String image;
     private Long reconciliationIntervalMs;

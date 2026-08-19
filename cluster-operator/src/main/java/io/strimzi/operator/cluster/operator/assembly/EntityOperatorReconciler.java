@@ -14,6 +14,7 @@ import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.model.CertSecretUtils;
 import io.strimzi.operator.cluster.model.EntityOperator;
 import io.strimzi.operator.cluster.model.ImagePullPolicy;
+import io.strimzi.operator.cluster.model.KafkaClusterSecurityContext;
 import io.strimzi.operator.cluster.operator.VertxUtil;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.ConfigMapOperator;
@@ -71,22 +72,24 @@ public class EntityOperatorReconciler {
     /**
      * Constructs the Entity Operator reconciler
      *
-     * @param reconciliation            Reconciliation marker
-     * @param config                    Cluster Operator Configuration
-     * @param supplier                  Supplier with Kubernetes Resource Operators
-     * @param kafkaAssembly             The Kafka custom resource
-     * @param clusterCa                 The Cluster CA instance
+     * @param reconciliation    Reconciliation marker
+     * @param config            Cluster Operator Configuration
+     * @param supplier          Supplier with Kubernetes Resource Operators
+     * @param kafkaAssembly     The Kafka custom resource
+     * @param clusterCa         The Cluster CA instance
+     * @param securityContext   Kafka Cluster Security Context
      */
     public EntityOperatorReconciler(
             Reconciliation reconciliation,
             ClusterOperatorConfig config,
             ResourceOperatorSupplier supplier,
             Kafka kafkaAssembly,
-            Ca clusterCa
+            Ca clusterCa,
+            KafkaClusterSecurityContext securityContext
     ) {
         this.reconciliation = reconciliation;
         this.operationTimeoutMs = config.getOperationTimeoutMs();
-        this.entityOperator = EntityOperator.fromCrd(reconciliation, kafkaAssembly, supplier.sharedEnvironmentProvider, config);
+        this.entityOperator = EntityOperator.fromCrd(reconciliation, kafkaAssembly, supplier.sharedEnvironmentProvider, config, securityContext);
         this.clusterCa = clusterCa;
         this.maintenanceWindows = kafkaAssembly.getSpec().getMaintenanceTimeWindows();
         this.isNetworkPolicyGeneration = config.isNetworkPolicyGeneration();
