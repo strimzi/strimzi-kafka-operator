@@ -31,10 +31,6 @@ if [ "$FIPS_MODE" = "disabled" ]; then
     export KAFKA_OPTS="${KAFKA_OPTS} -Dcom.redhat.fips=false"
 fi
 
-# Load FIPS agent for DSA workaround
-KAFKA_OPTS="${KAFKA_OPTS} -javaagent:$(ls "$KAFKA_HOME"/libs/fips-agent*.jar)"
-export KAFKA_OPTS
-
 # enabling Prometheus JMX exporter as Java agent
 if [ "$CRUISE_CONTROL_JMX_EXPORTER_ENABLED" = "true" ]; then
   KAFKA_OPTS="${KAFKA_OPTS} -javaagent:$(ls "$JMX_EXPORTER_HOME"/jmx_prometheus_javaagent*.jar)=9404:$CRUISE_CONTROL_HOME/custom-config/metrics-config.json"
