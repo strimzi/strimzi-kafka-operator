@@ -158,6 +158,7 @@ COPY --from=downloader $JMX_EXPORTER_HOME/jmx_prometheus_javaagent*.jar $JMX_EXP
 # Add Strimzi agents
 #####
 COPY ./tmp/kafka-agent-${STRIMZI_VERSION}.jar ${KAFKA_HOME}/libs/
+COPY ./tmp/fips-agent-${STRIMZI_VERSION}.jar ${KAFKA_HOME}/libs/
 COPY ./tmp/tracing-agent-${STRIMZI_VERSION}.jar ${KAFKA_HOME}/libs/
 
 #####
