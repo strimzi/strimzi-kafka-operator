@@ -1491,7 +1491,7 @@ public class KafkaConnectClusterTest {
         KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaConnect, VERSIONS, SHARED_ENV_PROVIDER);
 
         assertThat(kc.metrics(), is(notNullValue()));
-        assertThat(((StrimziMetricsReporterModel) kc.metrics()).getAllowList(), is("kafka_connect_connector_metrics.*" + "kafka_connect_connector_task_metrics.*"));
+        assertThat(((StrimziMetricsReporterModel) kc.metrics()).getAllowListOrDefault(List.of()), is("kafka_connect_connector_metrics.*" + "kafka_connect_connector_task_metrics.*"));
 
         NetworkPolicy np = kc.generateNetworkPolicy(true, null, null);
         List<NetworkPolicyIngressRule> rules = np.getSpec().getIngress().stream()
@@ -1696,7 +1696,7 @@ public class KafkaConnectClusterTest {
         KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaConnect, VERSIONS, SHARED_ENV_PROVIDER);
 
         assertThat(kc.metrics(), is(notNullValue()));
-        String allowList = ((StrimziMetricsReporterModel) kc.metrics()).getAllowList();
+        String allowList = ((StrimziMetricsReporterModel) kc.metrics()).getAllowListOrDefault(kc.getDefaultMetricsAllowList());
         
         // Verify MM2 metrics are NOT included in Kafka Connect default configuration
         assertThat(allowList, not(containsString("mirrorcheckpointconnector")));

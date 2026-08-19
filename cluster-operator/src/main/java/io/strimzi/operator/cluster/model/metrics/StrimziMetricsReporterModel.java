@@ -19,34 +19,35 @@ import java.util.regex.PatternSyntaxException;
  */
 public class StrimziMetricsReporterModel implements MetricsModel {
     /**
-     * Fully qualified class name of the Strimzi Metrics Reporter.
+     * The user-configured allow list of regex patterns, or null if not set by the user.
      */
     private final List<String> allowList;
 
-        /**
-         * Constructs the Metrics Model for managing configurable metrics to Strimzi.
-         *
-         * @param spec Custom resource section configuring metrics.
-         * @param defaultAllowList Default allow list to be used when no value is provided.
-         */
-    public StrimziMetricsReporterModel(HasConfigurableMetrics spec, List<String> defaultAllowList) {
+    /**
+     * Constructs the Metrics Model from a custom resource spec.
+     * Stores the user-configured allowlist if provided, otherwise stores null.
+     *
+     * @param spec Custom resource section configuring metrics.
+     */
+    public StrimziMetricsReporterModel(HasConfigurableMetrics spec) {
         if (spec.getMetricsConfig() != null) {
             StrimziMetricsReporter config = (StrimziMetricsReporter) spec.getMetricsConfig();
             validate(config);
-            this.allowList = config.getValues() != null && config.getValues().getAllowList() != null
-                    ? config.getValues().getAllowList() : defaultAllowList;
+            this.allowList = config.getValues() != null ? config.getValues().getAllowList() : null;
         } else {
             throw new InvalidConfigurationException("Unexpected empty metrics config");
         }
     }
 
     /**
-     * Gets the comma-separated list of allow regex expressions.
+     * Gets the comma-separated allow list, falling back to the provided default if the user did not configure one.
      *
-     * @return Comma separated list of allow regex expressions.
+     * @param defaultAllowList Role-specific default allow list to use when the user has not set one.
+     * @return Comma-separated list of allow regex expressions.
      */
-    public String getAllowList() {
-        return String.join(",", allowList);
+    public String getAllowListOrDefault(List<String> defaultAllowList) {
+        List<String> effective = allowList != null ? allowList : defaultAllowList;
+        return String.join(",", effective);
     }
 
     /**
