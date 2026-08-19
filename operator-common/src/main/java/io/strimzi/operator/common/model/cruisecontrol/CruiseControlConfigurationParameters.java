@@ -218,11 +218,6 @@ public enum CruiseControlConfigurationParameters {
     public static final boolean DEFAULT_WEBSERVER_SECURITY_ENABLED = true;
 
     /**
-     * Default value for enabling webserver security
-     */
-    public static final boolean DEFAULT_WEBSERVER_SSL_ENABLED = true;
-
-    /**
      * Default topic name for the partition samples
      */
     public static final String DEFAULT_PARTITION_METRIC_TOPIC_NAME = "strimzi.cruisecontrol.partitionmetricsamples";

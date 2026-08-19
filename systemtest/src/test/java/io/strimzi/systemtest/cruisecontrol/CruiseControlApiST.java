@@ -70,7 +70,6 @@ public class CruiseControlApiST extends AbstractST {
 
         Map<String, Object> config = new HashMap<>();
         config.put("webserver.security.enable", "false");
-        config.put("webserver.ssl.enable", "false");
 
         KubeResourceManager.get().createResourceWithWait(
             KafkaNodePoolTemplates.brokerPool(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
@@ -86,7 +85,7 @@ public class CruiseControlApiST extends AbstractST {
 
         LOGGER.info("----> CRUISE CONTROL DEPLOYMENT STATE ENDPOINT <----");
         CruiseControlUtils.ApiResult response = CruiseControlUtils.callApi(testStorage.getNamespaceName(), CruiseControlUtils.HttpMethod.GET,
-                CruiseControlUtils.Scheme.HTTP, CRUISE_CONTROL_DEFAULT_PORT, CruiseControlEndpoints.STATE.toString(), "");
+                CruiseControlUtils.Scheme.HTTPS, CRUISE_CONTROL_DEFAULT_PORT, CruiseControlEndpoints.STATE.toString(), "");
         String responseText = response.getResponseText();
         int responseCode = response.getResponseCode();
 

@@ -155,7 +155,11 @@ public abstract class AbstractKafkaRebalanceAssemblyOperatorTest {
     }
 
     protected KafkaRebalanceAssemblyOperator createKafkaRebalanceAssemblyOperator(ClusterOperatorConfig config) {
-        return new KafkaRebalanceAssemblyOperator(vertx, supplier, config, cruiseControlPort) {
+        return createKafkaRebalanceAssemblyOperator(config, cruiseControlPort);
+    }
+
+    protected KafkaRebalanceAssemblyOperator createKafkaRebalanceAssemblyOperator(ClusterOperatorConfig config, int port) {
+        return new KafkaRebalanceAssemblyOperator(vertx, supplier, config, port) {
             @Override
             public String cruiseControlHost(String clusterName, String clusterNamespace) {
                 return HOST;
@@ -163,13 +167,17 @@ public abstract class AbstractKafkaRebalanceAssemblyOperatorTest {
 
             @Override
             public CruiseControlApi cruiseControlClientProvider(Secret clusterCaCertSecret, Secret ccApiSecret, boolean apiAuthEnabled, boolean apiSslEnabled) {
-                return new CruiseControlApiImpl(1, clusterCaCertSecret, ccApiSecret, true, true);
+                return new CruiseControlApiImpl(1, clusterCaCertSecret, ccApiSecret, apiAuthEnabled, apiSslEnabled);
             }
         };
     }
 
     protected void crdCreateKafka() {
-        Kafka kafka = new KafkaBuilder(KAFKA)
+        crdCreateKafka(KAFKA);
+    }
+
+    protected void crdCreateKafka(Kafka source) {
+        Kafka kafka = new KafkaBuilder(source)
                 .withNewStatus()
                     .withObservedGeneration(1L)
                     .withConditions(new ConditionBuilder()
