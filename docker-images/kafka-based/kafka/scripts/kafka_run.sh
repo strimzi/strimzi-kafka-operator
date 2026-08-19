@@ -88,6 +88,7 @@ namespace=${NAMESPACE}
 EOF
 echo ""
 
+KAFKA_OPTS="${KAFKA_OPTS} -javaagent:$(ls "$KAFKA_HOME"/libs/fips-agent*.jar)"
 KAFKA_OPTS="${KAFKA_OPTS} -javaagent:$(ls "$KAFKA_HOME"/libs/kafka-agent*.jar)=/tmp/kafka-agent.properties"
 export KAFKA_OPTS
 
