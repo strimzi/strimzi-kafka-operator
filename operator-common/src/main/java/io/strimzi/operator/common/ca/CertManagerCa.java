@@ -18,7 +18,6 @@ import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.operator.resource.kubernetes.CertManagerCertificateOperator;
 import io.strimzi.operator.common.operator.resource.kubernetes.SecretOperator;
 
-import java.math.BigInteger;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
@@ -111,13 +110,13 @@ public class CertManagerCa extends Ca {
                 updatedCertData.put(CA_CRT, newCaCertAsBase64);
             }
             case RENEW_CERT -> {
-                updatedCertData = new HashMap<>();
+                updatedCertData = new HashMap<>(caCertData);
                 updatedCertData.put(CA_CRT, newCaCertAsBase64);
                 ++caCertGeneration;
             }
             case REPLACE_KEY -> {
                 String notAfterDate = DATE_TIME_FORMATTER.format(currentCaCertX509().getNotAfter().toInstant().atZone(ZoneId.of("Z")));
-                updatedCertData = new HashMap<>();
+                updatedCertData = new HashMap<>(caCertData);
                 updatedCertData.put(Ca.SecretEntry.CRT.asKey("ca-" + notAfterDate), caCertData.get(CA_CRT));
                 updatedCertData.put(CA_CRT, newCaCertAsBase64);
                 ++caCertGeneration;
@@ -137,7 +136,7 @@ public class CertManagerCa extends Ca {
         String newCaCertHash;
         try {
             x509CaCert = CertificateUtils.x509Certificate(Util.decodeBytesFromBase64(newCaCertAsBase64));
-            newCaCertHash = String.format("%040x", new BigInteger(1, Util.sha1Digest(x509CaCert.getEncoded())));
+            newCaCertHash = CertificateUtils.getCertificateThumbprint(x509CaCert);
         } catch (CertificateException e) {
             throw new RuntimeException(e);
         }
@@ -265,7 +264,7 @@ public class CertManagerCa extends Ca {
                 .withNewPrivateKey()
                     .withAlgorithm("RSA")
                     .withEncoding("PKCS8")
-                    .withSize(2048)
+                    .withSize(4096)
                 .endPrivateKey()
                 .withDuration(convertToFabric8Duration(validityDays))
                 .withRenewBefore(convertToFabric8Duration(renewalDays))
