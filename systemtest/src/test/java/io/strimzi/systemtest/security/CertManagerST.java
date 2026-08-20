@@ -24,7 +24,6 @@ import io.strimzi.systemtest.docs.TestDocsLabels;
 import io.strimzi.systemtest.kafkaclients.ClientsAuthentication;
 import io.strimzi.systemtest.resources.CrdClients;
 import io.strimzi.systemtest.resources.certManager.SetupCertManager;
-import io.strimzi.systemtest.resources.operator.ClusterOperatorConfigurationBuilder;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
@@ -535,9 +534,6 @@ public class CertManagerST extends AbstractST {
         SetupCertManager.createIssuerAndCaSecret();
         SetupClusterOperator
             .getInstance()
-            .withCustomConfiguration(new ClusterOperatorConfigurationBuilder()
-                    .withFeatureGates("+CertManagerCaType")
-                    .build())
             .install();
         SetupCertManager.installCertManagerRbac(SetupClusterOperator.getInstance().getOperatorNamespace());
     }

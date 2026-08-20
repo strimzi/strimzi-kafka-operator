@@ -8,7 +8,8 @@
 * The `UseConnectBuildWithBuildah` feature gate moves to GA stage, is enabled by default without option to be disabled
 * The `UseBackgroundPodDeletion` feature gate moves to beta stage and is enabled by default.
   If needed, `UseBackgroundPodDeletion` can be disabled in the feature gates configuration in the Cluster Operator.
-* Add support for cert-manager. Users can set `spec.clusterCa.type` and/or `spec.clientsCa.type` to `cert-manager.io` to delegate end-entity certificate issuance to a cert-manager `Issuer` or `ClusterIssuer`. This feature is behind the `CertManagerCaType` feature gate, which is disabled by default.
+* (Early Access) Integration with cert-manager for issuing certificates. Users can set `spec.clusterCa.type` and/or `spec.clientsCa.type` to `cert-manager.io` to delegate end-entity certificate issuance to a cert-manager `Issuer` or `ClusterIssuer`.
+  While the cert-manager feature is in Early Access it is not recommended for use in production.
 
 ### Major changes, deprecations, and removals
 

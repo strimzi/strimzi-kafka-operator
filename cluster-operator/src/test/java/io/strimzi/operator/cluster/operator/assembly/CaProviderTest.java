@@ -68,8 +68,7 @@ public class CaProviderTest {
                 Clock.systemUTC(),
                 null,
                 null,
-                null,
-                false);
+                null);
 
         assertThat(provider, instanceOf(InternalCaProvider.class));
     }
@@ -91,8 +90,7 @@ public class CaProviderTest {
                 Clock.systemUTC(),
                 null,
                 null,
-                null,
-                false);
+                null);
 
         assertThat(provider, instanceOf(CustomCaProvider.class));
     }
@@ -115,32 +113,9 @@ public class CaProviderTest {
                 Clock.systemUTC(),
                 null,
                 null,
-                null,
-                true);
+                null);
 
         assertThat(provider, instanceOf(CertManagerCaProvider.class));
-    }
-
-    @Test
-    public void testCreateProviderReturnsCustomCaProviderWhenTypeIsCertManagerAndFeatureGateIsNotEnabled() {
-        CaConfig caConfig = new CaConfig(new CertificateAuthorityBuilder()
-                .withGenerateCertificateAuthority(false)
-                .withType(CertificateManagerType.CERT_MANAGER_IO)
-                .build(), true);
-
-        assertThrows(RuntimeException.class, () -> CaProvider.create(Reconciliation.DUMMY_RECONCILIATION,
-                Ca.CaRole.CLUSTER_CA,
-                caConfig,
-                KAFKA,
-                null,
-                null,
-                CERT_ISSUER,
-                PASSWORD_GENERATOR,
-                Clock.systemUTC(),
-                null,
-                null,
-                null,
-                false));
     }
 
     @Test
@@ -161,7 +136,6 @@ public class CaProviderTest {
                 Clock.systemUTC(),
                 null,
                 null,
-                null,
-                true));
+                null));
     }
 }

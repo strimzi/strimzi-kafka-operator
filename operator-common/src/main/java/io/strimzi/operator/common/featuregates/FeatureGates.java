@@ -24,13 +24,11 @@ public class FeatureGates {
 
     // Enables background deletion propagation when rolling pods
     private static final String USE_BACKGROUND_POD_DELETION = "UseBackgroundPodDeletion";
-    //Enables the usage of cert-manager for issuing certificates
-    private static final String CERT_MANAGER_CA_TYPE = "CertManagerCaType";
 
     // When adding new feature gates, do not forget to add them to allFeatureGates(), toString(), equals(), and `hashCode() methods
     // private final FeatureGate dummyFeatureGate = new FeatureGate(DUMMY_FEATURE_GATE, false);
-    private final FeatureGate useBackgroundPodDeletion = new FeatureGate(USE_BACKGROUND_POD_DELETION, false);
-    private final FeatureGate certManagerCaType = new FeatureGate(CERT_MANAGER_CA_TYPE, false);
+    private final FeatureGate useBackgroundPodDeletion = new FeatureGate(USE_BACKGROUND_POD_DELETION, true);
+
     /**
      * Constructs the feature gates configuration.
      *
@@ -56,9 +54,6 @@ public class FeatureGates {
     //                    break;
                     case USE_BACKGROUND_POD_DELETION:
                         setValueOnlyOnce(useBackgroundPodDeletion, value);
-                        break;
-                    case CERT_MANAGER_CA_TYPE:
-                        setValueOnlyOnce(certManagerCaType, value);
                         break;
                     default:
                         throw new InvalidConfigurationException("Unknown feature gate " + featureGate + " found in the configuration");
@@ -107,15 +102,6 @@ public class FeatureGates {
     }
 
     /**
-     * Checks if the CertManagerCaType feature gate is enabled.
-     *
-     * @return  Returns true when the CertManagerCaType feature gate is enabled
-     */
-    public boolean certManagerCaTypeEnabled() {
-        return certManagerCaType.isEnabled();
-    }
-
-    /**
      * Returns a list of all Feature gates. Used for testing.
      *
      * @return  List of all Feature Gates
@@ -123,8 +109,7 @@ public class FeatureGates {
     /*test*/ List<FeatureGate> allFeatureGates()  {
         return List.of(
         //  dummyFeatureGate
-            useBackgroundPodDeletion,
-            certManagerCaType
+            useBackgroundPodDeletion
         );
     }
 
@@ -132,8 +117,7 @@ public class FeatureGates {
     public String toString() {
         return "FeatureGates(" +
     //      "DummyFeatureGate=" + dummyFeatureGate.isEnabled() +
-            "UseBackgroundPodDeletion=" + useBackgroundPodDeletion.isEnabled() + ", " +
-            "CertManagerCaType=" + certManagerCaType.isEnabled() +
+            "UseBackgroundPodDeletion=" + useBackgroundPodDeletion.isEnabled() +
             ")";
     }
 
@@ -168,14 +152,13 @@ public class FeatureGates {
         } else {
             FeatureGates other = (FeatureGates) o;
             // return Objects.equals(dummyFeatureGate, other.dummyFeatureGate)
-            return Objects.equals(useBackgroundPodDeletion, other.useBackgroundPodDeletion)
-                && Objects.equals(certManagerCaType, other.certManagerCaType);
+            return Objects.equals(useBackgroundPodDeletion, other.useBackgroundPodDeletion);
         }
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(useBackgroundPodDeletion, certManagerCaType);
+        return Objects.hash(useBackgroundPodDeletion);
     }
 
     /**
