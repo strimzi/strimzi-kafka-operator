@@ -9,7 +9,7 @@ watchAnyNamespace: false
 
 defaultImageRegistry: quay.io
 defaultImageRepository: strimzi
-defaultImageTag: 1.1.0
+defaultImageTag: 1.2.0
 
 image:
   registry: ""
@@ -47,8 +47,19 @@ deploymentStrategy: {}
 priorityClassName: ""
 
 hostUsers: NULL
+enableServiceLinks: NULL
 podSecurityContext: {}
-securityContext: {}
+securityContext:
+  # Specifies container security context. Defaults to a security context that matches the Restricted Kubernetes
+  # Pod Security Standard (https://kubernetes.io/docs/concepts/security/pod-security-standards/).
+  allowPrivilegeEscalation: false
+  runAsNonRoot: true
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+      - ALL
+  seccompProfile:
+    type: RuntimeDefault
 rbac:
   create: yes
 serviceAccountCreate: yes
@@ -149,7 +160,7 @@ kafkaBridge:
     registry: ""
     repository:
     name: kafka-bridge
-    tag: 1.0.0
+    tag: 1.1.0
 kafkaExporter:
   image:
     registry: ""
