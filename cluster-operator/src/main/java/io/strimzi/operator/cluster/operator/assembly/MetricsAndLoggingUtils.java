@@ -41,27 +41,27 @@ public class MetricsAndLoggingUtils {
                                                                        ConfigMapOperator configMapOperations,
                                                                        LoggingModel logging,
                                                                        MetricsModel metrics) {
-        CompletableFuture<ConfigMap> metricsFuture = metricsConfigMap(reconciliation, configMapOperations, metrics);
-        CompletableFuture<ConfigMap> loggingFuture = loggingConfigMap(reconciliation, configMapOperations, logging);
+        CompletableFuture<ConfigMap> metricsFuture = metricsConfigMap(reconciliation, configMapOperations, metrics).toCompletableFuture();
+        CompletableFuture<ConfigMap> loggingFuture = loggingConfigMap(reconciliation, configMapOperations, logging).toCompletableFuture();
         return CompletableFuture.allOf(metricsFuture, loggingFuture)
                 .thenApply(v -> new MetricsAndLogging(metricsFuture.join(), loggingFuture.join()));
     }
 
-    private static CompletableFuture<ConfigMap> metricsConfigMap(Reconciliation reconciliation, ConfigMapOperator configMapOperations, MetricsModel metrics) {
+    private static CompletionStage<ConfigMap> metricsConfigMap(Reconciliation reconciliation, ConfigMapOperator configMapOperations, MetricsModel metrics) {
         // this is only for JMX Prometheus Exporter, because the Strimzi Metrics Reporter configuration is in the Kafka configuration file
         if (metrics instanceof JmxPrometheusExporterModel model && model.getConfigMapName() != null) {
-            return configMapOperations.getAsync(reconciliation.namespace(), model.getConfigMapName()).toCompletableFuture();
+            return configMapOperations.getAsync(reconciliation.namespace(), model.getConfigMapName());
         } else {
             return CompletableFuture.completedFuture(null);
         }
     }
 
-    private static CompletableFuture<ConfigMap> loggingConfigMap(Reconciliation reconciliation, ConfigMapOperator configMapOperations, LoggingModel logging) {
+    private static CompletionStage<ConfigMap> loggingConfigMap(Reconciliation reconciliation, ConfigMapOperator configMapOperations, LoggingModel logging) {
         if (logging != null && logging.getLogging() instanceof ExternalLogging externalLogging) {
             if (externalLogging.getValueFrom() != null
                     && externalLogging.getValueFrom().getConfigMapKeyRef() != null
                     && externalLogging.getValueFrom().getConfigMapKeyRef().getName() != null) {
-                return configMapOperations.getAsync(reconciliation.namespace(), externalLogging.getValueFrom().getConfigMapKeyRef().getName()).toCompletableFuture();
+                return configMapOperations.getAsync(reconciliation.namespace(), externalLogging.getValueFrom().getConfigMapKeyRef().getName());
             } else {
                 LOGGER.warnCr(reconciliation, "External logging configuration does not specify logging ConfigMap");
                 throw new InvalidResourceException("External logging configuration does not specify logging ConfigMap");
