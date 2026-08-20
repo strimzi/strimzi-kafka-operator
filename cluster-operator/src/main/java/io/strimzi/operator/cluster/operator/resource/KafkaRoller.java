@@ -31,6 +31,7 @@ import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.AlterConfigOp;
 import org.apache.kafka.clients.admin.AlterConfigsResult;
 import org.apache.kafka.clients.admin.Config;
+import org.apache.kafka.clients.admin.ConfigEntry;
 import org.apache.kafka.common.KafkaFuture;
 import org.apache.kafka.common.config.ConfigResource;
 import org.apache.kafka.common.errors.SslAuthenticationException;
@@ -530,9 +531,9 @@ public class KafkaRoller {
         if (restartContext.needsReconfig) {
             try {
                 if (isControllerOnly) {
-                    dynamicUpdateKafkaConfig(nodeRef, controllerAdminClient, restartContext.configDiff);
+                    dynamicUpdateKafkaConfig(reconciliation, nodeRef, controllerAdminClient, restartContext.configDiff);
                 } else {
-                    dynamicUpdateKafkaConfig(nodeRef, brokerAdminClient, restartContext.configDiff);
+                    dynamicUpdateKafkaConfig(reconciliation, nodeRef, brokerAdminClient, restartContext.configDiff);
                 }
                 updatedDynamically = true;
             } catch (ForceableProblem e) {
@@ -671,14 +672,28 @@ public class KafkaRoller {
         return null;
     }
 
-    /* test */ void dynamicUpdateKafkaConfig(NodeRef nodeRef, Admin ac, KafkaConfigurationDiff configurationDiff)
+    /* test */ static void dynamicUpdateKafkaConfig(Reconciliation reconciliation, NodeRef nodeRef, Admin ac, KafkaConfigurationDiff configurationDiff)
             throws ForceableProblem, InterruptedException {
-        Collection<AlterConfigOp> perBrokerDiff = configurationDiff.getConfigDiff(Scope.PER_BROKER);
-        Collection<AlterConfigOp> clusterWideDiff = configurationDiff.getConfigDiff(Scope.CLUSTER_WIDE);
+        Collection<AlterConfigOp> perBrokerOps = new ArrayList<>(configurationDiff.getConfigDiff(Scope.PER_BROKER));
+        Collection<AlterConfigOp> clusterWideOps = new ArrayList<>();
 
-        if (!perBrokerDiff.isEmpty()) {
+        // When a CLUSTER_WIDE-scoped config has been manually set per-broker (DYNAMIC_BROKER_CONFIG),
+        // the per-broker override must be reverted so the Kafka CR is the source of truth.
+        for (AlterConfigOp op : configurationDiff.getConfigDiff(Scope.CLUSTER_WIDE)) {
+            boolean hasPerBrokerOverride = op.configEntry().source() == ConfigEntry.ConfigSource.DYNAMIC_BROKER_CONFIG;
+
+            if (hasPerBrokerOverride) {
+                perBrokerOps.add(new AlterConfigOp(new ConfigEntry(op.configEntry().name(), null), AlterConfigOp.OpType.DELETE));
+            }
+
+            if (!hasPerBrokerOverride || op.opType() == AlterConfigOp.OpType.SET) {
+                clusterWideOps.add(op);
+            }
+        }
+
+        if (!perBrokerOps.isEmpty()) {
             Map<ConfigResource, Collection<AlterConfigOp>> updatedPerBrokerConfig = new HashMap<>(2);
-            updatedPerBrokerConfig.put(getBrokersConfig(nodeRef.nodeId()), perBrokerDiff);
+            updatedPerBrokerConfig.put(getBrokersConfig(nodeRef.nodeId()), perBrokerOps);
             LOGGER.debugCr(reconciliation, "Updating broker configuration {}", nodeRef);
             LOGGER.traceCr(reconciliation, "Updating broker configuration {} with {}", nodeRef, updatedPerBrokerConfig);
 
@@ -697,9 +712,9 @@ public class KafkaRoller {
             LOGGER.infoCr(reconciliation, "Dynamic update of pod {} was successful.", nodeRef);
         }
 
-        if (!clusterWideDiff.isEmpty()) {
+        if (!clusterWideOps.isEmpty()) {
             Map<ConfigResource, Collection<AlterConfigOp>> updatedClusterWideConfig = new HashMap<>(1);
-            updatedClusterWideConfig.put(getClusterWideConfig(), clusterWideDiff);
+            updatedClusterWideConfig.put(getClusterWideConfig(), clusterWideOps);
 
             LOGGER.debugCr(reconciliation, "Updating cluster-wide configuration");
             LOGGER.traceCr(reconciliation, "Updating cluster-wide configuration with {}", updatedClusterWideConfig);

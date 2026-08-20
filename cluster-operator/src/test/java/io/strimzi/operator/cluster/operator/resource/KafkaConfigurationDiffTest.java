@@ -43,6 +43,10 @@ public class KafkaConfigurationDiffTest {
     private final NodeRef combinedNodeRef = new NodeRef("combined-2", 2, "combined", true, true);
 
     private ConfigEntry instantiateConfigEntry(String name, String val) {
+        return instantiateConfigEntry(name, val, ConfigEntry.ConfigSource.DEFAULT_CONFIG);
+    }
+
+    private ConfigEntry instantiateConfigEntry(String name, String val, ConfigEntry.ConfigSource source) {
         // use reflection to instantiate ConfigEntry
         Constructor<?> constructor;
         ConfigEntry configEntry = null;
@@ -50,7 +54,7 @@ public class KafkaConfigurationDiffTest {
             try {
                 constructor = ConfigEntry.class.getDeclaredConstructor(String.class, String.class, ConfigEntry.ConfigSource.class, boolean.class, boolean.class, List.class, ConfigEntry.ConfigType.class, String.class);
                 constructor.setAccessible(true);
-                configEntry = (ConfigEntry) constructor.newInstance(name, val, ConfigEntry.ConfigSource.DEFAULT_CONFIG, false, false, emptyList(), ConfigEntry.ConfigType.STRING, "doc");
+                configEntry = (ConfigEntry) constructor.newInstance(name, val, source, false, false, emptyList(), ConfigEntry.ConfigType.STRING, "doc");
             } catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
                 fail();
             }
@@ -431,6 +435,36 @@ public class KafkaConfigurationDiffTest {
                 getDesiredConfiguration(singletonList(new ConfigEntry("cordoned.log.dirs", "*"))), kafkaVersion, brokerNodeRef, false, true);
         assertThat(kcd.getDiffSize(), is(0));
         assertThat(kcd.canBeUpdatedDynamically(), is(true));
+    }
+
+    @Test
+    public void testClusterWideConfigSetPerBroker() {
+        // A CLUSTER_WIDE-scoped config (compression.type) set per-broker (DYNAMIC_BROKER_CONFIG)
+        // should produce an op that preserves the source, so dynamicUpdateKafkaConfig
+        // can route it to the per-broker ConfigResource instead of the cluster-wide one.
+        List<ConfigEntry> current = singletonList(instantiateConfigEntry("compression.type", "zstd", ConfigEntry.ConfigSource.DYNAMIC_BROKER_CONFIG));
+
+        // SET scenario: desired has compression.type=zstd but current has compression.type=lz4
+        KafkaConfigurationDiff kcd = new KafkaConfigurationDiff(Reconciliation.DUMMY_RECONCILIATION, getCurrentConfiguration(current),
+                getDesiredConfiguration(singletonList(new ConfigEntry("compression.type", "lz4"))), kafkaVersion, brokerNodeRef, false, true);
+        assertThat(kcd.getDiffSize(), is(1));
+        assertThat(kcd.canBeUpdatedDynamically(), is(true));
+        assertThat(kcd.getConfigDiff(Scope.CLUSTER_WIDE).size(), is(1));
+        assertConfig(kcd, new ConfigEntry("compression.type", "lz4"));
+
+        AlterConfigOp setOp = kcd.getConfigDiff(Scope.CLUSTER_WIDE).iterator().next();
+        assertThat(setOp.opType(), is(AlterConfigOp.OpType.SET));
+        assertThat(setOp.configEntry().source(), is(ConfigEntry.ConfigSource.DYNAMIC_BROKER_CONFIG));
+
+        // DELETE scenario: current has compression.type=zstd but desired does not
+        kcd = new KafkaConfigurationDiff(Reconciliation.DUMMY_RECONCILIATION,
+                getCurrentConfiguration(current), getDesiredConfiguration(emptyList()), kafkaVersion, brokerNodeRef, false, true);
+        assertThat(kcd.getDiffSize(), is(1));
+        assertThat(kcd.getConfigDiff(Scope.CLUSTER_WIDE).size(), is(1));
+
+        AlterConfigOp deleteOp = kcd.getConfigDiff(Scope.CLUSTER_WIDE).iterator().next();
+        assertThat(deleteOp.opType(), is(AlterConfigOp.OpType.DELETE));
+        assertThat(deleteOp.configEntry().source(), is(ConfigEntry.ConfigSource.DYNAMIC_BROKER_CONFIG));
     }
 
     @Test
