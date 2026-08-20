@@ -4,6 +4,7 @@
 
 * (Early Access) Configurable internal cluster security allows users to configure encryption and authentication on the internal connections within the Apache Kafka cluster.
 * Support for mounting projected service account tokens into Strimzi-managed Pods
+* Add support for cert-manager. Users can set `spec.clusterCa.type` and/or `spec.clientsCa.type` to `cert-manager.io` to delegate end-entity certificate issuance to a cert-manager `Issuer` or `ClusterIssuer`. This feature is behind the `CertManagerCaType` feature gate, which is disabled by default.
 
 ### Major changes, deprecations, and removals
 
@@ -11,7 +12,6 @@
 
 ## 1.2.0
 
-* Add support for cert-manager. Users can set `spec.clusterCa.type` and/or `spec.clientsCa.type` to `cert-manager.io` to delegate end-entity certificate issuance to a cert-manager `Issuer` or `ClusterIssuer`. This feature is behind the `CertManagerCaType` feature gate, which is disabled by default.
 * Add support for Apache Kafka 4.3.1
 * Support templated (per-pod) additional volumes for Kafka, Kafka Connect and Kafka MirrorMaker 2 operands
 * Stop auto-mounting Service Account tokens into Pods and mount them through a volume instead

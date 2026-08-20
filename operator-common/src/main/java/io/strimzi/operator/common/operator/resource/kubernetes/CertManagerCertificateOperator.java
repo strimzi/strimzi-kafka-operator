@@ -51,10 +51,14 @@ public class CertManagerCertificateOperator extends AbstractNamespacedResourceOp
 
     private boolean isReady(String namespace, String name) {
         Certificate certificate = operation().inNamespace(namespace).withName(name).get();
-        CertificateStatus status = certificate.getStatus();
+        if (certificate == null) {
+            return false;
+        }
+
         boolean certificateReady = false;
+        CertificateStatus status = certificate.getStatus();
         if (status != null) {
-            List<CertificateCondition> conditions = certificate.getStatus().getConditions();
+            List<CertificateCondition> conditions = status.getConditions();
             Optional<CertificateCondition> readyCondition = conditions.stream().filter(condition -> condition.getType().equals("Ready"))
                     .findFirst();
             if (readyCondition.isPresent() && readyCondition.get().getStatus().equals("True")) {
