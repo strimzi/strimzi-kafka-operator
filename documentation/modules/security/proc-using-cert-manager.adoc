@@ -5,22 +5,20 @@
 // assembly-using-your-own-certificates.adoc
 
 [id='proc-using-cert-manager-{context}']
-= Using cert-manager to issue TLS certificates
+= (Early Access) Using cert-manager to issue TLS certificates
 
 [role="_abstract"]
 Configure Strimzi to delegate TLS certificate issuing to https://cert-manager.io/[cert-manager] instead of managing it internally.
 When enabled, Strimzi creates cert-manager `Certificate` resources for each component and reads the CA certificate from a user-provided `Secret` to establish TLS trust.
+Users are responsible for installing cert-manager and creating an `Issuer` or `ClusterIssuer` resource for Strimzi to reference in the `Certificate` resources.
 cert-manager is responsible for issuing and renewing all end-entity certificates.
 
-This feature requires the `CertManagerCaType` feature gate to be enabled.
-For more information, see xref:ref-operator-cluster-feature-gates-{context}[Feature gates].
-
-NOTE: Strimzi does not install cert-manager and is not responsible for creating `Issuer` or `ClusterIssuer` resources.
+NOTE: This feature is currently Early Access and is not recommended for production.
+It is planned to move to GA after 1 or 2 releases.
 
 .Prerequisites
 
 * cert-manager is installed in the cluster with a ready `Issuer` or `ClusterIssuer` configured.
-* The `CertManagerCaType` feature gate is enabled in the Cluster Operator by setting `+CertManagerCaType` in the `STRIMZI_FEATURE_GATES` environment variable.
 
 .Procedure
 
@@ -81,7 +79,7 @@ spec:
   # ...
 ----
 <1> Required. Must be `false` when `type` is `cert-manager.io`.
-<2> Enables cert-manager certificate issuance for this CA role. Requires the `CertManagerCaType` feature gate to be enabled.
+<2> Enables cert-manager certificate issuance for this CA role.
 <3> Name of the cert-manager `Issuer` or `ClusterIssuer` to use.
 <4> Kind of the issuer. Must be `Issuer` or `ClusterIssuer`.
 <5> API group of the issuer. Defaults to `cert-manager.io`.
@@ -157,5 +155,4 @@ env:
 [role="_additional-resources"]
 .Additional resources
 
-* xref:ref-operator-cluster-feature-gates-{context}[Feature gates]
 * xref:installing-your-own-ca-certificates-str[]

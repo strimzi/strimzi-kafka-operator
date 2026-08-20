@@ -7,7 +7,6 @@ package io.strimzi.operator.user.ca;
 import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.strimzi.api.kafka.model.common.CertificateManagerType;
 import io.strimzi.api.kafka.model.common.certmanager.IssuerRef;
 import io.strimzi.api.kafka.model.common.certmanager.IssuerRefBuilder;
 import io.strimzi.certs.OpenSslCertIssuer;
@@ -69,17 +68,13 @@ public interface UserCertIssuer {
                     config.getMaintenanceWindows(),
                     Clock.systemUTC());
             case CERT_MANAGER_IO -> {
-                if (config.featureGates().certManagerCaTypeEnabled()) {
-                    CertManagerCertificateOperator certManagerOp = new CertManagerCertificateOperator(executor, client);
-                    IssuerRef issuerRef = new IssuerRefBuilder()
-                            .withName(config.getCertManagerIssuerName())
-                            .withKind(config.getCertManagerIssuerKind())
-                            .withGroup(config.getCertManagerIssuerGroup())
-                            .build();
-                    yield new CertManagerCaUserCertIssuer(certManagerOp, secretOperator, issuerRef);
-                } else {
-                    throw new IllegalStateException("Certificate Manager type is set to " + CertificateManagerType.CERT_MANAGER_IO.toValue() + ", but CertManagerCaType feature gate is not enabled");
-                }
+                CertManagerCertificateOperator certManagerOp = new CertManagerCertificateOperator(executor, client);
+                IssuerRef issuerRef = new IssuerRefBuilder()
+                        .withName(config.getCertManagerIssuerName())
+                        .withKind(config.getCertManagerIssuerKind())
+                        .withGroup(config.getCertManagerIssuerGroup())
+                        .build();
+                yield new CertManagerCaUserCertIssuer(certManagerOp, secretOperator, issuerRef);
             }
         };
     }
