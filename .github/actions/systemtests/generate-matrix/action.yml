@@ -32,6 +32,9 @@ inputs:
   default_tests:
     description: "Default JUnit5 tests that will be executed"
     required: false
+  default_ip_family:
+    description: "Default IP family for the Kind cluster (ipv4, ipv6, dual)"
+    required: false
   runnerArch:
     description: "Architecture of GitHub runner"
     required: false
@@ -88,9 +91,10 @@ runs:
             --arg pipeline "custom" \
             --arg groups "$INPUT_DEFAULT_GROUPS" \
             --arg tests "$INPUT_DEFAULT_TESTS" \
+            --arg ipFamily "$INPUT_DEFAULT_IP_FAMILY" \
             --arg timeout 720 \
             --argjson profiles "$PROFILES" \
-            '$profiles | map({agent: $agent, arch: $arch, pipeline: $pipeline, profile: ., timeout: $timeout, strimzi_feature_gates: $fg, strimzi_rbac_scope: $rbac, cluster_operator_install_type: $coi, parallel: $parallel, groups: $groups, tests: $tests})')
+            '$profiles | map({agent: $agent, arch: $arch, pipeline: $pipeline, profile: ., timeout: $timeout, strimzi_feature_gates: $fg, strimzi_rbac_scope: $rbac, cluster_operator_install_type: $coi, parallel: $parallel, groups: $groups, tests: $tests, ipFamily: $ipFamily})')
         fi
         
         # Inject jobName in format 'pipeline-profile-arch' or 'pipeline-arch' when profile == pipeline
@@ -123,3 +127,4 @@ runs:
         INPUT_DEFAULT_PARALLEL: "${{ inputs.default_parallel != '' && inputs.default_parallel || '1' }}"
         INPUT_DEFAULT_GROUPS: "${{ inputs.default_groups }}"
         INPUT_DEFAULT_TESTS: "${{ inputs.default_tests }}"
+        INPUT_DEFAULT_IP_FAMILY: "${{ inputs.default_ip_family != '' && inputs.default_ip_family || 'ipv4' }}"
