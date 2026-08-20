@@ -43,10 +43,8 @@ spec:
             type: object
           spec:
             type: object
-            properties: {}
           status:
             type: object
-            properties: {}
           someInt:
             type: integer
             minimum: 0
@@ -88,10 +86,8 @@ spec:
             type: object
           spec:
             type: object
-            properties: {}
           status:
             type: object
-            properties: {}
           someInt:
             type: integer
             minimum: 4

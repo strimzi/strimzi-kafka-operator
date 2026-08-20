@@ -516,14 +516,12 @@ spec:
             type: array
             items:
               type: object
-              properties: {}
           listOfRawList:
             type: array
             items:
               type: array
               items:
                 type: object
-                properties: {}
           arrayOfList:
             type: array
             items:
@@ -536,7 +534,6 @@ spec:
               type: array
               items:
                 type: object
-                properties: {}
           listOfArray:
             type: array
             items:
@@ -547,35 +544,28 @@ spec:
             type: array
             items:
               type: object
-              properties: {}
           listOfTypeVar:
             type: array
             items:
               type: object
-              properties: {}
           arrayOfBoundTypeVar:
             type: array
             items:
               type: object
-              properties: {}
           listOfBoundTypeVar:
             type: array
             items:
               type: object
-              properties: {}
           arrayOfBoundTypeVar2:
             type: array
             items:
               type: object
-              properties: {}
           listOfBoundTypeVar2:
             type: array
             items:
               type: object
-              properties: {}
           unstructured:
             type: object
-            properties: {}
             x-kubernetes-preserve-unknown-fields: true
           listOfWildcardTypeVar1:
             type: array
@@ -585,19 +575,16 @@ spec:
             type: array
             items:
               type: object
-              properties: {}
           listOfWildcardTypeVar3:
             type: array
             items:
               type: object
-              properties: {}
           listOfWildcardTypeVar4:
             type: array
             items:
               type: array
               items:
                 type: object
-                properties: {}
           listOfCustomizedEnum:
             type: array
             items:
@@ -623,10 +610,8 @@ spec:
             type: string
           status:
             type: object
-            properties: {}
           spec:
             type: object
-            properties: {}
           external:
             type: string
         oneOf:
@@ -1141,14 +1126,12 @@ spec:
             type: array
             items:
               type: object
-              properties: {}
           listOfRawList:
             type: array
             items:
               type: array
               items:
                 type: object
-                properties: {}
           arrayOfList:
             type: array
             items:
@@ -1161,7 +1144,6 @@ spec:
               type: array
               items:
                 type: object
-                properties: {}
           listOfArray:
             type: array
             items:
@@ -1172,35 +1154,28 @@ spec:
             type: array
             items:
               type: object
-              properties: {}
           listOfTypeVar:
             type: array
             items:
               type: object
-              properties: {}
           arrayOfBoundTypeVar:
             type: array
             items:
               type: object
-              properties: {}
           listOfBoundTypeVar:
             type: array
             items:
               type: object
-              properties: {}
           arrayOfBoundTypeVar2:
             type: array
             items:
               type: object
-              properties: {}
           listOfBoundTypeVar2:
             type: array
             items:
               type: object
-              properties: {}
           unstructured:
             type: object
-            properties: {}
             x-kubernetes-preserve-unknown-fields: true
           listOfWildcardTypeVar1:
             type: array
@@ -1210,19 +1185,16 @@ spec:
             type: array
             items:
               type: object
-              properties: {}
           listOfWildcardTypeVar3:
             type: array
             items:
               type: object
-              properties: {}
           listOfWildcardTypeVar4:
             type: array
             items:
               type: array
               items:
                 type: object
-                properties: {}
           listOfCustomizedEnum:
             type: array
             items:
@@ -1248,10 +1220,8 @@ spec:
             type: string
           status:
             type: object
-            properties: {}
           spec:
             type: object
-            properties: {}
           external:
             type: string
         oneOf:
