@@ -16,25 +16,18 @@ public enum CertificateManagerType {
 
     @JsonCreator
     public static CertificateManagerType forValue(String value) {
-        switch (value) {
-            case "strimzi.io":
-                return STRIMZI_IO;
-            case "cert-manager.io":
-                return CERT_MANAGER_IO;
-            default:
-                return null;
-        }
+        return switch (value) {
+            case "strimzi.io" -> STRIMZI_IO;
+            case "cert-manager.io" -> CERT_MANAGER_IO;
+            default -> throw new IllegalArgumentException(String.format("Unknown certificate manager type: %s. Must be %s or %s.", value, STRIMZI_IO.toValue(), CERT_MANAGER_IO.toValue()));
+        };
     }
 
     @JsonValue
     public String toValue() {
-        switch (this) {
-            case STRIMZI_IO:
-                return "strimzi.io";
-            case CERT_MANAGER_IO:
-                return "cert-manager.io";
-            default:
-                return null;
-        }
+        return switch (this) {
+            case STRIMZI_IO -> "strimzi.io";
+            case CERT_MANAGER_IO -> "cert-manager.io";
+        };
     }
 }

@@ -8,6 +8,7 @@
 * The `UseConnectBuildWithBuildah` feature gate moves to GA stage, is enabled by default without option to be disabled
 * The `UseBackgroundPodDeletion` feature gate moves to beta stage and is enabled by default.
   If needed, `UseBackgroundPodDeletion` can be disabled in the feature gates configuration in the Cluster Operator.
+* Add support for cert-manager. Users can set `spec.clusterCa.type` and/or `spec.clientsCa.type` to `cert-manager.io` to delegate end-entity certificate issuance to a cert-manager `Issuer` or `ClusterIssuer`. This feature is behind the `CertManagerCaType` feature gate, which is disabled by default.
 
 ### Major changes, deprecations, and removals
 
@@ -19,7 +20,6 @@
 
 ## 1.2.0
 
-* Add support for cert-manager. Users can set `spec.clusterCa.type` and/or `spec.clientsCa.type` to `cert-manager.io` to delegate end-entity certificate issuance to a cert-manager `Issuer` or `ClusterIssuer`. This feature is behind the `CertManagerCaType` feature gate, which is disabled by default.
 * Add support for Apache Kafka 4.3.1
 * Support templated (per-pod) additional volumes for Kafka, Kafka Connect and Kafka MirrorMaker 2 operands
 * Stop auto-mounting Service Account tokens into Pods and mount them through a volume instead

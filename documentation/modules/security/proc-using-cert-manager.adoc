@@ -9,7 +9,7 @@
 
 [role="_abstract"]
 Configure Strimzi to delegate TLS certificate issuing to https://cert-manager.io/[cert-manager] instead of managing it internally.
-When enabled, Strimzi creates cert-manager `Certificate` resources for each component and reads the CA public certificate from a user-provided `Secret` to establish TLS trust.
+When enabled, Strimzi creates cert-manager `Certificate` resources for each component and reads the CA certificate from a user-provided `Secret` to establish TLS trust.
 cert-manager is responsible for issuing and renewing all end-entity certificates.
 
 This feature requires the `CertManagerCaType` feature gate to be enabled.
@@ -29,7 +29,7 @@ NOTE: Strimzi does not install cert-manager and is not responsible for creating 
 [source,shell,subs="+quotes"]
 kubectl apply -f packaging/install/cert-manager/
 
-. Create a `Secret` containing the CA public certificate that Strimzi should trust.
+. Create a `Secret` containing the CA certificate that Strimzi should trust.
 +
 [source,shell,subs="+quotes"]
 ----
@@ -40,13 +40,16 @@ kubectl create secret generic _<ca_cert_secret_name>_ \
 +
 Replace _<ca_cert_secret_name>_ with a name of your choice, _<path_to_ca_cert_pem>_ with the path to the CA certificate PEM file, and _<namespace>_ with the namespace of the Kafka cluster.
 
+NOTE: The `ca.crt` file in the Secret must contain either a single CA certificate or CA certificate chain that can be used to trust certificates issued by cert-manager.
+For this reason the cert-manager `SelfSigned` issuer is not supported.
+
 . Create or update the `Kafka` resource, setting `type: cert-manager.io` on `clusterCa`, `clientsCa`, or both.
 Set `generateCertificateAuthority: false` and provide the `certManager.issuerRef` and `certManager.caCert` configuration.
 +
 .Example `Kafka` resource using cert-manager for both Cluster CA and Clients CA
 [source,yaml,subs="attributes+"]
 ----
-apiVersion: kafka.strimzi.io/v1beta2
+apiVersion: kafka.strimzi.io/v1
 kind: Kafka
 metadata:
   name: my-cluster
@@ -82,7 +85,7 @@ spec:
 <3> Name of the cert-manager `Issuer` or `ClusterIssuer` to use.
 <4> Kind of the issuer. Must be `Issuer` or `ClusterIssuer`.
 <5> API group of the issuer. Defaults to `cert-manager.io`.
-<6> Name of the `Secret` containing the CA public certificate.
+<6> Name of the `Secret` containing the CA certificate.
 <7> Key within the `Secret` that holds the CA certificate PEM data.
 
 . Apply the `Kafka` resource.
@@ -101,7 +104,7 @@ During reconciliation, Strimzi copies the certificates from these Secrets into t
 
 .CA certificate rotation
 
-When the CA public certificate in the user-provided `Secret` changes, Strimzi detects the change on the next reconciliation.
+When the CA certificate in the user-provided `Secret` changes, Strimzi detects the change on the next reconciliation.
 
 * If the new certificate was signed by the same private key (cert renewal), Strimzi rolls the Kafka pods once to update the truststore.
 * If the new certificate was signed by a new private key (key replacement), Strimzi performs a phased rolling restart.
