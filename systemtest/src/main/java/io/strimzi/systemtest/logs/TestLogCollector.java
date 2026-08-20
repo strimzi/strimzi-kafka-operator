@@ -191,7 +191,8 @@ public class TestLogCollector {
     public static LogCollectorBuilder defaultLogCollectorBuilder() {
         return new LogCollectorBuilder()
             .withKubeClient(new KubeClient())
-            .withKubeCmdClient(new Kubectl())
+            // Kubectl will have 30s timeouts on the operations to now hang forever in case of node troubles
+            .withKubeCmdClient(new Kubectl().withTimeout(30))
             .withRootFolderPath(Environment.TEST_LOG_DIR)
             .withCollectPreviousLogs();
     }
