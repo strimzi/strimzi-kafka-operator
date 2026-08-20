@@ -69,7 +69,6 @@ public class CaReconciler {
 
     /* test */ final Reconciliation reconciliation;
     private final long operationTimeoutMs;
-    private final boolean certManagerCaTypeEnabled;
 
     /* test */ final DeploymentOperator deploymentOperator;
     private final StrimziPodSetOperator strimziPodSetOperator;
@@ -120,7 +119,6 @@ public class CaReconciler {
     ) {
         this.reconciliation = reconciliation;
         this.operationTimeoutMs = config.getOperationTimeoutMs();
-        this.certManagerCaTypeEnabled = config.featureGates().certManagerCaTypeEnabled();
 
         this.deploymentOperator = supplier.deploymentOperations;
         this.strimziPodSetOperator = supplier.strimziPodSetOperator;
@@ -241,7 +239,7 @@ public class CaReconciler {
      * @return  CaProvider instance
      */
     /*test*/ CaProvider createCaProvider(Ca.CaRole caRole, CaConfig caConfig, Secret existingCaCertSecret, Secret existingCaKeySecret, Secret coSecret, Clock clock) {
-        return CaProvider.create(reconciliation, caRole, caConfig, kafkaCr, certManagerCertificateOperator, secretOperator, certIssuer, passwordGenerator, clock, existingCaCertSecret, existingCaKeySecret, coSecret, certManagerCaTypeEnabled);
+        return CaProvider.create(reconciliation, caRole, caConfig, kafkaCr, certManagerCertificateOperator, secretOperator, certIssuer, passwordGenerator, clock, existingCaCertSecret, existingCaKeySecret, coSecret);
     }
 
     /**

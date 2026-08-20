@@ -107,11 +107,6 @@ endif::Section[]
 ¦1.3 (planned)
 ¦1.7 (planned)
 
-¦`CertManagerCaType`
-¦1.3
-¦-
-¦-
-
 |===
 
 
@@ -148,21 +143,6 @@ endif::Section[]
 
 Early access feature gates have not yet reached the beta stage, and are disabled by default.
 An early access feature gate provides an opportunity for assessment before its functionality is permanently incorporated into Strimzi.
-
-[id='ref-operator-cert-manager-ca-type-feature-gate-{context}']
-=== `CertManagerCaType` feature gate
-
-The `CertManagerCaType` feature gate has a default state of _disabled_.
-
-When enabled, Strimzi delegates issuing of TLS certificates to an external cert-manager instead of managing certificates internally.
-With this feature gate enabled, you can set `type: cert-manager.io` on `clusterCa`, `clientsCa`, or both in the `Kafka` custom resource.
-Strimzi then creates cert-manager `Certificate` resources and reads the CA public certificate from a user-provided `Secret` to establish TLS trust.
-The Cluster Operator handles the Cluster CA and Clients CA end-entity certificates.
-The User Operator handles per-`KafkaUser` certificates when `clientsCa.type` is set to `cert-manager.io`.
-
-Before enabling this feature gate, apply the RBAC resources in `packaging/install/cert-manager/` and ensure that cert-manager is installed with a ready `Issuer` or `ClusterIssuer`.
-
-To enable the `CertManagerCaType` feature gate, specify `+CertManagerCaType` in the `STRIMZI_FEATURE_GATES` environment variable in the Cluster Operator configuration.
 
 [id='ref-operator-use-background-pod-deletion-feature-gate-{context}']
 === `UseBackgroundPodDeletion` feature gate
