@@ -74,8 +74,7 @@ public abstract class CaProvider {
             Clock clock,
             Secret existingCaCertSecret,
             Secret existingCaKeySecret,
-            Secret clusterOperatorCertSecret,
-            boolean certManagerCaTypeEnabled
+            Secret clusterOperatorCertSecret
     ) {
         return switch (caConfig.getCertificateManagerType()) {
             case STRIMZI_IO -> {
@@ -90,14 +89,10 @@ public abstract class CaProvider {
                 }
             }
             case CERT_MANAGER_IO -> {
-                if (certManagerCaTypeEnabled) {
-                    if (caConfig.isGenerateCa()) {
-                        throw new IllegalArgumentException("Certificate Manager type is set to " + CertificateManagerType.CERT_MANAGER_IO.toValue() + ", but generateCertificateAuthority is set to true. Set generateCertificateAuthority to false when using cert-manager.io as the certificate manager type.");
-                    }
-                    yield new CertManagerCaProvider(reconciliation, caRole, caConfig, kafkaCr, existingCaCertSecret, clusterOperatorCertSecret, certManagerCertificateOperator, secretOperator);
-                } else {
-                    throw new IllegalArgumentException("Certificate Manager type is set to " + CertificateManagerType.CERT_MANAGER_IO.toValue() + ", but CertManagerCaType feature gate is not enabled");
+                if (caConfig.isGenerateCa()) {
+                    throw new IllegalArgumentException("Certificate Manager type is set to " + CertificateManagerType.CERT_MANAGER_IO.toValue() + ", but generateCertificateAuthority is set to true. Set generateCertificateAuthority to false when using cert-manager.io as the certificate manager type.");
                 }
+                yield new CertManagerCaProvider(reconciliation, caRole, caConfig, kafkaCr, existingCaCertSecret, clusterOperatorCertSecret, certManagerCertificateOperator, secretOperator);
             }
         };
     }

@@ -64,7 +64,6 @@ public class EntityOperatorReconciler {
     private final NetworkPolicyOperator networkPolicyOperator;
     private final boolean isCruiseControlEnabled;
     private final PodDisruptionBudgetOperator podDistruptionBudgetOperator;
-    private final boolean certManagerCaTypeEnabled;
 
     private String toCertificateHash = "";
     private String uoCertificateHash = "";
@@ -97,7 +96,6 @@ public class EntityOperatorReconciler {
         this.isCruiseControlEnabled = kafkaAssembly.getSpec().getCruiseControl() != null;
         this.isPodDisruptionBudgetGeneration = config.isPodDisruptionBudgetGeneration();
         this.isEntityOperatorWatchedNamespaceEnabled = config.isEntityOperatorWatchedNamespaceEnabled();
-        this.certManagerCaTypeEnabled = config.featureGates().certManagerCaTypeEnabled();
 
         this.deploymentOperator = supplier.deploymentOperations;
         this.secretOperator = supplier.secretOperations;
@@ -388,15 +386,13 @@ public class EntityOperatorReconciler {
     /**
      * Manages the RoleBinding granting the entity operator service account permission to manage
      * cert-manager {@code Certificate} resources. The RoleBinding is created when the User Operator is
-     * present and the {@code CertManagerCaType} feature gate is enabled and the clients CA type is
-     * {@code cert-manager.io}. It is deleted otherwise.
+     * present and the clients CA type is {@code cert-manager.io}. It is deleted otherwise.
      *
      * @return  Future which completes when the reconciliation is done
      */
     protected Future<Void> userOperatorCertManagerRoleBinding() {
         RoleBinding certManagerRoleBinding = null;
-        if (certManagerCaTypeEnabled
-                && entityOperator != null
+        if (entityOperator != null
                 && entityOperator.userOperator() != null
                 && entityOperator.userOperator().isCertManagerEnabled()) {
             certManagerRoleBinding = entityOperator.userOperator()
