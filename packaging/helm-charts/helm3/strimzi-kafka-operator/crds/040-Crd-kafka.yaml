@@ -5701,7 +5701,6 @@ spec:
                   description: The status of an auto-rebalancing triggered by a cluster scaling request.
                 clusterSecurity:
                   type: object
-                  properties: {}
                   x-kubernetes-preserve-unknown-fields: true
                   description: The current security configuration of the Kafka cluster.
               description: The status of the Kafka cluster.
