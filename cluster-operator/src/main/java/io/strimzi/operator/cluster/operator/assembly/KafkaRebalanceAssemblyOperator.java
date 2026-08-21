@@ -359,9 +359,6 @@ public class KafkaRebalanceAssemblyOperator
                             ConfigMap loadAndProgressConfigMap = createConfigMapForRebalance(kafkaRebalance, existingConfigMap.getData());
                             desiredStatusAndMap.setLoadAndProgressConfigMap(loadAndProgressConfigMap);
                             desiredConfigMap = loadAndProgressConfigMap;
-                        } else {
-                            // Ensure desiredConfigMap retains broker load information if it exists.
-                            desiredConfigMap.getData().put(BROKER_LOAD_KEY, existingConfigMap.getData().get(BROKER_LOAD_KEY));
                         }
                     }
 

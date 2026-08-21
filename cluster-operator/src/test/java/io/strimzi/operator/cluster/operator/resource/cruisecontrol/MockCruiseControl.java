@@ -381,6 +381,23 @@ public class MockCruiseControl {
                         .withBody(jsonError)));
     }
 
+    public void mockNewProposal() {
+        for (boolean verbose : new boolean[]{false, true}) {
+            String fileName = verbose
+                ? "CC-Rebalance-no-goals-verbose-refreshed.json"
+                : "CC-Rebalance-no-goals-refreshed.json";
+            String userTaskId = verbose
+                ? REBALANCE_NO_GOALS_VERBOSE_RESPONSE_UTID
+                : REBALANCE_NO_GOALS_RESPONSE_UTID;
+
+            server.stubFor(rebalanceRequestMatcher(verbose, CruiseControlEndpoints.REBALANCE)
+                .willReturn(aResponse()
+                    .withStatus(200)
+                    .withHeader("User-Task-ID", userTaskId)
+                    .withBody(readJsonResource(fileName))));
+        }
+    }
+
     /**
      * Setup rebalance response with no response delay (for quicker tests).
      */
