@@ -14,7 +14,6 @@ import io.strimzi.operator.cluster.model.ImagePullPolicy;
 import io.strimzi.operator.cluster.model.KafkaClusterSecurityContext;
 import io.strimzi.operator.cluster.model.KafkaExporter;
 import io.strimzi.operator.cluster.model.KafkaVersion;
-import io.strimzi.operator.cluster.operator.VertxUtil;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.DeploymentOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.NetworkPolicyOperator;
@@ -25,12 +24,13 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.ca.Ca;
 import io.strimzi.operator.common.operator.resource.kubernetes.SecretOperator;
-import io.vertx.core.Future;
 
 import java.time.Clock;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 
 /**
  * Class used for reconciliation of Kafka Exporter. This class contains both the steps of the Kafka Exporter
@@ -96,30 +96,30 @@ public class KafkaExporterReconciler {
      * @param clock             The clock for supplying the reconciler with the time instant of each reconciliation cycle.
      *                          That time is used for checking maintenance windows
      *
-     * @return                  Future which completes when the reconciliation completes
+     * @return                  CompletionStage which completes when the reconciliation completes
      */
-    public Future<Void> reconcile(boolean isOpenShift, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets, Clock clock)    {
+    public CompletionStage<Void> reconcile(boolean isOpenShift, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets, Clock clock)    {
         return serviceAccount()
-                .compose(i -> certificatesSecret(clock))
-                .compose(i -> networkPolicy())
-                .compose(i -> podDisruptionBudget())
-                .compose(i -> deployment(isOpenShift, imagePullPolicy, imagePullSecrets))
-                .compose(i -> waitForDeploymentReadiness());
+                .thenCompose(i -> certificatesSecret(clock))
+                .thenCompose(i -> networkPolicy())
+                .thenCompose(i -> podDisruptionBudget())
+                .thenCompose(i -> deployment(isOpenShift, imagePullPolicy, imagePullSecrets))
+                .thenCompose(i -> waitForDeploymentReadiness());
     }
 
     /**
      * Manages the Kafka Exporter Service Account.
      *
-     * @return  Future which completes when the reconciliation is done
+     * @return  CompletionStage which completes when the reconciliation is done
      */
-    private Future<Void> serviceAccount() {
-        return VertxUtil.toFuture(serviceAccountOperator
+    private CompletionStage<Void> serviceAccount() {
+        return serviceAccountOperator
                 .reconcile(
                         reconciliation,
                         reconciliation.namespace(),
                         KafkaExporterResources.componentName(reconciliation.name()),
                         kafkaExporter != null ? kafkaExporter.generateServiceAccount() : null
-                )).mapEmpty();
+                ).thenApply(i -> null);
     }
 
     /**
@@ -128,65 +128,65 @@ public class KafkaExporterReconciler {
      * @param clock The clock for supplying the reconciler with the time instant of each reconciliation cycle.
      *              That time is used for checking maintenance windows
      *
-     * @return      Future which completes when the reconciliation is done
+     * @return      CompletionStage which completes when the reconciliation is done
      */
-    private Future<Void> certificatesSecret(Clock clock) {
+    private CompletionStage<Void> certificatesSecret(Clock clock) {
         if (kafkaExporter != null) {
-            return VertxUtil.toFuture(secretOperator.getAsync(reconciliation.namespace(), KafkaExporterResources.secretName(reconciliation.name())))
-                    .compose(oldSecret -> Future.fromCompletionStage(kafkaExporter.generateCertificatesSecret(clusterCa, oldSecret, Util.isMaintenanceTimeWindowsSatisfied(reconciliation, maintenanceWindows, clock.instant()))))
-                    .compose(newSecret -> VertxUtil.toFuture(secretOperator
+            return secretOperator.getAsync(reconciliation.namespace(), KafkaExporterResources.secretName(reconciliation.name()))
+                    .thenCompose(oldSecret -> kafkaExporter.generateCertificatesSecret(clusterCa, oldSecret, Util.isMaintenanceTimeWindowsSatisfied(reconciliation, maintenanceWindows, clock.instant())))
+                    .thenCompose(newSecret -> secretOperator
                             .reconcile(reconciliation,
                                     reconciliation.namespace(),
                                     KafkaExporterResources.secretName(reconciliation.name()),
-                                    newSecret))
-                            .compose(result -> {
+                                    newSecret)
+                            .thenCompose(result -> {
                                 certificateHash = CertSecretUtils.getCertificateShortThumbprint(newSecret, Ca.SecretEntry.CRT.asKey(KafkaExporter.COMPONENT_TYPE));
 
-                                return Future.succeededFuture();
+                                return CompletableFuture.completedFuture(null);
                             })
                     );
         } else {
-            return VertxUtil.toFuture(secretOperator
-                    .reconcile(reconciliation, reconciliation.namespace(), KafkaExporterResources.secretName(reconciliation.name()), null))
-                    .mapEmpty();
+            return secretOperator
+                    .reconcile(reconciliation, reconciliation.namespace(), KafkaExporterResources.secretName(reconciliation.name()), null)
+                    .thenApply(i -> null);
         }
     }
 
     /**
      * Manages the Kafka Exporter Network Policies.
      *
-     * @return  Future which completes when the reconciliation is done
+     * @return  CompletionStage which completes when the reconciliation is done
      */
-    protected Future<Void> networkPolicy() {
+    protected CompletionStage<Void> networkPolicy() {
         if (isNetworkPolicyGeneration) {
-            return VertxUtil.toFuture(networkPolicyOperator
+            return networkPolicyOperator
                     .reconcile(
                             reconciliation,
                             reconciliation.namespace(),
                             KafkaExporterResources.componentName(reconciliation.name()),
                             kafkaExporter != null ? kafkaExporter.generateNetworkPolicy() : null
-                    )).mapEmpty();
+                    ).thenApply(i -> null);
         } else {
-            return Future.succeededFuture();
+            return CompletableFuture.completedFuture(null);
         }
     }
 
     /**
      * Manages the Kafka Exporter Pod Disruption Budget
      *
-     * @return  Future which completes when the reconciliation is done
+     * @return  CompletionStage which completes when the reconciliation is done
      */
-    protected Future<Void> podDisruptionBudget() {
+    protected CompletionStage<Void> podDisruptionBudget() {
         if (isPodDisruptionBudgetGeneration) {
-            return VertxUtil.toFuture(podDisruptionBudgetOperator
+            return podDisruptionBudgetOperator
                     .reconcile(
                             reconciliation,
                             reconciliation.namespace(),
                             KafkaExporterResources.componentName(reconciliation.name()),
                             kafkaExporter != null ? kafkaExporter.generatePodDisruptionBudget() : null
-                    )).mapEmpty();
+                    ).thenApply(i -> null);
         } else {
-            return Future.succeededFuture();
+            return CompletableFuture.completedFuture(null);
         }
     }
     /**
@@ -196,9 +196,9 @@ public class KafkaExporterReconciler {
      * @param imagePullPolicy   Image pull policy
      * @param imagePullSecrets  List of Image pull secrets
      *
-     * @return  Future which completes when the reconciliation is done
+     * @return  CompletionState which completes when the reconciliation is done
      */
-    private Future<Void> deployment(boolean isOpenShift, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets) {
+    private CompletionStage<Void> deployment(boolean isOpenShift, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets) {
         if (kafkaExporter != null) {
             Map<String, String> podAnnotations = new LinkedHashMap<>();
             podAnnotations.put(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, String.valueOf(clusterCa.caCertGeneration()));
@@ -207,27 +207,27 @@ public class KafkaExporterReconciler {
 
             Deployment deployment = kafkaExporter.generateDeployment(podAnnotations, isOpenShift, imagePullPolicy, imagePullSecrets);
 
-            return VertxUtil.toFuture(deploymentOperator
-                    .reconcile(reconciliation, reconciliation.namespace(), KafkaExporterResources.componentName(reconciliation.name()), deployment))
-                    .mapEmpty();
+            return deploymentOperator
+                    .reconcile(reconciliation, reconciliation.namespace(), KafkaExporterResources.componentName(reconciliation.name()), deployment)
+                    .thenApply(i -> null);
         } else  {
-            return VertxUtil.toFuture(deploymentOperator
-                    .reconcile(reconciliation, reconciliation.namespace(), KafkaExporterResources.componentName(reconciliation.name()), null))
-                    .mapEmpty();
+            return deploymentOperator
+                    .reconcile(reconciliation, reconciliation.namespace(), KafkaExporterResources.componentName(reconciliation.name()), null)
+                    .thenApply(i -> null);
         }
     }
 
     /**
      * Waits for the Kafka Exporter deployment to finish any rolling and get ready.
      *
-     * @return  Future which completes when the reconciliation is done
+     * @return  CompletionStage which completes when the reconciliation is done
      */
-    private Future<Void> waitForDeploymentReadiness() {
+    private CompletionStage<Void> waitForDeploymentReadiness() {
         if (kafkaExporter != null) {
-            return VertxUtil.toFuture(deploymentOperator.waitForObserved(reconciliation, reconciliation.namespace(), KafkaExporterResources.componentName(reconciliation.name()), 1_000, operationTimeoutMs))
-                    .compose(i -> VertxUtil.toFuture(deploymentOperator.readiness(reconciliation, reconciliation.namespace(), KafkaExporterResources.componentName(reconciliation.name()), 1_000, operationTimeoutMs)));
+            return deploymentOperator.waitForObserved(reconciliation, reconciliation.namespace(), KafkaExporterResources.componentName(reconciliation.name()), 1_000, operationTimeoutMs)
+                    .thenCompose(i -> deploymentOperator.readiness(reconciliation, reconciliation.namespace(), KafkaExporterResources.componentName(reconciliation.name()), 1_000, operationTimeoutMs));
         } else {
-            return Future.succeededFuture();
+            return CompletableFuture.completedFuture(null);
         }
     }
 }
