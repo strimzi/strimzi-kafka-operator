@@ -350,7 +350,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
      * @return Future for tracking the asynchronous result of getting the metrics and logging config map
      */
     protected Future<ConfigMap> generateMetricsAndLoggingConfigMap(Reconciliation reconciliation, KafkaConnectCluster kafkaConnectCluster) {
-        return MetricsAndLoggingUtils.metricsAndLogging(reconciliation, configMapOperations, kafkaConnectCluster.logging(), kafkaConnectCluster.metrics())
+        return VertxUtil.toFuture(MetricsAndLoggingUtils.metricsAndLogging(reconciliation, configMapOperations, kafkaConnectCluster.logging(), kafkaConnectCluster.metrics()))
                 .compose(metricsAndLoggingCm -> Future.succeededFuture(kafkaConnectCluster.generateConnectConfigMap(metricsAndLoggingCm)));
     }
 

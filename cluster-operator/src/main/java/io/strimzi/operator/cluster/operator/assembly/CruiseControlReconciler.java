@@ -211,7 +211,7 @@ public class CruiseControlReconciler {
      */
     protected Future<Void> configMap() {
         if (cruiseControl != null) {
-            return MetricsAndLoggingUtils.metricsAndLogging(reconciliation, configMapOperator, cruiseControl.logging(), cruiseControl.metrics())
+            return VertxUtil.toFuture(MetricsAndLoggingUtils.metricsAndLogging(reconciliation, configMapOperator, cruiseControl.logging(), cruiseControl.metrics()))
                     .compose(metricsAndLogging -> {
                         ConfigMap configMap = cruiseControl.generateConfigMap(metricsAndLogging);
 
