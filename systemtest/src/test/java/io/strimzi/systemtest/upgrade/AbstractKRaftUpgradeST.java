@@ -781,6 +781,11 @@ public class AbstractKRaftUpgradeST extends AbstractST {
      * Cleans resources installed to namespaces from example files and namespaces themselves.
      */
     protected void cleanUpStrimziUpgradeTestNamespaces() {
+        // flush resources tracked by the resource manager (Kafka, KafkaNodePool, ...) while their CRDs
+        // still exist - otherwise the CRDs get removed below by deleteInstalledYamls() first, and the
+        // framework's own automatic cleanup (running after this @AfterEach) fails trying to list/delete
+        // CRs whose CRD is already gone
+        KubeResourceManager.get().deleteResources();
         cleanUpKafkaTopics(TEST_SUITE_NAMESPACE);
         deleteInstalledYamls(CO_NAMESPACE, TEST_SUITE_NAMESPACE, coDir);
         NamespaceUtils.deleteNamespace(CO_NAMESPACE);
