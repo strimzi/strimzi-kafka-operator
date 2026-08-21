@@ -391,15 +391,15 @@ public class CustomCaST extends AbstractST {
         // Print out certificate dates for debug
         LOGGER.info("Initial ClusterCA cert dates: {} --> {}", initialCertStartTime, initialCertEndTime);
         LOGGER.info("Changed ClusterCA cert dates: {} --> {}", changedCertStartTime, changedCertEndTime);
-        initialNodeCerts.forEach((podName, initialCert) -> {
-            LOGGER.info("{} cert creation dates: {} --> {}", podName, initialCert.getNotBefore(), initialCert.getNotAfter());
-            LOGGER.info("{} cert changed dates:  {} --> {}", podName, changedNodeCerts.get(podName).getNotBefore(), changedNodeCerts.get(podName).getNotAfter());
-        });
 
         // Verify renewal result
         assertThat("ClusterCA cert should not have changed start date.", initialCertEndTime.compareTo(changedCertEndTime) == 0);
         initialNodeCerts.forEach((podName, initialCert) -> {
             final X509Certificate changedCert = changedNodeCerts.get(podName);
+
+            LOGGER.info("{} cert creation dates: {} --> {}", podName, initialCert.getNotBefore(), initialCert.getNotAfter());
+            LOGGER.info("{} cert changed dates:  {} --> {}", podName, changedCert.getNotBefore(), changedCert.getNotAfter());
+
             assertThat("Certificate start date of " + podName + " should have been renewed.",
                     initialCert.getNotBefore().compareTo(changedCert.getNotBefore()) < 0);
             assertThat("Certificate end date of " + podName + " should have been renewed.",
