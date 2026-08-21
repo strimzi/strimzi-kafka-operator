@@ -8,9 +8,12 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.common.Condition;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalance;
+import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceAnnotation;
+import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceBuilder;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceState;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceStatus;
 import io.strimzi.operator.cluster.operator.VertxUtil;
+import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlUserTaskStatus;
 import io.vertx.core.Future;
@@ -30,6 +33,7 @@ import static io.strimzi.api.kafka.model.rebalance.KafkaRebalanceState.PendingPr
 import static io.strimzi.api.kafka.model.rebalance.KafkaRebalanceState.ProposalReady;
 import static io.strimzi.api.kafka.model.rebalance.KafkaRebalanceState.Ready;
 import static io.strimzi.api.kafka.model.rebalance.KafkaRebalanceState.Rebalancing;
+import static io.strimzi.api.kafka.model.rebalance.KafkaRebalanceState.Stopped;
 import static io.strimzi.operator.cluster.operator.assembly.KafkaRebalanceAssemblyOperator.BROKER_LOAD_KEY;
 import static io.strimzi.operator.cluster.operator.assembly.KafkaRebalanceConfigMapUtils.COMPLETED_BYTE_MOVEMENT_PERCENTAGE_KEY;
 import static io.strimzi.operator.cluster.operator.assembly.KafkaRebalanceConfigMapUtils.ESTIMATED_TIME_TO_COMPLETION_IN_MINUTES_KEY;
@@ -114,6 +118,24 @@ public class KafkaRebalanceAssemblyOperatorProgressTest extends AbstractKafkaReb
         expectations.assertConfigMapInStatus(getKafkaRebalanceStatus());
 
         return Future.succeededFuture();
+    }
+
+    private Future<ConfigMap> verifyBrokerLoadRetained(VertxTestContext context, KafkaRebalanceState state, ConfigMap previous, ConfigMap current) {
+        context.verify(() -> {
+            if (previous != null && current != null) {
+                assertState(context, client, namespace, RESOURCE_NAME, state);
+                assertThat(current.getData().get(BROKER_LOAD_KEY), is(previous.getData().get(BROKER_LOAD_KEY)));
+            }
+        });
+        return Future.succeededFuture(current);
+    }
+
+    private Future<ConfigMap> verifyBrokerLoadChanged(VertxTestContext context, KafkaRebalanceState state, ConfigMap previous, ConfigMap current) {
+        context.verify(() -> {
+            assertState(context, client, namespace, RESOURCE_NAME, state);
+            assertThat(current.getData().get(BROKER_LOAD_KEY), is(not(previous.getData().get(BROKER_LOAD_KEY))));
+        });
+        return Future.succeededFuture(current);
     }
 
     private Future<ConfigMap> reconcile(Reconciliation reconciliation) {
@@ -258,5 +280,121 @@ public class KafkaRebalanceAssemblyOperatorProgressTest extends AbstractKafkaReb
 
                 .onSuccess(res -> checkpoint.flag())
                 .onFailure(context::failNow);
+    }
+
+  /**
+   * Tests that broker load data in the ConfigMap is retained across state transitions
+   * and updated when a refresh annotation is applied.
+   *
+   * 1. A new KafkaRebalance resource is created with auto-approval; it is in the New state
+   * 2. The resource moves through PendingProposal, ProposalReady, Rebalancing, and Ready states
+   * 3. The broker load data is verified to be retained at each transition
+   * 4. A refresh annotation is applied and the resource moves back to ProposalReady
+   * 5. The broker load data is verified to have changed after refresh
+   */
+    @Test
+    public void testConfigMapBrokerLoadDuringRebalanceLifecycle(VertxTestContext context) {
+        Checkpoint checkpoint = context.checkpoint();
+        Reconciliation reconciliation = new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, RESOURCE_NAME);
+        mockCruiseControlTask(ACTIVE, false)
+                .compose(res -> reconcile(reconciliation))
+                .compose(cm1 -> verifyBrokerLoadRetained(context, PendingProposal, cm1, null))
+
+                .compose(res -> mockCruiseControlTask(COMPLETED, false))
+                .compose(cm1 -> reconcile(reconciliation))
+                .compose(cm1 -> verifyBrokerLoadRetained(context, ProposalReady, null, cm1)
+
+                    .compose(res -> mockCruiseControlTask(IN_EXECUTION, false))
+                    .compose(cm2 -> reconcile(reconciliation))
+                    .compose(cm2 -> verifyBrokerLoadRetained(context, Rebalancing, cm1, cm2))
+
+                    .compose(res -> mockCruiseControlTask(COMPLETED, false))
+                    .compose(cm2 -> reconcile(reconciliation))
+                    .compose(cm2 -> verifyBrokerLoadRetained(context, Ready, cm1, cm2)
+                    .compose(ignored -> {
+
+                        mockCruiseControlTask(COMPLETED, false);
+                        cruiseControlServer.mockNewProposal();
+                        annotate(client, namespace, RESOURCE_NAME, KafkaRebalanceAnnotation.refresh);
+
+                        return reconcile(reconciliation)
+                          .compose(cm3 -> verifyBrokerLoadChanged(context, ProposalReady, cm2, cm3));
+                    })))
+                .onSuccess(res -> checkpoint.flag())
+                .onFailure(context::failNow);
+    }
+
+  /**
+   * Tests that broker load data in the ConfigMap is updated when a
+   * refresh annotation is applied in the 'ProposalReady' state.
+   *
+   * 1. A new KafkaRebalance resource is created with auto-approval; it is in the New state
+   * 2. The resource moves to ProposalReady
+   * 3. The Cruise Control mock is configured to return a new proposal with different broker load data
+   * 4. A refresh annotation is applied and the resource stays in ProposalReady
+   * 5. The broker load data is verified to have changed after refresh
+   */
+    @Test
+    public void testConfigMapBrokerLoadFromProposalReadyAndRefresh(VertxTestContext context) {
+        Crds.kafkaRebalanceOperation(client).inNamespace(namespace).withName(RESOURCE_NAME).edit(
+            kr -> new KafkaRebalanceBuilder(kr)
+                .editMetadata()
+                    .removeFromAnnotations(Annotations.ANNO_STRIMZI_IO_REBALANCE_AUTOAPPROVAL)
+                .endMetadata()
+                .build());
+
+        Checkpoint checkpoint = context.checkpoint();
+        Reconciliation reconciliation = new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, RESOURCE_NAME);
+        mockCruiseControlTask(COMPLETED, false)
+              .compose(cm1 -> reconcile(reconciliation))
+              .compose(cm1 -> verifyBrokerLoadRetained(context, ProposalReady, null, cm1)
+                  .compose(ignored -> {
+
+                      mockCruiseControlTask(COMPLETED, false);
+                      cruiseControlServer.mockNewProposal();
+                      annotate(client, namespace, RESOURCE_NAME, KafkaRebalanceAnnotation.refresh);
+
+                      return reconcile(reconciliation)
+                          .compose(cm2 -> verifyBrokerLoadChanged(context, ProposalReady, cm1, cm2));
+                  }))
+              .onSuccess(res -> checkpoint.flag())
+              .onFailure(context::failNow);
+    }
+
+   /**
+    * Tests that broker load data in the ConfigMap is retained when
+    * the resource transitions from 'ProposalReady' to 'Rebalancing' to 'Stopped'.
+    *
+    * 1. A new KafkaRebalance resource is created with auto-approval; it is in the New state
+    * 2. The resource moves to ProposalReady
+    * 3. The resource is auto-approved and moves to Rebalancing
+    * 4. A stop annotation is applied and the resource moves to Stopped
+    * 5. The broker load data is verified to be retained at each transition
+    */
+    @Test
+    public void testBrokerLoadOnProposalReadyToRebalancingToStopped(VertxTestContext context) {
+        Checkpoint checkpoint = context.checkpoint();
+        Reconciliation reconciliation = new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, RESOURCE_NAME);
+        mockCruiseControlTask(COMPLETED, false)
+              .compose(res -> reconcile(reconciliation))
+              .compose(cm1 -> verifyBrokerLoadRetained(context, ProposalReady, null, cm1)
+
+                  .compose(res -> mockCruiseControlTask(IN_EXECUTION, false))
+                  .compose(cm2 -> reconcile(reconciliation))
+                  .compose(cm2 -> verifyBrokerLoadRetained(context, Rebalancing, cm1, cm2))
+
+                  .compose(cm2 -> {
+                      cruiseControlServer.setupCCStopResponse();
+                      annotate(client, namespace, RESOURCE_NAME, KafkaRebalanceAnnotation.stop);
+                      return mockCruiseControlTask(COMPLETED, false)
+                          .compose(res -> {
+                              cruiseControlServer.setupCCStopResponse();
+                              return reconcile(reconciliation);
+                          })
+                          .compose(cm3 -> verifyBrokerLoadRetained(context, Stopped, cm1, cm3));
+                  }))
+
+              .onSuccess(res -> checkpoint.flag())
+              .onFailure(context::failNow);
     }
 }
