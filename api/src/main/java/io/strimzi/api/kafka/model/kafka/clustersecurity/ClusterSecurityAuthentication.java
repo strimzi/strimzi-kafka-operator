@@ -33,9 +33,9 @@ public class ClusterSecurityAuthentication implements UnknownPropertyPreserving 
     private Map<String, Object> additionalProperties;
 
     @Description("The type of authentication used for this cluster's internal communication. " +
-            "Supported types are:" +
-            "* `none` for no authentication" +
-            "* `strimzi-mtls` for Strimzi-based mTLS encryption")
+            "Supported types are:\n\n" +
+            "* `none` for no authentication\n" +
+            "* `mtls` for  mTLS encryption")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @RequiredInVersions("v1+")
     public ClusterSecurityAuthenticationType getType() {

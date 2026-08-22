@@ -31,8 +31,8 @@ public class KafkaAgentConfigurationBuilderTest {
     @Test
     public void testTlsWithoutAuthentication()  {
         KafkaClusterSecurityContext securityContext = mock(KafkaClusterSecurityContext.class);
-        when(securityContext.isStrimziTlsEncryption()).thenReturn(true);
-        when(securityContext.isStrimziMtlsAuthentication()).thenReturn(false);
+        when(securityContext.isTlsEncryption()).thenReturn(true);
+        when(securityContext.isMtlsAuthentication()).thenReturn(false);
 
         String configuration = new KafkaAgentConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
                 .withSecurity(securityContext)
@@ -47,8 +47,8 @@ public class KafkaAgentConfigurationBuilderTest {
     @Test
     public void testWithoutTlsOrAuthentication()  {
         KafkaClusterSecurityContext securityContext = mock(KafkaClusterSecurityContext.class);
-        when(securityContext.isStrimziTlsEncryption()).thenReturn(false);
-        when(securityContext.isStrimziMtlsAuthentication()).thenReturn(false);
+        when(securityContext.isTlsEncryption()).thenReturn(false);
+        when(securityContext.isMtlsAuthentication()).thenReturn(false);
 
         String configuration = new KafkaAgentConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
                 .withSecurity(securityContext)

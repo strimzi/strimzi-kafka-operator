@@ -39,23 +39,23 @@ The annotation is a temporary configuration interface and might also change.
 |Description
 
 |Encryption
-|`strimzi-tls`
-|Encrypts internal communication by using Strimzi-managed TLS certificates.
+|`tls`
+|Encrypts internal communication by using TLS certificates.
 
 |Encryption
 |`none`
 |Disables TLS encryption for internal communication.
 
 |Authentication
-|`strimzi-mtls`
-|Authenticates internal components by using Strimzi-managed mTLS certificates.
+|`mtls`
+|Authenticates internal components by using mTLS certificates.
 
 |Authentication
 |`none`
 |Disables mTLS authentication governed by the internal cluster security configuration.
 |===
 
-The `strimzi-mtls` authentication type requires `strimzi-tls` encryption.
+The `mtls` authentication type requires `tls` encryption.
 Consequently, disabling TLS encryption also requires authentication to be disabled.
 The supported combinations are:
 
@@ -69,7 +69,7 @@ Disable authentication only if other controls, such as network isolation or a se
 
 == Default internal cluster security
 
-If the `strimzi.io/internal-cluster-security` annotation is not present, Strimzi uses `strimzi-tls` encryption with `strimzi-mtls` authentication.
+If the `strimzi.io/internal-cluster-security` annotation is not present, Strimzi uses `tls` encryption with `mtls` authentication.
 This behavior is unchanged from previous releases.
 
 == (Early Access) Disabling mTLS authentication
@@ -89,7 +89,7 @@ metadata:
     strimzi.io/internal-cluster-security: |
       {
         "encryption": {
-          "type": "strimzi-tls"
+          "type": "tls"
         },
         "authentication": {
           "type": "none"

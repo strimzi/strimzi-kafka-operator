@@ -492,8 +492,8 @@ public class CaReconciler {
      */
     private Identity createCoIdentity() {
         return new Identity(
-                securityContext.isStrimziTlsEncryption() ? new PemTrustSet(clusterCaCertSecret) : null,
-                securityContext.isStrimziMtlsAuthentication() ? PemAuthIdentity.clusterOperator(coSecret) : null
+                securityContext.isTlsEncryption() ? new PemTrustSet(clusterCaCertSecret) : null,
+                securityContext.isMtlsAuthentication() ? PemAuthIdentity.clusterOperator(coSecret) : null
         );
     }
 

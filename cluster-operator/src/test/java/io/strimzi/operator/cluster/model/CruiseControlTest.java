@@ -306,7 +306,7 @@ public class CruiseControlTest {
 
     @Test
     public void testTlsVolumesAndVolumeMounts() {
-        KafkaClusterSecurityContext tlsSecurityContext = new KafkaClusterSecurityContext(ClusterSecurityEncryptionType.STRIMZI_TLS, ClusterSecurityAuthenticationType.NONE);
+        KafkaClusterSecurityContext tlsSecurityContext = new KafkaClusterSecurityContext(ClusterSecurityEncryptionType.TLS, ClusterSecurityAuthenticationType.NONE);
         CruiseControl cc = createCruiseControl(KAFKA, NODES, STORAGE, Map.of(), tlsSecurityContext);
         Deployment dep = cc.generateDeployment(Map.of(), true, null, null);
 
@@ -613,8 +613,8 @@ public class CruiseControlTest {
 
     @Test
     public void testApiSecurity() {
-        testApiSecurity(true, ClusterSecurityEncryptionType.STRIMZI_TLS, ClusterSecurityAuthenticationType.STRIMZI_MTLS);
-        testApiSecurity(false, ClusterSecurityEncryptionType.STRIMZI_TLS, ClusterSecurityAuthenticationType.NONE);
+        testApiSecurity(true, ClusterSecurityEncryptionType.TLS, ClusterSecurityAuthenticationType.MTLS);
+        testApiSecurity(false, ClusterSecurityEncryptionType.TLS, ClusterSecurityAuthenticationType.NONE);
         testApiSecurity(false, ClusterSecurityEncryptionType.NONE, ClusterSecurityAuthenticationType.NONE);
     }
 
@@ -624,11 +624,11 @@ public class CruiseControlTest {
         EnvVar e1 = new EnvVar(e1Key, e1Value, null);
 
         String e2Key = CruiseControl.ENV_VAR_TLS_ENABLED;
-        String e2Value = Boolean.toString(encryptionType == ClusterSecurityEncryptionType.STRIMZI_TLS);
+        String e2Value = Boolean.toString(encryptionType == ClusterSecurityEncryptionType.TLS);
         EnvVar e2 = new EnvVar(e2Key, e2Value, null);
 
         String e3Key = CruiseControl.ENV_VAR_MTLS_ENABLED;
-        String e3Value = Boolean.toString(authenticationType == ClusterSecurityAuthenticationType.STRIMZI_MTLS);
+        String e3Value = Boolean.toString(authenticationType == ClusterSecurityAuthenticationType.MTLS);
         EnvVar e3 = new EnvVar(e3Key, e3Value, null);
 
         Kafka kafka = new KafkaBuilder(KAFKA)
