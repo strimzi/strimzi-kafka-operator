@@ -60,6 +60,7 @@ import java.util.Date;
 import java.util.Map;
 
 import static io.strimzi.systemtest.TestTags.REGRESSION;
+import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
@@ -74,6 +75,8 @@ public class CustomCaST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(CustomCaST.class);
     private static final String STRIMZI_INTERMEDIATE_CA = "C=CZ, L=Prague, O=Strimzi, CN=StrimziIntermediateCA";
+    private static final int DEFAULT_BROKER_REPLICAS = 3;
+    private static final int DEFAULT_CONTROLLER_REPLICAS = 3;
 
     @ParallelNamespaceTest
     @TestDoc(
@@ -230,7 +233,7 @@ public class CustomCaST extends AbstractST {
         steps = {
             @Step(value = "Create custom cluster and clients CAs and deploy them as secrets.", expected = "Both CA secrets are created."),
             @Step(value = "Deploy Kafka cluster configured to use custom CAs.", expected = "Kafka cluster is deployed using the custom CAs."),
-            @Step(value = "Verify that Kafka broker certificates are signed by the custom cluster CA.", expected = "Broker certificates have the correct issuer."),
+            @Step(value = "Verify that the certificates of all Kafka nodes are signed by the custom cluster CA.", expected = "Certificates of all Kafka nodes have the correct issuer."),
             @Step(value = "Create a KafkaUser and verify that its certificate is signed by the custom clients CA.", expected = "User certificate has the correct issuer."),
             @Step(value = "Send and receive messages over TLS.", expected = "Messages are successfully produced and consumed.")
         },
@@ -240,6 +243,8 @@ public class CustomCaST extends AbstractST {
     )
     void testCustomClusterCaAndClientsCaCertificates() {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
+        final int brokerReplicas = 3;
+        final int controllerReplicas = 1;
 
         final SystemTestCertBundle clientsCa = SystemTestCertBundle.forClientsCa(testStorage);
         final SystemTestCertBundle clusterCa = SystemTestCertBundle.forClusterCa(testStorage);
@@ -256,8 +261,8 @@ public class CustomCaST extends AbstractST {
 
         LOGGER.info("Deploying Kafka with new certs, Secrets");
         KubeResourceManager.get().createResourceWithWait(
-            KafkaNodePoolTemplates.brokerPool(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
-            KafkaNodePoolTemplates.controllerPool(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 1).build()
+            KafkaNodePoolTemplates.brokerPool(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), brokerReplicas).build(),
+            KafkaNodePoolTemplates.controllerPool(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), controllerReplicas).build()
         );
         KubeResourceManager.get().createResourceWithWait(KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getClusterName(), 3)
             .editSpec()
@@ -272,10 +277,12 @@ public class CustomCaST extends AbstractST {
         );
 
         LOGGER.info("Check Kafka(s) certificates");
-        String brokerPodName = KubeResourceManager.get().kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getBrokerSelector()).get(0).getMetadata().getName();
-        final X509Certificate kafkaCert = SecretUtils.getCertificateFromSecret(KubeResourceManager.get().kubeClient().getClient().secrets().inNamespace(testStorage.getNamespaceName()).withName(brokerPodName).get(), brokerPodName + ".crt");
-        assertThat("KafkaCert does not have expected test Issuer: " + kafkaCert.getIssuerX500Principal().getName(),
-                SystemTestCertGenerator.containsAllDN(kafkaCert.getIssuerX500Principal().getName(), clusterCa.getSubjectDn()));
+        final Map<String, X509Certificate> nodeCerts = SecretUtils.getKafkaNodeCertificates(testStorage.getNamespaceName(), testStorage.getClusterName());
+
+        assertThat("Certificate of every Kafka node should be found.", nodeCerts.size(), is(brokerReplicas + controllerReplicas));
+        nodeCerts.forEach((podName, kafkaCert) ->
+            assertThat("Certificate of " + podName + " does not have expected test Issuer: " + kafkaCert.getIssuerX500Principal().getName(),
+                    SystemTestCertGenerator.containsAllDN(kafkaCert.getIssuerX500Principal().getName(), clusterCa.getSubjectDn())));
 
         KubeResourceManager.get().createResourceWithWait(KafkaTopicTemplates.topic(testStorage).build());
 
@@ -311,11 +318,11 @@ public class CustomCaST extends AbstractST {
         description = @Desc("This test verifies that changing certificate validity and renewal days triggers renewal of cluster certificates without renewing the cluster CA itself."),
         steps = {
             @Step(value = "Create a custom cluster CA and deploy Kafka cluster with it.", expected = "Kafka cluster is deployed with custom cluster CA."),
-            @Step(value = "Record initial CA and broker certificate dates.", expected = "Certificate dates are captured."),
+            @Step(value = "Record initial CA and certificate dates of all Kafka nodes.", expected = "Certificate dates are captured."),
             @Step(value = "Pause Kafka reconciliation and update validity and renewal days for cluster CA.", expected = "CA configuration is updated."),
             @Step(value = "Resume reconciliation and wait for components to roll.", expected = "Controllers, brokers, and Entity Operator roll."),
             @Step(value = "Verify CA certificate dates remain unchanged.", expected = "Cluster CA was not renewed."),
-            @Step(value = "Verify broker certificates have been renewed with new dates.", expected = "Broker certificates have updated validity dates.")
+            @Step(value = "Verify certificates of all Kafka nodes have been renewed with new dates.", expected = "Certificates of all Kafka nodes have updated validity dates.")
         },
         labels = {
             @Label(value = TestDocsLabels.SECURITY)
@@ -342,12 +349,8 @@ public class CustomCaST extends AbstractST {
         final Date initialCertStartTime = cacert.getNotBefore();
         final Date initialCertEndTime = cacert.getNotAfter();
 
-        // Check Broker kafka certificate dates
-        String brokerPodName = KubeResourceManager.get().kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getBrokerSelector()).get(0).getMetadata().getName();
-        Secret brokerCertCreationSecret = KubeResourceManager.get().kubeClient().getClient().secrets().inNamespace(testStorage.getNamespaceName()).withName(brokerPodName).get();
-        X509Certificate kafkaBrokerCert = SecretUtils.getCertificateFromSecret(brokerCertCreationSecret, brokerPodName + ".crt");
-        final Date initialKafkaBrokerCertStartTime = kafkaBrokerCert.getNotBefore();
-        final Date initialKafkaBrokerCertEndTime = kafkaBrokerCert.getNotAfter();
+        final Map<String, X509Certificate> initialNodeCerts = SecretUtils.getKafkaNodeCertificates(testStorage.getNamespaceName(), testStorage.getClusterName());
+        assertThat("Certificate of every Kafka node should be found.", initialNodeCerts.size(), is(DEFAULT_BROKER_REPLICAS + DEFAULT_CONTROLLER_REPLICAS));
 
         // Pause Kafka reconciliation
         LOGGER.info("Pause the reconciliation of the Kafka CustomResource ({})", KafkaComponents.getBrokerPodSetName(testStorage.getClusterName()));
@@ -382,22 +385,26 @@ public class CustomCaST extends AbstractST {
         final Date changedCertStartTime = cacert.getNotBefore();
         final Date changedCertEndTime = cacert.getNotAfter();
 
-        // Check renewed Broker kafka certificate dates
-        brokerCertCreationSecret = KubeResourceManager.get().kubeClient().getClient().secrets().inNamespace(testStorage.getNamespaceName()).withName(brokerPodName).get();
-        kafkaBrokerCert = SecretUtils.getCertificateFromSecret(brokerCertCreationSecret, brokerPodName + ".crt");
-        final Date changedKafkaBrokerCertStartTime = kafkaBrokerCert.getNotBefore();
-        final Date changedKafkaBrokerCertEndTime = kafkaBrokerCert.getNotAfter();
+        final Map<String, X509Certificate> changedNodeCerts = SecretUtils.getKafkaNodeCertificates(testStorage.getNamespaceName(), testStorage.getClusterName());
+        assertThat("Every Kafka node should still have a certificate after the renewal.", changedNodeCerts.keySet(), is(initialNodeCerts.keySet()));
 
         // Print out certificate dates for debug
         LOGGER.info("Initial ClusterCA cert dates: {} --> {}", initialCertStartTime, initialCertEndTime);
         LOGGER.info("Changed ClusterCA cert dates: {} --> {}", changedCertStartTime, changedCertEndTime);
-        LOGGER.info("Kafka Broker cert creation dates: {} --> {}", initialKafkaBrokerCertStartTime, initialKafkaBrokerCertEndTime);
-        LOGGER.info("Kafka Broker cert changed dates:  {} --> {}", changedKafkaBrokerCertStartTime, changedKafkaBrokerCertEndTime);
 
         // Verify renewal result
         assertThat("ClusterCA cert should not have changed start date.", initialCertEndTime.compareTo(changedCertEndTime) == 0);
-        assertThat("Broker certificates start dates should have been renewed.", initialKafkaBrokerCertStartTime.compareTo(changedKafkaBrokerCertStartTime) < 0);
-        assertThat("Broker certificates end dates should have been renewed.", initialKafkaBrokerCertEndTime.compareTo(changedKafkaBrokerCertEndTime) < 0);
+        initialNodeCerts.forEach((podName, initialCert) -> {
+            final X509Certificate changedCert = changedNodeCerts.get(podName);
+
+            LOGGER.info("{} cert creation dates: {} --> {}", podName, initialCert.getNotBefore(), initialCert.getNotAfter());
+            LOGGER.info("{} cert changed dates:  {} --> {}", podName, changedCert.getNotBefore(), changedCert.getNotAfter());
+
+            assertThat("Certificate start date of " + podName + " should have been renewed.",
+                    initialCert.getNotBefore().compareTo(changedCert.getNotBefore()) < 0);
+            assertThat("Certificate end date of " + podName + " should have been renewed.",
+                    initialCert.getNotAfter().compareTo(changedCert.getNotAfter()) < 0);
+        });
     }
 
     @ParallelNamespaceTest
@@ -587,8 +594,8 @@ public class CustomCaST extends AbstractST {
         }
 
         KubeResourceManager.get().createResourceWithWait(
-            KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
-            KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 3).build()
+            KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), DEFAULT_BROKER_REPLICAS).build(),
+            KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), DEFAULT_CONTROLLER_REPLICAS).build()
         );
         // 2. Create a Kafka cluster without implicit generation of CA and paused reconciliation
         KubeResourceManager.get().createResourceWithWait(KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getClusterName(), 3)
