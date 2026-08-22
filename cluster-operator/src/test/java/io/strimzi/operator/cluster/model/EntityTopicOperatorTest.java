@@ -110,7 +110,7 @@ public class EntityTopicOperatorTest {
 
     @Test
     public void testSecurityEnvVarsWithTlsAndMtls() {
-        KafkaClusterSecurityContext securityContext = new KafkaClusterSecurityContext(ClusterSecurityEncryptionType.STRIMZI_TLS, ClusterSecurityAuthenticationType.STRIMZI_MTLS);
+        KafkaClusterSecurityContext securityContext = new KafkaClusterSecurityContext(ClusterSecurityEncryptionType.TLS, ClusterSecurityAuthenticationType.MTLS);
 
         assertThat(getSecurityEnvVars(securityContext), is(List.of(
                 new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_SECURITY_PROTOCOL).withValue("SSL").build(),
@@ -122,7 +122,7 @@ public class EntityTopicOperatorTest {
 
     @Test
     public void testSecurityEnvVarsWithTlsWithoutAuthentication() {
-        KafkaClusterSecurityContext securityContext = new KafkaClusterSecurityContext(ClusterSecurityEncryptionType.STRIMZI_TLS, ClusterSecurityAuthenticationType.NONE);
+        KafkaClusterSecurityContext securityContext = new KafkaClusterSecurityContext(ClusterSecurityEncryptionType.TLS, ClusterSecurityAuthenticationType.NONE);
 
         assertThat(getSecurityEnvVars(securityContext), is(List.of(
                 new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_SECURITY_PROTOCOL).withValue("SSL").build(),

@@ -183,7 +183,7 @@ public class KafkaBrokerConfigurationBuilderTest {
     public void testCruiseControlWithoutMtls()  {
         CruiseControlMetricsReporter ccMetricsReporter = new CruiseControlMetricsReporter("strimzi.cruisecontrol.metrics", 1, 1, 1);
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, new KafkaClusterSecurityContext(ClusterSecurityEncryptionType.STRIMZI_TLS, ClusterSecurityAuthenticationType.NONE))
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, new KafkaClusterSecurityContext(ClusterSecurityEncryptionType.TLS, ClusterSecurityAuthenticationType.NONE))
                 .withCruiseControl("my-cluster", ccMetricsReporter, true)
                 .build();
 
@@ -367,7 +367,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .addToSuperUsers("jakub", "CN=kuba")
                 .build();
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, new KafkaClusterSecurityContext(ClusterSecurityEncryptionType.STRIMZI_TLS, ClusterSecurityAuthenticationType.NONE))
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, new KafkaClusterSecurityContext(ClusterSecurityEncryptionType.TLS, ClusterSecurityAuthenticationType.NONE))
                 .withAuthorization("my-cluster", auth)
                 .build();
 
@@ -802,7 +802,7 @@ public class KafkaBrokerConfigurationBuilderTest {
 
     @Test
     public void testOnlyReplicationAndControlPlaneListenersWithoutMtls() {
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, new KafkaClusterSecurityContext(ClusterSecurityEncryptionType.STRIMZI_TLS, ClusterSecurityAuthenticationType.NONE))
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, new KafkaClusterSecurityContext(ClusterSecurityEncryptionType.TLS, ClusterSecurityAuthenticationType.NONE))
                 .withListeners("my-cluster", "my-namespace", emptyList(), null, null)
                 .build();
 
@@ -1949,7 +1949,7 @@ public class KafkaBrokerConfigurationBuilderTest {
 
     @Test
     public void testWithTieredStorageWithoutMtls() {
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, new KafkaClusterSecurityContext(ClusterSecurityEncryptionType.STRIMZI_TLS, ClusterSecurityAuthenticationType.NONE))
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, new KafkaClusterSecurityContext(ClusterSecurityEncryptionType.TLS, ClusterSecurityAuthenticationType.NONE))
                 .withTieredStorage("test-cluster-1", new TieredStorageCustomBuilder()
                         .withNewRemoteStorageManager()
                             .withClassName("com.example.kafka.tiered.storage.s3.S3RemoteStorageManager")
@@ -2054,7 +2054,7 @@ public class KafkaBrokerConfigurationBuilderTest {
     public void testWithStrimziQuotasWithoutMtls() {
         QuotasPluginStrimzi quotasPluginStrimzi = new QuotasPluginStrimziBuilder().build();
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, new KafkaClusterSecurityContext(ClusterSecurityEncryptionType.STRIMZI_TLS, ClusterSecurityAuthenticationType.NONE))
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, new KafkaClusterSecurityContext(ClusterSecurityEncryptionType.TLS, ClusterSecurityAuthenticationType.NONE))
             .withQuotas("my-personal-cluster", quotasPluginStrimzi)
             .build();
 

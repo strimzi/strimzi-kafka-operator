@@ -83,7 +83,7 @@ class ClusterSecurityST extends AbstractST {
      */
     private Stream<Arguments> securityConfigurationCombos() {
         return Stream.of(
-                Arguments.of(ClusterSecurityEncryptionType.STRIMZI_TLS, ClusterSecurityAuthenticationType.NONE),
+                Arguments.of(ClusterSecurityEncryptionType.TLS, ClusterSecurityAuthenticationType.NONE),
                 Arguments.of(ClusterSecurityEncryptionType.NONE, ClusterSecurityAuthenticationType.NONE)
         );
     }
@@ -258,7 +258,7 @@ class ClusterSecurityST extends AbstractST {
                 KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getTopicName(), testStorage.getClusterName(), 3, 3, 2).build()
         );
 
-        ClusterSecuritySTUtils.assertClusterSecurityStatus(testStorage, ClusterSecurityEncryptionType.STRIMZI_TLS, ClusterSecurityAuthenticationType.STRIMZI_MTLS);
+        ClusterSecuritySTUtils.assertClusterSecurityStatus(testStorage, ClusterSecurityEncryptionType.TLS, ClusterSecurityAuthenticationType.MTLS);
 
         // Test sending and consuming messages works
         KafkaProducerConsumer clients = new KafkaProducerConsumerBuilder()
@@ -293,8 +293,8 @@ class ClusterSecurityST extends AbstractST {
         ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), 2 * testStorage.getMessageCount());
 
         // Migrate back to the original to close the round trip
-        migrateClusterSecurity(testStorage, ClusterSecuritySTUtils.clusterSecurityAnnotation(ClusterSecurityEncryptionType.STRIMZI_TLS, ClusterSecurityAuthenticationType.STRIMZI_MTLS));
-        ClusterSecuritySTUtils.assertClusterSecurityStatus(testStorage, ClusterSecurityEncryptionType.STRIMZI_TLS, ClusterSecurityAuthenticationType.STRIMZI_MTLS);
+        migrateClusterSecurity(testStorage, ClusterSecuritySTUtils.clusterSecurityAnnotation(ClusterSecurityEncryptionType.TLS, ClusterSecurityAuthenticationType.MTLS));
+        ClusterSecuritySTUtils.assertClusterSecurityStatus(testStorage, ClusterSecurityEncryptionType.TLS, ClusterSecurityAuthenticationType.MTLS);
 
         // Test sending and consuming messages still works
         clients.setMessageCount(testStorage.getMessageCount());
