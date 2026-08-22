@@ -33,18 +33,16 @@ import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.kubernetes.SecretOperator;
 import io.strimzi.platform.KubernetesVersion;
-import io.vertx.core.Future;
-import io.vertx.junit5.Checkpoint;
-import io.vertx.junit5.VertxExtension;
-import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.Timeout;
 
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static org.hamcrest.CoreMatchers.hasItems;
@@ -60,7 +58,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@ExtendWith(VertxExtension.class)
+@Timeout(value = 30, unit = TimeUnit.SECONDS)
 public class KafkaListenerReconcilerTest {
     private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
     public static final String NAMESPACE = "test";
@@ -123,7 +121,7 @@ public class KafkaListenerReconcilerTest {
     // TODO: test advertised hostnames
 
     @Test
-    public void testClusterIpWithoutTLS(VertxTestContext context) {
+    public void testClusterIpWithoutTLS() {
         Kafka kafka = new KafkaBuilder(KAFKA)
                 .editSpec()
                     .editKafka()
@@ -164,38 +162,34 @@ public class KafkaListenerReconcilerTest {
                 supplier.ingressOperations
         );
 
-        Checkpoint async = context.checkpoint();
-        reconciler.reconcile()
-                .onComplete(context.succeeding(res -> context.verify(() -> {
-                    // Check status
-                    assertThat(res.listenerStatuses.size(), is(1));
-                    ListenerStatus listenerStatus = res.listenerStatuses.get(0);
-                    assertThat(listenerStatus.getBootstrapServers(), is("my-kafka-kafka-external-bootstrap.test.svc:9094"));
-                    assertThat(listenerStatus.getAddresses().size(), is(1));
-                    assertThat(listenerStatus.getAddresses().get(0).getHost(), is("my-kafka-kafka-external-bootstrap.test.svc"));
-                    assertThat(listenerStatus.getAddresses().get(0).getPort(), is(LISTENER_PORT));
+        var res = reconciler.reconcile().toCompletableFuture().join();
 
-                    //check hostnames
-                    assertThat(res.bootstrapDnsNames.size(), is(0));
-                    assertThat(res.brokerDnsNames.size(), is(0));
-                    Set<String> allBrokersAdvertisedHostNames = res.advertisedHostnames.values().stream().flatMap(s -> s.values().stream()).collect(Collectors.toSet());
-                    assertThat(allBrokersAdvertisedHostNames.size(), is(3));
-                    assertThat(allBrokersAdvertisedHostNames, hasItems("my-kafka-brokers-11.test.svc", "my-kafka-brokers-12.test.svc", "my-kafka-brokers-10.test.svc"));
-                    assertThat(res.advertisedPorts.size(), is(3));
-                    assertThat(res.advertisedPorts.values().stream().flatMap(s -> s.values().stream()).collect(Collectors.toSet()), hasItems("9094"));
+        // Check status
+        assertThat(res.listenerStatuses.size(), is(1));
+        ListenerStatus listenerStatus = res.listenerStatuses.get(0);
+        assertThat(listenerStatus.getBootstrapServers(), is("my-kafka-kafka-external-bootstrap.test.svc:9094"));
+        assertThat(listenerStatus.getAddresses().size(), is(1));
+        assertThat(listenerStatus.getAddresses().get(0).getHost(), is("my-kafka-kafka-external-bootstrap.test.svc"));
+        assertThat(listenerStatus.getAddresses().get(0).getPort(), is(LISTENER_PORT));
 
-                    // Check creation of services
-                    verify(supplier.serviceOperations, times(1)).reconcile(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-kafka-external-bootstrap"), notNull());
-                    verify(supplier.serviceOperations, times(1)).reconcile(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-brokers-10"), notNull());
-                    verify(supplier.serviceOperations, times(1)).reconcile(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-brokers-11"), notNull());
-                    verify(supplier.serviceOperations, times(1)).reconcile(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-brokers-12"), notNull());
+        //check hostnames
+        assertThat(res.bootstrapDnsNames.size(), is(0));
+        assertThat(res.brokerDnsNames.size(), is(0));
+        Set<String> allBrokersAdvertisedHostNames = res.advertisedHostnames.values().stream().flatMap(s -> s.values().stream()).collect(Collectors.toSet());
+        assertThat(allBrokersAdvertisedHostNames.size(), is(3));
+        assertThat(allBrokersAdvertisedHostNames, hasItems("my-kafka-brokers-11.test.svc", "my-kafka-brokers-12.test.svc", "my-kafka-brokers-10.test.svc"));
+        assertThat(res.advertisedPorts.size(), is(3));
+        assertThat(res.advertisedPorts.values().stream().flatMap(s -> s.values().stream()).collect(Collectors.toSet()), hasItems("9094"));
 
-                    async.flag();
-                })));
+        // Check creation of services
+        verify(supplier.serviceOperations, times(1)).reconcile(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-kafka-external-bootstrap"), notNull());
+        verify(supplier.serviceOperations, times(1)).reconcile(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-brokers-10"), notNull());
+        verify(supplier.serviceOperations, times(1)).reconcile(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-brokers-11"), notNull());
+        verify(supplier.serviceOperations, times(1)).reconcile(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-brokers-12"), notNull());
     }
 
     @Test
-    public void testClusterIpWithTLS(VertxTestContext context) {
+    public void testClusterIpWithTLS() {
         Kafka kafka = new KafkaBuilder(KAFKA)
                 .editSpec()
                     .editKafka()
@@ -236,42 +230,38 @@ public class KafkaListenerReconcilerTest {
                 supplier.ingressOperations
         );
 
-        Checkpoint async = context.checkpoint();
-        reconciler.reconcile()
-                .onComplete(context.succeeding(res -> context.verify(() -> {
-                    // Check status
-                    assertThat(res.listenerStatuses.size(), is(1));
-                    ListenerStatus listenerStatus = res.listenerStatuses.get(0);
-                    assertThat(listenerStatus.getBootstrapServers(), is("my-kafka-kafka-external-bootstrap.test.svc:9094"));
-                    assertThat(listenerStatus.getAddresses().size(), is(1));
-                    assertThat(listenerStatus.getAddresses().get(0).getHost(), is("my-kafka-kafka-external-bootstrap.test.svc"));
-                    assertThat(listenerStatus.getAddresses().get(0).getPort(), is(LISTENER_PORT));
+        var res = reconciler.reconcile().toCompletableFuture().join();
 
-                    //check hostnames
-                    assertThat(res.bootstrapDnsNames.size(), is(4));
-                    assertThat(res.bootstrapDnsNames, hasItems("my-kafka-kafka-external-bootstrap", "my-kafka-kafka-external-bootstrap.test", "my-kafka-kafka-external-bootstrap.test.svc", "my-kafka-kafka-external-bootstrap.test.svc.cluster.local"));
-                    Set<String> allBrokersDnsNames = res.brokerDnsNames.values().stream().flatMap(Collection::stream).collect(Collectors.toSet());
-                    assertThat(allBrokersDnsNames.size(), is(3));
-                    assertThat(allBrokersDnsNames, hasItems("my-kafka-brokers-11.test.svc", "my-kafka-brokers-12.test.svc", "my-kafka-brokers-10.test.svc"));
-                    Set<String> allBrokersAdvertisedHostNames = res.advertisedHostnames.values().stream().flatMap(s -> s.values().stream()).collect(Collectors.toSet());
-                    assertThat(allBrokersAdvertisedHostNames.size(), is(3));
-                    assertThat(allBrokersAdvertisedHostNames, hasItems("my-kafka-brokers-11.test.svc", "my-kafka-brokers-12.test.svc", "my-kafka-brokers-10.test.svc"));
-                    assertThat(res.advertisedPorts.size(), is(3));
-                    assertThat(res.advertisedPorts.values().stream().flatMap(s -> s.values().stream()).collect(Collectors.toSet()), hasItems("9094"));
+        // Check status
+        assertThat(res.listenerStatuses.size(), is(1));
+        ListenerStatus listenerStatus = res.listenerStatuses.get(0);
+        assertThat(listenerStatus.getBootstrapServers(), is("my-kafka-kafka-external-bootstrap.test.svc:9094"));
+        assertThat(listenerStatus.getAddresses().size(), is(1));
+        assertThat(listenerStatus.getAddresses().get(0).getHost(), is("my-kafka-kafka-external-bootstrap.test.svc"));
+        assertThat(listenerStatus.getAddresses().get(0).getPort(), is(LISTENER_PORT));
 
-                    // Check creation of services
-                    verify(supplier.serviceOperations, times(1)).reconcile(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-kafka-external-bootstrap"), notNull());
-                    verify(supplier.serviceOperations, times(1)).reconcile(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-brokers-10"), notNull());
-                    verify(supplier.serviceOperations, times(1)).reconcile(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-brokers-11"), notNull());
-                    verify(supplier.serviceOperations, times(1)).reconcile(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-brokers-12"), notNull());
+        //check hostnames
+        assertThat(res.bootstrapDnsNames.size(), is(4));
+        assertThat(res.bootstrapDnsNames, hasItems("my-kafka-kafka-external-bootstrap", "my-kafka-kafka-external-bootstrap.test", "my-kafka-kafka-external-bootstrap.test.svc", "my-kafka-kafka-external-bootstrap.test.svc.cluster.local"));
+        Set<String> allBrokersDnsNames = res.brokerDnsNames.values().stream().flatMap(Collection::stream).collect(Collectors.toSet());
+        assertThat(allBrokersDnsNames.size(), is(3));
+        assertThat(allBrokersDnsNames, hasItems("my-kafka-brokers-11.test.svc", "my-kafka-brokers-12.test.svc", "my-kafka-brokers-10.test.svc"));
+        Set<String> allBrokersAdvertisedHostNames = res.advertisedHostnames.values().stream().flatMap(s -> s.values().stream()).collect(Collectors.toSet());
+        assertThat(allBrokersAdvertisedHostNames.size(), is(3));
+        assertThat(allBrokersAdvertisedHostNames, hasItems("my-kafka-brokers-11.test.svc", "my-kafka-brokers-12.test.svc", "my-kafka-brokers-10.test.svc"));
+        assertThat(res.advertisedPorts.size(), is(3));
+        assertThat(res.advertisedPorts.values().stream().flatMap(s -> s.values().stream()).collect(Collectors.toSet()), hasItems("9094"));
 
-                    async.flag();
-                })));
+        // Check creation of services
+        verify(supplier.serviceOperations, times(1)).reconcile(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-kafka-external-bootstrap"), notNull());
+        verify(supplier.serviceOperations, times(1)).reconcile(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-brokers-10"), notNull());
+        verify(supplier.serviceOperations, times(1)).reconcile(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-brokers-11"), notNull());
+        verify(supplier.serviceOperations, times(1)).reconcile(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-brokers-12"), notNull());
     }
 
 
     @Test
-    public void testClusterIpWithCustomBrokerHosts(VertxTestContext context) {
+    public void testClusterIpWithCustomBrokerHosts() {
         GenericKafkaListenerConfigurationBroker broker0 = new GenericKafkaListenerConfigurationBrokerBuilder()
                 .withBroker(10)
                 .withAdvertisedHost("my-address-0")
@@ -323,40 +313,36 @@ public class KafkaListenerReconcilerTest {
                 supplier.ingressOperations
         );
 
-        Checkpoint async = context.checkpoint();
-        reconciler.reconcile()
-                .onComplete(context.succeeding(res -> context.verify(() -> {
-                    // Check status
-                    assertThat(res.listenerStatuses.size(), is(1));
-                    ListenerStatus listenerStatus = res.listenerStatuses.get(0);
-                    assertThat(listenerStatus.getBootstrapServers(), is("my-kafka-kafka-external-bootstrap.test.svc:9094"));
-                    assertThat(listenerStatus.getAddresses().size(), is(1));
-                    assertThat(listenerStatus.getAddresses().get(0).getHost(), is("my-kafka-kafka-external-bootstrap.test.svc"));
-                    assertThat(listenerStatus.getAddresses().get(0).getPort(), is(LISTENER_PORT));
+        var res = reconciler.reconcile().toCompletableFuture().join();
 
-                    //check hostnames
-                    assertThat(res.bootstrapDnsNames.size(), is(4));
-                    assertThat(res.bootstrapDnsNames, hasItems("my-kafka-kafka-external-bootstrap", "my-kafka-kafka-external-bootstrap.test", "my-kafka-kafka-external-bootstrap.test.svc", "my-kafka-kafka-external-bootstrap.test.svc.cluster.local"));
-                    Set<String> allBrokersDnsNames = res.brokerDnsNames.values().stream().flatMap(Collection::stream).collect(Collectors.toSet());
-                    assertThat(allBrokersDnsNames.size(), is(5));
-                    assertThat(allBrokersDnsNames, hasItems("my-address-0", "my-address-2", "my-kafka-brokers-11.test.svc", "my-kafka-brokers-12.test.svc", "my-kafka-brokers-10.test.svc"));
-                    Set<String> allBrokersAdvertisedHostNames = res.advertisedHostnames.values().stream().flatMap(s -> s.values().stream()).collect(Collectors.toSet());
-                    assertThat(allBrokersAdvertisedHostNames.size(), is(3));
-                    assertThat(allBrokersAdvertisedHostNames, hasItems("my-address-0", "my-kafka-brokers-11.test.svc", "my-address-2"));
-                    assertThat(res.advertisedPorts.size(), is(3));
-                    assertThat(res.advertisedPorts.values().stream().flatMap(s -> s.values().stream()).collect(Collectors.toSet()), hasItems("9094"));
-                    // Check creation of services
-                    verify(supplier.serviceOperations, times(1)).reconcile(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-kafka-external-bootstrap"), notNull());
-                    verify(supplier.serviceOperations, times(1)).reconcile(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-brokers-10"), notNull());
-                    verify(supplier.serviceOperations, times(1)).reconcile(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-brokers-11"), notNull());
-                    verify(supplier.serviceOperations, times(1)).reconcile(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-brokers-12"), notNull());
+        // Check status
+        assertThat(res.listenerStatuses.size(), is(1));
+        ListenerStatus listenerStatus = res.listenerStatuses.get(0);
+        assertThat(listenerStatus.getBootstrapServers(), is("my-kafka-kafka-external-bootstrap.test.svc:9094"));
+        assertThat(listenerStatus.getAddresses().size(), is(1));
+        assertThat(listenerStatus.getAddresses().get(0).getHost(), is("my-kafka-kafka-external-bootstrap.test.svc"));
+        assertThat(listenerStatus.getAddresses().get(0).getPort(), is(LISTENER_PORT));
 
-                    async.flag();
-                })));
+        //check hostnames
+        assertThat(res.bootstrapDnsNames.size(), is(4));
+        assertThat(res.bootstrapDnsNames, hasItems("my-kafka-kafka-external-bootstrap", "my-kafka-kafka-external-bootstrap.test", "my-kafka-kafka-external-bootstrap.test.svc", "my-kafka-kafka-external-bootstrap.test.svc.cluster.local"));
+        Set<String> allBrokersDnsNames = res.brokerDnsNames.values().stream().flatMap(Collection::stream).collect(Collectors.toSet());
+        assertThat(allBrokersDnsNames.size(), is(5));
+        assertThat(allBrokersDnsNames, hasItems("my-address-0", "my-address-2", "my-kafka-brokers-11.test.svc", "my-kafka-brokers-12.test.svc", "my-kafka-brokers-10.test.svc"));
+        Set<String> allBrokersAdvertisedHostNames = res.advertisedHostnames.values().stream().flatMap(s -> s.values().stream()).collect(Collectors.toSet());
+        assertThat(allBrokersAdvertisedHostNames.size(), is(3));
+        assertThat(allBrokersAdvertisedHostNames, hasItems("my-address-0", "my-kafka-brokers-11.test.svc", "my-address-2"));
+        assertThat(res.advertisedPorts.size(), is(3));
+        assertThat(res.advertisedPorts.values().stream().flatMap(s -> s.values().stream()).collect(Collectors.toSet()), hasItems("9094"));
+        // Check creation of services
+        verify(supplier.serviceOperations, times(1)).reconcile(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-kafka-external-bootstrap"), notNull());
+        verify(supplier.serviceOperations, times(1)).reconcile(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-brokers-10"), notNull());
+        verify(supplier.serviceOperations, times(1)).reconcile(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-brokers-11"), notNull());
+        verify(supplier.serviceOperations, times(1)).reconcile(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-brokers-12"), notNull());
     }
 
     @Test
-    public void testClusterIpWithCustomBrokerHostsAndPortTemplate(VertxTestContext context) {
+    public void testClusterIpWithCustomBrokerHostsAndPortTemplate() {
         GenericKafkaListenerConfigurationBroker broker0 = new GenericKafkaListenerConfigurationBrokerBuilder()
                 .withBroker(10)
                 .withAdvertisedHost("my-special-address-10")
@@ -406,44 +392,40 @@ public class KafkaListenerReconcilerTest {
                 supplier.ingressOperations
         );
 
-        Checkpoint async = context.checkpoint();
-        reconciler.reconcile()
-                .onComplete(context.succeeding(res -> context.verify(() -> {
-                    // Check status
-                    assertThat(res.listenerStatuses.size(), is(1));
-                    ListenerStatus listenerStatus = res.listenerStatuses.get(0);
-                    assertThat(listenerStatus.getBootstrapServers(), is("my-kafka-kafka-external-bootstrap.test.svc:9094"));
-                    assertThat(listenerStatus.getAddresses().size(), is(1));
-                    assertThat(listenerStatus.getAddresses().get(0).getHost(), is("my-kafka-kafka-external-bootstrap.test.svc"));
-                    assertThat(listenerStatus.getAddresses().get(0).getPort(), is(LISTENER_PORT));
+        var res = reconciler.reconcile().toCompletableFuture().join();
 
-                    // Check hostnames and ports
-                    assertThat(res.bootstrapDnsNames.size(), is(4));
-                    assertThat(res.bootstrapDnsNames, hasItems("my-kafka-kafka-external-bootstrap", "my-kafka-kafka-external-bootstrap.test", "my-kafka-kafka-external-bootstrap.test.svc", "my-kafka-kafka-external-bootstrap.test.svc.cluster.local"));
-                    Set<String> allBrokersDnsNames = res.brokerDnsNames.values().stream().flatMap(Collection::stream).collect(Collectors.toSet());
-                    assertThat(allBrokersDnsNames.size(), is(6));
-                    assertThat(allBrokersDnsNames, hasItems("my-special-address-10", "my-address-11", "my-address-12", "my-kafka-brokers-11.test.svc", "my-kafka-brokers-12.test.svc", "my-kafka-brokers-10.test.svc"));
+        // Check status
+        assertThat(res.listenerStatuses.size(), is(1));
+        ListenerStatus listenerStatus = res.listenerStatuses.get(0);
+        assertThat(listenerStatus.getBootstrapServers(), is("my-kafka-kafka-external-bootstrap.test.svc:9094"));
+        assertThat(listenerStatus.getAddresses().size(), is(1));
+        assertThat(listenerStatus.getAddresses().get(0).getHost(), is("my-kafka-kafka-external-bootstrap.test.svc"));
+        assertThat(listenerStatus.getAddresses().get(0).getPort(), is(LISTENER_PORT));
 
-                    assertThat(res.advertisedHostnames.size(), is(3));
-                    assertThat(res.advertisedHostnames.get(10).get("EXTERNAL_9094"), is("my-special-address-10"));
-                    assertThat(res.advertisedHostnames.get(11).get("EXTERNAL_9094"), is("my-address-11"));
-                    assertThat(res.advertisedHostnames.get(12).get("EXTERNAL_9094"), is("my-address-12"));
+        // Check hostnames and ports
+        assertThat(res.bootstrapDnsNames.size(), is(4));
+        assertThat(res.bootstrapDnsNames, hasItems("my-kafka-kafka-external-bootstrap", "my-kafka-kafka-external-bootstrap.test", "my-kafka-kafka-external-bootstrap.test.svc", "my-kafka-kafka-external-bootstrap.test.svc.cluster.local"));
+        Set<String> allBrokersDnsNames = res.brokerDnsNames.values().stream().flatMap(Collection::stream).collect(Collectors.toSet());
+        assertThat(allBrokersDnsNames.size(), is(6));
+        assertThat(allBrokersDnsNames, hasItems("my-special-address-10", "my-address-11", "my-address-12", "my-kafka-brokers-11.test.svc", "my-kafka-brokers-12.test.svc", "my-kafka-brokers-10.test.svc"));
 
-                    Set<String> allBrokersAdvertisedHostNames = res.advertisedHostnames.values().stream().flatMap(s -> s.values().stream()).collect(Collectors.toSet());
-                    assertThat(allBrokersAdvertisedHostNames.size(), is(3));
-                    assertThat(allBrokersAdvertisedHostNames, hasItems("my-special-address-10", "my-address-11", "my-address-12"));
+        assertThat(res.advertisedHostnames.size(), is(3));
+        assertThat(res.advertisedHostnames.get(10).get("EXTERNAL_9094"), is("my-special-address-10"));
+        assertThat(res.advertisedHostnames.get(11).get("EXTERNAL_9094"), is("my-address-11"));
+        assertThat(res.advertisedHostnames.get(12).get("EXTERNAL_9094"), is("my-address-12"));
 
-                    assertThat(res.advertisedPorts.size(), is(3));
-                    assertThat(res.advertisedPorts.get(10).get("EXTERNAL_9094"), is("13000"));
-                    assertThat(res.advertisedPorts.get(11).get("EXTERNAL_9094"), is("10011"));
-                    assertThat(res.advertisedPorts.get(12).get("EXTERNAL_9094"), is("10012"));
+        Set<String> allBrokersAdvertisedHostNames = res.advertisedHostnames.values().stream().flatMap(s -> s.values().stream()).collect(Collectors.toSet());
+        assertThat(allBrokersAdvertisedHostNames.size(), is(3));
+        assertThat(allBrokersAdvertisedHostNames, hasItems("my-special-address-10", "my-address-11", "my-address-12"));
 
-                    async.flag();
-                })));
+        assertThat(res.advertisedPorts.size(), is(3));
+        assertThat(res.advertisedPorts.get(10).get("EXTERNAL_9094"), is("13000"));
+        assertThat(res.advertisedPorts.get(11).get("EXTERNAL_9094"), is("10011"));
+        assertThat(res.advertisedPorts.get(12).get("EXTERNAL_9094"), is("10012"));
     }
 
     @Test
-    public void testLoadBalancerSkipBootstrapService(VertxTestContext context) {
+    public void testLoadBalancerSkipBootstrapService() {
         Kafka kafka = new KafkaBuilder(KAFKA)
                 .editSpec()
                     .editKafka()
@@ -484,33 +466,29 @@ public class KafkaListenerReconcilerTest {
                 supplier.ingressOperations
         );
 
-        Checkpoint async = context.checkpoint();
-        reconciler.reconcile()
-                .onComplete(context.succeeding(res -> context.verify(() -> {
-                    // Check status
-                    assertThat(res.listenerStatuses.size(), is(1));
-                    ListenerStatus listenerStatus = res.listenerStatuses.get(0);
-                    assertThat(listenerStatus.getBootstrapServers(), is("broker-10.test.dns.name:9094,broker-11.test.dns.name:9094,broker-12.test.dns.name:9094"));
-                    assertThat(listenerStatus.getAddresses().size(), is(3));
-                    assertThat(listenerStatus.getAddresses().get(0).getHost(), is(DNS_NAME_FOR_BROKER_10));
-                    assertThat(listenerStatus.getAddresses().get(1).getHost(), is(DNS_NAME_FOR_BROKER_11));
-                    assertThat(listenerStatus.getAddresses().get(2).getHost(), is(DNS_NAME_FOR_BROKER_12));
-                    assertThat(listenerStatus.getAddresses().get(0).getPort(), is(LISTENER_PORT));
-                    assertThat(listenerStatus.getAddresses().get(1).getPort(), is(LISTENER_PORT));
-                    assertThat(listenerStatus.getAddresses().get(2).getPort(), is(LISTENER_PORT));
+        var res = reconciler.reconcile().toCompletableFuture().join();
 
-                    // Check creation of services
-                    verify(supplier.serviceOperations, never()).reconcile(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-kafka-external-bootstrap"), notNull());
-                    verify(supplier.serviceOperations, times(1)).reconcile(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-brokers-10"), notNull());
-                    verify(supplier.serviceOperations, times(1)).reconcile(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-brokers-11"), notNull());
-                    verify(supplier.serviceOperations, times(1)).reconcile(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-brokers-12"), notNull());
+        // Check status
+        assertThat(res.listenerStatuses.size(), is(1));
+        ListenerStatus listenerStatus = res.listenerStatuses.get(0);
+        assertThat(listenerStatus.getBootstrapServers(), is("broker-10.test.dns.name:9094,broker-11.test.dns.name:9094,broker-12.test.dns.name:9094"));
+        assertThat(listenerStatus.getAddresses().size(), is(3));
+        assertThat(listenerStatus.getAddresses().get(0).getHost(), is(DNS_NAME_FOR_BROKER_10));
+        assertThat(listenerStatus.getAddresses().get(1).getHost(), is(DNS_NAME_FOR_BROKER_11));
+        assertThat(listenerStatus.getAddresses().get(2).getHost(), is(DNS_NAME_FOR_BROKER_12));
+        assertThat(listenerStatus.getAddresses().get(0).getPort(), is(LISTENER_PORT));
+        assertThat(listenerStatus.getAddresses().get(1).getPort(), is(LISTENER_PORT));
+        assertThat(listenerStatus.getAddresses().get(2).getPort(), is(LISTENER_PORT));
 
-                    async.flag();
-                })));
+        // Check creation of services
+        verify(supplier.serviceOperations, never()).reconcile(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-kafka-external-bootstrap"), notNull());
+        verify(supplier.serviceOperations, times(1)).reconcile(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-brokers-10"), notNull());
+        verify(supplier.serviceOperations, times(1)).reconcile(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-brokers-11"), notNull());
+        verify(supplier.serviceOperations, times(1)).reconcile(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-brokers-12"), notNull());
     }
 
     @Test
-    public void testLoadBalancerWithBootstrapService(VertxTestContext context) {
+    public void testLoadBalancerWithBootstrapService() {
         Kafka kafka = new KafkaBuilder(KAFKA)
                 .editSpec()
                     .editKafka()
@@ -551,30 +529,26 @@ public class KafkaListenerReconcilerTest {
                 supplier.ingressOperations
         );
 
-        Checkpoint async = context.checkpoint();
-        reconciler.reconcile()
-                .onComplete(context.succeeding(res -> context.verify(() -> {
-                    // Check status
-                    assertThat(res.listenerStatuses.size(), is(1));
-                    ListenerStatus listenerStatus = res.listenerStatuses.get(0);
-                    assertThat(listenerStatus.getBootstrapServers(), is(DNS_NAME_FOR_BOOTSTRAP_SERVICE + ":9094"));
-                    assertThat(listenerStatus.getAddresses().size(), is(1));
-                    assertThat(listenerStatus.getAddresses().get(0).getHost(), is(DNS_NAME_FOR_BOOTSTRAP_SERVICE));
-                    assertThat(listenerStatus.getAddresses().get(0).getPort(), is(LISTENER_PORT));
+        var res = reconciler.reconcile().toCompletableFuture().join();
 
-                    // Check creation of services
-                    verify(supplier.serviceOperations, times(1)).reconcile(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-kafka-external-bootstrap"), notNull());
-                    verify(supplier.serviceOperations, times(1)).reconcile(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-brokers-10"), notNull());
-                    verify(supplier.serviceOperations, times(1)).reconcile(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-brokers-11"), notNull());
-                    verify(supplier.serviceOperations, times(1)).reconcile(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-brokers-12"), notNull());
+        // Check status
+        assertThat(res.listenerStatuses.size(), is(1));
+        ListenerStatus listenerStatus = res.listenerStatuses.get(0);
+        assertThat(listenerStatus.getBootstrapServers(), is(DNS_NAME_FOR_BOOTSTRAP_SERVICE + ":9094"));
+        assertThat(listenerStatus.getAddresses().size(), is(1));
+        assertThat(listenerStatus.getAddresses().get(0).getHost(), is(DNS_NAME_FOR_BOOTSTRAP_SERVICE));
+        assertThat(listenerStatus.getAddresses().get(0).getPort(), is(LISTENER_PORT));
 
-                    async.flag();
-                })));
+        // Check creation of services
+        verify(supplier.serviceOperations, times(1)).reconcile(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-kafka-external-bootstrap"), notNull());
+        verify(supplier.serviceOperations, times(1)).reconcile(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-brokers-10"), notNull());
+        verify(supplier.serviceOperations, times(1)).reconcile(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-brokers-11"), notNull());
+        verify(supplier.serviceOperations, times(1)).reconcile(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-brokers-12"), notNull());
     }
 
 
     @Test
-    public void testLoadBalancer(VertxTestContext context) {
+    public void testLoadBalancer() {
         Kafka kafka = new KafkaBuilder(KAFKA)
                 .editSpec()
                     .editKafka()
@@ -612,25 +586,21 @@ public class KafkaListenerReconcilerTest {
                 supplier.ingressOperations
         );
 
-        Checkpoint async = context.checkpoint();
-        reconciler.reconcile()
-                .onComplete(context.succeeding(res -> context.verify(() -> {
-                    // Check status
-                    assertThat(res.listenerStatuses.size(), is(1));
-                    ListenerStatus listenerStatus = res.listenerStatuses.get(0);
-                    assertThat(listenerStatus.getBootstrapServers(), is(DNS_NAME_FOR_BOOTSTRAP_SERVICE + ":9094"));
-                    assertThat(listenerStatus.getAddresses().size(), is(1));
-                    assertThat(listenerStatus.getAddresses().get(0).getHost(), is(DNS_NAME_FOR_BOOTSTRAP_SERVICE));
-                    assertThat(listenerStatus.getAddresses().get(0).getPort(), is(LISTENER_PORT));
+        var res = reconciler.reconcile().toCompletableFuture().join();
 
-                    // Check creation of services
-                    verify(supplier.serviceOperations, times(1)).reconcile(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-kafka-external-bootstrap"), notNull());
-                    verify(supplier.serviceOperations, times(1)).reconcile(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-brokers-10"), notNull());
-                    verify(supplier.serviceOperations, times(1)).reconcile(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-brokers-11"), notNull());
-                    verify(supplier.serviceOperations, times(1)).reconcile(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-brokers-12"), notNull());
+        // Check status
+        assertThat(res.listenerStatuses.size(), is(1));
+        ListenerStatus listenerStatus = res.listenerStatuses.get(0);
+        assertThat(listenerStatus.getBootstrapServers(), is(DNS_NAME_FOR_BOOTSTRAP_SERVICE + ":9094"));
+        assertThat(listenerStatus.getAddresses().size(), is(1));
+        assertThat(listenerStatus.getAddresses().get(0).getHost(), is(DNS_NAME_FOR_BOOTSTRAP_SERVICE));
+        assertThat(listenerStatus.getAddresses().get(0).getPort(), is(LISTENER_PORT));
 
-                    async.flag();
-                })));
+        // Check creation of services
+        verify(supplier.serviceOperations, times(1)).reconcile(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-kafka-external-bootstrap"), notNull());
+        verify(supplier.serviceOperations, times(1)).reconcile(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-brokers-10"), notNull());
+        verify(supplier.serviceOperations, times(1)).reconcile(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-brokers-11"), notNull());
+        verify(supplier.serviceOperations, times(1)).reconcile(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-brokers-12"), notNull());
     }
 
     private ResourceOperatorSupplier prepareResourceOperatorSupplier() {
@@ -689,11 +659,11 @@ public class KafkaListenerReconcilerTest {
         }
 
         @Override
-        public Future<ReconciliationResult> reconcile()  {
+        public CompletionStage<ReconciliationResult> reconcile()  {
             return services()
-                    .compose(i -> clusterIPServicesReady())
-                    .compose(i -> loadBalancerServicesReady())
-                    .compose(i -> Future.succeededFuture(result));
+                    .thenCompose(i -> clusterIPServicesReady())
+                    .thenCompose(i -> loadBalancerServicesReady())
+                    .thenApply(i -> result);
         }
     }
 }

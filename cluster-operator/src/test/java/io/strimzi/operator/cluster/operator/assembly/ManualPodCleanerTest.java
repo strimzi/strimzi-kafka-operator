@@ -19,17 +19,15 @@ import io.strimzi.operator.cluster.operator.resource.kubernetes.StrimziPodSetOpe
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
-import io.vertx.junit5.Checkpoint;
-import io.vertx.junit5.VertxExtension;
-import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.Timeout;
 import org.mockito.ArgumentCaptor;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -39,13 +37,13 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
-@ExtendWith(VertxExtension.class)
+@Timeout(value = 30, unit = TimeUnit.SECONDS)
 public class ManualPodCleanerTest {
     private final static String CONTROLLER_NAME = "controller";
     private final static Labels SELECTOR = Labels.fromString("selector=" + CONTROLLER_NAME);
 
     @Test
-    public void testManualPodCleanupOnePodWithPodSets(VertxTestContext context) {
+    public void testManualPodCleanupOnePodWithPodSets() {
         List<Pod> pods = List.of(
                 podWithName(CONTROLLER_NAME + "-0"),
                 podWithNameAndAnnotations(CONTROLLER_NAME + "-1", Collections.singletonMap(Annotations.ANNO_STRIMZI_IO_DELETE_POD_AND_PVC, "true")),
@@ -58,11 +56,11 @@ public class ManualPodCleanerTest {
                 pvcWithName("data-" + CONTROLLER_NAME + "-2")
         );
 
-        manualPodCleanup(context, pods, pvcs, List.of(CONTROLLER_NAME + "-1"), List.of("data-" + CONTROLLER_NAME + "-1"));
+        manualPodCleanup(pods, pvcs, List.of(CONTROLLER_NAME + "-1"), List.of("data-" + CONTROLLER_NAME + "-1"));
     }
 
     @Test
-    public void testManualPodCleanupJbodWithPodSets(VertxTestContext context) {
+    public void testManualPodCleanupJbodWithPodSets() {
         List<Pod> pods = List.of(
                 podWithName(CONTROLLER_NAME + "-0"),
                 podWithNameAndAnnotations(CONTROLLER_NAME + "-1", Collections.singletonMap(Annotations.ANNO_STRIMZI_IO_DELETE_POD_AND_PVC, "true")),
@@ -78,11 +76,11 @@ public class ManualPodCleanerTest {
                 pvcWithName("data-1-" + CONTROLLER_NAME + "-2")
         );
 
-        manualPodCleanup(context, pods, pvcs, List.of(CONTROLLER_NAME + "-1"), List.of("data-0-" + CONTROLLER_NAME + "-1", "data-1-" + CONTROLLER_NAME + "-1"));
+        manualPodCleanup(pods, pvcs, List.of(CONTROLLER_NAME + "-1"), List.of("data-0-" + CONTROLLER_NAME + "-1", "data-1-" + CONTROLLER_NAME + "-1"));
     }
 
     @Test
-    public void testManualPodCleanupMultiplePodsWithPodSets(VertxTestContext context) {
+    public void testManualPodCleanupMultiplePodsWithPodSets() {
         List<Pod> pods = List.of(
                 podWithName(CONTROLLER_NAME + "-0"),
                 podWithNameAndAnnotations(CONTROLLER_NAME + "-1", Collections.singletonMap(Annotations.ANNO_STRIMZI_IO_DELETE_POD_AND_PVC, "true")),
@@ -98,11 +96,11 @@ public class ManualPodCleanerTest {
                 pvcWithName("data-1-" + CONTROLLER_NAME + "-2")
         );
 
-        manualPodCleanup(context, pods, pvcs, List.of(CONTROLLER_NAME + "-1"), List.of("data-0-" + CONTROLLER_NAME + "-1", "data-1-" + CONTROLLER_NAME + "-1"));
+        manualPodCleanup(pods, pvcs, List.of(CONTROLLER_NAME + "-1"), List.of("data-0-" + CONTROLLER_NAME + "-1", "data-1-" + CONTROLLER_NAME + "-1"));
     }
 
     @Test
-    public void testManualPodCleanupNoPodsWithPodSets(VertxTestContext context) {
+    public void testManualPodCleanupNoPodsWithPodSets() {
         List<Pod> pods = List.of(
                 podWithName(CONTROLLER_NAME + "-0"),
                 podWithName(CONTROLLER_NAME + "-1"),
@@ -118,10 +116,10 @@ public class ManualPodCleanerTest {
                 pvcWithName("data-1-" + CONTROLLER_NAME + "-2")
         );
 
-        manualPodCleanup(context, pods, pvcs, List.of(), List.of());
+        manualPodCleanup(pods, pvcs, List.of(), List.of());
     }
 
-    private void manualPodCleanup(VertxTestContext context, List<Pod> pods, List<PersistentVolumeClaim> pvcs, List<String> podsToBeDeleted, List<String> pvcsToBeDeleted) {
+    private void manualPodCleanup(List<Pod> pods, List<PersistentVolumeClaim> pvcs, List<String> podsToBeDeleted, List<String> pvcsToBeDeleted) {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
         StrimziPodSetOperator mockPodSetOps = supplier.strimziPodSetOperator;
 
@@ -146,27 +144,23 @@ public class ManualPodCleanerTest {
                 supplier
         );
 
-        Checkpoint async = context.checkpoint();
-        cleaner.maybeManualPodCleaning()
-                .onComplete(context.succeeding(v -> context.verify(() -> {
-                    if (podsToBeDeleted.size() > 0) {
-                        // PodSet was reconciled to remove the pod from it
-                        assertThat(podSetReconciliationCaptor.getAllValues().size(), is(1));
-                        assertThat(podSetReconciliationCaptor.getAllValues().get(0).getSpec().getPods().size(), is(2));
-                    } else {
-                        assertThat(podSetReconciliationCaptor.getAllValues().size(), is(0));
-                    }
+        cleaner.maybeManualPodCleaning().toCompletableFuture().join();
 
-                    // Verify the deleted pod
-                    assertThat(podDeletionCaptor.getAllValues().size(), is(podsToBeDeleted.size()));
-                    assertThat(podDeletionCaptor.getAllValues(), is(podsToBeDeleted));
+        if (!podsToBeDeleted.isEmpty()) {
+            // PodSet was reconciled to remove the pod from it
+            assertThat(podSetReconciliationCaptor.getAllValues().size(), is(1));
+            assertThat(podSetReconciliationCaptor.getAllValues().getFirst().getSpec().getPods().size(), is(2));
+        } else {
+            assertThat(podSetReconciliationCaptor.getAllValues().size(), is(0));
+        }
 
-                    // Verify the deleted and recreated pvc
-                    assertThat(pvcDeletionCaptor.getAllValues().size(), is(pvcsToBeDeleted.size()));
-                    assertThat(pvcDeletionCaptor.getAllValues(), is(pvcsToBeDeleted));
+        // Verify the deleted pod
+        assertThat(podDeletionCaptor.getAllValues().size(), is(podsToBeDeleted.size()));
+        assertThat(podDeletionCaptor.getAllValues(), is(podsToBeDeleted));
 
-                    async.flag();
-                })));
+        // Verify the deleted and recreated pvc
+        assertThat(pvcDeletionCaptor.getAllValues().size(), is(pvcsToBeDeleted.size()));
+        assertThat(pvcDeletionCaptor.getAllValues(), is(pvcsToBeDeleted));
     }
 
     // Internal utility methods
