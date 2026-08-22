@@ -32,10 +32,12 @@ public class ClusterSecurityAuthenticationStatus implements UnknownPropertyPrese
     private ClusterSecurityAuthenticationType type;
     private Map<String, Object> additionalProperties;
 
-    @Description("The type of authentication currently used for this cluster's internal communication. " +
-            "Supported types are:\n\n" +
-            "* `none` for no authentication\n" +
-            "* `mtls` for  mTLS encryption")
+    @Description("""
+            The type of authentication currently used for this cluster's internal communication.
+            Supported types are:
+            
+            * `none` for no authentication
+            * `mtls` for mTLS authentication""")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @RequiredInVersions("v1+")
     public ClusterSecurityAuthenticationType getType() {
