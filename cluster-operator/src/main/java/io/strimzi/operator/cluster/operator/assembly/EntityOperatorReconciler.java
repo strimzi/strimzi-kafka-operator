@@ -128,6 +128,7 @@ public class EntityOperatorReconciler {
                 .compose(i -> podDistruptionBudget())
                 .compose(i -> topicOperatorRoleBindings())
                 .compose(i -> userOperatorRoleBindings())
+                .compose(i -> userOperatorCertManagerRoleBinding())
                 .compose(i -> topicOperatorConfigMap())
                 .compose(i -> userOperatorConfigMap())
                 .compose(i -> topicOperatorSecret(clock))
@@ -380,6 +381,28 @@ public class EntityOperatorReconciler {
                     .reconcile(reconciliation, reconciliation.namespace(), KafkaResources.entityUserOperatorRoleBinding(reconciliation.name()), null))
                     .mapEmpty();
         }
+    }
+
+    /**
+     * Manages the RoleBinding granting the entity operator service account permission to manage
+     * cert-manager {@code Certificate} resources. The RoleBinding is created when the User Operator is
+     * present and the clients CA type is {@code cert-manager.io}. It is deleted otherwise.
+     *
+     * @return  Future which completes when the reconciliation is done
+     */
+    protected Future<Void> userOperatorCertManagerRoleBinding() {
+        RoleBinding certManagerRoleBinding = null;
+        if (entityOperator != null
+                && entityOperator.userOperator() != null
+                && entityOperator.userOperator().isCertManagerEnabled()) {
+            certManagerRoleBinding = entityOperator.userOperator()
+                    .generateCertManagerRoleBinding(reconciliation.namespace(), reconciliation.namespace());
+        }
+        return VertxUtil.toFuture(roleBindingOperator
+                .reconcile(reconciliation, reconciliation.namespace(),
+                        KafkaResources.entityOperatorCertManagerRoleBinding(reconciliation.name()),
+                        certManagerRoleBinding))
+                .mapEmpty();
     }
 
     /**

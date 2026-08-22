@@ -8,16 +8,17 @@ import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.OwnerReferenceBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
+import io.strimzi.api.kafka.model.common.CertificateManagerType;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.certs.CertIssuer;
 import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.ca.Ca;
 import io.strimzi.operator.common.ca.CaConfig;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.PasswordGenerator;
+import io.strimzi.operator.common.operator.resource.kubernetes.CertManagerCertificateOperator;
 import io.strimzi.operator.common.operator.resource.kubernetes.SecretOperator;
 
 import java.time.Clock;
@@ -35,8 +36,6 @@ import static java.util.Collections.singletonList;
  * Provides common functionality for managing CA certificates and secrets.
  */
 public abstract class CaProvider {
-    private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(CaProvider.class);
-
     protected final Reconciliation reconciliation;
     protected final Ca.CaRole caRole;
     protected final CaConfig caConfig;
@@ -48,16 +47,18 @@ public abstract class CaProvider {
     /**
      * Creates a CA provider.
      *
-     * @param reconciliation        Reconciliation marker
-     * @param caRole                The role of the CA
-     * @param caConfig              CA configuration
-     * @param kafkaCr               The Kafka custom resource
-     * @param secretOperator        Secret operator for managing secrets
-     * @param certIssuer            Certificate issuer
-     * @param passwordGenerator     Password generator
-     * @param clock                 Clock for time-based operations
-     * @param existingCaCertSecret  Existing CA certificate secret
-     * @param existingCaKeySecret   Existing CA key secret
+     * @param reconciliation                    Reconciliation marker
+     * @param caRole                            The role of the CA
+     * @param caConfig                          CA configuration
+     * @param kafkaCr                           The Kafka custom resource
+     * @param certManagerCertificateOperator    Certificate operator for managing cert-manager certificates
+     * @param secretOperator                    Secret operator for managing secrets
+     * @param certIssuer                        Certificate issuer
+     * @param passwordGenerator                 Password generator
+     * @param clock                             Clock for time-based operations
+     * @param existingCaCertSecret              Existing CA certificate secret
+     * @param existingCaKeySecret               Existing CA key secret
+     * @param clusterOperatorCertSecret         Cluster Operator cert secret
      *
      * @return The created CaProvider instance
      */
@@ -66,22 +67,34 @@ public abstract class CaProvider {
             Ca.CaRole caRole,
             CaConfig caConfig,
             Kafka kafkaCr,
+            CertManagerCertificateOperator certManagerCertificateOperator,
             SecretOperator secretOperator,
             CertIssuer certIssuer,
             PasswordGenerator passwordGenerator,
             Clock clock,
             Secret existingCaCertSecret,
-            Secret existingCaKeySecret
+            Secret existingCaKeySecret,
+            Secret clusterOperatorCertSecret
     ) {
-        if (caConfig.isGenerateCa()) {
-            return new InternalCaProvider(reconciliation, caRole, caConfig, kafkaCr, secretOperator, certIssuer,
-                    passwordGenerator, clock, existingCaCertSecret, existingCaKeySecret
-            );
-        } else {
-            return new CustomCaProvider(reconciliation, caRole, caConfig, kafkaCr, certIssuer, passwordGenerator,
-                    existingCaCertSecret, existingCaKeySecret
-            );
-        }
+        return switch (caConfig.getCertificateManagerType()) {
+            case STRIMZI_IO -> {
+                if (caConfig.isGenerateCa()) {
+                    yield new InternalCaProvider(reconciliation, caRole, caConfig, kafkaCr, secretOperator, certIssuer,
+                            passwordGenerator, clock, existingCaCertSecret, existingCaKeySecret
+                    );
+                } else {
+                    yield new CustomCaProvider(reconciliation, caRole, caConfig, kafkaCr, certIssuer, passwordGenerator,
+                            existingCaCertSecret, existingCaKeySecret
+                    );
+                }
+            }
+            case CERT_MANAGER_IO -> {
+                if (caConfig.isGenerateCa()) {
+                    throw new IllegalArgumentException("Certificate Manager type is set to " + CertificateManagerType.CERT_MANAGER_IO.toValue() + ", but generateCertificateAuthority is set to true. Set generateCertificateAuthority to false when using cert-manager.io as the certificate manager type.");
+                }
+                yield new CertManagerCaProvider(reconciliation, caRole, caConfig, kafkaCr, existingCaCertSecret, clusterOperatorCertSecret, certManagerCertificateOperator, secretOperator);
+            }
+        };
     }
 
     /**
@@ -105,7 +118,7 @@ public abstract class CaProvider {
     }
 
     /**
-     * Creates or loads the CA instance and reconciles the CA secrets with the Kubernetes cluster.
+     * Creates or loads the CA instance and may reconcile the CA secrets with the Kubernetes cluster.
      *
      * @return CompletionStage that completes with the CA instance and reconciled CA certificate secret
      */
