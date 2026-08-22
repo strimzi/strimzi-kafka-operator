@@ -72,6 +72,7 @@ jobs:
       CLUSTER_OPERATOR_INSTALL_TYPE: ${{ matrix.config.cluster_operator_install_type }}
       STRIMZI_FEATURE_GATES: ${{ matrix.config.strimzi_feature_gates }}
       PARALLEL: ${{ matrix.config.parallel }}
+      IP_FAMILY: ${{ matrix.config.ipFamily }}
       STRIMZI_DEFAULT_LOG_LEVEL: DEBUG
       OPERATOR_IMAGE_PULL_POLICY: IfNotPresent
       COMPONENTS_IMAGE_PULL_POLICY: IfNotPresent
