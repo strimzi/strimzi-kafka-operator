@@ -25,12 +25,11 @@ import java.util.Map;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({"type", "expirationSeconds"})
+@JsonPropertyOrder({"type"})
 @EqualsAndHashCode
 @ToString
 public class ClusterSecurityAuthentication implements UnknownPropertyPreserving {
     private ClusterSecurityAuthenticationType type;
-    private Integer expirationSeconds;
     private Map<String, Object> additionalProperties;
 
     @Description("""
@@ -47,19 +46,6 @@ public class ClusterSecurityAuthentication implements UnknownPropertyPreserving 
 
     public void setType(ClusterSecurityAuthenticationType type) {
         this.type = type;
-    }
-
-    @Description("The expiration time in seconds for the Service Account tokens used for authentication. " +
-            "This field is only applicable for `type: service-account` authentication. " +
-            "Defaults to 1 hour when not set.")
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    @RequiredInVersions("v1+")
-    public Integer getExpirationSeconds() {
-        return expirationSeconds;
-    }
-
-    public void setExpirationSeconds(Integer expirationSeconds) {
-        this.expirationSeconds = expirationSeconds;
     }
 
     @Override
