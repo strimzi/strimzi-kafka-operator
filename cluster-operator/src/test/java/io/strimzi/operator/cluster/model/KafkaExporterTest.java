@@ -212,7 +212,7 @@ public class KafkaExporterTest {
 
     @Test
     public void testGenerateDeploymentWithTlsWithoutMtls() {
-        KafkaClusterSecurityContext securityContext = new KafkaClusterSecurityContext(ClusterSecurityEncryptionType.STRIMZI_TLS, ClusterSecurityAuthenticationType.NONE);
+        KafkaClusterSecurityContext securityContext = new KafkaClusterSecurityContext(ClusterSecurityEncryptionType.TLS, ClusterSecurityAuthenticationType.NONE);
         KafkaExporter ke = KafkaExporter.fromCrd(new Reconciliation("test", KAFKA.getKind(), NAMESPACE, CLUSTER_NAME), KAFKA, VERSIONS, SHARED_ENV_PROVIDER, securityContext);
         Deployment dep = ke.generateDeployment(Map.of(), true, null, null);
 

@@ -111,7 +111,7 @@ public class EntityUserOperatorTest {
 
     @Test
     public void testSecurityEnvVarsWithTlsAndMtls() {
-        KafkaClusterSecurityContext securityContext = new KafkaClusterSecurityContext(ClusterSecurityEncryptionType.STRIMZI_TLS, ClusterSecurityAuthenticationType.STRIMZI_MTLS);
+        KafkaClusterSecurityContext securityContext = new KafkaClusterSecurityContext(ClusterSecurityEncryptionType.TLS, ClusterSecurityAuthenticationType.MTLS);
 
         assertThat(getSecurityEnvVars(securityContext), is(List.of(
                 new EnvVarBuilder().withName(EntityUserOperator.ENV_VAR_CLUSTER_CA_CERT_SECRET_NAME).withValue(KafkaCluster.clusterCaCertSecretName(CLUSTER_NAME)).build(),
@@ -120,7 +120,7 @@ public class EntityUserOperatorTest {
 
     @Test
     public void testSecurityEnvVarsWithTlsWithoutAuthentication() {
-        KafkaClusterSecurityContext securityContext = new KafkaClusterSecurityContext(ClusterSecurityEncryptionType.STRIMZI_TLS, ClusterSecurityAuthenticationType.NONE);
+        KafkaClusterSecurityContext securityContext = new KafkaClusterSecurityContext(ClusterSecurityEncryptionType.TLS, ClusterSecurityAuthenticationType.NONE);
 
         assertThat(getSecurityEnvVars(securityContext), is(List.of(
                 new EnvVarBuilder().withName(EntityUserOperator.ENV_VAR_CLUSTER_CA_CERT_SECRET_NAME).withValue(KafkaCluster.clusterCaCertSecretName(CLUSTER_NAME)).build())));

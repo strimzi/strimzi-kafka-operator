@@ -33,8 +33,9 @@ public class ClusterSecurityEncryptionStatus implements UnknownPropertyPreservin
     private Map<String, Object> additionalProperties;
 
     @Description("The type of encryption currently used for this cluster's internal communication. " +
-            "Supported types are:" +
-            "* `strimzi-tls` for Strimzi-based TLS encryption")
+            "Supported types are:\n\n" +
+            "* `none` for no encryption\n" +
+            "* `tls` for TLS encryption")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @RequiredInVersions("v1+")
     public ClusterSecurityEncryptionType getType() {
