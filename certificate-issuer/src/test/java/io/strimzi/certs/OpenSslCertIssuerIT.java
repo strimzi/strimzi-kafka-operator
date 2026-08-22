@@ -39,12 +39,13 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -78,12 +79,10 @@ public class OpenSslCertIssuerIT {
         ((Cmd) () -> ssl.generateSelfSignedCert(key, cert, sbj, 365)).exec();
         ssl.addCertToTrustStore(cert, "ca", store, "123456");
 
-        X509Certificate x509Certificate1 = loadCertificate(cert);
-        assertTrue(selfVerifies(x509Certificate1),
-                "Unexpected self-verification");
-        assertEquals(x509Certificate1.getSubjectX500Principal(), x509Certificate1.getIssuerX500Principal(), "Unexpected self-signedness");
-        assertSubject(sbj, x509Certificate1);
-        X509Certificate x509Certificate = x509Certificate1;
+        X509Certificate x509Certificate = loadCertificate(cert);
+        assertTrue(selfVerifies(x509Certificate), "Unexpected self-verification");
+        assertEquals(x509Certificate.getSubjectX500Principal(), x509Certificate.getIssuerX500Principal(), "Unexpected self-signedness");
+        assertSubject(sbj, x509Certificate);
         assertEquals(0, x509Certificate.getBasicConstraints(),
                 "Expected a certificate with CA:" + true + ", but basic constraints = " + x509Certificate.getBasicConstraints());
 
@@ -123,9 +122,9 @@ public class OpenSslCertIssuerIT {
         assertEquals(notAfter.toInstant(), x509Certificate.getNotAfter().toInstant());
 
         // truststore verification
-        KeyStore store1 = KeyStore.getInstance("PKCS12");
-        store1.load(new FileInputStream(store), "123456".toCharArray());
-        X509Certificate storeCert = (X509Certificate) store1.getCertificate("ca");
+        KeyStore keyStore = KeyStore.getInstance("PKCS12");
+        keyStore.load(new FileInputStream(store), "123456".toCharArray());
+        X509Certificate storeCert = (X509Certificate) keyStore.getCertificate("ca");
         storeCert.verify(storeCert.getPublicKey());
 
         key.delete();
@@ -134,10 +133,9 @@ public class OpenSslCertIssuerIT {
     }
 
     private X509Certificate loadCertificate(File cert) throws CertificateException, FileNotFoundException {
-        Certificate c1 = certFactory.generateCertificate(new FileInputStream(cert));
-        assertTrue(c1 instanceof X509Certificate);
-        X509Certificate x509Certificate = (X509Certificate) c1;
-        return x509Certificate;
+        Certificate x509Certificate = certFactory.generateCertificate(new FileInputStream(cert));
+        assertInstanceOf(X509Certificate.class, x509Certificate);
+        return (X509Certificate) x509Certificate;
     }
 
     private void assertCaCertificate(X509Certificate x509Certificate, boolean expectCa) throws CertificateException, NoSuchAlgorithmException, InvalidKeyException, NoSuchProviderException, SignatureException {
@@ -161,14 +159,14 @@ public class OpenSslCertIssuerIT {
     }
 
     private void assertSubject(StrimziSubject sbj, X509Certificate x509Certificate) throws CertificateParsingException {
-        Principal p = x509Certificate.getSubjectX500Principal();
-        assertThat(String.format("CN=%s,O=%s", sbj.commonName(), sbj.organizationName()), is(p.getName()));
+        Principal principal = x509Certificate.getSubjectX500Principal();
+        assertThat(String.format("CN=%s,O=%s", sbj.commonName(), sbj.organizationName()), is(principal.getName()));
 
         assertSubjectAlternativeNames(sbj, x509Certificate);
     }
 
     private void assertSubjectAlternativeNames(StrimziSubject sbj, X509Certificate x509Certificate) throws CertificateParsingException {
-        if (sbj.subjectAltNames() != null && sbj.subjectAltNames().size() > 0) {
+        if (sbj.subjectAltNames() != null && !sbj.subjectAltNames().isEmpty()) {
             final Collection<List<?>> sans = x509Certificate.getSubjectAlternativeNames();
             assertThat(sans, is(notNullValue()));
             assertThat(sbj.subjectAltNames().size(), is(sans.size()));
@@ -176,11 +174,6 @@ public class OpenSslCertIssuerIT {
                 assertThat(sbj.subjectAltNames().containsValue(sanItem.get(1)), is(true));
             }
         }
-    }
-
-    private void assertIssuer(StrimziSubject sbj, X509Certificate x509Certificate) {
-        Principal p = x509Certificate.getIssuerX500Principal();
-        assertThat(String.format("CN=%s,O=%s", sbj.commonName(), sbj.organizationName()), is(p.getName()));
     }
 
     @Test
@@ -202,8 +195,7 @@ public class OpenSslCertIssuerIT {
         X509Certificate rootX509 = loadCertificate(rootCert);
         assertTrue(selfVerifies(rootX509),
                 "Unexpected self-verification");
-        assertTrue(rootX509.getIssuerX500Principal().equals(rootX509.getSubjectX500Principal()),
-                "Unexpected self-signed cert");
+        assertEquals(rootX509.getIssuerX500Principal(), rootX509.getSubjectX500Principal(), "Unexpected self-signed cert");
         assertSubject(rootSubject, rootX509);
         assertEquals(rootPathLen, rootX509.getBasicConstraints(),
                 "Expected a certificate with CA:" + true + ", but basic constraints = " + rootX509.getBasicConstraints());
@@ -216,8 +208,7 @@ public class OpenSslCertIssuerIT {
         ssl.generateIntermediateCaCert(rootKey, rootCert, intermediateSubject, intermediateKey, intermediateCert, notBefore, notAfter, intermediatePathLen);
 
         X509Certificate intermediateX509 = loadCertificate(intermediateCert);
-        assertTrue(intermediateX509.getIssuerX500Principal().equals(rootX509.getSubjectX500Principal()),
-                "Unexpected intermediate's issued to be root");
+        assertEquals(intermediateX509.getIssuerX500Principal(), rootX509.getSubjectX500Principal(), "Unexpected intermediate's issued to be root");
         assertSubject(intermediateSubject, intermediateX509);
         assertEquals(intermediatePathLen, intermediateX509.getBasicConstraints(),
                 "Expected a certificate with CA:" + true + ", but basic constraints = " + intermediateX509.getBasicConstraints());
@@ -226,7 +217,7 @@ public class OpenSslCertIssuerIT {
 
         File leafKey = Files.createTempFile("key-", ".key").toFile();
         File csr = Files.createTempFile("csr-", ".csr").toFile();
-        StrimziSubject subject = new StrimziSubject.Builder()
+        StrimziSubject leafSubject = new StrimziSubject.Builder()
                 .withCommonName("MyCommonName")
                 .withOrganizationName("MyOrganization")
                 .addDnsName("example1.com")
@@ -234,7 +225,7 @@ public class OpenSslCertIssuerIT {
 
         File leafCert = Files.createTempFile("crt-", ".crt").toFile();
 
-        doGenerateSignedCert(intermediateKey, intermediateCert, intermediateSubject, leafKey, csr, leafCert, null, "123456", subject);
+        doGenerateSignedCert(intermediateKey, intermediateCert, intermediateSubject, leafKey, csr, leafCert, null, "123456", leafSubject);
 
         // Validate that when the root cert is trusted and the cert chain includes the leaf+intermediate,
         // that the leaf is considered valid by PKIX validation
@@ -341,20 +332,20 @@ public class OpenSslCertIssuerIT {
             ssl.addKeyAndCertToKeyStore(caKey, caCert, "ca", keyStore, keyStorePassword);
         }
 
-        X509Certificate c = loadCertificate(cert);
-        assertCaCertificate(c, false);
-        Certificate ca = loadCertificate(caCert);
+        X509Certificate x509Certificate = loadCertificate(cert);
+        assertCaCertificate(x509Certificate, false);
+        Certificate caCertificate = loadCertificate(caCert);
 
-        c.verify(ca.getPublicKey());
+        x509Certificate.verify(caCertificate.getPublicKey());
 
-        Principal p = c.getSubjectX500Principal();
+        Principal principal = x509Certificate.getSubjectX500Principal();
 
-        assertThat(String.format("CN=%s,O=%s", sbj.commonName(), sbj.organizationName()), is(p.getName()));
+        assertThat(String.format("CN=%s,O=%s", sbj.commonName(), sbj.organizationName()), is(principal.getName()));
 
-        if (sbj != null && sbj.subjectAltNames() != null && sbj.subjectAltNames().size() > 0) {
-            final Collection<List<?>> snas = c.getSubjectAlternativeNames();
-            if (snas != null) {
-                for (final List<?> sanItem : snas) {
+        if (sbj != null && sbj.subjectAltNames() != null && !sbj.subjectAltNames().isEmpty()) {
+            final Collection<List<?>> subjectAltNames = x509Certificate.getSubjectAlternativeNames();
+            if (subjectAltNames != null) {
+                for (final List<?> sanItem : subjectAltNames) {
                     assertThat(sbj.subjectAltNames().containsValue(sanItem.get(1)), is(true));
                 }
             } else {
@@ -386,7 +377,7 @@ public class OpenSslCertIssuerIT {
         doRenewSelfSignedCertWithSubject(caSubject);
     }
 
-    public void doRenewSelfSignedCertWithSubject(StrimziSubject caSubject) throws Exception {
+    private void doRenewSelfSignedCertWithSubject(StrimziSubject caSubject) throws Exception {
         // First generate a self-signed cert
         File caKey = Files.createTempFile("key-", ".key").toFile();
         caKey.deleteOnExit();
@@ -398,14 +389,13 @@ public class OpenSslCertIssuerIT {
         ((Cmd) () -> ssl.generateSelfSignedCert(caKey, originalCert, caSubject, 365)).exec();
         ssl.addCertToTrustStore(originalCert, "ca", originalStore, "123456");
 
-        X509Certificate x509Certificate1 = loadCertificate(originalCert);
-        assertTrue(selfVerifies(x509Certificate1),
+        X509Certificate originalX509Certificate = loadCertificate(originalCert);
+        assertTrue(selfVerifies(originalX509Certificate),
                 "Unexpected self-verification");
-        assertTrue(x509Certificate1.getIssuerX500Principal().equals(x509Certificate1.getSubjectX500Principal()),
-                "Unexpected self-signedness");
+        assertEquals(originalX509Certificate.getIssuerX500Principal(), originalX509Certificate.getSubjectX500Principal(), "Unexpected self-signedness");
         // subject verification if provided
         if (caSubject != null) {
-            assertSubject(caSubject, x509Certificate1);
+            assertSubject(caSubject, originalX509Certificate);
         }
 
         // truststore verification if provided
@@ -432,18 +422,19 @@ public class OpenSslCertIssuerIT {
         File newCert = Files.createTempFile("crt-", ".crt").toFile();
         File newStore = Files.createTempFile("crt-", ".p12").toFile();
         ssl.renewSelfSignedCert(caKey, newCert, caSubject, 365);
-        // TODO should assert that originalCert actually was changed
         ssl.addCertToTrustStore(newCert, "ca", newStore, "123456");
 
-        X509Certificate x509Certificate = loadCertificate(newCert);
-        assertCaCertificate(x509Certificate, true);
+        X509Certificate newX509Certificate = loadCertificate(newCert);
+        assertCaCertificate(newX509Certificate, true);
+        assertNotEquals(originalX509Certificate.getSerialNumber(), newX509Certificate.getSerialNumber(),
+                "Renewed certificate should have a different serial number than the original");
 
         // verify the client cert is valid wrt the new cert.
-        CertificateFactory cf = CertificateFactory.getInstance("X.509");
-        Certificate c = cf.generateCertificate(new FileInputStream(clientCert));
-        Certificate ca = cf.generateCertificate(new FileInputStream(newCert));
+        CertificateFactory certificateFactory = CertificateFactory.getInstance("X.509");
+        Certificate clientCertificate = certificateFactory.generateCertificate(new FileInputStream(clientCert));
+        Certificate caCertificate = certificateFactory.generateCertificate(new FileInputStream(newCert));
 
-        c.verify(ca.getPublicKey());
+        clientCertificate.verify(caCertificate.getPublicKey());
 
         clientKey.delete();
         clientCert.delete();
@@ -469,11 +460,11 @@ public class OpenSslCertIssuerIT {
         ssl.addCertToTrustStore(caCert, "ca", caStore, "123456");
 
         // generate a server cert with the SANs
-        File serverKey = Files.createTempFile("client-", ".key").toFile();
-        File serverCsr = Files.createTempFile("client-", ".serverCsr").toFile();
-        File serverCert = Files.createTempFile("client-", ".crt").toFile();
+        File serverKey = Files.createTempFile("server-", ".key").toFile();
+        File serverCsr = Files.createTempFile("server-", ".csr").toFile();
+        File serverCert = Files.createTempFile("server-", ".crt").toFile();
 
-        StrimziSubject clientSubject = new StrimziSubject.Builder()
+        StrimziSubject serverSubject = new StrimziSubject.Builder()
                 .withCommonName("MyCommonName")
                 .withOrganizationName("MyOrganization")
                 .addIpAddress("AC74::001c")
@@ -484,17 +475,17 @@ public class OpenSslCertIssuerIT {
                 .addIpAddress("1974:0:0:0:0:B03:1:AF74")
                 .build();
 
-        ssl.generateCsr(serverKey, serverCsr, clientSubject);
-        ssl.generateCert(serverCsr, caKey, caCert, serverCert, clientSubject, 365);
+        ssl.generateCsr(serverKey, serverCsr, serverSubject);
+        ssl.generateCert(serverCsr, caKey, caCert, serverCert, serverSubject, 365);
 
         // Test the SANS
-        X509Certificate x509Certificate2 = loadCertificate(serverCert);
-        Collection<String> desiredAltNames = clientSubject.subjectAltNames().values();
-        Collection<List<?>> altNames = x509Certificate2.getSubjectAlternativeNames();
+        X509Certificate serverX509Certificate = loadCertificate(serverCert);
+        Collection<String> desiredAltNames = serverSubject.subjectAltNames().values();
+        Collection<List<?>> altNames = serverX509Certificate.getSubjectAlternativeNames();
         Collection<String> currentAltNames = altNames.stream()
                 .filter(name -> name.get(1) instanceof String)
                 .map(item -> (String) item.get(1))
-                .collect(Collectors.toList());
+                .toList();
 
         assertThat(desiredAltNames.containsAll(currentAltNames), is(true));
         assertThat(currentAltNames.containsAll(desiredAltNames), is(true));
