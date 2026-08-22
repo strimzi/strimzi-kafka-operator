@@ -300,6 +300,31 @@ public class VolumeUtils {
     }
 
     /**
+     * Creates a Service Account projection volume
+     *
+     * @param name          Name of the Volume
+     * @param audience      Audience for the Service Account token
+     * @param path          Path where the token will be stored in the volume
+     * @param expiration    Expiration time of the token in seconds
+     *
+     * @return The Service Account projection volume
+     */
+    public static Volume createServiceAccountProjection(String name, String audience, String path, long expiration) {
+        return new VolumeBuilder()
+                .withName(name)
+                .withNewProjected()
+                .withSources(new VolumeProjectionBuilder()
+                        .withNewServiceAccountToken()
+                            .withAudience(audience)
+                            .withExpirationSeconds(expiration)
+                            .withPath(path)
+                        .endServiceAccountToken()
+                        .build())
+                .endProjected()
+                .build();
+    }
+
+    /**
      * Creates a Volume mount
      *
      * @param name Name of the Volume mount
