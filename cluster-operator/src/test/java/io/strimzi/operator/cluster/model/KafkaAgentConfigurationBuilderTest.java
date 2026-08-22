@@ -4,6 +4,10 @@
  */
 package io.strimzi.operator.cluster.model;
 
+import io.strimzi.operator.cluster.model.clustersecurity.kafka.KafkaClusterSecurityContext;
+import io.strimzi.operator.cluster.model.clustersecurity.kafka.NoneAuthenticationConfiguration;
+import io.strimzi.operator.cluster.model.clustersecurity.kafka.NoneEncryptionConfiguration;
+import io.strimzi.operator.cluster.model.clustersecurity.kafka.TlsEncryptionConfiguration;
 import io.strimzi.operator.common.Reconciliation;
 import org.junit.jupiter.api.Test;
 
@@ -31,8 +35,8 @@ public class KafkaAgentConfigurationBuilderTest {
     @Test
     public void testTlsWithoutAuthentication()  {
         KafkaClusterSecurityContext securityContext = mock(KafkaClusterSecurityContext.class);
-        when(securityContext.isTlsEncryption()).thenReturn(true);
-        when(securityContext.isMtlsAuthentication()).thenReturn(false);
+        when(securityContext.encryption()).thenReturn(new TlsEncryptionConfiguration());
+        when(securityContext.authentication()).thenReturn(new NoneAuthenticationConfiguration());
 
         String configuration = new KafkaAgentConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
                 .withSecurity(securityContext)
@@ -47,8 +51,8 @@ public class KafkaAgentConfigurationBuilderTest {
     @Test
     public void testWithoutTlsOrAuthentication()  {
         KafkaClusterSecurityContext securityContext = mock(KafkaClusterSecurityContext.class);
-        when(securityContext.isTlsEncryption()).thenReturn(false);
-        when(securityContext.isMtlsAuthentication()).thenReturn(false);
+        when(securityContext.encryption()).thenReturn(new NoneEncryptionConfiguration());
+        when(securityContext.authentication()).thenReturn(new NoneAuthenticationConfiguration());
 
         String configuration = new KafkaAgentConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
                 .withSecurity(securityContext)

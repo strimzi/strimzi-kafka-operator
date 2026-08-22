@@ -31,6 +31,9 @@ import io.strimzi.api.kafka.model.kafka.exporter.KafkaExporterSpec;
 import io.strimzi.api.kafka.model.kafka.exporter.KafkaExporterTemplate;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
+import io.strimzi.operator.cluster.model.clustersecurity.kafka.KafkaClusterSecurityContext;
+import io.strimzi.operator.cluster.model.clustersecurity.kafka.MtlsAuthenticationConfiguration;
+import io.strimzi.operator.cluster.model.clustersecurity.kafka.TlsEncryptionConfiguration;
 import io.strimzi.operator.cluster.model.metrics.MetricsModel;
 import io.strimzi.operator.cluster.model.securityprofiles.ContainerSecurityProviderContextImpl;
 import io.strimzi.operator.cluster.model.securityprofiles.PodSecurityProviderContextImpl;
@@ -274,10 +277,10 @@ public class KafkaExporter extends AbstractModel {
 
         volumeList.add(VolumeUtils.createTempDirVolume(templatePod));
 
-        if (securityContext.isTlsEncryption()) {
+        if (securityContext.encryption() instanceof TlsEncryptionConfiguration) {
             volumeList.add(VolumeUtils.createSecretVolume(CLUSTER_CA_CERTS_VOLUME_NAME, KafkaResources.trustBundleSecretName(cluster), isOpenShift));
 
-            if (securityContext.isMtlsAuthentication())  {
+            if (securityContext.authentication() instanceof MtlsAuthenticationConfiguration)  {
                 volumeList.add(VolumeUtils.createSecretVolume(KAFKA_EXPORTER_CERTS_VOLUME_NAME, KafkaExporterResources.secretName(cluster), isOpenShift));
             }
         }
@@ -291,10 +294,10 @@ public class KafkaExporter extends AbstractModel {
         List<VolumeMount> volumeList = new ArrayList<>(3);
         volumeList.add(VolumeUtils.createTempDirVolumeMount());
 
-        if (securityContext.isTlsEncryption()) {
+        if (securityContext.encryption() instanceof TlsEncryptionConfiguration) {
             volumeList.add(VolumeUtils.createVolumeMount(CLUSTER_CA_CERTS_VOLUME_NAME, CLUSTER_CA_CERTS_VOLUME_MOUNT));
 
-            if (securityContext.isMtlsAuthentication()) {
+            if (securityContext.authentication() instanceof MtlsAuthenticationConfiguration) {
                 volumeList.add(VolumeUtils.createVolumeMount(KAFKA_EXPORTER_CERTS_VOLUME_NAME, KAFKA_EXPORTER_CERTS_VOLUME_MOUNT));
             }
         }
