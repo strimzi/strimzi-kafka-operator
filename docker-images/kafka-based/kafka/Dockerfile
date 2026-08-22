@@ -1,7 +1,7 @@
 #####
 # Build the helper container image for downloading prerequisites
 #####
-FROM registry.access.redhat.com/ubi9/ubi-minimal:latest AS downloader
+FROM registry.access.redhat.com/ubi10/ubi-minimal:latest AS downloader
 
 ARG TARGETOS
 ARG TARGETARCH
@@ -69,6 +69,39 @@ RUN set -ex; \
     rm -f jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.jar.sha512;
 
 #####
+# Install Kafka-specific runtime tools into a chroot
+#####
+FROM registry.access.redhat.com/ubi10/ubi-minimal:latest AS kafka-tools
+
+RUN mkdir -p /mnt/rootfs && \
+    microdnf install \
+        --installroot /mnt/rootfs \
+        --noplugins \
+        --config /etc/dnf/dnf.conf \
+        --setopt=cachedir=/var/cache/microdnf \
+        --setopt=reposdir=/etc/yum.repos.d \
+        --setopt=varsdir=/etc/dnf \
+        --setopt=install_weak_deps=0 \
+        --setopt=tsflags=nodocs \
+        --releasever 10 \
+        -y \
+        net-tools \
+        hostname \
+        findutils \
+        tar \
+        gzip \
+        unzip \
+        curl-minimal \
+    && microdnf \
+        --installroot /mnt/rootfs \
+        --noplugins \
+        --config /etc/dnf/dnf.conf \
+        --setopt=cachedir=/var/cache/microdnf \
+        --setopt=reposdir=/etc/yum.repos.d \
+        --setopt=varsdir=/etc/dnf \
+        clean all
+
+#####
 # Build the main container image
 #####
 FROM strimzi/base:latest
@@ -88,25 +121,14 @@ LABEL name='kafka' \
     summary="Kafka ${KAFKA_VERSION} image of the Strimzi Kafka Operator project." \
     description="Kafka image used by the Strimzi Kafka Operator to run Kafka ${KAFKA_VERSION} clusters."
 
-RUN microdnf --setopt=install_weak_deps=0 --setopt=tsflags=nodocs install -y \
-            # net-tools are needed for the health check probes (netstat) \
-            net-tools \
-            # hostname is used by Strimzi scripts to determine the Kafka node ID \
-            hostname  \
-            # xargs is used by Kafka's own shell scripts \
-            # find and xargs are also used in our Kafka Connect Build Dockerfiles \
-            findutils \
-            # Tar is also used in our Kafka Connect Build Dockerfiles \
-            tar \
-            # gzip is also used in our Kafka Connect Build Dockerfiles \
-            gzip \
-            # unzip is used in our Kafka Connect Build Dockerfiles \
-            unzip \
-    && microdnf clean all -y
+#####
+# Copy Kafka-specific tools from chroot
+#####
+COPY --from=kafka-tools /mnt/rootfs /
 
 # Add kafka user with UID 1001
 # The user is in the group 0 to have access to the mounted volumes and storage
-RUN useradd -r -m -u 1001 -g 0 kafka
+RUN echo "kafka:x:1001:0::/home/kafka:/bin/false" >> /etc/passwd
 
 #####
 # Add Kafka
@@ -136,6 +158,7 @@ COPY --from=downloader $JMX_EXPORTER_HOME/jmx_prometheus_javaagent*.jar $JMX_EXP
 # Add Strimzi agents
 #####
 COPY ./tmp/kafka-agent-${STRIMZI_VERSION}.jar ${KAFKA_HOME}/libs/
+COPY ./tmp/fips-agent-${STRIMZI_VERSION}.jar ${KAFKA_HOME}/libs/
 COPY ./tmp/tracing-agent-${STRIMZI_VERSION}.jar ${KAFKA_HOME}/libs/
 
 #####

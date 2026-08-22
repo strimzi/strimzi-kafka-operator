@@ -33,6 +33,9 @@ if [ "$FIPS_MODE" = "disabled" ]; then
     JAVA_OPTS="${JAVA_OPTS} -Dcom.redhat.fips=false"
 fi
 
+# Load FIPS agent for DSA workaround
+JAVA_OPTS="${JAVA_OPTS} -javaagent:$(ls "$STRIMZI_HOME"/lib/io.strimzi.fips-agent-*.jar)"
+
 set -x
 
 # shellcheck disable=SC2086
