@@ -96,6 +96,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
@@ -335,13 +336,13 @@ public class KafkaReconciler {
      * @return  Completes when the manual pod cleaning is done
      */
     protected Future<Void> manualPodCleaning() {
-        return new ManualPodCleaner(
+        return VertxUtil.toFuture(new ManualPodCleaner(
                 reconciliation,
                 kafka.getSelectorLabels(),
                 strimziPodSetOperator,
                 podOperator,
                 pvcOperator
-        ).maybeManualPodCleaning();
+        ).maybeManualPodCleaning());
     }
 
     /**
@@ -500,9 +501,9 @@ public class KafkaReconciler {
     protected Future<Void> pvcs(KafkaStatus kafkaStatus) {
         List<PersistentVolumeClaim> pvcs = kafka.generatePersistentVolumeClaims();
 
-        return new PvcReconciler(reconciliation, pvcOperator, storageClassOperator)
+        return VertxUtil.toFuture(new PvcReconciler(reconciliation, pvcOperator, storageClassOperator)
                 .resizeAndReconcilePvcs(kafkaStatus, pvcs)
-                .compose(podIdsToRestart -> {
+                .thenCompose(podIdsToRestart -> {
                     for (Integer podId : podIdsToRestart) {
                         try {
                             fsResizingRestartRequest.add(kafka.nodePoolForNodeId(podId).nodeRef(podId).podName());
@@ -514,8 +515,8 @@ public class KafkaReconciler {
                         }
                     }
 
-                    return Future.succeededFuture();
-                });
+                    return CompletableFuture.completedStage(null);
+                }));
     }
 
     /**
@@ -657,12 +658,9 @@ public class KafkaReconciler {
      * @return  Future which completes when listeners are reconciled
      */
     protected Future<Void> listeners()    {
-        return listenerReconciler()
+        return VertxUtil.toFuture(listenerReconciler()
                 .reconcile()
-                .compose(result -> {
-                    listenerReconciliationResults = result;
-                    return Future.succeededFuture();
-                });
+                .thenAccept(result -> listenerReconciliationResults = result));
     }
 
     /**
@@ -1114,14 +1112,14 @@ public class KafkaReconciler {
      * @return  Future which completes when the PVCs which should be deleted are deleted
      */
     protected Future<Void> deletePersistentClaims() {
-        return VertxUtil.toFuture(pvcOperator.listAsync(reconciliation.namespace(), kafka.getSelectorLabels()))
-                .compose(pvcs -> {
+        return VertxUtil.toFuture(pvcOperator.listAsync(reconciliation.namespace(), kafka.getSelectorLabels())
+                .thenCompose(pvcs -> {
                     List<String> maybeDeletePvcs = pvcs.stream().map(pvc -> pvc.getMetadata().getName()).collect(Collectors.toList());
                     List<String> desiredPvcs = kafka.generatePersistentVolumeClaims().stream().map(pvc -> pvc.getMetadata().getName()).collect(Collectors.toList());
 
                     return new PvcReconciler(reconciliation, pvcOperator, storageClassOperator)
                             .deletePersistentClaims(maybeDeletePvcs, desiredPvcs);
-                });
+                }));
     }
 
     /**

@@ -23,7 +23,6 @@ import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.ListenersUtils;
 import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.cluster.model.NodeRef;
-import io.strimzi.operator.cluster.operator.VertxUtil;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.IngressOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.RouteOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.ServiceOperator;
@@ -34,7 +33,6 @@ import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.ca.Ca;
 import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.common.operator.resource.kubernetes.SecretOperator;
-import io.vertx.core.Future;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -44,6 +42,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.stream.Collectors;
 
 import static java.util.Collections.singletonList;
@@ -123,57 +123,57 @@ public class KafkaListenersReconciler {
      * @return  Future which completes when the reconciliation completes. It contains the result of the reconciliation
      *          which contains the collected addresses, prepared listener statuses etc.
      */
-    public Future<ReconciliationResult> reconcile()    {
+    public CompletionStage<ReconciliationResult> reconcile()    {
         return services()
-                .compose(i -> routes())
-                .compose(i -> tlsRoutes())
-                .compose(i -> ingresses())
-                .compose(i -> internalServicesReady())
-                .compose(i -> loadBalancerServicesReady())
-                .compose(i -> nodePortServicesReady())
-                .compose(i -> routesReady())
-                .compose(i -> tlsRoutesReady())
-                .compose(i -> ingressesReady())
-                .compose(i -> clusterIPServicesReady())
-                .compose(i -> customListenerCertificates())
+                .thenCompose(i -> routes())
+                .thenCompose(i -> tlsRoutes())
+                .thenCompose(i -> ingresses())
+                .thenCompose(i -> internalServicesReady())
+                .thenCompose(i -> loadBalancerServicesReady())
+                .thenCompose(i -> nodePortServicesReady())
+                .thenCompose(i -> routesReady())
+                .thenCompose(i -> tlsRoutesReady())
+                .thenCompose(i -> ingressesReady())
+                .thenCompose(i -> clusterIPServicesReady())
+                .thenCompose(i -> customListenerCertificates())
                 // This method should be called only after customListenerCertificates
-                .compose(customListenerCertificates -> addCertificatesToListenerStatuses(customListenerCertificates))
-                .compose(i -> Future.succeededFuture(result));
+                .thenCompose(customListenerCertificates -> addCertificatesToListenerStatuses(customListenerCertificates))
+                .thenCompose(i -> CompletableFuture.completedStage(result));
     }
 
     /**
      * Makes sure all desired services are updated and the rest is deleted. This method updates all services in one go
      *           => the regular headless, node-port or load balancer ones.
      *
-     * @return  Future which completes when all services are created or deleted.
+     * @return  CompletionStage which completes when all services are created or deleted.
      */
-    protected Future<Void> services() {
+    protected CompletionStage<Void> services() {
         List<Service> services = new ArrayList<>();
         services.add(kafka.generateService());
         services.add(kafka.generateHeadlessService());
         services.addAll(kafka.generateExternalBootstrapServices());
         services.addAll(kafka.generatePerPodServices());
 
-        return VertxUtil.toFuture(serviceOperator.batchReconcile(reconciliation, reconciliation.namespace(), services, kafka.getSelectorLabels())).mapEmpty();
+        return serviceOperator.batchReconcile(reconciliation, reconciliation.namespace(), services, kafka.getSelectorLabels()).thenApply(i -> null);
     }
 
     /**
      * Makes sure all desired routes are updated and the rest is deleted.
      *
-     * @return Future which completes when all routes are created or deleted.
+     * @return CompletionStage which completes when all routes are created or deleted.
      */
-    protected Future<Void> routes() {
+    protected CompletionStage<Void> routes() {
         List<Route> routes = new ArrayList<>(kafka.generateExternalBootstrapRoutes());
         routes.addAll(kafka.generateExternalRoutes());
 
         if (pfa.hasRoutes()) {
-            return VertxUtil.toFuture(routeOperator.batchReconcile(reconciliation, reconciliation.namespace(), routes, kafka.getSelectorLabels())).mapEmpty();
+            return routeOperator.batchReconcile(reconciliation, reconciliation.namespace(), routes, kafka.getSelectorLabels()).thenApply(i -> null);
         } else {
             if (!routes.isEmpty()) {
                 LOGGER.warnCr(reconciliation, "The OpenShift route API is not available in this Kubernetes cluster. Exposing Kafka cluster {} using routes is not possible.", reconciliation.name());
-                return Future.failedFuture("The OpenShift route API is not available in this Kubernetes cluster. Exposing Kafka cluster " + reconciliation.name() + " using routes is not possible.");
+                return CompletableFuture.failedStage(new RuntimeException("The OpenShift route API is not available in this Kubernetes cluster. Exposing Kafka cluster " + reconciliation.name() + " using routes is not possible."));
             } else {
-                return Future.succeededFuture();
+                return CompletableFuture.completedStage(null);
             }
         }
     }
@@ -181,20 +181,20 @@ public class KafkaListenersReconciler {
     /**
      * Makes sure all desired Gateway API TLS Routes are updated and the rest is deleted.
      *
-     * @return Future that completes when all Gateway API TLS Routes are created or deleted.
+     * @return CompletionStage that completes when all Gateway API TLS Routes are created or deleted.
      */
-    protected Future<Void> tlsRoutes() {
+    protected CompletionStage<Void> tlsRoutes() {
         List<TLSRoute> routes = new ArrayList<>(kafka.generateExternalBootstrapTlsRoutes());
         routes.addAll(kafka.generateExternalTlsRoutes());
 
         if (pfa.hasTLSRoutes()) {
-            return VertxUtil.toFuture(tlsRouteOperator.batchReconcile(reconciliation, reconciliation.namespace(), routes, kafka.getSelectorLabels())).mapEmpty();
+            return tlsRouteOperator.batchReconcile(reconciliation, reconciliation.namespace(), routes, kafka.getSelectorLabels()).thenApply(i -> null);
         } else {
             if (!routes.isEmpty()) {
                 LOGGER.warnCr(reconciliation, "The Gateway API TLSRoute resource is not available in this Kubernetes cluster. Exposing Kafka cluster {} using TLSRoutes is not possible.", reconciliation.name());
-                return Future.failedFuture("The Gateway API TLSRoute resource is not available in this Kubernetes cluster. Exposing Kafka cluster " + reconciliation.name() + " using TLSRoutes is not possible.");
+                return CompletableFuture.failedStage(new RuntimeException("The Gateway API TLSRoute resource is not available in this Kubernetes cluster. Exposing Kafka cluster " + reconciliation.name() + " using TLSRoutes is not possible."));
             } else {
-                return Future.succeededFuture();
+                return CompletableFuture.completedStage(null);
             }
         }
     }
@@ -202,13 +202,13 @@ public class KafkaListenersReconciler {
     /**
      * Makes sure all desired ingresses are updated and the rest is deleted.
      *
-     * @return  Future which completes when all ingresses are created or deleted.
+     * @return  CompletionStage which completes when all ingresses are created or deleted.
      */
-    protected Future<Void> ingresses() {
+    protected CompletionStage<Void> ingresses() {
         List<Ingress> ingresses = new ArrayList<>(kafka.generateExternalBootstrapIngresses());
         ingresses.addAll(kafka.generateExternalIngresses());
 
-        return VertxUtil.toFuture(ingressOperator.batchReconcile(reconciliation, reconciliation.namespace(), ingresses, kafka.getSelectorLabels())).mapEmpty();
+        return ingressOperator.batchReconcile(reconciliation, reconciliation.namespace(), ingresses, kafka.getSelectorLabels()).thenApply(i -> null);
     }
 
     /**
@@ -285,9 +285,9 @@ public class KafkaListenersReconciler {
      * need to wait for them. But this method at least collects their addresses for the reconciliation result and
      * prepares the listener statuses.
      *
-     * @return  Future which completes when the internal services are ready and their addresses are collected
+     * @return  CompletionStage which completes when the internal services are ready and their addresses are collected
      */
-    protected Future<Void> internalServicesReady()   {
+    protected CompletionStage<Void> internalServicesReady()   {
         for (GenericKafkaListener listener : ListenersUtils.internalListeners(kafka.getListeners())) {
             boolean useServiceDnsDomain = (listener.getConfiguration() != null && listener.getConfiguration().getUseServiceDnsDomain() != null)
                     ? listener.getConfiguration().getUseServiceDnsDomain() : false;
@@ -325,7 +325,7 @@ public class KafkaListenersReconciler {
             }
         }
 
-        return Future.succeededFuture();
+        return CompletableFuture.completedStage(null);
     }
 
     /**
@@ -334,9 +334,9 @@ public class KafkaListenersReconciler {
      *      1) Collects the relevant addresses of bootstrap service and stores them for use in certificates
      *      2) Collects the clusterIP addresses for certificates and advertised hostnames
      *
-     * @return  Future which completes clusterIP service addresses are collected
+     * @return  CompletionStage which completes clusterIP service addresses are collected
      */
-    protected Future<Void> clusterIPServicesReady()   {
+    protected CompletionStage<Void> clusterIPServicesReady()   {
         for (GenericKafkaListener listener : ListenersUtils.clusterIPListeners(kafka.getListeners())) {
             boolean useServiceDnsDomain = (listener.getConfiguration() != null && listener.getConfiguration().getUseServiceDnsDomain() != null)
                     ? listener.getConfiguration().getUseServiceDnsDomain() : false;
@@ -375,7 +375,7 @@ public class KafkaListenersReconciler {
             }
         }
 
-        return Future.succeededFuture();
+        return CompletableFuture.completedStage(null);
     }
 
     /**
@@ -386,24 +386,24 @@ public class KafkaListenersReconciler {
      *      3) Checks if the broker services have been provisioned (have a loadbalancer address)
      *      4) Collects the loadbalancer addresses for certificates and advertised hostnames
      *
-     * @return  Future which completes when all Load Balancer services are ready and their addresses are collected
+     * @return  CompletionStage which completes when all Load Balancer services are ready and their addresses are collected
      */
-    protected Future<Void> loadBalancerServicesReady() {
+    protected CompletionStage<Void> loadBalancerServicesReady() {
         List<GenericKafkaListener> loadBalancerListeners = ListenersUtils.loadBalancerListeners(kafka.getListeners());
-        List<Future<Void>> listenerFutures = new ArrayList<>(loadBalancerListeners.size());
+        List<CompletableFuture<Void>> listenerFutures = new ArrayList<>(loadBalancerListeners.size());
 
         for (GenericKafkaListener listener : loadBalancerListeners) {
             String bootstrapServiceName = ListenersUtils.backwardsCompatibleBootstrapServiceName(reconciliation.name(), listener);
 
             List<String> bootstrapListenerAddressList = new ArrayList<>();
 
-            Future<Void> perListenerFut = Future.succeededFuture().compose(i -> {
+            CompletionStage<Void> perListenerFut = CompletableFuture.completedStage(null).thenCompose(i -> {
                 if (ListenersUtils.skipCreateBootstrapService(listener)) {
-                    return Future.succeededFuture();
+                    return CompletableFuture.completedStage(null);
                 } else {
-                    return VertxUtil.toFuture(serviceOperator.hasIngressAddress(reconciliation, reconciliation.namespace(), bootstrapServiceName, 1_000, operationTimeoutMs))
-                            .compose(res -> VertxUtil.toFuture(serviceOperator.getAsync(reconciliation.namespace(), bootstrapServiceName)))
-                            .compose(svc -> {
+                    return serviceOperator.hasIngressAddress(reconciliation, reconciliation.namespace(), bootstrapServiceName, 1_000, operationTimeoutMs)
+                            .thenCompose(res -> serviceOperator.getAsync(reconciliation.namespace(), bootstrapServiceName))
+                            .thenCompose(svc -> {
                                 String bootstrapAddress;
 
                                 if (svc.getStatus().getLoadBalancer().getIngress().get(0).getHostname() != null) {
@@ -416,25 +416,25 @@ public class KafkaListenersReconciler {
 
                                 result.bootstrapDnsNames.add(bootstrapAddress);
                                 bootstrapListenerAddressList.add(bootstrapAddress);
-                                return Future.succeededFuture();
+                                return CompletableFuture.completedStage(null);
                             });
                 }
-            }).compose(res -> {
-                List<Future<Void>> perPodFutures = new ArrayList<>();
+            }).thenCompose(res -> {
+                List<CompletableFuture<Void>> perPodFutures = new ArrayList<>();
 
                 for (NodeRef node : kafka.brokerNodes()) {
                     perPodFutures.add(
-                            VertxUtil.toFuture(serviceOperator.hasIngressAddress(reconciliation, reconciliation.namespace(), ListenersUtils.backwardsCompatiblePerBrokerServiceName(ReconcilerUtils.getControllerNameFromPodName(node.podName()), node.nodeId(), listener), 1_000, operationTimeoutMs))
+                            serviceOperator.hasIngressAddress(reconciliation, reconciliation.namespace(), ListenersUtils.backwardsCompatiblePerBrokerServiceName(ReconcilerUtils.getControllerNameFromPodName(node.podName()), node.nodeId(), listener), 1_000, operationTimeoutMs).toCompletableFuture()
                     );
                 }
 
-                return Future.join(perPodFutures);
-            }).compose(res -> {
-                List<Future<Void>> perPodFutures = new ArrayList<>();
+                return CompletableFuture.allOf(perPodFutures.toArray(new CompletableFuture[0]));
+            }).thenCompose(res -> {
+                List<CompletableFuture<Void>> perPodFutures = new ArrayList<>();
 
                 for (NodeRef node : kafka.brokerNodes()) {
-                    Future<Void> perBrokerFut = VertxUtil.toFuture(serviceOperator.getAsync(reconciliation.namespace(), ListenersUtils.backwardsCompatiblePerBrokerServiceName(ReconcilerUtils.getControllerNameFromPodName(node.podName()), node.nodeId(), listener)))
-                            .compose(svc -> {
+                    CompletionStage<Void> perBrokerFut = serviceOperator.getAsync(reconciliation.namespace(), ListenersUtils.backwardsCompatiblePerBrokerServiceName(ReconcilerUtils.getControllerNameFromPodName(node.podName()), node.nodeId(), listener))
+                            .thenCompose(svc -> {
                                 String brokerAddress;
 
                                 if (svc.getStatus().getLoadBalancer().getIngress().get(0).getHostname() != null)    {
@@ -457,14 +457,14 @@ public class KafkaListenersReconciler {
                                 registerAdvertisedHostname(node.nodeId(), listener, advertisedHostname, brokerAddress);
                                 registerAdvertisedPort(node.nodeId(), listener, listener.getPort());
 
-                                return Future.succeededFuture();
+                                return CompletableFuture.completedStage(null);
                             });
 
-                    perPodFutures.add(perBrokerFut);
+                    perPodFutures.add(perBrokerFut.toCompletableFuture());
                 }
 
-                return Future.join(perPodFutures);
-            }).compose(res -> {
+                return CompletableFuture.allOf(perPodFutures.toArray(new CompletableFuture[0]));
+            }).thenCompose(res -> {
                 ListenerStatus ls = new ListenerStatusBuilder()
                         .withName(listener.getName())
                         .withAddresses(bootstrapListenerAddressList.stream()
@@ -475,15 +475,13 @@ public class KafkaListenersReconciler {
                         .build();
                 result.listenerStatuses.add(ls);
 
-                return Future.succeededFuture();
+                return CompletableFuture.completedStage(null);
             });
 
-            listenerFutures.add(perListenerFut);
+            listenerFutures.add(perListenerFut.toCompletableFuture());
         }
 
-        return Future
-                .join(listenerFutures)
-                .mapEmpty();
+        return CompletableFuture.allOf(listenerFutures.toArray(new CompletableFuture[0]));
     }
 
     /**
@@ -494,42 +492,41 @@ public class KafkaListenersReconciler {
      *      3) Checks it the broker services have been provisioned (have a node port)
      *      4) Collects the node ports for advertised hostnames
      *
-     * @return  Future which completes when all Node Port services are ready and their ports are collected
+     * @return  CompletionStage which completes when all Node Port services are ready and their ports are collected
      */
-    protected Future<Void> nodePortServicesReady() {
+    protected CompletionStage<Void> nodePortServicesReady() {
         List<GenericKafkaListener> loadBalancerListeners = ListenersUtils.nodePortListeners(kafka.getListeners());
-        List<Future<?>> listenerFutures = new ArrayList<>(loadBalancerListeners.size());
+        List<CompletableFuture<?>> listenerFutures = new ArrayList<>(loadBalancerListeners.size());
 
         for (GenericKafkaListener listener : loadBalancerListeners) {
             String bootstrapServiceName = ListenersUtils.backwardsCompatibleBootstrapServiceName(reconciliation.name(), listener);
 
-            @SuppressWarnings({ "rawtypes" }) // Has to use Raw type because of the CompositeFuture
-            Future perListenerFut = VertxUtil.toFuture(serviceOperator.hasNodePort(reconciliation, reconciliation.namespace(), bootstrapServiceName, 1_000, operationTimeoutMs))
-                    .compose(res -> VertxUtil.toFuture(serviceOperator.getAsync(reconciliation.namespace(), bootstrapServiceName)))
-                    .compose(svc -> {
+            CompletionStage<Void> perListenerFut = serviceOperator.hasNodePort(reconciliation, reconciliation.namespace(), bootstrapServiceName, 1_000, operationTimeoutMs)
+                    .thenCompose(res -> serviceOperator.getAsync(reconciliation.namespace(), bootstrapServiceName))
+                    .thenCompose(svc -> {
                         Integer externalBootstrapNodePort = svc.getSpec().getPorts().get(0).getNodePort();
                         LOGGER.debugCr(reconciliation, "Found node port {} for Service {}", externalBootstrapNodePort, bootstrapServiceName);
                         result.bootstrapNodePorts.put(ListenersUtils.identifier(listener), externalBootstrapNodePort);
 
-                        return Future.succeededFuture();
+                        return CompletableFuture.completedStage(null);
                     })
-                    .compose(res -> {
-                        List<Future<Void>> perPodFutures = new ArrayList<>();
+                    .thenCompose(res -> {
+                        List<CompletableFuture<Void>> perPodFutures = new ArrayList<>();
 
                         for (NodeRef node : kafka.brokerNodes()) {
                             perPodFutures.add(
-                                    VertxUtil.toFuture(serviceOperator.hasNodePort(reconciliation, reconciliation.namespace(), ListenersUtils.backwardsCompatiblePerBrokerServiceName(ReconcilerUtils.getControllerNameFromPodName(node.podName()), node.nodeId(), listener), 1_000, operationTimeoutMs))
+                                    serviceOperator.hasNodePort(reconciliation, reconciliation.namespace(), ListenersUtils.backwardsCompatiblePerBrokerServiceName(ReconcilerUtils.getControllerNameFromPodName(node.podName()), node.nodeId(), listener), 1_000, operationTimeoutMs).toCompletableFuture()
                             );
                         }
 
-                        return Future.join(perPodFutures);
+                        return CompletableFuture.allOf(perPodFutures.toArray(new CompletableFuture[0]));
                     })
-                    .compose(res -> {
-                        List<Future<Void>> perPodFutures = new ArrayList<>();
+                    .thenCompose(res -> {
+                        List<CompletableFuture<Void>> perPodFutures = new ArrayList<>();
 
                         for (NodeRef node : kafka.brokerNodes()) {
-                            Future<Void> perBrokerFut = VertxUtil.toFuture(serviceOperator.getAsync(reconciliation.namespace(), ListenersUtils.backwardsCompatiblePerBrokerServiceName(ReconcilerUtils.getControllerNameFromPodName(node.podName()), node.nodeId(), listener)))
-                                    .compose(svc -> {
+                            CompletionStage<Void> perBrokerFut = serviceOperator.getAsync(reconciliation.namespace(), ListenersUtils.backwardsCompatiblePerBrokerServiceName(ReconcilerUtils.getControllerNameFromPodName(node.podName()), node.nodeId(), listener))
+                                    .thenCompose(svc -> {
                                         Integer externalBrokerNodePort = svc.getSpec().getPorts().get(0).getNodePort();
                                         LOGGER.debugCr(reconciliation, "Found node port {} for Service {}", externalBrokerNodePort, svc.getMetadata().getName());
 
@@ -543,28 +540,26 @@ public class KafkaListenersReconciler {
 
                                         registerAdvertisedHostname(node.nodeId(), listener, advertisedHostname, nodePortAddressEnvVar(listener));
 
-                                        return Future.succeededFuture();
+                                        return CompletableFuture.completedStage(null);
                                     });
 
-                            perPodFutures.add(perBrokerFut);
+                            perPodFutures.add(perBrokerFut.toCompletableFuture());
                         }
 
-                        return Future.join(perPodFutures);
-                    }).compose(res -> {
+                        return CompletableFuture.allOf(perPodFutures.toArray(new CompletableFuture[0]));
+                    }).thenCompose(res -> {
                         ListenerStatus ls = new ListenerStatusBuilder()
                                 .withName(listener.getName())
                                 .build();
                         result.listenerStatuses.add(ls);
 
-                        return Future.succeededFuture();
+                        return CompletableFuture.completedStage(null);
                     });
 
-            listenerFutures.add(perListenerFut);
+            listenerFutures.add(perListenerFut.toCompletableFuture());
         }
 
-        return Future
-                .join(listenerFutures)
-                .mapEmpty();
+        return CompletableFuture.allOf(listenerFutures.toArray(new CompletableFuture[0]));
     }
 
     /**
@@ -575,19 +570,18 @@ public class KafkaListenersReconciler {
      *      3) Checks it the broker routes have been provisioned (have an address)
      *      4) Collects the route addresses for certificates and advertised hostnames
      *
-     * @return  Future which completes when all Routes are ready and their addresses are collected
+     * @return  CompletionStage which completes when all Routes are ready and their addresses are collected
      */
-    protected Future<Void> routesReady() {
+    protected CompletionStage<Void> routesReady() {
         List<GenericKafkaListener> routeListeners = ListenersUtils.routeListeners(kafka.getListeners());
-        List<Future<?>> listenerFutures = new ArrayList<>(routeListeners.size());
+        List<CompletableFuture<?>> listenerFutures = new ArrayList<>(routeListeners.size());
 
         for (GenericKafkaListener listener : routeListeners) {
             String bootstrapRouteName = ListenersUtils.backwardsCompatibleBootstrapRouteOrIngressName(reconciliation.name(), listener);
 
-            @SuppressWarnings({ "rawtypes" }) // Has to use Raw type because of the CompositeFuture
-            Future perListenerFut = VertxUtil.toFuture(routeOperator.hasAddress(reconciliation, reconciliation.namespace(), bootstrapRouteName, 1_000, operationTimeoutMs))
-                    .compose(res -> VertxUtil.toFuture(routeOperator.getAsync(reconciliation.namespace(), bootstrapRouteName)))
-                    .compose(route -> {
+            CompletionStage<Void> perListenerFut = routeOperator.hasAddress(reconciliation, reconciliation.namespace(), bootstrapRouteName, 1_000, operationTimeoutMs)
+                    .thenCompose(res -> routeOperator.getAsync(reconciliation.namespace(), bootstrapRouteName))
+                    .thenCompose(route -> {
                         String bootstrapAddress = route.getStatus().getIngress().get(0).getHost();
                         LOGGER.debugCr(reconciliation, "Found address {} for Route {}", bootstrapAddress, bootstrapRouteName);
 
@@ -602,26 +596,26 @@ public class KafkaListenersReconciler {
                                 .build();
                         result.listenerStatuses.add(ls);
 
-                        return Future.succeededFuture();
+                        return CompletableFuture.completedStage(null);
                     })
-                    .compose(res -> {
-                        List<Future<Void>> perPodFutures = new ArrayList<>();
+                    .thenCompose(res -> {
+                        List<CompletableFuture<Void>> perPodFutures = new ArrayList<>();
 
                         for (NodeRef node : kafka.brokerNodes()) {
                             perPodFutures.add(
-                                    VertxUtil.toFuture(routeOperator.hasAddress(reconciliation, reconciliation.namespace(), ListenersUtils.backwardsCompatiblePerBrokerServiceName(ReconcilerUtils.getControllerNameFromPodName(node.podName()), node.nodeId(), listener), 1_000, operationTimeoutMs))
+                                    routeOperator.hasAddress(reconciliation, reconciliation.namespace(), ListenersUtils.backwardsCompatiblePerBrokerServiceName(ReconcilerUtils.getControllerNameFromPodName(node.podName()), node.nodeId(), listener), 1_000, operationTimeoutMs).toCompletableFuture()
                             );
                         }
 
-                        return Future.join(perPodFutures);
+                        return CompletableFuture.allOf(perPodFutures.toArray(new CompletableFuture[0]));
                     })
-                    .compose(res -> {
-                        List<Future<Void>> perPodFutures = new ArrayList<>();
+                    .thenCompose(res -> {
+                        List<CompletableFuture<Void>> perPodFutures = new ArrayList<>();
 
                         for (NodeRef node : kafka.brokerNodes()) {
                             //final int finalBrokerId = brokerId;
-                            Future<Void> perBrokerFut = VertxUtil.toFuture(routeOperator.getAsync(reconciliation.namespace(), ListenersUtils.backwardsCompatiblePerBrokerServiceName(ReconcilerUtils.getControllerNameFromPodName(node.podName()), node.nodeId(), listener)))
-                                    .compose(route -> {
+                            CompletionStage<Void> perBrokerFut = routeOperator.getAsync(reconciliation.namespace(), ListenersUtils.backwardsCompatiblePerBrokerServiceName(ReconcilerUtils.getControllerNameFromPodName(node.podName()), node.nodeId(), listener))
+                                    .thenCompose(route -> {
                                         String brokerAddress = route.getStatus().getIngress().get(0).getHost();
                                         LOGGER.debugCr(reconciliation, "Found address {} for Route {}", brokerAddress, route.getMetadata().getName());
 
@@ -635,21 +629,19 @@ public class KafkaListenersReconciler {
                                         registerAdvertisedHostname(node.nodeId(), listener, advertisedHostname, brokerAddress);
                                         registerAdvertisedPort(node.nodeId(), listener, KafkaCluster.ROUTE_PORT);
 
-                                        return Future.succeededFuture();
+                                        return CompletableFuture.completedStage(null);
                                     });
 
-                            perPodFutures.add(perBrokerFut);
+                            perPodFutures.add(perBrokerFut.toCompletableFuture());
                         }
 
-                        return Future.join(perPodFutures);
+                        return CompletableFuture.allOf(perPodFutures.toArray(new CompletableFuture[0]));
                     });
 
-            listenerFutures.add(perListenerFut);
+            listenerFutures.add(perListenerFut.toCompletableFuture());
         }
 
-        return Future
-                .join(listenerFutures)
-                .mapEmpty();
+        return CompletableFuture.allOf(listenerFutures.toArray(new CompletableFuture[0]));
     }
 
     /**
@@ -660,18 +652,17 @@ public class KafkaListenersReconciler {
      *      3) Checks it the broker Gateway API TLS Routes have been provisioned and have at least one parent
      *      4) Collects the route addresses for certificates and advertised hostnames
      *
-     * @return  Future which completes when all Gateway API TLS Routes are ready and their addresses are collected
+     * @return  CompletionStage which completes when all Gateway API TLS Routes are ready and their addresses are collected
      */
-    protected Future<Void> tlsRoutesReady() {
+    protected CompletionStage<Void> tlsRoutesReady() {
         List<GenericKafkaListener> routeListeners = ListenersUtils.tlsRouteListeners(kafka.getListeners());
-        List<Future<?>> listenerFutures = new ArrayList<>(routeListeners.size());
+        List<CompletableFuture<?>> listenerFutures = new ArrayList<>(routeListeners.size());
 
         for (GenericKafkaListener listener : routeListeners) {
             String bootstrapRouteName = ListenersUtils.backwardsCompatibleBootstrapRouteOrIngressName(reconciliation.name(), listener);
 
-            @SuppressWarnings({ "rawtypes" }) // Has to use Raw type because of the CompositeFuture
-            Future perListenerFut = VertxUtil.toFuture(tlsRouteOperator.hasParents(reconciliation, reconciliation.namespace(), bootstrapRouteName, 1_000, operationTimeoutMs))
-                    .compose(i -> {
+            CompletionStage<Void> perListenerFut = tlsRouteOperator.hasParents(reconciliation, reconciliation.namespace(), bootstrapRouteName, 1_000, operationTimeoutMs)
+                    .thenCompose(i -> {
                         String bootstrapAddress = listener.getConfiguration().getBootstrap().getHost();
                         LOGGER.debugCr(reconciliation, "Using address {} for TLSRoute {}", bootstrapAddress, bootstrapRouteName);
 
@@ -686,20 +677,20 @@ public class KafkaListenersReconciler {
                                 .build();
                         result.listenerStatuses.add(ls);
 
-                        return Future.succeededFuture();
+                        return CompletableFuture.completedStage(null);
                     })
-                    .compose(res -> {
-                        List<Future<Void>> perPodFutures = new ArrayList<>();
+                    .thenCompose(res -> {
+                        List<CompletableFuture<Void>> perPodFutures = new ArrayList<>();
 
                         for (NodeRef node : kafka.brokerNodes()) {
                             perPodFutures.add(
-                                    VertxUtil.toFuture(tlsRouteOperator.hasParents(reconciliation, reconciliation.namespace(), ListenersUtils.backwardsCompatiblePerBrokerServiceName(ReconcilerUtils.getControllerNameFromPodName(node.podName()), node.nodeId(), listener), 1_000, operationTimeoutMs))
+                                    tlsRouteOperator.hasParents(reconciliation, reconciliation.namespace(), ListenersUtils.backwardsCompatiblePerBrokerServiceName(ReconcilerUtils.getControllerNameFromPodName(node.podName()), node.nodeId(), listener), 1_000, operationTimeoutMs).toCompletableFuture()
                             );
                         }
 
-                        return Future.join(perPodFutures);
+                        return CompletableFuture.allOf(perPodFutures.toArray(new CompletableFuture[0]));
                     })
-                    .compose(res -> {
+                    .thenCompose(res -> {
                         for (NodeRef node : kafka.brokerNodes()) {
                             String brokerAddress = ListenersUtils.brokerHost(listener, node);
                             LOGGER.debugCr(reconciliation, "Using address {} for TLSRoute {}", brokerAddress, ListenersUtils.backwardsCompatiblePerBrokerServiceName(ReconcilerUtils.getControllerNameFromPodName(node.podName()), node.nodeId(), listener));
@@ -715,15 +706,13 @@ public class KafkaListenersReconciler {
                             registerAdvertisedPort(node.nodeId(), listener, KafkaCluster.TLSROUTE_PORT);
                         }
 
-                        return Future.succeededFuture();
+                        return CompletableFuture.completedStage(null);
                     });
 
-            listenerFutures.add(perListenerFut);
+            listenerFutures.add(perListenerFut.toCompletableFuture());
         }
 
-        return Future
-                .join(listenerFutures)
-                .mapEmpty();
+        return CompletableFuture.allOf(listenerFutures.toArray(new CompletableFuture[0]));
     }
 
     /**
@@ -734,18 +723,18 @@ public class KafkaListenersReconciler {
      *      3) Checks it the broker ingresses have been provisioned (have an address)
      *      4) Collects the route addresses for certificates and advertised hostnames
      *
-     * @return  Future which completes when all Ingresses are ready and their addresses are collected
+     * @return  CompletionStage which completes when all Ingresses are ready and their addresses are collected
      */
-    protected Future<Void> ingressesReady() {
+    protected CompletionStage<Void> ingressesReady() {
 
         List<GenericKafkaListener> ingressListeners = ListenersUtils.ingressListeners(kafka.getListeners());
-        List<Future<Void>> listenerFutures = new ArrayList<>(ingressListeners.size());
+        List<CompletableFuture<Void>> listenerFutures = new ArrayList<>(ingressListeners.size());
 
         for (GenericKafkaListener listener : ingressListeners) {
             String bootstrapIngressName = ListenersUtils.backwardsCompatibleBootstrapRouteOrIngressName(reconciliation.name(), listener);
 
-            Future<Void> perListenerFut = VertxUtil.toFuture(ingressOperator.hasIngressAddress(reconciliation, reconciliation.namespace(), bootstrapIngressName, 1_000, operationTimeoutMs))
-                    .compose(res -> {
+            CompletionStage<Void> perListenerFut = ingressOperator.hasIngressAddress(reconciliation, reconciliation.namespace(), bootstrapIngressName, 1_000, operationTimeoutMs)
+                    .thenCompose(res -> {
                         String bootstrapAddress = listener.getConfiguration().getBootstrap().getHost();
                         LOGGER.debugCr(reconciliation, "Using address {} for Ingress {}", bootstrapAddress, bootstrapIngressName);
 
@@ -761,17 +750,17 @@ public class KafkaListenersReconciler {
                         result.listenerStatuses.add(ls);
 
                         // Check if broker ingresses are ready
-                        List<Future<Void>> perPodFutures = new ArrayList<>();
+                        List<CompletableFuture<Void>> perPodFutures = new ArrayList<>();
 
                         for (NodeRef node : kafka.brokerNodes()) {
                             perPodFutures.add(
-                                    VertxUtil.toFuture(ingressOperator.hasIngressAddress(reconciliation, reconciliation.namespace(), ListenersUtils.backwardsCompatiblePerBrokerServiceName(ReconcilerUtils.getControllerNameFromPodName(node.podName()), node.nodeId(), listener), 1_000, operationTimeoutMs))
+                                    ingressOperator.hasIngressAddress(reconciliation, reconciliation.namespace(), ListenersUtils.backwardsCompatiblePerBrokerServiceName(ReconcilerUtils.getControllerNameFromPodName(node.podName()), node.nodeId(), listener), 1_000, operationTimeoutMs).toCompletableFuture()
                             );
                         }
 
-                        return Future.join(perPodFutures);
+                        return CompletableFuture.allOf(perPodFutures.toArray(new CompletableFuture[0]));
                     })
-                    .compose(res -> {
+                    .thenCompose(res -> {
                         for (NodeRef node : kafka.brokerNodes()) {
                             String brokerAddress = ListenersUtils.brokerHost(listener, node);
                             LOGGER.debugCr(reconciliation, "Using address {} for Ingress {}", brokerAddress, ListenersUtils.backwardsCompatiblePerBrokerServiceName(ReconcilerUtils.getControllerNameFromPodName(node.podName()), node.nodeId(), listener));
@@ -787,23 +776,21 @@ public class KafkaListenersReconciler {
                             registerAdvertisedPort(node.nodeId(), listener, KafkaCluster.INGRESS_PORT);
                         }
 
-                        return Future.succeededFuture();
+                        return CompletableFuture.completedStage(null);
                     });
 
-            listenerFutures.add(perListenerFut);
+            listenerFutures.add(perListenerFut.toCompletableFuture());
         }
 
-        return Future
-                .join(listenerFutures)
-                .mapEmpty();
+        return CompletableFuture.allOf(listenerFutures.toArray(new CompletableFuture[0]));
     }
 
     /**
      * Collects the custom listener certificates from the secrets and stores them for later use
      *
-     * @return  Future which completes when all custom listener certificates are collected and are valid
+     * @return  CompletionStage which completes when all custom listener certificates are collected and are valid
      */
-    protected Future<Map<String, String>> customListenerCertificates() {
+    protected CompletionStage<Map<String, String>> customListenerCertificates() {
         List<String> secretNames = kafka.getListeners().stream()
                 .filter(listener -> listener.isTls()
                         && listener.getConfiguration() != null
@@ -813,25 +800,25 @@ public class KafkaListenersReconciler {
                 .collect(Collectors.toList());
         LOGGER.debugCr(reconciliation, "Validating secret {} with custom TLS listener certificates", secretNames);
 
-        List<Future<Secret>> secretFutures = new ArrayList<>(secretNames.size());
+        List<CompletableFuture<Secret>> secretFutures = new ArrayList<>(secretNames.size());
         Map<String, Secret> customSecrets = new HashMap<>(secretNames.size());
 
         for (String secretName : secretNames)   {
-            Future<Secret> fut = VertxUtil.toFuture(secretOperator.getAsync(reconciliation.namespace(), secretName))
-                    .compose(secret -> {
+            CompletionStage<Secret> completionStage = secretOperator.getAsync(reconciliation.namespace(), secretName)
+                    .thenCompose(secret -> {
                         if (secret != null) {
                             customSecrets.put(secretName, secret);
                             LOGGER.debugCr(reconciliation, "Found secrets {} with custom TLS listener certificate", secretName);
                         }
 
-                        return Future.succeededFuture();
+                        return CompletableFuture.completedStage(null);
                     });
 
-            secretFutures.add(fut);
+            secretFutures.add(completionStage.toCompletableFuture());
         }
 
-        return Future.join(secretFutures)
-                .compose(res -> {
+        return CompletableFuture.allOf(secretFutures.toArray(new CompletableFuture[0]))
+                .thenCompose(res -> {
                     List<String> errors = new ArrayList<>();
                     Map<String, String> customListenerCertificates = new HashMap<>();
 
@@ -860,10 +847,10 @@ public class KafkaListenersReconciler {
                     }
 
                     if (errors.isEmpty())   {
-                        return Future.succeededFuture(customListenerCertificates);
+                        return CompletableFuture.completedStage(customListenerCertificates);
                     } else {
                         LOGGER.errorCr(reconciliation, "Failed to process Secrets with custom certificates: {}", errors);
-                        return Future.failedFuture(new InvalidResourceException("Failed to process Secrets with custom certificates: " + errors));
+                        return CompletableFuture.failedStage(new InvalidResourceException("Failed to process Secrets with custom certificates: " + errors));
                     }
                 });
     }
@@ -891,9 +878,9 @@ public class KafkaListenersReconciler {
      * their status with either the custom listener certificate or with the CA certificate. This method should be
      * called only after This method should be called only after customListenerCertificates() which fills in the customListenerCertificates field.
      *
-     * @return  Future which completes when all statuses are updated
+     * @return  CompletionStage which completes when all statuses are updated
      */
-    protected Future<Void> addCertificatesToListenerStatuses(Map<String, String> customListenerCertificates) {
+    protected CompletionStage<Void> addCertificatesToListenerStatuses(Map<String, String> customListenerCertificates) {
         String caCertificate = new String(clusterCa.currentCaCertBytes(), StandardCharsets.US_ASCII);
 
         for (GenericKafkaListener listener : kafka.getListeners())   {
@@ -903,7 +890,7 @@ public class KafkaListenersReconciler {
             }
         }
 
-        return Future.succeededFuture();
+        return CompletableFuture.completedStage(null);
     }
 
     /**
