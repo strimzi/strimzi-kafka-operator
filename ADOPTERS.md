@@ -45,6 +45,8 @@ Please let us know by adding your company name and, if you want, a description o
     * Use Strimzi to operate cloud native data streaming platform (Kafka, Connect, MirrorMaker2, KafkaBridge)
 * [smaXtec] (https://www.smaxtec.com/en/)
     * Use Strimzi to deploy and manage multiple Kafka clusters and MirrorMaker2 instances.
+* [Moniepoint](https://moniepoint.com/)
+    * Use Strimzi to run Kafka and Kafka Connect on Kubernetes for CDC pipelines, database replication, and event messaging.
 
 ### Vendors
 
