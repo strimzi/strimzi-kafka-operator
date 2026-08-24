@@ -71,7 +71,7 @@ public class PvcReconciler {
                             // * The PVC doesn't exist yet, we should create it
                             // * The PVC is not Bound, we should reconcile it
                             return pvcOperator.reconcile(reconciliation, reconciliation.namespace(), desiredPvc.getMetadata().getName(), desiredPvc)
-                                    .thenApply(v -> null);
+                                    .thenApply(i -> null);
                         } else if (currentPvc.getStatus().getConditions().stream().anyMatch(cond -> "Resizing".equals(cond.getType()) && "true".equals(cond.getStatus().toLowerCase(Locale.ENGLISH))))  {
                             // The PVC is Bound, but it is already resizing => Nothing to do, we should let it resize
                             LOGGER.debugCr(reconciliation, "The PVC {} is resizing, nothing to do", desiredPvc.getMetadata().getName());
@@ -92,7 +92,7 @@ public class PvcReconciler {
                             } else  {
                                 // size didn't change, just reconcile
                                 return pvcOperator.reconcile(reconciliation, reconciliation.namespace(), desiredPvc.getMetadata().getName(), desiredPvc)
-                                        .thenApply(v -> null);
+                                        .thenApply(i -> null);
                             }
                         }
                     });
@@ -101,7 +101,7 @@ public class PvcReconciler {
         }
 
         return CompletableFuture.allOf(completableFutures.toArray(CompletableFuture[]::new))
-                .thenApply(v -> podIdsToRestart);
+                .thenApply(i -> podIdsToRestart);
     }
 
     /**
@@ -137,7 +137,7 @@ public class PvcReconciler {
                             // Resizing supported by SC => We can reconcile the PVC to have it resized
                             LOGGER.infoCr(reconciliation, "Resizing PVC {} from {} to {}.", desired.getMetadata().getName(), current.getStatus().getCapacity().get("storage").getAmount(), desired.getSpec().getResources().getRequests().get("storage").getAmount());
                             return pvcOperator.reconcile(reconciliation, reconciliation.namespace(), desired.getMetadata().getName(), desired)
-                                    .thenApply(v -> null);
+                                    .thenApply(i -> null);
                         }
                     });
         } else {

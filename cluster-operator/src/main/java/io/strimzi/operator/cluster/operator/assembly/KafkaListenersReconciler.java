@@ -402,7 +402,7 @@ public class KafkaListenersReconciler {
                     return CompletableFuture.completedFuture(null);
                 } else {
                     return serviceOperator.hasIngressAddress(reconciliation, reconciliation.namespace(), bootstrapServiceName, 1_000, operationTimeoutMs)
-                            .thenCompose(res -> serviceOperator.getAsync(reconciliation.namespace(), bootstrapServiceName))
+                            .thenCompose(ignore -> serviceOperator.getAsync(reconciliation.namespace(), bootstrapServiceName))
                             .thenCompose(svc -> {
                                 String bootstrapAddress;
 
@@ -419,7 +419,7 @@ public class KafkaListenersReconciler {
                                 return CompletableFuture.completedFuture(null);
                             });
                 }
-            }).thenCompose(res -> {
+            }).thenCompose(ignore -> {
                 List<CompletableFuture<Void>> perPodFutures = new ArrayList<>();
 
                 for (NodeRef node : kafka.brokerNodes()) {
@@ -429,7 +429,7 @@ public class KafkaListenersReconciler {
                 }
 
                 return CompletableFuture.allOf(perPodFutures.toArray(new CompletableFuture[0]));
-            }).thenCompose(res -> {
+            }).thenCompose(ignore -> {
                 List<CompletableFuture<Void>> perPodFutures = new ArrayList<>();
 
                 for (NodeRef node : kafka.brokerNodes()) {
@@ -464,7 +464,7 @@ public class KafkaListenersReconciler {
                 }
 
                 return CompletableFuture.allOf(perPodFutures.toArray(new CompletableFuture[0]));
-            }).thenCompose(res -> {
+            }).thenCompose(ignore -> {
                 ListenerStatus ls = new ListenerStatusBuilder()
                         .withName(listener.getName())
                         .withAddresses(bootstrapListenerAddressList.stream()
@@ -502,7 +502,7 @@ public class KafkaListenersReconciler {
             String bootstrapServiceName = ListenersUtils.backwardsCompatibleBootstrapServiceName(reconciliation.name(), listener);
 
             CompletionStage<Void> perListenerFut = serviceOperator.hasNodePort(reconciliation, reconciliation.namespace(), bootstrapServiceName, 1_000, operationTimeoutMs)
-                    .thenCompose(res -> serviceOperator.getAsync(reconciliation.namespace(), bootstrapServiceName))
+                    .thenCompose(ignore -> serviceOperator.getAsync(reconciliation.namespace(), bootstrapServiceName))
                     .thenCompose(svc -> {
                         Integer externalBootstrapNodePort = svc.getSpec().getPorts().get(0).getNodePort();
                         LOGGER.debugCr(reconciliation, "Found node port {} for Service {}", externalBootstrapNodePort, bootstrapServiceName);
@@ -510,7 +510,7 @@ public class KafkaListenersReconciler {
 
                         return CompletableFuture.completedFuture(null);
                     })
-                    .thenCompose(res -> {
+                    .thenCompose(ignore -> {
                         List<CompletableFuture<Void>> perPodFutures = new ArrayList<>();
 
                         for (NodeRef node : kafka.brokerNodes()) {
@@ -521,7 +521,7 @@ public class KafkaListenersReconciler {
 
                         return CompletableFuture.allOf(perPodFutures.toArray(new CompletableFuture[0]));
                     })
-                    .thenCompose(res -> {
+                    .thenCompose(ignore -> {
                         List<CompletableFuture<Void>> perPodFutures = new ArrayList<>();
 
                         for (NodeRef node : kafka.brokerNodes()) {
@@ -547,7 +547,7 @@ public class KafkaListenersReconciler {
                         }
 
                         return CompletableFuture.allOf(perPodFutures.toArray(new CompletableFuture[0]));
-                    }).thenCompose(res -> {
+                    }).thenCompose(ignore -> {
                         ListenerStatus ls = new ListenerStatusBuilder()
                                 .withName(listener.getName())
                                 .build();
@@ -580,7 +580,7 @@ public class KafkaListenersReconciler {
             String bootstrapRouteName = ListenersUtils.backwardsCompatibleBootstrapRouteOrIngressName(reconciliation.name(), listener);
 
             CompletionStage<Void> perListenerFut = routeOperator.hasAddress(reconciliation, reconciliation.namespace(), bootstrapRouteName, 1_000, operationTimeoutMs)
-                    .thenCompose(res -> routeOperator.getAsync(reconciliation.namespace(), bootstrapRouteName))
+                    .thenCompose(ignore -> routeOperator.getAsync(reconciliation.namespace(), bootstrapRouteName))
                     .thenCompose(route -> {
                         String bootstrapAddress = route.getStatus().getIngress().get(0).getHost();
                         LOGGER.debugCr(reconciliation, "Found address {} for Route {}", bootstrapAddress, bootstrapRouteName);
@@ -598,7 +598,7 @@ public class KafkaListenersReconciler {
 
                         return CompletableFuture.completedFuture(null);
                     })
-                    .thenCompose(res -> {
+                    .thenCompose(ignore -> {
                         List<CompletableFuture<Void>> perPodFutures = new ArrayList<>();
 
                         for (NodeRef node : kafka.brokerNodes()) {
@@ -609,7 +609,7 @@ public class KafkaListenersReconciler {
 
                         return CompletableFuture.allOf(perPodFutures.toArray(new CompletableFuture[0]));
                     })
-                    .thenCompose(res -> {
+                    .thenCompose(ignore -> {
                         List<CompletableFuture<Void>> perPodFutures = new ArrayList<>();
 
                         for (NodeRef node : kafka.brokerNodes()) {
@@ -679,7 +679,7 @@ public class KafkaListenersReconciler {
 
                         return CompletableFuture.completedFuture(null);
                     })
-                    .thenCompose(res -> {
+                    .thenCompose(ignore -> {
                         List<CompletableFuture<Void>> perPodFutures = new ArrayList<>();
 
                         for (NodeRef node : kafka.brokerNodes()) {
@@ -690,7 +690,7 @@ public class KafkaListenersReconciler {
 
                         return CompletableFuture.allOf(perPodFutures.toArray(new CompletableFuture[0]));
                     })
-                    .thenCompose(res -> {
+                    .thenCompose(ignore -> {
                         for (NodeRef node : kafka.brokerNodes()) {
                             String brokerAddress = ListenersUtils.brokerHost(listener, node);
                             LOGGER.debugCr(reconciliation, "Using address {} for TLSRoute {}", brokerAddress, ListenersUtils.backwardsCompatiblePerBrokerServiceName(ReconcilerUtils.getControllerNameFromPodName(node.podName()), node.nodeId(), listener));
@@ -734,7 +734,7 @@ public class KafkaListenersReconciler {
             String bootstrapIngressName = ListenersUtils.backwardsCompatibleBootstrapRouteOrIngressName(reconciliation.name(), listener);
 
             CompletionStage<Void> perListenerFut = ingressOperator.hasIngressAddress(reconciliation, reconciliation.namespace(), bootstrapIngressName, 1_000, operationTimeoutMs)
-                    .thenCompose(res -> {
+                    .thenCompose(ignore -> {
                         String bootstrapAddress = listener.getConfiguration().getBootstrap().getHost();
                         LOGGER.debugCr(reconciliation, "Using address {} for Ingress {}", bootstrapAddress, bootstrapIngressName);
 
@@ -760,7 +760,7 @@ public class KafkaListenersReconciler {
 
                         return CompletableFuture.allOf(perPodFutures.toArray(new CompletableFuture[0]));
                     })
-                    .thenCompose(res -> {
+                    .thenCompose(ignore -> {
                         for (NodeRef node : kafka.brokerNodes()) {
                             String brokerAddress = ListenersUtils.brokerHost(listener, node);
                             LOGGER.debugCr(reconciliation, "Using address {} for Ingress {}", brokerAddress, ListenersUtils.backwardsCompatiblePerBrokerServiceName(ReconcilerUtils.getControllerNameFromPodName(node.podName()), node.nodeId(), listener));
@@ -818,7 +818,7 @@ public class KafkaListenersReconciler {
         }
 
         return CompletableFuture.allOf(secretFutures.toArray(new CompletableFuture[0]))
-                .thenCompose(res -> {
+                .thenCompose(ignore -> {
                     List<String> errors = new ArrayList<>();
                     Map<String, String> customListenerCertificates = new HashMap<>();
 
