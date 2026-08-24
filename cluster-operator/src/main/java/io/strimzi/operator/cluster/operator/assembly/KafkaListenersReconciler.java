@@ -138,7 +138,7 @@ public class KafkaListenersReconciler {
                 .thenCompose(i -> customListenerCertificates())
                 // This method should be called only after customListenerCertificates
                 .thenCompose(customListenerCertificates -> addCertificatesToListenerStatuses(customListenerCertificates))
-                .thenCompose(i -> CompletableFuture.completedStage(result));
+                .thenCompose(i -> CompletableFuture.completedFuture(result));
     }
 
     /**
@@ -171,9 +171,9 @@ public class KafkaListenersReconciler {
         } else {
             if (!routes.isEmpty()) {
                 LOGGER.warnCr(reconciliation, "The OpenShift route API is not available in this Kubernetes cluster. Exposing Kafka cluster {} using routes is not possible.", reconciliation.name());
-                return CompletableFuture.failedStage(new RuntimeException("The OpenShift route API is not available in this Kubernetes cluster. Exposing Kafka cluster " + reconciliation.name() + " using routes is not possible."));
+                return CompletableFuture.failedFuture(new RuntimeException("The OpenShift route API is not available in this Kubernetes cluster. Exposing Kafka cluster " + reconciliation.name() + " using routes is not possible."));
             } else {
-                return CompletableFuture.completedStage(null);
+                return CompletableFuture.completedFuture(null);
             }
         }
     }
@@ -192,9 +192,9 @@ public class KafkaListenersReconciler {
         } else {
             if (!routes.isEmpty()) {
                 LOGGER.warnCr(reconciliation, "The Gateway API TLSRoute resource is not available in this Kubernetes cluster. Exposing Kafka cluster {} using TLSRoutes is not possible.", reconciliation.name());
-                return CompletableFuture.failedStage(new RuntimeException("The Gateway API TLSRoute resource is not available in this Kubernetes cluster. Exposing Kafka cluster " + reconciliation.name() + " using TLSRoutes is not possible."));
+                return CompletableFuture.failedFuture(new RuntimeException("The Gateway API TLSRoute resource is not available in this Kubernetes cluster. Exposing Kafka cluster " + reconciliation.name() + " using TLSRoutes is not possible."));
             } else {
-                return CompletableFuture.completedStage(null);
+                return CompletableFuture.completedFuture(null);
             }
         }
     }
@@ -325,7 +325,7 @@ public class KafkaListenersReconciler {
             }
         }
 
-        return CompletableFuture.completedStage(null);
+        return CompletableFuture.completedFuture(null);
     }
 
     /**
@@ -375,7 +375,7 @@ public class KafkaListenersReconciler {
             }
         }
 
-        return CompletableFuture.completedStage(null);
+        return CompletableFuture.completedFuture(null);
     }
 
     /**
@@ -397,9 +397,9 @@ public class KafkaListenersReconciler {
 
             List<String> bootstrapListenerAddressList = new ArrayList<>();
 
-            CompletionStage<Void> perListenerFut = CompletableFuture.completedStage(null).thenCompose(i -> {
+            CompletionStage<Void> perListenerFut = CompletableFuture.completedFuture(null).thenCompose(i -> {
                 if (ListenersUtils.skipCreateBootstrapService(listener)) {
-                    return CompletableFuture.completedStage(null);
+                    return CompletableFuture.completedFuture(null);
                 } else {
                     return serviceOperator.hasIngressAddress(reconciliation, reconciliation.namespace(), bootstrapServiceName, 1_000, operationTimeoutMs)
                             .thenCompose(res -> serviceOperator.getAsync(reconciliation.namespace(), bootstrapServiceName))
@@ -416,7 +416,7 @@ public class KafkaListenersReconciler {
 
                                 result.bootstrapDnsNames.add(bootstrapAddress);
                                 bootstrapListenerAddressList.add(bootstrapAddress);
-                                return CompletableFuture.completedStage(null);
+                                return CompletableFuture.completedFuture(null);
                             });
                 }
             }).thenCompose(res -> {
@@ -457,7 +457,7 @@ public class KafkaListenersReconciler {
                                 registerAdvertisedHostname(node.nodeId(), listener, advertisedHostname, brokerAddress);
                                 registerAdvertisedPort(node.nodeId(), listener, listener.getPort());
 
-                                return CompletableFuture.completedStage(null);
+                                return CompletableFuture.completedFuture(null);
                             });
 
                     perPodFutures.add(perBrokerFut.toCompletableFuture());
@@ -475,7 +475,7 @@ public class KafkaListenersReconciler {
                         .build();
                 result.listenerStatuses.add(ls);
 
-                return CompletableFuture.completedStage(null);
+                return CompletableFuture.completedFuture(null);
             });
 
             listenerFutures.add(perListenerFut.toCompletableFuture());
@@ -508,7 +508,7 @@ public class KafkaListenersReconciler {
                         LOGGER.debugCr(reconciliation, "Found node port {} for Service {}", externalBootstrapNodePort, bootstrapServiceName);
                         result.bootstrapNodePorts.put(ListenersUtils.identifier(listener), externalBootstrapNodePort);
 
-                        return CompletableFuture.completedStage(null);
+                        return CompletableFuture.completedFuture(null);
                     })
                     .thenCompose(res -> {
                         List<CompletableFuture<Void>> perPodFutures = new ArrayList<>();
@@ -540,7 +540,7 @@ public class KafkaListenersReconciler {
 
                                         registerAdvertisedHostname(node.nodeId(), listener, advertisedHostname, nodePortAddressEnvVar(listener));
 
-                                        return CompletableFuture.completedStage(null);
+                                        return CompletableFuture.completedFuture(null);
                                     });
 
                             perPodFutures.add(perBrokerFut.toCompletableFuture());
@@ -553,7 +553,7 @@ public class KafkaListenersReconciler {
                                 .build();
                         result.listenerStatuses.add(ls);
 
-                        return CompletableFuture.completedStage(null);
+                        return CompletableFuture.completedFuture(null);
                     });
 
             listenerFutures.add(perListenerFut.toCompletableFuture());
@@ -596,7 +596,7 @@ public class KafkaListenersReconciler {
                                 .build();
                         result.listenerStatuses.add(ls);
 
-                        return CompletableFuture.completedStage(null);
+                        return CompletableFuture.completedFuture(null);
                     })
                     .thenCompose(res -> {
                         List<CompletableFuture<Void>> perPodFutures = new ArrayList<>();
@@ -629,7 +629,7 @@ public class KafkaListenersReconciler {
                                         registerAdvertisedHostname(node.nodeId(), listener, advertisedHostname, brokerAddress);
                                         registerAdvertisedPort(node.nodeId(), listener, KafkaCluster.ROUTE_PORT);
 
-                                        return CompletableFuture.completedStage(null);
+                                        return CompletableFuture.completedFuture(null);
                                     });
 
                             perPodFutures.add(perBrokerFut.toCompletableFuture());
@@ -677,7 +677,7 @@ public class KafkaListenersReconciler {
                                 .build();
                         result.listenerStatuses.add(ls);
 
-                        return CompletableFuture.completedStage(null);
+                        return CompletableFuture.completedFuture(null);
                     })
                     .thenCompose(res -> {
                         List<CompletableFuture<Void>> perPodFutures = new ArrayList<>();
@@ -706,7 +706,7 @@ public class KafkaListenersReconciler {
                             registerAdvertisedPort(node.nodeId(), listener, KafkaCluster.TLSROUTE_PORT);
                         }
 
-                        return CompletableFuture.completedStage(null);
+                        return CompletableFuture.completedFuture(null);
                     });
 
             listenerFutures.add(perListenerFut.toCompletableFuture());
@@ -776,7 +776,7 @@ public class KafkaListenersReconciler {
                             registerAdvertisedPort(node.nodeId(), listener, KafkaCluster.INGRESS_PORT);
                         }
 
-                        return CompletableFuture.completedStage(null);
+                        return CompletableFuture.completedFuture(null);
                     });
 
             listenerFutures.add(perListenerFut.toCompletableFuture());
@@ -811,7 +811,7 @@ public class KafkaListenersReconciler {
                             LOGGER.debugCr(reconciliation, "Found secrets {} with custom TLS listener certificate", secretName);
                         }
 
-                        return CompletableFuture.completedStage(null);
+                        return CompletableFuture.completedFuture(null);
                     });
 
             secretFutures.add(completionStage.toCompletableFuture());
@@ -847,10 +847,10 @@ public class KafkaListenersReconciler {
                     }
 
                     if (errors.isEmpty())   {
-                        return CompletableFuture.completedStage(customListenerCertificates);
+                        return CompletableFuture.completedFuture(customListenerCertificates);
                     } else {
                         LOGGER.errorCr(reconciliation, "Failed to process Secrets with custom certificates: {}", errors);
-                        return CompletableFuture.failedStage(new InvalidResourceException("Failed to process Secrets with custom certificates: " + errors));
+                        return CompletableFuture.failedFuture(new InvalidResourceException("Failed to process Secrets with custom certificates: " + errors));
                     }
                 });
     }
@@ -890,7 +890,7 @@ public class KafkaListenersReconciler {
             }
         }
 
-        return CompletableFuture.completedStage(null);
+        return CompletableFuture.completedFuture(null);
     }
 
     /**

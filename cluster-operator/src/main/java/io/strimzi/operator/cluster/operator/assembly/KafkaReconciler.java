@@ -515,7 +515,7 @@ public class KafkaReconciler {
                         }
                     }
 
-                    return CompletableFuture.completedStage(null);
+                    return CompletableFuture.completedFuture(null);
                 }));
     }
 

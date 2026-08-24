@@ -75,12 +75,12 @@ public class PvcReconciler {
                         } else if (currentPvc.getStatus().getConditions().stream().anyMatch(cond -> "Resizing".equals(cond.getType()) && "true".equals(cond.getStatus().toLowerCase(Locale.ENGLISH))))  {
                             // The PVC is Bound, but it is already resizing => Nothing to do, we should let it resize
                             LOGGER.debugCr(reconciliation, "The PVC {} is resizing, nothing to do", desiredPvc.getMetadata().getName());
-                            return CompletableFuture.completedStage(null);
+                            return CompletableFuture.completedFuture(null);
                         } else if (currentPvc.getStatus().getConditions().stream().anyMatch(cond -> "FileSystemResizePending".equals(cond.getType()) && "true".equals(cond.getStatus().toLowerCase(Locale.ENGLISH))))  {
                             // The PVC is Bound and resized but waiting for FS resizing => We need to restart the pod which is using it
                             podIdsToRestart.add(getPodIndexFromPvcName(desiredPvc.getMetadata().getName()));
                             LOGGER.infoCr(reconciliation, "The PVC {} is waiting for file system resizing and the pod using it might need to be restarted.", desiredPvc.getMetadata().getName());
-                            return CompletableFuture.completedStage(null);
+                            return CompletableFuture.completedFuture(null);
                         } else {
                             // The PVC is Bound and resizing is not in progress => We should check if the SC supports resizing and check if size changed
                             Long currentSize = StorageUtils.convertToMillibytes(currentPvc.getSpec().getResources().getRequests().get("storage"));
@@ -125,14 +125,14 @@ public class PvcReconciler {
                                     "Storage Class " + storageClassName + " not found. " +
                                             "PVC " + desired.getMetadata().getName() + " cannot be resized."));
                             LOGGER.warnCr(reconciliation, "Storage Class {} not found. PVC {} cannot be resized. Reconciliation will proceed without reconciling this PVC.", storageClassName, desired.getMetadata().getName());
-                            return CompletableFuture.completedStage(null);
+                            return CompletableFuture.completedFuture(null);
                         } else if (sc.getAllowVolumeExpansion() == null || !sc.getAllowVolumeExpansion())    {
                             // Resizing not supported in SC => do nothing
                             kafkaStatus.addCondition(StatusUtils.buildWarningCondition("PvcResizingWarning",
                                     "Storage Class " + storageClassName + " does not support resizing of volumes. " +
                                             "PVC " + desired.getMetadata().getName() + " cannot be resized."));
                             LOGGER.warnCr(reconciliation, "Storage Class {} does not support resizing of volumes. PVC {} cannot be resized. Reconciliation will proceed without reconciling this PVC.", storageClassName, desired.getMetadata().getName());
-                            return CompletableFuture.completedStage(null);
+                            return CompletableFuture.completedFuture(null);
                         } else  {
                             // Resizing supported by SC => We can reconcile the PVC to have it resized
                             LOGGER.infoCr(reconciliation, "Resizing PVC {} from {} to {}.", desired.getMetadata().getName(), current.getStatus().getCapacity().get("storage").getAmount(), desired.getSpec().getResources().getRequests().get("storage").getAmount());
@@ -144,7 +144,7 @@ public class PvcReconciler {
             kafkaStatus.addCondition(StatusUtils.buildWarningCondition("PvcResizingWarning",
                     "PVC " + desired.getMetadata().getName() + " does not use any Storage Class and cannot be resized."));
             LOGGER.warnCr(reconciliation, "PVC {} does not use any Storage Class and cannot be resized. Reconciliation will proceed without reconciling this PVC.", desired.getMetadata().getName());
-            return CompletableFuture.completedStage(null);
+            return CompletableFuture.completedFuture(null);
         }
     }
 
@@ -185,7 +185,7 @@ public class PvcReconciler {
                         return pvcOperator.reconcile(reconciliation, reconciliation.namespace(), pvcName, null)
                                 .thenApply(i -> null);
                     } else {
-                        return CompletableFuture.completedStage(null);
+                        return CompletableFuture.completedFuture(null);
                     }
                 });
     }

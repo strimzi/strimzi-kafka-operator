@@ -105,7 +105,7 @@ public class ManualPodCleaner {
 
                     if (podToClean == null) {
                         // No pod is annotated for deletion => return success
-                        return CompletableFuture.completedStage(null);
+                        return CompletableFuture.completedFuture(null);
                     } else {
                         return manualPodCleaning(podToClean.getMetadata().getName());
                     }
