@@ -386,7 +386,7 @@ public class EntityOperatorReconciler {
     /**
      * Manages the RoleBinding granting the entity operator service account permission to manage
      * cert-manager {@code Certificate} resources. The RoleBinding is created when the User Operator is
-     * present and the clients CA type is {@code cert-manager.io}. It is deleted otherwise.
+     * present and the clients CA type is {@code cert-manager}. It is deleted otherwise.
      *
      * @return  Future which completes when the reconciliation is done
      */

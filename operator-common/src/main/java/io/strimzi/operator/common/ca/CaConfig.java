@@ -45,7 +45,7 @@ public class CaConfig {
                 ? certificateAuthority.getCertificateExpirationPolicy()
                 : CertificateExpirationPolicy.RENEW_CERTIFICATE;
         this.generatePkcs12Stores = generatePkcs12Stores;
-        this.certificateManagerType = certificateAuthority != null ? certificateAuthority.getType() : CertificateManagerType.STRIMZI_IO;
+        this.certificateManagerType = certificateAuthority != null ? certificateAuthority.getType() : CertificateManagerType.STRIMZI;
     }
 
     /**

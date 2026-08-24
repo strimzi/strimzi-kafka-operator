@@ -6,9 +6,9 @@ package io.strimzi.operator.user.ca;
 
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
-import io.strimzi.api.kafka.model.common.certmanager.IssuerKind;
-import io.strimzi.api.kafka.model.common.certmanager.IssuerRef;
-import io.strimzi.api.kafka.model.common.certmanager.IssuerRefBuilder;
+import io.strimzi.api.kafka.model.kafka.certmanager.IssuerKind;
+import io.strimzi.api.kafka.model.kafka.certmanager.IssuerRef;
+import io.strimzi.api.kafka.model.kafka.certmanager.IssuerRefBuilder;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.certs.OpenSslCertIssuer;
 import io.strimzi.certs.StrimziSubject;

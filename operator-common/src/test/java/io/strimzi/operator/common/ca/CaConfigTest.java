@@ -29,7 +29,7 @@ public class CaConfigTest {
         assertTrue(caConfig.isGenerateCa());
         assertTrue(caConfig.isGenerateSecretOwnerRef());
         assertThat(caConfig.getCertificateExpirationPolicy(), is(CertificateExpirationPolicy.RENEW_CERTIFICATE));
-        assertThat(caConfig.getCertificateManagerType(), is(CertificateManagerType.STRIMZI_IO));
+        assertThat(caConfig.getCertificateManagerType(), is(CertificateManagerType.STRIMZI));
     }
 
     @Test
@@ -41,7 +41,7 @@ public class CaConfigTest {
         assertTrue(caConfig.isGenerateCa());
         assertTrue(caConfig.isGenerateSecretOwnerRef());
         assertThat(caConfig.getCertificateExpirationPolicy(), is(CertificateExpirationPolicy.RENEW_CERTIFICATE));
-        assertThat(caConfig.getCertificateManagerType(), is(CertificateManagerType.STRIMZI_IO));
+        assertThat(caConfig.getCertificateManagerType(), is(CertificateManagerType.STRIMZI));
     }
 
     @Test
@@ -52,7 +52,7 @@ public class CaConfigTest {
                 .withGenerateCertificateAuthority(false)
                 .withGenerateSecretOwnerReference(false)
                 .withCertificateExpirationPolicy(CertificateExpirationPolicy.REPLACE_KEY)
-                .withType(CertificateManagerType.CERT_MANAGER_IO)
+                .withType(CertificateManagerType.CERT_MANAGER)
                 .build();
         CaConfig caConfig = new CaConfig(ca, true);
 
@@ -61,18 +61,18 @@ public class CaConfigTest {
         assertFalse(caConfig.isGenerateCa());
         assertFalse(caConfig.isGenerateSecretOwnerRef());
         assertThat(caConfig.getCertificateExpirationPolicy(), is(CertificateExpirationPolicy.REPLACE_KEY));
-        assertThat(caConfig.getCertificateManagerType(), is(CertificateManagerType.CERT_MANAGER_IO));
+        assertThat(caConfig.getCertificateManagerType(), is(CertificateManagerType.CERT_MANAGER));
     }
 
     @Test
     void testConstructorPassingSomeVariables() {
-        CaConfig caConfig = new CaConfig(6, 4, false, true, CertificateManagerType.CERT_MANAGER_IO);
+        CaConfig caConfig = new CaConfig(6, 4, false, true, CertificateManagerType.CERT_MANAGER);
 
         assertThat(caConfig.getValidityDays(), is(6));
         assertThat(caConfig.getRenewalDays(), is(4));
         assertFalse(caConfig.isGenerateCa());
         assertTrue(caConfig.isGenerateSecretOwnerRef());
         assertThat(caConfig.getCertificateExpirationPolicy(), is(CertificateExpirationPolicy.RENEW_CERTIFICATE));
-        assertThat(caConfig.getCertificateManagerType(), is(CertificateManagerType.CERT_MANAGER_IO));
+        assertThat(caConfig.getCertificateManagerType(), is(CertificateManagerType.CERT_MANAGER));
     }
 }

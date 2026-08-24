@@ -10,8 +10,8 @@ import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.strimzi.api.kafka.model.common.CertificateAuthority;
 import io.strimzi.api.kafka.model.common.CertificateAuthorityBuilder;
 import io.strimzi.api.kafka.model.common.CertificateManagerType;
-import io.strimzi.api.kafka.model.common.certmanager.IssuerKind;
-import io.strimzi.api.kafka.model.common.certmanager.IssuerRefBuilder;
+import io.strimzi.api.kafka.model.kafka.certmanager.IssuerKind;
+import io.strimzi.api.kafka.model.kafka.certmanager.IssuerRefBuilder;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.certs.OpenSslCertIssuer;
 import io.strimzi.certs.StrimziSubject;
@@ -72,12 +72,12 @@ public class CertManagerCaCertIssuerTest {
                 .withValidityDays(VALIDITY_DAYS)
                 .withRenewalDays(RENEWAL_DAYS)
                 .withGenerateCertificateAuthority(false)
-                .withType(CertificateManagerType.CERT_MANAGER_IO)
+                .withType(CertificateManagerType.CERT_MANAGER)
                 .withNewCertManager()
-                    .withNewCaCert()
+                    .withNewCaCertRef()
                         .withSecretName("my-cluster-ca-secret")
                         .withCertificate(CA_CRT)
-                    .endCaCert()
+                    .endCaCertRef()
                     .withNewIssuerRef()
                         .withName("cm-issuer")
                         .withKind(IssuerKind.CLUSTER_ISSUER)

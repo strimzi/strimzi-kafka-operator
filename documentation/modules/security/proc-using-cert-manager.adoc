@@ -41,7 +41,7 @@ Replace _<ca_cert_secret_name>_ with a name of your choice, _<path_to_ca_cert_pe
 NOTE: The `ca.crt` file in the Secret must contain either a single CA certificate or CA certificate chain that can be used to trust certificates issued by cert-manager.
 For this reason the cert-manager `SelfSigned` issuer is not supported.
 
-. Create or update the `Kafka` resource, setting `type: cert-manager.io` on `clusterCa`, `clientsCa`, or both.
+. Create or update the `Kafka` resource, setting `type: cert-manager` on `clusterCa`, `clientsCa`, or both.
 Set `generateCertificateAuthority: false` and provide the `certManager.issuerRef` and `certManager.caCert` configuration.
 +
 .Example `Kafka` resource using cert-manager for both Cluster CA and Clients CA
@@ -54,7 +54,7 @@ metadata:
 spec:
   clusterCa:
     generateCertificateAuthority: false <1>
-    type: cert-manager.io <2>
+    type: cert-manager <2>
     certManager:
       issuerRef:
         name: my-cluster-issuer <3>
@@ -65,7 +65,7 @@ spec:
         certificate: ca.crt <7>
   clientsCa:
     generateCertificateAuthority: false
-    type: cert-manager.io
+    type: cert-manager
     certManager:
       issuerRef:
         name: my-cluster-issuer
@@ -78,7 +78,7 @@ spec:
     # ...
   # ...
 ----
-<1> Required. Must be `false` when `type` is `cert-manager.io`.
+<1> Required. Must be `false` when `type` is `cert-manager`.
 <2> Enables cert-manager certificate issuance for this CA role.
 <3> Name of the cert-manager `Issuer` or `ClusterIssuer` to use.
 <4> Kind of the issuer. Must be `Issuer` or `ClusterIssuer`.
@@ -95,7 +95,9 @@ kubectl apply -f _<kafka_resource_file>_ -n _<namespace>_
 +
 [source,shell,subs="+quotes"]
 kubectl get certificates -n _<namespace>_
-+
+
+.Component TLS certificates
+
 Strimzi creates one `Certificate` resource per Kafka node and one for each enabled component (Cruise Control, Kafka Exporter, Entity Operator), plus one for the cluster operator.
 cert-manager stores the issued certificates in Secrets with a `-cm` suffix (for example, `my-cluster-dual-role-0-cm`).
 During reconciliation, Strimzi copies the certificates from these Secrets into the component Secrets that are used for TLS configuration.
@@ -110,7 +112,7 @@ When the CA certificate in the user-provided `Secret` changes, Strimzi detects t
 
 .KafkaUser TLS certificates
 
-When `clientsCa.type` is set to `cert-manager.io`, the User Operator also delegates `KafkaUser` TLS certificate issuance to cert-manager.
+When `clientsCa.type` is set to `cert-manager`, the User Operator also delegates `KafkaUser` TLS certificate issuance to cert-manager.
 Create `KafkaUser` resources with `spec.authentication.type: tls` as usual.
 
 If the User Operator is deployed as part of the Entity Operator, the Cluster Operator configures it automatically.
@@ -121,18 +123,18 @@ If you are running the User Operator as a standalone deployment, set the followi
 |Environment variable |Description |Default
 
 |`STRIMZI_CA_TYPE`
-|Type of certificate manager. Set to `cert-manager.io` to enable cert-manager integration.
-|`strimzi.io`
+|Type of certificate manager. Set to `cert-manager` to enable cert-manager integration.
+|`strimzi`
 
-|`STRIMZI_CM_ISSUER_NAME`
+|`STRIMZI_CERT_MANAGER_ISSUER_NAME`
 |Name of the cert-manager `Issuer` or `ClusterIssuer` to use for `KafkaUser` certificates.
 |_(none)_
 
-|`STRIMZI_CM_ISSUER_KIND`
+|`STRIMZI_CERT_MANAGER_ISSUER_KIND`
 |Kind of the cert-manager issuer. Must be `Issuer` or `ClusterIssuer`.
 |_(none)_
 
-|`STRIMZI_CM_ISSUER_GROUP`
+|`STRIMZI_CERT_MANAGER_ISSUER_GROUP`
 |API group of the cert-manager issuer.
 |`cert-manager.io`
 
@@ -143,14 +145,20 @@ If you are running the User Operator as a standalone deployment, set the followi
 ----
 env:
   - name: STRIMZI_CA_TYPE
-    value: cert-manager.io
-  - name: STRIMZI_CM_ISSUER_NAME
+    value: cert-manager
+  - name: STRIMZI_CERT_MANAGER_ISSUER_NAME
     value: my-cluster-issuer
-  - name: STRIMZI_CM_ISSUER_KIND
+  - name: STRIMZI_CERT_MANAGER_ISSUER_KIND
     value: ClusterIssuer
-  - name: STRIMZI_CM_ISSUER_GROUP
+  - name: STRIMZI_CERT_MANAGER_ISSUER_GROUP
     value: cert-manager.io
 ----
+
+.Switching between CA types
+
+You can switch between Strimzi-managed CA and cert-manager on a running cluster by changing the `type` and `generateCertificateAuthority` fields and applying the updated `Kafka` resource.
+The Cluster Operator detects the change and performs a rolling restart of all components to switch to the new certificates.
+To switch back to Strimzi-managed CA, set `type` to `strimzi` (or remove it) and set `generateCertificateAuthority` to `true`.
 
 [role="_additional-resources"]
 .Additional resources

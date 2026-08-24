@@ -2,9 +2,10 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.api.kafka.model.common.certmanager;
+package io.strimzi.api.kafka.model.kafka.certmanager;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.strimzi.api.kafka.model.common.Constants;
 import io.strimzi.api.kafka.model.common.UnknownPropertyPreserving;
@@ -17,22 +18,23 @@ import java.util.HashMap;
 import java.util.Map;
 
 @Description("Configuration for using cert-manager to issue certificates. " +
-        "This only applies if the CA type is set to `cert-manager.io`.")
+        "This only applies if the CA type is set to `cert-manager`.")
 @Buildable(
         editableEnabled = false,
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({ "issuerRef", "caCert" })
+@JsonPropertyOrder({ "issuerRef", "caCertRef" })
 @EqualsAndHashCode
 @ToString
 public class CertManager implements UnknownPropertyPreserving {
     private IssuerRef issuerRef;
-    private CaCertRef caCert;
+    private CaCertRef caCertRef;
     private Map<String, Object> additionalProperties;
 
     @Description("Reference to the cert-manager issuer to use for issuing certificates. " +
             "Required.")
+    @JsonProperty(required = true)
     public IssuerRef getIssuerRef() {
         return issuerRef;
     }
@@ -44,12 +46,13 @@ public class CertManager implements UnknownPropertyPreserving {
     @Description("Reference to the Secret containing the CA certificate (public key) " +
             "that trusts certificates issued by cert-manager. " +
             "Required.")
-    public CaCertRef getCaCert() {
-        return caCert;
+    @JsonProperty(required = true)
+    public CaCertRef getCaCertRef() {
+        return caCertRef;
     }
 
-    public void setCaCert(CaCertRef caCert) {
-        this.caCert = caCert;
+    public void setCaCertRef(CaCertRef caCertRef) {
+        this.caCertRef = caCertRef;
     }
 
     @Override

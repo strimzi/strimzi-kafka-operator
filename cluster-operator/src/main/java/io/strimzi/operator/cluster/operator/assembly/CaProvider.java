@@ -77,7 +77,7 @@ public abstract class CaProvider {
             Secret clusterOperatorCertSecret
     ) {
         return switch (caConfig.getCertificateManagerType()) {
-            case STRIMZI_IO -> {
+            case STRIMZI -> {
                 if (caConfig.isGenerateCa()) {
                     yield new InternalCaProvider(reconciliation, caRole, caConfig, kafkaCr, secretOperator, certIssuer,
                             passwordGenerator, clock, existingCaCertSecret, existingCaKeySecret
@@ -88,9 +88,9 @@ public abstract class CaProvider {
                     );
                 }
             }
-            case CERT_MANAGER_IO -> {
+            case CERT_MANAGER -> {
                 if (caConfig.isGenerateCa()) {
-                    throw new IllegalArgumentException("Certificate Manager type is set to " + CertificateManagerType.CERT_MANAGER_IO.toValue() + ", but generateCertificateAuthority is set to true. Set generateCertificateAuthority to false when using cert-manager.io as the certificate manager type.");
+                    throw new IllegalArgumentException("Certificate Manager type is set to " + CertificateManagerType.CERT_MANAGER.toValue() + ", but generateCertificateAuthority is set to true. Set generateCertificateAuthority to false when using cert-manager as the certificate manager type.");
                 }
                 yield new CertManagerCaProvider(reconciliation, caRole, caConfig, kafkaCr, existingCaCertSecret, clusterOperatorCertSecret, certManagerCertificateOperator, secretOperator);
             }
