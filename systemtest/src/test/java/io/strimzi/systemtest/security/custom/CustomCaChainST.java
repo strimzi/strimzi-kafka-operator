@@ -42,6 +42,7 @@ import org.junit.jupiter.api.Tag;
 
 import java.security.cert.X509Certificate;
 import java.util.List;
+import java.util.Map;
 
 import static io.strimzi.systemtest.TestTags.CONNECT;
 import static io.strimzi.systemtest.TestTags.CONNECT_COMPONENTS;
@@ -187,7 +188,7 @@ public class CustomCaChainST extends AbstractST {
             @Step(value = "Generate a custom CA chain: Root -> Intermediate -> Leaf.", expected = "CA chain is generated."),
             @Step(value = "Deploy the full chain as Cluster CA and Clients CA secrets.", expected = "CA secrets are deployed."),
             @Step(value = "Deploy Kafka cluster with custom CAs.", expected = "Kafka cluster is ready."),
-            @Step(value = "Verify the broker certificate chain contains 4 certificates and validate the issuer chain: broker cert -> Leaf CA -> Intermediate CA -> Root CA (self-signed).", expected = "Chain contains 4 certs with correct issuer relationships and CA basic constraints."),
+            @Step(value = "Verify the certificate chain of every Kafka node contains 4 certificates and validate the issuer chain: node cert -> Leaf CA -> Intermediate CA -> Root CA (self-signed).", expected = "Chain of every node contains 4 certs with correct issuer relationships and CA basic constraints."),
             @Step(value = "Create five trust secrets with different levels: Root + Intermediate + Leaf, Root + Intermediate, Root only, Intermediate only, Leaf only.", expected = "Trust secrets are created."),
             @Step(value = "For each trust secret, verify that clients can successfully produce and consume messages.", expected = "All five trust configurations succeed."),
             @Step(value = "Create a trust secret with only a foreign Root CA.", expected = "Foreign trust secret is created."),
@@ -199,6 +200,8 @@ public class CustomCaChainST extends AbstractST {
     )
     void testMultistageCustomCaTrustChainEstablishment() {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
+        final int brokerReplicas = 3;
+        final int controllerReplicas = 1;
 
         final SystemTestCertBundle clusterCa = SystemTestCertBundle.forClusterCa(testStorage);
 
@@ -208,8 +211,8 @@ public class CustomCaChainST extends AbstractST {
         clientsCa.createCustomSecretsFromBundles(testStorage.getNamespaceName(), testStorage.getClusterName());
 
         KubeResourceManager.get().createResourceWithWait(
-            KafkaNodePoolTemplates.brokerPool(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
-            KafkaNodePoolTemplates.controllerPool(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 1).build()
+            KafkaNodePoolTemplates.brokerPool(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), brokerReplicas).build(),
+            KafkaNodePoolTemplates.controllerPool(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), controllerReplicas).build()
         );
         KubeResourceManager.get().createResourceWithWait(KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getClusterName(), 3)
             .editSpec()
@@ -222,28 +225,28 @@ public class CustomCaChainST extends AbstractST {
             .endSpec()
             .build());
 
-        //  Verify broker certificate chain: broker cert -> Leaf CA -> Intermediate CA -> Root CA
-        LOGGER.info("Verifying broker certificate chain contains all certificates");
-        final String brokerPodName = KubeResourceManager.get().kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getBrokerSelector()).get(0).getMetadata().getName();
-        final List<X509Certificate> brokerChain = SecretUtils.getCertificatesFromSecret(
-            KubeResourceManager.get().kubeClient().getClient().secrets().inNamespace(testStorage.getNamespaceName()).withName(brokerPodName).get(),
-            brokerPodName + ".crt");
-        LOGGER.info("Broker certificate chain contains {} certificates", brokerChain.size());
-        assertThat("Broker certificate chain should contain 4 certs: broker cert, Leaf CA, Intermediate CA, Root CA",
-            brokerChain.size(), is(4));
+        //  Verify certificate chain of every Kafka node: node cert -> Leaf CA -> Intermediate CA -> Root CA
+        LOGGER.info("Verifying certificate chain of every Kafka node contains all certificates");
+        final Map<String, List<X509Certificate>> nodeChains = SecretUtils.getKafkaNodeCertificateChains(testStorage.getNamespaceName(), testStorage.getClusterName());
 
-        final X509Certificate brokerCert = brokerChain.get(0);
-        final X509Certificate leafCaCert = brokerChain.get(1);
-        final X509Certificate intermediateCaCert = brokerChain.get(2);
-        final X509Certificate rootCaCert = brokerChain.get(3);
+        assertThat("Certificate chain of every Kafka node should be found.", nodeChains.size(), is(brokerReplicas + controllerReplicas));
+        nodeChains.forEach((podName, nodeChain) -> {
+            assertThat("Certificate chain of " + podName + " should contain 4 certs: node cert, Leaf CA, Intermediate CA, Root CA",
+                nodeChain.size(), is(4));
 
-        assertThat("Broker cert should be issued by Leaf CA", brokerCert.getIssuerX500Principal(), is(leafCaCert.getSubjectX500Principal()));
-        assertThat("Leaf CA cert should be issued by Intermediate CA", leafCaCert.getIssuerX500Principal(), is(intermediateCaCert.getSubjectX500Principal()));
-        assertThat("Leaf CA cert should be a CA", leafCaCert.getBasicConstraints(), is(greaterThanOrEqualTo(0)));
-        assertThat("Intermediate CA cert should be issued by Root CA", intermediateCaCert.getIssuerX500Principal(), is(rootCaCert.getSubjectX500Principal()));
-        assertThat("Intermediate CA cert should be a CA", intermediateCaCert.getBasicConstraints(), is(greaterThanOrEqualTo(0)));
-        assertThat("Root CA cert should be self-signed", rootCaCert.getIssuerX500Principal(), is(rootCaCert.getSubjectX500Principal()));
-        assertThat("Root CA cert should be a CA", rootCaCert.getBasicConstraints(), is(greaterThanOrEqualTo(0)));
+            final X509Certificate nodeCert = nodeChain.get(0);
+            final X509Certificate leafCaCert = nodeChain.get(1);
+            final X509Certificate intermediateCaCert = nodeChain.get(2);
+            final X509Certificate rootCaCert = nodeChain.get(3);
+
+            assertThat("Node cert of " + podName + " should be issued by Leaf CA", nodeCert.getIssuerX500Principal(), is(leafCaCert.getSubjectX500Principal()));
+            assertThat("Leaf CA cert of " + podName + " should be issued by Intermediate CA", leafCaCert.getIssuerX500Principal(), is(intermediateCaCert.getSubjectX500Principal()));
+            assertThat("Leaf CA cert of " + podName + " should be a CA", leafCaCert.getBasicConstraints(), is(greaterThanOrEqualTo(0)));
+            assertThat("Intermediate CA cert of " + podName + " should be issued by Root CA", intermediateCaCert.getIssuerX500Principal(), is(rootCaCert.getSubjectX500Principal()));
+            assertThat("Intermediate CA cert of " + podName + " should be a CA", intermediateCaCert.getBasicConstraints(), is(greaterThanOrEqualTo(0)));
+            assertThat("Root CA cert of " + podName + " should be self-signed", rootCaCert.getIssuerX500Principal(), is(rootCaCert.getSubjectX500Principal()));
+            assertThat("Root CA cert of " + podName + " should be a CA", rootCaCert.getBasicConstraints(), is(greaterThanOrEqualTo(0)));
+        });
 
         //  Create KafkaUser and Topic
         KubeResourceManager.get().createResourceWithWait(KafkaTopicTemplates.topic(testStorage).build());
