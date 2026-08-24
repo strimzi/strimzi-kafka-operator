@@ -42,11 +42,11 @@ public class KafkaAgentConfigurationBuilder {
     public KafkaAgentConfigurationBuilder withSecurity(KafkaClusterSecurityContext securityContext)   {
         printSectionHeader("Security configuration");
 
-        if (securityContext.isStrimziTlsEncryption())   {
+        if (securityContext.isTlsEncryption())   {
             writer.println("namespace=" + reconciliation.namespace());
             writer.println("sslKeyStoreSecretName=" + node.podName());
 
-            if (securityContext.isStrimziMtlsAuthentication()) {
+            if (securityContext.isMtlsAuthentication()) {
                 writer.println("sslTrustStoreSecretName=" + reconciliation.name() + "-cluster-ca-cert");
             }
         }

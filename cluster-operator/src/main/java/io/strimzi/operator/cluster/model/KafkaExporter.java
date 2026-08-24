@@ -274,10 +274,10 @@ public class KafkaExporter extends AbstractModel {
 
         volumeList.add(VolumeUtils.createTempDirVolume(templatePod));
 
-        if (securityContext.isStrimziTlsEncryption()) {
+        if (securityContext.isTlsEncryption()) {
             volumeList.add(VolumeUtils.createSecretVolume(CLUSTER_CA_CERTS_VOLUME_NAME, KafkaResources.trustBundleSecretName(cluster), isOpenShift));
 
-            if (securityContext.isStrimziMtlsAuthentication())  {
+            if (securityContext.isMtlsAuthentication())  {
                 volumeList.add(VolumeUtils.createSecretVolume(KAFKA_EXPORTER_CERTS_VOLUME_NAME, KafkaExporterResources.secretName(cluster), isOpenShift));
             }
         }
@@ -291,10 +291,10 @@ public class KafkaExporter extends AbstractModel {
         List<VolumeMount> volumeList = new ArrayList<>(3);
         volumeList.add(VolumeUtils.createTempDirVolumeMount());
 
-        if (securityContext.isStrimziTlsEncryption()) {
+        if (securityContext.isTlsEncryption()) {
             volumeList.add(VolumeUtils.createVolumeMount(CLUSTER_CA_CERTS_VOLUME_NAME, CLUSTER_CA_CERTS_VOLUME_MOUNT));
 
-            if (securityContext.isStrimziMtlsAuthentication()) {
+            if (securityContext.isMtlsAuthentication()) {
                 volumeList.add(VolumeUtils.createVolumeMount(KAFKA_EXPORTER_CERTS_VOLUME_NAME, KAFKA_EXPORTER_CERTS_VOLUME_MOUNT));
             }
         }

@@ -12,13 +12,13 @@ import com.fasterxml.jackson.annotation.JsonValue;
  */
 public enum ClusterSecurityAuthenticationType {
     NONE,
-    STRIMZI_MTLS;
+    MTLS;
 
     @JsonCreator
     public static ClusterSecurityAuthenticationType forValue(String value) {
         return switch (value) {
             case "none" -> NONE;
-            case "strimzi-mtls" -> STRIMZI_MTLS;
+            case "mtls" -> MTLS;
             default -> null;
         };
     }
@@ -27,7 +27,7 @@ public enum ClusterSecurityAuthenticationType {
     public String toValue() {
         return switch (this) {
             case NONE -> "none";
-            case STRIMZI_MTLS -> "strimzi-mtls";
+            case MTLS -> "mtls";
         };
     }
 }

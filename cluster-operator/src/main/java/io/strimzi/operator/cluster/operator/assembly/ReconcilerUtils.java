@@ -131,9 +131,9 @@ public class ReconcilerUtils {
     public static Future<Identity> coIdentity(Reconciliation reconciliation, SecretOperator secretOperator, KafkaClusterSecurityContext securityContext) {
         return Future.join(
                     // The trustFuture gets the trust based on the security context
-                    securityContext.isStrimziTlsEncryption() ? clusterCaPemTrustSet(reconciliation, secretOperator) : Future.succeededFuture(null),
+                    securityContext.isTlsEncryption() ? clusterCaPemTrustSet(reconciliation, secretOperator) : Future.succeededFuture(null),
                     // The trustFuture gets the authentication details based on the security context
-                    securityContext.isStrimziMtlsAuthentication() ? coPemAuthIdentity(reconciliation, secretOperator) : Future.succeededFuture(null)
+                    securityContext.isMtlsAuthentication() ? coPemAuthIdentity(reconciliation, secretOperator) : Future.succeededFuture(null)
                 ).compose(res -> Future.succeededFuture(new Identity(res.resultAt(0), res.resultAt(1))));
     }
 

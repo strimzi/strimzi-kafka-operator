@@ -335,7 +335,7 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
         List<Volume> volumes = new ArrayList<>();
         volumes.add(VolumeUtils.createTempDirVolume(templatePod));
 
-        if (securityContext.isStrimziTlsEncryption()) {
+        if (securityContext.isTlsEncryption()) {
             // The CA certificate is used for encryption of Kafka client.
             // The CC certificate is needed for encryption of the HTTP server.
             // So we need both volumes regardless whether mTLS is enabled or not.
@@ -355,7 +355,7 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
         List<VolumeMount> volumeMounts = new ArrayList<>();
         volumeMounts.add(VolumeUtils.createTempDirVolumeMount());
 
-        if (securityContext.isStrimziTlsEncryption()) {
+        if (securityContext.isTlsEncryption()) {
             // The CA certificate is used for encryption of Kafka client.
             // The CC certificate is needed for encryption of the HTTP server.
             // So we need both volume mounts regardless whether mTLS is enabled or not.
@@ -432,8 +432,8 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_STRIMZI_KAFKA_BOOTSTRAP_SERVERS, KafkaResources.bootstrapServiceName(cluster) + ":" + KafkaCluster.REPLICATION_PORT));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED, String.valueOf(gcLoggingEnabled)));
 
-        varList.add(ContainerUtils.createEnvVar(ENV_VAR_TLS_ENABLED, String.valueOf(securityContext.isStrimziTlsEncryption())));
-        varList.add(ContainerUtils.createEnvVar(ENV_VAR_MTLS_ENABLED, String.valueOf(securityContext.isStrimziMtlsAuthentication())));
+        varList.add(ContainerUtils.createEnvVar(ENV_VAR_TLS_ENABLED, String.valueOf(securityContext.isTlsEncryption())));
+        varList.add(ContainerUtils.createEnvVar(ENV_VAR_MTLS_ENABLED, String.valueOf(securityContext.isMtlsAuthentication())));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_API_AUTH_ENABLED, String.valueOf(configuration.isApiAuthEnabled())));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_API_HEALTHCHECK_USERNAME, CruiseControlApiProperties.HEALTHCHECK_USERNAME));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_API_PORT, String.valueOf(REST_API_PORT)));
