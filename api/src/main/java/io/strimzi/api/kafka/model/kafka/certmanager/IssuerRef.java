@@ -2,9 +2,10 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.api.kafka.model.common.certmanager;
+package io.strimzi.api.kafka.model.kafka.certmanager;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.strimzi.api.kafka.model.common.Constants;
 import io.strimzi.api.kafka.model.common.UnknownPropertyPreserving;
@@ -17,7 +18,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @Description("Reference to the cert-manager issuer for TLS certificates. " +
-        "This only applies if the CA type is set to `cert-manager.io`.")
+        "This only applies if the CA type is set to `cert-manager`.")
 @Buildable(
         editableEnabled = false,
         builderPackage = Constants.FABRIC8_KUBERNETES_API
@@ -35,6 +36,7 @@ public class IssuerRef implements UnknownPropertyPreserving {
 
     @Description("The name of the cert-manager issuer. " +
             "Required.")
+    @JsonProperty(required = true)
     public String getName() {
         return name;
     }
@@ -46,6 +48,7 @@ public class IssuerRef implements UnknownPropertyPreserving {
     @Description("The kind of the cert-manager issuer. " +
             "Must be either `Issuer` or `ClusterIssuer`. " +
             "Required.")
+    @JsonProperty(required = true)
     public IssuerKind getKind() {
         return kind;
     }

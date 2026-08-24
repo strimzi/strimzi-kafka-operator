@@ -7,8 +7,8 @@ package io.strimzi.operator.user.ca;
 import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.strimzi.api.kafka.model.common.certmanager.IssuerRef;
-import io.strimzi.api.kafka.model.common.certmanager.IssuerRefBuilder;
+import io.strimzi.api.kafka.model.kafka.certmanager.IssuerRef;
+import io.strimzi.api.kafka.model.kafka.certmanager.IssuerRefBuilder;
 import io.strimzi.certs.OpenSslCertIssuer;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.PasswordGenerator;
@@ -62,12 +62,12 @@ public interface UserCertIssuer {
     static UserCertIssuer createUserCertIssuer(UserOperatorConfig config, ExecutorService executor,
                                                KubernetesClient client, SecretOperator secretOperator) {
         return switch (config.getCertificateManagerType()) {
-            case STRIMZI_IO -> new InternalCaUserCertIssuer(
+            case STRIMZI -> new InternalCaUserCertIssuer(
                     new OpenSslCertIssuer(),
                     new PasswordGenerator(config.getScramPasswordLength()),
                     config.getMaintenanceWindows(),
                     Clock.systemUTC());
-            case CERT_MANAGER_IO -> {
+            case CERT_MANAGER -> {
                 CertManagerCertificateOperator certManagerOp = new CertManagerCertificateOperator(executor, client);
                 IssuerRef issuerRef = new IssuerRefBuilder()
                         .withName(config.getCertManagerIssuerName())

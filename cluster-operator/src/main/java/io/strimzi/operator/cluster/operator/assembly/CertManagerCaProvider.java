@@ -73,7 +73,7 @@ public class CertManagerCaProvider extends CaProvider {
     @Override
     public CompletionStage<CaProviderResult> createAndReconcileCa() {
         if (certificateAuthority.getCertManager() == null) {
-            return CompletableFuture.failedFuture(new InvalidResourceException("When CA type is set to cert-manager.io, certManager property is required (e.g. clusterCa.certManager)."));
+            return CompletableFuture.failedFuture(new InvalidResourceException("When CA type is set to cert-manager, certManager property is required (e.g. clusterCa.certManager)."));
         }
         return getCaCertForCertManager()
                 .thenCompose(newCaCertAsBase64 -> {
@@ -105,8 +105,8 @@ public class CertManagerCaProvider extends CaProvider {
     }
 
     private CompletionStage<String> getCaCertForCertManager() {
-        String caCertSecretName = certificateAuthority.getCertManager().getCaCert().getSecretName();
-        String caCertSecretKey = certificateAuthority.getCertManager().getCaCert().getCertificate();
+        String caCertSecretName = certificateAuthority.getCertManager().getCaCertRef().getSecretName();
+        String caCertSecretKey = certificateAuthority.getCertManager().getCaCertRef().getCertificate();
         return secretOperator.getAsync(reconciliation.namespace(), caCertSecretName)
                 .thenApply(secret -> {
                     if (secret == null) {

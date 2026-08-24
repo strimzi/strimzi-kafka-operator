@@ -72,12 +72,12 @@ public class CertManagerCaProviderTest {
             .withValidityDays(100)
             .withRenewalDays(10)
             .withGenerateCertificateAuthority(false)
-            .withType(CertificateManagerType.CERT_MANAGER_IO)
+            .withType(CertificateManagerType.CERT_MANAGER)
             .withNewCertManager()
-                .withNewCaCert()
+                .withNewCaCertRef()
                     .withSecretName(CM_CA_CERT_SECRET_NAME)
                     .withCertificate(CA_CRT)
-                .endCaCert()
+                .endCaCertRef()
             .endCertManager()
             .build();
     private static final Kafka KAFKA = new KafkaBuilder()
@@ -214,7 +214,7 @@ public class CertManagerCaProviderTest {
                 .withValidityDays(100)
                 .withRenewalDays(10)
                 .withGenerateCertificateAuthority(false)
-                .withType(CertificateManagerType.CERT_MANAGER_IO)
+                .withType(CertificateManagerType.CERT_MANAGER)
                 .build();
 
         Kafka kafkaCluster = switch (caRole) {
@@ -234,7 +234,7 @@ public class CertManagerCaProviderTest {
 
         Exception exception = assertThrows(CompletionException.class, () -> caProvider.createAndReconcileCa().toCompletableFuture().join());
         assertThat(exception.getCause(), instanceOf(InvalidResourceException.class));
-        assertThat(exception.getCause().getMessage(), is("When CA type is set to cert-manager.io, certManager property is required (e.g. clusterCa.certManager)."));
+        assertThat(exception.getCause().getMessage(), is("When CA type is set to cert-manager, certManager property is required (e.g. clusterCa.certManager)."));
     }
 
     @ParameterizedTest
@@ -263,12 +263,12 @@ public class CertManagerCaProviderTest {
                 .withValidityDays(100)
                 .withRenewalDays(10)
                 .withGenerateCertificateAuthority(false)
-                .withType(CertificateManagerType.CERT_MANAGER_IO)
+                .withType(CertificateManagerType.CERT_MANAGER)
                 .withNewCertManager()
-                    .withNewCaCert()
+                    .withNewCaCertRef()
                         .withSecretName(CM_CA_CERT_SECRET_NAME)
                         .withCertificate(caCertSecretKey)
-                    .endCaCert()
+                    .endCaCertRef()
                 .endCertManager()
                 .build();
 

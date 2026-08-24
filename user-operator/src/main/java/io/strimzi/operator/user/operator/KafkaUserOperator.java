@@ -331,7 +331,7 @@ public class KafkaUserOperator {
             .toCompletableFuture();
 
         CompletableFuture<Secret> caKeyPromise;
-        if (config.getCertificateManagerType() == CertificateManagerType.STRIMZI_IO) {
+        if (config.getCertificateManagerType() == CertificateManagerType.STRIMZI) {
             caKeyPromise = getRequiredSecret(
                     namespace,
                     config.getCaKeySecretName(),

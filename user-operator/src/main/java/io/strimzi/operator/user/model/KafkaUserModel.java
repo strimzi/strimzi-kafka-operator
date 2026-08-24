@@ -191,6 +191,7 @@ public class KafkaUserModel {
             data.put("user.key", userCertAndKey.keyAsBase64String());
             data.put("user.crt", userCertAndKey.certAsBase64String());
 
+            // When cert-manager is used, keystore will be null since it only issues certificates in PEM format
             if (generatePkcs12Stores && userCertAndKey.keyStore() != null) {
                 data.put("user.p12", userCertAndKey.keyStoreAsBase64String());
                 data.put("user.password", userCertAndKey.storePasswordAsBase64String());

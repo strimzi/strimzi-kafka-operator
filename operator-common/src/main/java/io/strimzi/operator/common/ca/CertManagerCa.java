@@ -8,7 +8,7 @@ import io.fabric8.certmanager.api.model.v1.Certificate;
 import io.fabric8.certmanager.api.model.v1.CertificateBuilder;
 import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.Secret;
-import io.strimzi.api.kafka.model.common.certmanager.IssuerRef;
+import io.strimzi.api.kafka.model.kafka.certmanager.IssuerRef;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.certs.StrimziSubject;
 import io.strimzi.operator.common.Annotations;

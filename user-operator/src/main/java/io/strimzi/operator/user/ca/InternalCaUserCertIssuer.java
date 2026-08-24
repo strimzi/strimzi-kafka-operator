@@ -72,7 +72,7 @@ public class InternalCaUserCertIssuer implements UserCertIssuer {
                 passwordGenerator,
                 clientsCaCertSecret,
                 clientsCaKeySecret,
-                new CaConfig(caValidityDays, caRenewalDays, false, generatePkcs12Stores, CertificateManagerType.STRIMZI_IO)
+                new CaConfig(caValidityDays, caRenewalDays, false, generatePkcs12Stores, CertificateManagerType.STRIMZI)
         );
 
         CertAndKey existingUserCertAndKey = null;

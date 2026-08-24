@@ -7,8 +7,8 @@ package io.strimzi.operator.common.ca;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.strimzi.api.kafka.model.common.CertificateManagerType;
-import io.strimzi.api.kafka.model.common.certmanager.IssuerKind;
-import io.strimzi.api.kafka.model.common.certmanager.IssuerRefBuilder;
+import io.strimzi.api.kafka.model.kafka.certmanager.IssuerKind;
+import io.strimzi.api.kafka.model.kafka.certmanager.IssuerRefBuilder;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.operator.MockCertIssuer;
 import org.junit.jupiter.api.Test;
@@ -54,7 +54,7 @@ public class CertManagerCaTest {
                 Reconciliation.DUMMY_RECONCILIATION,
                 Ca.CaRole.CLUSTER_CA,
                 existingCertSecret,
-                new CaConfig(100, 10, false, false, CertificateManagerType.CERT_MANAGER_IO),
+                new CaConfig(100, 10, false, false, CertificateManagerType.CERT_MANAGER),
                 null,
                 null,
                 null,

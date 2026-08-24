@@ -140,7 +140,7 @@ public class SetupCertManager {
      * Creates ClusterIssuer that issues end-entity certificates signed by CA.
      *
      * <p>This simulates the steps a user would perform before deploying a Kafka cluster with
-     * {@code clusterCa.type: cert-manager.io}. It creates self-signed CA public certificate
+     * {@code clusterCa.type: cert-manager}. It creates self-signed CA public certificate
      * and private key and stores them in the Secret that would be used by ClusterIssuer.
      */
     public static void createIssuerAndCaSecret() {
