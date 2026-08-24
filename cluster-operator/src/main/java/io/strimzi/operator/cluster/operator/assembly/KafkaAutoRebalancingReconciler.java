@@ -35,7 +35,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
 import java.util.stream.Collectors;
 
@@ -100,18 +99,8 @@ public class KafkaAutoRebalancingReconciler {
             LOGGER.infoCr(reconciliation, "Reconciling auto-rebalance in the [{}] state with scaling nodes: blocked scale down = {}, added scale up = {}",
                     kafkaAutoRebalanceStatus.getState(), scalingNodes.blocked(), scalingNodes.added());
         }
-        CompletableFuture<Void> result = new CompletableFuture<>();
-        maybeRebalance(scalingNodes)
-                .whenComplete((v, error) -> {
-                    kafkaStatus.setAutoRebalance(kafkaAutoRebalanceStatus);
-                    if (error != null) {
-                        result.completeExceptionally(
-                                error instanceof CompletionException && error.getCause() != null ? error.getCause() : error);
-                    } else {
-                        result.complete(null);
-                    }
-                });
-        return result;
+        return maybeRebalance(scalingNodes)
+                .whenComplete((v, error) -> kafkaStatus.setAutoRebalance(kafkaAutoRebalanceStatus));
     }
 
     private CompletionStage<Void> maybeRebalance(ScalingNodes scalingNodes) {

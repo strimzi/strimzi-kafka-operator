@@ -774,7 +774,7 @@ public class KafkaAutoRebalancingMockTest {
                 // 2nd reconcile, auto-rebalancing for scaling up can't run, no mode specified in the auto-rebalance configuration
                 .compose(v -> operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, CLUSTER_NAME)))
                 .onComplete(context.failing(e -> context.verify(() -> {
-                    assertThat(e.getMessage(), is("No auto-rebalancing configuration specified for mode " + KafkaAutoRebalanceMode.ADD_BROKERS));
+                    assertThat(e.getMessage(), is("java.lang.RuntimeException: No auto-rebalancing configuration specified for mode " + KafkaAutoRebalanceMode.ADD_BROKERS));
                     reconciliation.flag();
                 })));
     }
