@@ -34,20 +34,21 @@ import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.kubernetes.SecretOperator;
 import io.strimzi.platform.KubernetesVersion;
-import io.vertx.core.Future;
-import io.vertx.junit5.Checkpoint;
-import io.vertx.junit5.VertxExtension;
-import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.Timeout;
 
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.TimeUnit;
 import java.util.function.BiPredicate;
 
+import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
@@ -59,7 +60,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@ExtendWith(VertxExtension.class)
+@Timeout(value = 30, unit = TimeUnit.SECONDS)
 public class KafkaListenerReconcilerTLSRoutesTest {
     private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
     public static final String NAMESPACE = "test";
@@ -117,7 +118,7 @@ public class KafkaListenerReconcilerTLSRoutesTest {
                 .build();
 
     @Test
-    public void testTLSRoutesNotSupported(VertxTestContext context) {
+    public void testTLSRoutesNotSupported() {
         Kafka kafka = new KafkaBuilder(KAFKA)
                 .editSpec()
                     .editKafka()
@@ -181,16 +182,15 @@ public class KafkaListenerReconcilerTLSRoutesTest {
                 supplier.ingressOperations
         );
 
-        Checkpoint async = context.checkpoint();
-        reconciler.reconcile()
-                .onComplete(context.failing(res -> context.verify(() -> {
-                    assertThat(res.getMessage(), is("The Gateway API TLSRoute resource is not available in this Kubernetes cluster. Exposing Kafka cluster my-kafka using TLSRoutes is not possible."));
-                    async.flag();
-                })));
+        CompletionException ex = assertThrows(CompletionException.class, () ->
+                reconciler.reconcile().toCompletableFuture().join()
+        );
+        assertThat(ex.getCause(), is(instanceOf(RuntimeException.class)));
+        assertThat(ex.getCause().getMessage(), is("The Gateway API TLSRoute resource is not available in this Kubernetes cluster. Exposing Kafka cluster my-kafka using TLSRoutes is not possible."));
     }
 
     @Test
-    public void testTLSRoutes(VertxTestContext context) {
+    public void testTLSRoutes() {
         Kafka kafka = new KafkaBuilder(KAFKA)
                 .editSpec()
                     .editKafka()
@@ -282,35 +282,31 @@ public class KafkaListenerReconcilerTLSRoutesTest {
                 supplier.ingressOperations
         );
 
-        Checkpoint async = context.checkpoint();
-        reconciler.reconcile()
-                .onComplete(context.succeeding(res -> context.verify(() -> {
-                    // Check status
-                    assertThat(res.listenerStatuses.size(), is(1));
-                    ListenerStatus listenerStatus = res.listenerStatuses.get(0);
-                    assertThat(listenerStatus.getBootstrapServers(), is(DNS_NAME_FOR_BOOTSTRAP_SERVICE + ":443"));
-                    assertThat(listenerStatus.getAddresses().size(), is(1));
-                    assertThat(listenerStatus.getAddresses().get(0).getHost(), is(DNS_NAME_FOR_BOOTSTRAP_SERVICE));
-                    assertThat(listenerStatus.getAddresses().get(0).getPort(), is(443));
+        var res = reconciler.reconcile().toCompletableFuture().join();
 
-                    // Check creation of services
-                    verify(supplier.serviceOperations, times(1)).reconcile(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-kafka-external-bootstrap"), notNull());
-                    verify(supplier.serviceOperations, times(1)).reconcile(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-brokers-10"), notNull());
-                    verify(supplier.serviceOperations, times(1)).reconcile(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-brokers-11"), notNull());
-                    verify(supplier.serviceOperations, times(1)).reconcile(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-brokers-12"), notNull());
+        // Check status
+        assertThat(res.listenerStatuses.size(), is(1));
+        ListenerStatus listenerStatus = res.listenerStatuses.get(0);
+        assertThat(listenerStatus.getBootstrapServers(), is(DNS_NAME_FOR_BOOTSTRAP_SERVICE + ":443"));
+        assertThat(listenerStatus.getAddresses().size(), is(1));
+        assertThat(listenerStatus.getAddresses().get(0).getHost(), is(DNS_NAME_FOR_BOOTSTRAP_SERVICE));
+        assertThat(listenerStatus.getAddresses().get(0).getPort(), is(443));
 
-                    // Check creation of routes
-                    verify(supplier.tlsRouteOperations, times(1)).reconcile(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-kafka-bootstrap"), notNull());
-                    verify(supplier.tlsRouteOperations, times(1)).reconcile(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-brokers-10"), notNull());
-                    verify(supplier.tlsRouteOperations, times(1)).reconcile(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-brokers-11"), notNull());
-                    verify(supplier.tlsRouteOperations, times(1)).reconcile(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-brokers-12"), notNull());
+        // Check creation of services
+        verify(supplier.serviceOperations, times(1)).reconcile(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-kafka-external-bootstrap"), notNull());
+        verify(supplier.serviceOperations, times(1)).reconcile(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-brokers-10"), notNull());
+        verify(supplier.serviceOperations, times(1)).reconcile(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-brokers-11"), notNull());
+        verify(supplier.serviceOperations, times(1)).reconcile(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-brokers-12"), notNull());
 
-                    async.flag();
-                })));
+        // Check creation of routes
+        verify(supplier.tlsRouteOperations, times(1)).reconcile(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-kafka-bootstrap"), notNull());
+        verify(supplier.tlsRouteOperations, times(1)).reconcile(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-brokers-10"), notNull());
+        verify(supplier.tlsRouteOperations, times(1)).reconcile(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-brokers-11"), notNull());
+        verify(supplier.tlsRouteOperations, times(1)).reconcile(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-brokers-12"), notNull());
     }
 
     @Test
-    public void testTLSRouteDeletion(VertxTestContext context) {
+    public void testTLSRouteDeletion() {
         Kafka kafka = new KafkaBuilder(KAFKA)
                 .editSpec()
                     .editKafka()
@@ -398,32 +394,28 @@ public class KafkaListenerReconcilerTLSRoutesTest {
                 supplier.ingressOperations
         );
 
-        Checkpoint async = context.checkpoint();
-        reconciler.reconcile()
-                .onComplete(context.succeeding(res -> context.verify(() -> {
-                    // Check status
-                    assertThat(res.listenerStatuses.size(), is(0));
+        var res = reconciler.reconcile().toCompletableFuture().join();
 
-                    // Check creation of services
-                    verify(supplier.serviceOperations, times(1)).reconcile(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-kafka-bootstrap"), notNull());
-                    verify(supplier.serviceOperations, times(1)).reconcile(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-kafka-brokers"), notNull());
-                    verify(supplier.serviceOperations, times(1)).reconcile(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-kafka-external-bootstrap"), isNull());
-                    verify(supplier.serviceOperations, times(1)).reconcile(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-brokers-10"), isNull());
-                    verify(supplier.serviceOperations, times(1)).reconcile(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-brokers-11"), isNull());
-                    verify(supplier.serviceOperations, times(1)).reconcile(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-brokers-12"), isNull());
+        // Check status
+        assertThat(res.listenerStatuses.size(), is(0));
 
-                    // Check creation of routes
-                    verify(supplier.tlsRouteOperations, times(1)).reconcile(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-kafka-bootstrap"), isNull());
-                    verify(supplier.tlsRouteOperations, times(1)).reconcile(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-brokers-10"), isNull());
-                    verify(supplier.tlsRouteOperations, times(1)).reconcile(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-brokers-11"), isNull());
-                    verify(supplier.tlsRouteOperations, times(1)).reconcile(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-brokers-12"), isNull());
+        // Check creation of services
+        verify(supplier.serviceOperations, times(1)).reconcile(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-kafka-bootstrap"), notNull());
+        verify(supplier.serviceOperations, times(1)).reconcile(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-kafka-brokers"), notNull());
+        verify(supplier.serviceOperations, times(1)).reconcile(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-kafka-external-bootstrap"), isNull());
+        verify(supplier.serviceOperations, times(1)).reconcile(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-brokers-10"), isNull());
+        verify(supplier.serviceOperations, times(1)).reconcile(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-brokers-11"), isNull());
+        verify(supplier.serviceOperations, times(1)).reconcile(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-brokers-12"), isNull());
 
-                    async.flag();
-                })));
+        // Check creation of routes
+        verify(supplier.tlsRouteOperations, times(1)).reconcile(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-kafka-bootstrap"), isNull());
+        verify(supplier.tlsRouteOperations, times(1)).reconcile(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-brokers-10"), isNull());
+        verify(supplier.tlsRouteOperations, times(1)).reconcile(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-brokers-11"), isNull());
+        verify(supplier.tlsRouteOperations, times(1)).reconcile(any(), eq(NAMESPACE), eq(CLUSTER_NAME + "-brokers-12"), isNull());
     }
 
     @Test
-    public void testTLSRoutesNotReady(VertxTestContext context) {
+    public void testTLSRoutesNotReady() {
         Kafka kafka = new KafkaBuilder(KAFKA)
                 .editSpec()
                     .editKafka()
@@ -515,14 +507,11 @@ public class KafkaListenerReconcilerTLSRoutesTest {
                 supplier.ingressOperations
         );
 
-        Checkpoint async = context.checkpoint();
-        reconciler.reconcile()
-                .onComplete(context.failing(e -> context.verify(() -> {
-                    // Check status
-                    assertThat(e.getMessage(), is("my-kafka-brokers-10 is not addressable"));
-
-                    async.flag();
-                })));
+        CompletionException ex = assertThrows(CompletionException.class, () ->
+                reconciler.reconcile().toCompletableFuture().join()
+        );
+        assertThat(ex.getCause(), is(instanceOf(RuntimeException.class)));
+        assertThat(ex.getCause().getMessage(), is("my-kafka-brokers-10 is not addressable"));
     }
 
     /**
@@ -542,13 +531,13 @@ public class KafkaListenerReconcilerTLSRoutesTest {
         }
 
         @Override
-        public Future<ReconciliationResult> reconcile()  {
+        public CompletionStage<ReconciliationResult> reconcile()  {
             return services()
-                    .compose(i -> tlsRoutes())
-                    .compose(i -> clusterIPServicesReady())
-                    .compose(i -> loadBalancerServicesReady())
-                    .compose(i -> tlsRoutesReady())
-                    .compose(i -> Future.succeededFuture(result));
+                    .thenCompose(i -> tlsRoutes())
+                    .thenCompose(i -> clusterIPServicesReady())
+                    .thenCompose(i -> loadBalancerServicesReady())
+                    .thenCompose(i -> tlsRoutesReady())
+                    .thenApply(i -> result);
         }
     }
 }
