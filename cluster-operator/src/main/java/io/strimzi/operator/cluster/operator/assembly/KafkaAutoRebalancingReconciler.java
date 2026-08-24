@@ -100,7 +100,7 @@ public class KafkaAutoRebalancingReconciler {
                     kafkaAutoRebalanceStatus.getState(), scalingNodes.blocked(), scalingNodes.added());
         }
         return maybeRebalance(scalingNodes)
-                .whenComplete((v, error) -> kafkaStatus.setAutoRebalance(kafkaAutoRebalanceStatus));
+                .whenComplete((ignored, ignored2) -> kafkaStatus.setAutoRebalance(kafkaAutoRebalanceStatus));
     }
 
     private CompletionStage<Void> maybeRebalance(ScalingNodes scalingNodes) {
