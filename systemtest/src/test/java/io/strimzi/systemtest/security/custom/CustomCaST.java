@@ -75,8 +75,8 @@ public class CustomCaST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(CustomCaST.class);
     private static final String STRIMZI_INTERMEDIATE_CA = "C=CZ, L=Prague, O=Strimzi, CN=StrimziIntermediateCA";
-    private static final int DEFAULT_BROKER_REPLICAS = 3;
-    private static final int DEFAULT_CONTROLLER_REPLICAS = 3;
+    private static final int RENEWAL_TEST_BROKER_REPLICAS = 3;
+    private static final int RENEWAL_TEST_CONTROLLER_REPLICAS = 3;
 
     @ParallelNamespaceTest
     @TestDoc(
@@ -350,7 +350,7 @@ public class CustomCaST extends AbstractST {
         final Date initialCertEndTime = cacert.getNotAfter();
 
         final Map<String, X509Certificate> initialNodeCerts = SecretUtils.getKafkaNodeCertificates(testStorage.getNamespaceName(), testStorage.getClusterName());
-        assertThat("Certificate of every Kafka node should be found.", initialNodeCerts.size(), is(DEFAULT_BROKER_REPLICAS + DEFAULT_CONTROLLER_REPLICAS));
+        assertThat("Certificate of every Kafka node should be found.", initialNodeCerts.size(), is(RENEWAL_TEST_BROKER_REPLICAS + RENEWAL_TEST_CONTROLLER_REPLICAS));
 
         // Pause Kafka reconciliation
         LOGGER.info("Pause the reconciliation of the Kafka CustomResource ({})", KafkaComponents.getBrokerPodSetName(testStorage.getClusterName()));
@@ -594,8 +594,8 @@ public class CustomCaST extends AbstractST {
         }
 
         KubeResourceManager.get().createResourceWithWait(
-            KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), DEFAULT_BROKER_REPLICAS).build(),
-            KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), DEFAULT_CONTROLLER_REPLICAS).build()
+            KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), RENEWAL_TEST_BROKER_REPLICAS).build(),
+            KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), RENEWAL_TEST_CONTROLLER_REPLICAS).build()
         );
         // 2. Create a Kafka cluster without implicit generation of CA and paused reconciliation
         KubeResourceManager.get().createResourceWithWait(KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getClusterName(), 3)
