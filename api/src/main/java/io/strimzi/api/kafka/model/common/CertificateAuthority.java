@@ -6,7 +6,7 @@ package io.strimzi.api.kafka.model.common;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import io.strimzi.api.kafka.model.common.certmanager.CertManager;
+import io.strimzi.api.kafka.model.kafka.certmanager.CertManager;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.Minimum;
 import io.sundr.builder.annotations.Buildable;
@@ -34,7 +34,7 @@ public class CertificateAuthority implements UnknownPropertyPreserving {
     
     private int validityDays;
     private boolean generateCertificateAuthority = true;
-    private CertificateManagerType type = CertificateManagerType.STRIMZI_IO;
+    private CertificateManagerType type = CertificateManagerType.STRIMZI;
     private boolean generateSecretOwnerReference = true;
     private int renewalDays;
     private CertificateExpirationPolicy certificateExpirationPolicy;
@@ -65,8 +65,8 @@ public class CertificateAuthority implements UnknownPropertyPreserving {
     }
 
     @Description("The type of certificate manager. " +
-            "The available types are `strimzi.io` and `cert-manager.io`. " +
-            "Default is `strimzi.io`")
+            "The available types are `strimzi` and `cert-manager`. " +
+            "Default is `strimzi`.")
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     public CertificateManagerType getType() {
         return type;
@@ -116,7 +116,7 @@ public class CertificateAuthority implements UnknownPropertyPreserving {
     }
 
     @Description("Configuration for using cert-manager to issue certificates. " +
-            "This only applies if the CA type is set to `cert-manager.io`.")
+            "This only applies if the CA type is set to `cert-manager`.")
     public CertManager getCertManager() {
         return certManager;
     }

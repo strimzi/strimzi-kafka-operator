@@ -7,7 +7,7 @@ package io.strimzi.operator.user.ca;
 import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.strimzi.api.kafka.model.common.CertificateManagerType;
-import io.strimzi.api.kafka.model.common.certmanager.IssuerRef;
+import io.strimzi.api.kafka.model.kafka.certmanager.IssuerRef;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
@@ -60,7 +60,7 @@ public class CertManagerCaUserCertIssuer implements UserCertIssuer {
                 reconciliation,
                 Ca.CaRole.CLIENTS_CA,
                 caCertSecret,
-                new CaConfig(validityDays, renewalDays, false, generatePkcs12Stores, CertificateManagerType.CERT_MANAGER_IO),
+                new CaConfig(validityDays, renewalDays, false, generatePkcs12Stores, CertificateManagerType.CERT_MANAGER),
                 certManagerCertificateOperator,
                 secretOperator,
                 ownerReference,

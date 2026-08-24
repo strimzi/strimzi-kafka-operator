@@ -1508,8 +1508,8 @@ Configuration of how TLS certificates are used within the cluster. This applies 
 |boolean
 |If true then Certificate Authority certificates will be generated automatically. Otherwise the user will need to provide a Secret with the CA certificate. Default is true.
 |type
-|string (one of [strimzi.io, cert-manager.io])
-|The type of certificate manager. The available types are `strimzi.io` and `cert-manager.io`. Default is `strimzi.io`.
+|string (one of [strimzi, cert-manager])
+|The type of certificate manager. The available types are `strimzi` and `cert-manager`. Default is `strimzi`.
 |generateSecretOwnerReference
 |boolean
 |If `true`, the Cluster and Client CA Secrets are configured with the `ownerReference` set to the `Kafka` resource. If the `Kafka` resource is deleted when `true`, the CA Secrets are also deleted. If `false`, the `ownerReference` is disabled. If the `Kafka` resource is deleted when `false`, the CA Secrets are retained and available for reuse. Default is `true`.
@@ -1524,7 +1524,7 @@ Configuration of how TLS certificates are used within the cluster. This applies 
 |How should CA certificate expiration be handled when `generateCertificateAuthority=true`. The default is for a new CA certificate to be generated reusing the existing private key.
 |certManager
 |xref:type-CertManager-{context}[`CertManager`]
-|Configuration for using cert-manager to issue certificates. This only applies if the CA type is set to `cert-manager.io`.
+|Configuration for using cert-manager to issue certificates. This only applies if the CA type is set to `cert-manager`.
 |====
 
 [id='type-CertManager-{context}']
@@ -1532,7 +1532,7 @@ Configuration of how TLS certificates are used within the cluster. This applies 
 
 Used in: xref:type-CertificateAuthority-{context}[`CertificateAuthority`]
 
-Configuration for using cert-manager to issue certificates. This only applies if the CA type is set to `cert-manager.io`.
+Configuration for using cert-manager to issue certificates. This only applies if the CA type is set to `cert-manager`.
 
 [cols="2,2,3a",options="header"]
 |====
@@ -1540,7 +1540,7 @@ Configuration for using cert-manager to issue certificates. This only applies if
 |issuerRef
 |xref:type-IssuerRef-{context}[`IssuerRef`]
 |Reference to the cert-manager issuer to use for issuing certificates. Required.
-|caCert
+|caCertRef
 |xref:type-CaCertRef-{context}[`CaCertRef`]
 |Reference to the Secret containing the CA certificate (public key) that trusts certificates issued by cert-manager. Required.
 |====
@@ -1550,7 +1550,7 @@ Configuration for using cert-manager to issue certificates. This only applies if
 
 Used in: xref:type-CertManager-{context}[`CertManager`]
 
-Reference to the cert-manager issuer for TLS certificates. This only applies if the CA type is set to `cert-manager.io`.
+Reference to the cert-manager issuer for TLS certificates. This only applies if the CA type is set to `cert-manager`.
 
 [cols="2,2,3a",options="header"]
 |====
@@ -1571,7 +1571,7 @@ Reference to the cert-manager issuer for TLS certificates. This only applies if 
 
 Used in: xref:type-CertManager-{context}[`CertManager`]
 
-Reference to the Secret containing the CA certificate (public key) that trusts certificates issued by cert-manager. This only applies if the CA type is set to `cert-manager.io`.
+Reference to the Secret containing the CA certificate (public key) that trusts certificates issued by cert-manager. This only applies if the CA type is set to `cert-manager`.
 
 [cols="2,2,3a",options="header"]
 |====
@@ -1581,7 +1581,7 @@ Reference to the Secret containing the CA certificate (public key) that trusts c
 |The name of the Secret. Required.
 |certificate
 |string
-|The name of the file certificate in the Secret.Required.
+|The key under which the CA certificate is stored in the Secret. Required.
 |====
 
 [id='type-CruiseControlSpec-{context}']

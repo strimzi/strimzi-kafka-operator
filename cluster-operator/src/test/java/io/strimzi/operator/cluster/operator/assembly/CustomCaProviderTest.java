@@ -41,7 +41,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 public class CustomCaProviderTest {
     private static final String NAMESPACE = "test";
     private static final String NAME = "my-cluster";
-    private static final CaConfig CA_CONFIG = new CaConfig(100, 10, false, false, CertificateManagerType.STRIMZI_IO);
+    private static final CaConfig CA_CONFIG = new CaConfig(100, 10, false, false, CertificateManagerType.STRIMZI);
     private final static OpenSslCertIssuer CERT_ISSUER = new OpenSslCertIssuer();
     private static final Kafka KAFKA = new KafkaBuilder()
             .withNewMetadata()

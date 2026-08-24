@@ -99,7 +99,7 @@ public class CaProviderTest {
     public void testCreateProviderReturnsCertManagerCaProviderWhenTypeIsCertManager() {
         CaConfig caConfig = new CaConfig(new CertificateAuthorityBuilder()
                 .withGenerateCertificateAuthority(false)
-                .withType(CertificateManagerType.CERT_MANAGER_IO)
+                .withType(CertificateManagerType.CERT_MANAGER)
                 .build(), true);
 
         CaProvider provider = CaProvider.create(Reconciliation.DUMMY_RECONCILIATION,
@@ -122,7 +122,7 @@ public class CaProviderTest {
     public void testCreateProviderThrowsWhenTypeIsCertManagerAndGenerateCaIsTrue() {
         CaConfig caConfig = new CaConfig(new CertificateAuthorityBuilder()
                 .withGenerateCertificateAuthority(true)
-                .withType(CertificateManagerType.CERT_MANAGER_IO)
+                .withType(CertificateManagerType.CERT_MANAGER)
                 .build(), true);
 
         assertThrows(IllegalArgumentException.class, () -> CaProvider.create(Reconciliation.DUMMY_RECONCILIATION,

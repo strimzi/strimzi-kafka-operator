@@ -5,8 +5,8 @@
 package io.strimzi.operator.user;
 
 import io.strimzi.api.kafka.model.common.CertificateManagerType;
-import io.strimzi.api.kafka.model.common.certmanager.IssuerKind;
-import io.strimzi.api.kafka.model.common.certmanager.IssuerRef;
+import io.strimzi.api.kafka.model.kafka.certmanager.IssuerKind;
+import io.strimzi.api.kafka.model.kafka.certmanager.IssuerRef;
 import io.strimzi.operator.common.config.ConfigParameter;
 import io.strimzi.operator.common.featuregates.FeatureGates;
 import io.strimzi.operator.common.model.Labels;
@@ -173,21 +173,21 @@ public class UserOperatorConfig {
      */
     public static final ConfigParameter<List<String>> GATEKEEPER_DEFAULT_PLUGINS = new ConfigParameter<>("STRIMZI_GATEKEEPER_DEFAULT_PLUGINS", COMMA_SEPARATED_LIST, "", CONFIG_VALUES);
     /**
-     * Certificate Manager Type. One of strimzi.io or cert-manager.io.
+     * Certificate Manager Type. One of strimzi or cert-manager.
      */
-    public static final ConfigParameter<String> CA_TYPE = new ConfigParameter<>("STRIMZI_CA_TYPE", STRING, CertificateManagerType.STRIMZI_IO.toValue(), CONFIG_VALUES);
+    public static final ConfigParameter<String> CA_TYPE = new ConfigParameter<>("STRIMZI_CA_TYPE", STRING, CertificateManagerType.STRIMZI.toValue(), CONFIG_VALUES);
     /**
      * Name of the Issuer to use for cert-manager certificates.
      */
-    public static final ConfigParameter<String> CM_ISSUER_NAME = new ConfigParameter<>("STRIMZI_CM_ISSUER_NAME", STRING, "", CONFIG_VALUES);
+    public static final ConfigParameter<String> CERT_MANAGER_ISSUER_NAME = new ConfigParameter<>("STRIMZI_CERT_MANAGER_ISSUER_NAME", STRING, "", CONFIG_VALUES);
     /**
      * Kind of the Issuer to use for cert-manager certificates. One of Issuer or ClusterIssuer.
      */
-    public static final ConfigParameter<String> CM_ISSUER_KIND = new ConfigParameter<>("STRIMZI_CM_ISSUER_KIND", STRING, "", CONFIG_VALUES);
+    public static final ConfigParameter<String> CERT_MANAGER_ISSUER_KIND = new ConfigParameter<>("STRIMZI_CERT_MANAGER_ISSUER_KIND", STRING, "", CONFIG_VALUES);
     /**
      * Group of the Issuer to use for cert-manager certificates.
      */
-    public static final ConfigParameter<String> CM_ISSUER_GROUP = new ConfigParameter<>("STRIMZI_CM_ISSUER_GROUP", STRING, IssuerRef.GROUP_DEFAULT, CONFIG_VALUES);
+    public static final ConfigParameter<String> CERT_MANAGER_ISSUER_GROUP = new ConfigParameter<>("STRIMZI_CERT_MANAGER_ISSUER_GROUP", STRING, IssuerRef.GROUP_DEFAULT, CONFIG_VALUES);
 
     private final Map<String, Object> map;
 
@@ -600,7 +600,7 @@ public class UserOperatorConfig {
      * @return Name of the cert-manager Issuer.
      */
     public String getCertManagerIssuerName() {
-        return get(CM_ISSUER_NAME);
+        return get(CERT_MANAGER_ISSUER_NAME);
     }
 
     /**
@@ -609,7 +609,7 @@ public class UserOperatorConfig {
      * @return Kind of the cert-manager Issuer.
      */
     public IssuerKind getCertManagerIssuerKind() {
-        String value = get(CM_ISSUER_KIND);
+        String value = get(CERT_MANAGER_ISSUER_KIND);
         return (value != null && !value.isEmpty()) ? IssuerKind.forValue(value) : null;
     }
 
@@ -619,7 +619,7 @@ public class UserOperatorConfig {
      * @return Group of the cert-manager Issuer.
      */
     public String getCertManagerIssuerGroup() {
-        return get(CM_ISSUER_GROUP);
+        return get(CERT_MANAGER_ISSUER_GROUP);
     }
 
     @Override

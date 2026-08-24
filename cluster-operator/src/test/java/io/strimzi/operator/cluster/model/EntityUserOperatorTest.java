@@ -13,14 +13,14 @@ import io.strimzi.api.kafka.model.common.CertificateManagerType;
 import io.strimzi.api.kafka.model.common.InlineLogging;
 import io.strimzi.api.kafka.model.common.JvmOptions;
 import io.strimzi.api.kafka.model.common.SystemPropertyBuilder;
-import io.strimzi.api.kafka.model.common.certmanager.IssuerKind;
-import io.strimzi.api.kafka.model.common.certmanager.IssuerRef;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaAuthorization;
 import io.strimzi.api.kafka.model.kafka.KafkaAuthorizationCustomBuilder;
 import io.strimzi.api.kafka.model.kafka.KafkaAuthorizationSimple;
 import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
+import io.strimzi.api.kafka.model.kafka.certmanager.IssuerKind;
+import io.strimzi.api.kafka.model.kafka.certmanager.IssuerRef;
 import io.strimzi.api.kafka.model.kafka.clustersecurity.ClusterSecurityAuthenticationType;
 import io.strimzi.api.kafka.model.kafka.clustersecurity.ClusterSecurityEncryptionType;
 import io.strimzi.api.kafka.model.kafka.entityoperator.EntityUserOperatorSpec;
@@ -429,7 +429,7 @@ public class EntityUserOperatorTest {
                         .endUserOperator()
                     .endEntityOperator()
                     .withNewClientsCa()
-                        .withType(CertificateManagerType.CERT_MANAGER_IO)
+                        .withType(CertificateManagerType.CERT_MANAGER)
                         .withNewCertManager()
                             .withNewIssuerRef()
                                 .withName(issuerName)
@@ -443,10 +443,10 @@ public class EntityUserOperatorTest {
         EntityUserOperator entityUserOperator = EntityUserOperator.fromCrd(new Reconciliation("test", KAFKA.getKind(), KAFKA.getMetadata().getNamespace(), KAFKA.getMetadata().getName()), customValues, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig(), KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
 
         List<EnvVar> envVars = entityUserOperator.getEnvVars();
-        assertThat(envVars.stream().filter(a -> a.getName().equals(EntityUserOperator.ENV_VAR_CA_TYPE)).findFirst().orElseThrow().getValue(), is(CertificateManagerType.CERT_MANAGER_IO.toValue()));
-        assertThat(envVars.stream().filter(a -> a.getName().equals(EntityUserOperator.ENV_VAR_CM_ISSUER_NAME)).findFirst().orElseThrow().getValue(), is(issuerName));
-        assertThat(envVars.stream().filter(a -> a.getName().equals(EntityUserOperator.ENV_VAR_CM_ISSUER_KIND)).findFirst().orElseThrow().getValue(), is(IssuerKind.CLUSTER_ISSUER.toValue()));
-        assertThat(envVars.stream().filter(a -> a.getName().equals(EntityUserOperator.ENV_VAR_CM_ISSUER_GROUP)).findFirst().orElseThrow().getValue(), is(IssuerRef.GROUP_DEFAULT));
+        assertThat(envVars.stream().filter(a -> a.getName().equals(EntityUserOperator.ENV_VAR_CA_TYPE)).findFirst().orElseThrow().getValue(), is(CertificateManagerType.CERT_MANAGER.toValue()));
+        assertThat(envVars.stream().filter(a -> a.getName().equals(EntityUserOperator.ENV_VAR_CERT_MANAGER_ISSUER_NAME)).findFirst().orElseThrow().getValue(), is(issuerName));
+        assertThat(envVars.stream().filter(a -> a.getName().equals(EntityUserOperator.ENV_VAR_CERT_MANAGER_ISSUER_KIND)).findFirst().orElseThrow().getValue(), is(IssuerKind.CLUSTER_ISSUER.toValue()));
+        assertThat(envVars.stream().filter(a -> a.getName().equals(EntityUserOperator.ENV_VAR_CERT_MANAGER_ISSUER_GROUP)).findFirst().orElseThrow().getValue(), is(IssuerRef.GROUP_DEFAULT));
     }
 
     ////////////////////
@@ -480,7 +480,7 @@ public class EntityUserOperatorTest {
         expected.add(new EnvVarBuilder().withName(EntityUserOperator.ENV_VAR_SECRET_PREFIX).withValue("strimzi-").build());
         expected.add(new EnvVarBuilder().withName(EntityUserOperator.ENV_VAR_ACLS_ADMIN_API_SUPPORTED).withValue(String.valueOf(false)).build());
         expected.add(new EnvVarBuilder().withName(ClusterOperatorConfig.PKCS12_KEYSTORE_GENERATION.key()).withValue(String.valueOf(true)).build());
-        expected.add(new EnvVarBuilder().withName(EntityUserOperator.ENV_VAR_CA_TYPE).withValue(CertificateManagerType.STRIMZI_IO.toValue()).build());
+        expected.add(new EnvVarBuilder().withName(EntityUserOperator.ENV_VAR_CA_TYPE).withValue(CertificateManagerType.STRIMZI.toValue()).build());
 
         return expected;
     }

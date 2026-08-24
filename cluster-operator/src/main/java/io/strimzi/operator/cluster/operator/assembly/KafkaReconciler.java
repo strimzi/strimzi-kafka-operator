@@ -783,7 +783,7 @@ public class KafkaReconciler {
                                 } else if (KafkaResources.kafkaJmxSecretName(reconciliation.name()).equals(secretName)) {
                                     //Don't delete jmx secrets
                                     secretIsDesired = true;
-                                } else if (CertificateManagerType.CERT_MANAGER_IO.equals(clusterCa.getType()) && CertManagerCa.matchesCertManagerSecretNaming(secretName)) {
+                                } else if (CertificateManagerType.CERT_MANAGER.equals(clusterCa.getType()) && CertManagerCa.matchesCertManagerSecretNaming(secretName)) {
                                     // Don't delete cert-manager secrets
                                     secretIsDesired = desiredCertSecretNames.contains(CertManagerCa.mapToStrimziSecretName(secretName));
                                 }
