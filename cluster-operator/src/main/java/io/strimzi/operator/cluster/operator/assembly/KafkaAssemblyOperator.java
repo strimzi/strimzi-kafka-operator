@@ -474,8 +474,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
          * @return  Future with Reconciliation State
          */
         Future<ReconciliationState> versionChange()    {
-            return versionChangeCreator()
-                    .reconcile()
+            return VertxUtil.toFuture(versionChangeCreator()
+                    .reconcile())
                     .compose(versionChange -> {
                         this.versionChange = versionChange;
                         return Future.succeededFuture(this);
