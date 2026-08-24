@@ -45,11 +45,8 @@ import io.strimzi.operator.common.model.PasswordGenerator;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlConfigurationParameters;
 import io.strimzi.operator.common.operator.MockCertIssuer;
 import io.strimzi.operator.common.operator.resource.kubernetes.SecretOperator;
-import io.vertx.junit5.Checkpoint;
-import io.vertx.junit5.VertxExtension;
-import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.ArgumentCaptor;
@@ -58,6 +55,7 @@ import java.time.Clock;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
 import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties.TOPIC_OPERATOR_PASSWORD_KEY;
 import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties.TOPIC_OPERATOR_USERNAME;
@@ -76,7 +74,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@ExtendWith(VertxExtension.class)
+@Timeout(value = 30, unit = TimeUnit.SECONDS)
 public class CruiseControlReconcilerTest {
     private static final String NAMESPACE = "namespace";
     private static final String NAME = "name";
@@ -123,7 +121,7 @@ public class CruiseControlReconcilerTest {
         "false, true",
         "false, false"
     })
-    public void reconcileEnabledCruiseControl(boolean topicOperatorEnabled, boolean apiUsersEnabled, VertxTestContext context) {
+    public void reconcileEnabledCruiseControl(boolean topicOperatorEnabled, boolean apiUsersEnabled) {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
         DeploymentOperator mockDepOps = supplier.deploymentOperations;
         SecretOperator mockSecretOps = supplier.secretOperations;
@@ -226,51 +224,48 @@ public class CruiseControlReconcilerTest {
                 clusterCa,
                 KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
 
-        Checkpoint async = context.checkpoint();
         rcnclr.reconcile(false, null, null, Clock.systemUTC())
-                .onComplete(context.succeeding(v -> context.verify(() -> {
-                    verify(mockSaOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.serviceAccountName(NAME)), isNotNull());
+                .toCompletableFuture().join();
 
-                    verify(mockSecretOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.secretName(NAME)), isNotNull());
-                    verify(mockSecretOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.apiSecretName(NAME)), isNotNull());
+        verify(mockSaOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.serviceAccountName(NAME)), isNotNull());
 
-                    verify(mockServiceOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.serviceName(NAME)), isNotNull());
+        verify(mockSecretOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.secretName(NAME)), isNotNull());
+        verify(mockSecretOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.apiSecretName(NAME)), isNotNull());
 
-                    verify(mockNetPolicyOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.networkPolicyName(NAME)), isNotNull());
+        verify(mockServiceOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.serviceName(NAME)), isNotNull());
 
-                    verify(mockCmOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.configMapName(NAME)), isNotNull());
+        verify(mockNetPolicyOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.networkPolicyName(NAME)), isNotNull());
 
-                    // Verify deployment
-                    ArgumentCaptor<Deployment> deployCaptor = ArgumentCaptor.forClass(Deployment.class);
-                    verify(mockDepOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.componentName(NAME)), deployCaptor.capture());
-                    assertThat(deployCaptor.getValue(), is(notNullValue()));
-                    assertThat(deployCaptor.getValue().getSpec().getTemplate().getMetadata().getAnnotations().get(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION), is("0"));
-                    assertThat(deployCaptor.getValue().getSpec().getTemplate().getMetadata().getAnnotations().get(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_KEY_GENERATION), is("0"));
-                    assertThat(deployCaptor.getAllValues().get(0).getSpec().getTemplate().getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_IO_CONFIGURATION_HASH), is("bccfe18e"));
-                    assertThat(deployCaptor.getAllValues().get(0).getSpec().getTemplate().getMetadata().getAnnotations().get(CruiseControl.ANNO_STRIMZI_CAPACITY_CONFIGURATION_HASH), is("3a5e63e7"));
-                    assertThat(deployCaptor.getValue().getSpec().getTemplate().getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_SERVER_CERT_HASH), is("4d715cdd"));
-                    if (topicOperatorEnabled && apiUsersEnabled) {
-                        assertThat(deployCaptor.getAllValues().get(0).getSpec().getTemplate().getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_AUTH_HASH), is("8c2972b2"));
-                    } else if (topicOperatorEnabled) {
-                        assertThat(deployCaptor.getAllValues().get(0).getSpec().getTemplate().getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_AUTH_HASH), is("1b601e9a"));
-                    } else if (apiUsersEnabled) {
-                        assertThat(deployCaptor.getAllValues().get(0).getSpec().getTemplate().getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_AUTH_HASH), is("4215f758"));
-                    } else {
-                        assertThat(deployCaptor.getAllValues().get(0).getSpec().getTemplate().getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_AUTH_HASH), is("5a188d9a"));
-                    }
+        verify(mockCmOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.configMapName(NAME)), isNotNull());
 
-                    ArgumentCaptor<PodDisruptionBudget> pdbCaptor = ArgumentCaptor.forClass(PodDisruptionBudget.class);
-                    verify(mockPodDisruptionBudget, times(1)).reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.componentName(NAME)), pdbCaptor.capture());
-                    assertThat(pdbCaptor.getValue(), is(notNullValue()));
-                    assertThat(pdbCaptor.getValue().getMetadata().getName(), is(CruiseControlResources.componentName(NAME)));
-                    assertThat(pdbCaptor.getValue().getSpec().getMaxUnavailable(), is(new IntOrString(1)));
+        // Verify deployment
+        ArgumentCaptor<Deployment> deployCaptor = ArgumentCaptor.forClass(Deployment.class);
+        verify(mockDepOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.componentName(NAME)), deployCaptor.capture());
+        assertThat(deployCaptor.getValue(), is(notNullValue()));
+        assertThat(deployCaptor.getValue().getSpec().getTemplate().getMetadata().getAnnotations().get(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION), is("0"));
+        assertThat(deployCaptor.getValue().getSpec().getTemplate().getMetadata().getAnnotations().get(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_KEY_GENERATION), is("0"));
+        assertThat(deployCaptor.getAllValues().get(0).getSpec().getTemplate().getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_IO_CONFIGURATION_HASH), is("bccfe18e"));
+        assertThat(deployCaptor.getAllValues().get(0).getSpec().getTemplate().getMetadata().getAnnotations().get(CruiseControl.ANNO_STRIMZI_CAPACITY_CONFIGURATION_HASH), is("3a5e63e7"));
+        assertThat(deployCaptor.getValue().getSpec().getTemplate().getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_SERVER_CERT_HASH), is("4d715cdd"));
+        if (topicOperatorEnabled && apiUsersEnabled) {
+            assertThat(deployCaptor.getAllValues().get(0).getSpec().getTemplate().getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_AUTH_HASH), is("8c2972b2"));
+        } else if (topicOperatorEnabled) {
+            assertThat(deployCaptor.getAllValues().get(0).getSpec().getTemplate().getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_AUTH_HASH), is("1b601e9a"));
+        } else if (apiUsersEnabled) {
+            assertThat(deployCaptor.getAllValues().get(0).getSpec().getTemplate().getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_AUTH_HASH), is("4215f758"));
+        } else {
+            assertThat(deployCaptor.getAllValues().get(0).getSpec().getTemplate().getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_AUTH_HASH), is("5a188d9a"));
+        }
 
-                    async.flag();
-                })));
+        ArgumentCaptor<PodDisruptionBudget> pdbCaptor = ArgumentCaptor.forClass(PodDisruptionBudget.class);
+        verify(mockPodDisruptionBudget, times(1)).reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.componentName(NAME)), pdbCaptor.capture());
+        assertThat(pdbCaptor.getValue(), is(notNullValue()));
+        assertThat(pdbCaptor.getValue().getMetadata().getName(), is(CruiseControlResources.componentName(NAME)));
+        assertThat(pdbCaptor.getValue().getSpec().getMaxUnavailable(), is(new IntOrString(1)));
     }
 
     @Test
-    public void reconcileDisabledCruiseControl(VertxTestContext context) {
+    public void reconcileDisabledCruiseControl() {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
         DeploymentOperator mockDepOps = supplier.deploymentOperations;
         SecretOperator mockSecretOps = supplier.secretOperations;
@@ -323,28 +318,25 @@ public class CruiseControlReconcilerTest {
                 clusterCa,
                 KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
 
-        Checkpoint async = context.checkpoint();
         rcnclr.reconcile(false, null, null, Clock.systemUTC())
-                .onComplete(context.succeeding(v -> context.verify(() -> {
-                    verify(mockSaOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.serviceAccountName(NAME)), isNull());
+                .toCompletableFuture().join();
 
-                    verify(mockSecretOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.secretName(NAME)), isNull());
+        verify(mockSaOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.serviceAccountName(NAME)), isNull());
 
-                    verify(mockSecretOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(KafkaResources.entityTopicOperatorCcApiSecretName(NAME)), isNull());
+        verify(mockSecretOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.secretName(NAME)), isNull());
 
-                    verify(mockSecretOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.apiSecretName(NAME)), isNull());
+        verify(mockSecretOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(KafkaResources.entityTopicOperatorCcApiSecretName(NAME)), isNull());
 
-                    verify(mockServiceOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.serviceName(NAME)), isNull());
+        verify(mockSecretOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.apiSecretName(NAME)), isNull());
 
-                    verify(mockNetPolicyOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.networkPolicyName(NAME)), isNull());
+        verify(mockServiceOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.serviceName(NAME)), isNull());
 
-                    verify(mockCmOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.configMapName(NAME)), isNull());
+        verify(mockNetPolicyOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.networkPolicyName(NAME)), isNull());
 
-                    verify(mockDepOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.componentName(NAME)), isNull());
+        verify(mockCmOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.configMapName(NAME)), isNull());
 
-                    verify(mockPodDisruptionBudget, times(1)).reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.componentName(NAME)), isNull());
+        verify(mockDepOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.componentName(NAME)), isNull());
 
-                    async.flag();
-                })));
+        verify(mockPodDisruptionBudget, times(1)).reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.componentName(NAME)), isNull());
     }
 }
