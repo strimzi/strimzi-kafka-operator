@@ -120,22 +120,16 @@ public class KafkaRebalanceAssemblyOperatorProgressTest extends AbstractKafkaReb
         return Future.succeededFuture();
     }
 
-    private Future<ConfigMap> verifyBrokerLoadRetained(VertxTestContext context, KafkaRebalanceState state, ConfigMap previous, ConfigMap current) {
-        context.verify(() -> {
-            if (previous != null && current != null) {
-                assertState(context, client, namespace, RESOURCE_NAME, state);
-                assertThat(current.getData().get(BROKER_LOAD_KEY), is(previous.getData().get(BROKER_LOAD_KEY)));
-            }
-        });
-        return Future.succeededFuture(current);
+    private void verifyBrokerLoadRetained(VertxTestContext context, KafkaRebalanceState state, ConfigMap previous, ConfigMap current) {
+        if (previous != null && current != null) {
+            assertState(context, client, namespace, RESOURCE_NAME, state);
+            assertThat(current.getData().get(BROKER_LOAD_KEY), is(previous.getData().get(BROKER_LOAD_KEY)));
+        }
     }
 
-    private Future<ConfigMap> verifyBrokerLoadChanged(VertxTestContext context, KafkaRebalanceState state, ConfigMap previous, ConfigMap current) {
-        context.verify(() -> {
-            assertState(context, client, namespace, RESOURCE_NAME, state);
-            assertThat(current.getData().get(BROKER_LOAD_KEY), is(not(previous.getData().get(BROKER_LOAD_KEY))));
-        });
-        return Future.succeededFuture(current);
+    private void verifyBrokerLoadChanged(VertxTestContext context, KafkaRebalanceState state, ConfigMap previous, ConfigMap current) {
+        assertState(context, client, namespace, RESOURCE_NAME, state);
+        assertThat(current.getData().get(BROKER_LOAD_KEY), is(not(previous.getData().get(BROKER_LOAD_KEY))));
     }
 
     private Future<ConfigMap> reconcile(Reconciliation reconciliation) {
@@ -298,28 +292,29 @@ public class KafkaRebalanceAssemblyOperatorProgressTest extends AbstractKafkaReb
         Reconciliation reconciliation = new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, RESOURCE_NAME);
         mockCruiseControlTask(ACTIVE, false)
                 .compose(res -> reconcile(reconciliation))
-                .compose(cm1 -> verifyBrokerLoadRetained(context, PendingProposal, cm1, null))
+                .onSuccess(cm1 -> verifyBrokerLoadRetained(context, PendingProposal, null, cm1))
 
                 .compose(res -> mockCruiseControlTask(COMPLETED, false))
-                .compose(cm1 -> reconcile(reconciliation))
-                .compose(cm1 -> verifyBrokerLoadRetained(context, ProposalReady, null, cm1)
+                .compose(res -> reconcile(reconciliation))
+                .onSuccess(cm1 -> verifyBrokerLoadRetained(context, ProposalReady, null, cm1))
 
-                    .compose(res -> mockCruiseControlTask(IN_EXECUTION, false))
-                    .compose(cm2 -> reconcile(reconciliation))
-                    .compose(cm2 -> verifyBrokerLoadRetained(context, Rebalancing, cm1, cm2))
+                .compose(cm1 -> mockCruiseControlTask(IN_EXECUTION, false)
+                .compose(res -> reconcile(reconciliation))
+                .onSuccess(cm2 -> verifyBrokerLoadRetained(context, Rebalancing, cm1, cm2))
 
-                    .compose(res -> mockCruiseControlTask(COMPLETED, false))
-                    .compose(cm2 -> reconcile(reconciliation))
-                    .compose(cm2 -> verifyBrokerLoadRetained(context, Ready, cm1, cm2)
-                    .compose(ignored -> {
+                .compose(res -> mockCruiseControlTask(COMPLETED, false))
+                .compose(res -> reconcile(reconciliation))
+                .onSuccess(cm2 -> verifyBrokerLoadRetained(context, Ready, cm1, cm2))
 
-                        mockCruiseControlTask(COMPLETED, false);
-                        cruiseControlServer.mockNewProposal();
-                        annotate(client, namespace, RESOURCE_NAME, KafkaRebalanceAnnotation.refresh);
+                .compose(cm2 -> {
 
-                        return reconcile(reconciliation)
-                          .compose(cm3 -> verifyBrokerLoadChanged(context, ProposalReady, cm2, cm3));
-                    })))
+                    mockCruiseControlTask(COMPLETED, false);
+                    cruiseControlServer.mockNewProposal();
+                    annotate(client, namespace, RESOURCE_NAME, KafkaRebalanceAnnotation.refresh);
+
+                    return reconcile(reconciliation)
+                      .onSuccess(cm3 -> verifyBrokerLoadChanged(context, ProposalReady, cm2, cm3));
+                }))
                 .onSuccess(res -> checkpoint.flag())
                 .onFailure(context::failNow);
     }
@@ -346,17 +341,18 @@ public class KafkaRebalanceAssemblyOperatorProgressTest extends AbstractKafkaReb
         Checkpoint checkpoint = context.checkpoint();
         Reconciliation reconciliation = new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, RESOURCE_NAME);
         mockCruiseControlTask(COMPLETED, false)
-              .compose(cm1 -> reconcile(reconciliation))
-              .compose(cm1 -> verifyBrokerLoadRetained(context, ProposalReady, null, cm1)
-                  .compose(ignored -> {
+              .compose(res -> reconcile(reconciliation))
+              .onSuccess(cm1 -> verifyBrokerLoadRetained(context, ProposalReady, null, cm1))
+
+                  .compose(cm1 -> {
 
                       mockCruiseControlTask(COMPLETED, false);
                       cruiseControlServer.mockNewProposal();
                       annotate(client, namespace, RESOURCE_NAME, KafkaRebalanceAnnotation.refresh);
 
                       return reconcile(reconciliation)
-                          .compose(cm2 -> verifyBrokerLoadChanged(context, ProposalReady, cm1, cm2));
-                  }))
+                          .onSuccess(cm2 -> verifyBrokerLoadChanged(context, ProposalReady, cm1, cm2));
+                  })
               .onSuccess(res -> checkpoint.flag())
               .onFailure(context::failNow);
     }
@@ -377,11 +373,11 @@ public class KafkaRebalanceAssemblyOperatorProgressTest extends AbstractKafkaReb
         Reconciliation reconciliation = new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, RESOURCE_NAME);
         mockCruiseControlTask(COMPLETED, false)
               .compose(res -> reconcile(reconciliation))
-              .compose(cm1 -> verifyBrokerLoadRetained(context, ProposalReady, null, cm1)
+              .onSuccess(cm1 -> verifyBrokerLoadRetained(context, ProposalReady, null, cm1))
 
-                  .compose(res -> mockCruiseControlTask(IN_EXECUTION, false))
-                  .compose(cm2 -> reconcile(reconciliation))
-                  .compose(cm2 -> verifyBrokerLoadRetained(context, Rebalancing, cm1, cm2))
+                  .compose(cm1 -> mockCruiseControlTask(IN_EXECUTION, false)
+                  .compose(res -> reconcile(reconciliation))
+                  .onSuccess(cm2 -> verifyBrokerLoadRetained(context, Rebalancing, cm1, cm2))
 
                   .compose(cm2 -> {
                       cruiseControlServer.setupCCStopResponse();
@@ -391,7 +387,7 @@ public class KafkaRebalanceAssemblyOperatorProgressTest extends AbstractKafkaReb
                               cruiseControlServer.setupCCStopResponse();
                               return reconcile(reconciliation);
                           })
-                          .compose(cm3 -> verifyBrokerLoadRetained(context, Stopped, cm1, cm3));
+                          .onSuccess(cm3 -> verifyBrokerLoadRetained(context, Stopped, cm1, cm3));
                   }))
 
               .onSuccess(res -> checkpoint.flag())
