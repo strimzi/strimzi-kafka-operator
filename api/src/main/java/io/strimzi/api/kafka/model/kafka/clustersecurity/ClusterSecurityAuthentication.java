@@ -54,7 +54,6 @@ public class ClusterSecurityAuthentication implements UnknownPropertyPreserving 
             "This field is only applicable for `type: service-account` authentication. " +
             "Defaults to 1 hour when not set.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    @RequiredInVersions("v1+")
     public Integer getExpirationSeconds() {
         return expirationSeconds;
     }
