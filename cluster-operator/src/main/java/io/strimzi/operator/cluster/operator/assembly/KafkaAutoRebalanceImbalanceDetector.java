@@ -25,6 +25,7 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
+import io.strimzi.operator.common.model.cruisecontrol.CruiseControlConfigurationParameters;
 import io.strimzi.operator.common.operator.resource.kubernetes.CrdOperator;
 
 import java.time.Instant;
@@ -113,7 +114,7 @@ public class KafkaAutoRebalanceImbalanceDetector {
     /**
      * Checks if there is an actively executing rebalance (manual or auto-generated) that should block auto-rebalance on imbalance
      *
-     * @return Future with boolean - true if auto-rebalance should be blocked, false otherwise
+     * @return CompletionStage with boolean - true if auto-rebalance should be blocked, false otherwise
      */
     public CompletionStage<Boolean> hasActiveRebalance() {
         return kafkaRebalanceOperator.listAsync(reconciliation.namespace(),
@@ -140,7 +141,7 @@ public class KafkaAutoRebalanceImbalanceDetector {
     /**
      * Checks for goal violations by querying Cruise Control
      *
-     * @return Future with GoalViolationInfo if violations detected, null otherwise
+     * @return CompletionStage with GoalViolationInfo if violations detected, null otherwise
      */
     public CompletionStage<GoalViolationInfo> checkForGoalViolations() {
         if (kafkaCr.getSpec() == null || kafkaCr.getSpec().getCruiseControl() == null) {
@@ -190,12 +191,10 @@ public class KafkaAutoRebalanceImbalanceDetector {
      * Checks if the detected anomaly should trigger a rebalance by comparing timestamps
      *
      * @param detectionDate When the anomaly was detected
-     * @return Future with boolean indicating if rebalance should be triggered
+     * @return CompletionStage with boolean indicating if rebalance should be triggered
      */
     public CompletionStage<Boolean> shouldTriggerRebalance(Instant detectionDate) {
-        String configMapName = reconciliation.name() + KafkaAutoRebalancingReconciler.AUTO_REBALANCE_IMBALANCE_TRACKER_SUFFIX;
-
-        return configMapOperator.getAsync(reconciliation.namespace(), configMapName)
+        return configMapOperator.getAsync(reconciliation.namespace(), reconciliation.name() + KafkaAutoRebalancingReconciler.AUTO_REBALANCE_IMBALANCE_TRACKER_SUFFIX)
                 .thenCompose(configMap -> {
                     if (configMap == null || configMap.getData() == null) {
                         return CompletableFuture.completedFuture(true);
@@ -235,7 +234,7 @@ public class KafkaAutoRebalanceImbalanceDetector {
      * Every anomaly detection goal must be present in the template so that the resulting
      * rebalance proposal actually addresses the detected violations.
      *
-     * @return Future with boolean value - true if validation passes or no validation needed, false if validation fails
+     * @return CompletionStage with boolean value - true if validation passes or no validation needed, false if validation fails
      */
     public CompletionStage<Boolean> validateTemplateGoals() {
         Optional<KafkaAutoRebalanceConfiguration> imbalanceConfig = kafkaAutoRebalanceConfigurations.stream()
@@ -280,7 +279,7 @@ public class KafkaAutoRebalanceImbalanceDetector {
                     }
 
                     return CompletableFuture.completedFuture(true);
-                });
+                }).toCompletableFuture();
     }
 
     /**
@@ -289,12 +288,11 @@ public class KafkaAutoRebalanceImbalanceDetector {
      * @return List of anomaly detection goal names
      */
     private List<String> getAnomalyDetectionGoals() {
-        List<String> defaultGoals = List.of(
-                "RackAwareGoal",
-                "MinTopicLeadersPerBrokerGoal",
-                "ReplicaCapacityGoal",
-                "DiskCapacityGoal"
-        );
+        List<String> defaultGoals = List.of(CruiseControlConfiguration.CRUISE_CONTROL_DEFAULT_ANOMALY_DETECTION_GOALS.split(","))
+                .stream()
+                .map(String::trim)
+                .map(this::extractGoalShortName)
+                .collect(Collectors.toList());
 
         if (kafkaCr.getSpec() == null || kafkaCr.getSpec().getCruiseControl() == null ||
                 kafkaCr.getSpec().getCruiseControl().getConfig() == null) {
@@ -302,7 +300,7 @@ public class KafkaAutoRebalanceImbalanceDetector {
         }
 
         Map<String, Object> ccConfig = kafkaCr.getSpec().getCruiseControl().getConfig();
-        Object goalsConfig = ccConfig.get("anomaly.detection.goals");
+        Object goalsConfig = ccConfig.get(CruiseControlConfigurationParameters.ANOMALY_DETECTION_CONFIG_KEY.toString());
 
         if (goalsConfig == null) {
             return defaultGoals;
