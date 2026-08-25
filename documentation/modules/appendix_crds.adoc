@@ -1662,7 +1662,7 @@ Used in: xref:type-CruiseControlSpec-{context}[`CruiseControlSpec`]
 |====
 |Property |Property type |Description
 |mode
-|string (one of [remove-brokers, add-brokers])
+|string (one of [imbalance, remove-brokers, add-brokers])
 |Specifies the mode for automatically rebalancing when brokers are added or removed. Supported modes are `add-brokers` and `remove-brokers`. 
 
 |template
@@ -1888,7 +1888,7 @@ Used in: xref:type-KafkaStatus-{context}[`KafkaStatus`]
 |====
 |Property |Property type |Description
 |state
-|string (one of [RebalanceOnScaleUp, Idle, RebalanceOnScaleDown])
+|string (one of [RebalanceOnScaleUp, Idle, RebalanceOnScaleDown, RebalanceOnImbalance])
 |The current state of an auto-rebalancing operation. Possible values are: 
 
 * `Idle` as the initial state when an auto-rebalancing is requested or as final state when it completes or fails.
@@ -1916,7 +1916,7 @@ Used in: xref:type-KafkaAutoRebalanceStatus-{context}[`KafkaAutoRebalanceStatus`
 |====
 |Property |Property type |Description
 |mode
-|string (one of [remove-brokers, add-brokers])
+|string (one of [imbalance, remove-brokers, add-brokers])
 |Mode for which there is an auto-rebalancing operation in progress or queued, when brokers are added or removed. The possible modes are `add-brokers` and `remove-brokers`.
 |brokers
 |integer array

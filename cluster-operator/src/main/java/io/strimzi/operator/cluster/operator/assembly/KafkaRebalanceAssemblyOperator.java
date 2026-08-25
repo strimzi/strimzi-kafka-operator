@@ -252,6 +252,7 @@ public class KafkaRebalanceAssemblyOperator
         return kafkaRebalance.getStatus();
     }
 
+
     /* test */ AbstractRebalanceOptions.AbstractRebalanceOptionsBuilder<?, ?> convertRebalanceSpecToRebalanceOptions(KafkaRebalanceSpec kafkaRebalanceSpec) {
 
         AbstractRebalanceOptions.AbstractRebalanceOptionsBuilder<?, ?> rebalanceOptionsBuilder;
