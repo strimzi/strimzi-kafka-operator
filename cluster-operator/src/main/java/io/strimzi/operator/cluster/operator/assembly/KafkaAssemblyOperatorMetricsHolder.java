@@ -4,11 +4,13 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
+import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.Tags;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePool;
 import io.strimzi.operator.common.MetricsProvider;
 import io.strimzi.operator.common.config.ConfigParameter;
+import io.strimzi.operator.common.metrics.AnomalyMetricKey;
 import io.strimzi.operator.common.metrics.CertificateMetricKey;
 import io.strimzi.operator.common.metrics.MetricKey;
 import io.strimzi.operator.common.metrics.MetricsUtils;
@@ -32,9 +34,14 @@ public class KafkaAssemblyOperatorMetricsHolder extends OperatorMetricsHolder {
      * Metric name for certificate expiration timestamp in ms.
      */
     public static final String METRICS_CERTIFICATE_EXPIRATION_MS = METRICS_PREFIX + "certificate.expiration.timestamp.ms";
+    /**
+     * Metric name for anomalies detected counter.
+     */
+    public static final String METRICS_ANOMALIES_DETECTED = METRICS_PREFIX + "auto.rebalance.anomalies.detected.total";
 
     protected final Map<MetricKey, AtomicLong> certificateExpirationMap = new ConcurrentHashMap<>(1);
     protected final Map<MetricKey, AtomicInteger> nodePoolResourceCounterMap = new ConcurrentHashMap<>(1);
+    protected final Map<MetricKey, Counter> anomaliesDetectedCounterMap = new ConcurrentHashMap<>(1);
 
     /**
      * Constructs the operator metrics holder
@@ -127,5 +134,24 @@ public class KafkaAssemblyOperatorMetricsHolder extends OperatorMetricsHolder {
         } else {
             nodePoolResourceCounter(namespace).set(0);
         }
+    }
+
+    /**
+     * Counter metric for anomalies detected by Cruise Control.
+     *
+     * @param namespace     Namespace of the resources being reconciled
+     * @param fixability    Fixability classification of the detected anomaly
+     *
+     * @return  Metrics counter
+     */
+    public Counter anomaliesDetectedCounter(String namespace, String fixability) {
+        return getCounter(
+                new AnomalyMetricKey(kind, namespace, fixability),
+                METRICS_ANOMALIES_DETECTED,
+                "Total number of anomalies detected by Cruise Control",
+                Optional.of(getLabelSelectorValues()),
+                anomaliesDetectedCounterMap,
+                Tag.of("type", "goal_violation"),
+                Tag.of("fixability", fixability));
     }
 }

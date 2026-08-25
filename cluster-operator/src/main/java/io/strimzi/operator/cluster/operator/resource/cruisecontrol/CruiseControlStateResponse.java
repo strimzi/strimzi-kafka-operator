@@ -23,7 +23,14 @@ public class CruiseControlStateResponse extends CruiseControlResponse {
     CruiseControlStateResponse(String userTaskId, JsonNode json) {
         super(userTaskId, json);
 
-        executorStatus = new ExecutorStatus(json.get(EXECUTOR_STATE_KEY));
+        // ExecutorState is only present when not using substates parameter or when using certain substates
+        // When querying with substates=anomaly_detector, only AnomalyDetectorState is present
+        JsonNode executorStateNode = json.get(EXECUTOR_STATE_KEY);
+        if (executorStateNode != null && !executorStateNode.isNull()) {
+            executorStatus = new ExecutorStatus(executorStateNode);
+        } else {
+            executorStatus = null;
+        }
     }
 
     /**
