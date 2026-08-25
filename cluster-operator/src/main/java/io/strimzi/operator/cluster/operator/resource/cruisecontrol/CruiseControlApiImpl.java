@@ -61,11 +61,11 @@ public class CruiseControlApiImpl implements CruiseControlApi {
     /**
      * Constructor
      *
-     * @param idleTimeout           Idle timeout
+     * @param idleTimeout       Idle timeout
      * @param clusterCaCertSecret   Cluster CA certificate Secret, used to trust the Cruise Control TLS server
-     * @param ccApiSecret           Cruise Control API Secret
-     * @param apiAuthEnabled        Flag indicating if authentication is enabled
-     * @param apiSslEnabled         Flag indicating if TLS is enabled
+     * @param ccApiSecret       Cruise Control API Secret
+     * @param apiAuthEnabled    Flag indicating if authentication is enabled
+     * @param apiSslEnabled     Flag indicating if TLS is enabled
      */
     public CruiseControlApiImpl(int idleTimeout, Secret clusterCaCertSecret, Secret ccApiSecret, Boolean apiAuthEnabled, boolean apiSslEnabled) {
         this.idleTimeout = idleTimeout;
@@ -588,7 +588,6 @@ public class CruiseControlApiImpl implements CruiseControlApi {
         } else if (ex.getCause() instanceof RuntimeException) {
             return (RuntimeException) ex.getCause();
         } else {
-            // Wrap checked exceptions (like IOException) in RuntimeException
             return new CruiseControlRetriableConnectionException(ex.getCause());
         }
     }
