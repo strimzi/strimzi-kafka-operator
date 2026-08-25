@@ -266,7 +266,7 @@ public class KafkaAutoRebalanceImbalanceDetector {
 
                     List<String> missingGoals = anomalyDetectionGoals.stream()
                             .filter(goal -> !templateGoals.contains(goal))
-                            .collect(Collectors.toList());
+                            .toList();
 
                     if (!missingGoals.isEmpty()) {
                         String message = String.format(
@@ -292,7 +292,7 @@ public class KafkaAutoRebalanceImbalanceDetector {
                 .stream()
                 .map(String::trim)
                 .map(this::extractGoalShortName)
-                .collect(Collectors.toList());
+                .toList();
 
         if (kafkaCr.getSpec() == null || kafkaCr.getSpec().getCruiseControl() == null ||
                 kafkaCr.getSpec().getCruiseControl().getConfig() == null) {
@@ -315,7 +315,7 @@ public class KafkaAutoRebalanceImbalanceDetector {
                 .stream()
                 .map(String::trim)
                 .map(this::extractGoalShortName)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     /**
