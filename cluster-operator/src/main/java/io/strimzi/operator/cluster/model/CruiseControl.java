@@ -62,12 +62,14 @@ import io.strimzi.plugin.security.profiles.PodSecurityProviderContext;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletionStage;
 
 import static io.strimzi.operator.cluster.model.cruisecontrol.CruiseControlConfiguration.CRUISE_CONTROL_DEFAULT_ANOMALY_DETECTION_GOALS;
+import static io.strimzi.operator.cluster.model.cruisecontrol.CruiseControlConfiguration.CRUISE_CONTROL_GOALS;
 import static java.lang.String.format;
 
 /**
@@ -282,9 +284,22 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
             }
         }
 
-        // If the user has not explicitly configured anomaly detection goals, default them to the default anomaly detection goals
-        if (configuration.getConfigOption(CruiseControlConfigurationParameters.ANOMALY_DETECTION_CONFIG_KEY.toString()) == null) {
-            configuration.setConfigOption(CruiseControlConfigurationParameters.ANOMALY_DETECTION_CONFIG_KEY.toString(), CRUISE_CONTROL_DEFAULT_ANOMALY_DETECTION_GOALS);
+        // If no anomaly detection goals have been defined by the user, the defaults defined in Cruise Control will be used.
+        String anomalyGoalsString = configuration.getConfigOption(CruiseControlConfigurationParameters.ANOMALY_DETECTION_CONFIG_KEY.toString(), CRUISE_CONTROL_DEFAULT_ANOMALY_DETECTION_GOALS);
+        Set<String> anomalyDetectionGoals = new HashSet<>(Arrays.asList(anomalyGoalsString.split("\\s*,\\s*")));
+
+        String defaultGoalsString = configuration.getConfigOption(CruiseControlConfigurationParameters.DEFAULT_GOALS_CONFIG_KEY.toString(), CRUISE_CONTROL_GOALS);
+        Set<String> defaultGoals = new HashSet<>(Arrays.asList(defaultGoalsString.split("\\s*,\\s*")));
+
+        // Remove all the goals which are present in the default goals set from the anomaly detection goals
+        anomalyDetectionGoals.removeAll(defaultGoals);
+
+        if (!anomalyDetectionGoals.isEmpty()) {
+            // If the anomaly detection goals contain goals which are not in the default goals then the CC startup
+            // checks will fail, so we make the anomaly goals match the default goals
+            configuration.setConfigOption(CruiseControlConfigurationParameters.ANOMALY_DETECTION_CONFIG_KEY.toString(), defaultGoalsString);
+            LOGGER.warnCr(reconciliation, "Anomaly goals contained goals which are not in the configured default goals. Anomaly goals have " +
+                    "been changed to match the specified default goals.");
         }
     }
 
