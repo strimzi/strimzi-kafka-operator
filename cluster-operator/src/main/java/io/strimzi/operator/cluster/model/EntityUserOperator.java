@@ -304,39 +304,6 @@ public class EntityUserOperator extends AbstractModel implements SupportsLogging
     }
 
     /**
-     * Generates a RoleBinding granting the entity operator service account permission to manage
-     * cert-manager {@code Certificate} resources in the given namespace.
-     *
-     * @param namespace         Namespace where the entity operator service account lives
-     * @param watchedNamespace  Namespace where the RoleBinding should be created
-     *
-     * @return  RoleBinding for cert-manager Certificate access
-     */
-    public RoleBinding generateCertManagerRoleBinding(String namespace, String watchedNamespace) {
-        Subject subject = new SubjectBuilder()
-                .withKind("ServiceAccount")
-                .withName(KafkaResources.entityOperatorDeploymentName(cluster))
-                .withNamespace(namespace)
-                .build();
-
-        RoleRef roleRef = new RoleRefBuilder()
-                .withName("strimzi-entity-operator-cert-manager")
-                .withApiGroup("rbac.authorization.k8s.io")
-                .withKind("ClusterRole")
-                .build();
-
-        RoleBinding rb = RbacUtils
-                .createRoleBinding(KafkaResources.entityOperatorCertManagerRoleBinding(cluster), watchedNamespace, roleRef, List.of(subject), labels, ownerReference, templateRoleBinding);
-
-        // We set OwnerReference only within the same namespace since it does not work cross-namespace
-        if (!namespace.equals(watchedNamespace)) {
-            rb.getMetadata().setOwnerReferences(Collections.emptyList());
-        }
-
-        return rb;
-    }
-
-    /**
      * Generates the User Operator Role Binding
      *
      * @param namespace         Namespace, where the User Operator is deployed
