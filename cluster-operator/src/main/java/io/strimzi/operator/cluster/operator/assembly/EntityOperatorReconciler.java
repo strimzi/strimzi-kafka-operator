@@ -128,7 +128,6 @@ public class EntityOperatorReconciler {
                 .compose(i -> podDistruptionBudget())
                 .compose(i -> topicOperatorRoleBindings())
                 .compose(i -> userOperatorRoleBindings())
-                .compose(i -> userOperatorCertManagerRoleBinding())
                 .compose(i -> topicOperatorConfigMap())
                 .compose(i -> userOperatorConfigMap())
                 .compose(i -> topicOperatorSecret(clock))
@@ -165,8 +164,19 @@ public class EntityOperatorReconciler {
                         reconciliation,
                         reconciliation.namespace(),
                         KafkaResources.entityOperatorDeploymentName(reconciliation.name()),
-                        shouldInstallEntityOperator() ? entityOperator.generateRole(reconciliation.namespace(), reconciliation.namespace(), KafkaResources.entityOperatorDeploymentName(reconciliation.name()), EntityOperator.Permissions.BOTH) : null
+                        shouldInstallEntityOperator() ? entityOperator.generateRole(reconciliation.namespace(), reconciliation.namespace(), KafkaResources.entityOperatorDeploymentName(reconciliation.name()), EntityOperator.Permissions.BOTH, isUserOperatorCertManagerEnabled()) : null
                 )).mapEmpty();
+    }
+
+    /**
+     * Checks whether the User Operator is configured with cert-manager as the clients CA type.
+     *
+     * @return True when cert-manager is used for client certificates
+     */
+    private boolean isUserOperatorCertManagerEnabled() {
+        return entityOperator != null
+                && entityOperator.userOperator() != null
+                && entityOperator.userOperator().isCertManagerEnabled();
     }
 
     /**
@@ -224,7 +234,7 @@ public class EntityOperatorReconciler {
             } else if (isEntityOperatorWatchedNamespaceEnabled && !namespace.equals(reconciliation.namespace())) {
                 // Creation case: generate Role for watched namespace using adaptive permissions
                 EntityOperator.Permissions permissions = getPermissionsForNamespace(namespace);
-                role = entityOperator.generateRole(reconciliation.namespace(), namespace, KafkaResources.entityOperatorDeploymentName(reconciliation.name()), permissions);
+                role = entityOperator.generateRole(reconciliation.namespace(), namespace, KafkaResources.entityOperatorDeploymentName(reconciliation.name()), permissions, isUserOperatorCertManagerEnabled());
             } else {
                 // Feature disabled and no deletion needed (watchedNamespace = cluster namespace)
                 return Future.succeededFuture();
@@ -262,7 +272,7 @@ public class EntityOperatorReconciler {
             } else if (isEntityOperatorWatchedNamespaceEnabled && !namespace.equals(reconciliation.namespace())) {
                 // Creation case: generate Role for watched namespace using adaptive permissions
                 EntityOperator.Permissions permissions = getPermissionsForNamespace(namespace);
-                role = entityOperator.generateRole(reconciliation.namespace(), namespace, KafkaResources.entityOperatorDeploymentName(reconciliation.name()), permissions);
+                role = entityOperator.generateRole(reconciliation.namespace(), namespace, KafkaResources.entityOperatorDeploymentName(reconciliation.name()), permissions, isUserOperatorCertManagerEnabled());
             } else {
                 // Feature disabled and no deletion needed (watchedNamespace = cluster namespace)
                 return Future.succeededFuture();
@@ -381,28 +391,6 @@ public class EntityOperatorReconciler {
                     .reconcile(reconciliation, reconciliation.namespace(), KafkaResources.entityUserOperatorRoleBinding(reconciliation.name()), null))
                     .mapEmpty();
         }
-    }
-
-    /**
-     * Manages the RoleBinding granting the entity operator service account permission to manage
-     * cert-manager {@code Certificate} resources. The RoleBinding is created when the User Operator is
-     * present and the clients CA type is {@code cert-manager}. It is deleted otherwise.
-     *
-     * @return  Future which completes when the reconciliation is done
-     */
-    protected Future<Void> userOperatorCertManagerRoleBinding() {
-        RoleBinding certManagerRoleBinding = null;
-        if (entityOperator != null
-                && entityOperator.userOperator() != null
-                && entityOperator.userOperator().isCertManagerEnabled()) {
-            certManagerRoleBinding = entityOperator.userOperator()
-                    .generateCertManagerRoleBinding(reconciliation.namespace(), reconciliation.namespace());
-        }
-        return VertxUtil.toFuture(roleBindingOperator
-                .reconcile(reconciliation, reconciliation.namespace(),
-                        KafkaResources.entityOperatorCertManagerRoleBinding(reconciliation.name()),
-                        certManagerRoleBinding))
-                .mapEmpty();
     }
 
     /**
