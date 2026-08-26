@@ -142,11 +142,14 @@ public class SetupCertManager {
      * <p>This simulates the steps a user would perform before deploying a Kafka cluster with
      * {@code clusterCa.type: cert-manager}. It creates self-signed CA public certificate
      * and private key and stores them in the Secret that would be used by ClusterIssuer.
+     *
+     * @return the subject DN of the generated CA certificate
      */
-    public static void createIssuerAndCaSecret() {
+    public static String createIssuerAndCaSecret() {
         LOGGER.info("Generating self-signed CA certificate and key for cert-manager ClusterIssuer");
 
         final CertAndKey ca = SystemTestCertGenerator.generateRootCaCertAndKey();
+        final String subjectDn = ca.getCertificate().getSubjectX500Principal().getName();
         final CertAndKeyFiles caFiles = SystemTestCertGenerator.exportToPemFiles(ca);
 
         final String certBase64;
@@ -181,6 +184,9 @@ public class SetupCertManager {
         KubeResourceManager.get().kubeCmdClient().apply(STRIMZI_ISSUER_PATH);
         KubeResourceManager.get().pushToStack(new ResourceItem<>(() ->
                 KubeResourceManager.get().kubeCmdClient().delete(STRIMZI_ISSUER_PATH)));
+
+        LOGGER.info("CA certificate subject DN: {}", subjectDn);
+        return subjectDn;
     }
 
     /**

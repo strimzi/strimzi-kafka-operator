@@ -156,9 +156,8 @@ env:
 
 .Switching between CA types
 
-You can switch between Strimzi-managed CA and cert-manager on a running cluster by changing the `type` and `generateCertificateAuthority` fields and applying the updated `Kafka` resource.
-The Cluster Operator detects the change and performs a rolling restart of all components to switch to the new certificates.
-To switch back to Strimzi-managed CA, set `type` to `strimzi` (or remove it) and set `generateCertificateAuthority` to `true`.
+You can from Strimzi-managed CA to cert-manager and custom CA on a running cluster by changing the `type` to `cert-manager` and `generateCertificateAuthority` to `false` and applying the updated `Kafka` resource.
+The Cluster Operator detects the change and performs a 2 phased rolling restart (one to establish trust and another one to use new certificates) of all components to switch to the new CA type.
 
 [role="_additional-resources"]
 .Additional resources
