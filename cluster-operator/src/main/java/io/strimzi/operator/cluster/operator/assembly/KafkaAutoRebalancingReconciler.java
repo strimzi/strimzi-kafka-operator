@@ -136,62 +136,55 @@ public class KafkaAutoRebalancingReconciler {
         }
 
         // Idle with no scaling — check for imbalance if that mode is configured
-        return maybeCheckForImbalance(scalingNodes, kafkaStatus);
+        return maybeCheckForImbalance()
+                .whenComplete((ignored, ignored2) -> kafkaStatus.setAutoRebalance(kafkaAutoRebalanceStatus));
     }
 
     /**
      * Checks for goal violations and triggers imbalance rebalancing when the cluster is idle with no scaling operations.
      * This includes template goal validation, active rebalance check, and Cruise Control anomaly detection.
-     * Only runs when IMBALANCE mode is configured; otherwise falls through to maybeRebalance directly.
-     *
-     * @param scalingNodes  The scaling nodes (expected to be empty when this method is called)
-     * @param kafkaStatus   The Kafka status to update
+     * Only runs when IMBALANCE mode is configured; otherwise returns immediately.
      *
      * @return  CompletionStage which completes when the check is done
      */
-    private CompletionStage<Void> maybeCheckForImbalance(ScalingNodes scalingNodes, KafkaStatus kafkaStatus) {
+    private CompletionStage<Void> maybeCheckForImbalance() {
         boolean imbalanceModeConfigured = kafkaAutoRebalanceConfigurations.stream()
                 .anyMatch(c -> c.getMode().equals(KafkaAutoRebalanceMode.IMBALANCE));
 
         if (!imbalanceModeConfigured) {
-            return maybeRebalance(scalingNodes)
-                    .whenComplete((ignored, ignored2) -> kafkaStatus.setAutoRebalance(kafkaAutoRebalanceStatus));
+            return CompletableFuture.completedFuture(null);
         }
 
         return imbalanceDetector.validateTemplateGoals()
                 .thenCompose(isValid -> {
                     if (!isValid) {
                         LOGGER.warnCr(reconciliation, "Template goal validation failed, imbalance auto-rebalance suspended");
-                        return maybeRebalance(scalingNodes)
-                                .whenComplete((ignored, ignored2) -> kafkaStatus.setAutoRebalance(kafkaAutoRebalanceStatus));
+                        return CompletableFuture.completedFuture(null);
                     }
 
                     return imbalanceDetector.hasActiveRebalance()
                             .thenCompose(blocked -> {
                                 if (blocked) {
-                                    return maybeRebalance(scalingNodes)
-                                            .whenComplete((ignored, ignored2) -> kafkaStatus.setAutoRebalance(kafkaAutoRebalanceStatus));
+                                    return CompletableFuture.completedFuture(null);
                                 }
                                 return imbalanceDetector.checkForGoalViolations()
                                         .thenCompose(goalViolationInfo -> {
                                             if (goalViolationInfo != null) {
-                                                return handleDetectedViolations(goalViolationInfo, scalingNodes, kafkaStatus);
+                                                return handleDetectedViolations(goalViolationInfo);
                                             } else {
-                                                return maybeRebalance(scalingNodes)
-                                                        .whenComplete((ignored, ignored2) -> kafkaStatus.setAutoRebalance(kafkaAutoRebalanceStatus));
+                                                return CompletableFuture.completedFuture(null);
                                             }
                                         });
                             });
                 });
     }
 
-    private CompletionStage<Void> handleDetectedViolations(GoalViolationInfo goalViolationInfo, ScalingNodes scalingNodes, KafkaStatus kafkaStatus) {
+    private CompletionStage<Void> handleDetectedViolations(GoalViolationInfo goalViolationInfo) {
         metricsHolder.anomaliesDetectedCounter(reconciliation.namespace(), goalViolationInfo.fixability().label()).increment();
 
         if (goalViolationInfo.fixability() == Fixability.UNFIXABLE) {
             LOGGER.warnCr(reconciliation, "Detected only unfixable goal violations at {}, no auto-rebalance possible", goalViolationInfo.detectionDate());
-            return maybeRebalance(scalingNodes)
-                    .whenComplete((ignored, ignored2) -> kafkaStatus.setAutoRebalance(kafkaAutoRebalanceStatus));
+            return CompletableFuture.completedFuture(null);
         }
 
         if (goalViolationInfo.fixability() == Fixability.MIXED) {
@@ -203,24 +196,20 @@ public class KafkaAutoRebalancingReconciler {
                     if (shouldTrigger && imbalanceDetector.isInMaintenanceWindow()) {
                         LOGGER.infoCr(reconciliation, "Goal violations detected at {}, triggering rebalance", goalViolationInfo.detectionDate());
                         return createKafkaRebalance(reconciliation.namespace(), reconciliation.name(), KafkaAutoRebalanceMode.IMBALANCE, null)
-                                .thenCompose(created -> {
+                                .thenApply(created -> {
                                     if (created) {
                                         updateStatus(kafkaAutoRebalanceStatus, KafkaAutoRebalanceState.RebalanceOnImbalance);
                                     } else {
                                         updateStatus(kafkaAutoRebalanceStatus, KafkaAutoRebalanceState.Idle);
                                     }
-                                    return CompletableFuture.<Void>completedFuture(null);
-                                })
-                                .whenComplete((ignored, ignored2) -> kafkaStatus.setAutoRebalance(kafkaAutoRebalanceStatus));
+                                    return (Void) null;
+                                });
                     } else if (shouldTrigger) {
                         LOGGER.infoCr(reconciliation, "Goal violations detected but outside maintenance window, skipping rebalance");
-                        return maybeRebalance(scalingNodes)
-                                .whenComplete((ignored, ignored2) -> kafkaStatus.setAutoRebalance(kafkaAutoRebalanceStatus));
                     } else {
                         LOGGER.debugCr(reconciliation, "Goal violations detected but already addressed by previous rebalance");
-                        return maybeRebalance(scalingNodes)
-                                .whenComplete((ignored, ignored2) -> kafkaStatus.setAutoRebalance(kafkaAutoRebalanceStatus));
                     }
+                    return CompletableFuture.completedFuture(null);
                 });
     }
 
