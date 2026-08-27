@@ -64,6 +64,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
@@ -566,8 +567,9 @@ public class KafkaUpgradeDowngradeWithKRaftMockTest {
                 })
                 .compose(v -> operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, CLUSTER_NAME)))
                 .onComplete(context.failing(v -> context.verify(() -> {
-                    assertThat(v, is(instanceOf(KafkaUpgradeException.class)));
-                    assertThat(v.getMessage(), is("The current metadata version (" + KafkaVersionTestUtils.LATEST_METADATA_VERSION + ") has to be lower or equal to the Kafka broker version we are downgrading to (" + KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION + ")"));
+                    assertThat(v, instanceOf(CompletionException.class));
+                    assertThat(v.getCause(), is(instanceOf(KafkaUpgradeException.class)));
+                    assertThat(v.getCause().getMessage(), is("The current metadata version (" + KafkaVersionTestUtils.LATEST_METADATA_VERSION + ") has to be lower or equal to the Kafka broker version we are downgrading to (" + KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION + ")"));
 
                     assertVersionsInKafkaStatus(KafkaAssemblyOperator.OPERATOR_VERSION, KafkaVersionTestUtils.LATEST_KAFKA_VERSION, KafkaVersionTestUtils.LATEST_METADATA_VERSION);
                     assertVersionsInStrimziPodSet(KafkaVersionTestUtils.LATEST_KAFKA_VERSION, KafkaVersionTestUtils.LATEST_KAFKA_IMAGE);
