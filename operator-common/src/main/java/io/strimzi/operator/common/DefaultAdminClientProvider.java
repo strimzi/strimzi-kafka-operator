@@ -5,7 +5,6 @@
 package io.strimzi.operator.common;
 
 import io.strimzi.operator.common.auth.AuthIdentity;
-import io.strimzi.operator.common.auth.PemAuthIdentity;
 import io.strimzi.operator.common.auth.PemTrustSet;
 import io.strimzi.operator.common.auth.TrustSet;
 import org.apache.kafka.clients.admin.Admin;
@@ -33,27 +32,6 @@ public class DefaultAdminClientProvider implements AdminClientProvider {
         return createControllerAdminClient(controllerBootstrapHostnames, kafkaTrustSet, authIdentity, new Properties());
     }
 
-    /**
-     * Create a Kafka Admin interface instance handling the following different scenarios:
-     *
-     * 1. No TLS connection, no TLS client authentication:
-     *
-     * If {@code kafkaTrustSet} and {@code authIdentity} are null, the returned Admin Client instance
-     * is configured to connect to the Apache Kafka bootstrap (defined via {@code hostname}) on plain connection with no
-     * TLS encryption and no TLS client authentication.
-     *
-     * 2. TLS connection, no TLS client authentication
-     *
-     * If only {@code kafkaTrustSet} is provided as not null, the returned Admin Client instance is configured to
-     * connect to the Apache Kafka bootstrap (defined via {@code hostname}) on TLS encrypted connection but with no
-     * TLS authentication.
-     *
-     * 3. TLS connection and TLS client authentication
-     *
-     * If {@code kafkaTrustSet} and {@code authIdentity} are provided as not null, the returned
-     * Admin Client instance is configured to connect to the Apache Kafka bootstrap (defined via {@code hostname}) on
-     * TLS encrypted connection and with TLS client authentication.
-     */
     @Override
     public Admin createAdminClient(String bootstrapHostnames, TrustSet kafkaTrustSet, AuthIdentity authIdentity, Properties config) {
         config.setProperty(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapHostnames);
@@ -87,12 +65,14 @@ public class DefaultAdminClientProvider implements AdminClientProvider {
             config.setProperty(SslConfigs.SSL_TRUSTSTORE_CERTIFICATES_CONFIG, pemTrustSet.trustedCertificatesString());
         }
 
-        // configuring TLS client authentication
-        if (authIdentity instanceof PemAuthIdentity pemAuthIdentity) {
-            config.putIfAbsent(AdminClientConfig.SECURITY_PROTOCOL_CONFIG, "SSL");
-            config.setProperty(SslConfigs.SSL_KEYSTORE_TYPE_CONFIG, "PEM");
-            config.setProperty(SslConfigs.SSL_KEYSTORE_CERTIFICATE_CHAIN_CONFIG, pemAuthIdentity.certificateChainAsPem());
-            config.setProperty(SslConfigs.SSL_KEYSTORE_KEY_CONFIG, pemAuthIdentity.privateKeyAsPem());
+        // Configure the authentication
+        if (authIdentity != null) {
+            // We update the security protocol if needed
+            if (authIdentity.isSasl())  {
+                config.compute(AdminClientConfig.SECURITY_PROTOCOL_CONFIG, (k, v) -> "SSL".equals(v) ? "SASL_SSL" : "SASL_PLAINTEXT");
+            }
+
+            config.putAll(authIdentity.kafkaClientProperties());
         }
 
         config.putIfAbsent(AdminClientConfig.METADATA_MAX_AGE_CONFIG, "30000");

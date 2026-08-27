@@ -50,6 +50,8 @@ import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.PersistentClaimStorageBuilder;
 import io.strimzi.api.kafka.model.kafka.Storage;
+import io.strimzi.api.kafka.model.kafka.clustersecurity.ClusterSecurityAuthenticationBuilder;
+import io.strimzi.api.kafka.model.kafka.clustersecurity.ClusterSecurityAuthenticationType;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlResources;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
@@ -63,6 +65,7 @@ import io.strimzi.operator.cluster.model.clustersecurity.kafka.KafkaClusterSecur
 import io.strimzi.operator.cluster.model.clustersecurity.kafka.MtlsAuthenticationConfiguration;
 import io.strimzi.operator.cluster.model.clustersecurity.kafka.NoneAuthenticationConfiguration;
 import io.strimzi.operator.cluster.model.clustersecurity.kafka.NoneEncryptionConfiguration;
+import io.strimzi.operator.cluster.model.clustersecurity.kafka.ServiceAccountAuthenticationConfiguration;
 import io.strimzi.operator.cluster.model.clustersecurity.kafka.TlsEncryptionConfiguration;
 import io.strimzi.operator.cluster.model.metrics.JmxPrometheusExporterModel;
 import io.strimzi.operator.common.Reconciliation;
@@ -343,9 +346,63 @@ public class CruiseControlTest {
     }
 
     @Test
+    public void testServiceAccountAuthenticationVolumesAndVolumeMounts() {
+        KafkaClusterSecurityContext securityContext = new KafkaClusterSecurityContext(new TlsEncryptionConfiguration(), serviceAccountAuthentication());
+        CruiseControl cc = createCruiseControl(KAFKA, NODES, STORAGE, Map.of(), securityContext);
+        Deployment dep = cc.generateDeployment(Map.of(), true, null, null);
+
+        assertThat(dep.getSpec().getTemplate().getSpec().getVolumes().stream().map(Volume::getName).toList(), containsInAnyOrder(
+                VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME,
+                CruiseControl.TLS_CC_CERTS_VOLUME_NAME,
+                CruiseControl.TLS_CA_CERTS_VOLUME_NAME,
+                VolumeUtils.STRIMZI_AUTHENTICATION_TOKEN_VOLUME_NAME,
+                CruiseControl.API_AUTH_CONFIG_VOLUME_NAME,
+                CruiseControl.CONFIG_VOLUME_NAME));
+        assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getVolumeMounts().stream().map(VolumeMount::getName).toList(), containsInAnyOrder(
+                VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME,
+                CruiseControl.TLS_CC_CERTS_VOLUME_NAME,
+                CruiseControl.TLS_CA_CERTS_VOLUME_NAME,
+                VolumeUtils.STRIMZI_AUTHENTICATION_TOKEN_VOLUME_NAME,
+                CruiseControl.API_AUTH_CONFIG_VOLUME_NAME,
+                CruiseControl.CONFIG_VOLUME_NAME));
+
+        // The projected Service Account token volume is configured from the authentication configuration
+        Volume tokenVolume = dep.getSpec().getTemplate().getSpec().getVolumes().stream().filter(v -> VolumeUtils.STRIMZI_AUTHENTICATION_TOKEN_VOLUME_NAME.equals(v.getName())).findFirst().orElseThrow();
+        assertThat(tokenVolume.getProjected().getSources().get(0).getServiceAccountToken().getAudience(), is("strimzi.io/kafka/" + NAMESPACE + "/" + CLUSTER_NAME));
+        assertThat(tokenVolume.getProjected().getSources().get(0).getServiceAccountToken().getExpirationSeconds(), is(3600L));
+        assertThat(tokenVolume.getProjected().getSources().get(0).getServiceAccountToken().getPath(), is("token"));
+
+        // Without TLS encryption, only the Service Account token volume is added
+        securityContext = new KafkaClusterSecurityContext(new NoneEncryptionConfiguration(), serviceAccountAuthentication());
+        cc = createCruiseControl(KAFKA, NODES, STORAGE, Map.of(), securityContext);
+        dep = cc.generateDeployment(Map.of(), true, null, null);
+
+        assertThat(dep.getSpec().getTemplate().getSpec().getVolumes().stream().map(Volume::getName).toList(), containsInAnyOrder(
+                VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME,
+                VolumeUtils.STRIMZI_AUTHENTICATION_TOKEN_VOLUME_NAME,
+                CruiseControl.API_AUTH_CONFIG_VOLUME_NAME,
+                CruiseControl.CONFIG_VOLUME_NAME));
+        assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getVolumeMounts().stream().map(VolumeMount::getName).toList(), containsInAnyOrder(
+                VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME,
+                VolumeUtils.STRIMZI_AUTHENTICATION_TOKEN_VOLUME_NAME,
+                CruiseControl.API_AUTH_CONFIG_VOLUME_NAME,
+                CruiseControl.CONFIG_VOLUME_NAME));
+    }
+
+    @Test
     public void testEnvVars() {
         CruiseControl cc = createCruiseControl(KAFKA, NODES, STORAGE, Map.of());
         assertThat(cc.getEnvVars(), is(getExpectedEnvVars()));
+    }
+
+    @Test
+    public void testEnvVarsWithServiceAccountAuthentication() {
+        CruiseControl cc = createCruiseControl(KAFKA, NODES, STORAGE, Map.of(), new KafkaClusterSecurityContext(new TlsEncryptionConfiguration(), serviceAccountAuthentication()));
+
+        assertThat(cc.getEnvVars(), hasItems(
+                new EnvVarBuilder().withName(CruiseControl.ENV_VAR_TLS_ENABLED).withValue("true").build(),
+                new EnvVarBuilder().withName(CruiseControl.ENV_VAR_MTLS_ENABLED).withValue("false").build(),
+                new EnvVarBuilder().withName(CruiseControl.ENV_VAR_SA_AUTH_ENABLED).withValue("true").build()));
     }
 
     @Test
@@ -621,6 +678,8 @@ public class CruiseControlTest {
         testApiSecurity(true, new TlsEncryptionConfiguration(), new MtlsAuthenticationConfiguration());
         testApiSecurity(false, new TlsEncryptionConfiguration(), new NoneAuthenticationConfiguration());
         testApiSecurity(false, new NoneEncryptionConfiguration(), new NoneAuthenticationConfiguration());
+        testApiSecurity(false, new TlsEncryptionConfiguration(), serviceAccountAuthentication());
+        testApiSecurity(false, new NoneEncryptionConfiguration(), serviceAccountAuthentication());
     }
 
     private void testApiSecurity(Boolean apiAuthEnabled, EncryptionConfiguration encryption, AuthenticationConfiguration authentication) {
@@ -636,6 +695,10 @@ public class CruiseControlTest {
         String e3Value = Boolean.toString(authentication instanceof MtlsAuthenticationConfiguration);
         EnvVar e3 = new EnvVar(e3Key, e3Value, null);
 
+        String e4Key = CruiseControl.ENV_VAR_SA_AUTH_ENABLED;
+        String e4Value = Boolean.toString(authentication instanceof ServiceAccountAuthenticationConfiguration);
+        EnvVar e4 = new EnvVar(e4Key, e4Value, null);
+
         Kafka kafka = new KafkaBuilder(KAFKA)
                 .editSpec()
                     .withNewCruiseControl()
@@ -650,6 +713,7 @@ public class CruiseControlTest {
         assertThat(envVarList.contains(e1),  is(true));
         assertThat(envVarList.contains(e2),  is(true));
         assertThat(envVarList.contains(e3),  is(true));
+        assertThat(envVarList.contains(e4),  is(true));
     }
 
     @Test
@@ -989,6 +1053,10 @@ public class CruiseControlTest {
         return properties;
     }
 
+    private static AuthenticationConfiguration serviceAccountAuthentication() {
+        return AuthenticationConfiguration.fromCrd(NAMESPACE, CLUSTER_NAME, new ClusterSecurityAuthenticationBuilder().withType(ClusterSecurityAuthenticationType.SERVICE_ACCOUNT).build());
+    }
+
     private CruiseControl createCruiseControl(Kafka kafka, Set<NodeRef> nodes, Map<String, Storage> storageMap, Map<String, ResourceRequirements> resourceRequirementsMap) {
         return createCruiseControl(kafka, nodes, storageMap, resourceRequirementsMap, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
     }
@@ -1033,6 +1101,7 @@ public class CruiseControlTest {
         expected.add(new EnvVarBuilder().withName(CruiseControl.ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED).withValue(Boolean.toString(JvmOptions.DEFAULT_GC_LOGGING_ENABLED)).build());
         expected.add(new EnvVarBuilder().withName(CruiseControl.ENV_VAR_TLS_ENABLED).withValue("true").build());
         expected.add(new EnvVarBuilder().withName(CruiseControl.ENV_VAR_MTLS_ENABLED).withValue("true").build());
+        expected.add(new EnvVarBuilder().withName(CruiseControl.ENV_VAR_SA_AUTH_ENABLED).withValue("false").build());
         expected.add(new EnvVarBuilder().withName(CruiseControl.ENV_VAR_API_AUTH_ENABLED).withValue(Boolean.toString(CruiseControlConfigurationParameters.DEFAULT_WEBSERVER_SECURITY_ENABLED)).build());
         expected.add(new EnvVarBuilder().withName(CruiseControl.ENV_VAR_API_HEALTHCHECK_USERNAME).withValue(CruiseControlApiProperties.HEALTHCHECK_USERNAME).build());
         expected.add(new EnvVarBuilder().withName(CruiseControl.ENV_VAR_API_PORT).withValue(Integer.toString(CruiseControl.REST_API_PORT)).build());

@@ -13,6 +13,8 @@ import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
+import io.strimzi.api.kafka.model.kafka.clustersecurity.ClusterSecurityAuthenticationBuilder;
+import io.strimzi.api.kafka.model.kafka.clustersecurity.ClusterSecurityAuthenticationType;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.api.kafka.model.podset.StrimziPodSet;
@@ -22,12 +24,17 @@ import io.strimzi.certs.CertIssuer;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
+import io.strimzi.operator.cluster.auth.RequestedServiceAccountAuthIdentity;
 import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.model.NodeRef;
 import io.strimzi.operator.cluster.model.PodSetUtils;
 import io.strimzi.operator.cluster.model.RestartReason;
 import io.strimzi.operator.cluster.model.RestartReasons;
+import io.strimzi.operator.cluster.model.clustersecurity.kafka.AuthenticationConfiguration;
 import io.strimzi.operator.cluster.model.clustersecurity.kafka.KafkaClusterSecurityContext;
+import io.strimzi.operator.cluster.model.clustersecurity.kafka.NoneAuthenticationConfiguration;
+import io.strimzi.operator.cluster.model.clustersecurity.kafka.NoneEncryptionConfiguration;
+import io.strimzi.operator.cluster.model.clustersecurity.kafka.TlsEncryptionConfiguration;
 import io.strimzi.operator.cluster.operator.resource.KafkaRoller;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.DeploymentOperator;
@@ -36,6 +43,8 @@ import io.strimzi.operator.cluster.operator.resource.kubernetes.StrimziPodSetOpe
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.auth.Identity;
+import io.strimzi.operator.common.auth.PemAuthIdentity;
+import io.strimzi.operator.common.auth.PemTrustSet;
 import io.strimzi.operator.common.ca.Ca;
 import io.strimzi.operator.common.ca.CaConfig;
 import io.strimzi.operator.common.model.Labels;
@@ -59,8 +68,11 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.aMapWithSize;
 import static org.hamcrest.Matchers.anEmptyMap;
@@ -167,6 +179,67 @@ public class CaReconcilerTest {
 
         // The old CA cert has to survive, the pods have not been rolled yet
         verify(clusterCa, never()).maybeDeleteOldCerts();
+    }
+
+    @Test
+    public void testCoIdentityWithMtlsAuthentication() {
+        Ca clusterCa = mockClusterCa(1, 1, true);
+        Ca clientsCa = mockClientsCa(0);
+
+        mockKubernetesState(
+                List.of(controllerPodWithCaGenerations("my-cluster-controllers-3", 0, 0)),
+                List.of(brokerPodWithCaGenerations("my-cluster-brokers-0", 0, 0)));
+        when(supplier.strimziPodSetOperator.batchReconcile(any(), eq(NAMESPACE), any(), any(Labels.class)))
+                .thenAnswer(i -> CompletableFuture.completedFuture(null));
+
+        MockCaReconciler mockCaReconciler = new MockCaReconciler(supplier, clusterCa, clientsCa);
+        mockCaReconciler.reconcile(Clock.systemUTC()).toCompletableFuture().join();
+
+        assertThat(mockCaReconciler.capturedCoIdentity.trustSet(), is(instanceOf(PemTrustSet.class)));
+        assertThat(mockCaReconciler.capturedCoIdentity.authIdentity(), is(instanceOf(PemAuthIdentity.class)));
+    }
+
+    @Test
+    public void testCoIdentityWithServiceAccountAuthentication() {
+        Ca clusterCa = mockClusterCa(1, 1, true);
+        Ca clientsCa = mockClientsCa(0);
+
+        mockKubernetesState(
+                List.of(controllerPodWithCaGenerations("my-cluster-controllers-3", 0, 0)),
+                List.of(brokerPodWithCaGenerations("my-cluster-brokers-0", 0, 0)));
+        when(supplier.strimziPodSetOperator.batchReconcile(any(), eq(NAMESPACE), any(), any(Labels.class)))
+                .thenAnswer(i -> CompletableFuture.completedFuture(null));
+
+        KafkaClusterSecurityContext securityContext = new KafkaClusterSecurityContext(new TlsEncryptionConfiguration(),
+                AuthenticationConfiguration.fromCrd(NAMESPACE, NAME, new ClusterSecurityAuthenticationBuilder().withType(ClusterSecurityAuthenticationType.SERVICE_ACCOUNT).build()));
+
+        MockCaReconciler mockCaReconciler = new MockCaReconciler(supplier, clusterCa, clientsCa, securityContext);
+        mockCaReconciler.reconcile(Clock.systemUTC()).toCompletableFuture().join();
+
+        assertThat(mockCaReconciler.capturedCoIdentity.trustSet(), is(instanceOf(PemTrustSet.class)));
+        assertThat(mockCaReconciler.capturedCoIdentity.authIdentity(), is(instanceOf(RequestedServiceAccountAuthIdentity.class)));
+        assertThat(mockCaReconciler.capturedCoIdentity.authIdentity().kafkaClientProperties().get("sasl.jaas.config"),
+                containsString("strimzi.kubernetes.token.audience=\"strimzi.io/kafka/" + NAMESPACE + "/" + NAME + "\""));
+    }
+
+    @Test
+    public void testCoIdentityWithoutEncryptionOrAuthentication() {
+        Ca clusterCa = mockClusterCa(1, 1, true);
+        Ca clientsCa = mockClientsCa(0);
+
+        mockKubernetesState(
+                List.of(controllerPodWithCaGenerations("my-cluster-controllers-3", 0, 0)),
+                List.of(brokerPodWithCaGenerations("my-cluster-brokers-0", 0, 0)));
+        when(supplier.strimziPodSetOperator.batchReconcile(any(), eq(NAMESPACE), any(), any(Labels.class)))
+                .thenAnswer(i -> CompletableFuture.completedFuture(null));
+
+        KafkaClusterSecurityContext securityContext = new KafkaClusterSecurityContext(new NoneEncryptionConfiguration(), new NoneAuthenticationConfiguration());
+
+        MockCaReconciler mockCaReconciler = new MockCaReconciler(supplier, clusterCa, clientsCa, securityContext);
+        mockCaReconciler.reconcile(Clock.systemUTC()).toCompletableFuture().join();
+
+        assertThat(mockCaReconciler.capturedCoIdentity.trustSet(), is(nullValue()));
+        assertThat(mockCaReconciler.capturedCoIdentity.authIdentity(), is(nullValue()));
     }
 
     // Cluster CA key replaced in a previous reconcile or by the user, and some pods already rolled
@@ -584,15 +657,20 @@ public class CaReconcilerTest {
 
         Map<String, RestartReasons> kafkaRestartReasons = new HashMap<>();
         Map<String, String> deploymentRestartReasons = new HashMap<>();
+        Identity capturedCoIdentity;
 
         MockCaReconciler(ResourceOperatorSupplier supplier, Ca clusterCa, Ca clientsCa) {
+            this(supplier, clusterCa, clientsCa, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
+        }
+
+        MockCaReconciler(ResourceOperatorSupplier supplier, Ca clusterCa, Ca clientsCa, KafkaClusterSecurityContext securityContext) {
             super(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, NAME),
                     KAFKA,
                     new ClusterOperatorConfig.ClusterOperatorConfigBuilder(ResourceUtils.dummyClusterOperatorConfig(), KafkaVersionTestUtils.getKafkaVersionLookup()).with(ClusterOperatorConfig.OPERATION_TIMEOUT_MS.key(), "1").build(),
                     supplier,
                     mock(CertIssuer.class),
                     mock(PasswordGenerator.class),
-                    KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT
+                    securityContext
             );
             this.clusterCa = clusterCa;
             this.clientsCa = clientsCa;
@@ -611,6 +689,8 @@ public class CaReconcilerTest {
 
         @Override
         KafkaRoller createKafkaRoller(Set<NodeRef> nodes, Identity coIdentity) {
+            this.capturedCoIdentity = coIdentity;
+
             KafkaRoller mockKafkaRoller = mock(KafkaRoller.class);
             when(mockKafkaRoller.rollingRestart(any())).thenAnswer(i -> podOperator.listAsync(NAMESPACE, Labels.EMPTY)
                     .thenAccept(pods -> kafkaRestartReasons = pods.stream().collect(Collectors.toMap(

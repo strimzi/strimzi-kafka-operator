@@ -27,12 +27,16 @@ import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticatio
 import io.strimzi.api.kafka.model.kafka.KafkaClusterSpec;
 import io.strimzi.api.kafka.model.kafka.KafkaClusterSpecBuilder;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
+import io.strimzi.api.kafka.model.kafka.clustersecurity.ClusterSecurityAuthenticationBuilder;
+import io.strimzi.api.kafka.model.kafka.clustersecurity.ClusterSecurityAuthenticationType;
 import io.strimzi.api.kafka.model.podset.StrimziPodSet;
 import io.strimzi.api.kafka.model.podset.StrimziPodSetBuilder;
 import io.strimzi.operator.cluster.ResourceUtils;
+import io.strimzi.operator.cluster.auth.RequestedServiceAccountAuthIdentity;
 import io.strimzi.operator.cluster.model.NodeRef;
 import io.strimzi.operator.cluster.model.PodRevision;
 import io.strimzi.operator.cluster.model.PodSetUtils;
+import io.strimzi.operator.cluster.model.clustersecurity.kafka.AuthenticationConfiguration;
 import io.strimzi.operator.cluster.model.clustersecurity.kafka.KafkaClusterSecurityContext;
 import io.strimzi.operator.cluster.model.clustersecurity.kafka.NoneAuthenticationConfiguration;
 import io.strimzi.operator.cluster.model.clustersecurity.kafka.NoneEncryptionConfiguration;
@@ -67,6 +71,7 @@ import java.util.concurrent.CompletionStage;
 import static io.strimzi.operator.cluster.ResourceUtils.DUMMY_CERT;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
@@ -135,8 +140,9 @@ public class ReconcilerUtilsTest {
                     assertThat(identity.trustSet(), is(instanceOf(PemTrustSet.class)));
                     assertThat(((PemTrustSet) identity.trustSet()).trustedCertificatesString(), is(DUMMY_CERT));
                     assertThat(identity.authIdentity(), is(instanceOf(PemAuthIdentity.class)));
-                    assertThat(((PemAuthIdentity) identity.authIdentity()).privateKeyAsPem(), is("key"));
-                    assertThat(((PemAuthIdentity) identity.authIdentity()).certificateChainAsPem(), is(DUMMY_CERT));
+                    assertThat(identity.authIdentity().kafkaClientProperties(), is(Map.of("ssl.keystore.type", "PEM",
+                            "ssl.keystore.key", "key",
+                            "ssl.keystore.certificate.chain", DUMMY_CERT)));
                     verify(mockSecretOps).getAsync(NAMESPACE, KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME));
                     verify(mockSecretOps).getAsync(NAMESPACE, KafkaResources.clusterOperatorCertsSecretName(CLUSTER_NAME));
                     async.flag();
@@ -182,6 +188,55 @@ public class ReconcilerUtilsTest {
         ReconcilerUtils.coIdentity(Reconciliation.DUMMY_RECONCILIATION, mockSecretOps, securityContext)
                 .onComplete(context.succeeding(identity -> context.verify(() -> {
                     assertThat(identity, is(Identity.DUMMY_IDENTITY));
+                    verifyNoInteractions(mockSecretOps);
+                    async.flag();
+                })));
+    }
+
+    @Test
+    public void testCoIdentityWithTlsAndServiceAccountAuthentication(VertxTestContext context) {
+        Secret clusterCaSecret = new SecretBuilder()
+                .withNewMetadata()
+                    .withName(KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME))
+                    .withNamespace(NAMESPACE)
+                .endMetadata()
+                .withData(Map.of("ca.crt", Util.encodeToBase64(DUMMY_CERT)))
+                .build();
+
+        SecretOperator mockSecretOps = mock(SecretOperator.class);
+        when(mockSecretOps.getAsync(NAMESPACE, KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME)))
+                .thenReturn(CompletableFuture.completedFuture(clusterCaSecret));
+        KafkaClusterSecurityContext securityContext = mock(KafkaClusterSecurityContext.class);
+        when(securityContext.encryption()).thenReturn(new TlsEncryptionConfiguration());
+        when(securityContext.authentication()).thenReturn(AuthenticationConfiguration.fromCrd(NAMESPACE, CLUSTER_NAME, new ClusterSecurityAuthenticationBuilder().withType(ClusterSecurityAuthenticationType.SERVICE_ACCOUNT).build()));
+
+        Checkpoint async = context.checkpoint();
+        ReconcilerUtils.coIdentity(Reconciliation.DUMMY_RECONCILIATION, mockSecretOps, securityContext)
+                .onComplete(context.succeeding(identity -> context.verify(() -> {
+                    assertThat(identity.trustSet(), is(instanceOf(PemTrustSet.class)));
+                    assertThat(identity.authIdentity(), is(instanceOf(RequestedServiceAccountAuthIdentity.class)));
+                    assertThat(identity.authIdentity().kafkaClientProperties().get("sasl.jaas.config"), containsString("strimzi.kubernetes.token.audience=\"strimzi.io/kafka/" + NAMESPACE + "/" + CLUSTER_NAME + "\""));
+                    assertThat(identity.authIdentity().kafkaClientProperties().get("sasl.jaas.config"), containsString("strimzi.kubernetes.token.expiration.seconds=\"3600\""));
+
+                    verify(mockSecretOps).getAsync(NAMESPACE, KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME));
+                    // The Cluster Operator certificates are not used with Service Account authentication
+                    verify(mockSecretOps, never()).getAsync(NAMESPACE, KafkaResources.clusterOperatorCertsSecretName(CLUSTER_NAME));
+                    async.flag();
+                })));
+    }
+
+    @Test
+    public void testCoIdentityWithServiceAccountAuthenticationWithoutTls(VertxTestContext context) {
+        SecretOperator mockSecretOps = mock(SecretOperator.class);
+        KafkaClusterSecurityContext securityContext = mock(KafkaClusterSecurityContext.class);
+        when(securityContext.encryption()).thenReturn(new NoneEncryptionConfiguration());
+        when(securityContext.authentication()).thenReturn(AuthenticationConfiguration.fromCrd(NAMESPACE, CLUSTER_NAME, new ClusterSecurityAuthenticationBuilder().withType(ClusterSecurityAuthenticationType.SERVICE_ACCOUNT).build()));
+
+        Checkpoint async = context.checkpoint();
+        ReconcilerUtils.coIdentity(Reconciliation.DUMMY_RECONCILIATION, mockSecretOps, securityContext)
+                .onComplete(context.succeeding(identity -> context.verify(() -> {
+                    assertThat(identity.trustSet(), is(nullValue()));
+                    assertThat(identity.authIdentity(), is(instanceOf(RequestedServiceAccountAuthIdentity.class)));
                     verifyNoInteractions(mockSecretOps);
                     async.flag();
                 })));

@@ -15,12 +15,15 @@ import io.strimzi.api.kafka.model.common.TopologyLabelRackBuilder;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
+import io.strimzi.api.kafka.model.kafka.clustersecurity.ClusterSecurityAuthenticationBuilder;
+import io.strimzi.api.kafka.model.kafka.clustersecurity.ClusterSecurityAuthenticationType;
 import io.strimzi.api.kafka.model.kafka.entityoperator.EntityTopicOperatorSpec;
 import io.strimzi.api.kafka.model.kafka.entityoperator.EntityTopicOperatorSpecBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ResourceUtils;
+import io.strimzi.operator.cluster.model.clustersecurity.kafka.AuthenticationConfiguration;
 import io.strimzi.operator.cluster.model.clustersecurity.kafka.KafkaClusterSecurityContext;
 import io.strimzi.operator.cluster.model.clustersecurity.kafka.MtlsAuthenticationConfiguration;
 import io.strimzi.operator.cluster.model.clustersecurity.kafka.NoneAuthenticationConfiguration;
@@ -45,11 +48,11 @@ public class EntityTopicOperatorTest {
     private static final String NAMESPACE = "my-namespace";
     private static final String CLUSTER_NAME = "my-cluster";
     private static final Set<String> SECURITY_ENV_VAR_NAMES = Set.of(
-            EntityTopicOperator.ENV_VAR_SECURITY_PROTOCOL,
             EntityTopicOperator.ENV_VAR_TLS_TRUSTED_CERTS_SECRET_NAME,
             EntityTopicOperator.ENV_VAR_TLS_SECRET_NAME,
             EntityTopicOperator.ENV_VAR_TLS_KEY_NAME,
-            EntityTopicOperator.ENV_VAR_TLS_CERT_NAME);
+            EntityTopicOperator.ENV_VAR_TLS_CERT_NAME,
+            EntityTopicOperator.ENV_VAR_SERVICE_ACCOUNT_TOKEN_PATH);
     private static final Kafka KAFKA = new KafkaBuilder()
             .withNewMetadata()
                 .withNamespace(NAMESPACE)
@@ -116,7 +119,6 @@ public class EntityTopicOperatorTest {
         KafkaClusterSecurityContext securityContext = new KafkaClusterSecurityContext(new TlsEncryptionConfiguration(), new MtlsAuthenticationConfiguration());
 
         assertThat(getSecurityEnvVars(securityContext), is(List.of(
-                new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_SECURITY_PROTOCOL).withValue("SSL").build(),
                 new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_TLS_TRUSTED_CERTS_SECRET_NAME).withValue(KafkaCluster.clusterCaCertSecretName(CLUSTER_NAME)).build(),
                 new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_TLS_SECRET_NAME).withValue(KafkaResources.entityTopicOperatorSecretName(CLUSTER_NAME)).build(),
                 new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_TLS_KEY_NAME).withValue("entity-operator.key").build(),
@@ -128,7 +130,6 @@ public class EntityTopicOperatorTest {
         KafkaClusterSecurityContext securityContext = new KafkaClusterSecurityContext(new TlsEncryptionConfiguration(), new NoneAuthenticationConfiguration());
 
         assertThat(getSecurityEnvVars(securityContext), is(List.of(
-                new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_SECURITY_PROTOCOL).withValue("SSL").build(),
                 new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_TLS_TRUSTED_CERTS_SECRET_NAME).withValue(KafkaCluster.clusterCaCertSecretName(CLUSTER_NAME)).build())));
     }
 
@@ -136,8 +137,25 @@ public class EntityTopicOperatorTest {
     public void testSecurityEnvVarsWithoutEncryptionOrAuthentication() {
         KafkaClusterSecurityContext securityContext = new KafkaClusterSecurityContext(new NoneEncryptionConfiguration(), new NoneAuthenticationConfiguration());
 
+        // Without encryption and authentication, there is nothing to configure
+        assertThat(getSecurityEnvVars(securityContext), is(List.of()));
+    }
+
+    @Test
+    public void testSecurityEnvVarsWithTlsAndServiceAccountAuthentication() {
+        KafkaClusterSecurityContext securityContext = new KafkaClusterSecurityContext(new TlsEncryptionConfiguration(), serviceAccountAuthentication());
+
         assertThat(getSecurityEnvVars(securityContext), is(List.of(
-                new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_SECURITY_PROTOCOL).withValue("PLAINTEXT").build())));
+                new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_TLS_TRUSTED_CERTS_SECRET_NAME).withValue(KafkaCluster.clusterCaCertSecretName(CLUSTER_NAME)).build(),
+                new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_SERVICE_ACCOUNT_TOKEN_PATH).withValue("/var/run/secrets/strimzi.io/token").build())));
+    }
+
+    @Test
+    public void testSecurityEnvVarsWithServiceAccountAuthenticationWithoutTls() {
+        KafkaClusterSecurityContext securityContext = new KafkaClusterSecurityContext(new NoneEncryptionConfiguration(), serviceAccountAuthentication());
+
+        assertThat(getSecurityEnvVars(securityContext), is(List.of(
+                new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_SERVICE_ACCOUNT_TOKEN_PATH).withValue("/var/run/secrets/strimzi.io/token").build())));
     }
 
     @Test
@@ -276,6 +294,18 @@ public class EntityTopicOperatorTest {
     }
 
     @Test
+    public void testGetContainersWithServiceAccountAuthentication() {
+        EntityTopicOperator eto = EntityTopicOperator.fromCrd(new Reconciliation("test", KAFKA.getKind(), NAMESPACE, CLUSTER_NAME), KAFKA, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig(), new KafkaClusterSecurityContext(new TlsEncryptionConfiguration(), serviceAccountAuthentication()));
+
+        Container container = eto.createContainer(null);
+        assertThat(EntityOperatorTest.volumeMounts(container.getVolumeMounts()), is(Map.of(
+                VolumeUtils.SERVICE_ACCOUNT_TOKEN_VOLUME_NAME, "/var/run/secrets/kubernetes.io/serviceaccount",
+                EntityTopicOperator.TOPIC_OPERATOR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME, VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_MOUNT_PATH,
+                "entity-topic-operator-metrics-and-logging", "/opt/topic-operator/custom-config/",
+                VolumeUtils.STRIMZI_AUTHENTICATION_TOKEN_VOLUME_NAME, "/var/run/secrets/strimzi.io")));
+    }
+
+    @Test
     public void testRoleBindingInOtherNamespace()   {
         RoleBinding binding = ETO.generateRoleBindingForRole(NAMESPACE, "my-topic-namespace");
 
@@ -325,7 +355,6 @@ public class EntityTopicOperatorTest {
         expectedEnvVars.add(new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_KAFKA_BOOTSTRAP_SERVERS).withValue(KafkaResources.bootstrapServiceName(CLUSTER_NAME) + ":" + KafkaCluster.REPLICATION_PORT).build());
         expectedEnvVars.add(new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_WATCHED_NAMESPACE).withValue(NAMESPACE).build());
         expectedEnvVars.add(new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_CLUSTER_NAMESPACE).withValue("my-namespace").build());
-        expectedEnvVars.add(new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_SECURITY_PROTOCOL).withValue("SSL").build());
         expectedEnvVars.add(new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_TLS_TRUSTED_CERTS_SECRET_NAME).withValue("my-cluster-cluster-ca-cert").build());
         expectedEnvVars.add(new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_TLS_SECRET_NAME).withValue("my-cluster-entity-topic-operator-certs").build());
         expectedEnvVars.add(new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_TLS_KEY_NAME).withValue("entity-operator.key").build());
@@ -384,6 +413,10 @@ public class EntityTopicOperatorTest {
     // Utility methods
     ////////////////////
 
+    private static AuthenticationConfiguration serviceAccountAuthentication() {
+        return AuthenticationConfiguration.fromCrd(NAMESPACE, CLUSTER_NAME, new ClusterSecurityAuthenticationBuilder().withType(ClusterSecurityAuthenticationType.SERVICE_ACCOUNT).build());
+    }
+
     private List<EnvVar> getSecurityEnvVars(KafkaClusterSecurityContext securityContext) {
         EntityTopicOperator entityTopicOperator = EntityTopicOperator.fromCrd(new Reconciliation("test", KAFKA.getKind(), NAMESPACE, CLUSTER_NAME), KAFKA, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig(), securityContext);
 
@@ -399,7 +432,6 @@ public class EntityTopicOperatorTest {
         expected.add(new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_WATCHED_NAMESPACE).withValue("my-topic-namespace").build());
         expected.add(new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_CLUSTER_NAMESPACE).withValue("my-namespace").build());
         expected.add(new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_FULL_RECONCILIATION_INTERVAL_MS).withValue(String.valueOf(60000)).build());
-        expected.add(new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_SECURITY_PROTOCOL).withValue("SSL").build());
         expected.add(new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_TLS_TRUSTED_CERTS_SECRET_NAME).withValue("my-cluster-cluster-ca-cert").build());
         expected.add(new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_TLS_SECRET_NAME).withValue("my-cluster-entity-topic-operator-certs").build());
         expected.add(new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_TLS_KEY_NAME).withValue("entity-operator.key").build());

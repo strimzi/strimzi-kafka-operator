@@ -98,6 +98,8 @@
         <commons-codec.version>1.13</commons-codec.version>
         <snakeyaml.version>2.5</snakeyaml.version>
         <javaluator.version>3.0.6</javaluator.version>
+        <jose4j.version>0.9.6</jose4j.version>
+        <strimzi-oauth.version>0.18.0</strimzi-oauth.version>
 
         <!-- Test only dependencies -->
         <hamcrest.version>2.2</hamcrest.version>
@@ -318,6 +320,11 @@
                 <groupId>io.fabric8</groupId>
                 <artifactId>openshift-model-operatorhub</artifactId>
                 <version>${fabric8.openshift-client.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.fabric8</groupId>
+                <artifactId>kubernetes-model-admissionregistration</artifactId>
+                <version>${fabric8.kubernetes-model.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.logging.log4j</groupId>
@@ -571,6 +578,17 @@
                 <groupId>com.fathzer</groupId>
                 <artifactId>javaluator</artifactId>
                 <version>${javaluator.version}</version>
+            </dependency>
+            <dependency>
+                <!-- Needed for Service Account based authentication -->
+                <groupId>org.bitbucket.b_c</groupId>
+                <artifactId>jose4j</artifactId>
+                <version>${jose4j.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.strimzi</groupId>
+                <artifactId>kafka-oauth-client</artifactId>
+                <version>${strimzi-oauth.version}</version>
             </dependency>
             <!-- The skodjob dependency is required at compile time, not solely in the test scope, due to the creation of custom metrics components. -->
             <dependency>

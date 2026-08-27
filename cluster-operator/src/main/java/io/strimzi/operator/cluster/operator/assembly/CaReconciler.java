@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.OwnerReferenceBuilder;
 import io.fabric8.kubernetes.api.model.Pod;
@@ -16,6 +17,7 @@ import io.strimzi.api.kafka.model.podset.StrimziPodSet;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.certs.CertIssuer;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
+import io.strimzi.operator.cluster.auth.RequestedServiceAccountAuthIdentity;
 import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.model.CertSecretUtils;
 import io.strimzi.operator.cluster.model.ModelUtils;
@@ -25,6 +27,7 @@ import io.strimzi.operator.cluster.model.RestartReasons;
 import io.strimzi.operator.cluster.model.WorkloadUtils;
 import io.strimzi.operator.cluster.model.clustersecurity.kafka.KafkaClusterSecurityContext;
 import io.strimzi.operator.cluster.model.clustersecurity.kafka.MtlsAuthenticationConfiguration;
+import io.strimzi.operator.cluster.model.clustersecurity.kafka.ServiceAccountAuthenticationConfiguration;
 import io.strimzi.operator.cluster.model.clustersecurity.kafka.TlsEncryptionConfiguration;
 import io.strimzi.operator.cluster.operator.resource.KafkaAgentClientProvider;
 import io.strimzi.operator.cluster.operator.resource.KafkaRoller;
@@ -492,10 +495,16 @@ public class CaReconciler {
      *
      * @return  Cluster operator identity
      */
+    @SuppressFBWarnings("DLS_DEAD_LOCAL_STORE") // SpotBugs does not like the unused `ignored` binding in the switch pattern
     private Identity createCoIdentity() {
         return new Identity(
-                securityContext.encryption() instanceof TlsEncryptionConfiguration ? new PemTrustSet(clusterCaCertSecret) : null,
-                securityContext.authentication() instanceof MtlsAuthenticationConfiguration ? PemAuthIdentity.clusterOperator(coSecret) : null
+            securityContext.encryption() instanceof TlsEncryptionConfiguration ? new PemTrustSet(clusterCaCertSecret) : null,
+            // Creates the identity based on the authentication type
+            switch (securityContext.authentication()) {
+                case MtlsAuthenticationConfiguration ignored -> PemAuthIdentity.clusterOperator(coSecret);
+                case ServiceAccountAuthenticationConfiguration sa -> new RequestedServiceAccountAuthIdentity(reconciliation, sa.audience(), sa.expirationSeconds());
+                default -> null;
+            }
         );
     }
 

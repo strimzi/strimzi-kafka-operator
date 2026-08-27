@@ -15,6 +15,8 @@ import io.strimzi.api.kafka.model.kafka.KafkaClusterSpecBuilder;
 import io.strimzi.api.kafka.model.kafka.PersistentClaimStorageBuilder;
 import io.strimzi.api.kafka.model.kafka.SingleVolumeStorage;
 import io.strimzi.api.kafka.model.kafka.Storage;
+import io.strimzi.api.kafka.model.kafka.clustersecurity.ClusterSecurityAuthenticationBuilder;
+import io.strimzi.api.kafka.model.kafka.clustersecurity.ClusterSecurityAuthenticationType;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListener;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerConfigurationBroker;
@@ -26,6 +28,7 @@ import io.strimzi.api.kafka.model.kafka.quotas.QuotasPluginStrimzi;
 import io.strimzi.api.kafka.model.kafka.quotas.QuotasPluginStrimziBuilder;
 import io.strimzi.api.kafka.model.kafka.tieredstorage.TieredStorageCustomBuilder;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
+import io.strimzi.operator.cluster.model.clustersecurity.kafka.AuthenticationConfiguration;
 import io.strimzi.operator.cluster.model.clustersecurity.kafka.KafkaClusterSecurityContext;
 import io.strimzi.operator.cluster.model.clustersecurity.kafka.NoneAuthenticationConfiguration;
 import io.strimzi.operator.cluster.model.clustersecurity.kafka.NoneEncryptionConfiguration;
@@ -213,6 +216,52 @@ public class KafkaBrokerConfigurationBuilderTest {
         assertThat(configuration, isEquivalent("node.id=2",
                 CruiseControlConfigurationParameters.METRICS_TOPIC_NAME + "=strimzi.cruisecontrol.metrics",
                 CruiseControlConfigurationParameters.METRICS_REPORTER_BOOTSTRAP_SERVERS + "=my-cluster-kafka-brokers:9091",
+                CruiseControlConfigurationParameters.METRICS_REPORTER_SECURITY_PROTOCOL + "=PLAINTEXT",
+                CruiseControlConfigurationParameters.METRICS_TOPIC_AUTO_CREATE + "=true",
+                CruiseControlConfigurationParameters.METRICS_TOPIC_NUM_PARTITIONS + "=1",
+                CruiseControlConfigurationParameters.METRICS_TOPIC_REPLICATION_FACTOR + "=1",
+                CruiseControlConfigurationParameters.METRICS_TOPIC_MIN_ISR + "=1"));
+    }
+
+    @Test
+    public void testCruiseControlWithServiceAccountAuthentication()  {
+        CruiseControlMetricsReporter ccMetricsReporter = new CruiseControlMetricsReporter("strimzi.cruisecontrol.metrics", 1, 1, 1);
+
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, new KafkaClusterSecurityContext(new TlsEncryptionConfiguration(), AuthenticationConfiguration.fromCrd("my-namespace", "my-cluster", new ClusterSecurityAuthenticationBuilder().withType(ClusterSecurityAuthenticationType.SERVICE_ACCOUNT).build())))
+                .withCruiseControl("my-cluster", ccMetricsReporter, true)
+                .build();
+
+        assertThat(configuration, isEquivalent("node.id=2",
+                CruiseControlConfigurationParameters.METRICS_TOPIC_NAME + "=strimzi.cruisecontrol.metrics",
+                CruiseControlConfigurationParameters.METRICS_REPORTER_BOOTSTRAP_SERVERS + "=my-cluster-kafka-brokers:9091",
+                CruiseControlConfigurationParameters.METRICS_REPORTER_SECURITY_PROTOCOL + "=SASL_SSL",
+                CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_ENDPOINT_ID_ALGO + "=HTTPS",
+                CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_TRUSTSTORE_TYPE + "=PEM",
+                CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_TRUSTSTORE_CERTIFICATES + "=${strimzisecrets:namespace/my-cluster-trustbundle:cluster-ca.crt}",
+                "cruise.control.metrics.reporter.sasl.mechanism=OAUTHBEARER",
+                "cruise.control.metrics.reporter.sasl.login.callback.handler.class=io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler",
+                "cruise.control.metrics.reporter.sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required oauth.access.token.location=\"/var/run/secrets/strimzi.io/token\";",
+                CruiseControlConfigurationParameters.METRICS_TOPIC_AUTO_CREATE + "=true",
+                CruiseControlConfigurationParameters.METRICS_TOPIC_NUM_PARTITIONS + "=1",
+                CruiseControlConfigurationParameters.METRICS_TOPIC_REPLICATION_FACTOR + "=1",
+                CruiseControlConfigurationParameters.METRICS_TOPIC_MIN_ISR + "=1"));
+    }
+
+    @Test
+    public void testCruiseControlWithServiceAccountAuthenticationWithoutTls()  {
+        CruiseControlMetricsReporter ccMetricsReporter = new CruiseControlMetricsReporter("strimzi.cruisecontrol.metrics", 1, 1, 1);
+
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, new KafkaClusterSecurityContext(new NoneEncryptionConfiguration(), AuthenticationConfiguration.fromCrd("my-namespace", "my-cluster", new ClusterSecurityAuthenticationBuilder().withType(ClusterSecurityAuthenticationType.SERVICE_ACCOUNT).build())))
+                .withCruiseControl("my-cluster", ccMetricsReporter, true)
+                .build();
+
+        assertThat(configuration, isEquivalent("node.id=2",
+                CruiseControlConfigurationParameters.METRICS_TOPIC_NAME + "=strimzi.cruisecontrol.metrics",
+                CruiseControlConfigurationParameters.METRICS_REPORTER_BOOTSTRAP_SERVERS + "=my-cluster-kafka-brokers:9091",
+                CruiseControlConfigurationParameters.METRICS_REPORTER_SECURITY_PROTOCOL + "=SASL_PLAINTEXT",
+                "cruise.control.metrics.reporter.sasl.mechanism=OAUTHBEARER",
+                "cruise.control.metrics.reporter.sasl.login.callback.handler.class=io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler",
+                "cruise.control.metrics.reporter.sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required oauth.access.token.location=\"/var/run/secrets/strimzi.io/token\";",
                 CruiseControlConfigurationParameters.METRICS_TOPIC_AUTO_CREATE + "=true",
                 CruiseControlConfigurationParameters.METRICS_TOPIC_NUM_PARTITIONS + "=1",
                 CruiseControlConfigurationParameters.METRICS_TOPIC_REPLICATION_FACTOR + "=1",
@@ -376,6 +425,21 @@ public class KafkaBrokerConfigurationBuilderTest {
         assertThat(configuration, isEquivalent("node.id=2",
                 "authorizer.class.name=org.apache.kafka.metadata.authorizer.StandardAuthorizer",
                 "super.users=User:ANONYMOUS;User:jakub;User:CN=kuba"));
+    }
+
+    @Test
+    public void testSimpleAuthorizationWithServiceAccountAuthentication()  {
+        KafkaAuthorization auth = new KafkaAuthorizationSimpleBuilder()
+                .addToSuperUsers("jakub", "CN=kuba")
+                .build();
+
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, new KafkaClusterSecurityContext(new TlsEncryptionConfiguration(), AuthenticationConfiguration.fromCrd("my-namespace", "my-cluster", new ClusterSecurityAuthenticationBuilder().withType(ClusterSecurityAuthenticationType.SERVICE_ACCOUNT).build())))
+                .withAuthorization("my-cluster", auth)
+                .build();
+
+        assertThat(configuration, isEquivalent("node.id=2",
+                "authorizer.class.name=org.apache.kafka.metadata.authorizer.StandardAuthorizer",
+                "super.users=User:system:serviceaccount:namespace:my-cluster-kafka;User:system:serviceaccount:namespace:my-cluster-entity-operator;User:system:serviceaccount:namespace:my-cluster-kafka-exporter;User:system:serviceaccount:namespace:my-cluster-cruise-control;User:system:serviceaccount:namespace:my-cluster-cluster-operator;User:jakub;User:CN=kuba"));
     }
 
     @Test
@@ -840,6 +904,98 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "inter.broker.listener.name=REPLICATION-9091",
                 "sasl.enabled.mechanisms=",
                 "ssl.endpoint.identification.algorithm=HTTPS"));
+    }
+
+    @Test
+    public void testOnlyReplicationAndControlPlaneListenersWithServiceAccountAuthentication() {
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, new KafkaClusterSecurityContext(new TlsEncryptionConfiguration(), AuthenticationConfiguration.fromCrd("my-namespace", "my-cluster", new ClusterSecurityAuthenticationBuilder().withType(ClusterSecurityAuthenticationType.SERVICE_ACCOUNT).build())))
+                .withListeners("my-cluster", "my-namespace", emptyList(), null, null)
+                .build();
+
+        assertThat(configuration, isEquivalent("node.id=2",
+                "listener.name.controlplane-9090.ssl.keystore.certificate.chain=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.crt}",
+                "listener.name.controlplane-9090.ssl.keystore.key=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.key}",
+                "listener.name.controlplane-9090.ssl.keystore.type=PEM",
+                "listener.name.controlplane-9090.ssl.truststore.certificates=${strimzisecrets:namespace/my-cluster-trustbundle:cluster-ca.crt}",
+                "listener.name.controlplane-9090.ssl.truststore.type=PEM",
+                "listener.name.controlplane-9090.sasl.enabled.mechanisms=OAUTHBEARER",
+                "listener.name.controlplane-9090.oauthbearer.sasl.server.callback.handler.class=io.strimzi.kafka.oauth.server.JaasServerOauthValidatorCallbackHandler",
+                "listener.name.controlplane-9090.oauthbearer.sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required unsecuredLoginStringClaim_sub=\"unused\" oauth.check.access.token.type=\"false\" oauth.custom.claim.check=\"@.aud anyof ['strimzi.io/kafka/my-namespace/my-cluster']\" oauth.valid.issuer.uri=\"https://kubernetes.default.svc.cluster.local\" oauth.jwks.endpoint.uri=\"https://kubernetes.default.svc.cluster.local/openid/v1/jwks\" oauth.username.claim=\"sub\" oauth.ssl.truststore.location=\"/var/run/secrets/kubernetes.io/serviceaccount/ca.crt\" oauth.ssl.truststore.type=\"PEM\" oauth.include.accept.header=\"false\" oauth.server.bearer.token.location=\"/var/run/secrets/kubernetes.io/serviceaccount/token\" oauth.access.token.location=\"/var/run/secrets/strimzi.io/token\";",
+                "listener.name.controlplane-9090.oauthbearer.sasl.mechanism=OAUTHBEARER",
+                "listener.name.controlplane-9090.oauthbearer.sasl.login.callback.handler.class=io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler",
+                "listener.name.replication-9091.ssl.keystore.certificate.chain=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.crt}",
+                "listener.name.replication-9091.ssl.keystore.key=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.key}",
+                "listener.name.replication-9091.ssl.keystore.type=PEM",
+                "listener.name.replication-9091.ssl.truststore.certificates=${strimzisecrets:namespace/my-cluster-trustbundle:cluster-ca.crt}",
+                "listener.name.replication-9091.ssl.truststore.type=PEM",
+                "listener.name.replication-9091.sasl.enabled.mechanisms=OAUTHBEARER",
+                "listener.name.replication-9091.oauthbearer.sasl.server.callback.handler.class=io.strimzi.kafka.oauth.server.JaasServerOauthValidatorCallbackHandler",
+                "listener.name.replication-9091.oauthbearer.sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required unsecuredLoginStringClaim_sub=\"unused\" oauth.check.access.token.type=\"false\" oauth.custom.claim.check=\"@.aud anyof ['strimzi.io/kafka/my-namespace/my-cluster']\" oauth.valid.issuer.uri=\"https://kubernetes.default.svc.cluster.local\" oauth.jwks.endpoint.uri=\"https://kubernetes.default.svc.cluster.local/openid/v1/jwks\" oauth.username.claim=\"sub\" oauth.ssl.truststore.location=\"/var/run/secrets/kubernetes.io/serviceaccount/ca.crt\" oauth.ssl.truststore.type=\"PEM\" oauth.include.accept.header=\"false\" oauth.server.bearer.token.location=\"/var/run/secrets/kubernetes.io/serviceaccount/token\" oauth.access.token.location=\"/var/run/secrets/strimzi.io/token\";",
+                "listener.name.replication-9091.oauthbearer.sasl.mechanism=OAUTHBEARER",
+                "listener.name.replication-9091.oauthbearer.sasl.login.callback.handler.class=io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler",
+                "listeners=REPLICATION-9091://0.0.0.0:9091",
+                "advertised.listeners=REPLICATION-9091://my-cluster-kafka-2.my-cluster-kafka-brokers.my-namespace.svc:9091",
+                "listener.security.protocol.map=CONTROLPLANE-9090:SASL_SSL,REPLICATION-9091:SASL_SSL",
+                "inter.broker.listener.name=REPLICATION-9091",
+                "sasl.enabled.mechanisms=",
+                "ssl.endpoint.identification.algorithm=HTTPS",
+                "sasl.mechanism.controller.protocol=OAUTHBEARER",
+                "sasl.mechanism.inter.broker.protocol=OAUTHBEARER"));
+    }
+
+    @Test
+    public void testOnlyReplicationAndControlPlaneListenersWithServiceAccountAuthenticationWithoutTls() {
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, new KafkaClusterSecurityContext(new NoneEncryptionConfiguration(), AuthenticationConfiguration.fromCrd("my-namespace", "my-cluster", new ClusterSecurityAuthenticationBuilder().withType(ClusterSecurityAuthenticationType.SERVICE_ACCOUNT).build())))
+                .withListeners("my-cluster", "my-namespace", emptyList(), null, null)
+                .build();
+
+        assertThat(configuration, isEquivalent("node.id=2",
+                "listener.name.controlplane-9090.sasl.enabled.mechanisms=OAUTHBEARER",
+                "listener.name.controlplane-9090.oauthbearer.sasl.server.callback.handler.class=io.strimzi.kafka.oauth.server.JaasServerOauthValidatorCallbackHandler",
+                "listener.name.controlplane-9090.oauthbearer.sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required unsecuredLoginStringClaim_sub=\"unused\" oauth.check.access.token.type=\"false\" oauth.custom.claim.check=\"@.aud anyof ['strimzi.io/kafka/my-namespace/my-cluster']\" oauth.valid.issuer.uri=\"https://kubernetes.default.svc.cluster.local\" oauth.jwks.endpoint.uri=\"https://kubernetes.default.svc.cluster.local/openid/v1/jwks\" oauth.username.claim=\"sub\" oauth.ssl.truststore.location=\"/var/run/secrets/kubernetes.io/serviceaccount/ca.crt\" oauth.ssl.truststore.type=\"PEM\" oauth.include.accept.header=\"false\" oauth.server.bearer.token.location=\"/var/run/secrets/kubernetes.io/serviceaccount/token\" oauth.access.token.location=\"/var/run/secrets/strimzi.io/token\";",
+                "listener.name.controlplane-9090.oauthbearer.sasl.mechanism=OAUTHBEARER",
+                "listener.name.controlplane-9090.oauthbearer.sasl.login.callback.handler.class=io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler",
+                "listener.name.replication-9091.sasl.enabled.mechanisms=OAUTHBEARER",
+                "listener.name.replication-9091.oauthbearer.sasl.server.callback.handler.class=io.strimzi.kafka.oauth.server.JaasServerOauthValidatorCallbackHandler",
+                "listener.name.replication-9091.oauthbearer.sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required unsecuredLoginStringClaim_sub=\"unused\" oauth.check.access.token.type=\"false\" oauth.custom.claim.check=\"@.aud anyof ['strimzi.io/kafka/my-namespace/my-cluster']\" oauth.valid.issuer.uri=\"https://kubernetes.default.svc.cluster.local\" oauth.jwks.endpoint.uri=\"https://kubernetes.default.svc.cluster.local/openid/v1/jwks\" oauth.username.claim=\"sub\" oauth.ssl.truststore.location=\"/var/run/secrets/kubernetes.io/serviceaccount/ca.crt\" oauth.ssl.truststore.type=\"PEM\" oauth.include.accept.header=\"false\" oauth.server.bearer.token.location=\"/var/run/secrets/kubernetes.io/serviceaccount/token\" oauth.access.token.location=\"/var/run/secrets/strimzi.io/token\";",
+                "listener.name.replication-9091.oauthbearer.sasl.mechanism=OAUTHBEARER",
+                "listener.name.replication-9091.oauthbearer.sasl.login.callback.handler.class=io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler",
+                "listeners=REPLICATION-9091://0.0.0.0:9091",
+                "advertised.listeners=REPLICATION-9091://my-cluster-kafka-2.my-cluster-kafka-brokers.my-namespace.svc:9091",
+                "listener.security.protocol.map=CONTROLPLANE-9090:SASL_PLAINTEXT,REPLICATION-9091:SASL_PLAINTEXT",
+                "inter.broker.listener.name=REPLICATION-9091",
+                "sasl.enabled.mechanisms=",
+                "ssl.endpoint.identification.algorithm=HTTPS",
+                "sasl.mechanism.controller.protocol=OAUTHBEARER",
+                "sasl.mechanism.inter.broker.protocol=OAUTHBEARER"));
+    }
+
+    @Test
+    public void testControllerOnlyNodeListenersWithServiceAccountAuthentication() {
+        NodeRef controller = new NodeRef("my-cluster-controllers-3", 3, "controllers", true, false);
+
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, controller, new KafkaClusterSecurityContext(new TlsEncryptionConfiguration(), AuthenticationConfiguration.fromCrd("my-namespace", "my-cluster", new ClusterSecurityAuthenticationBuilder().withType(ClusterSecurityAuthenticationType.SERVICE_ACCOUNT).build())))
+                .withListeners("my-cluster", "my-namespace", emptyList(), null, null)
+                .build();
+
+        assertThat(configuration, isEquivalent("node.id=3",
+                "listener.name.controlplane-9090.ssl.keystore.certificate.chain=${strimzisecrets:namespace/my-cluster-controllers-3:my-cluster-controllers-3.crt}",
+                "listener.name.controlplane-9090.ssl.keystore.key=${strimzisecrets:namespace/my-cluster-controllers-3:my-cluster-controllers-3.key}",
+                "listener.name.controlplane-9090.ssl.keystore.type=PEM",
+                "listener.name.controlplane-9090.ssl.truststore.certificates=${strimzisecrets:namespace/my-cluster-trustbundle:cluster-ca.crt}",
+                "listener.name.controlplane-9090.ssl.truststore.type=PEM",
+                "listener.name.controlplane-9090.sasl.enabled.mechanisms=OAUTHBEARER",
+                "listener.name.controlplane-9090.oauthbearer.sasl.server.callback.handler.class=io.strimzi.kafka.oauth.server.JaasServerOauthValidatorCallbackHandler",
+                "listener.name.controlplane-9090.oauthbearer.sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required unsecuredLoginStringClaim_sub=\"unused\" oauth.check.access.token.type=\"false\" oauth.custom.claim.check=\"@.aud anyof ['strimzi.io/kafka/my-namespace/my-cluster']\" oauth.valid.issuer.uri=\"https://kubernetes.default.svc.cluster.local\" oauth.jwks.endpoint.uri=\"https://kubernetes.default.svc.cluster.local/openid/v1/jwks\" oauth.username.claim=\"sub\" oauth.ssl.truststore.location=\"/var/run/secrets/kubernetes.io/serviceaccount/ca.crt\" oauth.ssl.truststore.type=\"PEM\" oauth.include.accept.header=\"false\" oauth.server.bearer.token.location=\"/var/run/secrets/kubernetes.io/serviceaccount/token\" oauth.access.token.location=\"/var/run/secrets/strimzi.io/token\";",
+                "listener.name.controlplane-9090.oauthbearer.sasl.mechanism=OAUTHBEARER",
+                "listener.name.controlplane-9090.oauthbearer.sasl.login.callback.handler.class=io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler",
+                "listeners=CONTROLPLANE-9090://0.0.0.0:9090",
+                "advertised.listeners=CONTROLPLANE-9090://my-cluster-controllers-3.my-cluster-kafka-brokers.my-namespace.svc:9090",
+                "listener.security.protocol.map=CONTROLPLANE-9090:SASL_SSL",
+                "sasl.enabled.mechanisms=",
+                "ssl.endpoint.identification.algorithm=HTTPS",
+                "sasl.mechanism.controller.protocol=OAUTHBEARER",
+                "sasl.mechanism.inter.broker.protocol=OAUTHBEARER"));
     }
 
     @Test
@@ -1994,7 +2150,68 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "remote.log.metadata.manager.impl.prefix=rlmm.config.",
                 "remote.log.metadata.manager.class.name=org.apache.kafka.server.log.remote.metadata.storage.TopicBasedRemoteLogMetadataManager",
                 "remote.log.metadata.manager.listener.name=REPLICATION-9091",
+                "rlmm.config.remote.log.metadata.common.client.security.protocol=PLAINTEXT",
                 "rlmm.config.remote.log.metadata.common.client.bootstrap.servers=test-cluster-1-kafka-brokers:9091",
+                "remote.log.storage.manager.class.name=com.example.kafka.tiered.storage.s3.S3RemoteStorageManager",
+                "remote.log.storage.manager.class.path=/opt/kafka/plugins/tiered-storage-s3/*",
+                "remote.log.storage.manager.impl.prefix=rsm.config.",
+                "rsm.config.storage.bucket.name=my-bucket"
+        ));
+    }
+
+    @Test
+    public void testWithTieredStorageWithServiceAccountAuthentication() {
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, new KafkaClusterSecurityContext(new TlsEncryptionConfiguration(), AuthenticationConfiguration.fromCrd("my-namespace", "my-cluster", new ClusterSecurityAuthenticationBuilder().withType(ClusterSecurityAuthenticationType.SERVICE_ACCOUNT).build())))
+                .withTieredStorage("test-cluster-1", new TieredStorageCustomBuilder()
+                        .withNewRemoteStorageManager()
+                            .withClassName("com.example.kafka.tiered.storage.s3.S3RemoteStorageManager")
+                            .withClassPath("/opt/kafka/plugins/tiered-storage-s3/*")
+                            .withConfig(Map.of("storage.bucket.name", "my-bucket"))
+                        .endRemoteStorageManager()
+                        .build())
+                .build();
+
+        assertThat(configuration, isEquivalent("node.id=2",
+                "remote.log.storage.system.enable=true",
+                "remote.log.metadata.manager.impl.prefix=rlmm.config.",
+                "remote.log.metadata.manager.class.name=org.apache.kafka.server.log.remote.metadata.storage.TopicBasedRemoteLogMetadataManager",
+                "remote.log.metadata.manager.listener.name=REPLICATION-9091",
+                "rlmm.config.remote.log.metadata.common.client.bootstrap.servers=test-cluster-1-kafka-brokers:9091",
+                "rlmm.config.remote.log.metadata.common.client.security.protocol=SASL_SSL",
+                "rlmm.config.remote.log.metadata.common.client.ssl.truststore.certificates=${strimzisecrets:namespace/test-cluster-1-trustbundle:cluster-ca.crt}",
+                "rlmm.config.remote.log.metadata.common.client.ssl.truststore.type=PEM",
+                "rlmm.config.remote.log.metadata.common.client.sasl.mechanism=OAUTHBEARER",
+                "rlmm.config.remote.log.metadata.common.client.sasl.login.callback.handler.class=io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler",
+                "rlmm.config.remote.log.metadata.common.client.sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required oauth.access.token.location=\"/var/run/secrets/strimzi.io/token\";",
+                "remote.log.storage.manager.class.name=com.example.kafka.tiered.storage.s3.S3RemoteStorageManager",
+                "remote.log.storage.manager.class.path=/opt/kafka/plugins/tiered-storage-s3/*",
+                "remote.log.storage.manager.impl.prefix=rsm.config.",
+                "rsm.config.storage.bucket.name=my-bucket"
+        ));
+    }
+
+    @Test
+    public void testWithTieredStorageWithServiceAccountAuthenticationWithoutTls() {
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, new KafkaClusterSecurityContext(new NoneEncryptionConfiguration(), AuthenticationConfiguration.fromCrd("my-namespace", "my-cluster", new ClusterSecurityAuthenticationBuilder().withType(ClusterSecurityAuthenticationType.SERVICE_ACCOUNT).build())))
+                .withTieredStorage("test-cluster-1", new TieredStorageCustomBuilder()
+                        .withNewRemoteStorageManager()
+                            .withClassName("com.example.kafka.tiered.storage.s3.S3RemoteStorageManager")
+                            .withClassPath("/opt/kafka/plugins/tiered-storage-s3/*")
+                            .withConfig(Map.of("storage.bucket.name", "my-bucket"))
+                        .endRemoteStorageManager()
+                        .build())
+                .build();
+
+        assertThat(configuration, isEquivalent("node.id=2",
+                "remote.log.storage.system.enable=true",
+                "remote.log.metadata.manager.impl.prefix=rlmm.config.",
+                "remote.log.metadata.manager.class.name=org.apache.kafka.server.log.remote.metadata.storage.TopicBasedRemoteLogMetadataManager",
+                "remote.log.metadata.manager.listener.name=REPLICATION-9091",
+                "rlmm.config.remote.log.metadata.common.client.bootstrap.servers=test-cluster-1-kafka-brokers:9091",
+                "rlmm.config.remote.log.metadata.common.client.security.protocol=SASL_PLAINTEXT",
+                "rlmm.config.remote.log.metadata.common.client.sasl.mechanism=OAUTHBEARER",
+                "rlmm.config.remote.log.metadata.common.client.sasl.login.callback.handler.class=io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler",
+                "rlmm.config.remote.log.metadata.common.client.sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required oauth.access.token.location=\"/var/run/secrets/strimzi.io/token\";",
                 "remote.log.storage.manager.class.name=com.example.kafka.tiered.storage.s3.S3RemoteStorageManager",
                 "remote.log.storage.manager.class.path=/opt/kafka/plugins/tiered-storage-s3/*",
                 "remote.log.storage.manager.impl.prefix=rsm.config.",
@@ -2079,9 +2296,52 @@ public class KafkaBrokerConfigurationBuilderTest {
             .build();
 
         assertThat(configuration, isEquivalent("node.id=2",
+            "client.quota.callback.static.kafka.admin.security.protocol=PLAINTEXT",
             "client.quota.callback.class=io.strimzi.kafka.quotas.StaticQuotaCallback",
             "client.quota.callback.static.kafka.admin.bootstrap.servers=my-personal-cluster-kafka-brokers:9091",
             "client.quota.callback.static.excluded.principal.name.list="
+        ));
+    }
+
+    @Test
+    public void testWithStrimziQuotasWithServiceAccountAuthentication() {
+        QuotasPluginStrimzi quotasPluginStrimzi = new QuotasPluginStrimziBuilder()
+            .withExcludedPrincipals("User:my-user1", "User:my-user2")
+            .build();
+
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, new KafkaClusterSecurityContext(new TlsEncryptionConfiguration(), AuthenticationConfiguration.fromCrd("my-namespace", "my-cluster", new ClusterSecurityAuthenticationBuilder().withType(ClusterSecurityAuthenticationType.SERVICE_ACCOUNT).build())))
+            .withQuotas("my-personal-cluster", quotasPluginStrimzi)
+            .build();
+
+        assertThat(configuration, isEquivalent("node.id=2",
+            "client.quota.callback.class=io.strimzi.kafka.quotas.StaticQuotaCallback",
+            "client.quota.callback.static.kafka.admin.bootstrap.servers=my-personal-cluster-kafka-brokers:9091",
+            "client.quota.callback.static.kafka.admin.security.protocol=SASL_SSL",
+            "client.quota.callback.static.kafka.admin.ssl.truststore.certificates=${strimzisecrets:namespace/my-personal-cluster-trustbundle:cluster-ca.crt}",
+            "client.quota.callback.static.kafka.admin.ssl.truststore.type=PEM",
+            "client.quota.callback.static.kafka.admin.sasl.mechanism=OAUTHBEARER",
+            "client.quota.callback.static.kafka.admin.sasl.login.callback.handler.class=io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler",
+            "client.quota.callback.static.kafka.admin.sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required oauth.access.token.location=\"/var/run/secrets/strimzi.io/token\";",
+            "client.quota.callback.static.excluded.principal.name.list=User:system:serviceaccount:namespace:my-personal-cluster-kafka;User:system:serviceaccount:namespace:my-personal-cluster-cruise-control;User:my-user1;User:my-user2"
+        ));
+    }
+
+    @Test
+    public void testWithStrimziQuotasWithServiceAccountAuthenticationWithoutTls() {
+        QuotasPluginStrimzi quotasPluginStrimzi = new QuotasPluginStrimziBuilder().build();
+
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, new KafkaClusterSecurityContext(new NoneEncryptionConfiguration(), AuthenticationConfiguration.fromCrd("my-namespace", "my-cluster", new ClusterSecurityAuthenticationBuilder().withType(ClusterSecurityAuthenticationType.SERVICE_ACCOUNT).build())))
+            .withQuotas("my-personal-cluster", quotasPluginStrimzi)
+            .build();
+
+        assertThat(configuration, isEquivalent("node.id=2",
+            "client.quota.callback.class=io.strimzi.kafka.quotas.StaticQuotaCallback",
+            "client.quota.callback.static.kafka.admin.bootstrap.servers=my-personal-cluster-kafka-brokers:9091",
+            "client.quota.callback.static.kafka.admin.security.protocol=SASL_PLAINTEXT",
+            "client.quota.callback.static.kafka.admin.sasl.mechanism=OAUTHBEARER",
+            "client.quota.callback.static.kafka.admin.sasl.login.callback.handler.class=io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler",
+            "client.quota.callback.static.kafka.admin.sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required oauth.access.token.location=\"/var/run/secrets/strimzi.io/token\";",
+            "client.quota.callback.static.excluded.principal.name.list=User:system:serviceaccount:namespace:my-personal-cluster-kafka;User:system:serviceaccount:namespace:my-personal-cluster-cruise-control"
         ));
     }
 

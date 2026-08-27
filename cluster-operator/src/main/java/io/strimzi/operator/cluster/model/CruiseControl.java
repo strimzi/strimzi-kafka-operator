@@ -41,6 +41,7 @@ import io.strimzi.certs.StrimziSubject;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.model.clustersecurity.kafka.KafkaClusterSecurityContext;
 import io.strimzi.operator.cluster.model.clustersecurity.kafka.MtlsAuthenticationConfiguration;
+import io.strimzi.operator.cluster.model.clustersecurity.kafka.ServiceAccountAuthenticationConfiguration;
 import io.strimzi.operator.cluster.model.clustersecurity.kafka.TlsEncryptionConfiguration;
 import io.strimzi.operator.cluster.model.cruisecontrol.CapacityConfiguration;
 import io.strimzi.operator.cluster.model.cruisecontrol.CruiseControlConfiguration;
@@ -140,6 +141,7 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
 
     protected static final String ENV_VAR_TLS_ENABLED = "STRIMZI_CC_TLS_ENABLED";
     protected static final String ENV_VAR_MTLS_ENABLED = "STRIMZI_CC_MTLS_ENABLED";
+    protected static final String ENV_VAR_SA_AUTH_ENABLED = "STRIMZI_CC_SA_AUTH_ENABLED";
     protected static final String ENV_VAR_API_AUTH_ENABLED = "STRIMZI_CC_API_AUTH_ENABLED";
     protected static final String ENV_VAR_API_HEALTHCHECK_USERNAME = "API_HEALTHCHECK_USERNAME";
     protected static final String ENV_VAR_API_PORT = "API_PORT";
@@ -346,6 +348,10 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
             volumes.add(VolumeUtils.createSecretVolume(TLS_CA_CERTS_VOLUME_NAME, AbstractModel.clusterCaCertSecretName(cluster), isOpenShift));
         }
 
+        if (securityContext.authentication() instanceof ServiceAccountAuthenticationConfiguration saAuthentication)   {
+            volumes.add(VolumeUtils.createStrimziAuthenticationTokenProjection(saAuthentication.audience(), saAuthentication.expirationSeconds()));
+        }
+
         volumes.add(VolumeUtils.createSecretVolume(API_AUTH_CONFIG_VOLUME_NAME, CruiseControlResources.apiSecretName(cluster), isOpenShift));
         volumes.add(VolumeUtils.createConfigMapVolume(CONFIG_VOLUME_NAME, CruiseControlResources.configMapName(cluster)));
 
@@ -364,6 +370,10 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
             // So we need both volume mounts regardless whether mTLS is enabled or not.
             volumeMounts.add(VolumeUtils.createVolumeMount(CruiseControl.TLS_CC_CERTS_VOLUME_NAME, CruiseControl.TLS_CC_CERTS_VOLUME_MOUNT));
             volumeMounts.add(VolumeUtils.createVolumeMount(CruiseControl.TLS_CA_CERTS_VOLUME_NAME, CruiseControl.TLS_CA_CERTS_VOLUME_MOUNT));
+        }
+
+        if (securityContext.authentication() instanceof ServiceAccountAuthenticationConfiguration)   {
+            volumeMounts.add(VolumeUtils.createStrimziAuthenticationTokenVolumeMount());
         }
 
         volumeMounts.add(VolumeUtils.createVolumeMount(CruiseControl.API_AUTH_CONFIG_VOLUME_NAME, CruiseControl.API_AUTH_CONFIG_VOLUME_MOUNT));
@@ -437,6 +447,7 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
 
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_TLS_ENABLED, String.valueOf(securityContext.encryption() instanceof TlsEncryptionConfiguration)));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_MTLS_ENABLED, String.valueOf(securityContext.authentication() instanceof MtlsAuthenticationConfiguration)));
+        varList.add(ContainerUtils.createEnvVar(ENV_VAR_SA_AUTH_ENABLED, String.valueOf(securityContext.authentication() instanceof ServiceAccountAuthenticationConfiguration)));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_API_AUTH_ENABLED, String.valueOf(configuration.isApiAuthEnabled())));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_API_HEALTHCHECK_USERNAME, CruiseControlApiProperties.HEALTHCHECK_USERNAME));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_API_PORT, String.valueOf(REST_API_PORT)));

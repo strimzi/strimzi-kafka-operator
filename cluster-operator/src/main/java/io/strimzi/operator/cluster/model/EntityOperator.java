@@ -31,6 +31,7 @@ import io.strimzi.api.kafka.model.kafka.entityoperator.EntityOperatorSpec;
 import io.strimzi.api.kafka.model.kafka.entityoperator.EntityOperatorTemplate;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.model.clustersecurity.kafka.KafkaClusterSecurityContext;
+import io.strimzi.operator.cluster.model.clustersecurity.kafka.ServiceAccountAuthenticationConfiguration;
 import io.strimzi.operator.cluster.model.securityprofiles.PodSecurityProviderContextImpl;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
@@ -91,6 +92,7 @@ public class EntityOperator extends AbstractModel {
     private EntityTopicOperator topicOperator;
     private EntityUserOperator userOperator;
     /* test */ boolean cruiseControlEnabled;
+    private KafkaClusterSecurityContext securityContext;
 
     private ResourceTemplate templateRole;
     private DeploymentTemplate templateDeployment;
@@ -144,6 +146,7 @@ public class EntityOperator extends AbstractModel {
             result.topicOperator = topicOperator;
             result.cruiseControlEnabled = kafkaAssembly.getSpec().getCruiseControl() != null;
             result.userOperator = userOperator;
+            result.securityContext = securityContext;
 
             if (entityOperatorSpec.getTemplate() != null) {
                 EntityOperatorTemplate template = entityOperatorSpec.getTemplate();
@@ -242,6 +245,10 @@ public class EntityOperator extends AbstractModel {
         List<Volume> volumeList = new ArrayList<>();
 
         volumeList.add(VolumeUtils.createServiceAccountVolume());
+
+        if (securityContext.authentication() instanceof ServiceAccountAuthenticationConfiguration saAuthentication)   {
+            volumeList.add(VolumeUtils.createStrimziAuthenticationTokenProjection(saAuthentication.audience(), saAuthentication.expirationSeconds()));
+        }
 
         if (topicOperator != null) {
             volumeList.addAll(topicOperator.getVolumes(templatePod, isOpenShift));

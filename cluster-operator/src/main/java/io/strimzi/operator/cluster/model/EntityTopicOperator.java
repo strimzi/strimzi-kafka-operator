@@ -28,6 +28,7 @@ import io.strimzi.certs.CertAndKey;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.model.clustersecurity.kafka.KafkaClusterSecurityContext;
 import io.strimzi.operator.cluster.model.clustersecurity.kafka.MtlsAuthenticationConfiguration;
+import io.strimzi.operator.cluster.model.clustersecurity.kafka.ServiceAccountAuthenticationConfiguration;
 import io.strimzi.operator.cluster.model.clustersecurity.kafka.TlsEncryptionConfiguration;
 import io.strimzi.operator.cluster.model.logging.LoggingModel;
 import io.strimzi.operator.cluster.model.logging.SupportsLogging;
@@ -72,12 +73,12 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
     /* test */ static final String ENV_VAR_WATCHED_NAMESPACE = "STRIMZI_NAMESPACE";
     /* test */ static final String ENV_VAR_CLUSTER_NAMESPACE = "STRIMZI_CLUSTER_NAMESPACE";
     /* test */ static final String ENV_VAR_FULL_RECONCILIATION_INTERVAL_MS = "STRIMZI_FULL_RECONCILIATION_INTERVAL_MS";
-    /* test */ static final String ENV_VAR_SECURITY_PROTOCOL = "STRIMZI_SECURITY_PROTOCOL";
 
     /* test */ static final String ENV_VAR_TLS_TRUSTED_CERTS_SECRET_NAME = "STRIMZI_TLS_TRUSTED_CERTS_SECRET_NAME";
     /* test */ static final String ENV_VAR_TLS_SECRET_NAME = "STRIMZI_TLS_SECRET_NAME";
     /* test */ static final String ENV_VAR_TLS_KEY_NAME = "STRIMZI_TLS_KEY_NAME";
     /* test */ static final String ENV_VAR_TLS_CERT_NAME = "STRIMZI_TLS_CERT_NAME";
+    /* test */ static final String ENV_VAR_SERVICE_ACCOUNT_TOKEN_PATH = "STRIMZI_SERVICE_ACCOUNT_TOKEN_PATH";
 
     // Volume name of the temporary volume used by the TO container
     // Because the container shares the pod with other containers, it needs to have a unique name
@@ -203,16 +204,15 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
         }
 
         if (securityContext.encryption() instanceof TlsEncryptionConfiguration) {
-            varList.add(ContainerUtils.createEnvVar(ENV_VAR_SECURITY_PROTOCOL, "SSL"));
             varList.add(ContainerUtils.createEnvVar(ENV_VAR_TLS_TRUSTED_CERTS_SECRET_NAME, AbstractModel.clusterCaCertSecretName(cluster)));
+        }
 
-            if (securityContext.authentication() instanceof MtlsAuthenticationConfiguration) {
-                varList.add(ContainerUtils.createEnvVar(ENV_VAR_TLS_SECRET_NAME, KafkaResources.entityTopicOperatorSecretName(cluster)));
-                varList.add(ContainerUtils.createEnvVar(ENV_VAR_TLS_KEY_NAME, Ca.SecretEntry.KEY.asKey(EntityOperator.COMPONENT_TYPE)));
-                varList.add(ContainerUtils.createEnvVar(ENV_VAR_TLS_CERT_NAME, Ca.SecretEntry.CRT.asKey(EntityOperator.COMPONENT_TYPE)));
-            }
-        } else {
-            varList.add(ContainerUtils.createEnvVar(ENV_VAR_SECURITY_PROTOCOL, "PLAINTEXT"));
+        if (securityContext.authentication() instanceof MtlsAuthenticationConfiguration) {
+            varList.add(ContainerUtils.createEnvVar(ENV_VAR_TLS_SECRET_NAME, KafkaResources.entityTopicOperatorSecretName(cluster)));
+            varList.add(ContainerUtils.createEnvVar(ENV_VAR_TLS_KEY_NAME, Ca.SecretEntry.KEY.asKey(EntityOperator.COMPONENT_TYPE)));
+            varList.add(ContainerUtils.createEnvVar(ENV_VAR_TLS_CERT_NAME, Ca.SecretEntry.CRT.asKey(EntityOperator.COMPONENT_TYPE)));
+        } else if (securityContext.authentication() instanceof ServiceAccountAuthenticationConfiguration) {
+            varList.add(ContainerUtils.createEnvVar(ENV_VAR_SERVICE_ACCOUNT_TOKEN_PATH, "/var/run/secrets/strimzi.io/token"));
         }
 
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_STRIMZI_GC_LOG_ENABLED, Boolean.toString(gcLoggingEnabled)));
@@ -262,6 +262,10 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
         result.add(VolumeUtils.createServiceAccountVolumeMount());
         result.add(VolumeUtils.createTempDirVolumeMount(TOPIC_OPERATOR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME));
         result.add(VolumeUtils.createVolumeMount(LOG_AND_METRICS_CONFIG_VOLUME_NAME, LOG_AND_METRICS_CONFIG_VOLUME_MOUNT));
+
+        if (securityContext.authentication() instanceof ServiceAccountAuthenticationConfiguration)   {
+            result.add(VolumeUtils.createStrimziAuthenticationTokenVolumeMount());
+        }
 
         if (this.cruiseControlEnabled) {
             result.add(VolumeUtils.createVolumeMount(ETO_CA_CERTS_VOLUME_NAME, ETO_CA_CERTS_VOLUME_MOUNT));
