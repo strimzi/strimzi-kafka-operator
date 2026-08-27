@@ -186,6 +186,28 @@ public class VolumeUtilsTest {
     }
 
     @Test
+    public void testCreateStrimziAuthenticationTokenProjection()   {
+        Volume volume = VolumeUtils.createStrimziAuthenticationTokenProjection("my-audience", 3600L);
+
+        assertThat(volume.getName(), is(VolumeUtils.STRIMZI_AUTHENTICATION_TOKEN_VOLUME_NAME));
+        assertThat(volume.getProjected(), is(notNullValue()));
+        assertThat(volume.getProjected().getSources().size(), is(1));
+        assertThat(volume.getProjected().getSources().get(0).getServiceAccountToken(), is(notNullValue()));
+        assertThat(volume.getProjected().getSources().get(0).getServiceAccountToken().getAudience(), is("my-audience"));
+        assertThat(volume.getProjected().getSources().get(0).getServiceAccountToken().getExpirationSeconds(), is(3600L));
+        assertThat(volume.getProjected().getSources().get(0).getServiceAccountToken().getPath(), is("token"));
+    }
+
+    @Test
+    public void testCreateStrimziAuthenticationTokenVolumeMount()   {
+        VolumeMount volumeMount = VolumeUtils.createStrimziAuthenticationTokenVolumeMount();
+
+        assertThat(volumeMount.getName(), is(VolumeUtils.STRIMZI_AUTHENTICATION_TOKEN_VOLUME_NAME));
+        assertThat(volumeMount.getMountPath(), is("/var/run/secrets/strimzi.io"));
+        assertThat(volumeMount.getReadOnly(), is(true));
+    }
+
+    @Test
     public void testCreatePvcVolume()   {
         Volume volumeFromPvc = VolumeUtils.createPvcVolume("my-volume", "my-pvc");
 

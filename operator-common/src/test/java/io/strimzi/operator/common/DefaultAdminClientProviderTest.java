@@ -4,13 +4,19 @@
  */
 package io.strimzi.operator.common;
 
+import io.fabric8.kubernetes.api.model.Secret;
+import io.fabric8.kubernetes.api.model.SecretBuilder;
+import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.operator.common.auth.PemAuthIdentity;
 import io.strimzi.operator.common.auth.PemTrustSet;
+import io.strimzi.operator.common.auth.ProjectedServiceAccountAuthIdentity;
 import org.apache.kafka.clients.admin.AdminClientConfig;
+import org.apache.kafka.common.config.SaslConfigs;
 import org.apache.kafka.common.config.SslConfigs;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
+import java.util.Map;
 import java.util.Properties;
 
 import static org.hamcrest.CoreMatchers.containsString;
@@ -28,6 +34,7 @@ public class DefaultAdminClientProviderTest {
     private static final String CA2 = "ca2";
     private static final String USER_CERT = "user-cert";
     private static final String USER_KEY = "user-key";
+    private static final String SA_TOKEN_PATH = "/var/run/secrets/kafka/serviceaccount/token";
 
     private void assertDefaultConfigs(Properties config) {
         assertThat(config.get(AdminClientConfig.METADATA_MAX_AGE_CONFIG), is("30000"));
@@ -93,8 +100,11 @@ public class DefaultAdminClientProviderTest {
 
     @Test
     public void testMTlsWithPublicCAConnection() {
+        Properties customConfig = new Properties();
+        customConfig.setProperty(AdminClientConfig.SECURITY_PROTOCOL_CONFIG, "SSL");
+
         DefaultAdminClientProvider defaultAdminClientProvider = new DefaultAdminClientProvider();
-        Properties config = defaultAdminClientProvider.adminClientConfiguration(null, mockPemAuthIdentity(), new Properties());
+        Properties config = defaultAdminClientProvider.adminClientConfiguration(null, mockPemAuthIdentity(), customConfig);
 
         assertThat(config.size(), is(8));
         assertDefaultConfigs(config);
@@ -102,6 +112,54 @@ public class DefaultAdminClientProviderTest {
         assertThat(config.get(SslConfigs.SSL_KEYSTORE_TYPE_CONFIG).toString(), is("PEM"));
         assertThat(config.get(SslConfigs.SSL_KEYSTORE_CERTIFICATE_CHAIN_CONFIG).toString(), is("user-cert"));
         assertThat(config.get(SslConfigs.SSL_KEYSTORE_KEY_CONFIG).toString(), is("user-key"));
+    }
+
+    @Test
+    public void testSaslPlaintextConnectionWithProjectedServiceAccountToken() {
+        DefaultAdminClientProvider defaultAdminClientProvider = new DefaultAdminClientProvider();
+        Properties config = defaultAdminClientProvider.adminClientConfiguration(null, new ProjectedServiceAccountAuthIdentity(SA_TOKEN_PATH), new Properties());
+
+        assertThat(config.size(), is(8));
+        assertDefaultConfigs(config);
+        assertThat(config.get(AdminClientConfig.SECURITY_PROTOCOL_CONFIG), is("SASL_PLAINTEXT"));
+        assertThat(config.get(SaslConfigs.SASL_MECHANISM), is("OAUTHBEARER"));
+        assertThat(config.get(SaslConfigs.SASL_LOGIN_CALLBACK_HANDLER_CLASS), is("io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler"));
+        assertThat(config.get(SaslConfigs.SASL_JAAS_CONFIG), is("org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required " +
+                "oauth.access.token.location=\"" + SA_TOKEN_PATH + "\";"));
+    }
+
+    @Test
+    public void testSaslSslConnectionWithProjectedServiceAccountToken() {
+        DefaultAdminClientProvider defaultAdminClientProvider = new DefaultAdminClientProvider();
+        Properties config = defaultAdminClientProvider.adminClientConfiguration(mockPemTrustSet(), new ProjectedServiceAccountAuthIdentity(SA_TOKEN_PATH), new Properties());
+
+        assertThat(config.size(), is(10));
+        assertDefaultConfigs(config);
+        assertThat(config.get(AdminClientConfig.SECURITY_PROTOCOL_CONFIG), is("SASL_SSL"));
+        assertThat(config.get(SslConfigs.SSL_TRUSTSTORE_TYPE_CONFIG), is("PEM"));
+        assertThat(config.get(SslConfigs.SSL_TRUSTSTORE_CERTIFICATES_CONFIG).toString(), containsString("ca1")); // The order is not deterministic. So we check both certificates are present
+        assertThat(config.get(SslConfigs.SSL_TRUSTSTORE_CERTIFICATES_CONFIG).toString(), containsString("ca2"));
+        assertThat(config.get(SaslConfigs.SASL_MECHANISM), is("OAUTHBEARER"));
+        assertThat(config.get(SaslConfigs.SASL_LOGIN_CALLBACK_HANDLER_CLASS), is("io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler"));
+        assertThat(config.get(SaslConfigs.SASL_JAAS_CONFIG), is("org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required " +
+                "oauth.access.token.location=\"" + SA_TOKEN_PATH + "\";"));
+    }
+
+    @Test
+    public void testSaslSslWithPublicCAConnectionWithProjectedServiceAccountToken() {
+        Properties customConfig = new Properties();
+        customConfig.setProperty(AdminClientConfig.SECURITY_PROTOCOL_CONFIG, "SSL");
+
+        DefaultAdminClientProvider defaultAdminClientProvider = new DefaultAdminClientProvider();
+        Properties config = defaultAdminClientProvider.adminClientConfiguration(null, new ProjectedServiceAccountAuthIdentity(SA_TOKEN_PATH), customConfig);
+
+        assertThat(config.size(), is(8));
+        assertDefaultConfigs(config);
+        assertThat(config.get(AdminClientConfig.SECURITY_PROTOCOL_CONFIG), is("SASL_SSL"));
+        assertThat(config.get(SaslConfigs.SASL_MECHANISM), is("OAUTHBEARER"));
+        assertThat(config.get(SaslConfigs.SASL_LOGIN_CALLBACK_HANDLER_CLASS), is("io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler"));
+        assertThat(config.get(SaslConfigs.SASL_JAAS_CONFIG), is("org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required " +
+                "oauth.access.token.location=\"" + SA_TOKEN_PATH + "\";"));
     }
 
     @Test
@@ -148,9 +206,14 @@ public class DefaultAdminClientProviderTest {
     }
 
     public static PemAuthIdentity mockPemAuthIdentity() {
-        PemAuthIdentity mockAuthIdentity = mock(PemAuthIdentity.class);
-        when(mockAuthIdentity.certificateChainAsPem()).thenReturn(USER_CERT);
-        when(mockAuthIdentity.privateKeyAsPem()).thenReturn(USER_KEY);
-        return mockAuthIdentity;
+        Secret secretWithCertificate = new SecretBuilder()
+                .withNewMetadata()
+                    .withName(KafkaResources.clusterOperatorCertsSecretName("test-cluster"))
+                    .withNamespace("test-namespace")
+                .endMetadata()
+                .withData(Map.of("cluster-operator.key", Util.encodeToBase64(USER_KEY),
+                        "cluster-operator.crt", Util.encodeToBase64(USER_CERT)))
+                .build();
+        return PemAuthIdentity.clusterOperator(secretWithCertificate);
     }
 }

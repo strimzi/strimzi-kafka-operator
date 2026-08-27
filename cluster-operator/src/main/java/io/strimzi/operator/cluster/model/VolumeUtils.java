@@ -50,6 +50,7 @@ public class VolumeUtils {
     public static final String DATA_VOLUME_NAME = "data";
 
     /* test */ static final String SERVICE_ACCOUNT_TOKEN_VOLUME_NAME = "kube-api-access";
+    /* test */ static final String STRIMZI_AUTHENTICATION_TOKEN_VOLUME_NAME = "strimzi-auth";
 
     /**
      * The path where the Kafka data volumes are mounted
@@ -300,6 +301,29 @@ public class VolumeUtils {
     }
 
     /**
+     * Creates a Service Account projection volume
+     *
+     * @param audience      Audience for the Service Account token
+     * @param expiration    Expiration time of the token in seconds
+     *
+     * @return The Service Account projection volume
+     */
+    public static Volume createStrimziAuthenticationTokenProjection(String audience, long expiration) {
+        return new VolumeBuilder()
+                .withName(STRIMZI_AUTHENTICATION_TOKEN_VOLUME_NAME)
+                .withNewProjected()
+                .withSources(new VolumeProjectionBuilder()
+                        .withNewServiceAccountToken()
+                            .withAudience(audience)
+                            .withExpirationSeconds(expiration)
+                            .withPath("token")
+                        .endServiceAccountToken()
+                        .build())
+                .endProjected()
+                .build();
+    }
+
+    /**
      * Creates a Volume mount
      *
      * @param name Name of the Volume mount
@@ -346,6 +370,19 @@ public class VolumeUtils {
                 .withName(SERVICE_ACCOUNT_TOKEN_VOLUME_NAME)
                 .withReadOnly(true)
                 .withMountPath("/var/run/secrets/kubernetes.io/serviceaccount")
+                .build();
+    }
+
+    /**
+     * Creates the volume mount for the Strimzi authentication Service Account token (used for internal cluster security).
+     *
+     * @return  Service Account token volume mount
+     */
+    public static VolumeMount createStrimziAuthenticationTokenVolumeMount() {
+        return new VolumeMountBuilder()
+                .withName(STRIMZI_AUTHENTICATION_TOKEN_VOLUME_NAME)
+                .withReadOnly(true)
+                .withMountPath("/var/run/secrets/strimzi.io")
                 .build();
     }
 

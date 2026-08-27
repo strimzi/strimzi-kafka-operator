@@ -18,6 +18,8 @@ import io.strimzi.api.kafka.model.kafka.KafkaAuthorizationCustomBuilder;
 import io.strimzi.api.kafka.model.kafka.KafkaAuthorizationSimple;
 import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
+import io.strimzi.api.kafka.model.kafka.clustersecurity.ClusterSecurityAuthenticationBuilder;
+import io.strimzi.api.kafka.model.kafka.clustersecurity.ClusterSecurityAuthenticationType;
 import io.strimzi.api.kafka.model.kafka.entityoperator.EntityUserOperatorSpec;
 import io.strimzi.api.kafka.model.kafka.entityoperator.EntityUserOperatorSpecBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
@@ -25,6 +27,7 @@ import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ResourceUtils;
+import io.strimzi.operator.cluster.model.clustersecurity.kafka.AuthenticationConfiguration;
 import io.strimzi.operator.cluster.model.clustersecurity.kafka.KafkaClusterSecurityContext;
 import io.strimzi.operator.cluster.model.clustersecurity.kafka.MtlsAuthenticationConfiguration;
 import io.strimzi.operator.cluster.model.clustersecurity.kafka.NoneAuthenticationConfiguration;
@@ -49,7 +52,8 @@ public class EntityUserOperatorTest {
     private static final String CLUSTER_NAME = "my-cluster";
     private static final Set<String> SECURITY_ENV_VAR_NAMES = Set.of(
             EntityUserOperator.ENV_VAR_CLUSTER_CA_CERT_SECRET_NAME,
-            EntityUserOperator.ENV_VAR_EO_KEY_SECRET_NAME);
+            EntityUserOperator.ENV_VAR_EO_KEY_SECRET_NAME,
+            EntityUserOperator.ENV_VAR_SERVICE_ACCOUNT_TOKEN_PATH);
     private static final Kafka KAFKA = new KafkaBuilder()
             .withNewMetadata()
                 .withNamespace(NAMESPACE)
@@ -134,6 +138,23 @@ public class EntityUserOperatorTest {
         KafkaClusterSecurityContext securityContext = new KafkaClusterSecurityContext(new NoneEncryptionConfiguration(), new NoneAuthenticationConfiguration());
 
         assertThat(getSecurityEnvVars(securityContext), is(List.of()));
+    }
+
+    @Test
+    public void testSecurityEnvVarsWithTlsAndServiceAccountAuthentication() {
+        KafkaClusterSecurityContext securityContext = new KafkaClusterSecurityContext(new TlsEncryptionConfiguration(), serviceAccountAuthentication());
+
+        assertThat(getSecurityEnvVars(securityContext), is(List.of(
+                new EnvVarBuilder().withName(EntityUserOperator.ENV_VAR_CLUSTER_CA_CERT_SECRET_NAME).withValue(KafkaCluster.clusterCaCertSecretName(CLUSTER_NAME)).build(),
+                new EnvVarBuilder().withName(EntityUserOperator.ENV_VAR_SERVICE_ACCOUNT_TOKEN_PATH).withValue("/var/run/secrets/strimzi.io/token").build())));
+    }
+
+    @Test
+    public void testSecurityEnvVarsWithServiceAccountAuthenticationWithoutTls() {
+        KafkaClusterSecurityContext securityContext = new KafkaClusterSecurityContext(new NoneEncryptionConfiguration(), serviceAccountAuthentication());
+
+        assertThat(getSecurityEnvVars(securityContext), is(List.of(
+                new EnvVarBuilder().withName(EntityUserOperator.ENV_VAR_SERVICE_ACCOUNT_TOKEN_PATH).withValue("/var/run/secrets/strimzi.io/token").build())));
     }
 
     @Test
@@ -252,6 +273,18 @@ public class EntityUserOperatorTest {
                 VolumeUtils.SERVICE_ACCOUNT_TOKEN_VOLUME_NAME, "/var/run/secrets/kubernetes.io/serviceaccount",
                 EntityUserOperator.USER_OPERATOR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME, VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_MOUNT_PATH,
                 "entity-user-operator-metrics-and-logging", "/opt/user-operator/custom-config/")));
+    }
+
+    @Test
+    public void testGetContainersWithServiceAccountAuthentication() {
+        EntityUserOperator euo = EntityUserOperator.fromCrd(new Reconciliation("test", KAFKA.getKind(), NAMESPACE, CLUSTER_NAME), KAFKA, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig(), new KafkaClusterSecurityContext(new TlsEncryptionConfiguration(), serviceAccountAuthentication()));
+
+        Container container = euo.createContainer(null);
+        assertThat(EntityOperatorTest.volumeMounts(container.getVolumeMounts()), is(Map.of(
+                VolumeUtils.SERVICE_ACCOUNT_TOKEN_VOLUME_NAME, "/var/run/secrets/kubernetes.io/serviceaccount",
+                EntityUserOperator.USER_OPERATOR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME, VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_MOUNT_PATH,
+                "entity-user-operator-metrics-and-logging", "/opt/user-operator/custom-config/",
+                VolumeUtils.STRIMZI_AUTHENTICATION_TOKEN_VOLUME_NAME, "/var/run/secrets/strimzi.io")));
     }
 
     @Test
@@ -422,6 +455,10 @@ public class EntityUserOperatorTest {
     ////////////////////
     // Utility methods
     ////////////////////
+
+    private static AuthenticationConfiguration serviceAccountAuthentication() {
+        return AuthenticationConfiguration.fromCrd(NAMESPACE, CLUSTER_NAME, new ClusterSecurityAuthenticationBuilder().withType(ClusterSecurityAuthenticationType.SERVICE_ACCOUNT).build());
+    }
 
     private List<EnvVar> getSecurityEnvVars(KafkaClusterSecurityContext securityContext) {
         EntityUserOperator entityUserOperator = EntityUserOperator.fromCrd(new Reconciliation("test", KAFKA.getKind(), NAMESPACE, CLUSTER_NAME), KAFKA, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig(), securityContext);

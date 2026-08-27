@@ -10,8 +10,11 @@ import io.strimzi.operator.common.AdminClientProvider;
 import io.strimzi.operator.common.DefaultAdminClientProvider;
 import io.strimzi.operator.common.OperatorKubernetesClientBuilder;
 import io.strimzi.operator.common.Util;
+import io.strimzi.operator.common.auth.AuthIdentity;
 import io.strimzi.operator.common.auth.PemAuthIdentity;
 import io.strimzi.operator.common.auth.PemTrustSet;
+import io.strimzi.operator.common.auth.ProjectedServiceAccountAuthIdentity;
+import io.strimzi.operator.common.auth.TrustSet;
 import io.strimzi.operator.common.operator.resource.kubernetes.SecretOperator;
 import org.apache.kafka.clients.admin.Admin;
 import org.apache.logging.log4j.LogManager;
@@ -70,19 +73,29 @@ public class Main {
      * @return  An instance of the Admin API client
      */
     /* test */ static Admin createAdminClient(TopicOperatorConfig config, SecretOperator secretOperator, AdminClientProvider adminClientProvider)    {
-        Secret clusterCaCert = getSecret(secretOperator, config.clusterNamespace(), config.tlsTrustedCertsSecretName());
-        // When the cluster CA secret is not null (i.e. TLS is used), we create a PemTrustSet. Otherwise, we just pass null.
-        PemTrustSet pemTrustSet = clusterCaCert != null ? new PemTrustSet(clusterCaCert) : null;
-
-        Secret toKeyAndCert = getSecret(secretOperator, config.clusterNamespace(), config.tlsSecretName());
-        // When the TO secret is not null (i.e. mTLS is used), we create a PemAuthIdentity. Otherwise, we just pass null.
-        PemAuthIdentity pemAuthIdentity = toKeyAndCert != null ? PemAuthIdentity.entityOperator(toKeyAndCert, config.tlsKeyName(), config.tlsCertName()) : null;
-
         return adminClientProvider.createAdminClient(
                 config.bootstrapServers(),
-                pemTrustSet,
-                pemAuthIdentity,
+                createTrustSet(config, secretOperator),
+                createAuthIdentity(config, secretOperator),
                 config.adminClientConfig());
+    }
+
+    private static TrustSet createTrustSet(TopicOperatorConfig config, SecretOperator secretOperator) {
+        if (config.tlsTrustedCertsSecretName() != null && !config.tlsTrustedCertsSecretName().isEmpty()) {
+            return new PemTrustSet(getSecret(secretOperator, config.clusterNamespace(), config.tlsTrustedCertsSecretName()));
+        } else {
+            return null;
+        }
+    }
+
+    private static AuthIdentity createAuthIdentity(TopicOperatorConfig config, SecretOperator secretOperator) {
+        if (config.tlsSecretName() != null && !config.tlsSecretName().isEmpty()) {
+            return PemAuthIdentity.entityOperator(getSecret(secretOperator, config.clusterNamespace(), config.tlsSecretName()), config.tlsKeyName(), config.tlsCertName());
+        } else if (config.getServiceAccountTokenPath() != null && !config.getServiceAccountTokenPath().isEmpty()) {
+            return new ProjectedServiceAccountAuthIdentity(config.getServiceAccountTokenPath());
+        } else {
+            return null;
+        }
     }
 
     /**

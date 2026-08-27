@@ -945,7 +945,7 @@ public class KafkaReconcilerStatusTest {
         @Override
         public Future<Void> reconcile(KafkaStatus kafkaStatus, Clock clock)    {
             return modelWarnings(kafkaStatus)
-                    .compose(i -> initClientAuthenticationCertificates())
+                    .compose(i -> initClusterOperatorIdentity())
                     .compose(i -> listeners())
                     .compose(i -> clusterId(kafkaStatus))
                     .compose(i -> nodePortExternalListenerStatus())
@@ -966,7 +966,7 @@ public class KafkaReconcilerStatusTest {
         }
 
         @Override
-        protected Future<Void> initClientAuthenticationCertificates() {
+        protected Future<Void> initClusterOperatorIdentity() {
             coIdentity = new Identity(null, null);
             return Future.succeededFuture();
         }
