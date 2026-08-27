@@ -22,8 +22,8 @@ echo "Java-модули собраны и установлены"
 make -C docker-images/artifacts java_install MVN_ARGS="$MVN_ARGS"
 echo "Артефакты для Docker-образов собраны"
 #
-#make -C docker-images/base docker_build RELEASE_VERSION="$STRIMZI_VERSION" BUILD_TAG="$STRIMZI_VERSION" BUILD_ID="$CI_PIPELINE_ID" BUILD_COMMIT="$CI_COMMIT_SHA"
-#echo "Базовый Docker-образ собран"
+make -C docker-images/base docker_build RELEASE_VERSION="$STRIMZI_VERSION" BUILD_TAG="$STRIMZI_VERSION" BUILD_ID="$CI_PIPELINE_ID" BUILD_COMMIT="$CI_COMMIT_SHA"
+echo "Базовый Docker-образ собран"
 
 #make -C docker-images/operator docker_build RELEASE_VERSION="$STRIMZI_VERSION" DOCKER_REGISTRY="$CI_REGISTRY" DOCKER_ORG="$CI_PROJECT_PATH" DOCKER_TAG="$IMAGE_TAG" BUILD_TAG="$STRIMZI_VERSION" BUILD_ID="$CI_PIPELINE_ID" BUILD_COMMIT="$CI_COMMIT_SHA"
 echo "Docker-образ оператора собран и отправлен в реестр"

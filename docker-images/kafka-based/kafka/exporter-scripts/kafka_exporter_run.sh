@@ -42,7 +42,7 @@ fi
 # Combine all the certs in the cluster CA into one file
 CA_CERTS=/tmp/cluster-ca.crt
 for cert in /etc/kafka-exporter/cluster-ca-certs/*.crt; do
-  sed -z '$ s/\n$//' "$cert" >> "$CA_CERTS"
+  sed -e '$ s/\n$//' "$cert" >> "$CA_CERTS"
   echo "" >> "$CA_CERTS"
 done
 
@@ -57,6 +57,7 @@ tls="--tls.enabled --tls.ca-file=$CA_CERTS --tls.cert-file=/etc/kafka-exporter/k
 
 # starting Kafka Exporter with final configuration
 cat <<EOT > /tmp/run.sh
+#!/usr/bin/env bash \
 $KAFKA_EXPORTER_HOME/kafka_exporter \
 $groupregex \
 $topicregex \
