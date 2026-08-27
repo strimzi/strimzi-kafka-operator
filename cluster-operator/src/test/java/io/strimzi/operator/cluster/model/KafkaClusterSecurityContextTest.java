@@ -247,6 +247,14 @@ public class KafkaClusterSecurityContextTest {
         assertThat(e.getMessage(), is("Desired Cluster Security configuration is not valid: mTLS authentication can be used only with enabled TLS encryption."));
     }
 
+    @Test
+    public void testExpirationSecondsWithWrongType()  {
+        Kafka kafka = kafkaWithClusterSecurity("{\"encryption\":{\"type\":\"tls\"},\"authentication\":{\"type\":\"mtls\", \"expirationSeconds\": \"1800\"}}", null);
+        InvalidResourceException e = assertThrows(InvalidResourceException.class, () -> KafkaClusterSecurityContext.fromCrd(kafka));
+
+        assertThat(e.getMessage(), is("The expirationSeconds option in Cluster Security configuration can be used only with service-account authentication type."));
+    }
+
     //////////////////////////////////////////////////
     // Tests for the deserializeSpec method
     //////////////////////////////////////////////////
@@ -388,7 +396,7 @@ public class KafkaClusterSecurityContextTest {
                 "encryption", Map.of("type", "some-other-tls"),
                 "authentication", Map.of("type", "mtls")
         )));
-        assertThat(e.getMessage(), is("Invalid ClusterSecurityStatus: encryption or authentication configuration is not set"));
+        assertThat(e.getMessage(), is("Failed to deserialize ClusterSecurityStatus"));
     }
 
     @Test
@@ -397,7 +405,7 @@ public class KafkaClusterSecurityContextTest {
                 "encryption", Map.of("type", "tls"),
                 "authentication", Map.of("type", "some-other-mtls")
         )));
-        assertThat(e.getMessage(), is("Invalid ClusterSecurityStatus: encryption or authentication configuration is not set"));
+        assertThat(e.getMessage(), is("Failed to deserialize ClusterSecurityStatus"));
     }
 
     @Test
