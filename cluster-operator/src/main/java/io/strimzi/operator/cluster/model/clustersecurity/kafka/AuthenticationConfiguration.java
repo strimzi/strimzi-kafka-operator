@@ -6,6 +6,7 @@ package io.strimzi.operator.cluster.model.clustersecurity.kafka;
 
 import io.strimzi.api.kafka.model.kafka.clustersecurity.ClusterSecurityAuthentication;
 import io.strimzi.api.kafka.model.kafka.clustersecurity.ClusterSecurityAuthenticationType;
+import io.strimzi.operator.common.model.InvalidResourceException;
 
 /**
  * Interface for authentication configuration
@@ -20,14 +21,26 @@ public interface AuthenticationConfiguration {
      * @return  AuthenticationConfiguration instance
      */
     static AuthenticationConfiguration fromCrd(String clusterName, ClusterSecurityAuthentication authentication)    {
-        if (authentication == null || authentication.getType() == null || ClusterSecurityAuthenticationType.MTLS.equals(authentication.getType())) {
-            return new MtlsAuthenticationConfiguration();
-        } else if (ClusterSecurityAuthenticationType.NONE.equals(authentication.getType())) {
-            return new NoneAuthenticationConfiguration();
-        } else if (ClusterSecurityAuthenticationType.SERVICE_ACCOUNT.equals(authentication.getType())) {
-            return ServiceAccountAuthenticationConfiguration.fromCrd(clusterName, authentication);
-        } else {
-            throw new IllegalArgumentException("Unknown Cluster Security authentication type: " + authentication.getType());
+        validate(authentication);
+
+        return switch (authentication != null ? authentication.getType() : ClusterSecurityAuthenticationType.MTLS) {
+            case MTLS -> new MtlsAuthenticationConfiguration();
+            case NONE -> new NoneAuthenticationConfiguration();
+            case SERVICE_ACCOUNT -> ServiceAccountAuthenticationConfiguration.fromCrd(clusterName, authentication);
+        };
+    }
+
+    /**
+     * Validates the authentication configuration and throws an InvalidResourceException if the authentication configuration is invalid.
+     *
+     * @param authentication    Authentication configuration to validate
+     */
+    private static void validate(ClusterSecurityAuthentication authentication) {
+        if (authentication != null
+                && authentication.getType() != null
+                && !ClusterSecurityAuthenticationType.SERVICE_ACCOUNT.equals(authentication.getType())
+                && authentication.getExpirationSeconds() != null) {
+            throw new InvalidResourceException("The expirationSeconds option in Cluster Security configuration can be used only with service-account authentication type.");
         }
     }
 

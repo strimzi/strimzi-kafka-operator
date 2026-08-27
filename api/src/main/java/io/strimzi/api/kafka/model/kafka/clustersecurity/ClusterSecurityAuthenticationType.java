@@ -21,7 +21,7 @@ public enum ClusterSecurityAuthenticationType {
             case "none" -> NONE;
             case "mtls", "strimzi-mtls" -> MTLS; // We have to keep the legacy strimzi-mtls here for downgrades/upgrades to/from 1.2.0
             case "service-account" -> SERVICE_ACCOUNT;
-            default -> null;
+            default -> throw new IllegalArgumentException("Unknown authentication type: " + value);
         };
     }
 
