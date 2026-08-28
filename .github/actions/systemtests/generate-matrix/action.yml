@@ -98,9 +98,11 @@ runs:
         fi
         
         # Inject jobName in format 'pipeline-profile-arch' or 'pipeline-arch' when profile == pipeline
-        MATRIX=$(echo "$MATRIX" | jq --arg default_arch "$INPUT_DEFAULT_ARCH" '
+        # Also override ipFamily with the input value if provided (allows global override from workflow level)
+        MATRIX=$(echo "$MATRIX" | jq --arg default_arch "$INPUT_DEFAULT_ARCH" --arg ip_family "$INPUT_DEFAULT_IP_FAMILY" '
           map(
             .arch = (.arch // $default_arch)
+            | .ipFamily = (if $ip_family != "" then $ip_family else (.ipFamily // "ipv4") end)
             | . + {
               jobName:
                 (if .pipeline == .profile or (.profile == null)
