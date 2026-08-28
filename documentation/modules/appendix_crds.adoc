@@ -1991,7 +1991,7 @@ include::../api/io.strimzi.api.kafka.model.connect.KafkaConnectSpec.adoc[levelof
 |Authentication configuration for Kafka Connect.
 |config
 |map
-|The Kafka Connect configuration. Properties with the following prefixes cannot be set: group.id, config.storage.topic, offset.storage.topic, status.storage.topic, ssl., sasl., security., listeners, plugin.path, rest., bootstrap.servers, consumer.interceptor.classes, producer.interceptor.classes, prometheus.metrics.reporter. (with the exception of: ssl.endpoint.identification.algorithm, ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols).
+|The Kafka Connect configuration. Properties with the following prefixes cannot be set: group.id, config.storage.topic, offset.storage.topic, status.storage.topic, ssl., sasl., security., listeners, plugin.path, rest., bootstrap.servers, consumer.interceptor.classes, producer.interceptor.classes, prometheus.metrics.reporter. (with the exception of: ssl.endpoint.identification.algorithm, ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols, rest.extension.classes).
 |resources
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#resourcerequirements-v1-core[ResourceRequirements]
 |The maximum limits for CPU and memory resources and the requested initial resources.
@@ -3610,7 +3610,7 @@ include::../api/io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2TargetC
 |Authentication configuration for connecting to the cluster.
 |config
 |map
-|The MirrorMaker 2 cluster config. Properties with the following prefixes cannot be set: group.id, config.storage.topic, offset.storage.topic, status.storage.topic, ssl., sasl., security., listeners, plugin.path, rest., bootstrap.servers, consumer.interceptor.classes, producer.interceptor.classes (with the exception of: ssl.endpoint.identification.algorithm, ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols).
+|The MirrorMaker 2 cluster config. Properties with the following prefixes cannot be set: group.id, config.storage.topic, offset.storage.topic, status.storage.topic, ssl., sasl., security., listeners, plugin.path, rest., bootstrap.servers, consumer.interceptor.classes, producer.interceptor.classes (with the exception of: ssl.endpoint.identification.algorithm, ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols, rest.extension.classes).
 |====
 
 [id='type-KafkaMirrorMaker2MirrorSpec-{context}']
@@ -3675,7 +3675,7 @@ include::../api/io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2Cluster
 |Authentication configuration for connecting to the cluster.
 |config
 |map
-|The MirrorMaker 2 cluster config. Properties with the following prefixes cannot be set: group.id, config.storage.topic, offset.storage.topic, status.storage.topic, ssl., sasl., security., listeners, plugin.path, rest., bootstrap.servers, consumer.interceptor.classes, producer.interceptor.classes (with the exception of: ssl.endpoint.identification.algorithm, ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols).
+|The MirrorMaker 2 cluster config. Properties with the following prefixes cannot be set: group.id, config.storage.topic, offset.storage.topic, status.storage.topic, ssl., sasl., security., listeners, plugin.path, rest., bootstrap.servers, consumer.interceptor.classes, producer.interceptor.classes (with the exception of: ssl.endpoint.identification.algorithm, ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols, rest.extension.classes).
 |====
 
 [id='type-KafkaMirrorMaker2ConnectorSpec-{context}']
