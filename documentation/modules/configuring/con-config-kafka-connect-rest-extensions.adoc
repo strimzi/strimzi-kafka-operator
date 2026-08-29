@@ -41,7 +41,7 @@ spec:
     # ...
 ----
 
-* `rest.extension.classes` specifies a comma-separated list of `ConnectRestExtension` implementation classes.
+* `rest.extension.classes` specifies a comma-separated list of fully qualified names of classes that implement Kafka's `ConnectRestExtension` interface.
 
 == Configuring REST extensions in MirrorMaker 2
 
@@ -64,4 +64,4 @@ spec:
     # ...
 ----
 
-* `rest.extension.classes` specifies a comma-separated list of `ConnectRestExtension` implementation classes.
+* `rest.extension.classes` specifies a comma-separated list of fully qualified names of classes that implement Kafka's `ConnectRestExtension` interface.
