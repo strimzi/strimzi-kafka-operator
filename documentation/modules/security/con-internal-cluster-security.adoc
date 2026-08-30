@@ -51,16 +51,22 @@ The annotation is a temporary configuration interface and might also change.
 |Authenticates internal components by using mTLS certificates.
 
 |Authentication
+|`service-account`
+|Authenticates internal components by using Kubernetes service account tokens.
+
+|Authentication
 |`none`
-|Disables mTLS authentication governed by the internal cluster security configuration.
+|Disables authentication governed by the internal cluster security configuration.
 |===
 
 The `mtls` authentication type requires `tls` encryption.
-Consequently, disabling TLS encryption also requires authentication to be disabled.
+The `service-account` authentication type works with or without TLS encryption.
 The supported combinations are:
 
 * TLS encryption with mTLS authentication
+* TLS encryption with service account authentication
 * TLS encryption without authentication
+* No encryption with service account authentication
 * And no encryption with no authentication
 
 WARNING: When the authentication type is `none` and Kafka authorization is configured, Strimzi automatically makes the `ANONYMOUS` user a super user so that internal components can operate.
@@ -71,6 +77,81 @@ Disable authentication only if other controls, such as network isolation or a se
 
 If the `strimzi.io/internal-cluster-security` annotation is not present, Strimzi uses `tls` encryption with `mtls` authentication.
 This behavior is unchanged from previous releases.
+
+== (Early Access) Using service account authentication
+
+Set the authentication type to `service-account` to authenticate internal components with Kubernetes service account tokens instead of mTLS certificates.
+Each component mounts a projected service account token that is bound to the Kafka cluster and uses it to authenticate through the SASL `OAUTHBEARER` mechanism.
+Kafka brokers and controllers validate the tokens against the JWKS endpoint of the Kubernetes API server.
+The Kafka Agent validates the same tokens on its HTTP endpoints.
+
+Service account authentication can be combined with `tls` encryption or used without encryption.
+Use it with `tls` encryption unless internal traffic is encrypted by other means, such as a service mesh.
+
+.TLS encryption with service account authentication
+[source,yaml,subs="+quotes,attributes"]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+  name: my-cluster
+  annotations:
+    strimzi.io/internal-cluster-security: |
+      {
+        "encryption": {
+          "type": "tls"
+        },
+        "authentication": {
+          "type": "service-account",
+          "expirationSeconds": 3600
+        }
+      }
+spec:
+  # ...
+----
+
+The optional `expirationSeconds` property sets the validity of the issued tokens.
+It applies only to the `service-account` authentication type and defaults to `3600` (1 hour) when not set.
+Kubernetes requires a minimum of `600` (10 minutes) for projected service account tokens.
+Tokens are refreshed by Kubernetes before they expire, and the components pick up the refreshed tokens automatically.
+
+Components are authenticated as the Kubernetes service accounts they run under, using the `system:serviceaccount:<namespace>:<service_account_name>` principal format.
+Strimzi creates an additional service account named `<cluster_name>-cluster-operator` in the namespace of the Kafka cluster.
+The Cluster Operator requests tokens for this service account and uses them for its own connections to the Kafka cluster and to the Kafka Agent.
+The service account exists only while service account authentication is enabled.
+
+.Service accounts used for internal cluster authentication
+[cols="1,1m",options="header"]
+|===
+|Component
+|Service account
+
+|Kafka brokers and controllers
+|<cluster_name>-kafka
+
+|Cluster Operator
+|<cluster_name>-cluster-operator
+
+|Topic Operator and User Operator
+|<cluster_name>-entity-operator
+
+|Cruise Control
+|<cluster_name>-cruise-control
+
+|Kafka Exporter
+|<cluster_name>-kafka-exporter
+|===
+
+When Kafka authorization is configured, Strimzi adds these principals to the list of Kafka super users so that internal components can operate.
+Unlike the `none` authentication type, the `ANONYMOUS` user is not made a super user.
+
+Service account authentication has the following requirements:
+
+* The Cluster Operator must be allowed to create tokens by requesting them from the Kubernetes API.
+The required permission to `create` the `serviceaccounts/token` subresource is included in the `strimzi-cluster-operator-namespaced` cluster role in the Strimzi installation files.
+If you use customized RBAC resources, add this permission before enabling service account authentication.
+* The Kubernetes API server must use the default in-cluster service account issuer (`https://kubernetes.default.svc.cluster.local`) and expose the link:https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/#service-account-issuer-discovery[service account issuer discovery^] endpoints, which is the case in most Kubernetes distributions.
+Strimzi components use their Kubernetes service account tokens to authenticate to these endpoints, so anonymous access to them is not required.
 
 == (Early Access) Disabling mTLS authentication
 
@@ -129,6 +210,3 @@ spec:
 During reconciliation, the Cluster Operator records the selected configuration in `.status.clusterSecurity` of the `Kafka` resource.
 If a subsequent annotation change does not match the recorded configuration, reconciliation fails to protect the running cluster from an incompatible change.
 To change the configuration of an existing cluster, use the required downtime procedure.
-
-Additional authentication types are planned for future releases so that internal components can authenticate without mTLS.
-These authentication types are not currently available.

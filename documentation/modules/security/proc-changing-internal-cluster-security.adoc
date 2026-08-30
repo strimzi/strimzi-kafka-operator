@@ -83,6 +83,15 @@ kubectl annotate kafka <cluster_name> \
   --overwrite
 ----
 +
+Or set the authentication type to `service-account` to keep TLS encryption and authenticate the components with Kubernetes service account tokens:
++
+[source,shell,subs="+quotes"]
+----
+kubectl annotate kafka <cluster_name> \
+  strimzi.io/internal-cluster-security='{"encryption":{"type":"tls"},"authentication":{"type":"service-account"}}' \
+  --overwrite
+----
++
 Use one of the combinations described in xref:con-internal-cluster-security-{context}[Internal cluster encryption and authentication].
 
 . Unpause reconciliation of the `Kafka` resource:
