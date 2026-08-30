@@ -60,4 +60,40 @@ public class RequestedServiceAccountAuthIdentity implements AuthIdentity {
 
         return config;
     }
+
+    /**
+     * Returns the namespace of the service account
+     *
+     * @return  The namespace of the service account
+     */
+    public String namespace() {
+        return namespace;
+    }
+
+    /**
+     * Returns the service account name
+     *
+     * @return  The service account name
+     */
+    public String serviceAccountName() {
+        return serviceAccountName;
+    }
+
+    /**
+     * Returns the audience for the token
+     *
+     * @return  The token audience
+     */
+    public String audience()    {
+        return audience;
+    }
+
+    /**
+     * Returns the expiration time for the token in seconds
+     *
+     * @return  The token expiration time in seconds
+     */
+    public long expirationSeconds()    {
+        return expirationSeconds;
+    }
 }

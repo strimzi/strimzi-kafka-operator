@@ -27,4 +27,14 @@ public class RequestedServiceAccountAuthIdentityTest {
         assertThat(authIdentity.isSasl(), is(true));
         assertThat(authIdentity.kafkaClientProperties(), is(expectedClientProperties));
     }
+
+    @Test
+    public void testTokenRequestDetails() {
+        RequestedServiceAccountAuthIdentity authIdentity = new RequestedServiceAccountAuthIdentity(Reconciliation.DUMMY_RECONCILIATION, "strimzi.io/kafka/namespace/name", 1800L);
+
+        assertThat(authIdentity.namespace(), is("namespace"));
+        assertThat(authIdentity.serviceAccountName(), is("name-cluster-operator"));
+        assertThat(authIdentity.audience(), is("strimzi.io/kafka/namespace/name"));
+        assertThat(authIdentity.expirationSeconds(), is(1800L));
+    }
 }
