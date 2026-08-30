@@ -617,7 +617,7 @@ The `metricsConfig` property contains configurations for the {StrimziMetricsRepo
 The Strimzi Metrics Reporter offers a lightweight solution for exposing Kafka metrics in Prometheus format, and avoiding complex mapping rules that can introduce latency.
 
 To enable Strimzi Metrics Reporter, set the type to `strimziMetricsReporter`.
-The `allowList` configuration is a comma-separated list of regex patterns to filter the metrics that are collected. This defaults to `.*`,  which allows all metrics.
+The `allowList` configuration is a list of regex patterns to filter the metrics that are collected. This defaults to `.*`, which allows all metrics.
 Changes to this field will not trigger rolling update, the configuration is dynamically updated for Kafka brokers and controllers.
 
 NOTE: Using `strimziMetricsReporter` is only supported in the Kafka brokers and controllers at the moment.
@@ -636,7 +636,7 @@ spec:
       type: strimziMetricsReporter
       values:
         allowList:
-          key: ".*"
+          - ".*"
     # ...
 ----
 
