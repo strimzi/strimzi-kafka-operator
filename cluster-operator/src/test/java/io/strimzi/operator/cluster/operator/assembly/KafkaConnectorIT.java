@@ -158,7 +158,7 @@ public class KafkaConnectorIT {
         ResourceOperatorSupplier ros = new ResourceOperatorSupplier(VertxUtil.asExecutor(vertx.createSharedWorkerExecutor("kubernetes-ops-pool")),
                 client,
                 new DefaultAdminClientProvider(),
-                new DefaultKafkaAgentClientProvider(),
+                new DefaultKafkaAgentClientProvider(null),
                 metrics,
                 pfa
         );
@@ -225,7 +225,7 @@ public class KafkaConnectorIT {
         ResourceOperatorSupplier ros = new ResourceOperatorSupplier(VertxUtil.asExecutor(vertx.createSharedWorkerExecutor("kubernetes-ops-pool")),
                 client,
                 new DefaultAdminClientProvider(),
-                new DefaultKafkaAgentClientProvider(),
+                new DefaultKafkaAgentClientProvider(null),
                 metrics,
                 pfa
         );
@@ -271,7 +271,7 @@ public class KafkaConnectorIT {
         ResourceOperatorSupplier ros = new ResourceOperatorSupplier(VertxUtil.asExecutor(vertx.createSharedWorkerExecutor("kubernetes-ops-pool")),
                 client,
                 new DefaultAdminClientProvider(),
-                new DefaultKafkaAgentClientProvider(),
+                new DefaultKafkaAgentClientProvider(null),
                 metrics,
                 pfa
         );
@@ -328,7 +328,7 @@ public class KafkaConnectorIT {
         ResourceOperatorSupplier ros = new ResourceOperatorSupplier(VertxUtil.asExecutor(vertx.createSharedWorkerExecutor("kubernetes-ops-pool")),
                 client,
                 new DefaultAdminClientProvider(),
-                new DefaultKafkaAgentClientProvider(),
+                new DefaultKafkaAgentClientProvider(null),
             metrics,
                 pfa
         );
@@ -374,7 +374,7 @@ public class KafkaConnectorIT {
         ResourceOperatorSupplier ros = new ResourceOperatorSupplier(VertxUtil.asExecutor(vertx.createSharedWorkerExecutor("kubernetes-ops-pool")),
                 client,
                 new DefaultAdminClientProvider(),
-                new DefaultKafkaAgentClientProvider(),
+                new DefaultKafkaAgentClientProvider(null),
             metrics,
                 pfa
         );

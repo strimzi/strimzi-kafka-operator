@@ -245,7 +245,7 @@ public class ResourceOperatorSupplier {
         this(asyncExecutor,
             client,
             new DefaultAdminClientProvider(),
-            new DefaultKafkaAgentClientProvider(),
+            new DefaultKafkaAgentClientProvider(client),
             metricsProvider,
             pfa,
             new KubernetesRestartEventPublisher(client, operatorName),

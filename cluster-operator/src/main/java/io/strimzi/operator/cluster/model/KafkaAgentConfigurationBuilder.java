@@ -4,8 +4,10 @@
  */
 package io.strimzi.operator.cluster.model;
 
+import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.operator.cluster.model.clustersecurity.kafka.KafkaClusterSecurityContext;
 import io.strimzi.operator.cluster.model.clustersecurity.kafka.MtlsAuthenticationConfiguration;
+import io.strimzi.operator.cluster.model.clustersecurity.kafka.ServiceAccountAuthenticationConfiguration;
 import io.strimzi.operator.cluster.model.clustersecurity.kafka.TlsEncryptionConfiguration;
 import io.strimzi.operator.common.Reconciliation;
 
@@ -48,10 +50,17 @@ public class KafkaAgentConfigurationBuilder {
         if (securityContext.encryption() instanceof TlsEncryptionConfiguration)   {
             writer.println("namespace=" + reconciliation.namespace());
             writer.println("sslKeyStoreSecretName=" + node.podName());
+        }
 
-            if (securityContext.authentication() instanceof MtlsAuthenticationConfiguration) {
-                writer.println("sslTrustStoreSecretName=" + reconciliation.name() + "-cluster-ca-cert");
-            }
+        if (securityContext.authentication() instanceof MtlsAuthenticationConfiguration) {
+            // The Security Context validated that mTLS is used only when TLS is used. We do not need to validate it again.
+            writer.println("sslTrustStoreSecretName=" + reconciliation.name() + "-cluster-ca-cert");
+        } else if (securityContext.authentication() instanceof ServiceAccountAuthenticationConfiguration saAuthentication) {
+            writer.println("tokenIssuer=" + ServiceAccountAuthenticationConfiguration.ISSUER);
+            writer.println("tokenJwksUri=" + ServiceAccountAuthenticationConfiguration.JWKS_URI);
+            writer.println("tokenJwksCaPath=" + "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt");
+            writer.println("tokenAudience=" + saAuthentication.audience());
+            writer.println("tokenAllowedUsers=system:serviceaccount:%s:%s".formatted(reconciliation.namespace(), KafkaResources.clusterOperatorServiceAccount(reconciliation.name())));
         }
 
         return this;
