@@ -141,7 +141,7 @@ jobs:
       parallel: ${{ steps.parse.outputs.parallel }}
       kubeVersion: ${{ steps.parse.outputs.kubeVersion }}
       kindVersion: ${{ steps.parse.outputs.kindVersion }}
-      ipFamily: ${{ steps.parse.outputs.ipFamily }}
+      ip_family: ${{ steps.parse.outputs.ip_family }}
       isValid: ${{ steps.validate.outputs.isValid }}
       message: ${{ steps.validate.outputs.message }}
       matrix: ${{ steps.gen.outputs.matrix }}
@@ -171,7 +171,7 @@ jobs:
           default_parallel: ${{ steps.parse.outputs.parallel }}
           default_tests: ${{ steps.parse.outputs.tests }}
           default_groups: ${{ steps.parse.outputs.groups }}
-          default_ip_family: ${{ steps.parse.outputs.ipFamily }}
+          default_ip_family: ${{ steps.parse.outputs.ip_family }}
           runnerArch: "amd64"
       - name: Validate Matrix
         id: validate
