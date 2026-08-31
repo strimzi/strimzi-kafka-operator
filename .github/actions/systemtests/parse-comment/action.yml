@@ -58,9 +58,9 @@ outputs:
   parallel:
     description: "How many tests will be executed in parallel"
     value: ${{ steps.parse_comment.outputs.parallel }}
-  ip_family:
+  ipFamily:
     description: "IP family for the Kind cluster (ipv4, ipv6, dual)"
-    value: ${{ steps.parse_comment.outputs.ip_family }}
+    value: ${{ steps.parse_comment.outputs.ipFamily }}
 
 runs:
   using: "composite"
@@ -123,7 +123,7 @@ runs:
             kafkaVersion: 'latest',
             kubeVersion:  'latest',
             kindVersion:  '',
-            ip_family:    'ipv4',
+            ipFamily:     'ipv4',
           };
 
           let pipelineList = '', profileList = '';
@@ -151,7 +151,7 @@ runs:
             kafkaVersion:                  getParameter('kafkaversion', lower) || DEFAULTS.kafkaVersion,
             kubeVersion:                   getParameter('kubeversion',  lower) || DEFAULTS.kubeVersion,
             kindVersion:                   getParameter('kindversion',  lower) || DEFAULTS.kindVersion,
-            ip_family:                     getParameter('ipfamily',     lower) || DEFAULTS.ip_family,
+            ipFamily:                      getParameter('ipfamily',     lower) || DEFAULTS.ipFamily,
             releaseVersion:                process.env.INPUT_RELEASE_VERSION || 'latest',
           };
 

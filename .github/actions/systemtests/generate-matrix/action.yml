@@ -129,4 +129,4 @@ runs:
         INPUT_DEFAULT_PARALLEL: "${{ inputs.default_parallel != '' && inputs.default_parallel || '1' }}"
         INPUT_DEFAULT_GROUPS: "${{ inputs.default_groups }}"
         INPUT_DEFAULT_TESTS: "${{ inputs.default_tests }}"
-        INPUT_DEFAULT_IP_FAMILY: "${{ inputs.default_ip_family != '' && inputs.default_ip_family || 'ipv4' }}"
+        INPUT_DEFAULT_IP_FAMILY: "${{ inputs.default_ip_family }}"
