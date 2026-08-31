@@ -27,6 +27,16 @@ on:
         required: false
         default: ""
         type: string
+      clusterSecurityEncryption:
+        description: "Encryption used for the internal Kafka cluster communication ('tls' or 'none')"
+        required: false
+        default: "tls"
+        type: string
+      clusterSecurityAuthentication:
+        description: "Authentication used for the internal Kafka cluster communication ('mtls' or 'none')"
+        required: false
+        default: "mtls"
+        type: string
       # Checkout ref params
       ref:
         description: "Repository ref that will be checkout"
@@ -71,6 +81,8 @@ jobs:
       STRIMZI_RBAC_SCOPE: ${{ matrix.config.strimzi_rbac_scope }}
       CLUSTER_OPERATOR_INSTALL_TYPE: ${{ matrix.config.cluster_operator_install_type }}
       STRIMZI_FEATURE_GATES: ${{ matrix.config.strimzi_feature_gates }}
+      CLUSTER_SECURITY_ENCRYPTION: ${{ inputs.clusterSecurityEncryption }}
+      CLUSTER_SECURITY_AUTHENTICATION: ${{ inputs.clusterSecurityAuthentication }}
       PARALLEL: ${{ matrix.config.parallel }}
       IP_FAMILY: ${{ matrix.config.ipFamily }}
       STRIMZI_DEFAULT_LOG_LEVEL: DEBUG

@@ -15,6 +15,8 @@ scenarios:
       kube: "latest"
       release: "latest"
       ipfamily: "ipv4"
+      cluster_security_encryption: "tls"
+      cluster_security_authentication: "mtls"
 
   - id: comment-profile-only
     description: "Comment with profile parameter only"
@@ -32,6 +34,8 @@ scenarios:
       kube: "latest"
       release: "latest"
       ipfamily: "ipv4"
+      cluster_security_encryption: "tls"
+      cluster_security_authentication: "mtls"
 
   - id: comment-additional-params
     description: "Comment with additional parameters"
@@ -51,6 +55,8 @@ scenarios:
       agent: "strimzi-agent"
       release: "latest"
       ipfamily: "ipv4"
+      cluster_security_encryption: "tls"
+      cluster_security_authentication: "mtls"
 
   - id: comment-pipeline-and-profile
     description: "Comment with both pipeline and profile (pipeline priority)"
@@ -67,6 +73,8 @@ scenarios:
       kube: "latest"
       release: "latest"
       ipfamily: "ipv4"
+      cluster_security_encryption: "tls"
+      cluster_security_authentication: "mtls"
 
   - id: comment-pipeline-priority
     description: "Comment with profile before pipeline (pipeline takes priority)"
@@ -83,6 +91,8 @@ scenarios:
       kube: "latest"
       release: "latest"
       ipfamily: "ipv4"
+      cluster_security_encryption: "tls"
+      cluster_security_authentication: "mtls"
 
   - id: comment-strimzi-params
     description: "Comment with Strimzi-specific parameters"
@@ -100,6 +110,8 @@ scenarios:
       kube: "latest"
       release: "latest"
       ipfamily: "ipv4"
+      cluster_security_encryption: "tls"
+      cluster_security_authentication: "mtls"
 
   - id: comment-basic-trigger
     description: "Basic trigger without parameters"
@@ -117,6 +129,8 @@ scenarios:
       kube: "latest"
       release: "latest"
       ipfamily: "ipv4"
+      cluster_security_encryption: "tls"
+      cluster_security_authentication: "mtls"
 
   - id: comment-empty-pipeline
     description: "Comment with empty pipeline value (fallback to default)"
@@ -134,6 +148,8 @@ scenarios:
       kube: "latest"
       release: "latest"
       ipfamily: "ipv4"
+      cluster_security_encryption: "tls"
+      cluster_security_authentication: "mtls"
 
   - id: comment-no-trigger
     description: "Comment without trigger phrase"
@@ -151,6 +167,8 @@ scenarios:
       kube: "latest"
       release: "latest"
       ipfamily: "ipv4"
+      cluster_security_encryption: "tls"
+      cluster_security_authentication: "mtls"
 
   - id: comment-case-insensitive
     description: "Uppercase trigger phrase (case insensitive)"
@@ -168,6 +186,8 @@ scenarios:
       kube: "latest"
       release: "latest"
       ipfamily: "ipv4"
+      cluster_security_encryption: "tls"
+      cluster_security_authentication: "mtls"
 
   - id: comment-random-tests
     description: "Pass tests param without specifying profile or pipeline"
@@ -185,6 +205,8 @@ scenarios:
       kube: "latest"
       release: "latest"
       ipfamily: "ipv4"
+      cluster_security_encryption: "tls"
+      cluster_security_authentication: "mtls"
 
   - id: dispatch-default
     description: "Workflow dispatch with default values"
@@ -200,6 +222,8 @@ scenarios:
       release: "0.48.0"
       kube: "latest"
       ipfamily: "ipv4"
+      cluster_security_encryption: "tls"
+      cluster_security_authentication: "mtls"
 
   - id: dispatch-custom
     description: "Workflow dispatch with custom values"
@@ -217,6 +241,8 @@ scenarios:
       release: "1.0.0"
       kube: "latest"
       ipfamily: "ipv4"
+      cluster_security_encryption: "tls"
+      cluster_security_authentication: "mtls"
 
   - id: dispatch-empty
     description: "Workflow dispatch with empty inputs"
@@ -234,6 +260,8 @@ scenarios:
       release: "latest"
       kube: "latest"
       ipfamily: "ipv4"
+      cluster_security_encryption: "tls"
+      cluster_security_authentication: "mtls"
 
   - id: comment-with-backticks
     description: "Comment with backticks and code blocks"
@@ -251,6 +279,8 @@ scenarios:
       kube: "latest"
       release: "latest"
       ipfamily: "ipv4"
+      cluster_security_encryption: "tls"
+      cluster_security_authentication: "mtls"
 
   - id: comment-closed-pr
     description: "Comment on closed PR should not run"
@@ -268,6 +298,8 @@ scenarios:
       kube: "latest"
       release: "latest"
       ipfamily: "ipv4"
+      cluster_security_encryption: "tls"
+      cluster_security_authentication: "mtls"
 
   - id: comment-closed-issue
     description: "Comment on closed issue should not run"
@@ -285,6 +317,8 @@ scenarios:
       kube: "latest"
       release: "latest"
       ipfamily: "ipv4"
+      cluster_security_encryption: "tls"
+      cluster_security_authentication: "mtls"
 
   - id: comment-closed-pr-random-comment
     description: "Comment on closed issue should not run"
@@ -302,6 +336,8 @@ scenarios:
       kube: "latest"
       release: "latest"
       ipfamily: "ipv4"
+      cluster_security_encryption: "tls"
+      cluster_security_authentication: "mtls"
 
   - id: comment-kind-version
     description: "Comment with kindVersion parameter"
@@ -320,6 +356,8 @@ scenarios:
       kind: "0.29.0"
       release: "latest"
       ipfamily: "ipv4"
+      cluster_security_encryption: "tls"
+      cluster_security_authentication: "mtls"
 
   - id: comment-ip-family
     description: "Comment with ipFamily parameter"
@@ -337,3 +375,24 @@ scenarios:
       kube: "latest"
       release: "latest"
       ipfamily: "dual"
+      cluster_security_encryption: "tls"
+      cluster_security_authentication: "mtls"
+
+  - id: comment-cluster-security
+    description: "Comment with internal cluster security parameters"
+    event: issue_comment
+    fixture: .github/tests/events/parse-comment/issue_comment_14.json
+    expectations:
+      pipelines: "regression"
+      profiles: ""
+      tests: ""
+      groups: ""
+      kafka: "latest"
+      strimzi_feature_gates: ""
+      strimzi_rbac_scope: ""
+      cluster_operator_install_type: "yaml"
+      kube: "latest"
+      release: "latest"
+      ipfamily: "dual"
+      cluster_security_encryption: "none"
+      cluster_security_authentication: "none"
