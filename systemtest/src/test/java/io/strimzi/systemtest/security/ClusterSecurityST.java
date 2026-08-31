@@ -26,7 +26,6 @@ import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.TestConstants;
-import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.docs.TestDocsLabels;
 import io.strimzi.systemtest.enums.CustomResourceStatus;
 import io.strimzi.systemtest.kafkaclients.ClientsAuthentication;
@@ -126,6 +125,7 @@ class ClusterSecurityST extends AbstractST {
                         .editSpec()
                             .editKafka()
                                 .withNewKafkaAuthorizationSimple()
+                                    .withSuperUsers("ANONYMOUS") // Required for the scraper pod => tracked in https://github.com/strimzi/strimzi-kafka-operator/issues/13112
                                 .endKafkaAuthorizationSimple()
                                 .withListeners(
                                     new GenericKafkaListenerBuilder()
@@ -217,11 +217,10 @@ class ClusterSecurityST extends AbstractST {
         return Stream.of(
                 Arguments.of(ClusterSecurityEncryptionType.TLS, ClusterSecurityAuthenticationType.MTLS, ClusterSecurityEncryptionType.NONE, ClusterSecurityAuthenticationType.NONE),
                 Arguments.of(ClusterSecurityEncryptionType.TLS, ClusterSecurityAuthenticationType.MTLS, ClusterSecurityEncryptionType.NONE, ClusterSecurityAuthenticationType.SERVICE_ACCOUNT),
-                Arguments.of(ClusterSecurityEncryptionType.NONE, ClusterSecurityAuthenticationType.NONE, ClusterSecurityEncryptionType.NONE, ClusterSecurityAuthenticationType.SERVICE_ACCOUNT)
+                Arguments.of(ClusterSecurityEncryptionType.NONE, ClusterSecurityAuthenticationType.NONE, ClusterSecurityEncryptionType.TLS, ClusterSecurityAuthenticationType.SERVICE_ACCOUNT)
         );
     }
 
-    @ParallelNamespaceTest
     @TestDoc(
         description = @Desc("Test migrating internal cluster security from the default TLS and mTLS configuration to no security and back."),
         steps = {
