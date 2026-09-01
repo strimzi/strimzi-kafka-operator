@@ -1663,11 +1663,11 @@ Used in: xref:type-CruiseControlSpec-{context}[`CruiseControlSpec`]
 |Property |Property type |Description
 |mode
 |string (one of [imbalance, remove-brokers, add-brokers])
-|Specifies the mode for automatically rebalancing when brokers are added or removed. Supported modes are `add-brokers` and `remove-brokers`. 
+|Specifies the mode for automatic rebalancing. Supported modes are `add-brokers`, `remove-brokers`, and `imbalance`. The `add-brokers` and `remove-brokers` modes trigger rebalancing when brokers are added or removed. The `imbalance` mode triggers rebalancing when Cruise Control detects goal violations in the cluster.
 
 |template
 |xref:type-LocalObjectReference-{context}[`LocalObjectReference`]
-|Reference to the KafkaRebalance custom resource to be used as the configuration template for the auto-rebalancing on scaling when running for the corresponding mode.
+|Reference to the KafkaRebalance custom resource to be used as the configuration template for auto-rebalancing when running for the corresponding mode. For the `imbalance` mode, the template goals must be a superset of the configured anomaly detection goals.
 |====
 
 [id='type-LocalObjectReference-{context}']
