@@ -38,3 +38,4 @@ include::../../modules/cruise-control/proc-tracking-cluster-rebalance.adoc[level
 include::../../modules/cruise-control/proc-stopping-cluster-rebalance.adoc[leveloffset=+1]
 
 include::../../modules/cruise-control/proc-fixing-problems-with-kafkarebalance.adoc[leveloffset=+1]
+

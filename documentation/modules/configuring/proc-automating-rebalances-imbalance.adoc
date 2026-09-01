@@ -1,0 +1,312 @@
+:_mod-docs-content-type: PROCEDURE
+
+// Module included in the following assemblies:
+//
+// assembly-scaling-kafka-clusters.adoc
+
+[id='proc-automating-rebalances-imbalance-{context}']
+= Triggering auto-rebalances on cluster imbalance
+
+[role="_abstract"]
+Set up auto-rebalancing to automatically redistribute topic partitions when goal violations are detected in the cluster.
+When enabled, the Cluster Operator queries Cruise Control's anomaly detection to identify cluster imbalances and triggers partition rebalances automatically.
+
+Unlike scaling-based auto-rebalancing (which responds to changes in the number of brokers), imbalance-based auto-rebalancing monitors the cluster continuously and acts when Cruise Control detects that optimization goals are violated.
+For example, if disk usage becomes unevenly distributed or replica placement violates rack-awareness constraints.
+
+NOTE: Auto-rebalance on imbalance is an early access feature.
+
+Auto-rebalancing for imbalance uses Cruise Control's anomaly detection to detect goal violations.
+The Cluster Operator queries the Cruise Control `state` endpoint to check for detected anomalies and triggers a rebalance when fixable goal violations are found.
+The operator controls all rebalance operations through `KafkaRebalance` custom resources, providing visibility and a consistent operational model.
+
+When enabled, the operator does the following on each reconciliation:
+
+. Validates that the rebalance template goals include all anomaly detection goals (if a template is configured)
+. Checks for actively executing rebalances that would block a new auto-rebalance
+. Queries Cruise Control for detected goal violations
+. If fixable violations are found, creates a `KafkaRebalance` resource to trigger a rebalance
+
+The `KafkaRebalance` resource created for imbalance mode uses `full` rebalance mode, meaning the rebalance considers all brokers in the cluster.
+The resource is named `<cluster_name>-auto-rebalancing-imbalance`.
+A `strimzi.io/auto-rebalancing` finalizer is set on the resource to prevent deletion while the rebalance is running.
+
+== Anomaly detection goals
+
+Anomaly detection goals define which types of cluster imbalances Cruise Control monitors.
+Configure them through the `anomaly.detection.goals` property in the Cruise Control configuration.
+
+If `anomaly.detection.goals` is not configured, the following default goals are used:
+
+* `RackAwareGoal`
+* `MinTopicLeadersPerBrokerGoal`
+* `ReplicaCapacityGoal`
+* `DiskCapacityGoal`
+
+.Example anomaly detection goals configuration
+[source,yaml,subs="attributes+"]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+  # ...
+  cruiseControl:
+    config:
+      anomaly.detection.goals: >
+        com.linkedin.kafka.cruisecontrol.analyzer.goals.RackAwareGoal,
+        com.linkedin.kafka.cruisecontrol.analyzer.goals.ReplicaCapacityGoal,
+        com.linkedin.kafka.cruisecontrol.analyzer.goals.DiskCapacityGoal,
+        com.linkedin.kafka.cruisecontrol.analyzer.goals.DiskUsageDistributionGoal
+    autoRebalance:
+      - mode: imbalance
+        template:
+          name: my-imbalance-rebalancing-template
+----
+
+The frequency of anomaly detection checks is controlled by the `anomaly.detection.interval.ms` configuration property (default: 5 minutes).
+
+== Template goal validation
+
+If a rebalance template is specified for the `imbalance` mode, the Cluster Operator validates that the template goals are a superset of the configured anomaly detection goals.
+This ensures that the resulting rebalance proposal addresses the root cause of detected violations.
+
+If the template goals do not include all anomaly detection goals, the operator logs a warning and suspends auto-rebalancing for the `imbalance` mode.
+Other auto-rebalance modes (`add-brokers` and `remove-brokers`) are not affected.
+
+For example, if the anomaly detection goals include `DiskUsageDistributionGoal` but the template does not, the validation fails.
+The template can include additional goals beyond what is monitored for anomaly detection.
+
+To fix a validation failure, either:
+
+* Update the template to include all goals from the anomaly detection configuration
+* Update the `anomaly.detection.goals` to remove goals missing from the template
+
+== Interaction with scaling operations and active rebalances
+
+Scale operations take priority over imbalance rebalancing.
+If a scaling event occurs while an imbalance rebalance is running, the imbalance rebalance is stopped and the scaling operation proceeds.
+After the scaling operation completes, Cruise Control re-detects any persisting violations and triggers a fresh imbalance rebalance if needed.
+
+The operator also checks for actively executing rebalances before triggering an imbalance rebalance.
+If any `KafkaRebalance` resource (manual or auto-generated) is in the `Rebalancing` state, auto-rebalance on imbalance is skipped.
+Manual `KafkaRebalance` resources in `New`, `PendingProposal`, or `ProposalReady` states are ignored and do not block auto-rebalance.
+
+== Handling unfixable goal violations
+
+Cruise Control classifies detected goal violations by fixability:
+
+`fixable`:: All detected violations can be resolved by partition rebalancing. The operator triggers an auto-rebalance.
+`mixed`:: Both fixable and unfixable violations are detected. The operator triggers an auto-rebalance to address the fixable violations. Unfixable violations remain and require manual infrastructure changes.
+`unfixable`:: All detected violations require manual infrastructure changes (such as insufficient racks for rack-awareness or insufficient brokers for replica capacity). The operator does not trigger a rebalance and remains in `Idle` state.
+
+If users need to address fixable violations while unfixable goals are present, they can create a manual `KafkaRebalance` resource that skips the unfixable hard goals:
+
+.Example manual rebalance skipping unfixable goals
+[source,yaml,subs="attributes+"]
+----
+apiVersion: {KafkaRebalanceApiVersion}
+kind: KafkaRebalance
+metadata:
+  name: manual-rebalance
+  labels:
+    strimzi.io/cluster: my-cluster
+spec:
+  goals:
+    - ReplicaCapacityGoal
+    - DiskCapacityGoal
+    - DiskUsageDistributionGoal
+  skipHardGoalCheck: true
+----
+
+== Rebalance completion tracking
+
+The operator tracks rebalance completion times in a ConfigMap named `<cluster_name>-auto-rebalance-imbalance-tracker`.
+This prevents the operator from retriggering rebalances for anomalies that were already addressed by a previous rebalance.
+The ConfigMap is automatically managed by the operator and deleted when the Kafka cluster is deleted.
+
+== Metrics
+
+The Cluster Operator exposes a `strimzi_auto_rebalance_anomalies_detected_total` counter metric that is incremented each time an anomaly is detected.
+The metric includes a `fixability` label (`fixable`, `unfixable`, or `mixed`) to differentiate anomalies by whether they can be resolved through rebalancing.
+
+You can use this metric to set up Prometheus alerts for monitoring auto-rebalance activity.
+For example alert configurations, see xref:con-auto-rebalance-imbalance-alerts-{context}[].
+
+== Maintenance time windows
+
+Auto-rebalance on imbalance respects the maintenance time windows configured in `Kafka.spec.maintenanceTimeWindows`.
+If maintenance windows are configured, the operator only triggers rebalances during those windows.
+If no maintenance windows are configured, rebalances trigger immediately when anomalies are detected.
+
+A rebalance that starts during a maintenance window continues to run even if the window closes.
+Cruise Control continues to detect anomalies regardless of maintenance windows, but the operator gates rebalance triggering on the maintenance window check.
+
+NOTE: Scale-up and scale-down auto-rebalance operations always execute immediately, regardless of maintenance window configuration.
+
+.Prerequisites
+
+* xref:deploying-cluster-operator-str[The Cluster Operator must be deployed.]
+* xref:proc-configuring-deploying-cruise-control-str[Cruise Control is deployed with Kafka.]
+* You have configured optimization goals and, optionally, capacity limits on broker resources.
+
+.Procedure
+
+. (Optional) Configure anomaly detection goals in the `Kafka` resource.
++
+If not specified, the default anomaly detection goals are used.
++
+.Example Cruise Control configuration with anomaly detection goals
+[source,yaml,subs="attributes+"]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+  # ...
+  cruiseControl:
+    config:
+      anomaly.detection.goals: >
+        com.linkedin.kafka.cruisecontrol.analyzer.goals.RackAwareGoal,
+        com.linkedin.kafka.cruisecontrol.analyzer.goals.ReplicaCapacityGoal,
+        com.linkedin.kafka.cruisecontrol.analyzer.goals.DiskCapacityGoal,
+        com.linkedin.kafka.cruisecontrol.analyzer.goals.DiskUsageDistributionGoal
+----
+
+. (Optional) Create a rebalancing template for the auto-rebalancing operation.
++
+Configure a `KafkaRebalance` resource with the `strimzi.io/rebalance-template: "true"` annotation.
+The template goals must include all configured anomaly detection goals.
++
+.Example rebalancing template for imbalance mode
+[source,yaml,subs="attributes+"]
+----
+apiVersion: {KafkaRebalanceApiVersion}
+kind: KafkaRebalance
+metadata:
+  name: my-imbalance-rebalancing-template
+  annotations:
+    strimzi.io/rebalance-template: "true" # <1>
+spec:
+  goals: # <2>
+    - RackAwareGoal
+    - ReplicaCapacityGoal
+    - DiskCapacityGoal
+    - DiskUsageDistributionGoal
+  skipHardGoalCheck: true
+  # ... other rebalancing configuration
+----
+<1> The annotation designates the resource as a rebalance configuration template.
+<2> The template goals must be a superset of the anomaly detection goals.
+
+. Apply the configuration to create the template.
+
+. Add auto-rebalancing configuration for imbalance mode to the `Kafka` resource.
++
+You can configure `imbalance` mode alongside `add-brokers` and `remove-brokers` modes.
++
+.Example using imbalance mode with a template
+[source,yaml,subs="+attributes"]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+  kafka:
+    # ...
+  cruiseControl:
+    autoRebalance:
+      - mode: add-brokers
+        template:
+          name: my-add-remove-brokers-rebalancing-template
+      - mode: remove-brokers
+        template:
+          name: my-add-remove-brokers-rebalancing-template
+      - mode: imbalance # <1>
+        template:
+          name: my-imbalance-rebalancing-template # <2>
+----
+<1> Enables auto-rebalancing for cluster imbalances detected by Cruise Control.
+<2> References the template `KafkaRebalance` resource for the rebalance configuration. If omitted, default Cruise Control configuration is used.
++
+To use default Cruise Control configuration, omit the template:
++
+.Example using imbalance mode without a template
+[source,yaml,subs="+attributes"]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+  kafka:
+    # ...
+  cruiseControl:
+    autoRebalance:
+      - mode: imbalance
+----
+
+. (Optional) Configure maintenance time windows to control when rebalances occur.
++
+.Example maintenance window configuration
+[source,yaml,subs="+attributes"]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+  maintenanceTimeWindows:
+    - "* * 2-4 * * ?" # <1>
+  cruiseControl:
+    autoRebalance:
+      - mode: imbalance
+        template:
+          name: my-imbalance-rebalancing-template
+----
+<1> Rebalancing only triggers between 2:00 and 4:59 UTC daily.
+
+. Apply the changes to the `Kafka` configuration. +
+Wait for the Cluster Operator to update the cluster.
+
+. Check the rebalance status. +
+The status is visible in the `Kafka` resource.
++
+.Example status for auto-rebalancing on imbalance
+[source,yaml,subs="+attributes"]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+  # ...
+status:
+  autoRebalance:
+    lastTransitionTime: <timestamp_for_last_rebalance_state>
+    state: RebalanceOnImbalance # <1>
+----
+<1> The state shows `RebalanceOnImbalance` when an imbalance rebalance is running. The initial state and final state (successful or failed) are shown as `Idle`.
+
+== Stopping an imbalance rebalance
+
+To stop a running imbalance rebalance, apply the `strimzi.io/rebalance=stop` annotation on the generated `KafkaRebalance` resource:
+
+[source,shell]
+----
+kubectl annotate kafkarebalance <cluster_name>-auto-rebalancing-imbalance strimzi.io/rebalance=stop
+----
+
+After stopping, ensure you also disable the `imbalance` mode in the `Kafka` resource to prevent the rebalance from being retriggered by the next anomaly detection cycle.
+
+== Failure recovery
+
+If an auto-rebalance fails (the `KafkaRebalance` transitions to `NotReady`), the operator transitions back to `Idle` and deletes the failed resource.
+The operator does not immediately retry.
+If the underlying issue persists, Cruise Control detects the goal violation again in the next anomaly detection cycle and a fresh rebalance is triggered.
+
+If the operator crashes while in `RebalanceOnImbalance` state, on restart it resumes monitoring from the current state.
+If the `KafkaRebalance` resource is missing (for example, deleted while the operator was not running), the operator transitions to `Idle` and relies on Cruise Control's next anomaly detection cycle to retrigger if violations persist.
