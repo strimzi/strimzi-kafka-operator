@@ -18,7 +18,7 @@ public enum ClusterSecurityAuthenticationType {
     public static ClusterSecurityAuthenticationType forValue(String value) {
         return switch (value) {
             case "none" -> NONE;
-            case "mtls" -> MTLS;
+            case "mtls", "strimzi-mtls" -> MTLS; // We have to keep the legacy strimzi-mtls here for downgrades/upgrades to/from 1.2.0
             default -> null;
         };
     }
@@ -27,7 +27,7 @@ public enum ClusterSecurityAuthenticationType {
     public String toValue() {
         return switch (this) {
             case NONE -> "none";
-            case MTLS -> "mtls";
+            case MTLS -> "strimzi-mtls"; // We have to keep the legacy strimzi-mtls here for downgrades/upgrades to/from 1.2.0
         };
     }
 }
