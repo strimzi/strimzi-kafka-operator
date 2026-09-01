@@ -150,8 +150,11 @@ jobs:
         run: |
           echo "DOCKER_TAG=${{ inputs.releaseVersion }}" >> $GITHUB_ENV
 
-      - name: Set DOCKER_REGISTRY to quay.io if releaseVersion != latest
-        if: ${{ inputs.releaseVersion != 'latest' }}
+      # This has to match the negation of the condition of the "Load Strimzi images" step below. When the images are
+      # built locally and loaded into the Kind registry, DOCKER_REGISTRY has to keep pointing to the Kind registry.
+      # Otherwise, the `docker_e2e` Make target would push the locally built images into quay.io.
+      - name: Set DOCKER_REGISTRY to quay.io when testing already published images
+        if: ${{ inputs.releaseVersion != 'latest' || inputs.ref == 'refs/heads/main' }}
         run: |
           echo "DOCKER_REGISTRY=quay.io" >> $GITHUB_ENV
 
