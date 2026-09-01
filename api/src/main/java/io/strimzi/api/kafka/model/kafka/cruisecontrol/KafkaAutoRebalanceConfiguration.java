@@ -35,8 +35,10 @@ public class KafkaAutoRebalanceConfiguration implements UnknownPropertyPreservin
     private LocalObjectReference template;
     private Map<String, Object> additionalProperties;
 
-    @Description("Specifies the mode for automatically rebalancing when brokers are added or removed. " +
-            "Supported modes are `add-brokers` and `remove-brokers`. \n")
+    @Description("Specifies the mode for automatic rebalancing. " +
+            "Supported modes are `add-brokers`, `remove-brokers`, and `imbalance`. " +
+            "The `add-brokers` and `remove-brokers` modes trigger rebalancing when brokers are added or removed. " +
+            "The `imbalance` mode triggers rebalancing when Cruise Control detects goal violations in the cluster.\n")
     @JsonProperty(required = true)
     public KafkaAutoRebalanceMode getMode() {
         return mode;
@@ -47,7 +49,8 @@ public class KafkaAutoRebalanceConfiguration implements UnknownPropertyPreservin
     }
 
     @Description("Reference to the KafkaRebalance custom resource to be used as the configuration template " +
-            "for the auto-rebalancing on scaling when running for the corresponding mode.")
+            "for auto-rebalancing when running for the corresponding mode. " +
+            "For the `imbalance` mode, the template goals must be a superset of the configured anomaly detection goals.")
     public LocalObjectReference getTemplate() {
         return template;
     }
