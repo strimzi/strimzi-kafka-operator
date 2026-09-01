@@ -1,0 +1,101 @@
+:_mod-docs-content-type: CONCEPT
+
+// Module included in the following assemblies:
+//
+// assembly-scaling-kafka-clusters.adoc
+
+[id='con-auto-rebalance-imbalance-alerts-{context}']
+= Monitoring auto-rebalance on imbalance
+
+[role="_abstract"]
+When auto-rebalance is configured with `imbalance` mode, the Cluster Operator exposes a `strimzi_auto_rebalance_anomalies_detected_total` counter metric.
+This counter is incremented each time Cruise Control detects a goal violation anomaly.
+The metric includes labels to help differentiate anomalies:
+
+`type`:: The type of anomaly detected. Currently always `goal_violation`.
+`fixability`:: Whether the anomaly can be resolved by auto-rebalancing: `fixable`, `unfixable`, or `mixed`.
+
+You can use these metrics along with KafkaRebalance resource state metrics from kube-state-metrics to configure Prometheus alerts for detecting issues with auto-rebalance operations.
+
+== Example alert configurations
+
+The following examples show Prometheus alert rules for common auto-rebalance on imbalance scenarios.
+Adapt the thresholds and durations to match your operational needs.
+
+.Detecting frequent auto-rebalance triggers
+[source,yaml]
+----
+- alert: AutoRebalanceOnImbalanceFrequentTriggers
+  expr: increase(strimzi_auto_rebalance_anomalies_detected_total{fixability="fixable"}[1h]) > 3
+  for: 5m
+  labels:
+    severity: warning
+  annotations:
+    summary: 'Frequent auto-rebalance on imbalance triggers detected'
+    description: 'More than 3 fixable anomalies were detected in the last hour for cluster {{ $labels.resource_namespace }}/{{ $labels.name }}. This may indicate a persisting imbalance that auto-rebalancing cannot fully resolve.'
+----
+
+More than 3 fixable anomalies detected within 1 hour may indicate a persisting imbalance.
+If rebalancing cannot resolve the issue, investigate the root cause, such as a capacity constraint or an infrastructure issue.
+
+.Detecting unfixable goal violations
+[source,yaml]
+----
+- alert: AutoRebalanceOnImbalanceUnfixableGoalViolations
+  expr: increase(strimzi_auto_rebalance_anomalies_detected_total{fixability="unfixable"}[1h]) > 0
+  for: 5m
+  labels:
+    severity: warning
+  annotations:
+    summary: 'Unfixable goal violations detected'
+    description: 'Unfixable goal violations were detected for cluster {{ $labels.resource_namespace }}/{{ $labels.name }}. Auto-rebalance cannot address these violations. Manual intervention is required.'
+----
+
+Unfixable goal violations cannot be resolved by auto-rebalancing.
+Manual intervention is required, such as adding brokers, racks, or disk capacity.
+
+.Detecting mixed fixable and unfixable goal violations
+[source,yaml]
+----
+- alert: AutoRebalanceOnImbalanceMixedGoalViolations
+  expr: increase(strimzi_auto_rebalance_anomalies_detected_total{fixability="mixed"}[1h]) > 0
+  for: 5m
+  labels:
+    severity: warning
+  annotations:
+    summary: 'Mixed fixable and unfixable goal violations detected'
+    description: 'Both fixable and unfixable goal violations were detected for cluster {{ $labels.resource_namespace }}/{{ $labels.name }}. The operator will rebalance for fixable goals but unfixable goals require manual intervention.'
+----
+
+When both fixable and unfixable goal violations are detected, the operator attempts to rebalance for the fixable goals.
+Unfixable goals remain and may need infrastructure changes.
+
+.Detecting a failed auto-rebalance KafkaRebalance resource
+[source,yaml]
+----
+- alert: AutoRebalanceOnImbalanceKafkaRebalanceFailed
+  expr: strimzi_kafka_rebalance_resource_info{ready!="True",mode="full",name=~".*-auto-rebalancing-imbalance"}
+  for: 15m
+  labels:
+    severity: warning
+  annotations:
+    summary: 'Auto-rebalance on imbalance KafkaRebalance failed'
+    description: 'The auto-generated KafkaRebalance {{ $labels.name }} in namespace {{ $labels.namespace }} is not ready for more than 15 minutes.'
+----
+
+An auto-generated `KafkaRebalance` resource stuck in a not-ready state for more than 15 minutes may indicate a failed rebalance that needs investigation.
+
+.Detecting a long-running auto-rebalance
+[source,yaml]
+----
+- alert: AutoRebalanceOnImbalanceRebalancingTooLong
+  expr: strimzi_kafka_rebalance_resource_info{ready="True",rebalancing="True",mode="full",name=~".*-auto-rebalancing-imbalance"}
+  for: 2h
+  labels:
+    severity: warning
+  annotations:
+    summary: 'Auto-rebalance on imbalance is taking too long'
+    description: 'The auto-generated KafkaRebalance {{ $labels.name }} in namespace {{ $labels.namespace }} has been actively rebalancing for more than 2 hours.'
+----
+
+A rebalance running for more than 2 hours may indicate an unusually large data movement or a problem with the rebalance operation.
