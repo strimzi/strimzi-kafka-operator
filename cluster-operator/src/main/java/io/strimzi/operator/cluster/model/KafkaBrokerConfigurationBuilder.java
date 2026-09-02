@@ -128,7 +128,7 @@ public class KafkaBrokerConfigurationBuilder {
 
             // Authentication
             if (securityContext.authentication() instanceof MtlsAuthenticationConfiguration)  {
-                // mTLS can ve used only with TLS encryption. But we check that earlier so do not need to check it again.
+                // mTLS can be used only with TLS encryption. But we check that earlier so do not need to check it again.
                 writer.println(CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_KEYSTORE_TYPE + "=PEM");
                 writer.println(CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_KEYSTORE_CERTIFICATE_CHAIN + "=" + String.format(PLACEHOLDER_SECRET_TEMPLATE_KUBE_CONFIG_PROVIDER, reconciliation.namespace(), node.podName(), node.podName() + ".crt"));
                 writer.println(CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_KEYSTORE_KEY + "=" + String.format(PLACEHOLDER_SECRET_TEMPLATE_KUBE_CONFIG_PROVIDER, reconciliation.namespace(), node.podName(), node.podName() + ".key"));
@@ -407,7 +407,7 @@ public class KafkaBrokerConfigurationBuilder {
                     "oauth.custom.claim.check=\"@.aud anyof ['" + saConfig.audience() + "']\" " +
                     "oauth.valid.issuer.uri=\"" + ServiceAccountAuthenticationConfiguration.ISSUER + "\" " +
                     "oauth.jwks.endpoint.uri=\"" + ServiceAccountAuthenticationConfiguration.JWKS_URI + "\" " +
-                    //"oauth.jwks.refresh.seconds=\"300\" " +
+                    "oauth.jwks.refresh.seconds=\"300\" " +
                     "oauth.username.claim=\"sub\" " +
                     "oauth.ssl.truststore.location=\"/var/run/secrets/kubernetes.io/serviceaccount/ca.crt\" " +
                     "oauth.ssl.truststore.type=\"PEM\" " +
