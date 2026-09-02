@@ -91,10 +91,9 @@ runs:
             --arg pipeline "custom" \
             --arg groups "$INPUT_DEFAULT_GROUPS" \
             --arg tests "$INPUT_DEFAULT_TESTS" \
-            --arg ipFamily "$INPUT_DEFAULT_IP_FAMILY" \
             --arg timeout 720 \
             --argjson profiles "$PROFILES" \
-            '$profiles | map({agent: $agent, arch: $arch, pipeline: $pipeline, profile: ., timeout: $timeout, strimzi_feature_gates: $fg, strimzi_rbac_scope: $rbac, cluster_operator_install_type: $coi, parallel: $parallel, groups: $groups, tests: $tests, ipFamily: $ipFamily})')
+            '$profiles | map({agent: $agent, arch: $arch, pipeline: $pipeline, profile: ., timeout: $timeout, strimzi_feature_gates: $fg, strimzi_rbac_scope: $rbac, cluster_operator_install_type: $coi, parallel: $parallel, groups: $groups, tests: $tests})')
         fi
         
         # Inject jobName in format 'pipeline-profile-arch' or 'pipeline-arch' when profile == pipeline

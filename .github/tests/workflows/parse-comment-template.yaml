@@ -51,6 +51,7 @@ jobs:
           EXPECT_CLUSTER_OPERATOR_INSTALL_TYPE: ${{ env.EXPECT_CLUSTER_OPERATOR_INSTALL_TYPE }}
           EXPECT_PARALLEL: ${{ env.EXPECT_PARALLEL }}
           EXPECT_RELEASE: ${{ env.EXPECT_RELEASE }}
+          EXPECT_IPFAMILY: ${{ env.EXPECT_IPFAMILY }}
         run: |
           set -euo pipefail
           
@@ -68,6 +69,7 @@ jobs:
           ACTUAL_CLUSTER_OPERATOR_INSTALL_TYPE='${{ steps.parse.outputs.cluster_operator_install_type }}'
           ACTUAL_PARALLEL='${{ steps.parse.outputs.parallel }}'
           ACTUAL_RELEASE='${{ steps.parse.outputs.releaseVersion }}'
+          ACTUAL_IPFAMILY='${{ steps.parse.outputs.ipFamily }}'
           
           echo "::group::Assertion details"
           printf 'EXPECT_PIPELINES=%q\n' "$EXPECT_PIPELINES"
@@ -98,6 +100,8 @@ jobs:
           printf 'EXPECT_PARALLEL=%q\n'  "$EXPECT_PARALLEL"
           printf 'ACTUAL_RELEASE=%q\n'  "$ACTUAL_RELEASE"
           printf 'EXPECT_RELEASE=%q\n'  "$EXPECT_RELEASE"
+          printf 'ACTUAL_IPFAMILY=%q\n'  "$ACTUAL_IPFAMILY"
+          printf 'EXPECT_IPFAMILY=%q\n'  "$EXPECT_IPFAMILY"
           echo "::endgroup::"
           
           # Assert all values, including empty strings (skip only if EXPECT var is unset/null)
@@ -139,5 +143,8 @@ jobs:
           fi
           if [[ "${EXPECT_RELEASE+defined}" == "defined" && "$ACTUAL_RELEASE"  != "$EXPECT_RELEASE" ]]; then
             echo "❌ releaseVersion mismatch";  exit 1
+          fi
+          if [[ "${EXPECT_IPFAMILY+defined}" == "defined" && "$ACTUAL_IPFAMILY"  != "$EXPECT_IPFAMILY" ]]; then
+            echo "❌ ipFamily mismatch";  exit 1
           fi
           echo "✅ Assertions passed"
