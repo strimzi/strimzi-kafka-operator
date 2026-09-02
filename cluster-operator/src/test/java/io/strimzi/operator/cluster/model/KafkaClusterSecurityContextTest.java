@@ -29,12 +29,18 @@ public class KafkaClusterSecurityContextTest {
     private static final String CLUSTER_NAME = "my-cluster";
     private static final String INTERNAL_CLUSTER_SECURITY_ANNOTATION = "strimzi.io/internal-cluster-security";
     private static final String TLS_WITHOUT_AUTHENTICATION = "{\"encryption\":{\"type\":\"tls\"},\"authentication\":{\"type\":\"none\"}}";
+    private static final String LEGACY_TLS_WITH_MTLS = "{\"encryption\":{\"type\":\"strimzi-tls\"},\"authentication\":{\"type\":\"strimzi-mtls\"}}";
     private static final String WITHOUT_ENCRYPTION_OR_AUTHENTICATION = "{\"encryption\":{\"type\":\"none\"},\"authentication\":{\"type\":\"none\"}}";
     private static final String MTLS_WITHOUT_TLS = "{\"encryption\":{\"type\":\"none\"},\"authentication\":{\"type\":\"mtls\"}}";
 
     private static final Map<String, Object> VALID_STATUS = Map.of(
             "encryption", Map.of("type", "tls"),
             "authentication", Map.of("type", "mtls")
+    );
+
+    private static final Map<String, Object> VALID_LEGACY_STATUS = Map.of(
+            "encryption", Map.of("type", "strimzi-tls"),
+            "authentication", Map.of("type", "strimzi-mtls")
     );
 
     private static final Kafka KAFKA = new KafkaBuilder()
@@ -249,6 +255,14 @@ public class KafkaClusterSecurityContextTest {
     }
 
     @Test
+    public void testDeserializeLegacySpec()  {
+        ClusterSecurity clusterSecurity = KafkaClusterSecurityContext.deserializeSpec(LEGACY_TLS_WITH_MTLS);
+
+        assertThat(clusterSecurity.getEncryption().getType(), is(ClusterSecurityEncryptionType.TLS));
+        assertThat(clusterSecurity.getAuthentication().getType(), is(ClusterSecurityAuthenticationType.MTLS));
+    }
+
+    @Test
     public void testDeserializeSpecWithUnknownFields()  {
         ClusterSecurity clusterSecurity = KafkaClusterSecurityContext.deserializeSpec("""
                 {
@@ -284,6 +298,14 @@ public class KafkaClusterSecurityContextTest {
     @Test
     public void testDeserializeStatus()  {
         ClusterSecurityStatus status = KafkaClusterSecurityContext.deserializeStatus(VALID_STATUS);
+
+        assertThat(status.getEncryption().getType(), is(ClusterSecurityEncryptionType.TLS));
+        assertThat(status.getAuthentication().getType(), is(ClusterSecurityAuthenticationType.MTLS));
+    }
+
+    @Test
+    public void testDeserializeLegacyStatus()  {
+        ClusterSecurityStatus status = KafkaClusterSecurityContext.deserializeStatus(VALID_LEGACY_STATUS);
 
         assertThat(status.getEncryption().getType(), is(ClusterSecurityEncryptionType.TLS));
         assertThat(status.getAuthentication().getType(), is(ClusterSecurityAuthenticationType.MTLS));
