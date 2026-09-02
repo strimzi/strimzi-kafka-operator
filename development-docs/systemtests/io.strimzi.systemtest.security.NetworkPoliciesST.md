@@ -38,7 +38,7 @@
 | Step | Action | Result |
 | - | - | - |
 | 1. | Deploy Cluster Operator with STRIMZI_NETWORK_POLICY_GENERATION set to false. | Cluster Operator is deployed with network policy generation disabled. |
-| 2. | Remove the networkpolicies resource from the Cluster Operator (Cluster)Role and read the role back. | The role no longer lists networkpolicies. |
+| 2. | Remove the networkpolicies resource from the Cluster Operator (Cluster)Role and read the role back. | The role no longer lists networkpolicies, so any NetworkPolicy API call from the Cluster Operator fails with 403 Forbidden and the following steps pass only if it makes no such call. |
 | 3. | Deploy Kafka cluster with Cruise Control and Kafka Exporter. | Kafka cluster is deployed. |
 | 4. | Deploy KafkaConnect. | KafkaConnect is deployed. |
 | 5. | Verify that no Strimzi-generated network policies exist. | List of Strimzi-generated network policies is empty. |

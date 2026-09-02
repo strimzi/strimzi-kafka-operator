@@ -363,7 +363,7 @@ public class NetworkPoliciesST extends AbstractST {
         description = @Desc("Test verifying that setting the STRIMZI_NETWORK_POLICY_GENERATION environment variable to false disables network policy generation by the Cluster Operator, and that the Cluster Operator works without the RBAC permission for NetworkPolicies."),
         steps = {
             @Step(value = "Deploy Cluster Operator with STRIMZI_NETWORK_POLICY_GENERATION set to false.", expected = "Cluster Operator is deployed with network policy generation disabled."),
-            @Step(value = "Remove the networkpolicies resource from the Cluster Operator (Cluster)Role and read the role back.", expected = "The role no longer lists networkpolicies."),
+            @Step(value = "Remove the networkpolicies resource from the Cluster Operator (Cluster)Role and read the role back.", expected = "The role no longer lists networkpolicies, so any NetworkPolicy API call from the Cluster Operator fails with 403 Forbidden and the following steps pass only if it makes no such call."),
             @Step(value = "Deploy Kafka cluster with Cruise Control and Kafka Exporter.", expected = "Kafka cluster is deployed."),
             @Step(value = "Deploy KafkaConnect.", expected = "KafkaConnect is deployed."),
             @Step(value = "Verify that no Strimzi-generated network policies exist.", expected = "List of Strimzi-generated network policies is empty.")
