@@ -32,6 +32,22 @@ public class DefaultAdminClientProvider implements AdminClientProvider {
         return createControllerAdminClient(controllerBootstrapHostnames, kafkaTrustSet, authIdentity, new Properties());
     }
 
+    /**
+     * Create a Kafka Admin client.
+     *
+     * The {@code kafkaTrustSet} control the encryption of the connection. The {@code authIdentity} controls the
+     * authentication. If {@code kafkaTrustSet} is null, the connection will be plaintext. If {@code kafkaTrustSet} is
+     * not null, the connection will be TLS encrypted. If {@code authIdentity} is null, there will be no authentication.
+     * If {@code authIdentity} is not null, the client will use the provided identity for authentication. The identity
+     * might currently correspond to mTLS or Service-Account-based authentication.
+     *
+     * @param bootstrapHostnames    Hostnames of the Kafka bootstrap servers
+     * @param kafkaTrustSet         Trust set for connecting to Kafka
+     * @param authIdentity          Identity for authentication for connecting to Kafka
+     * @param config                Custom Admin client configuration or empty properties instance
+     *
+     * @return  Admin client instance
+     */
     @Override
     public Admin createAdminClient(String bootstrapHostnames, TrustSet kafkaTrustSet, AuthIdentity authIdentity, Properties config) {
         config.setProperty(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapHostnames);
