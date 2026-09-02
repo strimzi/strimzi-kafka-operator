@@ -91,7 +91,7 @@ public class MockCruiseControl {
         keystoreFile.deleteOnExit();
 
         try {
-            certIssuer.generateCsr(serverKeyFile, csrFile, subject);
+            certIssuer.generateCsr(serverKeyFile, csrFile, subject, 4096);
             certIssuer.generateCert(csrFile, caKeyFile, caCertFile, serverCertFile, subject, 365);
             certIssuer.addKeyAndCertToKeyStore(serverKeyFile, serverCertFile, "server", keystoreFile, KEYSTORE_PASSWORD);
 

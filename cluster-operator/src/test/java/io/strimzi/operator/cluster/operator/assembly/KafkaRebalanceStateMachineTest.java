@@ -101,7 +101,7 @@ public class KafkaRebalanceStateMachineTest {
         File tlsCrtFile = ReadWriteUtils.tempFile(KafkaRebalanceStateMachineTest.class.getSimpleName(), ".crt");
 
         new MockCertIssuer().generateSelfSignedCert(tlsKeyFile, tlsCrtFile,
-            new StrimziSubject.Builder().withCommonName("Trusted Test CA").build(), 365);
+            new StrimziSubject.Builder().withCommonName("Trusted Test CA").build(), 365, 4096);
 
         cruiseControlPort = TestUtils.getFreePort();
         cruiseControlServer = new MockCruiseControl(cruiseControlPort, tlsKeyFile, tlsCrtFile);
