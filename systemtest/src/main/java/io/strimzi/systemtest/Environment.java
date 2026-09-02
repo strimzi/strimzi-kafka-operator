@@ -260,8 +260,8 @@ public class Environment {
 
     public static final String POSTGRES_IMAGE = ENVIRONMENT_VARIABLES.getOrDefault(POSTGRES_IMAGE_ENV, POSTGRES_IMAGE_DEFAULT);
 
-    public static final ClusterSecurityEncryptionType CLUSTER_SECURITY_ENCRYPTION = ENVIRONMENT_VARIABLES.getOrDefault(CLUSTER_SECURITY_ENCRYPTION_ENV, value -> ClusterSecurityEncryptionType.valueOf(value.toUpperCase(Locale.ENGLISH)), CLUSTER_SECURITY_ENCRYPTION_DEFAULT);
-    public static final ClusterSecurityAuthenticationType CLUSTER_SECURITY_AUTHENTICATION = ENVIRONMENT_VARIABLES.getOrDefault(CLUSTER_SECURITY_AUTHENTICATION_ENV, value -> ClusterSecurityAuthenticationType.valueOf(value.toUpperCase(Locale.ENGLISH)), CLUSTER_SECURITY_AUTHENTICATION_DEFAULT);
+    public static final ClusterSecurityEncryptionType CLUSTER_SECURITY_ENCRYPTION = ENVIRONMENT_VARIABLES.getOrDefault(CLUSTER_SECURITY_ENCRYPTION_ENV, value -> enumFromEnvVar(ClusterSecurityEncryptionType.class, CLUSTER_SECURITY_ENCRYPTION_ENV, value, CLUSTER_SECURITY_ENCRYPTION_DEFAULT), CLUSTER_SECURITY_ENCRYPTION_DEFAULT);
+    public static final ClusterSecurityAuthenticationType CLUSTER_SECURITY_AUTHENTICATION = ENVIRONMENT_VARIABLES.getOrDefault(CLUSTER_SECURITY_AUTHENTICATION_ENV, value -> enumFromEnvVar(ClusterSecurityAuthenticationType.class, CLUSTER_SECURITY_AUTHENTICATION_ENV, value, CLUSTER_SECURITY_AUTHENTICATION_DEFAULT), CLUSTER_SECURITY_AUTHENTICATION_DEFAULT);
 
     private Environment() { }
 
@@ -277,6 +277,32 @@ public class Environment {
         if (CLUSTER_SECURITY_AUTHENTICATION == ClusterSecurityAuthenticationType.MTLS && CLUSTER_SECURITY_ENCRYPTION != ClusterSecurityEncryptionType.TLS) {
             throw new IllegalArgumentException("Invalid internal cluster security configuration: " + CLUSTER_SECURITY_AUTHENTICATION_ENV
                     + "=mtls can be used only together with " + CLUSTER_SECURITY_ENCRYPTION_ENV + "=tls");
+        }
+    }
+
+    /**
+     * Converts the value of an environment variable into an enum constant. An environment variable that is set to an
+     * empty value is treated as if it was not set at all and the default value is used instead. That is needed because
+     * the environment variables are often set from CI pipelines where an unset parameter ends up as an empty value.
+     *
+     * @param enumType      Class of the enum the value should be converted to
+     * @param envVarName    Name of the environment variable. Used only in the error message.
+     * @param value         Value of the environment variable
+     * @param defaultValue  Default value used when the environment variable is not set or is empty
+     *
+     * @param <E>   Type of the enum the value should be converted to
+     *
+     * @return  Enum constant corresponding to the value of the environment variable or the default value
+     */
+    private static <E extends Enum<E>> E enumFromEnvVar(Class<E> enumType, String envVarName, String value, E defaultValue) {
+        if (value == null || value.isBlank()) {
+            return defaultValue;
+        }
+
+        try {
+            return Enum.valueOf(enumType, value.trim().toUpperCase(Locale.ENGLISH));
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Invalid value '" + value + "' of the " + envVarName + " environment variable", e);
         }
     }
 
