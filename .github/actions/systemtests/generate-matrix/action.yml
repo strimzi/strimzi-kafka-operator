@@ -119,7 +119,7 @@ runs:
       env:
         INPUT_PIPELINES: "${{ inputs.pipelines }}"
         INPUT_PROFILES: "${{ inputs.profiles }}"
-        INPUT_DEFAULT_AGENT: "${{ inputs.default_agent != '' && inputs.default_agent || 'ubuntu-latest' }}"
+        INPUT_DEFAULT_AGENT: "${{ inputs.default_agent != '' && inputs.default_agent || 'cncf-4cpu-16gb-x86-64' }}"
         INPUT_DEFAULT_ARCH: "${{ inputs.default_arch != '' && inputs.default_arch || 'amd64' }}"
         INPUT_DEFAULT_JDK_VERSION: "${{ inputs.default_jdk_version }}"
         INPUT_DEFAULT_STRIMZI_USE_FEATURE_GATES: "${{ inputs.default_strimzi_feature_gates }}"
