@@ -5,10 +5,11 @@
 package io.strimzi.operator.common.metrics;
 
 /**
- * Metric key for anomaly detection metrics, keyed by kind, namespace, and fixability.
+ * Metric key for anomaly detection metrics, keyed by kind, namespace, type, and fixability.
  */
 public class AnomalyMetricKey extends MetricKey {
 
+    private final String type;
     private final String fixability;
 
     /**
@@ -16,16 +17,27 @@ public class AnomalyMetricKey extends MetricKey {
      *
      * @param kind          Kind of the resource
      * @param namespace     Namespace of the resource
+     * @param type          Type of anomaly (e.g. goal_violation)
      * @param fixability    Fixability classification of the anomaly
      */
-    public AnomalyMetricKey(String kind, String namespace, String fixability) {
+    public AnomalyMetricKey(String kind, String namespace, String type, String fixability) {
         super(kind, namespace);
+        this.type = type;
         this.fixability = fixability;
     }
 
     @Override
     public String getKey() {
-        return String.format("%s/%s/%s", kind, namespace, fixability);
+        return String.format("%s/%s/%s/%s", kind, namespace, type, fixability);
+    }
+
+    /**
+     * Get the anomaly type
+     *
+     * @return  Anomaly type
+     */
+    public String getType() {
+        return type;
     }
 
     /**
@@ -40,14 +52,14 @@ public class AnomalyMetricKey extends MetricKey {
     @Override
     public boolean equals(Object obj) {
         if (obj instanceof AnomalyMetricKey other) {
-            return super.equals(obj) && this.fixability.equals(other.fixability);
+            return super.equals(obj) && this.type.equals(other.type) && this.fixability.equals(other.fixability);
         }
         return false;
     }
 
     @Override
     public int hashCode() {
-        return super.hashCode() + this.fixability.hashCode();
+        return super.hashCode() + this.type.hashCode() + this.fixability.hashCode();
     }
 
     @Override
@@ -55,6 +67,7 @@ public class AnomalyMetricKey extends MetricKey {
         return "AnomalyMetricKey(" +
                 "kind=" + kind +
                 ", namespace=" + namespace +
+                ", type=" + type +
                 ", fixability=" + fixability +
                 ')';
     }
