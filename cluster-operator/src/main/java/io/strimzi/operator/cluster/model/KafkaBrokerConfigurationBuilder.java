@@ -407,7 +407,6 @@ public class KafkaBrokerConfigurationBuilder {
                     "oauth.custom.claim.check=\"@.aud anyof ['" + saConfig.audience() + "']\" " +
                     "oauth.valid.issuer.uri=\"" + ServiceAccountAuthenticationConfiguration.ISSUER + "\" " +
                     "oauth.jwks.endpoint.uri=\"" + ServiceAccountAuthenticationConfiguration.JWKS_URI + "\" " +
-                    "oauth.jwks.refresh.seconds=\"300\" " +
                     "oauth.username.claim=\"sub\" " +
                     "oauth.ssl.truststore.location=\"/var/run/secrets/kubernetes.io/serviceaccount/ca.crt\" " +
                     "oauth.ssl.truststore.type=\"PEM\" " +
