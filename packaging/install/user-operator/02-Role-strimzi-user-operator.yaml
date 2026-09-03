@@ -47,12 +47,15 @@ rules:
   - "cert-manager.io"
   resources:
   - certificates
-  - certificates/status
   verbs:
   - get
-  - list
-  - watch
   - create
   - delete
   - patch
   - update
+- apiGroups:
+    - "cert-manager.io"
+  resources:
+    - certificates/status
+  verbs:
+    - get
