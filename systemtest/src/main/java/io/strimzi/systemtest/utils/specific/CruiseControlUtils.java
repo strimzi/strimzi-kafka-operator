@@ -136,7 +136,10 @@ public class CruiseControlUtils {
                     && kafkaProperties.getProperty(CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_KEYSTORE_CERTIFICATE_CHAIN.getValue()).equals("${strimzisecrets:" + namespace + "/" + brokerPodName + ":" + brokerPodName + ".crt}")
                     && kafkaProperties.getProperty(CruiseControlConfigurationParameters.METRICS_REPORTER_SECURITY_PROTOCOL.getValue()).endsWith("SSL");
         } else if (ClusterSecurityEncryptionType.NONE.equals(Environment.CLUSTER_SECURITY_ENCRYPTION))   {
-            return kafkaProperties.getProperty(CruiseControlConfigurationParameters.METRICS_REPORTER_SECURITY_PROTOCOL.getValue()).endsWith("PLAINTEXT");
+            encCheck = !kafkaProperties.containsKey(CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_ENDPOINT_ID_ALGO.getValue())
+                    && !kafkaProperties.containsKey(CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_KEYSTORE_TYPE.getValue())
+                    && !kafkaProperties.containsKey(CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_KEYSTORE_CERTIFICATE_CHAIN.getValue())
+                    && !kafkaProperties.getProperty(CruiseControlConfigurationParameters.METRICS_REPORTER_SECURITY_PROTOCOL.getValue()).endsWith("SSL");
         }
 
         if (ClusterSecurityAuthenticationType.MTLS.equals(Environment.CLUSTER_SECURITY_AUTHENTICATION)) {
@@ -144,7 +147,9 @@ public class CruiseControlUtils {
                     && kafkaProperties.getProperty(CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_TRUSTSTORE_CERTIFICATES.getValue()).equals("${strimzisecrets:" + namespace + "/" + clusterName + "-trustbundle:cluster-ca.crt}")
                     && kafkaProperties.getProperty(CruiseControlConfigurationParameters.METRICS_REPORTER_SECURITY_PROTOCOL.getValue()).endsWith("SSL");
         } else if (ClusterSecurityAuthenticationType.NONE.equals(Environment.CLUSTER_SECURITY_AUTHENTICATION))   {
-            authCheck = !kafkaProperties.getProperty(CruiseControlConfigurationParameters.METRICS_REPORTER_SECURITY_PROTOCOL.getValue()).startsWith("SASL");
+            authCheck = !kafkaProperties.containsKey(CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_TRUSTSTORE_TYPE.getValue())
+                    && !kafkaProperties.containsKey(CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_TRUSTSTORE_CERTIFICATES.getValue())
+                    && !kafkaProperties.getProperty(CruiseControlConfigurationParameters.METRICS_REPORTER_SECURITY_PROTOCOL.getValue()).startsWith("SASL");
         }
 
         return encCheck && authCheck;
