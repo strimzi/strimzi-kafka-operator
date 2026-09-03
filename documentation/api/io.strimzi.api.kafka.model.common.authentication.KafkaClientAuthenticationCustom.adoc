@@ -31,6 +31,61 @@ The `security.protocol `setting is generated automatically from the `sasl` prope
 If your custom authentication mechanism requires additional information from `Secret` or `ConfigMap` resources, use the link:{BookURLConfiguring}#con-common-configuration-volumes-reference[Additional Volumes^] feature to mount them into the operands.
 Kafka configuration providers can be used to load them from the disk.
 
+= Using Kubernetes Service Account tokens for authentication
+
+If the Kafka cluster has a listener that authenticates clients with Kubernetes Service Account tokens, you can connect the operand to it using `custom` authentication with the `OAUTHBEARER` SASL mechanism.
+The operand reads the token from a file mounted into its pod and presents it to the Kafka cluster.
+For information on how to configure such a listener, see the xref:type-KafkaListenerAuthenticationCustom-{context}[`KafkaListenerAuthenticationCustom` schema reference].
+
+Strimzi mounts the Service Account token of the operand into the `/var/run/secrets/kubernetes.io/serviceaccount` directory.
+This token is issued for the default audience of the Kubernetes API server.
+If the Kafka listener requires a specific audience, use a projected Service Account token volume to mount a token issued for that audience instead.
+
+.Example client authentication configuration using a projected Service Account token
+[source,yaml,subs="attributes+"]
+----
+spec:
+  authentication:
+    type: custom
+    sasl: true
+    config:
+      sasl.mechanism: OAUTHBEARER
+      sasl.login.callback.handler.class: io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler
+      sasl.jaas.config: |
+        org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required
+          oauth.access.token.location="/mnt/auth-token/token";
+  template:
+    pod:
+      volumes:
+        - name: auth-token
+          projected:
+            sources:
+              - serviceAccountToken:
+                  audience: my-internal-listener
+                  expirationSeconds: 3600
+                  path: token
+    connectContainer:
+      volumeMounts:
+        - name: auth-token
+          mountPath: /mnt/auth-token
+----
+
+In this configuration:
+
+* The `projected` volume asks Kubernetes to issue a token for the Service Account of the operand pod with the `my-internal-listener` audience and to store it in a file named `token`.
+* The volume is mounted at `/mnt/auth-token`, so the token is available in the `/mnt/auth-token/token` file.
+Additional volumes can be mounted only into paths that start with `/mnt`.
+For more information about additional volumes, see link:{BookURLConfiguring}#con-common-configuration-volumes-reference[Additional Volumes^].
+* `oauth.access.token.location` tells the Kafka client where to find the token file.
+* `sasl.login.callback.handler.class` sets the Strimzi callback handler that passes the token to the Kafka cluster.
+
+The `connectContainer` name used in this example applies to `KafkaConnect` and `KafkaMirrorMaker2` resources.
+For `KafkaBridge` resources, use `bridgeContainer` instead.
+
+NOTE: A projected Service Account token is always issued for the Service Account used by the pod.
+It cannot be used to obtain a token for a different Service Account.
+Strimzi operands use a Service Account named after the component: `<connect_cluster_name>-connect` for Kafka Connect, `<mirror_maker_2_cluster_name>-mirrormaker2` for MirrorMaker 2, and `<bridge_name>-bridge` for the HTTP Bridge.
+
 = Using additional authentication plugins
 
 Custom authentication mechanisms might require additional plugins for the operand.

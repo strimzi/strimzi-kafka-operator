@@ -956,6 +956,9 @@ Used in: xref:type-PodTemplate-{context}[`PodTemplate`], xref:type-StatefulPodTe
 |image
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#imagevolumesource-v1-core[ImageVolumeSource]
 |`ImageVolumeSource` object to use to populate the volume.
+|projected
+|xref:type-ProjectedVolume-{context}[`ProjectedVolume`]
+|`ProjectedVolume` object to use volume projection.
 |====
 
 [id='type-EmptyDirVolume-{context}']
@@ -973,6 +976,34 @@ Used in: xref:type-AdditionalVolume-{context}[`AdditionalVolume`]
 |sizeLimit
 |string
 |The total amount of local storage required for this EmptyDir volume (for example 1Gi).
+|====
+
+[id='type-ProjectedVolume-{context}']
+= `ProjectedVolume` schema reference
+
+Used in: xref:type-AdditionalVolume-{context}[`AdditionalVolume`]
+
+
+[cols="2,2,3a",options="header"]
+|====
+|Property |Property type |Description
+|sources
+|xref:type-ProjectedVolumeSource-{context}[`ProjectedVolumeSource`] array
+|List of projections that are part of this projected volumes. Currently, only Service Account projection is supported.
+|====
+
+[id='type-ProjectedVolumeSource-{context}']
+= `ProjectedVolumeSource` schema reference
+
+Used in: xref:type-ProjectedVolume-{context}[`ProjectedVolume`]
+
+
+[cols="2,2,3a",options="header"]
+|====
+|Property |Property type |Description
+|serviceAccountToken
+|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#serviceaccounttokenprojection-v1-core[ServiceAccountTokenProjection]
+|information about the serviceAccountToken data to project.
 |====
 
 [id='type-AdditionalTemplatedVolume-{context}']

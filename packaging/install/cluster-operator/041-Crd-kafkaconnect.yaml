@@ -1051,6 +1051,29 @@ spec:
                                 reference:
                                   type: string
                               description: '`ImageVolumeSource` object to use to populate the volume.'
+                            projected:
+                              type: object
+                              properties:
+                                sources:
+                                  type: array
+                                  items:
+                                    type: object
+                                    properties:
+                                      serviceAccountToken:
+                                        type: object
+                                        properties:
+                                          audience:
+                                            type: string
+                                          expirationSeconds:
+                                            type: integer
+                                          path:
+                                            type: string
+                                        description: information about the serviceAccountToken data to project.
+                                    oneOf:
+                                    - properties:
+                                        serviceAccountToken: {}
+                                  description: "List of projections that are part of this projected volumes. Currently, only Service Account projection is supported."
+                              description: '`ProjectedVolume` object to use volume projection.'
                           oneOf:
                           - properties:
                               secret: {}
@@ -1059,6 +1082,7 @@ spec:
                               persistentVolumeClaim: {}
                               csi: {}
                               image: {}
+                              projected: {}
                         description: Additional volumes that can be mounted to the pod.
                       templatedVolumes:
                         type: array
@@ -2173,6 +2197,29 @@ spec:
                                 reference:
                                   type: string
                               description: '`ImageVolumeSource` object to use to populate the volume.'
+                            projected:
+                              type: object
+                              properties:
+                                sources:
+                                  type: array
+                                  items:
+                                    type: object
+                                    properties:
+                                      serviceAccountToken:
+                                        type: object
+                                        properties:
+                                          audience:
+                                            type: string
+                                          expirationSeconds:
+                                            type: integer
+                                          path:
+                                            type: string
+                                        description: information about the serviceAccountToken data to project.
+                                    oneOf:
+                                    - properties:
+                                        serviceAccountToken: {}
+                                  description: "List of projections that are part of this projected volumes. Currently, only Service Account projection is supported."
+                              description: '`ProjectedVolume` object to use volume projection.'
                           oneOf:
                           - properties:
                               secret: {}
@@ -2181,6 +2228,7 @@ spec:
                               persistentVolumeClaim: {}
                               csi: {}
                               image: {}
+                              projected: {}
                         description: Additional volumes that can be mounted to the pod.
                       hostUsers:
                         type: boolean

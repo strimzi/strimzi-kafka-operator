@@ -86,6 +86,85 @@ spec:
             mountPath: /mnt/my-truststore
 ----
 
+= Configuring Service Account-based authentication
+
+You can also use `custom` authentication to authenticate clients with Kubernetes Service Account tokens.
+Kubernetes issues the tokens and publishes the keys needed to validate them, so you don't have to run and manage your own OAuth server.
+This makes Service Account tokens a convenient option for internal listeners used by clients that run in the same Kubernetes cluster as the Kafka cluster.
+
+The listener uses the `OAUTHBEARER` SASL mechanism and validates the tokens as JSON Web Tokens (JWTs) against the JSON Web Key Set (JWKS) endpoint published by the Kubernetes API server.
+Strimzi mounts the Service Account token of the Kafka node together with the Kubernetes CA certificate into the `/var/run/secrets/kubernetes.io/serviceaccount` directory of the Kafka containers.
+The listener configuration uses them to authenticate against the JWKS endpoint and to trust the TLS certificate of the Kubernetes API server.
+
+.Example Service Account-based authentication configuration
+[source,yaml,subs="attributes+"]
+----
+spec:
+  kafka:
+    config:
+      # Required by the Strimzi OAuth library
+      principal.builder.class: io.strimzi.kafka.oauth.server.OAuthKafkaPrincipalBuilder
+    listeners:
+      - name: sa
+        port: 9092
+        type: internal
+        tls: true
+        authentication:
+          type: custom
+          sasl: true
+          listenerConfig:
+            sasl.enabled.mechanisms: OAUTHBEARER
+            oauthbearer.sasl.server.callback.handler.class: io.strimzi.kafka.oauth.server.JaasServerOauthValidatorCallbackHandler
+            oauthbearer.sasl.jaas.config: |
+              org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required
+                unsecuredLoginStringClaim_sub="unused"
+                oauth.check.access.token.type="false"
+                oauth.custom.claim.check="@.aud anyof ['my-internal-listener']"
+                oauth.valid.issuer.uri="https://kubernetes.default.svc.cluster.local"
+                oauth.jwks.endpoint.uri="https://kubernetes.default.svc.cluster.local/openid/v1/jwks"
+                oauth.jwks.refresh.seconds="300"
+                oauth.username.claim="sub"
+                oauth.ssl.truststore.location="/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
+                oauth.ssl.truststore.type="PEM"
+                oauth.server.bearer.token.location="/var/run/secrets/kubernetes.io/serviceaccount/token"
+                oauth.include.accept.header="false";
+----
+
+In this configuration:
+
+* `oauth.jwks.endpoint.uri` points to the JWKS endpoint of the Kubernetes API server, which publishes the keys used to sign the Service Account tokens.
+Tokens are validated locally by the Kafka nodes using these keys.
+* `oauth.valid.issuer.uri` is the token issuer of your Kubernetes cluster and is checked against the `iss` claim of the token.
+* `oauth.server.bearer.token.location` and `oauth.ssl.truststore.location` point to the Service Account token and the Kubernetes CA certificate mounted by Strimzi into the Kafka containers.
+The token is used to authenticate against the JWKS endpoint, which is not available to unauthenticated users by default.
+* `oauth.username.claim` uses the `sub` claim of the token as the name of the Kafka principal.
+* `oauth.check.access.token.type` is disabled because Service Account tokens don't contain the `typ` claim expected by the OAuth standard.
+* `oauth.include.accept.header` is disabled because the Kubernetes API server rejects requests that set the `Accept` header.
+* `unsecuredLoginStringClaim_sub` satisfies the parameter validation of the `OAuthBearerLoginModule` and isn't used for authentication.
+* `oauth.custom.claim.check` restricts the listener to tokens issued for a specific audience.
+* `principal.builder.class` maps the validated tokens to Kafka principals.
+For more information on the requirements that apply to principal builders, see the description of setting a custom principal builder that follows.
+
+NOTE: The issuer URI and the address of the JWKS endpoint depend on your Kubernetes cluster.
+Many Kubernetes clusters use `https://kubernetes.default.svc.cluster.local`, but managed Kubernetes services often use a different, externally hosted issuer.
+To find the values used by your cluster, run `kubectl get --raw /.well-known/openid-configuration` and check the `issuer` and `jwks_uri` fields.
+
+== Kafka principals and ACLs
+
+Clients are identified by the `sub` claim of the token, which for Service Account tokens has the format `system:serviceaccount:<namespace>:<service_account_name>`.
+Use these names when configuring ACL rules.
+
+Strimzi operands use a Service Account named after the component, so a Kafka Connect cluster named `my-connect` deployed in the `myproject` namespace authenticates as `User:system:serviceaccount:myproject:my-connect-connect`.
+
+== Restricting the token audience
+
+Without an audience check, any Service Account token from the Kubernetes cluster can be used to authenticate to the Kafka cluster, including the tokens that Pods use to communicate with the Kubernetes API.
+The `oauth.custom.claim.check` option in the example accepts only tokens that have `my-internal-listener` in their `aud` claim.
+Tokens issued for a custom audience are in turn rejected by the Kubernetes API server, which limits how they can be used if they leak.
+
+Clients have to request a token with a matching audience.
+Strimzi operands can do this using a projected Service Account token volume, as described in the xref:type-KafkaClientAuthenticationCustom-{context}[`KafkaClientAuthenticationCustom` schema reference].
+
 = Setting a custom principal builder
 
 You can set a custom principal builder in the Kafka cluster configuration.

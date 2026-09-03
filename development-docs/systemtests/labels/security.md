@@ -47,6 +47,7 @@ They cover authentication and authorization mechanisms (OAuth, ACLs, OPA integra
 - [testReplacingCustomClientsKeyPairToInvokeRenewalProcess](../io.strimzi.systemtest.security.custom.CustomCaST.md)
 - [testReplacingCustomClusterKeyPairToInvokeRenewalProcess](../io.strimzi.systemtest.security.custom.CustomCaST.md)
 - [testSaslPlainProducerConsumer](../io.strimzi.systemtest.security.oauth.OauthPlainST.md)
+- [testServiceAccountAuthentication](../io.strimzi.systemtest.security.custom.CustomAuthenticationST.md)
 - [testTeamAReadFromTopic](../io.strimzi.systemtest.security.oauth.OauthAuthorizationST.md)
 - [testTeamAWriteToTopic](../io.strimzi.systemtest.security.oauth.OauthAuthorizationST.md)
 - [testTeamAWriteToTopicStartingWithXAndTeamBReadFromTopicStartingWithX](../io.strimzi.systemtest.security.oauth.OauthAuthorizationST.md)
