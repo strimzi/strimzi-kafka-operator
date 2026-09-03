@@ -18,7 +18,7 @@ public enum ClusterSecurityEncryptionType {
     public static ClusterSecurityEncryptionType forValue(String value) {
         return switch (value) {
             case "none" -> NONE;
-            case "tls" -> TLS;
+            case "tls", "strimzi-tls" -> TLS; // We have to keep the legacy strimzi-tls here for downgrades/upgrades to/from 1.2.0
             default -> null;
         };
     }
@@ -27,7 +27,7 @@ public enum ClusterSecurityEncryptionType {
     public String toValue() {
         return switch (this) {
             case NONE -> "none";
-            case TLS -> "tls";
+            case TLS -> "strimzi-tls"; // We have to keep the legacy strimzi-tls here for downgrades/upgrades to/from 1.2.0
         };
     }
 }
