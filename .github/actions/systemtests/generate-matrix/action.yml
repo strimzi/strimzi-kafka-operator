@@ -32,6 +32,9 @@ inputs:
   default_tests:
     description: "Default JUnit5 tests that will be executed"
     required: false
+  default_ip_family:
+    description: "Default IP family for the Kind cluster (ipv4, ipv6, dual)"
+    required: false
   runnerArch:
     description: "Architecture of GitHub runner"
     required: false
@@ -94,9 +97,11 @@ runs:
         fi
         
         # Inject jobName in format 'pipeline-profile-arch' or 'pipeline-arch' when profile == pipeline
-        MATRIX=$(echo "$MATRIX" | jq --arg default_arch "$INPUT_DEFAULT_ARCH" '
+        # Also override ipFamily with the input value if provided (allows global override from workflow level)
+        MATRIX=$(echo "$MATRIX" | jq --arg default_arch "$INPUT_DEFAULT_ARCH" --arg ip_family "$INPUT_DEFAULT_IP_FAMILY" '
           map(
             .arch = (.arch // $default_arch)
+            | .ipFamily = (if $ip_family != "" then $ip_family else (.ipFamily // "ipv4") end)
             | . + {
               jobName:
                 (if .pipeline == .profile or (.profile == null)
@@ -114,7 +119,7 @@ runs:
       env:
         INPUT_PIPELINES: "${{ inputs.pipelines }}"
         INPUT_PROFILES: "${{ inputs.profiles }}"
-        INPUT_DEFAULT_AGENT: "${{ inputs.default_agent != '' && inputs.default_agent || 'ubuntu-latest' }}"
+        INPUT_DEFAULT_AGENT: "${{ inputs.default_agent != '' && inputs.default_agent || 'cncf-4cpu-16gb-x86-64' }}"
         INPUT_DEFAULT_ARCH: "${{ inputs.default_arch != '' && inputs.default_arch || 'amd64' }}"
         INPUT_DEFAULT_JDK_VERSION: "${{ inputs.default_jdk_version }}"
         INPUT_DEFAULT_STRIMZI_USE_FEATURE_GATES: "${{ inputs.default_strimzi_feature_gates }}"
@@ -123,3 +128,4 @@ runs:
         INPUT_DEFAULT_PARALLEL: "${{ inputs.default_parallel != '' && inputs.default_parallel || '1' }}"
         INPUT_DEFAULT_GROUPS: "${{ inputs.default_groups }}"
         INPUT_DEFAULT_TESTS: "${{ inputs.default_tests }}"
+        INPUT_DEFAULT_IP_FAMILY: "${{ inputs.default_ip_family }}"

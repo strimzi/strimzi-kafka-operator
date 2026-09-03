@@ -9,6 +9,7 @@
     "strimzi_rbac_scope": "CLUSTER",
     "cluster_operator_install_type": "yaml",
     "parallel": 1,
+    "ipFamily": "ipv4",
     "jobName": "upgrade-azp_kraft_upgrade-amd64"
   },
   {
@@ -21,6 +22,7 @@
     "strimzi_rbac_scope": "CLUSTER",
     "cluster_operator_install_type": "yaml",
     "parallel": 1,
+    "ipFamily": "ipv4",
     "jobName": "upgrade-azp_kafka_upgrade-amd64"
   },
   {
@@ -33,6 +35,7 @@
     "strimzi_rbac_scope": "CLUSTER",
     "cluster_operator_install_type": "yaml",
     "parallel": 1,
+    "ipFamily": "ipv4",
     "jobName": "upgrade-azp_kraft_upgrade-arm64"
   },
   {
@@ -45,6 +48,7 @@
     "strimzi_rbac_scope": "CLUSTER",
     "cluster_operator_install_type": "yaml",
     "parallel": 1,
+    "ipFamily": "ipv4",
     "jobName": "upgrade-azp_kafka_upgrade-arm64"
   }
 ]

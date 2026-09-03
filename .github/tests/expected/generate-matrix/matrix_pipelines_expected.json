@@ -4,11 +4,12 @@
     "arch": "amd64",
     "pipeline": "regression",
     "profile": "brokers-and-security",
-    "timeout": 480,
+    "timeout": 360,
     "strimzi_feature_gates": "",
     "strimzi_rbac_scope": "CLUSTER",
     "cluster_operator_install_type": "yaml",
     "parallel": 4,
+    "ipFamily": "ipv4",
     "jobName": "regression-brokers-and-security-amd64"
   },
   {
@@ -16,11 +17,12 @@
     "arch": "amd64",
     "pipeline": "regression",
     "profile": "operators",
-    "timeout": 480,
+    "timeout": 360,
     "strimzi_feature_gates": "",
     "strimzi_rbac_scope": "CLUSTER",
     "cluster_operator_install_type": "yaml",
     "parallel": 4,
+    "ipFamily": "ipv4",
     "jobName": "regression-operators-amd64"
   },
   {
@@ -28,11 +30,12 @@
     "arch": "amd64",
     "pipeline": "regression",
     "profile": "operands",
-    "timeout": 480,
+    "timeout": 360,
     "strimzi_feature_gates": "",
     "strimzi_rbac_scope": "CLUSTER",
     "cluster_operator_install_type": "yaml",
     "parallel": 4,
+    "ipFamily": "ipv4",
     "jobName": "regression-operands-amd64"
   },
   {
@@ -40,11 +43,12 @@
     "arch": "arm64",
     "pipeline": "regression",
     "profile": "brokers-and-security",
-    "timeout": 480,
+    "timeout": 360,
     "strimzi_feature_gates": "",
     "strimzi_rbac_scope": "CLUSTER",
     "cluster_operator_install_type": "yaml",
     "parallel": 4,
+    "ipFamily": "ipv4",
     "jobName": "regression-brokers-and-security-arm64"
   },
   {
@@ -52,11 +56,12 @@
     "arch": "arm64",
     "pipeline": "regression",
     "profile": "operators",
-    "timeout": 480,
+    "timeout": 360,
     "strimzi_feature_gates": "",
     "strimzi_rbac_scope": "CLUSTER",
     "cluster_operator_install_type": "yaml",
     "parallel": 4,
+    "ipFamily": "ipv4",
     "jobName": "regression-operators-arm64"
   },
   {
@@ -64,11 +69,12 @@
     "arch": "arm64",
     "pipeline": "regression",
     "profile": "operands",
-    "timeout": 480,
+    "timeout": 360,
     "strimzi_feature_gates": "",
     "strimzi_rbac_scope": "CLUSTER",
     "cluster_operator_install_type": "yaml",
     "parallel": 4,
+    "ipFamily": "ipv4",
     "jobName": "regression-operands-arm64"
   },
   {
@@ -81,6 +87,7 @@
     "strimzi_rbac_scope": "CLUSTER",
     "cluster_operator_install_type": "yaml",
     "parallel": 1,
+    "ipFamily": "ipv4",
     "jobName": "smoke-amd64"
   },
   {
@@ -93,6 +100,7 @@
     "strimzi_rbac_scope": "CLUSTER",
     "cluster_operator_install_type": "yaml",
     "parallel": 1,
+    "ipFamily": "ipv4",
     "jobName": "smoke-arm64"
   }
 ]

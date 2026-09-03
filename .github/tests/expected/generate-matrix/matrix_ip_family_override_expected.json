@@ -9,7 +9,7 @@
     "strimzi_rbac_scope": "CLUSTER",
     "cluster_operator_install_type": "yaml",
     "parallel": 1,
-    "ipFamily": "ipv4",
+    "ipFamily": "dual",
     "jobName": "smoke-amd64"
   },
   {
@@ -22,7 +22,7 @@
     "strimzi_rbac_scope": "CLUSTER",
     "cluster_operator_install_type": "yaml",
     "parallel": 1,
-    "ipFamily": "ipv4",
+    "ipFamily": "dual",
     "jobName": "smoke-arm64"
   }
 ]
