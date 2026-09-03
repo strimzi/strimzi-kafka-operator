@@ -180,8 +180,6 @@ public class KafkaAutoRebalancingReconciler {
     }
 
     private CompletionStage<Void> handleDetectedViolations(GoalViolationInfo goalViolationInfo) {
-        metricsHolder.anomaliesDetectedCounter(reconciliation.namespace(), goalViolationInfo.fixability().label()).increment();
-
         if (goalViolationInfo.fixability() == Fixability.UNFIXABLE) {
             LOGGER.warnCr(reconciliation, "Detected only unfixable goal violations at {}, no auto-rebalance possible", goalViolationInfo.detectionDate());
             return CompletableFuture.completedFuture(null);
@@ -195,14 +193,23 @@ public class KafkaAutoRebalancingReconciler {
                 .thenCompose(shouldTrigger -> {
                     if (shouldTrigger && imbalanceDetector.isInMaintenanceWindow()) {
                         LOGGER.infoCr(reconciliation, "Goal violations detected at {}, triggering rebalance", goalViolationInfo.detectionDate());
-                        return createKafkaRebalance(reconciliation.namespace(), reconciliation.name(), KafkaAutoRebalanceMode.IMBALANCE, null)
-                                .thenApply(created -> {
-                                    if (created) {
-                                        updateStatus(kafkaAutoRebalanceStatus, KafkaAutoRebalanceState.RebalanceOnImbalance);
-                                    } else {
-                                        updateStatus(kafkaAutoRebalanceStatus, KafkaAutoRebalanceState.Idle);
+                        return getKafkaRebalance(reconciliation.namespace(), reconciliation.name(), KafkaAutoRebalanceMode.IMBALANCE)
+                                .thenCompose(existingKr -> {
+                                    if (existingKr != null) {
+                                        // KR already exists and is being processed — skip creation and counter increment
+                                        LOGGER.debugCr(reconciliation, "Auto-rebalance KafkaRebalance already exists, skipping");
+                                        return CompletableFuture.completedFuture(null);
                                     }
-                                    return (Void) null;
+                                    return createKafkaRebalance(reconciliation.namespace(), reconciliation.name(), KafkaAutoRebalanceMode.IMBALANCE, null)
+                                            .thenApply(created -> {
+                                                if (created) {
+                                                    metricsHolder.anomaliesDetectedCounter(reconciliation.namespace(), "goal_violation", goalViolationInfo.fixability().label()).increment();
+                                                    updateStatus(kafkaAutoRebalanceStatus, KafkaAutoRebalanceState.RebalanceOnImbalance);
+                                                } else {
+                                                    updateStatus(kafkaAutoRebalanceStatus, KafkaAutoRebalanceState.Idle);
+                                                }
+                                                return (Void) null;
+                                            });
                                 });
                     } else if (shouldTrigger) {
                         LOGGER.infoCr(reconciliation, "Goal violations detected but outside maintenance window, skipping rebalance");
