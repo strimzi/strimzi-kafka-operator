@@ -139,7 +139,7 @@ public class CruiseControlUtils {
             encCheck = !kafkaProperties.containsKey(CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_ENDPOINT_ID_ALGO.getValue())
                     && !kafkaProperties.containsKey(CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_KEYSTORE_TYPE.getValue())
                     && !kafkaProperties.containsKey(CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_KEYSTORE_CERTIFICATE_CHAIN.getValue())
-                    && !kafkaProperties.getProperty(CruiseControlConfigurationParameters.METRICS_REPORTER_SECURITY_PROTOCOL.getValue()).endsWith("SSL");
+                    && !kafkaProperties.containsKey(CruiseControlConfigurationParameters.METRICS_REPORTER_SECURITY_PROTOCOL.getValue());
         }
 
         if (ClusterSecurityAuthenticationType.MTLS.equals(Environment.CLUSTER_SECURITY_AUTHENTICATION)) {
@@ -149,7 +149,7 @@ public class CruiseControlUtils {
         } else if (ClusterSecurityAuthenticationType.NONE.equals(Environment.CLUSTER_SECURITY_AUTHENTICATION))   {
             authCheck = !kafkaProperties.containsKey(CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_TRUSTSTORE_TYPE.getValue())
                     && !kafkaProperties.containsKey(CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_TRUSTSTORE_CERTIFICATES.getValue())
-                    && !kafkaProperties.getProperty(CruiseControlConfigurationParameters.METRICS_REPORTER_SECURITY_PROTOCOL.getValue()).startsWith("SASL");
+                    && !kafkaProperties.containsKey(CruiseControlConfigurationParameters.METRICS_REPORTER_SECURITY_PROTOCOL.getValue());
         }
 
         return encCheck && authCheck;
