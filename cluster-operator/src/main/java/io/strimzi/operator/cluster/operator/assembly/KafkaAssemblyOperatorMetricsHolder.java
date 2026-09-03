@@ -140,18 +140,19 @@ public class KafkaAssemblyOperatorMetricsHolder extends OperatorMetricsHolder {
      * Counter metric for anomalies detected by Cruise Control.
      *
      * @param namespace     Namespace of the resources being reconciled
+     * @param type          Type of anomaly detected (e.g. goal_violation)
      * @param fixability    Fixability classification of the detected anomaly
      *
      * @return  Metrics counter
      */
-    public Counter anomaliesDetectedCounter(String namespace, String fixability) {
+    public Counter anomaliesDetectedCounter(String namespace, String type, String fixability) {
         return getCounter(
-                new AnomalyMetricKey(kind, namespace, fixability),
+                new AnomalyMetricKey(kind, namespace, type, fixability),
                 METRICS_ANOMALIES_DETECTED,
                 "Total number of anomalies detected by Cruise Control",
                 Optional.of(getLabelSelectorValues()),
                 anomaliesDetectedCounterMap,
-                Tag.of("type", "goal_violation"),
+                Tag.of("type", type),
                 Tag.of("fixability", fixability));
     }
 }
