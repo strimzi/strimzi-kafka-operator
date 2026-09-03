@@ -393,6 +393,6 @@ scenarios:
       cluster_operator_install_type: "yaml"
       kube: "latest"
       release: "latest"
-      ipfamily: "dual"
+      ipfamily: "ipv4"
       cluster_security_encryption: "none"
       cluster_security_authentication: "none"
