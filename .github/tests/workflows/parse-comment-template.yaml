@@ -166,6 +166,7 @@ jobs:
           fi
           if [[ "${EXPECT_IPFAMILY+defined}" == "defined" && "$ACTUAL_IPFAMILY"  != "$EXPECT_IPFAMILY" ]]; then
             echo "❌ ipFamily mismatch";  exit 1
+          fi
           if [[ "${EXPECT_CLUSTER_SECURITY_ENCRYPTION+defined}" == "defined" && "$ACTUAL_CLUSTER_SECURITY_ENCRYPTION"  != "$EXPECT_CLUSTER_SECURITY_ENCRYPTION" ]]; then
             echo "❌ clusterSecurityEncryption mismatch";  exit 1
           fi
