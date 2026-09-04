@@ -32,6 +32,7 @@ They cover authentication and authorization mechanisms (OAuth, ACLs, OPA integra
 - [testKafkaAndKafkaConnectCipherSuites](../io.strimzi.systemtest.security.SecurityST.md)
 - [testKafkaAndKafkaConnectTlsVersion](../io.strimzi.systemtest.security.SecurityST.md)
 - [testKafkaConnectTrustWithCustomCaChain](../io.strimzi.systemtest.security.custom.CustomCaChainST.md)
+- [testMigrateBetweenCaTypes](../io.strimzi.systemtest.security.CertManagerST.md)
 - [testMultistageCustomCaTrustChainEstablishment](../io.strimzi.systemtest.security.custom.CustomCaChainST.md)
 - [testMultistageCustomCaUserCertificateAuthentication](../io.strimzi.systemtest.security.custom.CustomCaChainST.md)
 - [testNPGenerationEnvironmentVariable](../io.strimzi.systemtest.security.NetworkPoliciesST.md)

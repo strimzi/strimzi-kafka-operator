@@ -8,7 +8,6 @@ import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.OwnerReferenceBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
-import io.strimzi.api.kafka.model.common.CertificateManagerType;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.certs.CertIssuer;
 import io.strimzi.operator.cluster.model.AbstractModel;
@@ -88,12 +87,8 @@ public abstract class CaProvider {
                     );
                 }
             }
-            case CERT_MANAGER -> {
-                if (caConfig.isGenerateCa()) {
-                    throw new IllegalArgumentException("Certificate Manager type is set to " + CertificateManagerType.CERT_MANAGER.toValue() + ", but generateCertificateAuthority is set to true. Set generateCertificateAuthority to false when using cert-manager as the certificate manager type.");
-                }
-                yield new CertManagerCaProvider(reconciliation, caRole, caConfig, kafkaCr, existingCaCertSecret, clusterOperatorCertSecret, certManagerCertificateOperator, secretOperator);
-            }
+            case CERT_MANAGER -> new CertManagerCaProvider(reconciliation, caRole, caConfig, kafkaCr, existingCaCertSecret,
+                    clusterOperatorCertSecret, certManagerCertificateOperator, secretOperator);
         };
     }
 
