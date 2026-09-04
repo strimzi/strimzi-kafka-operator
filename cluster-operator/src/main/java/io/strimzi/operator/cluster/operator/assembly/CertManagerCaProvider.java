@@ -24,7 +24,6 @@ import io.strimzi.operator.common.operator.resource.kubernetes.SecretOperator;
 import java.security.cert.CertificateException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
 import static io.strimzi.operator.common.ca.Ca.ANNO_STRIMZI_IO_CA_KEY_GENERATION;
@@ -72,9 +71,6 @@ public class CertManagerCaProvider extends CaProvider {
 
     @Override
     public CompletionStage<CaProviderResult> createAndReconcileCa() {
-        if (certificateAuthority.getCertManager() == null) {
-            return CompletableFuture.failedFuture(new InvalidResourceException("When CA type is set to cert-manager, certManager property is required (e.g. clusterCa.certManager)."));
-        }
         return getCaCertForCertManager()
                 .thenCompose(newCaCertAsBase64 -> {
                     CertManagerCa certManagerCa = new CertManagerCa(reconciliation, caRole,

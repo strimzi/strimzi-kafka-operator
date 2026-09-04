@@ -209,36 +209,6 @@ public class CertManagerCaProviderTest {
 
     @ParameterizedTest
     @EnumSource(Ca.CaRole.class)
-    public void throwsWhenCertManagerPropertyMissing(Ca.CaRole caRole) {
-        CertificateAuthority ca = new CertificateAuthorityBuilder()
-                .withValidityDays(100)
-                .withRenewalDays(10)
-                .withGenerateCertificateAuthority(false)
-                .withType(CertificateManagerType.CERT_MANAGER)
-                .build();
-
-        Kafka kafkaCluster = switch (caRole) {
-            case CLUSTER_CA -> new KafkaBuilder(KAFKA).editSpec().withClusterCa(ca).endSpec().build();
-            case CLIENTS_CA -> new KafkaBuilder(KAFKA).editSpec().withClientsCa(ca).endSpec().build();
-        };
-
-        CertManagerCaProvider caProvider = new CertManagerCaProvider(Reconciliation.DUMMY_RECONCILIATION,
-                caRole,
-                new CaConfig(CERT_AUTHORITY, false),
-                kafkaCluster,
-                null,
-                null,
-                certificateOperator,
-                secretOperations
-        );
-
-        Exception exception = assertThrows(CompletionException.class, () -> caProvider.createAndReconcileCa().toCompletableFuture().join());
-        assertThat(exception.getCause(), instanceOf(InvalidResourceException.class));
-        assertThat(exception.getCause().getMessage(), is("When CA type is set to cert-manager, certManager property is required (e.g. clusterCa.certManager)."));
-    }
-
-    @ParameterizedTest
-    @EnumSource(Ca.CaRole.class)
     public void throwsWhenCaCertSecretMissing(Ca.CaRole caRole) {
         CertManagerCaProvider caProvider = new CertManagerCaProvider(Reconciliation.DUMMY_RECONCILIATION,
                 caRole,
