@@ -91,7 +91,6 @@ public class CustomAuthenticationST extends AbstractST {
             @Step(value = "Create a FileStreamSink KafkaConnector consuming from the KafkaTopic.", expected = "KafkaConnector is ready."),
             @Step(value = "Produce messages with a Kafka client using a projected Service Account token with the expected audience.", expected = "The producer finishes successfully."),
             @Step(value = "Check the file sink of the KafkaConnector.", expected = "All produced messages are present in the file sink, so the connector consumed them over the authenticated listener."),
-            @Step(value = "Produce messages with a Kafka client using a projected Service Account token with a different audience.", expected = "The producer fails to authenticate and does not deliver any messages.")
         },
         labels = {
             @Label(value = TestDocsLabels.SECURITY)

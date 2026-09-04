@@ -41,7 +41,7 @@ public class ProjectedVolumeSource implements UnknownPropertyPreserving {
     private ServiceAccountTokenProjection serviceAccountToken;
     private Map<String, Object> additionalProperties;
 
-    @Description("information about the serviceAccountToken data to project.")
+    @Description("Information about the serviceAccountToken data to project.")
     @KubeLink(group = "core", version = "v1", kind = "serviceaccounttokenprojection")
     public ServiceAccountTokenProjection getServiceAccountToken() {
         return serviceAccountToken;
