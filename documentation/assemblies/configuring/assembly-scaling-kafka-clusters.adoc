@@ -69,8 +69,14 @@ Cruise Control provides `add-brokers` and `remove-brokers` modes for scaling:
 
 With auto-rebalancing, these modes run automatically using the default Cruise Control configuration or custom settings from a rebalancing template.
 
+An additional `imbalance` mode is available for automatically rebalancing when Cruise Control detects goal violations in the cluster, independent of scaling events.
+
 NOTE: To increase the throughput of a Kafka topic, you can increase the number of partitions for that topic, distributing the load across multiple brokers. 
 However, if all brokers are constrained by a resource (such as I/O), adding more partitions won't improve throughput, and adding more brokers is necessary.
 
 include::../../modules/cruise-control/proc-automating-rebalances.adoc[leveloffset=+1]
 include::../../modules/configuring/con-skipping-scale-down-checks.adoc[leveloffset=+1]
+
+include::../../modules/configuring/proc-automating-rebalances-imbalance.adoc[leveloffset=+1]
+
+include::../../modules/configuring/con-auto-rebalance-imbalance-alerts.adoc[leveloffset=+1]

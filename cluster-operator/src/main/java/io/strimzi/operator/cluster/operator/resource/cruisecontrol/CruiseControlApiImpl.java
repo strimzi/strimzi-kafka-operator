@@ -35,6 +35,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpTimeoutException;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
@@ -60,11 +61,11 @@ public class CruiseControlApiImpl implements CruiseControlApi {
     /**
      * Constructor
      *
-     * @param idleTimeout           Idle timeout
+     * @param idleTimeout       Idle timeout
      * @param clusterCaCertSecret   Cluster CA certificate Secret, used to trust the Cruise Control TLS server
-     * @param ccApiSecret           Cruise Control API Secret
-     * @param apiAuthEnabled        Flag indicating if authentication is enabled
-     * @param apiSslEnabled         Flag indicating if TLS is enabled
+     * @param ccApiSecret       Cruise Control API Secret
+     * @param apiAuthEnabled    Flag indicating if authentication is enabled
+     * @param apiSslEnabled     Flag indicating if TLS is enabled
      */
     public CruiseControlApiImpl(int idleTimeout, Secret clusterCaCertSecret, Secret ccApiSecret, Boolean apiAuthEnabled, boolean apiSslEnabled) {
         this.idleTimeout = idleTimeout;
@@ -75,11 +76,16 @@ public class CruiseControlApiImpl implements CruiseControlApi {
     }
 
     @Override
-    public CompletionStage<CruiseControlStateResponse> getCruiseControlState(Reconciliation reconciliation, String host, int port, boolean verbose) {
-        String path = new PathBuilder(CruiseControlEndpoints.STATE)
-                .withParameter(CruiseControlParameters.VERBOSE, String.valueOf(verbose))
+    public CompletionStage<CruiseControlStateResponse> getCruiseControlState(Reconciliation reconciliation, String host, int port, boolean verbose, String substates) {
+        PathBuilder pathBuilder = new PathBuilder(CruiseControlEndpoints.STATE)
                 .withParameter(CruiseControlParameters.JSON, "true")
-                .build();
+                .withParameter(CruiseControlParameters.VERBOSE, String.valueOf(verbose));
+
+        if (substates != null) {
+            pathBuilder.withParameter(CruiseControlParameters.SUBSTATES, substates);
+        }
+
+        String path = pathBuilder.build();
 
         HttpRequest.Builder builder = HttpRequest.newBuilder()
                 .uri(URI.create(String.format("%s://%s:%d%s", apiSslEnabled ? "https" : "http", host, port, path)))
@@ -96,17 +102,16 @@ public class CruiseControlApiImpl implements CruiseControlApi {
         HttpRequest request = builder.build();
         LOGGER.traceOp("Request: {}", request);
 
-        LOGGER.debugCr(reconciliation, "Sending GET request to {}", path);
+        LOGGER.debugCr(reconciliation, "Sending GET request to {} with substates={}", path, substates);
         return httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString())
                 .thenCompose(response -> {
-                    // send request and handle response
                     LOGGER.traceCr(reconciliation, "Response: {}, body: {}", response, response.body());
                     int statusCode = response.statusCode();
                     if (statusCode == 200 || statusCode == 201) {
                         String userTaskID = response.headers().firstValue(CruiseControlHeaders.USER_TASK_ID_HEADER).orElse("");
                         JsonNode json = parseToJsonNode(response.body());
 
-                        LOGGER.debugCr(reconciliation, "Got {} response to GET request to {} : userTaskID = {}", response.statusCode(), path, userTaskID);
+                        LOGGER.debugCr(reconciliation, "Got {} response to GET request to {}: userTaskID = {}", response.statusCode(), path, userTaskID);
                         if (json.has(CC_REST_API_ERROR_KEY)) {
                             return CompletableFuture.failedFuture(new CruiseControlRestException(
                                     "Error for request: " + host + ":" + port + path + ". Server returned: " +
@@ -118,11 +123,100 @@ public class CruiseControlApiImpl implements CruiseControlApi {
                         return CompletableFuture.failedFuture(new CruiseControlRestException(
                                 "Unexpected status code " + response.statusCode() + " for request to " + host + ":" + port + path));
                     }
-
                 })
                 .exceptionally(ex -> {
                     throw httpExceptionHandler(ex, request.method(), idleTimeout);
                 });
+    }
+
+    @Override
+    public CompletionStage<GoalViolationInfo> getGoalViolations(Reconciliation reconciliation, String host, int port) {
+        return getCruiseControlState(reconciliation, host, port, false, "anomaly_detector")
+                .thenCompose(response -> parseGoalViolations(reconciliation, response))
+                .exceptionally(error -> {
+                    LOGGER.warnCr(reconciliation, "Failed to query Cruise Control for goal violations", error);
+                    return null;
+                });
+    }
+
+    private CompletableFuture<GoalViolationInfo> parseGoalViolations(Reconciliation reconciliation, CruiseControlStateResponse response) {
+        if (response == null || response.getJson() == null) {
+            return CompletableFuture.completedFuture(null);
+        }
+
+        JsonNode jsonResponse = response.getJson();
+        JsonNode anomalyDetectorState = jsonResponse.get("AnomalyDetectorState");
+        if (anomalyDetectorState == null) {
+            return CompletableFuture.completedFuture(null);
+        }
+
+        // Check for goal violations
+        ArrayNode recentGoalViolations = (ArrayNode) anomalyDetectorState.get("recentGoalViolations");
+        if (recentGoalViolations == null || recentGoalViolations.isEmpty()) {
+            return CompletableFuture.completedFuture(null);
+        }
+
+        // Get the most recent violation (first element)
+        JsonNode recentViolation = recentGoalViolations.get(0);
+        if (recentViolation == null) {
+            return CompletableFuture.completedFuture(null);
+        }
+
+        // Parse detectionDate - CC returns ISO 8601 string like "2026-06-21T06:05:45Z"
+        Instant detectionDate = parseDetectionDate(reconciliation, recentViolation);
+        if (detectionDate == null) {
+            return CompletableFuture.completedFuture(null);
+        }
+
+        ArrayNode fixableViolatedGoals = (ArrayNode) recentViolation.get("fixableViolatedGoals");
+        ArrayNode unfixableViolatedGoals = (ArrayNode) recentViolation.get("unfixableViolatedGoals");
+
+        boolean hasFixable = fixableViolatedGoals != null && !fixableViolatedGoals.isEmpty();
+        boolean hasUnfixable = unfixableViolatedGoals != null && !unfixableViolatedGoals.isEmpty();
+
+        if (!hasFixable && !hasUnfixable) {
+            return CompletableFuture.completedFuture(null);
+        }
+
+        GoalViolationInfo.Fixability fixability;
+        if (hasFixable && hasUnfixable) {
+            fixability = GoalViolationInfo.Fixability.MIXED;
+            LOGGER.warnCr(reconciliation, "Goal violations detected at {} with both fixable and unfixable goals", detectionDate);
+        } else if (hasUnfixable) {
+            fixability = GoalViolationInfo.Fixability.UNFIXABLE;
+            LOGGER.warnCr(reconciliation, "Goal violations detected at {} but all goals are unfixable", detectionDate);
+        } else {
+            fixability = GoalViolationInfo.Fixability.FIXABLE;
+            LOGGER.debugCr(reconciliation, "Found fixable goal violations detected at {}", detectionDate);
+        }
+
+        return CompletableFuture.completedFuture(new GoalViolationInfo(detectionDate, fixability));
+    }
+
+    private Instant parseDetectionDate(Reconciliation reconciliation, JsonNode violation) {
+        // Try detectionMs first (CC returns epoch milliseconds in JSON format)
+        if (violation.has("detectionMs")) {
+            JsonNode node = violation.get("detectionMs");
+            if (node.isNumber()) {
+                return Instant.ofEpochMilli(node.asLong());
+            }
+        }
+
+        // Fallback to detectionDate (string format)
+        if (violation.has("detectionDate")) {
+            JsonNode node = violation.get("detectionDate");
+            if (node.isTextual()) {
+                try {
+                    return Instant.parse(node.asText());
+                } catch (Exception e) {
+                    LOGGER.warnCr(reconciliation, "Failed to parse detectionDate: {}", node.asText());
+                    return null;
+                }
+            } else if (node.isNumber()) {
+                return Instant.ofEpochMilli(node.asLong());
+            }
+        }
+        return null;
     }
 
     private static HTTPHeader generateAuthHttpHeader(String user, String password) {
@@ -320,8 +414,8 @@ public class CruiseControlApiImpl implements CruiseControlApi {
     @Override
     public CompletionStage<CruiseControlUserTasksResponse> getUserTaskStatus(Reconciliation reconciliation, String host, int port, String userTaskId) {
         PathBuilder pathBuilder = new PathBuilder(CruiseControlEndpoints.USER_TASKS)
-                        .withParameter(CruiseControlParameters.JSON, "true")
-                        .withParameter(CruiseControlParameters.FETCH_COMPLETE, "true");
+                .withParameter(CruiseControlParameters.JSON, "true")
+                .withParameter(CruiseControlParameters.FETCH_COMPLETE, "true");
 
         if (userTaskId != null) {
             pathBuilder.withParameter(CruiseControlParameters.USER_TASK_IDS, userTaskId);
@@ -385,7 +479,7 @@ public class CruiseControlApiImpl implements CruiseControlApi {
                                     // Completed tasks will have the original rebalance proposal summary in their original response
                                     // The original response is not Json, therefore it needs to be parsed
                                     JsonNode originalResponse = parseToJsonNode(jsonUserTask.get(
-                                                CruiseControlRebalanceKeys.ORIGINAL_RESPONSE.getKey()).asText());
+                                            CruiseControlRebalanceKeys.ORIGINAL_RESPONSE.getKey()).asText());
                                     statusJson.set(CruiseControlRebalanceKeys.SUMMARY.getKey(),
                                             originalResponse.get(CruiseControlRebalanceKeys.SUMMARY.getKey()));
                                     // Extract the load before/after information for the brokers
@@ -440,7 +534,7 @@ public class CruiseControlApiImpl implements CruiseControlApi {
     @Override
     public CompletionStage<CruiseControlResponse> stopExecution(Reconciliation reconciliation, String host, int port) {
         String path = new PathBuilder(CruiseControlEndpoints.STOP)
-                        .withParameter(CruiseControlParameters.JSON, "true").build();
+                .withParameter(CruiseControlParameters.JSON, "true").build();
 
         HttpRequest.Builder builder = HttpRequest.newBuilder()
                 .uri(URI.create(String.format("%s://%s:%d%s", apiSslEnabled ? "https" : "http", host, port, path)))
@@ -491,8 +585,11 @@ public class CruiseControlApiImpl implements CruiseControlApi {
             return new StrimziTimeoutException("The timeout period of " + timeout * 1000 + "ms has been exceeded while executing " + requestMethod);
         } else if (ex.getCause() instanceof NoRouteToHostException || ex.getCause() instanceof ConnectException) {
             return new CruiseControlRetriableConnectionException(ex.getCause());
-        } else {
+        } else if (ex.getCause() instanceof RuntimeException) {
             return (RuntimeException) ex.getCause();
+        } else {
+            return new CruiseControlRetriableConnectionException(ex.getCause());
         }
     }
 }
+

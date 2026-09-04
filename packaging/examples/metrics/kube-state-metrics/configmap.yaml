@@ -138,6 +138,7 @@ data:
                 deprecated: [ status, conditions, "[reason=DeprecatedFields]", type ]
                 proposal_ready: [ status, conditions, "[type=ProposalReady]", status ]
                 rebalancing: [ status, conditions, "[type=Rebalancing]", status ]
+                mode: [ spec, mode ]
                 template: [ metadata, annotations, "strimzi.io/rebalance-template" ]
         - groupVersionKind:
             group: kafka.strimzi.io
