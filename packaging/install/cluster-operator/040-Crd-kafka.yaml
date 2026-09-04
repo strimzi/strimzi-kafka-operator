@@ -1180,26 +1180,7 @@ spec:
                                   properties:
                                     defaultMode:
                                       type: integer
-                                    items:
-                                      type: array
-                                      items:
-                                        type: object
-                                        properties:
-                                          key:
-                                            type: string
-                                          mode:
-                                            type: integer
-                                          path:
-                                            type: string
-                                    optional:
-                                      type: boolean
-                                    secretName:
-                                      type: string
-                                  description: '`Secret` to use to populate the volume.'
-                                configMap:
-                                  type: object
-                                  properties:
-                                    defaultMode:
+                                    defaultUser:
                                       type: integer
                                     items:
                                       type: array
@@ -1212,6 +1193,33 @@ spec:
                                             type: integer
                                           path:
                                             type: string
+                                          user:
+                                            type: integer
+                                    optional:
+                                      type: boolean
+                                    secretName:
+                                      type: string
+                                  description: '`Secret` to use to populate the volume.'
+                                configMap:
+                                  type: object
+                                  properties:
+                                    defaultMode:
+                                      type: integer
+                                    defaultUser:
+                                      type: integer
+                                    items:
+                                      type: array
+                                      items:
+                                        type: object
+                                        properties:
+                                          key:
+                                            type: string
+                                          mode:
+                                            type: integer
+                                          path:
+                                            type: string
+                                          user:
+                                            type: integer
                                     name:
                                       type: string
                                     optional:
@@ -1282,6 +1290,8 @@ spec:
                                                 type: integer
                                               path:
                                                 type: string
+                                              user:
+                                                type: integer
                                             description: information about the serviceAccountToken data to project.
                                         oneOf:
                                         - properties:
@@ -1311,26 +1321,7 @@ spec:
                                   properties:
                                     defaultMode:
                                       type: integer
-                                    items:
-                                      type: array
-                                      items:
-                                        type: object
-                                        properties:
-                                          key:
-                                            type: string
-                                          mode:
-                                            type: integer
-                                          path:
-                                            type: string
-                                    optional:
-                                      type: boolean
-                                    secretName:
-                                      type: string
-                                  description: "`Secret` to use to populate the volume. The name of the Secret and the items key and path fields can use placeholders that would be replaced for every individual node. Valid placeholders that you can use in the template are `{nodeId}` and `{nodePodName}`."
-                                configMap:
-                                  type: object
-                                  properties:
-                                    defaultMode:
+                                    defaultUser:
                                       type: integer
                                     items:
                                       type: array
@@ -1343,6 +1334,33 @@ spec:
                                             type: integer
                                           path:
                                             type: string
+                                          user:
+                                            type: integer
+                                    optional:
+                                      type: boolean
+                                    secretName:
+                                      type: string
+                                  description: "`Secret` to use to populate the volume. The name of the Secret and the items key and path fields can use placeholders that would be replaced for every individual node. Valid placeholders that you can use in the template are `{nodeId}` and `{nodePodName}`."
+                                configMap:
+                                  type: object
+                                  properties:
+                                    defaultMode:
+                                      type: integer
+                                    defaultUser:
+                                      type: integer
+                                    items:
+                                      type: array
+                                      items:
+                                        type: object
+                                        properties:
+                                          key:
+                                            type: string
+                                          mode:
+                                            type: integer
+                                          path:
+                                            type: string
+                                          user:
+                                            type: integer
                                     name:
                                       type: string
                                     optional:
@@ -1707,6 +1725,10 @@ spec:
                             items:
                               type: object
                               properties:
+                                bindMountOptions:
+                                  type: array
+                                  items:
+                                    type: string
                                 mountPath:
                                   type: string
                                 mountPropagation:
@@ -1850,6 +1872,10 @@ spec:
                             items:
                               type: object
                               properties:
+                                bindMountOptions:
+                                  type: array
+                                  items:
+                                    type: string
                                 mountPath:
                                   type: string
                                 mountPropagation:
@@ -2943,26 +2969,7 @@ spec:
                                   properties:
                                     defaultMode:
                                       type: integer
-                                    items:
-                                      type: array
-                                      items:
-                                        type: object
-                                        properties:
-                                          key:
-                                            type: string
-                                          mode:
-                                            type: integer
-                                          path:
-                                            type: string
-                                    optional:
-                                      type: boolean
-                                    secretName:
-                                      type: string
-                                  description: '`Secret` to use to populate the volume.'
-                                configMap:
-                                  type: object
-                                  properties:
-                                    defaultMode:
+                                    defaultUser:
                                       type: integer
                                     items:
                                       type: array
@@ -2975,6 +2982,33 @@ spec:
                                             type: integer
                                           path:
                                             type: string
+                                          user:
+                                            type: integer
+                                    optional:
+                                      type: boolean
+                                    secretName:
+                                      type: string
+                                  description: '`Secret` to use to populate the volume.'
+                                configMap:
+                                  type: object
+                                  properties:
+                                    defaultMode:
+                                      type: integer
+                                    defaultUser:
+                                      type: integer
+                                    items:
+                                      type: array
+                                      items:
+                                        type: object
+                                        properties:
+                                          key:
+                                            type: string
+                                          mode:
+                                            type: integer
+                                          path:
+                                            type: string
+                                          user:
+                                            type: integer
                                     name:
                                       type: string
                                     optional:
@@ -3045,6 +3079,8 @@ spec:
                                                 type: integer
                                               path:
                                                 type: string
+                                              user:
+                                                type: integer
                                             description: information about the serviceAccountToken data to project.
                                         oneOf:
                                         - properties:
@@ -3192,6 +3228,10 @@ spec:
                             items:
                               type: object
                               properties:
+                                bindMountOptions:
+                                  type: array
+                                  items:
+                                    type: string
                                 mountPath:
                                   type: string
                                 mountPropagation:
@@ -3335,6 +3375,10 @@ spec:
                             items:
                               type: object
                               properties:
+                                bindMountOptions:
+                                  type: array
+                                  items:
+                                    type: string
                                 mountPath:
                                   type: string
                                 mountPropagation:
@@ -4218,26 +4262,7 @@ spec:
                                   properties:
                                     defaultMode:
                                       type: integer
-                                    items:
-                                      type: array
-                                      items:
-                                        type: object
-                                        properties:
-                                          key:
-                                            type: string
-                                          mode:
-                                            type: integer
-                                          path:
-                                            type: string
-                                    optional:
-                                      type: boolean
-                                    secretName:
-                                      type: string
-                                  description: '`Secret` to use to populate the volume.'
-                                configMap:
-                                  type: object
-                                  properties:
-                                    defaultMode:
+                                    defaultUser:
                                       type: integer
                                     items:
                                       type: array
@@ -4250,6 +4275,33 @@ spec:
                                             type: integer
                                           path:
                                             type: string
+                                          user:
+                                            type: integer
+                                    optional:
+                                      type: boolean
+                                    secretName:
+                                      type: string
+                                  description: '`Secret` to use to populate the volume.'
+                                configMap:
+                                  type: object
+                                  properties:
+                                    defaultMode:
+                                      type: integer
+                                    defaultUser:
+                                      type: integer
+                                    items:
+                                      type: array
+                                      items:
+                                        type: object
+                                        properties:
+                                          key:
+                                            type: string
+                                          mode:
+                                            type: integer
+                                          path:
+                                            type: string
+                                          user:
+                                            type: integer
                                     name:
                                       type: string
                                     optional:
@@ -4320,6 +4372,8 @@ spec:
                                                 type: integer
                                               path:
                                                 type: string
+                                              user:
+                                                type: integer
                                             description: information about the serviceAccountToken data to project.
                                         oneOf:
                                         - properties:
@@ -4522,6 +4576,10 @@ spec:
                             items:
                               type: object
                               properties:
+                                bindMountOptions:
+                                  type: array
+                                  items:
+                                    type: string
                                 mountPath:
                                   type: string
                                 mountPropagation:
@@ -5371,26 +5429,7 @@ spec:
                                   properties:
                                     defaultMode:
                                       type: integer
-                                    items:
-                                      type: array
-                                      items:
-                                        type: object
-                                        properties:
-                                          key:
-                                            type: string
-                                          mode:
-                                            type: integer
-                                          path:
-                                            type: string
-                                    optional:
-                                      type: boolean
-                                    secretName:
-                                      type: string
-                                  description: '`Secret` to use to populate the volume.'
-                                configMap:
-                                  type: object
-                                  properties:
-                                    defaultMode:
+                                    defaultUser:
                                       type: integer
                                     items:
                                       type: array
@@ -5403,6 +5442,33 @@ spec:
                                             type: integer
                                           path:
                                             type: string
+                                          user:
+                                            type: integer
+                                    optional:
+                                      type: boolean
+                                    secretName:
+                                      type: string
+                                  description: '`Secret` to use to populate the volume.'
+                                configMap:
+                                  type: object
+                                  properties:
+                                    defaultMode:
+                                      type: integer
+                                    defaultUser:
+                                      type: integer
+                                    items:
+                                      type: array
+                                      items:
+                                        type: object
+                                        properties:
+                                          key:
+                                            type: string
+                                          mode:
+                                            type: integer
+                                          path:
+                                            type: string
+                                          user:
+                                            type: integer
                                     name:
                                       type: string
                                     optional:
@@ -5473,6 +5539,8 @@ spec:
                                                 type: integer
                                               path:
                                                 type: string
+                                              user:
+                                                type: integer
                                             description: information about the serviceAccountToken data to project.
                                         oneOf:
                                         - properties:
@@ -5620,6 +5688,10 @@ spec:
                             items:
                               type: object
                               properties:
+                                bindMountOptions:
+                                  type: array
+                                  items:
+                                    type: string
                                 mountPath:
                                   type: string
                                 mountPropagation:

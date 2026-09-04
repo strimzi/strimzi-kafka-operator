@@ -145,10 +145,10 @@ public class TemplateUtilsTest {
                                 .withName("projected-volume")
                                 .withNewProjected()
                                     .addNewSource()
-                                        .withNewServiceAccountToken("my-audience", 600L, "my-token")
+                                        .withNewServiceAccountToken("my-audience", 600L, "my-token", 1001L)
                                     .endSource()
                                     .addNewSource()
-                                        .withNewServiceAccountToken("my-other-audience", null, "my-other-token")
+                                        .withNewServiceAccountToken("my-other-audience", null, "my-other-token", null)
                                     .endSource()
                                 .endProjected()
                                 .build())
@@ -234,9 +234,11 @@ public class TemplateUtilsTest {
         assertThat(existingVolumes.get(8).getProjected().getSources().get(0).getServiceAccountToken().getAudience(), is("my-audience"));
         assertThat(existingVolumes.get(8).getProjected().getSources().get(0).getServiceAccountToken().getExpirationSeconds(), is(600L));
         assertThat(existingVolumes.get(8).getProjected().getSources().get(0).getServiceAccountToken().getPath(), is("my-token"));
+        assertThat(existingVolumes.get(8).getProjected().getSources().get(0).getServiceAccountToken().getUser(), is(1001L));
         assertThat(existingVolumes.get(8).getProjected().getSources().get(1).getServiceAccountToken().getAudience(), is("my-other-audience"));
         assertThat(existingVolumes.get(8).getProjected().getSources().get(1).getServiceAccountToken().getExpirationSeconds(), is(nullValue()));
         assertThat(existingVolumes.get(8).getProjected().getSources().get(1).getServiceAccountToken().getPath(), is("my-other-token"));
+        assertThat(existingVolumes.get(8).getProjected().getSources().get(1).getServiceAccountToken().getUser(), is(nullValue()));
         assertThat(existingVolumes.get(8).getSecret(), is(nullValue()));
         assertThat(existingVolumes.get(8).getConfigMap(), is(nullValue()));
         assertThat(existingVolumes.get(8).getEmptyDir(), is(nullValue()));
