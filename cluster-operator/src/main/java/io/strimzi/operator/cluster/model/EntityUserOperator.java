@@ -173,10 +173,11 @@ public class EntityUserOperator extends AbstractModel implements SupportsLogging
                 if (kafkaAssembly.getSpec().getClientsCa().getRenewalDays() > 0) {
                     result.clientsCaRenewalDays = kafkaAssembly.getSpec().getClientsCa().getRenewalDays();
                 }
+
                 result.certificateManagerType = kafkaAssembly.getSpec().getClientsCa().getType();
+
                 if (CertificateManagerType.CERT_MANAGER.equals(result.certificateManagerType)
-                        && kafkaAssembly.getSpec().getClientsCa().getCertManager() != null
-                        && kafkaAssembly.getSpec().getClientsCa().getCertManager().getIssuerRef() != null) {
+                        && kafkaAssembly.getSpec().getClientsCa().getCertManager() != null) {
                     result.certManagerIssuerName = kafkaAssembly.getSpec().getClientsCa().getCertManager().getIssuerRef().getName();
                     result.certManagerIssuerKind = kafkaAssembly.getSpec().getClientsCa().getCertManager().getIssuerRef().getKind();
                     result.certManagerIssuerGroup = kafkaAssembly.getSpec().getClientsCa().getCertManager().getIssuerRef().getGroup();
@@ -262,15 +263,9 @@ public class EntityUserOperator extends AbstractModel implements SupportsLogging
 
         // if CA type is cert-manager, set cert-manager env vars
         if (CertificateManagerType.CERT_MANAGER.equals(certificateManagerType)) {
-            if (certManagerIssuerName != null && !certManagerIssuerName.isEmpty()) {
-                varList.add(ContainerUtils.createEnvVar(ENV_VAR_CERT_MANAGER_ISSUER_NAME, certManagerIssuerName));
-            }
-            if (certManagerIssuerKind != null) {
-                varList.add(ContainerUtils.createEnvVar(ENV_VAR_CERT_MANAGER_ISSUER_KIND, certManagerIssuerKind.toValue()));
-            }
-            if (certManagerIssuerGroup != null && !certManagerIssuerGroup.isEmpty()) {
-                varList.add(ContainerUtils.createEnvVar(ENV_VAR_CERT_MANAGER_ISSUER_GROUP, certManagerIssuerGroup));
-            }
+            varList.add(ContainerUtils.createEnvVar(ENV_VAR_CERT_MANAGER_ISSUER_NAME, certManagerIssuerName));
+            varList.add(ContainerUtils.createEnvVar(ENV_VAR_CERT_MANAGER_ISSUER_KIND, certManagerIssuerKind.toValue()));
+            varList.add(ContainerUtils.createEnvVar(ENV_VAR_CERT_MANAGER_ISSUER_GROUP, certManagerIssuerGroup));
         }
 
         return varList;

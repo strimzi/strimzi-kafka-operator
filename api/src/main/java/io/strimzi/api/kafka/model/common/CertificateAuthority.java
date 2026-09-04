@@ -7,6 +7,7 @@ package io.strimzi.api.kafka.model.common;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.strimzi.api.kafka.model.kafka.certmanager.CertManager;
+import io.strimzi.crdgenerator.annotations.CelValidation;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.Minimum;
 import io.sundr.builder.annotations.Buildable;
@@ -23,6 +24,20 @@ import java.util.Map;
         editableEnabled = false,
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
+@CelValidation(rules = {
+    @CelValidation.CelValidationRule(
+        rule = "(has(self.type) && self.type != 'strimzi') || !has(self.certManager)",
+        message = "'certManager' cannot be configured with 'type: strimzi'"
+        ),
+    @CelValidation.CelValidationRule(
+        rule = "!has(self.type) || self.type != 'cert-manager' || has(self.certManager)",
+        message = "'certManager' must be set for 'type: cert-manager'"
+        ),
+    @CelValidation.CelValidationRule(
+        rule = "!has(self.type) || self.type != 'cert-manager' || (has(self.generateCertificateAuthority) && !self.generateCertificateAuthority)",
+        message = "'generateCertificateAuthority' must be set to false for 'type: cert-manager'"
+        )
+})
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
 @JsonPropertyOrder({ "generateCertificateAuthority", "type", "generateSecretOwnerReference", "validityDays",
     "renewalDays", "certificateExpirationPolicy", "certManager" })

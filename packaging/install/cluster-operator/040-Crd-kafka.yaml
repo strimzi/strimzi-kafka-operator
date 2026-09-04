@@ -3516,6 +3516,13 @@ spec:
                     - caCertRef
                     description: Configuration for using cert-manager to issue certificates. This only applies if the CA type is set to `cert-manager`.
                 description: Configuration of the cluster certificate authority.
+                x-kubernetes-validations:
+                - rule: (has(self.type) && self.type != 'strimzi') || !has(self.certManager)
+                  message: "'certManager' cannot be configured with 'type: strimzi'"
+                - rule: '!has(self.type) || self.type != ''cert-manager'' || has(self.certManager)'
+                  message: "'certManager' must be set for 'type: cert-manager'"
+                - rule: '!has(self.type) || self.type != ''cert-manager'' || (has(self.generateCertificateAuthority) && !self.generateCertificateAuthority)'
+                  message: "'generateCertificateAuthority' must be set to false for 'type: cert-manager'"
               clientsCa:
                 type: object
                 properties:
@@ -3585,6 +3592,13 @@ spec:
                     - caCertRef
                     description: Configuration for using cert-manager to issue certificates. This only applies if the CA type is set to `cert-manager`.
                 description: Configuration of the clients certificate authority.
+                x-kubernetes-validations:
+                - rule: (has(self.type) && self.type != 'strimzi') || !has(self.certManager)
+                  message: "'certManager' cannot be configured with 'type: strimzi'"
+                - rule: '!has(self.type) || self.type != ''cert-manager'' || has(self.certManager)'
+                  message: "'certManager' must be set for 'type: cert-manager'"
+                - rule: '!has(self.type) || self.type != ''cert-manager'' || (has(self.generateCertificateAuthority) && !self.generateCertificateAuthority)'
+                  message: "'generateCertificateAuthority' must be set to false for 'type: cert-manager'"
               cruiseControl:
                 type: object
                 properties:

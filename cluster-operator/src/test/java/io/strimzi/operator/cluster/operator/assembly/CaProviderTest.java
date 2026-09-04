@@ -21,7 +21,6 @@ import java.time.Clock;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class CaProviderTest {
     private static final String NAMESPACE = Reconciliation.DUMMY_RECONCILIATION.namespace();
@@ -116,26 +115,5 @@ public class CaProviderTest {
                 null);
 
         assertThat(provider, instanceOf(CertManagerCaProvider.class));
-    }
-
-    @Test
-    public void testCreateProviderThrowsWhenTypeIsCertManagerAndGenerateCaIsTrue() {
-        CaConfig caConfig = new CaConfig(new CertificateAuthorityBuilder()
-                .withGenerateCertificateAuthority(true)
-                .withType(CertificateManagerType.CERT_MANAGER)
-                .build(), true);
-
-        assertThrows(IllegalArgumentException.class, () -> CaProvider.create(Reconciliation.DUMMY_RECONCILIATION,
-                Ca.CaRole.CLUSTER_CA,
-                caConfig,
-                KAFKA,
-                null,
-                null,
-                CERT_ISSUER,
-                PASSWORD_GENERATOR,
-                Clock.systemUTC(),
-                null,
-                null,
-                null));
     }
 }

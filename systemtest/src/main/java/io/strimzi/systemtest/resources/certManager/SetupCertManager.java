@@ -6,27 +6,21 @@ package io.strimzi.systemtest.resources.certManager;
 
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
-import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
 import io.skodjob.kubetest4j.resources.KubeResourceManager;
 import io.skodjob.kubetest4j.resources.ResourceItem;
 import io.skodjob.kubetest4j.security.CertAndKey;
 import io.skodjob.kubetest4j.security.CertAndKeyFiles;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.security.SystemTestCertGenerator;
-import io.strimzi.systemtest.templates.kubernetes.ClusterRoleBindingTemplates;
-import io.strimzi.systemtest.templates.kubernetes.RoleBindingTemplates;
 import io.strimzi.systemtest.utils.kubeUtils.NamespaceUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.NetworkPolicyUtils;
-import io.strimzi.test.ReadWriteUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.util.Arrays;
 import java.util.Base64;
 import java.util.Map;
 
@@ -187,45 +181,6 @@ public class SetupCertManager {
 
         LOGGER.info("CA certificate subject DN: {}", subjectDn);
         return subjectDn;
-    }
-
-    /**
-     * Applies all RBAC resources for cert-manager so the cluster
-     * operator {@code ServiceAccount} has access to
-     * {@code certificates.cert-manager.io} resources in watched namespaces.
-     *
-     * @param operatorNamespace namespace where the cluster operator {@code ServiceAccount} lives
-     */
-    public static void installCertManagerRbac(String operatorNamespace) {
-        LOGGER.info("Applying cert-manager RBAC from '{}' for operator namespace '{}'",
-                CERT_MANAGER_RBAC_DIR, operatorNamespace);
-
-        File[] files = new File(CERT_MANAGER_RBAC_DIR).listFiles();
-        if (files == null) {
-            throw new RuntimeException("cert-manager RBAC directory not found: " + CERT_MANAGER_RBAC_DIR);
-        }
-
-        Arrays.stream(files).sorted().filter(File::isFile).forEach(file -> {
-            final String resourceType = file.getName().split("-")[1].split(".yaml")[0];
-            switch (resourceType) {
-                case TestConstants.CLUSTER_ROLE:
-                    KubeResourceManager.get().createOrUpdateResourceWithWait(
-                            ReadWriteUtils.readObjectFromYamlFilepath(file, ClusterRole.class));
-                    break;
-                case TestConstants.CLUSTER_ROLE_BINDING:
-                    KubeResourceManager.get().createOrUpdateResourceWithWait(
-                            ClusterRoleBindingTemplates.clusterRoleBindingFromFile(
-                                    operatorNamespace, file.getAbsolutePath()));
-                    break;
-                case TestConstants.ROLE_BINDING:
-                    KubeResourceManager.get().createOrUpdateResourceWithWait(
-                            RoleBindingTemplates.roleBindingFromFile(
-                                    operatorNamespace, operatorNamespace, file.getAbsolutePath()));
-                    break;
-                default:
-                    LOGGER.warn("Skipping unrecognised cert-manager RBAC file: {}", file.getName());
-            }
-        });
     }
 
     /**

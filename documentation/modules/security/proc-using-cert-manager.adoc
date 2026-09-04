@@ -14,7 +14,6 @@ Users are responsible for installing cert-manager and creating an `Issuer` or `C
 cert-manager is responsible for issuing and renewing all end-entity certificates.
 
 NOTE: This feature is currently Early Access and is not recommended for production.
-It is planned to move to GA after 1 or 2 releases.
 
 .Prerequisites
 
