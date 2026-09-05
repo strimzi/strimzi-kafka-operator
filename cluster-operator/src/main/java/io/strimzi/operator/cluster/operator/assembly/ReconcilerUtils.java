@@ -20,12 +20,14 @@ import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.podset.StrimziPodSet;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.operator.cluster.model.InPlacePodResizingUtils;
-import io.strimzi.operator.cluster.model.KafkaClusterSecurityContext;
 import io.strimzi.operator.cluster.model.NodeRef;
 import io.strimzi.operator.cluster.model.PodRevision;
 import io.strimzi.operator.cluster.model.PodSetUtils;
 import io.strimzi.operator.cluster.model.RestartReason;
 import io.strimzi.operator.cluster.model.RestartReasons;
+import io.strimzi.operator.cluster.model.clustersecurity.kafka.KafkaClusterSecurityContext;
+import io.strimzi.operator.cluster.model.clustersecurity.kafka.MtlsAuthenticationConfiguration;
+import io.strimzi.operator.cluster.model.clustersecurity.kafka.TlsEncryptionConfiguration;
 import io.strimzi.operator.cluster.model.jmx.SupportsJmx;
 import io.strimzi.operator.cluster.operator.VertxUtil;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.PodOperator;
@@ -131,9 +133,9 @@ public class ReconcilerUtils {
     public static Future<Identity> coIdentity(Reconciliation reconciliation, SecretOperator secretOperator, KafkaClusterSecurityContext securityContext) {
         return Future.join(
                     // The trustFuture gets the trust based on the security context
-                    securityContext.isTlsEncryption() ? clusterCaPemTrustSet(reconciliation, secretOperator) : Future.succeededFuture(null),
+                    securityContext.encryption() instanceof TlsEncryptionConfiguration ? clusterCaPemTrustSet(reconciliation, secretOperator) : Future.succeededFuture(null),
                     // The trustFuture gets the authentication details based on the security context
-                    securityContext.isMtlsAuthentication() ? coPemAuthIdentity(reconciliation, secretOperator) : Future.succeededFuture(null)
+                    securityContext.authentication() instanceof MtlsAuthenticationConfiguration ? coPemAuthIdentity(reconciliation, secretOperator) : Future.succeededFuture(null)
                 ).compose(res -> Future.succeededFuture(new Identity(res.resultAt(0), res.resultAt(1))));
     }
 

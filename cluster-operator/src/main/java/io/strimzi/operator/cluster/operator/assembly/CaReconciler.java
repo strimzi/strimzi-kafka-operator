@@ -18,12 +18,14 @@ import io.strimzi.certs.CertIssuer;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.model.CertSecretUtils;
-import io.strimzi.operator.cluster.model.KafkaClusterSecurityContext;
 import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.cluster.model.NodeRef;
 import io.strimzi.operator.cluster.model.RestartReason;
 import io.strimzi.operator.cluster.model.RestartReasons;
 import io.strimzi.operator.cluster.model.WorkloadUtils;
+import io.strimzi.operator.cluster.model.clustersecurity.kafka.KafkaClusterSecurityContext;
+import io.strimzi.operator.cluster.model.clustersecurity.kafka.MtlsAuthenticationConfiguration;
+import io.strimzi.operator.cluster.model.clustersecurity.kafka.TlsEncryptionConfiguration;
 import io.strimzi.operator.cluster.operator.resource.KafkaAgentClientProvider;
 import io.strimzi.operator.cluster.operator.resource.KafkaRoller;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
@@ -492,8 +494,8 @@ public class CaReconciler {
      */
     private Identity createCoIdentity() {
         return new Identity(
-                securityContext.isTlsEncryption() ? new PemTrustSet(clusterCaCertSecret) : null,
-                securityContext.isMtlsAuthentication() ? PemAuthIdentity.clusterOperator(coSecret) : null
+                securityContext.encryption() instanceof TlsEncryptionConfiguration ? new PemTrustSet(clusterCaCertSecret) : null,
+                securityContext.authentication() instanceof MtlsAuthenticationConfiguration ? PemAuthIdentity.clusterOperator(coSecret) : null
         );
     }
 

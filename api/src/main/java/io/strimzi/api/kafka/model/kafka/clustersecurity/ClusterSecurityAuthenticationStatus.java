@@ -37,7 +37,8 @@ public class ClusterSecurityAuthenticationStatus implements UnknownPropertyPrese
             Supported types are:
             
             * `none` for no authentication
-            * `mtls` for mTLS authentication""")
+            * `mtls` for mTLS authentication
+            * `service-account` for service account-based authentication""")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @RequiredInVersions("v1+")
     public ClusterSecurityAuthenticationType getType() {

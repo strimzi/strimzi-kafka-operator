@@ -15,14 +15,17 @@ import io.strimzi.api.kafka.model.common.TopologyLabelRackBuilder;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
-import io.strimzi.api.kafka.model.kafka.clustersecurity.ClusterSecurityAuthenticationType;
-import io.strimzi.api.kafka.model.kafka.clustersecurity.ClusterSecurityEncryptionType;
 import io.strimzi.api.kafka.model.kafka.entityoperator.EntityTopicOperatorSpec;
 import io.strimzi.api.kafka.model.kafka.entityoperator.EntityTopicOperatorSpecBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ResourceUtils;
+import io.strimzi.operator.cluster.model.clustersecurity.kafka.KafkaClusterSecurityContext;
+import io.strimzi.operator.cluster.model.clustersecurity.kafka.MtlsAuthenticationConfiguration;
+import io.strimzi.operator.cluster.model.clustersecurity.kafka.NoneAuthenticationConfiguration;
+import io.strimzi.operator.cluster.model.clustersecurity.kafka.NoneEncryptionConfiguration;
+import io.strimzi.operator.cluster.model.clustersecurity.kafka.TlsEncryptionConfiguration;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.platform.KubernetesVersion;
 import org.junit.jupiter.api.Test;
@@ -110,7 +113,7 @@ public class EntityTopicOperatorTest {
 
     @Test
     public void testSecurityEnvVarsWithTlsAndMtls() {
-        KafkaClusterSecurityContext securityContext = new KafkaClusterSecurityContext(ClusterSecurityEncryptionType.TLS, ClusterSecurityAuthenticationType.MTLS);
+        KafkaClusterSecurityContext securityContext = new KafkaClusterSecurityContext(new TlsEncryptionConfiguration(), new MtlsAuthenticationConfiguration());
 
         assertThat(getSecurityEnvVars(securityContext), is(List.of(
                 new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_SECURITY_PROTOCOL).withValue("SSL").build(),
@@ -122,7 +125,7 @@ public class EntityTopicOperatorTest {
 
     @Test
     public void testSecurityEnvVarsWithTlsWithoutAuthentication() {
-        KafkaClusterSecurityContext securityContext = new KafkaClusterSecurityContext(ClusterSecurityEncryptionType.TLS, ClusterSecurityAuthenticationType.NONE);
+        KafkaClusterSecurityContext securityContext = new KafkaClusterSecurityContext(new TlsEncryptionConfiguration(), new NoneAuthenticationConfiguration());
 
         assertThat(getSecurityEnvVars(securityContext), is(List.of(
                 new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_SECURITY_PROTOCOL).withValue("SSL").build(),
@@ -131,7 +134,7 @@ public class EntityTopicOperatorTest {
 
     @Test
     public void testSecurityEnvVarsWithoutEncryptionOrAuthentication() {
-        KafkaClusterSecurityContext securityContext = new KafkaClusterSecurityContext(ClusterSecurityEncryptionType.NONE, ClusterSecurityAuthenticationType.NONE);
+        KafkaClusterSecurityContext securityContext = new KafkaClusterSecurityContext(new NoneEncryptionConfiguration(), new NoneAuthenticationConfiguration());
 
         assertThat(getSecurityEnvVars(securityContext), is(List.of(
                 new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_SECURITY_PROTOCOL).withValue("PLAINTEXT").build())));
@@ -354,7 +357,7 @@ public class EntityTopicOperatorTest {
                     .endCruiseControl()
                 .endSpec()
                 .build();
-        KafkaClusterSecurityContext securityContext = new KafkaClusterSecurityContext(ClusterSecurityEncryptionType.NONE, ClusterSecurityAuthenticationType.NONE);
+        KafkaClusterSecurityContext securityContext = new KafkaClusterSecurityContext(new NoneEncryptionConfiguration(), new NoneAuthenticationConfiguration());
         EntityTopicOperator entityTopicOperator = EntityTopicOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig(), securityContext);
 
         EnvVar cruiseControlTlsEnvVar = entityTopicOperator.getEnvVars().stream()

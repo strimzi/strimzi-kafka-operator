@@ -50,8 +50,6 @@ import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.PersistentClaimStorageBuilder;
 import io.strimzi.api.kafka.model.kafka.Storage;
-import io.strimzi.api.kafka.model.kafka.clustersecurity.ClusterSecurityAuthenticationType;
-import io.strimzi.api.kafka.model.kafka.clustersecurity.ClusterSecurityEncryptionType;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlResources;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
@@ -59,6 +57,13 @@ import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.TestUtils;
+import io.strimzi.operator.cluster.model.clustersecurity.kafka.AuthenticationConfiguration;
+import io.strimzi.operator.cluster.model.clustersecurity.kafka.EncryptionConfiguration;
+import io.strimzi.operator.cluster.model.clustersecurity.kafka.KafkaClusterSecurityContext;
+import io.strimzi.operator.cluster.model.clustersecurity.kafka.MtlsAuthenticationConfiguration;
+import io.strimzi.operator.cluster.model.clustersecurity.kafka.NoneAuthenticationConfiguration;
+import io.strimzi.operator.cluster.model.clustersecurity.kafka.NoneEncryptionConfiguration;
+import io.strimzi.operator.cluster.model.clustersecurity.kafka.TlsEncryptionConfiguration;
 import io.strimzi.operator.cluster.model.metrics.JmxPrometheusExporterModel;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.InvalidResourceException;
@@ -306,7 +311,7 @@ public class CruiseControlTest {
 
     @Test
     public void testTlsVolumesAndVolumeMounts() {
-        KafkaClusterSecurityContext tlsSecurityContext = new KafkaClusterSecurityContext(ClusterSecurityEncryptionType.TLS, ClusterSecurityAuthenticationType.NONE);
+        KafkaClusterSecurityContext tlsSecurityContext = new KafkaClusterSecurityContext(new TlsEncryptionConfiguration(), new NoneAuthenticationConfiguration());
         CruiseControl cc = createCruiseControl(KAFKA, NODES, STORAGE, Map.of(), tlsSecurityContext);
         Deployment dep = cc.generateDeployment(Map.of(), true, null, null);
 
@@ -323,7 +328,7 @@ public class CruiseControlTest {
                 CruiseControl.API_AUTH_CONFIG_VOLUME_NAME,
                 CruiseControl.CONFIG_VOLUME_NAME));
 
-        KafkaClusterSecurityContext noTlsSecurityContext = new KafkaClusterSecurityContext(ClusterSecurityEncryptionType.NONE, ClusterSecurityAuthenticationType.NONE);
+        KafkaClusterSecurityContext noTlsSecurityContext = new KafkaClusterSecurityContext(new NoneEncryptionConfiguration(), new NoneAuthenticationConfiguration());
         cc = createCruiseControl(KAFKA, NODES, STORAGE, Map.of(), noTlsSecurityContext);
         dep = cc.generateDeployment(Map.of(), true, null, null);
 
@@ -613,22 +618,22 @@ public class CruiseControlTest {
 
     @Test
     public void testApiSecurity() {
-        testApiSecurity(true, ClusterSecurityEncryptionType.TLS, ClusterSecurityAuthenticationType.MTLS);
-        testApiSecurity(false, ClusterSecurityEncryptionType.TLS, ClusterSecurityAuthenticationType.NONE);
-        testApiSecurity(false, ClusterSecurityEncryptionType.NONE, ClusterSecurityAuthenticationType.NONE);
+        testApiSecurity(true, new TlsEncryptionConfiguration(), new MtlsAuthenticationConfiguration());
+        testApiSecurity(false, new TlsEncryptionConfiguration(), new NoneAuthenticationConfiguration());
+        testApiSecurity(false, new NoneEncryptionConfiguration(), new NoneAuthenticationConfiguration());
     }
 
-    private void testApiSecurity(Boolean apiAuthEnabled, ClusterSecurityEncryptionType encryptionType, ClusterSecurityAuthenticationType authenticationType) {
+    private void testApiSecurity(Boolean apiAuthEnabled, EncryptionConfiguration encryption, AuthenticationConfiguration authentication) {
         String e1Key = CruiseControl.ENV_VAR_API_AUTH_ENABLED;
         String e1Value = apiAuthEnabled.toString();
         EnvVar e1 = new EnvVar(e1Key, e1Value, null);
 
         String e2Key = CruiseControl.ENV_VAR_TLS_ENABLED;
-        String e2Value = Boolean.toString(encryptionType == ClusterSecurityEncryptionType.TLS);
+        String e2Value = Boolean.toString(encryption instanceof TlsEncryptionConfiguration);
         EnvVar e2 = new EnvVar(e2Key, e2Value, null);
 
         String e3Key = CruiseControl.ENV_VAR_MTLS_ENABLED;
-        String e3Value = Boolean.toString(authenticationType == ClusterSecurityAuthenticationType.MTLS);
+        String e3Value = Boolean.toString(authentication instanceof MtlsAuthenticationConfiguration);
         EnvVar e3 = new EnvVar(e3Key, e3Value, null);
 
         Kafka kafka = new KafkaBuilder(KAFKA)
@@ -638,7 +643,7 @@ public class CruiseControlTest {
                     .endCruiseControl()
                 .endSpec()
                 .build();
-        CruiseControl cc = createCruiseControl(kafka, NODES, STORAGE, Map.of(), new KafkaClusterSecurityContext(encryptionType, authenticationType));
+        CruiseControl cc = createCruiseControl(kafka, NODES, STORAGE, Map.of(), new KafkaClusterSecurityContext(encryption, authentication));
 
         Deployment dep = cc.generateDeployment(Map.of(), true, null, null);
         List<EnvVar> envVarList = dep.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv();

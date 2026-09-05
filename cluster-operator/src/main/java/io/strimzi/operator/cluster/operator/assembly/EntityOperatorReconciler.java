@@ -14,7 +14,7 @@ import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.model.CertSecretUtils;
 import io.strimzi.operator.cluster.model.EntityOperator;
 import io.strimzi.operator.cluster.model.ImagePullPolicy;
-import io.strimzi.operator.cluster.model.KafkaClusterSecurityContext;
+import io.strimzi.operator.cluster.model.clustersecurity.kafka.KafkaClusterSecurityContext;
 import io.strimzi.operator.cluster.operator.VertxUtil;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.ConfigMapOperator;
