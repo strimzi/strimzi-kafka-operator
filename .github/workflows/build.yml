@@ -110,7 +110,7 @@ jobs:
       matrix:
         kindNodeImage:
           # Oldest Kube version we support
-          - "kindest/node:v1.30.13@sha256:397209b3d947d154f6641f2d0ce8d473732bd91c87d9575ade99049aa33cd648"
+          - "kindest/node:v1.32.11@sha256:5fc52d52a7b9574015299724bd68f183702956aa4a2116ae75a63cb574b35af8"
           # Latest Kube version we support
           - "kindest/node:v1.35.0@sha256:452d707d4862f52530247495d180205e029056831160e22870e37e3f6c1ac31f"
     runs-on: ubuntu-latest
