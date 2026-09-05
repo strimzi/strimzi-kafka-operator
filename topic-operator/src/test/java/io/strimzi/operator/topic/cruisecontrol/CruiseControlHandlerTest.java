@@ -66,7 +66,7 @@ public class CruiseControlHandlerTest {
         File tlsKeyFile = ReadWriteUtils.tempFile(CruiseControlHandlerTest.class.getSimpleName(), ".key");
         tlsCrtFile = ReadWriteUtils.tempFile(CruiseControlHandlerTest.class.getSimpleName(), ".crt");
         new MockCertIssuer().generateSelfSignedCert(tlsKeyFile, tlsCrtFile,
-            new StrimziSubject.Builder().withCommonName("Trusted Test CA").build(), 365);
+            new StrimziSubject.Builder().withCommonName("Trusted Test CA").build(), 365, 4096);
         apiUserFile = ReadWriteUtils.tempFile(CruiseControlHandlerTest.class.getSimpleName(), ".username");
         try (PrintWriter out = new PrintWriter(apiUserFile.getAbsolutePath())) {
             out.print("topic-operator-admin");

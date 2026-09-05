@@ -63,6 +63,7 @@ public class EntityUserOperator extends AbstractModel implements SupportsLogging
     /* test */ static final String ENV_VAR_CLIENTS_CA_NAMESPACE = "STRIMZI_CA_NAMESPACE";
     /* test */ static final String ENV_VAR_CLIENTS_CA_VALIDITY = "STRIMZI_CA_VALIDITY";
     /* test */ static final String ENV_VAR_CLIENTS_CA_RENEWAL = "STRIMZI_CA_RENEWAL";
+    /* test */ static final String ENV_VAR_CLIENTS_CA_KEY_SIZE = "STRIMZI_CA_KEY_SIZE";
     /* test */ static final String ENV_VAR_CLUSTER_CA_CERT_SECRET_NAME = "STRIMZI_CLUSTER_CA_CERT_SECRET_NAME";
     /* test */ static final String ENV_VAR_EO_KEY_SECRET_NAME = "STRIMZI_EO_KEY_SECRET_NAME";
     /* test */ static final String ENV_VAR_SECRET_PREFIX = "STRIMZI_SECRET_PREFIX";
@@ -80,6 +81,7 @@ public class EntityUserOperator extends AbstractModel implements SupportsLogging
     /* test */ Long reconciliationIntervalMs;
     /* test */ int clientsCaValidityDays;
     /* test */ int clientsCaRenewalDays;
+    /* test */ int clientsCaKeySize;
     private ResourceTemplate templateRoleBinding;
     private String featureGatesEnvVarValue;
     private KafkaClusterSecurityContext securityContext;
@@ -106,6 +108,7 @@ public class EntityUserOperator extends AbstractModel implements SupportsLogging
 
         this.clientsCaValidityDays = CertificateAuthority.DEFAULT_CERTS_VALIDITY_DAYS;
         this.clientsCaRenewalDays = CertificateAuthority.DEFAULT_CERTS_RENEWAL_DAYS;
+        this.clientsCaKeySize = CertificateAuthority.DEFAULT_CERTS_KEY_SIZE;
     }
 
     /**
@@ -162,6 +165,10 @@ public class EntityUserOperator extends AbstractModel implements SupportsLogging
                 if (kafkaAssembly.getSpec().getClientsCa().getRenewalDays() > 0) {
                     result.clientsCaRenewalDays = kafkaAssembly.getSpec().getClientsCa().getRenewalDays();
                 }
+
+                if (kafkaAssembly.getSpec().getClientsCa().getKeySize() > 0) {
+                    result.clientsCaKeySize = kafkaAssembly.getSpec().getClientsCa().getKeySize();
+                }
             }
 
             if (kafkaAssembly.getSpec().getKafka().getAuthorization() != null) {
@@ -209,6 +216,7 @@ public class EntityUserOperator extends AbstractModel implements SupportsLogging
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_CLIENTS_CA_NAMESPACE, namespace));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_CLIENTS_CA_VALIDITY, Integer.toString(clientsCaValidityDays)));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_CLIENTS_CA_RENEWAL, Integer.toString(clientsCaRenewalDays)));
+        varList.add(ContainerUtils.createEnvVar(ENV_VAR_CLIENTS_CA_KEY_SIZE, Integer.toString(clientsCaKeySize)));
 
         if (securityContext.isTlsEncryption()) {
             varList.add(ContainerUtils.createEnvVar(ENV_VAR_CLUSTER_CA_CERT_SECRET_NAME, KafkaCluster.clusterCaCertSecretName(cluster)));

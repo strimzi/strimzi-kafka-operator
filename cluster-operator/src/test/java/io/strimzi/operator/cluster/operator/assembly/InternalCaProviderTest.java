@@ -163,7 +163,7 @@ public class InternalCaProviderTest {
                 .withOrganizationName("io.strimzi")
                 .withCommonName(commonName).build();
 
-        CERT_ISSUER.generateSelfSignedCert(clusterCaKeyFile.toFile(), clusterCaCertFile.toFile(), sbj, certificateAuthority.getValidityDays());
+        CERT_ISSUER.generateSelfSignedCert(clusterCaKeyFile.toFile(), clusterCaCertFile.toFile(), sbj, certificateAuthority.getValidityDays(), 4096);
 
         CERT_ISSUER.addCertToTrustStore(clusterCaCertFile.toFile(), CA_CRT, clusterCaStoreFile.toFile(), clusterCaStorePassword);
         return new CertAndKey(

@@ -225,6 +225,7 @@ public class KafkaUserModel {
      * @param userSecret            Secret with the user certificate
      * @param caValidityDays        The default number of days (configured in Clients CA) the certificate should be valid for.
      * @param caRenewalDays         The default renewal days (configured in Clients CA).
+     * @param caKeySize             The default RSA key size in bits (configured in Clients CA).
      * @param maintenanceWindows    List of configured maintenance windows
      * @param clock                 The clock for supplying the reconciler with the time instant of each reconciliation cycle.
      *                              That time is used for checking maintenance windows
@@ -235,7 +236,7 @@ public class KafkaUserModel {
     @SuppressWarnings("checkstyle:BooleanExpressionComplexity")
     public CompletionStage<Void> maybeGenerateCertificates(Reconciliation reconciliation, CertIssuer certIssuer, PasswordGenerator passwordGenerator,
                                                      Secret clientsCaCertSecret, Secret clientsCaKeySecret, Secret userSecret, int caValidityDays,
-                                                     int caRenewalDays, List<String> maintenanceWindows, Clock clock, boolean generatePkcs12Stores) {
+                                                     int caRenewalDays, int caKeySize, List<String> maintenanceWindows, Clock clock, boolean generatePkcs12Stores) {
         // in case that validityDays and renewalDays are configured inside the authentication part of KafkaUser,
         // use those instead of default Clients CA configuration
         // we are checking it here as we have all needed information about the KafkaUser configuration and also default configuration of Clients CA
@@ -252,7 +253,7 @@ public class KafkaUserModel {
                 passwordGenerator,
                 clientsCaCertSecret,
                 clientsCaKeySecret,
-                new CaConfig(validityDays, renewalDays, false, generatePkcs12Stores)
+                new CaConfig(validityDays, renewalDays, caKeySize, false, generatePkcs12Stores)
         );
         this.caCert = clientsCa.currentCaCertBase64();
 
