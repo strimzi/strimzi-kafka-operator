@@ -1018,26 +1018,7 @@ spec:
                               properties:
                                 defaultMode:
                                   type: integer
-                                items:
-                                  type: array
-                                  items:
-                                    type: object
-                                    properties:
-                                      key:
-                                        type: string
-                                      mode:
-                                        type: integer
-                                      path:
-                                        type: string
-                                optional:
-                                  type: boolean
-                                secretName:
-                                  type: string
-                              description: '`Secret` to use to populate the volume.'
-                            configMap:
-                              type: object
-                              properties:
-                                defaultMode:
+                                defaultUser:
                                   type: integer
                                 items:
                                   type: array
@@ -1050,6 +1031,33 @@ spec:
                                         type: integer
                                       path:
                                         type: string
+                                      user:
+                                        type: integer
+                                optional:
+                                  type: boolean
+                                secretName:
+                                  type: string
+                              description: '`Secret` to use to populate the volume.'
+                            configMap:
+                              type: object
+                              properties:
+                                defaultMode:
+                                  type: integer
+                                defaultUser:
+                                  type: integer
+                                items:
+                                  type: array
+                                  items:
+                                    type: object
+                                    properties:
+                                      key:
+                                        type: string
+                                      mode:
+                                        type: integer
+                                      path:
+                                        type: string
+                                      user:
+                                        type: integer
                                 name:
                                   type: string
                                 optional:
@@ -1120,6 +1128,8 @@ spec:
                                             type: integer
                                           path:
                                             type: string
+                                          user:
+                                            type: integer
                                         description: information about the serviceAccountToken data to project.
                                     oneOf:
                                     - properties:
@@ -1322,6 +1332,10 @@ spec:
                         items:
                           type: object
                           properties:
+                            bindMountOptions:
+                              type: array
+                              items:
+                                type: string
                             mountPath:
                               type: string
                             mountPropagation:
@@ -1501,6 +1515,10 @@ spec:
                         items:
                           type: object
                           properties:
+                            bindMountOptions:
+                              type: array
+                              items:
+                                type: string
                             mountPath:
                               type: string
                             mountPropagation:
