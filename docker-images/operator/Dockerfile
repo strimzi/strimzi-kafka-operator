@@ -4,7 +4,7 @@ LABEL org.opencontainers.image.source='https://github.com/strimzi/strimzi-kafka-
 
 # Add strimzi user with UID 1001
 # The user is in the group 0 to have access to the mounted volumes and storage
-RUN useradd -r -m -u 1001 -g 0 strimzi
+RUN echo "strimzi:x:1001:0::/home/strimzi:/bin/false" >> /etc/passwd
 
 ARG strimzi_version=1.0-SNAPSHOT
 
