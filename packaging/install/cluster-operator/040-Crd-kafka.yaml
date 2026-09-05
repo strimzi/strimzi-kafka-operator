@@ -1292,7 +1292,7 @@ spec:
                                                 type: string
                                               user:
                                                 type: integer
-                                            description: information about the serviceAccountToken data to project.
+                                            description: Information about the serviceAccountToken data to project.
                                         oneOf:
                                         - properties:
                                             serviceAccountToken: {}
@@ -3081,7 +3081,7 @@ spec:
                                                 type: string
                                               user:
                                                 type: integer
-                                            description: information about the serviceAccountToken data to project.
+                                            description: Information about the serviceAccountToken data to project.
                                         oneOf:
                                         - properties:
                                             serviceAccountToken: {}
@@ -4374,7 +4374,7 @@ spec:
                                                 type: string
                                               user:
                                                 type: integer
-                                            description: information about the serviceAccountToken data to project.
+                                            description: Information about the serviceAccountToken data to project.
                                         oneOf:
                                         - properties:
                                             serviceAccountToken: {}
@@ -5541,7 +5541,7 @@ spec:
                                                 type: string
                                               user:
                                                 type: integer
-                                            description: information about the serviceAccountToken data to project.
+                                            description: Information about the serviceAccountToken data to project.
                                         oneOf:
                                         - properties:
                                             serviceAccountToken: {}

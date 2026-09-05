@@ -1003,7 +1003,7 @@ Used in: xref:type-ProjectedVolume-{context}[`ProjectedVolume`]
 |Property |Property type |Description
 |serviceAccountToken
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.32/#serviceaccounttokenprojection-v1-core[ServiceAccountTokenProjection]
-|information about the serviceAccountToken data to project.
+|Information about the serviceAccountToken data to project.
 |====
 
 [id='type-AdditionalTemplatedVolume-{context}']
