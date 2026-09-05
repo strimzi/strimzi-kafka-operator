@@ -15,18 +15,19 @@ public interface AuthenticationConfiguration {
     /**
      * Returns the authentication configuration based on the authentication type
      *
+     * @param namespace         Namespace of the Kafka cluster
      * @param clusterName       Name of the Kafka cluster
      * @param authentication    ClusterSecurityAuthentication from which the configuration is created
      *
      * @return  AuthenticationConfiguration instance
      */
-    static AuthenticationConfiguration fromCrd(String clusterName, ClusterSecurityAuthentication authentication)    {
+    static AuthenticationConfiguration fromCrd(String namespace, String clusterName, ClusterSecurityAuthentication authentication)    {
         validate(authentication);
 
         return switch (authentication != null ? authentication.getType() : ClusterSecurityAuthenticationType.MTLS) {
             case MTLS -> new MtlsAuthenticationConfiguration();
             case NONE -> new NoneAuthenticationConfiguration();
-            case SERVICE_ACCOUNT -> ServiceAccountAuthenticationConfiguration.fromCrd(clusterName, authentication);
+            case SERVICE_ACCOUNT -> ServiceAccountAuthenticationConfiguration.fromCrd(namespace, clusterName, authentication);
         };
     }
 

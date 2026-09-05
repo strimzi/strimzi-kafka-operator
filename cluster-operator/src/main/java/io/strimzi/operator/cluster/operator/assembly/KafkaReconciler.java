@@ -254,7 +254,8 @@ public class KafkaReconciler {
      */
     public Future<Void> reconcile(KafkaStatus kafkaStatus, Clock clock)    {
         return modelWarnings(kafkaStatus)
-                .compose(i -> initClientAuthenticationCertificates())
+                .compose(i -> clusterOperatorServiceAccount())
+                .compose(i -> initClusterOperatorIdentity())
                 .compose(i -> manualPodCleaning())
                 .compose(i -> networkPolicy())
                 .compose(i -> updateKafkaAutoRebalanceStatus(kafkaStatus))
@@ -320,13 +321,13 @@ public class KafkaReconciler {
     }
 
     /**
-     * Initialize the TrustSet and PemAuthIdentity to be used by TLS clients during reconciliation
+     * Initialize the Cluster Operator identity used to connect to Kafka cluster during reconciliation
      *
-     * @return Completes when the TrustSet and PemAuthIdentity have been created and stored in a record
+     * @return  Completes when the Cluster Operator identity have been created and stored in a record
      */
-    protected Future<Void> initClientAuthenticationCertificates() {
+    protected Future<Void> initClusterOperatorIdentity() {
         return ReconcilerUtils.coIdentity(reconciliation, secretOperator, kafka.securityContext())
-                .onSuccess(coTlsPemIdentity -> this.coIdentity = coTlsPemIdentity)
+                .onSuccess(coIdentity -> this.coIdentity = coIdentity)
                 .mapEmpty();
     }
 
@@ -527,6 +528,18 @@ public class KafkaReconciler {
     protected Future<Void> serviceAccount() {
         return VertxUtil.toFuture(serviceAccountOperator
                 .reconcile(reconciliation, reconciliation.namespace(), KafkaResources.kafkaComponentName(reconciliation.name()), kafka.generateServiceAccount()))
+                .mapEmpty();
+    }
+
+    /**
+     * Manages the Cluster Operator service account used by the Cluster Operator to connect to the Kafka cluster when
+     * Service-account-based authentication is used.
+     *
+     * @return  Completes when the service account was successfully created or updated
+     */
+    protected Future<Void> clusterOperatorServiceAccount() {
+        return VertxUtil.toFuture(serviceAccountOperator
+                .reconcile(reconciliation, reconciliation.namespace(), KafkaResources.clusterOperatorServiceAccount(reconciliation.name()), kafka.generateClusterOperatorServiceAccount()))
                 .mapEmpty();
     }
 

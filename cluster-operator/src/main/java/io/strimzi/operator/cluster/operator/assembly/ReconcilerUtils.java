@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.Pod;
@@ -19,6 +20,7 @@ import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticatio
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.podset.StrimziPodSet;
 import io.strimzi.certs.CertAndKey;
+import io.strimzi.operator.cluster.auth.RequestedServiceAccountAuthIdentity;
 import io.strimzi.operator.cluster.model.InPlacePodResizingUtils;
 import io.strimzi.operator.cluster.model.NodeRef;
 import io.strimzi.operator.cluster.model.PodRevision;
@@ -27,6 +29,7 @@ import io.strimzi.operator.cluster.model.RestartReason;
 import io.strimzi.operator.cluster.model.RestartReasons;
 import io.strimzi.operator.cluster.model.clustersecurity.kafka.KafkaClusterSecurityContext;
 import io.strimzi.operator.cluster.model.clustersecurity.kafka.MtlsAuthenticationConfiguration;
+import io.strimzi.operator.cluster.model.clustersecurity.kafka.ServiceAccountAuthenticationConfiguration;
 import io.strimzi.operator.cluster.model.clustersecurity.kafka.TlsEncryptionConfiguration;
 import io.strimzi.operator.cluster.model.jmx.SupportsJmx;
 import io.strimzi.operator.cluster.operator.VertxUtil;
@@ -130,13 +133,18 @@ public class ReconcilerUtils {
      *
      * @return  Future containing the PemTrustSet and PemAuthIdentity to use for client authentication.
      */
+    @SuppressFBWarnings("DLS_DEAD_LOCAL_STORE") // SpotBugs does not like the unused `ignored` binding in the switch pattern
     public static Future<Identity> coIdentity(Reconciliation reconciliation, SecretOperator secretOperator, KafkaClusterSecurityContext securityContext) {
         return Future.join(
-                    // The trustFuture gets the trust based on the security context
-                    securityContext.encryption() instanceof TlsEncryptionConfiguration ? clusterCaPemTrustSet(reconciliation, secretOperator) : Future.succeededFuture(null),
-                    // The trustFuture gets the authentication details based on the security context
-                    securityContext.authentication() instanceof MtlsAuthenticationConfiguration ? coPemAuthIdentity(reconciliation, secretOperator) : Future.succeededFuture(null)
-                ).compose(res -> Future.succeededFuture(new Identity(res.resultAt(0), res.resultAt(1))));
+            // Gets the trust based on the security context
+            securityContext.encryption() instanceof TlsEncryptionConfiguration ? clusterCaPemTrustSet(reconciliation, secretOperator) : Future.succeededFuture(null),
+            // Gets the identity based on the security context
+            switch (securityContext.authentication()) {
+                case MtlsAuthenticationConfiguration ignored -> coPemAuthIdentity(reconciliation, secretOperator);
+                case ServiceAccountAuthenticationConfiguration sa -> Future.succeededFuture(new RequestedServiceAccountAuthIdentity(reconciliation, sa.audience(), sa.expirationSeconds()));
+                default -> Future.succeededFuture();
+            }
+        ).compose(res -> Future.succeededFuture(new Identity(res.resultAt(0), res.resultAt(1))));
     }
 
     /**

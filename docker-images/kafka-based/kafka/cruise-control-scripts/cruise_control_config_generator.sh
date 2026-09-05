@@ -34,7 +34,6 @@ EOF
 # Configure Kafka client TLS encryption
 if [ "$STRIMZI_CC_TLS_ENABLED" = true ]; then
     cat <<EOF
-security.protocol=SSL
 ssl.truststore.type=PKCS12
 ssl.truststore.location=/tmp/cruise-control/replication.truststore.p12
 ssl.truststore.password=$CERTS_STORE_PASSWORD
@@ -47,6 +46,30 @@ if [ "$STRIMZI_CC_MTLS_ENABLED" = true ]; then
 ssl.keystore.type=PKCS12
 ssl.keystore.location=/tmp/cruise-control/cruise-control.keystore.p12
 ssl.keystore.password=$CERTS_STORE_PASSWORD
+EOF
+fi
+
+# Configure Kafka client Service Account authentication
+if [ "$STRIMZI_CC_SA_AUTH_ENABLED" = true ]; then
+    cat <<EOF
+sasl.mechanism=OAUTHBEARER
+sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required oauth.access.token.location="/var/run/secrets/strimzi.io/token";
+sasl.login.callback.handler.class=io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler
+EOF
+fi
+
+# Configure security protocol for Kafka client
+if [ "$STRIMZI_CC_TLS_ENABLED" = true ] && [ "$STRIMZI_CC_SA_AUTH_ENABLED" = true ]; then
+    cat <<EOF
+security.protocol=SASL_SSL
+EOF
+elif [ "$STRIMZI_CC_TLS_ENABLED" = true ]; then
+    cat <<EOF
+security.protocol=SSL
+EOF
+elif [ "$STRIMZI_CC_SA_AUTH_ENABLED" = true ]; then
+    cat <<EOF
+security.protocol=SASL_PLAINTEXT
 EOF
 fi
 

@@ -14,6 +14,7 @@ import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.Service;
+import io.fabric8.kubernetes.api.model.ServiceAccount;
 import io.fabric8.kubernetes.api.model.ServicePort;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
@@ -77,6 +78,7 @@ import io.strimzi.certs.IpAndDnsValidation;
 import io.strimzi.certs.StrimziSubject;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.model.clustersecurity.kafka.KafkaClusterSecurityContext;
+import io.strimzi.operator.cluster.model.clustersecurity.kafka.ServiceAccountAuthenticationConfiguration;
 import io.strimzi.operator.cluster.model.cruisecontrol.CruiseControlMetricsReporter;
 import io.strimzi.operator.cluster.model.jmx.JmxModel;
 import io.strimzi.operator.cluster.model.jmx.SupportsJmx;
@@ -1504,6 +1506,10 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
         volumeList.add(VolumeUtils.createConfigMapVolume(LOG_AND_METRICS_CONFIG_VOLUME_NAME, node.podName()));
         volumeList.add(VolumeUtils.createEmptyDirVolume("ready-files", "1Ki", "Memory"));
 
+        if (securityContext.authentication() instanceof ServiceAccountAuthenticationConfiguration saAuthentication)   {
+            volumeList.add(VolumeUtils.createStrimziAuthenticationTokenProjection(saAuthentication.audience(), saAuthentication.expirationSeconds()));
+        }
+
         // Some volumes are used only on nodes with broker role and are not needed on controller-only nodes
         if (node.broker()) {
             // Volume for sharing data with init container for rack awareness and node port listeners
@@ -1552,6 +1558,10 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
         volumeMountList.add(VolumeUtils.createTempDirVolumeMount());
         volumeMountList.add(VolumeUtils.createVolumeMount(LOG_AND_METRICS_CONFIG_VOLUME_NAME, LOG_AND_METRICS_CONFIG_VOLUME_MOUNT));
         volumeMountList.add(VolumeUtils.createVolumeMount("ready-files", "/var/opt/kafka"));
+
+        if (securityContext.authentication() instanceof ServiceAccountAuthenticationConfiguration)   {
+            volumeMountList.add(VolumeUtils.createStrimziAuthenticationTokenVolumeMount());
+        }
 
         // Some volumes are used only on nodes with broker role and are not needed on controller-only nodes
         if (isBroker)   {
@@ -1956,6 +1966,27 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
         }
 
         return configMaps;
+    }
+
+    /**
+     * Generates the Kubernetes service account used for Service-account-based authentication on internal Kafka interfaces.
+     * When the Service-account-based authentication is not used, returns null to make sure the Service Account does not
+     * exist.
+     *
+     * @return The service account (or null when service-account-based authentication is not used).
+     */
+    public ServiceAccount generateClusterOperatorServiceAccount() {
+        if (securityContext.authentication() instanceof ServiceAccountAuthenticationConfiguration) {
+            return ServiceAccountUtils.createServiceAccount(
+                    KafkaResources.clusterOperatorServiceAccount(cluster),
+                    namespace,
+                    labels,
+                    ownerReference,
+                    null
+            );
+        } else {
+            return null;
+        }
     }
 
     /**
