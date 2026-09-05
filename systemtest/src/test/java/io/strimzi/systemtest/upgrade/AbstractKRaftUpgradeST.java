@@ -781,7 +781,13 @@ public class AbstractKRaftUpgradeST extends AbstractST {
      * Cleans resources installed to namespaces from example files and namespaces themselves.
      */
     protected void cleanUpStrimziUpgradeTestNamespaces() {
+        // Cleanup topics as first to not block namespace deletion due to finalizers
         cleanUpKafkaTopics(TEST_SUITE_NAMESPACE);
+        // flush resources tracked by the resource manager (Kafka, KafkaNodePool, ...) while their CRDs
+        // still exist - otherwise the CRDs get removed below by deleteInstalledYamls() first, and the
+        // framework's own automatic cleanup (running after this @AfterEach) fails trying to list/delete
+        // CRs whose CRD is already gone
+        KubeResourceManager.get().deleteResources();
         deleteInstalledYamls(CO_NAMESPACE, TEST_SUITE_NAMESPACE, coDir);
         NamespaceUtils.deleteNamespace(CO_NAMESPACE);
         NamespaceUtils.deleteNamespace(Environment.TEST_SUITE_NAMESPACE);
@@ -789,6 +795,9 @@ public class AbstractKRaftUpgradeST extends AbstractST {
 
     protected void cleanUpKafkaTopics(String componentsNamespaceName) {
         if (CrdUtils.isCrdPresent(KafkaTopic.RESOURCE_PLURAL, KafkaTopic.RESOURCE_GROUP)) {
+            // Strip finalizers first so that topic deletion does not block waiting for the
+            // Topic Operator to respond — the operator may be slow or not yet fully ready.
+            KafkaTopicUtils.setFinalizersInAllTopicsToNull(componentsNamespaceName);
             // delete all topics created in test
             KafkaTopicUtils.deleteAllKafkaTopics(componentsNamespaceName);
         } else {
@@ -803,7 +812,6 @@ public class AbstractKRaftUpgradeST extends AbstractST {
         }
         if (kafkaTopicYaml != null) {
             LOGGER.info("Deleting KafkaTopic configuration files");
-            KafkaTopicUtils.setFinalizersInAllTopicsToNull(componentsNamespaceName);
             KubeResourceManager.get().kubeCmdClient().inNamespace(componentsNamespaceName).delete(kafkaTopicYaml);
         }
         if (kafkaYaml != null) {
