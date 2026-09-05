@@ -8,7 +8,10 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.skodjob.kubetest4j.enums.LogLevel;
 import io.skodjob.kubetest4j.executor.ExecResult;
 import io.skodjob.kubetest4j.resources.KubeResourceManager;
+import io.strimzi.api.kafka.model.kafka.clustersecurity.ClusterSecurityAuthenticationType;
+import io.strimzi.api.kafka.model.kafka.clustersecurity.ClusterSecurityEncryptionType;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlConfigurationParameters;
+import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.kafkaclients.internalClients.admin.AdminClient;
 import io.strimzi.systemtest.kafkaclients.internalClients.admin.KafkaTopicDescription;
@@ -117,14 +120,39 @@ public class CruiseControlUtils {
         String kafkaClusterName = kafkaProperties.getProperty("cluster-name");
         TestUtils.waitFor("Verify that Kafka configuration " + kafkaProperties + " has correct CruiseControl metric reporter properties",
             TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_CRUISE_CONTROL_TIMEOUT, () ->
-            kafkaProperties.getProperty(CruiseControlConfigurationParameters.METRICS_TOPIC_NAME.getValue()).equals("strimzi.cruisecontrol.metrics") &&
-            kafkaProperties.getProperty(CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_ENDPOINT_ID_ALGO.getValue()).equals("HTTPS") &&
-            kafkaProperties.getProperty(CruiseControlConfigurationParameters.METRICS_REPORTER_BOOTSTRAP_SERVERS.getValue()).equals(kafkaClusterName + "-kafka-brokers:9091") &&
-            kafkaProperties.getProperty(CruiseControlConfigurationParameters.METRICS_REPORTER_SECURITY_PROTOCOL.getValue()).equals("SSL") &&
-            kafkaProperties.getProperty(CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_KEYSTORE_TYPE.getValue()).equals("PEM") &&
-            kafkaProperties.getProperty(CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_KEYSTORE_CERTIFICATE_CHAIN.getValue()).equals("${strimzisecrets:" + namespace + "/" + brokerPodName + ":" + brokerPodName + ".crt}") &&
-            kafkaProperties.getProperty(CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_TRUSTSTORE_TYPE.getValue()).equals("PEM") &&
-            kafkaProperties.getProperty(CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_TRUSTSTORE_CERTIFICATES.getValue()).equals("${strimzisecrets:" + namespace + "/" + clusterName + "-trustbundle:cluster-ca.crt}"));
+                        kafkaProperties.getProperty(CruiseControlConfigurationParameters.METRICS_TOPIC_NAME.getValue()).equals("strimzi.cruisecontrol.metrics")
+                                && kafkaProperties.getProperty(CruiseControlConfigurationParameters.METRICS_TOPIC_AUTO_CREATE.getValue()).equals("true")
+                                && kafkaProperties.getProperty(CruiseControlConfigurationParameters.METRICS_REPORTER_BOOTSTRAP_SERVERS.getValue()).equals(kafkaClusterName + "-kafka-brokers:9091")
+                                && verifyCruiseControlMetricReporterTLSConfiguration(kafkaProperties, clusterName, namespace, brokerPodName));
+    }
+
+    private static boolean verifyCruiseControlMetricReporterTLSConfiguration(Properties kafkaProperties, String clusterName, String namespace, String brokerPodName)  {
+        boolean encCheck = true;
+        boolean authCheck = true;
+
+        if (ClusterSecurityEncryptionType.TLS.equals(Environment.CLUSTER_SECURITY_ENCRYPTION)) {
+            encCheck = kafkaProperties.getProperty(CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_ENDPOINT_ID_ALGO.getValue()).equals("HTTPS")
+                    && kafkaProperties.getProperty(CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_KEYSTORE_TYPE.getValue()).equals("PEM")
+                    && kafkaProperties.getProperty(CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_KEYSTORE_CERTIFICATE_CHAIN.getValue()).equals("${strimzisecrets:" + namespace + "/" + brokerPodName + ":" + brokerPodName + ".crt}")
+                    && kafkaProperties.getProperty(CruiseControlConfigurationParameters.METRICS_REPORTER_SECURITY_PROTOCOL.getValue()).endsWith("SSL");
+        } else if (ClusterSecurityEncryptionType.NONE.equals(Environment.CLUSTER_SECURITY_ENCRYPTION))   {
+            encCheck = !kafkaProperties.containsKey(CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_ENDPOINT_ID_ALGO.getValue())
+                    && !kafkaProperties.containsKey(CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_KEYSTORE_TYPE.getValue())
+                    && !kafkaProperties.containsKey(CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_KEYSTORE_CERTIFICATE_CHAIN.getValue())
+                    && !kafkaProperties.containsKey(CruiseControlConfigurationParameters.METRICS_REPORTER_SECURITY_PROTOCOL.getValue());
+        }
+
+        if (ClusterSecurityAuthenticationType.MTLS.equals(Environment.CLUSTER_SECURITY_AUTHENTICATION)) {
+            authCheck = kafkaProperties.getProperty(CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_TRUSTSTORE_TYPE.getValue()).equals("PEM")
+                    && kafkaProperties.getProperty(CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_TRUSTSTORE_CERTIFICATES.getValue()).equals("${strimzisecrets:" + namespace + "/" + clusterName + "-trustbundle:cluster-ca.crt}")
+                    && kafkaProperties.getProperty(CruiseControlConfigurationParameters.METRICS_REPORTER_SECURITY_PROTOCOL.getValue()).endsWith("SSL");
+        } else if (ClusterSecurityAuthenticationType.NONE.equals(Environment.CLUSTER_SECURITY_AUTHENTICATION))   {
+            authCheck = !kafkaProperties.containsKey(CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_TRUSTSTORE_TYPE.getValue())
+                    && !kafkaProperties.containsKey(CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_TRUSTSTORE_CERTIFICATES.getValue())
+                    && !kafkaProperties.containsKey(CruiseControlConfigurationParameters.METRICS_REPORTER_SECURITY_PROTOCOL.getValue());
+        }
+
+        return encCheck && authCheck;
     }
 
     public static void verifyThatCruiseControlTopicsArePresent(AdminClient adminClient, int defaultReplicaCount) {

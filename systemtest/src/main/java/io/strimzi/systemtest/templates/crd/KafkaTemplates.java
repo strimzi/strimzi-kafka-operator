@@ -20,6 +20,7 @@ import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.utils.FileUtils;
 import io.strimzi.systemtest.utils.TestKafkaVersion;
+import io.strimzi.systemtest.utils.specific.ClusterSecuritySTUtils;
 
 import java.util.Collections;
 
@@ -175,6 +176,7 @@ public class KafkaTemplates {
         setDefaultSpecOfKafka(kb, kafkaReplicas);
         setDefaultLogging(kb);
         setMemoryRequestsAndLimitsIfNeeded(kb);
+        setClusterSecurityIfNeeded(kb);
 
         return kb;
     }
@@ -217,6 +219,22 @@ public class KafkaTemplates {
                     .endTemplate()
                 .endEntityOperator()
             .endSpec();
+    }
+
+    /**
+     * Configures the security of the internal cluster communication based on the encryption and authentication types
+     * configured for the whole test run. The annotation is added only when a non-default configuration is requested.
+     * That way, the majority of the test runs covers also the behaviour when the annotation is not used at all.
+     *
+     * @param kafkaBuilder  Kafka builder that should be configured
+     */
+    private static void setClusterSecurityIfNeeded(KafkaBuilder kafkaBuilder) {
+        if (!Environment.isDefaultClusterSecurity()) {
+            kafkaBuilder
+                .editMetadata()
+                    .addToAnnotations(ClusterSecuritySTUtils.INTERNAL_CLUSTER_SECURITY_ANNOTATION, ClusterSecuritySTUtils.clusterSecurityAnnotation())
+                .endMetadata();
+        }
     }
 
     private static void setMemoryRequestsAndLimitsIfNeeded(KafkaBuilder kafkaBuilder) {

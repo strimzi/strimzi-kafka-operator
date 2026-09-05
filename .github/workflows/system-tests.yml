@@ -17,6 +17,22 @@ on:
         required: false
         default: "regression,upgrade,regression-fg,acceptance-helm"
         type: string
+      clusterSecurityEncryption:
+        description: "Encryption used for the internal Kafka cluster communication"
+        required: false
+        default: "tls"
+        type: choice
+        options:
+          - tls
+          - none
+      clusterSecurityAuthentication:
+        description: "Authentication used for the internal Kafka cluster communication. 'mtls' can be used only together with 'tls' encryption."
+        required: false
+        default: "mtls"
+        type: choice
+        options:
+          - mtls
+          - none
   # Automated trigger for issue comment
   issue_comment:
     types: [created]
@@ -142,6 +158,8 @@ jobs:
       kubeVersion: ${{ steps.parse.outputs.kubeVersion }}
       kindVersion: ${{ steps.parse.outputs.kindVersion }}
       ipFamily: ${{ steps.parse.outputs.ipFamily }}
+      clusterSecurityEncryption: ${{ steps.parse.outputs.clusterSecurityEncryption }}
+      clusterSecurityAuthentication: ${{ steps.parse.outputs.clusterSecurityAuthentication }}
       isValid: ${{ steps.validate.outputs.isValid }}
       message: ${{ steps.validate.outputs.message }}
       matrix: ${{ steps.gen.outputs.matrix }}
@@ -157,6 +175,17 @@ jobs:
           releaseVersion: ${{ github.event.inputs.releaseVersion }}
           kafkaVersion: ${{ github.event.inputs.kafkaVersion }}
           pipeline: ${{ github.event.inputs.pipeline }}
+          clusterSecurityEncryption: ${{ github.event.inputs.clusterSecurityEncryption }}
+          clusterSecurityAuthentication: ${{ github.event.inputs.clusterSecurityAuthentication }}
+      - name: Add parsing error comment
+        if: ${{ failure() && steps.parse.outcome == 'failure' && github.event_name == 'issue_comment' }}
+        uses: ./.github/actions/utils/add-comment
+        with:
+          commentId: ${{ needs.check-build.outputs.commentId }}
+          commentMessage: ':x: **System test validation failed**
+
+
+          The parameters of the run could not be parsed. Please check the [workflow run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) for more details.'
       - name: Generate Matrix for Validation
         id: gen
         uses: ./.github/actions/systemtests/generate-matrix
@@ -189,6 +218,8 @@ jobs:
         with:
           commentId: ${{ needs.check-build.outputs.commentId }}
           commentMessage: ':hourglass_flowing_sand: System test verification started: [link](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+
+          Internal cluster security: encryption `${{ steps.parse.outputs.clusterSecurityEncryption }}`, authentication `${{ steps.parse.outputs.clusterSecurityAuthentication }}`
 
           ${{ steps.validate.outputs.message }}'
       - name: Set check & commit status (pending)
@@ -328,6 +359,8 @@ jobs:
       kafkaVersion: ${{ needs.generate-matrix.outputs.kafkaVersion }}
       kubeVersion: ${{ needs.generate-matrix.outputs.kubeVersion }}
       kindVersion: ${{ needs.generate-matrix.outputs.kindVersion }}
+      clusterSecurityEncryption: ${{ needs.generate-matrix.outputs.clusterSecurityEncryption }}
+      clusterSecurityAuthentication: ${{ needs.generate-matrix.outputs.clusterSecurityAuthentication }}
       # Checkout ref params
       ref: ${{ needs.parse-params.outputs.ref }}
       sha: ${{ needs.parse-params.outputs.sha }}

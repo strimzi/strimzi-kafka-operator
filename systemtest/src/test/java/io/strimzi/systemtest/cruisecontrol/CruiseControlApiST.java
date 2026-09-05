@@ -10,8 +10,10 @@ import io.skodjob.annotations.Step;
 import io.skodjob.annotations.SuiteDoc;
 import io.skodjob.annotations.TestDoc;
 import io.skodjob.kubetest4j.resources.KubeResourceManager;
+import io.strimzi.api.kafka.model.kafka.clustersecurity.ClusterSecurityEncryptionType;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlEndpoints;
 import io.strimzi.systemtest.AbstractST;
+import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.docs.TestDocsLabels;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
@@ -84,8 +86,13 @@ public class CruiseControlApiST extends AbstractST {
             .build());
 
         LOGGER.info("----> CRUISE CONTROL DEPLOYMENT STATE ENDPOINT <----");
-        CruiseControlUtils.ApiResult response = CruiseControlUtils.callApi(testStorage.getNamespaceName(), CruiseControlUtils.HttpMethod.GET,
-                CruiseControlUtils.Scheme.HTTPS, CRUISE_CONTROL_DEFAULT_PORT, CruiseControlEndpoints.STATE.toString(), "");
+        CruiseControlUtils.ApiResult response = CruiseControlUtils.callApi(
+                testStorage.getNamespaceName(),
+                CruiseControlUtils.HttpMethod.GET,
+                ClusterSecurityEncryptionType.TLS.equals(Environment.CLUSTER_SECURITY_ENCRYPTION) ? CruiseControlUtils.Scheme.HTTPS : CruiseControlUtils.Scheme.HTTP,
+                CRUISE_CONTROL_DEFAULT_PORT,
+                CruiseControlEndpoints.STATE.toString(),
+                "");
         String responseText = response.getResponseText();
         int responseCode = response.getResponseCode();
 
@@ -135,7 +142,7 @@ public class CruiseControlApiST extends AbstractST {
         CruiseControlUtils.ApiResult response = CruiseControlUtils.callApi(
             testStorage.getNamespaceName(),
             CruiseControlUtils.HttpMethod.GET,
-            CruiseControlUtils.Scheme.HTTPS,
+            ClusterSecurityEncryptionType.TLS.equals(Environment.CLUSTER_SECURITY_ENCRYPTION) ? CruiseControlUtils.Scheme.HTTPS : CruiseControlUtils.Scheme.HTTP,
             CRUISE_CONTROL_DEFAULT_PORT,
             CruiseControlEndpoints.STATE.toString(),
             "",

@@ -28,5 +28,7 @@ runs:
           # Not a PR - use standard Strimzi settings
           echo "PULL_REQUEST=false" >> $GITHUB_ENV
           echo "DOCKER_ORG=strimzi" >> $GITHUB_ENV
-          echo "DOCKER_REGISTRY=quay.io" >> $GITHUB_ENV
+          # The DOCKER_REGISTRY set by setup-kind (Kind registry) is preserved here as well. The workflow switches it
+          # to quay.io only when the tested images are already published there. Otherwise, the locally built images
+          # would be pushed into quay.io instead of into the Kind registry.
         fi

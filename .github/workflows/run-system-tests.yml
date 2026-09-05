@@ -27,6 +27,16 @@ on:
         required: false
         default: ""
         type: string
+      clusterSecurityEncryption:
+        description: "Encryption used for the internal Kafka cluster communication ('tls' or 'none')"
+        required: false
+        default: "tls"
+        type: string
+      clusterSecurityAuthentication:
+        description: "Authentication used for the internal Kafka cluster communication ('mtls' or 'none')"
+        required: false
+        default: "mtls"
+        type: string
       # Checkout ref params
       ref:
         description: "Repository ref that will be checkout"
@@ -71,6 +81,8 @@ jobs:
       STRIMZI_RBAC_SCOPE: ${{ matrix.config.strimzi_rbac_scope }}
       CLUSTER_OPERATOR_INSTALL_TYPE: ${{ matrix.config.cluster_operator_install_type }}
       STRIMZI_FEATURE_GATES: ${{ matrix.config.strimzi_feature_gates }}
+      CLUSTER_SECURITY_ENCRYPTION: ${{ inputs.clusterSecurityEncryption }}
+      CLUSTER_SECURITY_AUTHENTICATION: ${{ inputs.clusterSecurityAuthentication }}
       PARALLEL: ${{ matrix.config.parallel }}
       IP_FAMILY: ${{ matrix.config.ipFamily }}
       STRIMZI_DEFAULT_LOG_LEVEL: DEBUG
@@ -138,8 +150,11 @@ jobs:
         run: |
           echo "DOCKER_TAG=${{ inputs.releaseVersion }}" >> $GITHUB_ENV
 
-      - name: Set DOCKER_REGISTRY to quay.io if releaseVersion != latest
-        if: ${{ inputs.releaseVersion != 'latest' }}
+      # This has to match the negation of the condition of the "Load Strimzi images" step below. When the images are
+      # built locally and loaded into the Kind registry, DOCKER_REGISTRY has to keep pointing to the Kind registry.
+      # Otherwise, the `docker_e2e` Make target would push the locally built images into quay.io.
+      - name: Set DOCKER_REGISTRY to quay.io when testing already published images
+        if: ${{ inputs.releaseVersion != 'latest' || inputs.ref == 'refs/heads/main' }}
         run: |
           echo "DOCKER_REGISTRY=quay.io" >> $GITHUB_ENV
 

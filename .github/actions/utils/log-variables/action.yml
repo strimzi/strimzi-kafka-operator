@@ -25,6 +25,8 @@ runs:
         echo "CLUSTER_OPERATOR_INSTALL_TYPE: ${{ env.CLUSTER_OPERATOR_INSTALL_TYPE }}"
         echo "STRIMZI_FEATURE_GATES: ${{ env.STRIMZI_FEATURE_GATES }}"
         echo "STRIMZI_RBAC_SCOPE: ${{ env.STRIMZI_RBAC_SCOPE }}"
+        echo "CLUSTER_SECURITY_ENCRYPTION: ${{ env.CLUSTER_SECURITY_ENCRYPTION }}"
+        echo "CLUSTER_SECURITY_AUTHENTICATION: ${{ env.CLUSTER_SECURITY_AUTHENTICATION }}"
         echo "JAVA_HOME: $JAVA_HOME"
         java -version
         which java

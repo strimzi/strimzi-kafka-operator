@@ -8,6 +8,8 @@ import io.fabric8.kubernetes.api.model.Service;
 import io.skodjob.kubetest4j.enums.InstallType;
 import io.skodjob.kubetest4j.environment.TestEnvironmentVariables;
 import io.skodjob.kubetest4j.resources.KubeResourceManager;
+import io.strimzi.api.kafka.model.kafka.clustersecurity.ClusterSecurityAuthenticationType;
+import io.strimzi.api.kafka.model.kafka.clustersecurity.ClusterSecurityEncryptionType;
 import io.strimzi.systemtest.enums.ClusterOperatorRBACType;
 import io.strimzi.systemtest.utils.TestKafkaVersion;
 import io.strimzi.test.TestUtils;
@@ -150,6 +152,17 @@ public class Environment {
     public static final String POSTGRES_IMAGE_ENV = "POSTGRES_IMAGE";
 
     /**
+     * Encryption type used for the internal communication of the Kafka clusters deployed by the tests. It is configured
+     * using the `strimzi.io/internal-cluster-security` annotation.
+     */
+    public static final String CLUSTER_SECURITY_ENCRYPTION_ENV = "CLUSTER_SECURITY_ENCRYPTION";
+    /**
+     * Authentication type used for the internal communication of the Kafka clusters deployed by the tests. It is
+     * configured using the `strimzi.io/internal-cluster-security` annotation.
+     */
+    public static final String CLUSTER_SECURITY_AUTHENTICATION_ENV = "CLUSTER_SECURITY_AUTHENTICATION";
+
+    /**
      * Defaults
      */
     public static final String STRIMZI_TAG_DEFAULT = "latest";
@@ -183,6 +196,10 @@ public class Environment {
     public static final String BUILDAH_IMAGE_DEFAULT = "quay.io/containers/buildah:v1.41.4";
 
     public static final String POSTGRES_IMAGE_DEFAULT = "docker.io/library/postgres:18.0";
+
+    // The defaults have to match the defaults used by the Cluster Operator when the annotation is not set at all
+    public static final ClusterSecurityEncryptionType CLUSTER_SECURITY_ENCRYPTION_DEFAULT = ClusterSecurityEncryptionType.TLS;
+    public static final ClusterSecurityAuthenticationType CLUSTER_SECURITY_AUTHENTICATION_DEFAULT = ClusterSecurityAuthenticationType.MTLS;
 
     /**
      * Set values
@@ -243,6 +260,9 @@ public class Environment {
 
     public static final String POSTGRES_IMAGE = ENVIRONMENT_VARIABLES.getOrDefault(POSTGRES_IMAGE_ENV, POSTGRES_IMAGE_DEFAULT);
 
+    public static final ClusterSecurityEncryptionType CLUSTER_SECURITY_ENCRYPTION = ENVIRONMENT_VARIABLES.getOrDefault(CLUSTER_SECURITY_ENCRYPTION_ENV, value -> enumFromEnvVar(ClusterSecurityEncryptionType.class, CLUSTER_SECURITY_ENCRYPTION_ENV, value, CLUSTER_SECURITY_ENCRYPTION_DEFAULT), CLUSTER_SECURITY_ENCRYPTION_DEFAULT);
+    public static final ClusterSecurityAuthenticationType CLUSTER_SECURITY_AUTHENTICATION = ENVIRONMENT_VARIABLES.getOrDefault(CLUSTER_SECURITY_AUTHENTICATION_ENV, value -> enumFromEnvVar(ClusterSecurityAuthenticationType.class, CLUSTER_SECURITY_AUTHENTICATION_ENV, value, CLUSTER_SECURITY_AUTHENTICATION_DEFAULT), CLUSTER_SECURITY_AUTHENTICATION_DEFAULT);
+
     private Environment() { }
 
     static {
@@ -252,6 +272,50 @@ public class Environment {
         } catch (IOException e) {
             LOGGER.error("Failed to write configuration to the {} due to: {}", TEST_LOG_DIR, e);
         }
+
+        // Fail fast when the requested internal cluster security configuration is not supported by the operator
+        if (CLUSTER_SECURITY_AUTHENTICATION == ClusterSecurityAuthenticationType.MTLS && CLUSTER_SECURITY_ENCRYPTION != ClusterSecurityEncryptionType.TLS) {
+            throw new IllegalArgumentException("Invalid internal cluster security configuration: " + CLUSTER_SECURITY_AUTHENTICATION_ENV
+                    + "=mtls can be used only together with " + CLUSTER_SECURITY_ENCRYPTION_ENV + "=tls");
+        }
+    }
+
+    /**
+     * Converts the value of an environment variable into an enum constant. An environment variable that is set to an
+     * empty value is treated as if it was not set at all and the default value is used instead. That is needed because
+     * the environment variables are often set from CI pipelines where an unset parameter ends up as an empty value.
+     *
+     * @param enumType      Class of the enum the value should be converted to
+     * @param envVarName    Name of the environment variable. Used only in the error message.
+     * @param value         Value of the environment variable
+     * @param defaultValue  Default value used when the environment variable is not set or is empty
+     *
+     * @param <E>   Type of the enum the value should be converted to
+     *
+     * @return  Enum constant corresponding to the value of the environment variable or the default value
+     */
+    private static <E extends Enum<E>> E enumFromEnvVar(Class<E> enumType, String envVarName, String value, E defaultValue) {
+        if (value == null || value.isBlank()) {
+            return defaultValue;
+        }
+
+        try {
+            return Enum.valueOf(enumType, value.trim().toUpperCase(Locale.ENGLISH));
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Invalid value '" + value + "' of the " + envVarName + " environment variable", e);
+        }
+    }
+
+    /**
+     * Checks whether the internal cluster security is configured to the values used by the Cluster Operator when the
+     * `strimzi.io/internal-cluster-security` annotation is not set at all. In such case, the tests do not need to set
+     * the annotation on the Kafka custom resources.
+     *
+     * @return  True if the default internal cluster security configuration should be used. False otherwise.
+     */
+    public static boolean isDefaultClusterSecurity() {
+        return CLUSTER_SECURITY_ENCRYPTION == CLUSTER_SECURITY_ENCRYPTION_DEFAULT
+                && CLUSTER_SECURITY_AUTHENTICATION == CLUSTER_SECURITY_AUTHENTICATION_DEFAULT;
     }
 
     public static boolean isOlmInstall() {

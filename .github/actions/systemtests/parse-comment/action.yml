@@ -14,6 +14,14 @@ inputs:
     description: "Comma-separated or single pipeline name(s)"
     required: false
     default: "smoke"
+  clusterSecurityEncryption:
+    description: "Encryption used for the internal Kafka cluster communication ('tls' or 'none')"
+    required: false
+    default: "tls"
+  clusterSecurityAuthentication:
+    description: "Authentication used for the internal Kafka cluster communication ('mtls' or 'none')"
+    required: false
+    default: "mtls"
 
 outputs:
   pipelineList:
@@ -61,6 +69,12 @@ outputs:
   ipFamily:
     description: "IP family for the Kind cluster (ipv4, ipv6, dual)"
     value: ${{ steps.parse_comment.outputs.ipFamily }}
+  clusterSecurityEncryption:
+    description: "Encryption used for the internal Kafka cluster communication"
+    value: ${{ steps.parse_comment.outputs.clusterSecurityEncryption }}
+  clusterSecurityAuthentication:
+    description: "Authentication used for the internal Kafka cluster communication"
+    value: ${{ steps.parse_comment.outputs.clusterSecurityAuthentication }}
 
 runs:
   using: "composite"
@@ -71,11 +85,15 @@ runs:
       env:
         INPUT_PIPELINE: ${{ inputs.pipeline }}
         INPUT_KAFKA_VERSION: ${{ inputs.kafkaVersion }}
+        INPUT_CLUSTER_SECURITY_ENCRYPTION: ${{ inputs.clusterSecurityEncryption }}
+        INPUT_CLUSTER_SECURITY_AUTHENTICATION: ${{ inputs.clusterSecurityAuthentication }}
       with:
         script: |
           const body = context.payload?.comment?.body ?? '';
           const pipeline = process.env.INPUT_PIPELINE || 'smoke';
-          const fallback = `/gha run pipeline=${pipeline} kafkaVersion=${process.env.INPUT_KAFKA_VERSION}`;
+          const fallback = `/gha run pipeline=${pipeline} kafkaVersion=${process.env.INPUT_KAFKA_VERSION}`
+            + ` clusterSecurityEncryption=${process.env.INPUT_CLUSTER_SECURITY_ENCRYPTION}`
+            + ` clusterSecurityAuthentication=${process.env.INPUT_CLUSTER_SECURITY_AUTHENTICATION}`;
           const builtComment = (body && body.trim().length) ? body : fallback;
           
           core.setOutput('builtComment', builtComment);
@@ -124,6 +142,9 @@ runs:
             kubeVersion:  'latest',
             kindVersion:  '',
             ipFamily:     'ipv4',
+            // Defaults used by the Cluster Operator when the `strimzi.io/internal-cluster-security` annotation is not set
+            clusterSecurityEncryption:     'tls',
+            clusterSecurityAuthentication: 'mtls',
           };
 
           let pipelineList = '', profileList = '';
@@ -153,7 +174,15 @@ runs:
             kindVersion:                   getParameter('kindversion',  lower) || DEFAULTS.kindVersion,
             ipFamily:                      getParameter('ipfamily',     lower) || DEFAULTS.ipFamily,
             releaseVersion:                process.env.INPUT_RELEASE_VERSION || 'latest',
+            clusterSecurityEncryption:     getParameter('clustersecurityencryption', lower) || DEFAULTS.clusterSecurityEncryption,
+            clusterSecurityAuthentication: getParameter('clustersecurityauthentication', lower) || DEFAULTS.clusterSecurityAuthentication,
           };
+
+          // mTLS authentication of the internal cluster communication can be used only with TLS encryption
+          if (out.clusterSecurityAuthentication === 'mtls' && out.clusterSecurityEncryption !== 'tls') {
+            core.setFailed(`Invalid internal cluster security configuration: clusterSecurityAuthentication=mtls can be used only with clusterSecurityEncryption=tls`);
+            return;
+          }
 
           if (starts && !out.pipelineList && !out.profileList) {
             out.profileList = DEFAULTS.profiles;

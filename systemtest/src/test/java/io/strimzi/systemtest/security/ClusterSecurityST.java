@@ -74,7 +74,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 class ClusterSecurityST extends AbstractST {
     private static final int BROKER_REPLICAS = 3;
     private static final int CONTROLLER_REPLICAS = 3;
-    private static final String INTERNAL_CLUSTER_SECURITY_ANNOTATION = "strimzi.io/internal-cluster-security";
 
     /**
      * Generates the combinations of encryption and authentication types for testing.
@@ -119,7 +118,7 @@ class ClusterSecurityST extends AbstractST {
         );
         KubeResourceManager.get().createResourceWithWait(KafkaTemplates.kafkaWithCruiseControlTunedForFastModelGeneration(testStorage.getNamespaceName(), testStorage.getClusterName(), BROKER_REPLICAS)
                         .editMetadata()
-                            .addToAnnotations(INTERNAL_CLUSTER_SECURITY_ANNOTATION, ClusterSecuritySTUtils.clusterSecurityAnnotation(encryption, authentication))
+                            .addToAnnotations(ClusterSecuritySTUtils.INTERNAL_CLUSTER_SECURITY_ANNOTATION, ClusterSecuritySTUtils.clusterSecurityAnnotation(encryption, authentication))
                         .endMetadata()
                         .editSpec()
                             .editKafka()
@@ -230,6 +229,11 @@ class ClusterSecurityST extends AbstractST {
             KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getControllerPoolName(),
                 testStorage.getClusterName(), CONTROLLER_REPLICAS).build(),
             KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getClusterName(), BROKER_REPLICAS)
+                    // This test always starts from the default configuration, so we drop any annotation possibly added
+                    // based on the Cluster Security configuration of the whole test run
+                    .editMetadata()
+                        .removeFromAnnotations(ClusterSecuritySTUtils.INTERNAL_CLUSTER_SECURITY_ANNOTATION)
+                    .endMetadata()
                     .editSpec()
                         .editKafka()
                             .withNewKafkaAuthorizationSimple()
@@ -332,9 +336,9 @@ class ClusterSecurityST extends AbstractST {
             .patch(PatchContext.of(PatchType.JSON_MERGE), "{\"status\":{\"clusterSecurity\":null}}");
 
         if (clusterSecurity == null) {
-            KafkaUtils.removeAnnotation(namespaceName, clusterName, INTERNAL_CLUSTER_SECURITY_ANNOTATION);
+            KafkaUtils.removeAnnotation(namespaceName, clusterName, ClusterSecuritySTUtils.INTERNAL_CLUSTER_SECURITY_ANNOTATION);
         } else {
-            KafkaUtils.annotateKafka(namespaceName, clusterName, Map.of(INTERNAL_CLUSTER_SECURITY_ANNOTATION, clusterSecurity));
+            KafkaUtils.annotateKafka(namespaceName, clusterName, Map.of(ClusterSecuritySTUtils.INTERNAL_CLUSTER_SECURITY_ANNOTATION, clusterSecurity));
         }
         KafkaUtils.annotateKafka(namespaceName, clusterName,
             Map.of(Annotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION, "false"));

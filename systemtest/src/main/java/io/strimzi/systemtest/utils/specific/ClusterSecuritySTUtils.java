@@ -6,6 +6,7 @@ package io.strimzi.systemtest.utils.specific;
 
 import io.strimzi.api.kafka.model.kafka.clustersecurity.ClusterSecurityAuthenticationType;
 import io.strimzi.api.kafka.model.kafka.clustersecurity.ClusterSecurityEncryptionType;
+import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.resources.CrdClients;
 import io.strimzi.systemtest.storage.TestStorage;
 import org.hamcrest.CoreMatchers;
@@ -18,7 +19,22 @@ import static org.hamcrest.MatcherAssert.assertThat;
  *  Provides auxiliary methods for working with Cluster Security configurations.
  */
 public class ClusterSecuritySTUtils {
+    /**
+     * Annotation used on the Kafka custom resource to configure the security of the internal cluster communication
+     */
+    public static final String INTERNAL_CLUSTER_SECURITY_ANNOTATION = "strimzi.io/internal-cluster-security";
+
     private ClusterSecuritySTUtils() { }
+
+    /**
+     * Generates the Cluster Security annotation for the encryption and authentication types configured for the whole
+     * test run through the {@link Environment} class.
+     *
+     * @return  Cluster Security annotation as a JSON string
+     */
+    public static String clusterSecurityAnnotation() {
+        return clusterSecurityAnnotation(Environment.CLUSTER_SECURITY_ENCRYPTION, Environment.CLUSTER_SECURITY_AUTHENTICATION);
+    }
 
     /**
      * Generates the Cluster Security annotation for the given encryption and authentication types
