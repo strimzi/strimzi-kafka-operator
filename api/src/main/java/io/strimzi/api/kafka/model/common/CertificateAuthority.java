@@ -6,6 +6,8 @@ package io.strimzi.api.kafka.model.common;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import io.strimzi.api.kafka.model.kafka.certmanager.CertManager;
+import io.strimzi.crdgenerator.annotations.CelValidation;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.Minimum;
 import io.sundr.builder.annotations.Buildable;
@@ -22,9 +24,23 @@ import java.util.Map;
         editableEnabled = false,
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
+@CelValidation(rules = {
+    @CelValidation.CelValidationRule(
+        rule = "(has(self.type) && self.type != 'strimzi') || !has(self.certManager)",
+        message = "'certManager' cannot be configured with 'type: strimzi'"
+        ),
+    @CelValidation.CelValidationRule(
+        rule = "!has(self.type) || self.type != 'cert-manager' || has(self.certManager)",
+        message = "'certManager' must be set for 'type: cert-manager'"
+        ),
+    @CelValidation.CelValidationRule(
+        rule = "!has(self.type) || self.type != 'cert-manager' || (has(self.generateCertificateAuthority) && !self.generateCertificateAuthority)",
+        message = "'generateCertificateAuthority' must be set to false for 'type: cert-manager'"
+        )
+})
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
-@JsonPropertyOrder({ "generateCertificateAuthority", "generateSecretOwnerReference", "validityDays",
-    "renewalDays", "certificateExpirationPolicy" })
+@JsonPropertyOrder({ "generateCertificateAuthority", "type", "generateSecretOwnerReference", "validityDays",
+    "renewalDays", "certificateExpirationPolicy", "certManager" })
 @EqualsAndHashCode
 @ToString
 public class CertificateAuthority implements UnknownPropertyPreserving {
@@ -33,9 +49,11 @@ public class CertificateAuthority implements UnknownPropertyPreserving {
     
     private int validityDays;
     private boolean generateCertificateAuthority = true;
+    private CertificateManagerType type = CertificateManagerType.STRIMZI;
     private boolean generateSecretOwnerReference = true;
     private int renewalDays;
     private CertificateExpirationPolicy certificateExpirationPolicy;
+    private CertManager certManager;
     private Map<String, Object> additionalProperties;
 
     @Description("The number of days generated certificates should be valid for. The default is 365.")
@@ -59,6 +77,18 @@ public class CertificateAuthority implements UnknownPropertyPreserving {
 
     public void setGenerateCertificateAuthority(boolean generateCertificateAuthority) {
         this.generateCertificateAuthority = generateCertificateAuthority;
+    }
+
+    @Description("The type of certificate manager. " +
+            "The available types are `strimzi` and `cert-manager`. " +
+            "Default is `strimzi`.")
+    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
+    public CertificateManagerType getType() {
+        return type;
+    }
+
+    public void setType(CertificateManagerType type) {
+        this.type = type;
     }
 
     @Description("If `true`, the Cluster and Client CA Secrets are configured with the `ownerReference` set to the `Kafka` resource. " +
@@ -98,6 +128,16 @@ public class CertificateAuthority implements UnknownPropertyPreserving {
 
     public void setCertificateExpirationPolicy(CertificateExpirationPolicy certificateExpirationPolicy) {
         this.certificateExpirationPolicy = certificateExpirationPolicy;
+    }
+
+    @Description("Configuration for using cert-manager to issue certificates. " +
+            "This only applies if the CA type is set to `cert-manager`.")
+    public CertManager getCertManager() {
+        return certManager;
+    }
+
+    public void setCertManager(CertManager certManager) {
+        this.certManager = certManager;
     }
 
     @Override

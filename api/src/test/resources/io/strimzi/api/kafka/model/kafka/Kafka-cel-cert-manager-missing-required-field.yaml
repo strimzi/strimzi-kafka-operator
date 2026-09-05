@@ -1,0 +1,14 @@
+apiVersion: kafka.strimzi.io/v1
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+  clusterCa:
+    generateCertificateAuthority: false
+    type: cert-manager
+  kafka:
+    listeners:
+      - name: plain
+        type: internal
+        tls: false
+        port: 9092

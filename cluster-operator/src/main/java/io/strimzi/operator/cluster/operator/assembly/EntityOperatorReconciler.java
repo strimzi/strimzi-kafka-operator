@@ -164,8 +164,19 @@ public class EntityOperatorReconciler {
                         reconciliation,
                         reconciliation.namespace(),
                         KafkaResources.entityOperatorDeploymentName(reconciliation.name()),
-                        shouldInstallEntityOperator() ? entityOperator.generateRole(reconciliation.namespace(), reconciliation.namespace(), KafkaResources.entityOperatorDeploymentName(reconciliation.name()), EntityOperator.Permissions.BOTH) : null
+                        shouldInstallEntityOperator() ? entityOperator.generateRole(reconciliation.namespace(), reconciliation.namespace(), KafkaResources.entityOperatorDeploymentName(reconciliation.name()), EntityOperator.Permissions.BOTH, isUserOperatorCertManagerEnabled()) : null
                 )).mapEmpty();
+    }
+
+    /**
+     * Checks whether the User Operator is configured with cert-manager as the clients CA type.
+     *
+     * @return True when cert-manager is used for client certificates
+     */
+    private boolean isUserOperatorCertManagerEnabled() {
+        return entityOperator != null
+                && entityOperator.userOperator() != null
+                && entityOperator.userOperator().isCertManagerEnabled();
     }
 
     /**
@@ -223,7 +234,7 @@ public class EntityOperatorReconciler {
             } else if (isEntityOperatorWatchedNamespaceEnabled && !namespace.equals(reconciliation.namespace())) {
                 // Creation case: generate Role for watched namespace using adaptive permissions
                 EntityOperator.Permissions permissions = getPermissionsForNamespace(namespace);
-                role = entityOperator.generateRole(reconciliation.namespace(), namespace, KafkaResources.entityOperatorDeploymentName(reconciliation.name()), permissions);
+                role = entityOperator.generateRole(reconciliation.namespace(), namespace, KafkaResources.entityOperatorDeploymentName(reconciliation.name()), permissions, isUserOperatorCertManagerEnabled());
             } else {
                 // Feature disabled and no deletion needed (watchedNamespace = cluster namespace)
                 return Future.succeededFuture();
@@ -261,7 +272,7 @@ public class EntityOperatorReconciler {
             } else if (isEntityOperatorWatchedNamespaceEnabled && !namespace.equals(reconciliation.namespace())) {
                 // Creation case: generate Role for watched namespace using adaptive permissions
                 EntityOperator.Permissions permissions = getPermissionsForNamespace(namespace);
-                role = entityOperator.generateRole(reconciliation.namespace(), namespace, KafkaResources.entityOperatorDeploymentName(reconciliation.name()), permissions);
+                role = entityOperator.generateRole(reconciliation.namespace(), namespace, KafkaResources.entityOperatorDeploymentName(reconciliation.name()), permissions, isUserOperatorCertManagerEnabled());
             } else {
                 // Feature disabled and no deletion needed (watchedNamespace = cluster namespace)
                 return Future.succeededFuture();

@@ -1,0 +1,20 @@
+apiVersion: kafka.strimzi.io/v1
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+  clusterCa:
+    type: cert-manager
+    certManager:
+      issuerRef:
+        name: my-issuer
+        kind: Issuer
+      caCertRef:
+        secretName: my-ca-secret
+        certificate: ca.crt
+  kafka:
+    listeners:
+      - name: plain
+        type: internal
+        tls: false
+        port: 9092

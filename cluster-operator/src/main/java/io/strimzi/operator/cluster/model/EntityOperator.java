@@ -79,7 +79,7 @@ public class EntityOperator extends AbstractModel {
      */
     private static final Map<Permissions, List<String>> OPERATOR_RESOURCE_PREFIXES = Map.of(
         Permissions.TOPIC_OPERATOR, List.of("kafkatopics"),
-        Permissions.USER_OPERATOR, List.of("kafkausers", "secrets")
+        Permissions.USER_OPERATOR, List.of("kafkausers", "secrets", "certificates")
     );
 
     /**
@@ -303,19 +303,22 @@ public class EntityOperator extends AbstractModel {
                 .anyMatch(prefix -> resource.equals(prefix) || resource.startsWith(prefix + "/"));
     }
 
+    private static final String CERT_MANAGER_API_GROUP = "cert-manager.io";
+
     /**
      * Generate a Role with filtered permissions based on which operator(s) need access.
      * Loads the combined Entity Operator ClusterRole template and filters the rules
      * based on the specified permissions to enforce least-privilege access.
      *
-     * @param ownerNamespace   The namespace of the parent resource (the Kafka CR)
-     * @param namespace        The namespace where this role will be located
-     * @param roleName         The name to use for the Role resource
-     * @param permissions      Which operator permissions to include (TOPIC_OPERATOR, USER_OPERATOR, or BOTH)
+     * @param ownerNamespace       The namespace of the parent resource (the Kafka CR)
+     * @param namespace            The namespace where this role will be located
+     * @param roleName             The name to use for the Role resource
+     * @param permissions          Which operator permissions to include (TOPIC_OPERATOR, USER_OPERATOR, or BOTH)
+     * @param includeCertManager   Whether to include cert-manager Certificate rules
      *
      * @return Role with appropriately filtered permissions
      */
-    public Role generateRole(String ownerNamespace, String namespace, String roleName, Permissions permissions) {
+    public Role generateRole(String ownerNamespace, String namespace, String roleName, Permissions permissions, boolean includeCertManager) {
         List<PolicyRule> rules;
 
         try (BufferedReader br = new BufferedReader(
@@ -328,6 +331,12 @@ public class EntityOperator extends AbstractModel {
             ObjectMapper yamlReader = new ObjectMapper(new YAMLFactory());
             ClusterRole cr = yamlReader.readValue(yaml, ClusterRole.class);
             rules = filterRulesByPermissions(cr.getRules(), permissions);
+
+            if (!includeCertManager) {
+                rules = rules.stream()
+                        .filter(rule -> !rule.getApiGroups().contains(CERT_MANAGER_API_GROUP))
+                        .toList();
+            }
         } catch (IOException e) {
             LOGGER.errorCr(reconciliation, "Failed to read entity-operator ClusterRole.", e);
             throw new RuntimeException(e);

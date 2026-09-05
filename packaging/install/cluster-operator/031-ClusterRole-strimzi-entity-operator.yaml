@@ -62,3 +62,17 @@ rules:
       - delete
       - patch
       - update
+  - apiGroups:
+      - "cert-manager.io"
+    resources:
+      # The User Operator needs to manage cert-manager Certificate resources when clients CA type is cert-manager
+      - certificates
+      - certificates/status
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - delete
+      - patch
+      - update

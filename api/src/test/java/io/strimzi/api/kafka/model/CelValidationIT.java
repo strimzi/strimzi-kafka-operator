@@ -66,12 +66,21 @@ public class CelValidationIT implements TestSeparator {
         final String renewalMustBeLessThanValidity = "'renewalDays' must be less than 'validityDays'.";
         final String validityRenewalMustBeSetUnderTls = "'validityDays' and 'renewalDays' can be configured only with 'type: tls'";
 
+        final String certManagerGenerateCaMustBeFalse = "'generateCertificateAuthority' must be set to false for 'type: cert-manager'";
+        final String certManagerMissingRequiredField = "'certManager' must be set for 'type: cert-manager'";
+        final String strimziCaInvalidField = "'certManager' cannot be configured with 'type: strimzi'";
+
         return Stream.of(
                 Arguments.of(Kafka.class, "Kafka-cel-rack-topology-label-missing-key.yaml", topologyKeyRequired),
                 Arguments.of(Kafka.class, "Kafka-cel-rack-environment-variable-missing-name.yaml", envVarNameRequired),
                 Arguments.of(Kafka.class, "Kafka-cel-metrics-jmx-missing-valueFrom.yaml", valueFromRequired),
                 Arguments.of(Kafka.class, "Kafka-cel-cc-metrics-jmx-missing-valueFrom.yaml", valueFromRequired),
                 Arguments.of(Kafka.class, "Kafka-cel-cc-metrics-strimzi-rejected.yaml", ccStrimziTypeNotSupported),
+                Arguments.of(Kafka.class, "Kafka-cel-cert-manager-missing-generate-ca.yaml", certManagerGenerateCaMustBeFalse),
+                Arguments.of(Kafka.class, "Kafka-cel-cert-manager-invalid-generate-ca.yaml", certManagerGenerateCaMustBeFalse),
+                Arguments.of(Kafka.class, "Kafka-cel-cert-manager-missing-required-field.yaml", certManagerMissingRequiredField),
+                Arguments.of(Kafka.class, "Kafka-cel-strimzi-ca-rejected-invalid-field.yaml", strimziCaInvalidField),
+                Arguments.of(Kafka.class, "Kafka-cel-default-ca-rejected-invalid-field.yaml", strimziCaInvalidField),
 
                 Arguments.of(KafkaConnect.class, "KafkaConnect-cel-rack-topology-label-missing-key.yaml", topologyKeyRequired),
                 Arguments.of(KafkaConnect.class, "KafkaConnect-cel-rack-environment-variable-missing-name.yaml", envVarNameRequired),

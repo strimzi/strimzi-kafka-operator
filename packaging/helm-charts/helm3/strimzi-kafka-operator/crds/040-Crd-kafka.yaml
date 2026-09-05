@@ -3498,6 +3498,12 @@ spec:
                     generateCertificateAuthority:
                       type: boolean
                       description: If true then Certificate Authority certificates will be generated automatically. Otherwise the user will need to provide a Secret with the CA certificate. Default is true.
+                    type:
+                      type: string
+                      enum:
+                        - strimzi
+                        - cert-manager
+                      description: The type of certificate manager. The available types are `strimzi` and `cert-manager`. Default is `strimzi`.
                     generateSecretOwnerReference:
                       type: boolean
                       description: "If `true`, the Cluster and Client CA Secrets are configured with the `ownerReference` set to the `Kafka` resource. If the `Kafka` resource is deleted when `true`, the CA Secrets are also deleted. If `false`, the `ownerReference` is disabled. If the `Kafka` resource is deleted when `false`, the CA Secrets are retained and available for reuse. Default is `true`."
@@ -3515,13 +3521,65 @@ spec:
                         - renew-certificate
                         - replace-key
                       description: How should CA certificate expiration be handled when `generateCertificateAuthority=true`. The default is for a new CA certificate to be generated reusing the existing private key.
+                    certManager:
+                      type: object
+                      properties:
+                        issuerRef:
+                          type: object
+                          properties:
+                            name:
+                              type: string
+                              description: The name of the cert-manager issuer. Required.
+                            kind:
+                              type: string
+                              enum:
+                                - Issuer
+                                - ClusterIssuer
+                              description: The kind of the cert-manager issuer. Must be either `Issuer` or `ClusterIssuer`. Required.
+                            group:
+                              type: string
+                              description: The group of the cert-manager issuer. Default is `cert-manager.io`.
+                          required:
+                            - name
+                            - kind
+                          description: Reference to the cert-manager issuer to use for issuing certificates. Required.
+                        caCertRef:
+                          type: object
+                          properties:
+                            secretName:
+                              type: string
+                              description: The name of the Secret. Required.
+                            certificate:
+                              type: string
+                              description: The key under which the CA certificate is stored in the Secret. Required.
+                          required:
+                            - secretName
+                            - certificate
+                          description: Reference to the Secret containing the CA certificate (public key) that trusts certificates issued by cert-manager. Required.
+                      required:
+                        - issuerRef
+                        - caCertRef
+                      description: Configuration for using cert-manager to issue certificates. This only applies if the CA type is set to `cert-manager`.
                   description: Configuration of the cluster certificate authority.
+                  x-kubernetes-validations:
+                    - rule: (has(self.type) && self.type != 'strimzi') || !has(self.certManager)
+                      message: "'certManager' cannot be configured with 'type: strimzi'"
+                    - rule: '!has(self.type) || self.type != ''cert-manager'' || has(self.certManager)'
+                      message: "'certManager' must be set for 'type: cert-manager'"
+                    - rule: '!has(self.type) || self.type != ''cert-manager'' || (has(self.generateCertificateAuthority) && !self.generateCertificateAuthority)'
+                      message: "'generateCertificateAuthority' must be set to false for 'type: cert-manager'"
                 clientsCa:
                   type: object
                   properties:
                     generateCertificateAuthority:
                       type: boolean
                       description: If true then Certificate Authority certificates will be generated automatically. Otherwise the user will need to provide a Secret with the CA certificate. Default is true.
+                    type:
+                      type: string
+                      enum:
+                        - strimzi
+                        - cert-manager
+                      description: The type of certificate manager. The available types are `strimzi` and `cert-manager`. Default is `strimzi`.
                     generateSecretOwnerReference:
                       type: boolean
                       description: "If `true`, the Cluster and Client CA Secrets are configured with the `ownerReference` set to the `Kafka` resource. If the `Kafka` resource is deleted when `true`, the CA Secrets are also deleted. If `false`, the `ownerReference` is disabled. If the `Kafka` resource is deleted when `false`, the CA Secrets are retained and available for reuse. Default is `true`."
@@ -3539,7 +3597,53 @@ spec:
                         - renew-certificate
                         - replace-key
                       description: How should CA certificate expiration be handled when `generateCertificateAuthority=true`. The default is for a new CA certificate to be generated reusing the existing private key.
+                    certManager:
+                      type: object
+                      properties:
+                        issuerRef:
+                          type: object
+                          properties:
+                            name:
+                              type: string
+                              description: The name of the cert-manager issuer. Required.
+                            kind:
+                              type: string
+                              enum:
+                                - Issuer
+                                - ClusterIssuer
+                              description: The kind of the cert-manager issuer. Must be either `Issuer` or `ClusterIssuer`. Required.
+                            group:
+                              type: string
+                              description: The group of the cert-manager issuer. Default is `cert-manager.io`.
+                          required:
+                            - name
+                            - kind
+                          description: Reference to the cert-manager issuer to use for issuing certificates. Required.
+                        caCertRef:
+                          type: object
+                          properties:
+                            secretName:
+                              type: string
+                              description: The name of the Secret. Required.
+                            certificate:
+                              type: string
+                              description: The key under which the CA certificate is stored in the Secret. Required.
+                          required:
+                            - secretName
+                            - certificate
+                          description: Reference to the Secret containing the CA certificate (public key) that trusts certificates issued by cert-manager. Required.
+                      required:
+                        - issuerRef
+                        - caCertRef
+                      description: Configuration for using cert-manager to issue certificates. This only applies if the CA type is set to `cert-manager`.
                   description: Configuration of the clients certificate authority.
+                  x-kubernetes-validations:
+                    - rule: (has(self.type) && self.type != 'strimzi') || !has(self.certManager)
+                      message: "'certManager' cannot be configured with 'type: strimzi'"
+                    - rule: '!has(self.type) || self.type != ''cert-manager'' || has(self.certManager)'
+                      message: "'certManager' must be set for 'type: cert-manager'"
+                    - rule: '!has(self.type) || self.type != ''cert-manager'' || (has(self.generateCertificateAuthority) && !self.generateCertificateAuthority)'
+                      message: "'generateCertificateAuthority' must be set to false for 'type: cert-manager'"
                 cruiseControl:
                   type: object
                   properties:
