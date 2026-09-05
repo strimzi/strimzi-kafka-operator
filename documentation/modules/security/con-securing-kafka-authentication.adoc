@@ -90,7 +90,9 @@ spec:
 [id='con-mutual-tls-authentication-{context}']
 == mTLS authentication
 
-mTLS authentication is always used for the communication between Kafka nodes.
+By default, mTLS authentication is also used for the communication between Kafka nodes and other Strimzi components.
+You can change this in the internal cluster security configuration.
+For more information, see xref:con-internal-cluster-security-{context}[Internal cluster encryption and authentication].
 
 Strimzi can configure Kafka to use TLS (Transport Layer Security) to provide encrypted communication between Kafka brokers and clients either with or without mutual authentication.
 For mutual, or two-way, authentication, both the server and the client present certificates.
