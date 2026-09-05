@@ -59,6 +59,12 @@ import java.util.Properties;
  *     <dd>Returns HTTP code 204 if broker state is RUNNING(3). Otherwise returns non successful HTTP code.
  *     </dd>
  * </dl>
+ * <p>
+ * The endpoints are exposed on two connectors. The external connector is used by the operator and can optionally use
+ * TLS encryption and require the clients to authenticate with a TLS client certificate or with a Kubernetes Service
+ * Account token. The internal connector is bound to localhost and is used by the health checks of this Pod without any
+ * encryption or authentication.
+ * </p>
  */
 public class KafkaAgent {
     private static final Logger LOGGER = LoggerFactory.getLogger(KafkaAgent.class);
@@ -66,6 +72,8 @@ public class KafkaAgent {
     private static final String READINESS_ENDPOINT_PATH = "/v1/ready";
     private static final int EXTERNAL_HTTP_PORT = 8443;
     private static final int INTERNAL_HTTP_PORT = 8080;
+    private static final String EXTERNAL_CONNECTOR_NAME = "external";
+    private static final String INTERNAL_CONNECTOR_NAME = "internal";
     private static final long GRACEFUL_SHUTDOWN_TIMEOUT_MS = 30 * 1000;
     private static final byte BROKER_RUNNING_STATE = 3;
     private static final byte BROKER_RECOVERY_STATE = 2;
@@ -171,7 +179,8 @@ public class KafkaAgent {
         ServerConnector externalConnector = createExternalHttpConnector(server);
 
         // Internal connector is used within the Pod only for health checks
-        ServerConnector internalConnector  = new ServerConnector(server);
+        ServerConnector internalConnector = new ServerConnector(server);
+        internalConnector.setName(INTERNAL_CONNECTOR_NAME);
         internalConnector.setHost("localhost"); // Should not be exposed outside the Pod. So we use localhost only here.
         internalConnector.setPort(INTERNAL_HTTP_PORT);
 
@@ -181,8 +190,16 @@ public class KafkaAgent {
         ContextHandler readinessContext = new ContextHandler(READINESS_ENDPOINT_PATH);
         readinessContext.setHandler(getReadinessHandler());
 
+        Handler handler = new ContextHandlerCollection(brokerStateContext, readinessContext);
+
+        if (config.get("tokenIssuer") != null) {
+            // Service Account authentication is used => the requests arriving through the external connector have to be
+            // authenticated with a valid Kubernetes Service Account token
+            handler = new ServiceAccountAuthenticationHandler(handler, EXTERNAL_CONNECTOR_NAME, config);
+        }
+
         server.setConnectors(new Connector[] {externalConnector, internalConnector});
-        server.setHandler(new ContextHandlerCollection(brokerStateContext, readinessContext));
+        server.setHandler(handler);
 
         server.setStopTimeout(GRACEFUL_SHUTDOWN_TIMEOUT_MS);
         server.setStopAtShutdown(true);
@@ -203,6 +220,7 @@ public class KafkaAgent {
             httpConnector  = new ServerConnector(server);
         }
 
+        httpConnector.setName(EXTERNAL_CONNECTOR_NAME);
         httpConnector.setHost("0.0.0.0");
         httpConnector.setPort(EXTERNAL_HTTP_PORT);
 

@@ -17,20 +17,25 @@ import org.eclipse.jetty.server.Server;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManagerFactory;
 
 import java.io.IOException;
+import java.net.ServerSocket;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.security.GeneralSecurityException;
 import java.security.SecureRandom;
 import java.time.Duration;
+import java.util.HashMap;
 import java.util.Map;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -49,6 +54,9 @@ public class KafkaAgentTest {
     private static final Map<String, String> TLS_CONFIG = Map.of(
             "namespace", NAMESPACE,
             "sslKeyStoreSecretName", NODE_CERT_SECRET_NAME);
+
+    @TempDir
+    Path tempDir;
 
     private Server server;
     private HttpClient httpsClient;
@@ -238,6 +246,86 @@ public class KafkaAgentTest {
                 .send(httpReq, HttpResponse.BodyHandlers.ofString());
 
         assertThat(response.statusCode(), is(HttpServletResponse.SC_SERVICE_UNAVAILABLE));
+    }
+
+    /**
+     * Creates the Kafka Agent configuration with TLS encryption and with Service Account authentication enabled. The
+     * JWKS endpoint points to an unused port, because these tests check only the requests which are rejected before
+     * the token is validated. The Kafka Agent is expected to start anyway and keep retrying the download of the keys
+     * in the background.
+     *
+     * @return  Map with the Kafka Agent configuration
+     */
+    private Map<String, String> serviceAccountAuthenticationConfig() throws IOException {
+        int unusedPort;
+
+        try (ServerSocket socket = new ServerSocket(0)) {
+            unusedPort = socket.getLocalPort();
+        }
+
+        Path tokenPath = tempDir.resolve("token");
+        Files.writeString(tokenPath, "my-kubernetes-token");
+
+        Map<String, String> config = new HashMap<>(TLS_CONFIG);
+        config.put("tokenIssuer", "https://kubernetes.default.svc.cluster.local");
+        config.put("tokenJwksUri", "http://localhost:" + unusedPort + "/openid/v1/jwks");
+        config.put("tokenAudience", "strimzi.io/kafka/my-namespace/my-cluster");
+        config.put("tokenAllowedUsers", "system:serviceaccount:my-namespace:my-cluster-cluster-operator");
+        config.put("tokenPath", tokenPath.toString());
+
+        return config;
+    }
+
+    @Test
+    public void testExternalConnectorRequiresTokenWithServiceAccountAuthentication() throws Exception {
+        @SuppressWarnings({ "rawtypes" })
+        final Gauge brokerState = mock(Gauge.class);
+        when(brokerState.value()).thenReturn((byte) 3);
+
+        KafkaAgent agent = new KafkaAgent(client, serviceAccountAuthenticationConfig(), brokerState, null, null);
+        server = agent.startHttpServer();
+
+        HttpClient tlsClient = HttpClient.newBuilder()
+                .connectTimeout(Duration.ofSeconds(10))
+                .sslContext(getClientSSLContext(caCertSecret, null))
+                .build();
+        HttpResponse<String> response = tlsClient.send(httpsReq, HttpResponse.BodyHandlers.ofString());
+
+        assertThat(response.statusCode(), is(HttpServletResponse.SC_UNAUTHORIZED));
+    }
+
+    @Test
+    public void testInternalConnectorDoesNotRequireTokenWithServiceAccountAuthentication() throws Exception {
+        @SuppressWarnings({ "rawtypes" })
+        final Gauge brokerState = mock(Gauge.class);
+        when(brokerState.value()).thenReturn((byte) 3);
+
+        KafkaAgent agent = new KafkaAgent(client, serviceAccountAuthenticationConfig(), brokerState, null, null);
+        server = agent.startHttpServer();
+
+        HttpResponse<String> response = HttpClient.newBuilder()
+                .build()
+                .send(httpReq, HttpResponse.BodyHandlers.ofString());
+
+        assertThat(response.statusCode(), is(HttpServletResponse.SC_NO_CONTENT));
+    }
+
+    @Test
+    public void testExternalConnectorDoesNotRequireTokenWithoutServiceAccountAuthentication() throws Exception {
+        @SuppressWarnings({ "rawtypes" })
+        final Gauge brokerState = mock(Gauge.class);
+        when(brokerState.value()).thenReturn((byte) 3);
+
+        KafkaAgent agent = new KafkaAgent(client, TLS_CONFIG, brokerState, null, null);
+        server = agent.startHttpServer();
+
+        HttpClient tlsClient = HttpClient.newBuilder()
+                .connectTimeout(Duration.ofSeconds(10))
+                .sslContext(getClientSSLContext(caCertSecret, null))
+                .build();
+        HttpResponse<String> response = tlsClient.send(httpsReq, HttpResponse.BodyHandlers.ofString());
+
+        assertThat(response.statusCode(), is(HttpServletResponse.SC_OK));
     }
 
     @Test

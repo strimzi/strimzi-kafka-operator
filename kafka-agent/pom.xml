@@ -63,6 +63,13 @@
             <artifactId>jackson-databind</artifactId>
             <scope>provided</scope>
         </dependency>
+        <!-- Used to validate the Kubernetes Service Account tokens. It is shipped in the Kafka image as one of the
+        third-party libraries, so it is available on the classpath of the Kafka broker at runtime. -->
+        <dependency>
+            <groupId>io.strimzi</groupId>
+            <artifactId>kafka-oauth-common</artifactId>
+            <scope>provided</scope>
+        </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
