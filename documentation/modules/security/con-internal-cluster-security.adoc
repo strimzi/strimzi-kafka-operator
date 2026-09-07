@@ -81,7 +81,9 @@ This behavior is unchanged from previous releases.
 == (Early Access) Using service account authentication
 
 Set the authentication type to `service-account` to authenticate internal components with Kubernetes service account tokens instead of mTLS certificates.
-Each component mounts a projected service account token that is bound to the Kafka cluster and uses it to authenticate through the SASL `OAUTHBEARER` mechanism.
+All components use the the SASL `OAUTHBEARER` mechanism with a Service Account token for authentication.
+The operands get the token by mounting a projected service account token that is bound to the Kafka cluster.
+The Cluster Operator uses the Kubernetes `TokenRequest` to get the token.
 Kafka brokers and controllers validate the tokens against the JWKS endpoint of the Kubernetes API server.
 The Kafka Agent validates the same tokens on its HTTP endpoints.
 
