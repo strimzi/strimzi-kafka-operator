@@ -35,7 +35,7 @@ import java.util.Set;
  *
  * Example configuration in the {@code OAuthBearerLoginModule} entry:
  * {@code
- * sasl.login.callback.handler.class=io.strimzi.operator.cluster.model.auth.KubernetesRequestedServiceAccountTokenLoginCallbackHandler
+ * sasl.login.callback.handler.class=io.strimzi.operator.cluster.auth.KubernetesRequestedServiceAccountTokenLoginCallbackHandler
  * sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required \
  *     strimzi.kubernetes.token.namespace="my-kafka-ns" \
  *     strimzi.kubernetes.token.serviceaccount="my-cluster-cluster-operator" \
@@ -74,7 +74,7 @@ public class KubernetesRequestedServiceAccountTokenLoginCallbackHandler implemen
     private KubernetesClient client;
 
     /**
-     * Default constructor — required because Kafka loads the handler via reflection.
+     * Default constructor — required because Kafka clients (Admin API client in our case) load the handler via reflection.
      */
     public KubernetesRequestedServiceAccountTokenLoginCallbackHandler() {
     }
@@ -124,8 +124,8 @@ public class KubernetesRequestedServiceAccountTokenLoginCallbackHandler implemen
     private OAuthBearerToken mintToken() {
         TokenRequest request = new TokenRequestBuilder()
                 .withNewSpec()
-                .withAudiences(audience)
-                .withExpirationSeconds(expirationSeconds)
+                    .withAudiences(audience)
+                    .withExpirationSeconds(expirationSeconds)
                 .endSpec()
                 .build();
         TokenRequest response = client.serviceAccounts()
@@ -137,10 +137,12 @@ public class KubernetesRequestedServiceAccountTokenLoginCallbackHandler implemen
             throw new IllegalStateException("Kubernetes API did not return a token for ServiceAccount " + namespace + "/" + serviceAccountName);
         }
 
-        String tokenValue = response.getStatus().getToken();
-        long lifetimeMs = Instant.parse(response.getStatus().getExpirationTimestamp()).toEpochMilli();
-        long startTimeMs = System.currentTimeMillis();
-        return new ServiceAccountToken(tokenValue, principalName, lifetimeMs, startTimeMs);
+        return new ServiceAccountToken(
+                response.getStatus().getToken(),
+                principalName,
+                Instant.parse(response.getStatus().getExpirationTimestamp()).toEpochMilli(),
+                System.currentTimeMillis()
+        );
     }
 
     @Override

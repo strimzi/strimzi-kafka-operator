@@ -301,7 +301,9 @@ public class VolumeUtils {
     }
 
     /**
-     * Creates a Service Account projection volume
+     * Creates a Service Account projection volume used to mount a Service Account token for Strimzi authentication.
+     * This is used when the internal cluster security configuration is set to use Service Account tokens for
+     * authentication. The volume will contain a token with the specified audience and expiration time.
      *
      * @param audience      Audience for the Service Account token
      * @param expiration    Expiration time of the token in seconds
@@ -312,13 +314,13 @@ public class VolumeUtils {
         return new VolumeBuilder()
                 .withName(STRIMZI_AUTHENTICATION_TOKEN_VOLUME_NAME)
                 .withNewProjected()
-                .withSources(new VolumeProjectionBuilder()
-                        .withNewServiceAccountToken()
-                            .withAudience(audience)
-                            .withExpirationSeconds(expiration)
-                            .withPath("token")
-                        .endServiceAccountToken()
-                        .build())
+                    .withSources(new VolumeProjectionBuilder()
+                            .withNewServiceAccountToken()
+                                .withAudience(audience)
+                                .withExpirationSeconds(expiration)
+                                .withPath("token")
+                            .endServiceAccountToken()
+                            .build())
                 .endProjected()
                 .build();
     }

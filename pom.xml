@@ -98,7 +98,6 @@
         <commons-codec.version>1.13</commons-codec.version>
         <snakeyaml.version>2.5</snakeyaml.version>
         <javaluator.version>3.0.6</javaluator.version>
-        <jose4j.version>0.9.6</jose4j.version>
         <strimzi-oauth.version>0.18.0</strimzi-oauth.version>
 
         <!-- Test only dependencies -->
@@ -578,12 +577,6 @@
                 <groupId>com.fathzer</groupId>
                 <artifactId>javaluator</artifactId>
                 <version>${javaluator.version}</version>
-            </dependency>
-            <dependency>
-                <!-- Needed for Service Account based authentication -->
-                <groupId>org.bitbucket.b_c</groupId>
-                <artifactId>jose4j</artifactId>
-                <version>${jose4j.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.strimzi</groupId>
