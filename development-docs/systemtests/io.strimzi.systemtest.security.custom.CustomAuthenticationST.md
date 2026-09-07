@@ -29,7 +29,6 @@
 | 5. | Create a FileStreamSink KafkaConnector consuming from the KafkaTopic. | KafkaConnector is ready. |
 | 6. | Produce messages with a Kafka client using a projected Service Account token with the expected audience. | The producer finishes successfully. |
 | 7. | Check the file sink of the KafkaConnector. | All produced messages are present in the file sink, so the connector consumed them over the authenticated listener. |
-| 8. | Produce messages with a Kafka client using a projected Service Account token with a different audience. | The producer fails to authenticate and does not deliver any messages. |
 
 **Labels:**
 
