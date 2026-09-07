@@ -15,7 +15,6 @@ You can switch to using your own CA certificates and private keys in the followi
 
 * Install your own CA certificates and private keys before deploying your Kafka cluster
 * Replace the default CA certificates and private keys with your own after deploying a Kafka cluster
-* (Early Access) Use cert-manager to issue end-entity certificates on behalf of Strimzi
 
 The steps to replace the default CA certificates and private keys after deploying a Kafka cluster are the same as those used to renew your own CA certificates and private keys.
 
@@ -32,5 +31,3 @@ include::../../modules/security/proc-installing-your-own-ca-certificates.adoc[le
 include::../../modules/security/proc-renewing-your-own-ca-certificates.adoc[leveloffset=+1]
 
 include::../../modules/security/proc-replacing-your-own-private-keys.adoc[leveloffset=+1]
-
-include::../../modules/security/proc-using-cert-manager.adoc[leveloffset=+1]
