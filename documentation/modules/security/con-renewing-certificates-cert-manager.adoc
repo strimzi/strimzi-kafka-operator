@@ -1,0 +1,37 @@
+:_mod-docs-content-type: CONCEPT
+
+// Module included in the following assemblies:
+//
+// assembly-using-cert-manager.adoc
+
+[id='con-renewing-certificates-cert-manager-{context}']
+= (Early Access) Renewing certificates when using cert-manager
+
+[role="_abstract"]
+When the Cluster Operator delegates certificate issuing to cert-manager, the user is responsible for updating the user-provided Secret containing the CA certificate if either the certificate or private key changes. Renewal of end-entity certificates is handled by cert-manager.
+
+The Cluster Operator creates one `Certificate` resource per Kafka node and one for each enabled component (Cruise Control, Kafka Exporter, Entity Operator), plus one for the Cluster Operator itself.
+cert-manager stores the issued certificates in Secrets with a `-cm` suffix (for example, `my-cluster-dual-role-0-cm`).
+During reconciliation, if the issued certificates are trusted, they are copied into the component specific Secrets (for example, `my-cluster-dual-role-0`).
+
+.CA certificate rotation
+
+When the CA certificate in the user-provided `Secret` is updated, the Cluster Operator detects the change on the next reconciliation.
+
+* If the new certificate was signed by the same private key (cert renewal), the Cluster Operator rolls the Kafka pods once to update the truststore.
+* If the new certificate was signed by a new private key (key replacement), the Cluster Operator performs a phased rolling restart.
+The old CA certificate is retained alongside the new one until all pods have rolled and all components are using certificates issued by the new CA.
+
+.End-entity certificate rotation
+End-entity certificates are renewed by cert-manager if:
+* they are due to expire
+* a change to Kafka CR triggers Cluster Operator to update Certificate resource (for example, `validityDays` is updated)
+
+NOTE: Maintenance time windows configured in Kafka CR do not apply to cert-manager issuing certificates.
+
+.KafkaUser TLS certificates
+
+When `clientsCa.type` is set to `cert-manager`, the User Operator also delegates `KafkaUser` TLS certificate issuance to cert-manager.
+Create `KafkaUser` resources with `spec.authentication.type: tls` as usual.
+
+If the User Operator is deployed as part of the Entity Operator, the Cluster Operator configures it automatically.

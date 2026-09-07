@@ -1,0 +1,21 @@
+:_mod-docs-content-type: ASSEMBLY
+
+// This assembly is included in the following assemblies:
+//
+// security/assembly-security.adoc
+
+[id='security-using-cert-manager-{context}']
+= (Early Access) Using cert-manager to issue TLS certificates
+
+[role="_abstract"]
+
+Configure the Cluster Operator to delegate TLS certificate issuing to https://cert-manager.io/[cert-manager].
+
+When enabled, the Cluster Operator creates cert-manager `Certificate` resources for each component and reads the CA certificate from a user-provided `Secret` to establish TLS trust.
+Users are responsible for installing cert-manager and creating an `Issuer` or `ClusterIssuer` resource for the Cluster Operator to reference in the `Certificate` resources.
+cert-manager is responsible for issuing and renewing all end-entity certificates.
+
+NOTE: This feature is currently Early Access and is not recommended for production.
+
+include::../../modules/security/proc-using-cert-manager.adoc[leveloffset=+1]
+include::../../modules/security/con-renewing-certificates-cert-manager.adoc[leveloffset=+1]

@@ -2,18 +2,14 @@
 
 // Module included in the following assemblies:
 //
-// assembly-using-your-own-certificates.adoc
+// assembly-using-cert-manager.adoc
 
 [id='proc-using-cert-manager-{context}']
-= (Early Access) Using cert-manager to issue TLS certificates
+= (Early Access) Configuring your Kafka cluster to use cert-manager
 
 [role="_abstract"]
-Configure Strimzi to delegate TLS certificate issuing to https://cert-manager.io/[cert-manager] instead of managing it internally.
-When enabled, Strimzi creates cert-manager `Certificate` resources for each component and reads the CA certificate from a user-provided `Secret` to establish TLS trust.
-Users are responsible for installing cert-manager and creating an `Issuer` or `ClusterIssuer` resource for Strimzi to reference in the `Certificate` resources.
-cert-manager is responsible for issuing and renewing all end-entity certificates.
-
-NOTE: This feature is currently Early Access and is not recommended for production.
+Perform the steps in this procedure to enable cert-manager to issue certificates on either a
+new or existing cluster.
 
 .Prerequisites
 
@@ -90,70 +86,9 @@ kubectl apply -f _<kafka_resource_file>_ -n _<namespace>_
 [source,shell,subs="+quotes"]
 kubectl get certificates -n _<namespace>_
 
-.Component TLS certificates
-
-Strimzi creates one `Certificate` resource per Kafka node and one for each enabled component (Cruise Control, Kafka Exporter, Entity Operator), plus one for the cluster operator.
-cert-manager stores the issued certificates in Secrets with a `-cm` suffix (for example, `my-cluster-dual-role-0-cm`).
-During reconciliation, Strimzi copies the certificates from these Secrets into the component Secrets that are used for TLS configuration.
-
-.CA certificate rotation
-
-When the CA certificate in the user-provided `Secret` changes, Strimzi detects the change on the next reconciliation.
-
-* If the new certificate was signed by the same private key (cert renewal), Strimzi rolls the Kafka pods once to update the truststore.
-* If the new certificate was signed by a new private key (key replacement), Strimzi performs a phased rolling restart.
-  The old CA certificate is retained alongside the new one until all pods have rolled and all components are using certificates issued by the new CA.
-
-.KafkaUser TLS certificates
-
-When `clientsCa.type` is set to `cert-manager`, the User Operator also delegates `KafkaUser` TLS certificate issuance to cert-manager.
-Create `KafkaUser` resources with `spec.authentication.type: tls` as usual.
-
-If the User Operator is deployed as part of the Entity Operator, the Cluster Operator configures it automatically.
-If you are running the User Operator as a standalone deployment, set the following environment variables in the User Operator `Deployment`:
-
-[cols="2,4,1",options="header"]
-|===
-|Environment variable |Description |Default
-
-|`STRIMZI_CA_TYPE`
-|Type of certificate manager. Set to `cert-manager` to enable cert-manager integration.
-|`strimzi`
-
-|`STRIMZI_CERT_MANAGER_ISSUER_NAME`
-|Name of the cert-manager `Issuer` or `ClusterIssuer` to use for `KafkaUser` certificates.
-|_(none)_
-
-|`STRIMZI_CERT_MANAGER_ISSUER_KIND`
-|Kind of the cert-manager issuer. Must be `Issuer` or `ClusterIssuer`.
-|_(none)_
-
-|`STRIMZI_CERT_MANAGER_ISSUER_GROUP`
-|API group of the cert-manager issuer.
-|`cert-manager.io`
-
-|===
-
-.Example standalone User Operator configuration for cert-manager
-[source,yaml]
-----
-env:
-  - name: STRIMZI_CA_TYPE
-    value: cert-manager
-  - name: STRIMZI_CERT_MANAGER_ISSUER_NAME
-    value: my-cluster-issuer
-  - name: STRIMZI_CERT_MANAGER_ISSUER_KIND
-    value: ClusterIssuer
-  - name: STRIMZI_CERT_MANAGER_ISSUER_GROUP
-    value: cert-manager.io
-----
-
-.Switching between CA types
-
-You can from Strimzi-managed CA to cert-manager and custom CA on a running cluster by changing the `type` to `cert-manager` and `generateCertificateAuthority` to `false` and applying the updated `Kafka` resource.
-The Cluster Operator detects the change and performs a 2 phased rolling restart (one to establish trust and another one to use new certificates) of all components to switch to the new CA type.
+When performing this procedure on an existing cluster, the Cluster Operator detects the change and initiates a 2 phased rolling restart (one to establish trust and another one to use new certificates) of all components to switch to the new CA type.
 
 [role="_additional-resources"]
 .Additional resources
 
-* xref:installing-your-own-ca-certificates-str[]
+* xref:con-renewing-certificates-cert-manager-{context}[]
