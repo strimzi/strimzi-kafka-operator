@@ -185,7 +185,7 @@ public class KafkaAgentClient {
                     .withName(authIdentity.serviceAccountName())
                     .tokenRequest(request);
 
-            if (response == null || response.getStatus() == null || response.getStatus().getToken() == null) {
+            if (response == null || response.getStatus() == null || response.getStatus().getToken() == null || response.getStatus().getExpirationTimestamp() == null) {
                 throw new RuntimeException("Kubernetes API did not return a token for ServiceAccount " + authIdentity.namespace() + "/" + authIdentity.serviceAccountName());
             }
 
