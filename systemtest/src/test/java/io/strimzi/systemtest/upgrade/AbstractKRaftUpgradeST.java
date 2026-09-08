@@ -52,6 +52,7 @@ import io.strimzi.systemtest.utils.kubeUtils.NamespaceUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.crds.CrdUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
+import io.strimzi.systemtest.utils.specific.ClusterSecuritySTUtils;
 import io.strimzi.test.ReadWriteUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.KubeClusterResource;
@@ -354,6 +355,13 @@ public class AbstractKRaftUpgradeST extends AbstractST {
                     KafkaNodePoolTemplates.controllerPoolPersistentStorage(componentsNamespaceName, CONTROLLER_NODE_NAME, CLUSTER_NAME, 3).build(),
                     KafkaNodePoolTemplates.brokerPoolPersistentStorage(componentsNamespaceName, BROKER_NODE_NAME, CLUSTER_NAME, 3).build(),
                     KafkaTemplates.kafka(componentsNamespaceName, CLUSTER_NAME, 3)
+                        // The operator is upgraded / downgraded underneath this cluster. Older operators do not know
+                        // the Cluster Security annotation and would reconcile the cluster back to the default TLS and
+                        // mTLS configuration. So these tests always run with the default configuration and drop any
+                        // annotation added based on the Cluster Security configuration of the whole test run.
+                        .editMetadata()
+                            .removeFromAnnotations(ClusterSecuritySTUtils.INTERNAL_CLUSTER_SECURITY_ANNOTATION)
+                        .endMetadata()
                         .editSpec()
                             .editKafka()
                                 .withVersion(upgradeKafkaVersion.getVersion())

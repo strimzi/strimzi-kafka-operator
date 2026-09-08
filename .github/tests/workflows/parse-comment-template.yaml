@@ -20,6 +20,16 @@ on:
         required: false
         default: ""
         type: string
+      clusterSecurityEncryption:
+        description: "Encryption used for the internal Kafka cluster communication ('tls' or 'none')"
+        required: false
+        default: ""
+        type: string
+      clusterSecurityAuthentication:
+        description: "Authentication used for the internal Kafka cluster communication ('mtls' or 'none')"
+        required: false
+        default: ""
+        type: string
 
 jobs:
   sut:
@@ -33,6 +43,8 @@ jobs:
           releaseVersion: ${{ github.event.inputs.releaseVersion }}
           kafkaVersion: ${{ github.event.inputs.kafkaVersion }}
           pipeline: ${{ github.event.inputs.pipeline }}
+          clusterSecurityEncryption: ${{ github.event.inputs.clusterSecurityEncryption }}
+          clusterSecurityAuthentication: ${{ github.event.inputs.clusterSecurityAuthentication }}
 
       - name: Assert expected outputs
         shell: bash
@@ -52,6 +64,8 @@ jobs:
           EXPECT_PARALLEL: ${{ env.EXPECT_PARALLEL }}
           EXPECT_RELEASE: ${{ env.EXPECT_RELEASE }}
           EXPECT_IPFAMILY: ${{ env.EXPECT_IPFAMILY }}
+          EXPECT_CLUSTER_SECURITY_ENCRYPTION: ${{ env.EXPECT_CLUSTER_SECURITY_ENCRYPTION }}
+          EXPECT_CLUSTER_SECURITY_AUTHENTICATION: ${{ env.EXPECT_CLUSTER_SECURITY_AUTHENTICATION }}
         run: |
           set -euo pipefail
           
@@ -70,6 +84,8 @@ jobs:
           ACTUAL_PARALLEL='${{ steps.parse.outputs.parallel }}'
           ACTUAL_RELEASE='${{ steps.parse.outputs.releaseVersion }}'
           ACTUAL_IPFAMILY='${{ steps.parse.outputs.ipFamily }}'
+          ACTUAL_CLUSTER_SECURITY_ENCRYPTION='${{ steps.parse.outputs.clusterSecurityEncryption }}'
+          ACTUAL_CLUSTER_SECURITY_AUTHENTICATION='${{ steps.parse.outputs.clusterSecurityAuthentication }}'
           
           echo "::group::Assertion details"
           printf 'EXPECT_PIPELINES=%q\n' "$EXPECT_PIPELINES"
@@ -102,6 +118,10 @@ jobs:
           printf 'EXPECT_RELEASE=%q\n'  "$EXPECT_RELEASE"
           printf 'ACTUAL_IPFAMILY=%q\n'  "$ACTUAL_IPFAMILY"
           printf 'EXPECT_IPFAMILY=%q\n'  "$EXPECT_IPFAMILY"
+          printf 'ACTUAL_CLUSTER_SECURITY_ENCRYPTION=%q\n'  "$ACTUAL_CLUSTER_SECURITY_ENCRYPTION"
+          printf 'EXPECT_CLUSTER_SECURITY_ENCRYPTION=%q\n'  "$EXPECT_CLUSTER_SECURITY_ENCRYPTION"
+          printf 'ACTUAL_CLUSTER_SECURITY_AUTHENTICATION=%q\n'  "$ACTUAL_CLUSTER_SECURITY_AUTHENTICATION"
+          printf 'EXPECT_CLUSTER_SECURITY_AUTHENTICATION=%q\n'  "$EXPECT_CLUSTER_SECURITY_AUTHENTICATION"
           echo "::endgroup::"
           
           # Assert all values, including empty strings (skip only if EXPECT var is unset/null)
@@ -146,5 +166,11 @@ jobs:
           fi
           if [[ "${EXPECT_IPFAMILY+defined}" == "defined" && "$ACTUAL_IPFAMILY"  != "$EXPECT_IPFAMILY" ]]; then
             echo "❌ ipFamily mismatch";  exit 1
+          fi
+          if [[ "${EXPECT_CLUSTER_SECURITY_ENCRYPTION+defined}" == "defined" && "$ACTUAL_CLUSTER_SECURITY_ENCRYPTION"  != "$EXPECT_CLUSTER_SECURITY_ENCRYPTION" ]]; then
+            echo "❌ clusterSecurityEncryption mismatch";  exit 1
+          fi
+          if [[ "${EXPECT_CLUSTER_SECURITY_AUTHENTICATION+defined}" == "defined" && "$ACTUAL_CLUSTER_SECURITY_AUTHENTICATION"  != "$EXPECT_CLUSTER_SECURITY_AUTHENTICATION" ]]; then
+            echo "❌ clusterSecurityAuthentication mismatch";  exit 1
           fi
           echo "✅ Assertions passed"
