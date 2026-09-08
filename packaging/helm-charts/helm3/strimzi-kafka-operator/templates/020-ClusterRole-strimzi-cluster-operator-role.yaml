@@ -198,10 +198,4 @@ rules:
   - delete
   - patch
   - update
-- apiGroups:
-  - "cert-manager.io"
-  resources:
-  - certificates/status
-  verbs:
-  - get
 {{- end -}}
