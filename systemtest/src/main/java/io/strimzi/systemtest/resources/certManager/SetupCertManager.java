@@ -57,9 +57,6 @@ public class SetupCertManager {
     private static final String STRIMZI_ISSUER_PATH =
             TestUtils.USER_PATH + "/../systemtest/src/test/resources/cert-manager/strimzi-issuer.yaml";
 
-    private static final String CERT_MANAGER_RBAC_DIR =
-            TestUtils.USER_PATH + "/../packaging/install/cert-manager/";
-
     private SetupCertManager() { }
 
     /**
