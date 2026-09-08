@@ -3,6 +3,7 @@
 ## 1.3.0
 
 * (Early Access) Configurable internal cluster security allows users to configure encryption and authentication on the internal connections within the Apache Kafka cluster.
+* Update Kafka Exporter to [1.10.0](https://github.com/danielqsj/kafka_exporter/releases/tag/v1.10.0)
 * Support for mounting projected service account tokens into Strimzi-managed Pods
 
 ### Major changes, deprecations, and removals
