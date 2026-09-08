@@ -31,9 +31,33 @@
 * [security](labels/security.md)
 
 
-## testMigrateBetweenCaTypes
+## testSwitchBetweenCertManagerAndCustomCa
 
-**Description:** Test verifying migration between all CA types: Strimzi -> cert-manager -> custom -> cert-manager. A Kafka cluster is first deployed with the default Strimzi-managed CA, then switched to cert-manager, then to a user-provided custom CA, and finally back to cert-manager. At each transition the cluster must remain operational and certificates must match the expected CA.
+**Description:** Test verifying switch between cert-manager CA and custom CA. A Kafka cluster is deployed with cert-manager cluster CA, then switched to a user-provided custom CA and finally back to cert-manager. At each transition the cluster must remain operational and certificates must match the expected CA.
+
+**Steps:**
+
+| Step | Action | Result |
+| - | - | - |
+| 1. | Deploy Kafka with cert-manager cluster CA. | Kafka cluster reaches ready state. |
+| 2. | Pause reconciliation, replace cluster CA secrets with custom CA, edit Kafka CR, resume. | Kafka CR and secrets are updated atomically. |
+| 3. | Wait for broker pods to roll twice (trust new CA, then re-issue certs). | All broker pods have new UIDs after both rolling updates. |
+| 4. | Verify broker certificates are signed by the custom CA. | Broker certificate issuer DN matches custom CA subject DN. |
+| 5. | Produce and consume messages over TLS after switching to custom CA. | Messages are successfully produced and consumed. |
+| 6. | Wait for CO cert to be reissued with the custom CA. | CO cert secret generation matches cluster CA cert generation. |
+| 7. | Edit the Kafka CR to switch cluster CA back to cert-manager. | Kafka CR is updated. |
+| 8. | Wait for broker pods to roll twice (trust new CA, then re-issue certs). | All broker pods have new UIDs after both rolling updates. |
+| 9. | Verify broker certificates are signed by the cert-manager CA. | Broker certificate issuer DN matches cert-manager CA subject DN. |
+| 10. | Produce and consume messages over TLS after switching back to cert-manager. | Messages are successfully produced and consumed. |
+
+**Labels:**
+
+* [security](labels/security.md)
+
+
+## testSwitchFromStrimziToCertManager
+
+**Description:** Test verifying switch from Strimzi-managed CA to cert-manager CA. A Kafka cluster is first deployed with the default Strimzi-managed CA, then switched to cert-manager by editing the Kafka CR. The cluster must remain operational and certificates must match the expected CA.
 
 **Steps:**
 
@@ -42,16 +66,9 @@
 | 1. | Deploy Kafka with default Strimzi-managed CA. | Kafka cluster reaches ready state. |
 | 2. | Create the cert-manager CA cert Secret and edit the Kafka CR to switch cluster CA to cert-manager. | Kafka CR is updated. |
 | 3. | Wait for broker pods to roll twice (trust new CA, then re-issue certs). | All broker pods have new UIDs after both rolling updates. |
-| 4. | Verify broker certificates are signed by the cert-manager CA. | Broker certificate issuer DN matches cert-manager CA subject DN. |
-| 5. | Produce and consume messages over TLS after switching to cert-manager. | Messages are successfully produced and consumed. |
-| 6. | Pause reconciliation, replace cluster CA secrets with custom CA, edit Kafka CR, resume. | Kafka CR and secrets are updated atomically. |
-| 7. | Wait for broker pods to roll twice (trust new CA, then re-issue certs). | All broker pods have new UIDs after both rolling updates. |
-| 8. | Verify broker certificates are signed by the custom CA. | Broker certificate issuer DN matches custom CA subject DN. |
-| 9. | Produce and consume messages over TLS after switching to custom CA. | Messages are successfully produced and consumed. |
-| 10. | Edit the Kafka CR to switch cluster CA back to cert-manager. | Kafka CR is updated. |
-| 11. | Wait for broker pods to roll twice (trust new CA, then re-issue certs). | All broker pods have new UIDs after both rolling updates. |
-| 12. | Verify broker certificates are signed by the cert-manager CA. | Broker certificate issuer DN matches cert-manager CA subject DN. |
-| 13. | Produce and consume messages over TLS after switching back to cert-manager. | Messages are successfully produced and consumed. |
+| 4. | Wait for CO cert to be reissued with the new cert-manager CA. | CO cert secret generation matches cluster CA cert generation. |
+| 5. | Verify broker certificates are signed by the cert-manager CA. | Broker certificate issuer DN matches cert-manager CA subject DN. |
+| 6. | Produce and consume messages over TLS after switching to cert-manager. | Messages are successfully produced and consumed. |
 
 **Labels:**
 
