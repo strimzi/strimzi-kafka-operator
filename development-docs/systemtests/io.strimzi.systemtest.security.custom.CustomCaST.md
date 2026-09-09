@@ -18,7 +18,7 @@
 | - | - | - |
 | 1. | Create custom cluster and clients CAs and deploy them as secrets. | Both CA secrets are created. |
 | 2. | Deploy Kafka cluster configured to use custom CAs. | Kafka cluster is deployed using the custom CAs. |
-| 3. | Verify that Kafka broker certificates are signed by the custom cluster CA. | Broker certificates have the correct issuer. |
+| 3. | Verify that the certificates of all Kafka nodes are signed by the custom cluster CA. | Certificates of all Kafka nodes have the correct issuer. |
 | 4. | Create a KafkaUser and verify that its certificate is signed by the custom clients CA. | User certificate has the correct issuer. |
 | 5. | Send and receive messages over TLS. | Messages are successfully produced and consumed. |
 
@@ -56,11 +56,11 @@
 | Step | Action | Result |
 | - | - | - |
 | 1. | Create a custom cluster CA and deploy Kafka cluster with it. | Kafka cluster is deployed with custom cluster CA. |
-| 2. | Record initial CA and broker certificate dates. | Certificate dates are captured. |
+| 2. | Record initial CA and certificate dates of all Kafka nodes. | Certificate dates are captured. |
 | 3. | Pause Kafka reconciliation and update validity and renewal days for cluster CA. | CA configuration is updated. |
 | 4. | Resume reconciliation and wait for components to roll. | Controllers, brokers, and Entity Operator roll. |
 | 5. | Verify CA certificate dates remain unchanged. | Cluster CA was not renewed. |
-| 6. | Verify broker certificates have been renewed with new dates. | Broker certificates have updated validity dates. |
+| 6. | Verify certificates of all Kafka nodes have been renewed with new dates. | Certificates of all Kafka nodes have updated validity dates. |
 
 **Labels:**
 

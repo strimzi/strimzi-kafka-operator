@@ -24,8 +24,8 @@ import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ResourceUtils;
-import io.strimzi.operator.cluster.model.KafkaClusterSecurityContext;
 import io.strimzi.operator.cluster.model.KafkaVersion;
+import io.strimzi.operator.cluster.model.clustersecurity.kafka.KafkaClusterSecurityContext;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.PasswordGenerator;
@@ -108,10 +108,10 @@ public class KafkaStatusTest {
                     .withClusterId("my-cluster-id")
                     .withClusterSecurity(new ClusterSecurityStatusBuilder()
                             .withNewEncryption()
-                                .withType(ClusterSecurityEncryptionType.STRIMZI_TLS)
+                                .withType(ClusterSecurityEncryptionType.TLS)
                             .endEncryption()
                             .withNewAuthentication()
-                                .withType(ClusterSecurityAuthenticationType.STRIMZI_MTLS)
+                                .withType(ClusterSecurityAuthenticationType.MTLS)
                             .endAuthentication()
                             .build())
                 .endStatus()
@@ -167,9 +167,9 @@ public class KafkaStatusTest {
             assertThat(status.getClusterSecurity(), is(notNullValue()));
             ClusterSecurityStatus clusterSecurityStatus = KafkaClusterSecurityContext.deserializeStatus(status.getClusterSecurity());
             assertThat(clusterSecurityStatus.getEncryption(), is(notNullValue()));
-            assertThat(clusterSecurityStatus.getEncryption().getType(), is(ClusterSecurityEncryptionType.STRIMZI_TLS));
+            assertThat(clusterSecurityStatus.getEncryption().getType(), is(ClusterSecurityEncryptionType.TLS));
             assertThat(clusterSecurityStatus.getAuthentication(), is(notNullValue()));
-            assertThat(clusterSecurityStatus.getAuthentication().getType(), is(ClusterSecurityAuthenticationType.STRIMZI_MTLS));
+            assertThat(clusterSecurityStatus.getAuthentication().getType(), is(ClusterSecurityAuthenticationType.MTLS));
 
             async.flag();
         })));
@@ -215,9 +215,9 @@ public class KafkaStatusTest {
                 assertThat(status.getClusterSecurity(), is(notNullValue()));
                 ClusterSecurityStatus clusterSecurityStatus = KafkaClusterSecurityContext.deserializeStatus(status.getClusterSecurity());
                 assertThat(clusterSecurityStatus.getEncryption(), is(notNullValue()));
-                assertThat(clusterSecurityStatus.getEncryption().getType(), is(ClusterSecurityEncryptionType.STRIMZI_TLS));
+                assertThat(clusterSecurityStatus.getEncryption().getType(), is(ClusterSecurityEncryptionType.TLS));
                 assertThat(clusterSecurityStatus.getAuthentication(), is(notNullValue()));
-                assertThat(clusterSecurityStatus.getAuthentication().getType(), is(ClusterSecurityAuthenticationType.STRIMZI_MTLS));
+                assertThat(clusterSecurityStatus.getAuthentication().getType(), is(ClusterSecurityAuthenticationType.MTLS));
 
                 async.flag();
             })));
@@ -277,9 +277,9 @@ public class KafkaStatusTest {
             assertThat(status.getClusterSecurity(), is(notNullValue()));
             ClusterSecurityStatus clusterSecurityStatus = KafkaClusterSecurityContext.deserializeStatus(status.getClusterSecurity());
             assertThat(clusterSecurityStatus.getEncryption(), is(notNullValue()));
-            assertThat(clusterSecurityStatus.getEncryption().getType(), is(ClusterSecurityEncryptionType.STRIMZI_TLS));
+            assertThat(clusterSecurityStatus.getEncryption().getType(), is(ClusterSecurityEncryptionType.TLS));
             assertThat(clusterSecurityStatus.getAuthentication(), is(notNullValue()));
-            assertThat(clusterSecurityStatus.getAuthentication().getType(), is(ClusterSecurityAuthenticationType.STRIMZI_MTLS));
+            assertThat(clusterSecurityStatus.getAuthentication().getType(), is(ClusterSecurityAuthenticationType.MTLS));
 
             async.flag();
         })));
@@ -344,9 +344,9 @@ public class KafkaStatusTest {
             assertThat(status.getClusterSecurity(), is(notNullValue()));
             ClusterSecurityStatus clusterSecurityStatus = KafkaClusterSecurityContext.deserializeStatus(status.getClusterSecurity());
             assertThat(clusterSecurityStatus.getEncryption(), is(notNullValue()));
-            assertThat(clusterSecurityStatus.getEncryption().getType(), is(ClusterSecurityEncryptionType.STRIMZI_TLS));
+            assertThat(clusterSecurityStatus.getEncryption().getType(), is(ClusterSecurityEncryptionType.TLS));
             assertThat(clusterSecurityStatus.getAuthentication(), is(notNullValue()));
-            assertThat(clusterSecurityStatus.getAuthentication().getType(), is(ClusterSecurityAuthenticationType.STRIMZI_MTLS));
+            assertThat(clusterSecurityStatus.getAuthentication().getType(), is(ClusterSecurityAuthenticationType.MTLS));
 
             async.flag();
         })));
@@ -429,9 +429,9 @@ public class KafkaStatusTest {
             assertThat(status.getClusterSecurity(), is(notNullValue()));
             ClusterSecurityStatus clusterSecurityStatus = KafkaClusterSecurityContext.deserializeStatus(status.getClusterSecurity());
             assertThat(clusterSecurityStatus.getEncryption(), is(notNullValue()));
-            assertThat(clusterSecurityStatus.getEncryption().getType(), is(ClusterSecurityEncryptionType.STRIMZI_TLS));
+            assertThat(clusterSecurityStatus.getEncryption().getType(), is(ClusterSecurityEncryptionType.TLS));
             assertThat(clusterSecurityStatus.getAuthentication(), is(notNullValue()));
-            assertThat(clusterSecurityStatus.getAuthentication().getType(), is(ClusterSecurityAuthenticationType.STRIMZI_MTLS));
+            assertThat(clusterSecurityStatus.getAuthentication().getType(), is(ClusterSecurityAuthenticationType.MTLS));
 
             async.flag();
         })));
@@ -448,7 +448,7 @@ public class KafkaStatusTest {
                 .editStatus()
                     .withClusterSecurity(new ClusterSecurityStatusBuilder()
                             .withNewEncryption()
-                                .withType(ClusterSecurityEncryptionType.STRIMZI_TLS)
+                                .withType(ClusterSecurityEncryptionType.TLS)
                             .endEncryption()
                             .build())
                 .endStatus()

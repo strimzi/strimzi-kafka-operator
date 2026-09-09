@@ -114,6 +114,8 @@ include::../../modules/configuring/con-config-kafka-connect-build.adoc[leveloffs
 include::../../modules/configuring/con-config-kafka-connect-worker-settings.adoc[leveloffset=+2]
 // Running multiple Kafka Connect instances against the same Kafka cluster
 include::../../modules/configuring/con-config-kafka-connect-multiple-instances.adoc[leveloffset=+2]
+// Using custom REST Extensions with Kafka Connect and MirrorMaker 2
+include::../../modules/configuring/con-config-kafka-connect-rest-extensions.adoc[leveloffset=+2]
 
 //`KafkaConnector` resource config
 include::../../modules/configuring/con-config-kafka-connector.adoc[leveloffset=+1]

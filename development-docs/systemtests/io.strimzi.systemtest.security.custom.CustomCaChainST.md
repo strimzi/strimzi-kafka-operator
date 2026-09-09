@@ -61,7 +61,7 @@
 | 1. | Generate a custom CA chain: Root -> Intermediate -> Leaf. | CA chain is generated. |
 | 2. | Deploy the full chain as Cluster CA and Clients CA secrets. | CA secrets are deployed. |
 | 3. | Deploy Kafka cluster with custom CAs. | Kafka cluster is ready. |
-| 4. | Verify the broker certificate chain contains 4 certificates and validate the issuer chain: broker cert -> Leaf CA -> Intermediate CA -> Root CA (self-signed). | Chain contains 4 certs with correct issuer relationships and CA basic constraints. |
+| 4. | Verify the certificate chain of every Kafka node contains 4 certificates and validate the issuer chain: node cert -> Leaf CA -> Intermediate CA -> Root CA (self-signed). | Chain of every node contains 4 certs with correct issuer relationships and CA basic constraints. |
 | 5. | Create five trust secrets with different levels: Root + Intermediate + Leaf, Root + Intermediate, Root only, Intermediate only, Leaf only. | Trust secrets are created. |
 | 6. | For each trust secret, verify that clients can successfully produce and consume messages. | All five trust configurations succeed. |
 | 7. | Create a trust secret with only a foreign Root CA. | Foreign trust secret is created. |

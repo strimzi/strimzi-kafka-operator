@@ -10,18 +10,17 @@ import io.strimzi.api.kafka.model.common.ExternalLoggingBuilder;
 import io.strimzi.api.kafka.model.common.metrics.JmxPrometheusExporterMetricsBuilder;
 import io.strimzi.api.kafka.model.connect.KafkaConnectSpec;
 import io.strimzi.api.kafka.model.connect.KafkaConnectSpecBuilder;
+import io.strimzi.operator.cluster.model.MetricsAndLogging;
 import io.strimzi.operator.cluster.model.logging.LoggingModel;
 import io.strimzi.operator.cluster.model.metrics.JmxPrometheusExporterModel;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.ConfigMapOperator;
 import io.strimzi.operator.common.Reconciliation;
-import io.vertx.junit5.Checkpoint;
-import io.vertx.junit5.VertxExtension;
-import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.Timeout;
 
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -35,28 +34,25 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@ExtendWith(VertxExtension.class)
+@Timeout(value = 30, unit = TimeUnit.SECONDS)
 public class MetricsAndLoggingUtilsTest {
     @Test
-    public void testNoMetricsAndNoExternalLogging(VertxTestContext context)   {
+    public void testNoMetricsAndNoExternalLogging()   {
         LoggingModel logging = new LoggingModel(new KafkaConnectSpec(), "KafkaConnectCluster");
 
         ConfigMapOperator mockCmOps = mock(ConfigMapOperator.class);
 
-        Checkpoint async = context.checkpoint();
-        MetricsAndLoggingUtils.metricsAndLogging(Reconciliation.DUMMY_RECONCILIATION, mockCmOps, logging, null)
-                .onComplete(context.succeeding(v -> context.verify(() -> {
-                    assertThat(v.loggingCm(), is(nullValue()));
-                    assertThat(v.metricsCm(), is(nullValue()));
+        MetricsAndLogging v = MetricsAndLoggingUtils.metricsAndLogging(Reconciliation.DUMMY_RECONCILIATION, mockCmOps, logging, null)
+                .toCompletableFuture().join();
 
-                    verify(mockCmOps, never()).getAsync(any(), any());
+        assertThat(v.loggingCm(), is(nullValue()));
+        assertThat(v.metricsCm(), is(nullValue()));
 
-                    async.flag();
-                })));
+        verify(mockCmOps, never()).getAsync(any(), any());
     }
 
     @Test
-    public void testMetricsAndExternalLogging(VertxTestContext context)   {
+    public void testMetricsAndExternalLogging()   {
         LoggingModel logging = new LoggingModel(new KafkaConnectSpecBuilder().withLogging(new ExternalLoggingBuilder().withNewValueFrom().withConfigMapKeyRef(new ConfigMapKeySelector("log4j.properties", "logging-cm", false)).endValueFrom().build()).build(), "KafkaConnectCluster");
         JmxPrometheusExporterModel metrics = new JmxPrometheusExporterModel(new KafkaConnectSpecBuilder().withMetricsConfig(new JmxPrometheusExporterMetricsBuilder().withNewValueFrom().withConfigMapKeyRef(new ConfigMapKeySelector("metrics.yaml", "metrics-cm", false)).endValueFrom().build()).build());
 
@@ -64,61 +60,52 @@ public class MetricsAndLoggingUtilsTest {
         when(mockCmOps.getAsync(any(), eq("logging-cm"))).thenReturn(CompletableFuture.completedFuture(new ConfigMapBuilder().withNewMetadata().withName("logging-cm").endMetadata().withData(Map.of()).build()));
         when(mockCmOps.getAsync(any(), eq("metrics-cm"))).thenReturn(CompletableFuture.completedFuture(new ConfigMapBuilder().withNewMetadata().withName("metrics-cm").endMetadata().withData(Map.of()).build()));
 
-        Checkpoint async = context.checkpoint();
-        MetricsAndLoggingUtils.metricsAndLogging(Reconciliation.DUMMY_RECONCILIATION, mockCmOps, logging, metrics)
-                .onComplete(context.succeeding(v -> context.verify(() -> {
-                    assertThat(v.loggingCm(), is(notNullValue()));
-                    assertThat(v.loggingCm().getMetadata().getName(), is("logging-cm"));
+        MetricsAndLogging v = MetricsAndLoggingUtils.metricsAndLogging(Reconciliation.DUMMY_RECONCILIATION, mockCmOps, logging, metrics)
+                .toCompletableFuture().join();
 
-                    assertThat(v.metricsCm(), is(notNullValue()));
-                    assertThat(v.metricsCm().getMetadata().getName(), is("metrics-cm"));
+        assertThat(v.loggingCm(), is(notNullValue()));
+        assertThat(v.loggingCm().getMetadata().getName(), is("logging-cm"));
 
-                    verify(mockCmOps, times(2)).getAsync(any(), any());
+        assertThat(v.metricsCm(), is(notNullValue()));
+        assertThat(v.metricsCm().getMetadata().getName(), is("metrics-cm"));
 
-                    async.flag();
-                })));
+        verify(mockCmOps, times(2)).getAsync(any(), any());
     }
 
     @Test
-    public void testNoMetricsAndExternalLogging(VertxTestContext context)   {
+    public void testNoMetricsAndExternalLogging()   {
         LoggingModel logging = new LoggingModel(new KafkaConnectSpecBuilder().withLogging(new ExternalLoggingBuilder().withNewValueFrom().withConfigMapKeyRef(new ConfigMapKeySelector("log4j.properties", "logging-cm", false)).endValueFrom().build()).build(), "KafkaConnectCluster");
 
         ConfigMapOperator mockCmOps = mock(ConfigMapOperator.class);
         when(mockCmOps.getAsync(any(), eq("logging-cm"))).thenReturn(CompletableFuture.completedFuture(new ConfigMapBuilder().withNewMetadata().withName("logging-cm").endMetadata().withData(Map.of()).build()));
 
-        Checkpoint async = context.checkpoint();
-        MetricsAndLoggingUtils.metricsAndLogging(Reconciliation.DUMMY_RECONCILIATION, mockCmOps, logging, null)
-                .onComplete(context.succeeding(v -> context.verify(() -> {
-                    assertThat(v.loggingCm(), is(notNullValue()));
-                    assertThat(v.loggingCm().getMetadata().getName(), is("logging-cm"));
+        MetricsAndLogging v = MetricsAndLoggingUtils.metricsAndLogging(Reconciliation.DUMMY_RECONCILIATION, mockCmOps, logging, null)
+                .toCompletableFuture().join();
 
-                    assertThat(v.metricsCm(), is(nullValue()));
+        assertThat(v.loggingCm(), is(notNullValue()));
+        assertThat(v.loggingCm().getMetadata().getName(), is("logging-cm"));
 
-                    verify(mockCmOps, times(1)).getAsync(any(), any());
+        assertThat(v.metricsCm(), is(nullValue()));
 
-                    async.flag();
-                })));
+        verify(mockCmOps, times(1)).getAsync(any(), any());
     }
 
     @Test
-    public void testMetricsAndNoExternalLogging(VertxTestContext context)   {
+    public void testMetricsAndNoExternalLogging()   {
         LoggingModel logging = new LoggingModel(new KafkaConnectSpec(), "KafkaConnectCluster");
         JmxPrometheusExporterModel metrics = new JmxPrometheusExporterModel(new KafkaConnectSpecBuilder().withMetricsConfig(new JmxPrometheusExporterMetricsBuilder().withNewValueFrom().withConfigMapKeyRef(new ConfigMapKeySelector("metrics.yaml", "metrics-cm", false)).endValueFrom().build()).build());
 
         ConfigMapOperator mockCmOps = mock(ConfigMapOperator.class);
         when(mockCmOps.getAsync(any(), eq("metrics-cm"))).thenReturn(CompletableFuture.completedFuture(new ConfigMapBuilder().withNewMetadata().withName("metrics-cm").endMetadata().withData(Map.of()).build()));
 
-        Checkpoint async = context.checkpoint();
-        MetricsAndLoggingUtils.metricsAndLogging(Reconciliation.DUMMY_RECONCILIATION, mockCmOps, logging, metrics)
-                .onComplete(context.succeeding(v -> context.verify(() -> {
-                    assertThat(v.loggingCm(), is(nullValue()));
+        MetricsAndLogging v = MetricsAndLoggingUtils.metricsAndLogging(Reconciliation.DUMMY_RECONCILIATION, mockCmOps, logging, metrics)
+                .toCompletableFuture().join();
 
-                    assertThat(v.metricsCm(), is(notNullValue()));
-                    assertThat(v.metricsCm().getMetadata().getName(), is("metrics-cm"));
+        assertThat(v.loggingCm(), is(nullValue()));
 
-                    verify(mockCmOps, times(1)).getAsync(any(), any());
+        assertThat(v.metricsCm(), is(notNullValue()));
+        assertThat(v.metricsCm().getMetadata().getName(), is("metrics-cm"));
 
-                    async.flag();
-                })));
+        verify(mockCmOps, times(1)).getAsync(any(), any());
     }
 }

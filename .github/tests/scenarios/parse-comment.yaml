@@ -14,6 +14,9 @@ scenarios:
       cluster_operator_install_type: "yaml"
       kube: "latest"
       release: "latest"
+      ipfamily: "ipv4"
+      cluster_security_encryption: "tls"
+      cluster_security_authentication: "mtls"
 
   - id: comment-profile-only
     description: "Comment with profile parameter only"
@@ -30,6 +33,9 @@ scenarios:
       cluster_operator_install_type: "yaml"
       kube: "latest"
       release: "latest"
+      ipfamily: "ipv4"
+      cluster_security_encryption: "tls"
+      cluster_security_authentication: "mtls"
 
   - id: comment-additional-params
     description: "Comment with additional parameters"
@@ -48,6 +54,9 @@ scenarios:
       architecture: "arm64"
       agent: "strimzi-agent"
       release: "latest"
+      ipfamily: "ipv4"
+      cluster_security_encryption: "tls"
+      cluster_security_authentication: "mtls"
 
   - id: comment-pipeline-and-profile
     description: "Comment with both pipeline and profile (pipeline priority)"
@@ -63,6 +72,9 @@ scenarios:
       cluster_operator_install_type: "yaml"
       kube: "latest"
       release: "latest"
+      ipfamily: "ipv4"
+      cluster_security_encryption: "tls"
+      cluster_security_authentication: "mtls"
 
   - id: comment-pipeline-priority
     description: "Comment with profile before pipeline (pipeline takes priority)"
@@ -78,6 +90,9 @@ scenarios:
       cluster_operator_install_type: "yaml"
       kube: "latest"
       release: "latest"
+      ipfamily: "ipv4"
+      cluster_security_encryption: "tls"
+      cluster_security_authentication: "mtls"
 
   - id: comment-strimzi-params
     description: "Comment with Strimzi-specific parameters"
@@ -94,6 +109,9 @@ scenarios:
       cluster_operator_install_type: "helm"
       kube: "latest"
       release: "latest"
+      ipfamily: "ipv4"
+      cluster_security_encryption: "tls"
+      cluster_security_authentication: "mtls"
 
   - id: comment-basic-trigger
     description: "Basic trigger without parameters"
@@ -110,6 +128,9 @@ scenarios:
       cluster_operator_install_type: "yaml"
       kube: "latest"
       release: "latest"
+      ipfamily: "ipv4"
+      cluster_security_encryption: "tls"
+      cluster_security_authentication: "mtls"
 
   - id: comment-empty-pipeline
     description: "Comment with empty pipeline value (fallback to default)"
@@ -126,6 +147,9 @@ scenarios:
       cluster_operator_install_type: "yaml"
       kube: "latest"
       release: "latest"
+      ipfamily: "ipv4"
+      cluster_security_encryption: "tls"
+      cluster_security_authentication: "mtls"
 
   - id: comment-no-trigger
     description: "Comment without trigger phrase"
@@ -142,6 +166,9 @@ scenarios:
       cluster_operator_install_type: "yaml"
       kube: "latest"
       release: "latest"
+      ipfamily: "ipv4"
+      cluster_security_encryption: "tls"
+      cluster_security_authentication: "mtls"
 
   - id: comment-case-insensitive
     description: "Uppercase trigger phrase (case insensitive)"
@@ -158,6 +185,9 @@ scenarios:
       cluster_operator_install_type: "yaml"
       kube: "latest"
       release: "latest"
+      ipfamily: "ipv4"
+      cluster_security_encryption: "tls"
+      cluster_security_authentication: "mtls"
 
   - id: comment-random-tests
     description: "Pass tests param without specifying profile or pipeline"
@@ -174,6 +204,9 @@ scenarios:
       cluster_operator_install_type: "yaml"
       kube: "latest"
       release: "latest"
+      ipfamily: "ipv4"
+      cluster_security_encryption: "tls"
+      cluster_security_authentication: "mtls"
 
   - id: dispatch-default
     description: "Workflow dispatch with default values"
@@ -188,6 +221,9 @@ scenarios:
       kafka: "4.1.0"
       release: "0.48.0"
       kube: "latest"
+      ipfamily: "ipv4"
+      cluster_security_encryption: "tls"
+      cluster_security_authentication: "mtls"
 
   - id: dispatch-custom
     description: "Workflow dispatch with custom values"
@@ -204,6 +240,9 @@ scenarios:
       kafka: "3.5.0"
       release: "1.0.0"
       kube: "latest"
+      ipfamily: "ipv4"
+      cluster_security_encryption: "tls"
+      cluster_security_authentication: "mtls"
 
   - id: dispatch-empty
     description: "Workflow dispatch with empty inputs"
@@ -220,6 +259,9 @@ scenarios:
       kafka: "latest"
       release: "latest"
       kube: "latest"
+      ipfamily: "ipv4"
+      cluster_security_encryption: "tls"
+      cluster_security_authentication: "mtls"
 
   - id: comment-with-backticks
     description: "Comment with backticks and code blocks"
@@ -236,6 +278,9 @@ scenarios:
       cluster_operator_install_type: "yaml"
       kube: "latest"
       release: "latest"
+      ipfamily: "ipv4"
+      cluster_security_encryption: "tls"
+      cluster_security_authentication: "mtls"
 
   - id: comment-closed-pr
     description: "Comment on closed PR should not run"
@@ -252,6 +297,9 @@ scenarios:
       cluster_operator_install_type: "yaml"
       kube: "latest"
       release: "latest"
+      ipfamily: "ipv4"
+      cluster_security_encryption: "tls"
+      cluster_security_authentication: "mtls"
 
   - id: comment-closed-issue
     description: "Comment on closed issue should not run"
@@ -268,6 +316,9 @@ scenarios:
       cluster_operator_install_type: "yaml"
       kube: "latest"
       release: "latest"
+      ipfamily: "ipv4"
+      cluster_security_encryption: "tls"
+      cluster_security_authentication: "mtls"
 
   - id: comment-closed-pr-random-comment
     description: "Comment on closed issue should not run"
@@ -284,6 +335,9 @@ scenarios:
       cluster_operator_install_type: "yaml"
       kube: "latest"
       release: "latest"
+      ipfamily: "ipv4"
+      cluster_security_encryption: "tls"
+      cluster_security_authentication: "mtls"
 
   - id: comment-kind-version
     description: "Comment with kindVersion parameter"
@@ -301,3 +355,44 @@ scenarios:
       kube: "latest"
       kind: "0.29.0"
       release: "latest"
+      ipfamily: "ipv4"
+      cluster_security_encryption: "tls"
+      cluster_security_authentication: "mtls"
+
+  - id: comment-ip-family
+    description: "Comment with ipFamily parameter"
+    event: issue_comment
+    fixture: .github/tests/events/parse-comment/issue_comment_13.json
+    expectations:
+      pipelines: ""
+      profiles: ""
+      tests: ""
+      groups: ""
+      kafka: "latest"
+      strimzi_feature_gates: ""
+      strimzi_rbac_scope: ""
+      cluster_operator_install_type: "yaml"
+      kube: "latest"
+      release: "latest"
+      ipfamily: "dual"
+      cluster_security_encryption: "tls"
+      cluster_security_authentication: "mtls"
+
+  - id: comment-cluster-security
+    description: "Comment with internal cluster security parameters"
+    event: issue_comment
+    fixture: .github/tests/events/parse-comment/issue_comment_14.json
+    expectations:
+      pipelines: "regression"
+      profiles: ""
+      tests: ""
+      groups: ""
+      kafka: "latest"
+      strimzi_feature_gates: ""
+      strimzi_rbac_scope: ""
+      cluster_operator_install_type: "yaml"
+      kube: "latest"
+      release: "latest"
+      ipfamily: "ipv4"
+      cluster_security_encryption: "none"
+      cluster_security_authentication: "none"

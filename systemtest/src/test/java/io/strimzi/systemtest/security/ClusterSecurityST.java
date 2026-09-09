@@ -26,7 +26,6 @@ import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.TestConstants;
-import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.docs.TestDocsLabels;
 import io.strimzi.systemtest.enums.CustomResourceStatus;
 import io.strimzi.systemtest.kafkaclients.ClientsAuthentication;
@@ -74,7 +73,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 class ClusterSecurityST extends AbstractST {
     private static final int BROKER_REPLICAS = 3;
     private static final int CONTROLLER_REPLICAS = 3;
-    private static final String INTERNAL_CLUSTER_SECURITY_ANNOTATION = "strimzi.io/internal-cluster-security";
 
     /**
      * Generates the combinations of encryption and authentication types for testing.
@@ -83,8 +81,10 @@ class ClusterSecurityST extends AbstractST {
      */
     private Stream<Arguments> securityConfigurationCombos() {
         return Stream.of(
-                Arguments.of(ClusterSecurityEncryptionType.STRIMZI_TLS, ClusterSecurityAuthenticationType.NONE),
-                Arguments.of(ClusterSecurityEncryptionType.NONE, ClusterSecurityAuthenticationType.NONE)
+                Arguments.of(ClusterSecurityEncryptionType.TLS, ClusterSecurityAuthenticationType.NONE),
+                Arguments.of(ClusterSecurityEncryptionType.NONE, ClusterSecurityAuthenticationType.NONE),
+                Arguments.of(ClusterSecurityEncryptionType.TLS, ClusterSecurityAuthenticationType.SERVICE_ACCOUNT),
+                Arguments.of(ClusterSecurityEncryptionType.NONE, ClusterSecurityAuthenticationType.SERVICE_ACCOUNT)
         );
     }
 
@@ -119,11 +119,12 @@ class ClusterSecurityST extends AbstractST {
         );
         KubeResourceManager.get().createResourceWithWait(KafkaTemplates.kafkaWithCruiseControlTunedForFastModelGeneration(testStorage.getNamespaceName(), testStorage.getClusterName(), BROKER_REPLICAS)
                         .editMetadata()
-                            .addToAnnotations(INTERNAL_CLUSTER_SECURITY_ANNOTATION, ClusterSecuritySTUtils.clusterSecurityAnnotation(encryption, authentication))
+                            .addToAnnotations(ClusterSecuritySTUtils.INTERNAL_CLUSTER_SECURITY_ANNOTATION, ClusterSecuritySTUtils.clusterSecurityAnnotation(encryption, authentication))
                         .endMetadata()
                         .editSpec()
                             .editKafka()
                                 .withNewKafkaAuthorizationSimple()
+                                    .withSuperUsers("ANONYMOUS") // Required for the scraper pod => tracked in https://github.com/strimzi/strimzi-kafka-operator/issues/13112
                                 .endKafkaAuthorizationSimple()
                                 .withListeners(
                                     new GenericKafkaListenerBuilder()
@@ -205,7 +206,20 @@ class ClusterSecurityST extends AbstractST {
         KafkaRebalanceUtils.doRebalancingProcess(testStorage.getNamespaceName(), testStorage.getClusterName());
     }
 
-    @ParallelNamespaceTest
+    /**
+     * Generates the combinations of encryption and authentication types for migration testing. The test does always
+     * a round-trip test.
+     *
+     * @return  A stream of arguments containing encryption and authentication type combinations.
+     */
+    private Stream<Arguments> securityConfigurationMigrationCombos() {
+        return Stream.of(
+                Arguments.of(ClusterSecurityEncryptionType.TLS, ClusterSecurityAuthenticationType.MTLS, ClusterSecurityEncryptionType.NONE, ClusterSecurityAuthenticationType.NONE),
+                Arguments.of(ClusterSecurityEncryptionType.TLS, ClusterSecurityAuthenticationType.MTLS, ClusterSecurityEncryptionType.NONE, ClusterSecurityAuthenticationType.SERVICE_ACCOUNT),
+                Arguments.of(ClusterSecurityEncryptionType.NONE, ClusterSecurityAuthenticationType.NONE, ClusterSecurityEncryptionType.TLS, ClusterSecurityAuthenticationType.SERVICE_ACCOUNT)
+        );
+    }
+
     @TestDoc(
         description = @Desc("Test migrating internal cluster security from the default TLS and mTLS configuration to no security and back."),
         steps = {
@@ -220,7 +234,9 @@ class ClusterSecurityST extends AbstractST {
             @Label(value = TestDocsLabels.KAFKA)
         }
     )
-    void testClusterSecurityMigration() {
+    @ParameterizedTest(name = "EncryptionFrom: {0}; AuthenticationFrom: {1}, EncryptionTo: {2}; AuthenticationTo: {3}")
+    @MethodSource("securityConfigurationMigrationCombos")
+    void testClusterSecurityMigration(ClusterSecurityEncryptionType encFrom, ClusterSecurityAuthenticationType authFrom, ClusterSecurityEncryptionType encTo, ClusterSecurityAuthenticationType authTo) {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
         // Deploy the initial cluster
@@ -230,6 +246,9 @@ class ClusterSecurityST extends AbstractST {
             KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getControllerPoolName(),
                 testStorage.getClusterName(), CONTROLLER_REPLICAS).build(),
             KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getClusterName(), BROKER_REPLICAS)
+                    .editMetadata()
+                        .addToAnnotations(ClusterSecuritySTUtils.INTERNAL_CLUSTER_SECURITY_ANNOTATION, ClusterSecuritySTUtils.clusterSecurityAnnotation(encFrom, authFrom))
+                    .endMetadata()
                     .editSpec()
                         .editKafka()
                             .withNewKafkaAuthorizationSimple()
@@ -258,7 +277,7 @@ class ClusterSecurityST extends AbstractST {
                 KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getTopicName(), testStorage.getClusterName(), 3, 3, 2).build()
         );
 
-        ClusterSecuritySTUtils.assertClusterSecurityStatus(testStorage, ClusterSecurityEncryptionType.STRIMZI_TLS, ClusterSecurityAuthenticationType.STRIMZI_MTLS);
+        ClusterSecuritySTUtils.assertClusterSecurityStatus(testStorage, encFrom, authFrom);
 
         // Test sending and consuming messages works
         KafkaProducerConsumer clients = new KafkaProducerConsumerBuilder()
@@ -280,8 +299,8 @@ class ClusterSecurityST extends AbstractST {
         ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getMessageCount());
 
         // Migrate to different security settings
-        migrateClusterSecurity(testStorage, ClusterSecuritySTUtils.clusterSecurityAnnotation(ClusterSecurityEncryptionType.NONE, ClusterSecurityAuthenticationType.NONE));
-        ClusterSecuritySTUtils.assertClusterSecurityStatus(testStorage, ClusterSecurityEncryptionType.NONE, ClusterSecurityAuthenticationType.NONE);
+        migrateClusterSecurity(testStorage, ClusterSecuritySTUtils.clusterSecurityAnnotation(encTo, authTo));
+        ClusterSecuritySTUtils.assertClusterSecurityStatus(testStorage, encTo, authTo);
 
         // Test sending and consuming messages still works
         KubeResourceManager.get().createResourceWithWait(clients.getProducer().getJob());
@@ -293,8 +312,8 @@ class ClusterSecurityST extends AbstractST {
         ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), 2 * testStorage.getMessageCount());
 
         // Migrate back to the original to close the round trip
-        migrateClusterSecurity(testStorage, ClusterSecuritySTUtils.clusterSecurityAnnotation(ClusterSecurityEncryptionType.STRIMZI_TLS, ClusterSecurityAuthenticationType.STRIMZI_MTLS));
-        ClusterSecuritySTUtils.assertClusterSecurityStatus(testStorage, ClusterSecurityEncryptionType.STRIMZI_TLS, ClusterSecurityAuthenticationType.STRIMZI_MTLS);
+        migrateClusterSecurity(testStorage, ClusterSecuritySTUtils.clusterSecurityAnnotation(encFrom, authFrom));
+        ClusterSecuritySTUtils.assertClusterSecurityStatus(testStorage, encFrom, authFrom);
 
         // Test sending and consuming messages still works
         clients.setMessageCount(testStorage.getMessageCount());
@@ -332,9 +351,9 @@ class ClusterSecurityST extends AbstractST {
             .patch(PatchContext.of(PatchType.JSON_MERGE), "{\"status\":{\"clusterSecurity\":null}}");
 
         if (clusterSecurity == null) {
-            KafkaUtils.removeAnnotation(namespaceName, clusterName, INTERNAL_CLUSTER_SECURITY_ANNOTATION);
+            KafkaUtils.removeAnnotation(namespaceName, clusterName, ClusterSecuritySTUtils.INTERNAL_CLUSTER_SECURITY_ANNOTATION);
         } else {
-            KafkaUtils.annotateKafka(namespaceName, clusterName, Map.of(INTERNAL_CLUSTER_SECURITY_ANNOTATION, clusterSecurity));
+            KafkaUtils.annotateKafka(namespaceName, clusterName, Map.of(ClusterSecuritySTUtils.INTERNAL_CLUSTER_SECURITY_ANNOTATION, clusterSecurity));
         }
         KafkaUtils.annotateKafka(namespaceName, clusterName,
             Map.of(Annotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION, "false"));

@@ -16,20 +16,20 @@ import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaUpgradeException;
 import io.strimzi.operator.cluster.model.KafkaVersion;
+import io.strimzi.operator.cluster.model.KafkaVersionChange;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.PodOperator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
-import io.vertx.junit5.Checkpoint;
-import io.vertx.junit5.VertxExtension;
-import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.Timeout;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.TimeUnit;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.instanceOf;
@@ -39,7 +39,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
-@ExtendWith(VertxExtension.class)
+@Timeout(value = 30, unit = TimeUnit.SECONDS)
 public class KRaftVersionChangeCreatorTest {
     private static final String NAMESPACE = "my-namespace";
     private static final String CLUSTER_NAME = "my-cluster";
@@ -111,54 +111,42 @@ public class KRaftVersionChangeCreatorTest {
     //////////
 
     @Test
-    public void testNewClusterWithAllVersions(VertxTestContext context) {
+    public void testNewClusterWithAllVersions() {
         KRaftVersionChangeCreator vcc = mockVersionChangeCreator(
                 mockKafka(VERSIONS.defaultVersion().version(), VERSIONS.defaultVersion().metadataVersion(), VERSIONS.defaultVersion().metadataVersion()),
                 mockRos(List.of())
         );
 
-        Checkpoint async = context.checkpoint();
-        vcc.reconcile().onComplete(context.succeeding(c -> context.verify(() -> {
-            assertThat(c.from(), is(VERSIONS.defaultVersion()));
-            assertThat(c.to(), is(VERSIONS.defaultVersion()));
-            assertThat(c.metadataVersion(), is(VERSIONS.defaultVersion().metadataVersion()));
-
-            async.flag();
-        })));
+        KafkaVersionChange c = vcc.reconcile().toCompletableFuture().join();
+        assertThat(c.from(), is(VERSIONS.defaultVersion()));
+        assertThat(c.to(), is(VERSIONS.defaultVersion()));
+        assertThat(c.metadataVersion(), is(VERSIONS.defaultVersion().metadataVersion()));
     }
 
     @Test
-    public void testNewClusterWithoutVersion(VertxTestContext context) {
+    public void testNewClusterWithoutVersion() {
         KRaftVersionChangeCreator vcc = mockVersionChangeCreator(
                 mockKafka(null, null, null),
                 mockRos(List.of())
         );
 
-        Checkpoint async = context.checkpoint();
-        vcc.reconcile().onComplete(context.succeeding(c -> context.verify(() -> {
-            assertThat(c.from(), is(VERSIONS.defaultVersion()));
-            assertThat(c.to(), is(VERSIONS.defaultVersion()));
-            assertThat(c.metadataVersion(), is(VERSIONS.defaultVersion().metadataVersion()));
-
-            async.flag();
-        })));
+        KafkaVersionChange c = vcc.reconcile().toCompletableFuture().join();
+        assertThat(c.from(), is(VERSIONS.defaultVersion()));
+        assertThat(c.to(), is(VERSIONS.defaultVersion()));
+        assertThat(c.metadataVersion(), is(VERSIONS.defaultVersion().metadataVersion()));
     }
 
     @Test
-    public void testNewClusterWithKafkaVersionOnly(VertxTestContext context) {
+    public void testNewClusterWithKafkaVersionOnly() {
         KRaftVersionChangeCreator vcc = mockVersionChangeCreator(
                 mockKafka(VERSIONS.defaultVersion().version(), null, null),
                 mockRos(List.of())
         );
 
-        Checkpoint async = context.checkpoint();
-        vcc.reconcile().onComplete(context.succeeding(c -> context.verify(() -> {
-            assertThat(c.from(), is(VERSIONS.defaultVersion()));
-            assertThat(c.to(), is(VERSIONS.defaultVersion()));
-            assertThat(c.metadataVersion(), is(VERSIONS.defaultVersion().metadataVersion()));
-
-            async.flag();
-        })));
+        KafkaVersionChange c = vcc.reconcile().toCompletableFuture().join();
+        assertThat(c.from(), is(VERSIONS.defaultVersion()));
+        assertThat(c.to(), is(VERSIONS.defaultVersion()));
+        assertThat(c.metadataVersion(), is(VERSIONS.defaultVersion().metadataVersion()));
     }
 
     //////////
@@ -166,121 +154,94 @@ public class KRaftVersionChangeCreatorTest {
     //////////
 
     @Test
-    public void testExistingClusterWithAllVersion(VertxTestContext context) {
+    public void testExistingClusterWithAllVersion() {
         KRaftVersionChangeCreator vcc = mockVersionChangeCreator(
                 mockKafka(VERSIONS.defaultVersion().version(), VERSIONS.defaultVersion().metadataVersion(), VERSIONS.defaultVersion().metadataVersion()),
                 mockRos(mockUniformPods(VERSIONS.defaultVersion().version()))
         );
 
-        Checkpoint async = context.checkpoint();
-        vcc.reconcile().onComplete(context.succeeding(c -> context.verify(() -> {
-            assertThat(c.from(), is(VERSIONS.defaultVersion()));
-            assertThat(c.to(), is(VERSIONS.defaultVersion()));
-            assertThat(c.metadataVersion(), is(VERSIONS.defaultVersion().metadataVersion()));
-
-            async.flag();
-        })));
+        KafkaVersionChange c = vcc.reconcile().toCompletableFuture().join();
+        assertThat(c.from(), is(VERSIONS.defaultVersion()));
+        assertThat(c.to(), is(VERSIONS.defaultVersion()));
+        assertThat(c.metadataVersion(), is(VERSIONS.defaultVersion().metadataVersion()));
     }
 
     @Test
-    public void testExistingClusterWithoutVersions(VertxTestContext context) {
+    public void testExistingClusterWithoutVersions() {
         KRaftVersionChangeCreator vcc = mockVersionChangeCreator(
                 mockKafka(null, VERSIONS.defaultVersion().metadataVersion(), null),
                 mockRos(mockUniformPods(VERSIONS.defaultVersion().version()))
         );
 
-        Checkpoint async = context.checkpoint();
-        vcc.reconcile().onComplete(context.succeeding(c -> context.verify(() -> {
-            assertThat(c.from(), is(VERSIONS.defaultVersion()));
-            assertThat(c.to(), is(VERSIONS.defaultVersion()));
-            assertThat(c.metadataVersion(), is(VERSIONS.defaultVersion().metadataVersion()));
-
-            async.flag();
-        })));
+        KafkaVersionChange c = vcc.reconcile().toCompletableFuture().join();
+        assertThat(c.from(), is(VERSIONS.defaultVersion()));
+        assertThat(c.to(), is(VERSIONS.defaultVersion()));
+        assertThat(c.metadataVersion(), is(VERSIONS.defaultVersion().metadataVersion()));
     }
 
     @Test
-    public void testExistingClusterWithoutVersionsWithOldMetadataVersion(VertxTestContext context) {
+    public void testExistingClusterWithoutVersionsWithOldMetadataVersion() {
         KRaftVersionChangeCreator vcc = mockVersionChangeCreator(
                 mockKafka(null, "3.4-IV2", null),
                 mockRos(mockUniformPods(VERSIONS.defaultVersion().version()))
         );
 
-        Checkpoint async = context.checkpoint();
-        vcc.reconcile().onComplete(context.succeeding(c -> context.verify(() -> {
-            assertThat(c.from(), is(VERSIONS.defaultVersion()));
-            assertThat(c.to(), is(VERSIONS.defaultVersion()));
-            assertThat(c.metadataVersion(), is(VERSIONS.defaultVersion().metadataVersion()));
-
-            async.flag();
-        })));
+        KafkaVersionChange c = vcc.reconcile().toCompletableFuture().join();
+        assertThat(c.from(), is(VERSIONS.defaultVersion()));
+        assertThat(c.to(), is(VERSIONS.defaultVersion()));
+        assertThat(c.metadataVersion(), is(VERSIONS.defaultVersion().metadataVersion()));
     }
 
     @Test
-    public void testExistingClusterWithNewMetadataVersion(VertxTestContext context) {
+    public void testExistingClusterWithNewMetadataVersion() {
         KRaftVersionChangeCreator vcc = mockVersionChangeCreator(
                 mockKafka(VERSIONS.defaultVersion().version(), "3.4-IV2", "3.6"),
                 mockRos(mockUniformPods(VERSIONS.defaultVersion().version()))
         );
 
-        Checkpoint async = context.checkpoint();
-        vcc.reconcile().onComplete(context.succeeding(c -> context.verify(() -> {
-            assertThat(c.from(), is(VERSIONS.defaultVersion()));
-            assertThat(c.to(), is(VERSIONS.defaultVersion()));
-            assertThat(c.metadataVersion(), is("3.6"));
-
-            async.flag();
-        })));
+        KafkaVersionChange c = vcc.reconcile().toCompletableFuture().join();
+        assertThat(c.from(), is(VERSIONS.defaultVersion()));
+        assertThat(c.to(), is(VERSIONS.defaultVersion()));
+        assertThat(c.metadataVersion(), is("3.6"));
     }
 
     @Test
-    public void testExistingClusterWithRemovedMetadataVersion(VertxTestContext context) {
+    public void testExistingClusterWithRemovedMetadataVersion() {
         KRaftVersionChangeCreator vcc = mockVersionChangeCreator(
                 mockKafka(VERSIONS.defaultVersion().version(), "3.4-IV2", null),
                 mockRos(mockUniformPods(VERSIONS.defaultVersion().version()))
         );
 
-        Checkpoint async = context.checkpoint();
-        vcc.reconcile().onComplete(context.succeeding(c -> context.verify(() -> {
-            assertThat(c.from(), is(VERSIONS.defaultVersion()));
-            assertThat(c.to(), is(VERSIONS.defaultVersion()));
-            assertThat(c.metadataVersion(), is(VERSIONS.defaultVersion().metadataVersion()));
-
-            async.flag();
-        })));
+        KafkaVersionChange c = vcc.reconcile().toCompletableFuture().join();
+        assertThat(c.from(), is(VERSIONS.defaultVersion()));
+        assertThat(c.to(), is(VERSIONS.defaultVersion()));
+        assertThat(c.metadataVersion(), is(VERSIONS.defaultVersion().metadataVersion()));
     }
 
     @Test
-    public void testExistingClusterWithWrongMetadataVersion(VertxTestContext context) {
+    public void testExistingClusterWithWrongMetadataVersion() {
         KRaftVersionChangeCreator vcc = mockVersionChangeCreator(
                 mockKafka(VERSIONS.defaultVersion().version(), "3.4-IV2", "5.11-IV2"),
                 mockRos(mockUniformPods(VERSIONS.defaultVersion().version()))
         );
 
-        Checkpoint async = context.checkpoint();
-        vcc.reconcile().onComplete(context.succeeding(c -> context.verify(() -> {
-            assertThat(c.from(), is(VERSIONS.defaultVersion()));
-            assertThat(c.to(), is(VERSIONS.defaultVersion()));
-            assertThat(c.metadataVersion(), is("3.4-IV2"));
-
-            async.flag();
-        })));
+        KafkaVersionChange c = vcc.reconcile().toCompletableFuture().join();
+        assertThat(c.from(), is(VERSIONS.defaultVersion()));
+        assertThat(c.to(), is(VERSIONS.defaultVersion()));
+        assertThat(c.metadataVersion(), is("3.4-IV2"));
     }
 
     @Test
-    public void testExistingClusterWithPodWithoutAnnotations(VertxTestContext context) {
+    public void testExistingClusterWithPodWithoutAnnotations() {
         KRaftVersionChangeCreator vcc = mockVersionChangeCreator(
                 mockKafka(VERSIONS.defaultVersion().version(), VERSIONS.defaultVersion().metadataVersion(), VERSIONS.defaultVersion().metadataVersion()),
                 mockRos(mockUniformPods(null))
         );
 
-        Checkpoint async = context.checkpoint();
-        vcc.reconcile().onComplete(context.failing(c -> context.verify(() -> {
-            assertThat(c, is(instanceOf(KafkaUpgradeException.class)));
-            assertThat(c.getMessage(), is("Kafka Pods exist, but do not contain the strimzi.io/kafka-version annotation to detect their version. Kafka upgrade cannot be detected."));
-
-            async.flag();
-        })));
+        CompletionException ex = assertThrows(CompletionException.class,
+                () -> vcc.reconcile().toCompletableFuture().join());
+        assertThat(ex.getCause(), is(instanceOf(KafkaUpgradeException.class)));
+        assertThat(ex.getCause().getMessage(), is("Kafka Pods exist, but do not contain the strimzi.io/kafka-version annotation to detect their version. Kafka upgrade cannot be detected."));
     }
 
     //////////
@@ -288,87 +249,68 @@ public class KRaftVersionChangeCreatorTest {
     //////////
 
     @Test
-    public void testUpgradeWithAllVersion(VertxTestContext context) {
+    public void testUpgradeWithAllVersion() {
         KRaftVersionChangeCreator vcc = mockVersionChangeCreator(
                 mockKafka(VERSIONS.defaultVersion().version(), VERSIONS.version(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION).metadataVersion(), VERSIONS.defaultVersion().metadataVersion()),
                 mockRos(mockUniformPods(VERSIONS.version(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION).version()))
         );
 
-        Checkpoint async = context.checkpoint();
-        vcc.reconcile().onComplete(context.succeeding(c -> context.verify(() -> {
-            assertThat(c.from(), is(VERSIONS.version(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION)));
-            assertThat(c.to(), is(VERSIONS.defaultVersion()));
-            assertThat(c.metadataVersion(), is(VERSIONS.version(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION).metadataVersion()));
-
-            async.flag();
-        })));
+        KafkaVersionChange c = vcc.reconcile().toCompletableFuture().join();
+        assertThat(c.from(), is(VERSIONS.version(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION)));
+        assertThat(c.to(), is(VERSIONS.defaultVersion()));
+        assertThat(c.metadataVersion(), is(VERSIONS.version(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION).metadataVersion()));
     }
 
     @Test
-    public void testUpgradeWithoutVersion(VertxTestContext context) {
+    public void testUpgradeWithoutVersion() {
         KRaftVersionChangeCreator vcc = mockVersionChangeCreator(
                 mockKafka(null, VERSIONS.version(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION).metadataVersion(), null),
                 mockRos(mockUniformPods(VERSIONS.version(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION).version()))
         );
 
-        Checkpoint async = context.checkpoint();
-        vcc.reconcile().onComplete(context.succeeding(c -> context.verify(() -> {
-            assertThat(c.from(), is(VERSIONS.version(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION)));
-            assertThat(c.to(), is(VERSIONS.defaultVersion()));
-            assertThat(c.metadataVersion(), is(VERSIONS.version(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION).metadataVersion()));
-
-            async.flag();
-        })));
+        KafkaVersionChange c = vcc.reconcile().toCompletableFuture().join();
+        assertThat(c.from(), is(VERSIONS.version(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION)));
+        assertThat(c.to(), is(VERSIONS.defaultVersion()));
+        assertThat(c.metadataVersion(), is(VERSIONS.version(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION).metadataVersion()));
     }
 
     @Test
-    public void testUpgradeWithAllVersionAndMixedPods(VertxTestContext context) {
+    public void testUpgradeWithAllVersionAndMixedPods() {
         KRaftVersionChangeCreator vcc = mockVersionChangeCreator(
                 mockKafka(VERSIONS.defaultVersion().version(), VERSIONS.version(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION).metadataVersion(), VERSIONS.defaultVersion().metadataVersion()),
                 mockRos(mockMixedPods(VERSIONS.version(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION).version(), VERSIONS.defaultVersion().version()))
         );
 
-        Checkpoint async = context.checkpoint();
-        vcc.reconcile().onComplete(context.succeeding(c -> context.verify(() -> {
-            assertThat(c.from(), is(VERSIONS.version(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION)));
-            assertThat(c.to(), is(VERSIONS.defaultVersion()));
-            assertThat(c.metadataVersion(), is(VERSIONS.version(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION).metadataVersion()));
-
-            async.flag();
-        })));
+        KafkaVersionChange c = vcc.reconcile().toCompletableFuture().join();
+        assertThat(c.from(), is(VERSIONS.version(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION)));
+        assertThat(c.to(), is(VERSIONS.defaultVersion()));
+        assertThat(c.metadataVersion(), is(VERSIONS.version(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION).metadataVersion()));
     }
 
     @Test
-    public void testUpgradeWithoutVersionAndMixedPods(VertxTestContext context) {
+    public void testUpgradeWithoutVersionAndMixedPods() {
         KRaftVersionChangeCreator vcc = mockVersionChangeCreator(
                 mockKafka(null, VERSIONS.version(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION).metadataVersion(), null),
                 mockRos(mockMixedPods(VERSIONS.version(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION).version(), VERSIONS.defaultVersion().version()))
         );
 
-        Checkpoint async = context.checkpoint();
-        vcc.reconcile().onComplete(context.succeeding(c -> context.verify(() -> {
-            assertThat(c.from(), is(VERSIONS.version(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION)));
-            assertThat(c.to(), is(VERSIONS.defaultVersion()));
-            assertThat(c.metadataVersion(), is(VERSIONS.version(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION).metadataVersion()));
-
-            async.flag();
-        })));
+        KafkaVersionChange c = vcc.reconcile().toCompletableFuture().join();
+        assertThat(c.from(), is(VERSIONS.version(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION)));
+        assertThat(c.to(), is(VERSIONS.defaultVersion()));
+        assertThat(c.metadataVersion(), is(VERSIONS.version(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION).metadataVersion()));
     }
 
     @Test
-    public void testUpgradeWithWrongCurrentMetadataVersion(VertxTestContext context) {
+    public void testUpgradeWithWrongCurrentMetadataVersion() {
         KRaftVersionChangeCreator vcc = mockVersionChangeCreator(
                 mockKafka(VERSIONS.defaultVersion().version(), "5.11-IV1", VERSIONS.defaultVersion().metadataVersion()),
                 mockRos(mockUniformPods(VERSIONS.version(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION).version()))
         );
 
-        Checkpoint async = context.checkpoint();
-        vcc.reconcile().onComplete(context.failing(c -> context.verify(() -> {
-            assertThat(c, is(instanceOf(KafkaUpgradeException.class)));
-            assertThat(c.getMessage(), is("The current metadata version (5.11-IV1) has to be lower or equal to the Kafka broker version we upgrade from (" + VERSIONS.version(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION).version() + ")"));
-
-            async.flag();
-        })));
+        CompletionException ex = assertThrows(CompletionException.class,
+                () -> vcc.reconcile().toCompletableFuture().join());
+        assertThat(ex.getCause(), is(instanceOf(KafkaUpgradeException.class)));
+        assertThat(ex.getCause().getMessage(), is("The current metadata version (5.11-IV1) has to be lower or equal to the Kafka broker version we upgrade from (" + VERSIONS.version(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION).version() + ")"));
     }
 
     //////////
@@ -376,106 +318,82 @@ public class KRaftVersionChangeCreatorTest {
     //////////
 
     @Test
-    public void testDowngradeWithAllVersion(VertxTestContext context) {
+    public void testDowngradeWithAllVersion() {
         KRaftVersionChangeCreator vcc = mockVersionChangeCreator(
                 mockKafka(VERSIONS.version(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION).version(), VERSIONS.version(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION).metadataVersion(), VERSIONS.version(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION).metadataVersion()),
                 mockRos(mockUniformPods(VERSIONS.defaultVersion().version()))
         );
 
-        Checkpoint async = context.checkpoint();
-        vcc.reconcile().onComplete(context.succeeding(c -> context.verify(() -> {
-            assertThat(c.from(), is(VERSIONS.defaultVersion()));
-            assertThat(c.to(), is(VERSIONS.version(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION)));
-            assertThat(c.metadataVersion(), is(VERSIONS.version(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION).metadataVersion()));
-
-            async.flag();
-        })));
+        KafkaVersionChange c = vcc.reconcile().toCompletableFuture().join();
+        assertThat(c.from(), is(VERSIONS.defaultVersion()));
+        assertThat(c.to(), is(VERSIONS.version(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION)));
+        assertThat(c.metadataVersion(), is(VERSIONS.version(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION).metadataVersion()));
     }
 
     @Test
-    public void testDowngradeWithUnsetDesiredMetadataVersion(VertxTestContext context) {
+    public void testDowngradeWithUnsetDesiredMetadataVersion() {
         KRaftVersionChangeCreator vcc = mockVersionChangeCreator(
                 mockKafka(VERSIONS.version(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION).version(), VERSIONS.version(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION).metadataVersion(), null),
                 mockRos(mockUniformPods(VERSIONS.defaultVersion().version()))
         );
 
-        Checkpoint async = context.checkpoint();
-        vcc.reconcile().onComplete(context.succeeding(c -> context.verify(() -> {
-            assertThat(c.from(), is(VERSIONS.defaultVersion()));
-            assertThat(c.to(), is(VERSIONS.version(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION)));
-            assertThat(c.metadataVersion(), is(VERSIONS.version(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION).metadataVersion()));
-
-            async.flag();
-        })));
+        KafkaVersionChange c = vcc.reconcile().toCompletableFuture().join();
+        assertThat(c.from(), is(VERSIONS.defaultVersion()));
+        assertThat(c.to(), is(VERSIONS.version(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION)));
+        assertThat(c.metadataVersion(), is(VERSIONS.version(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION).metadataVersion()));
     }
 
     @Test
-    public void testDowngradeWithOldMetadataVersion(VertxTestContext context) {
+    public void testDowngradeWithOldMetadataVersion() {
         KRaftVersionChangeCreator vcc = mockVersionChangeCreator(
                 mockKafka(VERSIONS.version(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION).version(), "3.4-IV2", "3.4-IV2"),
                 mockRos(mockUniformPods(VERSIONS.defaultVersion().version()))
         );
 
-        Checkpoint async = context.checkpoint();
-        vcc.reconcile().onComplete(context.succeeding(c -> context.verify(() -> {
-            assertThat(c.from(), is(VERSIONS.defaultVersion()));
-            assertThat(c.to(), is(VERSIONS.version(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION)));
-            assertThat(c.metadataVersion(), is("3.4-IV2"));
-
-            async.flag();
-        })));
+        KafkaVersionChange c = vcc.reconcile().toCompletableFuture().join();
+        assertThat(c.from(), is(VERSIONS.defaultVersion()));
+        assertThat(c.to(), is(VERSIONS.version(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION)));
+        assertThat(c.metadataVersion(), is("3.4-IV2"));
     }
 
     @Test
-    public void testDowngradeWithAllVersionAndMixedPods(VertxTestContext context) {
+    public void testDowngradeWithAllVersionAndMixedPods() {
         KRaftVersionChangeCreator vcc = mockVersionChangeCreator(
                 mockKafka(VERSIONS.version(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION).version(), VERSIONS.version(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION).metadataVersion(), VERSIONS.version(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION).metadataVersion()),
                 mockRos(mockMixedPods(VERSIONS.version(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION).version(), VERSIONS.defaultVersion().version()))
         );
 
-        Checkpoint async = context.checkpoint();
-        vcc.reconcile().onComplete(context.succeeding(c -> context.verify(() -> {
-            assertThat(c.from(), is(VERSIONS.defaultVersion()));
-            assertThat(c.to(), is(VERSIONS.version(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION)));
-            assertThat(c.metadataVersion(), is(VERSIONS.version(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION).metadataVersion()));
-
-            async.flag();
-        })));
+        KafkaVersionChange c = vcc.reconcile().toCompletableFuture().join();
+        assertThat(c.from(), is(VERSIONS.defaultVersion()));
+        assertThat(c.to(), is(VERSIONS.version(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION)));
+        assertThat(c.metadataVersion(), is(VERSIONS.version(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION).metadataVersion()));
     }
-    
+
     @Test
-    public void testDowngradeFromUnknownVersion(VertxTestContext context) {
+    public void testDowngradeFromUnknownVersion() {
         String unknownVersion = KafkaVersionTestUtils.HIGH_UNKNOWN_KAFKA_VERSION;
         KRaftVersionChangeCreator vcc = mockVersionChangeCreator(
                 mockKafka(VERSIONS.version(KafkaVersionTestUtils.LATEST_KAFKA_VERSION).version(), VERSIONS.version(KafkaVersionTestUtils.LATEST_KAFKA_VERSION).metadataVersion(), VERSIONS.version(KafkaVersionTestUtils.LATEST_KAFKA_VERSION).metadataVersion()),
                 mockRos(mockUniformPods(unknownVersion))
         );
 
-        Checkpoint async = context.checkpoint();
-        vcc.reconcile().onComplete(context.succeeding(c -> context.verify(() -> {
-            assertThat(c.from().version(), is(unknownVersion));
-            assertThat(c.to(), is(VERSIONS.version(KafkaVersionTestUtils.LATEST_KAFKA_VERSION)));
-            assertThat(c.metadataVersion(), is(VERSIONS.version(KafkaVersionTestUtils.LATEST_KAFKA_VERSION).metadataVersion()));
-
-            async.flag();
-        })));
+        KafkaVersionChange c = vcc.reconcile().toCompletableFuture().join();
+        assertThat(c.from().version(), is(unknownVersion));
+        assertThat(c.to(), is(VERSIONS.version(KafkaVersionTestUtils.LATEST_KAFKA_VERSION)));
+        assertThat(c.metadataVersion(), is(VERSIONS.version(KafkaVersionTestUtils.LATEST_KAFKA_VERSION).metadataVersion()));
     }
 
     @Test
-    public void testUpgradeFromUnknownVersion(VertxTestContext context) {
+    public void testUpgradeFromUnknownVersion() {
         KRaftVersionChangeCreator vcc = mockVersionChangeCreator(
                 mockKafka(VERSIONS.version(KafkaVersionTestUtils.LATEST_KAFKA_VERSION).version(), VERSIONS.version(KafkaVersionTestUtils.LATEST_KAFKA_VERSION).metadataVersion(), "3.9-IV99"),
                 mockRos(mockUniformPods(KafkaVersionTestUtils.LOW_UNKNOWN_KAFKA_VERSION))
         );
 
-        Checkpoint async = context.checkpoint();
-        vcc.reconcile().onComplete(context.succeeding(c -> context.verify(() -> {
-            assertThat(c.from().version(), is(KafkaVersionTestUtils.LOW_UNKNOWN_KAFKA_VERSION));
-            assertThat(c.to(), is(VERSIONS.version(KafkaVersionTestUtils.LATEST_KAFKA_VERSION)));
-            assertThat(c.metadataVersion(), is(VERSIONS.version(KafkaVersionTestUtils.LATEST_KAFKA_VERSION).metadataVersion()));
-
-            async.flag();
-        })));
+        KafkaVersionChange c = vcc.reconcile().toCompletableFuture().join();
+        assertThat(c.from().version(), is(KafkaVersionTestUtils.LOW_UNKNOWN_KAFKA_VERSION));
+        assertThat(c.to(), is(VERSIONS.version(KafkaVersionTestUtils.LATEST_KAFKA_VERSION)));
+        assertThat(c.metadataVersion(), is(VERSIONS.version(KafkaVersionTestUtils.LATEST_KAFKA_VERSION).metadataVersion()));
     }
 
     @Test
@@ -485,35 +403,29 @@ public class KRaftVersionChangeCreatorTest {
     }
 
     @Test
-    public void testDowngradeWithWrongCurrentMetadataVersion(VertxTestContext context) {
+    public void testDowngradeWithWrongCurrentMetadataVersion() {
         KRaftVersionChangeCreator vcc = mockVersionChangeCreator(
                 mockKafka(VERSIONS.version(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION).version(), "5.11-IV1", VERSIONS.version(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION).metadataVersion()),
                 mockRos(mockUniformPods(VERSIONS.defaultVersion().version()))
         );
 
-        Checkpoint async = context.checkpoint();
-        vcc.reconcile().onComplete(context.failing(c -> context.verify(() -> {
-            assertThat(c, is(instanceOf(KafkaUpgradeException.class)));
-            assertThat(c.getMessage(), is("The current metadata version (5.11-IV1) has to be lower or equal to the Kafka broker version we are downgrading to (" + VERSIONS.version(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION).version() + ")"));
-
-            async.flag();
-        })));
+        CompletionException ex = assertThrows(CompletionException.class,
+                () -> vcc.reconcile().toCompletableFuture().join());
+        assertThat(ex.getCause(), is(instanceOf(KafkaUpgradeException.class)));
+        assertThat(ex.getCause().getMessage(), is("The current metadata version (5.11-IV1) has to be lower or equal to the Kafka broker version we are downgrading to (" + VERSIONS.version(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION).version() + ")"));
     }
 
     @Test
-    public void testDowngradeWithNonDowngradedCurrentMetadataVersion(VertxTestContext context) {
+    public void testDowngradeWithNonDowngradedCurrentMetadataVersion() {
         KRaftVersionChangeCreator vcc = mockVersionChangeCreator(
                 mockKafka(VERSIONS.version(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION).version(), VERSIONS.defaultVersion().metadataVersion(), VERSIONS.version(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION).metadataVersion()),
                 mockRos(mockUniformPods(VERSIONS.defaultVersion().version()))
         );
 
-        Checkpoint async = context.checkpoint();
-        vcc.reconcile().onComplete(context.failing(c -> context.verify(() -> {
-            assertThat(c, is(instanceOf(KafkaUpgradeException.class)));
-            assertThat(c.getMessage(), is("The current metadata version (" + VERSIONS.defaultVersion().metadataVersion() + ") has to be lower or equal to the Kafka broker version we are downgrading to (" + VERSIONS.version(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION).version() + ")"));
-
-            async.flag();
-        })));
+        CompletionException ex = assertThrows(CompletionException.class,
+                () -> vcc.reconcile().toCompletableFuture().join());
+        assertThat(ex.getCause(), is(instanceOf(KafkaUpgradeException.class)));
+        assertThat(ex.getCause().getMessage(), is("The current metadata version (" + VERSIONS.defaultVersion().metadataVersion() + ") has to be lower or equal to the Kafka broker version we are downgrading to (" + VERSIONS.version(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION).version() + ")"));
     }
 
     //////////

@@ -3,10 +3,16 @@
 ## 1.3.0
 
 * (Early Access) Configurable internal cluster security allows users to configure encryption and authentication on the internal connections within the Apache Kafka cluster.
+* Update Kafka Exporter to [1.10.0](https://github.com/danielqsj/kafka_exporter/releases/tag/v1.10.0)
+* Support for mounting projected service account tokens into Strimzi-managed Pods
 
 ### Major changes, deprecations, and removals
 
-* n/a
+* **From Strimzi 1.3.0 on, we support only Kubernetes 1.32 and newer.**
+  Kubernetes 1.30 and 1.31 are not supported anymore.
+* PKCS12 format certificates are deprecated.
+  The `STRIMZI_PKCS12_KEYSTORE_GENERATION` env var will be set to false by default in a future release and then eventually removed completely.
+  Once removed, the CA certificate Secrets and User Secrets will only contain certificates in the PEM format.
 
 ## 1.2.0
 

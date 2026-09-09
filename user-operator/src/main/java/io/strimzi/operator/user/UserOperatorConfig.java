@@ -78,6 +78,10 @@ public class UserOperatorConfig {
      */
     public static final ConfigParameter<String> CA_KEY_SECRET_NAME = new ConfigParameter<>("STRIMZI_CA_KEY_NAME", NON_EMPTY_STRING, CONFIG_VALUES);
     /**
+     * The path to where the projected Service Account token is mounted.
+     */
+    public static final ConfigParameter<String> SERVICE_ACCOUNT_TOKEN_PATH = new ConfigParameter<>("STRIMZI_SERVICE_ACCOUNT_TOKEN_PATH", STRING, null, CONFIG_VALUES);
+    /**
      * Map with labels which should be used to find the KafkaUser resources.
      */
     public static final ConfigParameter<Labels> LABELS = new ConfigParameter<>("STRIMZI_LABELS", LABEL_PREDICATE, "", CONFIG_VALUES);
@@ -337,6 +341,15 @@ public class UserOperatorConfig {
     }
 
     /**
+     * Gets the path of the Service Account token
+     *
+     * @return The path of the Service Account token
+     */
+    public String getServiceAccountTokenPath() {
+        return get(SERVICE_ACCOUNT_TOKEN_PATH);
+    }
+
+    /**
      * Gets the namespace of the Client CA or the operator's namespace if not set.
      *
      * @return The namespace of the Client CA if not null or empty, else it will return namespace
@@ -579,6 +592,7 @@ public class UserOperatorConfig {
                 "\n\teuoKeySecretName='" + getEuoKeySecretName() + '\'' +
                 "\n\teuoCertName='" + getEuoCertName() + '\'' +
                 "\n\teuoKeyName='" + getEuoKeyName() + '\'' +
+                "\n\tserviceAccountTokenPath='" + getServiceAccountTokenPath() + '\'' +
                 "\n\tcaNamespace='" + getCaNamespaceOrNamespace() + '\'' +
                 "\n\tsecretPrefix='" + getSecretPrefix() + '\'' +
                 "\n\tclientsCaValidityDays=" + getClientsCaValidityDays() +

@@ -315,4 +315,16 @@ public class KafkaResources {
     public static String autoRebalancingKafkaRebalanceResourceName(String cluster, KafkaAutoRebalanceMode kafkaAutoRebalanceMode) {
         return cluster + "-auto-rebalancing-" + kafkaAutoRebalanceMode.toValue();
     }
+
+    /**
+     * Name of the Service Account used by the Cluster Operator to connect to the Kafka cluster when Service-account-based
+     * authentication is used.
+     *
+     * @param cluster   Name of the Kafka cluster
+     *
+     * @return  Name of the Cluster Operator Service Account
+     */
+    public static String clusterOperatorServiceAccount(String cluster) {
+        return cluster + "-cluster-operator";
+    }
 }

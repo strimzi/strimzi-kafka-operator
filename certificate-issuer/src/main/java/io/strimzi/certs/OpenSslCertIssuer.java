@@ -286,7 +286,6 @@ public class OpenSslCertIssuer implements CertIssuer {
         }
 
         // Generate a CSR for the key
-        Path tmpKey = null;
         Path sna = null;
         Path defaultConfig = null;
         Path csrFile = null;
@@ -295,18 +294,13 @@ public class OpenSslCertIssuer implements CertIssuer {
         Path attr = null;
 
         try {
-            tmpKey = Files.createTempFile(null, null);
-            boolean keyInPkcs1;
             if (subjectKeyFile.length() == 0) {
-                // Generate a key pair
-                new OpensslArgs("openssl", "genrsa")
-                        .optArg("-out", tmpKey)
-                        .opt("4096")
+                // Generate a new key pair directly in PKCS#8 format (bracketed by BEGIN/END PRIVATE KEY)
+                new OpensslArgs("openssl", "genpkey")
+                        .optArg("-algorithm", "RSA")
+                        .optArg("-pkeyopt", "rsa_keygen_bits:4096")
+                        .optArg("-out", subjectKeyFile)
                         .exec();
-                keyInPkcs1 = true;
-            } else {
-                Files.copy(subjectKeyFile.toPath(), tmpKey, StandardCopyOption.REPLACE_EXISTING);
-                keyInPkcs1 = false;
             }
 
             csrFile = Files.createTempFile(null, null);
@@ -314,7 +308,7 @@ public class OpenSslCertIssuer implements CertIssuer {
             new OpensslArgs("openssl", "req")
                     .opt("-new")
                     .optArg("-config", sna, true)
-                    .optArg("-key", tmpKey)
+                    .optArg("-key", subjectKeyFile)
                     .optArg("-out", csrFile)
                     .optArg("-subj", subject)
                     .exec();
@@ -328,7 +322,7 @@ public class OpenSslCertIssuer implements CertIssuer {
                     .opt("-utf8").opt("-batch").opt("-notext");
             if (issuerCaCertFile == null) {
                 opt.opt("-selfsign");
-                opt.optArg("-keyfile", tmpKey);
+                opt.optArg("-keyfile", subjectKeyFile);
             } else {
                 opt.optArg("-cert", issuerCaCertFile);
                 opt.optArg("-keyfile", issuerCaKeyFile);
@@ -344,19 +338,8 @@ public class OpenSslCertIssuer implements CertIssuer {
                     .basicConstraints("critical,CA:true,pathlen:" + pathLength)
                     .keyUsage("critical,keyCertSign,cRLSign")
                     .exec(false);
-
-            if (keyInPkcs1) {
-                // If the key is in pkcs#1 format (bracketed by BEGIN/END RSA PRIVATE KEY)
-                // convert it to pkcs#8 format (bracketed by BEGIN/END PRIVATE KEY)
-                new OpensslArgs("openssl", "pkcs8")
-                        .opt("-topk8").opt("-nocrypt")
-                        .optArg("-in", tmpKey)
-                        .optArg("-out", subjectKeyFile)
-                        .exec();
-            }
         } finally {
-            deleteAll(tmpKey,
-                    database,
+            deleteAll(database,
                     // The .old files are created by OpenSSL
                     database != null ? Paths.get(database + ".old") : null,
                     attr,

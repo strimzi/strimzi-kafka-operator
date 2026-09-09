@@ -2,7 +2,7 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.operator.cluster.model;
+package io.strimzi.operator.cluster.model.clustersecurity.kafka;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -27,16 +27,22 @@ public class KafkaClusterSecurityContext {
     /**
      * The default Kafka Cluster Security Context configuration
      */
-    public static final KafkaClusterSecurityContext DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT =  new KafkaClusterSecurityContext(ClusterSecurityEncryptionType.STRIMZI_TLS, ClusterSecurityAuthenticationType.STRIMZI_MTLS);
+    public static final KafkaClusterSecurityContext DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT =  new KafkaClusterSecurityContext(new TlsEncryptionConfiguration(), new MtlsAuthenticationConfiguration());
 
-    private final ClusterSecurityEncryptionType encryptionType;
-    private final ClusterSecurityAuthenticationType authenticationType;
+    private final AuthenticationConfiguration authentication;
+    private final EncryptionConfiguration encryption;
 
-    /* test */ KafkaClusterSecurityContext(ClusterSecurityEncryptionType encryptionType, ClusterSecurityAuthenticationType authenticationType) {
-        this.encryptionType = encryptionType;
-        this.authenticationType = authenticationType;
+    /**
+     * Constructor
+     *
+     * @param encryption        Encryption configuration
+     * @param authentication    Authentication configuration
+     */
+    public KafkaClusterSecurityContext(EncryptionConfiguration encryption, AuthenticationConfiguration authentication) {
+        this.encryption = encryption;
+        this.authentication = authentication;
 
-        validateDesiredConfiguration();
+        validateDesiredSecurityConfiguration();
     }
 
     /**
@@ -57,25 +63,22 @@ public class KafkaClusterSecurityContext {
         } else if (clusterSecurity == null) {
             // Cluster Security exists in status, but it is not configured in the annotation. We need to doublecheck
             // that the status uses the default configuration.
-            validateSpecAndStatusMatch(ClusterSecurityEncryptionType.STRIMZI_TLS, ClusterSecurityAuthenticationType.STRIMZI_MTLS, clusterSecurityStatus);
+            validateSpecAndStatusMatch(ClusterSecurityEncryptionType.TLS, ClusterSecurityAuthenticationType.MTLS, clusterSecurityStatus);
             return DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT;
         } else if (clusterSecurityStatus == null) {
             // Cluster Security does not exist in status, but it is configured in the annotation. This is a new cluster
             // or follows the migration process. We use the configuration from the annotation.
-            return createContextFromSpec(clusterSecurity);
+            return fromSpec(kafka.getMetadata().getNamespace(), kafka.getMetadata().getName(), clusterSecurity);
         } else {
             // Cluster Security exists in status and in the annotation. We need to doublecheck that the status uses
             // the same configuration as the annotation.
             validateSpecAndStatusMatch(clusterSecurity, clusterSecurityStatus);
-            return createContextFromSpec(clusterSecurity);
+            return fromSpec(kafka.getMetadata().getNamespace(), kafka.getMetadata().getName(), clusterSecurity);
         }
     }
 
-    private static KafkaClusterSecurityContext createContextFromSpec(ClusterSecurity clusterSecurity) {
-        return new KafkaClusterSecurityContext(
-                clusterSecurity.getEncryption() != null && clusterSecurity.getEncryption().getType() != null ? clusterSecurity.getEncryption().getType() : ClusterSecurityEncryptionType.STRIMZI_TLS,
-                clusterSecurity.getAuthentication() != null && clusterSecurity.getAuthentication().getType() != null ? clusterSecurity.getAuthentication().getType() : ClusterSecurityAuthenticationType.STRIMZI_MTLS
-        );
+    private static KafkaClusterSecurityContext fromSpec(String namespace, String clusterName, ClusterSecurity clusterSecurity) {
+        return new KafkaClusterSecurityContext(EncryptionConfiguration.fromCrd(clusterSecurity.getEncryption()), AuthenticationConfiguration.fromCrd(namespace, clusterName, clusterSecurity.getAuthentication()));
     }
 
     /**
@@ -140,11 +143,10 @@ public class KafkaClusterSecurityContext {
      * Validates the desired configuration. This checks things such as that the encryption and authentication mechanisms
      * are compatible and so on.
      */
-    private void validateDesiredConfiguration() {
+    private void validateDesiredSecurityConfiguration() {
         // Check that mTLS is not enabled when TLS is disabled
-        if (authenticationType == ClusterSecurityAuthenticationType.STRIMZI_MTLS && encryptionType != ClusterSecurityEncryptionType.STRIMZI_TLS) {
-            LOGGER.errorOp("Desired Cluster Security configuration (encryption: {}, authentication: {}) is not valid: mTLS authentication can be used only with enabled TLS encryption",
-                    encryptionType, authenticationType);
+        if (authentication instanceof MtlsAuthenticationConfiguration && !(encryption instanceof TlsEncryptionConfiguration)) {
+            LOGGER.errorOp("Desired Cluster Security configuration is not valid: mTLS authentication can be used only with enabled TLS encryption");
             throw new InvalidResourceException("Desired Cluster Security configuration is not valid: mTLS authentication can be used only with enabled TLS encryption.");
         }
     }
@@ -157,29 +159,29 @@ public class KafkaClusterSecurityContext {
     public ClusterSecurityStatus toStatus() {
         return new ClusterSecurityStatusBuilder()
                 .withNewEncryption()
-                    .withType(encryptionType)
+                    .withType(encryption.getType())
                 .endEncryption()
                 .withNewAuthentication()
-                    .withType(authenticationType)
+                    .withType(authentication.getType())
                 .endAuthentication()
                 .build();
     }
 
     /**
-     * Returns whether Strimzi-based TLS encryption should be used or not.
+     * Returns the encryption configuration.
      *
-     * @return  True if the encryption type is STRIMZI_TLS, false otherwise
+     * @return  The encryption configuration
      */
-    public boolean isStrimziTlsEncryption() {
-        return encryptionType == ClusterSecurityEncryptionType.STRIMZI_TLS;
+    public EncryptionConfiguration encryption() {
+        return encryption;
     }
 
     /**
-     * Returns whether Strimzi-based mTLS authentication should be used or not.
+     * Returns the authentication configuration.
      *
-     * @return  True if the authentication type is STRIMZI_MTLS, false otherwise
+     * @return  The authentication configuration
      */
-    public boolean isStrimziMtlsAuthentication() {
-        return authenticationType == ClusterSecurityAuthenticationType.STRIMZI_MTLS;
+    public AuthenticationConfiguration authentication() {
+        return authentication;
     }
 }

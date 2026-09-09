@@ -14,7 +14,7 @@ import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.model.CertSecretUtils;
 import io.strimzi.operator.cluster.model.EntityOperator;
 import io.strimzi.operator.cluster.model.ImagePullPolicy;
-import io.strimzi.operator.cluster.model.KafkaClusterSecurityContext;
+import io.strimzi.operator.cluster.model.clustersecurity.kafka.KafkaClusterSecurityContext;
 import io.strimzi.operator.cluster.operator.VertxUtil;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.ConfigMapOperator;
@@ -390,7 +390,7 @@ public class EntityOperatorReconciler {
      */
     protected Future<Void> topicOperatorConfigMap() {
         if (shouldInstallEntityOperator() && entityOperator.topicOperator() != null) {
-            return MetricsAndLoggingUtils.metricsAndLogging(reconciliation, configMapOperator, entityOperator.topicOperator().logging(), null)
+            return VertxUtil.toFuture(MetricsAndLoggingUtils.metricsAndLogging(reconciliation, configMapOperator, entityOperator.topicOperator().logging(), null))
                     .compose(logging ->
                             VertxUtil.toFuture(configMapOperator.reconcile(
                                     reconciliation,
@@ -414,7 +414,7 @@ public class EntityOperatorReconciler {
      */
     protected Future<Void> userOperatorConfigMap() {
         if (shouldInstallEntityOperator() && entityOperator.userOperator() != null) {
-            return MetricsAndLoggingUtils.metricsAndLogging(reconciliation, configMapOperator, entityOperator.userOperator().logging(), null)
+            return VertxUtil.toFuture(MetricsAndLoggingUtils.metricsAndLogging(reconciliation, configMapOperator, entityOperator.userOperator().logging(), null))
                     .compose(logging ->
                             VertxUtil.toFuture(configMapOperator.reconcile(
                                     reconciliation,

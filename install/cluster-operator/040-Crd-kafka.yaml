@@ -1274,6 +1274,70 @@ spec:
                                   csi: {}
                                   image: {}
                             description: Additional volumes that can be mounted to the pod.
+                          templatedVolumes:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                name:
+                                  type: string
+                                  description: Name to use for the volume. Required.
+                                secret:
+                                  type: object
+                                  properties:
+                                    defaultMode:
+                                      type: integer
+                                    items:
+                                      type: array
+                                      items:
+                                        type: object
+                                        properties:
+                                          key:
+                                            type: string
+                                          mode:
+                                            type: integer
+                                          path:
+                                            type: string
+                                    optional:
+                                      type: boolean
+                                    secretName:
+                                      type: string
+                                  description: "`Secret` to use to populate the volume. The name of the Secret and the items key and path fields can use placeholders that would be replaced for every individual node. Valid placeholders that you can use in the template are `{nodeId}` and `{nodePodName}`."
+                                configMap:
+                                  type: object
+                                  properties:
+                                    defaultMode:
+                                      type: integer
+                                    items:
+                                      type: array
+                                      items:
+                                        type: object
+                                        properties:
+                                          key:
+                                            type: string
+                                          mode:
+                                            type: integer
+                                          path:
+                                            type: string
+                                    name:
+                                      type: string
+                                    optional:
+                                      type: boolean
+                                  description: "`ConfigMap` to use to populate the volume. The name of the ConfigMap and the items key and path fields can use placeholders that would be replaced for every individual node. Valid placeholders that you can use in the template are `{nodeId}` and `{nodePodName}`."
+                                persistentVolumeClaim:
+                                  type: object
+                                  properties:
+                                    claimName:
+                                      type: string
+                                    readOnly:
+                                      type: boolean
+                                  description: "`PersistentVolumeClaim` object to use to populate the volume. The name of the Persistent Volume Claim can use placeholders that would be replaced for every individual node. Valid placeholders that you can use in the template are `{nodeId}` and `{nodePodName}`."
+                              oneOf:
+                              - properties:
+                                  secret: {}
+                                  configMap: {}
+                                  persistentVolumeClaim: {}
+                            description: Additional volumes that can be mounted to the pod. These volumes can use templates to mount different volumes into individual Pods.
                           hostUsers:
                             type: boolean
                             description: "Use the host user namespace. Optional. Defaults to `true`. When `true` or not set, the pod runs in the host user namespace. This is required when the pod needs features available only in the host namespace, such as loading kernel modules with `CAP_SYS_MODULE`.When set to `false`, the pod runs in a new user namespace. Setting `false` helps mitigate container breakout vulnerabilities and allows containers to run as `root` without granting `root` privileges on the host. This property is alpha-level in Kubernetes and is supported only by Kubernetes clusters that enable the `UserNamespacesSupport` feature."
@@ -5634,6 +5698,11 @@ spec:
                           description: "List of broker IDs involved in an auto-rebalancing operation related to the current mode. \nThe list contains one of the following: \n\n* Broker IDs for a current auto-rebalance. \n* Broker IDs for a queued auto-rebalance (if a previous auto-rebalance is still in progress). \n"
                     description: "List of modes where an auto-rebalancing operation is either running or queued. \nEach mode entry (`add-brokers` or `remove-brokers`) includes one of the following: \n\n* Broker IDs for a current auto-rebalance. \n* Broker IDs for a queued auto-rebalance (if a previous rebalance is still in progress)."
                 description: The status of an auto-rebalancing triggered by a cluster scaling request.
+              clusterSecurity:
+                type: object
+                properties: {}
+                x-kubernetes-preserve-unknown-fields: true
+                description: The current security configuration of the Kafka cluster.
             description: The status of the Kafka cluster.
         required:
         - spec

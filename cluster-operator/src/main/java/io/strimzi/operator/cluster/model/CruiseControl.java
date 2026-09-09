@@ -39,6 +39,10 @@ import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlTemplate;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.certs.StrimziSubject;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
+import io.strimzi.operator.cluster.model.clustersecurity.kafka.KafkaClusterSecurityContext;
+import io.strimzi.operator.cluster.model.clustersecurity.kafka.MtlsAuthenticationConfiguration;
+import io.strimzi.operator.cluster.model.clustersecurity.kafka.ServiceAccountAuthenticationConfiguration;
+import io.strimzi.operator.cluster.model.clustersecurity.kafka.TlsEncryptionConfiguration;
 import io.strimzi.operator.cluster.model.cruisecontrol.CapacityConfiguration;
 import io.strimzi.operator.cluster.model.cruisecontrol.CruiseControlConfiguration;
 import io.strimzi.operator.cluster.model.cruisecontrol.HashLoginServiceApiCredentials;
@@ -137,6 +141,7 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
 
     protected static final String ENV_VAR_TLS_ENABLED = "STRIMZI_CC_TLS_ENABLED";
     protected static final String ENV_VAR_MTLS_ENABLED = "STRIMZI_CC_MTLS_ENABLED";
+    protected static final String ENV_VAR_SA_AUTH_ENABLED = "STRIMZI_CC_SA_AUTH_ENABLED";
     protected static final String ENV_VAR_API_AUTH_ENABLED = "STRIMZI_CC_API_AUTH_ENABLED";
     protected static final String ENV_VAR_API_HEALTHCHECK_USERNAME = "API_HEALTHCHECK_USERNAME";
     protected static final String ENV_VAR_API_PORT = "API_PORT";
@@ -335,12 +340,16 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
         List<Volume> volumes = new ArrayList<>();
         volumes.add(VolumeUtils.createTempDirVolume(templatePod));
 
-        if (securityContext.isStrimziTlsEncryption()) {
+        if (securityContext.encryption() instanceof TlsEncryptionConfiguration) {
             // The CA certificate is used for encryption of Kafka client.
             // The CC certificate is needed for encryption of the HTTP server.
             // So we need both volumes regardless whether mTLS is enabled or not.
             volumes.add(VolumeUtils.createSecretVolume(TLS_CC_CERTS_VOLUME_NAME, CruiseControlResources.secretName(cluster), isOpenShift));
             volumes.add(VolumeUtils.createSecretVolume(TLS_CA_CERTS_VOLUME_NAME, AbstractModel.clusterCaCertSecretName(cluster), isOpenShift));
+        }
+
+        if (securityContext.authentication() instanceof ServiceAccountAuthenticationConfiguration saAuthentication)   {
+            volumes.add(VolumeUtils.createStrimziAuthenticationTokenProjection(saAuthentication.audience(), saAuthentication.expirationSeconds()));
         }
 
         volumes.add(VolumeUtils.createSecretVolume(API_AUTH_CONFIG_VOLUME_NAME, CruiseControlResources.apiSecretName(cluster), isOpenShift));
@@ -355,12 +364,16 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
         List<VolumeMount> volumeMounts = new ArrayList<>();
         volumeMounts.add(VolumeUtils.createTempDirVolumeMount());
 
-        if (securityContext.isStrimziTlsEncryption()) {
+        if (securityContext.encryption() instanceof TlsEncryptionConfiguration) {
             // The CA certificate is used for encryption of Kafka client.
             // The CC certificate is needed for encryption of the HTTP server.
             // So we need both volume mounts regardless whether mTLS is enabled or not.
             volumeMounts.add(VolumeUtils.createVolumeMount(CruiseControl.TLS_CC_CERTS_VOLUME_NAME, CruiseControl.TLS_CC_CERTS_VOLUME_MOUNT));
             volumeMounts.add(VolumeUtils.createVolumeMount(CruiseControl.TLS_CA_CERTS_VOLUME_NAME, CruiseControl.TLS_CA_CERTS_VOLUME_MOUNT));
+        }
+
+        if (securityContext.authentication() instanceof ServiceAccountAuthenticationConfiguration)   {
+            volumeMounts.add(VolumeUtils.createStrimziAuthenticationTokenVolumeMount());
         }
 
         volumeMounts.add(VolumeUtils.createVolumeMount(CruiseControl.API_AUTH_CONFIG_VOLUME_NAME, CruiseControl.API_AUTH_CONFIG_VOLUME_MOUNT));
@@ -432,8 +445,9 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_STRIMZI_KAFKA_BOOTSTRAP_SERVERS, KafkaResources.bootstrapServiceName(cluster) + ":" + KafkaCluster.REPLICATION_PORT));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED, String.valueOf(gcLoggingEnabled)));
 
-        varList.add(ContainerUtils.createEnvVar(ENV_VAR_TLS_ENABLED, String.valueOf(securityContext.isStrimziTlsEncryption())));
-        varList.add(ContainerUtils.createEnvVar(ENV_VAR_MTLS_ENABLED, String.valueOf(securityContext.isStrimziMtlsAuthentication())));
+        varList.add(ContainerUtils.createEnvVar(ENV_VAR_TLS_ENABLED, String.valueOf(securityContext.encryption() instanceof TlsEncryptionConfiguration)));
+        varList.add(ContainerUtils.createEnvVar(ENV_VAR_MTLS_ENABLED, String.valueOf(securityContext.authentication() instanceof MtlsAuthenticationConfiguration)));
+        varList.add(ContainerUtils.createEnvVar(ENV_VAR_SA_AUTH_ENABLED, String.valueOf(securityContext.authentication() instanceof ServiceAccountAuthenticationConfiguration)));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_API_AUTH_ENABLED, String.valueOf(configuration.isApiAuthEnabled())));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_API_HEALTHCHECK_USERNAME, CruiseControlApiProperties.HEALTHCHECK_USERNAME));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_API_PORT, String.valueOf(REST_API_PORT)));

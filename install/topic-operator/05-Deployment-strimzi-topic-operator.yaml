@@ -15,17 +15,38 @@ spec:
         name: strimzi-topic-operator
     spec:
       serviceAccountName: strimzi-topic-operator
+      automountServiceAccountToken: false
       volumes:
+        - name: kube-api-access
+          projected:
+            defaultMode: 420
+            sources:
+              - serviceAccountToken:
+                  path: token
+              - configMap:
+                  name: kube-root-ca.crt
+                  items:
+                    - key: ca.crt
+                      path: ca.crt
+              - downwardAPI:
+                  items:
+                    - path: namespace
+                      fieldRef:
+                        apiVersion: v1
+                        fieldPath: metadata.namespace
         - name: strimzi-tmp
           emptyDir:
             medium: Memory
             sizeLimit: 5Mi
       containers:
         - name: strimzi-topic-operator
-          image: quay.io/strimzi/operator:1.1.0
+          image: quay.io/strimzi/operator:1.2.0
           args:
             - /opt/strimzi/bin/topic_operator_run.sh
           volumeMounts:
+            - name: kube-api-access
+              mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+              readOnly: true
             - name: strimzi-tmp
               mountPath: /tmp
           env:
@@ -55,6 +76,15 @@ spec:
               port: 8080
             initialDelaySeconds: 10
             periodSeconds: 30
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
           resources:
             limits:
               memory: 256Mi

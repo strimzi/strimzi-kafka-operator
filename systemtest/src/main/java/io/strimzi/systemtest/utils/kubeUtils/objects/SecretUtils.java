@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest.utils.kubeUtils.objects;
 
+import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.skodjob.kubetest4j.enums.LogLevel;
@@ -14,6 +15,7 @@ import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.TestConstants;
+import io.strimzi.systemtest.labels.LabelSelectors;
 import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.systemtest.security.SystemTestCertGenerator;
 import io.strimzi.test.TestUtils;
@@ -35,6 +37,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
 public class SecretUtils {
 
@@ -219,6 +222,47 @@ public class SecretUtils {
         } catch (CertificateException e) {
             e.printStackTrace();
         }
+        return certificates;
+    }
+
+    /**
+     * Returns the certificate chain of every Kafka node, keyed by Pod name. Each node keeps its certificate
+     * chain in a Secret named after the Pod, under the {@code <podName>.crt} key.
+     *
+     * @param namespaceName     name of the Namespace where the Kafka cluster is deployed
+     * @param clusterName       name of the Kafka cluster
+     *
+     * @return  Map of Pod name to the certificate chain of that node
+     */
+    public static Map<String, List<X509Certificate>> getKafkaNodeCertificateChains(String namespaceName, String clusterName) {
+        Map<String, List<X509Certificate>> chains = new TreeMap<>();
+
+        for (Pod pod : KubeResourceManager.get().kubeClient().listPods(namespaceName, LabelSelectors.allKafkaPodsLabelSelector(clusterName))) {
+            String podName = pod.getMetadata().getName();
+            Secret nodeSecret = KubeResourceManager.get().kubeClient().getClient().secrets().inNamespace(namespaceName).withName(podName).get();
+
+            chains.put(podName, getCertificatesFromSecret(nodeSecret, podName + ".crt"));
+        }
+
+        LOGGER.info("Found certificates of Kafka nodes: {}", chains.keySet());
+
+        return chains;
+    }
+
+    /**
+     * Returns the certificate of every Kafka node, keyed by Pod name. When the CA is a chain, the first
+     * certificate of the chain is the certificate of the node itself.
+     *
+     * @param namespaceName     name of the Namespace where the Kafka cluster is deployed
+     * @param clusterName       name of the Kafka cluster
+     *
+     * @return  Map of Pod name to the certificate of that node
+     */
+    public static Map<String, X509Certificate> getKafkaNodeCertificates(String namespaceName, String clusterName) {
+        Map<String, X509Certificate> certificates = new TreeMap<>();
+
+        getKafkaNodeCertificateChains(namespaceName, clusterName).forEach((podName, chain) -> certificates.put(podName, chain.getFirst()));
+
         return certificates;
     }
 

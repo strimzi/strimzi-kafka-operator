@@ -1,0 +1,13 @@
+{
+  "event_name": "workflow_dispatch",
+  "action": "workflow_dispatch",
+  "inputs": {
+    "pipelines": "smoke",
+    "profiles": "",
+    "default_ip_family": "dual"
+  },
+  "repository": {
+    "name": "ci-playground",
+    "owner": { "login": "frawless" }
+  }
+}

@@ -1,0 +1,28 @@
+[
+  {
+    "agent": "cncf-ubuntu-2-8-x86",
+    "arch": "amd64",
+    "pipeline": "smoke",
+    "profile": "smoke",
+    "timeout": 60,
+    "strimzi_feature_gates": "",
+    "strimzi_rbac_scope": "CLUSTER",
+    "cluster_operator_install_type": "yaml",
+    "parallel": 1,
+    "ipFamily": "dual",
+    "jobName": "smoke-amd64"
+  },
+  {
+    "agent": "cncf-ubuntu-2-8-arm",
+    "arch": "arm64",
+    "pipeline": "smoke",
+    "profile": "smoke",
+    "timeout": 60,
+    "strimzi_feature_gates": "",
+    "strimzi_rbac_scope": "CLUSTER",
+    "cluster_operator_install_type": "yaml",
+    "parallel": 1,
+    "ipFamily": "dual",
+    "jobName": "smoke-arm64"
+  }
+]

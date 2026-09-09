@@ -1,0 +1,67 @@
+:_mod-docs-content-type: CONCEPT
+
+// Module included in the following assemblies:
+//
+// assembly-config.adoc
+
+[id='con-config-kafka-connect-rest-extensions-{context}']
+= Using custom REST extensions with Kafka Connect and MirrorMaker 2
+
+[role="_abstract"]
+Add custom REST extensions to the Kafka Connect REST API by setting the `rest.extension.classes` property in the `KafkaConnect` or `KafkaMirrorMaker2` custom resource.
+REST extensions can add custom filtering, validation, or security mechanisms to the REST API.
+
+Each class listed in `rest.extension.classes` must implement the `ConnectRestExtension` interface and must be available on the Kafka Connect or MirrorMaker 2 classpath.
+Kafka Connect loads and runs the extensions in the order in which they are listed.
+
+Strimzi manages Kafka Connect and MirrorMaker 2 through the REST API, so custom REST extensions must not restrict the following:
+
+* Access to the `/health` endpoint, so that the liveness and readiness probes continue to work.
+* Inter-node communication between Kafka Connect or MirrorMaker 2 nodes, so that the nodes can communicate with each other.
+* Operations performed by the Cluster Operator on the Kafka Connect REST API when the `strimzi.io/use-connector-resources` annotation is enabled, so that connectors can be managed using `KafkaConnector` resources.
+
+Configuring REST extensions is an advanced option.
+Make sure that your extensions meet these requirements and test them outside of production before you deploy them to a production environment.
+
+== Configuring REST extensions in Kafka Connect
+
+For Kafka Connect, add the `rest.extension.classes` property to `spec.config`.
+
+.Example REST extension configuration for Kafka Connect
+[source,yaml,subs="attributes+"]
+----
+apiVersion: {KafkaConnectApiVersion}
+kind: KafkaConnect
+metadata:
+  name: my-connect
+spec:
+  # ...
+  config:
+    rest.extension.classes: my.domain.package.MyCustomRestExtension,my.domain.package.AnotherRestExtension
+    # ...
+----
+
+* `rest.extension.classes` specifies a comma-separated list of fully qualified names of classes that implement Kafka's `ConnectRestExtension` interface.
+
+== Configuring REST extensions in MirrorMaker 2
+
+For MirrorMaker 2, add the `rest.extension.classes` property to `spec.target.config`.
+
+.Example REST extension configuration for MirrorMaker 2
+[source,yaml,subs="attributes+"]
+----
+apiVersion: {KafkaMirrorMaker2ApiVersion}
+kind: KafkaMirrorMaker2
+metadata:
+  name: my-mirror-maker-2
+spec:
+  target:
+    # ...
+    config:
+      rest.extension.classes: my.domain.package.MyCustomRestExtension,my.domain.package.AnotherRestExtension
+      # ...
+  mirrors:
+    # ...
+----
+
+* `rest.extension.classes` specifies a comma-separated list of fully qualified names of classes that implement Kafka's `ConnectRestExtension` interface.

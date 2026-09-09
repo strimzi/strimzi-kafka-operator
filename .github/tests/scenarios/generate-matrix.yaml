@@ -41,6 +41,13 @@ scenarios:
     expectations:
       expected_json_file: ".github/tests/expected/generate-matrix/matrix_empty_expected.json"
 
+  - id: ip-family-override
+    description: "Global default_ip_family override applies to named pipeline matrix entries"
+    event: workflow_dispatch
+    fixture: .github/tests/events/generate-matrix/matrix_ip_family_override.json
+    expectations:
+      expected_json_file: ".github/tests/expected/generate-matrix/matrix_ip_family_override_expected.json"
+
   - id: nonexistent-pipeline
     description: "Handle nonexistent pipeline gracefully"
     event: workflow_dispatch

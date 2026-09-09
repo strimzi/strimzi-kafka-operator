@@ -1,6 +1,6 @@
 [
   {
-    "agent": "oracle-4cpu-16gb-x86-64",
+    "agent": "cncf-4cpu-16gb-x86-64",
     "arch": "amd64",
     "pipeline": "custom",
     "profile": "all",
@@ -14,7 +14,7 @@
     "jobName": "custom-all-amd64"
   },
   {
-    "agent": "oracle-4cpu-16gb-arm64",
+    "agent": "cncf-4cpu-16gb-arm64",
     "arch": "arm64",
     "pipeline": "custom",
     "profile": "all",

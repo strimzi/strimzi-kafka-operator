@@ -96,6 +96,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
@@ -253,7 +254,8 @@ public class KafkaReconciler {
      */
     public Future<Void> reconcile(KafkaStatus kafkaStatus, Clock clock)    {
         return modelWarnings(kafkaStatus)
-                .compose(i -> initClientAuthenticationCertificates())
+                .compose(i -> clusterOperatorServiceAccount())
+                .compose(i -> initClusterOperatorIdentity())
                 .compose(i -> manualPodCleaning())
                 .compose(i -> networkPolicy())
                 .compose(i -> updateKafkaAutoRebalanceStatus(kafkaStatus))
@@ -319,13 +321,13 @@ public class KafkaReconciler {
     }
 
     /**
-     * Initialize the TrustSet and PemAuthIdentity to be used by TLS clients during reconciliation
+     * Initialize the Cluster Operator identity used to connect to Kafka cluster during reconciliation
      *
-     * @return Completes when the TrustSet and PemAuthIdentity have been created and stored in a record
+     * @return  Completes when the Cluster Operator identity have been created and stored in a record
      */
-    protected Future<Void> initClientAuthenticationCertificates() {
+    protected Future<Void> initClusterOperatorIdentity() {
         return ReconcilerUtils.coIdentity(reconciliation, secretOperator, kafka.securityContext())
-                .onSuccess(coTlsPemIdentity -> this.coIdentity = coTlsPemIdentity)
+                .onSuccess(coIdentity -> this.coIdentity = coIdentity)
                 .mapEmpty();
     }
 
@@ -335,13 +337,13 @@ public class KafkaReconciler {
      * @return  Completes when the manual pod cleaning is done
      */
     protected Future<Void> manualPodCleaning() {
-        return new ManualPodCleaner(
+        return VertxUtil.toFuture(new ManualPodCleaner(
                 reconciliation,
                 kafka.getSelectorLabels(),
                 strimziPodSetOperator,
                 podOperator,
                 pvcOperator
-        ).maybeManualPodCleaning();
+        ).maybeManualPodCleaning());
     }
 
     /**
@@ -500,9 +502,9 @@ public class KafkaReconciler {
     protected Future<Void> pvcs(KafkaStatus kafkaStatus) {
         List<PersistentVolumeClaim> pvcs = kafka.generatePersistentVolumeClaims();
 
-        return new PvcReconciler(reconciliation, pvcOperator, storageClassOperator)
+        return VertxUtil.toFuture(new PvcReconciler(reconciliation, pvcOperator, storageClassOperator)
                 .resizeAndReconcilePvcs(kafkaStatus, pvcs)
-                .compose(podIdsToRestart -> {
+                .thenCompose(podIdsToRestart -> {
                     for (Integer podId : podIdsToRestart) {
                         try {
                             fsResizingRestartRequest.add(kafka.nodePoolForNodeId(podId).nodeRef(podId).podName());
@@ -514,8 +516,8 @@ public class KafkaReconciler {
                         }
                     }
 
-                    return Future.succeededFuture();
-                });
+                    return CompletableFuture.completedFuture(null);
+                }));
     }
 
     /**
@@ -526,6 +528,18 @@ public class KafkaReconciler {
     protected Future<Void> serviceAccount() {
         return VertxUtil.toFuture(serviceAccountOperator
                 .reconcile(reconciliation, reconciliation.namespace(), KafkaResources.kafkaComponentName(reconciliation.name()), kafka.generateServiceAccount()))
+                .mapEmpty();
+    }
+
+    /**
+     * Manages the Cluster Operator service account used by the Cluster Operator to connect to the Kafka cluster when
+     * Service-account-based authentication is used.
+     *
+     * @return  Completes when the service account was successfully created or updated
+     */
+    protected Future<Void> clusterOperatorServiceAccount() {
+        return VertxUtil.toFuture(serviceAccountOperator
+                .reconcile(reconciliation, reconciliation.namespace(), KafkaResources.clusterOperatorServiceAccount(reconciliation.name()), kafka.generateClusterOperatorServiceAccount()))
                 .mapEmpty();
     }
 
@@ -657,12 +671,9 @@ public class KafkaReconciler {
      * @return  Future which completes when listeners are reconciled
      */
     protected Future<Void> listeners()    {
-        return listenerReconciler()
+        return VertxUtil.toFuture(listenerReconciler()
                 .reconcile()
-                .compose(result -> {
-                    listenerReconciliationResults = result;
-                    return Future.succeededFuture();
-                });
+                .thenAccept(result -> listenerReconciliationResults = result));
     }
 
     /**
@@ -750,7 +761,7 @@ public class KafkaReconciler {
      * @return  Future which completes when the Config Map(s) with configuration are created or updated
      */
     protected Future<Void> brokerConfigurationConfigMaps() {
-        return MetricsAndLoggingUtils.metricsAndLogging(reconciliation, configMapOperator, kafka.logging(), kafka.metrics())
+        return VertxUtil.toFuture(MetricsAndLoggingUtils.metricsAndLogging(reconciliation, configMapOperator, kafka.logging(), kafka.metrics()))
                 .compose(metricsAndLoggingCm -> perBrokerKafkaConfiguration(metricsAndLoggingCm));
     }
 
@@ -1114,14 +1125,14 @@ public class KafkaReconciler {
      * @return  Future which completes when the PVCs which should be deleted are deleted
      */
     protected Future<Void> deletePersistentClaims() {
-        return VertxUtil.toFuture(pvcOperator.listAsync(reconciliation.namespace(), kafka.getSelectorLabels()))
-                .compose(pvcs -> {
+        return VertxUtil.toFuture(pvcOperator.listAsync(reconciliation.namespace(), kafka.getSelectorLabels())
+                .thenCompose(pvcs -> {
                     List<String> maybeDeletePvcs = pvcs.stream().map(pvc -> pvc.getMetadata().getName()).collect(Collectors.toList());
                     List<String> desiredPvcs = kafka.generatePersistentVolumeClaims().stream().map(pvc -> pvc.getMetadata().getName()).collect(Collectors.toList());
 
                     return new PvcReconciler(reconciliation, pvcOperator, storageClassOperator)
                             .deletePersistentClaims(maybeDeletePvcs, desiredPvcs);
-                });
+                }));
     }
 
     /**

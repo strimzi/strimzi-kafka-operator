@@ -45,10 +45,8 @@ spec:
             type: string
           spec:
             type: object
-            properties: {}
           status:
             type: object
-            properties: {}
   - name: v1beta1
     served: true
     storage: false
@@ -79,7 +77,5 @@ spec:
             type: string
           spec:
             type: object
-            properties: {}
           status:
             type: object
-            properties: {}

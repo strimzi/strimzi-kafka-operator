@@ -6,6 +6,9 @@ See our [website](https://strimzi.io) for more details about the project.
 
 **!!! IMPORTANT !!!**
 
+**From Strimzi 1.3.0 on, we support only Kubernetes 1.32 and newer.**
+Kubernetes 1.30 and 1.31 are not supported anymore.
+
 **From Strimzi 1.2.0, the Helm Chart uses the default container security context that matches the [Restricted Kubernetes Pod Security Standard](https://kubernetes.io/docs/concepts/security/pod-security-standards/).**
 ```yaml
 securityContext:
@@ -75,7 +78,7 @@ Strimzi is licensed under the [Apache License, Version 2.0](https://github.com/s
 
 ## Prerequisites
 
-- Kubernetes 1.30+
+- Kubernetes 1.32+
 
 ## Installing the Chart
 

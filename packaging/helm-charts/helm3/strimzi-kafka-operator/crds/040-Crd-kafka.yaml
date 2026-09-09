@@ -1181,26 +1181,7 @@ spec:
                                     properties:
                                       defaultMode:
                                         type: integer
-                                      items:
-                                        type: array
-                                        items:
-                                          type: object
-                                          properties:
-                                            key:
-                                              type: string
-                                            mode:
-                                              type: integer
-                                            path:
-                                              type: string
-                                      optional:
-                                        type: boolean
-                                      secretName:
-                                        type: string
-                                    description: '`Secret` to use to populate the volume.'
-                                  configMap:
-                                    type: object
-                                    properties:
-                                      defaultMode:
+                                      defaultUser:
                                         type: integer
                                       items:
                                         type: array
@@ -1213,6 +1194,33 @@ spec:
                                               type: integer
                                             path:
                                               type: string
+                                            user:
+                                              type: integer
+                                      optional:
+                                        type: boolean
+                                      secretName:
+                                        type: string
+                                    description: '`Secret` to use to populate the volume.'
+                                  configMap:
+                                    type: object
+                                    properties:
+                                      defaultMode:
+                                        type: integer
+                                      defaultUser:
+                                        type: integer
+                                      items:
+                                        type: array
+                                        items:
+                                          type: object
+                                          properties:
+                                            key:
+                                              type: string
+                                            mode:
+                                              type: integer
+                                            path:
+                                              type: string
+                                            user:
+                                              type: integer
                                       name:
                                         type: string
                                       optional:
@@ -1266,6 +1274,31 @@ spec:
                                       reference:
                                         type: string
                                     description: '`ImageVolumeSource` object to use to populate the volume.'
+                                  projected:
+                                    type: object
+                                    properties:
+                                      sources:
+                                        type: array
+                                        items:
+                                          type: object
+                                          properties:
+                                            serviceAccountToken:
+                                              type: object
+                                              properties:
+                                                audience:
+                                                  type: string
+                                                expirationSeconds:
+                                                  type: integer
+                                                path:
+                                                  type: string
+                                                user:
+                                                  type: integer
+                                              description: Information about the serviceAccountToken data to project.
+                                          oneOf:
+                                            - properties:
+                                                serviceAccountToken: {}
+                                        description: "List of projections that are part of this projected volumes. Currently, only Service Account projection is supported."
+                                    description: '`ProjectedVolume` object to use volume projection.'
                                 oneOf:
                                   - properties:
                                       secret: {}
@@ -1274,6 +1307,7 @@ spec:
                                       persistentVolumeClaim: {}
                                       csi: {}
                                       image: {}
+                                      projected: {}
                               description: Additional volumes that can be mounted to the pod.
                             templatedVolumes:
                               type: array
@@ -1288,26 +1322,7 @@ spec:
                                     properties:
                                       defaultMode:
                                         type: integer
-                                      items:
-                                        type: array
-                                        items:
-                                          type: object
-                                          properties:
-                                            key:
-                                              type: string
-                                            mode:
-                                              type: integer
-                                            path:
-                                              type: string
-                                      optional:
-                                        type: boolean
-                                      secretName:
-                                        type: string
-                                    description: "`Secret` to use to populate the volume. The name of the Secret and the items key and path fields can use placeholders that would be replaced for every individual node. Valid placeholders that you can use in the template are `{nodeId}` and `{nodePodName}`."
-                                  configMap:
-                                    type: object
-                                    properties:
-                                      defaultMode:
+                                      defaultUser:
                                         type: integer
                                       items:
                                         type: array
@@ -1320,6 +1335,33 @@ spec:
                                               type: integer
                                             path:
                                               type: string
+                                            user:
+                                              type: integer
+                                      optional:
+                                        type: boolean
+                                      secretName:
+                                        type: string
+                                    description: "`Secret` to use to populate the volume. The name of the Secret and the items key and path fields can use placeholders that would be replaced for every individual node. Valid placeholders that you can use in the template are `{nodeId}` and `{nodePodName}`."
+                                  configMap:
+                                    type: object
+                                    properties:
+                                      defaultMode:
+                                        type: integer
+                                      defaultUser:
+                                        type: integer
+                                      items:
+                                        type: array
+                                        items:
+                                          type: object
+                                          properties:
+                                            key:
+                                              type: string
+                                            mode:
+                                              type: integer
+                                            path:
+                                              type: string
+                                            user:
+                                              type: integer
                                       name:
                                         type: string
                                       optional:
@@ -1684,6 +1726,10 @@ spec:
                               items:
                                 type: object
                                 properties:
+                                  bindMountOptions:
+                                    type: array
+                                    items:
+                                      type: string
                                   mountPath:
                                     type: string
                                   mountPropagation:
@@ -1827,6 +1873,10 @@ spec:
                               items:
                                 type: object
                                 properties:
+                                  bindMountOptions:
+                                    type: array
+                                    items:
+                                      type: string
                                   mountPath:
                                     type: string
                                   mountPropagation:
@@ -2920,26 +2970,7 @@ spec:
                                     properties:
                                       defaultMode:
                                         type: integer
-                                      items:
-                                        type: array
-                                        items:
-                                          type: object
-                                          properties:
-                                            key:
-                                              type: string
-                                            mode:
-                                              type: integer
-                                            path:
-                                              type: string
-                                      optional:
-                                        type: boolean
-                                      secretName:
-                                        type: string
-                                    description: '`Secret` to use to populate the volume.'
-                                  configMap:
-                                    type: object
-                                    properties:
-                                      defaultMode:
+                                      defaultUser:
                                         type: integer
                                       items:
                                         type: array
@@ -2952,6 +2983,33 @@ spec:
                                               type: integer
                                             path:
                                               type: string
+                                            user:
+                                              type: integer
+                                      optional:
+                                        type: boolean
+                                      secretName:
+                                        type: string
+                                    description: '`Secret` to use to populate the volume.'
+                                  configMap:
+                                    type: object
+                                    properties:
+                                      defaultMode:
+                                        type: integer
+                                      defaultUser:
+                                        type: integer
+                                      items:
+                                        type: array
+                                        items:
+                                          type: object
+                                          properties:
+                                            key:
+                                              type: string
+                                            mode:
+                                              type: integer
+                                            path:
+                                              type: string
+                                            user:
+                                              type: integer
                                       name:
                                         type: string
                                       optional:
@@ -3005,6 +3063,31 @@ spec:
                                       reference:
                                         type: string
                                     description: '`ImageVolumeSource` object to use to populate the volume.'
+                                  projected:
+                                    type: object
+                                    properties:
+                                      sources:
+                                        type: array
+                                        items:
+                                          type: object
+                                          properties:
+                                            serviceAccountToken:
+                                              type: object
+                                              properties:
+                                                audience:
+                                                  type: string
+                                                expirationSeconds:
+                                                  type: integer
+                                                path:
+                                                  type: string
+                                                user:
+                                                  type: integer
+                                              description: Information about the serviceAccountToken data to project.
+                                          oneOf:
+                                            - properties:
+                                                serviceAccountToken: {}
+                                        description: "List of projections that are part of this projected volumes. Currently, only Service Account projection is supported."
+                                    description: '`ProjectedVolume` object to use volume projection.'
                                 oneOf:
                                   - properties:
                                       secret: {}
@@ -3013,6 +3096,7 @@ spec:
                                       persistentVolumeClaim: {}
                                       csi: {}
                                       image: {}
+                                      projected: {}
                               description: Additional volumes that can be mounted to the pod.
                             hostUsers:
                               type: boolean
@@ -3145,6 +3229,10 @@ spec:
                               items:
                                 type: object
                                 properties:
+                                  bindMountOptions:
+                                    type: array
+                                    items:
+                                      type: string
                                   mountPath:
                                     type: string
                                   mountPropagation:
@@ -3288,6 +3376,10 @@ spec:
                               items:
                                 type: object
                                 properties:
+                                  bindMountOptions:
+                                    type: array
+                                    items:
+                                      type: string
                                   mountPath:
                                     type: string
                                   mountPropagation:
@@ -4171,26 +4263,7 @@ spec:
                                     properties:
                                       defaultMode:
                                         type: integer
-                                      items:
-                                        type: array
-                                        items:
-                                          type: object
-                                          properties:
-                                            key:
-                                              type: string
-                                            mode:
-                                              type: integer
-                                            path:
-                                              type: string
-                                      optional:
-                                        type: boolean
-                                      secretName:
-                                        type: string
-                                    description: '`Secret` to use to populate the volume.'
-                                  configMap:
-                                    type: object
-                                    properties:
-                                      defaultMode:
+                                      defaultUser:
                                         type: integer
                                       items:
                                         type: array
@@ -4203,6 +4276,33 @@ spec:
                                               type: integer
                                             path:
                                               type: string
+                                            user:
+                                              type: integer
+                                      optional:
+                                        type: boolean
+                                      secretName:
+                                        type: string
+                                    description: '`Secret` to use to populate the volume.'
+                                  configMap:
+                                    type: object
+                                    properties:
+                                      defaultMode:
+                                        type: integer
+                                      defaultUser:
+                                        type: integer
+                                      items:
+                                        type: array
+                                        items:
+                                          type: object
+                                          properties:
+                                            key:
+                                              type: string
+                                            mode:
+                                              type: integer
+                                            path:
+                                              type: string
+                                            user:
+                                              type: integer
                                       name:
                                         type: string
                                       optional:
@@ -4256,6 +4356,31 @@ spec:
                                       reference:
                                         type: string
                                     description: '`ImageVolumeSource` object to use to populate the volume.'
+                                  projected:
+                                    type: object
+                                    properties:
+                                      sources:
+                                        type: array
+                                        items:
+                                          type: object
+                                          properties:
+                                            serviceAccountToken:
+                                              type: object
+                                              properties:
+                                                audience:
+                                                  type: string
+                                                expirationSeconds:
+                                                  type: integer
+                                                path:
+                                                  type: string
+                                                user:
+                                                  type: integer
+                                              description: Information about the serviceAccountToken data to project.
+                                          oneOf:
+                                            - properties:
+                                                serviceAccountToken: {}
+                                        description: "List of projections that are part of this projected volumes. Currently, only Service Account projection is supported."
+                                    description: '`ProjectedVolume` object to use volume projection.'
                                 oneOf:
                                   - properties:
                                       secret: {}
@@ -4264,6 +4389,7 @@ spec:
                                       persistentVolumeClaim: {}
                                       csi: {}
                                       image: {}
+                                      projected: {}
                               description: Additional volumes that can be mounted to the pod.
                             hostUsers:
                               type: boolean
@@ -4451,6 +4577,10 @@ spec:
                               items:
                                 type: object
                                 properties:
+                                  bindMountOptions:
+                                    type: array
+                                    items:
+                                      type: string
                                   mountPath:
                                     type: string
                                   mountPropagation:
@@ -5300,26 +5430,7 @@ spec:
                                     properties:
                                       defaultMode:
                                         type: integer
-                                      items:
-                                        type: array
-                                        items:
-                                          type: object
-                                          properties:
-                                            key:
-                                              type: string
-                                            mode:
-                                              type: integer
-                                            path:
-                                              type: string
-                                      optional:
-                                        type: boolean
-                                      secretName:
-                                        type: string
-                                    description: '`Secret` to use to populate the volume.'
-                                  configMap:
-                                    type: object
-                                    properties:
-                                      defaultMode:
+                                      defaultUser:
                                         type: integer
                                       items:
                                         type: array
@@ -5332,6 +5443,33 @@ spec:
                                               type: integer
                                             path:
                                               type: string
+                                            user:
+                                              type: integer
+                                      optional:
+                                        type: boolean
+                                      secretName:
+                                        type: string
+                                    description: '`Secret` to use to populate the volume.'
+                                  configMap:
+                                    type: object
+                                    properties:
+                                      defaultMode:
+                                        type: integer
+                                      defaultUser:
+                                        type: integer
+                                      items:
+                                        type: array
+                                        items:
+                                          type: object
+                                          properties:
+                                            key:
+                                              type: string
+                                            mode:
+                                              type: integer
+                                            path:
+                                              type: string
+                                            user:
+                                              type: integer
                                       name:
                                         type: string
                                       optional:
@@ -5385,6 +5523,31 @@ spec:
                                       reference:
                                         type: string
                                     description: '`ImageVolumeSource` object to use to populate the volume.'
+                                  projected:
+                                    type: object
+                                    properties:
+                                      sources:
+                                        type: array
+                                        items:
+                                          type: object
+                                          properties:
+                                            serviceAccountToken:
+                                              type: object
+                                              properties:
+                                                audience:
+                                                  type: string
+                                                expirationSeconds:
+                                                  type: integer
+                                                path:
+                                                  type: string
+                                                user:
+                                                  type: integer
+                                              description: Information about the serviceAccountToken data to project.
+                                          oneOf:
+                                            - properties:
+                                                serviceAccountToken: {}
+                                        description: "List of projections that are part of this projected volumes. Currently, only Service Account projection is supported."
+                                    description: '`ProjectedVolume` object to use volume projection.'
                                 oneOf:
                                   - properties:
                                       secret: {}
@@ -5393,6 +5556,7 @@ spec:
                                       persistentVolumeClaim: {}
                                       csi: {}
                                       image: {}
+                                      projected: {}
                               description: Additional volumes that can be mounted to the pod.
                             hostUsers:
                               type: boolean
@@ -5525,6 +5689,10 @@ spec:
                               items:
                                 type: object
                                 properties:
+                                  bindMountOptions:
+                                    type: array
+                                    items:
+                                      type: string
                                   mountPath:
                                     type: string
                                   mountPropagation:
@@ -5701,7 +5869,6 @@ spec:
                   description: The status of an auto-rebalancing triggered by a cluster scaling request.
                 clusterSecurity:
                   type: object
-                  properties: {}
                   x-kubernetes-preserve-unknown-fields: true
                   description: The current security configuration of the Kafka cluster.
               description: The status of the Kafka cluster.

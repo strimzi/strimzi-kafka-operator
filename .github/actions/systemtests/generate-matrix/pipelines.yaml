@@ -27,6 +27,7 @@ pipelines:
     strimzi_rbac_scope: "CLUSTER"
     cluster_operator_install_type: "yaml"
     parallel: 4
+    ipFamily: "ipv4"
   - agent: "cncf-ubuntu-8-32-x86"
     arch: "amd64"
     pipeline: "regression"
@@ -36,6 +37,7 @@ pipelines:
     strimzi_rbac_scope: "CLUSTER"
     cluster_operator_install_type: "yaml"
     parallel: 4
+    ipFamily: "ipv4"
   - agent: "cncf-ubuntu-8-32-x86"
     arch: "amd64"
     pipeline: "regression"
@@ -45,6 +47,7 @@ pipelines:
     strimzi_rbac_scope: "CLUSTER"
     cluster_operator_install_type: "yaml"
     parallel: 4
+    ipFamily: "ipv4"
   # arm64
   - agent: "cncf-ubuntu-8-32-arm"
     arch: "arm64"
@@ -55,6 +58,7 @@ pipelines:
     strimzi_rbac_scope: "CLUSTER"
     cluster_operator_install_type: "yaml"
     parallel: 4
+    ipFamily: "ipv4"
   - agent: "cncf-ubuntu-8-32-arm"
     arch: "arm64"
     pipeline: "regression"
@@ -64,6 +68,7 @@ pipelines:
     strimzi_rbac_scope: "CLUSTER"
     cluster_operator_install_type: "yaml"
     parallel: 4
+    ipFamily: "ipv4"
   - agent: "cncf-ubuntu-8-32-arm"
     arch: "arm64"
     pipeline: "regression"
@@ -73,6 +78,7 @@ pipelines:
     strimzi_rbac_scope: "CLUSTER"
     cluster_operator_install_type: "yaml"
     parallel: 4
+    ipFamily: "ipv4"
   #############
   ### Smoke ###
   #############
@@ -87,6 +93,7 @@ pipelines:
     strimzi_rbac_scope: "CLUSTER"
     cluster_operator_install_type: "yaml"
     parallel: 1
+    ipFamily: "ipv4"
   # arm64
   - agent: "cncf-ubuntu-2-8-arm"
     arch: "arm64"
@@ -97,6 +104,7 @@ pipelines:
     strimzi_rbac_scope: "CLUSTER"
     cluster_operator_install_type: "yaml"
     parallel: 1
+    ipFamily: "ipv4"
   ###############
   ### Upgrade ###
   ###############
@@ -110,6 +118,7 @@ pipelines:
     strimzi_rbac_scope: "CLUSTER"
     cluster_operator_install_type: "yaml"
     parallel: 1
+    ipFamily: "ipv4"
   - agent: "cncf-ubuntu-4-16-x86"
     arch: "amd64"
     pipeline: "upgrade"
@@ -119,6 +128,7 @@ pipelines:
     strimzi_rbac_scope: "CLUSTER"
     cluster_operator_install_type: "yaml"
     parallel: 1
+    ipFamily: "ipv4"
   # arm64
   - agent: "cncf-ubuntu-4-16-arm"
     arch: "arm64"
@@ -129,6 +139,7 @@ pipelines:
     strimzi_rbac_scope: "CLUSTER"
     cluster_operator_install_type: "yaml"
     parallel: 1
+    ipFamily: "ipv4"
   - agent: "cncf-ubuntu-4-16-arm"
     arch: "arm64"
     pipeline: "upgrade"
@@ -138,6 +149,7 @@ pipelines:
     strimzi_rbac_scope: "CLUSTER"
     cluster_operator_install_type: "yaml"
     parallel: 1
+    ipFamily: "ipv4"
   ##################
   ### Acceptance ###
   ##################
@@ -152,6 +164,7 @@ pipelines:
     strimzi_rbac_scope: "CLUSTER"
     cluster_operator_install_type: "yaml"
     parallel: 2
+    ipFamily: "ipv4"
   # arm64
   - agent: "cncf-ubuntu-4-16-arm"
     arch: "arm64"
@@ -162,6 +175,7 @@ pipelines:
     strimzi_rbac_scope: "CLUSTER"
     cluster_operator_install_type: "yaml"
     parallel: 2
+    ipFamily: "ipv4"
   #######################
   ### Acceptance Helm ###
   #######################
@@ -175,6 +189,7 @@ pipelines:
     strimzi_rbac_scope: "CLUSTER"
     cluster_operator_install_type: "helm"
     parallel: 2
+    ipFamily: "ipv4"
   # arm64
   - agent: "cncf-ubuntu-4-16-arm"
     arch: "arm64"
@@ -185,6 +200,7 @@ pipelines:
     strimzi_rbac_scope: "CLUSTER"
     cluster_operator_install_type: "helm"
     parallel: 2
+    ipFamily: "ipv4"
   #######################
   ### Regression RBAC ###
   #######################
@@ -202,6 +218,7 @@ pipelines:
     cluster_operator_install_type: "yaml"
     excluded_groups: 'nodeport'
     parallel: 1
+    ipFamily: "ipv4"
   - agent: "cncf-ubuntu-4-16-x86"
     arch: "amd64"
     pipeline: "regression-rbac"
@@ -212,6 +229,7 @@ pipelines:
     cluster_operator_install_type: "yaml"
     excluded_groups: 'nodeport'
     parallel: 1
+    ipFamily: "ipv4"
   - agent: "cncf-ubuntu-4-16-x86"
     arch: "amd64"
     pipeline: "regression-rbac"
@@ -222,6 +240,7 @@ pipelines:
     cluster_operator_install_type: "yaml"
     excluded_groups: 'nodeport'
     parallel: 1
+    ipFamily: "ipv4"
   - agent: "cncf-ubuntu-4-16-x86"
     arch: "amd64"
     pipeline: "regression-rbac"
@@ -232,6 +251,7 @@ pipelines:
     cluster_operator_install_type: "yaml"
     excluded_groups: 'nodeport'
     parallel: 1
+    ipFamily: "ipv4"
   - agent: "cncf-ubuntu-4-16-x86"
     arch: "amd64"
     pipeline: "regression-rbac"
@@ -242,6 +262,7 @@ pipelines:
     cluster_operator_install_type: "yaml"
     excluded_groups: 'nodeport'
     parallel: 1
+    ipFamily: "ipv4"
   - agent: "cncf-ubuntu-4-16-x86"
     arch: "amd64"
     pipeline: "regression-rbac"
@@ -252,6 +273,7 @@ pipelines:
     cluster_operator_install_type: "yaml"
     excluded_groups: 'nodeport'
     parallel: 1
+    ipFamily: "ipv4"
   - agent: "cncf-ubuntu-4-16-x86"
     arch: "amd64"
     pipeline: "regression-rbac"
@@ -262,6 +284,7 @@ pipelines:
     cluster_operator_install_type: "yaml"
     excluded_groups: 'nodeport'
     parallel: 1
+    ipFamily: "ipv4"
   # arm64
   - agent: "cncf-ubuntu-4-16-arm"
     arch: "arm64"
@@ -273,6 +296,7 @@ pipelines:
     cluster_operator_install_type: "yaml"
     excluded_groups: 'nodeport'
     parallel: 1
+    ipFamily: "ipv4"
   - agent: "cncf-ubuntu-4-16-arm"
     arch: "arm64"
     pipeline: "regression-rbac"
@@ -283,6 +307,7 @@ pipelines:
     cluster_operator_install_type: "yaml"
     excluded_groups: 'nodeport'
     parallel: 1
+    ipFamily: "ipv4"
   - agent: "cncf-ubuntu-4-16-arm"
     arch: "arm64"
     pipeline: "regression-rbac"
@@ -293,6 +318,7 @@ pipelines:
     cluster_operator_install_type: "yaml"
     excluded_groups: 'nodeport'
     parallel: 1
+    ipFamily: "ipv4"
   - agent: "cncf-ubuntu-4-16-arm"
     arch: "arm64"
     pipeline: "regression-rbac"
@@ -303,6 +329,7 @@ pipelines:
     cluster_operator_install_type: "yaml"
     excluded_groups: 'nodeport'
     parallel: 1
+    ipFamily: "ipv4"
   - agent: "cncf-ubuntu-4-16-arm"
     arch: "arm64"
     pipeline: "regression-rbac"
@@ -313,6 +340,7 @@ pipelines:
     cluster_operator_install_type: "yaml"
     excluded_groups: 'nodeport'
     parallel: 1
+    ipFamily: "ipv4"
   - agent: "cncf-ubuntu-4-16-arm"
     arch: "arm64"
     pipeline: "regression-rbac"
@@ -323,6 +351,7 @@ pipelines:
     cluster_operator_install_type: "yaml"
     excluded_groups: 'nodeport'
     parallel: 1
+    ipFamily: "ipv4"
   - agent: "cncf-ubuntu-4-16-arm"
     arch: "arm64"
     pipeline: "regression-rbac"
@@ -333,6 +362,7 @@ pipelines:
     cluster_operator_install_type: "yaml"
     excluded_groups: 'nodeport'
     parallel: 1
+    ipFamily: "ipv4"
   ################################
   ### Regression Feature Gates ###
   ################################
@@ -346,6 +376,7 @@ pipelines:
     strimzi_rbac_scope: "CLUSTER"
     cluster_operator_install_type: "yaml"
     parallel: 3
+    ipFamily: "ipv4"
   - agent: "cncf-ubuntu-8-32-x86"
     arch: "amd64"
     pipeline: "regression-fg"
@@ -355,6 +386,7 @@ pipelines:
     strimzi_rbac_scope: "CLUSTER"
     cluster_operator_install_type: "yaml"
     parallel: 4
+    ipFamily: "ipv4"
   - agent: "cncf-ubuntu-8-32-x86"
     arch: "amd64"
     pipeline: "regression-fg"
@@ -364,6 +396,7 @@ pipelines:
     strimzi_rbac_scope: "CLUSTER"
     cluster_operator_install_type: "yaml"
     parallel: 3
+    ipFamily: "ipv4"
   # arm64
   - agent: "cncf-ubuntu-8-32-arm"
     arch: "arm64"
@@ -374,6 +407,7 @@ pipelines:
     strimzi_rbac_scope: "CLUSTER"
     cluster_operator_install_type: "yaml"
     parallel: 4
+    ipFamily: "ipv4"
   - agent: "cncf-ubuntu-8-32-arm"
     arch: "arm64"
     pipeline: "regression-fg"
@@ -383,6 +417,7 @@ pipelines:
     strimzi_rbac_scope: "CLUSTER"
     cluster_operator_install_type: "yaml"
     parallel: 4
+    ipFamily: "ipv4"
   - agent: "cncf-ubuntu-8-32-arm"
     arch: "arm64"
     pipeline: "regression-fg"
@@ -392,6 +427,7 @@ pipelines:
     strimzi_rbac_scope: "CLUSTER"
     cluster_operator_install_type: "yaml"
     parallel: 4
+    ipFamily: "ipv4"
   ###################
   ### Performance ###
   ###################
@@ -405,6 +441,7 @@ pipelines:
     strimzi_rbac_scope: "CLUSTER"
     cluster_operator_install_type: "yaml"
     parallel: 1
+    ipFamily: "ipv4"
   # arm64
   - agent: "cncf-ubuntu-8-32-arm"
     arch: "arm64"
@@ -415,6 +452,7 @@ pipelines:
     strimzi_rbac_scope: "CLUSTER"
     cluster_operator_install_type: "yaml"
     parallel: 1
+    ipFamily: "ipv4"
   ##############
   ### Bridge ###
   ##############
@@ -429,6 +467,7 @@ pipelines:
     strimzi_rbac_scope: "CLUSTER"
     cluster_operator_install_type: "yaml"
     parallel: 2
+    ipFamily: "ipv4"
   # arm64
   - agent: "cncf-ubuntu-4-16-arm"
     arch: "arm64"
@@ -439,3 +478,4 @@ pipelines:
     strimzi_rbac_scope: "CLUSTER"
     cluster_operator_install_type: "yaml"
     parallel: 2
+    ipFamily: "ipv4"

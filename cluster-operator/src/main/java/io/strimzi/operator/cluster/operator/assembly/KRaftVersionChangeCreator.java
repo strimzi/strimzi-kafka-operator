@@ -11,16 +11,16 @@ import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.model.KafkaUpgradeException;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.KafkaVersionChange;
-import io.strimzi.operator.cluster.operator.VertxUtil;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.PodOperator;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.model.Labels;
-import io.vertx.core.Future;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 
 import static io.strimzi.operator.cluster.model.KafkaCluster.ANNO_STRIMZI_IO_KAFKA_VERSION;
 import static io.strimzi.operator.cluster.model.KafkaVersion.compareMetadataVersions;
@@ -78,33 +78,33 @@ public class KRaftVersionChangeCreator {
      * Collects the information from the Kubernetes resources and creates the KafkaVersionChange instance describing the
      * version change in this reconciliation
      *
-     * @return  Future which completes with the KafkaVersionChange instance
+     * @return  CompletionStage which completes with the KafkaVersionChange instance
      */
-    public Future<KafkaVersionChange> reconcile()    {
+    public CompletionStage<KafkaVersionChange> reconcile()    {
         return getPods()
-                .compose(this::detectToAndFromVersions)
-                .compose(i -> prepareVersionChange());
+                .thenCompose(this::detectToAndFromVersions)
+                .thenCompose(i -> prepareVersionChange());
     }
 
     /**
      * Collects any existing Kafka pods so that we can later get the version information from them.
      *
-     * @return  Future which completes when the Kafka broker pods are retrieved
+     * @return  CompletionStage which completes when the Kafka broker pods are retrieved
      */
-    private Future<List<Pod>> getPods()   {
+    private CompletionStage<List<Pod>> getPods()   {
         Labels selectorLabels = Labels.forStrimziKind(Kafka.RESOURCE_KIND)
                 .withStrimziCluster(reconciliation.name())
                 .withStrimziName(KafkaResources.kafkaComponentName(reconciliation.name()));
 
-        return VertxUtil.toFuture(podOperator.listAsync(reconciliation.namespace(), selectorLabels));
+        return podOperator.listAsync(reconciliation.namespace(), selectorLabels);
     }
 
     /**
      * Detects the current and desired Kafka versions based on the information collected from Kubernetes
      *
-     * @return  Future which completes when the "to" and "from" versions are collected
+     * @return  CompletionStage which completes when the "to" and "from" versions are collected
      */
-    private Future<Void> detectToAndFromVersions(List<Pod> pods)    {
+    private CompletionStage<Void> detectToAndFromVersions(List<Pod> pods)    {
         String lowestKafkaVersion = null;
         String highestKafkaVersion = null;
 
@@ -166,16 +166,16 @@ public class KRaftVersionChangeCreator {
             versionTo = versionFromCr;
         }
 
-        return Future.succeededFuture();
+        return CompletableFuture.completedFuture(null);
     }
 
     /**
      * Plans the version change and creates a KafkaVersionChange object which contains the main versions as well as the
      * metadata version.
      *
-     * @return  Future with the KafkaVersionChange instance describing the Kafka version changes
+     * @return  CompletionStage with the KafkaVersionChange instance describing the Kafka version changes
      */
-    private Future<KafkaVersionChange>  prepareVersionChange()  {
+    private CompletionStage<KafkaVersionChange>  prepareVersionChange()  {
         String metadataVersion;
 
         if (versionFrom.compareTo(versionTo) == 0) { // => no version change
@@ -192,7 +192,7 @@ public class KRaftVersionChangeCreator {
             }
         }
 
-        return Future.succeededFuture(new KafkaVersionChange(versionFrom, versionTo, null, null, metadataVersion));
+        return CompletableFuture.completedFuture(new KafkaVersionChange(versionFrom, versionTo, null, null, metadataVersion));
     }
 
     /**

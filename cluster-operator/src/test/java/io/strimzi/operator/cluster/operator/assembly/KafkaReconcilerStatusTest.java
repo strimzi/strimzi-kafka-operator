@@ -29,8 +29,8 @@ import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.model.KafkaCluster;
-import io.strimzi.operator.cluster.model.KafkaClusterSecurityContext;
 import io.strimzi.operator.cluster.model.KafkaVersion;
+import io.strimzi.operator.cluster.model.clustersecurity.kafka.KafkaClusterSecurityContext;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.NodeOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.PodOperator;
@@ -945,7 +945,7 @@ public class KafkaReconcilerStatusTest {
         @Override
         public Future<Void> reconcile(KafkaStatus kafkaStatus, Clock clock)    {
             return modelWarnings(kafkaStatus)
-                    .compose(i -> initClientAuthenticationCertificates())
+                    .compose(i -> initClusterOperatorIdentity())
                     .compose(i -> listeners())
                     .compose(i -> clusterId(kafkaStatus))
                     .compose(i -> nodePortExternalListenerStatus())
@@ -966,7 +966,7 @@ public class KafkaReconcilerStatusTest {
         }
 
         @Override
-        protected Future<Void> initClientAuthenticationCertificates() {
+        protected Future<Void> initClusterOperatorIdentity() {
             coIdentity = new Identity(null, null);
             return Future.succeededFuture();
         }

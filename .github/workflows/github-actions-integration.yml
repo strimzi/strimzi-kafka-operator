@@ -15,6 +15,14 @@ on:
   push:
     branches:
       - "main"
+    paths:
+      - '.github/**'
+      - 'pom.xml'
+      - 'Makefile'
+      - 'Makefile.docker'
+      - 'Makefile.maven'
+      - 'Makefile.os'
+      - 'docker-images/**'
 
 permissions:
   contents: read

@@ -571,7 +571,12 @@ class CrdGenerator {
 
         result.put("type", "object");
 
-        result.set("properties", buildSchemaProperties(crApiVersion, crdClass, description));
+        ObjectNode properties = buildSchemaProperties(crApiVersion, crdClass, description);
+        if (!properties.isEmpty())   {
+            // We set the proeprties only if not empty because otherwise it causes problems with diffing in Argo
+            result.set("properties", properties);
+        }
+
         ArrayNode oneOf = buildSchemaOneOf(crdClass);
         if (oneOf != null) {
             result.set("oneOf", oneOf);
