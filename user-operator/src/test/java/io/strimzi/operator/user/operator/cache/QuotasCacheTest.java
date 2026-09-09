@@ -62,9 +62,15 @@ public class QuotasCacheTest {
         Map<String, Double> myUser2Quotas = Map.of("producer_byte_rate", 1024000.0, "consumer_byte_rate", 2048000.0);
         Map<String, Double> myUser2QuotasUpdated = Map.of("producer_byte_rate", 4096000.0, "consumer_byte_rate", 4096000.0);
 
+        ClientQuotaEntity compositeUserEntity = new ClientQuotaEntity(Map.of(
+                ClientQuotaEntity.USER, "composite-user",
+                ClientQuotaEntity.CLIENT_ID, "client-a"));
+        Map<String, Double> compositeUserQuotas = Map.of("producer_byte_rate", 8192.0);
+
         when(mockFuture.get(anyLong(), any())).thenAnswer(i -> {
             if (initialData.get()) {
-                return Map.of(defaultUserEntity, defaultUserQuotas, myUserEntity, myUserQuotas, myUser2Entity, myUser2Quotas);
+                return Map.of(defaultUserEntity, defaultUserQuotas, myUserEntity, myUserQuotas, myUser2Entity, myUser2Quotas,
+                        compositeUserEntity, compositeUserQuotas);
             } else {
                 return Map.of(defaultUserEntity, defaultUserQuotas, myUser2Entity, myUser2QuotasUpdated);
             }
@@ -95,6 +101,7 @@ public class QuotasCacheTest {
 
             assertThat(cache.get("my-user"), is(QuotaUtils.fromClientQuota(myUserQuotas)));
             assertThat(cache.get("my-user2"), is(QuotaUtils.fromClientQuota(myUser2Quotas)));
+            assertThat(cache.get("composite-user"), is(nullValue()));
 
             // Check update data after another call
             initialData.set(false);
