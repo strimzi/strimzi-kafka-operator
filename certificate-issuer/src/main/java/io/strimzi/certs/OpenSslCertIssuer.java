@@ -194,11 +194,11 @@ public class OpenSslCertIssuer implements CertIssuer {
     }
 
     @Override
-    public void generateSelfSignedCert(File keyFile, File certFile, StrimziSubject sbj, int days) throws IOException {
+    public void generateSelfSignedCert(File keyFile, File certFile, StrimziSubject sbj, int days, int keySize) throws IOException {
         Instant now = clock.instant();
         ZonedDateTime notBefore = now.atZone(Clock.systemUTC().getZone());
         ZonedDateTime notAfter = now.plus(days, ChronoUnit.DAYS).atZone(Clock.systemUTC().getZone());
-        generateRootCaCert(sbj, keyFile, certFile, notBefore, notAfter, 0);
+        generateRootCaCert(sbj, keyFile, certFile, notBefore, notAfter, 0, keySize);
     }
 
     /**
@@ -218,8 +218,8 @@ public class OpenSslCertIssuer implements CertIssuer {
      */
     @Override
     public void generateRootCaCert(StrimziSubject subject, File subjectKeyFile, File subjectCertFile,
-                                   ZonedDateTime notBefore, ZonedDateTime notAfter, int pathLength) throws IOException {
-        generateCaCert(null, null, subject, subjectKeyFile, subjectCertFile, notBefore, notAfter, pathLength);
+                                   ZonedDateTime notBefore, ZonedDateTime notAfter, int pathLength, int keySize) throws IOException {
+        generateCaCert(null, null, subject, subjectKeyFile, subjectCertFile, notBefore, notAfter, pathLength, keySize);
     }
 
     /**
@@ -243,10 +243,10 @@ public class OpenSslCertIssuer implements CertIssuer {
     public void generateIntermediateCaCert(File issuerCaKeyFile, File issuerCaCertFile,
                                            StrimziSubject subject,
                                            File subjectKeyFile, File subjectCertFile,
-                                           ZonedDateTime notBefore, ZonedDateTime notAfter, int pathLength) throws IOException {
+                                           ZonedDateTime notBefore, ZonedDateTime notAfter, int pathLength, int keySize) throws IOException {
         Objects.requireNonNull(issuerCaKeyFile);
         Objects.requireNonNull(issuerCaCertFile);
-        generateCaCert(issuerCaKeyFile, issuerCaCertFile, subject, subjectKeyFile, subjectCertFile, notBefore, notAfter, pathLength);
+        generateCaCert(issuerCaKeyFile, issuerCaCertFile, subject, subjectKeyFile, subjectCertFile, notBefore, notAfter, pathLength, keySize);
     }
 
     /**
@@ -269,7 +269,7 @@ public class OpenSslCertIssuer implements CertIssuer {
     private void generateCaCert(File issuerCaKeyFile, File issuerCaCertFile,
                                 StrimziSubject subject,
                                 File subjectKeyFile, File subjectCertFile,
-                                ZonedDateTime notBefore, ZonedDateTime notAfter, int pathLength) throws IOException {
+                                ZonedDateTime notBefore, ZonedDateTime notAfter, int pathLength, int keySize) throws IOException {
         if (issuerCaKeyFile == null ^ issuerCaCertFile == null) {
             throw new IllegalArgumentException();
         }
@@ -298,7 +298,7 @@ public class OpenSslCertIssuer implements CertIssuer {
                 // Generate a new key pair directly in PKCS#8 format (bracketed by BEGIN/END PRIVATE KEY)
                 new OpensslArgs("openssl", "genpkey")
                         .optArg("-algorithm", "RSA")
-                        .optArg("-pkeyopt", "rsa_keygen_bits:4096")
+                        .optArg("-pkeyopt", "rsa_keygen_bits:" + keySize)
                         .optArg("-out", subjectKeyFile)
                         .exec();
             }
@@ -441,21 +441,22 @@ public class OpenSslCertIssuer implements CertIssuer {
     }
 
     @Override
-    public void renewSelfSignedCert(File keyFile, File certFile, StrimziSubject subject, int days) throws IOException {
+    public void renewSelfSignedCert(File keyFile, File certFile, StrimziSubject subject, int days, int keySize) throws IOException {
         Instant now = clock.instant();
         ZonedDateTime notBefore = now.atZone(Clock.systemUTC().getZone());
         ZonedDateTime notAfter = now.plus(days, ChronoUnit.DAYS).atZone(Clock.systemUTC().getZone());
-        generateCaCert(null, null, subject, keyFile, certFile, notBefore, notAfter, 0);
+        generateCaCert(null, null, subject, keyFile, certFile, notBefore, notAfter, 0, keySize);
     }
 
     @Override
-    public void generateCsr(File keyFile, File csrFile, StrimziSubject subject) throws IOException {
+    public void generateCsr(File keyFile, File csrFile, StrimziSubject subject, int keySize) throws IOException {
         Objects.requireNonNull(keyFile);
         Objects.requireNonNull(csrFile);
         Objects.requireNonNull(subject);
 
         OpensslArgs cmd = new OpensslArgs("openssl", "req")
                 .opt("-new").opt("-batch").opt("-nodes")
+                .optArg("-newkey", "rsa:" + keySize)
                 .optArg("-keyout", keyFile)
                 .optArg("-out", csrFile);
 

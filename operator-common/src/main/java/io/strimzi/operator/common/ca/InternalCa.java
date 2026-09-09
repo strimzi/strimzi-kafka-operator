@@ -328,7 +328,7 @@ public class InternalCa extends Ca {
 
         try {
             byte[] caCertBytes = currentCaCertBytes();
-            certIssuer.generateCsr(keyFile, csrFile, subject);
+            certIssuer.generateCsr(keyFile, csrFile, subject, caConfig.getKeySize());
             certIssuer.generateCert(csrFile, currentCaKey(), caCertBytes,
                     certFile, subject, caConfig.getValidityDays());
 
@@ -679,7 +679,7 @@ public class InternalCa extends Ca {
             File certFile = Files.createTempFile("tls", subject.commonName() + "-cert").toFile();
 
             try {
-                certIssuer.generateSelfSignedCert(keyFile, certFile, subject, caConfig.getValidityDays());
+                certIssuer.generateSelfSignedCert(keyFile, certFile, subject, caConfig.getValidityDays(), caConfig.getKeySize());
                 CertAndKey ca;
 
                 if (caConfig.isGeneratePkcs12Stores()) {
@@ -736,7 +736,7 @@ public class InternalCa extends Ca {
             File certFile = Files.createTempFile("tls", subject.commonName() + "-cert").toFile();
 
             try {
-                certIssuer.renewSelfSignedCert(keyFile, certFile, subject, caConfig.getValidityDays());
+                certIssuer.renewSelfSignedCert(keyFile, certFile, subject, caConfig.getValidityDays(), caConfig.getKeySize());
                 CertAndKey ca;
 
                 if (caConfig.isGeneratePkcs12Stores()) {

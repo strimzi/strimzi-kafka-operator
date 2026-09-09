@@ -61,7 +61,7 @@ public class CaConfigTest {
 
     @Test
     void testConstructorPassingSomeVariables() {
-        CaConfig caConfig = new CaConfig(6, 4, false, true);
+        CaConfig caConfig = new CaConfig(6, 4, 4096, false, true);
 
         assertThat(caConfig.getValidityDays(), is(6));
         assertThat(caConfig.getRenewalDays(), is(4));

@@ -76,7 +76,7 @@ public class OpenSslCertIssuerIT {
         store.deleteOnExit();
         StrimziSubject sbj = new StrimziSubject.Builder().withCommonName("MyCommonName").withOrganizationName("MyOrganization").build();
 
-        ((Cmd) () -> ssl.generateSelfSignedCert(key, cert, sbj, 365)).exec();
+        ((Cmd) () -> ssl.generateSelfSignedCert(key, cert, sbj, 365, 4096)).exec();
         ssl.addCertToTrustStore(cert, "ca", store, "123456");
 
         X509Certificate x509Certificate = loadCertificate(cert);
@@ -107,7 +107,7 @@ public class OpenSslCertIssuerIT {
         Instant now = Instant.now();
         ZonedDateTime notBefore = now.plus(1, ChronoUnit.HOURS).truncatedTo(ChronoUnit.SECONDS).atZone(Clock.systemUTC().getZone());
         ZonedDateTime notAfter = now.plus(2, ChronoUnit.HOURS).truncatedTo(ChronoUnit.SECONDS).atZone(Clock.systemUTC().getZone());
-        ssl.generateRootCaCert(sbj, key, cert, notBefore, notAfter, 0);
+        ssl.generateRootCaCert(sbj, key, cert, notBefore, notAfter, 0, 4096);
         ssl.addCertToTrustStore(cert, "ca", store, "123456");
 
         // cert verification
@@ -190,7 +190,7 @@ public class OpenSslCertIssuerIT {
         ZonedDateTime notBefore = now.plus(1, ChronoUnit.HOURS).truncatedTo(ChronoUnit.SECONDS).atZone(Clock.systemUTC().getZone());
         ZonedDateTime notAfter = now.plus(2, ChronoUnit.HOURS).truncatedTo(ChronoUnit.SECONDS).atZone(Clock.systemUTC().getZone());
         int rootPathLen = 1;
-        ssl.generateRootCaCert(rootSubject, rootKey, rootCert, notBefore, notAfter, rootPathLen);
+        ssl.generateRootCaCert(rootSubject, rootKey, rootCert, notBefore, notAfter, rootPathLen, 4096);
 
         X509Certificate rootX509 = loadCertificate(rootCert);
         assertTrue(selfVerifies(rootX509),
@@ -205,7 +205,7 @@ public class OpenSslCertIssuerIT {
         // Generate an intermediate cert
         StrimziSubject intermediateSubject = new StrimziSubject.Builder().withCommonName("IntermediateCn").withOrganizationName("MyOrganization").build();
         int intermediatePathLen = 1;
-        ssl.generateIntermediateCaCert(rootKey, rootCert, intermediateSubject, intermediateKey, intermediateCert, notBefore, notAfter, intermediatePathLen);
+        ssl.generateIntermediateCaCert(rootKey, rootCert, intermediateSubject, intermediateKey, intermediateCert, notBefore, notAfter, intermediatePathLen, 4096);
 
         X509Certificate intermediateX509 = loadCertificate(intermediateCert);
         assertEquals(intermediateX509.getIssuerX500Principal(), rootX509.getSubjectX500Principal(), "Unexpected intermediate's issued to be root");
@@ -273,7 +273,7 @@ public class OpenSslCertIssuerIT {
         File cert = Files.createTempFile("crt-", ".crt").toFile();
         cert.deleteOnExit();
 
-        ssl.generateSelfSignedCert(caKey, caCert, caSbj, 365);
+        ssl.generateSelfSignedCert(caKey, caCert, caSbj, 365, 4096);
         doGenerateSignedCert(caKey, caCert, caSbj, key, csr, cert, store, "123456", sbj);
 
         caKey.delete();
@@ -311,7 +311,7 @@ public class OpenSslCertIssuerIT {
 
         File cert = Files.createTempFile("crt-", ".crt").toFile();
 
-        ssl.generateSelfSignedCert(caKey, caCert, caSbj, 365);
+        ssl.generateSelfSignedCert(caKey, caCert, caSbj, 365, 4096);
         doGenerateSignedCert(caKey, caCert, caSbj, key, csr, cert, store, "123456", subject);
 
         caKey.delete();
@@ -324,7 +324,7 @@ public class OpenSslCertIssuerIT {
 
     private void doGenerateSignedCert(File caKey, File caCert, StrimziSubject caSbj, File key, File csr, File cert,
                                       File keyStore, String keyStorePassword, StrimziSubject sbj) throws Exception {
-        ssl.generateCsr(key, csr, sbj);
+        ssl.generateCsr(key, csr, sbj, 4096);
 
         ssl.generateCert(csr, caKey, caCert, cert, sbj, 365);
 
@@ -386,7 +386,7 @@ public class OpenSslCertIssuerIT {
         File originalStore = Files.createTempFile("crt-", ".p12").toFile();
         originalStore.deleteOnExit();
 
-        ((Cmd) () -> ssl.generateSelfSignedCert(caKey, originalCert, caSubject, 365)).exec();
+        ((Cmd) () -> ssl.generateSelfSignedCert(caKey, originalCert, caSubject, 365, 4096)).exec();
         ssl.addCertToTrustStore(originalCert, "ca", originalStore, "123456");
 
         X509Certificate originalX509Certificate = loadCertificate(originalCert);
@@ -411,7 +411,7 @@ public class OpenSslCertIssuerIT {
         File csr = Files.createTempFile("client-", ".csr").toFile();
         File clientCert = Files.createTempFile("client-", ".crt").toFile();
         StrimziSubject clientSubject = new StrimziSubject.Builder().withCommonName("MyCommonName").withOrganizationName("MyOrganization").build();
-        ssl.generateCsr(clientKey, csr, clientSubject);
+        ssl.generateCsr(clientKey, csr, clientSubject, 4096);
 
         ssl.generateCert(csr, caKey, originalCert, clientCert, clientSubject, 365);
         csr.delete();
@@ -421,7 +421,7 @@ public class OpenSslCertIssuerIT {
         // Generate a renewed CA certificate
         File newCert = Files.createTempFile("crt-", ".crt").toFile();
         File newStore = Files.createTempFile("crt-", ".p12").toFile();
-        ssl.renewSelfSignedCert(caKey, newCert, caSubject, 365);
+        ssl.renewSelfSignedCert(caKey, newCert, caSubject, 365, 4096);
         ssl.addCertToTrustStore(newCert, "ca", newStore, "123456");
 
         X509Certificate newX509Certificate = loadCertificate(newCert);
@@ -456,7 +456,7 @@ public class OpenSslCertIssuerIT {
         File caStore = Files.createTempFile("ca-", ".p12").toFile();
         caStore.deleteOnExit();
 
-        ssl.generateSelfSignedCert(caKey, caCert, caSubject, 365);
+        ssl.generateSelfSignedCert(caKey, caCert, caSubject, 365, 4096);
         ssl.addCertToTrustStore(caCert, "ca", caStore, "123456");
 
         // generate a server cert with the SANs
@@ -475,7 +475,7 @@ public class OpenSslCertIssuerIT {
                 .addIpAddress("1974:0:0:0:0:B03:1:AF74")
                 .build();
 
-        ssl.generateCsr(serverKey, serverCsr, serverSubject);
+        ssl.generateCsr(serverKey, serverCsr, serverSubject, 4096);
         ssl.generateCert(serverCsr, caKey, caCert, serverCert, serverSubject, 365);
 
         // Test the SANS

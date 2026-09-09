@@ -40,7 +40,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 public class CustomCaProviderTest {
     private static final String NAMESPACE = "test";
     private static final String NAME = "my-cluster";
-    private static final CaConfig CA_CONFIG = new CaConfig(100, 10, false, false);
+    private static final CaConfig CA_CONFIG = new CaConfig(100, 10, 4096, false, false);
     private final static OpenSslCertIssuer CERT_ISSUER = new OpenSslCertIssuer();
     private static final Kafka KAFKA = new KafkaBuilder()
             .withNewMetadata()
@@ -88,15 +88,15 @@ public class CustomCaProviderTest {
         Instant now = Instant.now();
         ZonedDateTime notBefore = now.truncatedTo(ChronoUnit.SECONDS).atZone(Clock.systemUTC().getZone());
         ZonedDateTime notAfter = now.plus(2, ChronoUnit.HOURS).truncatedTo(ChronoUnit.SECONDS).atZone(Clock.systemUTC().getZone());
-        CERT_ISSUER.generateRootCaCert(sbj, rootKey, rootCert, notBefore, notAfter, 1);
+        CERT_ISSUER.generateRootCaCert(sbj, rootKey, rootCert, notBefore, notAfter, 1, 4096);
 
         // Generate an intermediate cert
         StrimziSubject intermediateSubject1 = new StrimziSubject.Builder().withCommonName("IntermediateCn1").withOrganizationName("MyOrganization").build();
-        CERT_ISSUER.generateIntermediateCaCert(rootKey, rootCert, intermediateSubject1, intermediateKey1, intermediateCert1, notBefore, notAfter, 1);
+        CERT_ISSUER.generateIntermediateCaCert(rootKey, rootCert, intermediateSubject1, intermediateKey1, intermediateCert1, notBefore, notAfter, 1, 4096);
 
         // Generate an additional intermediate cert
         StrimziSubject intermediateSubject2 = new StrimziSubject.Builder().withCommonName("IntermediateCn2").withOrganizationName("MyOrganization").build();
-        CERT_ISSUER.generateIntermediateCaCert(intermediateKey1, intermediateCert1, intermediateSubject2, intermediateKey2, intermediateCert2, notBefore, notAfter, 1);
+        CERT_ISSUER.generateIntermediateCaCert(intermediateKey1, intermediateCert1, intermediateSubject2, intermediateKey2, intermediateCert2, notBefore, notAfter, 1, 4096);
 
         String caKey = Base64.getEncoder().encodeToString(Files.readAllBytes(rootKey.toPath()));
 
@@ -162,15 +162,15 @@ public class CustomCaProviderTest {
         Instant now = Instant.now();
         ZonedDateTime notBefore = now.truncatedTo(ChronoUnit.SECONDS).atZone(Clock.systemUTC().getZone());
         ZonedDateTime notAfter = now.plus(2, ChronoUnit.HOURS).truncatedTo(ChronoUnit.SECONDS).atZone(Clock.systemUTC().getZone());
-        CERT_ISSUER.generateRootCaCert(sbj, rootKey, rootCert, notBefore, notAfter, 1);
+        CERT_ISSUER.generateRootCaCert(sbj, rootKey, rootCert, notBefore, notAfter, 1, 4096);
 
         // Generate an intermediate cert
         StrimziSubject intermediateSubject1 = new StrimziSubject.Builder().withCommonName("IntermediateCn1").withOrganizationName("MyOrganization").build();
-        CERT_ISSUER.generateIntermediateCaCert(rootKey, rootCert, intermediateSubject1, intermediateKey1, intermediateCert1, notBefore, notAfter, 1);
+        CERT_ISSUER.generateIntermediateCaCert(rootKey, rootCert, intermediateSubject1, intermediateKey1, intermediateCert1, notBefore, notAfter, 1, 4096);
 
         // Generate an additional intermediate cert
         StrimziSubject intermediateSubject2 = new StrimziSubject.Builder().withCommonName("IntermediateCn2").withOrganizationName("MyOrganization").build();
-        CERT_ISSUER.generateIntermediateCaCert(intermediateKey1, intermediateCert1, intermediateSubject2, intermediateKey2, intermediateCert2, notBefore, notAfter, 1);
+        CERT_ISSUER.generateIntermediateCaCert(intermediateKey1, intermediateCert1, intermediateSubject2, intermediateKey2, intermediateCert2, notBefore, notAfter, 1, 4096);
 
         String caKey = Base64.getEncoder().encodeToString(Files.readAllBytes(rootKey.toPath()));
 

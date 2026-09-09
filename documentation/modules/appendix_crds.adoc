@@ -1516,6 +1516,9 @@ Configuration of how TLS certificates are used within the cluster. This applies 
 |renewalDays
 |integer
 |The number of days in the certificate renewal period. This is the number of days before the a certificate expires during which renewal actions may be performed. When `generateCertificateAuthority` is true, this will cause the generation of a new certificate. When `generateCertificateAuthority` is true, this will cause extra logging at WARN level about the pending certificate expiry. Default is 30.
+|keySize
+|integer
+|The RSA key size in bits for CA and end-entity certificate keys. Must be at least 512. The default is 4096.
 |certificateExpirationPolicy
 |string (one of [replace-key, renew-certificate])
 |How should CA certificate expiration be handled when `generateCertificateAuthority=true`. The default is for a new CA certificate to be generated reusing the existing private key.
