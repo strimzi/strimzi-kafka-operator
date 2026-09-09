@@ -55,7 +55,7 @@ if [ -d "/etc/kafka-exporter/cluster-ca-certs/" ] ; then
 fi
 
 if [ -f "/var/run/secrets/strimzi.io/token" ] ; then
-    sasl="--sasl.enabled --sasl.mechanism=OAUTHBEARER --sasl.token-file=/var/run/secrets/strimzi.io/token"
+    sasl="--sasl.enabled --sasl.mechanism=OAUTHBEARER --sasl.oauthbearer-token-file=/var/run/secrets/strimzi.io/token"
 fi
 
 # starting Kafka Exporter with final configuration
