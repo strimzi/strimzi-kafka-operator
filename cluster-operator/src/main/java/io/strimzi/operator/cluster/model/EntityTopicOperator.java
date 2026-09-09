@@ -26,6 +26,9 @@ import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.entityoperator.EntityTopicOperatorSpec;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
+import io.strimzi.operator.cluster.model.clustersecurity.kafka.KafkaClusterSecurityContext;
+import io.strimzi.operator.cluster.model.clustersecurity.kafka.MtlsAuthenticationConfiguration;
+import io.strimzi.operator.cluster.model.clustersecurity.kafka.TlsEncryptionConfiguration;
 import io.strimzi.operator.cluster.model.logging.LoggingModel;
 import io.strimzi.operator.cluster.model.logging.SupportsLogging;
 import io.strimzi.operator.cluster.model.securityprofiles.ContainerSecurityProviderContextImpl;
@@ -199,11 +202,11 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
             varList.add(ContainerUtils.createEnvVar(ENV_VAR_FULL_RECONCILIATION_INTERVAL_MS, Long.toString(reconciliationIntervalMs)));
         }
 
-        if (securityContext.isTlsEncryption()) {
+        if (securityContext.encryption() instanceof TlsEncryptionConfiguration) {
             varList.add(ContainerUtils.createEnvVar(ENV_VAR_SECURITY_PROTOCOL, "SSL"));
             varList.add(ContainerUtils.createEnvVar(ENV_VAR_TLS_TRUSTED_CERTS_SECRET_NAME, AbstractModel.clusterCaCertSecretName(cluster)));
 
-            if (securityContext.isMtlsAuthentication()) {
+            if (securityContext.authentication() instanceof MtlsAuthenticationConfiguration) {
                 varList.add(ContainerUtils.createEnvVar(ENV_VAR_TLS_SECRET_NAME, KafkaResources.entityTopicOperatorSecretName(cluster)));
                 varList.add(ContainerUtils.createEnvVar(ENV_VAR_TLS_KEY_NAME, Ca.SecretEntry.KEY.asKey(EntityOperator.COMPONENT_TYPE)));
                 varList.add(ContainerUtils.createEnvVar(ENV_VAR_TLS_CERT_NAME, Ca.SecretEntry.CRT.asKey(EntityOperator.COMPONENT_TYPE)));
@@ -225,7 +228,7 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
             varList.add(ContainerUtils.createEnvVar(ENV_VAR_CRUISE_CONTROL_RACK_ENABLED, Boolean.toString(rackAwarenessEnabled)));
             varList.add(ContainerUtils.createEnvVar(ENV_VAR_CRUISE_CONTROL_HOSTNAME, String.format("%s-cruise-control.%s.svc", cluster, namespace)));
             varList.add(ContainerUtils.createEnvVar(ENV_VAR_CRUISE_CONTROL_PORT, String.valueOf(CRUISE_CONTROL_API_PORT)));
-            varList.add(ContainerUtils.createEnvVar(ENV_VAR_CRUISE_CONTROL_SSL_ENABLED, String.valueOf(securityContext.isTlsEncryption())));
+            varList.add(ContainerUtils.createEnvVar(ENV_VAR_CRUISE_CONTROL_SSL_ENABLED, String.valueOf(securityContext.encryption() instanceof TlsEncryptionConfiguration)));
             varList.add(ContainerUtils.createEnvVar(ENV_VAR_CRUISE_CONTROL_AUTH_ENABLED, "true"));
             // Truststore and API credentials are mounted in the container
         }

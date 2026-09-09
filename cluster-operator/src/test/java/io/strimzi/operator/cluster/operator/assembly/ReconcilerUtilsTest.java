@@ -30,10 +30,13 @@ import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.podset.StrimziPodSet;
 import io.strimzi.api.kafka.model.podset.StrimziPodSetBuilder;
 import io.strimzi.operator.cluster.ResourceUtils;
-import io.strimzi.operator.cluster.model.KafkaClusterSecurityContext;
 import io.strimzi.operator.cluster.model.NodeRef;
 import io.strimzi.operator.cluster.model.PodRevision;
 import io.strimzi.operator.cluster.model.PodSetUtils;
+import io.strimzi.operator.cluster.model.clustersecurity.kafka.KafkaClusterSecurityContext;
+import io.strimzi.operator.cluster.model.clustersecurity.kafka.NoneAuthenticationConfiguration;
+import io.strimzi.operator.cluster.model.clustersecurity.kafka.NoneEncryptionConfiguration;
+import io.strimzi.operator.cluster.model.clustersecurity.kafka.TlsEncryptionConfiguration;
 import io.strimzi.operator.cluster.model.jmx.JmxModel;
 import io.strimzi.operator.cluster.model.jmx.SupportsJmx;
 import io.strimzi.operator.common.Annotations;
@@ -84,6 +87,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(VertxExtension.class)
+@SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling"})
 public class ReconcilerUtilsTest {
     private final static String JMX_SECRET_NAME = "my-jmx-secret";
     private final static String NAMESPACE = "namespace";
@@ -153,8 +157,8 @@ public class ReconcilerUtilsTest {
         when(mockSecretOps.getAsync(NAMESPACE, KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME)))
                 .thenReturn(CompletableFuture.completedFuture(clusterCaSecret));
         KafkaClusterSecurityContext securityContext = mock(KafkaClusterSecurityContext.class);
-        when(securityContext.isTlsEncryption()).thenReturn(true);
-        when(securityContext.isMtlsAuthentication()).thenReturn(false);
+        when(securityContext.encryption()).thenReturn(new TlsEncryptionConfiguration());
+        when(securityContext.authentication()).thenReturn(new NoneAuthenticationConfiguration());
 
         Checkpoint async = context.checkpoint();
         ReconcilerUtils.coIdentity(Reconciliation.DUMMY_RECONCILIATION, mockSecretOps, securityContext)
@@ -171,8 +175,8 @@ public class ReconcilerUtilsTest {
     public void testCoIdentityWithoutTlsOrAuthentication(VertxTestContext context) {
         SecretOperator mockSecretOps = mock(SecretOperator.class);
         KafkaClusterSecurityContext securityContext = mock(KafkaClusterSecurityContext.class);
-        when(securityContext.isTlsEncryption()).thenReturn(false);
-        when(securityContext.isMtlsAuthentication()).thenReturn(false);
+        when(securityContext.encryption()).thenReturn(new NoneEncryptionConfiguration());
+        when(securityContext.authentication()).thenReturn(new NoneAuthenticationConfiguration());
 
         Checkpoint async = context.checkpoint();
         ReconcilerUtils.coIdentity(Reconciliation.DUMMY_RECONCILIATION, mockSecretOps, securityContext)

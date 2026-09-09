@@ -34,9 +34,10 @@ import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.model.ConfigMapUtils;
 import io.strimzi.operator.cluster.model.CruiseControl;
-import io.strimzi.operator.cluster.model.KafkaClusterSecurityContext;
 import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.cluster.model.NoSuchResourceException;
+import io.strimzi.operator.cluster.model.clustersecurity.kafka.KafkaClusterSecurityContext;
+import io.strimzi.operator.cluster.model.clustersecurity.kafka.TlsEncryptionConfiguration;
 import io.strimzi.operator.cluster.model.cruisecontrol.CruiseControlConfiguration;
 import io.strimzi.operator.cluster.operator.VertxUtil;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
@@ -1217,7 +1218,7 @@ public class KafkaRebalanceAssemblyOperator
 
                                 CruiseControlConfiguration ccConfig = new CruiseControlConfiguration(reconciliation, kafka.getSpec().getCruiseControl().getConfig().entrySet(), Map.of());
                                 KafkaClusterSecurityContext securityContext = KafkaClusterSecurityContext.fromCrd(kafka);
-                                CruiseControlApi apiClient = cruiseControlClientProvider(clusterCaCertSecret, ccApiSecret, ccConfig.isApiAuthEnabled(), securityContext.isTlsEncryption());
+                                CruiseControlApi apiClient = cruiseControlClientProvider(clusterCaCertSecret, ccApiSecret, ccConfig.isApiAuthEnabled(), securityContext.encryption() instanceof TlsEncryptionConfiguration);
 
                                 // get latest KafkaRebalance state as it may have changed (see the patching above with "refresh" annotation)
                                 return VertxUtil.toFuture(kafkaRebalanceOperator.getAsync(kafkaRebalance.getMetadata().getNamespace(), kafkaRebalance.getMetadata().getName()))
