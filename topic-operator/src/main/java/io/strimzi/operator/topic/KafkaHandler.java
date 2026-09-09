@@ -18,7 +18,9 @@ import io.strimzi.operator.topic.model.UncheckedInterruptedException;
 import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.AlterConfigOp;
 import org.apache.kafka.clients.admin.Config;
+import org.apache.kafka.clients.admin.ConfigEntry;
 import org.apache.kafka.clients.admin.CreatePartitionsResult;
+import org.apache.kafka.clients.admin.DescribeConfigsOptions;
 import org.apache.kafka.clients.admin.DescribeConfigsResult;
 import org.apache.kafka.clients.admin.DescribeTopicsResult;
 import org.apache.kafka.clients.admin.NewPartitions;
@@ -33,6 +35,7 @@ import org.apache.kafka.common.errors.ApiException;
 import org.apache.kafka.common.errors.TopicExistsException;
 import org.apache.kafka.common.errors.UnknownTopicOrPartitionException;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -64,6 +67,7 @@ public class KafkaHandler {
     private final TopicOperatorConfig config;
     private final TopicOperatorMetricsHolder metricsHolder;
     private final Admin kafkaAdminClient;
+    private Map<String, ConfigEntry.ConfigType> defaultTopicConfigTypes = Map.of();
 
     /**
      * Create a new instance.
@@ -76,6 +80,22 @@ public class KafkaHandler {
         this.config = config;
         this.metricsHolder = metricsHolder;
         this.kafkaAdminClient = kafkaAdminClient;
+    }
+
+    /**
+     * Create a new instance with pre-loaded default topic config types.
+     *
+     * @param config Topic Operator configuration.
+     * @param metricsHolder Metrics holder.
+     * @param kafkaAdminClient Kafka admin client.
+     * @param defaultTopicConfigTypes Map of topic config name to {@link ConfigEntry.ConfigType}.
+     */
+    /* test */ KafkaHandler(TopicOperatorConfig config,
+                              TopicOperatorMetricsHolder metricsHolder,
+                              Admin kafkaAdminClient,
+                              Map<String, ConfigEntry.ConfigType> defaultTopicConfigTypes) {
+        this(config, metricsHolder, kafkaAdminClient);
+        this.defaultTopicConfigTypes = defaultTopicConfigTypes;
     }
 
     /**
@@ -109,6 +129,71 @@ public class KafkaHandler {
         } catch (Throwable e) {
             throw new RuntimeException("Failed to get cluster configuration: " + e.getMessage());
         }
+    }
+
+    /**
+     * Describe default topic configs and load a map from config name (including synonyms) to {@link ConfigEntry.ConfigType}.
+     * Used at Topic Operator start up to validate {@code KafkaTopic.spec.config} value types.
+     *
+     * @throws RuntimeException if describing default topic configs fails.
+     */
+    public void loadDefaultTopicConfigTypes() {
+        ConfigResource defaultTopic = buildTopicConfigResource("");
+        DescribeConfigsOptions options = new DescribeConfigsOptions().includeSynonyms(true);
+        try {
+            LOGGER.debugOp("Admin.describeConfigs({}, includeSynonyms=true) for default topic configs", defaultTopic);
+            Config config = kafkaAdminClient.describeConfigs(Set.of(defaultTopic), options).all().get().get(defaultTopic);
+            Map<String, ConfigEntry.ConfigType> types = new HashMap<>();
+            for (ConfigEntry entry : config.entries()) {
+                ConfigEntry.ConfigType type = entry.type();
+                types.put(entry.name(), type);
+                for (ConfigEntry.ConfigSynonym synonym : entry.synonyms()) {
+                    types.putIfAbsent(synonym.name(), type);
+                }
+            }
+            defaultTopicConfigTypes = Map.copyOf(types);
+            LOGGER.infoOp("Loaded {} default topic config types for validation", defaultTopicConfigTypes.size());
+        } catch (InterruptedException e) {
+            throw new UncheckedInterruptedException(e);
+        } catch (ExecutionException e) {
+            throw new RuntimeException("Failed to describe default topic configs", e.getCause() != null ? e.getCause() : e);
+        }
+    }
+
+    /**
+     * Validate {@code KafkaTopic.spec.config} values against default topic {@link ConfigEntry.ConfigType}s
+     * loaded at Topic Operator start up.
+     *
+     * <p>Unknown config keys (not present in the type map) are ignored.</p>
+     *
+     * @param config {@code KafkaTopic.spec.config}, may be {@code null}.
+     * @return List of error messages; empty if valid.
+     */
+    public List<String> validateTopicConfigTypes(Map<String, Object> config) {
+        if (config == null || config.isEmpty() || defaultTopicConfigTypes.isEmpty()) {
+            return List.of();
+        }
+        List<String> errors = new ArrayList<>();
+        for (Map.Entry<String, Object> entry : config.entrySet()) {
+            String key = entry.getKey();
+            ConfigEntry.ConfigType type = defaultTopicConfigTypes.get(key);
+            if (type == null) {
+                continue;
+            }
+            Object value = entry.getValue();
+            String valueStr;
+            try {
+                valueStr = TopicOperatorUtil.configValueAsString(key, value);
+            } catch (InvalidResourceException e) {
+                errors.add(e.getMessage());
+                continue;
+            }
+            String typeError = validateConfigType(key, valueStr, type);
+            if (typeError != null) {
+                errors.add(typeError);
+            }
+        }
+        return errors;
     }
 
     /**
@@ -428,6 +513,31 @@ public class KafkaHandler {
 
     private static ConfigResource buildTopicConfigResource(String topicName) {
         return new ConfigResource(ConfigResource.Type.TOPIC, topicName);
+    }
+
+    private static String validateConfigType(String key, String value, ConfigEntry.ConfigType type) {
+        if (value == null) {
+            return key + " has a null value which is not valid for type " + type;
+        }
+        return switch (type) {
+            case BOOLEAN -> value.matches("true|false")
+                ? null
+                : key + " has value '" + value + "' which is not a boolean";
+            case INT -> parseConfigNumber(key, value, type, () -> Integer.parseInt(value));
+            case SHORT -> parseConfigNumber(key, value, type, () -> Short.parseShort(value));
+            case LONG -> parseConfigNumber(key, value, type, () -> Long.parseLong(value));
+            case DOUBLE -> parseConfigNumber(key, value, type, () -> Double.parseDouble(value));
+            case LIST, STRING, CLASS, PASSWORD, UNKNOWN -> null;
+        };
+    }
+
+    private static String parseConfigNumber(String key, String value, ConfigEntry.ConfigType type, Runnable parser) {
+        try {
+            parser.run();
+            return null;
+        } catch (NumberFormatException e) {
+            return key + " has value '" + value + "' which is not a valid " + type.name().toLowerCase();
+        }
     }
 
     private static TopicOperatorException handleAdminException(ExecutionException e) {

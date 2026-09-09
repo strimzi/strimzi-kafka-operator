@@ -157,8 +157,20 @@ public class BatchingTopicController {
     private Either<TopicOperatorException, Boolean> validate(ReconcilableTopic reconcilableTopic) {
         var doReconcile = Either.<TopicOperatorException, Boolean>ofRight(true);
         doReconcile = doReconcile.flatMapRight((Boolean x) -> x ? validateUnchangedTopicName(reconcilableTopic) : Either.ofRight(false));
+        doReconcile = doReconcile.flatMapRight((Boolean x) -> x ? validateConfigTypes(reconcilableTopic) : Either.ofRight(false));
         doReconcile = doReconcile.mapRight((Boolean x) -> x && rememberReconcilableTopic(reconcilableTopic));
         return doReconcile;
+    }
+
+    private Either<TopicOperatorException, Boolean> validateConfigTypes(ReconcilableTopic reconcilableTopic) {
+        if (!TopicOperatorUtil.hasConfig(reconcilableTopic.kt())) {
+            return Either.ofRight(true);
+        }
+        List<String> errors = kafkaHandler.validateTopicConfigTypes(reconcilableTopic.kt().getSpec().getConfig());
+        if (!errors.isEmpty()) {
+            return Either.ofLeft(new TopicOperatorException.NotSupported(String.join("; ", errors)));
+        }
+        return Either.ofRight(true);
     }
 
     private void deleteUnmanagedTopic(ReconcilableTopic reconcilableTopic) {

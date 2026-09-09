@@ -40,6 +40,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyCollection;
@@ -89,6 +90,35 @@ public class KafkaHandlerIT implements TestSeparator {
 
             assertThat(autoCreateValue.isPresent(), is(true));
             assertThat(autoCreateValue.get(), is("false"));
+        }
+    }
+
+    @Test
+    public void shouldLoadDefaultTopicConfigTypesAndValidateSpecConfig() {
+        try (var kafkaAdminClientSpy = spy(Admin.create(Map.of(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaCluster.getBootstrapServers())))) {
+            var config = TopicOperatorConfig.buildFromMap(Map.of(
+                    TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), kafkaCluster.getBootstrapServers(),
+                    TopicOperatorConfig.WATCHED_NAMESPACE.key(), NAMESPACE)
+            );
+
+            var kafkaHandler = new KafkaHandler(config,
+                    new TopicOperatorMetricsHolder(KafkaTopic.RESOURCE_KIND, null, new TopicOperatorMetricsProvider(new SimpleMeterRegistry())),
+                    kafkaAdminClientSpy);
+            kafkaHandler.loadDefaultTopicConfigTypes();
+
+            verify(kafkaAdminClientSpy, times(1)).describeConfigs(anySet(), any());
+
+            assertThat(kafkaHandler.validateTopicConfigTypes(Map.of(
+                    TopicConfig.RETENTION_MS_CONFIG, 7200000L,
+                    TopicConfig.SEGMENT_BYTES_CONFIG, 1073741824
+            )), is(empty()));
+
+            var errors = kafkaHandler.validateTopicConfigTypes(Map.of(
+                    TopicConfig.RETENTION_MS_CONFIG, true
+            ));
+            assertThat(errors.size(), is(1));
+            assertThat(errors.get(0).contains(TopicConfig.RETENTION_MS_CONFIG), is(true));
+            assertThat(errors.get(0).contains("long"), is(true));
         }
     }
 

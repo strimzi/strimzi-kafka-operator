@@ -75,6 +75,7 @@ public class TopicOperator implements Liveness, Readiness {
         var metricsHolder = new TopicOperatorMetricsHolder(KafkaTopic.RESOURCE_KIND, Labels.fromMap(selector), metricsProvider);
         var kubeHandler = new KubernetesHandler(config, metricsHolder, kubernetesClient);
         var kafkaHandler = new KafkaHandler(config, metricsHolder, kafkaAdminClient);
+        kafkaHandler.loadDefaultTopicConfigTypes();
         var cruiseControlHandler = new CruiseControlHandler(config, metricsHolder, cruiseControlClient);
 
         this.controller = new BatchingTopicController(config, selector, kubeHandler, kafkaHandler, metricsHolder, cruiseControlHandler);
