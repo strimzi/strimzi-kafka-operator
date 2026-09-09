@@ -414,8 +414,8 @@ public class CruiseControlApiImpl implements CruiseControlApi {
     @Override
     public CompletionStage<CruiseControlUserTasksResponse> getUserTaskStatus(Reconciliation reconciliation, String host, int port, String userTaskId) {
         PathBuilder pathBuilder = new PathBuilder(CruiseControlEndpoints.USER_TASKS)
-                .withParameter(CruiseControlParameters.JSON, "true")
-                .withParameter(CruiseControlParameters.FETCH_COMPLETE, "true");
+                        .withParameter(CruiseControlParameters.JSON, "true")
+                        .withParameter(CruiseControlParameters.FETCH_COMPLETE, "true");
 
         if (userTaskId != null) {
             pathBuilder.withParameter(CruiseControlParameters.USER_TASK_IDS, userTaskId);
@@ -534,7 +534,7 @@ public class CruiseControlApiImpl implements CruiseControlApi {
     @Override
     public CompletionStage<CruiseControlResponse> stopExecution(Reconciliation reconciliation, String host, int port) {
         String path = new PathBuilder(CruiseControlEndpoints.STOP)
-                .withParameter(CruiseControlParameters.JSON, "true").build();
+                        .withParameter(CruiseControlParameters.JSON, "true").build();
 
         HttpRequest.Builder builder = HttpRequest.newBuilder()
                 .uri(URI.create(String.format("%s://%s:%d%s", apiSslEnabled ? "https" : "http", host, port, path)))
