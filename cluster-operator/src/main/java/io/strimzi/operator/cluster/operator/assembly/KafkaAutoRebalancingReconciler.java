@@ -136,7 +136,7 @@ public class KafkaAutoRebalancingReconciler {
         }
 
         // Idle with no scaling — check for imbalance if that mode is configured
-        return maybeCheckForImbalance()
+        return maybeCheckForImbalance(kafkaStatus)
                 .whenComplete((ignored, ignored2) -> kafkaStatus.setAutoRebalance(kafkaAutoRebalanceStatus));
     }
 
@@ -147,7 +147,7 @@ public class KafkaAutoRebalancingReconciler {
      *
      * @return  CompletionStage which completes when the check is done
      */
-    private CompletionStage<Void> maybeCheckForImbalance() {
+    private CompletionStage<Void> maybeCheckForImbalance(KafkaStatus kafkaStatus) {
         boolean imbalanceModeConfigured = kafkaAutoRebalanceConfigurations.stream()
                 .anyMatch(c -> c.getMode().equals(KafkaAutoRebalanceMode.IMBALANCE));
 
@@ -170,7 +170,7 @@ public class KafkaAutoRebalancingReconciler {
                                 return imbalanceDetector.checkForGoalViolations()
                                         .thenCompose(goalViolationInfo -> {
                                             if (goalViolationInfo != null) {
-                                                return handleDetectedViolations(goalViolationInfo);
+                                                return handleDetectedViolations(goalViolationInfo, kafkaStatus);
                                             } else {
                                                 return CompletableFuture.completedFuture(null);
                                             }
@@ -179,14 +179,20 @@ public class KafkaAutoRebalancingReconciler {
                 });
     }
 
-    private CompletionStage<Void> handleDetectedViolations(GoalViolationInfo goalViolationInfo) {
+    private CompletionStage<Void> handleDetectedViolations(GoalViolationInfo goalViolationInfo, KafkaStatus kafkaStatus) {
         if (goalViolationInfo.fixability() == Fixability.UNFIXABLE) {
             LOGGER.warnCr(reconciliation, "Detected only unfixable goal violations at {}, no auto-rebalance possible", goalViolationInfo.detectionDate());
+            kafkaStatus.addCondition(StatusUtils.buildWarningCondition("AutoRebalanceOnImbalanceBlocked",
+                    "Unfixable goal violations detected. Auto-rebalance on imbalance is blocked until resolved."));
             return CompletableFuture.completedFuture(null);
         }
 
         if (goalViolationInfo.fixability() == Fixability.MIXED) {
-            LOGGER.warnCr(reconciliation, "Detected both fixable and unfixable goal violations at {}, proceeding with rebalance for fixable goals", goalViolationInfo.detectionDate());
+            LOGGER.warnCr(reconciliation, "Detected both fixable and unfixable goal violations at {}, auto-rebalance on imbalance is blocked", goalViolationInfo.detectionDate());
+            kafkaStatus.addCondition(StatusUtils.buildWarningCondition("AutoRebalanceOnImbalanceBlocked",
+                    "Both fixable and unfixable goal violations detected. Auto-rebalance on imbalance is blocked until resolved. " +
+                    "To address fixable violations, create a manual KafkaRebalance with skipHardGoalCheck: true."));
+            return CompletableFuture.completedFuture(null);
         }
 
         return imbalanceDetector.shouldTriggerRebalance(goalViolationInfo.detectionDate())

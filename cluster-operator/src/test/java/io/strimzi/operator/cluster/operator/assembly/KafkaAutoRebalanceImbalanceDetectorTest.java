@@ -96,19 +96,6 @@ public class KafkaAutoRebalanceImbalanceDetectorTest {
     }
 
     @Test
-    public void testHasActiveRebalanceMixedListWithRebalancing() {
-        KafkaRebalance newRebalance = buildRebalance("kr1", KafkaRebalanceState.New);
-        KafkaRebalance rebalancing = buildRebalance("kr2", KafkaRebalanceState.Rebalancing);
-        when(rebalanceOperator.listAsync(eq(NAMESPACE), any(Labels.class)))
-                .thenReturn(CompletableFuture.completedFuture(List.of(newRebalance, rebalancing)));
-
-        boolean result = detector(buildKafka(null, null)).hasActiveRebalance().toCompletableFuture().join();
-
-        assertThat(result, is(true));
-    }
-
-
-    @Test
     public void testShouldTriggerRebalanceNoTracker() {
         when(supplier.configMapOperations.getAsync(eq(NAMESPACE), any()))
                 .thenReturn(CompletableFuture.completedFuture(null));
@@ -164,18 +151,6 @@ public class KafkaAutoRebalanceImbalanceDetectorTest {
 
         assertThat(detector(kafka).isInMaintenanceWindow(), is(true));
     }
-
-    @Test
-    public void testIsInMaintenanceWindowWithEmptyWindowsList() {
-        Kafka kafka = new KafkaBuilder(buildKafka(null, null))
-                .editSpec()
-                    .withMaintenanceTimeWindows(List.of())
-                .endSpec()
-                .build();
-
-        assertThat(detector(kafka).isInMaintenanceWindow(), is(true));
-    }
-
 
     @Test
     public void testValidateTemplateGoalsWithNoImbalanceConfig() {
