@@ -85,12 +85,19 @@ RUN mkdir -p /mnt/rootfs && \
         --setopt=tsflags=nodocs \
         --releasever 10 \
         -y \
+        # Required for network diagnostics (e.g. netstat)
         net-tools \
+        # Required to resolve the pod hostname inside scripts
         hostname \
+        # Required for script utilities (e.g. find)
         findutils \
+        # Required to unpack Kafka and other archives
         tar \
+        # Required to decompress .tar.gz archives
         gzip \
+        # Required to unpack zip archives (e.g. Kafka plugins)
         unzip \
+        # Required to download files from the internet (e.g. connectors)
         curl-minimal \
     && microdnf \
         --installroot /mnt/rootfs \
