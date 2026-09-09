@@ -43,6 +43,12 @@ public interface AuthenticationConfiguration {
                 && authentication.getExpirationSeconds() != null) {
             throw new InvalidResourceException("The expirationSeconds option in Cluster Security configuration can be used only with service-account authentication type.");
         }
+
+        if (authentication != null
+                && authentication.getExpirationSeconds() != null
+                && authentication.getExpirationSeconds() < 600) {
+            throw new InvalidResourceException("The expirationSeconds option in Cluster Security configuration must be set to at least 600 seconds.");
+        }
     }
 
     /**

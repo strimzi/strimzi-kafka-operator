@@ -300,6 +300,14 @@ public class KafkaClusterSecurityContextTest {
         assertThat(e.getMessage(), is("The expirationSeconds option in Cluster Security configuration can be used only with service-account authentication type."));
     }
 
+    @Test
+    public void testExpirationSecondsTooSmall()  {
+        Kafka kafka = kafkaWithClusterSecurity("{\"encryption\":{\"type\":\"tls\"},\"authentication\":{\"type\":\"service-account\", \"expirationSeconds\": \"300\"}}", null);
+        InvalidResourceException e = assertThrows(InvalidResourceException.class, () -> KafkaClusterSecurityContext.fromCrd(kafka));
+
+        assertThat(e.getMessage(), is("The expirationSeconds option in Cluster Security configuration must be set to at least 600 seconds."));
+    }
+
     //////////////////////////////////////////////////
     // Tests for the deserializeSpec method
     //////////////////////////////////////////////////
