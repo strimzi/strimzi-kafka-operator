@@ -14,12 +14,12 @@ import java.security.Security;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-class FipsDsaWorkaroundTest {
+class FipsAgentTest {
 
     @Test
     void applyIsIdempotentWhenDsaAvailable() {
         assertDoesNotThrow(() -> KeyFactory.getInstance("DSA"));
-        FipsDsaWorkaround.apply();
+        FipsAgent.applyDsaWorkaround();
         assertDoesNotThrow(() -> KeyFactory.getInstance("DSA"));
     }
 
@@ -40,7 +40,7 @@ class FipsDsaWorkaroundTest {
             }
 
             if (dsaMissing) {
-                FipsDsaWorkaround.apply();
+                FipsAgent.applyDsaWorkaround();
                 assertNotNull(Security.getProvider("StrimziFipsDsaWorkaround"));
                 assertDoesNotThrow(() -> KeyFactory.getInstance("DSA"));
             }
@@ -54,8 +54,8 @@ class FipsDsaWorkaroundTest {
 
     @Test
     void applyMultipleTimesDoesNotDuplicate() {
-        FipsDsaWorkaround.apply();
-        FipsDsaWorkaround.apply();
+        FipsAgent.applyDsaWorkaround();
+        FipsAgent.applyDsaWorkaround();
         assertDoesNotThrow(() -> KeyFactory.getInstance("DSA"));
     }
 }
