@@ -121,7 +121,7 @@ Currently, we have these parameters that can be passed through the comment:
 | kindVersion                   | Version of Kind binary to install for cluster setup (e.g. `0.29.0`). n case you use different from default version of Kind, you should reference full image via `kindVersion` parameter to achieve supported configuration.                                  | The one set as default in setup scripts (currently 0.31.0)                           |
 | kafkaVersion                  | Which Kafka version will be used in the tests                                                                                                                                                                                                                | Default one from STs config                                                          |
 | clusterSecurityEncryption     | Encryption used for the internal communication of the Kafka clusters deployed by the tests (`tls` or `none`)                                                                                                                                                 | `tls`                                                                                |
-| clusterSecurityAuthentication | Authentication used for the internal communication of the Kafka clusters deployed by the tests (`mtls` or `none`). `mtls` can be used only together with `tls` encryption.                                                                                   | `mtls`                                                                               |
+| clusterSecurityAuthentication | Authentication used for the internal communication of the Kafka clusters deployed by the tests (`mtls`, `service-account` or `none`). `mtls` can be used only together with `tls` encryption.                                                                | `mtls`                                                                               |
 
 The process of parameter usage is as follows:
 - `pipeline` has the highest priority. If `pipeline` is defined, the jobs will be loaded with data from [pipelines.yaml](../actions/systemtests/generate-matrix/pipelines.yaml) that match specific _pipeline_.
@@ -164,6 +164,9 @@ Every generated `GITHUB_TOKEN` has only read access to the repo/org without acce
 Unit and integration tests invoked via [actions-tests.yml](../workflows/actions-tests.yml) workflow.
 It uses files specified within [tests](../tests) folder and via [act](https://github.com/nektos/act) it tries to execute the actions and check the outputs.
 Currently, we tests `generate-matrix` and `parse-comment` actions.
+
+A `parse-comment` scenario can also cover invalid inputs that should be rejected by the action.
+Such a scenario sets `expectFailure: true` (with empty `expectations`) and passes only when the parsing fails.
 
 ### Performance Report Tests
 The performance report generation workflow has test scenarios defined in [tests/scenarios/perf-report.yaml](../tests/scenarios/perf-report.yaml).

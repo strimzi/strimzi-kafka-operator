@@ -19,7 +19,7 @@ inputs:
     required: false
     default: "tls"
   clusterSecurityAuthentication:
-    description: "Authentication used for the internal Kafka cluster communication ('mtls' or 'none')"
+    description: "Authentication used for the internal Kafka cluster communication ('mtls', 'service-account' or 'none')"
     required: false
     default: "mtls"
 
@@ -177,6 +177,20 @@ runs:
             clusterSecurityEncryption:     getParameter('clustersecurityencryption', lower) || DEFAULTS.clusterSecurityEncryption,
             clusterSecurityAuthentication: getParameter('clustersecurityauthentication', lower) || DEFAULTS.clusterSecurityAuthentication,
           };
+
+          // Only the supported internal cluster security types can be used
+          const CLUSTER_SECURITY_ENCRYPTION_TYPES = ['tls', 'none'];
+          const CLUSTER_SECURITY_AUTHENTICATION_TYPES = ['mtls', 'service-account', 'none'];
+
+          if (!CLUSTER_SECURITY_ENCRYPTION_TYPES.includes(out.clusterSecurityEncryption)) {
+            core.setFailed(`Invalid internal cluster security configuration: clusterSecurityEncryption=${out.clusterSecurityEncryption} is not supported. Supported values are: ${CLUSTER_SECURITY_ENCRYPTION_TYPES.join(', ')}`);
+            return;
+          }
+
+          if (!CLUSTER_SECURITY_AUTHENTICATION_TYPES.includes(out.clusterSecurityAuthentication)) {
+            core.setFailed(`Invalid internal cluster security configuration: clusterSecurityAuthentication=${out.clusterSecurityAuthentication} is not supported. Supported values are: ${CLUSTER_SECURITY_AUTHENTICATION_TYPES.join(', ')}`);
+            return;
+          }
 
           // mTLS authentication of the internal cluster communication can be used only with TLS encryption
           if (out.clusterSecurityAuthentication === 'mtls' && out.clusterSecurityEncryption !== 'tls') {

@@ -32,6 +32,7 @@ on:
         type: choice
         options:
           - mtls
+          - service-account
           - none
   # Automated trigger for issue comment
   issue_comment:

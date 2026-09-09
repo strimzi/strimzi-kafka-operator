@@ -87,12 +87,15 @@ jobs:
             description=$(yq eval ".scenarios[$i].description" "$SCENARIOS_FILE")
             event=$(yq eval ".scenarios[$i].event" "$SCENARIOS_FILE")
             fixture=$(yq eval ".scenarios[$i].fixture" "$SCENARIOS_FILE")
+            # Scenarios with invalid parameters are expected to fail the parsing instead of producing outputs
+            expect_failure=$(yq eval ".scenarios[$i].expectFailure // false" "$SCENARIOS_FILE")
 
             echo "───────────────────────────────────────"
             echo "🔍 Scenario $((i + 1))/$TOTAL: $id"
             echo "   Description: $description"
             echo "   Event: $event"
             echo "   Fixture: $fixture"
+            echo "   Expected to fail: $expect_failure"
 
             # Build environment variables from expectations
             env_args=""
@@ -111,10 +114,19 @@ jobs:
             echo "▶️  Running test..."
 
             if eval "act '$event' -W '$WORKFLOW' -e '$fixture' -P ubuntu-latest=ghcr.io/catthehacker/ubuntu:act-22.04 --pull=false $env_args $token_args"; then
-              echo "✅ $id passed"
+              if [ "$expect_failure" = "true" ]; then
+                echo "❌ $id failed => it was expected to fail, but it passed"
+                overall_result=false
+              else
+                echo "✅ $id passed"
+              fi
             else
-              echo "❌ $id failed"
-              overall_result=false
+              if [ "$expect_failure" = "true" ]; then
+                echo "✅ $id passed => it failed as expected"
+              else
+                echo "❌ $id failed"
+                overall_result=false
+              fi
             fi
             # Print blank line for better readability
             echo

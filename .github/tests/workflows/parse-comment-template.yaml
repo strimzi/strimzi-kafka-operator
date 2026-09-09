@@ -26,7 +26,7 @@ on:
         default: ""
         type: string
       clusterSecurityAuthentication:
-        description: "Authentication used for the internal Kafka cluster communication ('mtls' or 'none')"
+        description: "Authentication used for the internal Kafka cluster communication ('mtls', 'service-account' or 'none')"
         required: false
         default: ""
         type: string
