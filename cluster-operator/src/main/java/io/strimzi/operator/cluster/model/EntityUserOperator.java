@@ -27,6 +27,7 @@ import io.strimzi.certs.CertAndKey;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.model.clustersecurity.kafka.KafkaClusterSecurityContext;
 import io.strimzi.operator.cluster.model.clustersecurity.kafka.MtlsAuthenticationConfiguration;
+import io.strimzi.operator.cluster.model.clustersecurity.kafka.ServiceAccountAuthenticationConfiguration;
 import io.strimzi.operator.cluster.model.clustersecurity.kafka.TlsEncryptionConfiguration;
 import io.strimzi.operator.cluster.model.logging.LoggingModel;
 import io.strimzi.operator.cluster.model.logging.SupportsLogging;
@@ -68,6 +69,7 @@ public class EntityUserOperator extends AbstractModel implements SupportsLogging
     /* test */ static final String ENV_VAR_CLIENTS_CA_RENEWAL = "STRIMZI_CA_RENEWAL";
     /* test */ static final String ENV_VAR_CLUSTER_CA_CERT_SECRET_NAME = "STRIMZI_CLUSTER_CA_CERT_SECRET_NAME";
     /* test */ static final String ENV_VAR_EO_KEY_SECRET_NAME = "STRIMZI_EO_KEY_SECRET_NAME";
+    /* test */ static final String ENV_VAR_SERVICE_ACCOUNT_TOKEN_PATH = "STRIMZI_SERVICE_ACCOUNT_TOKEN_PATH";
     /* test */ static final String ENV_VAR_SECRET_PREFIX = "STRIMZI_SECRET_PREFIX";
     /* test */ static final String ENV_VAR_ACLS_ADMIN_API_SUPPORTED = "STRIMZI_ACLS_ADMIN_API_SUPPORTED";
     /* test */ static final String ENV_VAR_MAINTENANCE_TIME_WINDOWS = "STRIMZI_MAINTENANCE_TIME_WINDOWS";
@@ -215,10 +217,12 @@ public class EntityUserOperator extends AbstractModel implements SupportsLogging
 
         if (securityContext.encryption() instanceof TlsEncryptionConfiguration) {
             varList.add(ContainerUtils.createEnvVar(ENV_VAR_CLUSTER_CA_CERT_SECRET_NAME, KafkaCluster.clusterCaCertSecretName(cluster)));
+        }
 
-            if (securityContext.authentication() instanceof MtlsAuthenticationConfiguration) {
-                varList.add(ContainerUtils.createEnvVar(ENV_VAR_EO_KEY_SECRET_NAME, KafkaResources.entityUserOperatorSecretName(cluster)));
-            }
+        if (securityContext.authentication() instanceof MtlsAuthenticationConfiguration) {
+            varList.add(ContainerUtils.createEnvVar(ENV_VAR_EO_KEY_SECRET_NAME, KafkaResources.entityUserOperatorSecretName(cluster)));
+        } else if (securityContext.authentication() instanceof ServiceAccountAuthenticationConfiguration) {
+            varList.add(ContainerUtils.createEnvVar(ENV_VAR_SERVICE_ACCOUNT_TOKEN_PATH, "/var/run/secrets/strimzi.io/token"));
         }
 
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_STRIMZI_GC_LOG_ENABLED, String.valueOf(gcLoggingEnabled)));
@@ -258,6 +262,10 @@ public class EntityUserOperator extends AbstractModel implements SupportsLogging
         volumeMounts.add(VolumeUtils.createServiceAccountVolumeMount());
         volumeMounts.add(VolumeUtils.createTempDirVolumeMount(USER_OPERATOR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME));
         volumeMounts.add(VolumeUtils.createVolumeMount(LOG_AND_METRICS_CONFIG_VOLUME_NAME, LOG_AND_METRICS_CONFIG_VOLUME_MOUNT));
+
+        if (securityContext.authentication() instanceof ServiceAccountAuthenticationConfiguration)   {
+            volumeMounts.add(VolumeUtils.createStrimziAuthenticationTokenVolumeMount());
+        }
 
         TemplateUtils.addAdditionalVolumeMounts(volumeMounts, templateContainer);
 

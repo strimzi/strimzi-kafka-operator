@@ -36,6 +36,7 @@ import io.fabric8.kubernetes.api.model.Toleration;
 import io.fabric8.kubernetes.api.model.TolerationBuilder;
 import io.fabric8.kubernetes.api.model.TopologySpreadConstraint;
 import io.fabric8.kubernetes.api.model.TopologySpreadConstraintBuilder;
+import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.VolumeMountBuilder;
 import io.fabric8.kubernetes.api.model.WeightedPodAffinityTermBuilder;
@@ -66,6 +67,8 @@ import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.PersistentClaimStorageBuilder;
 import io.strimzi.api.kafka.model.kafka.Storage;
+import io.strimzi.api.kafka.model.kafka.clustersecurity.ClusterSecurityAuthenticationBuilder;
+import io.strimzi.api.kafka.model.kafka.clustersecurity.ClusterSecurityAuthenticationType;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlResources;
 import io.strimzi.api.kafka.model.kafka.exporter.KafkaExporterResources;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
@@ -79,7 +82,11 @@ import io.strimzi.certs.OpenSslCertIssuer;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.TestUtils;
+import io.strimzi.operator.cluster.model.clustersecurity.kafka.AuthenticationConfiguration;
 import io.strimzi.operator.cluster.model.clustersecurity.kafka.KafkaClusterSecurityContext;
+import io.strimzi.operator.cluster.model.clustersecurity.kafka.NoneAuthenticationConfiguration;
+import io.strimzi.operator.cluster.model.clustersecurity.kafka.NoneEncryptionConfiguration;
+import io.strimzi.operator.cluster.model.clustersecurity.kafka.TlsEncryptionConfiguration;
 import io.strimzi.operator.cluster.model.jmx.JmxModel;
 import io.strimzi.operator.cluster.model.logging.LoggingModel;
 import io.strimzi.operator.cluster.model.metrics.JmxPrometheusExporterModel;
@@ -118,6 +125,7 @@ import java.util.stream.Collectors;
 import static io.strimzi.operator.cluster.model.jmx.JmxModel.JMX_PORT;
 import static io.strimzi.operator.cluster.model.jmx.JmxModel.JMX_PORT_NAME;
 import static java.util.Collections.singletonMap;
+import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
@@ -1148,6 +1156,65 @@ public class KafkaClusterTest {
         Secret jmxSecret = kc.jmx().jmxSecret(null);
         assertThat(jmxSecret.getMetadata().getLabels().entrySet().containsAll(jmxLabels.entrySet()), is(true));
         assertThat(jmxSecret.getMetadata().getAnnotations().entrySet().containsAll(jmxAnnotations.entrySet()), is(true));
+    }
+
+    @Test
+    public void testServiceAccountAuthenticationVolumesAndVolumeMounts() {
+        KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, KAFKA, POOLS, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, null, SHARED_ENV_PROVIDER,
+                new KafkaClusterSecurityContext(new TlsEncryptionConfiguration(), AuthenticationConfiguration.fromCrd(NAMESPACE, CLUSTER, new ClusterSecurityAuthenticationBuilder().withType(ClusterSecurityAuthenticationType.SERVICE_ACCOUNT).build())));
+
+        List<StrimziPodSet> podSets = kc.generatePodSets(null, null, node -> Map.of());
+        assertThat(podSets.size(), is(3));
+
+        // The token volume and volume mount are added to all nodes => controllers, mixed nodes and brokers
+        podSets.forEach(podSet -> PodSetUtils.podSetToPods(podSet).forEach(pod -> {
+            Volume tokenVolume = pod.getSpec().getVolumes().stream()
+                    .filter(volume -> VolumeUtils.STRIMZI_AUTHENTICATION_TOKEN_VOLUME_NAME.equals(volume.getName()))
+                    .findFirst()
+                    .orElseThrow();
+            assertThat(tokenVolume.getProjected().getSources().size(), is(1));
+            assertThat(tokenVolume.getProjected().getSources().get(0).getServiceAccountToken().getAudience(), is("strimzi.io/kafka/" + NAMESPACE + "/" + CLUSTER));
+            assertThat(tokenVolume.getProjected().getSources().get(0).getServiceAccountToken().getExpirationSeconds(), is(3600L));
+            assertThat(tokenVolume.getProjected().getSources().get(0).getServiceAccountToken().getPath(), is("token"));
+
+            assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().stream().map(VolumeMount::getName).toList(),
+                    hasItem(VolumeUtils.STRIMZI_AUTHENTICATION_TOKEN_VOLUME_NAME));
+        }));
+    }
+
+    @Test
+    public void testVolumesAndVolumeMountsWithoutServiceAccountAuthentication() {
+        List<StrimziPodSet> podSets = KC.generatePodSets(null, null, node -> Map.of());
+
+        podSets.forEach(podSet -> PodSetUtils.podSetToPods(podSet).forEach(pod -> {
+            assertThat(pod.getSpec().getVolumes().stream().map(Volume::getName).toList(),
+                    not(hasItem(VolumeUtils.STRIMZI_AUTHENTICATION_TOKEN_VOLUME_NAME)));
+            assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().stream().map(VolumeMount::getName).toList(),
+                    not(hasItem(VolumeUtils.STRIMZI_AUTHENTICATION_TOKEN_VOLUME_NAME)));
+        }));
+    }
+
+    @Test
+    public void testGenerateClusterOperatorServiceAccount() {
+        KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, KAFKA, POOLS, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, null, SHARED_ENV_PROVIDER,
+                new KafkaClusterSecurityContext(new TlsEncryptionConfiguration(), AuthenticationConfiguration.fromCrd(NAMESPACE, CLUSTER, new ClusterSecurityAuthenticationBuilder().withType(ClusterSecurityAuthenticationType.SERVICE_ACCOUNT).build())));
+
+        ServiceAccount sa = kc.generateClusterOperatorServiceAccount();
+        assertThat(sa, is(notNullValue()));
+        assertThat(sa.getMetadata().getName(), is(KafkaResources.clusterOperatorServiceAccount(CLUSTER)));
+        assertThat(sa.getMetadata().getNamespace(), is(NAMESPACE));
+        assertThat(sa.getMetadata().getOwnerReferences().size(), is(1));
+        assertThat(sa.getMetadata().getLabels().get(Labels.STRIMZI_CLUSTER_LABEL), is(CLUSTER));
+    }
+
+    @Test
+    public void testGenerateClusterOperatorServiceAccountWithoutServiceAccountAuthentication() {
+        // Without Service Account authentication, the Service Account should not exist
+        assertThat(KC.generateClusterOperatorServiceAccount(), is(nullValue()));
+
+        KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, KAFKA, POOLS, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, null, SHARED_ENV_PROVIDER,
+                new KafkaClusterSecurityContext(new NoneEncryptionConfiguration(), new NoneAuthenticationConfiguration()));
+        assertThat(kc.generateClusterOperatorServiceAccount(), is(nullValue()));
     }
 
     @Test

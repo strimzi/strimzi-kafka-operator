@@ -6,6 +6,7 @@ package io.strimzi.operator.common.auth;
 
 import io.fabric8.kubernetes.api.model.Secret;
 import io.strimzi.operator.common.Util;
+import org.apache.kafka.common.config.SslConfigs;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -20,6 +21,8 @@ import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.Base64;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -46,6 +49,22 @@ public class PemAuthIdentity implements AuthIdentity {
         this.secretNamespace = secret.getMetadata().getNamespace();
         this.privateKeyAsPem = Util.decodeStringFieldFromSecret(secret, keyName);
         this.certificateChainAsPem = Util.decodeStringFieldFromSecret(secret, certificateName);
+    }
+
+    @Override
+    public boolean isSasl() {
+        return false;
+    }
+
+    @Override
+    public Map<String, String> kafkaClientProperties() {
+        Map<String, String> config = new HashMap<>();
+
+        config.put(SslConfigs.SSL_KEYSTORE_TYPE_CONFIG, "PEM");
+        config.put(SslConfigs.SSL_KEYSTORE_CERTIFICATE_CHAIN_CONFIG, certificateChainAsPem());
+        config.put(SslConfigs.SSL_KEYSTORE_KEY_CONFIG, privateKeyAsPem());
+
+        return config;
     }
 
     /**
@@ -79,7 +98,7 @@ public class PemAuthIdentity implements AuthIdentity {
      *
      * @return The certificate chain for this authentication identity as a String
      */
-    public String certificateChainAsPem() {
+    private String certificateChainAsPem() {
         return certificateChainAsPem;
     }
 
@@ -88,7 +107,7 @@ public class PemAuthIdentity implements AuthIdentity {
      *
      * @return The private key for this authentication identity as a String
      */
-    public String privateKeyAsPem() {
+    private String privateKeyAsPem() {
         return privateKeyAsPem;
     }
 

@@ -68,17 +68,17 @@ public class KafkaClusterSecurityContext {
         } else if (clusterSecurityStatus == null) {
             // Cluster Security does not exist in status, but it is configured in the annotation. This is a new cluster
             // or follows the migration process. We use the configuration from the annotation.
-            return fromSpec(kafka.getMetadata().getName(), clusterSecurity);
+            return fromSpec(kafka.getMetadata().getNamespace(), kafka.getMetadata().getName(), clusterSecurity);
         } else {
             // Cluster Security exists in status and in the annotation. We need to doublecheck that the status uses
             // the same configuration as the annotation.
             validateSpecAndStatusMatch(clusterSecurity, clusterSecurityStatus);
-            return fromSpec(kafka.getMetadata().getName(), clusterSecurity);
+            return fromSpec(kafka.getMetadata().getNamespace(), kafka.getMetadata().getName(), clusterSecurity);
         }
     }
 
-    private static KafkaClusterSecurityContext fromSpec(String clusterName, ClusterSecurity clusterSecurity) {
-        return new KafkaClusterSecurityContext(EncryptionConfiguration.fromCrd(clusterSecurity.getEncryption()), AuthenticationConfiguration.fromCrd(clusterName, clusterSecurity.getAuthentication()));
+    private static KafkaClusterSecurityContext fromSpec(String namespace, String clusterName, ClusterSecurity clusterSecurity) {
+        return new KafkaClusterSecurityContext(EncryptionConfiguration.fromCrd(clusterSecurity.getEncryption()), AuthenticationConfiguration.fromCrd(namespace, clusterName, clusterSecurity.getAuthentication()));
     }
 
     /**

@@ -54,6 +54,8 @@ public class TopicOperatorConfig {
     public static final ConfigParameter<String> TLS_KEY_NAME = new ConfigParameter<>("STRIMZI_TLS_KEY_NAME", ConfigParameterParser.STRING, "", CONFIG_VALUES);
     /** TLS: keystore certificate name. */
     public static final ConfigParameter<String> TLS_CERT_NAME = new ConfigParameter<>("STRIMZI_TLS_CERT_NAME", ConfigParameterParser.STRING, "", CONFIG_VALUES);
+    /** The path to where the projected Service Account token is mounted. */
+    public static final ConfigParameter<String> SERVICE_ACCOUNT_TOKEN_PATH = new ConfigParameter<>("STRIMZI_SERVICE_ACCOUNT_TOKEN_PATH", ConfigParameterParser.STRING, null, CONFIG_VALUES);
     /** TLS: endpoint identification algorithm. */
     public static final ConfigParameter<String> SSL_ENDPOINT_IDENTIFICATION_ALGORITHM = new ConfigParameter<>("STRIMZI_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM", ConfigParameterParser.STRING, "HTTPS", CONFIG_VALUES);
     /** SASL: whether to enable configuration. */
@@ -226,6 +228,15 @@ public class TopicOperatorConfig {
      */
     public String tlsCertName() {
         return get(TLS_CERT_NAME);
+    }
+
+    /**
+     * Gets the path of the Service Account token
+     *
+     * @return The path of the Service Account token
+     */
+    public String getServiceAccountTokenPath() {
+        return get(SERVICE_ACCOUNT_TOKEN_PATH);
     }
 
     /**
@@ -552,6 +563,7 @@ public class TopicOperatorConfig {
             "\n\ttlsSecretName='" + tlsSecretName() + '\'' +
             "\n\ttlsKeyName='" + tlsKeyName() + '\'' +
             "\n\ttlsCertName='" + tlsCertName() + '\'' +
+            "\n\tserviceAccountTokenPath='" + getServiceAccountTokenPath() + '\'' +
             "\n\tsslEndpointIdentificationAlgorithm='" + sslEndpointIdentificationAlgorithm() + '\'' +
             "\n\tsaslEnabled=" + saslEnabled() +
             "\n\tsaslMechanism='" + saslMechanism() + '\'' +

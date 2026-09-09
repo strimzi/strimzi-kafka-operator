@@ -15,6 +15,7 @@ import io.strimzi.operator.cluster.model.clustersecurity.kafka.KafkaClusterSecur
 import io.strimzi.operator.cluster.model.clustersecurity.kafka.MtlsAuthenticationConfiguration;
 import io.strimzi.operator.cluster.model.clustersecurity.kafka.NoneAuthenticationConfiguration;
 import io.strimzi.operator.cluster.model.clustersecurity.kafka.NoneEncryptionConfiguration;
+import io.strimzi.operator.cluster.model.clustersecurity.kafka.ServiceAccountAuthenticationConfiguration;
 import io.strimzi.operator.cluster.model.clustersecurity.kafka.TlsEncryptionConfiguration;
 import io.strimzi.operator.common.model.InvalidResourceException;
 import org.junit.jupiter.api.Test;
@@ -37,6 +38,8 @@ public class KafkaClusterSecurityContextTest {
     private static final String LEGACY_TLS_WITH_MTLS = "{\"encryption\":{\"type\":\"strimzi-tls\"},\"authentication\":{\"type\":\"strimzi-mtls\"}}";
     private static final String WITHOUT_ENCRYPTION_OR_AUTHENTICATION = "{\"encryption\":{\"type\":\"none\"},\"authentication\":{\"type\":\"none\"}}";
     private static final String MTLS_WITHOUT_TLS = "{\"encryption\":{\"type\":\"none\"},\"authentication\":{\"type\":\"mtls\"}}";
+    private static final String TLS_WITH_SERVICE_ACCOUNT = "{\"encryption\":{\"type\":\"tls\"},\"authentication\":{\"type\":\"service-account\"}}";
+    private static final String TLS_WITH_SERVICE_ACCOUNT_AND_CUSTOM_EXPIRATION = "{\"encryption\":{\"type\":\"tls\"},\"authentication\":{\"type\":\"service-account\",\"expirationSeconds\":600}}";
 
     private static final Map<String, Object> VALID_STATUS = Map.of(
             "encryption", Map.of("type", "tls"),
@@ -163,6 +166,48 @@ public class KafkaClusterSecurityContextTest {
         assertThat(context.encryption(), is(instanceOf(NoneEncryptionConfiguration.class)));
         assertThat(context.authentication(), is(instanceOf(NoneAuthenticationConfiguration.class)));
         assertThat(context.toStatus(), is(status(ClusterSecurityEncryptionType.NONE, ClusterSecurityAuthenticationType.NONE)));
+    }
+
+    @Test
+    public void testFromCrdWithServiceAccountAuthenticationInAnnotation()  {
+        Kafka kafka = kafkaWithClusterSecurity(TLS_WITH_SERVICE_ACCOUNT, null);
+
+        KafkaClusterSecurityContext context = KafkaClusterSecurityContext.fromCrd(kafka);
+
+        assertThat(context.encryption(), is(instanceOf(TlsEncryptionConfiguration.class)));
+        assertThat(context.authentication(), is(instanceOf(ServiceAccountAuthenticationConfiguration.class)));
+        assertThat(context.toStatus(), is(status(ClusterSecurityEncryptionType.TLS, ClusterSecurityAuthenticationType.SERVICE_ACCOUNT)));
+
+        // The audience is scoped to the namespace and name of the Kafka cluster
+        ServiceAccountAuthenticationConfiguration authentication = (ServiceAccountAuthenticationConfiguration) context.authentication();
+        assertThat(authentication.audience(), is("strimzi.io/kafka/" + NAMESPACE + "/" + CLUSTER_NAME));
+        assertThat(authentication.expirationSeconds(), is(3600));
+    }
+
+    @Test
+    public void testFromCrdWithServiceAccountAuthenticationWithCustomExpirationInAnnotation()  {
+        Kafka kafka = kafkaWithClusterSecurity(TLS_WITH_SERVICE_ACCOUNT_AND_CUSTOM_EXPIRATION, status(ClusterSecurityEncryptionType.TLS, ClusterSecurityAuthenticationType.SERVICE_ACCOUNT));
+
+        KafkaClusterSecurityContext context = KafkaClusterSecurityContext.fromCrd(kafka);
+
+        ServiceAccountAuthenticationConfiguration authentication = (ServiceAccountAuthenticationConfiguration) context.authentication();
+        assertThat(authentication.audience(), is("strimzi.io/kafka/" + NAMESPACE + "/" + CLUSTER_NAME));
+        assertThat(authentication.expirationSeconds(), is(600));
+    }
+
+    @Test
+    public void testFromCrdWithServiceAccountAuthenticationUsesTheClusterNamespaceInTheAudience()  {
+        Kafka kafka = new KafkaBuilder(kafkaWithClusterSecurity(TLS_WITH_SERVICE_ACCOUNT, null))
+                .editMetadata()
+                    .withNamespace("other-namespace")
+                    .withName("other-cluster")
+                .endMetadata()
+                .build();
+
+        KafkaClusterSecurityContext context = KafkaClusterSecurityContext.fromCrd(kafka);
+
+        ServiceAccountAuthenticationConfiguration authentication = (ServiceAccountAuthenticationConfiguration) context.authentication();
+        assertThat(authentication.audience(), is("strimzi.io/kafka/other-namespace/other-cluster"));
     }
 
     @Test

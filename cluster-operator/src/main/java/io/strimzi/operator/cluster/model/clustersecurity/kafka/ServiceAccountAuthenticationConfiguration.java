@@ -24,21 +24,22 @@ public class ServiceAccountAuthenticationConfiguration implements Authentication
     private final Integer expirationSeconds;
     private final String audience;
 
-    private ServiceAccountAuthenticationConfiguration(String clusterName, Integer expirationSeconds) {
+    private ServiceAccountAuthenticationConfiguration(String namespace, String clusterName, Integer expirationSeconds) {
         this.expirationSeconds = expirationSeconds != null ? expirationSeconds : 3600;
-        this.audience = "strimzi.io/kafka/" + clusterName;
+        this.audience = "strimzi.io/kafka/" + namespace + "/" + clusterName;
     }
 
     /**
      * Creates ServiceAccountAuthenticationConfiguration from ClusterSecurityAuthentication
      *
+     * @param namespace         Namespace of the Kafka cluster
      * @param clusterName       Name of the Kafka cluster
      * @param authentication    ClusterSecurityAuthentication from which the configuration is created
      *
      * @return  ServiceAccountAuthenticationConfiguration instance
      */
-    public static ServiceAccountAuthenticationConfiguration fromCrd(String clusterName, ClusterSecurityAuthentication authentication) {
-        return new ServiceAccountAuthenticationConfiguration(clusterName, authentication.getExpirationSeconds());
+    public static ServiceAccountAuthenticationConfiguration fromCrd(String namespace, String clusterName, ClusterSecurityAuthentication authentication) {
+        return new ServiceAccountAuthenticationConfiguration(namespace, clusterName, authentication.getExpirationSeconds());
     }
 
     /**

@@ -17,6 +17,7 @@
 
     <properties>
         <cruise-control.version>2.5.146</cruise-control.version>
+        <strimzi-oauth.version>0.18.0</strimzi-oauth.version>
         <log4j.version>2.17.2</log4j.version>
         <commons-beanutils.version>1.11.0</commons-beanutils.version>
     </properties>
@@ -58,6 +59,53 @@
             <artifactId>commons-beanutils</artifactId>
             <version>${commons-beanutils.version}</version>
             <scope>runtime</scope>
+        </dependency>
+        <!-- OAuth -->
+        <dependency>
+            <groupId>io.strimzi</groupId>
+            <artifactId>kafka-oauth-common</artifactId>
+            <version>${strimzi-oauth.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-api</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.kafka</groupId>
+                    <artifactId>kafka-clients</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.fasterxml.jackson.core</groupId>
+                    <artifactId>jackson-databind</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.fasterxml.jackson.core</groupId>
+                    <artifactId>jackson-core</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.github.stephenc.jcip</groupId>
+                    <artifactId>jcip-annotations</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>io.strimzi</groupId>
+            <artifactId>kafka-oauth-client</artifactId>
+            <version>${strimzi-oauth.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.apache.kafka</groupId>
+                    <artifactId>kafka-clients</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <!-- Cruise Control bundles jackson-databind:2.15.2 but only jackson-annotations:2.9.5, which
+             predates @JsonKey (added in 2.12). Pin jackson-annotations to match databind so the
+             Strimzi OAuth client's JWT claim deserialization doesn't trip a NoClassDefFoundError. -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-annotations</artifactId>
+            <version>2.15.2</version>
         </dependency>
     </dependencies>
 </project>
