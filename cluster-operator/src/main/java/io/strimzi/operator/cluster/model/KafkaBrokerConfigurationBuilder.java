@@ -550,10 +550,6 @@ public class KafkaBrokerConfigurationBuilder {
                 superUsers.add(String.format("User:system:serviceaccount:%s:%s", reconciliation.namespace(), KafkaExporterResources.serviceAccountName(clusterName)));
                 superUsers.add(String.format("User:system:serviceaccount:%s:%s", reconciliation.namespace(), CruiseControlResources.serviceAccountName(clusterName)));
                 superUsers.add(String.format("User:system:serviceaccount:%s:%s", reconciliation.namespace(), KafkaResources.clusterOperatorServiceAccount(clusterName)));
-            } else {
-                // When authentication is disabled, all internal synchronization is using the ANONYMOUS user. In order
-                // to support authorization, we have to make this user a super-user.
-                superUsers.add("User:ANONYMOUS");
             }
 
             printSectionHeader("Authorization");
