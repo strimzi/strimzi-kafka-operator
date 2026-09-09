@@ -281,7 +281,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         private Map<String, Storage> kafkaBrokerStorage;
         private Map<String, ResourceRequirements> kafkaBrokerResources;
         // needed to take information for the auto-rebalancing on scaling via Cruise Control
-        Set<Integer> scalingDownBlockedNodes;
+        private Set<Integer> scalingDownBlockedNodes;
         private KafkaClusterSecurityContext securityContext;
 
         /* test */ KafkaStatus kafkaStatus = new KafkaStatus();
@@ -652,6 +652,10 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     kafkaAssembly,
                     clusterCa,
                     securityContext);
+        }
+
+        /* test */ Set<Integer> getScalingDownBlockedNodes() {
+            return scalingDownBlockedNodes;
         }
 
         /**
