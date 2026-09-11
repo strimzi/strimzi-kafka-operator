@@ -32,7 +32,7 @@ public class FipsAgent {
      * @param agentArgs The agent arguments (unused)
      */
     public static void premain(String agentArgs) {
-        applyDsaWorkaround();
+        handleMissingDSA();
     }
 
     /**
@@ -47,11 +47,11 @@ public class FipsAgent {
      *
      * Safe to call multiple times — no-ops if DSA is already available.
      */
-    static void applyDsaWorkaround() {
+    static void handleMissingDSA() {
         try {
             KeyFactory.getInstance("DSA");
         } catch (NoSuchAlgorithmException e) {
-            LOGGER.warn("DSA KeyFactory not available (FIPS mode detected). Registering no-op DSA provider to work around Kafka PemStore initialization bug.");
+            LOGGER.warn("DSA KeyFactory not available. Registering no-op DSA provider to work around Kafka PemStore initialization bug.");
             Security.addProvider(new NoOpDsaProvider());
         }
     }
@@ -63,7 +63,7 @@ public class FipsAgent {
         private static final long serialVersionUID = 1L;
 
         NoOpDsaProvider() {
-            super("StrimziFipsDsaWorkaround", "1.0", "No-op DSA KeyFactory for FIPS compatibility with Kafka PemStore");
+            super("StrimziMissingDsaHandler", "1.0", "No-op DSA KeyFactory for missing DSA algorithms within JVM");
             put("KeyFactory.DSA", NoOpDsaKeyFactorySpi.class.getName());
         }
     }
@@ -79,23 +79,23 @@ public class FipsAgent {
 
         @Override
         protected PublicKey engineGeneratePublic(KeySpec keySpec) throws InvalidKeySpecException {
-            throw new InvalidKeySpecException("DSA is not supported in FIPS mode");
+            throw new InvalidKeySpecException("DSA is not available");
         }
 
         @Override
         protected PrivateKey engineGeneratePrivate(KeySpec keySpec) throws InvalidKeySpecException {
-            throw new InvalidKeySpecException("DSA is not supported in FIPS mode");
+            throw new InvalidKeySpecException("DSA is not available");
         }
 
         @Override
         @SuppressWarnings("unchecked")
         protected <T extends KeySpec> T engineGetKeySpec(Key key, Class<T> keySpec) throws InvalidKeySpecException {
-            throw new InvalidKeySpecException("DSA is not supported in FIPS mode");
+            throw new InvalidKeySpecException("DSA is not available");
         }
 
         @Override
         protected Key engineTranslateKey(Key key) throws InvalidKeyException {
-            throw new InvalidKeyException("DSA is not supported in FIPS mode");
+            throw new InvalidKeyException("DSA is not available");
         }
     }
 }
