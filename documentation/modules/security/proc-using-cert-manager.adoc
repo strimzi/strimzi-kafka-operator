@@ -8,16 +8,15 @@
 = (Early Access) Configuring your Kafka cluster to use cert-manager
 
 [role="_abstract"]
-Perform the steps in this procedure to enable cert-manager to issue certificates on either a
-new or existing cluster.
+Perform the steps in this procedure to enable cert-manager to issue certificates on either a new or existing cluster.
 
 .Prerequisites
 
-* cert-manager is installed in the cluster with a ready `Issuer` or `ClusterIssuer` configured.
+* cert-manager is installed in the cluster with a ready `Issuer` or `ClusterIssuer` configured with a Secret that contains a certificate and key pair for the CA. The Secret must have `tls.crt` and `tls.key` keys. The value of `tls.crt` is the CA certificate that you provide to the Cluster Operator in the following step under the `ca.crt` key.
 
 .Procedure
 
-. Create a `Secret` containing the CA certificate that Strimzi should trust.
+. Create a `Secret` containing the CA certificate that the Cluster Operator should trust.
 +
 [source,shell,subs="+quotes"]
 ----
@@ -27,12 +26,14 @@ kubectl create secret generic _<ca_cert_secret_name>_ \
 ----
 +
 Replace _<ca_cert_secret_name>_ with a name of your choice, _<path_to_ca_cert_pem>_ with the path to the CA certificate PEM file, and _<namespace>_ with the namespace of the Kafka cluster.
++
+TIP: To automate provisioning and renewal of this Secret, you can use https://cert-manager.io/docs/trust/trust-manager/[trust-manager] to copy the `ca.crt` from the issuer's Secret into a separate Secret for the Cluster Operator.
 
-NOTE: The `ca.crt` file in the Secret must contain either a single CA certificate or CA certificate chain that can be used to trust certificates issued by cert-manager.
-For this reason the cert-manager `SelfSigned` issuer is not supported.
+NOTE: The `ca.crt` file in the Secret must contain either a single CA certificate or a CA certificate chain that can be used to trust certificates issued by cert-manager.
+A cert-manager `SelfSigned` issuer type cannot be used directly because it does not provide a CA certificate.
 
 . Create or update the `Kafka` resource, setting `type: cert-manager` on `clusterCa`, `clientsCa`, or both.
-Set `generateCertificateAuthority: false` and provide the `certManager.issuerRef` and `certManager.caCert` configuration.
+Set `generateCertificateAuthority: false` and provide the `certManager.issuerRef` and `certManager.caCertRef` configuration.
 +
 .Example `Kafka` resource using cert-manager for both Cluster CA and Clients CA
 [source,yaml,subs="attributes+"]
@@ -50,8 +51,8 @@ spec:
         name: my-cluster-issuer <3>
         kind: ClusterIssuer <4>
         group: cert-manager.io <5>
-      caCert:
-        secretName: _<ca_cert_secret_name>_ <6>
+      caCertRef:
+        secretName: _<cluster_ca_cert_secret_name>_ <6>
         certificate: ca.crt <7>
   clientsCa:
     generateCertificateAuthority: false
@@ -61,8 +62,8 @@ spec:
         name: my-cluster-issuer
         kind: ClusterIssuer
         group: cert-manager.io
-      caCert:
-        secretName: _<ca_cert_secret_name>_
+      caCertRef:
+        secretName: _<clients_ca_cert_secret_name>_
         certificate: ca.crt
   kafka:
     # ...

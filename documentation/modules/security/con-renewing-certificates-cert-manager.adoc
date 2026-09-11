@@ -8,30 +8,60 @@
 = (Early Access) Renewing certificates when using cert-manager
 
 [role="_abstract"]
-When the Cluster Operator delegates certificate issuing to cert-manager, the user is responsible for updating the user-provided Secret containing the CA certificate if either the certificate or private key changes. Renewal of end-entity certificates is handled by cert-manager.
+When the Cluster Operator delegates certificate issuing to cert-manager, renewal of end-entity certificates is handled by cert-manager.
+The user is responsible for managing the CA lifecycle: provisioning the issuer, rotating or replacing the CA certificate, and providing the CA certificate to the Cluster Operator in a Secret.
+
+.How cert-manager integration works
 
 The Cluster Operator creates one `Certificate` resource per Kafka node and one for each enabled component (Cruise Control, Kafka Exporter, Entity Operator), plus one for the Cluster Operator itself.
 cert-manager stores the issued certificates in Secrets with a `-cm` suffix (for example, `my-cluster-dual-role-0-cm`).
-During reconciliation, if the issued certificates are trusted, they are copied into the component specific Secrets (for example, `my-cluster-dual-role-0`).
+During reconciliation, if the issued certificates are trusted, they are copied into the component-specific Secrets (for example, `my-cluster-dual-role-0`).
+
+.Provisioning the CA issuer
+
+You are responsible for provisioning a cert-manager `Issuer` or `ClusterIssuer` that the Cluster Operator references when creating `Certificate` resources.
+To make the CA certificate available to Cluster Operator, use a tool such as https://cert-manager.io/docs/trust/trust-manager/[trust-manager] to copy the `ca.crt` from the issuer's Secret into a separate Secret that the Cluster Operator can consume.
+
+NOTE: For development or demo environments, you can bootstrap a self-signed CA issuer as described in the https://cert-manager.io/docs/configuration/selfsigned/#bootstrapping-ca-issuers[cert-manager documentation]. This approach is not recommended for production use.
 
 .CA certificate rotation
 
-When the CA certificate in the user-provided `Secret` is updated, the Cluster Operator detects the change on the next reconciliation.
+When the CA certificate in the user-provided Secret is updated, the Cluster Operator detects the change on the next reconciliation.
 
-* If the new certificate was signed by the same private key (cert renewal), the Cluster Operator rolls the Kafka pods once to update the truststore.
-* If the new certificate was signed by a new private key (key replacement), the Cluster Operator performs a phased rolling restart.
-The old CA certificate is retained alongside the new one until all pods have rolled and all components are using certificates issued by the new CA.
+* If the new certificate was signed by the same private key (cert renewal):
+    1. Update the user-provided Secret containing the CA certificate that the Cluster Operator should trust.
+    2. The Cluster Operator rolls the Kafka pods once to update the truststore.
++
+Existing end-entity certificates remain valid because the signing key has not changed. You do not need to trigger cert-manager to re-issue them.
+
+* If the new certificate was signed by a new private key (key replacement):
++
+You must complete these steps in order:
++
+    1. Replace the CA in cert-manager (update the issuer or its backing Secret with the new CA key and certificate).
+    2. Trigger cert-manager to issue new end-entity certificates signed by the new key, for example using the https://cert-manager.io/docs/reference/cmctl/#renew[cmctl renew] command.
+    3. Update the user-provided Secret containing the CA certificate with the CA certificate signed by the new private key. This tells the Cluster Operator about the new CA.
+    4. The Cluster Operator rolls the Kafka pods once to update the truststore.
+       The old CA certificate is retained alongside the new one until all pods have rolled and all components are using certificates issued by the new CA.
+    5. The Cluster Operator rolls the Kafka pods a second time, along with other components, to update the end-entity certificates that they use.
+       Once all components are using certificates issued by the new CA, the old CA certificate is removed from the Secret.
++
+The rolling restarts in steps 4-5 are triggered automatically by the Cluster Operator during successive reconciliations. No manual intervention is required after step 3.
 
 .End-entity certificate rotation
-End-entity certificates are renewed by cert-manager if:
-* they are due to expire
-* a change to Kafka CR triggers Cluster Operator to update Certificate resource (for example, `validityDays` is updated)
 
-NOTE: Maintenance time windows configured in Kafka CR do not apply to cert-manager issuing certificates.
+End-entity certificates are renewed by cert-manager if:
+
+* they are due to expire
+* a change to the Kafka CR triggers the Cluster Operator to update the `Certificate` resource (for example, `validityDays` is updated)
+* renewal has been triggered explicitly, for example using the https://cert-manager.io/docs/reference/cmctl/#renew[cmctl renew] command, because the CA key has been replaced
+
+NOTE: Maintenance time windows configured in the Kafka CR do not apply to cert-manager issuing certificates.
 
 .KafkaUser TLS certificates
 
 When `clientsCa.type` is set to `cert-manager`, the User Operator also delegates `KafkaUser` TLS certificate issuance to cert-manager.
 Create `KafkaUser` resources with `spec.authentication.type: tls` as usual.
+The User Operator creates a `Certificate` resource for each `KafkaUser`, and cert-manager stores the issued certificate in a Secret with a `-cm` suffix (for example, `my-user-cm`).
 
 If the User Operator is deployed as part of the Entity Operator, the Cluster Operator configures it automatically.

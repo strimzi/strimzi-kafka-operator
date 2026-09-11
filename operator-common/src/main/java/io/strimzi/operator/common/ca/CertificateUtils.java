@@ -123,7 +123,7 @@ public class CertificateUtils {
      * @param caRole The role of the CA.
      * @param userCaCertData The CA cert data provided by the user.
      */
-    public static void validateUserCaCertChain(Reconciliation reconciliation, Ca.CaRole caRole, Map<String, String> userCaCertData) {
+    public static void validateCaCertChain(Reconciliation reconciliation, Ca.CaRole caRole, Map<String, String> userCaCertData) {
         userCaCertData.entrySet()
                 .stream()
                 .filter(entry -> Ca.SecretEntry.CRT.matchesType(entry.getKey()))
@@ -179,7 +179,7 @@ public class CertificateUtils {
             LOGGER.debugCr(reconciliation, "Certificate chain validated using supplied CA cert.");
             return true;
         } catch (CertPathValidatorException e) {
-            LOGGER.errorCr(reconciliation, "Certificate chain cannot be validated with supplied CA cert.", e);
+            LOGGER.warnCr(reconciliation, "Certificate chain cannot be validated with supplied CA cert.", e);
             return false;
         } catch (InvalidAlgorithmParameterException e) {
             LOGGER.errorCr(reconciliation, "Error validating the certificate chain.", e);
