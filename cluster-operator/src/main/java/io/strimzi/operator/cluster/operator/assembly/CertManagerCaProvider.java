@@ -110,7 +110,7 @@ public class CertManagerCaProvider extends CaProvider {
                     } else if (secret.getData() == null || secret.getData().get(caCertSecretKey) == null) {
                         throw new InvalidResourceException("CA public certificate Secret " + caCertSecretName + " missing key " + caCertSecretKey);
                     }
-                    CertificateUtils.validateUserCaCertChain(reconciliation, caRole, Map.of(caCertSecretKey, secret.getData().get(caCertSecretKey)));
+                    CertificateUtils.validateCaCertChain(reconciliation, caRole, Map.of(caCertSecretKey, secret.getData().get(caCertSecretKey)));
                     return secret.getData().get(caCertSecretKey);
                 });
     }
