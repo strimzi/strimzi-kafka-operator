@@ -4,11 +4,6 @@
  */
 package io.strimzi.operator.cluster.auth;
 
-import io.fabric8.kubernetes.api.model.authentication.TokenRequest;
-import io.fabric8.kubernetes.api.model.authentication.TokenRequestBuilder;
-import io.fabric8.kubernetes.client.ConfigBuilder;
-import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import org.apache.kafka.common.security.auth.AuthenticateCallbackHandler;
 import org.apache.kafka.common.security.oauthbearer.OAuthBearerToken;
 import org.apache.kafka.common.security.oauthbearer.OAuthBearerTokenCallback;
@@ -20,18 +15,19 @@ import javax.security.auth.callback.UnsupportedCallbackException;
 import javax.security.auth.login.AppConfigurationEntry;
 
 import java.io.IOException;
-import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 /**
- * Kafka SASL/OAUTHBEARER login callback handler that mints a fresh token via the Kubernetes TokenRequest API on each
- * invocation. The token is bound to a configured Service Account in a configured namespace, with a configured audience.
+ * Kafka SASL/OAUTHBEARER login callback handler that obtains the token for a configured Service Account in a
+ * configured namespace and with a configured audience from the {@link ServiceAccountTokenService}.
  *
- * There is currently no caching done internally. Kafka's OAuthBearerLoginModule uses the token lifetime to schedule the
- * next refresh, so a new TokenRequest is only made when the prior token is close to expiring.
+ * The tokens are cached by the token service and shared with the other users of the Service Account tokens such as the
+ * Kafka Agent client. So a new token is minted through the Kubernetes TokenRequest API only when the cached token is
+ * not usable anymore. Kafka's OAuthBearerLoginModule uses the token lifetime to schedule the next login, so it asks
+ * for a token only when the one it has is close to expiring.
  *
  * Example configuration in the {@code OAuthBearerLoginModule} entry:
  * {@code
@@ -71,7 +67,6 @@ public class KubernetesRequestedServiceAccountTokenLoginCallbackHandler implemen
     private String audience;
     private long expirationSeconds;
     private String principalName;
-    private KubernetesClient client;
 
     /**
      * Default constructor — required because Kafka clients (Admin API client in our case) load the handler via reflection.
@@ -92,17 +87,16 @@ public class KubernetesRequestedServiceAccountTokenLoginCallbackHandler implemen
         expirationSeconds = Long.parseLong(requiredOption(options, EXPIRATION_SECONDS_CONFIG));
         principalName = "User:system:serviceaccount:" + namespace + ":" + serviceAccountName;
 
-        client = buildKubernetesClient();
         LOGGER.debug("Configured Kubernetes Service Account token login for {} (audience={})", principalName, audience);
     }
 
     /**
-     * Factory for the Kubernetes client. Overridable so tests can inject a mock.
+     * Provides the token service used to get the tokens. Overridable so tests can inject their own instance.
      *
-     * @return  Kubernetes client used to call the TokenRequest API
+     * @return  Service Account token service
      */
-    /* test */ KubernetesClient buildKubernetesClient() {
-        return new KubernetesClientBuilder().withConfig(new ConfigBuilder().withUserAgent("strimzi-auth-token-callback").build()).build();
+    /* test */ ServiceAccountTokenService tokenService() {
+        return ServiceAccountTokenService.getInstance();
     }
 
     @Override
@@ -110,9 +104,9 @@ public class KubernetesRequestedServiceAccountTokenLoginCallbackHandler implemen
         for (Callback callback : callbacks) {
             if (callback instanceof OAuthBearerTokenCallback tokenCallback) {
                 try {
-                    tokenCallback.token(mintToken());
+                    tokenCallback.token(oauthBearerToken());
                 } catch (RuntimeException e) {
-                    LOGGER.error("Failed to mint Service Account token for {}", principalName, e);
+                    LOGGER.error("Failed to get Service Account token for {}", principalName, e);
                     tokenCallback.error("invalid_token", e.getMessage(), null);
                 }
             } else {
@@ -121,35 +115,14 @@ public class KubernetesRequestedServiceAccountTokenLoginCallbackHandler implemen
         }
     }
 
-    private OAuthBearerToken mintToken() {
-        TokenRequest request = new TokenRequestBuilder()
-                .withNewSpec()
-                    .withAudiences(audience)
-                    .withExpirationSeconds(expirationSeconds)
-                .endSpec()
-                .build();
-        TokenRequest response = client.serviceAccounts()
-                .inNamespace(namespace)
-                .withName(serviceAccountName)
-                .tokenRequest(request);
-
-        if (response == null || response.getStatus() == null || response.getStatus().getToken() == null) {
-            throw new IllegalStateException("Kubernetes API did not return a token for ServiceAccount " + namespace + "/" + serviceAccountName);
-        }
-
-        return new ServiceAccountToken(
-                response.getStatus().getToken(),
-                principalName,
-                Instant.parse(response.getStatus().getExpirationTimestamp()).toEpochMilli(),
-                System.currentTimeMillis()
-        );
+    private OAuthBearerToken oauthBearerToken() {
+        ServiceAccountToken token = tokenService().token(namespace, serviceAccountName, audience, expirationSeconds);
+        return new ServiceAccountOAuthBearerToken(token, principalName);
     }
 
     @Override
     public void close() {
-        if (client != null) {
-            client.close();
-        }
+        // The token service is shared and lives for the whole lifetime of the operator. So there is nothing to close.
     }
 
     private static String requiredOption(Map<String, ?> options, String key) {
@@ -160,22 +133,18 @@ public class KubernetesRequestedServiceAccountTokenLoginCallbackHandler implemen
         return value.toString();
     }
 
-    private static final class ServiceAccountToken implements OAuthBearerToken {
-        private final String token;
+    private static final class ServiceAccountOAuthBearerToken implements OAuthBearerToken {
+        private final ServiceAccountToken token;
         private final String principalName;
-        private final long lifetimeMs;
-        private final long startTimeMs;
 
-        ServiceAccountToken(String token, String principalName, long lifetimeMs, long startTimeMs) {
+        ServiceAccountOAuthBearerToken(ServiceAccountToken token, String principalName) {
             this.token = token;
             this.principalName = principalName;
-            this.lifetimeMs = lifetimeMs;
-            this.startTimeMs = startTimeMs;
         }
 
         @Override
         public String value() {
-            return token;
+            return token.value();
         }
 
         @Override
@@ -185,7 +154,7 @@ public class KubernetesRequestedServiceAccountTokenLoginCallbackHandler implemen
 
         @Override
         public long lifetimeMs() {
-            return lifetimeMs;
+            return token.expiresAtMs();
         }
 
         @Override
@@ -195,7 +164,7 @@ public class KubernetesRequestedServiceAccountTokenLoginCallbackHandler implemen
 
         @Override
         public Long startTimeMs() {
-            return startTimeMs;
+            return token.issuedAtMs();
         }
     }
 }
