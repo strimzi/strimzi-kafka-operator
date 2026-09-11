@@ -178,15 +178,15 @@ class CertificateUtilsTest {
     }
 
     @Test
-    @DisplayName("When the CA data is empty then validateUserCaCertChain throws an exception")
-    public void testValidateUserCaCertChainWhenEmpty() {
-        Exception exception = assertThrows(RuntimeException.class, () -> CertificateUtils.validateUserCaCertChain(Reconciliation.DUMMY_RECONCILIATION, Ca.CaRole.CLUSTER_CA, Map.of("ca.crt", "")));
+    @DisplayName("When the CA data is empty then validateCaCertChain throws an exception")
+    public void testValidateCaCertChainWhenEmpty() {
+        Exception exception = assertThrows(RuntimeException.class, () -> CertificateUtils.validateCaCertChain(Reconciliation.DUMMY_RECONCILIATION, Ca.CaRole.CLUSTER_CA, Map.of("ca.crt", "")));
         assertEquals("Failed to validate User supplied Cluster CA cert chain in ca.crt", exception.getMessage());
     }
 
     @Test
-    @DisplayName("When the CA data contains a single cert then validateUserCaCertChain does not throw an exception")
-    public void testValidateUserCaCertChainWhenSingleCert() throws IOException {
+    @DisplayName("When the CA data contains a single cert then validateCaCertChain does not throw an exception")
+    public void testValidateCaCertChainWhenSingleCert() throws IOException {
         OpenSslCertIssuer ssl = new OpenSslCertIssuer();
 
         File rootKey = createTempFile("key-", ".key");
@@ -205,12 +205,12 @@ class CertificateUtilsTest {
             cert = Map.of("ca.crt", Base64.getEncoder().encodeToString(fis.readAllBytes()));
         }
 
-        assertDoesNotThrow(() -> CertificateUtils.validateUserCaCertChain(Reconciliation.DUMMY_RECONCILIATION, Ca.CaRole.CLUSTER_CA, cert));
+        assertDoesNotThrow(() -> CertificateUtils.validateCaCertChain(Reconciliation.DUMMY_RECONCILIATION, Ca.CaRole.CLUSTER_CA, cert));
     }
 
     @Test
-    @DisplayName("When the CA data contains a chain then validateUserCaCertChain throws an exception when it is invalid")
-    public void testValidateUserCaCertChain() throws IOException {
+    @DisplayName("When the CA data contains a chain then validateCaCertChain throws an exception when it is invalid")
+    public void testValidateCaCertChain() throws IOException {
         OpenSslCertIssuer ssl = new OpenSslCertIssuer();
 
         File rootKey = createTempFile("key-", ".key");
@@ -261,14 +261,14 @@ class CertificateUtilsTest {
         }
 
         Map<String, String> validCert = Map.of("ca.crt", validCombinedPem, "ca-2026-02-01T09-00-00.crt", validCombinedPem);
-        assertDoesNotThrow(() -> CertificateUtils.validateUserCaCertChain(Reconciliation.DUMMY_RECONCILIATION, Ca.CaRole.CLUSTER_CA, validCert));
+        assertDoesNotThrow(() -> CertificateUtils.validateCaCertChain(Reconciliation.DUMMY_RECONCILIATION, Ca.CaRole.CLUSTER_CA, validCert));
 
         Map<String, String> invalidCert = Map.of("ca.crt", invalidCombinedPem);
-        Exception exception = assertThrows(RuntimeException.class, () -> CertificateUtils.validateUserCaCertChain(Reconciliation.DUMMY_RECONCILIATION, Ca.CaRole.CLUSTER_CA, invalidCert));
+        Exception exception = assertThrows(RuntimeException.class, () -> CertificateUtils.validateCaCertChain(Reconciliation.DUMMY_RECONCILIATION, Ca.CaRole.CLUSTER_CA, invalidCert));
         assertEquals("User supplied Cluster CA cert chain ca.crt is not valid. Certificates must be provided in the correct order.", exception.getMessage());
 
         Map<String, String> partiallyValidCert = Map.of("ca.crt", validCombinedPem, "ca-2026-02-01T09-00-00.crt", invalidCombinedPem);
-        Exception exception1 = assertThrows(RuntimeException.class, () -> CertificateUtils.validateUserCaCertChain(Reconciliation.DUMMY_RECONCILIATION, Ca.CaRole.CLUSTER_CA, partiallyValidCert));
+        Exception exception1 = assertThrows(RuntimeException.class, () -> CertificateUtils.validateCaCertChain(Reconciliation.DUMMY_RECONCILIATION, Ca.CaRole.CLUSTER_CA, partiallyValidCert));
         assertEquals("User supplied Cluster CA cert chain ca-2026-02-01T09-00-00.crt is not valid. Certificates must be provided in the correct order.", exception1.getMessage());
     }
 

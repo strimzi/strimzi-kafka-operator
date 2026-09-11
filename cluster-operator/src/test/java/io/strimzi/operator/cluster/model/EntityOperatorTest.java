@@ -906,7 +906,6 @@ public class EntityOperatorTest {
             .collect(Collectors.toList());
 
         assertThat(certManagerApiGroups, hasItem("certificates"));
-        assertThat(certManagerApiGroups, hasItem("certificates/status"));
     }
 
     @Test

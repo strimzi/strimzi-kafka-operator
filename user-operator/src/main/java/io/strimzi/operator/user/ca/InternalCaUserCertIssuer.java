@@ -144,6 +144,6 @@ public class InternalCaUserCertIssuer implements UserCertIssuer {
         } else if (clientsCaKeySecret.getData() == null || clientsCaKeySecret.getData().get("ca.key") == null) {
             throw new InvalidCertificateException("The Clients CA Key Secret is missing the ca.key file");
         }
-        CertificateUtils.validateUserCaCertChain(reconciliation, Ca.CaRole.CLIENTS_CA, clientsCaCertSecret.getData());
+        CertificateUtils.validateCaCertChain(reconciliation, Ca.CaRole.CLIENTS_CA, clientsCaCertSecret.getData());
     }
 }

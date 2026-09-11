@@ -197,7 +197,7 @@ public class CertManagerCa extends Ca {
                             LOGGER.infoCr(reconciliation, "New certificate for {}/{}", reconciliation.namespace(), entityName);
                             return newCertAndKey;
                         } else {
-                            LOGGER.infoCr(reconciliation, "New certificate for {}/{}, but not trusted yet so keeping existing certificate.", reconciliation.namespace(), entityName);
+                            LOGGER.warnCr(reconciliation, "New certificate for {}/{}, but not trusted yet so keeping existing certificate.", reconciliation.namespace(), entityName);
                             return existingCert;
                         }
                     } else {
@@ -260,26 +260,26 @@ public class CertManagerCa extends Ca {
                     .withNamespace(reconciliation.namespace())
                 .endMetadata()
                 .withNewSpec()
-                .withCommonName(subject.commonName())
-                .withNewPrivateKey()
-                    .withAlgorithm("RSA")
-                    .withEncoding("PKCS8")
-                    .withSize(4096)
-                .endPrivateKey()
-                .withDuration(convertToFabric8Duration(validityDays))
-                .withRenewBefore(convertToFabric8Duration(renewalDays))
-                .withIsCA(false)
-                .withNewSubject()
-                    .withOrganizations(subject.organizationName())
-                .endSubject()
-                .withDnsNames(new ArrayList<>(subject.dnsNames()))
-                .withIpAddresses(new ArrayList<>(subject.ipAddresses()))
-                .withNewIssuerRef()
-                    .withName(issuerRef.getName())
-                    .withKind(issuerRef.getKind().toValue())
-                    .withGroup(issuerRef.getGroup())
-                .endIssuerRef()
-                .withSecretName(secretName)
+                    .withCommonName(subject.commonName())
+                    .withNewPrivateKey()
+                        .withAlgorithm("RSA")
+                        .withEncoding("PKCS8")
+                        .withSize(4096)
+                    .endPrivateKey()
+                    .withDuration(convertToFabric8Duration(validityDays))
+                    .withRenewBefore(convertToFabric8Duration(renewalDays))
+                    .withIsCA(false)
+                    .withNewSubject()
+                        .withOrganizations(subject.organizationName())
+                    .endSubject()
+                    .withDnsNames(new ArrayList<>(subject.dnsNames()))
+                    .withIpAddresses(new ArrayList<>(subject.ipAddresses()))
+                    .withNewIssuerRef()
+                        .withName(issuerRef.getName())
+                        .withKind(issuerRef.getKind().toValue())
+                        .withGroup(issuerRef.getGroup())
+                    .endIssuerRef()
+                    .withSecretName(secretName)
                 .endSpec();
         if (ownerReference != null) {
             certificateBuilder.editMetadata().withOwnerReferences(ownerReference).endMetadata();
