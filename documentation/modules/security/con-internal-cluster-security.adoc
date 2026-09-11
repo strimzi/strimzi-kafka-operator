@@ -69,9 +69,10 @@ The supported combinations are:
 * No encryption with service account authentication
 * And no encryption with no authentication
 
-WARNING: When the authentication type is `none` and Kafka authorization is configured, Strimzi automatically makes the `ANONYMOUS` user a super user so that internal components can operate.
-This gives unrestricted access to any connection that Kafka identifies as `ANONYMOUS`, including connections through an unauthenticated client listener.
+WARNING: When the authentication type is set to `none`, all internal connections between the Kafka cluster components are unauthenticated and use the `ANONYMOUS` principal.
 Disable authentication only if other controls, such as network isolation or a service mesh, prevent unauthorized access.
+If you want to enable Kafka authorization in such a cluster, you must configure the `ANONYMOUS` user as a super user to make the internal components operate correctly.
+This gives unrestricted access to any connection that Kafka identifies as `ANONYMOUS`, including connections through an unauthenticated client listener.
 
 == Default internal cluster security
 
@@ -145,7 +146,6 @@ The service account exists only while service account authentication is enabled.
 |===
 
 When Kafka authorization is configured, Strimzi adds these principals to the list of Kafka super users so that internal components can operate.
-Unlike the `none` authentication type, the `ANONYMOUS` user is not made a super user.
 
 Service account authentication has the following requirements:
 

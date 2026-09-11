@@ -424,7 +424,7 @@ public class KafkaBrokerConfigurationBuilderTest {
 
         assertThat(configuration, isEquivalent("node.id=2",
                 "authorizer.class.name=org.apache.kafka.metadata.authorizer.StandardAuthorizer",
-                "super.users=User:ANONYMOUS;User:jakub;User:CN=kuba"));
+                "super.users=User:jakub;User:CN=kuba"));
     }
 
     @Test
