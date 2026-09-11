@@ -284,6 +284,8 @@ public class Environment {
      * Converts the value of an environment variable into an enum constant. An environment variable that is set to an
      * empty value is treated as if it was not set at all and the default value is used instead. That is needed because
      * the environment variables are often set from CI pipelines where an unset parameter ends up as an empty value.
+     * Dashes in the value are converted to underscores, so that values such as `service-account` can be matched with
+     * the `SERVICE_ACCOUNT` enum constant.
      *
      * @param enumType      Class of the enum the value should be converted to
      * @param envVarName    Name of the environment variable. Used only in the error message.
@@ -300,7 +302,7 @@ public class Environment {
         }
 
         try {
-            return Enum.valueOf(enumType, value.trim().toUpperCase(Locale.ENGLISH));
+            return Enum.valueOf(enumType, value.trim().toUpperCase(Locale.ENGLISH).replace('-', '_'));
         } catch (IllegalArgumentException e) {
             throw new IllegalArgumentException("Invalid value '" + value + "' of the " + envVarName + " environment variable", e);
         }

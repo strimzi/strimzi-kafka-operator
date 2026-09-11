@@ -396,3 +396,36 @@ scenarios:
       ipfamily: "ipv4"
       cluster_security_encryption: "none"
       cluster_security_authentication: "none"
+
+  - id: comment-cluster-security-service-account
+    description: "Comment with Service Account authentication of the internal cluster security"
+    event: issue_comment
+    fixture: .github/tests/events/parse-comment/issue_comment_15.json
+    expectations:
+      pipelines: "regression"
+      profiles: ""
+      tests: ""
+      groups: ""
+      kafka: "latest"
+      strimzi_feature_gates: ""
+      strimzi_rbac_scope: ""
+      cluster_operator_install_type: "yaml"
+      kube: "latest"
+      release: "latest"
+      ipfamily: "ipv4"
+      cluster_security_encryption: "tls"
+      cluster_security_authentication: "service-account"
+
+  - id: comment-cluster-security-unsupported-authentication
+    description: "Comment with an unsupported internal cluster security authentication type"
+    event: issue_comment
+    fixture: .github/tests/events/parse-comment/issue_comment_16.json
+    expectFailure: true
+    expectations: {}
+
+  - id: comment-cluster-security-unsupported-combination
+    description: "Comment with mTLS authentication combined with disabled encryption"
+    event: issue_comment
+    fixture: .github/tests/events/parse-comment/issue_comment_17.json
+    expectFailure: true
+    expectations: {}
