@@ -19,7 +19,7 @@ class FipsAgentTest {
     @Test
     void applyIsIdempotentWhenDsaAvailable() {
         assertDoesNotThrow(() -> KeyFactory.getInstance("DSA"));
-        FipsAgent.applyDsaWorkaround();
+        FipsAgent.handleMissingDSA();
         assertDoesNotThrow(() -> KeyFactory.getInstance("DSA"));
     }
 
@@ -40,7 +40,7 @@ class FipsAgentTest {
             }
 
             if (dsaMissing) {
-                FipsAgent.applyDsaWorkaround();
+                FipsAgent.handleMissingDSA();
                 assertNotNull(Security.getProvider("StrimziFipsDsaWorkaround"));
                 assertDoesNotThrow(() -> KeyFactory.getInstance("DSA"));
             }
@@ -54,8 +54,8 @@ class FipsAgentTest {
 
     @Test
     void applyMultipleTimesDoesNotDuplicate() {
-        FipsAgent.applyDsaWorkaround();
-        FipsAgent.applyDsaWorkaround();
+        FipsAgent.handleMissingDSA();
+        FipsAgent.handleMissingDSA();
         assertDoesNotThrow(() -> KeyFactory.getInstance("DSA"));
     }
 }
