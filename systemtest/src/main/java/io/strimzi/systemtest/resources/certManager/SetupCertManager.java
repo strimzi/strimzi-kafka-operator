@@ -4,14 +4,16 @@
  */
 package io.strimzi.systemtest.resources.certManager;
 
+import io.fabric8.certmanager.api.model.v1.Certificate;
+import io.fabric8.certmanager.api.model.v1.CertificateBuilder;
+import io.fabric8.certmanager.api.model.v1.CertificateList;
+import io.fabric8.certmanager.api.model.v1.ClusterIssuer;
+import io.fabric8.certmanager.api.model.v1.ClusterIssuerBuilder;
+import io.fabric8.certmanager.api.model.v1.ClusterIssuerList;
 import io.fabric8.kubernetes.api.model.Secret;
-import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.skodjob.kubetest4j.resources.KubeResourceManager;
 import io.skodjob.kubetest4j.resources.ResourceItem;
-import io.skodjob.kubetest4j.security.CertAndKey;
-import io.skodjob.kubetest4j.security.CertAndKeyFiles;
 import io.strimzi.systemtest.TestConstants;
-import io.strimzi.systemtest.security.SystemTestCertGenerator;
 import io.strimzi.systemtest.utils.kubeUtils.NamespaceUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.NetworkPolicyUtils;
@@ -19,9 +21,6 @@ import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.util.Base64;
 import java.util.Map;
 
 /**
@@ -38,14 +37,21 @@ public class SetupCertManager {
 
     /**
      * Name of the Kubernetes {@code Secret} in the cert-manager namespace that holds the
-     * CA certificate and private key.
+     * CA certificate and private key, created by cert-manager from the CA Certificate resource.
      */
     public static final String CA_SECRET_NAME = "strimzi-ca-secret";
 
     /**
-     * Name of the {@code ClusterIssuer} to issue certificates.
+     * Name of the {@code ClusterIssuer} that issues end-entity certificates using the CA.
      */
     public static final String CLUSTER_ISSUER_NAME = "strimzi-issuer";
+
+    /**
+     * Name of the cert-manager {@code Certificate} resource that represents the CA.
+     */
+    public static final String CA_CERTIFICATE_NAME = "strimzi-ca";
+
+    private static final String SELF_SIGNED_ISSUER_NAME = "selfsigned-bootstrap-issuer";
 
     private static final String CERT_MANAGER_DEPLOYMENT = "cert-manager";
     private static final String CERT_MANAGER_WEBHOOK_DEPLOYMENT = "cert-manager-webhook";
@@ -53,9 +59,6 @@ public class SetupCertManager {
 
     private static final String CERT_MANAGER_PATH =
             TestUtils.USER_PATH + "/../systemtest/src/test/resources/cert-manager/cert-manager.yaml";
-
-    private static final String STRIMZI_ISSUER_PATH =
-            TestUtils.USER_PATH + "/../systemtest/src/test/resources/cert-manager/strimzi-issuer.yaml";
 
     private SetupCertManager() { }
 
@@ -128,56 +131,98 @@ public class SetupCertManager {
     }
 
     /**
-     * Creates ClusterIssuer that issues end-entity certificates signed by CA.
-     *
-     * <p>This simulates the steps a user would perform before deploying a Kafka cluster with
-     * {@code clusterCa.type: cert-manager}. It creates self-signed CA public certificate
-     * and private key and stores them in the Secret that would be used by ClusterIssuer.
-     *
-     * @return the subject DN of the generated CA certificate
+     * Bootstraps a CA issuer chain using cert-manager's own certificate lifecycle:
+     * <ol>
+     *   <li>A {@code SelfSigned} ClusterIssuer is created to bootstrap the CA.</li>
+     *   <li>A {@code Certificate} resource ({@value CA_CERTIFICATE_NAME}) with {@code isCA=true}
+     *       is created, referencing the SelfSigned issuer. cert-manager generates the CA
+     *       certificate and private key and stores them in {@value CA_SECRET_NAME}.</li>
+     *   <li>A CA {@code ClusterIssuer} ({@value CLUSTER_ISSUER_NAME}) is created, referencing
+     *       the CA Secret so that cert-manager uses it to sign end-entity certificates.</li>
+     * </ol>
      */
-    public static String createIssuerAndCaSecret() {
-        LOGGER.info("Generating self-signed CA certificate and key for cert-manager ClusterIssuer");
+    public static void createIssuerAndCaSecret() {
+        LOGGER.info("Bootstrapping CA issuer chain via cert-manager");
 
-        final CertAndKey ca = SystemTestCertGenerator.generateRootCaCertAndKey();
-        final String subjectDn = ca.getCertificate().getSubjectX500Principal().getName();
-        final CertAndKeyFiles caFiles = SystemTestCertGenerator.exportToPemFiles(ca);
-
-        final String certBase64;
-        final String keyBase64;
-        try {
-            certBase64 = Base64.getEncoder().encodeToString(Files.readAllBytes(caFiles.certFile().toPath()));
-            keyBase64 = Base64.getEncoder().encodeToString(Files.readAllBytes(caFiles.keyFile().toPath()));
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to read CA cert/key PEM files", e);
-        }
-
-        // Create the Secret that the ClusterIssuer references
-        final Secret caSecret = new SecretBuilder()
+        // SelfSigned ClusterIssuer (used only to bootstrap the CA certificate)
+        final ClusterIssuer selfSignedIssuer = new ClusterIssuerBuilder()
                 .withNewMetadata()
-                    .withName(CA_SECRET_NAME)
-                    .withNamespace(CERT_MANAGER_NAMESPACE)
+                    .withName(SELF_SIGNED_ISSUER_NAME)
                 .endMetadata()
-                .withType("kubernetes.io/tls")
-                .addToData("tls.crt", certBase64)
-                .addToData("tls.key", keyBase64)
+                .withNewSpec()
+                    .withNewSelfSigned()
+                    .endSelfSigned()
+                .endSpec()
                 .build();
 
-        LOGGER.info("Creating CA Secret '{}/{}' for ClusterIssuer", CERT_MANAGER_NAMESPACE, CA_SECRET_NAME);
+        LOGGER.info("Creating SelfSigned ClusterIssuer '{}'", SELF_SIGNED_ISSUER_NAME);
         KubeResourceManager.get().kubeClient().getClient()
-                .secrets().inNamespace(CERT_MANAGER_NAMESPACE).resource(caSecret).create();
+                .resources(ClusterIssuer.class, ClusterIssuerList.class)
+                .resource(selfSignedIssuer).create();
         KubeResourceManager.get().pushToStack(new ResourceItem<>(() ->
                 KubeResourceManager.get().kubeClient().getClient()
-                        .secrets().inNamespace(CERT_MANAGER_NAMESPACE).withName(CA_SECRET_NAME).delete()));
+                        .resources(ClusterIssuer.class, ClusterIssuerList.class)
+                        .withName(SELF_SIGNED_ISSUER_NAME).delete()));
 
-        // Create the ClusterIssuer that signs end-entity certificates
-        LOGGER.info("Creating ClusterIssuer '{}' from {}", CLUSTER_ISSUER_NAME, STRIMZI_ISSUER_PATH);
-        KubeResourceManager.get().kubeCmdClient().apply(STRIMZI_ISSUER_PATH);
+        // Certificate resource for CA that will generate the CA cert+key in a Secret
+        final Certificate caCertificate = new CertificateBuilder()
+                .withNewMetadata()
+                    .withName(CA_CERTIFICATE_NAME)
+                    .withNamespace(CERT_MANAGER_NAMESPACE)
+                .endMetadata()
+                .withNewSpec()
+                    .withIsCA(true)
+                    .withCommonName("StrimziCA")
+                    .withSecretName(CA_SECRET_NAME)
+                    .withNewIssuerRef()
+                        .withName(SELF_SIGNED_ISSUER_NAME)
+                        .withKind("ClusterIssuer")
+                        .withGroup("cert-manager.io")
+                    .endIssuerRef()
+                .endSpec()
+                .build();
+
+        LOGGER.info("Creating CA Certificate '{}' in namespace '{}'", CA_CERTIFICATE_NAME, CERT_MANAGER_NAMESPACE);
+        KubeResourceManager.get().kubeClient().getClient()
+                .resources(Certificate.class, CertificateList.class)
+                .inNamespace(CERT_MANAGER_NAMESPACE)
+                .resource(caCertificate).create();
         KubeResourceManager.get().pushToStack(new ResourceItem<>(() ->
-                KubeResourceManager.get().kubeCmdClient().delete(STRIMZI_ISSUER_PATH)));
+                KubeResourceManager.get().kubeClient().getClient()
+                        .resources(Certificate.class, CertificateList.class)
+                        .inNamespace(CERT_MANAGER_NAMESPACE)
+                        .withName(CA_CERTIFICATE_NAME).delete()));
 
-        LOGGER.info("CA certificate subject DN: {}", subjectDn);
-        return subjectDn;
+        // Wait for cert-manager to create the CA Secret
+        LOGGER.info("Waiting for cert-manager to create CA Secret '{}/{}'", CERT_MANAGER_NAMESPACE, CA_SECRET_NAME);
+        TestUtils.waitFor("CA cert Secret to be created by cert-manager",
+                TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT,
+                () -> {
+                    Secret s = KubeResourceManager.get().kubeClient().getClient()
+                            .secrets().inNamespace(CERT_MANAGER_NAMESPACE).withName(CA_SECRET_NAME).get();
+                    return s != null && s.getData() != null && s.getData().containsKey("tls.crt");
+                });
+
+        // ClusterIssuer that signs end-entity certificates using the bootstrapped CA
+        final ClusterIssuer caIssuer = new ClusterIssuerBuilder()
+                .withNewMetadata()
+                    .withName(CLUSTER_ISSUER_NAME)
+                .endMetadata()
+                .withNewSpec()
+                    .withNewCa()
+                        .withSecretName(CA_SECRET_NAME)
+                    .endCa()
+                .endSpec()
+                .build();
+
+        LOGGER.info("Creating ClusterIssuer '{}'", CLUSTER_ISSUER_NAME);
+        KubeResourceManager.get().kubeClient().getClient()
+                .resources(ClusterIssuer.class, ClusterIssuerList.class)
+                .resource(caIssuer).create();
+        KubeResourceManager.get().pushToStack(new ResourceItem<>(() ->
+                KubeResourceManager.get().kubeClient().getClient()
+                        .resources(ClusterIssuer.class, ClusterIssuerList.class)
+                        .withName(CLUSTER_ISSUER_NAME).delete()));
     }
 
     /**

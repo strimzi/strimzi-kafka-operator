@@ -8,6 +8,30 @@
 
 <hr style="border:1px solid">
 
+## testCertManagerCaKeyReplacementAndCertRenewal
+
+**Description:** Test verifying CA key replacement and CA certificate renewal when using cert-manager. A Kafka cluster is deployed with cert-manager. First, the CA key is replaced, end-entity certs are reissued by deleting -cm secrets, expects 3 rolling restarts with correct generation annotation progression. Then, the CA cert is renewed with the same key and then expects 1 rolling restart, ca-cert-generation incremented on pods but not on secrets, ca-key-generation unchanged.
+
+**Steps:**
+
+| Step | Action | Result |
+| - | - | - |
+| 1. | Deploy Kafka cluster with cert-manager cluster CA. | Kafka cluster reaches ready state. |
+| 2. | Replace the CA key by deleting the CA cert Secret and waiting for cert-manager to regenerate it. | CA cert Secret is recreated with new key. |
+| 3. | Trigger end-entity cert reissue by deleting -cm secrets. | cert-manager recreates -cm secrets signed by the new CA. |
+| 4. | Verify that no rolling restart happens before updating the user-provided CA cert Secret. | Broker pods remain stable. |
+| 5. | Update the user-provided CA cert Secret with the new CA certificate. | Cluster Operator detects the new CA and initiates rolling restarts. |
+| 6. | Wait for 3 rolling restarts and verify generation annotations after each. | ca-key-generation incremented on pods after the first roll, ca-cert-generation incremented on both pods and secrets after the second roll, old CA cert removed in the third roll. |
+| 7. | Verify cluster is functional after key replacement. | Messages are successfully produced and consumed. |
+| 8. | Trigger cert renewal by updating the CA Certificate resource. | CA cert Secret is recreated with the same key but a new certificate. |
+| 9. | Update the user-provided CA cert Secret with the renewed certificate. | Single rolling restart occurs. |
+| 10. | Verify that ca-cert-generation is incremented on pods and ca-key-generation unchanged. | Generation annotations match expected values. |
+
+**Labels:**
+
+* [security](labels/security.md)
+
+
 ## testCertManagerClusterAndClientsCa
 
 **Description:** Test verifying cert-manager CA integration for both cluster and clients CA, including KafkaUser certificate issuance and certificate renewal. A new Kafka cluster is deployed with clusterCa.type=cert-manager and clientsCa.type=cert-manager. cert-manager issues all component and user end-entity certificates. The cluster must come up healthy, Secrets and annotations are verified, KafkaUser cert is verified to be issued by cert-manager, and a TLS-authenticated producer/consumer must be able to send and receive messages. Then validityDays is updated to trigger certificate renewal and the cluster must remain healthy.
@@ -18,13 +42,14 @@
 | - | - | - |
 | 1. | Create the CA cert Secret in the test namespace. | Secret is present in the test namespace. |
 | 2. | Deploy Kafka with clusterCa.type=cert-manager and clientsCa.type=cert-manager, generateCertificateAuthority=false. | Kafka cluster reaches ready state without errors. |
-| 3. | Assert cluster CA cert Secret has correct annotations. | ca-cert-generation=0, ca-key-generation=0, and cert-hash annotations are set. |
-| 4. | Assert the cert-manager broker and cluster operator Secrets (-cm suffix) exist and their certificates match the corresponding Strimzi Secrets and are signed by the cert-manager CA. | cert-manager Secrets exist, their certificates match the Strimzi Secrets, and the issuer DNs match the CA subject DN. |
-| 5. | Create a KafkaUser and assert that the cert-manager managed user Secret (-cm suffix) exists, its tls.crt matches user.crt, and the user cert is signed by the cert-manager CA. | cert-manager user Secret exists, certificates match, and issuer DN matches cert-manager CA subject DN. |
+| 3. | Verify that cluster CA cert Secret has correct annotations. | ca-cert-generation=0, ca-key-generation=0, and cert-hash annotations are set. |
+| 4. | Verify that the cert-manager broker and cluster operator Secrets (-cm suffix) exist and their certificates match the corresponding Strimzi Secrets and are signed by the cert-manager CA. | cert-manager Secrets exist, their certificates match the Strimzi Secrets, and the issuer DNs match the CA subject DN. |
+| 5. | Create a KafkaUser and verify that the cert-manager managed user Secret (-cm suffix) exists, its tls.crt matches user.crt, and the user cert is signed by the cert-manager CA. | cert-manager user Secret exists, certificates match, and issuer DN matches cert-manager CA subject DN. |
 | 6. | Produce and consume messages over TLS using the KafkaUser. | Messages are successfully produced and consumed. |
-| 7. | Edit the Kafka CR to increase validityDays on clusterCa, causing cert-manager to re-issue broker certs with the new duration. | Kafka CR is accepted by the API server. |
+| 7. | Edit the Kafka CR to change validityDays on clusterCa, causing cert-manager to re-issue broker certificates. | Kafka CR is accepted by the API server. |
 | 8. | Wait for all broker pods to roll and become ready. | All broker pods have a new UID after the rolling update. |
-| 9. | Produce and consume messages over TLS using a KafkaUser after renewal. | Messages are successfully produced and consumed. |
+| 9. | Verify that broker certificate is updated. | Broker certificate does not match the certificate captured before renewal |
+| 10. | Produce and consume messages over TLS using a KafkaUser after renewal. | Messages are successfully produced and consumed. |
 
 **Labels:**
 

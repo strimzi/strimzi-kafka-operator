@@ -19,6 +19,7 @@ They cover authentication and authorization mechanisms (OAuth, ACLs, OPA integra
 - [testAutoReplaceClusterCaKeysTriggeredByAnno](../io.strimzi.systemtest.security.SecurityST.md)
 - [testBrokerCertificatesIncludeFullCaChain](../io.strimzi.systemtest.security.SecurityST.md)
 - [testCaRenewalBreakInMiddle](../io.strimzi.systemtest.security.SecurityST.md)
+- [testCertManagerCaKeyReplacementAndCertRenewal](../io.strimzi.systemtest.security.CertManagerST.md)
 - [testCertManagerClusterAndClientsCa](../io.strimzi.systemtest.security.CertManagerST.md)
 - [testCertRegeneratedAfterInternalCAisDeleted](../io.strimzi.systemtest.security.SecurityST.md)
 - [testCertRenewalInMaintenanceTimeWindow](../io.strimzi.systemtest.security.SecurityST.md)
