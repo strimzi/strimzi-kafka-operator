@@ -190,7 +190,7 @@ public class ConnectorMockTest {
         ResourceOperatorSupplier ros = new ResourceOperatorSupplier(VertxUtil.asExecutor(vertx.createSharedWorkerExecutor("kubernetes-ops-pool")),
                 client,
                 new DefaultAdminClientProvider(),
-                new DefaultKafkaAgentClientProvider(null),
+                new DefaultKafkaAgentClientProvider(),
                 metricsProvider,
                 pfa);
 
