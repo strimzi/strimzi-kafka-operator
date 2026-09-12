@@ -1,0 +1,7 @@
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: strimzi-issuer
+spec:
+  ca:
+    secretName: strimzi-ca-secret

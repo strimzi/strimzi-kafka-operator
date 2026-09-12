@@ -11,14 +11,16 @@ import io.strimzi.api.kafka.model.user.KafkaUserBuilder;
 import io.strimzi.api.kafka.model.user.KafkaUserList;
 import io.strimzi.api.kafka.model.user.KafkaUserQuotas;
 import io.strimzi.api.kafka.model.user.KafkaUserStatus;
-import io.strimzi.certs.CertIssuer;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.gatekeeper.GatekeeperPluginFactory;
+import io.strimzi.operator.common.model.PasswordGenerator;
 import io.strimzi.operator.common.operator.MockCertIssuer;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.kubernetes.CrdOperator;
 import io.strimzi.operator.common.operator.resource.kubernetes.SecretOperator;
 import io.strimzi.operator.user.ResourceUtils;
+import io.strimzi.operator.user.ca.InternalCaUserCertIssuer;
+import io.strimzi.operator.user.ca.UserCertIssuer;
 import io.strimzi.operator.user.model.acl.SimpleAclRule;
 import io.strimzi.plugin.gatekeeper.GatekeeperKafkaUserDeletionContext;
 import io.strimzi.plugin.gatekeeper.GatekeeperKafkaUserEntryContext;
@@ -31,6 +33,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
+import java.time.Clock;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -61,7 +64,7 @@ import static org.mockito.Mockito.when;
  * exit phases.
  */
 public class KafkaUserOperatorGatekeeperTest {
-    private final CertIssuer mockCertIssuer = new MockCertIssuer();
+    private final UserCertIssuer userCertIssuer = new InternalCaUserCertIssuer(new MockCertIssuer(), new PasswordGenerator(10, "a", "a"), null, Clock.systemUTC());
 
     // The order in which the plugin hooks are invoked
     private final List<String> order = new ArrayList<>();
@@ -113,7 +116,7 @@ public class KafkaUserOperatorGatekeeperTest {
     }
 
     private KafkaUserOperator operator() {
-        return new KafkaUserOperator(ResourceUtils.createUserOperatorConfig(ResourceUtils.NAMESPACE), mockCertIssuer, secretOps, kafkaUserOps, scramOps, quotasOps, aclOps);
+        return new KafkaUserOperator(ResourceUtils.createUserOperatorConfig(ResourceUtils.NAMESPACE), userCertIssuer, secretOps, kafkaUserOps, scramOps, quotasOps, aclOps);
     }
 
     private static Reconciliation reconciliation() {

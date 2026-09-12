@@ -43,3 +43,13 @@ rules:
   - patch
   - update
   - delete
+- apiGroups:
+  - "cert-manager.io"
+  resources:
+  - certificates
+  verbs:
+  - get
+  - create
+  - delete
+  - patch
+  - update

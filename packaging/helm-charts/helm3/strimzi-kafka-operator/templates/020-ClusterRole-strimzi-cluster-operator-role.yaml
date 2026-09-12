@@ -188,4 +188,14 @@ rules:
   - delete
   - patch
   - update
+- apiGroups:
+  - "cert-manager.io"
+  resources:
+  - certificates
+  verbs:
+  - get
+  - create
+  - delete
+  - patch
+  - update
 {{- end -}}

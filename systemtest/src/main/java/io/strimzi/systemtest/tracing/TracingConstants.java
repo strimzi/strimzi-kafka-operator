@@ -23,11 +23,6 @@ public interface TracingConstants {
     String JAEGER_QUERY_SERVICE = JAEGER_COLLECTOR_NAME;
     String JAEGER_COLLECTOR_OTLP_URL = "http://" + JAEGER_COLLECTOR_NAME + ":4317";
 
-    String CERT_MANAGER_WEBHOOK_DEPLOYMENT = "cert-manager-webhook";
-    String CERT_MANAGER_CA_INJECTOR_DEPLOYMENT = "cert-manager-cainjector";
-    String CERT_MANAGER_DEPLOYMENT = "cert-manager";
-    String CERT_MANAGER_NAMESPACE = "cert-manager";
-
     String OTEL_SERVICE_ENV = "OTEL_SERVICE_NAME";
 
     String OPEN_TELEMETRY = "OpenTelemetry";

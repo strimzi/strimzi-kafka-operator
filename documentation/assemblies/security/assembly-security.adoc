@@ -72,3 +72,6 @@ include::../../modules/security/proc-configuring-external-clients-to-trust-clust
 
 //user-supplied certs
 include::assembly-using-your-own-certificates.adoc[leveloffset=+1]
+
+//cert-manager certs
+include::assembly-using-cert-manager.adoc[leveloffset=+1]
