@@ -1,10 +1,40 @@
 #####
-# Build the helper container image for downloading prerequisites
+# Install runtime dependencies into a chroot and download prerequisites
 #####
-FROM registry.access.redhat.com/ubi9/ubi-minimal:latest AS downloader
+FROM registry.access.redhat.com/ubi10/ubi-minimal:latest AS builder
 
+ARG JAVA_VERSION=21
 ARG TARGETOS
 ARG TARGETARCH
+
+RUN mkdir -p /mnt/rootfs && \
+    microdnf install \
+        --installroot /mnt/rootfs \
+        --noplugins \
+        --config /etc/dnf/dnf.conf \
+        --setopt=cachedir=/var/cache/microdnf \
+        --setopt=reposdir=/etc/yum.repos.d \
+        --setopt=varsdir=/etc/dnf \
+        --setopt=install_weak_deps=0 \
+        --setopt=tsflags=nodocs \
+        --releasever 10 \
+        -y \
+        # Java runtime
+        java-${JAVA_VERSION}-openjdk-headless \
+        # Required for TLS operations
+        openssl \
+        # Required for entrypoint scripts
+        bash \
+        # Required for timezone configuration
+        tzdata \
+    && microdnf \
+        --installroot /mnt/rootfs \
+        --noplugins \
+        --config /etc/dnf/dnf.conf \
+        --setopt=cachedir=/var/cache/microdnf \
+        --setopt=reposdir=/etc/yum.repos.d \
+        --setopt=varsdir=/etc/dnf \
+        clean all
 
 #####
 # Get Tini
@@ -16,34 +46,33 @@ ENV TINI_SHA256_PPC64LE=3f658420974768e40810001a038c29d003728c5fe86da211cff5059e
 ENV TINI_SHA256_S390X=931b70a182af879ca249ae9de87ef68423121b38d235c78997fafc680ceab32d
 
 RUN set -ex; \
+    mkdir -p /mnt/rootfs/usr/bin; \
     if [[ "${TARGETOS}/${TARGETARCH}" = "linux/ppc64le" ]]; then \
-        curl -s -L https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini-ppc64le -o /usr/bin/tini; \
-        echo "${TINI_SHA256_PPC64LE} */usr/bin/tini" | sha256sum -c; \
-        chmod +x /usr/bin/tini; \
+        curl -s -L https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini-ppc64le -o /mnt/rootfs/usr/bin/tini; \
+        echo "${TINI_SHA256_PPC64LE} */mnt/rootfs/usr/bin/tini" | sha256sum -c; \
+        chmod +x /mnt/rootfs/usr/bin/tini; \
     elif [[ "${TARGETOS}/${TARGETARCH}" = "linux/arm64" ]]; then \
-        curl -s -L https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini-arm64 -o /usr/bin/tini; \
-        echo "${TINI_SHA256_ARM64} */usr/bin/tini" | sha256sum -c; \
-        chmod +x /usr/bin/tini; \
+        curl -s -L https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini-arm64 -o /mnt/rootfs/usr/bin/tini; \
+        echo "${TINI_SHA256_ARM64} */mnt/rootfs/usr/bin/tini" | sha256sum -c; \
+        chmod +x /mnt/rootfs/usr/bin/tini; \
     elif [[ "${TARGETOS}/${TARGETARCH}" = "linux/s390x" ]]; then \
-        curl -s -L https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini-s390x -o /usr/bin/tini; \
-        echo "${TINI_SHA256_S390X} */usr/bin/tini" | sha256sum -c; \
-        chmod +x /usr/bin/tini; \
+        curl -s -L https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini-s390x -o /mnt/rootfs/usr/bin/tini; \
+        echo "${TINI_SHA256_S390X} */mnt/rootfs/usr/bin/tini" | sha256sum -c; \
+        chmod +x /mnt/rootfs/usr/bin/tini; \
     else \
-        curl -s -L https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini -o /usr/bin/tini; \
-        echo "${TINI_SHA256_AMD64} */usr/bin/tini" | sha256sum -c; \
-        chmod +x /usr/bin/tini; \
+        curl -s -L https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini -o /mnt/rootfs/usr/bin/tini; \
+        echo "${TINI_SHA256_AMD64} */mnt/rootfs/usr/bin/tini" | sha256sum -c; \
+        chmod +x /mnt/rootfs/usr/bin/tini; \
     fi
 
 #####
-# Build the main container image
+# Build the main container image on distroless base
 #####
-FROM registry.access.redhat.com/ubi9/ubi-minimal:latest
+FROM registry.access.redhat.com/ubi10/ubi-micro:latest
 
 LABEL org.opencontainers.image.source='https://github.com/strimzi/strimzi-kafka-operator'
 
 ARG JAVA_VERSION=21
-ARG TARGETOS
-ARG TARGETARCH
 ARG strimzi_version
 
 LABEL name='base' \
@@ -55,20 +84,9 @@ LABEL name='base' \
 
 USER root
 
-RUN microdnf update -y \
-    && microdnf --setopt=install_weak_deps=0 --setopt=tsflags=nodocs install -y  \
-            # Needed to run Java applications \
-            java-${JAVA_VERSION}-openjdk-headless \
-            # Needed to work with TLS certificates in our shell scripts as well as from our own Java code \
-            openssl \
-            # Needed to add non-root users to our container images \
-            shadow-utils \
-    && microdnf reinstall -y tzdata \
-    && microdnf clean all -y
+#####
+# Copy installed packages from builder chroot
+#####
+COPY --from=builder /mnt/rootfs /
 
 ENV JAVA_HOME=/usr/lib/jvm/jre-${JAVA_VERSION}
-
-#####
-# Copy Tini from the downloader stage
-#####
-COPY --from=downloader /usr/bin/tini /usr/bin/tini

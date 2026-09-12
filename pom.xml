@@ -128,6 +128,7 @@
 
     <modules>
         <module>kafka-agent</module>
+        <module>fips-agent</module>
         <module>tracing-agent</module>
         <module>test</module>
         <module>crd-annotations</module>
