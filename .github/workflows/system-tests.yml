@@ -263,11 +263,13 @@ jobs:
         uses: strimzi/github-actions/.github/actions/dependencies/install-yq@4aefb08c299693441fb87284984c760a1c708fbc # v2.4
         with:
           version: "v4.6.3"
+          architecture: "amd64"
 
       - name: Install Shellcheck
         uses: strimzi/github-actions/.github/actions/dependencies/install-shellcheck@4aefb08c299693441fb87284984c760a1c708fbc # v2.4
         with:
           version: "0.11.0"
+          architecture: "amd64"
 
       - name: Install Helm
         uses: strimzi/github-actions/.github/actions/dependencies/install-helm@4aefb08c299693441fb87284984c760a1c708fbc # v2.4
@@ -304,7 +306,7 @@ jobs:
     strategy:
       matrix:
         architecture: [amd64, arm64]
-    runs-on: cncf-ubuntu-2-8-arm
+    runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -318,11 +320,13 @@ jobs:
         uses: strimzi/github-actions/.github/actions/dependencies/install-yq@4aefb08c299693441fb87284984c760a1c708fbc # v2.4
         with:
           version: "v4.6.3"
+          architecture: "amd64"
 
       - name: Install Shellcheck
         uses: strimzi/github-actions/.github/actions/dependencies/install-shellcheck@4aefb08c299693441fb87284984c760a1c708fbc # v2.4
         with:
           version: "0.11.0"
+          architecture: "amd64"
 
       - uses: strimzi/github-actions/.github/actions/build/build-containers@4aefb08c299693441fb87284984c760a1c708fbc # v2.4
         with:
