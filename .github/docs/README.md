@@ -120,6 +120,8 @@ Currently, we have these parameters that can be passed through the comment:
 | kubeVersion                   | Used Kubernetes version as part of Kind/Minikube setup. In case `kind` is used as Kubernetes provider, the format should follow Kind Node Images syntax like `kindest/node:v1.33.7@sha256:d26ef333bdb2cbe9862a0f7c3803ecc7b4303d8cea8e814b481b09949d353040`. | The one set as default in setup scripts                                              |
 | kindVersion                   | Version of Kind binary to install for cluster setup (e.g. `0.29.0`). n case you use different from default version of Kind, you should reference full image via `kindVersion` parameter to achieve supported configuration.                                  | The one set as default in setup scripts (currently 0.31.0)                           |
 | kafkaVersion                  | Which Kafka version will be used in the tests                                                                                                                                                                                                                | Default one from STs config                                                          |
+| clusterSecurityEncryption     | Encryption used for the internal communication of the Kafka clusters deployed by the tests (`tls` or `none`)                                                                                                                                                 | `tls`                                                                                |
+| clusterSecurityAuthentication | Authentication used for the internal communication of the Kafka clusters deployed by the tests (`mtls`, `service-account` or `none`). `mtls` can be used only together with `tls` encryption.                                                                | `mtls`                                                                               |
 
 The process of parameter usage is as follows:
 - `pipeline` has the highest priority. If `pipeline` is defined, the jobs will be loaded with data from [pipelines.yaml](../actions/systemtests/generate-matrix/pipelines.yaml) that match specific _pipeline_.
@@ -135,6 +137,7 @@ The process of parameter usage is as follows:
 - `kubeVersion` is used for set up a specific version of Kubernetes within the tests. In case `kind` is used as Kubernetes provider, the format should follow Kind Node Images syntax like `kindest/node:v1.33.7@sha256:d26ef333bdb2cbe9862a0f7c3803ecc7b4303d8cea8e814b481b09949d353040`. 
 - `kindVersion` is used for every running job to set the Kind CLI binary version. In case you use different from default version of Kind, you should reference full image via `kindVersion` parameter to achieve supported configuration.
 - `kafkaVersion` is used for every running job.
+- `clusterSecurityEncryption` and `clusterSecurityAuthentication` are used for every running job. They configure the `strimzi.io/internal-cluster-security` annotation set on the Kafka custom resources created by the tests. When the default combination (`tls` / `mtls`) is used, the annotation is not set at all so that the default behaviour of the Cluster Operator is covered as well.
 
 ### Matrix generation
 Once the event is parsed the mechanism will decide whether Strimzi should be built or already existing images will be used (release RC for example).
@@ -161,6 +164,9 @@ Every generated `GITHUB_TOKEN` has only read access to the repo/org without acce
 Unit and integration tests invoked via [actions-tests.yml](../workflows/actions-tests.yml) workflow.
 It uses files specified within [tests](../tests) folder and via [act](https://github.com/nektos/act) it tries to execute the actions and check the outputs.
 Currently, we tests `generate-matrix` and `parse-comment` actions.
+
+A `parse-comment` scenario can also cover invalid inputs that should be rejected by the action.
+Such a scenario sets `expectFailure: true` (with empty `expectations`) and passes only when the parsing fails.
 
 ### Performance Report Tests
 The performance report generation workflow has test scenarios defined in [tests/scenarios/perf-report.yaml](../tests/scenarios/perf-report.yaml).

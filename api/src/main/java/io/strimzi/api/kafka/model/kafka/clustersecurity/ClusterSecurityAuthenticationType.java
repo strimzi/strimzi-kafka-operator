@@ -12,14 +12,16 @@ import com.fasterxml.jackson.annotation.JsonValue;
  */
 public enum ClusterSecurityAuthenticationType {
     NONE,
-    MTLS;
+    MTLS,
+    SERVICE_ACCOUNT;
 
     @JsonCreator
     public static ClusterSecurityAuthenticationType forValue(String value) {
         return switch (value) {
             case "none" -> NONE;
             case "mtls", "strimzi-mtls" -> MTLS; // We have to keep the legacy strimzi-mtls here for downgrades/upgrades to/from 1.2.0
-            default -> null;
+            case "service-account" -> SERVICE_ACCOUNT;
+            default -> throw new IllegalArgumentException("Unknown authentication type: " + value);
         };
     }
 
@@ -28,6 +30,7 @@ public enum ClusterSecurityAuthenticationType {
         return switch (this) {
             case NONE -> "none";
             case MTLS -> "strimzi-mtls"; // We have to keep the legacy strimzi-mtls here for downgrades/upgrades to/from 1.2.0
+            case SERVICE_ACCOUNT -> "service-account";
         };
     }
 }

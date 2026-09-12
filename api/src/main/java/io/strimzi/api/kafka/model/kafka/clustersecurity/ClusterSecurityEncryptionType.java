@@ -19,7 +19,7 @@ public enum ClusterSecurityEncryptionType {
         return switch (value) {
             case "none" -> NONE;
             case "tls", "strimzi-tls" -> TLS; // We have to keep the legacy strimzi-tls here for downgrades/upgrades to/from 1.2.0
-            default -> null;
+            default -> throw new IllegalArgumentException("Unknown encryption type: " + value);
         };
     }
 

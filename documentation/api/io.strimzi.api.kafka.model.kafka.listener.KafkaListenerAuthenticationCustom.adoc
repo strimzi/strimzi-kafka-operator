@@ -106,7 +106,7 @@ spec:
       principal.builder.class: io.strimzi.kafka.oauth.server.OAuthKafkaPrincipalBuilder
     listeners:
       - name: sa
-        port: 9092
+        port: 9093
         type: internal
         tls: true
         authentication:
@@ -132,18 +132,18 @@ spec:
 
 In this configuration:
 
-* `oauth.jwks.endpoint.uri` points to the JWKS endpoint of the Kubernetes API server, which publishes the keys used to sign the Service Account tokens.
-Tokens are validated locally by the Kafka nodes using these keys.
-* `oauth.valid.issuer.uri` is the token issuer of your Kubernetes cluster and is checked against the `iss` claim of the token.
-* `oauth.server.bearer.token.location` and `oauth.ssl.truststore.location` point to the Service Account token and the Kubernetes CA certificate mounted by Strimzi into the Kafka containers.
-The token is used to authenticate against the JWKS endpoint, which is not available to unauthenticated users by default.
-* `oauth.username.claim` uses the `sub` claim of the token as the name of the Kafka principal.
-* `oauth.check.access.token.type` is disabled because Service Account tokens don't contain the `typ` claim expected by the OAuth standard.
-* `oauth.include.accept.header` is disabled because the Kubernetes API server rejects requests that set the `Accept` header.
-* `unsecuredLoginStringClaim_sub` satisfies the parameter validation of the `OAuthBearerLoginModule` and isn't used for authentication.
-* `oauth.custom.claim.check` restricts the listener to tokens issued for a specific audience.
 * `principal.builder.class` maps the validated tokens to Kafka principals.
 For more information on the requirements that apply to principal builders, see the description of setting a custom principal builder that follows.
+* `unsecuredLoginStringClaim_sub` satisfies the parameter validation of the `OAuthBearerLoginModule` and isn't used for authentication.
+* `oauth.check.access.token.type` is disabled because Service Account tokens don't contain the `typ` claim expected by the OAuth standard.
+* `oauth.custom.claim.check` restricts the listener to tokens issued for a specific audience.
+* `oauth.valid.issuer.uri` is the token issuer of your Kubernetes cluster and is checked against the `iss` claim of the token.
+* `oauth.jwks.endpoint.uri` points to the JWKS endpoint of the Kubernetes API server, which publishes the keys used to sign the Service Account tokens.
+Tokens are validated locally by the Kafka nodes using these keys.
+* `oauth.username.claim` uses the `sub` claim of the token as the name of the Kafka principal.
+* `oauth.server.bearer.token.location` and `oauth.ssl.truststore.location` point to the Service Account token and the Kubernetes CA certificate mounted by Strimzi into the Kafka containers.
+The token is used to authenticate against the JWKS endpoint, which is not available to unauthenticated users by default.
+* `oauth.include.accept.header` is disabled because the Kubernetes API server rejects requests that set the `Accept` header.
 
 NOTE: The issuer URI and the address of the JWKS endpoint depend on your Kubernetes cluster.
 Many Kubernetes clusters use `https://kubernetes.default.svc.cluster.local`, but managed Kubernetes services often use a different, externally hosted issuer.
@@ -152,9 +152,9 @@ To find the values used by your cluster, run `kubectl get --raw /.well-known/ope
 == Kafka principals and ACLs
 
 Clients are identified by the `sub` claim of the token, which for Service Account tokens has the format `system:serviceaccount:<namespace>:<service_account_name>`.
+Strimzi operands use a Service Account named after the component: `<connect_cluster_name>-connect` for Kafka Connect, `<mirror_maker_2_cluster_name>-mirrormaker2` for MirrorMaker 2, and `<bridge_name>-bridge` for the HTTP Bridge.
+For example, a Kafka Connect cluster named `my-connect` deployed in the `myproject` namespace authenticates as `User:system:serviceaccount:myproject:my-connect-connect`.
 Use these names when configuring ACL rules.
-
-Strimzi operands use a Service Account named after the component, so a Kafka Connect cluster named `my-connect` deployed in the `myproject` namespace authenticates as `User:system:serviceaccount:myproject:my-connect-connect`.
 
 == Restricting the token audience
 

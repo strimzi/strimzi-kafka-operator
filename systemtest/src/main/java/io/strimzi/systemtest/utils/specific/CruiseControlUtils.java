@@ -8,7 +8,10 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.skodjob.kubetest4j.enums.LogLevel;
 import io.skodjob.kubetest4j.executor.ExecResult;
 import io.skodjob.kubetest4j.resources.KubeResourceManager;
+import io.strimzi.api.kafka.model.kafka.clustersecurity.ClusterSecurityAuthenticationType;
+import io.strimzi.api.kafka.model.kafka.clustersecurity.ClusterSecurityEncryptionType;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlConfigurationParameters;
+import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.kafkaclients.internalClients.admin.AdminClient;
 import io.strimzi.systemtest.kafkaclients.internalClients.admin.KafkaTopicDescription;
@@ -117,14 +120,99 @@ public class CruiseControlUtils {
         String kafkaClusterName = kafkaProperties.getProperty("cluster-name");
         TestUtils.waitFor("Verify that Kafka configuration " + kafkaProperties + " has correct CruiseControl metric reporter properties",
             TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_CRUISE_CONTROL_TIMEOUT, () ->
-            kafkaProperties.getProperty(CruiseControlConfigurationParameters.METRICS_TOPIC_NAME.getValue()).equals("strimzi.cruisecontrol.metrics") &&
-            kafkaProperties.getProperty(CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_ENDPOINT_ID_ALGO.getValue()).equals("HTTPS") &&
-            kafkaProperties.getProperty(CruiseControlConfigurationParameters.METRICS_REPORTER_BOOTSTRAP_SERVERS.getValue()).equals(kafkaClusterName + "-kafka-brokers:9091") &&
-            kafkaProperties.getProperty(CruiseControlConfigurationParameters.METRICS_REPORTER_SECURITY_PROTOCOL.getValue()).equals("SSL") &&
-            kafkaProperties.getProperty(CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_KEYSTORE_TYPE.getValue()).equals("PEM") &&
-            kafkaProperties.getProperty(CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_KEYSTORE_CERTIFICATE_CHAIN.getValue()).equals("${strimzisecrets:" + namespace + "/" + brokerPodName + ":" + brokerPodName + ".crt}") &&
-            kafkaProperties.getProperty(CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_TRUSTSTORE_TYPE.getValue()).equals("PEM") &&
-            kafkaProperties.getProperty(CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_TRUSTSTORE_CERTIFICATES.getValue()).equals("${strimzisecrets:" + namespace + "/" + clusterName + "-trustbundle:cluster-ca.crt}"));
+                        kafkaProperties.getProperty(CruiseControlConfigurationParameters.METRICS_TOPIC_NAME.getValue()).equals("strimzi.cruisecontrol.metrics")
+                                && kafkaProperties.getProperty(CruiseControlConfigurationParameters.METRICS_TOPIC_AUTO_CREATE.getValue()).equals("true")
+                                && kafkaProperties.getProperty(CruiseControlConfigurationParameters.METRICS_REPORTER_BOOTSTRAP_SERVERS.getValue()).equals(kafkaClusterName + "-kafka-brokers:9091")
+                                && verifyCruiseControlMetricReporterConfiguration(kafkaProperties, clusterName, namespace, brokerPodName));
+    }
+
+    /**
+     * Verifies that the Cruise Control metrics reporter is configured according to the internal cluster security
+     * configuration used for the whole test run.
+     *
+     * @param kafkaProperties   Kafka broker configuration with the Cruise Control metrics reporter options
+     * @param clusterName       Name of the Kafka cluster
+     * @param namespace         Namespace of the Kafka cluster
+     * @param brokerPodName     Name of the broker pod the configuration belongs to
+     *
+     * @return  True when the configuration matches the expected internal cluster security configuration. False otherwise.
+     */
+    private static boolean verifyCruiseControlMetricReporterConfiguration(Properties kafkaProperties, String clusterName, String namespace, String brokerPodName)  {
+        return verifyCruiseControlMetricReporterSecurityProtocol(kafkaProperties)
+                && verifyCruiseControlMetricReporterEncryption(kafkaProperties, clusterName, namespace)
+                && verifyCruiseControlMetricReporterAuthentication(kafkaProperties, namespace, brokerPodName);
+    }
+
+    /**
+     * Verifies the security protocol of the Cruise Control metrics reporter. It is always configured and depends on
+     * both the encryption and the authentication type.
+     *
+     * @param kafkaProperties   Kafka broker configuration with the Cruise Control metrics reporter options
+     *
+     * @return  True when the security protocol matches the expected one. False otherwise.
+     */
+    private static boolean verifyCruiseControlMetricReporterSecurityProtocol(Properties kafkaProperties) {
+        String expected = ClusterSecurityEncryptionType.TLS.equals(Environment.CLUSTER_SECURITY_ENCRYPTION) ? "SSL" : "PLAINTEXT";
+
+        if (ClusterSecurityAuthenticationType.SERVICE_ACCOUNT.equals(Environment.CLUSTER_SECURITY_AUTHENTICATION)) {
+            expected = "SASL_" + expected;
+        }
+
+        return expected.equals(kafkaProperties.getProperty(CruiseControlConfigurationParameters.METRICS_REPORTER_SECURITY_PROTOCOL.getValue()));
+    }
+
+    /**
+     * Verifies the encryption configuration of the Cruise Control metrics reporter. The truststore with the Cluster CA
+     * is configured only when TLS encryption is used.
+     *
+     * @param kafkaProperties   Kafka broker configuration with the Cruise Control metrics reporter options
+     * @param clusterName       Name of the Kafka cluster
+     * @param namespace         Namespace of the Kafka cluster
+     *
+     * @return  True when the encryption configuration matches the expected one. False otherwise.
+     */
+    private static boolean verifyCruiseControlMetricReporterEncryption(Properties kafkaProperties, String clusterName, String namespace) {
+        if (ClusterSecurityEncryptionType.TLS.equals(Environment.CLUSTER_SECURITY_ENCRYPTION)) {
+            return "HTTPS".equals(kafkaProperties.getProperty(CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_ENDPOINT_ID_ALGO.getValue()))
+                    && "PEM".equals(kafkaProperties.getProperty(CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_TRUSTSTORE_TYPE.getValue()))
+                    && ("${strimzisecrets:" + namespace + "/" + clusterName + "-trustbundle:cluster-ca.crt}").equals(kafkaProperties.getProperty(CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_TRUSTSTORE_CERTIFICATES.getValue()));
+        } else {
+            return !kafkaProperties.containsKey(CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_ENDPOINT_ID_ALGO.getValue())
+                    && !kafkaProperties.containsKey(CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_TRUSTSTORE_TYPE.getValue())
+                    && !kafkaProperties.containsKey(CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_TRUSTSTORE_CERTIFICATES.getValue());
+        }
+    }
+
+    /**
+     * Verifies the authentication configuration of the Cruise Control metrics reporter. mTLS authentication uses the
+     * keystore with the broker certificate while Service Account authentication uses SASL OAUTHBEARER with the
+     * projected Service Account token.
+     *
+     * @param kafkaProperties   Kafka broker configuration with the Cruise Control metrics reporter options
+     * @param namespace         Namespace of the Kafka cluster
+     * @param brokerPodName     Name of the broker pod the configuration belongs to
+     *
+     * @return  True when the authentication configuration matches the expected one. False otherwise.
+     */
+    private static boolean verifyCruiseControlMetricReporterAuthentication(Properties kafkaProperties, String namespace, String brokerPodName) {
+        boolean noKeystore = !kafkaProperties.containsKey(CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_KEYSTORE_TYPE.getValue())
+                && !kafkaProperties.containsKey(CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_KEYSTORE_CERTIFICATE_CHAIN.getValue())
+                && !kafkaProperties.containsKey(CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_KEYSTORE_KEY.getValue());
+        boolean noSasl = !kafkaProperties.containsKey("cruise.control.metrics.reporter.sasl.mechanism")
+                && !kafkaProperties.containsKey("cruise.control.metrics.reporter.sasl.login.callback.handler.class")
+                && !kafkaProperties.containsKey("cruise.control.metrics.reporter.sasl.jaas.config");
+
+        return switch (Environment.CLUSTER_SECURITY_AUTHENTICATION) {
+            case MTLS -> "PEM".equals(kafkaProperties.getProperty(CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_KEYSTORE_TYPE.getValue()))
+                    && ("${strimzisecrets:" + namespace + "/" + brokerPodName + ":" + brokerPodName + ".crt}").equals(kafkaProperties.getProperty(CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_KEYSTORE_CERTIFICATE_CHAIN.getValue()))
+                    && ("${strimzisecrets:" + namespace + "/" + brokerPodName + ":" + brokerPodName + ".key}").equals(kafkaProperties.getProperty(CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_KEYSTORE_KEY.getValue()))
+                    && noSasl;
+            case SERVICE_ACCOUNT -> "OAUTHBEARER".equals(kafkaProperties.getProperty("cruise.control.metrics.reporter.sasl.mechanism"))
+                    && kafkaProperties.containsKey("cruise.control.metrics.reporter.sasl.login.callback.handler.class")
+                    && kafkaProperties.getProperty("cruise.control.metrics.reporter.sasl.jaas.config", "").contains("/var/run/secrets/strimzi.io/token")
+                    && noKeystore;
+            case NONE -> noKeystore && noSasl;
+        };
     }
 
     public static void verifyThatCruiseControlTopicsArePresent(AdminClient adminClient, int defaultReplicaCount) {

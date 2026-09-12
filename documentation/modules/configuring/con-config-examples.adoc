@@ -32,7 +32,8 @@ examples
 ├── security <3>
 │   ├── tls-auth
 │   ├── scram-sha-512-auth
-│   └── keycloak-authorization
+│   ├── keycloak-authorization
+│   └── internal-cluster-security
 ├── mirror-maker <4>
 ├── metrics <5>
 ├── kafka <6>
@@ -45,6 +46,8 @@ examples
 <3> Authentication and authorization configuration for Kafka components. 
 Includes example configuration for TLS and SCRAM-SHA-512 authentication. 
 The Keycloak examples include a Keycloak realm specification and two `Kafka` custom resources with `type: custom` definitions for using OAuth 2.0 authentication and Keycloak authorization with or without metrics enabled.
+The internal cluster security examples are `Kafka` custom resources that use the `strimzi.io/internal-cluster-security` annotation to configure the xref:assembly-internal-cluster-security-{context}[encryption and authentication used for the communication between the Kafka cluster components].
+The examples cover the use of service account tokens instead of mTLS authentication, and the disabling of TLS encryption or of both encryption and authentication.
 <4> `KafkaMirrorMaker2` custom resource configurations for a deployment of MirrorMaker 2. Includes example configuration for replication policy and synchronization frequency.
 <5> xref:assembly-metrics-config-files-{context}[Metrics configuration], including Prometheus installation and Grafana dashboard files.
 <6> `Kafka` and `KafkaNodePool` custom resource configurations for a deployment of Kafka clusters that use KRaft mode. Includes example configuration for an ephemeral or persistent single or multi-node deployment.

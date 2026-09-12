@@ -72,12 +72,12 @@ spec:
 
 In this configuration:
 
+* `sasl.login.callback.handler.class` sets the Strimzi callback handler that passes the token to the Kafka cluster.
+* `oauth.access.token.location` tells the Kafka client where to find the token file.
 * The `projected` volume asks Kubernetes to issue a token for the Service Account of the operand pod with the `my-internal-listener` audience and to store it in a file named `token`.
 * The volume is mounted at `/mnt/auth-token`, so the token is available in the `/mnt/auth-token/token` file.
 Additional volumes can be mounted only into paths that start with `/mnt`.
 For more information about additional volumes, see link:{BookURLConfiguring}#con-common-configuration-volumes-reference[Additional Volumes^].
-* `oauth.access.token.location` tells the Kafka client where to find the token file.
-* `sasl.login.callback.handler.class` sets the Strimzi callback handler that passes the token to the Kafka cluster.
 
 The `connectContainer` name used in this example applies to `KafkaConnect` and `KafkaMirrorMaker2` resources.
 For `KafkaBridge` resources, use `bridgeContainer` instead.

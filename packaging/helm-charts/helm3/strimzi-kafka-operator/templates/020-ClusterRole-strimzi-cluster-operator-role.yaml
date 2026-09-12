@@ -73,6 +73,13 @@ rules:
     - patch
     - update
 - apiGroups:
+    - ""
+  resources:
+    # For Service Account based authentication
+    - serviceaccounts/token
+  verbs:
+    - create
+- apiGroups:
   - "apps"
   resources:
     # The cluster operator needs to access and manage deployments to run deployment based Strimzi components
