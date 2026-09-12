@@ -78,7 +78,6 @@ public class CertificateAuthority implements UnknownPropertyPreserving {
     @Description("The number of days in the certificate renewal period. " +
             "This is the number of days before the a certificate expires during which renewal actions may be performed. " +
             "When `generateCertificateAuthority` is true, this will cause the generation of a new certificate. " +
-            "When `generateCertificateAuthority` is true, this will cause extra logging at WARN level about the pending certificate expiry. " +
             "Default is 30.")
     @Minimum(1)
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
