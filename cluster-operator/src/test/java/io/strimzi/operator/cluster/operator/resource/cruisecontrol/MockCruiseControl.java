@@ -251,6 +251,20 @@ public class MockCruiseControl {
         }
     }
 
+    /**
+     * Sets up mocked response of the Cruise Control "State" endpoint with goal violation data.
+     * Does not require auth header matching, so it works regardless of the CC API secret password.
+     *
+     * @param jsonFileName  Name of the JSON resource file in CruiseControlJSON directory
+     */
+    public void mockStateEndpointWithGoalViolations(String jsonFileName) {
+        server.stubFor(stateRequestMatcher(false)
+                .willReturn(aResponse()
+                        .withStatus(200)
+                        .withHeader(USER_TASK_ID_HEADER, "cruise-control-state")
+                        .withBody(readJsonResource(jsonFileName))));
+    }
+
     private String userTaskResponseJson(CruiseControlUserTaskStatus state, boolean verbose) {
         String fileName = "CC-User-task-rebalance-no-goals-" +
                 (verbose ? "verbose-" : "") + state.toString() + ".json";

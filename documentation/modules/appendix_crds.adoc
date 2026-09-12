@@ -1693,12 +1693,12 @@ Used in: xref:type-CruiseControlSpec-{context}[`CruiseControlSpec`]
 |====
 |Property |Property type |Description
 |mode
-|string (one of [remove-brokers, add-brokers])
-|Specifies the mode for automatically rebalancing when brokers are added or removed. Supported modes are `add-brokers` and `remove-brokers`. 
+|string (one of [imbalance, remove-brokers, add-brokers])
+|Specifies the mode for automatic rebalancing. Supported modes are `add-brokers`, `remove-brokers`, and `imbalance`. The `add-brokers` and `remove-brokers` modes trigger rebalancing when brokers are added or removed. The `imbalance` mode triggers rebalancing when Cruise Control detects goal violations in the cluster.
 
 |template
 |xref:type-LocalObjectReference-{context}[`LocalObjectReference`]
-|Reference to the KafkaRebalance custom resource to be used as the configuration template for the auto-rebalancing on scaling when running for the corresponding mode.
+|Reference to the KafkaRebalance custom resource to be used as the configuration template for auto-rebalancing when running for the corresponding mode. For the `imbalance` mode, the template goals must be a superset of the configured anomaly detection goals.
 |====
 
 [id='type-LocalObjectReference-{context}']
@@ -1919,7 +1919,7 @@ Used in: xref:type-KafkaStatus-{context}[`KafkaStatus`]
 |====
 |Property |Property type |Description
 |state
-|string (one of [RebalanceOnScaleUp, Idle, RebalanceOnScaleDown])
+|string (one of [RebalanceOnScaleUp, Idle, RebalanceOnScaleDown, RebalanceOnImbalance])
 |The current state of an auto-rebalancing operation. Possible values are: 
 
 * `Idle` as the initial state when an auto-rebalancing is requested or as final state when it completes or fails.
@@ -1947,7 +1947,7 @@ Used in: xref:type-KafkaAutoRebalanceStatus-{context}[`KafkaAutoRebalanceStatus`
 |====
 |Property |Property type |Description
 |mode
-|string (one of [remove-brokers, add-brokers])
+|string (one of [imbalance, remove-brokers, add-brokers])
 |Mode for which there is an auto-rebalancing operation in progress or queued, when brokers are added or removed. The possible modes are `add-brokers` and `remove-brokers`.
 |brokers
 |integer array
