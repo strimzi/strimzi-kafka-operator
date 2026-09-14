@@ -12,6 +12,7 @@ import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
+import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.PasswordGenerator;
 
 import java.io.File;
@@ -95,7 +96,8 @@ public class InternalCa extends Ca {
                                                                   StrimziSubject subject,
                                                                   CertAndKey existingCertAndKey,
                                                                   boolean isMaintenanceTimeWindowsSatisfied,
-                                                                  boolean includeCaChain) {
+                                                                  boolean includeCaChain,
+                                                                  Labels labels) {
         List<String> reasons = new ArrayList<>();
 
         if (existingCertAndKey == null) {
@@ -199,8 +201,8 @@ public class InternalCa extends Ca {
             Reconciliation reconciliation,
             String commonName,
             CertAndKey existingCertAndKey,
-            boolean isMaintenanceTimeWindowsSatisfied
-    ) {
+            boolean isMaintenanceTimeWindowsSatisfied,
+            Labels labels) {
         List<String> reasons = new ArrayList<>();
 
         if (existingCertAndKey == null) {

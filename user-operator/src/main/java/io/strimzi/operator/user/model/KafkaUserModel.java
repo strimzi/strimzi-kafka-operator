@@ -234,7 +234,7 @@ public class KafkaUserModel {
         int renewalDays = kafkaUserTlsClientAuthentication.getRenewalDays() != null ? kafkaUserTlsClientAuthentication.getRenewalDays() : caRenewalDays;
 
         return userCertIssuer.maybeCopyOrGenerateCert(reconciliation, clientsCaCertSecret, clientsCaKeySecret, userSecret,
-                        name, validityDays, renewalDays, generatePkcs12Stores, createOwnerReference())
+                        name, validityDays, renewalDays, generatePkcs12Stores, createOwnerReference(), labels)
             .thenApply(result -> {
                 this.caCert = result.caCertBase64();
                 this.userCertAndKey = result.userCertAndKey();

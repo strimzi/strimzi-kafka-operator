@@ -15,6 +15,7 @@ import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
+import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.kubernetes.CertManagerCertificateOperator;
 import io.strimzi.operator.common.operator.resource.kubernetes.SecretOperator;
 
@@ -80,13 +81,13 @@ public class CertManagerCa extends Ca {
     }
 
     @Override
-    public CompletionStage<CertAndKey> maybeCopyOrGenerateServerCerts(Reconciliation reconciliation, String componentName, StrimziSubject subject, CertAndKey existingCertAndKey, boolean isMaintenanceTimeWindowsSatisfied, boolean includeCaChain) {
-        return maybeCopyOrGenerateCert(componentName, subject, existingCertAndKey);
+    public CompletionStage<CertAndKey> maybeCopyOrGenerateServerCerts(Reconciliation reconciliation, String componentName, StrimziSubject subject, CertAndKey existingCertAndKey, boolean isMaintenanceTimeWindowsSatisfied, boolean includeCaChain, Labels labels) {
+        return maybeCopyOrGenerateCert(componentName, subject, existingCertAndKey, labels);
     }
 
     @Override
-    public CompletionStage<CertAndKey> maybeCopyOrGenerateClientCert(Reconciliation reconciliation, String componentName, CertAndKey existingCertAndKey, boolean isMaintenanceTimeWindowsSatisfied) {
-        return maybeCopyOrGenerateCert(componentName, CertificateUtils.getSubject(componentName, Ca.IO_STRIMZI), existingCertAndKey);
+    public CompletionStage<CertAndKey> maybeCopyOrGenerateClientCert(Reconciliation reconciliation, String componentName, CertAndKey existingCertAndKey, boolean isMaintenanceTimeWindowsSatisfied, Labels labels) {
+        return maybeCopyOrGenerateCert(componentName, CertificateUtils.getSubject(componentName, Ca.IO_STRIMZI), existingCertAndKey, labels);
     }
 
     /**
@@ -187,8 +188,8 @@ public class CertManagerCa extends Ca {
         deleteOldCerts();
     }
 
-    CompletionStage<CertAndKey> maybeCopyOrGenerateCert(String entityName, StrimziSubject subject, CertAndKey existingCert) {
-        return generateSignedCert(entityName, subject)
+    CompletionStage<CertAndKey> maybeCopyOrGenerateCert(String entityName, StrimziSubject subject, CertAndKey existingCert, Labels labels) {
+        return generateSignedCert(entityName, subject, labels)
                 .thenApply(newCertAndKey -> {
                     if (existingCert == null) {
                         return newCertAndKey;
@@ -212,10 +213,12 @@ public class CertManagerCa extends Ca {
      *
      * @param entityName            Name of the component the Certificate is for
      * @param subject               Subject for Certificate
+     * @param labels                Custom labels to put on Certificate
+     *
      * @return CompletionStage with CertAndKey
      */
-    private CompletionStage<CertAndKey> generateSignedCert(String entityName, StrimziSubject subject) {
-        Certificate certificate = buildCertificateResource(entityName, subject, caConfig.getValidityDays(), caConfig.getRenewalDays());
+    private CompletionStage<CertAndKey> generateSignedCert(String entityName, StrimziSubject subject, Labels labels) {
+        Certificate certificate = buildCertificateResource(entityName, subject, caConfig.getValidityDays(), caConfig.getRenewalDays(), labels);
         return certManagerCertificateOperator.reconcile(reconciliation, reconciliation.namespace(), entityName, certificate)
                 .thenCompose(v -> certManagerCertificateOperator.waitForReady(reconciliation, reconciliation.namespace(), entityName))
                 .thenCompose(v -> secretOperator.getAsync(reconciliation.namespace(), certManagerSecretName(entityName)))
@@ -250,14 +253,16 @@ public class CertManagerCa extends Ca {
      * @param subject               Subject for Certificate
      * @param validityDays          Validity days for Certificate
      * @param renewalDays           Renewal days for certificate
+     * @param labels                Custom labels to put on Certificate
      * @return Certificate object
      */
-    private Certificate buildCertificateResource(String entityName, StrimziSubject subject, int validityDays, int renewalDays) {
+    private Certificate buildCertificateResource(String entityName, StrimziSubject subject, int validityDays, int renewalDays, Labels labels) {
         String secretName = certManagerSecretName(entityName);
         CertificateBuilder certificateBuilder = new CertificateBuilder()
                 .withNewMetadata()
                     .withName(entityName)
                     .withNamespace(reconciliation.namespace())
+                    .withLabels(labels.toMap())
                 .endMetadata()
                 .withNewSpec()
                     .withCommonName(subject.commonName())

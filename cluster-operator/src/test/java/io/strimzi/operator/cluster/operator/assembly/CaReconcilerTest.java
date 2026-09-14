@@ -437,7 +437,7 @@ public class CaReconcilerTest {
 
         new MockCaReconciler(supplier, clusterCa, clientsCa).reconcile(Clock.systemUTC()).toCompletableFuture().join();
 
-        verify(clusterCa).maybeCopyOrGenerateClientCert(any(), eq("cluster-operator"), isNull(), anyBoolean());
+        verify(clusterCa).maybeCopyOrGenerateClientCert(any(), eq("cluster-operator"), isNull(), anyBoolean(), any());
 
         ArgumentCaptor<Secret> coSecret = ArgumentCaptor.forClass(Secret.class);
         verify(supplier.secretOperations).reconcile(any(), eq(NAMESPACE), eq(KafkaResources.clusterOperatorCertsSecretName(NAME)), coSecret.capture());
@@ -476,7 +476,7 @@ public class CaReconcilerTest {
         new MockCaReconciler(supplier, clusterCa, clientsCa).reconcile(Clock.systemUTC()).toCompletableFuture().join();
 
         ArgumentCaptor<CertAndKey> oldCertAndKey = ArgumentCaptor.forClass(CertAndKey.class);
-        verify(clusterCa).maybeCopyOrGenerateClientCert(any(), eq("cluster-operator"), oldCertAndKey.capture(), anyBoolean());
+        verify(clusterCa).maybeCopyOrGenerateClientCert(any(), eq("cluster-operator"), oldCertAndKey.capture(), anyBoolean(), any());
 
         assertThat(oldCertAndKey.getValue().certAsBase64String(), is(Util.encodeToBase64("old-cert")));
         assertThat(oldCertAndKey.getValue().keyAsBase64String(), is(Util.encodeToBase64("old-key")));
@@ -518,7 +518,7 @@ public class CaReconcilerTest {
 
         new MockCaReconciler(supplier, clusterCa, clientsCa).reconcile(Clock.systemUTC()).toCompletableFuture().join();
 
-        verify(clusterCa, never()).maybeCopyOrGenerateClientCert(any(), any(), any(), anyBoolean());
+        verify(clusterCa, never()).maybeCopyOrGenerateClientCert(any(), any(), any(), anyBoolean(), any());
         verify(supplier.secretOperations, never()).reconcile(any(), eq(NAMESPACE), eq(KafkaResources.clusterOperatorCertsSecretName(NAME)), any());
     }
 
@@ -598,7 +598,7 @@ public class CaReconcilerTest {
         when(clusterCa.trustedCaCerts()).thenReturn(CLUSTER_CA_TRUSTED_CERTS);
         // The CA cert data as it is after any old certificates were deleted
         when(clusterCa.caCertData()).thenReturn(Map.of(Ca.CA_CRT, CURRENT_CA_CRT));
-        when(clusterCa.maybeCopyOrGenerateClientCert(any(), any(), any(), anyBoolean()))
+        when(clusterCa.maybeCopyOrGenerateClientCert(any(), any(), any(), anyBoolean(), any()))
                 .thenReturn(CompletableFuture.completedStage(new CertAndKey(
                         "new-key".getBytes(StandardCharsets.US_ASCII),
                         "new-cert".getBytes(StandardCharsets.US_ASCII),

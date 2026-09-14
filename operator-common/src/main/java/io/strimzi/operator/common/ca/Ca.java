@@ -13,6 +13,7 @@ import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
+import io.strimzi.operator.common.model.Labels;
 
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
@@ -352,6 +353,7 @@ public abstract class Ca {
      * @param existingCertAndKey                    Existing certificate (or null if none exists)
      * @param isMaintenanceTimeWindowsSatisfied     Whether we are in a maintenance window
      * @param includeCaChain                        Whether to include CA chain
+     * @param labels                                Labels
      *
      *
      * @return CertAndKey object containing the public and private key
@@ -362,8 +364,8 @@ public abstract class Ca {
             StrimziSubject subject,
             CertAndKey existingCertAndKey,
             boolean isMaintenanceTimeWindowsSatisfied,
-            boolean includeCaChain
-    );
+            boolean includeCaChain,
+            Labels labels);
 
     /**
      * Generates or reuses a client certificate signed by this Cluster CA.
@@ -373,6 +375,7 @@ public abstract class Ca {
      * @param commonName                            Common Name for the certificate
      * @param existingCertAndKey                    Existing certificate (or null if none exists)
      * @param isMaintenanceTimeWindowsSatisfied     Whether we are in a maintenance window
+     * @param labels                                Labels
      *
      * @return CertAndKey object containing the certificate and key with CA generation set
      */
@@ -380,8 +383,8 @@ public abstract class Ca {
             Reconciliation reconciliation,
             String commonName,
             CertAndKey existingCertAndKey,
-            boolean isMaintenanceTimeWindowsSatisfied
-    );
+            boolean isMaintenanceTimeWindowsSatisfied,
+            Labels labels);
 
     /**
      * Remove old certificates that are stored in the CA Secret.
