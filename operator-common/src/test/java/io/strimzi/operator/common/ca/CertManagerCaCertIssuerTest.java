@@ -18,6 +18,7 @@ import io.strimzi.certs.StrimziSubject;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.StrimziTimeoutException;
 import io.strimzi.operator.common.Util;
+import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.MockCertIssuer;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.kubernetes.CertManagerCertificateOperator;
@@ -208,7 +209,8 @@ public class CertManagerCaCertIssuerTest {
                         .build()
                 );
 
-        certManagerCa.maybeCopyOrGenerateCert(ENTITY_NAME, subject, null)
+        Map<String, String> labels = Map.of("customLabel", "customValue");
+        certManagerCa.maybeCopyOrGenerateCert(ENTITY_NAME, subject, null, Labels.fromMap(labels))
                         .whenComplete((cert, throwable)  -> {
                             assertNull(throwable);
 
@@ -230,6 +232,9 @@ public class CertManagerCaCertIssuerTest {
 
                             assertThat(certificate.getSpec().getIpAddresses().size(), is(1));
                             assertThat(certificate.getSpec().getIpAddresses().getFirst(), is("127.0.0.1"));
+
+                            assertThat(certificate.getMetadata().getLabels().size(), is(1));
+                            assertThat(certificate.getMetadata().getLabels(), is(labels));
 
                             // Entity cert is returned
                             assertThat(cert.cert(), is(Util.decodeBytesFromBase64(cmSecretData.get("tls.crt"))));
@@ -266,7 +271,7 @@ public class CertManagerCaCertIssuerTest {
                 .withCommonName(ENTITY_NAME)
                 .build();
 
-        Exception e = assertThrows(CompletionException.class, () -> certManagerCa.maybeCopyOrGenerateCert(ENTITY_NAME, subject, null).toCompletableFuture().join());
+        Exception e = assertThrows(CompletionException.class, () -> certManagerCa.maybeCopyOrGenerateCert(ENTITY_NAME, subject, null, Labels.EMPTY).toCompletableFuture().join());
         assertThat(e.getCause().getMessage(), is("Timed out waiting for resource to be ready"));
 
         // Certificate Object created
@@ -317,7 +322,7 @@ public class CertManagerCaCertIssuerTest {
                         .build()
         );
 
-        certManagerCa.maybeCopyOrGenerateCert(ENTITY_NAME, subject, initialCert)
+        certManagerCa.maybeCopyOrGenerateCert(ENTITY_NAME, subject, initialCert, Labels.EMPTY)
                 .whenComplete((cert, throwable) -> {
                     assertNull(throwable);
 
@@ -382,7 +387,7 @@ public class CertManagerCaCertIssuerTest {
                 .addIpAddress("127.0.0.1")
                 .build();
 
-        Exception e = assertThrows(CompletionException.class, () -> certManagerCa.maybeCopyOrGenerateCert(ENTITY_NAME, expectedSubject, initialCert).toCompletableFuture().join());
+        Exception e = assertThrows(CompletionException.class, () -> certManagerCa.maybeCopyOrGenerateCert(ENTITY_NAME, expectedSubject, initialCert, Labels.EMPTY).toCompletableFuture().join());
         assertThat(e.getCause().getMessage(), containsString("Certificate from cert-manager does not contain correct subject"));
     }
 
@@ -427,7 +432,7 @@ public class CertManagerCaCertIssuerTest {
                         .build()
         );
 
-        certManagerCa.maybeCopyOrGenerateCert(ENTITY_NAME, newSubject, initialCert)
+        certManagerCa.maybeCopyOrGenerateCert(ENTITY_NAME, newSubject, initialCert, Labels.EMPTY)
                 .whenComplete((cert, throwable) -> {
                     assertNull(throwable);
 
@@ -487,7 +492,7 @@ public class CertManagerCaCertIssuerTest {
                         .build()
         );
 
-        certManagerCa.maybeCopyOrGenerateCert(ENTITY_NAME, subject, initialCert)
+        certManagerCa.maybeCopyOrGenerateCert(ENTITY_NAME, subject, initialCert, Labels.EMPTY)
                 .whenComplete((cert, throwable) -> {
                     assertNull(throwable);
 
@@ -549,7 +554,7 @@ public class CertManagerCaCertIssuerTest {
                         .build()
         );
 
-        certManagerCa.maybeCopyOrGenerateCert(ENTITY_NAME, subject, initialCert)
+        certManagerCa.maybeCopyOrGenerateCert(ENTITY_NAME, subject, initialCert, Labels.EMPTY)
                 .whenComplete((cert, throwable) -> {
                     assertNull(throwable);
 
@@ -611,7 +616,7 @@ public class CertManagerCaCertIssuerTest {
                         .build()
         );
 
-        certManagerCa.maybeCopyOrGenerateCert(ENTITY_NAME, subject, initialCert)
+        certManagerCa.maybeCopyOrGenerateCert(ENTITY_NAME, subject, initialCert, Labels.EMPTY)
                 .whenComplete((cert, throwable) -> {
                     assertNull(throwable);
 

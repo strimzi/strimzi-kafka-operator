@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.PasswordGenerator;
 import io.strimzi.operator.common.operator.MockCertIssuer;
 import io.strimzi.operator.user.ResourceUtils;
@@ -62,7 +63,7 @@ public class InternalCaUserCertIssuerTest {
         InternalCaUserCertIssuer provider = new InternalCaUserCertIssuer(new MockCertIssuer(), passwordGenerator, null, Clock.systemUTC());
         UserCertResult result = provider.maybeCopyOrGenerateCert(
                 Reconciliation.DUMMY_RECONCILIATION, clientsCaCert, clientsCaKey,
-                null, ResourceUtils.NAME, 365, 30, true, null)
+                null, ResourceUtils.NAME, 365, 30, true, null, Labels.EMPTY)
                 .toCompletableFuture().join();
 
         assertThat(result.caCertBase64(), is(clientsCaCert.getData().get("ca.crt")));
@@ -85,7 +86,7 @@ public class InternalCaUserCertIssuerTest {
         InternalCaUserCertIssuer provider = new InternalCaUserCertIssuer(new MockCertIssuer(), passwordGenerator, null, Clock.systemUTC());
         UserCertResult result = provider.maybeCopyOrGenerateCert(
                 Reconciliation.DUMMY_RECONCILIATION, clientsCaCert, clientsCaKey,
-                userSecret, ResourceUtils.NAME, 365, 30, true, null)
+                userSecret, ResourceUtils.NAME, 365, 30, true, null, Labels.EMPTY)
                 .toCompletableFuture().join();
 
         assertThat(result.caCertBase64(), is(clientsCaCert.getData().get("ca.crt")));
@@ -107,7 +108,7 @@ public class InternalCaUserCertIssuerTest {
         InternalCaUserCertIssuer provider = new InternalCaUserCertIssuer(new MockCertIssuer(), passwordGenerator, null, Clock.systemUTC());
         UserCertResult result = provider.maybeCopyOrGenerateCert(
                 Reconciliation.DUMMY_RECONCILIATION, clientsCaCert, clientsCaKey,
-                userSecret, ResourceUtils.NAME, 365, 30, true, null)
+                userSecret, ResourceUtils.NAME, 365, 30, true, null, Labels.EMPTY)
                 .toCompletableFuture().join();
 
         assertThat(result.caCertBase64(), is(clientsCaCert.getData().get("ca.crt")));
@@ -132,7 +133,7 @@ public class InternalCaUserCertIssuerTest {
         InternalCaUserCertIssuer provider = new InternalCaUserCertIssuer(new MockCertIssuer(), passwordGenerator, null, Clock.systemUTC());
         UserCertResult result = provider.maybeCopyOrGenerateCert(
                 Reconciliation.DUMMY_RECONCILIATION, clientsCaCert, clientsCaKey,
-                userSecret, ResourceUtils.NAME, 365, 30, true, null)
+                userSecret, ResourceUtils.NAME, 365, 30, true, null, Labels.EMPTY)
                 .toCompletableFuture().join();
 
         assertThat(result.caCertBase64(), not(oldCaCert));
@@ -155,7 +156,7 @@ public class InternalCaUserCertIssuerTest {
         InternalCaUserCertIssuer provider = new InternalCaUserCertIssuer(new MockCertIssuer(), passwordGenerator, null, Clock.systemUTC());
         UserCertResult result = provider.maybeCopyOrGenerateCert(
                 Reconciliation.DUMMY_RECONCILIATION, clientsCaCert, clientsCaKey,
-                userSecret, ResourceUtils.NAME, 365, 30, true, null)
+                userSecret, ResourceUtils.NAME, 365, 30, true, null, Labels.EMPTY)
                 .toCompletableFuture().join();
 
         assertThat(result.caCertBase64(), is(clientsCaCert.getData().get("ca.crt")));
@@ -178,7 +179,7 @@ public class InternalCaUserCertIssuerTest {
         InternalCaUserCertIssuer provider = new InternalCaUserCertIssuer(new MockCertIssuer(), passwordGenerator, null, Clock.systemUTC());
         UserCertResult result = provider.maybeCopyOrGenerateCert(
                 Reconciliation.DUMMY_RECONCILIATION, clientsCaCert, clientsCaKey,
-                userSecret, ResourceUtils.NAME, 1000, 500, true, null)
+                userSecret, ResourceUtils.NAME, 1000, 500, true, null, Labels.EMPTY)
                 .toCompletableFuture().join();
 
         assertThat(result.userCertAndKey().cert(), not(USER_CRT_FOR_EXPIRATION_TEST));
@@ -201,7 +202,7 @@ public class InternalCaUserCertIssuerTest {
                 Clock.fixed(Instant.parse("2018-11-26T09:00:00Z"), Clock.systemUTC().getZone()));
         UserCertResult result = provider.maybeCopyOrGenerateCert(
                 Reconciliation.DUMMY_RECONCILIATION, clientsCaCert, clientsCaKey,
-                userSecret, ResourceUtils.NAME, 1000, 500, true, null)
+                userSecret, ResourceUtils.NAME, 1000, 500, true, null, Labels.EMPTY)
                 .toCompletableFuture().join();
 
         assertThat(result.userCertAndKey().cert(), not(USER_CRT_FOR_EXPIRATION_TEST));
@@ -224,7 +225,7 @@ public class InternalCaUserCertIssuerTest {
                 Clock.fixed(Instant.parse("2018-11-26T11:55:00Z"), Clock.systemUTC().getZone()));
         UserCertResult result = provider.maybeCopyOrGenerateCert(
                 Reconciliation.DUMMY_RECONCILIATION, clientsCaCert, clientsCaKey,
-                userSecret, ResourceUtils.NAME, 1000, 500, true, null)
+                userSecret, ResourceUtils.NAME, 1000, 500, true, null, Labels.EMPTY)
                 .toCompletableFuture().join();
 
         assertThat(result.userCertAndKey().cert(), is(USER_CRT_FOR_EXPIRATION_TEST));

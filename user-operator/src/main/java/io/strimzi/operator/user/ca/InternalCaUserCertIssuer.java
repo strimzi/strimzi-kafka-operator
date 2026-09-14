@@ -17,6 +17,7 @@ import io.strimzi.operator.common.ca.Ca;
 import io.strimzi.operator.common.ca.CaConfig;
 import io.strimzi.operator.common.ca.CertificateUtils;
 import io.strimzi.operator.common.ca.InternalCa;
+import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.PasswordGenerator;
 import io.strimzi.operator.user.model.InvalidCertificateException;
 
@@ -62,7 +63,8 @@ public class InternalCaUserCertIssuer implements UserCertIssuer {
             int caValidityDays,
             int caRenewalDays,
             boolean generatePkcs12Stores,
-            OwnerReference ownerReference) {
+            OwnerReference ownerReference,
+            Labels labels) {
         validateCaSecrets(reconciliation, clientsCaCertSecret, clientsCaKeySecret);
 
         InternalCa clientsCa = new InternalCa(
@@ -92,7 +94,7 @@ public class InternalCaUserCertIssuer implements UserCertIssuer {
             }
         }
 
-        return clientsCa.maybeCopyOrGenerateClientCert(reconciliation, userName, existingUserCertAndKey, Util.isMaintenanceTimeWindowsSatisfied(reconciliation, maintenanceWindows, clock.instant()))
+        return clientsCa.maybeCopyOrGenerateClientCert(reconciliation, userName, existingUserCertAndKey, Util.isMaintenanceTimeWindowsSatisfied(reconciliation, maintenanceWindows, clock.instant()), labels)
                 .thenApply(certAndKey -> new UserCertResult(clientsCa.currentCaCertBase64(), certAndKey));
     }
 

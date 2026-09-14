@@ -1317,7 +1317,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
             }
             StrimziSubject subject = buildKafkaNodeCertsSubject(node, externalBootstrapDnsName, externalDnsNames);
 
-            futureList.add(clusterCa.maybeCopyOrGenerateServerCerts(reconciliation, podName, subject, existingCertAndKey, isMaintenanceTimeWindowsSatisfied, true)
+            futureList.add(clusterCa.maybeCopyOrGenerateServerCerts(reconciliation, podName, subject, existingCertAndKey, isMaintenanceTimeWindowsSatisfied, true, labels)
                     .thenApply(certAndKey -> Map.entry(podName, certAndKey))
                     .toCompletableFuture());
         });

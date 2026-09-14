@@ -14,6 +14,7 @@ import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.ca.Ca;
 import io.strimzi.operator.common.ca.CaConfig;
 import io.strimzi.operator.common.ca.CertManagerCa;
+import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.kubernetes.CertManagerCertificateOperator;
 import io.strimzi.operator.common.operator.resource.kubernetes.SecretOperator;
 import io.strimzi.operator.user.model.InvalidCertificateException;
@@ -53,7 +54,8 @@ public class CertManagerCaUserCertIssuer implements UserCertIssuer {
             int validityDays,
             int renewalDays,
             boolean generatePkcs12Stores,
-            OwnerReference ownerReference) {
+            OwnerReference ownerReference,
+            Labels labels) {
         validateCaSecrets(caCertSecret);
 
         CertManagerCa clientsCa = new CertManagerCa(
@@ -76,7 +78,7 @@ public class CertManagerCaUserCertIssuer implements UserCertIssuer {
             }
         }
 
-        return clientsCa.maybeCopyOrGenerateClientCert(reconciliation, userName, existingCertAndKey, false)
+        return clientsCa.maybeCopyOrGenerateClientCert(reconciliation, userName, existingCertAndKey, false, labels)
                 .thenApply(certAndKey -> new UserCertResult(clientsCa.currentCaCertBase64(), certAndKey));
     }
 

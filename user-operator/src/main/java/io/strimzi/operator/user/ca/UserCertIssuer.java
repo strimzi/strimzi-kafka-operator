@@ -11,6 +11,7 @@ import io.strimzi.api.kafka.model.kafka.certmanager.IssuerRef;
 import io.strimzi.api.kafka.model.kafka.certmanager.IssuerRefBuilder;
 import io.strimzi.certs.OpenSslCertIssuer;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.PasswordGenerator;
 import io.strimzi.operator.common.operator.resource.kubernetes.CertManagerCertificateOperator;
 import io.strimzi.operator.common.operator.resource.kubernetes.SecretOperator;
@@ -36,6 +37,8 @@ public interface UserCertIssuer {
      * @param renewalDays          Certificate renewal period in days
      * @param generatePkcs12Stores Whether to generate PKCS12 keystores
      * @param ownerReference       Owner reference to add to any created resources
+     * @param labels               Labels
+     *
      * @return CompletionStage with the CA cert and generated user certificate
      */
     CompletionStage<UserCertResult> maybeCopyOrGenerateCert(
@@ -47,7 +50,8 @@ public interface UserCertIssuer {
             int validityDays,
             int renewalDays,
             boolean generatePkcs12Stores,
-            OwnerReference ownerReference);
+            OwnerReference ownerReference,
+            Labels labels);
 
     /**
      * Creates the appropriate UserCertIssuer based on the configured certificate manager type
