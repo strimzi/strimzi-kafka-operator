@@ -64,88 +64,92 @@ spec:
                   fieldPath: metadata.namespace
             - name: STRIMZI_KAFKA_BOOTSTRAP_SERVERS <2>
               value: my-kafka-bootstrap-address:9092
-            - name: STRIMZI_CA_CERT_NAME <3>
+            - name: STRIMZI_CA_TYPE <3>
+              value: strimzi
+            - name: STRIMZI_CA_CERT_NAME <4>
               value: my-cluster-clients-ca-cert
-            - name: STRIMZI_CA_KEY_NAME <4>
+            - name: STRIMZI_CA_KEY_NAME <5>
               value: my-cluster-clients-ca
-            - name: STRIMZI_LABELS <5>
+            - name: STRIMZI_LABELS <6>
               value: "strimzi.io/cluster=my-cluster"
-            - name: STRIMZI_FULL_RECONCILIATION_INTERVAL_MS <6>
+            - name: STRIMZI_FULL_RECONCILIATION_INTERVAL_MS <7>
               value: "120000"
-            - name: STRIMZI_WORK_QUEUE_SIZE <7>
+            - name: STRIMZI_WORK_QUEUE_SIZE <8>
               value: 10000
-            - name: STRIMZI_CONTROLLER_THREAD_POOL_SIZE <8>
+            - name: STRIMZI_CONTROLLER_THREAD_POOL_SIZE <9>
               value: 10
-            - name: STRIMZI_USER_OPERATIONS_THREAD_POOL_SIZE <9>
+            - name: STRIMZI_USER_OPERATIONS_THREAD_POOL_SIZE <10>
               value: 4
-            - name: STRIMZI_LOG_LEVEL <10>
+            - name: STRIMZI_LOG_LEVEL <11>
               value: INFO
-            - name: STRIMZI_GC_LOG_ENABLED <11>
+            - name: STRIMZI_GC_LOG_ENABLED <12>
               value: "true"
-            - name: STRIMZI_CA_VALIDITY <12>
+            - name: STRIMZI_CA_VALIDITY <13>
               value: "365"
-            - name: STRIMZI_CA_RENEWAL <13>
+            - name: STRIMZI_CA_RENEWAL <14>
               value: "30"
-            - name: STRIMZI_JAVA_OPTS <14>
+            - name: STRIMZI_JAVA_OPTS <15>
               value: "-Xmx=512M -Xms=256M"
-            - name: STRIMZI_JAVA_SYSTEM_PROPERTIES <15>
+            - name: STRIMZI_JAVA_SYSTEM_PROPERTIES <16>
               value: "-Djavax.net.debug=verbose -DpropertyName=value"
-            - name: STRIMZI_SECRET_PREFIX <16>
+            - name: STRIMZI_SECRET_PREFIX <17>
               value: "kafka-"
-            - name: STRIMZI_ACLS_ADMIN_API_SUPPORTED <17>
+            - name: STRIMZI_ACLS_ADMIN_API_SUPPORTED <18>
               value: "true"
-            - name: STRIMZI_MAINTENANCE_TIME_WINDOWS <18>
+            - name: STRIMZI_MAINTENANCE_TIME_WINDOWS <19>
               value: '* * 8-10 * * ?;* * 14-15 * * ?'
-            - name: STRIMZI_KAFKA_ADMIN_CLIENT_CONFIGURATION <19>
+            - name: STRIMZI_KAFKA_ADMIN_CLIENT_CONFIGURATION <20>
               value: |
                 default.api.timeout.ms=120000
                 request.timeout.ms=60000
-            - name: STRIMZI_IGNORED_USERS_PATTERN <20>
+            - name: STRIMZI_IGNORED_USERS_PATTERN <21>
               value: "^ANONYMOUS$"
-            - name: STRIMZI_PKCS12_KEYSTORE_GENERATION <21>
+            - name: STRIMZI_PKCS12_KEYSTORE_GENERATION <22>
               value: "true"
 ----
 <1> The Kubernetes namespace for the User Operator to watch for `KafkaUser` resources. Only one namespace can be specified.
 <2>  The host and port pair of the bootstrap broker address to discover and connect to all brokers in the Kafka cluster.
 Use a comma-separated list to specify two or three broker addresses in case a server is down.
-<3> The Kubernetes `Secret` that contains the public key (`ca.crt`) value of the CA (certificate authority) that signs new user certificates for mTLS authentication.
-<4> The Kubernetes `Secret` that contains the private key (`ca.key`) value of the CA that signs new user certificates for mTLS authentication.
-<5> The label to identify the `KafkaUser` resources managed by the User Operator.
+<3> Type of certificate manager. Set to `cert-manager` to enable cert-manager integration.
+The default is `strimzi`.
+<4> The Kubernetes `Secret` that contains the public key (`ca.crt`) value of the CA (certificate authority) that signs new user certificates for mTLS authentication.
+<5> The Kubernetes `Secret` that contains the private key (`ca.key`) value of the CA that signs new user certificates for mTLS authentication.
+<6> The label to identify the `KafkaUser` resources managed by the User Operator.
 This does not have to be the name of the Kafka cluster.
 It can be the label assigned to the `KafkaUser` resource.
 If you deploy more than one User Operator, the labels must be unique for each.
 That is, the operators cannot manage the same resources.
-<6> The interval between periodic reconciliations, in milliseconds.
+<7> The interval between periodic reconciliations, in milliseconds.
 The default is `120000` (2 minutes).
-<7> The size of the controller event queue.
+<8> The size of the controller event queue.
 The size of the queue should be at least as big as the maximal amount of users you expect the User Operator to operate.
 The default is `1024`.
-<8> The size of the worker pool for reconciling the users.
+<9> The size of the worker pool for reconciling the users.
 Bigger pool might require more resources, but it will also handle more `KafkaUser` resources
 The default is `50`.
-<9> The size of the worker pool for Kafka Admin API and Kubernetes operations.
+<10> The size of the worker pool for Kafka Admin API and Kubernetes operations.
 Bigger pool might require more resources, but it will also handle more `KafkaUser` resources
 The default is `4`.
-<10> The level for printing logging messages.
+<11> The level for printing logging messages.
 You can set the level to `ERROR`, `WARNING`, `INFO`, `DEBUG`, or `TRACE`.
-<11> Enables garbage collection (GC) logging.
+<12> Enables garbage collection (GC) logging.
 The default is `true`.
-<12> The validity period for the CA.
+<13> The validity period for the CA.
 The default is `365` days.
-<13> The renewal period for the CA. The renewal period is measured backwards from the expiry date of the current certificate.
+<14> The renewal period for the CA. The renewal period is measured backwards from the expiry date of the current certificate.
 The default is `30` days to initiate certificate renewal before the old certificates expire.
-<14> (Optional) The Java options used by the JVM running the User Operator
-<15> (Optional) The debugging (`-D`) options set for the User Operator
-<16> (Optional) Prefix for the names of Kubernetes secrets created by the User Operator.
-<17> (Optional) Indicates whether the Kafka cluster supports management of authorization ACL rules using the Kafka Admin API.
+<15> (Optional) The Java options used by the JVM running the User Operator
+<16> (Optional) The debugging (`-D`) options set for the User Operator
+<17> (Optional) Prefix for the names of Kubernetes secrets created by the User Operator.
+<18> (Optional) Indicates whether the Kafka cluster supports management of authorization ACL rules using the Kafka Admin API.
 When set to `false`, the User Operator will reject all resources with `simple` authorization ACL rules.
 This helps to avoid unnecessary exceptions in the Kafka cluster logs.
 The default is `true`.
-<18> (Optional) Semi-colon separated list of Cron Expressions defining the maintenance time windows during which the expiring user certificates will be renewed.
-<19> (Optional) Configuration options for configuring the Kafka Admin client used by the User Operator in the properties format.
-<20> (Optional) Regular expression to configure users for which any existing ACLs, Quotas and SCRAM-SHa credentials will be ignored.
+<19> (Optional) Semi-colon separated list of Cron Expressions defining the maintenance time windows during which the expiring user certificates will be renewed.
+<20> (Optional) Configuration options for configuring the Kafka Admin client used by the User Operator in the properties format.
+<21> (Optional) Regular expression to configure users for which any existing ACLs, Quotas and SCRAM-SHa credentials will be ignored.
 This option is useful when you want to configure the User Operator to ignore users that are managed through another mechanism.
-<21> (Optional) Controls automatic creation of PKCS12 stores in the Kafka user `Secret` resources.
+<22> (Optional) Controls automatic creation of PKCS12 stores in the Kafka user `Secret` resources.
 The default is `true`.
 
 . If you are using mTLS to connect to the Kafka cluster, specify the secrets used to authenticate connection.
@@ -170,6 +174,26 @@ env:
 <2> The Kubernetes `Secret` that contains the certificate public key (`entity-operator.crt`) and private key (`entity-operator.key`) that is used for mTLS authentication against the Kafka cluster.
 <3> The name of the private key that is used for mTLS authentication against the Kafka cluster. The default is `entity-operator.key`.
 <4> The name of the public key that is used for mTLS authentication against the Kafka cluster. The default is `entity-operator.crt`.
+
+. If you are using cert-manager to issue certificates, specify the cert-manager issuer.
+Otherwise, go to the next step.
++
+.Example cert-manager configuration
+[source,shell,subs=+quotes]
+----
+# ....
+env:
+  - name: STRIMZI_CERT_MANAGER_ISSUER_NAME <1>
+    value: my-cluster-issuer
+  - name: STRIMZI_CERT_MANAGER_ISSUER_KIND <2>
+    value: ClusterIssuer
+  - name: STRIMZI_CERT_MANAGER_ISSUER_GROUP <3>
+    value: cert-manager.io
+# ..."
+----
+<1> Name of the cert-manager `Issuer` or `ClusterIssuer` to use for `KafkaUser` certificates.
+<2> Kind of the cert-manager issuer. Must be `Issuer` or `ClusterIssuer`.
+<3> API group of the cert-manager issuer. Default value is `cert-manager.io`.
 
 . Deploy the User Operator.
 +

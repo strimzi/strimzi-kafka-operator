@@ -5,6 +5,7 @@
 package io.strimzi.operator.cluster.operator.assembly;
 
 import io.strimzi.api.kafka.model.common.CertificateAuthorityBuilder;
+import io.strimzi.api.kafka.model.common.CertificateManagerType;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
@@ -60,9 +61,11 @@ public class CaProviderTest {
                 caConfig,
                 KAFKA,
                 null,
+                null,
                 CERT_ISSUER,
                 PASSWORD_GENERATOR,
                 Clock.systemUTC(),
+                null,
                 null,
                 null);
 
@@ -80,12 +83,37 @@ public class CaProviderTest {
                 caConfig,
                 KAFKA,
                 null,
+                null,
                 CERT_ISSUER,
                 PASSWORD_GENERATOR,
                 Clock.systemUTC(),
                 null,
+                null,
                 null);
 
         assertThat(provider, instanceOf(CustomCaProvider.class));
+    }
+
+    @Test
+    public void testCreateProviderReturnsCertManagerCaProviderWhenTypeIsCertManager() {
+        CaConfig caConfig = new CaConfig(new CertificateAuthorityBuilder()
+                .withGenerateCertificateAuthority(false)
+                .withType(CertificateManagerType.CERT_MANAGER)
+                .build(), true);
+
+        CaProvider provider = CaProvider.create(Reconciliation.DUMMY_RECONCILIATION,
+                Ca.CaRole.CLUSTER_CA,
+                caConfig,
+                KAFKA,
+                null,
+                null,
+                CERT_ISSUER,
+                PASSWORD_GENERATOR,
+                Clock.systemUTC(),
+                null,
+                null,
+                null);
+
+        assertThat(provider, instanceOf(CertManagerCaProvider.class));
     }
 }

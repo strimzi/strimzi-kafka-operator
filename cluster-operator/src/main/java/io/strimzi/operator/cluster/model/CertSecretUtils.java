@@ -12,7 +12,6 @@ import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.ca.Ca;
 import io.strimzi.operator.common.ca.CertificateUtils;
 
-import java.math.BigInteger;
 import java.security.cert.CertificateEncodingException;
 import java.util.HashMap;
 import java.util.Map;
@@ -47,7 +46,7 @@ public class CertSecretUtils {
     public static String getCertificateThumbprint(Secret certSecret, String key) {
         try {
             var cert = CertificateUtils.cert(certSecret, key);
-            return cert == null ? null : String.format("%040x", new BigInteger(1, Util.sha1Digest(cert.getEncoded())));
+            return cert == null ? null : CertificateUtils.getCertificateThumbprint(cert);
         } catch (CertificateEncodingException e) {
             throw new RuntimeException("Failed to get certificate thumbprint of " + key + " from Secret " + certSecret.getMetadata().getName(), e);
         }

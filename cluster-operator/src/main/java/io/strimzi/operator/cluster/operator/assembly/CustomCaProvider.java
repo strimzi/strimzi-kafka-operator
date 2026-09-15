@@ -49,7 +49,7 @@ public class CustomCaProvider extends CaProvider {
         if (existingCaCertSecret == null || existingCaKeySecret == null)   {
             return CompletableFuture.failedStage(new InvalidResourceException(caRole.caName() + " should not be generated, but the secrets were not found."));
         }
-        CertificateUtils.validateUserCaCertChain(reconciliation, caRole, existingCaCertSecret.getData());
+        CertificateUtils.validateCaCertChain(reconciliation, caRole, existingCaCertSecret.getData());
         InternalCa internalCa = new InternalCa(reconciliation, caRole, certIssuer, passwordGenerator, existingCaCertSecret, existingCaKeySecret, caConfig);
         return CompletableFuture.completedStage(new CaProviderResult(internalCa, existingCaCertSecret));
     }
