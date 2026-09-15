@@ -15,3 +15,45 @@ For more information on the configuration options, see the following API schema 
 * link:{BookURLConfiguring}#type-KafkaListenerAuthenticationCustom-reference[`KafkaListenerAuthenticationCustom` schema reference^]
 * link:{BookURLConfiguring}#type-KafkaClientAuthenticationCustom-reference[`KafkaClientAuthenticationCustom` schema reference^]
 
+== Handling secrets securely in `custom` authentication
+
+With the old `oauth` type, Strimzi accepted structured secret references (`clientSecret.secretName` / `clientSecret.key`) and resolved them at runtime.
+With the `custom` type, credentials are embedded directly in the `sasl.jaas.config` string inside the `config` section.
+
+WARNING: Do not use literal secret values in the `config` section of `custom` authentication.
+
+Use Kafka configuration providers to load sensitive values from Kubernetes `Secret` resources at runtime instead.
+Strimzi components include the `strimzisecrets` provider out of the box.
+Reference secrets using the template syntax `${strimzisecrets:<namespace>/<secret-name>:<key>}`.
+
+.Before: `oauth` type with structured secret reference
+[source,yaml]
+----
+authentication:
+  type: oauth
+  clientId: my-client-id
+  clientSecret:
+    secretName: my-oauth-secret
+    key: client-secret
+  tokenEndpointUri: https://my-oauth-server/token
+----
+
+.After: `custom` type with config provider reference
+[source,yaml,subs="attributes+"]
+----
+authentication:
+  type: custom
+  sasl: true
+  config:
+    sasl.mechanism: OAUTHBEARER
+    sasl.jaas.config: |
+      org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required
+        oauth.client.id="my-client-id"
+        oauth.client.secret="${strimzisecrets:mynamespace/my-oauth-secret:client-secret}"
+        oauth.token.endpoint.uri="https://my-oauth-server/token";
+    sasl.login.callback.handler.class: io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler
+----
+
+Replace `mynamespace` with the namespace where the component is deployed.
+For more information on setting up access rights, see the link:{BookURLConfiguring}#assembly-loading-config-with-providers-str[Loading configuration values from external sources^] section.
+
