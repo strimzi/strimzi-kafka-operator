@@ -654,13 +654,17 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     securityContext);
         }
 
+        /* test */ Set<Integer> getScalingDownBlockedNodes() {
+            return scalingDownBlockedNodes;
+        }
+
         /**
          * Provider method for the Kafka auto-rebalancing reconciler. Overriding this method can be used to get mocked reconciler.
          *
          * @return Kafka auto-rebalancing reconciler
          */
         KafkaAutoRebalancingReconciler kafkaAutoRebalancingReconciler() {
-            return new KafkaAutoRebalancingReconciler(reconciliation, kafkaAssembly, supplier, scalingDownBlockedNodes);
+            return new KafkaAutoRebalancingReconciler(reconciliation, kafkaAssembly, supplier, scalingDownBlockedNodes, metrics);
         }
 
         /**
