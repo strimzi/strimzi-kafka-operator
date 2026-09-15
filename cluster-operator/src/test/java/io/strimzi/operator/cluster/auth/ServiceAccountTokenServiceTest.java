@@ -152,12 +152,19 @@ public class ServiceAccountTokenServiceTest {
     @Test
     public void testTokenIsCachedWhenKubernetesShortensTheRequestedExpiration() {
         // The Kubernetes API can issue the token with a shorter validity than requested. The caching has to follow the
-        // returned expiration time and not the requested one, otherwise the token would be requested on every call.
-        ServiceAccountResource serviceAccountResource = mockServiceAccountResource(tokenRequestResponse("my-token", Instant.now().plusSeconds(600)));
+        // actual expiration time and not the requested one, otherwise the token would be requested on every call.
+        // This test checks that we use the actual expiration for the token renewals and not the requested one. It requests
+        // a token with 3600 second expiration but the mocked Kubernetes response return a token with only 600 seconds
+        // expiration. A token with the request 3600 seconds would be renewed 900 seconds (0.75 * 3600) before expiration.
+        // So as the mocked token is valid only for another 600 seconds, it would be already up for renwal. But because
+        // the expiration is counted from the actual 600 second expiration, it is cached and the new token is not requested.
+        Instant shortened = Instant.now().plusSeconds(600);
+        ServiceAccountResource serviceAccountResource = mockServiceAccountResource(tokenRequestResponse("my-token", shortened));
         ServiceAccountTokenService service = tokenService(mockKubernetesClient(serviceAccountResource));
 
         assertThat(service.token(NAMESPACE, SERVICE_ACCOUNT, AUDIENCE, EXPIRATION_SECONDS).value(), is("my-token"));
         assertThat(service.token(NAMESPACE, SERVICE_ACCOUNT, AUDIENCE, EXPIRATION_SECONDS).value(), is("my-token"));
+        assertThat(service.token(NAMESPACE, SERVICE_ACCOUNT, AUDIENCE, EXPIRATION_SECONDS).expirationTimestamp(), is(shortened.toEpochMilli()));
 
         verify(serviceAccountResource, times(1)).tokenRequest(any());
     }
