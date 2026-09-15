@@ -20,6 +20,7 @@ import io.skodjob.kubetest4j.security.CertAndKeyFiles;
 import io.strimzi.api.kafka.model.common.template.AdditionalVolumeBuilder;
 import io.strimzi.api.kafka.model.common.template.ContainerEnvVarBuilder;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
+import io.strimzi.api.kafka.model.kafka.clustersecurity.ClusterSecurityAuthenticationType;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerConfigurationBroker;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerConfigurationBrokerBuilder;
@@ -98,6 +99,7 @@ import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 @Tag(REGRESSION)
 @SuiteDoc(
@@ -503,6 +505,9 @@ public class ListenersST extends AbstractST {
         }
     )
     void testSendMessagesCustomListenerTlsCustomization() {
+        // This test uses authorization and is therefore skipped when `type: none` cluster security authentication is used
+        assumeFalse(ClusterSecurityAuthenticationType.NONE.equals(Environment.CLUSTER_SECURITY_AUTHENTICATION));
+
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
         final String superuserName = "pepa";

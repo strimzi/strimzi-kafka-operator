@@ -15,6 +15,7 @@ import io.skodjob.annotations.SuiteDoc;
 import io.skodjob.annotations.TestDoc;
 import io.skodjob.kubetest4j.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.kafka.Kafka;
+import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.clustersecurity.ClusterSecurityAuthenticationType;
 import io.strimzi.api.kafka.model.kafka.clustersecurity.ClusterSecurityEncryptionType;
@@ -52,6 +53,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
@@ -252,6 +254,7 @@ class ClusterSecurityST extends AbstractST {
                     .editSpec()
                         .editKafka()
                             .withNewKafkaAuthorizationSimple()
+                                .addToSuperUsers(ClusterSecurityAuthenticationType.NONE.equals(authFrom) ? new String[] {"ANONYMOUS"} : new String[0]) // None authentication needs ANONYMOUS as superuser
                             .endKafkaAuthorizationSimple()
                             .withListeners(
                                 new GenericKafkaListenerBuilder()
@@ -299,7 +302,7 @@ class ClusterSecurityST extends AbstractST {
         ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getMessageCount());
 
         // Migrate to different security settings
-        migrateClusterSecurity(testStorage, ClusterSecuritySTUtils.clusterSecurityAnnotation(encTo, authTo));
+        migrateClusterSecurity(testStorage, encTo, authTo);
         ClusterSecuritySTUtils.assertClusterSecurityStatus(testStorage, encTo, authTo);
 
         // Test sending and consuming messages still works
@@ -312,7 +315,7 @@ class ClusterSecurityST extends AbstractST {
         ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), 2 * testStorage.getMessageCount());
 
         // Migrate back to the original to close the round trip
-        migrateClusterSecurity(testStorage, ClusterSecuritySTUtils.clusterSecurityAnnotation(encFrom, authFrom));
+        migrateClusterSecurity(testStorage, encFrom, authFrom);
         ClusterSecuritySTUtils.assertClusterSecurityStatus(testStorage, encFrom, authFrom);
 
         // Test sending and consuming messages still works
@@ -326,14 +329,17 @@ class ClusterSecurityST extends AbstractST {
         ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), 3 * testStorage.getMessageCount());
     }
 
-    private void migrateClusterSecurity(TestStorage testStorage, String clusterSecurity) {
+    private void migrateClusterSecurity(TestStorage testStorage, ClusterSecurityEncryptionType enc, ClusterSecurityAuthenticationType auth) {
         String namespaceName = testStorage.getNamespaceName();
         String clusterName = testStorage.getClusterName();
+        String clusterSecurity = ClusterSecuritySTUtils.clusterSecurityAnnotation(enc, auth);
 
+        // Pause reconciliation
         KafkaUtils.annotateKafka(namespaceName, clusterName,
             Map.of(Annotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION, "true"));
         KafkaUtils.waitForKafkaStatus(namespaceName, clusterName, CustomResourceStatus.ReconciliationPaused);
 
+        // Delete the cluster
         String selector = Labels.STRIMZI_CLUSTER_LABEL + "=" + clusterName + "," + Labels.STRIMZI_KIND_LABEL + "=" + Kafka.RESOURCE_KIND;
         KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName).exec(
             "delete", "strimzipodsets,deployments", "-l", selector, "--cascade=foreground");
@@ -344,17 +350,45 @@ class ClusterSecurityST extends AbstractST {
             .build();
         PodUtils.waitForPodsReady(namespaceName, clusterPodSelector, 0, true);
 
+        // Reconfigure the Kafka cluster for the new configuration
         CrdClients.kafkaClient()
             .inNamespace(namespaceName)
             .withName(clusterName)
             .subresource("status")
             .patch(PatchContext.of(PatchType.JSON_MERGE), "{\"status\":{\"clusterSecurity\":null}}");
 
-        if (clusterSecurity == null) {
-            KafkaUtils.removeAnnotation(namespaceName, clusterName, ClusterSecuritySTUtils.INTERNAL_CLUSTER_SECURITY_ANNOTATION);
+        KafkaUtils.annotateKafka(namespaceName, clusterName, Map.of(ClusterSecuritySTUtils.INTERNAL_CLUSTER_SECURITY_ANNOTATION, clusterSecurity));
+
+        // Update the super users if needed
+        if (ClusterSecurityAuthenticationType.NONE.equals(auth))   {
+            CrdClients.kafkaClient()
+                    .inNamespace(namespaceName)
+                    .withName(clusterName)
+                    .edit(kafka -> new KafkaBuilder(kafka)
+                            .editSpec()
+                                .editKafka()
+                                    .withNewKafkaAuthorizationSimple()
+                                        .withSuperUsers("ANONYMOUS") // None authentication needs ANONYMOUS as superuser
+                                    .endKafkaAuthorizationSimple()
+                                .endKafka()
+                            .endSpec()
+                            .build());
         } else {
-            KafkaUtils.annotateKafka(namespaceName, clusterName, Map.of(ClusterSecuritySTUtils.INTERNAL_CLUSTER_SECURITY_ANNOTATION, clusterSecurity));
+            CrdClients.kafkaClient()
+                    .inNamespace(namespaceName)
+                    .withName(clusterName)
+                    .edit(kafka -> new KafkaBuilder(kafka)
+                            .editSpec()
+                                .editKafka()
+                                    .withNewKafkaAuthorizationSimple()
+                                        .withSuperUsers(List.of()) // Authentication is used => no need for any super users
+                                    .endKafkaAuthorizationSimple()
+                                .endKafka()
+                            .endSpec()
+                            .build());
         }
+
+        // Unpause the reconciliation and wait for the cluster to get back online
         KafkaUtils.annotateKafka(namespaceName, clusterName,
             Map.of(Annotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION, "false"));
 
