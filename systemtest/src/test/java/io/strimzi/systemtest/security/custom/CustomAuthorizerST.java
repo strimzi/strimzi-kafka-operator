@@ -12,6 +12,7 @@ import io.skodjob.annotations.TestDoc;
 import io.skodjob.kubetest4j.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.kafka.KafkaAuthorizationSimple;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
+import io.strimzi.api.kafka.model.kafka.clustersecurity.ClusterSecurityAuthenticationType;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthenticationTls;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
@@ -38,6 +39,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 
 import static io.strimzi.systemtest.TestTags.REGRESSION;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 @Tag(REGRESSION)
 @SuiteDoc(
@@ -180,6 +182,9 @@ public class CustomAuthorizerST extends AbstractST {
 
     @BeforeAll
     public void setup() {
+        // This test suite uses authorization and is therefore skipped when `type: none` cluster security authentication is used
+        assumeFalse(ClusterSecurityAuthenticationType.NONE.equals(Environment.CLUSTER_SECURITY_AUTHENTICATION));
+
         sharedTestStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
         SetupClusterOperator

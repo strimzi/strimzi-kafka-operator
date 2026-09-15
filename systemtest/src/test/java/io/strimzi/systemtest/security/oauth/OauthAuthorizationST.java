@@ -14,6 +14,7 @@ import io.skodjob.annotations.TestDoc;
 import io.skodjob.kubetest4j.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.common.template.AdditionalVolumeBuilder;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
+import io.strimzi.api.kafka.model.kafka.clustersecurity.ClusterSecurityAuthenticationType;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.systemtest.Environment;
@@ -49,6 +50,7 @@ import java.util.Map;
 
 import static io.strimzi.systemtest.TestTags.OAUTH;
 import static io.strimzi.systemtest.TestTags.REGRESSION;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 @Tag(OAUTH)
 @Tag(REGRESSION)
@@ -344,6 +346,9 @@ public class OauthAuthorizationST extends OauthAbstractST {
 
     @BeforeAll
     void setUp()  {
+        // This test suite uses authorization and is therefore skipped when `type: none` cluster security authentication is used
+        assumeFalse(ClusterSecurityAuthenticationType.NONE.equals(Environment.CLUSTER_SECURITY_AUTHENTICATION));
+
         super.setupCoAndKeycloak(Environment.TEST_SUITE_NAMESPACE);
 
         keycloakInstance.setRealm(TEST_REALM, true);
