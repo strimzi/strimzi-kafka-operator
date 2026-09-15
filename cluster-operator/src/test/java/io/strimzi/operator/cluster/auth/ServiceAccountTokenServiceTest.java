@@ -113,9 +113,9 @@ public class ServiceAccountTokenServiceTest {
         long after = System.currentTimeMillis();
 
         assertThat(token.value(), is("my-token"));
-        assertThat(token.expiresAtMs(), is(expiration.toEpochMilli()));
-        assertThat(token.issuedAtMs(), greaterThanOrEqualTo(before));
-        assertThat(token.issuedAtMs(), lessThanOrEqualTo(after));
+        assertThat(token.expirationTimestamp(), is(expiration.toEpochMilli()));
+        assertThat(token.issuedTimestamp(), greaterThanOrEqualTo(before));
+        assertThat(token.issuedTimestamp(), lessThanOrEqualTo(after));
 
         ArgumentCaptor<TokenRequest> requestCaptor = ArgumentCaptor.forClass(TokenRequest.class);
         verify(serviceAccountResource).tokenRequest(requestCaptor.capture());

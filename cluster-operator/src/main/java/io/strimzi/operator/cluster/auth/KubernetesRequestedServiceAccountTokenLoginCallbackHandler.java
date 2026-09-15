@@ -154,7 +154,7 @@ public class KubernetesRequestedServiceAccountTokenLoginCallbackHandler implemen
 
         @Override
         public long lifetimeMs() {
-            return token.expiresAtMs();
+            return token.expirationTimestamp();
         }
 
         @Override
@@ -164,7 +164,7 @@ public class KubernetesRequestedServiceAccountTokenLoginCallbackHandler implemen
 
         @Override
         public Long startTimeMs() {
-            return token.issuedAtMs();
+            return token.issuedTimestamp();
         }
     }
 }
