@@ -106,6 +106,10 @@ public class UserOperatorConfig {
      */
     public static final ConfigParameter<Integer> CERTS_RENEWAL_DAYS = new ConfigParameter<>("STRIMZI_CA_RENEWAL", strictlyPositive(INTEGER), "30", CONFIG_VALUES);
     /**
+     * RSA key size in bits for CA and end-entity certificates
+     */
+    public static final ConfigParameter<Integer> CERTS_KEY_SIZE = new ConfigParameter<>("STRIMZI_CA_KEY_SIZE", strictlyPositive(INTEGER), "4096", CONFIG_VALUES);
+    /**
      * Length used for the Scram-Sha Password
      */
     public static final ConfigParameter<Integer> SCRAM_SHA_PASSWORD_LENGTH = new ConfigParameter<>("STRIMZI_SCRAM_SHA_PASSWORD_LENGTH", strictlyPositive(INTEGER), "32",  CONFIG_VALUES);
@@ -507,6 +511,15 @@ public class UserOperatorConfig {
     }
 
     /**
+     * Gets the RSA key size in bits for CA and end-entity certificates.
+     *
+     * @return The RSA key size in bits.
+     */
+    public int getClientsCaKeySize() {
+        return get(CERTS_KEY_SIZE);
+    }
+
+    /**
      * Gets the feature gates configuration.
      *
      * @return  Feature gates configuration
@@ -597,6 +610,7 @@ public class UserOperatorConfig {
                 "\n\tsecretPrefix='" + getSecretPrefix() + '\'' +
                 "\n\tclientsCaValidityDays=" + getClientsCaValidityDays() +
                 "\n\tclientsCaRenewalDays=" + getClientsCaRenewalDays() +
+                "\n\tclientsCaKeySize=" + getClientsCaKeySize() +
                 "\n\taclsAdminApiSupported=" + isAclsAdminApiSupported() +
                 "\n\tscramPasswordLength=" + getScramPasswordLength() +
                 "\n\tmaintenanceWindows=`" + getMaintenanceWindows() + '\'' +
