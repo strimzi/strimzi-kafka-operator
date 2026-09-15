@@ -17,7 +17,9 @@ public record ServiceAccountToken(String value, long issuedTimestamp, long expir
      * the given fraction of its lifetime elapses. That leaves enough time for the client to use it before it expires.
      *
      * @param timestamp     Point in time for which the validity should be checked as milliseconds since the epoch
-     * @param threshold     Fraction of the token lifetime after which the token is not used anymore
+     * @param threshold     Fraction of the token lifetime after which the token is not used anymore. For example, a
+     *                      threshold of 0.75 means the token is usable for the first 75% of its lifetime (e.g. 45 minutes
+     *                      for a 60-minute token).
      *
      * @return  True if the token can be still used. False otherwise.
      */

@@ -26,7 +26,7 @@ import java.util.concurrent.TimeUnit;
  * minutes. Without caching, every reconciliation of every cluster would create several new tokens. So the tokens are
  * cached and shared by all components which need them.
  *
- * The tokens are cached per Service Account (and per audience and requested expiration) and reused until 80% of their
+ * The tokens are cached per Service Account (and per audience and requested expiration) and reused until 75% of their
  * lifetime elapses. Once that happens, the token is thrown away and a new one is requested when it is needed again.
  * The tokens are never renewed proactively. That keeps the number of the token requests at minimum and makes sure we
  * do not keep requesting tokens for clusters which were deleted or reconfigured to not use the Service Account
@@ -42,16 +42,16 @@ public class ServiceAccountTokenService {
     private static final Logger LOGGER = LogManager.getLogger(ServiceAccountTokenService.class);
 
     /**
-     * Fraction of the token lifetime after which the token is not used anymore and is removed from the cache. Most
-     * services expect the token to be renewed at 80% of their lifetime, so we use a slightly lower threshold to be on
-     * the safe side and try to renew it before they ask for it.
+     * Fraction of the token lifetime after which the token is not used anymore and is removed from the cache. Kafka's
+     * OAuthBearerLoginModule refreshes the token by default at around 80% of its lifetime, so we use a slightly lower
+     * threshold to ensure the cache gets a fresh token before Kafka asks for one.
      */
     /* test */ static final double RENEWAL_THRESHOLD = 0.75;
 
     /**
      * Interval in which the reaper thread checks the cache for tokens which are not usable anymore. The minimal token
-     * expiration allowed by our API is 600 seconds, so this interval is short enough to not keep the unused tokens in
-     * the cache for a significant part of their lifetime.
+     * expiration allowed by Kubernetes is 600 seconds, so this interval is short enough to not keep the unused tokens
+     * in the cache for a significant part of their lifetime.
      */
     private static final long REAPER_INTERVAL_MS = 60_000L;
 

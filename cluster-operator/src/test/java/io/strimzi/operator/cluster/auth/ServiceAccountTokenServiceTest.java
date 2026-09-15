@@ -167,7 +167,8 @@ public class ServiceAccountTokenServiceTest {
         ServiceAccountResource serviceAccountResource = mockServiceAccountResource(
                 // The first token is already past the renewal threshold and should not be reused
                 tokenRequestResponse("my-old-token", Instant.now().minusSeconds(EXPIRATION_SECONDS)),
-                tokenRequestResponse("my-new-token", Instant.now().plusSeconds(EXPIRATION_SECONDS)));
+                tokenRequestResponse("my-new-token", Instant.now().plusSeconds(EXPIRATION_SECONDS)),
+                tokenRequestResponse("my-even-newer-token", Instant.now().plusSeconds(EXPIRATION_SECONDS))); // Even newer token should be never used
         ServiceAccountTokenService service = tokenService(mockKubernetesClient(serviceAccountResource));
 
         assertThat(service.token(NAMESPACE, SERVICE_ACCOUNT, AUDIENCE, EXPIRATION_SECONDS).value(), is("my-old-token"));
