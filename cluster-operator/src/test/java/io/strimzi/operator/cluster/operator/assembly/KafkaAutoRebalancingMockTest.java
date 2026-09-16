@@ -1342,8 +1342,8 @@ public class KafkaAutoRebalancingMockTest {
                     assertThat(cm, is(notNullValue()));
                     assertThat(cm.getData().get("lastRebalanceCompletionTime"), is(notNullValue()));
 
-                    // Mock CC with goal violations for re-detection after failure recovery
-                    cruiseControlServer.mockStateEndpointWithGoalViolations("CC-State-goal-violations-fixable.json");
+                    // Mock CC with a fresh violation (detectionMs in the far future so it's after the tracker update)
+                    cruiseControlServer.mockStateEndpointWithGoalViolations("CC-State-goal-violations-fixable-redetection.json");
                 })))
                 // 3rd reconcile, CC re-detects goal violations and triggers a fresh rebalance
                 .compose(v -> operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, CLUSTER_NAME)))
