@@ -582,6 +582,32 @@ public class KafkaPoolTest {
     }
 
     @Test
+    public void testRemovedJbodVolumeIdsWithoutJbodStorage()  {
+        KafkaNodePool pool = new KafkaNodePoolBuilder(POOL)
+                .withNewStatus()
+                    .withRoles(ProcessRoles.BROKER)
+                    .withNodeIds(10, 11, 13)
+                .endStatus()
+                .editSpec()
+                    .withStorage(new PersistentClaimStorageBuilder().withSize("100Gi").build())
+                .endSpec()
+                .build();
+
+        KafkaPool kp = KafkaPool.fromCrd(
+                Reconciliation.DUMMY_RECONCILIATION,
+                KAFKA,
+                pool,
+                new NodeIdAssignment(Set.of(10, 11, 13), Set.of(10, 11, 13), Set.of(), Set.of(), Set.of(), Set.of(10, 11, 13)),
+                new PersistentClaimStorageBuilder().withSize("100Gi").build(),
+                ResourceUtils.DUMMY_OWNER_REFERENCE,
+                SHARED_ENV_PROVIDER
+        );
+
+        // A pool which does not use JBOD storage has no JBOD volumes to remove
+        assertThat(kp.removedJbodVolumeIds(), is(Set.of()));
+    }
+
+    @Test
     public void testCurrentBrokerNodes()  {
         KafkaPool kp = KafkaPool.fromCrd(
                 Reconciliation.DUMMY_RECONCILIATION,
