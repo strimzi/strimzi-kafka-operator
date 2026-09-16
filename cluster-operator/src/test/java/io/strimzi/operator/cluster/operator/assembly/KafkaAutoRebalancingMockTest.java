@@ -248,7 +248,7 @@ public class KafkaAutoRebalancingMockTest {
                     KafkaAutoRebalancingReconciler kafkaAutoRebalancingReconciler() {
                         return new KafkaAutoRebalancingReconciler(reconciliation, kafkaAssembly, supplier, getScalingDownBlockedNodes(), testMetricsHolder) {
                             @Override
-                            protected KafkaAutoRebalanceImbalanceDetector createImbalanceDetector() {
+                            KafkaAutoRebalanceImbalanceDetector createImbalanceDetector() {
                                 return new KafkaAutoRebalanceImbalanceDetector(reconciliation, kafkaAssembly, supplier) {
                                     @Override
                                     protected String cruiseControlHost(String clusterName, String clusterNamespace) {
@@ -1336,6 +1336,12 @@ public class KafkaAutoRebalancingMockTest {
                     KafkaRebalance kr = Crds.kafkaRebalanceOperation(client).inNamespace(namespace).withName(KafkaResources.autoRebalancingKafkaRebalanceResourceName(CLUSTER_NAME, KafkaAutoRebalanceMode.IMBALANCE)).get();
                     assertThat(kr, is(nullValue()));
 
+                    // ConfigMap should be updated with failure timestamp to prevent immediate re-triggering
+                    ConfigMap cm = client.configMaps().inNamespace(namespace)
+                            .withName(CLUSTER_NAME + "-auto-rebalance-imbalance-tracker").get();
+                    assertThat(cm, is(notNullValue()));
+                    assertThat(cm.getData().get("lastRebalanceCompletionTime"), is(notNullValue()));
+
                     // Mock CC with goal violations for re-detection after failure recovery
                     cruiseControlServer.mockStateEndpointWithGoalViolations("CC-State-goal-violations-fixable.json");
                 })))
@@ -1380,10 +1386,11 @@ public class KafkaAutoRebalancingMockTest {
                     KafkaRebalance kr = Crds.kafkaRebalanceOperation(client).inNamespace(namespace).withName(KafkaResources.autoRebalancingKafkaRebalanceResourceName(CLUSTER_NAME, KafkaAutoRebalanceMode.IMBALANCE)).get();
                     assertThat(kr, is(nullValue()));
 
-                    // ConfigMap should NOT be updated since the rebalance was stopped, not completed
+                    // ConfigMap should be updated even when stopped, to prevent immediate re-triggering
                     ConfigMap cm = client.configMaps().inNamespace(namespace)
                             .withName(CLUSTER_NAME + "-auto-rebalance-imbalance-tracker").get();
-                    assertThat(cm, is(nullValue()));
+                    assertThat(cm, is(notNullValue()));
+                    assertThat(cm.getData().get("lastRebalanceCompletionTime"), is(notNullValue()));
 
                     reconciliation.flag();
                 })));
