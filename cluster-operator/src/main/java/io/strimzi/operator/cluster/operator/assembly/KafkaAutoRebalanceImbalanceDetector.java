@@ -8,8 +8,6 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlResources;
-import io.strimzi.api.kafka.model.kafka.cruisecontrol.KafkaAutoRebalanceConfiguration;
-import io.strimzi.api.kafka.model.kafka.cruisecontrol.KafkaAutoRebalanceMode;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalance;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceList;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceState;
@@ -32,7 +30,6 @@ import io.strimzi.operator.common.operator.resource.kubernetes.CrdOperator;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -49,7 +46,6 @@ public class KafkaAutoRebalanceImbalanceDetector {
 
     private final Reconciliation reconciliation;
     private final Kafka kafkaCr;
-    private final List<KafkaAutoRebalanceConfiguration> kafkaAutoRebalanceConfigurations;
     private final CrdOperator<KubernetesClient, KafkaRebalance, KafkaRebalanceList> kafkaRebalanceOperator;
     private final ConfigMapOperator configMapOperator;
     private final ResourceOperatorSupplier supplier;
@@ -68,7 +64,6 @@ public class KafkaAutoRebalanceImbalanceDetector {
         this.reconciliation = reconciliation;
         this.kafkaCr = kafkaCr;
         this.supplier = supplier;
-        this.kafkaAutoRebalanceConfigurations = kafkaCr.getSpec().getCruiseControl().getAutoRebalance();
         this.kafkaRebalanceOperator = supplier.kafkaRebalanceOperator;
         this.configMapOperator = supplier.configMapOperations;
     }
@@ -125,13 +120,13 @@ public class KafkaAutoRebalanceImbalanceDetector {
                         KafkaRebalanceState state = KafkaRebalanceUtils.rebalanceState(rebalance.getStatus());
 
                         if (state == KafkaRebalanceState.Rebalancing) {
-                            LOGGER.infoCr(reconciliation, "KafkaRebalance {}/{} is actively rebalancing. Auto-rebalance on imbalance will be skipped.",
+                            LOGGER.debugCr(reconciliation, "KafkaRebalance {}/{} is actively rebalancing — auto-rebalance on imbalance will be skipped until it completes",
                                     rebalance.getMetadata().getNamespace(), rebalance.getMetadata().getName());
                             return CompletableFuture.completedFuture(true);
                         } else if (state == KafkaRebalanceState.New ||
                                    state == KafkaRebalanceState.PendingProposal ||
                                    state == KafkaRebalanceState.ProposalReady) {
-                            LOGGER.infoCr(reconciliation, "KafkaRebalance {}/{} is in {} state and will be ignored. Auto-rebalance on imbalance will proceed.",
+                            LOGGER.debugCr(reconciliation, "KafkaRebalance {}/{} is in {} state (not yet executing) — auto-rebalance on imbalance will proceed",
                                     rebalance.getMetadata().getNamespace(), rebalance.getMetadata().getName(), state);
                         }
                     }
@@ -145,27 +140,20 @@ public class KafkaAutoRebalanceImbalanceDetector {
      * @return CompletionStage with GoalViolationInfo if violations detected, null otherwise
      */
     public CompletionStage<GoalViolationInfo> checkForGoalViolations() {
-        if (kafkaCr.getSpec() == null || kafkaCr.getSpec().getCruiseControl() == null) {
-            return CompletableFuture.completedFuture(null);
-        }
-
-        Optional<KafkaAutoRebalanceConfiguration> imbalanceConfig = kafkaAutoRebalanceConfigurations.stream()
-                .filter(c -> c.getMode().equals(KafkaAutoRebalanceMode.IMBALANCE))
-                .findFirst();
-
-        if (imbalanceConfig.isEmpty()) {
-            return CompletableFuture.completedFuture(null);
-        }
-
         return supplier.secretOperations.getAsync(reconciliation.namespace(), CruiseControlResources.secretName(reconciliation.name()))
                 .thenCompose(ccSecret -> {
                     if (ccSecret == null) {
-                        LOGGER.warnCr(reconciliation, "Cruise Control secret not found, skipping anomaly detection");
+                        LOGGER.warnCr(reconciliation, "Cruise Control secret not found — skipping goal violation detection this reconciliation");
                         return CompletableFuture.completedFuture(null);
                     }
 
                     return supplier.secretOperations.getAsync(reconciliation.namespace(), CruiseControlResources.apiSecretName(reconciliation.name()))
                             .thenCompose(ccApiSecret -> {
+                                if (ccApiSecret == null) {
+                                    LOGGER.warnCr(reconciliation, "Cruise Control API secret not found — skipping goal violation detection this reconciliation");
+                                    return CompletableFuture.completedFuture(null);
+                                }
+
                                 Map<String, Object> ccConfigMap = kafkaCr.getSpec().getCruiseControl().getConfig();
                                 CruiseControlConfiguration ccConfig = new CruiseControlConfiguration(
                                         reconciliation,
@@ -181,7 +169,7 @@ public class KafkaAutoRebalanceImbalanceDetector {
 
                                 return ccApi.getGoalViolations(reconciliation, ccHost, ccPort)
                                         .exceptionally(error -> {
-                                            LOGGER.debugCr(reconciliation, "Unable to query Cruise Control for goal violations (pod may not be ready yet): {}", error.getMessage());
+                                            LOGGER.debugCr(reconciliation, "Unable to query Cruise Control for goal violations — pod may not be ready yet", error);
                                             return null;
                                         });
                             });
@@ -191,10 +179,10 @@ public class KafkaAutoRebalanceImbalanceDetector {
     /**
      * Checks if the detected anomaly should trigger a rebalance by comparing timestamps
      *
-     * @param detectionDate When the anomaly was detected
+     * @param detectionTime When the anomaly was detected
      * @return CompletionStage with boolean indicating if rebalance should be triggered
      */
-    public CompletionStage<Boolean> shouldTriggerRebalance(Instant detectionDate) {
+    public CompletionStage<Boolean> shouldTriggerRebalance(Instant detectionTime) {
         return configMapOperator.getAsync(reconciliation.namespace(), reconciliation.name() + KafkaAutoRebalancingReconciler.AUTO_REBALANCE_IMBALANCE_TRACKER_SUFFIX)
                 .thenCompose(configMap -> {
                     if (configMap == null || configMap.getData() == null) {
@@ -208,9 +196,9 @@ public class KafkaAutoRebalanceImbalanceDetector {
 
                     try {
                         Instant lastCompletionTime = Instant.parse(lastCompletionTimeStr);
-                        return CompletableFuture.completedFuture(detectionDate.isAfter(lastCompletionTime));
+                        return CompletableFuture.completedFuture(detectionTime.isAfter(lastCompletionTime));
                     } catch (Exception e) {
-                        LOGGER.warnCr(reconciliation, "Failed to parse lastRebalanceCompletionTime: {}", e.getMessage());
+                        LOGGER.warnCr(reconciliation, "Failed to parse lastRebalanceCompletionTime '{}' — treating as no previous rebalance and allowing trigger", lastCompletionTimeStr);
                         return CompletableFuture.completedFuture(true);
                     }
                 });
@@ -235,27 +223,18 @@ public class KafkaAutoRebalanceImbalanceDetector {
      * Every anomaly detection goal must be present in the template so that the resulting
      * rebalance proposal actually addresses the detected violations.
      *
-     * @return CompletionStage with boolean value - true if validation passes or no validation needed, false if validation fails
+     * @param templateName  Name of the KafkaRebalance template to validate
+     * @return CompletionStage with boolean value - true if validation passes, false if validation fails
      */
-    public CompletionStage<Boolean> validateTemplateGoals() {
-        Optional<KafkaAutoRebalanceConfiguration> imbalanceConfig = kafkaAutoRebalanceConfigurations.stream()
-                .filter(c -> c.getMode().equals(KafkaAutoRebalanceMode.IMBALANCE))
-                .findFirst();
-
-        if (imbalanceConfig.isEmpty() || imbalanceConfig.get().getTemplate() == null) {
-            return CompletableFuture.completedFuture(true);
-        }
-
-        String templateName = imbalanceConfig.get().getTemplate().getName();
-
+    public CompletionStage<Boolean> validateTemplateGoals(String templateName) {
         return kafkaRebalanceOperator.getAsync(reconciliation.namespace(), templateName)
                 .thenCompose(template -> {
                     if (template == null) {
-                        LOGGER.warnCr(reconciliation, "KafkaRebalance template {} not found", templateName);
+                        LOGGER.warnCr(reconciliation, "KafkaRebalance template '{}' not found — skipping template goal validation and proceeding with detection", templateName);
                         return CompletableFuture.completedFuture(true);
                     }
 
-                    if (template.getSpec() == null || template.getSpec().getGoals() == null || template.getSpec().getGoals().isEmpty()) {
+                    if (template.getSpec().getGoals() == null || template.getSpec().getGoals().isEmpty()) {
                         return CompletableFuture.completedFuture(true);
                     }
 
@@ -270,12 +249,11 @@ public class KafkaAutoRebalanceImbalanceDetector {
                             .toList();
 
                     if (!missingGoals.isEmpty()) {
-                        String message = String.format(
-                                "Anomaly detection goals %s are missing from template '%s'. " +
+                        LOGGER.warnCr(reconciliation,
+                                "Anomaly detection goals {} are missing from template '{}'. " +
                                 "The template must include all anomaly detection goals so that the rebalance addresses detected violations. " +
-                                "Template goals: %s. Add missing goals to the template.",
+                                "Template goals: {}. Add the missing goals to the template.",
                                 missingGoals, templateName, templateGoals);
-                        LOGGER.warnCr(reconciliation, message);
                         return CompletableFuture.completedFuture(false);
                     }
 
@@ -295,12 +273,10 @@ public class KafkaAutoRebalanceImbalanceDetector {
                 .map(this::extractGoalShortName)
                 .toList();
 
-        if (kafkaCr.getSpec() == null || kafkaCr.getSpec().getCruiseControl() == null ||
-                kafkaCr.getSpec().getCruiseControl().getConfig() == null) {
+        Map<String, Object> ccConfig = kafkaCr.getSpec().getCruiseControl().getConfig();
+        if (ccConfig == null) {
             return defaultGoals;
         }
-
-        Map<String, Object> ccConfig = kafkaCr.getSpec().getCruiseControl().getConfig();
         Object goalsConfig = ccConfig.get(CruiseControlConfigurationParameters.ANOMALY_DETECTION_CONFIG_KEY.toString());
 
         if (goalsConfig == null) {

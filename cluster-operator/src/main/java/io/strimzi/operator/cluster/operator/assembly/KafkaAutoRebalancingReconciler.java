@@ -105,13 +105,7 @@ public class KafkaAutoRebalancingReconciler {
         this.imbalanceDetector = createImbalanceDetector();
     }
 
-    /**
-     * Factory method for the imbalance detector.
-     * Overriding this method can be used in tests to inject a mock detector.
-     *
-     * @return  Imbalance detector instance
-     */
-    protected KafkaAutoRebalanceImbalanceDetector createImbalanceDetector() {
+    /* test */ KafkaAutoRebalanceImbalanceDetector createImbalanceDetector() {
         return new KafkaAutoRebalanceImbalanceDetector(reconciliation, kafkaCr, supplier);
     }
 
@@ -148,17 +142,23 @@ public class KafkaAutoRebalancingReconciler {
      * @return  CompletionStage which completes when the check is done
      */
     private CompletionStage<Void> maybeCheckForImbalance(KafkaStatus kafkaStatus) {
-        boolean imbalanceModeConfigured = kafkaAutoRebalanceConfigurations.stream()
-                .anyMatch(c -> c.getMode().equals(KafkaAutoRebalanceMode.IMBALANCE));
+        KafkaAutoRebalanceConfiguration imbalanceConfig = kafkaAutoRebalanceConfigurations.stream()
+                .filter(c -> c.getMode().equals(KafkaAutoRebalanceMode.IMBALANCE))
+                .findFirst()
+                .orElse(null);
 
-        if (!imbalanceModeConfigured) {
+        if (imbalanceConfig == null) {
             return CompletableFuture.completedFuture(null);
         }
 
-        return imbalanceDetector.validateTemplateGoals()
+        CompletionStage<Boolean> templateValidation = imbalanceConfig.getTemplate() != null
+                ? imbalanceDetector.validateTemplateGoals(imbalanceConfig.getTemplate().getName())
+                : CompletableFuture.completedFuture(true);
+
+        return templateValidation
                 .thenCompose(isValid -> {
                     if (!isValid) {
-                        LOGGER.warnCr(reconciliation, "Template goal validation failed, imbalance auto-rebalance suspended");
+                        LOGGER.warnCr(reconciliation, "Template goals validation failed, auto-rebalance on imbalance will not be triggered until the template configuration is corrected");
                         return CompletableFuture.completedFuture(null);
                     }
 
@@ -181,24 +181,26 @@ public class KafkaAutoRebalancingReconciler {
 
     private CompletionStage<Void> handleDetectedViolations(GoalViolationInfo goalViolationInfo, KafkaStatus kafkaStatus) {
         if (goalViolationInfo.fixability() == Fixability.UNFIXABLE) {
-            LOGGER.warnCr(reconciliation, "Detected only unfixable goal violations at {}, no auto-rebalance possible", goalViolationInfo.detectionDate());
-            kafkaStatus.addCondition(StatusUtils.buildWarningCondition("AutoRebalanceOnImbalanceBlocked",
+            LOGGER.warnCr(reconciliation, "Detected only unfixable goal violations at {}. Auto-rebalance on imbalance is blocked — manual infrastructure intervention is required", goalViolationInfo.detectionTime());
+            metricsHolder.anomaliesDetectedCounter(reconciliation.namespace(), "goal_violation", goalViolationInfo.fixability().label()).increment();
+            kafkaStatus.addCondition(StatusUtils.buildWarningCondition("AutoRebalanceOnImbalanceFailure",
                     "Unfixable goal violations detected. Auto-rebalance on imbalance is blocked until resolved."));
             return CompletableFuture.completedFuture(null);
         }
 
         if (goalViolationInfo.fixability() == Fixability.MIXED) {
-            LOGGER.warnCr(reconciliation, "Detected both fixable and unfixable goal violations at {}, auto-rebalance on imbalance is blocked", goalViolationInfo.detectionDate());
-            kafkaStatus.addCondition(StatusUtils.buildWarningCondition("AutoRebalanceOnImbalanceBlocked",
+            LOGGER.warnCr(reconciliation, "Detected both fixable and unfixable goal violations at {}. Auto-rebalance on imbalance is blocked — resolve unfixable violations first, or use a manual KafkaRebalance with skipHardGoalCheck: true", goalViolationInfo.detectionTime());
+            metricsHolder.anomaliesDetectedCounter(reconciliation.namespace(), "goal_violation", goalViolationInfo.fixability().label()).increment();
+            kafkaStatus.addCondition(StatusUtils.buildWarningCondition("AutoRebalanceOnImbalanceFailure",
                     "Both fixable and unfixable goal violations detected. Auto-rebalance on imbalance is blocked until resolved. " +
                     "To address fixable violations, create a manual KafkaRebalance with skipHardGoalCheck: true."));
             return CompletableFuture.completedFuture(null);
         }
 
-        return imbalanceDetector.shouldTriggerRebalance(goalViolationInfo.detectionDate())
+        return imbalanceDetector.shouldTriggerRebalance(goalViolationInfo.detectionTime())
                 .thenCompose(shouldTrigger -> {
                     if (shouldTrigger && imbalanceDetector.isInMaintenanceWindow()) {
-                        LOGGER.infoCr(reconciliation, "Goal violations detected at {}, triggering rebalance", goalViolationInfo.detectionDate());
+                        LOGGER.infoCr(reconciliation, "Fixable goal violations detected at {}, triggering auto-rebalance on imbalance", goalViolationInfo.detectionTime());
                         return getKafkaRebalance(reconciliation.namespace(), reconciliation.name(), KafkaAutoRebalanceMode.IMBALANCE)
                                 .thenCompose(existingKr -> {
                                     if (existingKr != null) {
@@ -218,9 +220,9 @@ public class KafkaAutoRebalancingReconciler {
                                             });
                                 });
                     } else if (shouldTrigger) {
-                        LOGGER.infoCr(reconciliation, "Goal violations detected but outside maintenance window, skipping rebalance");
+                        LOGGER.infoCr(reconciliation, "Goal violations detected at {} but outside maintenance window, auto-rebalance on imbalance is deferred", goalViolationInfo.detectionTime());
                     } else {
-                        LOGGER.debugCr(reconciliation, "Goal violations detected but already addressed by previous rebalance");
+                        LOGGER.debugCr(reconciliation, "Goal violations detected at {} were already addressed by a previous rebalance, skipping", goalViolationInfo.detectionTime());
                     }
                     return CompletableFuture.completedFuture(null);
                 });
@@ -729,8 +731,10 @@ public class KafkaAutoRebalancingReconciler {
                             // No scaling operations, rebalancing is still running
                             return CompletableFuture.completedFuture(null);
                         case NotReady:
-                            LOGGER.warnCr(reconciliation, "Auto-rebalance on imbalance failed");
+                            LOGGER.warnCr(reconciliation, "Auto-rebalance on imbalance failed (KafkaRebalance {}/{} is NotReady) — will retry if Cruise Control re-detects the violation",
+                                    kafkaRebalance.getMetadata().getNamespace(), kafkaRebalance.getMetadata().getName());
                             return deleteKafkaRebalance(kafkaRebalance)
+                                    .thenCompose(v -> updateRebalanceCompletionTime())
                                     .thenApply(v -> {
                                         updateStatus(kafkaAutoRebalanceStatus, KafkaAutoRebalanceState.Idle);
                                         return (Void) null;
@@ -738,6 +742,7 @@ public class KafkaAutoRebalancingReconciler {
                         case Stopped:
                             LOGGER.infoCr(reconciliation, "Auto-rebalance on imbalance was stopped");
                             return deleteKafkaRebalance(kafkaRebalance)
+                                    .thenCompose(v -> updateRebalanceCompletionTime())
                                     .thenApply(v -> {
                                         updateStatus(kafkaAutoRebalanceStatus, KafkaAutoRebalanceState.Idle);
                                         return (Void) null;
