@@ -359,10 +359,6 @@ public class Environment {
         return IP_FAMILY.contains(IP_FAMILY_DUAL_STACK);
     }
 
-    public static boolean isConnectBuildWithBuildahEnabled() {
-        return !STRIMZI_FEATURE_GATES.contains("-UseConnectBuildWithBuildah");
-    }
-
     public static String getImageOutputRegistry() {
         if (KubeClusterResource.getInstance().isOpenShift()) {
             return "image-registry.openshift-image-registry.svc:5000";

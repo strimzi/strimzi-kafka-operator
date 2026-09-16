@@ -323,12 +323,12 @@ public interface PodSecurityProvider {
     }
 
     /**
-     * Provides the Pod security context for the Kafka Connect Build (Kaniko/Buildah) pod. The default implementation just returns
+     * Provides the Pod security context for the Kafka Connect Build (Buildah) pod. The default implementation just returns
      * the security context configured by the user in the template section or null (no Pod security context).
      *
      * @param context   Provides the context which can be used to generate the Pod security context
      *
-     * @return  Pod security context which will be set for the Kafka Connect Build (Kaniko/Buildah) pod
+     * @return  Pod security context which will be set for the Kafka Connect Build (Buildah) pod
      */
     default PodSecurityContext kafkaConnectBuildPodSecurityContext(PodSecurityProviderContext context) {
         return podSecurityContextOrNull(context);

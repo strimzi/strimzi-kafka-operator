@@ -77,8 +77,6 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
 
     private final CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> connectorOperator;
     private final ConnectBuildOperator connectBuildOperator;
-    private final boolean useConnectBuildWithBuildah;
-
 
     /**
      * Constructor
@@ -131,7 +129,6 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
 
         this.connectorOperator = supplier.kafkaConnectorOperator;
         this.connectBuildOperator = new ConnectBuildOperator(pfa, supplier, config);
-        this.useConnectBuildWithBuildah = config.featureGates().useConnectBuildWithBuildahEnabled();
     }
 
     @Override
@@ -141,7 +138,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
         KafkaConnectStatus kafkaConnectStatus = new KafkaConnectStatus();
         try {
             connect = KafkaConnectCluster.fromCrd(reconciliation, kafkaConnect, versions, sharedEnvironmentProvider);
-            build = KafkaConnectBuild.fromCrd(reconciliation, kafkaConnect, versions, sharedEnvironmentProvider, useConnectBuildWithBuildah);
+            build = KafkaConnectBuild.fromCrd(reconciliation, kafkaConnect, versions, sharedEnvironmentProvider);
         } catch (Exception e) {
             LOGGER.warnCr(reconciliation, e);
             StatusUtils.setStatusConditionAndObservedGeneration(kafkaConnect, kafkaConnectStatus, e);

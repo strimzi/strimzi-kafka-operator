@@ -34,7 +34,7 @@ public class ImageBuild {
 
     /**
      * Build a specific image from passed Dockerfile and push it into internal registry.
-     * It will use OpenShift build on OpenShift like clusters and Kaniko on other distributions.
+     * It will use OpenShift build on OpenShift like clusters and Buildah on other distributions.
      *
      * @param namespace      location where the build will happen
      * @param name           Image name (it is also used as a name for all needed resources)
@@ -65,7 +65,7 @@ public class ImageBuild {
         createDockerfileConfigMap(namespace, name, dockerfilePath);
         String imageName = Environment.getImageOutputRegistry(namespace, name, imageTag);
 
-        Job kanikoJob = new JobBuilder()
+        Job buildahJob = new JobBuilder()
             .withNewMetadata()
                 .withName(name)
                 .withNamespace(namespace) // Change this to your namespace
@@ -107,7 +107,7 @@ public class ImageBuild {
             .endSpec()
             .build();
 
-        KubeResourceManager.get().createResourceWithWait(kanikoJob);
+        KubeResourceManager.get().createResourceWithWait(buildahJob);
         JobUtils.waitForJobSuccess(namespace, name, TestConstants.GLOBAL_TIMEOUT);
     }
 
@@ -172,7 +172,7 @@ public class ImageBuild {
     }
 
     /**
-     * Create config map with Dockerfile loaded by Kaniko
+     * Create config map with Dockerfile loaded by Buildah
      * @param namespace location of the config map
      * @param configMapName name of the config map
      * @param dockerfilePath path to the Dockerfile

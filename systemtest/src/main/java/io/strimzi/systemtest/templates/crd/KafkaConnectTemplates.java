@@ -236,7 +236,7 @@ public class KafkaConnectTemplates {
             dockerOutputBuilder.withPushSecret(Environment.CONNECT_BUILD_REGISTRY_SECRET);
         }
 
-        if (Environment.isConnectBuildWithBuildahEnabled() && !KubeClusterResource.getInstance().isOpenShiftLikeCluster()) {
+        if (!KubeClusterResource.getInstance().isOpenShiftLikeCluster()) {
             if (dockerOutputBuilder.getAdditionalBuildOptions() == null || !dockerOutputBuilder.getAdditionalBuildOptions().contains("--tls-verify=false")) {
                 // for Buildah on minikube or Kind, we need to add `--tls-verify=false` in order to push via HTTP
                 dockerOutputBuilder.addToAdditionalBuildOptions("--tls-verify=false");
@@ -244,11 +244,6 @@ public class KafkaConnectTemplates {
             if (dockerOutputBuilder.getAdditionalPushOptions() == null || !dockerOutputBuilder.getAdditionalPushOptions().contains("--tls-verify=false")) {
                 dockerOutputBuilder.addToAdditionalPushOptions("--tls-verify=false");
             }
-        } else if (!Environment.isConnectBuildWithBuildahEnabled() && KubeClusterResource.getInstance().isKind()) {
-            // if we use Kind we add insecure option
-            dockerOutputBuilder.addToAdditionalBuildOptions(
-                // --insecure for PUSH via HTTP instead of HTTPS
-                "--insecure");
         }
 
         return dockerOutputBuilder.build();

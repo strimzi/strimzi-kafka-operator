@@ -60,14 +60,14 @@ import static io.strimzi.systemtest.TestTags.REGRESSION;
 import static io.strimzi.systemtest.TestTags.TIERED_STORAGE;
 import static io.strimzi.systemtest.utils.specific.NfsUtils.NFS_PVC_NAME;
 
-@MicroShiftNotSupported("We are using Kaniko and OpenShift builds to build Kafka image with TS. To make it working on Microshift we will invest much time with not much additional value.")
+@MicroShiftNotSupported("We are using Buildah and OpenShift builds to build Kafka image with TS. To make it working on Microshift we will invest much time with not much additional value.")
 @Tag(REGRESSION)
 @Tag(TIERED_STORAGE)
 @SuiteDoc(
     description = @Desc("This test suite covers scenarios for Tiered Storage integration implemented within Strimzi."),
     beforeTestSteps = {
         @Step(value = "Create test namespace.", expected = "Namespace is created."),
-        @Step(value = "Build Kafka image based on passed parameters like image full name, base image, Dockerfile path (via Kaniko or OpenShift build), and include the Aiven Tiered Storage plugin from (<a href=\"https://github.com/Aiven-Open/tiered-storage-for-apache-kafka/tree/main\">tiered-storage-for-apache-kafka</a>).", expected = "Kafka image is built with the Aiven Tiered Storage plugin integrated."),
+        @Step(value = "Build Kafka image based on passed parameters like image full name, base image, Dockerfile path (via Buildah or OpenShift build), and include the Aiven Tiered Storage plugin from (<a href=\"https://github.com/Aiven-Open/tiered-storage-for-apache-kafka/tree/main\">tiered-storage-for-apache-kafka</a>).", expected = "Kafka image is built with the Aiven Tiered Storage plugin integrated."),
         @Step(value = "Deploy SeaweedFS in test namespace and init IAM inside the SeaweedFS pod.", expected = "SeaweedFS is deployed and IAM is initialized."),
         @Step(value = "Init bucket in SeaweedFS for purposes of these tests.", expected = "Bucket is initialized in SeaweedFS."),
         @Step(value = "Deploy Cluster Operator.", expected = "Cluster Operator is deployed.")
