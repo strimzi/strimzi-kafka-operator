@@ -109,7 +109,7 @@ public class KafkaAutoRebalanceImbalanceDetectorTest {
     @Test
     public void testShouldTriggerRebalanceNewerViolation() {
         Instant lastCompletion = Instant.parse("2024-01-01T10:00:00Z");
-        Instant detectionDate = Instant.parse("2024-01-01T11:00:00Z");
+        Instant detectionTime = Instant.parse("2024-01-01T11:00:00Z");
         ConfigMap cm = new ConfigMapBuilder()
                 .withNewMetadata().withName("x").endMetadata()
                 .withData(Map.of("lastRebalanceCompletionTime", lastCompletion.toString()))
@@ -118,7 +118,7 @@ public class KafkaAutoRebalanceImbalanceDetectorTest {
                 .thenReturn(CompletableFuture.completedFuture(cm));
 
         boolean result = detector(buildKafka(null, null))
-                .shouldTriggerRebalance(detectionDate).toCompletableFuture().join();
+                .shouldTriggerRebalance(detectionTime).toCompletableFuture().join();
 
         assertThat(result, is(true));
     }
@@ -126,7 +126,7 @@ public class KafkaAutoRebalanceImbalanceDetectorTest {
     @Test
     public void testShouldNotTriggerRebalanceOlderViolation() {
         Instant lastCompletion = Instant.parse("2024-01-01T12:00:00Z");
-        Instant detectionDate = Instant.parse("2024-01-01T11:00:00Z");
+        Instant detectionTime = Instant.parse("2024-01-01T11:00:00Z");
         ConfigMap cm = new ConfigMapBuilder()
                 .withNewMetadata().withName("x").endMetadata()
                 .withData(Map.of("lastRebalanceCompletionTime", lastCompletion.toString()))
@@ -135,7 +135,7 @@ public class KafkaAutoRebalanceImbalanceDetectorTest {
                 .thenReturn(CompletableFuture.completedFuture(cm));
 
         boolean result = detector(buildKafka(null, null))
-                .shouldTriggerRebalance(detectionDate).toCompletableFuture().join();
+                .shouldTriggerRebalance(detectionTime).toCompletableFuture().join();
 
         assertThat(result, is(false));
     }
@@ -153,32 +153,12 @@ public class KafkaAutoRebalanceImbalanceDetectorTest {
     }
 
     @Test
-    public void testValidateTemplateGoalsWithNoImbalanceConfig() {
-        // Kafka with only REMOVE_BROKERS config — no IMBALANCE config
-        Kafka kafka = buildKafkaWithoutImbalanceConfig();
-
-        boolean result = detector(kafka).validateTemplateGoals().toCompletableFuture().join();
-
-        assertThat(result, is(true));
-    }
-
-    @Test
-    public void testValidateTemplateGoalsWithNoTemplateReference() {
-        // IMBALANCE config exists but has no template reference
-        Kafka kafka = buildKafka(null, null);
-
-        boolean result = detector(kafka).validateTemplateGoals().toCompletableFuture().join();
-
-        assertThat(result, is(true));
-    }
-
-    @Test
     public void testValidateTemplateGoalsWithMissingTemplate() {
         Kafka kafka = buildKafka(null, "my-template");
         when(rebalanceOperator.getAsync(eq(NAMESPACE), eq("my-template")))
                 .thenReturn(CompletableFuture.completedFuture(null));
 
-        boolean result = detector(kafka).validateTemplateGoals().toCompletableFuture().join();
+        boolean result = detector(kafka).validateTemplateGoals("my-template").toCompletableFuture().join();
 
         assertThat(result, is(true));
     }
@@ -193,7 +173,7 @@ public class KafkaAutoRebalanceImbalanceDetectorTest {
         when(rebalanceOperator.getAsync(eq(NAMESPACE), eq("my-template")))
                 .thenReturn(CompletableFuture.completedFuture(template));
 
-        boolean result = detector(kafka).validateTemplateGoals().toCompletableFuture().join();
+        boolean result = detector(kafka).validateTemplateGoals("my-template").toCompletableFuture().join();
 
         assertThat(result, is(true));
     }
@@ -216,7 +196,7 @@ public class KafkaAutoRebalanceImbalanceDetectorTest {
         when(rebalanceOperator.getAsync(eq(NAMESPACE), eq("my-template")))
                 .thenReturn(CompletableFuture.completedFuture(template));
 
-        boolean result = detector(kafka).validateTemplateGoals().toCompletableFuture().join();
+        boolean result = detector(kafka).validateTemplateGoals("my-template").toCompletableFuture().join();
 
         assertThat(result, is(true));
     }
@@ -234,7 +214,7 @@ public class KafkaAutoRebalanceImbalanceDetectorTest {
         when(rebalanceOperator.getAsync(eq(NAMESPACE), eq("my-template")))
                 .thenReturn(CompletableFuture.completedFuture(template));
 
-        boolean result = detector(kafka).validateTemplateGoals().toCompletableFuture().join();
+        boolean result = detector(kafka).validateTemplateGoals("my-template").toCompletableFuture().join();
 
         assertThat(result, is(false));
     }
@@ -256,7 +236,7 @@ public class KafkaAutoRebalanceImbalanceDetectorTest {
         when(rebalanceOperator.getAsync(eq(NAMESPACE), eq("my-template")))
                 .thenReturn(CompletableFuture.completedFuture(template));
 
-        boolean result = detector(kafka).validateTemplateGoals().toCompletableFuture().join();
+        boolean result = detector(kafka).validateTemplateGoals("my-template").toCompletableFuture().join();
 
         assertThat(result, is(true));
     }
@@ -276,20 +256,11 @@ public class KafkaAutoRebalanceImbalanceDetectorTest {
         when(rebalanceOperator.getAsync(eq(NAMESPACE), eq("my-template")))
                 .thenReturn(CompletableFuture.completedFuture(template));
 
-        boolean result = detector(kafka).validateTemplateGoals().toCompletableFuture().join();
+        boolean result = detector(kafka).validateTemplateGoals("my-template").toCompletableFuture().join();
 
         assertThat(result, is(true));
     }
 
-
-    @Test
-    public void testCheckForGoalViolationsWithNoImbalanceConfig() {
-        Kafka kafka = buildKafkaWithoutImbalanceConfig();
-
-        GoalViolationInfo result = detector(kafka).checkForGoalViolations().toCompletableFuture().join();
-
-        assertThat(result, is(nullValue()));
-    }
 
     @Test
     public void testCheckForGoalViolationsWhenSecretNotFound() {
@@ -395,23 +366,6 @@ public class KafkaAutoRebalanceImbalanceDetectorTest {
                     .withNewCruiseControl()
                         .withConfig(ccConfig)
                         .withAutoRebalance(imbalanceConfig.build())
-                    .endCruiseControl()
-                .endSpec()
-                .build();
-    }
-
-    private Kafka buildKafkaWithoutImbalanceConfig() {
-        return new KafkaBuilder()
-                .withNewMetadata()
-                    .withName(CLUSTER_NAME)
-                    .withNamespace(NAMESPACE)
-                .endMetadata()
-                .withNewSpec()
-                    .withNewCruiseControl()
-                        .withAutoRebalance(
-                            new KafkaAutoRebalanceConfigurationBuilder()
-                                    .withMode(KafkaAutoRebalanceMode.REMOVE_BROKERS)
-                                    .build())
                     .endCruiseControl()
                 .endSpec()
                 .build();
