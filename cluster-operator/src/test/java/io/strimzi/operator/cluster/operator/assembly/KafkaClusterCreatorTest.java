@@ -127,6 +127,13 @@ public class KafkaClusterCreatorTest {
             .endStatus()
             .build();
 
+    // A pool whose status exists but has no node IDs yet, for example right after it was created
+    private final static KafkaNodePool POOL_B_WITH_STATUS_WITHOUT_NODE_IDS = new KafkaNodePoolBuilder(POOL_B)
+            .withNewStatus()
+                .withRoles(ProcessRoles.BROKER)
+            .endStatus()
+            .build();
+
     private final static KafkaNodePool POOL_MIXED = new KafkaNodePoolBuilder()
             .withNewMetadata()
                 .withName("pool-mixed")
@@ -1006,6 +1013,29 @@ public class KafkaClusterCreatorTest {
 
         assertThat(e.getCause(), instanceOf(InvalidResourceException.class));
         assertThat(e.getCause().getMessage(), is("Following errors were found when processing the Kafka custom resource: [Cannot remove the JBOD volumes [1] from Kafka brokers [1000] because it is not known whether they are empty. The broker did not answer, or the log directory is offline.]"));
+    }
+
+    @Test
+    public void testRevertVolumeRemovalSkipsPoolsWithoutNodeIdsWithKRaft() throws Exception {
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
+
+        // Mock volumes-in-use check => pool-a is blocked
+        BrokersInUseCheck brokersInUseOps = supplier.brokersInUseCheck;
+        when(brokersInUseOps.volumesInUse(any(), any(), any(), any())).thenReturn(CompletableFuture.completedFuture(new BrokersInUseCheck.VolumesInUse(Map.of(1000, Set.of(1)), Map.of())));
+
+        KafkaStatus kafkaStatus = new KafkaStatus();
+        KafkaClusterCreator creator = new KafkaClusterCreator(RECONCILIATION, CO_CONFIG, supplier);
+
+        KafkaCluster kc = creator.prepareKafkaCluster(KAFKA, List.of(POOL_CONTROLLERS_WITH_STATUS, POOL_A_WITH_STATUS, POOL_B, POOL_B_WITH_STATUS_WITHOUT_NODE_IDS), OLD_STORAGE_TWO_VOLUMES_IN_POOL_A, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, kafkaStatus, true, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT)
+                .toCompletableFuture()
+                .join();
+
+        // Pools which have no status yet, or a status without node IDs, hold no nodes which could be blocked.
+        // They must be left alone while another pool is put back to its old storage.
+        assertThat(kc, is(notNullValue()));
+        assertThat(kc.getStorageByPoolName().get("pool-a"), is(OLD_STORAGE_TWO_VOLUMES_IN_POOL_A.get("my-cluster-pool-a")));
+        assertThat(kafkaStatus.getConditions().size(), is(1));
+        assertThat(kafkaStatus.getConditions().get(0).getMessage(), is("Reverting all storage changes of KafkaNodePool pool-a because they remove JBOD volumes which are not empty"));
     }
 
     @Test

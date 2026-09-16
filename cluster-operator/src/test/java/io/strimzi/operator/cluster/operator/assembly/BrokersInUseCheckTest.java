@@ -284,6 +284,21 @@ public class BrokersInUseCheckTest {
     }
 
     @Test
+    public void testVolumesInUseWhenTheAdminClientCannotBeCreated() {
+        AdminClientProvider mock = mock(AdminClientProvider.class);
+        when(mock.createAdminClient(anyString(), any(), any())).thenThrow(new KafkaException("Test error ..."));
+
+        BrokersInUseCheck operations = new BrokersInUseCheck();
+        Exception e = assertThrows(Exception.class, () ->
+                operations.volumesInUse(RECONCILIATION, DUMMY_IDENTITY, mock, Map.of(0, Set.of(1)))
+                        .toCompletableFuture()
+                        .join());
+
+        // The check fails instead of blocking, because without a client it cannot ask Kafka anything at all
+        assertThat(e.getCause().getMessage(), is("Test error ..."));
+    }
+
+    @Test
     public void testVolumesInUseKafkaClientFailure() {
         Admin admin = mock(Admin.class);
         AdminClientProvider mock = mock(AdminClientProvider.class);
