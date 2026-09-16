@@ -9,10 +9,10 @@ import java.time.Instant;
 /**
  * Information about goal violations detected by Cruise Control.
  *
- * @param detectionDate The time when the goal violations were detected
+ * @param detectionTime The time when the goal violations were detected
  * @param fixability The fixability of the detected violations (fixable, unfixable, or mixed)
  */
-public record GoalViolationInfo(Instant detectionDate, Fixability fixability) {
+public record GoalViolationInfo(Instant detectionTime, Fixability fixability) {
 
     /**
      * Represents the fixability classification of detected goal violations.
