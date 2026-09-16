@@ -11,6 +11,7 @@ import io.strimzi.api.kafka.model.kafka.JbodStorageBuilder;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
 import io.strimzi.api.kafka.model.kafka.PersistentClaimStorageBuilder;
+import io.strimzi.api.kafka.model.kafka.Storage;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePool;
@@ -26,6 +27,7 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.hasItems;
@@ -69,13 +71,20 @@ public class KafkaPoolTest {
             .endSpec()
             .build();
 
+    private static final KafkaNodePool POOL_WITH_BROKER_STATUS = new KafkaNodePoolBuilder(POOL)
+            .withNewStatus()
+                .withRoles(ProcessRoles.BROKER)
+                .withNodeIds(10, 11, 13)
+            .endStatus()
+            .build();
+
     @Test
     public void testKafkaPool()  {
         KafkaPool kp = KafkaPool.fromCrd(
                 Reconciliation.DUMMY_RECONCILIATION,
                 KAFKA,
                 POOL,
-                new NodeIdAssignment(Set.of(10, 11, 13), Set.of(10, 11, 13), Set.of(), Set.of(), Set.of()),
+                new NodeIdAssignment(Set.of(10, 11, 13), Set.of(10, 11, 13), Set.of(), Set.of(), Set.of(), Set.of(10, 11, 13)),
                 new JbodStorageBuilder().withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("100Gi").build()).build(),
                 ResourceUtils.DUMMY_OWNER_REFERENCE,
                 SHARED_ENV_PROVIDER
@@ -134,7 +143,7 @@ public class KafkaPoolTest {
                 Reconciliation.DUMMY_RECONCILIATION,
                 KAFKA,
                 pool,
-                new NodeIdAssignment(Set.of(10, 11, 13), Set.of(10, 11, 13), Set.of(), Set.of(), Set.of()),
+                new NodeIdAssignment(Set.of(10, 11, 13), Set.of(10, 11, 13), Set.of(), Set.of(), Set.of(), Set.of()),
                 new JbodStorageBuilder().withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("100Gi").build()).build(),
                 ResourceUtils.DUMMY_OWNER_REFERENCE,
                 SHARED_ENV_PROVIDER
@@ -165,7 +174,7 @@ public class KafkaPoolTest {
                 Reconciliation.DUMMY_RECONCILIATION,
                 KAFKA,
                 pool,
-                new NodeIdAssignment(Set.of(10, 11, 13), Set.of(10, 11, 13), Set.of(), Set.of(), Set.of()),
+                new NodeIdAssignment(Set.of(10, 11, 13), Set.of(10, 11, 13), Set.of(), Set.of(), Set.of(), Set.of(10, 11, 13)),
                 new JbodStorageBuilder().withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("100Gi").build()).build(),
                 ResourceUtils.DUMMY_OWNER_REFERENCE,
                 SHARED_ENV_PROVIDER
@@ -205,7 +214,7 @@ public class KafkaPoolTest {
                 Reconciliation.DUMMY_RECONCILIATION,
                 KAFKA,
                 pool,
-                new NodeIdAssignment(Set.of(10, 11, 13), Set.of(10, 11, 13), Set.of(), Set.of(), Set.of()),
+                new NodeIdAssignment(Set.of(10, 11, 13), Set.of(10, 11, 13), Set.of(), Set.of(), Set.of(), Set.of(10, 11, 13)),
                 new JbodStorageBuilder().withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("100Gi").build()).build(),
                 ResourceUtils.DUMMY_OWNER_REFERENCE,
                 SHARED_ENV_PROVIDER
@@ -249,7 +258,7 @@ public class KafkaPoolTest {
                 Reconciliation.DUMMY_RECONCILIATION,
                 kafka,
                 POOL,
-                new NodeIdAssignment(Set.of(10, 11, 13), Set.of(10, 11, 13), Set.of(), Set.of(), Set.of()),
+                new NodeIdAssignment(Set.of(10, 11, 13), Set.of(10, 11, 13), Set.of(), Set.of(), Set.of(), Set.of(10, 11, 13)),
                 new JbodStorageBuilder().withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("100Gi").build()).build(),
                 ResourceUtils.DUMMY_OWNER_REFERENCE,
                 SHARED_ENV_PROVIDER
@@ -311,7 +320,7 @@ public class KafkaPoolTest {
                 Reconciliation.DUMMY_RECONCILIATION,
                 kafka,
                 pool,
-                new NodeIdAssignment(Set.of(10, 11, 13), Set.of(10, 11, 13), Set.of(), Set.of(), Set.of()),
+                new NodeIdAssignment(Set.of(10, 11, 13), Set.of(10, 11, 13), Set.of(), Set.of(), Set.of(), Set.of(10, 11, 13)),
                 new JbodStorageBuilder().withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("100Gi").build()).build(),
                 ResourceUtils.DUMMY_OWNER_REFERENCE,
                 SHARED_ENV_PROVIDER
@@ -366,7 +375,7 @@ public class KafkaPoolTest {
                 Reconciliation.DUMMY_RECONCILIATION,
                 kafka,
                 pool,
-                new NodeIdAssignment(Set.of(10, 11, 13), Set.of(10, 11, 13), Set.of(), Set.of(), Set.of()),
+                new NodeIdAssignment(Set.of(10, 11, 13), Set.of(10, 11, 13), Set.of(), Set.of(), Set.of(), Set.of(10, 11, 13)),
                 new JbodStorageBuilder().withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("100Gi").build()).build(),
                 ResourceUtils.DUMMY_OWNER_REFERENCE,
                 SHARED_ENV_PROVIDER
@@ -403,7 +412,7 @@ public class KafkaPoolTest {
                 Reconciliation.DUMMY_RECONCILIATION,
                 KAFKA,
                 pool,
-                new NodeIdAssignment(Set.of(10, 11, 13), Set.of(10, 11, 13), Set.of(), Set.of(), Set.of()),
+                new NodeIdAssignment(Set.of(10, 11, 13), Set.of(10, 11, 13), Set.of(), Set.of(), Set.of(), Set.of(10, 11, 13)),
                 new JbodStorageBuilder().withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("100Gi").build()).build(),
                 ResourceUtils.DUMMY_OWNER_REFERENCE,
                 SHARED_ENV_PROVIDER
@@ -426,12 +435,168 @@ public class KafkaPoolTest {
                 Reconciliation.DUMMY_RECONCILIATION,
                 KAFKA,
                 pool,
-                new NodeIdAssignment(Set.of(10, 11, 13), Set.of(10, 11, 13), Set.of(), Set.of(), Set.of()),
+                new NodeIdAssignment(Set.of(10, 11, 13), Set.of(10, 11, 13), Set.of(), Set.of(), Set.of(), Set.of(10, 11, 13)),
                 null,
                 ResourceUtils.DUMMY_OWNER_REFERENCE,
                 SHARED_ENV_PROVIDER
         ));
 
         assertThat(ex.getMessage(), containsString("JbodStorage needs to contain at least one volume (KafkaNodePool.spec.storage"));
+    }
+
+    @Test
+    public void testRemovedJbodVolumeIds()  {
+        KafkaNodePool pool = new KafkaNodePoolBuilder(POOL_WITH_BROKER_STATUS)
+                .editSpec()
+                    .withNewJbodStorage()
+                        .withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("100Gi").build())
+                    .endJbodStorage()
+                .endSpec()
+                .build();
+
+        Storage oldStorage = new JbodStorageBuilder()
+                .withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("100Gi").build(),
+                        new PersistentClaimStorageBuilder().withId(1).withSize("100Gi").build())
+                .build();
+
+        KafkaPool kp = KafkaPool.fromCrd(
+                Reconciliation.DUMMY_RECONCILIATION,
+                KAFKA,
+                pool,
+                new NodeIdAssignment(Set.of(10, 11, 13), Set.of(10, 11, 13), Set.of(), Set.of(), Set.of(), Set.of(10, 11, 13)),
+                oldStorage,
+                ResourceUtils.DUMMY_OWNER_REFERENCE,
+                SHARED_ENV_PROVIDER
+        );
+
+        assertThat(kp.removedJbodVolumeIds(), is(Set.of(1)));
+    }
+
+    @Test
+    public void testRemovedJbodVolumeIdsWithoutAnyRemovedVolume()  {
+        KafkaNodePool pool = new KafkaNodePoolBuilder(POOL_WITH_BROKER_STATUS)
+                .editSpec()
+                    .withNewJbodStorage()
+                        .withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("100Gi").build(),
+                                new PersistentClaimStorageBuilder().withId(1).withSize("100Gi").build())
+                    .endJbodStorage()
+                .endSpec()
+                .build();
+
+        Storage oldStorage = new JbodStorageBuilder()
+                .withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("100Gi").build())
+                .build();
+
+        KafkaPool kp = KafkaPool.fromCrd(
+                Reconciliation.DUMMY_RECONCILIATION,
+                KAFKA,
+                pool,
+                new NodeIdAssignment(Set.of(10, 11, 13), Set.of(10, 11, 13), Set.of(), Set.of(), Set.of(), Set.of(10, 11, 13)),
+                oldStorage,
+                ResourceUtils.DUMMY_OWNER_REFERENCE,
+                SHARED_ENV_PROVIDER
+        );
+
+        // Adding a volume is not a removal
+        assertThat(kp.removedJbodVolumeIds(), is(Set.of()));
+    }
+
+    @Test
+    public void testRemovedJbodVolumeIdsWithRejectedStorageChange()  {
+        // Changing the storage type is not allowed, so the whole storage change is ignored
+        KafkaNodePool pool = new KafkaNodePoolBuilder(POOL_WITH_BROKER_STATUS)
+                .editSpec()
+                    .withNewEphemeralStorage()
+                    .endEphemeralStorage()
+                .endSpec()
+                .build();
+
+        Storage oldStorage = new JbodStorageBuilder()
+                .withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("100Gi").build(),
+                        new PersistentClaimStorageBuilder().withId(1).withSize("100Gi").build())
+                .build();
+
+        KafkaPool kp = KafkaPool.fromCrd(
+                Reconciliation.DUMMY_RECONCILIATION,
+                KAFKA,
+                pool,
+                new NodeIdAssignment(Set.of(10, 11, 13), Set.of(10, 11, 13), Set.of(), Set.of(), Set.of(), Set.of(10, 11, 13)),
+                oldStorage,
+                ResourceUtils.DUMMY_OWNER_REFERENCE,
+                SHARED_ENV_PROVIDER
+        );
+
+        assertThat(kp.storage, is(oldStorage));
+        assertThat(kp.removedJbodVolumeIds(), is(Set.of()));
+    }
+
+    @Test
+    public void testRemovedJbodVolumeIdsForNewPool()  {
+        KafkaPool kp = KafkaPool.fromCrd(
+                Reconciliation.DUMMY_RECONCILIATION,
+                KAFKA,
+                POOL,
+                new NodeIdAssignment(Set.of(), Set.of(10, 11, 13), Set.of(), Set.of(10, 11, 13), Set.of(), Set.of()),
+                null,
+                ResourceUtils.DUMMY_OWNER_REFERENCE,
+                SHARED_ENV_PROVIDER
+        );
+
+        assertThat(kp.removedJbodVolumeIds(), is(Set.of()));
+    }
+
+    @Test
+    public void testRemovedJbodVolumeIdsForPoolWhichIsNotABrokerYet()  {
+        // The pool is controller-only today and gets the broker role in the same edit which drops volume 1
+        KafkaNodePool pool = new KafkaNodePoolBuilder(POOL)
+                .withNewStatus()
+                    .withRoles(ProcessRoles.CONTROLLER)
+                    .withNodeIds(10, 11, 13)
+                .endStatus()
+                .editSpec()
+                    .withRoles(ProcessRoles.CONTROLLER, ProcessRoles.BROKER)
+                    .withNewJbodStorage()
+                        .withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("100Gi").build())
+                    .endJbodStorage()
+                .endSpec()
+                .build();
+
+        Storage oldStorage = new JbodStorageBuilder()
+                .withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("100Gi").build(),
+                        new PersistentClaimStorageBuilder().withId(1).withSize("100Gi").build())
+                .build();
+
+        KafkaPool kp = KafkaPool.fromCrd(
+                Reconciliation.DUMMY_RECONCILIATION,
+                KAFKA,
+                pool,
+                new NodeIdAssignment(Set.of(10, 11, 13), Set.of(10, 11, 13), Set.of(), Set.of(), Set.of(), Set.of()),
+                oldStorage,
+                ResourceUtils.DUMMY_OWNER_REFERENCE,
+                SHARED_ENV_PROVIDER
+        );
+
+        // The volume is removed from the storage, but the nodes are not brokers yet, so there is nobody to ask
+        assertThat(kp.removedJbodVolumeIds(), is(Set.of(1)));
+        assertThat(kp.currentBrokerNodes(), is(Set.of()));
+    }
+
+    @Test
+    public void testCurrentBrokerNodes()  {
+        KafkaPool kp = KafkaPool.fromCrd(
+                Reconciliation.DUMMY_RECONCILIATION,
+                KAFKA,
+                POOL,
+                new NodeIdAssignment(Set.of(10, 11, 13), Set.of(11, 13, 14), Set.of(10), Set.of(14), Set.of(), Set.of(10, 11, 13)),
+                null,
+                ResourceUtils.DUMMY_OWNER_REFERENCE,
+                SHARED_ENV_PROVIDER
+        );
+
+        // Node 14 is being added, so it does not run yet. Node 10 is being removed, but it still runs.
+        assertThat(kp.currentBrokerNodes().stream().map(NodeRef::nodeId).collect(Collectors.toSet()), is(Set.of(10, 11, 13)));
+        assertThat(kp.nodes().stream().map(NodeRef::nodeId).collect(Collectors.toSet()), is(Set.of(11, 13, 14)));
+        assertThat(kp.scaledDownNodes().stream().map(NodeRef::nodeId).collect(Collectors.toSet()), is(Set.of(10)));
+        assertThat(kp.scaleUpNodes().stream().map(NodeRef::nodeId).collect(Collectors.toSet()), is(Set.of(14)));
     }
 }

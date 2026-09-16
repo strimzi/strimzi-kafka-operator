@@ -10,6 +10,7 @@
   If needed, `UseBackgroundPodDeletion` can be disabled in the feature gates configuration in the Cluster Operator.
 * (Early Access) Integration with cert-manager for issuing certificates.
   While the cert-manager feature is in Early Access it is not recommended for use in production.
+* Prevent removal of JBOD volumes which still contain partition replicas. The check can be disabled with the `strimzi.io/skip-broker-scaledown-check` annotation on the `Kafka` resource.
 
 ### Major changes, deprecations, and removals
 
