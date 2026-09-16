@@ -31,6 +31,58 @@ The `security.protocol `setting is generated automatically from the `sasl` prope
 If your custom authentication mechanism requires additional information from `Secret` or `ConfigMap` resources, use the link:{BookURLConfiguring}#con-common-configuration-volumes-reference[Additional Volumes^] feature to mount them into the operands.
 Kafka configuration providers can be used to load them from the disk.
 
+If the `config` section contains sensitive values such as passwords, tokens, or client secrets, do not embed them directly.
+Use Kafka configuration providers to load sensitive values at runtime instead.
+Strimzi includes the `KubernetesSecretConfigProvider` for loading values from Kubernetes `Secret` resources.
+Other providers, such as the File or Directory providers, can also be used when the sensitive value is available on the filesystem.
+
+Configure the config provider in the component's `spec.config` and reference secrets using the template syntax `${<config-provider-alias>:<namespace>/<secret-name>:<key>}`.
+
+.Insecure: OAuth client secret as a literal value in sasl.jaas.config
+[source,yaml]
+----
+authentication:
+  type: custom
+  sasl: true
+  config:
+    sasl.mechanism: OAUTHBEARER
+    sasl.jaas.config: |
+      org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required
+        oauth.client.id="my-client-id"
+        oauth.client.secret="my-plaintext-client-secret"
+        oauth.token.endpoint.uri="https://my-oauth-server/token";
+    sasl.login.callback.handler.class: io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler
+----
+
+.Secure: OAuth client secret loaded from a Kubernetes Secret via a config provider
+[source,yaml,subs="attributes+"]
+----
+spec:
+  config:
+    config.providers: my-secrets-provider # <1>
+    config.providers.my-secrets-provider.class: io.strimzi.kafka.KubernetesSecretConfigProvider # <2>
+  # ...
+  authentication:
+    type: custom
+    sasl: true
+    config:
+      sasl.mechanism: OAUTHBEARER
+      sasl.jaas.config: |
+        org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required
+          oauth.client.id="my-client-id"
+          oauth.client.secret="${my-secrets-provider:mynamespace/my-oauth-secret:client-secret}" # <3>
+          oauth.token.endpoint.uri="https://my-oauth-server/token";
+      sasl.login.callback.handler.class: io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler
+----
+<1> A user-chosen alias for the provider, used in template references.
+<2> `KubernetesSecretConfigProvider` loads values from Kubernetes `Secret` resources at runtime.
+<3> A config provider template reference. The `KubernetesSecretConfigProvider` resolves it to the actual secret value at runtime, so the sensitive value is never stored in plaintext in the component configuration.
+
+The Secret can be in any namespace, as long as the service account has the required access rights.
+
+IMPORTANT: You need to give the Kafka broker service account the access rights to the used Secret.
+For more information on setting up access rights, see the link:{BookURLConfiguring}#assembly-loading-config-with-providers-str[Loading configuration values from external sources^] section.
+
 = Using Kubernetes Service Account tokens for authentication
 
 If the Kafka cluster has a listener that authenticates clients with Kubernetes Service Account tokens, you can connect the operand to it using `custom` authentication with the `OAUTHBEARER` SASL mechanism.
