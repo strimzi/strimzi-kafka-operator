@@ -141,39 +141,36 @@ public class KafkaAutoRebalanceImbalanceDetector {
      */
     public CompletionStage<GoalViolationInfo> checkForGoalViolations() {
         return supplier.secretOperations.getAsync(reconciliation.namespace(), CruiseControlResources.secretName(reconciliation.name()))
-                .thenCompose(ccSecret -> {
+                .thenCompose(ccSecret -> supplier.secretOperations.getAsync(reconciliation.namespace(), CruiseControlResources.apiSecretName(reconciliation.name()))
+                .thenCompose(ccApiSecret -> {
                     if (ccSecret == null) {
                         LOGGER.warnCr(reconciliation, "Cruise Control secret not found — skipping goal violation detection this reconciliation");
                         return CompletableFuture.completedFuture(null);
                     }
+                    if (ccApiSecret == null) {
+                        LOGGER.warnCr(reconciliation, "Cruise Control API secret not found — skipping goal violation detection this reconciliation");
+                        return CompletableFuture.completedFuture(null);
+                    }
 
-                    return supplier.secretOperations.getAsync(reconciliation.namespace(), CruiseControlResources.apiSecretName(reconciliation.name()))
-                            .thenCompose(ccApiSecret -> {
-                                if (ccApiSecret == null) {
-                                    LOGGER.warnCr(reconciliation, "Cruise Control API secret not found — skipping goal violation detection this reconciliation");
-                                    return CompletableFuture.completedFuture(null);
-                                }
+                    Map<String, Object> ccConfigMap = kafkaCr.getSpec().getCruiseControl().getConfig();
+                    CruiseControlConfiguration ccConfig = new CruiseControlConfiguration(
+                            reconciliation,
+                            ccConfigMap != null ? ccConfigMap.entrySet() : Map.<String, Object>of().entrySet(),
+                            Map.of());
+                    boolean apiAuthEnabled = ccConfig.isApiAuthEnabled();
+                    boolean apiSslEnabled = KafkaClusterSecurityContext.fromCrd(kafkaCr).encryption() instanceof TlsEncryptionConfiguration;
 
-                                Map<String, Object> ccConfigMap = kafkaCr.getSpec().getCruiseControl().getConfig();
-                                CruiseControlConfiguration ccConfig = new CruiseControlConfiguration(
-                                        reconciliation,
-                                        ccConfigMap != null ? ccConfigMap.entrySet() : Map.<String, Object>of().entrySet(),
-                                        Map.of());
-                                boolean apiAuthEnabled = ccConfig.isApiAuthEnabled();
-                                boolean apiSslEnabled = KafkaClusterSecurityContext.fromCrd(kafkaCr).encryption() instanceof TlsEncryptionConfiguration;
+                    CruiseControlApi ccApi = cruiseControlClientProvider(ccSecret, ccApiSecret, apiAuthEnabled, apiSslEnabled);
 
-                                CruiseControlApi ccApi = cruiseControlClientProvider(ccSecret, ccApiSecret, apiAuthEnabled, apiSslEnabled);
+                    String ccHost = cruiseControlHost(reconciliation.name(), reconciliation.namespace());
+                    int ccPort = cruiseControlPort();
 
-                                String ccHost = cruiseControlHost(reconciliation.name(), reconciliation.namespace());
-                                int ccPort = cruiseControlPort();
-
-                                return ccApi.getGoalViolations(reconciliation, ccHost, ccPort)
-                                        .exceptionally(error -> {
-                                            LOGGER.debugCr(reconciliation, "Unable to query Cruise Control for goal violations — pod may not be ready yet", error);
-                                            return null;
-                                        });
+                    return ccApi.getGoalViolations(reconciliation, ccHost, ccPort)
+                            .exceptionally(error -> {
+                                LOGGER.debugCr(reconciliation, "Unable to query Cruise Control for goal violations — pod may not be ready yet", error);
+                                return null;
                             });
-                });
+                }));
     }
 
     /**
