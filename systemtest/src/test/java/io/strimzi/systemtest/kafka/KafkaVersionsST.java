@@ -17,6 +17,7 @@ import io.strimzi.api.kafka.model.user.KafkaUser;
 import io.strimzi.api.kafka.model.user.acl.StrimziAclOperation;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.TestConstants;
+import io.strimzi.systemtest.annotations.RequiresSharedNamespace;
 import io.strimzi.systemtest.docs.TestDocsLabels;
 import io.strimzi.systemtest.kafkaclients.ClientsAuthentication;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
@@ -52,6 +53,7 @@ import static io.strimzi.systemtest.TestTags.KAFKA_SMOKE;
         @Label(value = TestDocsLabels.KAFKA)
     }
 )
+@RequiresSharedNamespace
 public class KafkaVersionsST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(KafkaVersionsST.class);

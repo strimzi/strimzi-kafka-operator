@@ -19,6 +19,7 @@ import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.IsolatedTest;
+import io.strimzi.systemtest.annotations.RequiresSharedNamespace;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
 import io.strimzi.systemtest.docs.TestDocsLabels;
 import io.strimzi.systemtest.kafkaclients.externalClients.ExternalKafkaClient;
@@ -68,6 +69,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
         @Step(value = "Deploy the cluster operator.", expected = "Cluster operator is installed successfully.")
     }
 )
+@RequiresSharedNamespace
 public class DynamicConfST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(DynamicConfST.class);

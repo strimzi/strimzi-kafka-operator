@@ -27,6 +27,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 @Inherited
 @ResourceLock(mode = ResourceAccessMode.READ_WRITE, value = "global")
 @Tag(ISOLATED_TEST)
+@RequiresSharedNamespace
 @Test
 public @interface IsolatedTest {
     String value() default "";

@@ -13,6 +13,7 @@ import io.skodjob.kubetest4j.resources.KubeResourceManager;
 import io.strimzi.kafka.config.model.Scope;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
+import io.strimzi.systemtest.annotations.RequiresSharedNamespace;
 import io.strimzi.systemtest.docs.TestDocsLabels;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.storage.TestStorage;
@@ -54,6 +55,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
         @Label(value = TestDocsLabels.KAFKA)
     }
 )
+@RequiresSharedNamespace
 public class DynamicConfSharedST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(DynamicConfSharedST.class);

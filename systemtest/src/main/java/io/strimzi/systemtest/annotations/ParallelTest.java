@@ -28,6 +28,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 @Execution(ExecutionMode.CONCURRENT)
 @ResourceLock(mode = ResourceAccessMode.READ, value = "global")
 @Tag(PARALLEL_TEST)
+@RequiresSharedNamespace
 @Test
 public @interface ParallelTest {
 }

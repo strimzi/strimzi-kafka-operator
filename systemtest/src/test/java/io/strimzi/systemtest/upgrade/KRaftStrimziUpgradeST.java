@@ -9,6 +9,7 @@ import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.KindIPv6NotSupported;
 import io.strimzi.systemtest.annotations.MicroShiftNotSupported;
+import io.strimzi.systemtest.annotations.RequiresSharedNamespace;
 import io.strimzi.systemtest.resources.crd.KafkaComponents;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.utils.RollingUpdateUtils;
@@ -40,6 +41,7 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
  * Metadata for the following tests are collected from systemtest/src/test/resources/upgrade/BundleUpgrade.yaml
  */
 @Tag(KRAFT_UPGRADE)
+@RequiresSharedNamespace
 public class KRaftStrimziUpgradeST extends AbstractKRaftUpgradeST {
 
     private static final Logger LOGGER = LogManager.getLogger(KRaftStrimziUpgradeST.class);
