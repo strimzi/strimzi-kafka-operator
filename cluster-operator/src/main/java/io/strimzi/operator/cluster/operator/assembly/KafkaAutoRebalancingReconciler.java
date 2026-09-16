@@ -204,7 +204,7 @@ public class KafkaAutoRebalancingReconciler {
                         return getKafkaRebalance(reconciliation.namespace(), reconciliation.name(), KafkaAutoRebalanceMode.IMBALANCE)
                                 .thenCompose(existingKr -> {
                                     if (existingKr != null) {
-                                        // KR already exists and is being processed — skip creation and counter increment
+                                        // KafkaRebalance already exists and is being processed — skip creation and counter increment
                                         LOGGER.debugCr(reconciliation, "Auto-rebalance KafkaRebalance already exists, skipping");
                                         return CompletableFuture.completedFuture(null);
                                     }
@@ -650,7 +650,7 @@ public class KafkaAutoRebalancingReconciler {
         return getKafkaRebalance(reconciliation.namespace(), reconciliation.name(), KafkaAutoRebalanceMode.IMBALANCE)
                 .thenCompose(kafkaRebalance -> {
                     if (kafkaRebalance == null) {
-                        LOGGER.infoCr(reconciliation, "Recovering from crash: KafkaRebalance resource missing, transitioning to Idle. " +
+                        LOGGER.infoCr(reconciliation, "KafkaRebalance resource for imbalance rebalancing not found, transitioning to Idle. " +
                                 "Cruise Control will re-detect violations if they still exist.");
                         updateStatus(kafkaAutoRebalanceStatus, KafkaAutoRebalanceState.Idle);
                         return CompletableFuture.completedFuture(null);
