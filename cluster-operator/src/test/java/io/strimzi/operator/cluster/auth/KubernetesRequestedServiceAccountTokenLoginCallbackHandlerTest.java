@@ -14,6 +14,7 @@ import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.ServiceAccountResource;
 import org.apache.kafka.common.security.oauthbearer.OAuthBearerToken;
 import org.apache.kafka.common.security.oauthbearer.OAuthBearerTokenCallback;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
@@ -23,6 +24,7 @@ import javax.security.auth.callback.UnsupportedCallbackException;
 import javax.security.auth.login.AppConfigurationEntry;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,6 +38,8 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -47,19 +51,27 @@ public class KubernetesRequestedServiceAccountTokenLoginCallbackHandlerTest {
     private static final String PRINCIPAL = "User:system:serviceaccount:my-namespace:my-cluster-cluster-operator";
     private static final String EXPIRATION_TIMESTAMP = "2026-08-27T17:00:00Z";
 
+    private final List<ServiceAccountTokenService> tokenServices = new ArrayList<>();
+
+    @AfterEach
+    public void tearDown() {
+        tokenServices.forEach(ServiceAccountTokenService::close);
+        tokenServices.clear();
+    }
+
     /**
-     * Handler subclass which injects a mocked Kubernetes client instead of building a real one.
+     * Handler subclass which injects a token service using a mocked Kubernetes client instead of using the singleton.
      */
     private static class MockedHandler extends KubernetesRequestedServiceAccountTokenLoginCallbackHandler {
-        private final KubernetesClient client;
+        private final ServiceAccountTokenService tokenService;
 
-        MockedHandler(KubernetesClient client) {
-            this.client = client;
+        MockedHandler(ServiceAccountTokenService tokenService) {
+            this.tokenService = tokenService;
         }
 
         @Override
-        KubernetesClient buildKubernetesClient() {
-            return client;
+        ServiceAccountTokenService tokenService() {
+            return tokenService;
         }
     }
 
@@ -106,8 +118,11 @@ public class KubernetesRequestedServiceAccountTokenLoginCallbackHandlerTest {
                 .build();
     }
 
-    private static KubernetesRequestedServiceAccountTokenLoginCallbackHandler configuredHandler(KubernetesClient client) {
-        KubernetesRequestedServiceAccountTokenLoginCallbackHandler handler = new MockedHandler(client);
+    private KubernetesRequestedServiceAccountTokenLoginCallbackHandler configuredHandler(KubernetesClient client) {
+        ServiceAccountTokenService tokenService = new ServiceAccountTokenService(client);
+        tokenServices.add(tokenService);
+
+        KubernetesRequestedServiceAccountTokenLoginCallbackHandler handler = new MockedHandler(tokenService);
         handler.configure(Map.of(), "OAUTHBEARER", jaasConfigEntries(options()));
         return handler;
     }
@@ -229,22 +244,39 @@ public class KubernetesRequestedServiceAccountTokenLoginCallbackHandlerTest {
         assertThat(e.getCallback(), is(callback));
     }
 
+    @Test
+    public void testHandleReusesTheCachedToken() throws Exception {
+        ServiceAccountResource serviceAccountResource = mock(ServiceAccountResource.class);
+        when(serviceAccountResource.tokenRequest(any())).thenReturn(tokenRequestResponse("my-token", Instant.now().plusSeconds(3600).toString()));
+
+        KubernetesRequestedServiceAccountTokenLoginCallbackHandler handler = configuredHandler(mockKubernetesClient(serviceAccountResource));
+
+        for (int i = 0; i < 3; i++) {
+            OAuthBearerTokenCallback callback = new OAuthBearerTokenCallback();
+            handler.handle(new Callback[]{callback});
+            assertThat(callback.token().value(), is("my-token"));
+        }
+
+        verify(serviceAccountResource, times(1)).tokenRequest(any());
+    }
+
     //////////////////////////////////////////////////
     // Tests for the close method
     //////////////////////////////////////////////////
 
     @Test
-    public void testCloseClosesTheClient() {
+    public void testCloseDoesNotCloseTheSharedResources() {
         KubernetesClient client = mockKubernetesClient(tokenRequestResponse("my-token", EXPIRATION_TIMESTAMP));
 
         configuredHandler(client).close();
 
-        verify(client).close();
+        // The Kubernetes client belongs to the shared token service and should not be closed by the handler
+        verify(client, never()).close();
     }
 
     @Test
     public void testCloseWithoutConfigure() {
         // Kafka can close a handler which failed to configure => this should not throw
-        new MockedHandler(mock(KubernetesClient.class)).close();
+        new KubernetesRequestedServiceAccountTokenLoginCallbackHandler().close();
     }
 }
