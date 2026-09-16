@@ -162,9 +162,9 @@ public class CruiseControlApiImpl implements CruiseControlApi {
             return CompletableFuture.completedFuture(null);
         }
 
-        // Parse detectionDate - CC returns ISO 8601 string like "2026-06-21T06:05:45Z"
-        Instant detectionDate = parseDetectionDate(reconciliation, recentViolation);
-        if (detectionDate == null) {
+        // Parse detection time - CC returns either epoch ms (detectionMs) or ISO 8601 string (detectionDate)
+        Instant detectionTime = parseDetectionTime(reconciliation, recentViolation);
+        if (detectionTime == null) {
             return CompletableFuture.completedFuture(null);
         }
 
@@ -181,19 +181,19 @@ public class CruiseControlApiImpl implements CruiseControlApi {
         GoalViolationInfo.Fixability fixability;
         if (hasFixable && hasUnfixable) {
             fixability = GoalViolationInfo.Fixability.MIXED;
-            LOGGER.warnCr(reconciliation, "Goal violations detected at {} with both fixable and unfixable goals", detectionDate);
+            LOGGER.warnCr(reconciliation, "Goal violations detected at {} with both fixable and unfixable goals", detectionTime);
         } else if (hasUnfixable) {
             fixability = GoalViolationInfo.Fixability.UNFIXABLE;
-            LOGGER.warnCr(reconciliation, "Goal violations detected at {} but all goals are unfixable", detectionDate);
+            LOGGER.warnCr(reconciliation, "Goal violations detected at {} but all goals are unfixable", detectionTime);
         } else {
             fixability = GoalViolationInfo.Fixability.FIXABLE;
-            LOGGER.debugCr(reconciliation, "Found fixable goal violations detected at {}", detectionDate);
+            LOGGER.debugCr(reconciliation, "Found fixable goal violations detected at {}", detectionTime);
         }
 
-        return CompletableFuture.completedFuture(new GoalViolationInfo(detectionDate, fixability));
+        return CompletableFuture.completedFuture(new GoalViolationInfo(detectionTime, fixability));
     }
 
-    private Instant parseDetectionDate(Reconciliation reconciliation, JsonNode violation) {
+    private Instant parseDetectionTime(Reconciliation reconciliation, JsonNode violation) {
         // Try detectionMs first (CC returns epoch milliseconds in JSON format)
         if (violation.has("detectionMs")) {
             JsonNode node = violation.get("detectionMs");
@@ -202,14 +202,14 @@ public class CruiseControlApiImpl implements CruiseControlApi {
             }
         }
 
-        // Fallback to detectionDate (string format)
+        // Fallback to detectionDate (string format from CC API)
         if (violation.has("detectionDate")) {
             JsonNode node = violation.get("detectionDate");
             if (node.isTextual()) {
                 try {
                     return Instant.parse(node.asText());
                 } catch (Exception e) {
-                    LOGGER.warnCr(reconciliation, "Failed to parse detectionDate: {}", node.asText());
+                    LOGGER.warnCr(reconciliation, "Failed to parse detection time '{}' from CC response", node.asText());
                     return null;
                 }
             } else if (node.isNumber()) {
