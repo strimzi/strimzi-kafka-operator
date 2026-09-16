@@ -63,6 +63,7 @@ public class NodeIdAssignor {
             TreeSet<Integer> current;
             TreeSet<Integer> desired;
             TreeSet<Integer> usedToBeBroker;
+            TreeSet<Integer> currentBrokers;
             TreeSet<Integer> toBeRemoved = new TreeSet<>();
             TreeSet<Integer> toBeAdded = new TreeSet<>();
 
@@ -98,10 +99,12 @@ public class NodeIdAssignor {
                 }
 
                 usedToBeBroker = brokerNodesBecomingControllerOnlyNodes(pool, current, desired);
+                currentBrokers = currentBrokerNodes(pool, current);
             } else {
                 // New pool? It is all scale-up
                 current = new TreeSet<>();
                 usedToBeBroker = new TreeSet<>();
+                currentBrokers = new TreeSet<>();
                 desired = new TreeSet<>();
 
                 // Provides the node IDs which the user would like to assign to the next broker(s)
@@ -114,7 +117,7 @@ public class NodeIdAssignor {
                 }
             }
 
-            assignments.put(pool.getMetadata().getName(), new NodeIdAssignment(current, desired, toBeRemoved, toBeAdded, usedToBeBroker));
+            assignments.put(pool.getMetadata().getName(), new NodeIdAssignment(current, desired, toBeRemoved, toBeAdded, usedToBeBroker, currentBrokers));
         }
     }
 
@@ -322,6 +325,25 @@ public class NodeIdAssignor {
      *
      * @return  Set of node IDs that used to have the broker role but will not have it anymore
      */
+    /**
+     * Finds the Kafka nodes of this pool which run with the broker role right now. Only these nodes can hold partition
+     * replicas and answer the Admin API, so only they can be asked about the content of their storage.
+     *
+     * @param pool      Node Pool to check for the current roles
+     * @param current   Current node IDs belonging to this node pool
+     *
+     * @return  Set of node IDs which run with the broker role right now
+     */
+    /* test */ static TreeSet<Integer> currentBrokerNodes(KafkaNodePool pool, Set<Integer> current) {
+        if (pool.getStatus() != null
+                && pool.getStatus().getRoles() != null
+                && pool.getStatus().getRoles().contains(ProcessRoles.BROKER)) {
+            return new TreeSet<>(current);
+        } else {
+            return new TreeSet<>();
+        }
+    }
+
     /* test */ static TreeSet<Integer> brokerNodesBecomingControllerOnlyNodes(KafkaNodePool pool, Set<Integer> current, Set<Integer> desired) {
         if (pool.getStatus() != null
                 && pool.getSpec().getRoles() != null

@@ -203,5 +203,14 @@ PVCs are created for the JBOD volumes using the naming convention `data-<volume_
 Volume IDs cannot be changed once JBOD volumes are created, though you can add or remove volumes.
 When adding a new volume to the to the `volumes` array under an `id` which was already used in the past and removed, make sure that the previously used `PersistentVolumeClaims` have been deleted.
 
+Before it removes a volume, Strimzi checks whether the volume still holds partition replicas.
+The check runs on brokers only, so volumes of controller-only node pools are not checked.
+It also covers partition replicas only, so a volume which holds just the KRaft metadata log is reported as empty.
+
+If the volume still holds partition replicas, or if the check cannot be done because a broker does not answer or its log directory is offline, Strimzi refuses the removal.
+All storage changes of that node pool are then reverted, a warning is added to the status of the `Kafka` resource, and the volume stays.
+Move the partition replicas off the volume and try again.
+To remove a volume without the check, for example a volume on a disk which failed, see xref:con-skipping-scale-down-checks-{context}[].
+
 Use Cruise Control to reassign partitions when adding or removing volumes. 
 For information on intra-broker disk balancing, see xref:con-rebalance-{context}[].

@@ -501,6 +501,29 @@ public class NodeIdAssignorTest {
     }
 
     @Test
+    public void testCurrentBrokerNodes() {
+        // New node pool => the nodes do not exist yet
+        KafkaNodePool pool = createPool("pool", 3, Map.of());
+        assertThat(NodeIdAssignor.currentBrokerNodes(pool, Set.of()).size(), is(0));
+
+        // Existing broker pool
+        pool = createPool("pool", 3, Map.of(), List.of(0, 1, 2), List.of(ProcessRoles.BROKER), List.of(ProcessRoles.BROKER));
+        assertThat(NodeIdAssignor.currentBrokerNodes(pool, Set.of(0, 1, 2)), hasItems(0, 1, 2));
+
+        // Existing controller-only pool
+        pool = createPool("pool", 3, Map.of(), List.of(0, 1, 2), List.of(ProcessRoles.CONTROLLER), List.of(ProcessRoles.CONTROLLER));
+        assertThat(NodeIdAssignor.currentBrokerNodes(pool, Set.of(0, 1, 2)).size(), is(0));
+
+        // Pool which is losing the broker role still runs as a broker right now
+        pool = createPool("pool", 3, Map.of(), List.of(0, 1, 2), List.of(ProcessRoles.CONTROLLER), List.of(ProcessRoles.BROKER, ProcessRoles.CONTROLLER));
+        assertThat(NodeIdAssignor.currentBrokerNodes(pool, Set.of(0, 1, 2)), hasItems(0, 1, 2));
+
+        // Pool which is only gaining the broker role is not a broker yet
+        pool = createPool("pool", 3, Map.of(), List.of(0, 1, 2), List.of(ProcessRoles.BROKER, ProcessRoles.CONTROLLER), List.of(ProcessRoles.CONTROLLER));
+        assertThat(NodeIdAssignor.currentBrokerNodes(pool, Set.of(0, 1, 2)).size(), is(0));
+    }
+
+    @Test
     public void testBrokerRoleRemoval() {
         // New node pool
         KafkaNodePool pool = createPool("pool", 3, Map.of());

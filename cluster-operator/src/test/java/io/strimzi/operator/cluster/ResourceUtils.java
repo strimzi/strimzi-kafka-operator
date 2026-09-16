@@ -57,11 +57,13 @@ import org.apache.kafka.clients.admin.DescribeClusterOptions;
 import org.apache.kafka.clients.admin.DescribeClusterResult;
 import org.apache.kafka.clients.admin.DescribeConfigsResult;
 import org.apache.kafka.clients.admin.DescribeFeaturesResult;
+import org.apache.kafka.clients.admin.DescribeLogDirsResult;
 import org.apache.kafka.clients.admin.DescribeMetadataQuorumResult;
 import org.apache.kafka.clients.admin.DescribeTopicsResult;
 import org.apache.kafka.clients.admin.FeatureMetadata;
 import org.apache.kafka.clients.admin.FinalizedVersionRange;
 import org.apache.kafka.clients.admin.ListTopicsResult;
+import org.apache.kafka.clients.admin.LogDirDescription;
 import org.apache.kafka.clients.admin.QuorumInfo;
 import org.apache.kafka.clients.admin.TopicListing;
 import org.apache.kafka.clients.admin.UnregisterBrokerResult;
@@ -242,6 +244,24 @@ public class ResourceUtils {
             throw new RuntimeException(e);
         }
         when(mock.describeTopics(anyCollection())).thenReturn(dtr);
+
+        // Every requested node answers, but reports no log directories, so nothing blocks a removal
+        when(mock.describeLogDirs(anyCollection())).thenAnswer(invocation -> {
+            Collection<Integer> nodeIds = invocation.getArgument(0);
+            Map<Integer, KafkaFuture<Map<String, LogDirDescription>>> logDirs = new HashMap<>();
+
+            for (Integer nodeId : nodeIds) {
+                logDirs.put(nodeId, KafkaFuture.completedFuture(emptyMap()));
+            }
+
+            try {
+                Constructor<DescribeLogDirsResult> declaredConstructor = DescribeLogDirsResult.class.getDeclaredConstructor(Map.class);
+                declaredConstructor.setAccessible(true);
+                return declaredConstructor.newInstance(logDirs);
+            } catch (ReflectiveOperationException e) {
+                throw new RuntimeException(e);
+            }
+        });
 
         DescribeConfigsResult dcfr;
         try {

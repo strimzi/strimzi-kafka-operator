@@ -338,6 +338,7 @@ In this example, the log directories for volumes 1 and 2 no longer have partitio
 +
 WARNING: Before making changes, verify that all partitions have been successfully moved using `kafka-log-dirs.sh`. 
 Removing volumes prematurely can cause data loss.
+Strimzi refuses to remove a volume which still holds partition replicas, unless the check is skipped.
 +
 In this example, volumes 1 and 2 are removed, and only volume 0 is retained:
 +

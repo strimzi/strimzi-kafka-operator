@@ -779,7 +779,7 @@ public class KafkaBrokerConfigurationBuilder {
     public KafkaBrokerConfigurationBuilder withLogDirs(List<VolumeMount> mounts)  {
         // We take all the data mount points and add the broker specific path
         String logDirs = mounts.stream()
-                .map(volumeMount -> volumeMount.getMountPath() + "/kafka-log" + node.nodeId()).collect(Collectors.joining(","));
+                .map(volumeMount -> VolumeUtils.kafkaLogDirPathOnMount(volumeMount.getMountPath(), node.nodeId())).collect(Collectors.joining(","));
 
         printSectionHeader("Kafka message logs configuration");
         writer.println("log.dirs=" + logDirs);
@@ -797,7 +797,7 @@ public class KafkaBrokerConfigurationBuilder {
      */
     public KafkaBrokerConfigurationBuilder withKRaftMetadataLogDir(String kraftMetadataLogDir)  {
         printSectionHeader("KRaft metadata log dir configuration");
-        writer.println("metadata.log.dir=" + kraftMetadataLogDir + "/kafka-log" + node.nodeId());
+        writer.println("metadata.log.dir=" + VolumeUtils.kafkaLogDirPathOnMount(kraftMetadataLogDir, node.nodeId()));
         writer.println();
 
         return this;
