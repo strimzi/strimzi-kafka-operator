@@ -20,6 +20,7 @@ import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.auth.RequestedServiceAccountAuthIdentity;
 import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.model.CertSecretUtils;
+import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.cluster.model.NodeRef;
 import io.strimzi.operator.cluster.model.RestartReason;
@@ -53,6 +54,7 @@ import io.strimzi.operator.common.operator.resource.kubernetes.CertManagerCertif
 import io.strimzi.operator.common.operator.resource.kubernetes.SecretOperator;
 
 import java.time.Clock;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -93,6 +95,7 @@ public class CaReconciler {
     private Ca clientsCa;
     private Secret clusterCaCertSecret;
     private Secret coSecret;
+    private final List<Secret> certSecrets = new ArrayList<>();
 
     /* test */ boolean isClusterCaNeedFullTrust;
     /* test */ boolean isClusterCaFullyUsed;
@@ -200,8 +203,12 @@ public class CaReconciler {
                             existingClientsCaCertSecret = secret;
                         } else if (secretName.equals(clientsCaKeyName)) {
                             existingClientsCaKeySecret = secret;
+                        //  Extract cluster operator cert Secret to store for reconciliation
                         } else if (secretName.equals(clusterOperatorName)) {
                             coSecret = secret;
+                        //  Extract cert Secrets that contain certs to store for reconciliation
+                        } else if (secretContainsEndEntityComponentCerts(secret)) {
+                            certSecrets.add(secret);
                         }
                     }
 
@@ -231,6 +238,26 @@ public class CaReconciler {
                     });
                     return CompletableFuture.allOf(clusterCaFuture.toCompletableFuture(), clientsCaFuture.toCompletableFuture());
                 });
+    }
+
+    /**
+     * Returns whether a Secret in one containing end-entity certs for components like Kafka, EntityOperator, Cruise Control etc.
+     * @param secret Secret to check
+     *
+     * @return Whether the Secret contains certs
+     */
+    private boolean secretContainsEndEntityComponentCerts(Secret secret) {
+        if (KafkaCluster.COMPONENT_TYPE.equals(secret.getMetadata().getLabels().get(Labels.STRIMZI_COMPONENT_TYPE_LABEL))) {
+            return true;
+        } else {
+            List<String> endEntityCertSecrets = List.of(
+                    CruiseControlResources.secretName(reconciliation.name()),
+                    KafkaResources.entityTopicOperatorSecretName(reconciliation.name()),
+                    KafkaResources.entityUserOperatorSecretName(reconciliation.name()),
+                    KafkaExporterResources.secretName(reconciliation.name())
+            );
+            return endEntityCertSecrets.contains(secret.getMetadata().getName());
+        }
     }
 
     /**
@@ -332,7 +359,7 @@ public class CaReconciler {
      * When the trusting phase is not completed (i.e. because CO stopped), it needs to be recovered from where it was left.
      * <p>
      * Verify that all pods are already using the new CA certificate to sign server certificates.
-     * It checks each pod's CA certificate generation, compared with the new CA certificate generation.
+     * It checks each pod's CA certificate generation and each end-entity cert secret's CA certificate generation, compared with the new CA certificate generation.
      * When the new CA certificate is used everywhere, the old CA certificate can be removed.
      */
     /* test */ CompletionStage<Void> verifyClusterCaFullyTrustedAndUsed() {
@@ -389,6 +416,19 @@ public class CaReconciler {
                         }
                         if (!isClusterCaFullyUsed) {
                             LOGGER.debugCr(reconciliation, "The old Cluster CA is still used by some server certificates and cannot be removed");
+                        }
+                    }
+
+                    // Even if all pods trust the new CA cert generation, it's possible some end-entity certificates have not been updated yet.
+                    // We should only remove older CA certificate, when all end-entity certificates have been updated.
+                    if (this.isClusterCaFullyUsed) {
+                        for (Secret secret : certSecrets) {
+                            int secretClusterCaCertGeneration = Annotations.intAnnotation(secret, Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, clusterCaCertGeneration);
+                            LOGGER.debugCr(reconciliation, "Secret {} has cluster CA cert generation {}", secret.getMetadata().getName(), secretClusterCaCertGeneration);
+
+                            if (clusterCaCertGeneration != secretClusterCaCertGeneration) {
+                                this.isClusterCaFullyUsed = false;
+                            }
                         }
                     }
                     return null;
