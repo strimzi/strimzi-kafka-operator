@@ -421,12 +421,22 @@
         </profile>
 
         <profile>
-            <id>brokers-and-security</id>
+            <id>brokers</id>
             <properties>
                 <skipTests>false</skipTests>
                 <groups>regression</groups>
                 <it.test>
-                    kafka/**/*ST,
+                    kafka/**/*ST
+                </it.test>
+            </properties>
+        </profile>
+
+        <profile>
+            <id>security</id>
+            <properties>
+                <skipTests>false</skipTests>
+                <groups>regression</groups>
+                <it.test>
                     security/**/*ST
                 </it.test>
             </properties>

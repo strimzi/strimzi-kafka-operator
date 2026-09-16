@@ -7,7 +7,7 @@ scenarios:
       expected_json_file: ".github/tests/expected/generate-matrix/matrix_pipelines_expected.json"
 
   - id: multiple-profiles
-    description: "Generate matrix for multiple profiles (operators,brokers-and-security)"
+    description: "Generate matrix for multiple profiles (operators,brokers,security)"
     event: workflow_dispatch
     fixture: .github/tests/events/generate-matrix/matrix_profiles.json
     expectations:

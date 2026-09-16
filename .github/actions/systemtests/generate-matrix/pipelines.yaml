@@ -21,7 +21,17 @@ pipelines:
   - agent: "cncf-ubuntu-8-32-x86"
     arch: "amd64"
     pipeline: "regression"
-    profile: "brokers-and-security"
+    profile: "brokers"
+    timeout: 360
+    strimzi_feature_gates: ""
+    strimzi_rbac_scope: "CLUSTER"
+    cluster_operator_install_type: "yaml"
+    parallel: 4
+    ipFamily: "ipv4"
+  - agent: "cncf-ubuntu-8-32-x86"
+    arch: "amd64"
+    pipeline: "regression"
+    profile: "security"
     timeout: 360
     strimzi_feature_gates: ""
     strimzi_rbac_scope: "CLUSTER"
@@ -52,7 +62,17 @@ pipelines:
   - agent: "cncf-ubuntu-8-32-arm"
     arch: "arm64"
     pipeline: "regression"
-    profile: "brokers-and-security"
+    profile: "brokers"
+    timeout: 360
+    strimzi_feature_gates: ""
+    strimzi_rbac_scope: "CLUSTER"
+    cluster_operator_install_type: "yaml"
+    parallel: 4
+    ipFamily: "ipv4"
+  - agent: "cncf-ubuntu-8-32-arm"
+    arch: "arm64"
+    pipeline: "regression"
+    profile: "security"
     timeout: 360
     strimzi_feature_gates: ""
     strimzi_rbac_scope: "CLUSTER"
@@ -370,7 +390,17 @@ pipelines:
   - agent: "cncf-ubuntu-8-32-x86"
     arch: "amd64"
     pipeline: "regression-fg"
-    profile: "brokers-and-security"
+    profile: "brokers"
+    timeout: 360
+    strimzi_feature_gates: "-UseConnectBuildWithBuildah,+UseBackgroundPodDeletion"
+    strimzi_rbac_scope: "CLUSTER"
+    cluster_operator_install_type: "yaml"
+    parallel: 3
+    ipFamily: "ipv4"
+  - agent: "cncf-ubuntu-8-32-x86"
+    arch: "amd64"
+    pipeline: "regression-fg"
+    profile: "security"
     timeout: 360
     strimzi_feature_gates: "-UseConnectBuildWithBuildah,+UseBackgroundPodDeletion"
     strimzi_rbac_scope: "CLUSTER"
@@ -401,7 +431,17 @@ pipelines:
   - agent: "cncf-ubuntu-8-32-arm"
     arch: "arm64"
     pipeline: "regression-fg"
-    profile: "brokers-and-security"
+    profile: "brokers"
+    timeout: 360
+    strimzi_feature_gates: "-UseConnectBuildWithBuildah,+UseBackgroundPodDeletion"
+    strimzi_rbac_scope: "CLUSTER"
+    cluster_operator_install_type: "yaml"
+    parallel: 4
+    ipFamily: "ipv4"
+  - agent: "cncf-ubuntu-8-32-arm"
+    arch: "arm64"
+    pipeline: "regression-fg"
+    profile: "security"
     timeout: 360
     strimzi_feature_gates: "-UseConnectBuildWithBuildah,+UseBackgroundPodDeletion"
     strimzi_rbac_scope: "CLUSTER"
