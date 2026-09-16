@@ -38,7 +38,7 @@ runs:
             errorMessage += "`acceptance`, `acceptance-helm`, `regression`, `regression-fg`, `regression-rbac`, `smoke`, `upgrade`\n";
             errorMessage += "\n";
             errorMessage += "**Available profiles:**\n";
-            errorMessage += "`acceptance`, `azp_connect_mirrormaker`, `azp_dynconfig_listeners_tracing_watcher`, `azp_kafka_oauth`, `azp_kafka_upgrade`, `azp_kraft_upgrade`, `azp_operators`, `azp_rbac_remaining`, `azp_rolling_update_bridge`, `azp_security`, `brokers-and-security`, `operands`, `operators`, `smoke`\n";
+            errorMessage += "`acceptance`, `azp_connect_mirrormaker`, `azp_dynconfig_listeners_tracing_watcher`, `azp_kafka_oauth`, `azp_kafka_upgrade`, `azp_kraft_upgrade`, `azp_operators`, `azp_rbac_remaining`, `azp_rolling_update_bridge`, `azp_security`, `brokers`, `security`, `operands`, `operators`, `smoke`\n";
             errorMessage += "\n";
             errorMessage += "Please check your command for typos and try again.";
             

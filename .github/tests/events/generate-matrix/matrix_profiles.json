@@ -3,7 +3,7 @@
   "action": "workflow_dispatch",
   "inputs": {
     "pipelines": "",
-    "profiles": "operators,brokers-and-security"
+    "profiles": "operators,brokers,security"
   },
   "repository": {
     "name": "ci-playground",
