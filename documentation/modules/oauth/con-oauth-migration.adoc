@@ -15,3 +15,7 @@ For more information on the configuration options, see the following API schema 
 * link:{BookURLConfiguring}#type-KafkaListenerAuthenticationCustom-reference[`KafkaListenerAuthenticationCustom` schema reference^]
 * link:{BookURLConfiguring}#type-KafkaClientAuthenticationCustom-reference[`KafkaClientAuthenticationCustom` schema reference^]
 
+WARNING: Do not use sensitive values directly in the `config` section of `custom` authentication.
+Use Kafka configuration providers to load sensitive values at runtime instead.
+
+For more information, see link:{BookURLConfiguring}#type-KafkaClientAuthenticationCustom-reference[Using secrets in custom authentication^].
