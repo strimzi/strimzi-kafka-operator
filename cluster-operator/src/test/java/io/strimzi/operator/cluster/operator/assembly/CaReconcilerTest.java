@@ -15,6 +15,8 @@ import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.clustersecurity.ClusterSecurityAuthenticationBuilder;
 import io.strimzi.api.kafka.model.kafka.clustersecurity.ClusterSecurityAuthenticationType;
+import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlResources;
+import io.strimzi.api.kafka.model.kafka.exporter.KafkaExporterResources;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.api.kafka.model.podset.StrimziPodSet;
@@ -26,6 +28,10 @@ import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.auth.RequestedServiceAccountAuthIdentity;
 import io.strimzi.operator.cluster.model.AbstractModel;
+import io.strimzi.operator.cluster.model.CruiseControl;
+import io.strimzi.operator.cluster.model.EntityOperator;
+import io.strimzi.operator.cluster.model.KafkaCluster;
+import io.strimzi.operator.cluster.model.KafkaExporter;
 import io.strimzi.operator.cluster.model.NodeRef;
 import io.strimzi.operator.cluster.model.PodSetUtils;
 import io.strimzi.operator.cluster.model.RestartReason;
@@ -53,6 +59,9 @@ import io.strimzi.operator.common.operator.resource.kubernetes.SecretOperator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.ArgumentCaptor;
 
 import java.nio.charset.StandardCharsets;
@@ -67,6 +76,7 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.instanceOf;
@@ -576,6 +586,65 @@ public class CaReconcilerTest {
     }
 
     @Test
+    public void testOldClusterCaCertsKeptWhileBrokerSecretNotUpdated() {
+        Ca clusterCa = mockClusterCa(1, 0, false);
+        Ca clientsCa = mockClientsCa(0);
+
+        // One secret still contains a certificate signed by the previous Cluster CA cert
+        List<Secret> brokerSecrets = List.of(
+                createCertSecret("my-cluster-brokers-0", 1, KafkaCluster.COMPONENT_TYPE),
+                createCertSecret("my-cluster-brokers-1", 1, KafkaCluster.COMPONENT_TYPE),
+                createCertSecret("my-cluster-brokers-2", 0, KafkaCluster.COMPONENT_TYPE));
+
+        mockKubernetesState(brokerSecrets,
+                List.of(
+                        controllerPodWithCaGenerations("my-cluster-controllers-3", 1, 0),
+                        controllerPodWithCaGenerations("my-cluster-controllers-4", 1, 0),
+                        controllerPodWithCaGenerations("my-cluster-controllers-5", 1, 0)),
+                List.of(
+                        brokerPodWithCaGenerations("my-cluster-brokers-0", 1, 0),
+                        brokerPodWithCaGenerations("my-cluster-brokers-1", 1, 0),
+                        brokerPodWithCaGenerations("my-cluster-brokers-2", 1, 0)));
+
+        new MockCaReconciler(supplier, clusterCa, clientsCa).reconcile(Clock.systemUTC()).toCompletableFuture().join();
+
+        verify(clusterCa, never()).maybeDeleteOldCerts();
+        verify(supplier.secretOperations, never()).reconcile(any(), eq(NAMESPACE), eq(AbstractModel.clusterCaCertSecretName(NAME)), any());
+    }
+
+    private static Stream<Arguments> componentCertSecretNames() {
+        return Stream.of(Arguments.of(CruiseControlResources.secretName(NAME), CruiseControl.COMPONENT_TYPE),
+                Arguments.of(KafkaResources.entityTopicOperatorSecretName(NAME), EntityOperator.COMPONENT_TYPE),
+                Arguments.of(KafkaResources.entityUserOperatorSecretName(NAME), EntityOperator.COMPONENT_TYPE),
+                Arguments.of(KafkaExporterResources.secretName(NAME), KafkaExporter.COMPONENT_TYPE));
+    }
+
+    @ParameterizedTest
+    @MethodSource("componentCertSecretNames")
+    public void testOldClusterCaCertsKeptWhileCertSecretNotUpdated(String secretName, String componentType) {
+        Ca clusterCa = mockClusterCa(1, 0, false);
+        Ca clientsCa = mockClientsCa(0);
+
+        // Component cert secret still contains a certificate signed by the previous Cluster CA cert
+        List<Secret> certSecret = List.of(createCertSecret(secretName, 0, componentType));
+
+        mockKubernetesState(certSecret,
+                List.of(
+                        controllerPodWithCaGenerations("my-cluster-controllers-3", 1, 0),
+                        controllerPodWithCaGenerations("my-cluster-controllers-4", 1, 0),
+                        controllerPodWithCaGenerations("my-cluster-controllers-5", 1, 0)),
+                List.of(
+                        brokerPodWithCaGenerations("my-cluster-brokers-0", 1, 0),
+                        brokerPodWithCaGenerations("my-cluster-brokers-1", 1, 0),
+                        brokerPodWithCaGenerations("my-cluster-brokers-2", 1, 0)));
+
+        new MockCaReconciler(supplier, clusterCa, clientsCa).reconcile(Clock.systemUTC()).toCompletableFuture().join();
+
+        verify(clusterCa, never()).maybeDeleteOldCerts();
+        verify(supplier.secretOperations, never()).reconcile(any(), eq(NAMESPACE), eq(AbstractModel.clusterCaCertSecretName(NAME)), any());
+    }
+
+    @Test
     public void testOldClusterCaCertsKeptWhenThereAreNoPods() {
         // The key was replaced in a previous reconcile, so there is an old cert, but no Pod can prove it is unused
         Ca clusterCa = mockClusterCa(1, 1, false);
@@ -615,12 +684,14 @@ public class CaReconcilerTest {
     }
 
     private void mockKubernetesState(List<Pod> controllerPods, List<Pod> brokerPods) {
-        mockKubernetesState(null, controllerPods, brokerPods);
+        mockKubernetesState(List.of(), controllerPods, brokerPods);
     }
 
     private void mockKubernetesState(Secret existingClusterOperatorSecret, List<Pod> controllerPods, List<Pod> brokerPods) {
-        List<Secret> secrets = existingClusterOperatorSecret == null ? List.of() : List.of(existingClusterOperatorSecret);
+        mockKubernetesState(List.of(existingClusterOperatorSecret), controllerPods, brokerPods);
+    }
 
+    private void mockKubernetesState(List<Secret> secrets, List<Pod> controllerPods, List<Pod> brokerPods) {
         SecretOperator secretOps = supplier.secretOperations;
         when(secretOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(CompletableFuture.completedFuture(secrets));
         when(secretOps.reconcile(any(), eq(NAMESPACE), any(), any(Secret.class))).thenReturn(CompletableFuture.completedFuture(null));
@@ -757,6 +828,17 @@ public class CaReconcilerTest {
                     .withNamespace(NAMESPACE)
                 .endMetadata()
                 .withData(Map.of(Ca.CA_CRT, CURRENT_CA_CRT, OLD_CA_CRT_ALIAS, OLD_CA_CRT))
+                .build();
+    }
+
+    private static Secret createCertSecret(String name, int caCertGeneration, String componentType) {
+        return new SecretBuilder()
+                .withNewMetadata()
+                .withName(name)
+                .withNamespace(NAMESPACE)
+                .withLabels(Map.of(Labels.STRIMZI_COMPONENT_TYPE_LABEL, componentType))
+                .withAnnotations(Map.of(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, String.valueOf(caCertGeneration)))
+                .endMetadata()
                 .build();
     }
 
