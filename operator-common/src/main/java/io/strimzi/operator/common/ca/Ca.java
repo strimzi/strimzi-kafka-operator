@@ -348,19 +348,18 @@ public abstract class Ca {
      * Used for Kafka brokers and Cruise Control.
      *
      * @param reconciliation                        Reconciliation marker
-     * @param commonName                            Common Name for the certificate
+     * @param resourceName                          Name to use for any resources created
      * @param subject                               Subject for the certificate
      * @param existingCertAndKey                    Existing certificate (or null if none exists)
      * @param isMaintenanceTimeWindowsSatisfied     Whether we are in a maintenance window
      * @param includeCaChain                        Whether to include CA chain
      * @param labels                                Labels
      *
-     *
      * @return CertAndKey object containing the public and private key
      **/
     public abstract CompletionStage<CertAndKey> maybeCopyOrGenerateServerCerts(
             Reconciliation reconciliation,
-            String commonName,
+            String resourceName,
             StrimziSubject subject,
             CertAndKey existingCertAndKey,
             boolean isMaintenanceTimeWindowsSatisfied,
@@ -372,6 +371,7 @@ public abstract class Ca {
      * Used for components that only act as clients, like Entity Operators and Kafka Exporter.
      *
      * @param reconciliation                        Reconciliation marker
+     * @param resourceName                          Name to use for any resources created
      * @param commonName                            Common Name for the certificate
      * @param existingCertAndKey                    Existing certificate (or null if none exists)
      * @param isMaintenanceTimeWindowsSatisfied     Whether we are in a maintenance window
@@ -381,10 +381,21 @@ public abstract class Ca {
      */
     public abstract CompletionStage<CertAndKey> maybeCopyOrGenerateClientCert(
             Reconciliation reconciliation,
+            String resourceName,
             String commonName,
             CertAndKey existingCertAndKey,
             boolean isMaintenanceTimeWindowsSatisfied,
             Labels labels);
+
+    /**
+     * Clean up any end-entity certificate related resources for a specific entity.
+     * This is called for example when scaling down nodes, or disabling a component like cruise control.
+     *
+     * @param entity Name of entity that is no longer needed
+     *
+     * @return CompletionStage that completes once the resources have been cleaned up
+     */
+    public abstract CompletionStage<Void> cleanupEndEntityCert(String entity);
 
     /**
      * Remove old certificates that are stored in the CA Secret.

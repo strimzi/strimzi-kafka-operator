@@ -12,7 +12,6 @@ import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.strimzi.api.kafka.model.common.CertificateManagerType;
 import io.strimzi.api.kafka.model.common.Condition;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
@@ -75,7 +74,6 @@ import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.auth.Identity;
 import io.strimzi.operator.common.ca.Ca;
-import io.strimzi.operator.common.ca.CertManagerCa;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.NodeUtils;
 import io.strimzi.operator.common.model.StatusDiff;
@@ -285,7 +283,7 @@ public class KafkaReconciler {
                 .compose(i -> metadataVersion(kafkaStatus))
                 .compose(i -> deletePersistentClaims())
                 .compose(i -> sharedKafkaConfigurationCleanup())
-                .compose(i -> deleteOldCertificateSecrets())
+                .compose(i -> deleteOldCertificateResources())
                 // This has to run after all possible rolling updates which might move the pods to different nodes
                 .compose(i -> nodePortExternalListenerStatus())
                 .compose(i -> updateKafkaStatus(kafkaStatus));
@@ -796,9 +794,6 @@ public class KafkaReconciler {
                                 } else if (KafkaResources.kafkaJmxSecretName(reconciliation.name()).equals(secretName)) {
                                     //Don't delete jmx secrets
                                     secretIsDesired = true;
-                                } else if (CertificateManagerType.CERT_MANAGER.equals(clusterCa.getType()) && CertManagerCa.matchesCertManagerSecretNaming(secretName)) {
-                                    // Don't delete cert-manager secrets
-                                    secretIsDesired = desiredCertSecretNames.contains(CertManagerCa.mapToStrimziSecretName(secretName));
                                 }
                                 if (!secretIsDesired) {
                                     secretsToDelete.add(secretName);
@@ -832,16 +827,17 @@ public class KafkaReconciler {
     }
 
     /**
-     * Delete old certificate Secrets that are no longer needed.
+     * Delete old certificate resources that are no longer needed.
      *
-     * @return Future that completes when the Secrets have been deleted.
+     * @return Future that completes when the resources have been deleted.
      */
-    protected Future<Void> deleteOldCertificateSecrets() {
+    protected Future<Void> deleteOldCertificateResources() {
         List<Future<Void>> deleteFutures = secretsToDelete.stream()
-                .map(secretName -> {
-                    LOGGER.debugCr(reconciliation, "Deleting old Secret {}/{} that is no longer used.", reconciliation.namespace(), secretName);
-                    return VertxUtil.toFuture(secretOperator.deleteAsync(reconciliation, reconciliation.namespace(), secretName, false));
-                }).toList();
+                .map(secretName -> VertxUtil.toFuture(clusterCa.cleanupEndEntityCert(secretName)
+                        .thenCompose(i -> {
+                            LOGGER.debugCr(reconciliation, "Deleting old Secret {}/{} that is no longer used.", reconciliation.namespace(), secretName);
+                            return secretOperator.deleteAsync(reconciliation, reconciliation.namespace(), secretName, false);
+                        }))).toList();
         return Future.join(deleteFutures).mapEmpty();
     }
 

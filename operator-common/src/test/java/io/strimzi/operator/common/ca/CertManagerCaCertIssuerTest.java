@@ -54,7 +54,8 @@ import static org.mockito.Mockito.when;
 
 public class CertManagerCaCertIssuerTest {
     private final static String NAMESPACE = Reconciliation.DUMMY_RECONCILIATION.namespace();
-    private final static String ENTITY_NAME = "mock-component";
+    private final static String RESOURCE_NAME = "mock-component-certs";
+    private final static String COMMON_NAME = "mock-component";
     private final static int VALIDITY_DAYS = 100;
     private final static int RENEWAL_DAYS = 10;
     private final static OpenSslCertIssuer CERT_ISSUER = new OpenSslCertIssuer();
@@ -90,7 +91,7 @@ public class CertManagerCaCertIssuerTest {
     private Secret createSecret(Map<String, String> data) {
         return new SecretBuilder()
                 .withNewMetadata()
-                    .withName(ENTITY_NAME + "-cm")
+                    .withName(RESOURCE_NAME + "-cm")
                     .withNamespace(NAMESPACE)
                 .endMetadata()
                 .withData(data)
@@ -178,7 +179,7 @@ public class CertManagerCaCertIssuerTest {
 
         StrimziSubject subject = new StrimziSubject.Builder()
                 .withOrganizationName("io.strimzi")
-                .withCommonName(ENTITY_NAME)
+                .withCommonName(COMMON_NAME)
                 .addDnsName("mock-component.namespace.local")
                 .addIpAddress("127.0.0.1")
                 .build();
@@ -210,16 +211,16 @@ public class CertManagerCaCertIssuerTest {
                 );
 
         Map<String, String> labels = Map.of("customLabel", "customValue");
-        certManagerCa.maybeCopyOrGenerateCert(ENTITY_NAME, subject, null, Labels.fromMap(labels))
+        certManagerCa.maybeCopyOrGenerateCert(RESOURCE_NAME, subject, null, Labels.fromMap(labels))
                         .whenComplete((cert, throwable)  -> {
                             assertNull(throwable);
 
                             // Certificate Object created
                             ArgumentCaptor<Certificate> entityCertificateResourceCaptor =  ArgumentCaptor.forClass(Certificate.class);
-                            verify(certManagerCertificateOperator, times(1)).reconcile(any(), eq(NAMESPACE), eq(ENTITY_NAME), entityCertificateResourceCaptor.capture());
+                            verify(certManagerCertificateOperator, times(1)).reconcile(any(), eq(NAMESPACE), eq(RESOURCE_NAME), entityCertificateResourceCaptor.capture());
 
                             Certificate certificate = entityCertificateResourceCaptor.getValue();
-                            assertThat(certificate.getSpec().getCommonName(), is(ENTITY_NAME));
+                            assertThat(certificate.getSpec().getCommonName(), is(COMMON_NAME));
 
                             assertThat(certificate.getSpec().getSubject().getOrganizations().size(), is(1));
                             assertThat(certificate.getSpec().getSubject().getOrganizations().getFirst(), is("io.strimzi"));
@@ -249,7 +250,7 @@ public class CertManagerCaCertIssuerTest {
         clusterCaCertData.put("ca.crt", MockCertIssuer.clusterCaCert());
         Secret clusterCaCertSecret = createCaCertSecret(clusterCaCertData, 0);
 
-        when(certManagerCertificateOperator.waitForReady(any(), eq(NAMESPACE), eq(ENTITY_NAME)))
+        when(certManagerCertificateOperator.waitForReady(any(), eq(NAMESPACE), eq(RESOURCE_NAME)))
                 .thenReturn(CompletableFuture.failedFuture(new StrimziTimeoutException("Timed out waiting for resource to be ready")));
 
         CertManagerCa certManagerCa = new CertManagerCa(
@@ -268,17 +269,17 @@ public class CertManagerCaCertIssuerTest {
 
         StrimziSubject subject = new StrimziSubject.Builder()
                 .withOrganizationName("io.strimzi")
-                .withCommonName(ENTITY_NAME)
+                .withCommonName(COMMON_NAME)
                 .build();
 
-        Exception e = assertThrows(CompletionException.class, () -> certManagerCa.maybeCopyOrGenerateCert(ENTITY_NAME, subject, null, Labels.EMPTY).toCompletableFuture().join());
+        Exception e = assertThrows(CompletionException.class, () -> certManagerCa.maybeCopyOrGenerateCert(RESOURCE_NAME, subject, null, Labels.EMPTY).toCompletableFuture().join());
         assertThat(e.getCause().getMessage(), is("Timed out waiting for resource to be ready"));
 
         // Certificate Object created
         ArgumentCaptor<Certificate> entityCertificateResourceCaptor = ArgumentCaptor.forClass(Certificate.class);
-        verify(certManagerCertificateOperator, times(1)).reconcile(any(), eq(NAMESPACE), eq(ENTITY_NAME), entityCertificateResourceCaptor.capture());
+        verify(certManagerCertificateOperator, times(1)).reconcile(any(), eq(NAMESPACE), eq(RESOURCE_NAME), entityCertificateResourceCaptor.capture());
 
-        assertThat(entityCertificateResourceCaptor.getValue().getSpec().getCommonName(), is(ENTITY_NAME));
+        assertThat(entityCertificateResourceCaptor.getValue().getSpec().getCommonName(), is(COMMON_NAME));
     }
 
     @Test
@@ -291,7 +292,7 @@ public class CertManagerCaCertIssuerTest {
 
         StrimziSubject subject = new StrimziSubject.Builder()
                 .withOrganizationName("io.strimzi")
-                .withCommonName(ENTITY_NAME)
+                .withCommonName(COMMON_NAME)
                 .addDnsName("mock-component.namespace.local")
                 .addIpAddress("127.0.0.1")
                 .build();
@@ -322,15 +323,15 @@ public class CertManagerCaCertIssuerTest {
                         .build()
         );
 
-        certManagerCa.maybeCopyOrGenerateCert(ENTITY_NAME, subject, initialCert, Labels.EMPTY)
+        certManagerCa.maybeCopyOrGenerateCert(RESOURCE_NAME, subject, initialCert, Labels.EMPTY)
                 .whenComplete((cert, throwable) -> {
                     assertNull(throwable);
 
                     // Certificate Object created
                     ArgumentCaptor<Certificate> entityCertificateResourceCaptor =  ArgumentCaptor.forClass(Certificate.class);
-                    verify(certManagerCertificateOperator, times(1)).reconcile(any(), eq(NAMESPACE), eq(ENTITY_NAME), entityCertificateResourceCaptor.capture());
+                    verify(certManagerCertificateOperator, times(1)).reconcile(any(), eq(NAMESPACE), eq(RESOURCE_NAME), entityCertificateResourceCaptor.capture());
 
-                    assertThat(entityCertificateResourceCaptor.getValue().getSpec().getCommonName(), is(ENTITY_NAME));
+                    assertThat(entityCertificateResourceCaptor.getValue().getSpec().getCommonName(), is(COMMON_NAME));
 
                     // Entity cert Secret is returned
                     assertThat(cert.cert(), is(renewedCert.cert()));
@@ -349,7 +350,7 @@ public class CertManagerCaCertIssuerTest {
 
         StrimziSubject newSubject = new StrimziSubject.Builder()
                 .withOrganizationName("io.strimzi")
-                .withCommonName(ENTITY_NAME)
+                .withCommonName(COMMON_NAME)
                 .addDnsName("mock-component.namespace.local")
                 .addIpAddress("127.0.0.1")
                 .build();
@@ -382,12 +383,12 @@ public class CertManagerCaCertIssuerTest {
 
         StrimziSubject expectedSubject = new StrimziSubject.Builder()
                 .withOrganizationName("io.strimzi")
-                .withCommonName(ENTITY_NAME)
+                .withCommonName(COMMON_NAME)
                 .addDnsName("mock-component-v2.namespace.local")
                 .addIpAddress("127.0.0.1")
                 .build();
 
-        Exception e = assertThrows(CompletionException.class, () -> certManagerCa.maybeCopyOrGenerateCert(ENTITY_NAME, expectedSubject, initialCert, Labels.EMPTY).toCompletableFuture().join());
+        Exception e = assertThrows(CompletionException.class, () -> certManagerCa.maybeCopyOrGenerateCert(RESOURCE_NAME, expectedSubject, initialCert, Labels.EMPTY).toCompletableFuture().join());
         assertThat(e.getCause().getMessage(), containsString("Certificate from cert-manager does not contain correct subject"));
     }
 
@@ -401,7 +402,7 @@ public class CertManagerCaCertIssuerTest {
 
         StrimziSubject newSubject = new StrimziSubject.Builder()
                 .withOrganizationName("io.strimzi")
-                .withCommonName(ENTITY_NAME)
+                .withCommonName(COMMON_NAME)
                 .addDnsName("mock-component-v2.namespace.local")
                 .addIpAddress("127.0.0.1")
                 .build();
@@ -432,15 +433,15 @@ public class CertManagerCaCertIssuerTest {
                         .build()
         );
 
-        certManagerCa.maybeCopyOrGenerateCert(ENTITY_NAME, newSubject, initialCert, Labels.EMPTY)
+        certManagerCa.maybeCopyOrGenerateCert(RESOURCE_NAME, newSubject, initialCert, Labels.EMPTY)
                 .whenComplete((cert, throwable) -> {
                     assertNull(throwable);
 
                     // Certificate Object created
                     ArgumentCaptor<Certificate> entityCertificateResourceCaptor =  ArgumentCaptor.forClass(Certificate.class);
-                    verify(certManagerCertificateOperator, times(1)).reconcile(any(), eq(NAMESPACE), eq(ENTITY_NAME), entityCertificateResourceCaptor.capture());
+                    verify(certManagerCertificateOperator, times(1)).reconcile(any(), eq(NAMESPACE), eq(RESOURCE_NAME), entityCertificateResourceCaptor.capture());
 
-                    assertThat(entityCertificateResourceCaptor.getValue().getSpec().getCommonName(), is(ENTITY_NAME));
+                    assertThat(entityCertificateResourceCaptor.getValue().getSpec().getCommonName(), is(COMMON_NAME));
 
                     // Entity cert Secret is returned
                     assertThat(cert.cert(), is(renewedCert.cert()));
@@ -461,7 +462,7 @@ public class CertManagerCaCertIssuerTest {
 
         StrimziSubject subject = new StrimziSubject.Builder()
                 .withOrganizationName("io.strimzi")
-                .withCommonName(ENTITY_NAME)
+                .withCommonName(COMMON_NAME)
                 .addDnsName("mock-component.namespace.local")
                 .addIpAddress("127.0.0.1")
                 .build();
@@ -492,15 +493,15 @@ public class CertManagerCaCertIssuerTest {
                         .build()
         );
 
-        certManagerCa.maybeCopyOrGenerateCert(ENTITY_NAME, subject, initialCert, Labels.EMPTY)
+        certManagerCa.maybeCopyOrGenerateCert(RESOURCE_NAME, subject, initialCert, Labels.EMPTY)
                 .whenComplete((cert, throwable) -> {
                     assertNull(throwable);
 
                     // Certificate Object created
                     ArgumentCaptor<Certificate> entityCertificateResourceCaptor =  ArgumentCaptor.forClass(Certificate.class);
-                    verify(certManagerCertificateOperator, times(1)).reconcile(any(), eq(NAMESPACE), eq(ENTITY_NAME), entityCertificateResourceCaptor.capture());
+                    verify(certManagerCertificateOperator, times(1)).reconcile(any(), eq(NAMESPACE), eq(RESOURCE_NAME), entityCertificateResourceCaptor.capture());
 
-                    assertThat(entityCertificateResourceCaptor.getValue().getSpec().getCommonName(), is(ENTITY_NAME));
+                    assertThat(entityCertificateResourceCaptor.getValue().getSpec().getCommonName(), is(COMMON_NAME));
 
                     // Entity cert Secret is returned
                     assertThat(cert.cert(), is(renewedCert.cert()));
@@ -523,7 +524,7 @@ public class CertManagerCaCertIssuerTest {
 
         StrimziSubject subject = new StrimziSubject.Builder()
                 .withOrganizationName("io.strimzi")
-                .withCommonName(ENTITY_NAME)
+                .withCommonName(COMMON_NAME)
                 .addDnsName("mock-component.namespace.local")
                 .addIpAddress("127.0.0.1")
                 .build();
@@ -554,15 +555,15 @@ public class CertManagerCaCertIssuerTest {
                         .build()
         );
 
-        certManagerCa.maybeCopyOrGenerateCert(ENTITY_NAME, subject, initialCert, Labels.EMPTY)
+        certManagerCa.maybeCopyOrGenerateCert(RESOURCE_NAME, subject, initialCert, Labels.EMPTY)
                 .whenComplete((cert, throwable) -> {
                     assertNull(throwable);
 
                     // Certificate Object created
                     ArgumentCaptor<Certificate> entityCertificateResourceCaptor =  ArgumentCaptor.forClass(Certificate.class);
-                    verify(certManagerCertificateOperator, times(1)).reconcile(any(), eq(NAMESPACE), eq(ENTITY_NAME), entityCertificateResourceCaptor.capture());
+                    verify(certManagerCertificateOperator, times(1)).reconcile(any(), eq(NAMESPACE), eq(RESOURCE_NAME), entityCertificateResourceCaptor.capture());
 
-                    assertThat(entityCertificateResourceCaptor.getValue().getSpec().getCommonName(), is(ENTITY_NAME));
+                    assertThat(entityCertificateResourceCaptor.getValue().getSpec().getCommonName(), is(COMMON_NAME));
 
                     // Entity cert Secret is returned
                     assertThat(cert.cert(), is(initialCert.cert()));
@@ -585,7 +586,7 @@ public class CertManagerCaCertIssuerTest {
 
         StrimziSubject subject = new StrimziSubject.Builder()
                 .withOrganizationName("io.strimzi")
-                .withCommonName(ENTITY_NAME)
+                .withCommonName(COMMON_NAME)
                 .addDnsName("mock-component.namespace.local")
                 .addIpAddress("127.0.0.1")
                 .build();
@@ -616,20 +617,47 @@ public class CertManagerCaCertIssuerTest {
                         .build()
         );
 
-        certManagerCa.maybeCopyOrGenerateCert(ENTITY_NAME, subject, initialCert, Labels.EMPTY)
+        certManagerCa.maybeCopyOrGenerateCert(RESOURCE_NAME, subject, initialCert, Labels.EMPTY)
                 .whenComplete((cert, throwable) -> {
                     assertNull(throwable);
 
                     // Certificate Object created
                     ArgumentCaptor<Certificate> entityCertificateResourceCaptor =  ArgumentCaptor.forClass(Certificate.class);
-                    verify(certManagerCertificateOperator, times(1)).reconcile(any(), eq(NAMESPACE), eq(ENTITY_NAME), entityCertificateResourceCaptor.capture());
+                    verify(certManagerCertificateOperator, times(1)).reconcile(any(), eq(NAMESPACE), eq(RESOURCE_NAME), entityCertificateResourceCaptor.capture());
 
-                    assertThat(entityCertificateResourceCaptor.getValue().getSpec().getCommonName(), is(ENTITY_NAME));
+                    assertThat(entityCertificateResourceCaptor.getValue().getSpec().getCommonName(), is(COMMON_NAME));
 
                     // Entity cert Secret is returned
                     assertThat(cert.cert(), is(newCert.cert()));
                     assertThat(cert.key(), is(newCert.key()));
                     assertThat(cert.caCertGeneration(), is(1));
                 }).toCompletableFuture().join();
+    }
+
+    @Test
+    void cleanupEndEntityCert() {
+        Map<String, String> clusterCaCertData = new HashMap<>();
+        clusterCaCertData.put("ca.crt", MockCertIssuer.clusterCaCert());
+        Secret clusterCaCertSecret = createCaCertSecret(clusterCaCertData, 0);
+
+        CertManagerCa certManagerCa = new CertManagerCa(
+                Reconciliation.DUMMY_RECONCILIATION,
+                Ca.CaRole.CLUSTER_CA,
+                clusterCaCertSecret,
+                new CaConfig(getCertificateAuthority(), false),
+                certManagerCertificateOperator,
+                secretOperator,
+                null,
+                new IssuerRefBuilder()
+                        .withName("cm-issuer")
+                        .withKind(IssuerKind.CLUSTER_ISSUER)
+                        .build()
+        );
+
+        String entityName = "my-entity";
+
+        certManagerCa.cleanupEndEntityCert(entityName).toCompletableFuture().join();
+
+        verify(certManagerCertificateOperator).deleteAsync(any(), eq(NAMESPACE), eq(entityName), eq(false));
     }
 }

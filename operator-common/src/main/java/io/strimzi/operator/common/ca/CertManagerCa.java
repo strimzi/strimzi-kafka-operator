@@ -86,8 +86,15 @@ public class CertManagerCa extends Ca {
     }
 
     @Override
-    public CompletionStage<CertAndKey> maybeCopyOrGenerateClientCert(Reconciliation reconciliation, String componentName, CertAndKey existingCertAndKey, boolean isMaintenanceTimeWindowsSatisfied, Labels labels) {
-        return maybeCopyOrGenerateCert(componentName, CertificateUtils.getSubject(componentName, Ca.IO_STRIMZI), existingCertAndKey, labels);
+    public CompletionStage<CertAndKey> maybeCopyOrGenerateClientCert(Reconciliation reconciliation, String resourceName, String componentName, CertAndKey existingCertAndKey, boolean isMaintenanceTimeWindowsSatisfied, Labels labels) {
+        return maybeCopyOrGenerateCert(resourceName, CertificateUtils.getSubject(componentName, Ca.IO_STRIMZI), existingCertAndKey, labels);
+    }
+
+    @Override
+    public CompletionStage<Void> cleanupEndEntityCert(String entity) {
+        LOGGER.debugCr(reconciliation, "Deleting old Certificate {}/{} that is no longer used.", reconciliation.namespace(), entity);
+        return certManagerCertificateOperator.deleteAsync(reconciliation, reconciliation.namespace(), entity, false)
+                .toCompletableFuture();
     }
 
     /**
@@ -188,17 +195,17 @@ public class CertManagerCa extends Ca {
         deleteOldCerts();
     }
 
-    CompletionStage<CertAndKey> maybeCopyOrGenerateCert(String entityName, StrimziSubject subject, CertAndKey existingCert, Labels labels) {
-        return generateSignedCert(entityName, subject, labels)
+    CompletionStage<CertAndKey> maybeCopyOrGenerateCert(String resourceName, StrimziSubject subject, CertAndKey existingCert, Labels labels) {
+        return generateSignedCert(resourceName, subject, labels)
                 .thenApply(newCertAndKey -> {
                     if (existingCert == null) {
                         return newCertAndKey;
                     } else if (certManagerCertUpdated(existingCert, newCertAndKey)) {
-                        if (CertificateUtils.certIsTrusted(reconciliation, CertificateUtils.extractCertChain(entityName, newCertAndKey.cert()), currentCaCertX509())) {
-                            LOGGER.infoCr(reconciliation, "New certificate for {}/{}", reconciliation.namespace(), entityName);
+                        if (CertificateUtils.certIsTrusted(reconciliation, CertificateUtils.extractCertChain(resourceName, newCertAndKey.cert()), currentCaCertX509())) {
+                            LOGGER.infoCr(reconciliation, "New certificate for {}/{}", reconciliation.namespace(), resourceName);
                             return newCertAndKey;
                         } else {
-                            LOGGER.warnCr(reconciliation, "New certificate for {}/{}, but not trusted yet so keeping existing certificate.", reconciliation.namespace(), entityName);
+                            LOGGER.warnCr(reconciliation, "New certificate for {}/{}, but not trusted yet so keeping existing certificate.", reconciliation.namespace(), resourceName);
                             return existingCert;
                         }
                     } else {
@@ -331,28 +338,5 @@ public class CertManagerCa extends Ca {
      */
     private static String certManagerSecretName(String strimziSecretName) {
         return strimziSecretName + CERT_MANAGER_SECRET_SUFFIX;
-    }
-
-    /**
-     * Returns whether the supplied Secret name has the same format as a Secret created by cert-manager
-     *
-     * @param secretName Secret name to check
-     * @return Whether the Secret name matches the format of a Secret created by cert-manager
-     */
-    public static boolean matchesCertManagerSecretNaming(String secretName) {
-        return secretName.endsWith(CERT_MANAGER_SECRET_SUFFIX);
-    }
-
-    /**
-     * Get the name of the Secret managed by Strimzi, given a cert-manager managed Secret
-     *
-     * @param certManagerSecretName Name of the Secret managed by cert-manager
-     * @return Secret name to use for Strimzi managed Secret
-     */
-    public static String mapToStrimziSecretName(String certManagerSecretName) {
-        if (!matchesCertManagerSecretNaming(certManagerSecretName)) {
-            throw new RuntimeException("Supplied Secret does not match expected format for cert-manager Secret name");
-        }
-        return certManagerSecretName.substring(0, certManagerSecretName.length() - CERT_MANAGER_SECRET_SUFFIX.length());
     }
 }

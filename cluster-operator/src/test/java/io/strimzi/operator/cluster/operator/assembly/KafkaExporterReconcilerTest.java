@@ -15,10 +15,10 @@ import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
 import io.strimzi.api.kafka.model.kafka.exporter.KafkaExporterResources;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
+import io.strimzi.certs.CertAndKey;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
-import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.clustersecurity.kafka.KafkaClusterSecurityContext;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
@@ -29,15 +29,13 @@ import io.strimzi.operator.cluster.operator.resource.kubernetes.ServiceAccountOp
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ca.Ca;
-import io.strimzi.operator.common.ca.CaConfig;
-import io.strimzi.operator.common.ca.InternalCa;
-import io.strimzi.operator.common.model.PasswordGenerator;
 import io.strimzi.operator.common.operator.MockCertIssuer;
 import io.strimzi.operator.common.operator.resource.kubernetes.SecretOperator;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 import org.mockito.ArgumentCaptor;
 
+import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -47,10 +45,12 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNotNull;
 import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -61,16 +61,6 @@ public class KafkaExporterReconcilerTest {
     private static final String NAMESPACE = "namespace";
     private static final String NAME = "name";
     private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
-
-    private final static InternalCa CLUSTER_CA = new InternalCa(
-            Reconciliation.DUMMY_RECONCILIATION,
-            Ca.CaRole.CLUSTER_CA,
-            new MockCertIssuer(),
-            new PasswordGenerator(10, "a", "a"),
-            ResourceUtils.createInitialCaCertSecret(NAMESPACE, NAME, AbstractModel.clusterCaCertSecretName(NAME), MockCertIssuer.clusterCaCert(), MockCertIssuer.clusterCaCertStore(), "123456"),
-            ResourceUtils.createInitialCaKeySecret(NAMESPACE, NAME, AbstractModel.clusterCaKeySecretName(NAME), MockCertIssuer.clusterCaKey()),
-            CaConfig.createDefault()
-    );
     private final static Kafka KAFKA = new KafkaBuilder()
             .withNewMetadata()
                 .withNamespace(NAMESPACE)
@@ -120,6 +110,11 @@ public class KafkaExporterReconcilerTest {
         PodDisruptionBudgetOperator mockPodDisruptionBudgetOps = supplier.podDisruptionBudgetOperator;
         when(mockPodDisruptionBudgetOps.reconcile(any(), eq(NAMESPACE), eq(KafkaExporterResources.componentName(NAME)), any())).thenReturn(CompletableFuture.completedFuture(null));
 
+        Ca clusterCa = mock(Ca.class);
+        when(clusterCa.maybeCopyOrGenerateClientCert(any(), any(), any(), any(), anyBoolean(), any()))
+                .thenReturn(CompletableFuture.completedFuture(new CertAndKey(MockCertIssuer.serverKey().getBytes(StandardCharsets.UTF_8), MockCertIssuer.serverCert().getBytes(StandardCharsets.UTF_8))));
+        when(clusterCa.caCertGenerationAnnotation()).thenReturn(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION);
+
         Kafka kafka = new KafkaBuilder(KAFKA)
                 .editSpec()
                     .withNewKafkaExporter()
@@ -133,7 +128,7 @@ public class KafkaExporterReconcilerTest {
                 supplier,
                 kafka,
                 VERSIONS,
-                CLUSTER_CA,
+                clusterCa,
                 KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
 
         reconciler.reconcile(false, null, null, Clock.systemUTC()).toCompletableFuture().join();
@@ -162,6 +157,8 @@ public class KafkaExporterReconcilerTest {
         verify(mockPodDisruptionBudgetOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(KafkaExporterResources.componentName(NAME)), pdbCaptor.capture());
         assertThat(pdbCaptor.getValue(), is(notNullValue()));
         assertThat(pdbCaptor.getValue().getSpec().getMaxUnavailable(), is(new IntOrString(1)));
+
+        verify(clusterCa, never()).cleanupEndEntityCert(eq(KafkaExporterResources.secretName(NAME)));
     }
 
     /*
@@ -191,6 +188,11 @@ public class KafkaExporterReconcilerTest {
         PodDisruptionBudgetOperator mockPodDisruptionBudgetOps = supplier.podDisruptionBudgetOperator;
         when(mockPodDisruptionBudgetOps.reconcile(any(), eq(NAMESPACE), eq(KafkaExporterResources.componentName(NAME)), any())).thenReturn(CompletableFuture.completedFuture(null));
 
+        Ca clusterCa = mock(Ca.class);
+        when(clusterCa.maybeCopyOrGenerateClientCert(any(), any(), any(), any(), anyBoolean(), any()))
+                .thenReturn(CompletableFuture.completedFuture(new CertAndKey(MockCertIssuer.serverKey().getBytes(StandardCharsets.UTF_8), MockCertIssuer.serverCert().getBytes(StandardCharsets.UTF_8))));
+        when(clusterCa.caCertGenerationAnnotation()).thenReturn(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION);
+
         Kafka kafka = new KafkaBuilder(KAFKA)
                 .editSpec()
                     .withNewKafkaExporter()
@@ -205,7 +207,7 @@ public class KafkaExporterReconcilerTest {
                 supplier,
                 kafka,
                 VERSIONS,
-                CLUSTER_CA,
+                clusterCa,
                 KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
 
         reconciler.reconcile(false, null, null, Clock.systemUTC()).toCompletableFuture().join();
@@ -226,6 +228,8 @@ public class KafkaExporterReconcilerTest {
         verify(mockPodDisruptionBudgetOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(KafkaExporterResources.componentName(NAME)), pdbCaptor.capture());
         assertThat(pdbCaptor.getValue(), is(notNullValue()));
         assertThat(pdbCaptor.getValue().getSpec().getMaxUnavailable(), is(new IntOrString(1)));
+
+        verify(clusterCa, never()).cleanupEndEntityCert(eq(KafkaExporterResources.secretName(NAME)));
     }
 
     /*
@@ -253,13 +257,15 @@ public class KafkaExporterReconcilerTest {
         PodDisruptionBudgetOperator mockPodDisruptionBudgetOps = supplier.podDisruptionBudgetOperator;
         when(mockPodDisruptionBudgetOps.reconcile(any(), eq(NAMESPACE), eq(KafkaExporterResources.componentName(NAME)), any())).thenReturn(CompletableFuture.completedFuture(null));
 
+        Ca clusterCa = mock(Ca.class);
+
         KafkaExporterReconciler reconciler = new KafkaExporterReconciler(
                 Reconciliation.DUMMY_RECONCILIATION,
                 ResourceUtils.dummyClusterOperatorConfig(),
                 supplier,
                 KAFKA,
                 VERSIONS,
-                CLUSTER_CA,
+                clusterCa,
                 KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
 
         reconciler.reconcile(false, null, null, Clock.systemUTC()).toCompletableFuture().join();
@@ -269,6 +275,8 @@ public class KafkaExporterReconcilerTest {
         verify(mockNetPolicyOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(KafkaExporterResources.componentName(NAME)), isNull());
         verify(mockDepOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(KafkaExporterResources.componentName(NAME)), isNull());
         verify(mockPodDisruptionBudgetOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(KafkaExporterResources.componentName(NAME)), isNull());
+
+        verify(clusterCa, times(1)).cleanupEndEntityCert(eq(KafkaExporterResources.secretName(NAME)));
     }
 
     /*
@@ -297,6 +305,8 @@ public class KafkaExporterReconcilerTest {
         PodDisruptionBudgetOperator mockPodDisruptionBudgetOps = supplier.podDisruptionBudgetOperator;
         when(mockPodDisruptionBudgetOps.reconcile(any(), eq(NAMESPACE), eq(KafkaExporterResources.componentName(NAME)), any())).thenReturn(CompletableFuture.completedFuture(null));
 
+        Ca clusterCa = mock(Ca.class);
+
         KafkaExporterReconciler reconciler = new KafkaExporterReconciler(
                 Reconciliation.DUMMY_RECONCILIATION,
                 new ClusterOperatorConfig.ClusterOperatorConfigBuilder(ResourceUtils.dummyClusterOperatorConfig(), KafkaVersionTestUtils.getKafkaVersionLookup())
@@ -304,7 +314,7 @@ public class KafkaExporterReconcilerTest {
                 supplier,
                 KAFKA,
                 VERSIONS,
-                CLUSTER_CA,
+                clusterCa,
                 KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
 
         reconciler.reconcile(false, null, null, Clock.systemUTC()).toCompletableFuture().join();
@@ -314,5 +324,7 @@ public class KafkaExporterReconcilerTest {
         verify(mockNetPolicyOps, never()).reconcile(any(), eq(NAMESPACE), any(), any());
         verify(mockDepOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(KafkaExporterResources.componentName(NAME)), isNull());
         verify(mockPodDisruptionBudgetOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(KafkaExporterResources.componentName(NAME)), isNull());
+
+        verify(clusterCa, times(1)).cleanupEndEntityCert(eq(KafkaExporterResources.secretName(NAME)));
     }
 }

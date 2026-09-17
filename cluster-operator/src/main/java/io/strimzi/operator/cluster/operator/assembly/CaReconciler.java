@@ -299,6 +299,7 @@ public class CaReconciler {
      */
     CompletionStage<Void> reconcileClusterOperatorSecret(Clock clock) {
         String componentName = "cluster-operator";
+        String resourceName = KafkaResources.clusterOperatorCertsSecretName(reconciliation.name());
 
         if (coSecret != null && this.isClusterCaNeedFullTrust) {
             LOGGER.warnCr(reconciliation, "Cluster CA needs to be fully trusted across the cluster, keeping current CO secret and certs");
@@ -308,11 +309,11 @@ public class CaReconciler {
         CertAndKey oldCertAndKey = CertSecretUtils.keyStoreCertAndKey(coSecret, componentName, Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION);
         Labels labels =  Labels.generateDefaultLabels(kafkaCr, Labels.APPLICATION_NAME, Labels.APPLICATION_NAME, AbstractModel.STRIMZI_CLUSTER_OPERATOR_NAME);
 
-        return clusterCa.maybeCopyOrGenerateClientCert(reconciliation, componentName, oldCertAndKey, Util.isMaintenanceTimeWindowsSatisfied(reconciliation, kafkaCr.getSpec().getMaintenanceTimeWindows(), clock.instant()), labels)
+        return clusterCa.maybeCopyOrGenerateClientCert(reconciliation, resourceName, componentName, oldCertAndKey, Util.isMaintenanceTimeWindowsSatisfied(reconciliation, kafkaCr.getSpec().getMaintenanceTimeWindows(), clock.instant()), labels)
                 .thenCompose(updatedCert -> {
                     Map<String, String> secretData = CertSecretUtils.buildSecretData(componentName, updatedCert);
                     coSecret = ModelUtils.createSecret(
-                            KafkaResources.clusterOperatorCertsSecretName(reconciliation.name()),
+                            resourceName,
                             reconciliation.namespace(),
                             labels,
                             ownerRef,
@@ -320,7 +321,7 @@ public class CaReconciler {
                             Map.of(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, String.valueOf(updatedCert.caCertGeneration())),
                             Map.of()
                     );
-                    return secretOperator.reconcile(reconciliation, reconciliation.namespace(), KafkaResources.clusterOperatorCertsSecretName(reconciliation.name()), coSecret);
+                    return secretOperator.reconcile(reconciliation, reconciliation.namespace(), resourceName, coSecret);
                 })
                 .thenApply(ignored -> null);
     }

@@ -21,9 +21,9 @@ import io.strimzi.api.kafka.model.kafka.cruisecontrol.HashLoginServiceApiUsersBu
 import io.strimzi.api.kafka.model.kafka.entityoperator.EntityOperatorSpecBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
+import io.strimzi.certs.CertAndKey;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
-import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.model.CruiseControl;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.NodeRef;
@@ -39,8 +39,6 @@ import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.ca.Ca;
-import io.strimzi.operator.common.ca.CaConfig;
-import io.strimzi.operator.common.ca.InternalCa;
 import io.strimzi.operator.common.model.PasswordGenerator;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlConfigurationParameters;
 import io.strimzi.operator.common.operator.MockCertIssuer;
@@ -51,6 +49,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.ArgumentCaptor;
 
+import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.util.Map;
 import java.util.Set;
@@ -64,12 +63,14 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNotNull;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -165,6 +166,11 @@ public class CruiseControlReconcilerTest {
 
         when(mockPodDisruptionBudget.reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.componentName(NAME)), any())).thenReturn(CompletableFuture.completedFuture(null));
 
+        Ca clusterCa = mock(Ca.class);
+        when(clusterCa.maybeCopyOrGenerateServerCerts(any(), any(), any(), any(), anyBoolean(), anyBoolean(), any()))
+                .thenReturn(CompletableFuture.completedFuture(new CertAndKey(MockCertIssuer.serverKey().getBytes(StandardCharsets.UTF_8), MockCertIssuer.serverCert().getBytes(StandardCharsets.UTF_8))));
+        when(clusterCa.caCertGenerationAnnotation()).thenReturn(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION);
+
         @SuppressWarnings("checkstyle:NoFullyQualifiedClassNames") // False positive, fully qualified class name used in a string
         Kafka kafka = new KafkaBuilder(KAFKA)
                 .editSpec()
@@ -200,16 +206,6 @@ public class CruiseControlReconcilerTest {
                     .endTopicOperator()
                     .build());
         }
-
-        InternalCa clusterCa = new InternalCa(
-                Reconciliation.DUMMY_RECONCILIATION,
-                Ca.CaRole.CLUSTER_CA,
-                new MockCertIssuer(),
-                new PasswordGenerator(10, "a", "a"),
-                ResourceUtils.createInitialCaCertSecret(NAMESPACE, NAME, AbstractModel.clusterCaCertSecretName(NAME), MockCertIssuer.clusterCaCert(), MockCertIssuer.clusterCaCertStore(), "123456"),
-                ResourceUtils.createInitialCaKeySecret(NAMESPACE, NAME, AbstractModel.clusterCaKeySecretName(NAME), MockCertIssuer.clusterCaKey()),
-                CaConfig.createDefault()
-        );
 
         CruiseControlReconciler rcnclr = new CruiseControlReconciler(
                 Reconciliation.DUMMY_RECONCILIATION,
@@ -262,6 +258,8 @@ public class CruiseControlReconcilerTest {
         assertThat(pdbCaptor.getValue(), is(notNullValue()));
         assertThat(pdbCaptor.getValue().getMetadata().getName(), is(CruiseControlResources.componentName(NAME)));
         assertThat(pdbCaptor.getValue().getSpec().getMaxUnavailable(), is(new IntOrString(1)));
+
+        verify(clusterCa, never()).cleanupEndEntityCert(eq(CruiseControlResources.secretName(NAME)));
     }
 
     @Test
@@ -295,15 +293,10 @@ public class CruiseControlReconcilerTest {
 
         when(mockPodDisruptionBudget.reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.componentName(NAME)), any())).thenReturn(CompletableFuture.completedFuture(null));
 
-        InternalCa clusterCa = new InternalCa(
-                Reconciliation.DUMMY_RECONCILIATION,
-                Ca.CaRole.CLUSTER_CA,
-                new MockCertIssuer(),
-                new PasswordGenerator(10, "a", "a"),
-                ResourceUtils.createInitialCaCertSecret(NAMESPACE, NAME, AbstractModel.clusterCaCertSecretName(NAME), MockCertIssuer.clusterCaCert(), MockCertIssuer.clusterCaCertStore(), "123456"),
-                ResourceUtils.createInitialCaKeySecret(NAMESPACE, NAME, AbstractModel.clusterCaKeySecretName(NAME), MockCertIssuer.clusterCaKey()),
-                CaConfig.createDefault()
-        );
+        Ca clusterCa = mock(Ca.class);
+        when(clusterCa.maybeCopyOrGenerateServerCerts(any(), any(), any(), any(), anyBoolean(), anyBoolean(), any()))
+                .thenReturn(CompletableFuture.completedFuture(new CertAndKey(MockCertIssuer.serverKey().getBytes(StandardCharsets.UTF_8), MockCertIssuer.serverCert().getBytes(StandardCharsets.UTF_8))));
+        when(clusterCa.caCertGenerationAnnotation()).thenReturn(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION);
 
         CruiseControlReconciler rcnclr = new CruiseControlReconciler(
                 Reconciliation.DUMMY_RECONCILIATION,
@@ -338,5 +331,7 @@ public class CruiseControlReconcilerTest {
         verify(mockDepOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.componentName(NAME)), isNull());
 
         verify(mockPodDisruptionBudget, times(1)).reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.componentName(NAME)), isNull());
+
+        verify(clusterCa, times(1)).cleanupEndEntityCert(eq(CruiseControlResources.secretName(NAME)));
     }
 }

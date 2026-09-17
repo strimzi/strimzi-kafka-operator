@@ -92,7 +92,7 @@ public class InternalCa extends Ca {
 
     @Override
     public CompletionStage<CertAndKey> maybeCopyOrGenerateServerCerts(Reconciliation reconciliation,
-                                                                  String podName,
+                                                                  String resourceName,
                                                                   StrimziSubject subject,
                                                                   CertAndKey existingCertAndKey,
                                                                   boolean isMaintenanceTimeWindowsSatisfied,
@@ -102,13 +102,13 @@ public class InternalCa extends Ca {
 
         if (existingCertAndKey == null) {
             reasons.add("certificate doesn't exist yet for pod");
-        } else if (hasCaCertGenerationChanged(existingCertAndKey.caCertGeneration(), podName)) {
+        } else if (hasCaCertGenerationChanged(existingCertAndKey.caCertGeneration(), resourceName)) {
             reasons.add("certificate for pod has old cert generation");
         } else {
             // A certificate for this node already exists, so we will try to reuse it
-            LOGGER.debugCr(reconciliation, "certificate for node {} already exists", podName);
+            LOGGER.debugCr(reconciliation, "certificate for node {} already exists", resourceName);
 
-            if (certSubjectChanged(reconciliation, existingCertAndKey, subject, podName))   {
+            if (certSubjectChanged(reconciliation, existingCertAndKey, subject, resourceName))   {
                 reasons.add("DNS names changed");
             }
 
@@ -131,12 +131,12 @@ public class InternalCa extends Ca {
 
         CertAndKey certAndKey;
         if (!reasons.isEmpty())  {
-            LOGGER.infoCr(reconciliation, "Certificate for pod {} needs to be regenerated because: {}", podName, String.join(", ", reasons));
+            LOGGER.infoCr(reconciliation, "Certificate for {} needs to be regenerated because: {}", resourceName, String.join(", ", reasons));
             try {
                 certAndKey = generateSignedCert(subject, includeCaChain);
             } catch (IOException e) {
                 LOGGER.errorCr(reconciliation, "Error while generating certificates", e);
-                return CompletableFuture.failedStage(new RuntimeException("Failed to prepare certificate for " + podName, e));
+                return CompletableFuture.failedStage(new RuntimeException("Failed to prepare certificate for " + resourceName, e));
             }
         }  else {
             certAndKey = existingCertAndKey;
@@ -199,6 +199,7 @@ public class InternalCa extends Ca {
     @Override
     public CompletionStage<CertAndKey> maybeCopyOrGenerateClientCert(
             Reconciliation reconciliation,
+            String resourceName,
             String commonName,
             CertAndKey existingCertAndKey,
             boolean isMaintenanceTimeWindowsSatisfied,
@@ -207,7 +208,7 @@ public class InternalCa extends Ca {
 
         if (existingCertAndKey == null) {
             reasons.add("certificate doesn't exist yet");
-        } else if (hasCaCertGenerationChanged(existingCertAndKey.caCertGeneration(), commonName)) {
+        } else if (hasCaCertGenerationChanged(existingCertAndKey.caCertGeneration(), resourceName)) {
             reasons.add("certificate has old cert generation");
         } else {
             // Certificate exists and CA generation matches - check if renewal is needed
@@ -218,7 +219,7 @@ public class InternalCa extends Ca {
 
         CertAndKey certAndKey = null;
         if (!reasons.isEmpty()) {
-            LOGGER.infoCr(reconciliation, "Certificate for component {} needs to be regenerated because: {}", commonName, String.join(", ", reasons));
+            LOGGER.infoCr(reconciliation, "Certificate for component {} needs to be regenerated because: {}", resourceName, String.join(", ", reasons));
 
             try {
                 String org = caRole.equals(CaRole.CLIENTS_CA) ? null : Ca.IO_STRIMZI;
@@ -226,7 +227,7 @@ public class InternalCa extends Ca {
                 certAndKey = generateSignedCert(subject);
             } catch (IOException e) {
                 LOGGER.errorCr(reconciliation, "Error while generating certificates", e);
-                return CompletableFuture.failedStage(new RuntimeException("Failed to generate signed certificate for " + commonName, e));
+                return CompletableFuture.failedStage(new RuntimeException("Failed to generate signed certificate for " + resourceName, e));
             }
 
             LOGGER.debugCr(reconciliation, "End generating certificates");
@@ -235,6 +236,12 @@ public class InternalCa extends Ca {
         }
 
         return CompletableFuture.completedFuture(certAndKey);
+    }
+
+    @Override
+    public CompletionStage<Void> cleanupEndEntityCert(String entity) {
+        // InternalCa does not create any long-lived resources when issuing certificates - NOOP
+        return CompletableFuture.completedFuture(null);
     }
 
     private static void delete(Reconciliation reconciliation, File file) {
