@@ -12,7 +12,7 @@ Deploy the Strimzi Drain Cleaner to the Kubernetes cluster where the Cluster Ope
 
 Strimzi Drain Cleaner can run in two different modes.
 By default, the Drain Cleaner denies (blocks) the Kubernetes eviction request to prevent Kubernetes from evicting the pods and instead uses the Cluster Operator to move the pod.
-This mode has better compatibility with various cluster autoscaling tools and does not require any specific `PodDisuptionBudget` configuration.
+This mode has better compatibility with various cluster autoscaling tools and does not require any specific `PodDisruptionBudget` configuration.
 Alternatively, you can enable the legacy mode where it allows the eviction request while also instructing the Cluster Operator to move the pod.
 For the legacy mode to work, you have to configure the `PodDisruptionBudget` to not allow any pod evictions by setting the `maxUnavailable` option to `0`.
 

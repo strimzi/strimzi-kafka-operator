@@ -120,14 +120,14 @@ COPY ./scripts/ $KAFKA_HOME
 RUN mkdir $KAFKA_HOME/plugins
 
 #####
-# Copy Kafka Experter from the downloader stage and the helper scripts from local filesystem
+# Copy Kafka Exporter from the downloader stage and the helper scripts from local filesystem
 #####
 ENV KAFKA_EXPORTER_HOME=/opt/kafka-exporter
 COPY --from=downloader $KAFKA_EXPORTER_HOME/kafka_exporter $KAFKA_EXPORTER_HOME/kafka_exporter
 COPY ./exporter-scripts $KAFKA_EXPORTER_HOME
 
 #####
-# Copy Prometheus JMX Exporter from the donwnloader stage
+# Copy Prometheus JMX Exporter from the downloader stage
 #####
 ENV JMX_EXPORTER_HOME=/opt/prometheus-jmx-exporter
 COPY --from=downloader $JMX_EXPORTER_HOME/jmx_prometheus_javaagent*.jar $JMX_EXPORTER_HOME/

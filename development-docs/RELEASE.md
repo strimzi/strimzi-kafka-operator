@@ -19,7 +19,7 @@ The release process should normally look like this:
    * Update the project [roadmap](https://github.com/orgs/strimzi/projects/4) (add the next version to the planned releases, make sure the current release is up to date, etc.)
 3. Move to the release branch and run `make clean`
 4. Run `RELEASE_VERSION=<desired version> make release`, for example `RELEASE_VERSION=0.45.0 make release`
-   * For `RELEASE_VERISON` always use the GA version here (e.g. `0.45.0`) and not the RC version (e.g `0.45.0-rc1`)
+   * For `RELEASE_VERSION` always use the GA version here (e.g. `0.45.0`) and not the RC version (e.g `0.45.0-rc1`)
    * This will automatically update several `pom.xml` files and all files in `packaging/`, `install/`, `example/` and `helm-charts/` folders.
 5. Update the checksums for released files in `.checksums` in the release branch
    * Use the Make commands `make checksum_helm`, `make checksum_install`, and `make checksum_examples` to generate the new checksums
@@ -107,7 +107,7 @@ The workflow has to be triggered multiple times in case you want to run tests fo
 
 ## Rebuild container image for base image CVEs
 
-Overtime, the base container image could be affected by CVEs related to the installed JVM, operating system libraries and so on.
+Over time, the base container image could be affected by CVEs related to the installed JVM, operating system libraries and so on.
 Security issues are usually reported by security scanner tools used by the community users as well as project contributors.
 The Quay.io registry also runs such scans periodically to look for security issues reported on the website.
 Checking the Quay.io website is a way to get the status of security vulnerabilities affecting the operator container image.

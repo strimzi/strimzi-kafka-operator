@@ -132,7 +132,7 @@ This service account grants it the privileges it requires to manage the operands
 The Cluster Operator creates additional `ClusterRoleBinding` and `RoleBinding` resources to delegate some of these RBAC rights to the operands.
 
 Each of the operands uses its own service account created by the Cluster Operator.
-This allows the Cluster Operator to follow the principle of least privilege and give the operands only the access rights that are really need.
+This allows the Cluster Operator to follow the principle of least privilege and give the operands only the access rights that are really needed.
 
 .`ServiceAccount` resources
 [cols="1m,1",options="header"]
