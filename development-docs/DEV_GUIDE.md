@@ -229,7 +229,7 @@ this quick start guide.
    make sure that the `DOCKER_ORG` and `DOCKER_REGISTRY` environment variables are set to the same value as your
    username on the Docker Registry, and Docker Registry you are using before running the `make` commands.\
    \
-   When the Docker images are build, they will be labeled in the
+   When the Docker images are built, they will be labeled in the
    form: `docker_registry_name/docker_hub_username/operator:latest` in your local repository and pushed to your Docker
    Hub account under the same label.
 
@@ -327,7 +327,7 @@ Commonly used Make targets:
 
 ### Java versions
 
-Strimzi currently developed and tested with Java 21.
+Strimzi is currently developed and tested with Java 21.
 
 ### Building Docker images
 
