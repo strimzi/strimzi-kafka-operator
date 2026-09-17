@@ -55,9 +55,10 @@ public class FeatureGatesTest {
         assertThat(new FeatureGates("-UseBackgroundPodDeletion").useBackgroundPodDeletionEnabled(), is(false));
         assertThat(new FeatureGates("   +UseBackgroundPodDeletion   ").useBackgroundPodDeletionEnabled(), is(true));
 
-        assertThat(new FeatureGates("-UseBackgroundPodDeletion,-DummyFeatureGate").useBackgroundPodDeletionEnabled(), is(false));
-        assertThat(new FeatureGates("  +UseBackgroundPodDeletion    ,    +DummyFeatureGate").useBackgroundPodDeletionEnabled(), is(true));
-        assertThat(new FeatureGates("+DummyFeatureGate,-UseBackgroundPodDeletion").useBackgroundPodDeletionEnabled(), is(false));
+//        Once we have again two (and more) feature gates, we should uncomment these checks
+//        assertThat(new FeatureGates("-UseBackgroundPodDeletion,-DummyFeatureGate").useBackgroundPodDeletionEnabled(), is(false));
+//        assertThat(new FeatureGates("  +UseBackgroundPodDeletion    ,    +DummyFeatureGate").useBackgroundPodDeletionEnabled(), is(true));
+//        assertThat(new FeatureGates("+DummyFeatureGate,-UseBackgroundPodDeletion").useBackgroundPodDeletionEnabled(), is(false));
     }
 
     @Test
