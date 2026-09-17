@@ -18,24 +18,9 @@ import java.util.Map;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class CertManagerCaTest {
     private final static String NAMESPACE = Reconciliation.DUMMY_RECONCILIATION.namespace();
-
-    @Test
-    public void matchesCertManagerSecretNaming() {
-        assertThat(CertManagerCa.matchesCertManagerSecretNaming("test-cm"), is(true));
-        assertThat(CertManagerCa.matchesCertManagerSecretNaming("test-foo"), is(false));
-        assertThat(CertManagerCa.matchesCertManagerSecretNaming("cm-test"), is(false));
-    }
-
-    @Test
-    public void mapToStrimziSecretName() {
-        assertThat(CertManagerCa.mapToStrimziSecretName("test-cm"), is("test"));
-        assertThat(CertManagerCa.mapToStrimziSecretName("test-cm-cm"), is("test-cm"));
-        assertThrows(RuntimeException.class, () -> CertManagerCa.mapToStrimziSecretName("test"));
-    }
 
     @Test
     public void removeOldCertificate() {

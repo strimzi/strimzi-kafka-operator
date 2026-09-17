@@ -78,7 +78,7 @@ public class CertManagerCaUserCertIssuer implements UserCertIssuer {
             }
         }
 
-        return clientsCa.maybeCopyOrGenerateClientCert(reconciliation, userName, existingCertAndKey, false, labels)
+        return clientsCa.maybeCopyOrGenerateClientCert(reconciliation, userName, userName, existingCertAndKey, false, labels)
                 .thenApply(certAndKey -> new UserCertResult(clientsCa.currentCaCertBase64(), certAndKey));
     }
 

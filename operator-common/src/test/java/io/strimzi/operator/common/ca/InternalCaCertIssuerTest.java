@@ -241,6 +241,7 @@ public class InternalCaCertIssuerTest {
         CertAndKey newCert = mockedCa.maybeCopyOrGenerateClientCert(
                 Reconciliation.DUMMY_RECONCILIATION,
                 "deployment",
+                "deployment",
                 null,
                 true,
                 Labels.EMPTY
@@ -261,6 +262,7 @@ public class InternalCaCertIssuerTest {
         CertAndKey newCert = mockedCa.maybeCopyOrGenerateClientCert(
                 Reconciliation.DUMMY_RECONCILIATION,
                 "deployment",
+                "deployment",
                 initialCert,
                 true,
                 Labels.EMPTY
@@ -279,6 +281,7 @@ public class InternalCaCertIssuerTest {
 
         CertAndKey newCert = mockedCa.maybeCopyOrGenerateClientCert(
                 Reconciliation.DUMMY_RECONCILIATION,
+                "deployment",
                 "deployment",
                 initialCert,
                 true,
@@ -299,6 +302,7 @@ public class InternalCaCertIssuerTest {
         CertAndKey newCert = mockedCa.maybeCopyOrGenerateClientCert(
                 Reconciliation.DUMMY_RECONCILIATION,
                 "deployment",
+                "deployment",
                 initialCert,
                 false,
                 Labels.EMPTY
@@ -318,6 +322,7 @@ public class InternalCaCertIssuerTest {
 
         CertAndKey newCert = mockedCa.maybeCopyOrGenerateClientCert(
                 Reconciliation.DUMMY_RECONCILIATION,
+                "deployment",
                 "deployment",
                 initialCert,
                 true,

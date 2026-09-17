@@ -94,7 +94,7 @@ public class InternalCaUserCertIssuer implements UserCertIssuer {
             }
         }
 
-        return clientsCa.maybeCopyOrGenerateClientCert(reconciliation, userName, existingUserCertAndKey, Util.isMaintenanceTimeWindowsSatisfied(reconciliation, maintenanceWindows, clock.instant()), labels)
+        return clientsCa.maybeCopyOrGenerateClientCert(reconciliation, userName, userName, existingUserCertAndKey, Util.isMaintenanceTimeWindowsSatisfied(reconciliation, maintenanceWindows, clock.instant()), labels)
                 .thenApply(certAndKey -> new UserCertResult(clientsCa.currentCaCertBase64(), certAndKey));
     }
 
