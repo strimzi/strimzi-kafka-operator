@@ -589,10 +589,10 @@ class KafkaConnectConfigurationBuilderTest {
                         .withAllowList("kafka_connect_connector_metrics.*", "kafka_connect_connector_task_metrics.*")
                     .endValues()
                     .build())
-                .build(), List.of(".*"));
+                .build());
 
         String configuration = new KafkaConnectConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, BOOTSTRAP_SERVERS)
-                .withStrimziMetricsReporter(model)
+                .withStrimziMetricsReporter(model, List.of())
                 .build();
 
         assertThat(configuration, isEquivalent(
@@ -687,11 +687,11 @@ class KafkaConnectConfigurationBuilderTest {
                         .withAllowList("kafka_connect_connector_metrics.*", "kafka_connect_connector_task_metrics.*")
                     .endValues()
                     .build())
-                .build(), List.of(".*"));
+                .build());
 
         String configuration = new KafkaConnectConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, BOOTSTRAP_SERVERS)
                 .withUserConfiguration(userConfig, false, true)
-                .withStrimziMetricsReporter(model)
+                .withStrimziMetricsReporter(model, List.of())
                 .build();
 
         assertThat(configuration, isEquivalent("bootstrap.servers=my-cluster-kafka-bootstrap:9092\n"

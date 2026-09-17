@@ -65,6 +65,31 @@ public class KafkaBrokerConfigurationBuilder {
     // the secrets file template: <namespace>/<secret_name>:<secret_key>
     private static final String PLACEHOLDER_SECRET_TEMPLATE_KUBE_CONFIG_PROVIDER = "${strimzisecrets:%s/%s:%s}";
 
+    // Role-specific default Strimzi Metrics Reporter allow lists, composed per node from the parts below so each node
+    // only exposes the metrics relevant to it. If modifying these, keep the example dashboards compatible.
+    private static final List<String> COMMON_DEFAULT_METRICS_ALLOW_LIST = List.of(
+            "kafka_network_requestmetrics.*",
+            "kafka_network_socketserver_networkprocessoravgidlepercent",
+            "kafka_server_app_info.*",
+            "kafka_server_kafkarequesthandlerpool_requesthandleravgidlepercent",
+            "kafka_server_kafkaserver_clusterid",
+            "kafka_server_kafkaserver_linux.*",
+            "kafka_server_request_queue_size",
+            "kafka_server_socket_server.*"
+    );
+    private static final List<String> BROKER_ONLY_DEFAULT_METRICS_ALLOW_LIST = List.of(
+            "kafka_cluster_partition.*",
+            "kafka_log_log_size",
+            "kafka_server_brokertopicmetrics.*",
+            "kafka_server_kafkaserver_brokerstate",
+            "kafka_server_replicamanager.*"
+    );
+    private static final List<String> CONTROLLER_ONLY_DEFAULT_METRICS_ALLOW_LIST = List.of(
+            "kafka_controller_kafkacontroller.*",
+            "kafka_controller_controllerstats_uncleanleaderelectionspersec",
+            "kafka_server_raft.*"
+    );
+
     private final StringWriter stringWriter = new StringWriter();
     private final PrintWriter writer = new PrintWriter(stringWriter);
     private final Reconciliation reconciliation;
@@ -169,10 +194,24 @@ public class KafkaBrokerConfigurationBuilder {
             printSectionHeader("Strimzi Metrics Reporter configuration");
             writer.println(StrimziMetricsReporterConfig.LISTENER_ENABLE + "=true");
             writer.println(StrimziMetricsReporterConfig.LISTENER + "=http://:" + MetricsModel.METRICS_PORT);
-            writer.println(StrimziMetricsReporterConfig.ALLOW_LIST + "=" + reporterModel.getAllowList());
+            writer.println(StrimziMetricsReporterConfig.ALLOW_LIST + "=" + reporterModel.getAllowListOrDefault(defaultMetricsAllowList()));
             writer.println();
         }
         return this;
+    }
+
+    /**
+     * Returns the role-specific default metrics allow list for this node (both parts for mixed-role nodes).
+     */
+    private List<String> defaultMetricsAllowList() {
+        List<String> allowList = new ArrayList<>(COMMON_DEFAULT_METRICS_ALLOW_LIST);
+        if (node.broker()) {
+            allowList.addAll(BROKER_ONLY_DEFAULT_METRICS_ALLOW_LIST);
+        }
+        if (node.controller()) {
+            allowList.addAll(CONTROLLER_ONLY_DEFAULT_METRICS_ALLOW_LIST);
+        }
+        return allowList;
     }
 
     /**

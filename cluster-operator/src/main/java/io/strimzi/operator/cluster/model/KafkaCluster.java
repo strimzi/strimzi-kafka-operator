@@ -124,29 +124,6 @@ import static java.util.Collections.singletonMap;
 @SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "checkstyle:ClassFanOutComplexity"})
 public class KafkaCluster extends AbstractModel implements SupportsMetrics, SupportsLogging, SupportsJmx {
     /**
-     * Default Strimzi Metrics Reporter allow list.
-     * If modifying this list, make sure example dashboards are compatible with the regexes.
-     */
-    private static final List<String> DEFAULT_METRICS_ALLOW_LIST = List.of(
-            "kafka_cluster_partition.*",
-            "kafka_controller_kafkacontroller.*",
-            "kafka_controller_controllerstats_uncleanleaderelectionspersec",
-            "kafka_log_log_size",
-            "kafka_network_requestmetrics.*",
-            "kafka_network_socketserver_networkprocessoravgidlepercent",
-            "kafka_server_app_info.*",
-            "kafka_server_brokertopicmetrics.*",
-            "kafka_server_kafkarequesthandlerpool_requesthandleravgidlepercent",
-            "kafka_server_kafkaserver_brokerstate",
-            "kafka_server_kafkaserver_clusterid",
-            "kafka_server_kafkaserver_linux.*",
-            "kafka_server_raft.*",
-            "kafka_server_replicamanager.*",
-            "kafka_server_request_queue_size",
-            "kafka_server_socket_server.*"
-    );
-
-    /**
      * Component type used by Kubernetes labels
      */
     public static final String COMPONENT_TYPE = "kafka";
@@ -351,7 +328,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
         if (kafkaClusterSpec.getMetricsConfig() instanceof JmxPrometheusExporterMetrics) {
             result.metrics = new JmxPrometheusExporterModel(kafkaClusterSpec);
         } else if (kafkaClusterSpec.getMetricsConfig() instanceof StrimziMetricsReporter) {
-            result.metrics = new StrimziMetricsReporterModel(kafkaClusterSpec, DEFAULT_METRICS_ALLOW_LIST);
+            result.metrics = new StrimziMetricsReporterModel(kafkaClusterSpec);
         }
 
         result.logging = new LoggingModel(kafkaClusterSpec, result.getClass().getSimpleName());

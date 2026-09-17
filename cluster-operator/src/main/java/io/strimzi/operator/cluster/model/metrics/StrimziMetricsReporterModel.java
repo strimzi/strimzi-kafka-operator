@@ -19,34 +19,35 @@ import java.util.regex.PatternSyntaxException;
  */
 public class StrimziMetricsReporterModel implements MetricsModel {
     /**
-     * Fully qualified class name of the Strimzi Metrics Reporter.
+     * The user-configured allow list, or {@code null} when the user did not set one.
      */
     private final List<String> allowList;
 
-        /**
-         * Constructs the Metrics Model for managing configurable metrics to Strimzi.
-         *
-         * @param spec Custom resource section configuring metrics.
-         * @param defaultAllowList Default allow list to be used when no value is provided.
-         */
-    public StrimziMetricsReporterModel(HasConfigurableMetrics spec, List<String> defaultAllowList) {
+    /**
+     * Stores only the user-configured allow list; the default is resolved later at the call site, as it can
+     * depend on the node's role.
+     *
+     * @param spec Custom resource section configuring metrics.
+     */
+    public StrimziMetricsReporterModel(HasConfigurableMetrics spec) {
         if (spec.getMetricsConfig() != null) {
             StrimziMetricsReporter config = (StrimziMetricsReporter) spec.getMetricsConfig();
             validate(config);
-            this.allowList = config.getValues() != null && config.getValues().getAllowList() != null
-                    ? config.getValues().getAllowList() : defaultAllowList;
+            this.allowList = config.getValues() != null ? config.getValues().getAllowList() : null;
         } else {
             throw new InvalidConfigurationException("Unexpected empty metrics config");
         }
     }
 
     /**
-     * Gets the comma-separated list of allow regex expressions.
+     * Gets the comma-separated list of allow regex expressions, falling back to the given default when the user
+     * did not configure one.
      *
+     * @param defaultAllowList Default allow list to be used when the user did not configure one.
      * @return Comma separated list of allow regex expressions.
      */
-    public String getAllowList() {
-        return String.join(",", allowList);
+    public String getAllowListOrDefault(List<String> defaultAllowList) {
+        return String.join(",", allowList != null ? allowList : defaultAllowList);
     }
 
     /**
