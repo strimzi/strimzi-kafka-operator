@@ -21,4 +21,10 @@ import static io.strimzi.systemtest.TestTags.REQUIRES_SHARED_NAMESPACE;
 @Retention(RetentionPolicy.RUNTIME)
 @Tag(REQUIRES_SHARED_NAMESPACE)
 public @interface RequiresSharedNamespace {
+
+    /**
+     * The reason why this test-case or test-suite requires `test-suite-namespace` Namespace
+     * @return reason
+     */
+    String value() default "";
 }

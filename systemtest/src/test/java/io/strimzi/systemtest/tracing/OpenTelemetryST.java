@@ -66,7 +66,7 @@ import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 @Tag(REGRESSION)
 @Tag(TRACING)
-@RequiresSharedNamespace
+@RequiresSharedNamespace("Deploys Jaeger in the test-suite-namespace")
 public class OpenTelemetryST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(OpenTelemetryST.class);

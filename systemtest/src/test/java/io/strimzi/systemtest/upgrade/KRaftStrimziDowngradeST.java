@@ -30,7 +30,7 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
  * Metadata for the following tests are collected from systemtest/src/test/resources/upgrade/BundleDowngrade.yaml
  */
 @Tag(KRAFT_UPGRADE)
-@RequiresSharedNamespace
+@RequiresSharedNamespace("Resources are created in the test-suite-namespace, also needed for the ParameterizedTest")
 public class KRaftStrimziDowngradeST extends AbstractKRaftUpgradeST {
     private static final Logger LOGGER = LogManager.getLogger(KRaftStrimziDowngradeST.class);
 

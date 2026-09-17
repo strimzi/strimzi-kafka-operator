@@ -27,7 +27,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 @Inherited
 @ResourceLock(mode = ResourceAccessMode.READ_WRITE, value = "global")
 @Tag(ISOLATED_TEST)
-@RequiresSharedNamespace
+@RequiresSharedNamespace("Resources are installed to test-suite-namespace for IsolatedTest")
 @Test
 public @interface IsolatedTest {
     String value() default "";

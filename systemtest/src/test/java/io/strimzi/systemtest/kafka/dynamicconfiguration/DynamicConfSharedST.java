@@ -55,7 +55,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
         @Label(value = TestDocsLabels.KAFKA)
     }
 )
-@RequiresSharedNamespace
+@RequiresSharedNamespace("Shared Kafka cluster used in test-cases")
 public class DynamicConfSharedST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(DynamicConfSharedST.class);

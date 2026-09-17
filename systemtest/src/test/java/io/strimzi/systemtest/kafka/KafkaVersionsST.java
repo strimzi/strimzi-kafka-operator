@@ -53,7 +53,7 @@ import static io.strimzi.systemtest.TestTags.KAFKA_SMOKE;
         @Label(value = TestDocsLabels.KAFKA)
     }
 )
-@RequiresSharedNamespace
+@RequiresSharedNamespace("Creates everything in test-suite-namespace, because we are using ParameterizedTest")
 public class KafkaVersionsST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(KafkaVersionsST.class);

@@ -84,7 +84,7 @@ import static org.valid4j.matchers.jsonpath.JsonPathMatchers.hasJsonPath;
         @Label(TestDocsLabels.USER_OPERATOR)
     }
 )
-@RequiresSharedNamespace
+@RequiresSharedNamespace("Needed for shared Kafka cluster created inside the test-suite-namespace.")
 class UserST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(UserST.class);

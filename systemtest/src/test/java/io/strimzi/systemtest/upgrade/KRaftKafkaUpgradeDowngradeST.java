@@ -43,7 +43,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
  * Metadata for upgrade/downgrade procedure are loaded from kafka-versions.yaml in root dir of this repository.
  */
 @Tag(KRAFT_UPGRADE)
-@RequiresSharedNamespace
+@RequiresSharedNamespace("Resources are created in the test-suite-namespace")
 public class KRaftKafkaUpgradeDowngradeST extends AbstractKRaftUpgradeST {
     private static final Logger LOGGER = LogManager.getLogger(KRaftKafkaUpgradeDowngradeST.class);
     private final int continuousClientsMessageCount = 300;

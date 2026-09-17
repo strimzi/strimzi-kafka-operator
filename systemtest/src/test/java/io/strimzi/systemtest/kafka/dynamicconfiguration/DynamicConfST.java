@@ -69,7 +69,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
         @Step(value = "Deploy the cluster operator.", expected = "Cluster operator is installed successfully.")
     }
 )
-@RequiresSharedNamespace
+@RequiresSharedNamespace("Shared resources inside test-suite-namespace in tests")
 public class DynamicConfST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(DynamicConfST.class);
