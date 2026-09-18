@@ -29,8 +29,12 @@ Replace _<ca_cert_secret_name>_ with a name of your choice, _<path_to_ca_cert_pe
 +
 TIP: To automate provisioning and renewal of this Secret, you can use https://cert-manager.io/docs/trust/trust-manager/[trust-manager] to copy the `ca.crt` from the issuer's Secret into a separate Secret for the Cluster Operator.
 
-NOTE: The `ca.crt` file in the Secret must contain either a single CA certificate or a CA certificate chain that can be used to trust certificates issued by cert-manager.
+[NOTE]
+====
+The `ca.crt` file in the Secret must contain either a single CA certificate or a CA certificate chain that can be used to trust certificates issued by cert-manager.
+If providing a CA certificate chain, any intermediate CAs should be provided first, in order, with the root CA being the last certificate.
 A cert-manager `SelfSigned` issuer type cannot be used directly because it does not provide a CA certificate.
+====
 
 . Create or update the `Kafka` resource, setting `type: cert-manager` on `clusterCa`, `clientsCa`, or both.
 Set `generateCertificateAuthority: false` and provide the `certManager.issuerRef` and `certManager.caCertRef` configuration.
