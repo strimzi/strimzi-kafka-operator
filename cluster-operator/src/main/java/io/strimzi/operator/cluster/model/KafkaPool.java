@@ -10,9 +10,11 @@ import io.strimzi.api.kafka.model.common.JvmOptions;
 import io.strimzi.api.kafka.model.common.template.ContainerTemplate;
 import io.strimzi.api.kafka.model.common.template.ResourceTemplate;
 import io.strimzi.api.kafka.model.common.template.StatefulPodTemplate;
+import io.strimzi.api.kafka.model.kafka.JbodStorage;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaClusterTemplate;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
+import io.strimzi.api.kafka.model.kafka.SingleVolumeStorage;
 import io.strimzi.api.kafka.model.kafka.Storage;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePool;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePoolStatus;
@@ -25,6 +27,7 @@ import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.StatusUtils;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -51,6 +54,11 @@ public class KafkaPool extends AbstractModel {
      * Storage configuration
      */
     protected Storage storage;
+
+    /**
+     * IDs of the JBOD volumes which are removed from the storage configuration of this pool
+     */
+    protected Set<Integer> removedJbodVolumeIds = Set.of();
 
     /**
      * Process roles the nodes in this pool will take. This field is set in the fromCrd method, here it is only
@@ -183,6 +191,7 @@ public class KafkaPool extends AbstractModel {
                     LOGGER.warnCr(reconciliation, "The KRaft metadata log for KafkaNodePool {}/{} will be moved from volume {} to volume {}.", pool.getMetadata().getNamespace(), pool.getMetadata().getName(), VolumeUtils.kraftMetadataPath(oldStorage), VolumeUtils.kraftMetadataPath(newStorage));
                 }
 
+                result.removedJbodVolumeIds = findRemovedJbodVolumeIds(oldStorage, newStorage);
                 result.setStorage(newStorage);
             }
         } else {
@@ -192,6 +201,27 @@ public class KafkaPool extends AbstractModel {
         processTemplate(result, kafka.getSpec().getKafka().getTemplate(), pool.getSpec().getTemplate());
 
         return result;
+    }
+
+    /**
+     * Finds the JBOD volumes which exist in the old storage configuration but not in the new one.
+     *
+     * @param oldStorage    Old storage configuration
+     * @param newStorage    New storage configuration
+     *
+     * @return  Set with the IDs of the removed JBOD volumes
+     */
+    private static Set<Integer> findRemovedJbodVolumeIds(Storage oldStorage, Storage newStorage) {
+        if (oldStorage instanceof JbodStorage oldJbod && newStorage instanceof JbodStorage newJbod) {
+            Set<Integer> desiredIds = newJbod.getVolumes().stream().map(SingleVolumeStorage::getId).collect(Collectors.toSet());
+
+            return oldJbod.getVolumes().stream()
+                    .map(SingleVolumeStorage::getId)
+                    .filter(id -> !desiredIds.contains(id))
+                    .collect(Collectors.toCollection(LinkedHashSet::new)); // we want this in deterministic order
+        } else {
+            return Set.of();
+        }
     }
 
     /**
@@ -284,6 +314,19 @@ public class KafkaPool extends AbstractModel {
     }
 
     /**
+     * Gets the set with node references which run with the broker role right now. Nodes which are being added are not
+     * included, because they do not exist yet.
+     *
+     * @return  Set with node references which run with the broker role right now
+     */
+    public Set<NodeRef> currentBrokerNodes() {
+        return idAssignment.currentBrokers()
+                .stream()
+                .map(this::nodeRef)
+                .collect(Collectors.toCollection(LinkedHashSet::new)); // we want this in deterministic order
+    }
+
+    /**
      * Gets the set of Kafka nodes that are going to be added to the Kafka cluster.
      *
      * @return  Set of Kafka nodes that are going to be added to the Kafka cluster
@@ -360,5 +403,14 @@ public class KafkaPool extends AbstractModel {
      */
     public Set<Integer> usedToBeBrokerNodes() {
         return idAssignment.usedToBeBroker();
+    }
+
+    /**
+     * Gets the IDs of the JBOD volumes which are going to be removed from the nodes of this pool.
+     *
+     * @return  Set with the IDs of the JBOD volumes which are going to be removed
+     */
+    public Set<Integer> removedJbodVolumeIds() {
+        return Collections.unmodifiableSet(removedJbodVolumeIds);
     }
 }

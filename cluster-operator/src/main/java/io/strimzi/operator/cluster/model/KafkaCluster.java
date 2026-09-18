@@ -106,6 +106,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -457,6 +458,27 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
         }
 
         return nodes;
+    }
+
+    /**
+     * Generates a map of the JBOD volumes which are going to be removed from the Kafka brokers. Only nodes which run
+     * with the broker role right now are included, because only they can hold partition replicas. Note that the Admin
+     * API does not report the KRaft metadata log, so a volume which holds only the metadata log is seen as empty.
+     *
+     * @return  Map with the broker node IDs and the IDs of the JBOD volumes which are going to be removed from them
+     */
+    public Map<Integer, Set<Integer>> removedJbodVolumes() {
+        Map<Integer, Set<Integer>> volumes = new LinkedHashMap<>();
+
+        for (KafkaPool pool : nodePools)    {
+            if (!pool.removedJbodVolumeIds().isEmpty()) {
+                for (NodeRef node : pool.currentBrokerNodes())   {
+                    volumes.put(node.nodeId(), pool.removedJbodVolumeIds());
+                }
+            }
+        }
+
+        return volumes;
     }
 
     /**

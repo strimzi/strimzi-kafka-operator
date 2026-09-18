@@ -7,6 +7,7 @@ package io.strimzi.operator.cluster.operator.assembly;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.Crds;
+import io.strimzi.api.kafka.model.common.Condition;
 import io.strimzi.api.kafka.model.kafka.JbodStorage;
 import io.strimzi.api.kafka.model.kafka.JbodStorageBuilder;
 import io.strimzi.api.kafka.model.kafka.Kafka;
@@ -40,6 +41,12 @@ import io.vertx.core.WorkerExecutor;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
+import org.apache.kafka.clients.admin.Admin;
+import org.apache.kafka.clients.admin.DescribeLogDirsResult;
+import org.apache.kafka.clients.admin.LogDirDescription;
+import org.apache.kafka.clients.admin.ReplicaInfo;
+import org.apache.kafka.common.KafkaFuture;
+import org.apache.kafka.common.TopicPartition;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -62,6 +69,9 @@ import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
+import static org.mockito.ArgumentMatchers.anyCollection;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(VertxExtension.class)
 public class JbodStorageMockTest {
@@ -77,6 +87,7 @@ public class JbodStorageMockTest {
     private String namespace = "test-jbod-storage";
     private KafkaNodePool kafkaNodePool;
     private KafkaAssemblyOperator operator;
+    private Admin adminClient;
     private StrimziPodSetController podSetController;
 
     private List<SingleVolumeStorage> volumes;
@@ -161,11 +172,13 @@ public class JbodStorageMockTest {
                 .build();
         Crds.kafkaNodePoolOperation(client).inNamespace(namespace).resource(kafkaNodePool).create();
 
+        this.adminClient = ResourceUtils.adminClient();
+
         PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(false, KubernetesVersion.MINIMAL_SUPPORTED_VERSION);
         // creating the Kafka operator
         ResourceOperatorSupplier ros =
                 new ResourceOperatorSupplier(VertxUtil.asExecutor(vertx.createSharedWorkerExecutor("kubernetes-ops-pool")),
-                        client, ResourceUtils.adminClientProvider(), ResourceUtils.kafkaAgentClientProvider(), ResourceUtils.metricsProvider(), pfa);
+                        client, ResourceUtils.adminClientProvider(adminClient), ResourceUtils.kafkaAgentClientProvider(), ResourceUtils.metricsProvider(), pfa);
 
         podSetController = new StrimziPodSetController(namespace, Labels.EMPTY, ros.kafkaOperator, ros.connectOperator, ros.mirrorMaker2Operator, ros.strimziPodSetOperator, ros.podOperations, ros.metricsProvider, Integer.parseInt(ClusterOperatorConfig.POD_SET_CONTROLLER_WORK_QUEUE_SIZE.defaultValue()));
         podSetController.start();
@@ -256,6 +269,14 @@ public class JbodStorageMockTest {
     @Test
     public void testReconcileWithVolumeRemovedFromJbodStorage(VertxTestContext context) {
         Checkpoint async = context.checkpoint();
+
+        // Every node reports the log directory of the removed volume, and it holds no partition replicas
+        DescribeLogDirsResult dldr = mock(DescribeLogDirsResult.class);
+        when(dldr.descriptions()).thenReturn(Map.of(
+                0, KafkaFuture.completedFuture(Map.of(VolumeUtils.kafkaLogDirPath(0, 0), new LogDirDescription(null, Map.of()))),
+                1, KafkaFuture.completedFuture(Map.of(VolumeUtils.kafkaLogDirPath(0, 1), new LogDirDescription(null, Map.of()))),
+                2, KafkaFuture.completedFuture(Map.of(VolumeUtils.kafkaLogDirPath(0, 2), new LogDirDescription(null, Map.of())))));
+        when(adminClient.describeLogDirs(anyCollection())).thenReturn(dldr);
 
         // remove a volume from the Jbod Storage
         volumes.remove(0);
@@ -415,5 +436,48 @@ public class JbodStorageMockTest {
                 .inNamespace(namespace)
                 .withLabels(pvcSelector.toMap())
                 .list().getItems();
+    }
+
+    @Test
+    public void testReconcileBlocksRemovalOfNonEmptyJbodVolume(VertxTestContext context) {
+        Checkpoint async = context.checkpoint();
+
+        // Kafka reports a partition replica on volume 0 of every node, so the removal must be refused
+        DescribeLogDirsResult dldr = mock(DescribeLogDirsResult.class);
+        when(dldr.descriptions()).thenReturn(Map.of(
+                0, KafkaFuture.completedFuture(Map.of(VolumeUtils.kafkaLogDirPath(0, 0), new LogDirDescription(null, Map.of(new TopicPartition("my-topic", 0), new ReplicaInfo(1000L, 0L, false))))),
+                1, KafkaFuture.completedFuture(Map.of(VolumeUtils.kafkaLogDirPath(0, 1), new LogDirDescription(null, Map.of(new TopicPartition("my-topic", 1), new ReplicaInfo(1000L, 0L, false))))),
+                2, KafkaFuture.completedFuture(Map.of(VolumeUtils.kafkaLogDirPath(0, 2), new LogDirDescription(null, Map.of(new TopicPartition("my-topic", 2), new ReplicaInfo(1000L, 0L, false)))))));
+        when(adminClient.describeLogDirs(anyCollection())).thenReturn(dldr);
+
+        Set<String> expectedPvcs = expectedPvcs(kafkaNodePool);
+
+        // remove a volume from the Jbod Storage
+        volumes.remove(0);
+
+        KafkaNodePool kafkaNodePoolWithRemovedVolume = new KafkaNodePoolBuilder(kafkaNodePool)
+                .editSpec()
+                    .withStorage(new JbodStorageBuilder().withVolumes(volumes).build())
+                .endSpec()
+                .build();
+
+        operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, NAME))
+            .compose(v -> {
+                Crds.kafkaNodePoolOperation(client).inNamespace(namespace).withName(NODE_POOL_NAME).patch(kafkaNodePoolWithRemovedVolume);
+                return operator.reconcile(new Reconciliation("test-trigger2", Kafka.RESOURCE_KIND, namespace, NAME));
+            })
+            .onComplete(context.succeeding(v -> context.verify(() -> {
+                // The volume is not removed, so all the PVCs are still there
+                List<PersistentVolumeClaim> pvcs = getPvcs();
+                Set<String> pvcsNames = pvcs.stream().map(pvc -> pvc.getMetadata().getName()).collect(Collectors.toSet());
+                assertThat(pvcsNames, is(expectedPvcs));
+
+                // And the user is told why
+                Kafka kafka = Crds.kafkaOperation(client).inNamespace(namespace).withName(NAME).get();
+                assertThat(kafka.getStatus().getConditions().stream().filter(c -> "Warning".equals(c.getType())).map(Condition::getMessage).toList(),
+                        hasItem("Reverting all storage changes of KafkaNodePool " + NODE_POOL_NAME + " because they remove JBOD volumes which are not empty"));
+
+                async.flag();
+            })));
     }
 }

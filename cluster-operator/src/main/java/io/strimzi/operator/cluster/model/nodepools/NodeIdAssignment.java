@@ -14,6 +14,7 @@ import java.util.Set;
  * @param toBeRemoved       Node IDs which should be removed
  * @param toBeAdded         Node IDs which should be added
  * @param usedToBeBroker    Node IDs that used to have the broker role but should not have it anymore
+ * @param currentBrokers    Node IDs which run with the broker role right now
  */
-public record NodeIdAssignment(Set<Integer> current, Set<Integer> desired, Set<Integer> toBeRemoved, Set<Integer> toBeAdded, Set<Integer> usedToBeBroker) {
+public record NodeIdAssignment(Set<Integer> current, Set<Integer> desired, Set<Integer> toBeRemoved, Set<Integer> toBeAdded, Set<Integer> usedToBeBroker, Set<Integer> currentBrokers) {
 }

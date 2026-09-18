@@ -30,6 +30,8 @@ import io.strimzi.operator.common.operator.resource.kubernetes.SecretOperator;
 
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -55,8 +57,10 @@ public class KafkaClusterCreator {
     // State
     private boolean scaleDownCheckFailed = false;
     private boolean usedToBeBrokersCheckFailed = false;
+    private boolean volumeRemovalCheckFailed = false;
     private final List<Condition> warningConditions = new ArrayList<>();
     private final Set<Integer> scalingDownBlockedNodes = new HashSet<>();
+    private BrokersInUseCheck.VolumesInUse volumesInUse = new BrokersInUseCheck.VolumesInUse(Map.of(), Map.of());
 
     /**
      * Constructor
@@ -114,14 +118,18 @@ public class KafkaClusterCreator {
             KafkaClusterSecurityContext securityContext)   {
         return createKafkaCluster(kafkaCr, nodePools, oldStorage, versionChange, securityContext)
                 .thenCompose(kafka -> brokerRemovalCheck(kafkaCr, kafka))
+                .thenCompose(kafka -> volumeRemovalCheck(kafkaCr, kafka))
                 .thenCompose(kafka -> {
                     if (checkFailed() && tryToFixProblems)   {
-                        // saving scaling down blocked nodes, before they are reverted back
-                        this.scalingDownBlockedNodes.addAll(kafka.removedNodes());
+                        if (scaleDownCheckFailed || usedToBeBrokersCheckFailed) {
+                            // saving scaling down blocked nodes, before they are reverted back
+                            this.scalingDownBlockedNodes.addAll(kafka.removedNodes());
+                        }
                         // We have a failure, and should try to fix issues
                         // Once we fix it, we call this method again, but this time with tryToFixProblems set to false
                         return revertScaleDown(nodePools)
                                 .thenCompose(revertedNodePools -> revertRoleChange(revertedNodePools))
+                                .thenCompose(revertedNodePools -> revertVolumeRemoval(revertedNodePools, kafkaCr, oldStorage))
                                 .thenCompose(revertedNodePools -> prepareKafkaCluster(kafkaCr, revertedNodePools, oldStorage, versionChange, kafkaStatus, false, securityContext));
                     } else if (checkFailed()) {
                         // We have a failure, but we should not try to fix it
@@ -133,6 +141,14 @@ public class KafkaClusterCreator {
 
                         if (usedToBeBrokersCheckFailed) {
                             errors.add("Cannot remove the broker role from nodes " + kafka.usedToBeBrokerNodes() + " because they have assigned partition-replicas.");
+                        }
+
+                        if (!volumesInUse.notEmpty().isEmpty()) {
+                            errors.add("Cannot remove the " + blockedVolumes(volumesInUse.notEmpty()) + " because they have assigned partition-replicas.");
+                        }
+
+                        if (!volumesInUse.notChecked().isEmpty()) {
+                            errors.add("Cannot remove the " + blockedVolumes(volumesInUse.notChecked()) + " because it is not known whether they are empty. The broker did not answer, or the log directory is offline.");
                         }
 
                         return CompletableFuture.failedFuture(new InvalidResourceException("Following errors were found when processing the Kafka custom resource: " + errors));
@@ -205,6 +221,44 @@ public class KafkaClusterCreator {
                             usedToBeBrokersCheckFailed = true;
                         } else {
                             usedToBeBrokersCheckFailed = false;
+                        }
+
+                        return kafka;
+                    });
+        }
+    }
+
+    /**
+     * Checks if the JBOD volumes which are being removed are empty or if they still have some partition-replicas
+     * assigned.
+     *
+     * @param kafkaCr   Kafka custom resource
+     * @param kafka     Kafka cluster model
+     *
+     * @return  CompletionStage with the Kafka cluster model
+     */
+    private CompletionStage<KafkaCluster> volumeRemovalCheck(Kafka kafkaCr, KafkaCluster kafka) {
+        Map<Integer, Set<Integer>> removedVolumes = kafka.removedJbodVolumes();
+
+        if (skipBrokerScaleDownCheck(kafkaCr) // The check was disabled by the user
+                || removedVolumes.isEmpty()) { // There are no removed volumes, so there is nothing to check
+            volumeRemovalCheckFailed = false;
+            volumesInUse = new BrokersInUseCheck.VolumesInUse(Map.of(), Map.of());
+            return CompletableFuture.completedFuture(kafka);
+        } else {
+            return ReconcilerUtils.coIdentity(reconciliation, secretOperator, kafka.securityContext())
+                    .toCompletionStage()
+                    .thenCompose(coTlsPemIdentity -> brokerScaleDownOperations.volumesInUse(reconciliation, coTlsPemIdentity, adminClientProvider, removedVolumes))
+                    .thenApply(result -> {
+                        volumesInUse = result;
+                        volumeRemovalCheckFailed = !result.nothingBlocked();
+
+                        if (!result.notEmpty().isEmpty()) {
+                            LOGGER.warnCr(reconciliation, "Cannot remove the {} because they have assigned partition-replicas", blockedVolumes(result.notEmpty()));
+                        }
+
+                        if (!result.notChecked().isEmpty()) {
+                            LOGGER.warnCr(reconciliation, "Cannot remove the {} because it is not known whether they are empty. The broker did not answer, or the log directory is offline", blockedVolumes(result.notChecked()));
                         }
 
                         return kafka;
@@ -286,7 +340,104 @@ public class KafkaClusterCreator {
     }
 
     /**
-     * Utility method that checks if the scale-down check should be skipped or not.
+     * Reverts the removal of the JBOD volumes if it is not allowed because the volumes are not empty. The whole
+     * storage configuration of the affected node pools is set back to the storage the Kafka cluster runs on, in the
+     * same way as when the storage change is rejected in {@code KafkaPool.fromCrd}.
+     *
+     * @param nodePoolCrs   List with KafkaNodePool custom resources
+     * @param kafkaCr       Kafka custom resource
+     * @param oldStorage    Old storage configuration
+     *
+     * @return  CompletionStage with the list of the fixed KafkaNodePool CRs
+     */
+    private CompletionStage<List<KafkaNodePool>> revertVolumeRemoval(List<KafkaNodePool> nodePoolCrs, Kafka kafkaCr, Map<String, Storage> oldStorage) {
+        if (volumeRemovalCheckFailed) {
+            List<KafkaNodePool> newNodePools = new ArrayList<>();
+
+            for (KafkaNodePool nodePool : nodePoolCrs) {
+                Storage currentStorage = oldStorage.get(KafkaPool.componentName(kafkaCr, nodePool));
+
+                if (currentStorage != null
+                        && nodePool.getStatus() != null
+                        && nodePool.getStatus().getNodeIds() != null
+                        && nodePool.getStatus().getNodeIds().stream().anyMatch(this::isBlocked)) {
+                    String blockedReason = blockedReason(nodePool);
+                    warningConditions.add(StatusUtils.buildWarningCondition("ScaleDownPreventionCheck", "Reverting all storage changes of KafkaNodePool " + nodePool.getMetadata().getName() + " because they remove JBOD volumes which " + blockedReason));
+                    LOGGER.warnCr(reconciliation, "Reverting all storage changes of KafkaNodePool {} because they remove JBOD volumes which {}", nodePool.getMetadata().getName(), blockedReason);
+                    newNodePools.add(
+                            new KafkaNodePoolBuilder(nodePool)
+                                    .editSpec()
+                                        .withStorage(currentStorage)
+                                    .endSpec()
+                                    .build());
+                } else {
+                    newNodePools.add(nodePool);
+                }
+            }
+
+            return CompletableFuture.completedFuture(newNodePools);
+        } else {
+            // The volume removal check did not fail => return the original resources
+            return CompletableFuture.completedFuture(nodePoolCrs);
+        }
+    }
+
+    /**
+     * Describes why the JBOD volume removal was blocked for the given node pool. Both reasons are listed when
+     * different nodes of the pool are blocked for different reasons.
+     *
+     * @param nodePool  KafkaNodePool custom resource
+     *
+     * @return  Text saying whether the volumes hold partition replicas or could not be checked
+     */
+    private String blockedReason(KafkaNodePool nodePool) {
+        List<String> reasons = new ArrayList<>();
+
+        if (nodePool.getStatus().getNodeIds().stream().anyMatch(volumesInUse.notEmpty()::containsKey)) {
+            reasons.add("are not empty");
+        }
+
+        if (nodePool.getStatus().getNodeIds().stream().anyMatch(volumesInUse.notChecked()::containsKey)) {
+            reasons.add("could not be checked, because a broker did not answer or a log directory is offline");
+        }
+
+        return String.join(" or ", reasons);
+    }
+
+    /**
+     * Checks whether the JBOD volume removal was blocked on the given Kafka node.
+     *
+     * @param nodeId    ID of the Kafka node
+     *
+     * @return  True when the removal was blocked. False otherwise.
+     */
+    private boolean isBlocked(Integer nodeId) {
+        return volumesInUse.notEmpty().containsKey(nodeId) || volumesInUse.notChecked().containsKey(nodeId);
+    }
+
+    /**
+     * Describes the blocked volumes. Nodes which are blocked on the same volumes are listed together, so that the
+     * volumes are never paired with a node which does not have them.
+     *
+     * @param volumesPerNode    Map with the node IDs and their JBOD volume IDs
+     *
+     * @return  Text such as "JBOD volumes [1] from Kafka brokers [1000, 1001]"
+     */
+    private static String blockedVolumes(Map<Integer, Set<Integer>> volumesPerNode) {
+        Map<Set<Integer>, Set<Integer>> nodesPerVolumes = new LinkedHashMap<>();
+
+        for (Map.Entry<Integer, Set<Integer>> node : volumesPerNode.entrySet()) {
+            nodesPerVolumes.computeIfAbsent(node.getValue(), volumes -> new LinkedHashSet<>()).add(node.getKey());
+        }
+
+        return nodesPerVolumes.entrySet()
+                .stream()
+                .map(entry -> "JBOD volumes " + entry.getKey() + " from Kafka brokers " + entry.getValue())
+                .collect(Collectors.joining(", "));
+    }
+
+    /**
+     * Utility method that checks if the checks preventing data loss should be skipped or not.
      *
      * @param kafkaCr   Kafka custom resource
      *
@@ -302,7 +453,7 @@ public class KafkaClusterCreator {
      * @return  True if any checks failed. False otherwise.
      */
     private boolean checkFailed()   {
-        return scaleDownCheckFailed || usedToBeBrokersCheckFailed;
+        return scaleDownCheckFailed || usedToBeBrokersCheckFailed || volumeRemovalCheckFailed;
     }
 
     /**
