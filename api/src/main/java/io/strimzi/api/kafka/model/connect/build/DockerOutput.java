@@ -28,11 +28,6 @@ import java.util.List;
 @ToString(callSuper = true)
 public class DockerOutput extends Output {
     // Note: --customPlatform is deprecated option replaced with --custom-platform. We enable both for backwards compatibility
-    public static final String ALLOWED_KANIKO_OPTIONS = "--customPlatform, --custom-platform, --insecure, --insecure-pull, " +
-            "--insecure-registry, --log-format, --log-timestamp, --registry-mirror, --reproducible, --single-snapshot, " +
-            "--skip-tls-verify, --skip-tls-verify-pull, --skip-tls-verify-registry, --verbosity, --snapshotMode, " +
-            "--use-new-run, --registry-certificate, --registry-client-cert, --ignore-path";
-
     public static final String ALLOWED_BUILDAH_BUILD_OPTIONS = "--authfile, --cert-dir, --creds, --decryption-key, --retry, --retry-delay, --tls-verify";
     public static final String ALLOWED_BUILDAH_PUSH_OPTIONS = "--authfile, --cert-dir, --creds, --quiet, --retry, --retry-delay, --tls-verify";
 
@@ -68,12 +63,11 @@ public class DockerOutput extends Output {
         this.pushSecret = pushSecret;
     }
 
-    @Description("Configures additional options to pass to the `build` command of either Kaniko or Buildah (depending on the feature gate setting) when building a new Kafka Connect image. " +
-        "Allowed Kaniko options: " + ALLOWED_KANIKO_OPTIONS + ". " +
+    @Description("Configures additional options to pass to the `build` command of Buildah when building a new Kafka Connect image. " +
         "Allowed Buildah `build` options: " + ALLOWED_BUILDAH_BUILD_OPTIONS + ". " +
-        "Those options are used only on Kubernetes, where Kaniko and Buildah are available. " +
+        "Those options are used only on Kubernetes, where Buildah is available. " +
         "They are ignored on OpenShift. " +
-        "For more information, see the link:https://github.com/GoogleContainerTools/kaniko[Kaniko GitHub repository^] or the link:https://github.com/containers/buildah/blob/main/docs/buildah-build.1.md[Buildah build document^]. " +
+        "For more information, see the link:https://github.com/containers/buildah/blob/main/docs/buildah-build.1.md[Buildah build document^]. " +
         "Changing this field does not trigger a rebuild of the Kafka Connect image."
     )
     @JsonInclude(JsonInclude.Include.NON_NULL)

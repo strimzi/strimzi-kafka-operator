@@ -179,12 +179,6 @@ cruiseControl:
     repository: ""
     name: kafka
     tagPrefix: ""
-kanikoExecutor:
-  image:
-    registry: ""
-    repository: ""
-    name: kaniko-executor
-    tag: ""
 buildah:
   image:
     registry: ""

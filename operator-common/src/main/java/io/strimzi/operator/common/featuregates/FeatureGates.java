@@ -22,14 +22,11 @@ public class FeatureGates {
     // Once we don't have any other feature gate supported, code for `DummyFeatureGate` should be un-commented
     // private static final String DUMMY_FEATURE_GATE = "DummyFeatureGate";
 
-    // Enables the usage of Buildah in Connect Build
-    private static final String USE_CONNECT_BUILD_WITH_BUILDAH = "UseConnectBuildWithBuildah";
     // Enables background deletion propagation when rolling pods
     private static final String USE_BACKGROUND_POD_DELETION = "UseBackgroundPodDeletion";
 
     // When adding new feature gates, do not forget to add them to allFeatureGates(), toString(), equals(), and `hashCode() methods
     // private final FeatureGate dummyFeatureGate = new FeatureGate(DUMMY_FEATURE_GATE, false);
-    private final FeatureGate useConnectBuildWithBuildah = new FeatureGate(USE_CONNECT_BUILD_WITH_BUILDAH, true);
     private final FeatureGate useBackgroundPodDeletion = new FeatureGate(USE_BACKGROUND_POD_DELETION, false);
 
     /**
@@ -55,9 +52,6 @@ public class FeatureGates {
     //                case DUMMY_FEATURE_GATE:
     //                    setValueOnlyOnce(dummyFeatureGate, value);
     //                    break;
-                    case USE_CONNECT_BUILD_WITH_BUILDAH:
-                        setValueOnlyOnce(useConnectBuildWithBuildah, value);
-                        break;
                     case USE_BACKGROUND_POD_DELETION:
                         setValueOnlyOnce(useBackgroundPodDeletion, value);
                         break;
@@ -99,15 +93,6 @@ public class FeatureGates {
     // }
 
     /**
-     * Checks if the UseConnectBuildWithBuildah feature gate is enabled.
-     *
-     * @return  Returns if `UseConnectBuildWithBuildah` is enabled or not.
-     */
-    public boolean useConnectBuildWithBuildahEnabled() {
-        return useConnectBuildWithBuildah.isEnabled();
-    }
-
-    /**
      * Checks if the UseBackgroundPodDeletion feature gate is enabled.
      *
      * @return  Returns true when the UseBackgroundPodDeletion feature gate is enabled
@@ -124,7 +109,6 @@ public class FeatureGates {
     /*test*/ List<FeatureGate> allFeatureGates()  {
         return List.of(
         //  dummyFeatureGate
-            useConnectBuildWithBuildah,
             useBackgroundPodDeletion
         );
     }
@@ -133,7 +117,6 @@ public class FeatureGates {
     public String toString() {
         return "FeatureGates(" +
     //      "DummyFeatureGate=" + dummyFeatureGate.isEnabled() +
-            "UseConnectBuildWithBuildah=" + useConnectBuildWithBuildah.isEnabled() + ", " +
             "UseBackgroundPodDeletion=" + useBackgroundPodDeletion.isEnabled() +
             ")";
     }
@@ -169,14 +152,13 @@ public class FeatureGates {
         } else {
             FeatureGates other = (FeatureGates) o;
             // return Objects.equals(dummyFeatureGate, other.dummyFeatureGate)
-            return Objects.equals(useConnectBuildWithBuildah, other.useConnectBuildWithBuildah)
-                && Objects.equals(useBackgroundPodDeletion, other.useBackgroundPodDeletion);
+            return Objects.equals(useBackgroundPodDeletion, other.useBackgroundPodDeletion);
         }
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(useConnectBuildWithBuildah, useBackgroundPodDeletion);
+        return Objects.hash(useBackgroundPodDeletion);
     }
 
     /**

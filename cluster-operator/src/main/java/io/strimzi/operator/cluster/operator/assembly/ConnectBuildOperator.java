@@ -52,7 +52,6 @@ public class ConnectBuildOperator {
     private final ImagePullPolicy imagePullPolicy;
     private final List<LocalObjectReference> imagePullSecrets;
     private final long connectBuildTimeoutMs;
-    private final boolean useConnectBuildWithBuildah;
     private final PlatformFeaturesAvailability pfa;
 
     /**
@@ -73,7 +72,6 @@ public class ConnectBuildOperator {
         this.imagePullPolicy = config.getImagePullPolicy();
         this.imagePullSecrets = config.getImagePullSecrets();
         this.connectBuildTimeoutMs = config.getConnectBuildTimeoutMs();
-        this.useConnectBuildWithBuildah = config.featureGates().useConnectBuildWithBuildahEnabled();
         this.pfa = pfa;
     }
 
@@ -103,7 +101,7 @@ public class ConnectBuildOperator {
     }
 
     /**
-     * Builds a new container image with connectors on Kubernetes using Kaniko or on OpenShift using BuildConfig
+     * Builds a new container image with connectors on Kubernetes using Buildah or on OpenShift using BuildConfig
      *
      * @param reconciliation        The reconciliation
      * @param namespace             Namespace of the Connect cluster
@@ -207,7 +205,7 @@ public class ConnectBuildOperator {
     private Future<Void> kubernetesBuildStart(Reconciliation reconciliation, String namespace, KafkaConnectBuild connectBuild, ConfigMap dockerFileConfigMap, String newBuildRevision) {
         return VertxUtil.toFuture(configMapOperations.reconcile(reconciliation, namespace, KafkaConnectResources.dockerFileConfigMapName(connectBuild.getCluster()), dockerFileConfigMap))
                 .compose(ignore -> VertxUtil.toFuture(serviceAccountOperations.reconcile(reconciliation, namespace, KafkaConnectResources.buildServiceAccountName(connectBuild.getCluster()), connectBuild.generateServiceAccount())))
-                .compose(ignore -> VertxUtil.toFuture(podOperator.reconcile(reconciliation, namespace, KafkaConnectResources.buildPodName(connectBuild.getCluster()), connectBuild.generateBuilderPod(pfa.isOpenshift(), useConnectBuildWithBuildah, imagePullPolicy, imagePullSecrets, newBuildRevision))))
+                .compose(ignore -> VertxUtil.toFuture(podOperator.reconcile(reconciliation, namespace, KafkaConnectResources.buildPodName(connectBuild.getCluster()), connectBuild.generateBuilderPod(pfa.isOpenshift(), imagePullPolicy, imagePullSecrets, newBuildRevision))))
                 .mapEmpty();
     }
 
