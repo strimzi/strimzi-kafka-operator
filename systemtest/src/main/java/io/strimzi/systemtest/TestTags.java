@@ -177,4 +177,9 @@ public interface TestTags {
      */
     String USER_CAPACITY = "user-capacity";
     String TOPIC_CAPACITY = "topic-capacity";
+
+    /**
+     * Tag for marking tests requiring shared Namespace - test-suite-namespace
+     */
+    String REQUIRES_SHARED_NAMESPACE = "requires-shared-namespace";
 }

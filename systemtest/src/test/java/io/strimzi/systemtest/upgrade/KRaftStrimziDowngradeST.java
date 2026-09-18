@@ -7,6 +7,7 @@ package io.strimzi.systemtest.upgrade;
 import io.skodjob.kubetest4j.resources.KubeResourceManager;
 import io.strimzi.systemtest.annotations.KindIPv6NotSupported;
 import io.strimzi.systemtest.annotations.MicroShiftNotSupported;
+import io.strimzi.systemtest.annotations.RequiresSharedNamespace;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.utils.StUtils;
 import org.apache.logging.log4j.LogManager;
@@ -29,6 +30,7 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
  * Metadata for the following tests are collected from systemtest/src/test/resources/upgrade/BundleDowngrade.yaml
  */
 @Tag(KRAFT_UPGRADE)
+@RequiresSharedNamespace("Resources are created in the test-suite-namespace, also needed for the ParameterizedTest")
 public class KRaftStrimziDowngradeST extends AbstractKRaftUpgradeST {
     private static final Logger LOGGER = LogManager.getLogger(KRaftStrimziDowngradeST.class);
 

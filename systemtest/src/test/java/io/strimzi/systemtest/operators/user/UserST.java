@@ -33,6 +33,7 @@ import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.annotations.ParallelTest;
+import io.strimzi.systemtest.annotations.RequiresSharedNamespace;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
 import io.strimzi.systemtest.docs.TestDocsLabels;
 import io.strimzi.systemtest.kafkaclients.ClientsAuthentication;
@@ -83,6 +84,7 @@ import static org.valid4j.matchers.jsonpath.JsonPathMatchers.hasJsonPath;
         @Label(TestDocsLabels.USER_OPERATOR)
     }
 )
+@RequiresSharedNamespace("Needed for shared Kafka cluster created inside the test-suite-namespace.")
 class UserST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(UserST.class);

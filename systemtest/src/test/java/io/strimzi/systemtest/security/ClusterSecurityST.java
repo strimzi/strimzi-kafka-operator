@@ -27,6 +27,7 @@ import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.TestConstants;
+import io.strimzi.systemtest.annotations.RequiresSharedNamespace;
 import io.strimzi.systemtest.docs.TestDocsLabels;
 import io.strimzi.systemtest.enums.CustomResourceStatus;
 import io.strimzi.systemtest.kafkaclients.ClientsAuthentication;
@@ -72,6 +73,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
         @Label(value = TestDocsLabels.KAFKA)
     }
 )
+@RequiresSharedNamespace
 class ClusterSecurityST extends AbstractST {
     private static final int BROKER_REPLICAS = 3;
     private static final int CONTROLLER_REPLICAS = 3;
