@@ -9,6 +9,7 @@ import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.OwnerReferenceBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
+import io.strimzi.api.kafka.model.common.CertificateManagerType;
 import io.strimzi.api.kafka.model.user.KafkaUser;
 import io.strimzi.api.kafka.model.user.KafkaUserAuthentication;
 import io.strimzi.api.kafka.model.user.KafkaUserAuthorizationSimple;
@@ -232,7 +233,6 @@ public class KafkaUserModel {
      *
      * @return CompletionStage with empty result
      */
-    @SuppressWarnings("checkstyle:BooleanExpressionComplexity")
     public CompletionStage<Void> maybeGenerateCertificates(Reconciliation reconciliation, CertIssuer certIssuer, PasswordGenerator passwordGenerator,
                                                      Secret clientsCaCertSecret, Secret clientsCaKeySecret, Secret userSecret, int caValidityDays,
                                                      int caRenewalDays, List<String> maintenanceWindows, Clock clock, boolean generatePkcs12Stores) {
@@ -252,8 +252,9 @@ public class KafkaUserModel {
                 passwordGenerator,
                 clientsCaCertSecret,
                 clientsCaKeySecret,
-                new CaConfig(validityDays, renewalDays, false, generatePkcs12Stores)
+                new CaConfig(validityDays, renewalDays, false, generatePkcs12Stores, CertificateManagerType.STRIMZI)
         );
+
         this.caCert = clientsCa.currentCaCertBase64();
 
         CertAndKey existingUserCertAndKey = null;
@@ -273,7 +274,7 @@ public class KafkaUserModel {
             }
         }
 
-        return clientsCa.maybeCopyOrGenerateClientCert(reconciliation, name, existingUserCertAndKey, Util.isMaintenanceTimeWindowsSatisfied(reconciliation, maintenanceWindows, clock.instant()))
+        return clientsCa.maybeCopyOrGenerateClientCert(reconciliation, name, name, existingUserCertAndKey, Util.isMaintenanceTimeWindowsSatisfied(reconciliation, maintenanceWindows, clock.instant()), labels)
                 .thenApply(certAndKey -> {
                     userCertAndKey = certAndKey;
                     return null;
@@ -332,7 +333,7 @@ public class KafkaUserModel {
             // CA private key secret exists, but does not have the ca.crt key
             throw new InvalidCertificateException("The Clients CA Key Secret is missing the ca.key file");
         }
-        CertificateUtils.validateUserCaCertChain(reconciliation, Ca.CaRole.CLIENTS_CA, clientsCaCertSecret.getData());
+        CertificateUtils.validateCaCertChain(reconciliation, Ca.CaRole.CLIENTS_CA, clientsCaCertSecret.getData());
     }
 
     /**

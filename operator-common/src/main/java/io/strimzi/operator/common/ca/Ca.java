@@ -6,12 +6,14 @@ package io.strimzi.operator.common.ca;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Secret;
+import io.strimzi.api.kafka.model.common.CertificateManagerType;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.certs.StrimziSubject;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
+import io.strimzi.operator.common.model.Labels;
 
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
@@ -346,41 +348,54 @@ public abstract class Ca {
      * Used for Kafka brokers and Cruise Control.
      *
      * @param reconciliation                        Reconciliation marker
-     * @param commonName                            Common Name for the certificate
+     * @param resourceName                          Name to use for any resources created
      * @param subject                               Subject for the certificate
      * @param existingCertAndKey                    Existing certificate (or null if none exists)
      * @param isMaintenanceTimeWindowsSatisfied     Whether we are in a maintenance window
      * @param includeCaChain                        Whether to include CA chain
-     *
+     * @param labels                                Labels
      *
      * @return CertAndKey object containing the public and private key
      **/
     public abstract CompletionStage<CertAndKey> maybeCopyOrGenerateServerCerts(
             Reconciliation reconciliation,
-            String commonName,
+            String resourceName,
             StrimziSubject subject,
             CertAndKey existingCertAndKey,
             boolean isMaintenanceTimeWindowsSatisfied,
-            boolean includeCaChain
-    );
+            boolean includeCaChain,
+            Labels labels);
 
     /**
      * Generates or reuses a client certificate signed by this Cluster CA.
      * Used for components that only act as clients, like Entity Operators and Kafka Exporter.
      *
      * @param reconciliation                        Reconciliation marker
+     * @param resourceName                          Name to use for any resources created
      * @param commonName                            Common Name for the certificate
      * @param existingCertAndKey                    Existing certificate (or null if none exists)
      * @param isMaintenanceTimeWindowsSatisfied     Whether we are in a maintenance window
+     * @param labels                                Labels
      *
      * @return CertAndKey object containing the certificate and key with CA generation set
      */
     public abstract CompletionStage<CertAndKey> maybeCopyOrGenerateClientCert(
             Reconciliation reconciliation,
+            String resourceName,
             String commonName,
             CertAndKey existingCertAndKey,
-            boolean isMaintenanceTimeWindowsSatisfied
-    );
+            boolean isMaintenanceTimeWindowsSatisfied,
+            Labels labels);
+
+    /**
+     * Clean up any end-entity certificate related resources for a specific entity.
+     * This is called for example when scaling down nodes, or disabling a component like cruise control.
+     *
+     * @param entity Name of entity that is no longer needed
+     *
+     * @return CompletionStage that completes once the resources have been cleaned up
+     */
+    public abstract CompletionStage<Void> cleanupEndEntityCert(String entity);
 
     /**
      * Remove old certificates that are stored in the CA Secret.
@@ -612,6 +627,15 @@ public abstract class Ca {
             throw new RuntimeException(CA_CRT + " does not exist in the secret for " + caRole.caName());
         }
         return cert.getNotAfter().getTime();
+    }
+
+    /**
+     * Get the CertificateManagerType of this CA.
+     *
+     * @return the CertificateManagerType of this CA.
+     */
+    public CertificateManagerType getType() {
+        return caConfig.getCertificateManagerType();
     }
 
     /**

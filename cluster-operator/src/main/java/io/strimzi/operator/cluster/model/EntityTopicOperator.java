@@ -323,7 +323,7 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
     public CompletionStage<Secret> generateCertificatesSecret(Ca clusterCa, Secret existingSecret, boolean isMaintenanceTimeWindowsSatisfied) {
         CertAndKey existingCertAndKey = CertSecretUtils.keyStoreCertAndKey(existingSecret, EntityOperator.COMPONENT_TYPE, clusterCa.caCertGenerationAnnotation());
 
-        return clusterCa.maybeCopyOrGenerateClientCert(reconciliation, componentName, existingCertAndKey, isMaintenanceTimeWindowsSatisfied)
+        return clusterCa.maybeCopyOrGenerateClientCert(reconciliation, KafkaResources.entityTopicOperatorSecretName(cluster), componentName, existingCertAndKey, isMaintenanceTimeWindowsSatisfied, labels)
                 .thenApply(updatedCert -> {
                     Map<String, String> secretData = CertSecretUtils.buildSecretData(EntityOperator.COMPONENT_TYPE, updatedCert);
                     return ModelUtils.createSecret(

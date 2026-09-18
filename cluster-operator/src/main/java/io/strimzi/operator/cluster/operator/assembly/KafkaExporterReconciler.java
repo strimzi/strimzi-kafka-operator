@@ -146,9 +146,10 @@ public class KafkaExporterReconciler {
                             })
                     );
         } else {
-            return secretOperator
-                    .reconcile(reconciliation, reconciliation.namespace(), KafkaExporterResources.secretName(reconciliation.name()), null)
-                    .thenApply(i -> null);
+            return CompletableFuture.allOf(
+                    clusterCa.cleanupEndEntityCert(KafkaExporterResources.secretName(reconciliation.name())).toCompletableFuture(),
+                    secretOperator.reconcile(reconciliation, reconciliation.namespace(), KafkaExporterResources.secretName(reconciliation.name()), null).toCompletableFuture()
+            ).thenApply(i -> null);
         }
     }
 

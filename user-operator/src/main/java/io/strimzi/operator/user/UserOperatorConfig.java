@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.user;
 
+import io.strimzi.api.kafka.model.common.CertificateManagerType;
 import io.strimzi.operator.common.config.ConfigParameter;
 import io.strimzi.operator.common.featuregates.FeatureGates;
 import io.strimzi.operator.common.model.Labels;
@@ -173,6 +174,14 @@ public class UserOperatorConfig {
      * Comma-separated list of default Gatekeeper plugins. If not set, the default list of default plugins is used.
      */
     public static final ConfigParameter<List<String>> GATEKEEPER_DEFAULT_PLUGINS = new ConfigParameter<>("STRIMZI_GATEKEEPER_DEFAULT_PLUGINS", COMMA_SEPARATED_LIST, "", CONFIG_VALUES);
+    /**
+     * Certificate Manager Type for the clients CA. Set by the Cluster Operator based on the Kafka CR's
+     * {@code clientsCa.type} field. When set to {@code cert-manager}, the User Operator rejects KafkaUser
+     * resources with {@code authentication.type: tls} since it cannot issue certificates using cert-manager.
+     * Users must use {@code tls-external} instead and manage their own cert-manager Certificate resources.
+     * Defaults to {@code strimzi}.
+     */
+    public static final ConfigParameter<String> CA_TYPE = new ConfigParameter<>("STRIMZI_CA_TYPE", STRING, CertificateManagerType.STRIMZI.toValue(), CONFIG_VALUES);
 
     private final Map<String, Object> map;
 
@@ -579,6 +588,15 @@ public class UserOperatorConfig {
         return plugins;
     }
 
+    /**
+     * Gets the Certificate Manager Type.
+     *
+     * @return Certificate Manager Type.
+     */
+    public CertificateManagerType getCertificateManagerType() {
+        return CertificateManagerType.forValue(get(CA_TYPE));
+    }
+
     @Override
     public String toString() {
         return "UserOperatorBuilderConfig{" +
@@ -615,6 +633,7 @@ public class UserOperatorConfig {
                 "\n\tgatekeeperCustomPlugins='" + getGatekeeperCustomPlugins() + "'" +
                 "\n\tgatekeeperDefaultPlugins='" + getGatekeeperDefaultPlugins() + "'" +
                 "\n\tgatekeeperPlugins='" + getGatekeeperPlugins() + "'" +
+                "\n\tcertificateManagerType='" + getCertificateManagerType() + "'" +
                 '}';
     }
 }

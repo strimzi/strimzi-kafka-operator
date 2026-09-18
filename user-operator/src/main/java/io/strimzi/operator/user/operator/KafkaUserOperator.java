@@ -7,6 +7,7 @@ package io.strimzi.operator.user.operator;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.strimzi.api.kafka.model.common.CertificateManagerType;
 import io.strimzi.api.kafka.model.user.KafkaUser;
 import io.strimzi.api.kafka.model.user.KafkaUserList;
 import io.strimzi.api.kafka.model.user.KafkaUserQuotas;
@@ -323,6 +324,11 @@ public class KafkaUserOperator {
      * @param userSecret        Secret with existing user credentials or null if the secret doesn't exist yet
      */
     private CompletionStage<Void> maybeGenerateTlsCredentials(Reconciliation reconciliation, KafkaUserModel user, Secret userSecret) {
+        if (config.getCertificateManagerType().equals(CertificateManagerType.CERT_MANAGER)) {
+            return CompletableFuture.failedFuture(new InvalidResourceException(
+                    "Authentication type 'tls' is not supported with cert-manager. Use 'tls-external' instead to use a certificate managed by cert-manager."));
+        }
+
         String namespace = config.getCaNamespaceOrNamespace();
         CompletableFuture<Secret> caCertPromise = getRequiredSecret(
                 namespace,

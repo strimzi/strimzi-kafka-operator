@@ -241,6 +241,24 @@ public class KafkaUserOperatorMockTest {
     }
 
     @Test
+    public void testCreateTlsUserWithCertManagerCaType() {
+        KafkaUser user = ResourceUtils.createKafkaUserTls(namespace);
+        user = Crds.kafkaUserOperation(client).resource(user).create();
+
+        UserOperatorConfig config = new UserOperatorConfig.UserOperatorConfigBuilder(ResourceUtils.createUserOperatorConfig(namespace))
+                .with(UserOperatorConfig.CA_TYPE.key(), "cert-manager")
+                .build();
+
+        KafkaUserOperator op = new KafkaUserOperator(config, mockCertIssuer, secretOps, kafkaUserOps, scramOps, quotasOps, aclOps);
+        CompletionStage<KafkaUserStatus> futureResult = op.reconcile(new Reconciliation("test-trigger", KafkaUser.RESOURCE_KIND, namespace, ResourceUtils.NAME), user, null);
+
+        ExecutionException thrown = assertThrows(ExecutionException.class, futureResult.toCompletableFuture()::get);
+        assertThat(thrown.getCause(), instanceOf(CompletionException.class));
+        assertThat(thrown.getCause().getCause(), instanceOf(InvalidResourceException.class));
+        assertThat(thrown.getCause().getCause().getMessage(), containsString("Authentication type 'tls' is not supported with cert-manager"));
+    }
+
+    @Test
     public void testCreateTlsUserWithoutPkcs12() throws ExecutionException, InterruptedException {
         KafkaUser user = new KafkaUserBuilder()
                 .withNewMetadata()

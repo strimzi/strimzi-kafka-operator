@@ -241,19 +241,24 @@ public class KafkaClusterCertificateRenewalTest {
         }
 
         @Override
-        public CompletionStage<CertAndKey> maybeCopyOrGenerateServerCerts(Reconciliation reconciliation, String commonName, StrimziSubject subject, CertAndKey existingCertAndKey, boolean isMaintenanceTimeWindowsSatisfied, boolean includeCaChain) {
+        public CompletionStage<CertAndKey> maybeCopyOrGenerateServerCerts(Reconciliation reconciliation, String resourceName, StrimziSubject subject, CertAndKey existingCertAndKey, boolean isMaintenanceTimeWindowsSatisfied, boolean includeCaChain, Labels labels) {
             if (existingCertAndKey != null) {
                 if (Arrays.equals(existingCertAndKey.cert(), DUMMY_CERT.getBytes(StandardCharsets.UTF_8)) || (Arrays.equals(existingCertAndKey.cert(), EXPIRED_DUMMY_CERT.getBytes(StandardCharsets.UTF_8)) && !isMaintenanceTimeWindowsSatisfied)) {
                     // We either have a valid cert, or we have an expired cert but are outside maintenance window - return existing cert
                     return CompletableFuture.completedFuture(existingCertAndKey);
                 }
             }
-            return CompletableFuture.completedFuture(new CertAndKey(("new-key-" + commonName).getBytes(StandardCharsets.UTF_8), ("new-cert-" + commonName).getBytes(StandardCharsets.UTF_8)));
+            return CompletableFuture.completedFuture(new CertAndKey(("new-key-" + resourceName).getBytes(StandardCharsets.UTF_8), ("new-cert-" + resourceName).getBytes(StandardCharsets.UTF_8)));
         }
 
         @Override
-        public CompletionStage<CertAndKey> maybeCopyOrGenerateClientCert(Reconciliation reconciliation, String commonName, CertAndKey existingCertAndKey, boolean isMaintenanceTimeWindowsSatisfied) {
+        public CompletionStage<CertAndKey> maybeCopyOrGenerateClientCert(Reconciliation reconciliation, String resourceName, String commonName, CertAndKey existingCertAndKey, boolean isMaintenanceTimeWindowsSatisfied, Labels labels) {
             return null;
+        }
+
+        @Override
+        public CompletionStage<Void> cleanupEndEntityCert(String entity) {
+            return CompletableFuture.completedFuture(null);
         }
 
         @Override
