@@ -37,7 +37,7 @@ A cert-manager `SelfSigned` issuer type cannot be used directly because it does 
 ====
 
 . Create or update the `Kafka` resource, setting `type: cert-manager` on `clusterCa`, `clientsCa`, or both.
-Set `generateCertificateAuthority: false` and provide the `certManager.issuerRef` and `certManager.caCertRef` configuration.
+Set `generateCertificateAuthority: false` and provide the `certManager` configuration.
 +
 .Example `Kafka` resource using cert-manager for both Cluster CA and Clients CA
 [source,yaml,subs="attributes+"]
@@ -52,7 +52,7 @@ spec:
     type: cert-manager <2>
     certManager:
       issuerRef:
-        name: my-cluster-issuer <3>
+        name: my-cluster-ca-issuer <3>
         kind: ClusterIssuer <4>
         group: cert-manager.io <5>
       caCertRef:
@@ -63,11 +63,11 @@ spec:
     type: cert-manager
     certManager:
       issuerRef:
-        name: my-cluster-issuer
+        name: my-clients-ca-issuer <8>
         kind: ClusterIssuer
         group: cert-manager.io
       caCertRef:
-        secretName: _<clients_ca_cert_secret_name>_
+        secretName: _<clients_ca_cert_secret_name>_ <9>
         certificate: ca.crt
   kafka:
     # ...
@@ -80,6 +80,8 @@ spec:
 <5> API group of the issuer. Defaults to `cert-manager.io`.
 <6> Name of the `Secret` containing the CA certificate.
 <7> Key within the `Secret` that holds the CA certificate PEM data.
+<8> Required by the API schema but not used by the operator to issue certificates. You are responsible for issuing client certificates using cert-manager (see step 4).
+<9> Name of the `Secret` containing the clients CA certificate. The Cluster Operator adds this certificate to the Kafka truststore.
 
 . Apply the `Kafka` resource.
 +
@@ -92,6 +94,88 @@ kubectl apply -f _<kafka_resource_file>_ -n _<namespace>_
 kubectl get certificates -n _<namespace>_
 
 When performing this procedure on an existing cluster, the Cluster Operator detects the change and initiates a multiphased rolling restart of all components to switch to the new CA type.
+
+. To use mTLS authentication with client certificates issued by cert-manager, create a `KafkaUser` with `spec.authentication.type: tls-external`.
++
+.Example `KafkaUser` with `tls-external` authentication
+[source,yaml,subs="attributes+"]
+----
+apiVersion: kafka.strimzi.io/v1
+kind: KafkaUser
+metadata:
+  name: my-user
+  labels:
+    strimzi.io/cluster: my-cluster
+spec:
+  authentication:
+    type: tls-external
+  authorization:
+    type: simple
+    acls:
+      # Example consumer Acls for topic my-topic using consumer group my-group
+      - resource:
+          type: topic
+          name: my-topic
+          patternType: literal
+        operations:
+          - Describe
+          - Read
+        host: "*"
+      - resource:
+          type: group
+          name: my-group
+          patternType: literal
+        operations:
+          - Read
+        host: "*"
+      # Example Producer Acls for topic my-topic
+      - resource:
+          type: topic
+          name: my-topic
+          patternType: literal
+        operations:
+          - Create
+          - Describe
+          - Write
+        host: "*"
+----
++
+[source,shell,subs="+quotes"]
+kubectl apply -f _<kafka_user_file>_ -n _<namespace>_
+
+. Create a cert-manager `Certificate` resource for the client certificate.
++
+.Example cert-manager `Certificate` for the KafkaUser
+[source,yaml,subs="attributes+"]
+----
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: my-user
+  namespace: kafka
+spec:
+  commonName: my-user # <1>
+  duration: 2160h
+  isCA: false
+  issuerRef:
+    group: cert-manager.io
+    kind: ClusterIssuer
+    name: my-ca-issuer # <2>
+  privateKey:
+    algorithm: RSA
+    encoding: PKCS8
+    size: 4096
+  renewBefore: 360h
+  secretName: my-user
+  subject:
+    organizations:
+    - com.example
+----
+<1> The `commonName` must match the name of the `KafkaUser` resource. Kafka uses the CN from the client certificate as the principal for authentication and authorization.
+<2> The issuer must be backed by the same CA whose certificate is provided in `clientsCa.certManager.caCertRef`, so that the issued certificate is trusted by the Kafka cluster.
++
+[source,shell,subs="+quotes"]
+kubectl apply -f _<certificate_file>_ -n _<namespace>_
 
 [role="_additional-resources"]
 .Additional resources

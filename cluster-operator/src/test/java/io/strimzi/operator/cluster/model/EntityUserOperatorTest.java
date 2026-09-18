@@ -19,8 +19,6 @@ import io.strimzi.api.kafka.model.kafka.KafkaAuthorizationCustomBuilder;
 import io.strimzi.api.kafka.model.kafka.KafkaAuthorizationSimple;
 import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
-import io.strimzi.api.kafka.model.kafka.certmanager.IssuerKind;
-import io.strimzi.api.kafka.model.kafka.certmanager.IssuerRef;
 import io.strimzi.api.kafka.model.kafka.clustersecurity.ClusterSecurityAuthenticationBuilder;
 import io.strimzi.api.kafka.model.kafka.clustersecurity.ClusterSecurityAuthenticationType;
 import io.strimzi.api.kafka.model.kafka.entityoperator.EntityUserOperatorSpec;
@@ -453,36 +451,6 @@ public class EntityUserOperatorTest {
         assertThat(cont.getSecurityContext().getRunAsNonRoot(), is(true));
         assertThat(cont.getSecurityContext().getSeccompProfile().getType(), is("RuntimeDefault"));
         assertThat(cont.getSecurityContext().getCapabilities().getDrop(), is(List.of("ALL")));
-    }
-
-    @Test
-    public void testFromCrdWithCertManagerClientsCa() {
-        String issuerName = "my-issuer";
-        Kafka customValues = new KafkaBuilder(KAFKA)
-                .editSpec()
-                    .withNewEntityOperator()
-                        .withNewUserOperator()
-                        .endUserOperator()
-                    .endEntityOperator()
-                    .withNewClientsCa()
-                        .withType(CertificateManagerType.CERT_MANAGER)
-                        .withNewCertManager()
-                            .withNewIssuerRef()
-                                .withName(issuerName)
-                                .withKind(IssuerKind.CLUSTER_ISSUER)
-                                .withGroup(IssuerRef.GROUP_DEFAULT)
-                            .endIssuerRef()
-                        .endCertManager()
-                    .endClientsCa()
-                .endSpec()
-                .build();
-        EntityUserOperator entityUserOperator = EntityUserOperator.fromCrd(new Reconciliation("test", KAFKA.getKind(), KAFKA.getMetadata().getNamespace(), KAFKA.getMetadata().getName()), customValues, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig(), KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
-
-        List<EnvVar> envVars = entityUserOperator.getEnvVars();
-        assertThat(envVars.stream().filter(a -> a.getName().equals(EntityUserOperator.ENV_VAR_CA_TYPE)).findFirst().orElseThrow().getValue(), is(CertificateManagerType.CERT_MANAGER.toValue()));
-        assertThat(envVars.stream().filter(a -> a.getName().equals(EntityUserOperator.ENV_VAR_CERT_MANAGER_ISSUER_NAME)).findFirst().orElseThrow().getValue(), is(issuerName));
-        assertThat(envVars.stream().filter(a -> a.getName().equals(EntityUserOperator.ENV_VAR_CERT_MANAGER_ISSUER_KIND)).findFirst().orElseThrow().getValue(), is(IssuerKind.CLUSTER_ISSUER.toValue()));
-        assertThat(envVars.stream().filter(a -> a.getName().equals(EntityUserOperator.ENV_VAR_CERT_MANAGER_ISSUER_GROUP)).findFirst().orElseThrow().getValue(), is(IssuerRef.GROUP_DEFAULT));
     }
 
     ////////////////////

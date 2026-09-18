@@ -59,11 +59,3 @@ End-entity certificates are renewed by cert-manager if:
 When end-entity certificates are renewed by cert-manager, the Cluster Operator updates the component-specific Secrets for the certificates and initiates a rolling update so that operands can start using the new certificates.
 
 NOTE: Maintenance time windows configured in the Kafka CR do not apply to cert-manager issuing certificates.
-
-.KafkaUser TLS certificates
-
-When `clientsCa.type` is set to `cert-manager`, the User Operator also delegates `KafkaUser` TLS certificate issuance to cert-manager.
-Create `KafkaUser` resources with `spec.authentication.type: tls` as usual.
-The User Operator creates a `Certificate` resource for each `KafkaUser`, and cert-manager stores the issued certificate in a Secret with a `-cm` suffix (for example, `my-user-cm`).
-
-If the User Operator is deployed as part of the Entity Operator, the Cluster Operator configures it automatically.

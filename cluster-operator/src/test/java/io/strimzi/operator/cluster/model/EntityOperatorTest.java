@@ -377,7 +377,7 @@ public class EntityOperatorTest {
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(1).getVolumeMounts().stream().filter(volumeMount -> "secret-volume-name".equals(volumeMount.getName())).iterator().next(), is(additionalVolumeMounts.get(0)));
 
         // Generate Role metadata
-        Role crb = entityOperator.generateRole(null, NAMESPACE, KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), EntityOperator.Permissions.BOTH, false);
+        Role crb = entityOperator.generateRole(null, NAMESPACE, KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), EntityOperator.Permissions.BOTH);
         assertThat(crb.getMetadata().getLabels().entrySet().containsAll(rLabels.entrySet()), is(true));
         assertThat(crb.getMetadata().getAnnotations().entrySet().containsAll(rAnnotations.entrySet()), is(true));
 
@@ -775,7 +775,7 @@ public class EntityOperatorTest {
     
     @Test
     public void testRole() {
-        Role role = ENTITY_OPERATOR.generateRole(NAMESPACE, NAMESPACE, KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), EntityOperator.Permissions.BOTH, false);
+        Role role = ENTITY_OPERATOR.generateRole(NAMESPACE, NAMESPACE, KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), EntityOperator.Permissions.BOTH);
 
         assertThat(role.getMetadata().getName(), is("my-cluster-entity-operator"));
         assertThat(role.getMetadata().getNamespace(), is(NAMESPACE));
@@ -811,22 +811,20 @@ public class EntityOperatorTest {
 
     @Test
     public void testRoleInDifferentNamespace() {
-        Role role = ENTITY_OPERATOR.generateRole(NAMESPACE, NAMESPACE, KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), EntityOperator.Permissions.BOTH, false);
+        Role role = ENTITY_OPERATOR.generateRole(NAMESPACE, NAMESPACE, KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), EntityOperator.Permissions.BOTH);
         TestUtils.checkOwnerReference(role, KAFKA);
 
-        role = ENTITY_OPERATOR.generateRole(NAMESPACE, "some-other-namespace", KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), EntityOperator.Permissions.BOTH, false);
+        role = ENTITY_OPERATOR.generateRole(NAMESPACE, "some-other-namespace", KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), EntityOperator.Permissions.BOTH);
         assertThat(role.getMetadata().getOwnerReferences().size(), is(0));
     }
 
     @Test
     public void testRoleGenerationWithTopicOperatorOnly() {
-        // cert-manager rules should not be included for TO-only even when cert-manager is enabled
         Role role = ENTITY_OPERATOR.generateRole(
             NAMESPACE,
             "watched-namespace",
             KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME),
-            EntityOperator.Permissions.TOPIC_OPERATOR,
-            true
+            EntityOperator.Permissions.TOPIC_OPERATOR
         );
 
         // Verify only kafkatopics resources are present
@@ -837,7 +835,6 @@ public class EntityOperatorTest {
         assertThat(allResources.stream().anyMatch(r -> r.startsWith("kafkatopics")), is(true));
         assertThat(allResources.stream().anyMatch(r -> r.startsWith("kafkausers")), is(false));
         assertThat(allResources.stream().anyMatch(r -> r.equals("secrets")), is(false));
-        assertThat(allResources.stream().anyMatch(r -> r.startsWith("certificates")), is(false));
     }
 
     @Test
@@ -846,8 +843,7 @@ public class EntityOperatorTest {
             NAMESPACE,
             "watched-namespace",
             KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME),
-            EntityOperator.Permissions.USER_OPERATOR,
-            false
+            EntityOperator.Permissions.USER_OPERATOR
         );
 
         // Verify only kafkausers and secrets resources are present
@@ -866,8 +862,7 @@ public class EntityOperatorTest {
             NAMESPACE,
             "watched-namespace",
             KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME),
-            EntityOperator.Permissions.BOTH,
-            false
+            EntityOperator.Permissions.BOTH
         );
 
         // Verify all resources are present
@@ -878,54 +873,6 @@ public class EntityOperatorTest {
         assertThat(allResources.stream().anyMatch(r -> r.startsWith("kafkatopics")), is(true));
         assertThat(allResources.stream().anyMatch(r -> r.startsWith("kafkausers")), is(true));
         assertThat(allResources.stream().anyMatch(r -> r.equals("secrets")), is(true));
-        assertThat(allResources.stream().anyMatch(r -> r.startsWith("certificates")), is(false));
-    }
-
-    @Test
-    public void testRoleGenerationWithCertManager() {
-        Role role = ENTITY_OPERATOR.generateRole(
-            NAMESPACE,
-            "watched-namespace",
-            KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME),
-            EntityOperator.Permissions.BOTH,
-            true
-        );
-
-        List<String> allResources = role.getRules().stream()
-            .flatMap(rule -> rule.getResources().stream())
-            .collect(Collectors.toList());
-
-        assertThat(allResources.stream().anyMatch(r -> r.startsWith("kafkatopics")), is(true));
-        assertThat(allResources.stream().anyMatch(r -> r.startsWith("kafkausers")), is(true));
-        assertThat(allResources.stream().anyMatch(r -> r.equals("secrets")), is(true));
-        assertThat(allResources.stream().anyMatch(r -> r.startsWith("certificates")), is(true));
-
-        List<String> certManagerApiGroups = role.getRules().stream()
-            .filter(rule -> rule.getApiGroups().contains("cert-manager.io"))
-            .flatMap(rule -> rule.getResources().stream())
-            .collect(Collectors.toList());
-
-        assertThat(certManagerApiGroups, hasItem("certificates"));
-    }
-
-    @Test
-    public void testRoleGenerationWithCertManagerUserOperatorOnly() {
-        Role role = ENTITY_OPERATOR.generateRole(
-            NAMESPACE,
-            "watched-namespace",
-            KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME),
-            EntityOperator.Permissions.USER_OPERATOR,
-            true
-        );
-
-        List<String> allResources = role.getRules().stream()
-            .flatMap(rule -> rule.getResources().stream())
-            .collect(Collectors.toList());
-
-        assertThat(allResources.stream().anyMatch(r -> r.startsWith("kafkausers")), is(true));
-        assertThat(allResources.stream().anyMatch(r -> r.equals("secrets")), is(true));
-        assertThat(allResources.stream().anyMatch(r -> r.startsWith("certificates")), is(true));
-        assertThat(allResources.stream().anyMatch(r -> r.startsWith("kafkatopics")), is(false));
     }
 
     @Test
@@ -934,8 +881,7 @@ public class EntityOperatorTest {
             NAMESPACE,
             "watched-namespace",
             KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME),
-            EntityOperator.Permissions.TOPIC_OPERATOR,
-            false
+            EntityOperator.Permissions.TOPIC_OPERATOR
         );
 
         // Verify kafkatopics/status and kafkatopics/finalizers are present

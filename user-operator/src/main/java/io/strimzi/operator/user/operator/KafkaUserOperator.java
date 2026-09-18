@@ -12,6 +12,7 @@ import io.strimzi.api.kafka.model.user.KafkaUser;
 import io.strimzi.api.kafka.model.user.KafkaUserList;
 import io.strimzi.api.kafka.model.user.KafkaUserQuotas;
 import io.strimzi.api.kafka.model.user.KafkaUserStatus;
+import io.strimzi.certs.CertIssuer;
 import io.strimzi.operator.common.InvalidConfigurationException;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationException;
@@ -26,7 +27,6 @@ import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.kubernetes.CrdOperator;
 import io.strimzi.operator.common.operator.resource.kubernetes.SecretOperator;
 import io.strimzi.operator.user.UserOperatorConfig;
-import io.strimzi.operator.user.ca.UserCertIssuer;
 import io.strimzi.operator.user.gatekeeper.UserOperatorGatekeeperPluginInvoker;
 import io.strimzi.operator.user.gatekeeper.impl.GatekeeperKafkaUserDeletionContextImpl;
 import io.strimzi.operator.user.gatekeeper.impl.GatekeeperKafkaUserEntryContextImpl;
@@ -34,6 +34,7 @@ import io.strimzi.operator.user.gatekeeper.impl.GatekeeperKafkaUserExitContextIm
 import io.strimzi.operator.user.model.KafkaUserModel;
 import io.strimzi.operator.user.model.acl.SimpleAclRule;
 
+import java.time.Clock;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
@@ -49,7 +50,7 @@ import java.util.stream.Collectors;
 public class KafkaUserOperator {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(KafkaUserOperator.class.getName());
 
-    private final UserCertIssuer userCertIssuer;
+    private final CertIssuer certIssuer;
     private final AdminApiOperator<Set<SimpleAclRule>, Set<String>> aclOperator;
     private final AdminApiOperator<String, Set<String>> scramCredentialsOperator;
     private final AdminApiOperator<KafkaUserQuotas, Set<String>> quotasOperator;
@@ -63,7 +64,7 @@ public class KafkaUserOperator {
      * Creates the instance of KafkaUserOperator
      *
      * @param config                   User operator configuration
-     * @param userCertIssuer           Issuer for creating certificates signed by the Clients CA.
+     * @param certIssuer               For issuing certificates.
      * @param secretOperator           For operating on secrets
      * @param kafkaUserCrdOperator     For operating on KafkaUser resources
      * @param scramCredentialsOperator For operating on SCRAM SHA credentials.
@@ -72,14 +73,14 @@ public class KafkaUserOperator {
      */
     public KafkaUserOperator(
             UserOperatorConfig config,
-            UserCertIssuer userCertIssuer,
+            CertIssuer certIssuer,
             SecretOperator secretOperator,
             CrdOperator<KubernetesClient, KafkaUser, KafkaUserList> kafkaUserCrdOperator,
             AdminApiOperator<String, Set<String>> scramCredentialsOperator,
             AdminApiOperator<KafkaUserQuotas, Set<String>> quotasOperator,
             AdminApiOperator<Set<SimpleAclRule>, Set<String>> aclOperator
     ) {
-        this.userCertIssuer = userCertIssuer;
+        this.certIssuer = certIssuer;
         this.scramCredentialsOperator = scramCredentialsOperator;
         this.quotasOperator = quotasOperator;
         this.aclOperator = aclOperator;
@@ -323,33 +324,35 @@ public class KafkaUserOperator {
      * @param userSecret        Secret with existing user credentials or null if the secret doesn't exist yet
      */
     private CompletionStage<Void> maybeGenerateTlsCredentials(Reconciliation reconciliation, KafkaUserModel user, Secret userSecret) {
+        if (config.getCertificateManagerType().equals(CertificateManagerType.CERT_MANAGER)) {
+            return CompletableFuture.failedFuture(new InvalidResourceException(
+                    "Authentication type 'tls' is not supported with cert-manager. Use 'tls-external' instead to use a certificate managed by cert-manager."));
+        }
+
         String namespace = config.getCaNamespaceOrNamespace();
         CompletableFuture<Secret> caCertPromise = getRequiredSecret(
                 namespace,
                 config.getCaCertSecretName(),
                 InvalidConfigurationException::new)
             .toCompletableFuture();
-
-        CompletableFuture<Secret> caKeyPromise;
-        if (config.getCertificateManagerType() == CertificateManagerType.STRIMZI) {
-            caKeyPromise = getRequiredSecret(
-                    namespace,
-                    config.getCaKeySecretName(),
-                    InvalidConfigurationException::new)
-                .toCompletableFuture();
-        } else {
-            caKeyPromise = CompletableFuture.completedFuture(null);
-        }
+        CompletableFuture<Secret> caKeyPromise = getRequiredSecret(
+                namespace,
+                config.getCaKeySecretName(),
+                InvalidConfigurationException::new)
+            .toCompletableFuture();
 
         return CompletableFuture.allOf(caCertPromise, caKeyPromise)
                 .thenCompose(v -> user.maybeGenerateCertificates(
                         reconciliation,
-                        userCertIssuer,
+                        certIssuer,
+                        passwordGenerator,
                         caCertPromise.join(),
                         caKeyPromise.join(),
                         userSecret,
                         config.getClientsCaValidityDays(),
                         config.getClientsCaRenewalDays(),
+                        config.getMaintenanceWindows(),
+                        Clock.systemUTC(),
                         config.isPkcs12KeystoreGeneration()));
     }
 
