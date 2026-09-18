@@ -68,6 +68,9 @@ spec:
       - mode: remove-brokers
         template:
           name: my-remove-brokers-rebalancing-template
+      - mode: imbalance
+        template:
+          name: my-imbalance-rebalancing-template
 ---
 apiVersion: kafka.strimzi.io/v1
 kind: KafkaRebalance
@@ -86,3 +89,17 @@ metadata:
     strimzi.io/rebalance-template: "true"
 # no goals specified, using the default goals from the Cruise Control configuration
 spec: {}
+---
+apiVersion: kafka.strimzi.io/v1
+kind: KafkaRebalance
+metadata:
+  name: my-imbalance-rebalancing-template
+  annotations:
+    strimzi.io/rebalance-template: "true"
+# goals must be a superset of the configured anomaly detection goals
+spec:
+  goals:
+    - RackAwareGoal
+    - MinTopicLeadersPerBrokerGoal
+    - ReplicaCapacityGoal
+    - DiskCapacityGoal
