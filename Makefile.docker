@@ -10,6 +10,9 @@ ARCHIVE_DIR=$(TOPDIR)docker-images/container-archives
 SBOM_DIR=$(TOPDIR)sbom
 
 DOCKERFILE_DIR     ?= ./
+# Name of the Dockerfile inside DOCKERFILE_DIR. Override this to build an alternative variant of
+# the image from the same build context, for example DOCKER_FILE=Dockerfile.custom.
+DOCKER_FILE        ?= Dockerfile
 DOCKER_CMD         ?= docker
 DOCKER_REGISTRY    ?= docker.io
 DOCKER_ORG         ?= $(USER)
@@ -31,7 +34,7 @@ all: docker_build docker_push
 
 docker_build_default:
 	# Build Docker image ...
-	$(DOCKER_CMD) $(DOCKER_BUILDX) build $(DOCKER_PLATFORM) $(DOCKER_BUILD_ARGS) --build-arg strimzi_version=$(RELEASE_VERSION) -t strimzi/$(PROJECT_NAME):latest $(DOCKERFILE_DIR)
+	$(DOCKER_CMD) $(DOCKER_BUILDX) build $(DOCKER_PLATFORM) $(DOCKER_BUILD_ARGS) --build-arg strimzi_version=$(RELEASE_VERSION) -f $(DOCKERFILE_DIR)/$(DOCKER_FILE) -t strimzi/$(PROJECT_NAME):latest $(DOCKERFILE_DIR)
 #   The Dockerfiles all use FROM ...:latest, so it is necessary to tag images with latest (-t above)
 #   But because we generate Kafka images for different versions we also need to tag with something
 #   including the kafka version number. This BUILD_TAG is used by the docker_tag target.

@@ -2,6 +2,10 @@ TOPDIR = $(dir $(lastword $(MAKEFILE_LIST)))
 RELEASE_VERSION ?= $(shell cat $(TOPDIR)/release.version)
 DOCKER_TARGETS = docker_build docker_push docker_tag docker_load docker_save docker_amend_manifest docker_delete_archive docker_sbom docker_push_sbom
 DOCKER_TAG ?= latest
+# Exported so that build.sh can select an alternative Dockerfile to build an image variant
+DOCKER_FILE ?=
+export DOCKER_FILE
+export ALTERNATE_BASE
 
 .PHONY: build clean release all $(DOCKER_TARGETS)
 

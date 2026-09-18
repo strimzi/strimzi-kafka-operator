@@ -362,13 +362,36 @@ When building the Docker images you can use an alternative JRE or use an alterna
 The build assumes the `docker` command is available on your `$PATH`. You can set the `DOCKER_CMD` environment variable
 to use a different `docker` binary or an alternative implementation such as [`podman`](https://podman.io/).
 
+#### Alternative Dockerfile
+
+Every image is built from a file named `Dockerfile` in the component directory. You can build a
+different Dockerfile from the same build context by setting the `DOCKER_FILE` variable, which is
+passed to `docker build` as `-f`. For example, to build every component from a `Dockerfile.custom`
+placed next to the standard `Dockerfile`:
+
+```
+make DOCKER_FILE=Dockerfile.custom docker_build
+```
+
+This works for all images, and can also be used for a single component:
+
+```
+make -C docker-images/operator DOCKER_FILE=Dockerfile.custom docker_build
+```
+
+Because the build context is unchanged, the alternative Dockerfile can `COPY` the same files and
+uses the same build arguments as the standard one. If the named file does not exist, the build
+fails rather than silently falling back to the default Dockerfile.
+
 #### Alternative Docker base image
 
-The docker images can be built with an alternative container OS version by adding the environment
-variable `ALTERNATE_BASE`. When this environment variable is set, for each component the build will look for a
-Dockerfile in the subdirectory named by `ALTERNATE_BASE`. For example, to build docker images based on alpine,
-use `ALTERNATE_BASE=alpine make docker_build`. Alternative docker images are an experimental feature not supported by
-the core Strimzi team.
+The Kafka images can be built with an alternative container OS version by adding the environment
+variable `ALTERNATE_BASE`. When this environment variable is set, the build will look for a
+Dockerfile in the subdirectory named by `ALTERNATE_BASE`. For example, to build the Kafka images
+based on alpine, use `ALTERNATE_BASE=alpine make docker_build`. Note that this mechanism is
+implemented only for the Kafka images; the `base`, `operator` and `maven-builder` images ignore it.
+`DOCKER_FILE` described above applies to all images and takes precedence when both are set.
+Alternative docker images are an experimental feature not supported by the core Strimzi team.
 
 ### Build customization
 

@@ -25,12 +25,17 @@ function dependency_check {
     command -v yq >/dev/null 2>&1 || { >&2 echo "You need yq installed to build Strimzi. Refer to DEV_GUIDE.md for more information"; exit 1; }
 }
 
-# Support for alternate base images
-# if ALTERNATE_BASE is defined, and there is a Dockerfile in the directory, 
-# use that Dockerfile $1 the component directory
-function alternate_base {
-    if [ -n "$ALTERNATE_BASE" ] && [ -f "$1/$ALTERNATE_BASE/Dockerfile" ]; then
-      echo "-f $ALTERNATE_BASE/Dockerfile"
+# Support for alternate base images and image variants.
+# DOCKER_FILE, if set, names the Dockerfile to build and takes precedence. Otherwise, if
+# ALTERNATE_BASE is defined and there is a Dockerfile in that directory, use that Dockerfile.
+# $1 is the component directory.
+function docker_file {
+    if [ -n "$DOCKER_FILE" ]; then
+      echo "$DOCKER_FILE"
+    elif [ -n "$ALTERNATE_BASE" ] && [ -f "$1/$ALTERNATE_BASE/Dockerfile" ]; then
+      echo "$ALTERNATE_BASE/Dockerfile"
+    else
+      echo "Dockerfile"
     fi
 }
 
@@ -57,7 +62,8 @@ function build {
         for image in $kafka_images
         do
             make -C "$image" "$targets" \
-                DOCKER_BUILD_ARGS="$DOCKER_BUILD_ARGS --build-arg KAFKA_VERSION=${kafka_version} --build-arg KAFKA_DIST_DIR=${relative_dist_dir} --build-arg THIRD_PARTY_LIBS=${lib_directory} $(alternate_base "$image")" \
+                DOCKER_BUILD_ARGS="$DOCKER_BUILD_ARGS --build-arg KAFKA_VERSION=${kafka_version} --build-arg KAFKA_DIST_DIR=${relative_dist_dir} --build-arg THIRD_PARTY_LIBS=${lib_directory}" \
+                DOCKER_FILE="$(docker_file "$image")" \
                 DOCKER_TAG="${tag}-kafka-${kafka_version}" \
                 BUILD_TAG="latest-kafka-${kafka_version}" \
                 KAFKA_VERSION="${kafka_version}" \
