@@ -728,10 +728,10 @@ public class KafkaBridgeConfigurationBuilderTest {
                                     .withAllowList("kafka_producer_producer_metrics.*,kafka_producer_kafka_metrics_count_count")
                                 .endValues()
                         .endStrimziMetricsReporterConfig()
-                        .build(), List.of(".*"));
+                        .build());
 
         String configuration = new KafkaBridgeConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, BRIDGE_CLUSTER, BRIDGE_BOOTSTRAP_SERVERS)
-                .withStrimziMetricsReporter(model)
+                .withStrimziMetricsReporter(model, List.of())
                 .build();
 
         assertThat(configuration, isEquivalent(
