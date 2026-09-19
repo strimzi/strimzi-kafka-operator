@@ -1,7 +1,7 @@
 #####
 # Build the helper container image for downloading prerequisites
 #####
-FROM registry.access.redhat.com/ubi10/ubi-minimal:latest AS downloader
+FROM registry.access.redhat.com/ubi9/ubi-minimal:latest AS downloader
 
 ARG TARGETOS
 ARG TARGETARCH
@@ -69,12 +69,19 @@ RUN set -ex; \
     rm -f jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.jar.sha512;
 
 #####
-# Install Kafka-specific runtime tools into a chroot
+# Stage 1: Establish clean ubi9-micro rootfs with its own RPM database
 #####
-FROM registry.access.redhat.com/ubi10/ubi-minimal:latest AS kafka-tools
+FROM registry.access.redhat.com/ubi9/ubi-micro:latest AS kafka-base
 
-RUN mkdir -p /mnt/rootfs && \
-    microdnf install \
+#####
+# Install Kafka-specific runtime tools into the ubi9-micro rootfs using dnf --installroot
+#####
+FROM registry.access.redhat.com/ubi9/ubi-minimal:latest AS kafka-tools
+
+# Copy the ubi9-micro rootfs (including its RPM database) as the install root
+COPY --from=kafka-base / /mnt/rootfs/
+
+RUN microdnf install \
         --installroot /mnt/rootfs \
         --noplugins \
         --config /etc/dnf/dnf.conf \
@@ -83,7 +90,7 @@ RUN mkdir -p /mnt/rootfs && \
         --setopt=varsdir=/etc/dnf \
         --setopt=install_weak_deps=0 \
         --setopt=tsflags=nodocs \
-        --releasever 10 \
+        --releasever 9 \
         -y \
         # Required for network diagnostics (e.g. netstat)
         net-tools \
