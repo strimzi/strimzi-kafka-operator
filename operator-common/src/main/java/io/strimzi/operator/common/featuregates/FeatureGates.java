@@ -27,7 +27,7 @@ public class FeatureGates {
 
     // When adding new feature gates, do not forget to add them to allFeatureGates(), toString(), equals(), and `hashCode() methods
     // private final FeatureGate dummyFeatureGate = new FeatureGate(DUMMY_FEATURE_GATE, false);
-    private final FeatureGate useBackgroundPodDeletion = new FeatureGate(USE_BACKGROUND_POD_DELETION, false);
+    private final FeatureGate useBackgroundPodDeletion = new FeatureGate(USE_BACKGROUND_POD_DELETION, true);
 
     /**
      * Constructs the feature gates configuration.
