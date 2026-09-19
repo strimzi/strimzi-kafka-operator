@@ -1,9 +1,19 @@
-FROM registry.access.redhat.com/ubi10/ubi-minimal:latest AS builder
+#####
+# Stage 1: Establish clean ubi9-micro rootfs with its own RPM database
+#####
+FROM registry.access.redhat.com/ubi9/ubi-micro:latest AS base
+
+#####
+# Stage 2: Install runtime dependencies into the ubi9-micro rootfs using dnf --installroot
+#####
+FROM registry.access.redhat.com/ubi9/ubi-minimal:latest AS builder
 
 ARG JAVA_VERSION=21
 
-RUN mkdir -p /mnt/rootfs && \
-    microdnf install \
+# Copy the ubi9-micro rootfs (including its RPM database) as the install root
+COPY --from=base / /mnt/rootfs/
+
+RUN microdnf install \
         --installroot /mnt/rootfs \
         --noplugins \
         --config /etc/dnf/dnf.conf \
@@ -12,7 +22,7 @@ RUN mkdir -p /mnt/rootfs && \
         --setopt=varsdir=/etc/dnf \
         --setopt=install_weak_deps=0 \
         --setopt=tsflags=nodocs \
-        --releasever 10 \
+        --releasever 9 \
         -y \
         java-${JAVA_VERSION}-openjdk-headless \
         maven \
@@ -28,7 +38,10 @@ RUN mkdir -p /mnt/rootfs && \
         --setopt=varsdir=/etc/dnf \
         clean all
 
-FROM registry.access.redhat.com/ubi10/ubi-micro:latest
+#####
+# Stage 3: Build the final container image on ubi9-micro base
+#####
+FROM registry.access.redhat.com/ubi9/ubi-micro:latest
 
 LABEL org.opencontainers.image.source='https://github.com/strimzi/strimzi-kafka-operator'
 
