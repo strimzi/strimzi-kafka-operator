@@ -65,16 +65,15 @@ spec:
       annotations:
         summary: 'Prometheus unable to scrape metrics from {{ $labels.kubernetes_pod_name }}/{{ $labels.instance }}'
         description: 'Prometheus was unable to scrape metrics from {{ $labels.kubernetes_pod_name }}/{{ $labels.instance }} for more than 3 minutes'
-    - alert: KafkaBrokerContainersDown
-      expr: absent(container_last_seen{container="kafka"} and on(namespace,pod) label_replace(up{strimzi_io_component_type="kafka",strimzi_io_broker_role="true"},"pod","$1","kubernetes_pod_name","(.*)"))
-      for: 3m
+    - alert: KafkaNodeContainersDown
+      expr: absent(container_last_seen{container="kafka"} and on(namespace,pod) label_replace(up{strimzi_io_component_type="kafka"},"pod","$1","kubernetes_pod_name","(.*)"))
       labels:
         severity: major
       annotations:
         summary: 'All `kafka` containers down or in CrashLookBackOff status'
         description: 'All `kafka` containers have been down or in CrashLookBackOff status for 3 minutes'
     - alert: KafkaContainerRestartedInTheLast5Minutes
-      expr: count(count_over_time(container_last_seen{container="kafka"}[5m])) > 2 * count(container_last_seen{container="kafka",pod=~".+-kafka-[0-9]+"})
+      expr: count(count_over_time((container_last_seen{container="kafka"} and on(namespace,pod) label_replace(up{strimzi_io_component_type="kafka"},"pod","$1","kubernetes_pod_name","(.*)"))[5m:])) > 2 * count(container_last_seen{container="kafka"} and on(namespace,pod) label_replace(up{strimzi_io_component_type="kafka"},"pod","$1","kubernetes_pod_name","(.*)"))
       for: 5m
       labels:
         severity: warning
