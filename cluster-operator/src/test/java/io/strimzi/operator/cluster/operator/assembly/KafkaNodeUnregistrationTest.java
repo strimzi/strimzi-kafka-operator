@@ -46,7 +46,7 @@ public class KafkaNodeUnregistrationTest {
                 .whenComplete((v, t) -> {
                     assertThat(unregisteredNodeIdCaptor.getAllValues().size(), is(2));
                     assertThat(unregisteredNodeIdCaptor.getAllValues(), hasItems(1874, 1919));
-                }).join();
+                }).toCompletableFuture().join();
     }
 
     @Test
@@ -72,6 +72,7 @@ public class KafkaNodeUnregistrationTest {
 
         try {
             KafkaNodeUnregistration.unregisterBrokerNodes(Reconciliation.DUMMY_RECONCILIATION, mockProvider, null, null, Set.of(1874, 1919))
+                    .toCompletableFuture()
                     .join();
             throw new AssertionError("Expected TimeoutException but none was thrown");
         } catch (Exception e) {
@@ -110,7 +111,7 @@ public class KafkaNodeUnregistrationTest {
         KafkaNodeUnregistration.listRegisteredBrokerNodes(Reconciliation.DUMMY_RECONCILIATION, mockProvider, null, null, true)
                 .whenComplete((nodes, t) -> {
                     assertThat(nodes.size(), is(5));
-                }).join();
+                }).toCompletableFuture().join();
 
         KafkaNodeUnregistration.listRegisteredBrokerNodes(Reconciliation.DUMMY_RECONCILIATION, mockProvider, null, null, false)
                 .whenComplete((nodes, t) -> {
@@ -118,6 +119,6 @@ public class KafkaNodeUnregistrationTest {
                     for (Node node : nodes) {
                         assertThat(node.isFenced(), is(false));
                     }
-                }).join();
+                }).toCompletableFuture().join();
     }
 }
