@@ -326,7 +326,7 @@ public class KafkaReconciler {
      * @return  Completes when the Cluster Operator identity have been created and stored in a record
      */
     protected Future<Void> initClusterOperatorIdentity() {
-        return ReconcilerUtils.coIdentity(reconciliation, secretOperator, kafka.securityContext())
+        return VertxUtil.toFuture(ReconcilerUtils.coIdentity(reconciliation, secretOperator, kafka.securityContext()))
                 .onSuccess(coIdentity -> this.coIdentity = coIdentity)
                 .mapEmpty();
     }
@@ -553,16 +553,16 @@ public class KafkaReconciler {
     protected Future<Void> initClusterRoleBinding() {
         ClusterRoleBinding desired = kafka.generateClusterRoleBinding(reconciliation.namespace());
 
-        return ReconcilerUtils.withIgnoreRbacError(
+        return VertxUtil.toFuture(ReconcilerUtils.withIgnoreRbacError(
                 reconciliation,
-                VertxUtil.toFuture(clusterRoleBindingOperator
+                clusterRoleBindingOperator
                         .reconcile(
                                 reconciliation,
                                 KafkaResources.initContainerClusterRoleBindingName(reconciliation.name(), reconciliation.namespace()),
                                 desired
-                        )),
+                        ),
                 desired
-        ).mapEmpty();
+        )).mapEmpty();
     }
 
     /**
@@ -818,7 +818,7 @@ public class KafkaReconciler {
         List<Future<Object>> futures = kafka.getListeners().stream()
                 .filter(l -> l.isTls() && l.getConfiguration() != null && l.getConfiguration().getBrokerCertChainAndKey() != null)
                 .map(l ->
-                        ReconcilerUtils.getCertificateAndKeyAsync(secretOperator, reconciliation.namespace(), l.getConfiguration().getBrokerCertChainAndKey())
+                        VertxUtil.toFuture(ReconcilerUtils.getCertificateAndKeyAsync(secretOperator, reconciliation.namespace(), l.getConfiguration().getBrokerCertChainAndKey()))
                                 .onSuccess(certAndKey -> customCertsData.putAll(CertSecretUtils.buildSecretData(ListenersUtils.identifier(l), certAndKey)))
                                 .mapEmpty()
                 ).toList();
@@ -873,7 +873,7 @@ public class KafkaReconciler {
      * @return  Completes when the JMX secret is successfully created or updated
      */
     protected Future<Void> jmxSecret() {
-        return ReconcilerUtils.reconcileJmxSecret(reconciliation, secretOperator, kafka);
+        return VertxUtil.toFuture(ReconcilerUtils.reconcileJmxSecret(reconciliation, secretOperator, kafka));
     }
 
     /**
@@ -942,13 +942,13 @@ public class KafkaReconciler {
      * @return  Future that completes when all the new nodes are ready
      */
     private Future<Void> waitForNewNodes() {
-        return ReconcilerUtils
+        return VertxUtil.toFuture(ReconcilerUtils
                 .podsReady(
                         reconciliation,
                         podOperator,
                         operationTimeoutMs,
                         kafka.addedNodes().stream().map(NodeRef::podName).toList()
-                );
+                ));
     }
 
     /**
@@ -982,13 +982,13 @@ public class KafkaReconciler {
      * @return  Future which completes when all Kafka pods are ready
      */
     protected Future<Void> podsReady() {
-        return ReconcilerUtils
+        return VertxUtil.toFuture(ReconcilerUtils
                 .podsReady(
                         reconciliation,
                         podOperator,
                         operationTimeoutMs,
                         kafka.nodes().stream().map(node -> node.podName()).toList()
-                );
+                ));
     }
 
     /**

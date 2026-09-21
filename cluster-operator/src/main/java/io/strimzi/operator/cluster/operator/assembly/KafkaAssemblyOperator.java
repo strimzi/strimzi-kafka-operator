@@ -733,7 +733,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
      */
     @Override
     protected Future<Boolean> delete(Reconciliation reconciliation) {
-        return ReconcilerUtils.withIgnoreRbacError(reconciliation, VertxUtil.toFuture(clusterRoleBindingOperations.reconcile(reconciliation, KafkaResources.initContainerClusterRoleBindingName(reconciliation.name(), reconciliation.namespace()), null)), null)
+        return VertxUtil.toFuture(ReconcilerUtils.withIgnoreRbacError(reconciliation, clusterRoleBindingOperations.reconcile(reconciliation, KafkaResources.initContainerClusterRoleBindingName(reconciliation.name(), reconciliation.namespace()), null), null))
                 .map(Boolean.FALSE); // Return FALSE since other resources are still deleted by garbage collection
     }
 

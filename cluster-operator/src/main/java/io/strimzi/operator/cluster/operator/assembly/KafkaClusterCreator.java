@@ -186,7 +186,6 @@ public class KafkaClusterCreator {
             return CompletableFuture.completedFuture(kafka);
         } else {
             return ReconcilerUtils.coIdentity(reconciliation, secretOperator, kafka.securityContext())
-                    .toCompletionStage()
                     .thenCompose(coTlsPemIdentity -> brokerScaleDownOperations.brokersInUse(reconciliation, coTlsPemIdentity, adminClientProvider))
                     .thenApply(brokersInUse -> {
                         // Check nodes that are being scaled down

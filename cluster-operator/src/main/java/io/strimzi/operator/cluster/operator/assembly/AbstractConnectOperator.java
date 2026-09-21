@@ -215,7 +215,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
      * @return Future for tracking the asynchronous result of the ClusterRoleBinding reconciliation
      */
     protected Future<ReconcileResult<ClusterRoleBinding>> connectInitClusterRoleBinding(Reconciliation reconciliation, String crbName, ClusterRoleBinding crb) {
-        return ReconcilerUtils.withIgnoreRbacError(reconciliation, VertxUtil.toFuture(clusterRoleBindingOperations.reconcile(reconciliation, crbName, crb)), crb);
+        return VertxUtil.toFuture(ReconcilerUtils.withIgnoreRbacError(reconciliation, clusterRoleBindingOperations.reconcile(reconciliation, crbName, crb), crb));
     }
 
 
@@ -283,7 +283,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
      */
     protected Future<Collection<String>> tlsTrustedCertsSecret(Reconciliation reconciliation, String namespace, KafkaConnectCluster connect) {
         if (connect.getTls() != null) {
-            return ReconcilerUtils.trustedCertificates(reconciliation, secretOperations, connect.getTls().getTrustedCertificates())
+            return VertxUtil.toFuture(ReconcilerUtils.trustedCertificates(reconciliation, secretOperations, connect.getTls().getTrustedCertificates()))
                     .compose(certificates -> {
                         if (certificates != null) {
                             return VertxUtil.toFuture(secretOperations.reconcile(
