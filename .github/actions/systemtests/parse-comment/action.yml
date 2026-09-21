@@ -134,7 +134,7 @@ runs:
           const DEFAULTS = {
             pipelines:    '',
             profiles:     '',
-            featureGate:  '+UseBackgroundPodDeletion',
+            featureGate:  '-UseBackgroundPodDeletion',
             rbacScope:    'CLUSTER',
             installType:  'yaml',
             parallel:     '1',
