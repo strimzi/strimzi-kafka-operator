@@ -66,7 +66,7 @@ spec:
         summary: 'Prometheus unable to scrape metrics from {{ $labels.kubernetes_pod_name }}/{{ $labels.instance }}'
         description: 'Prometheus was unable to scrape metrics from {{ $labels.kubernetes_pod_name }}/{{ $labels.instance }} for more than 3 minutes'
     - alert: KafkaBrokerContainersDown
-      expr: absent(container_last_seen{container="kafka",pod=~".+-kafka-[0-9]+"})
+      expr: absent(container_last_seen{container="kafka"} and on(namespace,pod) label_replace(up{strimzi_io_component_type="kafka",strimzi_io_broker_role="true"},"pod","$1","kubernetes_pod_name","(.*)"))
       for: 3m
       labels:
         severity: major
