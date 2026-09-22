@@ -10,7 +10,27 @@ spec:
   - name: kafka
     rules:
     - alert: KafkaRunningOutOfSpace
-      expr: kubelet_volume_stats_available_bytes{persistentvolumeclaim=~"data(-[0-9]+)?-(.+)-kafka-[0-9]+"} * 100 / kubelet_volume_stats_capacity_bytes{persistentvolumeclaim=~"data(-[0-9]+)?-(.+)-kafka-[0-9]+"} < 15
+      expr: >-
+        (
+          label_replace(
+            kubelet_volume_stats_available_bytes
+            * 100
+            /
+            kubelet_volume_stats_capacity_bytes,
+            "pod",
+            "$2",
+            "persistentvolumeclaim",
+            "data(-[0-9]+)?-(.*)"
+          )
+          and on(namespace,pod)
+          label_replace(
+            up{strimzi_io_component_type="kafka"},
+            "pod",
+            "$1",
+            "kubernetes_pod_name",
+            "(.*)"
+          )
+        ) < 15
       for: 10s
       labels:
         severity: warning
