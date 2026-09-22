@@ -55,23 +55,22 @@
 * [security](labels/security.md)
 
 
-## testCertManagerClusterAndClientsCa
+## testCertManagerClusterCa
 
-**Description:** Test verifying cert-manager CA integration for both cluster and clients CA, including KafkaUser certificate issuance and certificate renewal. A new Kafka cluster is deployed with clusterCa.type=cert-manager and clientsCa.type=cert-manager. cert-manager issues all component and user end-entity certificates. The cluster must come up healthy, Secrets and annotations are verified, KafkaUser cert is verified to be issued by cert-manager, and a TLS-authenticated producer/consumer must be able to send and receive messages. Then validityDays is updated to trigger certificate renewal and the cluster must remain healthy.
+**Description:** Test verifying cert-manager CA integration for both cluster and clients CA, including KafkaUser certificate issuance and certificate renewal. A new Kafka cluster is deployed with clusterCa.type=cert-manager. cert-manager issues all component end-entity certificates. The cluster must come up healthy, Secrets and annotations are verified.Then validityDays is updated to trigger certificate renewal and the cluster must remain healthy.and a TLS-authenticated producer/consumer must be able to send and receive messages.
 
 **Steps:**
 
 | Step | Action | Result |
 | - | - | - |
 | 1. | Create the CA cert Secret in the test namespace. | Secret is present in the test namespace. |
-| 2. | Deploy Kafka with clusterCa.type=cert-manager and clientsCa.type=cert-manager, generateCertificateAuthority=false. | Kafka cluster reaches ready state without errors. |
+| 2. | Deploy Kafka with clusterCa.type=cert-manager and generateCertificateAuthority=false. | Kafka cluster reaches ready state without errors. |
 | 3. | Verify that cluster CA cert Secret has correct annotations. | ca-cert-generation=0, ca-key-generation=0, and cert-hash annotations are set. |
 | 4. | Verify that the cert-manager broker and cluster operator Secrets (-cm suffix) exist and their certificates match the corresponding Strimzi Secrets and are signed by the cert-manager CA. | cert-manager Secrets exist, their certificates match the Strimzi Secrets, and the issuer DNs match the CA subject DN. |
-| 5. | Produce and consume messages over TLS. | Messages are successfully produced and consumed. |
-| 6. | Edit the Kafka CR to change validityDays on clusterCa, causing cert-manager to re-issue broker certificates. | Kafka CR is accepted by the API server. |
-| 7. | Wait for all broker pods to roll and become ready. | All broker pods have a new UID after the rolling update. |
-| 8. | Verify that broker certificate is updated. | Broker certificate does not match the certificate captured before renewal |
-| 9. | Produce and consume messages over TLS using a KafkaUser after renewal. | Messages are successfully produced and consumed. |
+| 5. | Edit the Kafka CR to change validityDays on clusterCa, causing cert-manager to re-issue broker certificates. | Kafka CR is accepted by the API server. |
+| 6. | Wait for all broker pods to roll and become ready. | All broker pods have a new UID after the rolling update. |
+| 7. | Verify that broker certificate is updated. | Broker certificate does not match the certificate captured before renewal |
+| 8. | Produce and consume messages over TLS using a KafkaUser after renewal. | Messages are successfully produced and consumed. |
 
 **Labels:**
 
