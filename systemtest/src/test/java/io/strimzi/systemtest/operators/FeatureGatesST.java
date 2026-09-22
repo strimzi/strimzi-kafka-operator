@@ -49,7 +49,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 )
 public class FeatureGatesST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(FeatureGatesST.class);
-    private static final String USE_BACKGROUND_POD_DELETION_ENABLED = "+UseBackgroundPodDeletion";
 
     @IsolatedTest("Enables UseBackgroundPodDeletion feature gate in CO")
     @TestDoc(
@@ -68,7 +67,8 @@ public class FeatureGatesST extends AbstractST {
         TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
         LOGGER.info("Deploying CO with UseBackgroundPodDeletion enabled");
-        setupClusterOperatorWithFeatureGate(USE_BACKGROUND_POD_DELETION_ENABLED);
+        // by default, the UseBackgroundPodDeletion feature gate is enabled
+        setupClusterOperatorWithFeatureGate("");
 
         KubeResourceManager.get().createResourceWithWait(
             KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),

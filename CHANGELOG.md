@@ -6,6 +6,8 @@
 * Update Kafka Exporter to [1.10.0](https://github.com/danielqsj/kafka_exporter/releases/tag/v1.10.0)
 * Support for mounting projected service account tokens into Strimzi-managed Pods
 * The `UseConnectBuildWithBuildah` feature gate moves to GA stage, is enabled by default without option to be disabled
+* The `UseBackgroundPodDeletion` feature gate moves to beta stage and is enabled by default.
+  If needed, `UseBackgroundPodDeletion` can be disabled in the feature gates configuration in the Cluster Operator.
 
 ### Major changes, deprecations, and removals
 

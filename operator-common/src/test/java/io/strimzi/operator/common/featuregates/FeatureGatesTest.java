@@ -63,10 +63,10 @@ public class FeatureGatesTest {
 
     @Test
     public void testFeatureGatesEquals() {
-        FeatureGates fg = new FeatureGates("+UseBackgroundPodDeletion");
+        FeatureGates fg = new FeatureGates("-UseBackgroundPodDeletion");
         assertThat(fg, is(fg));
-        assertThat(fg, is(new FeatureGates("+UseBackgroundPodDeletion")));
-        assertThat(fg, is(not(new FeatureGates("-UseBackgroundPodDeletion"))));
+        assertThat(fg, is(new FeatureGates("-UseBackgroundPodDeletion")));
+        assertThat(fg, is(not(new FeatureGates("+UseBackgroundPodDeletion"))));
     }
 
     @Test
@@ -113,7 +113,7 @@ public class FeatureGatesTest {
     public void testEnvironmentVariable()   {
         assertThat(new FeatureGates("").toEnvironmentVariable(), is(""));
 
-        assertThat(new FeatureGates("+UseBackgroundPodDeletion").toEnvironmentVariable(), is("+UseBackgroundPodDeletion"));
-        assertThat(new FeatureGates("-UseBackgroundPodDeletion").toEnvironmentVariable(), is(""));
+        assertThat(new FeatureGates("+UseBackgroundPodDeletion").toEnvironmentVariable(), is(""));
+        assertThat(new FeatureGates("-UseBackgroundPodDeletion").toEnvironmentVariable(), is("-UseBackgroundPodDeletion"));
     }
 }

@@ -392,7 +392,7 @@ pipelines:
     pipeline: "regression-fg"
     profile: "brokers"
     timeout: 360
-    strimzi_feature_gates: "+UseBackgroundPodDeletion"
+    strimzi_feature_gates: "-UseBackgroundPodDeletion"
     strimzi_rbac_scope: "CLUSTER"
     cluster_operator_install_type: "yaml"
     parallel: 3
@@ -402,7 +402,7 @@ pipelines:
     pipeline: "regression-fg"
     profile: "security"
     timeout: 360
-    strimzi_feature_gates: "+UseBackgroundPodDeletion"
+    strimzi_feature_gates: "-UseBackgroundPodDeletion"
     strimzi_rbac_scope: "CLUSTER"
     cluster_operator_install_type: "yaml"
     parallel: 3
@@ -412,7 +412,7 @@ pipelines:
     pipeline: "regression-fg"
     profile: "operators"
     timeout: 360
-    strimzi_feature_gates: "+UseBackgroundPodDeletion"
+    strimzi_feature_gates: "-UseBackgroundPodDeletion"
     strimzi_rbac_scope: "CLUSTER"
     cluster_operator_install_type: "yaml"
     parallel: 4
@@ -422,7 +422,7 @@ pipelines:
     pipeline: "regression-fg"
     profile: "operands"
     timeout: 360
-    strimzi_feature_gates: "+UseBackgroundPodDeletion"
+    strimzi_feature_gates: "-UseBackgroundPodDeletion"
     strimzi_rbac_scope: "CLUSTER"
     cluster_operator_install_type: "yaml"
     parallel: 3
@@ -433,7 +433,7 @@ pipelines:
     pipeline: "regression-fg"
     profile: "brokers"
     timeout: 360
-    strimzi_feature_gates: "+UseBackgroundPodDeletion"
+    strimzi_feature_gates: "-UseBackgroundPodDeletion"
     strimzi_rbac_scope: "CLUSTER"
     cluster_operator_install_type: "yaml"
     parallel: 4
@@ -443,7 +443,7 @@ pipelines:
     pipeline: "regression-fg"
     profile: "security"
     timeout: 360
-    strimzi_feature_gates: "+UseBackgroundPodDeletion"
+    strimzi_feature_gates: "-UseBackgroundPodDeletion"
     strimzi_rbac_scope: "CLUSTER"
     cluster_operator_install_type: "yaml"
     parallel: 4
@@ -453,7 +453,7 @@ pipelines:
     pipeline: "regression-fg"
     profile: "operators"
     timeout: 360
-    strimzi_feature_gates: "+UseBackgroundPodDeletion"
+    strimzi_feature_gates: "-UseBackgroundPodDeletion"
     strimzi_rbac_scope: "CLUSTER"
     cluster_operator_install_type: "yaml"
     parallel: 4
@@ -463,7 +463,7 @@ pipelines:
     pipeline: "regression-fg"
     profile: "operands"
     timeout: 360
-    strimzi_feature_gates: "+UseBackgroundPodDeletion"
+    strimzi_feature_gates: "-UseBackgroundPodDeletion"
     strimzi_rbac_scope: "CLUSTER"
     cluster_operator_install_type: "yaml"
     parallel: 4
