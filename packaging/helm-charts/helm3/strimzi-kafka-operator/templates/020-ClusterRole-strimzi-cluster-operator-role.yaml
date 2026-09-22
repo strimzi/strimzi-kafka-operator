@@ -194,6 +194,7 @@ rules:
   - certificates
   verbs:
   - get
+  - watch
   - create
   - delete
   - patch
