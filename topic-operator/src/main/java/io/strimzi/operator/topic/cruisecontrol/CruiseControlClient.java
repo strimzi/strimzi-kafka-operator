@@ -92,9 +92,9 @@ public interface CruiseControlClient {
     
     /**
      * Topic names grouped by replication factor value.
-     * In order to support batch requests, we send a JSON payload where, for each RF value, 
-     * we have a simple regex like topic1|topic2|topic3 (i.e. a group by operation).
-     * 
+     * In order to support batch requests, we send a JSON payload where, for each RF value,
+     * we have a regex containing literal topic-name alternatives (i.e. a group by operation).
+     *
      * @param topicByReplicationFactor Topic names grouped by replication factor value.
      */
     record ReplicationFactor(@JsonProperty("topic_by_replication_factor") Map<Integer, String> topicByReplicationFactor) { }
