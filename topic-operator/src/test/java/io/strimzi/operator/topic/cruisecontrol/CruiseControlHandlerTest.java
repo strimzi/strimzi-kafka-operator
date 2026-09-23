@@ -14,7 +14,6 @@ import io.strimzi.api.kafka.model.topic.ReplicasChangeStatusBuilder;
 import io.strimzi.certs.StrimziSubject;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.StatusUtils;
-import io.strimzi.operator.common.model.cruisecontrol.CruiseControlEndpoints;
 import io.strimzi.operator.common.operator.MockCertIssuer;
 import io.strimzi.operator.topic.TestUtil;
 import io.strimzi.operator.topic.TopicOperatorConfig;
@@ -39,10 +38,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-import static com.github.tomakehurst.wiremock.client.WireMock.equalToJson;
-import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
-import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
-import static com.github.tomakehurst.wiremock.client.WireMock.verify;
 import static java.util.Map.entry;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -129,10 +124,9 @@ public class CruiseControlHandlerTest {
         server.expectTopicConfigSuccessResponse(apiUserFile, apiPassFile);
         client.topicConfiguration(List.of(dottedTopic, plainTopic));
 
-        verify(postRequestedFor(urlPathEqualTo(CruiseControlEndpoints.TOPIC_CONFIGURATION.toString()))
-                .withRequestBody(equalToJson("""
-                    {"replication_factor":{"topic_by_replication_factor":{"2":"\\\\Qa.c\\\\E|\\\\Qacc\\\\E"}}}
-                    """)));
+        assertThat(server.topicConfigurationRequestBody(), is("""
+            {"replication_factor":{"topic_by_replication_factor":{"2":"\\\\Qa.c\\\\E|\\\\Qacc\\\\E"}}}\
+            """));
         client.close();
     }
 
