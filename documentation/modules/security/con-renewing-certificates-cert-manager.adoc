@@ -26,7 +26,7 @@ To make the CA certificate available to the Cluster Operator, use a tool such as
 ====
 The certificates issued for Kafka components contain Subject Alternative Names using internal Kubernetes DNS names (for example, <cluster>-kafka-brokers.<namespace>.svc.cluster.local). Public certificate authorities cannot sign these names, so the CA backing your issuer must be a private CA capable of signing arbitrary SANs. For guidance on provisioning a suitable CA issuer, see the https://cert-manager.io/docs/configuration/[cert-manager Issuer configuration documentation].
 
-For development or demo environments, you can bootstrap a self-signed CA issuer as described in the https://cert-manager.io/docs/configuration/selfsigned/#bootstrapping-ca-issuers[cert-manager documentation]. This approach is not recommended for production use.
+To get started quickly, you can bootstrap a self-signed CA issuer as described in the https://cert-manager.io/docs/configuration/selfsigned/#bootstrapping-ca-issuers[cert-manager documentation].
 ====
 
 .CA certificate rotation
