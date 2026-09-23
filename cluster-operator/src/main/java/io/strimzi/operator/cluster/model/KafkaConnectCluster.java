@@ -279,7 +279,7 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
         if (spec.getMetricsConfig() instanceof JmxPrometheusExporterMetrics) {
             result.metrics = new JmxPrometheusExporterModel(spec);
         } else if (spec.getMetricsConfig() instanceof StrimziMetricsReporter) {
-            result.metrics = new StrimziMetricsReporterModel(spec, result.getDefaultMetricsAllowList());
+            result.metrics = new StrimziMetricsReporterModel(spec);
         }
 
         result.logging = new LoggingModel(spec, result.getClass().getSimpleName());
@@ -843,7 +843,7 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
                         .withTls(tls, cluster)
                         .withAuthentication(authentication)
                         .withRackId(rack)
-                        .withStrimziMetricsReporter(metrics)
+                        .withStrimziMetricsReporter(metrics, getDefaultMetricsAllowList())
                         .withUserConfiguration(
                                 configuration,
                                 metrics instanceof JmxPrometheusExporterModel,
