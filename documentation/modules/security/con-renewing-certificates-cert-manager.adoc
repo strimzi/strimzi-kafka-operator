@@ -13,8 +13,8 @@ The user is responsible for managing the CA lifecycle: provisioning the issuer, 
 
 .How cert-manager integration works
 
-The Cluster Operator creates one `Certificate` resource per Kafka node and one for each enabled component (Cruise Control, Kafka Exporter, Entity Operator), plus one for the Cluster Operator itself.
-cert-manager stores the issued certificates in Secrets with a `-cm` suffix (for example, `my-cluster-dual-role-0-cm`).
+The Cluster Operator creates one `Certificate` resource per Kafka node and one for each enabled components such as Cruise Control, Kafka Exporter, User Operator, Topic Operator and one for the Cluster Operator itself.
+The certificates issued by cert-manager are stored in Secrets with a `-cm` suffix (for example, `my-cluster-dual-role-0-cm`)
 During reconciliation, if the issued certificates are trusted, they are copied into the component-specific Secrets (for example, `my-cluster-dual-role-0`).
 
 .Provisioning the CA issuer
@@ -22,7 +22,12 @@ During reconciliation, if the issued certificates are trusted, they are copied i
 You are responsible for provisioning a cert-manager `Issuer` or `ClusterIssuer` that the Cluster Operator references when creating `Certificate` resources.
 To make the CA certificate available to the Cluster Operator, use a tool such as https://cert-manager.io/docs/trust/trust-manager/[trust-manager] to copy the `ca.crt` from the issuer's Secret into a separate Secret that the Cluster Operator can consume.
 
-NOTE: For development or demo environments, you can bootstrap a self-signed CA issuer as described in the https://cert-manager.io/docs/configuration/selfsigned/#bootstrapping-ca-issuers[cert-manager documentation]. This approach is not recommended for production use.
+[NOTE]
+====
+The certificates issued for Kafka components contain Subject Alternative Names using internal Kubernetes DNS names (for example, <cluster>-kafka-brokers.<namespace>.svc.cluster.local). Public certificate authorities cannot sign these names, so the CA backing your issuer must be a private CA capable of signing arbitrary SANs. For guidance on provisioning a suitable CA issuer, see the https://cert-manager.io/docs/configuration/[cert-manager Issuer configuration documentation].
+
+For development or demo environments, you can bootstrap a self-signed CA issuer as described in the https://cert-manager.io/docs/configuration/selfsigned/#bootstrapping-ca-issuers[cert-manager documentation]. This approach is not recommended for production use.
+====
 
 .CA certificate rotation
 

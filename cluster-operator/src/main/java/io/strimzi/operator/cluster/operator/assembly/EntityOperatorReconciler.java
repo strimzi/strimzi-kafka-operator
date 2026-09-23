@@ -168,7 +168,6 @@ public class EntityOperatorReconciler {
                 )).mapEmpty();
     }
 
-
     /**
      * Determines which operator permissions are needed for a given namespace.
      * This implements adaptive permission selection:
