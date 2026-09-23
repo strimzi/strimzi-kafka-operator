@@ -12,7 +12,7 @@ Perform the steps in this procedure to enable cert-manager to issue certificates
 
 .Prerequisites
 
-* cert-manager is installed in the cluster with a ready `Issuer` or `ClusterIssuer` configured with a Secret that contains a certificate and key pair for the CA. The Secret must have `tls.crt` and `tls.key` keys. The value of `tls.crt` is the CA certificate that you provide to the Cluster Operator in the following step under the `ca.crt` key.
+* cert-manager is installed in the cluster with a ready `Issuer` or `ClusterIssuer` configured with a Secret that contains a certificate and key pair for the CA. The Secret must have `tls.crt` and `tls.key` keys, where `tls.crt` is the CA certificate. You provide this certificate to the Cluster Operator as `ca.crt` in a Secret in the following step.
 
 .Procedure
 
