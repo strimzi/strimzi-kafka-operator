@@ -12,6 +12,7 @@ import io.strimzi.api.kafka.model.kafka.clustersecurity.ClusterSecurityAuthentic
 import io.strimzi.api.kafka.model.kafka.clustersecurity.ClusterSecurityEncryptionType;
 import io.strimzi.api.kafka.model.kafka.clustersecurity.ClusterSecurityStatus;
 import io.strimzi.api.kafka.model.kafka.clustersecurity.ClusterSecurityStatusBuilder;
+import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.model.InvalidResourceException;
@@ -49,10 +50,11 @@ public class KafkaClusterSecurityContext {
      * Creates an instance of this class from the Kafka CR.
      *
      * @param kafka     The Kafka CR
+     * @param oidcDiscovery     OIDC discovery information detected from the Kubernetes API (null if not detected)
      *
      * @return  KafkaClusterSecurityContext instance corresponding to the Kafka CR
      */
-    public static KafkaClusterSecurityContext fromCrd(Kafka kafka) {
+    public static KafkaClusterSecurityContext fromCrd(Kafka kafka, PlatformFeaturesAvailability.OidcDiscovery oidcDiscovery) {
         ClusterSecurity clusterSecurity = Annotations.hasAnnotation(kafka, INTERNAL_CLUSTER_SECURITY_ANNOTATION) ? deserializeSpec(Annotations.stringAnnotation(kafka, INTERNAL_CLUSTER_SECURITY_ANNOTATION, null)) : null;
         ClusterSecurityStatus clusterSecurityStatus = kafka.getStatus() != null ? deserializeStatus(kafka.getStatus().getClusterSecurity()) : null;
 
@@ -68,17 +70,17 @@ public class KafkaClusterSecurityContext {
         } else if (clusterSecurityStatus == null) {
             // Cluster Security does not exist in status, but it is configured in the annotation. This is a new cluster
             // or follows the migration process. We use the configuration from the annotation.
-            return fromSpec(kafka.getMetadata().getNamespace(), kafka.getMetadata().getName(), clusterSecurity);
+            return fromSpec(kafka.getMetadata().getNamespace(), kafka.getMetadata().getName(), clusterSecurity, oidcDiscovery);
         } else {
             // Cluster Security exists in status and in the annotation. We need to doublecheck that the status uses
             // the same configuration as the annotation.
             validateSpecAndStatusMatch(clusterSecurity, clusterSecurityStatus);
-            return fromSpec(kafka.getMetadata().getNamespace(), kafka.getMetadata().getName(), clusterSecurity);
+            return fromSpec(kafka.getMetadata().getNamespace(), kafka.getMetadata().getName(), clusterSecurity, oidcDiscovery);
         }
     }
 
-    private static KafkaClusterSecurityContext fromSpec(String namespace, String clusterName, ClusterSecurity clusterSecurity) {
-        return new KafkaClusterSecurityContext(EncryptionConfiguration.fromCrd(clusterSecurity.getEncryption()), AuthenticationConfiguration.fromCrd(namespace, clusterName, clusterSecurity.getAuthentication()));
+    private static KafkaClusterSecurityContext fromSpec(String namespace, String clusterName, ClusterSecurity clusterSecurity, PlatformFeaturesAvailability.OidcDiscovery oidcDiscovery) {
+        return new KafkaClusterSecurityContext(EncryptionConfiguration.fromCrd(clusterSecurity.getEncryption()), AuthenticationConfiguration.fromCrd(namespace, clusterName, clusterSecurity.getAuthentication(), oidcDiscovery));
     }
 
     /**

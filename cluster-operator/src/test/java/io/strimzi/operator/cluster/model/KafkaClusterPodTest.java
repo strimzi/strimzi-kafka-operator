@@ -717,7 +717,7 @@ public class KafkaClusterPodTest {
     @Test
     public void testServiceAccountAuthenticationVolumesAndVolumeMounts() {
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, KAFKA, POOLS, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, null, SHARED_ENV_PROVIDER,
-                new KafkaClusterSecurityContext(new TlsEncryptionConfiguration(), AuthenticationConfiguration.fromCrd(NAMESPACE, CLUSTER, new ClusterSecurityAuthenticationBuilder().withType(ClusterSecurityAuthenticationType.SERVICE_ACCOUNT).build())));
+                new KafkaClusterSecurityContext(new TlsEncryptionConfiguration(), AuthenticationConfiguration.fromCrd(NAMESPACE, CLUSTER, new ClusterSecurityAuthenticationBuilder().withType(ClusterSecurityAuthenticationType.SERVICE_ACCOUNT).build(), null)));
 
         List<StrimziPodSet> podSets = kc.generatePodSets(null, null, node -> Map.of());
         assertThat(podSets.size(), is(3));

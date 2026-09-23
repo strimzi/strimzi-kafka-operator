@@ -556,7 +556,7 @@ public class KafkaExporterTest {
     ////////////////////
 
     private static AuthenticationConfiguration serviceAccountAuthentication() {
-        return AuthenticationConfiguration.fromCrd(NAMESPACE, CLUSTER_NAME, new ClusterSecurityAuthenticationBuilder().withType(ClusterSecurityAuthenticationType.SERVICE_ACCOUNT).build());
+        return AuthenticationConfiguration.fromCrd(NAMESPACE, CLUSTER_NAME, new ClusterSecurityAuthenticationBuilder().withType(ClusterSecurityAuthenticationType.SERVICE_ACCOUNT).build(), null);
     }
 
     private static List<EnvVar> getExpectedEnvVars() {

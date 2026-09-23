@@ -41,7 +41,10 @@ import java.util.stream.Collectors;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 
 @ExtendWith(VertxExtension.class)
@@ -221,8 +224,82 @@ public class PlatformFeaturesAvailabilityTest {
             assertThat(pfa.hasBuilds(), is(false));
             assertThat(pfa.hasImages(), is(false));
             assertThat(pfa.hasTLSRoutes(), is(false));
+            assertThat(pfa.getOidcDiscovery(), is(nullValue()));
             async.flag();
         })));
+    }
+
+    @Test
+    public void testOidcDetection(Vertx vertx, VertxTestContext context) throws InterruptedException, ExecutionException {
+        String oidc = """
+                {
+                  "issuer": "https://kubernetes.default.svc.cluster.local",
+                  "jwks_uri": "https://172.18.0.2:6443/openid/v1/jwks",
+                  "response_types_supported": ["id_token"],
+                  "subject_types_supported": ["public"],
+                  "id_token_signing_alg_values_supported": ["RS256"]
+                }""";
+
+        startMockApi(vertx, List.of(), List.of(), 200, oidc);
+
+        KubernetesClient client = buildKubernetesClient("127.0.0.1:" + server.actualPort());
+
+        Checkpoint async = context.checkpoint();
+
+        PlatformFeaturesAvailability.create(vertx, client).onComplete(context.succeeding(pfa -> context.verify(() -> {
+            assertThat(pfa.getOidcDiscovery(), is(notNullValue()));
+            assertThat(pfa.getOidcDiscovery().issuer(), is("https://kubernetes.default.svc.cluster.local"));
+            assertThat(pfa.getOidcDiscovery().jwksUri(), is("https://172.18.0.2:6443/openid/v1/jwks"));
+            async.flag();
+        })));
+    }
+
+    @Test
+    public void testOidcDetectionFailureIsIgnored(Vertx vertx, VertxTestContext context) throws InterruptedException, ExecutionException {
+        // 403 => The operator does not have the RBAC rights to access the OIDC discovery endpoint
+        startMockApi(vertx, List.of(), List.of(), 403, "");
+
+        KubernetesClient client = buildKubernetesClient("127.0.0.1:" + server.actualPort());
+
+        Checkpoint async = context.checkpoint();
+
+        PlatformFeaturesAvailability.create(vertx, client).onComplete(context.succeeding(pfa -> context.verify(() -> {
+            assertThat(pfa.getOidcDiscovery(), is(nullValue()));
+            async.flag();
+        })));
+    }
+
+    @Test
+    public void testOidcDetectionInvalidDocumentIsIgnored(Vertx vertx, VertxTestContext context) throws InterruptedException, ExecutionException {
+        startMockApi(vertx, List.of(), List.of(), 200, "Not a proper OIDC discovery JSON");
+
+        KubernetesClient client = buildKubernetesClient("127.0.0.1:" + server.actualPort());
+
+        Checkpoint async = context.checkpoint();
+
+        PlatformFeaturesAvailability.create(vertx, client).onComplete(context.succeeding(pfa -> context.verify(() -> {
+            assertThat(pfa.getOidcDiscovery(), is(nullValue()));
+            async.flag();
+        })));
+    }
+
+    @Test
+    public void testParseOidcDiscovery() throws Exception {
+        PlatformFeaturesAvailability.OidcDiscovery oidc = PlatformFeaturesAvailability.parseOidcDiscovery("""
+                {"issuer": "https://oidc.eks.eu-west-1.amazonaws.com/id/ABCDEF", "jwks_uri": "https://oidc.eks.eu-west-1.amazonaws.com/id/ABCDEF/keys"}""");
+        assertThat(oidc.issuer(), is("https://oidc.eks.eu-west-1.amazonaws.com/id/ABCDEF"));
+        assertThat(oidc.jwksUri(), is("https://oidc.eks.eu-west-1.amazonaws.com/id/ABCDEF/keys"));
+
+        // Not found
+        assertThat(PlatformFeaturesAvailability.parseOidcDiscovery(null), is(nullValue()));
+
+        // Missing fields
+        assertThat(PlatformFeaturesAvailability.parseOidcDiscovery("{\"issuer\": \"https://kubernetes.default.svc\"}"), is(nullValue()));
+        assertThat(PlatformFeaturesAvailability.parseOidcDiscovery("{\"jwks_uri\": \"https://kubernetes.default.svc/openid/v1/jwks\"}"), is(nullValue()));
+        assertThat(PlatformFeaturesAvailability.parseOidcDiscovery("{\"issuer\": \"\", \"jwks_uri\": \"https://kubernetes.default.svc/openid/v1/jwks\"}"), is(nullValue()));
+
+        // Invalid JSON
+        assertThrows(Exception.class, () -> PlatformFeaturesAvailability.parseOidcDiscovery("Not a proper OIDC discovery JSON"));
     }
 
     @Test
@@ -292,6 +369,10 @@ public class PlatformFeaturesAvailabilityTest {
     }
 
     void startMockApi(Vertx vertx, String version, List<APIGroup> apis, List<APIResourceList> apiResourceLists) throws InterruptedException, ExecutionException {
+        startMockApi(vertx, version, apis, apiResourceLists, 404, "");
+    }
+
+    void startMockApi(Vertx vertx, String version, List<APIGroup> apis, List<APIResourceList> apiResourceLists, int oidcStatusCode, String oidcDiscovery) throws InterruptedException, ExecutionException {
         Set<String> groupsPaths = apis.stream().map(api -> "/apis/" + api.getName()).collect(Collectors.toSet());
         Set<String> apiResourcePaths = apiResourceLists.stream().map(api -> "/apis/" + api.getGroupVersion()).collect(Collectors.toSet());
 
@@ -316,6 +397,8 @@ public class PlatformFeaturesAvailabilityTest {
                 }
             } else if (HttpMethod.GET.equals(request.method()) && "/version".equals(request.uri())) {
                 request.response().setStatusCode(200).end(version);
+            } else if (HttpMethod.GET.equals(request.method()) && PlatformFeaturesAvailability.OIDC_DISCOVERY_PATH.equals(request.uri())) {
+                request.response().setStatusCode(oidcStatusCode).end(oidcDiscovery);
             } else {
                 request.response().setStatusCode(404).end();
             }
@@ -324,6 +407,10 @@ public class PlatformFeaturesAvailabilityTest {
     }
 
     void startMockApi(Vertx vertx, List<APIGroup> apis, List<APIResourceList> apiResourceLists) throws InterruptedException, ExecutionException {
+        startMockApi(vertx, apis, apiResourceLists, 404, "");
+    }
+
+    void startMockApi(Vertx vertx, List<APIGroup> apis, List<APIResourceList> apiResourceLists, int oidcStatusCode, String oidcDiscovery) throws InterruptedException, ExecutionException {
         String version = """
                 {
                   "major": "1",
@@ -337,7 +424,7 @@ public class PlatformFeaturesAvailabilityTest {
                   "platform": "linux/amd64"
                 }""";
 
-        startMockApi(vertx, version, apis, apiResourceLists);
+        startMockApi(vertx, version, apis, apiResourceLists, oidcStatusCode, oidcDiscovery);
     }
 
     private APIGroup buildAPIGroup(String group, String... versions)    {

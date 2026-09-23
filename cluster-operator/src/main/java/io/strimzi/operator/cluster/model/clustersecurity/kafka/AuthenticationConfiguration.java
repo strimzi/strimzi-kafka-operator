@@ -6,6 +6,7 @@ package io.strimzi.operator.cluster.model.clustersecurity.kafka;
 
 import io.strimzi.api.kafka.model.kafka.clustersecurity.ClusterSecurityAuthentication;
 import io.strimzi.api.kafka.model.kafka.clustersecurity.ClusterSecurityAuthenticationType;
+import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.common.model.InvalidResourceException;
 
 /**
@@ -18,16 +19,17 @@ public interface AuthenticationConfiguration {
      * @param namespace         Namespace of the Kafka cluster
      * @param clusterName       Name of the Kafka cluster
      * @param authentication    ClusterSecurityAuthentication from which the configuration is created
+     * @param oidcDiscovery     OIDC discovery information detected from the Kubernetes API (null if not detected)
      *
      * @return  AuthenticationConfiguration instance
      */
-    static AuthenticationConfiguration fromCrd(String namespace, String clusterName, ClusterSecurityAuthentication authentication)    {
+    static AuthenticationConfiguration fromCrd(String namespace, String clusterName, ClusterSecurityAuthentication authentication, PlatformFeaturesAvailability.OidcDiscovery oidcDiscovery)    {
         validate(authentication);
 
         return switch (authentication != null ? authentication.getType() : ClusterSecurityAuthenticationType.MTLS) {
             case MTLS -> new MtlsAuthenticationConfiguration();
             case NONE -> new NoneAuthenticationConfiguration();
-            case SERVICE_ACCOUNT -> ServiceAccountAuthenticationConfiguration.fromCrd(namespace, clusterName, authentication);
+            case SERVICE_ACCOUNT -> ServiceAccountAuthenticationConfiguration.fromCrd(namespace, clusterName, authentication, oidcDiscovery);
         };
     }
 

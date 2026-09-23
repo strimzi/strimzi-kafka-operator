@@ -132,7 +132,7 @@ public class KafkaReconcilerServiceAccountTest {
     @Test
     public void testClusterOperatorServiceAccountIsCreatedWithServiceAccountAuthentication(VertxTestContext context) {
         KafkaClusterSecurityContext securityContext = new KafkaClusterSecurityContext(new TlsEncryptionConfiguration(),
-                AuthenticationConfiguration.fromCrd(NAMESPACE, CLUSTER_NAME, new ClusterSecurityAuthenticationBuilder().withType(ClusterSecurityAuthenticationType.SERVICE_ACCOUNT).build()));
+                AuthenticationConfiguration.fromCrd(NAMESPACE, CLUSTER_NAME, new ClusterSecurityAuthenticationBuilder().withType(ClusterSecurityAuthenticationType.SERVICE_ACCOUNT).build(), null));
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
         ServiceAccountOperator mockSaOps = supplier.serviceAccountOperations;

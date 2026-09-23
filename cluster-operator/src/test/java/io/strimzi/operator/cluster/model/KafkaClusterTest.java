@@ -451,7 +451,7 @@ public class KafkaClusterTest {
     @Test
     public void testGenerateClusterOperatorServiceAccount() {
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, KAFKA, POOLS, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, null, SHARED_ENV_PROVIDER,
-                new KafkaClusterSecurityContext(new TlsEncryptionConfiguration(), AuthenticationConfiguration.fromCrd(NAMESPACE, CLUSTER, new ClusterSecurityAuthenticationBuilder().withType(ClusterSecurityAuthenticationType.SERVICE_ACCOUNT).build())));
+                new KafkaClusterSecurityContext(new TlsEncryptionConfiguration(), AuthenticationConfiguration.fromCrd(NAMESPACE, CLUSTER, new ClusterSecurityAuthenticationBuilder().withType(ClusterSecurityAuthenticationType.SERVICE_ACCOUNT).build(), null)));
 
         ServiceAccount sa = kc.generateClusterOperatorServiceAccount();
         assertThat(sa, is(notNullValue()));

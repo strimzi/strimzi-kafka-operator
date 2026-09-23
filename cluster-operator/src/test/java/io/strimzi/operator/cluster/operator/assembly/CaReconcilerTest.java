@@ -211,7 +211,7 @@ public class CaReconcilerTest {
                 .thenAnswer(i -> CompletableFuture.completedFuture(null));
 
         KafkaClusterSecurityContext securityContext = new KafkaClusterSecurityContext(new TlsEncryptionConfiguration(),
-                AuthenticationConfiguration.fromCrd(NAMESPACE, NAME, new ClusterSecurityAuthenticationBuilder().withType(ClusterSecurityAuthenticationType.SERVICE_ACCOUNT).build()));
+                AuthenticationConfiguration.fromCrd(NAMESPACE, NAME, new ClusterSecurityAuthenticationBuilder().withType(ClusterSecurityAuthenticationType.SERVICE_ACCOUNT).build(), null));
 
         MockCaReconciler mockCaReconciler = new MockCaReconciler(supplier, clusterCa, clientsCa, securityContext);
         mockCaReconciler.reconcile(Clock.systemUTC()).toCompletableFuture().join();

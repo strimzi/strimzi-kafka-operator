@@ -90,7 +90,7 @@ public class KafkaClusterSecurityContextTest {
 
     @Test
     public void testFromCrdWithoutStatus()  {
-        ClusterSecurityStatus status = KafkaClusterSecurityContext.fromCrd(KAFKA).toStatus();
+        ClusterSecurityStatus status = KafkaClusterSecurityContext.fromCrd(KAFKA, null).toStatus();
 
         assertThat(status.getEncryption().getType(), is(ClusterSecurityEncryptionType.TLS));
         assertThat(status.getAuthentication().getType(), is(ClusterSecurityAuthenticationType.MTLS));
@@ -104,7 +104,7 @@ public class KafkaClusterSecurityContextTest {
                 .endStatus()
                 .build();
 
-        ClusterSecurityStatus status = KafkaClusterSecurityContext.fromCrd(kafka).toStatus();
+        ClusterSecurityStatus status = KafkaClusterSecurityContext.fromCrd(kafka, null).toStatus();
 
         assertThat(status.getEncryption().getType(), is(ClusterSecurityEncryptionType.TLS));
         assertThat(status.getAuthentication().getType(), is(ClusterSecurityAuthenticationType.MTLS));
@@ -118,7 +118,7 @@ public class KafkaClusterSecurityContextTest {
                 .endStatus()
                 .build();
 
-        ClusterSecurityStatus status = KafkaClusterSecurityContext.fromCrd(kafka).toStatus();
+        ClusterSecurityStatus status = KafkaClusterSecurityContext.fromCrd(kafka, null).toStatus();
 
         assertThat(status.getEncryption().getType(), is(ClusterSecurityEncryptionType.TLS));
         assertThat(status.getAuthentication().getType(), is(ClusterSecurityAuthenticationType.MTLS));
@@ -139,7 +139,7 @@ public class KafkaClusterSecurityContextTest {
                 .endStatus()
                 .build();
 
-        ClusterSecurityStatus status = KafkaClusterSecurityContext.fromCrd(kafka).toStatus();
+        ClusterSecurityStatus status = KafkaClusterSecurityContext.fromCrd(kafka, null).toStatus();
 
         assertThat(status.getEncryption().getType(), is(ClusterSecurityEncryptionType.TLS));
         assertThat(status.getAuthentication().getType(), is(ClusterSecurityAuthenticationType.MTLS));
@@ -153,7 +153,7 @@ public class KafkaClusterSecurityContextTest {
                 .endStatus()
                 .build();
 
-        InvalidResourceException e = assertThrows(InvalidResourceException.class, () -> KafkaClusterSecurityContext.fromCrd(kafka));
+        InvalidResourceException e = assertThrows(InvalidResourceException.class, () -> KafkaClusterSecurityContext.fromCrd(kafka, null));
         assertThat(e.getMessage(), is("Invalid ClusterSecurityStatus: encryption or authentication configuration is not set"));
     }
 
@@ -161,7 +161,7 @@ public class KafkaClusterSecurityContextTest {
     public void testFromCrdWithClusterSecurityInAnnotation()  {
         Kafka kafka = kafkaWithClusterSecurity(WITHOUT_ENCRYPTION_OR_AUTHENTICATION, null);
 
-        KafkaClusterSecurityContext context = KafkaClusterSecurityContext.fromCrd(kafka);
+        KafkaClusterSecurityContext context = KafkaClusterSecurityContext.fromCrd(kafka, null);
 
         assertThat(context.encryption(), is(instanceOf(NoneEncryptionConfiguration.class)));
         assertThat(context.authentication(), is(instanceOf(NoneAuthenticationConfiguration.class)));
@@ -172,7 +172,7 @@ public class KafkaClusterSecurityContextTest {
     public void testFromCrdWithServiceAccountAuthenticationInAnnotation()  {
         Kafka kafka = kafkaWithClusterSecurity(TLS_WITH_SERVICE_ACCOUNT, null);
 
-        KafkaClusterSecurityContext context = KafkaClusterSecurityContext.fromCrd(kafka);
+        KafkaClusterSecurityContext context = KafkaClusterSecurityContext.fromCrd(kafka, null);
 
         assertThat(context.encryption(), is(instanceOf(TlsEncryptionConfiguration.class)));
         assertThat(context.authentication(), is(instanceOf(ServiceAccountAuthenticationConfiguration.class)));
@@ -188,7 +188,7 @@ public class KafkaClusterSecurityContextTest {
     public void testFromCrdWithServiceAccountAuthenticationWithCustomExpirationInAnnotation()  {
         Kafka kafka = kafkaWithClusterSecurity(TLS_WITH_SERVICE_ACCOUNT_AND_CUSTOM_EXPIRATION, status(ClusterSecurityEncryptionType.TLS, ClusterSecurityAuthenticationType.SERVICE_ACCOUNT));
 
-        KafkaClusterSecurityContext context = KafkaClusterSecurityContext.fromCrd(kafka);
+        KafkaClusterSecurityContext context = KafkaClusterSecurityContext.fromCrd(kafka, null);
 
         ServiceAccountAuthenticationConfiguration authentication = (ServiceAccountAuthenticationConfiguration) context.authentication();
         assertThat(authentication.audience(), is("strimzi.io/kafka/" + NAMESPACE + "/" + CLUSTER_NAME));
@@ -204,7 +204,7 @@ public class KafkaClusterSecurityContextTest {
                 .endMetadata()
                 .build();
 
-        KafkaClusterSecurityContext context = KafkaClusterSecurityContext.fromCrd(kafka);
+        KafkaClusterSecurityContext context = KafkaClusterSecurityContext.fromCrd(kafka, null);
 
         ServiceAccountAuthenticationConfiguration authentication = (ServiceAccountAuthenticationConfiguration) context.authentication();
         assertThat(authentication.audience(), is("strimzi.io/kafka/other-namespace/other-cluster"));
@@ -215,7 +215,7 @@ public class KafkaClusterSecurityContextTest {
         ClusterSecurityStatus status = status(ClusterSecurityEncryptionType.TLS, ClusterSecurityAuthenticationType.NONE);
         Kafka kafka = kafkaWithClusterSecurity(TLS_WITHOUT_AUTHENTICATION, status);
 
-        KafkaClusterSecurityContext context = KafkaClusterSecurityContext.fromCrd(kafka);
+        KafkaClusterSecurityContext context = KafkaClusterSecurityContext.fromCrd(kafka, null);
 
         assertThat(context.encryption(), is(instanceOf(TlsEncryptionConfiguration.class)));
         assertThat(context.authentication(), is(instanceOf(NoneAuthenticationConfiguration.class)));
@@ -227,7 +227,7 @@ public class KafkaClusterSecurityContextTest {
         ClusterSecurityStatus status = status(ClusterSecurityEncryptionType.NONE, ClusterSecurityAuthenticationType.NONE);
         Kafka kafka = kafkaWithClusterSecurity(TLS_WITHOUT_AUTHENTICATION, status);
 
-        InvalidResourceException e = assertThrows(InvalidResourceException.class, () -> KafkaClusterSecurityContext.fromCrd(kafka));
+        InvalidResourceException e = assertThrows(InvalidResourceException.class, () -> KafkaClusterSecurityContext.fromCrd(kafka, null));
         assertThat(e.getMessage(), is("Desired Cluster Security configuration does not match the current configuration. " +
                 "If you want to change the Cluster Security configuration, please follow the documentation."));
     }
@@ -240,7 +240,7 @@ public class KafkaClusterSecurityContextTest {
                 .endStatus()
                 .build();
 
-        InvalidResourceException e = assertThrows(InvalidResourceException.class, () -> KafkaClusterSecurityContext.fromCrd(kafka));
+        InvalidResourceException e = assertThrows(InvalidResourceException.class, () -> KafkaClusterSecurityContext.fromCrd(kafka, null));
         assertThat(e.getMessage(), is("Desired Cluster Security configuration does not match the current configuration. " +
                 "If you want to change the Cluster Security configuration, please follow the documentation."));
     }
@@ -249,7 +249,7 @@ public class KafkaClusterSecurityContextTest {
     public void testFromCrdWithMtlsWithoutTls()  {
         Kafka kafka = kafkaWithClusterSecurity(MTLS_WITHOUT_TLS, null);
 
-        InvalidResourceException e = assertThrows(InvalidResourceException.class, () -> KafkaClusterSecurityContext.fromCrd(kafka));
+        InvalidResourceException e = assertThrows(InvalidResourceException.class, () -> KafkaClusterSecurityContext.fromCrd(kafka, null));
         assertThat(e.getMessage(), is("Desired Cluster Security configuration is not valid: mTLS authentication can be used only with enabled TLS encryption."));
     }
 
@@ -295,7 +295,7 @@ public class KafkaClusterSecurityContextTest {
     @Test
     public void testExpirationSecondsWithWrongType()  {
         Kafka kafka = kafkaWithClusterSecurity("{\"encryption\":{\"type\":\"tls\"},\"authentication\":{\"type\":\"mtls\", \"expirationSeconds\": \"1800\"}}", null);
-        InvalidResourceException e = assertThrows(InvalidResourceException.class, () -> KafkaClusterSecurityContext.fromCrd(kafka));
+        InvalidResourceException e = assertThrows(InvalidResourceException.class, () -> KafkaClusterSecurityContext.fromCrd(kafka, null));
 
         assertThat(e.getMessage(), is("The expirationSeconds option in Cluster Security configuration can be used only with service-account authentication type."));
     }
@@ -303,7 +303,7 @@ public class KafkaClusterSecurityContextTest {
     @Test
     public void testExpirationSecondsTooSmall()  {
         Kafka kafka = kafkaWithClusterSecurity("{\"encryption\":{\"type\":\"tls\"},\"authentication\":{\"type\":\"service-account\", \"expirationSeconds\": \"300\"}}", null);
-        InvalidResourceException e = assertThrows(InvalidResourceException.class, () -> KafkaClusterSecurityContext.fromCrd(kafka));
+        InvalidResourceException e = assertThrows(InvalidResourceException.class, () -> KafkaClusterSecurityContext.fromCrd(kafka, null));
 
         assertThat(e.getMessage(), is("The expirationSeconds option in Cluster Security configuration must be set to at least 600 seconds."));
     }
@@ -482,7 +482,7 @@ public class KafkaClusterSecurityContextTest {
 
     @Test
     public void testToStatus()  {
-        ClusterSecurityStatus status = KafkaClusterSecurityContext.fromCrd(KAFKA).toStatus();
+        ClusterSecurityStatus status = KafkaClusterSecurityContext.fromCrd(KAFKA, null).toStatus();
 
         assertThat(status, is(new ClusterSecurityStatusBuilder()
                 .withNewEncryption()
@@ -496,7 +496,7 @@ public class KafkaClusterSecurityContextTest {
 
     @Test
     public void testStatusRoundTrip()  {
-        ClusterSecurityStatus status = KafkaClusterSecurityContext.fromCrd(KAFKA).toStatus();
+        ClusterSecurityStatus status = KafkaClusterSecurityContext.fromCrd(KAFKA, null).toStatus();
 
         Kafka kafka = new KafkaBuilder(KAFKA)
                 .withNewStatus()
@@ -504,6 +504,6 @@ public class KafkaClusterSecurityContextTest {
                 .endStatus()
                 .build();
 
-        assertThat(KafkaClusterSecurityContext.fromCrd(kafka).toStatus(), is(status));
+        assertThat(KafkaClusterSecurityContext.fromCrd(kafka, null).toStatus(), is(status));
     }
 }

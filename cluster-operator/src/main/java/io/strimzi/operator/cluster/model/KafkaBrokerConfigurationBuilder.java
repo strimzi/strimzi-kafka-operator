@@ -405,8 +405,8 @@ public class KafkaBrokerConfigurationBuilder {
                     "unsecuredLoginStringClaim_sub=\"unused\" " +
                     "oauth.check.access.token.type=\"false\" " +
                     "oauth.custom.claim.check=\"@.aud anyof ['" + saConfig.audience() + "']\" " +
-                    "oauth.valid.issuer.uri=\"" + ServiceAccountAuthenticationConfiguration.ISSUER + "\" " +
-                    "oauth.jwks.endpoint.uri=\"" + ServiceAccountAuthenticationConfiguration.JWKS_URI + "\" " +
+                    "oauth.valid.issuer.uri=\"" + saConfig.issuer() + "\" " +
+                    "oauth.jwks.endpoint.uri=\"" + saConfig.jwksUri() + "\" " +
                     "oauth.username.claim=\"sub\" " +
                     "oauth.ssl.truststore.location=\"/var/run/secrets/kubernetes.io/serviceaccount/ca.crt\" " +
                     "oauth.ssl.truststore.type=\"PEM\" " +

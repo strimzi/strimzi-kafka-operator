@@ -208,7 +208,7 @@ public class ReconcilerUtilsTest {
                 .thenReturn(CompletableFuture.completedFuture(clusterCaSecret));
         KafkaClusterSecurityContext securityContext = mock(KafkaClusterSecurityContext.class);
         when(securityContext.encryption()).thenReturn(new TlsEncryptionConfiguration());
-        when(securityContext.authentication()).thenReturn(AuthenticationConfiguration.fromCrd(NAMESPACE, CLUSTER_NAME, new ClusterSecurityAuthenticationBuilder().withType(ClusterSecurityAuthenticationType.SERVICE_ACCOUNT).build()));
+        when(securityContext.authentication()).thenReturn(AuthenticationConfiguration.fromCrd(NAMESPACE, CLUSTER_NAME, new ClusterSecurityAuthenticationBuilder().withType(ClusterSecurityAuthenticationType.SERVICE_ACCOUNT).build(), null));
 
         Checkpoint async = context.checkpoint();
         ReconcilerUtils.coIdentity(Reconciliation.DUMMY_RECONCILIATION, mockSecretOps, securityContext)
@@ -230,7 +230,7 @@ public class ReconcilerUtilsTest {
         SecretOperator mockSecretOps = mock(SecretOperator.class);
         KafkaClusterSecurityContext securityContext = mock(KafkaClusterSecurityContext.class);
         when(securityContext.encryption()).thenReturn(new NoneEncryptionConfiguration());
-        when(securityContext.authentication()).thenReturn(AuthenticationConfiguration.fromCrd(NAMESPACE, CLUSTER_NAME, new ClusterSecurityAuthenticationBuilder().withType(ClusterSecurityAuthenticationType.SERVICE_ACCOUNT).build()));
+        when(securityContext.authentication()).thenReturn(AuthenticationConfiguration.fromCrd(NAMESPACE, CLUSTER_NAME, new ClusterSecurityAuthenticationBuilder().withType(ClusterSecurityAuthenticationType.SERVICE_ACCOUNT).build(), null));
 
         Checkpoint async = context.checkpoint();
         ReconcilerUtils.coIdentity(Reconciliation.DUMMY_RECONCILIATION, mockSecretOps, securityContext)

@@ -56,8 +56,8 @@ public class KafkaAgentConfigurationBuilder {
             // The Security Context validated that mTLS is used only when TLS is used. We do not need to validate it again.
             writer.println("sslTrustStoreSecretName=" + reconciliation.name() + "-cluster-ca-cert");
         } else if (securityContext.authentication() instanceof ServiceAccountAuthenticationConfiguration saAuthentication) {
-            writer.println("tokenIssuer=" + ServiceAccountAuthenticationConfiguration.ISSUER);
-            writer.println("tokenJwksUri=" + ServiceAccountAuthenticationConfiguration.JWKS_URI);
+            writer.println("tokenIssuer=" + saAuthentication.issuer());
+            writer.println("tokenJwksUri=" + saAuthentication.jwksUri());
             writer.println("tokenJwksCaPath=" + "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt");
             writer.println("tokenAudience=" + saAuthentication.audience());
             writer.println("tokenAllowedUsers=system:serviceaccount:%s:%s".formatted(reconciliation.namespace(), KafkaResources.clusterOperatorServiceAccount(reconciliation.name())));
