@@ -301,7 +301,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         Future<ReconciliationState> initialize() {
             // Initialize the security context from the Kafka CR and set it in the status.
             try {
-                this.securityContext = KafkaClusterSecurityContext.fromCrd(kafkaAssembly);
+                this.securityContext = KafkaClusterSecurityContext.fromCrd(kafkaAssembly, pfa.getOidcDiscovery());
                 this.kafkaStatus.setClusterSecurity(securityContext.toStatus());
 
                 // NOTE: To correctly propagate any possible errors into the Kafka CR, we have to make sure to fail

@@ -166,7 +166,7 @@ public class EntityOperatorTest {
     @Test
     public void testPodVolumesWithServiceAccountAuthentication() {
         EntityOperator eo = EntityOperator.fromCrd(new Reconciliation("test", KAFKA.getKind(), NAMESPACE, CLUSTER_NAME), KAFKA, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig(),
-                new KafkaClusterSecurityContext(new TlsEncryptionConfiguration(), AuthenticationConfiguration.fromCrd(NAMESPACE, CLUSTER_NAME, new ClusterSecurityAuthenticationBuilder().withType(ClusterSecurityAuthenticationType.SERVICE_ACCOUNT).build())));
+                new KafkaClusterSecurityContext(new TlsEncryptionConfiguration(), AuthenticationConfiguration.fromCrd(NAMESPACE, CLUSTER_NAME, new ClusterSecurityAuthenticationBuilder().withType(ClusterSecurityAuthenticationType.SERVICE_ACCOUNT).build(), null)));
         Deployment dep = eo.generateDeployment(Map.of(), true, null, null);
 
         Volume tokenVolume = dep.getSpec().getTemplate().getSpec().getVolumes().stream()

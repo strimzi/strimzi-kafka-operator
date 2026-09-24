@@ -4,6 +4,8 @@
  */
 package io.strimzi.operator.cluster;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.fabric8.kubernetes.api.model.APIGroup;
 import io.fabric8.kubernetes.api.model.APIResourceList;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -26,11 +28,18 @@ import java.util.Map;
 public class PlatformFeaturesAvailability implements PlatformFeatures {
     private static final Logger LOGGER = LogManager.getLogger(PlatformFeaturesAvailability.class.getName());
 
+    /**
+     * Path of the OIDC discovery (well-known) endpoint exposed by the Kubernetes API server for Service Account Issuer
+     * Discovery
+     */
+    /* test */ static final String OIDC_DISCOVERY_PATH = "/.well-known/openid-configuration";
+
     private boolean routes = false;
     private boolean builds = false;
     private boolean images = false;
     private boolean tlsRoutes = false;
     private KubernetesVersion kubernetesVersion;
+    private OidcDiscovery oidcDiscovery = null;
 
     /**
      * Creates a PlatformFeaturesAvailability instance
@@ -64,6 +73,9 @@ public class PlatformFeaturesAvailability implements PlatformFeatures {
             return checkApiAvailability(vertx, client, "gateway.networking.k8s.io", "v1", "TLSRoute");
         }).compose(supported -> {
             pfa.setTLSRoutes(supported);
+            return detectOidcDiscovery(vertx, client);
+        }).compose(oidcDiscovery -> {
+            pfa.setOidcDiscovery(oidcDiscovery);
             return Future.succeededFuture(pfa);
         }).onComplete(pfaPromise);
 
@@ -200,6 +212,64 @@ public class PlatformFeaturesAvailability implements PlatformFeatures {
         });
     }
 
+    /**
+     * Queries the OIDC discovery (well-known) endpoint of the Kubernetes API server and extracts the issuer and JWKS
+     * endpoint URLs from it. The OIDC discovery endpoint is optional -> it might be disabled or not accessible to the
+     * operator. So a failure to get the OIDC discovery information does not fail the whole platform feature detection.
+     * Instead, it just logs a warning and completes with null.
+     *
+     * @param vertx     Vert.x instance
+     * @param client    Kubernetes client
+     *
+     * @return  Future that completes with the OIDC discovery information or with null if it is not available
+     */
+    private static Future<OidcDiscovery> detectOidcDiscovery(Vertx vertx, KubernetesClient client)   {
+        return vertx.executeBlocking(() -> {
+            try {
+                OidcDiscovery oidcDiscovery = parseOidcDiscovery(client.raw(OIDC_DISCOVERY_PATH));
+
+                if (oidcDiscovery != null) {
+                    LOGGER.info("Kubernetes OIDC discovery endpoint found with issuer {} and JWKS URI {}", oidcDiscovery.issuer(), oidcDiscovery.jwksUri());
+                } else {
+                    LOGGER.warn("Kubernetes OIDC discovery endpoint is not available");
+                }
+
+                return oidcDiscovery;
+            } catch (Exception e) {
+                LOGGER.warn("Detection of Kubernetes OIDC discovery endpoint failed.", e);
+                return null;
+            }
+        });
+    }
+
+    /**
+     * Parses the OIDC discovery document and extracts the issuer and JWKS URI from it.
+     *
+     * @param discoveryDocument     The OIDC discovery document (JSON)
+     *
+     * @return  OIDC discovery information or null if the discovery document is null or does not contain both the
+     *          issuer and the JWKS URI
+     *
+     * @throws Exception    If the discovery document cannot be parsed
+     */
+    /* test */ static OidcDiscovery parseOidcDiscovery(String discoveryDocument) throws Exception {
+        if (discoveryDocument == null) {
+            // Endpoint returned 404
+            return null;
+        }
+
+        JsonNode json = new ObjectMapper().readTree(discoveryDocument);
+        String issuer = json.path("issuer").asText(null);
+        String jwksUri = json.path("jwks_uri").asText(null);
+
+        if (issuer == null || issuer.isBlank() || jwksUri == null || jwksUri.isBlank()) {
+            LOGGER.warn("Kubernetes OIDC discovery document is missing the issuer or the JWKS URI: {}", discoveryDocument);
+            return null;
+        }
+
+        return new OidcDiscovery(issuer, jwksUri);
+    }
+
     private PlatformFeaturesAvailability() {}
 
     /**
@@ -305,6 +375,19 @@ public class PlatformFeaturesAvailability implements PlatformFeatures {
         this.tlsRoutes = tlsRoutes;
     }
 
+    /**
+     * Gets the information detected from the Kubernetes OIDC discovery endpoint.
+     *
+     * @return  The OIDC discovery information or null if it was not detected
+     */
+    public OidcDiscovery getOidcDiscovery() {
+        return oidcDiscovery;
+    }
+
+    private void setOidcDiscovery(OidcDiscovery oidcDiscovery) {
+        this.oidcDiscovery = oidcDiscovery;
+    }
+
     @Override
     public String toString() {
         return "PlatformFeaturesAvailability(" +
@@ -313,6 +396,15 @@ public class PlatformFeaturesAvailability implements PlatformFeatures {
                 ",OpenShiftBuilds=" + builds +
                 ",OpenShiftImageStreams=" + images +
                 ",TLSRoutes=" + tlsRoutes +
+                ",OidcDiscovery=" + oidcDiscovery +
                 ")";
     }
+
+    /**
+     * Holds the information obtained from the OIDC discovery endpoint
+     *
+     * @param issuer    Issuer URL
+     * @param jwksUri   JWKS endpoint URL
+     */
+    public record OidcDiscovery(String issuer, String jwksUri) { }
 }

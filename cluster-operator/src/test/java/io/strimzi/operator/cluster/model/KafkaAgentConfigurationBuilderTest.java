@@ -6,6 +6,7 @@ package io.strimzi.operator.cluster.model;
 
 import io.strimzi.api.kafka.model.kafka.clustersecurity.ClusterSecurityAuthenticationBuilder;
 import io.strimzi.api.kafka.model.kafka.clustersecurity.ClusterSecurityAuthenticationType;
+import io.strimzi.operator.cluster.PlatformFeaturesAvailability.OidcDiscovery;
 import io.strimzi.operator.cluster.model.clustersecurity.kafka.AuthenticationConfiguration;
 import io.strimzi.operator.cluster.model.clustersecurity.kafka.KafkaClusterSecurityContext;
 import io.strimzi.operator.cluster.model.clustersecurity.kafka.NoneAuthenticationConfiguration;
@@ -55,7 +56,7 @@ public class KafkaAgentConfigurationBuilderTest {
     public void testTlsAndServiceAccountAuthentication()  {
         KafkaClusterSecurityContext securityContext = mock(KafkaClusterSecurityContext.class);
         when(securityContext.encryption()).thenReturn(new TlsEncryptionConfiguration());
-        when(securityContext.authentication()).thenReturn(AuthenticationConfiguration.fromCrd("namespace", "name", new ClusterSecurityAuthenticationBuilder().withType(ClusterSecurityAuthenticationType.SERVICE_ACCOUNT).build()));
+        when(securityContext.authentication()).thenReturn(AuthenticationConfiguration.fromCrd("namespace", "name", new ClusterSecurityAuthenticationBuilder().withType(ClusterSecurityAuthenticationType.SERVICE_ACCOUNT).build(), null));
 
         String configuration = new KafkaAgentConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
                 .withSecurity(securityContext)
@@ -73,10 +74,33 @@ public class KafkaAgentConfigurationBuilderTest {
     }
 
     @Test
+    public void testServiceAccountAuthenticationWithDetectedOidc()  {
+        OidcDiscovery oidcDiscovery = new OidcDiscovery("https://my-issuer.example.com", "https://my-issuer.example.com/keys");
+
+        KafkaClusterSecurityContext securityContext = mock(KafkaClusterSecurityContext.class);
+        when(securityContext.encryption()).thenReturn(new TlsEncryptionConfiguration());
+        when(securityContext.authentication()).thenReturn(AuthenticationConfiguration.fromCrd("namespace", "name", new ClusterSecurityAuthenticationBuilder().withType(ClusterSecurityAuthenticationType.SERVICE_ACCOUNT).build(), oidcDiscovery));
+
+        String configuration = new KafkaAgentConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
+                .withSecurity(securityContext)
+                .build();
+
+        assertThat(configuration, isEquivalent(
+                "namespace=namespace",
+                "sslKeyStoreSecretName=my-cluster-kafka-2",
+                "tokenIssuer=https://my-issuer.example.com",
+                "tokenJwksUri=https://my-issuer.example.com/keys",
+                "tokenJwksCaPath=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt",
+                "tokenAudience=strimzi.io/kafka/namespace/name",
+                "tokenAllowedUsers=system:serviceaccount:namespace:name-cluster-operator"
+        ));
+    }
+
+    @Test
     public void testServiceAccountAuthenticationWithoutTls()  {
         KafkaClusterSecurityContext securityContext = mock(KafkaClusterSecurityContext.class);
         when(securityContext.encryption()).thenReturn(new NoneEncryptionConfiguration());
-        when(securityContext.authentication()).thenReturn(AuthenticationConfiguration.fromCrd("namespace", "name", new ClusterSecurityAuthenticationBuilder().withType(ClusterSecurityAuthenticationType.SERVICE_ACCOUNT).build()));
+        when(securityContext.authentication()).thenReturn(AuthenticationConfiguration.fromCrd("namespace", "name", new ClusterSecurityAuthenticationBuilder().withType(ClusterSecurityAuthenticationType.SERVICE_ACCOUNT).build(), null));
 
         String configuration = new KafkaAgentConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
                 .withSecurity(securityContext)

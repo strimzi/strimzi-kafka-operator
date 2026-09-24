@@ -414,7 +414,7 @@ public class EntityTopicOperatorTest {
     ////////////////////
 
     private static AuthenticationConfiguration serviceAccountAuthentication() {
-        return AuthenticationConfiguration.fromCrd(NAMESPACE, CLUSTER_NAME, new ClusterSecurityAuthenticationBuilder().withType(ClusterSecurityAuthenticationType.SERVICE_ACCOUNT).build());
+        return AuthenticationConfiguration.fromCrd(NAMESPACE, CLUSTER_NAME, new ClusterSecurityAuthenticationBuilder().withType(ClusterSecurityAuthenticationType.SERVICE_ACCOUNT).build(), null);
     }
 
     private List<EnvVar> getSecurityEnvVars(KafkaClusterSecurityContext securityContext) {

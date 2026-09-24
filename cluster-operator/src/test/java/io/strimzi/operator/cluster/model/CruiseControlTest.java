@@ -1054,7 +1054,7 @@ public class CruiseControlTest {
     }
 
     private static AuthenticationConfiguration serviceAccountAuthentication() {
-        return AuthenticationConfiguration.fromCrd(NAMESPACE, CLUSTER_NAME, new ClusterSecurityAuthenticationBuilder().withType(ClusterSecurityAuthenticationType.SERVICE_ACCOUNT).build());
+        return AuthenticationConfiguration.fromCrd(NAMESPACE, CLUSTER_NAME, new ClusterSecurityAuthenticationBuilder().withType(ClusterSecurityAuthenticationType.SERVICE_ACCOUNT).build(), null);
     }
 
     private CruiseControl createCruiseControl(Kafka kafka, Set<NodeRef> nodes, Map<String, Storage> storageMap, Map<String, ResourceRequirements> resourceRequirementsMap) {
