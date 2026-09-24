@@ -4,6 +4,9 @@
  */
 package io.strimzi.systemtest.security.custom;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.fabric8.kubernetes.api.model.ServiceAccountTokenProjectionBuilder;
 import io.fabric8.kubernetes.api.model.VolumeMountBuilder;
 import io.fabric8.kubernetes.api.model.batch.v1.Job;
@@ -68,8 +71,6 @@ public class CustomAuthenticationST extends AbstractST {
     private static final String TOKEN_VOLUME_NAME = "auth-token";
     private static final String TOKEN_MOUNT_PATH = "/mnt/auth-token";
     private static final String TOKEN_FILE_PATH = TOKEN_MOUNT_PATH + "/token";
-    private static final String JWKS_ENDPOINT_URI = "https://kubernetes.default.svc.cluster.local/openid/v1/jwks";
-    private static final String ISSUER_URI = "https://kubernetes.default.svc.cluster.local";
     private static final String SERVICE_ACCOUNT_DIR = "/var/run/secrets/kubernetes.io/serviceaccount";
 
     private static final String OAUTH_PRINCIPAL_BUILDER_CLASS = "io.strimzi.kafka.oauth.server.OAuthKafkaPrincipalBuilder";
@@ -77,6 +78,11 @@ public class CustomAuthenticationST extends AbstractST {
     private static final String OAUTH_CLIENT_CALLBACK_HANDLER_CLASS = "io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler";
     private static final String OAUTH_BEARER_LOGIN_MODULE = "org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule";
     private static final String STRING_CONVERTER_CLASS = "org.apache.kafka.connect.storage.StringConverter";
+    private static final String OIDC_DISCOVERY_PATH = "/.well-known/openid-configuration";
+
+    // Loaded from the Kubernetes OIDC discovery endpoint in the setUp() method
+    private String issuerUri;
+    private String jwksEndpointUri;
 
     @ParallelNamespaceTest
     @TestDoc(
@@ -124,8 +130,8 @@ public class CustomAuthenticationST extends AbstractST {
                                     + "unsecuredLoginStringClaim_sub=\"unused\" "
                                     + "oauth.check.access.token.type=\"false\" "
                                     + "oauth.custom.claim.check=\"@.aud anyof ['" + LISTENER_AUDIENCE + "']\" "
-                                    + "oauth.valid.issuer.uri=\"" + ISSUER_URI + "\" "
-                                    + "oauth.jwks.endpoint.uri=\"" + JWKS_ENDPOINT_URI + "\" "
+                                    + "oauth.valid.issuer.uri=\"" + issuerUri + "\" "
+                                    + "oauth.jwks.endpoint.uri=\"" + jwksEndpointUri + "\" "
                                     + "oauth.jwks.refresh.seconds=\"300\" "
                                     + "oauth.username.claim=\"sub\" "
                                     + "oauth.ssl.truststore.location=\"" + SERVICE_ACCOUNT_DIR + "/ca.crt\" "
@@ -258,5 +264,33 @@ public class CustomAuthenticationST extends AbstractST {
             .getInstance()
             .withDefaultConfiguration()
             .install();
+
+        loadOidcDiscovery();
+    }
+
+    /**
+     * Loads the issuer and JWKS endpoint URIs from the OIDC discovery (well-known) endpoint of the Kubernetes API
+     * server, so that the test does not depend on the cluster DNS domain or on a custom Service Account issuer.
+     */
+    private void loadOidcDiscovery() {
+        String discoveryDocument = KubeResourceManager.get().kubeClient().getClient().raw(OIDC_DISCOVERY_PATH);
+
+        if (discoveryDocument == null) {
+            throw new RuntimeException("The Kubernetes OIDC discovery endpoint " + OIDC_DISCOVERY_PATH + " is not available");
+        }
+
+        try {
+            JsonNode json = new ObjectMapper().readTree(discoveryDocument);
+            issuerUri = json.path("issuer").asText(null);
+            jwksEndpointUri = json.path("jwks_uri").asText(null);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("Failed to parse the Kubernetes OIDC discovery document: " + discoveryDocument, e);
+        }
+
+        if (issuerUri == null || issuerUri.isBlank() || jwksEndpointUri == null || jwksEndpointUri.isBlank()) {
+            throw new RuntimeException("The Kubernetes OIDC discovery document is missing the issuer or the JWKS URI: " + discoveryDocument);
+        }
+
+        LOGGER.info("Using the issuer {} and the JWKS endpoint {} from the Kubernetes OIDC discovery endpoint", issuerUri, jwksEndpointUri);
     }
 }
