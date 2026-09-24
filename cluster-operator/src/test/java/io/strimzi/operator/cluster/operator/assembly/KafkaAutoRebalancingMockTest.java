@@ -631,6 +631,19 @@ public class KafkaAutoRebalancingMockTest {
     }
 
     @Test
+    public void testNoAutoRebalancingIdleOnClusterCreation(VertxTestContext context) {
+        Checkpoint reconciliation = context.checkpoint();
+        // 1st reconcile, Kafka cluster creation
+        operator.reconcile(new Reconciliation("initial-reconciliation", Kafka.RESOURCE_KIND, namespace, CLUSTER_NAME))
+                .onComplete(context.succeeding(v -> context.verify(() -> {
+                    // just checking that on Kafka cluster creation with no scaling, the auto-rebalancing is just in Idle state
+                    Kafka k = Crds.kafkaOperation(client).inNamespace(namespace).withName(CLUSTER_NAME).get();
+                    assertThat(k.getStatus().getAutoRebalance().getState(), is(KafkaAutoRebalanceState.Idle));
+                    reconciliation.flag();
+                })));
+    }
+
+    @Test
     public void testNoAutoRebalancingIdleNoScaling(VertxTestContext context) {
         Checkpoint reconciliation = context.checkpoint();
         // 1st reconcile, Kafka cluster creation
@@ -833,6 +846,93 @@ public class KafkaAutoRebalancingMockTest {
                 .onComplete(context.failing(e -> context.verify(() -> {
                     assertThat(e, instanceOf(CompletionException.class));
                     assertThat(e.getMessage(), is("java.lang.RuntimeException: No auto-rebalancing configuration specified for mode " + KafkaAutoRebalanceMode.ADD_BROKERS));
+                    reconciliation.flag();
+                })));
+    }
+
+    @Test
+    public void testAutoRebalancingDoubleScaleDownWithSpecificRemovedNodes(VertxTestContext context) {
+        Crds.kafkaNodePoolOperation(client).inNamespace(namespace).withName("brokers").edit(
+                knp -> new KafkaNodePoolBuilder(knp)
+                        .editMetadata()
+                            .addToAnnotations(ANNO_STRIMZI_IO_REMOVE_NODE_IDS, "[4-0]")
+                        .endMetadata()
+                        .build()
+        );
+
+        // mocking admin client to return specific blocked nodes
+        hostPartitionsOnBrokers(List.of(3, 4));
+
+        KafkaRebalance kafkaRebalanceTemplate = buildKafkaRebalanceTemplate("my-add-remove-brokers-rebalancing-template", List.of("CpuCapacityGoal"));
+        Crds.kafkaRebalanceOperation(client).inNamespace(namespace).resource(kafkaRebalanceTemplate).create();
+
+        Checkpoint reconciliation = context.checkpoint();
+        // 1st reconcile, Kafka cluster creation
+        operator.reconcile(new Reconciliation("initial-reconciliation", Kafka.RESOURCE_KIND, namespace, CLUSTER_NAME))
+                .onComplete(context.succeeding(v -> context.verify(() -> {
+                    Kafka k = Crds.kafkaOperation(client).inNamespace(namespace).withName(CLUSTER_NAME).get();
+                    assertThat(k.getStatus().getAutoRebalance().getState(), is(KafkaAutoRebalanceState.Idle));
+
+                    // scaling down the brokers
+                    scaleKafkaCluster(4);
+                })))
+                // 2nd reconcile, getting the scaling down
+                .compose(v -> operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, CLUSTER_NAME)))
+                .onComplete(context.succeeding(v -> context.verify(() -> {
+                    Kafka k = Crds.kafkaOperation(client).inNamespace(namespace).withName(CLUSTER_NAME).get();
+                    assertKafkaAutoRebalanceStatus(k, KafkaAutoRebalanceState.RebalanceOnScaleDown, KafkaAutoRebalanceMode.REMOVE_BROKERS, List.of(4));
+
+                    KafkaRebalance kr = Crds.kafkaRebalanceOperation(client).inNamespace(namespace).withName(KafkaResources.autoRebalancingKafkaRebalanceResourceName(CLUSTER_NAME, KafkaAutoRebalanceMode.REMOVE_BROKERS)).get();
+                    assertKafkaRebalanceStatus(kr, KafkaRebalanceMode.REMOVE_BROKERS, List.of(4), List.of("CpuCapacityGoal"));
+
+                    // simulate the auto-rebalancing KafkaRebalance custom resource got by the rebalance operator transitions to Rebalancing state
+                    // (shortening by skipping New, PendingProposal, ProposalReady to have less reconciliation during the test)
+                    patchKafkaRebalanceState(kr, KafkaRebalanceState.Rebalancing);
+                })))
+                // 3rd reconcile, handling auto-rebalancing with KafkaRebalance in Rebalancing state
+                .compose(v -> operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, CLUSTER_NAME)))
+                .onComplete(context.succeeding(v -> context.verify(() -> {
+                    Kafka k = Crds.kafkaOperation(client).inNamespace(namespace).withName(CLUSTER_NAME).get();
+                    assertKafkaAutoRebalanceStatus(k, KafkaAutoRebalanceState.RebalanceOnScaleDown, KafkaAutoRebalanceMode.REMOVE_BROKERS, List.of(4));
+
+                    // scaling down the brokers again (while there is an auto-rebalancing on scale down already running)
+                    scaleKafkaCluster(3);
+                })))
+                // 4th reconcile, handling auto-rebalancing with KafkaRebalance in Rebalancing state and a new request of scaling down
+                .compose(v -> operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, CLUSTER_NAME)))
+                .onComplete(context.succeeding(v -> context.verify(() -> {
+                    Kafka k = Crds.kafkaOperation(client).inNamespace(namespace).withName(CLUSTER_NAME).get();
+                    assertKafkaAutoRebalanceStatus(k, KafkaAutoRebalanceState.RebalanceOnScaleDown, KafkaAutoRebalanceMode.REMOVE_BROKERS, List.of(3, 4));
+
+                    // check KafkaRebalance was updated with newly removed brokers and refreshed
+                    KafkaRebalance kr = Crds.kafkaRebalanceOperation(client).inNamespace(namespace).withName(KafkaResources.autoRebalancingKafkaRebalanceResourceName(CLUSTER_NAME, KafkaAutoRebalanceMode.REMOVE_BROKERS)).get();
+                    assertKafkaRebalanceStatus(kr, KafkaRebalanceMode.REMOVE_BROKERS, List.of(3, 4), List.of("CpuCapacityGoal"));
+                    assertThat(kr.getMetadata().getAnnotations().get(ANNO_STRIMZI_IO_REBALANCE), is("refresh"));
+
+                    // simulate the auto-rebalancing KafkaRebalance custom resource got by the rebalance operator transitions to Rebalancing state
+                    // (shortening by skipping New, PendingProposal, ProposalReady to have less reconciliation during the test)
+                    patchKafkaRebalanceState(kr, KafkaRebalanceState.Rebalancing);
+                })))
+                // 5th reconcile, handling auto-rebalancing with KafkaRebalance in Rebalancing state
+                .compose(v -> operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, CLUSTER_NAME)))
+                .onComplete(context.succeeding(v -> context.verify(() -> {
+                    Kafka k = Crds.kafkaOperation(client).inNamespace(namespace).withName(CLUSTER_NAME).get();
+                    assertKafkaAutoRebalanceStatus(k, KafkaAutoRebalanceState.RebalanceOnScaleDown, KafkaAutoRebalanceMode.REMOVE_BROKERS, List.of(3, 4));
+
+                    KafkaRebalance kr = Crds.kafkaRebalanceOperation(client).inNamespace(namespace).withName(KafkaResources.autoRebalancingKafkaRebalanceResourceName(CLUSTER_NAME, KafkaAutoRebalanceMode.REMOVE_BROKERS)).get();
+                    // simulate the auto-rebalancing KafkaRebalance custom resource got by the rebalance operator transitions to Ready state
+                    patchKafkaRebalanceState(kr, KafkaRebalanceState.Ready);
+                })))
+                // 6th reconcile, handling auto-rebalancing with KafkaRebalance in Ready state
+                .compose(v -> operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, CLUSTER_NAME)))
+                .onComplete(context.succeeding(v -> context.verify(() -> {
+                    Kafka k = Crds.kafkaOperation(client).inNamespace(namespace).withName(CLUSTER_NAME).get();
+                    assertThat(k.getStatus().getAutoRebalance().getState(), is(KafkaAutoRebalanceState.Idle));
+                    assertThat(k.getStatus().getAutoRebalance().getModes(), is(nullValue()));
+
+                    KafkaRebalance kr = Crds.kafkaRebalanceOperation(client).inNamespace(namespace).withName(KafkaResources.autoRebalancingKafkaRebalanceResourceName(CLUSTER_NAME, KafkaAutoRebalanceMode.REMOVE_BROKERS)).get();
+                    assertThat(kr, is(nullValue()));
+
                     reconciliation.flag();
                 })));
     }
