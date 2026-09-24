@@ -17,12 +17,12 @@ public class ServiceAccountAuthenticationConfiguration implements Authentication
      * uses the cluster DNS domain configured through the KUBERNETES_SERVICE_DNS_DOMAIN environment variable (defaults
      * to cluster.local).
      */
-    public static final String ISSUER = "https://kubernetes.default.svc." + System.getenv().getOrDefault("KUBERNETES_SERVICE_DNS_DOMAIN", "cluster.local");
+    private static final String DEFAULT_ISSUER = "https://kubernetes.default.svc." + System.getenv().getOrDefault("KUBERNETES_SERVICE_DNS_DOMAIN", "cluster.local");
 
     /**
      * The default JWKS URI of the token used when it was not detected from the Kubernetes OIDC discovery endpoint
      */
-    private static final String JWKS_URI = ISSUER + "/openid/v1/jwks";
+    private static final String DEFAULT_JWKS_URI = DEFAULT_ISSUER + "/openid/v1/jwks";
 
     private final Integer expirationSeconds;
     private final String audience;
@@ -37,8 +37,8 @@ public class ServiceAccountAuthenticationConfiguration implements Authentication
             this.issuer = oidcDiscovery.issuer();
             this.jwksUri = oidcDiscovery.jwksUri();
         } else {
-            this.issuer = ISSUER;
-            this.jwksUri = JWKS_URI;
+            this.issuer = DEFAULT_ISSUER;
+            this.jwksUri = DEFAULT_JWKS_URI;
         }
     }
 
