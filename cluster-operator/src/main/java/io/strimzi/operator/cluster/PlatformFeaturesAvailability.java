@@ -41,6 +41,36 @@ public class PlatformFeaturesAvailability implements PlatformFeatures {
     private KubernetesVersion kubernetesVersion;
     private OidcDiscovery oidcDiscovery = null;
 
+    private PlatformFeaturesAvailability() {}
+
+    /**
+     * This constructor is used in tests. It sets all OpenShift APIs to true or false depending on the isOpenShift parameter
+     *
+     * @param isOpenShift       Set all OpenShift APIs to true
+     * @param kubernetesVersion Set the Kubernetes version
+     */
+    public PlatformFeaturesAvailability(boolean isOpenShift, KubernetesVersion kubernetesVersion) {
+        this.kubernetesVersion = kubernetesVersion;
+        this.routes = isOpenShift;
+        this.images = isOpenShift;
+        this.builds = isOpenShift;
+    }
+
+    /**
+     * This constructor is used in tests. It sets all OpenShift APIs to true or false depending on the isOpenShift parameter
+     *
+     * @param isOpenShift       Set all OpenShift APIs to true
+     * @param hasTlsRoutes      Set TLS Routes support
+     * @param kubernetesVersion Set the Kubernetes version
+     */
+    public PlatformFeaturesAvailability(boolean isOpenShift, boolean hasTlsRoutes, KubernetesVersion kubernetesVersion) {
+        this.kubernetesVersion = kubernetesVersion;
+        this.tlsRoutes = hasTlsRoutes;
+        this.routes = isOpenShift;
+        this.images = isOpenShift;
+        this.builds = isOpenShift;
+    }
+
     /**
      * Creates a PlatformFeaturesAvailability instance
      *
@@ -87,7 +117,7 @@ public class PlatformFeaturesAvailability implements PlatformFeatures {
      * environment variable. If defined, the environment variable will take the precedence. Otherwise, the API server
      * endpoint will be used.
      *
-     * And example of the STRIMZI_KUBERNETES_VERSION environment variable in Cluster Operator deployment:
+     * An example of the STRIMZI_KUBERNETES_VERSION environment variable in Cluster Operator deployment:
      * <pre><code>
      *       env:
      *         - name: STRIMZI_KUBERNETES_VERSION
@@ -170,7 +200,7 @@ public class PlatformFeaturesAvailability implements PlatformFeatures {
                     supported = false;
                 }
 
-                LOGGER.warn("API Group {} is {}supported", group, supported ? "" : "not ");
+                LOGGER.debug("API Group {} is {}supported", group, supported ? "" : "not ");
                 return supported;
             } catch (Exception e) {
                 LOGGER.error("Detection of API availability failed.", e);
@@ -181,7 +211,7 @@ public class PlatformFeaturesAvailability implements PlatformFeatures {
 
     /**
      * Checks whether a specific resource kind is supported or not. This check is useful for APIs where different
-     * resources use different API versions and chercking the group support is not sufficient (such as Gateway API).
+     * resources use different API versions, and checking the group support is not enough (such as Gateway API).
      *
      * @param vertx     Vert.x instance
      * @param client    Kubernetes client
@@ -189,7 +219,7 @@ public class PlatformFeaturesAvailability implements PlatformFeatures {
      * @param version   API version to check
      * @param kind      Resource kind to check
      *
-     * @return  Future that completes with true when the resource kind is supported in version or false when not.
+     * @return  Future that completes with true when the resource kind is supported in a version or false when not.
      */
     private static Future<Boolean> checkApiAvailability(Vertx vertx, KubernetesClient client, String group, String version, String kind)   {
         return vertx.executeBlocking(() -> {
@@ -203,7 +233,7 @@ public class PlatformFeaturesAvailability implements PlatformFeatures {
                     supported = false;
                 }
 
-                LOGGER.warn("Kind {} in API Group {} is {}supported", kind, group, supported ? "" : "not ");
+                LOGGER.debug("Kind {} in API Group {} is {}supported", kind, group, supported ? "" : "not ");
                 return supported;
             } catch (Exception e) {
                 LOGGER.error("Detection of API availability failed.", e);
@@ -229,7 +259,7 @@ public class PlatformFeaturesAvailability implements PlatformFeatures {
                 OidcDiscovery oidcDiscovery = parseOidcDiscovery(client.raw(OIDC_DISCOVERY_PATH));
 
                 if (oidcDiscovery != null) {
-                    LOGGER.info("Kubernetes OIDC discovery endpoint found with issuer {} and JWKS URI {}", oidcDiscovery.issuer(), oidcDiscovery.jwksUri());
+                    LOGGER.debug("Kubernetes OIDC discovery endpoint found with issuer {} and JWKS URI {}", oidcDiscovery.issuer(), oidcDiscovery.jwksUri());
                 } else {
                     LOGGER.warn("Kubernetes OIDC discovery endpoint is not available");
                 }
@@ -268,36 +298,6 @@ public class PlatformFeaturesAvailability implements PlatformFeatures {
         }
 
         return new OidcDiscovery(issuer, jwksUri);
-    }
-
-    private PlatformFeaturesAvailability() {}
-
-    /**
-     * This constructor is used in tests. It sets all OpenShift APIs to true or false depending on the isOpenShift parameter
-     *
-     * @param isOpenShift       Set all OpenShift APIs to true
-     * @param kubernetesVersion Set the Kubernetes version
-     */
-    public PlatformFeaturesAvailability(boolean isOpenShift, KubernetesVersion kubernetesVersion) {
-        this.kubernetesVersion = kubernetesVersion;
-        this.routes = isOpenShift;
-        this.images = isOpenShift;
-        this.builds = isOpenShift;
-    }
-
-    /**
-     * This constructor is used in tests. It sets all OpenShift APIs to true or false depending on the isOpenShift parameter
-     *
-     * @param isOpenShift       Set all OpenShift APIs to true
-     * @param hasTlsRoutes      Set TLS Routes support
-     * @param kubernetesVersion Set the Kubernetes version
-     */
-    public PlatformFeaturesAvailability(boolean isOpenShift, boolean hasTlsRoutes, KubernetesVersion kubernetesVersion) {
-        this.kubernetesVersion = kubernetesVersion;
-        this.tlsRoutes = hasTlsRoutes;
-        this.routes = isOpenShift;
-        this.images = isOpenShift;
-        this.builds = isOpenShift;
     }
 
     @Override

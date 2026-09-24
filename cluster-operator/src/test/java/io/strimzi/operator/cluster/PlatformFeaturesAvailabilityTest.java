@@ -465,7 +465,7 @@ public class PlatformFeaturesAvailabilityTest {
 
     void startFailingMockApi(Vertx vertx) throws InterruptedException, ExecutionException {
         HttpServer httpServer = vertx.createHttpServer().requestHandler(request -> {
-            // 403 causes a fast failure without retry (for example 500 would cause retry and test will run for a much longer time)
+            // 403 causes a fast failure without retry (for example, 500 would cause retry and test will run for a much longer time)
             request.response().setStatusCode(403).setStatusMessage("Mock error").end();
         });
 
