@@ -17,7 +17,10 @@ However, rather than deleting the pods directly, if you perform the rolling upda
 * The manual deletion of the pod does not conflict with simultaneous Cluster Operator operations, such as deleting other pods in parallel.
 * The Cluster Operator logic handles the Kafka configuration specifications, such as the number of in-sync replicas.
 
-//steps for manual rolling updates with strimzipodset
-include::../../modules/managing/proc-manual-rolling-update-strimzipodset.adoc[leveloffset=+1]
+For manual rolling updates, annotate the individual `Pod` resources directly.
+This avoids the risk of a `StrimziPodSet` annotation being overwritten during reconciliation before the rolling update is triggered.
+
 //steps for manual rolling update with pods
 include::../../modules/managing/proc-manual-rolling-update-pods.adoc[leveloffset=+1]
+//steps for manual rolling updates with strimzipodset
+include::../../modules/managing/proc-manual-rolling-update-strimzipodset.adoc[leveloffset=+1]

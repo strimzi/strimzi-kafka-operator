@@ -9,7 +9,10 @@
 
 [role="_abstract"]
 This procedure describes how to manually trigger a rolling update of existing Kafka, Kafka Connect, or MirrorMaker 2 clusters using a Kubernetes `Pod` annotation.
+Annotate each pod that you want to roll.
 When multiple pods are annotated, consecutive rolling updates are performed within the same reconciliation run.
+
+NOTE: If a rolling update is already replacing a pod, annotating that pod does not guarantee an additional restart.
 
 .Prerequisites
 
