@@ -129,7 +129,7 @@ public class KafkaAutoRebalancingReconciler {
                     .whenComplete((ignored, ignored2) -> kafkaStatus.setAutoRebalance(kafkaAutoRebalanceStatus));
         }
 
-        // Idle with no scaling — check for imbalance if that mode is configured
+        // Idle with no scaling: check for imbalance if that mode is configured
         return maybeCheckForImbalance(kafkaStatus)
                 .whenComplete((ignored, ignored2) -> kafkaStatus.setAutoRebalance(kafkaAutoRebalanceStatus));
     }
@@ -181,7 +181,7 @@ public class KafkaAutoRebalancingReconciler {
 
     private CompletionStage<Void> handleDetectedViolations(GoalViolationInfo goalViolationInfo, KafkaStatus kafkaStatus) {
         if (goalViolationInfo.fixability() == Fixability.UNFIXABLE) {
-            LOGGER.warnCr(reconciliation, "Detected only unfixable goal violations at {}. Auto-rebalance on imbalance is blocked — manual infrastructure intervention is required", goalViolationInfo.detectionTime());
+            LOGGER.warnCr(reconciliation, "Detected only unfixable goal violations at {}. Auto-rebalance on imbalance is blocked: Manual infrastructure intervention is required", goalViolationInfo.detectionTime());
             metricsHolder.anomaliesDetectedCounter(reconciliation.namespace(), "goal_violation", goalViolationInfo.fixability().label()).increment();
             kafkaStatus.addCondition(StatusUtils.buildWarningCondition("AutoRebalanceOnImbalanceFailure",
                     "Unfixable goal violations detected. Auto-rebalance on imbalance is blocked until resolved."));
@@ -189,7 +189,7 @@ public class KafkaAutoRebalancingReconciler {
         }
 
         if (goalViolationInfo.fixability() == Fixability.MIXED) {
-            LOGGER.warnCr(reconciliation, "Detected both fixable and unfixable goal violations at {}. Auto-rebalance on imbalance is blocked — resolve unfixable violations first, or use a manual KafkaRebalance with skipHardGoalCheck: true", goalViolationInfo.detectionTime());
+            LOGGER.warnCr(reconciliation, "Detected both fixable and unfixable goal violations at {}. Auto-rebalance on imbalance is blocked: Resolve unfixable violations first, or use a manual KafkaRebalance with skipHardGoalCheck: true", goalViolationInfo.detectionTime());
             metricsHolder.anomaliesDetectedCounter(reconciliation.namespace(), "goal_violation", goalViolationInfo.fixability().label()).increment();
             kafkaStatus.addCondition(StatusUtils.buildWarningCondition("AutoRebalanceOnImbalanceFailure",
                     "Both fixable and unfixable goal violations detected. Auto-rebalance on imbalance is blocked until resolved. " +
@@ -204,7 +204,7 @@ public class KafkaAutoRebalancingReconciler {
                         return getKafkaRebalance(reconciliation.namespace(), reconciliation.name(), KafkaAutoRebalanceMode.IMBALANCE)
                                 .thenCompose(existingKr -> {
                                     if (existingKr != null) {
-                                        // KafkaRebalance already exists and is being processed — skip creation and counter increment
+                                        // KafkaRebalance already exists and is being processed: skip creation and counter increment
                                         LOGGER.debugCr(reconciliation, "Auto-rebalance KafkaRebalance already exists, skipping");
                                         return CompletableFuture.completedFuture(null);
                                     }
@@ -731,7 +731,7 @@ public class KafkaAutoRebalancingReconciler {
                             // No scaling operations, rebalancing is still running
                             return CompletableFuture.completedFuture(null);
                         case NotReady:
-                            LOGGER.warnCr(reconciliation, "Auto-rebalance on imbalance failed (KafkaRebalance {}/{} is NotReady) — will retry if Cruise Control re-detects the violation",
+                            LOGGER.warnCr(reconciliation, "Auto-rebalance on imbalance failed (KafkaRebalance {}/{} is NotReady): Will retry if Cruise Control re-detects the violation",
                                     kafkaRebalance.getMetadata().getNamespace(), kafkaRebalance.getMetadata().getName());
                             return deleteKafkaRebalance(kafkaRebalance)
                                     .thenCompose(v -> updateRebalanceCompletionTime())
