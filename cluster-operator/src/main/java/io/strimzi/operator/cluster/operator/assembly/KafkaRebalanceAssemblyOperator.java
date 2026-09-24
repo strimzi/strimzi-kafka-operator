@@ -1470,17 +1470,26 @@ public class KafkaRebalanceAssemblyOperator
     private void updateImbalanceTrackerConfigMap(Reconciliation reconciliation, String namespace, String clusterName) {
         String configMapName = clusterName + KafkaAutoRebalancingReconciler.AUTO_REBALANCE_IMBALANCE_TRACKER_SUFFIX;
         String completionTime = Instant.now().toString();
-        ConfigMap desiredConfigMap = new ConfigMapBuilder()
-                .withNewMetadata()
-                    .withName(configMapName)
-                    .withNamespace(namespace)
-                    .withLabels(Map.of(Labels.STRIMZI_CLUSTER_LABEL, clusterName))
-                .endMetadata()
-                .withData(Map.of("lastRebalanceCompletionTime", completionTime))
-                .build();
-        VertxUtil.toFuture(configMapOperator.reconcile(reconciliation, namespace, configMapName, desiredConfigMap))
-                .onSuccess(ignored -> LOGGER.debugCr(reconciliation, "Updated imbalance tracker ConfigMap {} with completion time {}", configMapName, completionTime))
-                .onFailure(error -> LOGGER.warnCr(reconciliation, "Failed to update imbalance tracker ConfigMap {}: {}", configMapName, error.getMessage()));
+        VertxUtil.toFuture(kafkaOperator.getAsync(namespace, clusterName))
+                .onSuccess(kafka -> {
+                    if (kafka == null) {
+                        LOGGER.debugCr(reconciliation, "Kafka CR not found, skipping imbalance tracker ConfigMap update for {}", configMapName);
+                        return;
+                    }
+                    ConfigMap desiredConfigMap = new ConfigMapBuilder()
+                            .withNewMetadata()
+                                .withName(configMapName)
+                                .withNamespace(namespace)
+                                .withLabels(Map.of(Labels.STRIMZI_CLUSTER_LABEL, clusterName))
+                                .withOwnerReferences(ModelUtils.createOwnerReference(kafka, false))
+                            .endMetadata()
+                            .withData(Map.of("lastRebalanceCompletionTime", completionTime))
+                            .build();
+                    VertxUtil.toFuture(configMapOperator.reconcile(reconciliation, namespace, configMapName, desiredConfigMap))
+                            .onSuccess(ignored -> LOGGER.debugCr(reconciliation, "Updated imbalance tracker ConfigMap {} with completion time {}", configMapName, completionTime))
+                            .onFailure(error -> LOGGER.warnCr(reconciliation, "Failed to update imbalance tracker ConfigMap {}: {}", configMapName, error.getMessage()));
+                })
+                .onFailure(error -> LOGGER.warnCr(reconciliation, "Failed to fetch Kafka CR to set owner reference on imbalance tracker ConfigMap {}: {}", configMapName, error.getMessage()));
     }
 
     @Override
