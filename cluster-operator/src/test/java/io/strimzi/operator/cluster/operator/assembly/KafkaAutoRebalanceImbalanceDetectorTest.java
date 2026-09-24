@@ -179,7 +179,7 @@ public class KafkaAutoRebalanceImbalanceDetectorTest {
     }
 
     @Test
-    public void testValidateTemplateGoalsTemplateGoalsAreSupersetOfAnomalyGoalsReturnsTrue() {
+    public void testValidateTemplateGoalsSupersetOfAnomalyGoals() {
         // Template includes all default anomaly detection goals plus extras
         Kafka kafka = buildKafka(null, "my-template");
         KafkaRebalance template = new KafkaRebalanceBuilder()
@@ -220,7 +220,7 @@ public class KafkaAutoRebalanceImbalanceDetectorTest {
     }
 
     @Test
-    public void testValidateTemplateGoalsFullClassNameGoalsInTemplateMatchedByShortName() {
+    public void testValidateTemplateGoalsMatchesFullClassNames() {
         // Template goals specified as fully qualified class names — extractor should normalize them
         Kafka kafka = buildKafka(null, "my-template");
         KafkaRebalance template = new KafkaRebalanceBuilder()
@@ -242,7 +242,7 @@ public class KafkaAutoRebalanceImbalanceDetectorTest {
     }
 
     @Test
-    public void testValidateTemplateGoalsCustomAnomalyGoalsInCCConfigTemplateValidatedAgainstCustomGoals() {
+    public void testValidateTemplateGoalsAgainstCustomAnomalyGoals() {
         // Kafka CR has custom anomaly.detection.goals — template must cover those, not the defaults
         Kafka kafka = buildKafka(
                 Map.of(CruiseControlConfigurationParameters.ANOMALY_DETECTION_CONFIG_KEY.toString(), "RackAwareGoal,CpuCapacityGoal"),
