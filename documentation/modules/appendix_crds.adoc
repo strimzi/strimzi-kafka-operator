@@ -1925,13 +1925,14 @@ Used in: xref:type-KafkaStatus-{context}[`KafkaStatus`]
 * `Idle` as the initial state when an auto-rebalancing is requested or as final state when it completes or fails.
 * `RebalanceOnScaleDown` if an auto-rebalance related to a scale-down operation is running.
 * `RebalanceOnScaleUp` if an auto-rebalance related to a scale-up operation is running.
+* `RebalanceOnImbalance` if an auto-rebalance triggered by Cruise Control goal violation detection is running.
 |lastTransitionTime
 |string
 |The timestamp of the latest auto-rebalancing state update.
 |modes
 |xref:type-KafkaAutoRebalanceStatusBrokers-{context}[`KafkaAutoRebalanceStatusBrokers`] array
 |List of modes where an auto-rebalancing operation is either running or queued. 
-Each mode entry (`add-brokers` or `remove-brokers`) includes one of the following: 
+Each mode entry (`add-brokers`, `remove-brokers`, or `imbalance`) includes one of the following: 
 
 * Broker IDs for a current auto-rebalance. 
 * Broker IDs for a queued auto-rebalance (if a previous rebalance is still in progress).
@@ -1948,7 +1949,7 @@ Used in: xref:type-KafkaAutoRebalanceStatus-{context}[`KafkaAutoRebalanceStatus`
 |Property |Property type |Description
 |mode
 |string (one of [imbalance, remove-brokers, add-brokers])
-|Mode for which there is an auto-rebalancing operation in progress or queued, when brokers are added or removed. The possible modes are `add-brokers` and `remove-brokers`.
+|Mode for which there is an auto-rebalancing operation in progress or queued. The possible modes are `add-brokers`, `remove-brokers`, and `imbalance`.
 |brokers
 |integer array
 |List of broker IDs involved in an auto-rebalancing operation related to the current mode. 
