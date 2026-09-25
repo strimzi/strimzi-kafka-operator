@@ -127,7 +127,7 @@ public class ReconcilerUtilsTest {
         when(mockSecretOps.getAsync(NAMESPACE, KafkaResources.clusterOperatorCertsSecretName(CLUSTER_NAME)))
                 .thenReturn(CompletableFuture.completedFuture(clusterOperatorSecret));
 
-        var identity = ReconcilerUtils.coIdentity(Reconciliation.DUMMY_RECONCILIATION, mockSecretOps, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT).toCompletableFuture().join();
+        Identity identity = ReconcilerUtils.coIdentity(Reconciliation.DUMMY_RECONCILIATION, mockSecretOps, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT).toCompletableFuture().join();
         assertThat(identity.trustSet(), is(instanceOf(PemTrustSet.class)));
         assertThat(((PemTrustSet) identity.trustSet()).trustedCertificatesString(), is(DUMMY_CERT));
         assertThat(identity.authIdentity(), is(instanceOf(PemAuthIdentity.class)));
@@ -155,7 +155,7 @@ public class ReconcilerUtilsTest {
         when(securityContext.encryption()).thenReturn(new TlsEncryptionConfiguration());
         when(securityContext.authentication()).thenReturn(new NoneAuthenticationConfiguration());
 
-        var identity = ReconcilerUtils.coIdentity(Reconciliation.DUMMY_RECONCILIATION, mockSecretOps, securityContext).toCompletableFuture().join();
+        Identity identity = ReconcilerUtils.coIdentity(Reconciliation.DUMMY_RECONCILIATION, mockSecretOps, securityContext).toCompletableFuture().join();
         assertThat(identity.trustSet(), is(instanceOf(PemTrustSet.class)));
         assertThat(identity.authIdentity(), is(nullValue()));
         verify(mockSecretOps).getAsync(NAMESPACE, KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME));
@@ -169,7 +169,7 @@ public class ReconcilerUtilsTest {
         when(securityContext.encryption()).thenReturn(new NoneEncryptionConfiguration());
         when(securityContext.authentication()).thenReturn(new NoneAuthenticationConfiguration());
 
-        var identity = ReconcilerUtils.coIdentity(Reconciliation.DUMMY_RECONCILIATION, mockSecretOps, securityContext).toCompletableFuture().join();
+        Identity identity = ReconcilerUtils.coIdentity(Reconciliation.DUMMY_RECONCILIATION, mockSecretOps, securityContext).toCompletableFuture().join();
         assertThat(identity, is(Identity.DUMMY_IDENTITY));
         verifyNoInteractions(mockSecretOps);
     }
@@ -191,7 +191,7 @@ public class ReconcilerUtilsTest {
         when(securityContext.encryption()).thenReturn(new TlsEncryptionConfiguration());
         when(securityContext.authentication()).thenReturn(AuthenticationConfiguration.fromCrd(NAMESPACE, CLUSTER_NAME, new ClusterSecurityAuthenticationBuilder().withType(ClusterSecurityAuthenticationType.SERVICE_ACCOUNT).build()));
 
-        var identity = ReconcilerUtils.coIdentity(Reconciliation.DUMMY_RECONCILIATION, mockSecretOps, securityContext).toCompletableFuture().join();
+        Identity identity = ReconcilerUtils.coIdentity(Reconciliation.DUMMY_RECONCILIATION, mockSecretOps, securityContext).toCompletableFuture().join();
         assertThat(identity.trustSet(), is(instanceOf(PemTrustSet.class)));
         assertThat(identity.authIdentity(), is(instanceOf(RequestedServiceAccountAuthIdentity.class)));
         assertThat(identity.authIdentity().kafkaClientProperties().get("sasl.jaas.config"), containsString("strimzi.kubernetes.token.audience=\"strimzi.io/kafka/" + NAMESPACE + "/" + CLUSTER_NAME + "\""));
@@ -209,7 +209,7 @@ public class ReconcilerUtilsTest {
         when(securityContext.encryption()).thenReturn(new NoneEncryptionConfiguration());
         when(securityContext.authentication()).thenReturn(AuthenticationConfiguration.fromCrd(NAMESPACE, CLUSTER_NAME, new ClusterSecurityAuthenticationBuilder().withType(ClusterSecurityAuthenticationType.SERVICE_ACCOUNT).build()));
 
-        var identity = ReconcilerUtils.coIdentity(Reconciliation.DUMMY_RECONCILIATION, mockSecretOps, securityContext).toCompletableFuture().join();
+        Identity identity = ReconcilerUtils.coIdentity(Reconciliation.DUMMY_RECONCILIATION, mockSecretOps, securityContext).toCompletableFuture().join();
         assertThat(identity.trustSet(), is(nullValue()));
         assertThat(identity.authIdentity(), is(instanceOf(RequestedServiceAccountAuthIdentity.class)));
         verifyNoInteractions(mockSecretOps);
@@ -504,7 +504,7 @@ public class ReconcilerUtilsTest {
         when(secretOps.getAsync(eq(namespace), eq("top-secret-pwd"))).thenReturn(CompletableFuture.completedFuture(secret));
         when(secretOps.getAsync(eq(namespace), eq("css-secret"))).thenReturn(CompletableFuture.completedFuture(cssSecret));
 
-        var v = ReconcilerUtils.authTlsHash(secretOps, "ns", kcu, List.of(DUMMY_CERT)).toCompletableFuture().join();
+        Integer v = ReconcilerUtils.authTlsHash(secretOps, "ns", kcu, List.of(DUMMY_CERT)).toCompletableFuture().join();
         // we are summing "value" hash four times
         assertThat(v, is(DUMMY_CERT.hashCode() + "dmFsdWU=".hashCode()));
     }
@@ -563,7 +563,7 @@ public class ReconcilerUtilsTest {
         passwordSecretSource.setSecretName("my-secret");
         passwordSecretSource.setPassword("passwordKey");
         auth.setPasswordSecret(passwordSecretSource);
-        var r = ReconcilerUtils.authTlsHash(secretOperator, "anyNamespace", auth, List.of()).toCompletableFuture().join();
+        Integer r = ReconcilerUtils.authTlsHash(secretOperator, "anyNamespace", auth, List.of()).toCompletableFuture().join();
         assertEquals("my-password".hashCode(), r);
     }
 
@@ -600,7 +600,7 @@ public class ReconcilerUtilsTest {
         passwordSecretSource.setSecretName("my-secret");
         passwordSecretSource.setPassword("passwordKey");
         auth.setPasswordSecret(passwordSecretSource);
-        var r = ReconcilerUtils.authTlsHash(secretOperator, "anyNamespace", auth, List.of()).toCompletableFuture().join();
+        Integer r = ReconcilerUtils.authTlsHash(secretOperator, "anyNamespace", auth, List.of()).toCompletableFuture().join();
         assertEquals("my-password".hashCode(), r);
     }
 
@@ -620,7 +620,7 @@ public class ReconcilerUtilsTest {
         SecretOperator secretOps = mock(SecretOperator.class);
         when(secretOps.getAsync(eq(namespace), eq(secretName))).thenReturn(CompletableFuture.completedFuture(secret));
 
-        var result = ReconcilerUtils.getValidatedSecret(secretOps, namespace, secretName, "key1", "key2").toCompletableFuture().join();
+        Secret result = ReconcilerUtils.getValidatedSecret(secretOps, namespace, secretName, "key1", "key2").toCompletableFuture().join();
         assertThat(result, is(secret));
     }
 
@@ -689,7 +689,7 @@ public class ReconcilerUtilsTest {
         when(secretOps.getAsync(anyString(), eq("cert-secret2"))).thenReturn(CompletableFuture.completedFuture(secret2));
         when(secretOps.getAsync(anyString(), eq("cert-secret3"))).thenReturn(CompletableFuture.completedFuture(secret3));
 
-        var res = ReconcilerUtils.trustedCertificates(Reconciliation.DUMMY_RECONCILIATION, secretOps, List.of(cert1, cert2, cert3)).toCompletableFuture().join();
+        List<String> res = ReconcilerUtils.trustedCertificates(Reconciliation.DUMMY_RECONCILIATION, secretOps, List.of(cert1, cert2, cert3)).toCompletableFuture().join();
         assertThat(res, hasItems(DUMMY_CERT + "\n" + DUMMY_CERT, DUMMY_CERT, DUMMY_CERT));
     }
 
@@ -777,7 +777,7 @@ public class ReconcilerUtilsTest {
         SecretOperator secretOps = mock(SecretOperator.class);
         when(secretOps.getAsync(eq(NAMESPACE), eq("cert-secret"))).thenReturn(CompletableFuture.completedFuture(secret));
 
-        var res = ReconcilerUtils.trustedCertificates(Reconciliation.DUMMY_RECONCILIATION, secretOps, singletonList(cert1)).toCompletableFuture().join();
+        List<String> res = ReconcilerUtils.trustedCertificates(Reconciliation.DUMMY_RECONCILIATION, secretOps, singletonList(cert1)).toCompletableFuture().join();
         assertThat(res, is(List.of("")));
         verify(secretOps).getAsync(any(), eq("cert-secret"));
     }

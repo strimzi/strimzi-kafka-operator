@@ -98,7 +98,7 @@ public class ReconcilerUtils {
                 LOGGER.debugCr(reconciliation, "Ignoring forbidden access to ClusterRoleBindings resource which does not seem to be required.");
                 return null;
             }
-            var throwable = Util.maybeUnwrapCompletionException(e);
+            Throwable throwable = Util.maybeUnwrapCompletionException(e);
             throw throwable instanceof RuntimeException re ? re : new RuntimeException(throwable);
         });
     }
