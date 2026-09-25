@@ -7,6 +7,8 @@ package io.strimzi.api.kafka.model.common;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 
+import java.util.Arrays;
+
 /**
  * Defines values for the spec.clusterCa/clientsCa.type field
  */
@@ -19,7 +21,7 @@ public enum CertificateManagerType {
         return switch (value) {
             case "strimzi" -> STRIMZI;
             case "cert-manager" -> CERT_MANAGER;
-            default -> throw new IllegalArgumentException(String.format("Unknown certificate manager type: %s. Must be %s or %s.", value, STRIMZI.toValue(), CERT_MANAGER.toValue()));
+            default -> throw new IllegalArgumentException(String.format("Unknown certificate manager type: %s. Must be one of: %s.", value, Arrays.stream(values()).map(CertificateManagerType::toValue).toList()));
         };
     }
 

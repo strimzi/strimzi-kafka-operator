@@ -241,7 +241,7 @@ public class CaReconciler {
     }
 
     /**
-     * Returns whether a Secret in one containing end-entity certs for components like Kafka, EntityOperator, Cruise Control etc.
+     * Returns whether a Secret contains end-entity certs for components like Kafka, EntityOperator, Cruise Control etc.
      * @param secret Secret to check
      *
      * @return Whether the Secret contains certs
