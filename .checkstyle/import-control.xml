@@ -30,6 +30,7 @@ We also control imports only in production classes and not in tests. This is con
         <!-- Common libraries and Java classes -->
         <allow pkg="java" />
         <allow pkg="com.fasterxml.jackson" />
+        <allow pkg="tools.jackson" />
         <allow pkg="io.fabric8.zjsonpatch" />
         <allow pkg="io.fabric8.kubernetes.api.model" />
         <allow class="io.fabric8.kubernetes.client.utils.Serialization" />
@@ -56,6 +57,7 @@ We also control imports only in production classes and not in tests. This is con
         <allow pkg="org.apache.kafka" />
         <allow pkg="org.apache.logging.log4j" />
         <allow pkg="com.fasterxml.jackson" />
+        <allow pkg="tools.jackson" />
         <allow pkg="io.fabric8.zjsonpatch" />
         <allow pkg="io.fabric8.openshift.api.model" />
         <allow pkg="io.fabric8.kubernetes.api.model" />

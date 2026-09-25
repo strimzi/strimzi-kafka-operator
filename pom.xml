@@ -72,16 +72,18 @@
         <lombok.version>1.18.32</lombok.version>
 
         <!-- Runtime dependencies -->
-        <fabric8.kubernetes-client.version>7.9.0</fabric8.kubernetes-client.version>
-        <fabric8.openshift-client.version>7.9.0</fabric8.openshift-client.version>
-        <fabric8.kubernetes-model.version>7.9.0</fabric8.kubernetes-model.version>
-        <fabric8.zjsonpatch.version>7.9.0</fabric8.zjsonpatch.version>
+        <fabric8.kubernetes-client.version>8.0.0</fabric8.kubernetes-client.version>
+        <fabric8.openshift-client.version>8.0.0</fabric8.openshift-client.version>
+        <fabric8.kubernetes-model.version>8.0.0</fabric8.kubernetes-model.version>
+        <fabric8.zjsonpatch.version>8.0.0</fabric8.zjsonpatch.version>
         <fasterxml.jackson-core.version>2.22.2</fasterxml.jackson-core.version>
         <fasterxml.jackson-databind.version>2.22.2</fasterxml.jackson-databind.version>
         <fasterxml.jackson-dataformat.version>2.22.2</fasterxml.jackson-dataformat.version>
         <fasterxml.jackson-annotations.version>2.22</fasterxml.jackson-annotations.version>
         <fasterxml.jackson-datatype.version>2.22.2</fasterxml.jackson-datatype.version>
         <fasterxml.jackson-jaxrs.version>2.22.2</fasterxml.jackson-jaxrs.version>
+        <jackson3-core.version>3.2.3</jackson3-core.version>
+        <jackson3-dataformat.version>3.2.3</jackson3-dataformat.version>
         <vertx.version>5.2.0</vertx.version>
         <vertx-junit5.version>5.2.0</vertx-junit5.version>
         <kafka.version>4.3.1</kafka.version>
@@ -210,7 +212,7 @@
                 <exclusions>
                     <exclusion>
                         <groupId>io.fabric8</groupId>
-                        <artifactId>kubernetes-httpclient-vertx</artifactId>
+                        <artifactId>kubernetes-httpclient-vertx-5</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -369,6 +371,22 @@
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-api</artifactId>
                 <version>${slf4j.version}</version>
+            </dependency>
+            <!-- Jackson 3 is used by Fabric8 Kubernetes Client -->
+            <dependency>
+                <groupId>tools.jackson.core</groupId>
+                <artifactId>jackson-databind</artifactId>
+                <version>${jackson3-core.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>tools.jackson.core</groupId>
+                <artifactId>jackson-core</artifactId>
+                <version>${jackson3-core.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>tools.jackson.dataformat</groupId>
+                <artifactId>jackson-dataformat-yaml</artifactId>
+                <version>${jackson3-dataformat.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>

@@ -4,7 +4,6 @@
  */
 package io.strimzi.operator.cluster.model;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodBuilder;
@@ -15,6 +14,7 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
+import tools.jackson.core.JacksonException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -67,7 +67,7 @@ public class PodRevision {
             }
 
             return Util.hashStub(PodSetUtils.podToString(podWithoutResources));
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             LOGGER.warnCr(reconciliation, "Failed to get pod revision", e);
             throw new RuntimeException("Failed to get pod revision", e);
         }
@@ -105,7 +105,7 @@ public class PodRevision {
             }
 
             return Util.hashStub(PodSetUtils.resourcesToString(resources));
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             LOGGER.warnCr(reconciliation, "Failed to get pod resource revision", e);
             throw new RuntimeException("Failed to get pod resource revision", e);
         }
