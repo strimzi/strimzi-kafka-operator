@@ -9,6 +9,7 @@ import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
 import io.strimzi.api.kafka.model.common.CertificateAuthority;
+import io.strimzi.api.kafka.model.common.CertificateManagerType;
 import io.strimzi.api.kafka.model.common.InlineLogging;
 import io.strimzi.api.kafka.model.common.JvmOptions;
 import io.strimzi.api.kafka.model.common.SystemPropertyBuilder;
@@ -487,6 +488,7 @@ public class EntityUserOperatorTest {
         expected.add(new EnvVarBuilder().withName(EntityUserOperator.ENV_VAR_SECRET_PREFIX).withValue("strimzi-").build());
         expected.add(new EnvVarBuilder().withName(EntityUserOperator.ENV_VAR_ACLS_ADMIN_API_SUPPORTED).withValue(String.valueOf(false)).build());
         expected.add(new EnvVarBuilder().withName(ClusterOperatorConfig.PKCS12_KEYSTORE_GENERATION.key()).withValue(String.valueOf(true)).build());
+        expected.add(new EnvVarBuilder().withName(EntityUserOperator.ENV_VAR_CA_TYPE).withValue(CertificateManagerType.STRIMZI.toValue()).build());
 
         return expected;
     }

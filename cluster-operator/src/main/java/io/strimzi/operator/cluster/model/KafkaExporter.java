@@ -326,7 +326,7 @@ public class KafkaExporter extends AbstractModel {
     public CompletionStage<Secret> generateCertificatesSecret(Ca clusterCa, Secret existingSecret, boolean isMaintenanceTimeWindowsSatisfied) {
         CertAndKey existingCertAndKey = CertSecretUtils.keyStoreCertAndKey(existingSecret, COMPONENT_TYPE, clusterCa.caCertGenerationAnnotation());
 
-        return clusterCa.maybeCopyOrGenerateClientCert(reconciliation, componentName, existingCertAndKey, isMaintenanceTimeWindowsSatisfied)
+        return clusterCa.maybeCopyOrGenerateClientCert(reconciliation, KafkaExporterResources.secretName(cluster), componentName, existingCertAndKey, isMaintenanceTimeWindowsSatisfied, labels)
                 .thenApply(updatedCert -> {
                     Map<String, String> secretData = CertSecretUtils.buildSecretData(COMPONENT_TYPE, updatedCert);
                     return ModelUtils.createSecret(

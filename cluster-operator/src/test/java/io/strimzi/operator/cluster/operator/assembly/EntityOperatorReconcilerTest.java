@@ -19,11 +19,11 @@ import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlSpecBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
+import io.strimzi.certs.CertAndKey;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.ClusterOperatorConfig.ClusterOperatorConfigBuilder;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
-import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.model.clustersecurity.kafka.KafkaClusterSecurityContext;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.ConfigMapOperator;
@@ -38,9 +38,6 @@ import io.strimzi.operator.common.InvalidConfigurationException;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.ca.Ca;
-import io.strimzi.operator.common.ca.CaConfig;
-import io.strimzi.operator.common.ca.InternalCa;
-import io.strimzi.operator.common.model.PasswordGenerator;
 import io.strimzi.operator.common.operator.MockCertIssuer;
 import io.strimzi.operator.common.operator.resource.kubernetes.SecretOperator;
 import io.vertx.junit5.Checkpoint;
@@ -52,6 +49,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 
+import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.util.Map;
 import java.util.Objects;
@@ -67,10 +65,14 @@ import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItems;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(VertxExtension.class)
@@ -93,15 +95,6 @@ public class EntityOperatorReconcilerTest {
                 .endKafka()
             .endSpec()
             .build();
-    private final static InternalCa CLUSTER_CA = new InternalCa(
-            Reconciliation.DUMMY_RECONCILIATION,
-            Ca.CaRole.CLUSTER_CA,
-            new MockCertIssuer(),
-            new PasswordGenerator(10, "a", "a"),
-            ResourceUtils.createInitialCaCertSecret(NAMESPACE, NAME, AbstractModel.clusterCaCertSecretName(NAME), MockCertIssuer.clusterCaCert(), MockCertIssuer.clusterCaCertStore(), "123456"),
-            ResourceUtils.createInitialCaKeySecret(NAMESPACE, NAME, AbstractModel.clusterCaKeySecretName(NAME), MockCertIssuer.clusterCaKey()),
-            CaConfig.createDefault()
-    );
 
     @Test
     public void reconcileWithToAndUo(VertxTestContext context) {
@@ -150,6 +143,11 @@ public class EntityOperatorReconcilerTest {
         ArgumentCaptor<PodDisruptionBudget> pdbCaptor = ArgumentCaptor.forClass(PodDisruptionBudget.class);
         when(mockPodDisruptionBudgetOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.entityOperatorDeploymentName(NAME)), pdbCaptor.capture())).thenReturn(CompletableFuture.completedFuture(null));
 
+        Ca clusterCa = mock(Ca.class);
+        when(clusterCa.maybeCopyOrGenerateClientCert(any(), any(), any(), any(), anyBoolean(), any()))
+                .thenReturn(CompletableFuture.completedFuture(new CertAndKey(MockCertIssuer.serverKey().getBytes(StandardCharsets.UTF_8), MockCertIssuer.serverCert().getBytes(StandardCharsets.UTF_8))));
+        when(clusterCa.caCertGenerationAnnotation()).thenReturn(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION);
+
         Kafka kafka = new KafkaBuilder(KAFKA)
                 .editSpec()
                     .withNewEntityOperator()
@@ -166,7 +164,7 @@ public class EntityOperatorReconcilerTest {
                 ResourceUtils.dummyClusterOperatorConfig(),
                 supplier,
                 kafka,
-                CLUSTER_CA,
+                clusterCa,
                 KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
 
         Checkpoint async = context.checkpoint();
@@ -205,6 +203,9 @@ public class EntityOperatorReconcilerTest {
                     assertThat(pdbCaptor.getAllValues().size(), is(1));
                     assertThat(pdbCaptor.getValue(), is(notNullValue()));
                     assertThat(pdbCaptor.getValue().getSpec().getMaxUnavailable(), is(new IntOrString(1)));
+
+                    verify(clusterCa, never()).cleanupEndEntityCert(KafkaResources.entityTopicOperatorSecretName(NAME));
+                    verify(clusterCa, never()).cleanupEndEntityCert(KafkaResources.entityUserOperatorSecretName(NAME));
 
                     async.flag();
                 })));
@@ -265,6 +266,11 @@ public class EntityOperatorReconcilerTest {
         ArgumentCaptor<PodDisruptionBudget> pdbCaptor = ArgumentCaptor.forClass(PodDisruptionBudget.class);
         when(mockPodDisruptionBudgetOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.entityOperatorDeploymentName(NAME)), pdbCaptor.capture())).thenReturn(CompletableFuture.completedFuture(null));
 
+        Ca clusterCa = mock(Ca.class);
+        when(clusterCa.maybeCopyOrGenerateClientCert(any(), any(), any(), any(), anyBoolean(), any()))
+                .thenReturn(CompletableFuture.completedFuture(new CertAndKey(MockCertIssuer.serverKey().getBytes(StandardCharsets.UTF_8), MockCertIssuer.serverCert().getBytes(StandardCharsets.UTF_8))));
+        when(clusterCa.caCertGenerationAnnotation()).thenReturn(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION);
+
         Kafka kafka = new KafkaBuilder(KAFKA)
                 .editSpec()
                     .withNewEntityOperator()
@@ -287,7 +293,7 @@ public class EntityOperatorReconcilerTest {
                 config,
                 supplier,
                 kafka,
-                CLUSTER_CA,
+                clusterCa,
                 KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
 
         Checkpoint async = context.checkpoint();
@@ -329,6 +335,9 @@ public class EntityOperatorReconcilerTest {
                     assertThat(pdbCaptor.getAllValues().size(), is(1));
                     assertThat(pdbCaptor.getValue(), is(notNullValue()));
                     assertThat(pdbCaptor.getValue().getSpec().getMaxUnavailable(), is(new IntOrString(1)));
+
+                    verify(clusterCa, never()).cleanupEndEntityCert(KafkaResources.entityTopicOperatorSecretName(NAME));
+                    verify(clusterCa, never()).cleanupEndEntityCert(KafkaResources.entityUserOperatorSecretName(NAME));
 
                     async.flag();
                 })));
@@ -385,6 +394,11 @@ public class EntityOperatorReconcilerTest {
         ArgumentCaptor<PodDisruptionBudget> pdbCaptor = ArgumentCaptor.forClass(PodDisruptionBudget.class);
         when(mockPodDisruptionBudgetOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.entityOperatorDeploymentName(NAME)), pdbCaptor.capture())).thenReturn(CompletableFuture.completedFuture(null));
 
+        Ca clusterCa = mock(Ca.class);
+        when(clusterCa.maybeCopyOrGenerateClientCert(any(), any(), any(), any(), anyBoolean(), any()))
+                .thenReturn(CompletableFuture.completedFuture(new CertAndKey(MockCertIssuer.serverKey().getBytes(StandardCharsets.UTF_8), MockCertIssuer.serverCert().getBytes(StandardCharsets.UTF_8))));
+        when(clusterCa.caCertGenerationAnnotation()).thenReturn(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION);
+
         Kafka kafka = new KafkaBuilder(KAFKA)
                 .editSpec()
                     .withNewEntityOperator()
@@ -403,7 +417,7 @@ public class EntityOperatorReconcilerTest {
                 ResourceUtils.dummyClusterOperatorConfig(),
                 supplier,
                 kafka,
-                CLUSTER_CA,
+                clusterCa,
                 KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
 
         Checkpoint async = context.checkpoint();
@@ -447,6 +461,9 @@ public class EntityOperatorReconcilerTest {
                     assertThat(pdbCaptor.getAllValues().size(), is(1));
                     assertThat(pdbCaptor.getValue(), is(notNullValue()));
                     assertThat(pdbCaptor.getValue().getSpec().getMaxUnavailable(), is(new IntOrString(1)));
+
+                    verify(clusterCa, never()).cleanupEndEntityCert(KafkaResources.entityTopicOperatorSecretName(NAME));
+                    verify(clusterCa, times(1)).cleanupEndEntityCert(KafkaResources.entityUserOperatorSecretName(NAME));
 
                     async.flag();
                 })));
@@ -497,6 +514,11 @@ public class EntityOperatorReconcilerTest {
         ArgumentCaptor<PodDisruptionBudget> pdbCaptor = ArgumentCaptor.forClass(PodDisruptionBudget.class);
         when(mockPodDisruptionBudgetOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.entityOperatorDeploymentName(NAME)), pdbCaptor.capture())).thenReturn(CompletableFuture.completedFuture(null));
 
+        Ca clusterCa = mock(Ca.class);
+        when(clusterCa.maybeCopyOrGenerateClientCert(any(), any(), any(), any(), anyBoolean(), any()))
+                .thenReturn(CompletableFuture.completedFuture(new CertAndKey(MockCertIssuer.serverKey().getBytes(StandardCharsets.UTF_8), MockCertIssuer.serverCert().getBytes(StandardCharsets.UTF_8))));
+        when(clusterCa.caCertGenerationAnnotation()).thenReturn(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION);
+
         Kafka kafka = new KafkaBuilder(KAFKA)
                 .editSpec()
                     .withNewEntityOperator()
@@ -511,7 +533,7 @@ public class EntityOperatorReconcilerTest {
                 ResourceUtils.dummyClusterOperatorConfig(),
                 supplier,
                 kafka,
-                CLUSTER_CA,
+                clusterCa,
                 KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
 
         Checkpoint async = context.checkpoint();
@@ -550,6 +572,9 @@ public class EntityOperatorReconcilerTest {
                     assertThat(pdbCaptor.getAllValues().size(), is(1));
                     assertThat(pdbCaptor.getValue(), is(notNullValue()));
                     assertThat(pdbCaptor.getValue().getSpec().getMaxUnavailable(), is(new IntOrString(1)));
+
+                    verify(clusterCa, times(1)).cleanupEndEntityCert(KafkaResources.entityTopicOperatorSecretName(NAME));
+                    verify(clusterCa, never()).cleanupEndEntityCert(KafkaResources.entityUserOperatorSecretName(NAME));
 
                     async.flag();
                 })));
@@ -599,6 +624,11 @@ public class EntityOperatorReconcilerTest {
         ArgumentCaptor<PodDisruptionBudget> pdbCaptor = ArgumentCaptor.forClass(PodDisruptionBudget.class);
         when(mockPodDisruptionBudgetOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.entityOperatorDeploymentName(NAME)), pdbCaptor.capture())).thenReturn(CompletableFuture.completedFuture(null));
 
+        Ca clusterCa = mock(Ca.class);
+        when(clusterCa.maybeCopyOrGenerateClientCert(any(), any(), any(), any(), anyBoolean(), any()))
+                .thenReturn(CompletableFuture.completedFuture(new CertAndKey(MockCertIssuer.serverKey().getBytes(StandardCharsets.UTF_8), MockCertIssuer.serverCert().getBytes(StandardCharsets.UTF_8))));
+        when(clusterCa.caCertGenerationAnnotation()).thenReturn(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION);
+
         Kafka kafka = new KafkaBuilder(KAFKA)
                 .editSpec()
                     .withNewEntityOperator()
@@ -611,7 +641,7 @@ public class EntityOperatorReconcilerTest {
                 ResourceUtils.dummyClusterOperatorConfig(),
                 supplier,
                 kafka,
-                CLUSTER_CA,
+                clusterCa,
                 KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
 
         Checkpoint async = context.checkpoint();
@@ -646,6 +676,9 @@ public class EntityOperatorReconcilerTest {
 
                     assertThat(pdbCaptor.getAllValues().size(), is(1));
                     assertThat(pdbCaptor.getValue(), is(nullValue()));
+
+                    verify(clusterCa, times(1)).cleanupEndEntityCert(KafkaResources.entityTopicOperatorSecretName(NAME));
+                    verify(clusterCa, times(1)).cleanupEndEntityCert(KafkaResources.entityUserOperatorSecretName(NAME));
 
                     async.flag();
                 })));
@@ -695,12 +728,17 @@ public class EntityOperatorReconcilerTest {
         ArgumentCaptor<PodDisruptionBudget> pdbCaptor = ArgumentCaptor.forClass(PodDisruptionBudget.class);
         when(mockPodDisruptionBudgetOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.entityOperatorDeploymentName(NAME)), pdbCaptor.capture())).thenReturn(CompletableFuture.completedFuture(null));
 
+        Ca clusterCa = mock(Ca.class);
+        when(clusterCa.maybeCopyOrGenerateClientCert(any(), any(), any(), any(), anyBoolean(), any()))
+                .thenReturn(CompletableFuture.completedFuture(new CertAndKey(MockCertIssuer.serverKey().getBytes(StandardCharsets.UTF_8), MockCertIssuer.serverCert().getBytes(StandardCharsets.UTF_8))));
+        when(clusterCa.caCertGenerationAnnotation()).thenReturn(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION);
+
         EntityOperatorReconciler rcnclr = new EntityOperatorReconciler(
                 Reconciliation.DUMMY_RECONCILIATION,
                 ResourceUtils.dummyClusterOperatorConfig(),
                 supplier,
                 KAFKA,
-                CLUSTER_CA,
+                clusterCa,
                 KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
 
         Checkpoint async = context.checkpoint();
@@ -735,6 +773,9 @@ public class EntityOperatorReconcilerTest {
 
                     assertThat(pdbCaptor.getAllValues().size(), is(1));
                     assertThat(pdbCaptor.getValue(), is(nullValue()));
+
+                    verify(clusterCa, times(1)).cleanupEndEntityCert(KafkaResources.entityTopicOperatorSecretName(NAME));
+                    verify(clusterCa, times(1)).cleanupEndEntityCert(KafkaResources.entityUserOperatorSecretName(NAME));
 
                     async.flag();
                 })));
@@ -791,6 +832,11 @@ public class EntityOperatorReconcilerTest {
         ArgumentCaptor<PodDisruptionBudget> pdbCaptor = ArgumentCaptor.forClass(PodDisruptionBudget.class);
         when(mockPodDisruptionBudgetOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.entityOperatorDeploymentName(NAME)), pdbCaptor.capture())).thenReturn(CompletableFuture.completedFuture(null));
 
+        Ca clusterCa = mock(Ca.class);
+        when(clusterCa.maybeCopyOrGenerateClientCert(any(), any(), any(), any(), anyBoolean(), any()))
+                .thenReturn(CompletableFuture.completedFuture(new CertAndKey(MockCertIssuer.serverKey().getBytes(StandardCharsets.UTF_8), MockCertIssuer.serverCert().getBytes(StandardCharsets.UTF_8))));
+        when(clusterCa.caCertGenerationAnnotation()).thenReturn(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION);
+
         // Create Kafka CR with Topic Operator having watchedNamespace configured
         Kafka kafka = new KafkaBuilder(KAFKA)
                 .editSpec()
@@ -815,7 +861,7 @@ public class EntityOperatorReconcilerTest {
                 config,
                 supplier,
                 kafka,
-                CLUSTER_CA,
+                clusterCa,
                 KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
 
         Checkpoint async = context.checkpoint();
@@ -862,6 +908,9 @@ public class EntityOperatorReconcilerTest {
 
                     assertThat(pdbCaptor.getAllValues().size(), is(1));
                     assertThat(pdbCaptor.getValue(), is(nullValue()));
+
+                    verify(clusterCa, times(1)).cleanupEndEntityCert(KafkaResources.entityTopicOperatorSecretName(NAME));
+                    verify(clusterCa, times(1)).cleanupEndEntityCert(KafkaResources.entityUserOperatorSecretName(NAME));
 
                     async.flag();
                 })));
@@ -918,6 +967,11 @@ public class EntityOperatorReconcilerTest {
         ArgumentCaptor<PodDisruptionBudget> pdbCaptor = ArgumentCaptor.forClass(PodDisruptionBudget.class);
         when(mockPodDisruptionBudgetOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.entityOperatorDeploymentName(NAME)), pdbCaptor.capture())).thenReturn(CompletableFuture.completedFuture(null));
 
+        Ca clusterCa = mock(Ca.class);
+        when(clusterCa.maybeCopyOrGenerateClientCert(any(), any(), any(), any(), anyBoolean(), any()))
+                .thenReturn(CompletableFuture.completedFuture(new CertAndKey(MockCertIssuer.serverKey().getBytes(StandardCharsets.UTF_8), MockCertIssuer.serverCert().getBytes(StandardCharsets.UTF_8))));
+        when(clusterCa.caCertGenerationAnnotation()).thenReturn(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION);
+
         // Create Kafka CR with only one operator having watchedNamespace configured
         Kafka kafka = new KafkaBuilder(KAFKA)
                 .editSpec()
@@ -942,7 +996,7 @@ public class EntityOperatorReconcilerTest {
                 config,
                 supplier,
                 kafka,
-                CLUSTER_CA,
+                clusterCa,
                 KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
 
         Checkpoint async = context.checkpoint();
@@ -994,6 +1048,9 @@ public class EntityOperatorReconcilerTest {
 
                     assertThat(pdbCaptor.getAllValues().size(), is(1));
                     assertThat(pdbCaptor.getValue(), is(nullValue()));
+
+                    verify(clusterCa, times(1)).cleanupEndEntityCert(KafkaResources.entityTopicOperatorSecretName(NAME));
+                    verify(clusterCa, times(1)).cleanupEndEntityCert(KafkaResources.entityUserOperatorSecretName(NAME));
 
                     async.flag();
                 })));

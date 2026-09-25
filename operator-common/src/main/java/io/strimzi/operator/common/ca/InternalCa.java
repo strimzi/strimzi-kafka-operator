@@ -12,6 +12,7 @@ import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
+import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.PasswordGenerator;
 
 import java.io.File;
@@ -37,8 +38,6 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
-
 
 /**
  * A Certificate Authority which can renew its own (self-signed) certificates, and generate signed certificates
@@ -93,22 +92,23 @@ public class InternalCa extends Ca {
 
     @Override
     public CompletionStage<CertAndKey> maybeCopyOrGenerateServerCerts(Reconciliation reconciliation,
-                                                                  String podName,
+                                                                  String resourceName,
                                                                   StrimziSubject subject,
                                                                   CertAndKey existingCertAndKey,
                                                                   boolean isMaintenanceTimeWindowsSatisfied,
-                                                                  boolean includeCaChain) {
+                                                                  boolean includeCaChain,
+                                                                  Labels labels) {
         List<String> reasons = new ArrayList<>();
 
         if (existingCertAndKey == null) {
             reasons.add("certificate doesn't exist yet for pod");
-        } else if (hasCaCertGenerationChanged(existingCertAndKey.caCertGeneration(), podName)) {
+        } else if (hasCaCertGenerationChanged(existingCertAndKey.caCertGeneration(), resourceName)) {
             reasons.add("certificate for pod has old cert generation");
         } else {
             // A certificate for this node already exists, so we will try to reuse it
-            LOGGER.debugCr(reconciliation, "certificate for node {} already exists", podName);
+            LOGGER.debugCr(reconciliation, "certificate for node {} already exists", resourceName);
 
-            if (certSubjectChanged(reconciliation, existingCertAndKey, subject, podName))   {
+            if (certSubjectChanged(reconciliation, existingCertAndKey, subject, resourceName))   {
                 reasons.add("DNS names changed");
             }
 
@@ -131,12 +131,12 @@ public class InternalCa extends Ca {
 
         CertAndKey certAndKey;
         if (!reasons.isEmpty())  {
-            LOGGER.infoCr(reconciliation, "Certificate for pod {} needs to be regenerated because: {}", podName, String.join(", ", reasons));
+            LOGGER.infoCr(reconciliation, "Certificate for {} needs to be regenerated because: {}", resourceName, String.join(", ", reasons));
             try {
                 certAndKey = generateSignedCert(subject, includeCaChain);
             } catch (IOException e) {
                 LOGGER.errorCr(reconciliation, "Error while generating certificates", e);
-                return CompletableFuture.failedStage(new RuntimeException("Failed to prepare certificate for " + podName, e));
+                return CompletableFuture.failedStage(new RuntimeException("Failed to prepare certificate for " + resourceName, e));
             }
         }  else {
             certAndKey = existingCertAndKey;
@@ -157,7 +157,7 @@ public class InternalCa extends Ca {
     /* test */
     static boolean certSubjectChanged(Reconciliation reconciliation, CertAndKey certAndKey, StrimziSubject desiredSubject, String podName)    {
         Collection<String> desiredAltNames = desiredSubject.subjectAltNames().values();
-        Collection<String> currentAltNames = getSubjectAltNames(reconciliation, certAndKey.cert());
+        Collection<String> currentAltNames = CertificateUtils.getSubjectAltNames(reconciliation, certAndKey.cert());
 
         if (currentAltNames != null && desiredAltNames.containsAll(currentAltNames) && currentAltNames.containsAll(desiredAltNames))   {
             LOGGER.traceCr(reconciliation, "Alternate subjects match. No need to refresh cert for pod {}.", podName);
@@ -168,32 +168,6 @@ public class InternalCa extends Ca {
             LOGGER.infoCr(reconciliation, "Desired alternate subjects: {}", desiredAltNames);
             return true;
         }
-    }
-
-    /**
-     * Extracts the alternate subject names out of existing certificate
-     *
-     * @param certificate   Existing X509 certificate as a byte array
-     *
-     * @return  List of certificate Subject Alternate Names
-     */
-    private static List<String> getSubjectAltNames(Reconciliation reconciliation, byte[] certificate) {
-        List<String> subjectAltNames = new ArrayList<>();
-
-        try {
-            X509Certificate cert = CertificateUtils.x509Certificate(certificate);
-            Collection<List<?>> altNames = cert.getSubjectAlternativeNames();
-            if (altNames != null) {
-                subjectAltNames = altNames.stream()
-                        .filter(name -> name.get(1) instanceof String)
-                        .map(item -> (String) item.get(1))
-                        .collect(Collectors.toList());
-            }
-        } catch (CertificateException | RuntimeException e) {
-            LOGGER.debugCr(reconciliation, "Failed to parse existing certificate", e);
-        }
-
-        return subjectAltNames;
     }
 
     /**
@@ -225,15 +199,16 @@ public class InternalCa extends Ca {
     @Override
     public CompletionStage<CertAndKey> maybeCopyOrGenerateClientCert(
             Reconciliation reconciliation,
+            String resourceName,
             String commonName,
             CertAndKey existingCertAndKey,
-            boolean isMaintenanceTimeWindowsSatisfied
-    ) {
+            boolean isMaintenanceTimeWindowsSatisfied,
+            Labels labels) {
         List<String> reasons = new ArrayList<>();
 
         if (existingCertAndKey == null) {
             reasons.add("certificate doesn't exist yet");
-        } else if (hasCaCertGenerationChanged(existingCertAndKey.caCertGeneration(), commonName)) {
+        } else if (hasCaCertGenerationChanged(existingCertAndKey.caCertGeneration(), resourceName)) {
             reasons.add("certificate has old cert generation");
         } else {
             // Certificate exists and CA generation matches - check if renewal is needed
@@ -244,7 +219,7 @@ public class InternalCa extends Ca {
 
         CertAndKey certAndKey = null;
         if (!reasons.isEmpty()) {
-            LOGGER.infoCr(reconciliation, "Certificate for component {} needs to be regenerated because: {}", commonName, String.join(", ", reasons));
+            LOGGER.infoCr(reconciliation, "Certificate for component {} needs to be regenerated because: {}", resourceName, String.join(", ", reasons));
 
             try {
                 String org = caRole.equals(CaRole.CLIENTS_CA) ? null : Ca.IO_STRIMZI;
@@ -252,7 +227,7 @@ public class InternalCa extends Ca {
                 certAndKey = generateSignedCert(subject);
             } catch (IOException e) {
                 LOGGER.errorCr(reconciliation, "Error while generating certificates", e);
-                return CompletableFuture.failedStage(new RuntimeException("Failed to generate signed certificate for " + commonName, e));
+                return CompletableFuture.failedStage(new RuntimeException("Failed to generate signed certificate for " + resourceName, e));
             }
 
             LOGGER.debugCr(reconciliation, "End generating certificates");
@@ -261,6 +236,12 @@ public class InternalCa extends Ca {
         }
 
         return CompletableFuture.completedFuture(certAndKey);
+    }
+
+    @Override
+    public CompletionStage<Void> cleanupEndEntityCert(String entity) {
+        // InternalCa does not create any long-lived resources when issuing certificates - NOOP
+        return CompletableFuture.completedFuture(null);
     }
 
     private static void delete(Reconciliation reconciliation, File file) {

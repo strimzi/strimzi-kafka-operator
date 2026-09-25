@@ -484,7 +484,7 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
 
         StrimziSubject subject = buildCruiseControlCertSubject(namespace, clusterName);
 
-        return clusterCa.maybeCopyOrGenerateServerCerts(reconciliation, CruiseControl.COMPONENT_TYPE, subject, existingCertAndKey, isMaintenanceTimeWindowsSatisfied, false)
+        return clusterCa.maybeCopyOrGenerateServerCerts(reconciliation, CruiseControlResources.secretName(cluster), subject, existingCertAndKey, isMaintenanceTimeWindowsSatisfied, false, labels)
                 .thenApply(ccCerts -> {
                     LOGGER.debugCr(reconciliation, "End generating certificates");
                     return ModelUtils.createSecret(

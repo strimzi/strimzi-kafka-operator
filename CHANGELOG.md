@@ -8,6 +8,8 @@
 * The `UseConnectBuildWithBuildah` feature gate moves to GA stage, is enabled by default without option to be disabled
 * The `UseBackgroundPodDeletion` feature gate moves to beta stage and is enabled by default.
   If needed, `UseBackgroundPodDeletion` can be disabled in the feature gates configuration in the Cluster Operator.
+* (Early Access) Integration with cert-manager for issuing certificates.
+  While the cert-manager feature is in Early Access it is not recommended for use in production.
 
 ### Major changes, deprecations, and removals
 

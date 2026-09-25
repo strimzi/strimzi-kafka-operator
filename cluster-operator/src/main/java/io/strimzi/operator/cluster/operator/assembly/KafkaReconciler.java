@@ -283,7 +283,7 @@ public class KafkaReconciler {
                 .compose(i -> metadataVersion(kafkaStatus))
                 .compose(i -> deletePersistentClaims())
                 .compose(i -> sharedKafkaConfigurationCleanup())
-                .compose(i -> deleteOldCertificateSecrets())
+                .compose(i -> deleteOldCertificateResources())
                 // This has to run after all possible rolling updates which might move the pods to different nodes
                 .compose(i -> nodePortExternalListenerStatus())
                 .compose(i -> updateKafkaStatus(kafkaStatus));
@@ -827,16 +827,17 @@ public class KafkaReconciler {
     }
 
     /**
-     * Delete old certificate Secrets that are no longer needed.
+     * Delete old certificate resources that are no longer needed.
      *
-     * @return Future that completes when the Secrets have been deleted.
+     * @return Future that completes when the resources have been deleted.
      */
-    protected Future<Void> deleteOldCertificateSecrets() {
+    protected Future<Void> deleteOldCertificateResources() {
         List<Future<Void>> deleteFutures = secretsToDelete.stream()
-                .map(secretName -> {
-                    LOGGER.debugCr(reconciliation, "Deleting old Secret {}/{} that is no longer used.", reconciliation.namespace(), secretName);
-                    return VertxUtil.toFuture(secretOperator.deleteAsync(reconciliation, reconciliation.namespace(), secretName, false));
-                }).toList();
+                .map(secretName -> VertxUtil.toFuture(clusterCa.cleanupEndEntityCert(secretName)
+                        .thenCompose(i -> {
+                            LOGGER.debugCr(reconciliation, "Deleting old Secret {}/{} that is no longer used.", reconciliation.namespace(), secretName);
+                            return secretOperator.deleteAsync(reconciliation, reconciliation.namespace(), secretName, false);
+                        }))).toList();
         return Future.join(deleteFutures).mapEmpty();
     }
 

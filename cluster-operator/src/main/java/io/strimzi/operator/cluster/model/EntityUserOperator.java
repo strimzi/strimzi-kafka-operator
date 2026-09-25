@@ -17,6 +17,7 @@ import io.fabric8.kubernetes.api.model.rbac.RoleRefBuilder;
 import io.fabric8.kubernetes.api.model.rbac.Subject;
 import io.fabric8.kubernetes.api.model.rbac.SubjectBuilder;
 import io.strimzi.api.kafka.model.common.CertificateAuthority;
+import io.strimzi.api.kafka.model.common.CertificateManagerType;
 import io.strimzi.api.kafka.model.common.JvmOptions;
 import io.strimzi.api.kafka.model.common.template.PodTemplate;
 import io.strimzi.api.kafka.model.common.template.ResourceTemplate;
@@ -73,6 +74,7 @@ public class EntityUserOperator extends AbstractModel implements SupportsLogging
     /* test */ static final String ENV_VAR_SECRET_PREFIX = "STRIMZI_SECRET_PREFIX";
     /* test */ static final String ENV_VAR_ACLS_ADMIN_API_SUPPORTED = "STRIMZI_ACLS_ADMIN_API_SUPPORTED";
     /* test */ static final String ENV_VAR_MAINTENANCE_TIME_WINDOWS = "STRIMZI_MAINTENANCE_TIME_WINDOWS";
+    /* test */ static final String ENV_VAR_CA_TYPE = "STRIMZI_CA_TYPE";
 
     // Volume name of the temporary volume used by the UO container
     // Because the container shares the pod with other containers, it needs to have a unique name
@@ -93,6 +95,7 @@ public class EntityUserOperator extends AbstractModel implements SupportsLogging
     private List<String> maintenanceWindows;
     private LoggingModel logging;
     private boolean generatePkcs12Stores;
+    private CertificateManagerType certificateManagerType;
 
     /**
      * Constructs a new EntityUserOperator.
@@ -154,6 +157,7 @@ public class EntityUserOperator extends AbstractModel implements SupportsLogging
             result.featureGatesEnvVarValue = config.featureGates().toEnvironmentVariable();
             result.generatePkcs12Stores = config.isPkcs12KeystoreGeneration();
             result.securityContext = securityContext;
+            result.certificateManagerType = CertificateManagerType.STRIMZI;
 
             if (kafkaAssembly.getSpec().getEntityOperator().getTemplate() != null)  {
                 result.templateRoleBinding = kafkaAssembly.getSpec().getEntityOperator().getTemplate().getUserOperatorRoleBinding();
@@ -167,6 +171,8 @@ public class EntityUserOperator extends AbstractModel implements SupportsLogging
                 if (kafkaAssembly.getSpec().getClientsCa().getRenewalDays() > 0) {
                     result.clientsCaRenewalDays = kafkaAssembly.getSpec().getClientsCa().getRenewalDays();
                 }
+
+                result.certificateManagerType = kafkaAssembly.getSpec().getClientsCa().getType();
             }
 
             if (kafkaAssembly.getSpec().getKafka().getAuthorization() != null) {
@@ -229,6 +235,7 @@ public class EntityUserOperator extends AbstractModel implements SupportsLogging
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_SECRET_PREFIX, secretPrefix));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_ACLS_ADMIN_API_SUPPORTED, String.valueOf(aclsAdminApiSupported)));
         varList.add(ContainerUtils.createEnvVar(ClusterOperatorConfig.PKCS12_KEYSTORE_GENERATION.key(), String.valueOf(generatePkcs12Stores)));
+        varList.add(ContainerUtils.createEnvVar(ENV_VAR_CA_TYPE, certificateManagerType.toValue()));
         JvmOptionUtils.javaOptions(varList, jvmOptions);
 
         // Add feature gates configuration if not empty
@@ -318,7 +325,7 @@ public class EntityUserOperator extends AbstractModel implements SupportsLogging
     public CompletionStage<Secret> generateCertificatesSecret(Ca clusterCa, Secret existingSecret, boolean isMaintenanceTimeWindowsSatisfied) {
         CertAndKey existingCertAndKey = CertSecretUtils.keyStoreCertAndKey(existingSecret, EntityOperator.COMPONENT_TYPE, clusterCa.caCertGenerationAnnotation());
 
-        return clusterCa.maybeCopyOrGenerateClientCert(reconciliation, componentName, existingCertAndKey, isMaintenanceTimeWindowsSatisfied)
+        return clusterCa.maybeCopyOrGenerateClientCert(reconciliation, KafkaResources.entityUserOperatorSecretName(cluster), componentName, existingCertAndKey, isMaintenanceTimeWindowsSatisfied, labels)
                 .thenApply(updatedCert -> {
                     Map<String, String> secretData = CertSecretUtils.buildSecretData(EntityOperator.COMPONENT_TYPE, updatedCert);
                     return ModelUtils.createSecret(

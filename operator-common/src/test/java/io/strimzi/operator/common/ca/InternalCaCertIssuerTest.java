@@ -7,10 +7,10 @@ package io.strimzi.operator.common.ca;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.certs.StrimziSubject;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.model.Labels;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -71,7 +71,7 @@ public class InternalCaCertIssuerTest {
             "-----END CERTIFICATE-----\n";
 
     @Test
-    public void renewalOfCertificatesWithNullCertificates() throws IOException {
+    public void renewalOfCertificatesWithNullCertificates() {
         InternalCa mockedCa = new MockedClusterCa();
 
         CertAndKey newCert = mockedCa.maybeCopyOrGenerateServerCerts(
@@ -80,7 +80,8 @@ public class InternalCaCertIssuerTest {
                 SUBJECT,
                 null,
                 true,
-                false
+                false,
+                Labels.EMPTY
         ).toCompletableFuture().join();
 
         assertThat(new String(newCert.cert()), is("new-cert0"));
@@ -101,7 +102,8 @@ public class InternalCaCertIssuerTest {
                 SUBJECT,
                 initialCert,
                 true,
-                false
+                false,
+                Labels.EMPTY
         ).toCompletableFuture().join();
 
         assertThat(new String(newCert.cert()), is("new-cert0"));
@@ -123,7 +125,8 @@ public class InternalCaCertIssuerTest {
                 SUBJECT,
                 initialCert,
                 true,
-                false
+                false,
+                Labels.EMPTY
         ).toCompletableFuture().join();
 
         assertThat(new String(newCert.cert()), is("new-cert0"));
@@ -145,7 +148,8 @@ public class InternalCaCertIssuerTest {
                 SUBJECT,
                 initialCert,
                 false,
-                false
+                false,
+                Labels.EMPTY
         ).toCompletableFuture().join();
 
         assertThat(new String(newCert.cert()), is(EXPIRED_DUMMY_CERT));
@@ -165,7 +169,8 @@ public class InternalCaCertIssuerTest {
                 SUBJECT,
                 initialCert,
                 true,
-                false
+                false,
+                Labels.EMPTY
         ).toCompletableFuture().join();
 
         assertThat(new String(newCert.cert()), is(DUMMY_CERT));
@@ -184,7 +189,8 @@ public class InternalCaCertIssuerTest {
                  new StrimziSubject.Builder().addDnsName("pod0.test.com").build(),
                 initialCert,
                 true,
-                false
+                false,
+                Labels.EMPTY
         ).toCompletableFuture().join();
 
         assertThat(new String(newCert.cert()), is("new-cert0"));
@@ -202,7 +208,8 @@ public class InternalCaCertIssuerTest {
                 SUBJECT,
                 null,
                 true,
-                true
+                true,
+                Labels.EMPTY
         ).toCompletableFuture().join();
 
         assertThat(new String(newCert.cert()), is("new-cert0CA-CERT"));
@@ -220,7 +227,8 @@ public class InternalCaCertIssuerTest {
                 SUBJECT,
                 initialCert,
                 true,
-                true
+                true,
+                Labels.EMPTY
         ).toCompletableFuture().join();
 
         assertThat(new String(newCert.cert()), is("new-cert0CA-CERT"));
@@ -233,8 +241,10 @@ public class InternalCaCertIssuerTest {
         CertAndKey newCert = mockedCa.maybeCopyOrGenerateClientCert(
                 Reconciliation.DUMMY_RECONCILIATION,
                 "deployment",
+                "deployment",
                 null,
-                true
+                true,
+                Labels.EMPTY
         ).toCompletableFuture().join();
 
         assertThat(new String(newCert.cert()), is("new-cert0"));
@@ -252,8 +262,10 @@ public class InternalCaCertIssuerTest {
         CertAndKey newCert = mockedCa.maybeCopyOrGenerateClientCert(
                 Reconciliation.DUMMY_RECONCILIATION,
                 "deployment",
+                "deployment",
                 initialCert,
-                true
+                true,
+                Labels.EMPTY
         ).toCompletableFuture().join();
 
         assertThat(new String(newCert.cert()), is("new-cert0"));
@@ -270,8 +282,10 @@ public class InternalCaCertIssuerTest {
         CertAndKey newCert = mockedCa.maybeCopyOrGenerateClientCert(
                 Reconciliation.DUMMY_RECONCILIATION,
                 "deployment",
+                "deployment",
                 initialCert,
-                true
+                true,
+                Labels.EMPTY
         ).toCompletableFuture().join();
 
         assertThat(new String(newCert.cert()), is("new-cert0"));
@@ -288,8 +302,10 @@ public class InternalCaCertIssuerTest {
         CertAndKey newCert = mockedCa.maybeCopyOrGenerateClientCert(
                 Reconciliation.DUMMY_RECONCILIATION,
                 "deployment",
+                "deployment",
                 initialCert,
-                false
+                false,
+                Labels.EMPTY
         ).toCompletableFuture().join();
 
         assertThat(new String(newCert.cert()), is(EXPIRED_DUMMY_CERT));
@@ -307,8 +323,10 @@ public class InternalCaCertIssuerTest {
         CertAndKey newCert = mockedCa.maybeCopyOrGenerateClientCert(
                 Reconciliation.DUMMY_RECONCILIATION,
                 "deployment",
+                "deployment",
                 initialCert,
-                true
+                true,
+                Labels.EMPTY
         ).toCompletableFuture().join();
 
         assertThat(new String(newCert.cert()), is(DUMMY_CERT));
