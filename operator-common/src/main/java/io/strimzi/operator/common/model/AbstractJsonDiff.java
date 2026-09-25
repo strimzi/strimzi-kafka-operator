@@ -4,11 +4,11 @@
  */
 package io.strimzi.operator.common.model;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.databind.node.MissingNode;
 import io.fabric8.kubernetes.client.utils.Serialization;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.SerializationFeature;
+import tools.jackson.databind.node.MissingNode;
 
 /**
  * Abstract class for diffing Json and YAML resources
@@ -16,9 +16,10 @@ import io.fabric8.kubernetes.client.utils.Serialization;
 public abstract class AbstractJsonDiff {
     // use SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS just for better human readability in the logs
     @SuppressWarnings("deprecation") // Suppress deprecated warning of SerializationFeature.WRITE_EMPTY_JSON_ARRAYS which currently does not have proper alternative
-    protected static final ObjectMapper PATCH_MAPPER = Serialization.jsonMapper().copy()
-            .configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true)
-            .configure(SerializationFeature.WRITE_EMPTY_JSON_ARRAYS, false);
+    protected static final ObjectMapper PATCH_MAPPER = Serialization.jsonMapper().rebuild()
+            .enable(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS)
+            .disable(SerializationFeature.WRITE_EMPTY_JSON_ARRAYS)
+            .build();
 
     /**
      * Constructor
