@@ -263,7 +263,7 @@ public class CertManagerST extends AbstractST {
         final Map<String, String> brokerPodsSnapshot = PodUtils.podSnapshot(
             testStorage.getNamespaceName(), testStorage.getBrokerSelector());
 
-        LOGGER.info("Updating clusterCa validityDays to 30 to trigger cert-manager cert re-issuance");
+        LOGGER.info("Updating clusterCa validityDays to 334 to trigger cert-manager cert re-issuance");
 
         CrdClients.kafkaClient()
             .inNamespace(testStorage.getNamespaceName())
