@@ -11,6 +11,9 @@
 This procedure describes how to trigger a rolling update of Kafka, Kafka Connect, or MirrorMaker 2 clusters.
 To trigger the update, you add an annotation to the `StrimziPodSet` that manages the pods running on the cluster.
 
+IMPORTANT: If you annotate a `StrimziPodSet` while the Cluster Operator is reconciling it, the annotation can be overwritten without triggering the requested rolling update.
+To avoid this race, xref:proc-manual-rolling-update-pods-{context}[annotate the individual pods directly].
+
 .Prerequisites
 
 To perform a manual rolling update, you need a running Cluster Operator.
