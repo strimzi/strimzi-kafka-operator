@@ -14,6 +14,14 @@ Perform the steps in this procedure to enable cert-manager to issue certificates
 
 * cert-manager is installed in the cluster with a ready `Issuer` or `ClusterIssuer` configured with a Secret that contains a certificate and key pair for the CA. The Secret must have `tls.crt` and `tls.key` keys, where `tls.crt` is the CA certificate. You provide this certificate to the Cluster Operator as `ca.crt` in a Secret in the following step.
 
+[NOTE]
+====
+When a Kafka component is removed, Strimzi cleans up the associated `Certificate` resources, but by default cert-manager does not delete the corresponding `Secret`.
+Those Secrets are left behind and must be removed manually.
+To have cert-manager automatically delete Secrets when their `Certificate` is deleted, install cert-manager with the `--enable-certificate-owner-ref` flag enabled.
+See link:https://cert-manager.io/docs/usage/certificate/#cleaning-up-secrets-when-certificates-are-deleted[Cleaning up Secrets when Certificates are deleted] in the cert-manager documentation.
+====
+
 .Procedure
 
 . Create a `Secret` containing the CA certificate that the Cluster Operator should trust.

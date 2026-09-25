@@ -179,7 +179,7 @@ public class CertificateUtils {
             LOGGER.debugCr(reconciliation, "Certificate chain validated using supplied CA cert.");
             return true;
         } catch (CertPathValidatorException e) {
-            LOGGER.warnCr(reconciliation, "Certificate chain cannot be validated with supplied CA cert.", e);
+            LOGGER.debugCr(reconciliation, "Certificate chain cannot be validated with supplied CA cert.", e);
             return false;
         } catch (InvalidAlgorithmParameterException e) {
             LOGGER.errorCr(reconciliation, "Error validating the certificate chain.", e);
