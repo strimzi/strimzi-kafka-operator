@@ -69,6 +69,53 @@ RUN set -ex; \
     rm -f jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.jar.sha512;
 
 #####
+# Stage 1: Establish clean ubi9-micro rootfs with its own RPM database
+#####
+FROM registry.access.redhat.com/ubi9/ubi-micro:latest AS kafka-base
+
+#####
+# Install Kafka-specific runtime tools into the ubi9-micro rootfs using dnf --installroot
+#####
+FROM registry.access.redhat.com/ubi9/ubi-minimal:latest AS kafka-tools
+
+# Copy the ubi9-micro rootfs (including its RPM database) as the install root
+COPY --from=kafka-base / /mnt/rootfs/
+
+RUN microdnf install \
+        --installroot /mnt/rootfs \
+        --noplugins \
+        --config /etc/dnf/dnf.conf \
+        --setopt=cachedir=/var/cache/microdnf \
+        --setopt=reposdir=/etc/yum.repos.d \
+        --setopt=varsdir=/etc/dnf \
+        --setopt=install_weak_deps=0 \
+        --setopt=tsflags=nodocs \
+        --releasever 9 \
+        -y \
+        # Required for network diagnostics (e.g. netstat)
+        net-tools \
+        # Required to resolve the pod hostname inside scripts
+        hostname \
+        # Required for script utilities (e.g. find)
+        findutils \
+        # Required to unpack Kafka and other archives
+        tar \
+        # Required to decompress .tar.gz archives
+        gzip \
+        # Required to unpack zip archives (e.g. Kafka plugins)
+        unzip \
+        # Required to download files from the internet (e.g. connectors)
+        curl-minimal \
+    && microdnf \
+        --installroot /mnt/rootfs \
+        --noplugins \
+        --config /etc/dnf/dnf.conf \
+        --setopt=cachedir=/var/cache/microdnf \
+        --setopt=reposdir=/etc/yum.repos.d \
+        --setopt=varsdir=/etc/dnf \
+        clean all
+
+#####
 # Build the main container image
 #####
 FROM strimzi/base:latest
@@ -88,25 +135,14 @@ LABEL name='kafka' \
     summary="Kafka ${KAFKA_VERSION} image of the Strimzi Kafka Operator project." \
     description="Kafka image used by the Strimzi Kafka Operator to run Kafka ${KAFKA_VERSION} clusters."
 
-RUN microdnf --setopt=install_weak_deps=0 --setopt=tsflags=nodocs install -y \
-            # net-tools are needed for the health check probes (netstat) \
-            net-tools \
-            # hostname is used by Strimzi scripts to determine the Kafka node ID \
-            hostname  \
-            # xargs is used by Kafka's own shell scripts \
-            # find and xargs are also used in our Kafka Connect Build Dockerfiles \
-            findutils \
-            # Tar is also used in our Kafka Connect Build Dockerfiles \
-            tar \
-            # gzip is also used in our Kafka Connect Build Dockerfiles \
-            gzip \
-            # unzip is used in our Kafka Connect Build Dockerfiles \
-            unzip \
-    && microdnf clean all -y
+#####
+# Copy Kafka-specific tools from chroot
+#####
+COPY --from=kafka-tools /mnt/rootfs /
 
 # Add kafka user with UID 1001
 # The user is in the group 0 to have access to the mounted volumes and storage
-RUN useradd -r -m -u 1001 -g 0 kafka
+RUN echo "kafka:x:1001:0::/home/kafka:/bin/false" >> /etc/passwd
 
 #####
 # Add Kafka
