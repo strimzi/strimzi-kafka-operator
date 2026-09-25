@@ -38,6 +38,7 @@ import io.strimzi.operator.common.InvalidConfigurationException;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationException;
 import io.strimzi.operator.common.ReconciliationLogger;
+import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.ca.Ca;
 import io.strimzi.operator.common.config.ConfigParameter;
 import io.strimzi.operator.common.model.InvalidResourceException;
@@ -218,12 +219,13 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 status.addCondition(condition);
                 createOrUpdatePromise.complete(status);
             } else {
+                Throwable reconcileFailure = Util.maybeUnwrapCompletionException(reconcileResult.cause());
                 condition = new ConditionBuilder()
                         .withLastTransitionTime(StatusUtils.iso8601(clock.instant()))
                         .withType("NotReady")
                         .withStatus("True")
-                        .withReason(reconcileResult.cause().getClass().getSimpleName())
-                        .withMessage(reconcileResult.cause().getMessage())
+                        .withReason(reconcileFailure.getClass().getSimpleName())
+                        .withMessage(reconcileFailure.getMessage())
                         .build();
 
                 status.addCondition(condition);
@@ -503,7 +505,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     config,
                     supplier,
                     pfa,
-                    vertx,
                     scalingDownBlockedNodes
             );
         }
@@ -571,7 +572,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
          */
         Future<ReconciliationState> reconcileKafka(Clock clock)    {
             return kafkaReconciler()
-                    .compose(reconciler -> reconciler.reconcile(kafkaStatus, clock))
+                    .compose(reconciler -> VertxUtil.toFuture(reconciler.reconcile(kafkaStatus, clock)))
                     .map(this);
         }
 
