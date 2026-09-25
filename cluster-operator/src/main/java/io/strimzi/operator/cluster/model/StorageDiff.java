@@ -4,7 +4,6 @@
  */
 package io.strimzi.operator.cluster.model;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import io.fabric8.zjsonpatch.JsonDiff;
 import io.strimzi.api.kafka.model.kafka.JbodStorage;
 import io.strimzi.api.kafka.model.kafka.PersistentClaimStorage;
@@ -13,6 +12,7 @@ import io.strimzi.api.kafka.model.kafka.Storage;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.model.AbstractJsonDiff;
+import tools.jackson.databind.JsonNode;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -107,7 +107,7 @@ public class StorageDiff extends AbstractJsonDiff {
             int num = 0;
 
             for (JsonNode d : diff) {
-                String pathValue = d.get("path").asText();
+                String pathValue = d.get("path").asString();
 
                 if (IGNORABLE_PATHS.matcher(pathValue).matches()) {
                     LOGGER.debugCr(reconciliation, "Ignoring Storage {}diff {}", volumeDesc, d);

@@ -4,7 +4,6 @@
  */
 package io.strimzi.operator.cluster.operator.resource;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import io.fabric8.zjsonpatch.JsonDiff;
 import io.strimzi.kafka.config.model.ConfigModel;
 import io.strimzi.kafka.config.model.Scope;
@@ -19,6 +18,7 @@ import io.strimzi.operator.common.model.OrderedProperties;
 import org.apache.kafka.clients.admin.AlterConfigOp;
 import org.apache.kafka.clients.admin.Config;
 import org.apache.kafka.clients.admin.ConfigEntry;
+import tools.jackson.databind.JsonNode;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -289,7 +289,7 @@ public class KafkaConfigurationDiff extends AbstractJsonDiff {
         JsonNode jsonDiff = JsonDiff.asJson(source, target);
 
         for (JsonNode d : jsonDiff) {
-            String pathValue = d.get("path").asText();
+            String pathValue = d.get("path").asString();
             String pathValueWithoutSlash = pathValue.substring(1);
 
             Optional<ConfigEntry> optEntry = nodeConfigs.entries().stream()
@@ -297,7 +297,7 @@ public class KafkaConfigurationDiff extends AbstractJsonDiff {
                     .findFirst();
 
             boolean isConfigUpdated = false;
-            String op = d.get("op").asText();
+            String op = d.get("op").asString();
             if (optEntry.isPresent()) {
                 ConfigEntry entry = optEntry.get();
                 if ("remove".equals(op)) {
