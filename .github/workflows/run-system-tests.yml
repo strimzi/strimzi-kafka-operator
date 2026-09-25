@@ -301,6 +301,7 @@ jobs:
           TESTS_OPT: ${{ matrix.config.tests  != '' && format('-Dit.test={0}',  matrix.config.tests)  || '' }}
           EXCLUDED_GROUPS: ${{ matrix.config.excluded_groups || '' }}
           STRIMZI_TEST_LOG_LEVEL: INFO
+          STRIMZI_TEST_CLIENTS_DEFAULT_IMAGE: quay.io/strimzi-test-clients/test-clients:0.15.0-rc1-kafka-4.3.1
 
       - name: Archive JUnit test results
         if: ${{ always() }}
