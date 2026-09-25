@@ -40,11 +40,8 @@ import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.ca.Ca;
 import io.strimzi.operator.common.operator.MockCertIssuer;
 import io.strimzi.operator.common.operator.resource.kubernetes.SecretOperator;
-import io.vertx.junit5.Checkpoint;
-import io.vertx.junit5.VertxExtension;
-import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
@@ -54,6 +51,8 @@ import java.time.Clock;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.TimeUnit;
 
 import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties.TOPIC_OPERATOR_PASSWORD_KEY;
 import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties.TOPIC_OPERATOR_USERNAME;
@@ -64,6 +63,7 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItems;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -75,7 +75,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@ExtendWith(VertxExtension.class)
+@Timeout(value = 30, unit = TimeUnit.SECONDS)
 public class EntityOperatorReconcilerTest {
     private static final String NAMESPACE = "namespace";
     private static final String NAME = "name";
@@ -97,7 +97,7 @@ public class EntityOperatorReconcilerTest {
             .build();
 
     @Test
-    public void reconcileWithToAndUo(VertxTestContext context) {
+    public void reconcileWithToAndUo() {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
         DeploymentOperator mockDepOps = supplier.deploymentOperations;
         SecretOperator mockSecretOps = supplier.secretOperations;
@@ -167,52 +167,49 @@ public class EntityOperatorReconcilerTest {
                 clusterCa,
                 KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
 
-        Checkpoint async = context.checkpoint();
         rcnclr.reconcile(false, null, null, Clock.systemUTC())
-                .onComplete(context.succeeding(v -> context.verify(() -> {
-                    assertThat(saCaptor.getAllValues().size(), is(1));
-                    assertThat(saCaptor.getValue(), is(notNullValue()));
+                .toCompletableFuture().join();
 
-                    assertThat(toSecretCaptor.getAllValues().size(), is(1));
-                    assertThat(toSecretCaptor.getAllValues().get(0), is(notNullValue()));
-                    assertThat(uoSecretCaptor.getAllValues().size(), is(1));
-                    assertThat(uoSecretCaptor.getAllValues().get(0), is(notNullValue()));
+        assertThat(saCaptor.getAllValues().size(), is(1));
+        assertThat(saCaptor.getValue(), is(notNullValue()));
 
-                    assertThat(netPolicyCaptor.getAllValues().size(), is(1));
-                    assertThat(netPolicyCaptor.getValue(), is(notNullValue()));
+        assertThat(toSecretCaptor.getAllValues().size(), is(1));
+        assertThat(toSecretCaptor.getAllValues().get(0), is(notNullValue()));
+        assertThat(uoSecretCaptor.getAllValues().size(), is(1));
+        assertThat(uoSecretCaptor.getAllValues().get(0), is(notNullValue()));
 
-                    assertThat(operatorRoleCaptor.getAllValues().size(), is(1));
-                    assertThat(operatorRoleCaptor.getValue(), is(notNullValue()));
+        assertThat(netPolicyCaptor.getAllValues().size(), is(1));
+        assertThat(netPolicyCaptor.getValue(), is(notNullValue()));
 
-                    assertThat(toRoleBindingCaptor.getAllValues().size(), is(1));
-                    assertThat(toRoleBindingCaptor.getAllValues().get(0), is(notNullValue()));
-                    assertThat(uoRoleBindingCaptor.getAllValues().size(), is(1));
-                    assertThat(uoRoleBindingCaptor.getAllValues().get(0), is(notNullValue()));
+        assertThat(operatorRoleCaptor.getAllValues().size(), is(1));
+        assertThat(operatorRoleCaptor.getValue(), is(notNullValue()));
 
-                    assertThat(toCmCaptor.getAllValues().size(), is(1));
-                    assertThat(toCmCaptor.getValue(), is(notNullValue()));
-                    assertThat(uoCmCaptor.getAllValues().size(), is(1));
-                    assertThat(uoCmCaptor.getValue(), is(notNullValue()));
+        assertThat(toRoleBindingCaptor.getAllValues().size(), is(1));
+        assertThat(toRoleBindingCaptor.getAllValues().get(0), is(notNullValue()));
+        assertThat(uoRoleBindingCaptor.getAllValues().size(), is(1));
+        assertThat(uoRoleBindingCaptor.getAllValues().get(0), is(notNullValue()));
 
-                    assertThat(depCaptor.getAllValues().size(), is(1));
-                    assertThat(depCaptor.getValue(), is(notNullValue()));
-                    assertThat(depCaptor.getValue().getSpec().getTemplate().getMetadata().getAnnotations().get(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION), is("0"));
-                    assertThat(depCaptor.getValue().getSpec().getTemplate().getMetadata().getAnnotations().get(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_KEY_GENERATION), is("0"));
-                    assertThat(depCaptor.getValue().getSpec().getTemplate().getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_SERVER_CERT_HASH), is("4d715cdd4d715cdd"));
+        assertThat(toCmCaptor.getAllValues().size(), is(1));
+        assertThat(toCmCaptor.getValue(), is(notNullValue()));
+        assertThat(uoCmCaptor.getAllValues().size(), is(1));
+        assertThat(uoCmCaptor.getValue(), is(notNullValue()));
 
-                    assertThat(pdbCaptor.getAllValues().size(), is(1));
-                    assertThat(pdbCaptor.getValue(), is(notNullValue()));
-                    assertThat(pdbCaptor.getValue().getSpec().getMaxUnavailable(), is(new IntOrString(1)));
+        assertThat(depCaptor.getAllValues().size(), is(1));
+        assertThat(depCaptor.getValue(), is(notNullValue()));
+        assertThat(depCaptor.getValue().getSpec().getTemplate().getMetadata().getAnnotations().get(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION), is("0"));
+        assertThat(depCaptor.getValue().getSpec().getTemplate().getMetadata().getAnnotations().get(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_KEY_GENERATION), is("0"));
+        assertThat(depCaptor.getValue().getSpec().getTemplate().getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_SERVER_CERT_HASH), is("4d715cdd4d715cdd"));
 
-                    verify(clusterCa, never()).cleanupEndEntityCert(KafkaResources.entityTopicOperatorSecretName(NAME));
-                    verify(clusterCa, never()).cleanupEndEntityCert(KafkaResources.entityUserOperatorSecretName(NAME));
+        assertThat(pdbCaptor.getAllValues().size(), is(1));
+        assertThat(pdbCaptor.getValue(), is(notNullValue()));
+        assertThat(pdbCaptor.getValue().getSpec().getMaxUnavailable(), is(new IntOrString(1)));
 
-                    async.flag();
-                })));
+        verify(clusterCa, never()).cleanupEndEntityCert(KafkaResources.entityTopicOperatorSecretName(NAME));
+        verify(clusterCa, never()).cleanupEndEntityCert(KafkaResources.entityUserOperatorSecretName(NAME));
     }
 
     @Test
-    public void reconcileWithToAndUoAndWatchNamespaces(VertxTestContext context) {
+    public void reconcileWithToAndUoAndWatchNamespaces() {
         String toWatchNamespace = "to-watch-namespace";
         String uoWatchNamespace = "uo-watch-namespace";
 
@@ -296,56 +293,53 @@ public class EntityOperatorReconcilerTest {
                 clusterCa,
                 KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
 
-        Checkpoint async = context.checkpoint();
         rcnclr.reconcile(false, null, null, Clock.systemUTC())
-                .onComplete(context.succeeding(v -> context.verify(() -> {
-                    assertThat(saCaptor.getAllValues().size(), is(1));
-                    assertThat(saCaptor.getValue(), is(notNullValue()));
+                .toCompletableFuture().join();
 
-                    assertThat(toSecretCaptor.getAllValues().size(), is(1));
-                    assertThat(toSecretCaptor.getAllValues().get(0), is(notNullValue()));
-                    assertThat(uoSecretCaptor.getAllValues().size(), is(1));
-                    assertThat(uoSecretCaptor.getAllValues().get(0), is(notNullValue()));
+        assertThat(saCaptor.getAllValues().size(), is(1));
+        assertThat(saCaptor.getValue(), is(notNullValue()));
 
-                    assertThat(netPolicyCaptor.getAllValues().size(), is(1));
-                    assertThat(netPolicyCaptor.getValue(), is(notNullValue()));
+        assertThat(toSecretCaptor.getAllValues().size(), is(1));
+        assertThat(toSecretCaptor.getAllValues().get(0), is(notNullValue()));
+        assertThat(uoSecretCaptor.getAllValues().size(), is(1));
+        assertThat(uoSecretCaptor.getAllValues().get(0), is(notNullValue()));
 
-                    assertThat(operatorRoleCaptor.getAllValues().size(), is(1));
-                    assertThat(operatorRoleCaptor.getValue(), is(notNullValue()));
-                    assertThat(toRoleCaptor.getAllValues().size(), is(1));
-                    assertThat(toRoleCaptor.getValue(), is(notNullValue()));
-                    assertThat(uoRoleCaptor.getAllValues().size(), is(1));
-                    assertThat(uoRoleCaptor.getValue(), is(notNullValue()));
+        assertThat(netPolicyCaptor.getAllValues().size(), is(1));
+        assertThat(netPolicyCaptor.getValue(), is(notNullValue()));
 
-                    assertThat(toRoleBindingCaptor.getAllValues().size(), is(2));
-                    assertThat(toRoleBindingCaptor.getAllValues().stream().allMatch(Objects::nonNull), is(true));
-                    assertThat(toRoleBindingCaptor.getAllValues().stream().map(rb -> rb.getMetadata().getNamespace()).toList(), hasItems(toWatchNamespace, NAMESPACE));
-                    assertThat(uoRoleBindingCaptor.getAllValues().size(), is(2));
-                    assertThat(uoRoleBindingCaptor.getAllValues().stream().allMatch(Objects::nonNull), is(true));
-                    assertThat(uoRoleBindingCaptor.getAllValues().stream().map(rb -> rb.getMetadata().getNamespace()).toList(), hasItems(uoWatchNamespace, NAMESPACE));
+        assertThat(operatorRoleCaptor.getAllValues().size(), is(1));
+        assertThat(operatorRoleCaptor.getValue(), is(notNullValue()));
+        assertThat(toRoleCaptor.getAllValues().size(), is(1));
+        assertThat(toRoleCaptor.getValue(), is(notNullValue()));
+        assertThat(uoRoleCaptor.getAllValues().size(), is(1));
+        assertThat(uoRoleCaptor.getValue(), is(notNullValue()));
 
-                    assertThat(toCmCaptor.getAllValues().size(), is(1));
-                    assertThat(toCmCaptor.getValue(), is(notNullValue()));
-                    assertThat(uoCmCaptor.getAllValues().size(), is(1));
-                    assertThat(uoCmCaptor.getValue(), is(notNullValue()));
+        assertThat(toRoleBindingCaptor.getAllValues().size(), is(2));
+        assertThat(toRoleBindingCaptor.getAllValues().stream().allMatch(Objects::nonNull), is(true));
+        assertThat(toRoleBindingCaptor.getAllValues().stream().map(rb -> rb.getMetadata().getNamespace()).toList(), hasItems(toWatchNamespace, NAMESPACE));
+        assertThat(uoRoleBindingCaptor.getAllValues().size(), is(2));
+        assertThat(uoRoleBindingCaptor.getAllValues().stream().allMatch(Objects::nonNull), is(true));
+        assertThat(uoRoleBindingCaptor.getAllValues().stream().map(rb -> rb.getMetadata().getNamespace()).toList(), hasItems(uoWatchNamespace, NAMESPACE));
 
-                    assertThat(depCaptor.getAllValues().size(), is(1));
-                    assertThat(depCaptor.getValue(), is(notNullValue()));
+        assertThat(toCmCaptor.getAllValues().size(), is(1));
+        assertThat(toCmCaptor.getValue(), is(notNullValue()));
+        assertThat(uoCmCaptor.getAllValues().size(), is(1));
+        assertThat(uoCmCaptor.getValue(), is(notNullValue()));
 
-                    assertThat(pdbCaptor.getAllValues().size(), is(1));
-                    assertThat(pdbCaptor.getValue(), is(notNullValue()));
-                    assertThat(pdbCaptor.getValue().getSpec().getMaxUnavailable(), is(new IntOrString(1)));
+        assertThat(depCaptor.getAllValues().size(), is(1));
+        assertThat(depCaptor.getValue(), is(notNullValue()));
 
-                    verify(clusterCa, never()).cleanupEndEntityCert(KafkaResources.entityTopicOperatorSecretName(NAME));
-                    verify(clusterCa, never()).cleanupEndEntityCert(KafkaResources.entityUserOperatorSecretName(NAME));
+        assertThat(pdbCaptor.getAllValues().size(), is(1));
+        assertThat(pdbCaptor.getValue(), is(notNullValue()));
+        assertThat(pdbCaptor.getValue().getSpec().getMaxUnavailable(), is(new IntOrString(1)));
 
-                    async.flag();
-                })));
+        verify(clusterCa, never()).cleanupEndEntityCert(KafkaResources.entityTopicOperatorSecretName(NAME));
+        verify(clusterCa, never()).cleanupEndEntityCert(KafkaResources.entityUserOperatorSecretName(NAME));
     }
 
     @ParameterizedTest
     @ValueSource(booleans = { true, false })
-    public void reconcileWithToOnly(boolean cruiseControlEnabled, VertxTestContext context) {
+    public void reconcileWithToOnly(boolean cruiseControlEnabled) {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
         DeploymentOperator mockDepOps = supplier.deploymentOperations;
         SecretOperator mockSecretOps = supplier.secretOperations;
@@ -420,57 +414,54 @@ public class EntityOperatorReconcilerTest {
                 clusterCa,
                 KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
 
-        Checkpoint async = context.checkpoint();
         rcnclr.reconcile(false, null, null, Clock.systemUTC())
-                .onComplete(context.succeeding(v -> context.verify(() -> {
-                    assertThat(saCaptor.getAllValues().size(), is(1));
-                    assertThat(saCaptor.getValue(), is(notNullValue()));
+                .toCompletableFuture().join();
 
-                    if (cruiseControlEnabled) {
-                        assertThat(toSecretCaptor.getAllValues().size(), is(1));
-                        assertThat(toSecretCaptor.getAllValues().get(0), is(notNullValue()));
-                    } else {
-                        assertThat(toSecretCaptor.getAllValues().size(), is(1));
-                        assertThat(toSecretCaptor.getAllValues().get(0), is(notNullValue()));
-                    }
-                    assertThat(uoSecretCaptor.getAllValues().size(), is(1));
-                    assertThat(uoSecretCaptor.getAllValues().get(0), is(nullValue()));
+        assertThat(saCaptor.getAllValues().size(), is(1));
+        assertThat(saCaptor.getValue(), is(notNullValue()));
 
-                    assertThat(netPolicyCaptor.getAllValues().size(), is(1));
-                    assertThat(netPolicyCaptor.getValue(), is(notNullValue()));
+        if (cruiseControlEnabled) {
+            assertThat(toSecretCaptor.getAllValues().size(), is(1));
+            assertThat(toSecretCaptor.getAllValues().get(0), is(notNullValue()));
+        } else {
+            assertThat(toSecretCaptor.getAllValues().size(), is(1));
+            assertThat(toSecretCaptor.getAllValues().get(0), is(notNullValue()));
+        }
+        assertThat(uoSecretCaptor.getAllValues().size(), is(1));
+        assertThat(uoSecretCaptor.getAllValues().get(0), is(nullValue()));
 
-                    assertThat(operatorRoleCaptor.getAllValues().size(), is(1));
-                    assertThat(operatorRoleCaptor.getValue(), is(notNullValue()));
+        assertThat(netPolicyCaptor.getAllValues().size(), is(1));
+        assertThat(netPolicyCaptor.getValue(), is(notNullValue()));
 
-                    assertThat(toRoleBindingCaptor.getAllValues().size(), is(1));
-                    assertThat(toRoleBindingCaptor.getAllValues().get(0), is(notNullValue()));
-                    assertThat(uoRoleBindingCaptor.getAllValues().size(), is(1));
-                    assertThat(uoRoleBindingCaptor.getAllValues().get(0), is(nullValue()));
+        assertThat(operatorRoleCaptor.getAllValues().size(), is(1));
+        assertThat(operatorRoleCaptor.getValue(), is(notNullValue()));
 
-                    assertThat(toCmCaptor.getAllValues().size(), is(1));
-                    assertThat(toCmCaptor.getValue(), is(notNullValue()));
-                    assertThat(uoCmCaptor.getAllValues().size(), is(1));
-                    assertThat(uoCmCaptor.getValue(), is(nullValue()));
+        assertThat(toRoleBindingCaptor.getAllValues().size(), is(1));
+        assertThat(toRoleBindingCaptor.getAllValues().get(0), is(notNullValue()));
+        assertThat(uoRoleBindingCaptor.getAllValues().size(), is(1));
+        assertThat(uoRoleBindingCaptor.getAllValues().get(0), is(nullValue()));
 
-                    assertThat(depCaptor.getAllValues().size(), is(1));
-                    assertThat(depCaptor.getValue(), is(notNullValue()));
-                    assertThat(depCaptor.getValue().getSpec().getTemplate().getMetadata().getAnnotations().get(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION), is("0"));
-                    assertThat(depCaptor.getValue().getSpec().getTemplate().getMetadata().getAnnotations().get(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_KEY_GENERATION), is("0"));
-                    assertThat(depCaptor.getValue().getSpec().getTemplate().getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_SERVER_CERT_HASH), is("4d715cdd"));
+        assertThat(toCmCaptor.getAllValues().size(), is(1));
+        assertThat(toCmCaptor.getValue(), is(notNullValue()));
+        assertThat(uoCmCaptor.getAllValues().size(), is(1));
+        assertThat(uoCmCaptor.getValue(), is(nullValue()));
 
-                    assertThat(pdbCaptor.getAllValues().size(), is(1));
-                    assertThat(pdbCaptor.getValue(), is(notNullValue()));
-                    assertThat(pdbCaptor.getValue().getSpec().getMaxUnavailable(), is(new IntOrString(1)));
+        assertThat(depCaptor.getAllValues().size(), is(1));
+        assertThat(depCaptor.getValue(), is(notNullValue()));
+        assertThat(depCaptor.getValue().getSpec().getTemplate().getMetadata().getAnnotations().get(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION), is("0"));
+        assertThat(depCaptor.getValue().getSpec().getTemplate().getMetadata().getAnnotations().get(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_KEY_GENERATION), is("0"));
+        assertThat(depCaptor.getValue().getSpec().getTemplate().getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_SERVER_CERT_HASH), is("4d715cdd"));
 
-                    verify(clusterCa, never()).cleanupEndEntityCert(KafkaResources.entityTopicOperatorSecretName(NAME));
-                    verify(clusterCa, times(1)).cleanupEndEntityCert(KafkaResources.entityUserOperatorSecretName(NAME));
+        assertThat(pdbCaptor.getAllValues().size(), is(1));
+        assertThat(pdbCaptor.getValue(), is(notNullValue()));
+        assertThat(pdbCaptor.getValue().getSpec().getMaxUnavailable(), is(new IntOrString(1)));
 
-                    async.flag();
-                })));
+        verify(clusterCa, never()).cleanupEndEntityCert(KafkaResources.entityTopicOperatorSecretName(NAME));
+        verify(clusterCa, times(1)).cleanupEndEntityCert(KafkaResources.entityUserOperatorSecretName(NAME));
     }
 
     @Test
-    public void reconcileWithUoOnly(VertxTestContext context) {
+    public void reconcileWithUoOnly() {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
         DeploymentOperator mockDepOps = supplier.deploymentOperations;
         SecretOperator mockSecretOps = supplier.secretOperations;
@@ -536,52 +527,49 @@ public class EntityOperatorReconcilerTest {
                 clusterCa,
                 KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
 
-        Checkpoint async = context.checkpoint();
         rcnclr.reconcile(false, null, null, Clock.systemUTC())
-                .onComplete(context.succeeding(v -> context.verify(() -> {
-                    assertThat(saCaptor.getAllValues().size(), is(1));
-                    assertThat(saCaptor.getValue(), is(notNullValue()));
+                .toCompletableFuture().join();
 
-                    assertThat(toSecretCaptor.getAllValues().size(), is(1));
-                    assertThat(toSecretCaptor.getAllValues().get(0), is(nullValue()));
-                    assertThat(uoSecretCaptor.getAllValues().size(), is(1));
-                    assertThat(uoSecretCaptor.getAllValues().get(0), is(notNullValue()));
+        assertThat(saCaptor.getAllValues().size(), is(1));
+        assertThat(saCaptor.getValue(), is(notNullValue()));
 
-                    assertThat(netPolicyCaptor.getAllValues().size(), is(1));
-                    assertThat(netPolicyCaptor.getValue(), is(notNullValue()));
+        assertThat(toSecretCaptor.getAllValues().size(), is(1));
+        assertThat(toSecretCaptor.getAllValues().get(0), is(nullValue()));
+        assertThat(uoSecretCaptor.getAllValues().size(), is(1));
+        assertThat(uoSecretCaptor.getAllValues().get(0), is(notNullValue()));
 
-                    assertThat(operatorRoleCaptor.getAllValues().size(), is(1));
-                    assertThat(operatorRoleCaptor.getValue(), is(notNullValue()));
+        assertThat(netPolicyCaptor.getAllValues().size(), is(1));
+        assertThat(netPolicyCaptor.getValue(), is(notNullValue()));
 
-                    assertThat(toRoleBindingCaptor.getAllValues().size(), is(1));
-                    assertThat(toRoleBindingCaptor.getAllValues().get(0), is(nullValue()));
-                    assertThat(uoRoleBindingCaptor.getAllValues().size(), is(1));
-                    assertThat(uoRoleBindingCaptor.getAllValues().get(0), is(notNullValue()));
+        assertThat(operatorRoleCaptor.getAllValues().size(), is(1));
+        assertThat(operatorRoleCaptor.getValue(), is(notNullValue()));
 
-                    assertThat(toCmCaptor.getAllValues().size(), is(1));
-                    assertThat(toCmCaptor.getValue(), is(nullValue()));
-                    assertThat(uoCmCaptor.getAllValues().size(), is(1));
-                    assertThat(uoCmCaptor.getValue(), is(notNullValue()));
+        assertThat(toRoleBindingCaptor.getAllValues().size(), is(1));
+        assertThat(toRoleBindingCaptor.getAllValues().get(0), is(nullValue()));
+        assertThat(uoRoleBindingCaptor.getAllValues().size(), is(1));
+        assertThat(uoRoleBindingCaptor.getAllValues().get(0), is(notNullValue()));
 
-                    assertThat(depCaptor.getAllValues().size(), is(1));
-                    assertThat(depCaptor.getValue(), is(notNullValue()));
-                    assertThat(depCaptor.getValue().getSpec().getTemplate().getMetadata().getAnnotations().get(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION), is("0"));
-                    assertThat(depCaptor.getValue().getSpec().getTemplate().getMetadata().getAnnotations().get(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_KEY_GENERATION), is("0"));
-                    assertThat(depCaptor.getValue().getSpec().getTemplate().getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_SERVER_CERT_HASH), is("4d715cdd"));
+        assertThat(toCmCaptor.getAllValues().size(), is(1));
+        assertThat(toCmCaptor.getValue(), is(nullValue()));
+        assertThat(uoCmCaptor.getAllValues().size(), is(1));
+        assertThat(uoCmCaptor.getValue(), is(notNullValue()));
 
-                    assertThat(pdbCaptor.getAllValues().size(), is(1));
-                    assertThat(pdbCaptor.getValue(), is(notNullValue()));
-                    assertThat(pdbCaptor.getValue().getSpec().getMaxUnavailable(), is(new IntOrString(1)));
+        assertThat(depCaptor.getAllValues().size(), is(1));
+        assertThat(depCaptor.getValue(), is(notNullValue()));
+        assertThat(depCaptor.getValue().getSpec().getTemplate().getMetadata().getAnnotations().get(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION), is("0"));
+        assertThat(depCaptor.getValue().getSpec().getTemplate().getMetadata().getAnnotations().get(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_KEY_GENERATION), is("0"));
+        assertThat(depCaptor.getValue().getSpec().getTemplate().getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_SERVER_CERT_HASH), is("4d715cdd"));
 
-                    verify(clusterCa, times(1)).cleanupEndEntityCert(KafkaResources.entityTopicOperatorSecretName(NAME));
-                    verify(clusterCa, never()).cleanupEndEntityCert(KafkaResources.entityUserOperatorSecretName(NAME));
+        assertThat(pdbCaptor.getAllValues().size(), is(1));
+        assertThat(pdbCaptor.getValue(), is(notNullValue()));
+        assertThat(pdbCaptor.getValue().getSpec().getMaxUnavailable(), is(new IntOrString(1)));
 
-                    async.flag();
-                })));
+        verify(clusterCa, times(1)).cleanupEndEntityCert(KafkaResources.entityTopicOperatorSecretName(NAME));
+        verify(clusterCa, never()).cleanupEndEntityCert(KafkaResources.entityUserOperatorSecretName(NAME));
     }
 
     @Test
-    public void reconcileWithoutUoAndTo(VertxTestContext context) {
+    public void reconcileWithoutUoAndTo() {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
         DeploymentOperator mockDepOps = supplier.deploymentOperations;
         SecretOperator mockSecretOps = supplier.secretOperations;
@@ -644,48 +632,45 @@ public class EntityOperatorReconcilerTest {
                 clusterCa,
                 KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
 
-        Checkpoint async = context.checkpoint();
         rcnclr.reconcile(false, null, null, Clock.systemUTC())
-                .onComplete(context.succeeding(v -> context.verify(() -> {
-                    assertThat(saCaptor.getAllValues().size(), is(1));
-                    assertThat(saCaptor.getValue(), is(nullValue()));
+                .toCompletableFuture().join();
 
-                    assertThat(toSecretCaptor.getAllValues().size(), is(1));
-                    assertThat(toSecretCaptor.getAllValues().get(0), is(nullValue()));
-                    assertThat(uoSecretCaptor.getAllValues().size(), is(1));
-                    assertThat(uoSecretCaptor.getAllValues().get(0), is(nullValue()));
+        assertThat(saCaptor.getAllValues().size(), is(1));
+        assertThat(saCaptor.getValue(), is(nullValue()));
 
-                    assertThat(netPolicyCaptor.getAllValues().size(), is(1));
-                    assertThat(netPolicyCaptor.getValue(), is(nullValue()));
+        assertThat(toSecretCaptor.getAllValues().size(), is(1));
+        assertThat(toSecretCaptor.getAllValues().get(0), is(nullValue()));
+        assertThat(uoSecretCaptor.getAllValues().size(), is(1));
+        assertThat(uoSecretCaptor.getAllValues().get(0), is(nullValue()));
 
-                    assertThat(operatorRoleCaptor.getAllValues().size(), is(1));
-                    assertThat(operatorRoleCaptor.getValue(), is(nullValue()));
+        assertThat(netPolicyCaptor.getAllValues().size(), is(1));
+        assertThat(netPolicyCaptor.getValue(), is(nullValue()));
 
-                    assertThat(toRoleBindingCaptor.getAllValues().size(), is(1));
-                    assertThat(toRoleBindingCaptor.getAllValues().get(0), is(nullValue()));
-                    assertThat(uoRoleBindingCaptor.getAllValues().size(), is(1));
-                    assertThat(uoRoleBindingCaptor.getAllValues().get(0), is(nullValue()));
+        assertThat(operatorRoleCaptor.getAllValues().size(), is(1));
+        assertThat(operatorRoleCaptor.getValue(), is(nullValue()));
 
-                    assertThat(toCmCaptor.getAllValues().size(), is(1));
-                    assertThat(toCmCaptor.getValue(), is(nullValue()));
-                    assertThat(uoCmCaptor.getAllValues().size(), is(1));
-                    assertThat(uoCmCaptor.getValue(), is(nullValue()));
+        assertThat(toRoleBindingCaptor.getAllValues().size(), is(1));
+        assertThat(toRoleBindingCaptor.getAllValues().get(0), is(nullValue()));
+        assertThat(uoRoleBindingCaptor.getAllValues().size(), is(1));
+        assertThat(uoRoleBindingCaptor.getAllValues().get(0), is(nullValue()));
 
-                    assertThat(depCaptor.getAllValues().size(), is(1));
-                    assertThat(depCaptor.getValue(), is(nullValue()));
+        assertThat(toCmCaptor.getAllValues().size(), is(1));
+        assertThat(toCmCaptor.getValue(), is(nullValue()));
+        assertThat(uoCmCaptor.getAllValues().size(), is(1));
+        assertThat(uoCmCaptor.getValue(), is(nullValue()));
 
-                    assertThat(pdbCaptor.getAllValues().size(), is(1));
-                    assertThat(pdbCaptor.getValue(), is(nullValue()));
+        assertThat(depCaptor.getAllValues().size(), is(1));
+        assertThat(depCaptor.getValue(), is(nullValue()));
 
-                    verify(clusterCa, times(1)).cleanupEndEntityCert(KafkaResources.entityTopicOperatorSecretName(NAME));
-                    verify(clusterCa, times(1)).cleanupEndEntityCert(KafkaResources.entityUserOperatorSecretName(NAME));
+        assertThat(pdbCaptor.getAllValues().size(), is(1));
+        assertThat(pdbCaptor.getValue(), is(nullValue()));
 
-                    async.flag();
-                })));
+        verify(clusterCa, times(1)).cleanupEndEntityCert(KafkaResources.entityTopicOperatorSecretName(NAME));
+        verify(clusterCa, times(1)).cleanupEndEntityCert(KafkaResources.entityUserOperatorSecretName(NAME));
     }
 
     @Test
-    public void reconcileWithoutEo(VertxTestContext context) {
+    public void reconcileWithoutEo() {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
         DeploymentOperator mockDepOps = supplier.deploymentOperations;
         SecretOperator mockSecretOps = supplier.secretOperations;
@@ -741,48 +726,45 @@ public class EntityOperatorReconcilerTest {
                 clusterCa,
                 KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
 
-        Checkpoint async = context.checkpoint();
         rcnclr.reconcile(false, null, null, Clock.systemUTC())
-                .onComplete(context.succeeding(v -> context.verify(() -> {
-                    assertThat(saCaptor.getAllValues().size(), is(1));
-                    assertThat(saCaptor.getValue(), is(nullValue()));
+                .toCompletableFuture().join();
 
-                    assertThat(toSecretCaptor.getAllValues().size(), is(1));
-                    assertThat(toSecretCaptor.getAllValues().get(0), is(nullValue()));
-                    assertThat(uoSecretCaptor.getAllValues().size(), is(1));
-                    assertThat(uoSecretCaptor.getAllValues().get(0), is(nullValue()));
+        assertThat(saCaptor.getAllValues().size(), is(1));
+        assertThat(saCaptor.getValue(), is(nullValue()));
 
-                    assertThat(netPolicyCaptor.getAllValues().size(), is(1));
-                    assertThat(netPolicyCaptor.getValue(), is(nullValue()));
+        assertThat(toSecretCaptor.getAllValues().size(), is(1));
+        assertThat(toSecretCaptor.getAllValues().get(0), is(nullValue()));
+        assertThat(uoSecretCaptor.getAllValues().size(), is(1));
+        assertThat(uoSecretCaptor.getAllValues().get(0), is(nullValue()));
 
-                    assertThat(operatorRoleCaptor.getAllValues().size(), is(1));
-                    assertThat(operatorRoleCaptor.getValue(), is(nullValue()));
+        assertThat(netPolicyCaptor.getAllValues().size(), is(1));
+        assertThat(netPolicyCaptor.getValue(), is(nullValue()));
 
-                    assertThat(toRoleBindingCaptor.getAllValues().size(), is(1));
-                    assertThat(toRoleBindingCaptor.getAllValues().get(0), is(nullValue()));
-                    assertThat(uoRoleBindingCaptor.getAllValues().size(), is(1));
-                    assertThat(uoRoleBindingCaptor.getAllValues().get(0), is(nullValue()));
+        assertThat(operatorRoleCaptor.getAllValues().size(), is(1));
+        assertThat(operatorRoleCaptor.getValue(), is(nullValue()));
 
-                    assertThat(toCmCaptor.getAllValues().size(), is(1));
-                    assertThat(toCmCaptor.getValue(), is(nullValue()));
-                    assertThat(uoCmCaptor.getAllValues().size(), is(1));
-                    assertThat(uoCmCaptor.getValue(), is(nullValue()));
+        assertThat(toRoleBindingCaptor.getAllValues().size(), is(1));
+        assertThat(toRoleBindingCaptor.getAllValues().get(0), is(nullValue()));
+        assertThat(uoRoleBindingCaptor.getAllValues().size(), is(1));
+        assertThat(uoRoleBindingCaptor.getAllValues().get(0), is(nullValue()));
 
-                    assertThat(depCaptor.getAllValues().size(), is(1));
-                    assertThat(depCaptor.getValue(), is(nullValue()));
+        assertThat(toCmCaptor.getAllValues().size(), is(1));
+        assertThat(toCmCaptor.getValue(), is(nullValue()));
+        assertThat(uoCmCaptor.getAllValues().size(), is(1));
+        assertThat(uoCmCaptor.getValue(), is(nullValue()));
 
-                    assertThat(pdbCaptor.getAllValues().size(), is(1));
-                    assertThat(pdbCaptor.getValue(), is(nullValue()));
+        assertThat(depCaptor.getAllValues().size(), is(1));
+        assertThat(depCaptor.getValue(), is(nullValue()));
 
-                    verify(clusterCa, times(1)).cleanupEndEntityCert(KafkaResources.entityTopicOperatorSecretName(NAME));
-                    verify(clusterCa, times(1)).cleanupEndEntityCert(KafkaResources.entityUserOperatorSecretName(NAME));
+        assertThat(pdbCaptor.getAllValues().size(), is(1));
+        assertThat(pdbCaptor.getValue(), is(nullValue()));
 
-                    async.flag();
-                })));
+        verify(clusterCa, times(1)).cleanupEndEntityCert(KafkaResources.entityTopicOperatorSecretName(NAME));
+        verify(clusterCa, times(1)).cleanupEndEntityCert(KafkaResources.entityUserOperatorSecretName(NAME));
     }
 
     @Test
-    public void reconcileWithToAndUoAndWatchNamespacesWithFeatureDisabled(VertxTestContext context) {
+    public void reconcileWithToAndUoAndWatchNamespacesWithFeatureDisabled() {
         String toWatchNamespace = "to-watch-namespace";
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
@@ -864,61 +846,61 @@ public class EntityOperatorReconcilerTest {
                 clusterCa,
                 KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
 
-        Checkpoint async = context.checkpoint();
-        rcnclr.reconcile(false, null, null, Clock.systemUTC())
-                .onComplete(context.failing(error -> context.verify(() -> {
-                    // Verify the reconciliation failed with InvalidConfigurationException
-                    assertThat(error, instanceOf(InvalidConfigurationException.class));
-                    assertThat(error.getMessage(), is("Entity Operator deployment deleted because Topic Operator and/or User Operator are configured with " +
-                            "watchedNamespace set to a different namespace but the feature is disabled. " +
-                            "To enable cross-namespace watching, set STRIMZI_ENTITY_OPERATOR_WATCHED_NAMESPACE_ENABLED=true"));
+        CompletionException ex = assertThrows(CompletionException.class, () ->
+                rcnclr.reconcile(false, null, null, Clock.systemUTC())
+                        .toCompletableFuture().join()
+        );
+        Throwable error = ex.getCause();
 
-                    // Verify all resources are deleted (null passed to reconcile) before failure
-                    assertThat(saCaptor.getAllValues().size(), is(1));
-                    assertThat(saCaptor.getValue(), is(nullValue()));
+        // Verify the reconciliation failed with InvalidConfigurationException
+        assertThat(error, instanceOf(InvalidConfigurationException.class));
+        assertThat(error.getMessage(), is("Entity Operator deployment deleted because Topic Operator and/or User Operator are configured with " +
+                "watchedNamespace set to a different namespace but the feature is disabled. " +
+                "To enable cross-namespace watching, set STRIMZI_ENTITY_OPERATOR_WATCHED_NAMESPACE_ENABLED=true"));
 
-                    assertThat(toSecretCaptor.getAllValues().size(), is(1));
-                    assertThat(toSecretCaptor.getValue(), is(nullValue()));
-                    assertThat(uoSecretCaptor.getAllValues().size(), is(1));
-                    assertThat(uoSecretCaptor.getValue(), is(nullValue()));
+        // Verify all resources are deleted (null passed to reconcile) before failure
+        assertThat(saCaptor.getAllValues().size(), is(1));
+        assertThat(saCaptor.getValue(), is(nullValue()));
 
-                    assertThat(netPolicyCaptor.getAllValues().size(), is(1));
-                    assertThat(netPolicyCaptor.getValue(), is(nullValue()));
+        assertThat(toSecretCaptor.getAllValues().size(), is(1));
+        assertThat(toSecretCaptor.getValue(), is(nullValue()));
+        assertThat(uoSecretCaptor.getAllValues().size(), is(1));
+        assertThat(uoSecretCaptor.getValue(), is(nullValue()));
 
-                    assertThat(operatorRoleCaptor.getAllValues().size(), is(1));
-                    assertThat(operatorRoleCaptor.getValue(), is(nullValue()));
+        assertThat(netPolicyCaptor.getAllValues().size(), is(1));
+        assertThat(netPolicyCaptor.getValue(), is(nullValue()));
 
-                    // Both TO and UO Roles in watched namespace - should be 2 calls, both with null
-                    assertThat(watchedNamespaceRoleCaptor.getAllValues().size(), is(2));
-                    assertThat(watchedNamespaceRoleCaptor.getAllValues().stream().allMatch(r -> r == null), is(true));
+        assertThat(operatorRoleCaptor.getAllValues().size(), is(1));
+        assertThat(operatorRoleCaptor.getValue(), is(nullValue()));
 
-                    assertThat(toRoleBindingCaptor.getAllValues().size(), is(2));
-                    assertThat(toRoleBindingCaptor.getAllValues().stream().allMatch(rb -> rb == null), is(true));
+        // Both TO and UO Roles in watched namespace - should be 2 calls, both with null
+        assertThat(watchedNamespaceRoleCaptor.getAllValues().size(), is(2));
+        assertThat(watchedNamespaceRoleCaptor.getAllValues().stream().allMatch(r -> r == null), is(true));
 
-                    assertThat(uoRoleBindingCaptor.getAllValues().size(), is(2));
-                    assertThat(uoRoleBindingCaptor.getAllValues().stream().allMatch(rb -> rb == null), is(true));
+        assertThat(toRoleBindingCaptor.getAllValues().size(), is(2));
+        assertThat(toRoleBindingCaptor.getAllValues().stream().allMatch(rb -> rb == null), is(true));
 
-                    assertThat(toCmCaptor.getAllValues().size(), is(1));
-                    assertThat(toCmCaptor.getValue(), is(nullValue()));
-                    assertThat(uoCmCaptor.getAllValues().size(), is(1));
-                    assertThat(uoCmCaptor.getValue(), is(nullValue()));
+        assertThat(uoRoleBindingCaptor.getAllValues().size(), is(2));
+        assertThat(uoRoleBindingCaptor.getAllValues().stream().allMatch(rb -> rb == null), is(true));
 
-                    assertThat(depCaptor.getAllValues().size(), is(1));
-                    assertThat(depCaptor.getValue(), is(nullValue()));
+        assertThat(toCmCaptor.getAllValues().size(), is(1));
+        assertThat(toCmCaptor.getValue(), is(nullValue()));
+        assertThat(uoCmCaptor.getAllValues().size(), is(1));
+        assertThat(uoCmCaptor.getValue(), is(nullValue()));
 
-                    assertThat(pdbCaptor.getAllValues().size(), is(1));
-                    assertThat(pdbCaptor.getValue(), is(nullValue()));
+        assertThat(depCaptor.getAllValues().size(), is(1));
+        assertThat(depCaptor.getValue(), is(nullValue()));
 
-                    verify(clusterCa, times(1)).cleanupEndEntityCert(KafkaResources.entityTopicOperatorSecretName(NAME));
-                    verify(clusterCa, times(1)).cleanupEndEntityCert(KafkaResources.entityUserOperatorSecretName(NAME));
+        assertThat(pdbCaptor.getAllValues().size(), is(1));
+        assertThat(pdbCaptor.getValue(), is(nullValue()));
 
-                    async.flag();
-                })));
+        verify(clusterCa, times(1)).cleanupEndEntityCert(KafkaResources.entityTopicOperatorSecretName(NAME));
+        verify(clusterCa, times(1)).cleanupEndEntityCert(KafkaResources.entityUserOperatorSecretName(NAME));
     }
 
     @ParameterizedTest
     @ValueSource(booleans = { true, false })
-    public void reconcileWithOnlyOneOperatorWatchedNamespaceAndFeatureDisabled(boolean topicOperatorWatches, VertxTestContext context) {
+    public void reconcileWithOnlyOneOperatorWatchedNamespaceAndFeatureDisabled(boolean topicOperatorWatches) {
         String watchNamespace = "watch-namespace";
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
@@ -999,60 +981,60 @@ public class EntityOperatorReconcilerTest {
                 clusterCa,
                 KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
 
-        Checkpoint async = context.checkpoint();
-        rcnclr.reconcile(false, null, null, Clock.systemUTC())
-                .onComplete(context.failing(error -> context.verify(() -> {
-                    // Verify the reconciliation failed with InvalidConfigurationException
-                    assertThat(error, instanceOf(InvalidConfigurationException.class));
+        CompletionException ex = assertThrows(CompletionException.class, () ->
+                rcnclr.reconcile(false, null, null, Clock.systemUTC())
+                        .toCompletableFuture().join()
+        );
+        Throwable error = ex.getCause();
 
-                    // Verify ENTIRE Entity Operator deployment is deleted before failure
-                    // even though only one operator has watchedNamespace configured
+        // Verify the reconciliation failed with InvalidConfigurationException
+        assertThat(error, instanceOf(InvalidConfigurationException.class));
 
-                    assertThat(saCaptor.getAllValues().size(), is(1));
-                    assertThat(saCaptor.getValue(), is(nullValue()));
+        // Verify ENTIRE Entity Operator deployment is deleted before failure
+        // even though only one operator has watchedNamespace configured
 
-                    assertThat(toSecretCaptor.getAllValues().size(), is(1));
-                    assertThat(toSecretCaptor.getValue(), is(nullValue()));
-                    assertThat(uoSecretCaptor.getAllValues().size(), is(1));
-                    assertThat(uoSecretCaptor.getValue(), is(nullValue()));
+        assertThat(saCaptor.getAllValues().size(), is(1));
+        assertThat(saCaptor.getValue(), is(nullValue()));
 
-                    assertThat(netPolicyCaptor.getAllValues().size(), is(1));
-                    assertThat(netPolicyCaptor.getValue(), is(nullValue()));
+        assertThat(toSecretCaptor.getAllValues().size(), is(1));
+        assertThat(toSecretCaptor.getValue(), is(nullValue()));
+        assertThat(uoSecretCaptor.getAllValues().size(), is(1));
+        assertThat(uoSecretCaptor.getValue(), is(nullValue()));
 
-                    assertThat(operatorRoleCaptor.getAllValues().size(), is(1));
-                    assertThat(operatorRoleCaptor.getValue(), is(nullValue()));
+        assertThat(netPolicyCaptor.getAllValues().size(), is(1));
+        assertThat(netPolicyCaptor.getValue(), is(nullValue()));
 
-                    assertThat(watchRoleCaptor.getAllValues().size(), is(1));
-                    assertThat(watchRoleCaptor.getValue(), is(nullValue()));
+        assertThat(operatorRoleCaptor.getAllValues().size(), is(1));
+        assertThat(operatorRoleCaptor.getValue(), is(nullValue()));
 
-                    // RoleBindings should be deleted (both cluster namespace and watched namespace)
-                    if (topicOperatorWatches) {
-                        assertThat(toRoleBindingCaptor.getAllValues().size(), is(2));
-                        assertThat(toRoleBindingCaptor.getAllValues().stream().allMatch(rb -> rb == null), is(true));
-                        assertThat(uoRoleBindingCaptor.getAllValues().size(), is(1));
-                        assertThat(uoRoleBindingCaptor.getValue(), is(nullValue()));
-                    } else {
-                        assertThat(toRoleBindingCaptor.getAllValues().size(), is(1));
-                        assertThat(toRoleBindingCaptor.getValue(), is(nullValue()));
-                        assertThat(uoRoleBindingCaptor.getAllValues().size(), is(2));
-                        assertThat(uoRoleBindingCaptor.getAllValues().stream().allMatch(rb -> rb == null), is(true));
-                    }
+        assertThat(watchRoleCaptor.getAllValues().size(), is(1));
+        assertThat(watchRoleCaptor.getValue(), is(nullValue()));
 
-                    assertThat(toCmCaptor.getAllValues().size(), is(1));
-                    assertThat(toCmCaptor.getValue(), is(nullValue()));
-                    assertThat(uoCmCaptor.getAllValues().size(), is(1));
-                    assertThat(uoCmCaptor.getValue(), is(nullValue()));
+        // RoleBindings should be deleted (both cluster namespace and watched namespace)
+        if (topicOperatorWatches) {
+            assertThat(toRoleBindingCaptor.getAllValues().size(), is(2));
+            assertThat(toRoleBindingCaptor.getAllValues().stream().allMatch(rb -> rb == null), is(true));
+            assertThat(uoRoleBindingCaptor.getAllValues().size(), is(1));
+            assertThat(uoRoleBindingCaptor.getValue(), is(nullValue()));
+        } else {
+            assertThat(toRoleBindingCaptor.getAllValues().size(), is(1));
+            assertThat(toRoleBindingCaptor.getValue(), is(nullValue()));
+            assertThat(uoRoleBindingCaptor.getAllValues().size(), is(2));
+            assertThat(uoRoleBindingCaptor.getAllValues().stream().allMatch(rb -> rb == null), is(true));
+        }
 
-                    assertThat(depCaptor.getAllValues().size(), is(1));
-                    assertThat(depCaptor.getValue(), is(nullValue()));
+        assertThat(toCmCaptor.getAllValues().size(), is(1));
+        assertThat(toCmCaptor.getValue(), is(nullValue()));
+        assertThat(uoCmCaptor.getAllValues().size(), is(1));
+        assertThat(uoCmCaptor.getValue(), is(nullValue()));
 
-                    assertThat(pdbCaptor.getAllValues().size(), is(1));
-                    assertThat(pdbCaptor.getValue(), is(nullValue()));
+        assertThat(depCaptor.getAllValues().size(), is(1));
+        assertThat(depCaptor.getValue(), is(nullValue()));
 
-                    verify(clusterCa, times(1)).cleanupEndEntityCert(KafkaResources.entityTopicOperatorSecretName(NAME));
-                    verify(clusterCa, times(1)).cleanupEndEntityCert(KafkaResources.entityUserOperatorSecretName(NAME));
+        assertThat(pdbCaptor.getAllValues().size(), is(1));
+        assertThat(pdbCaptor.getValue(), is(nullValue()));
 
-                    async.flag();
-                })));
+        verify(clusterCa, times(1)).cleanupEndEntityCert(KafkaResources.entityTopicOperatorSecretName(NAME));
+        verify(clusterCa, times(1)).cleanupEndEntityCert(KafkaResources.entityUserOperatorSecretName(NAME));
     }
 }

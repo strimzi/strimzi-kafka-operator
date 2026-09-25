@@ -693,8 +693,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
          * @return      Future with Reconciliation State
          */
         Future<ReconciliationState> reconcileEntityOperator(Clock clock)    {
-            return entityOperatorReconciler()
-                    .reconcile(pfa.isOpenshift(), imagePullPolicy, imagePullSecrets, clock)
+            return VertxUtil.toFuture(entityOperatorReconciler()
+                            .reconcile(pfa.isOpenshift(), imagePullPolicy, imagePullSecrets, clock))
                     .map(this);
         }
 
