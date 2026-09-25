@@ -38,7 +38,8 @@ public class KafkaAutoRebalanceStatus implements UnknownPropertyPreserving {
     @Description("The current state of an auto-rebalancing operation. Possible values are: \n\n" +
             "* `Idle` as the initial state when an auto-rebalancing is requested or as final state when it completes or fails.\n" +
             "* `RebalanceOnScaleDown` if an auto-rebalance related to a scale-down operation is running.\n" +
-            "* `RebalanceOnScaleUp` if an auto-rebalance related to a scale-up operation is running.")
+            "* `RebalanceOnScaleUp` if an auto-rebalance related to a scale-up operation is running.\n" +
+            "* `RebalanceOnImbalance` if an auto-rebalance triggered by Cruise Control goal violation detection is running.")
     public KafkaAutoRebalanceState getState() {
         return state;
     }
@@ -57,7 +58,7 @@ public class KafkaAutoRebalanceStatus implements UnknownPropertyPreserving {
     }
 
     @Description("List of modes where an auto-rebalancing operation is either running or queued. \n" +
-            "Each mode entry (`add-brokers` or `remove-brokers`) includes one of the following: \n\n" +
+            "Each mode entry (`add-brokers`, `remove-brokers`, or `imbalance`) includes one of the following: \n\n" +
             "* Broker IDs for a current auto-rebalance. \n" +
             "* Broker IDs for a queued auto-rebalance (if a previous rebalance is still in progress).")
     public List<KafkaAutoRebalanceStatusBrokers> getModes() {

@@ -4842,13 +4842,15 @@ spec:
                             enum:
                               - add-brokers
                               - remove-brokers
-                            description: "Specifies the mode for automatically rebalancing when brokers are added or removed. Supported modes are `add-brokers` and `remove-brokers`. \n"
+                              - imbalance
+                            description: |
+                              Specifies the mode for automatic rebalancing. Supported modes are `add-brokers`, `remove-brokers`, and `imbalance`. The `add-brokers` and `remove-brokers` modes trigger rebalancing when brokers are added or removed. The `imbalance` mode triggers rebalancing when Cruise Control detects goal violations in the cluster.
                           template:
                             type: object
                             properties:
                               name:
                                 type: string
-                            description: Reference to the KafkaRebalance custom resource to be used as the configuration template for the auto-rebalancing on scaling when running for the corresponding mode.
+                            description: "Reference to the KafkaRebalance custom resource to be used as the configuration template for auto-rebalancing when running for the corresponding mode. For the `imbalance` mode, the template goals must be a superset of the configured anomaly detection goals."
                         required:
                           - mode
                       description: "Auto-rebalancing on scaling related configuration listing the modes, when brokers are added or removed, with the corresponding rebalance template configurations.If this field is set, at least one mode has to be defined."
@@ -5949,7 +5951,8 @@ spec:
                         - Idle
                         - RebalanceOnScaleDown
                         - RebalanceOnScaleUp
-                      description: "The current state of an auto-rebalancing operation. Possible values are: \n\n* `Idle` as the initial state when an auto-rebalancing is requested or as final state when it completes or fails.\n* `RebalanceOnScaleDown` if an auto-rebalance related to a scale-down operation is running.\n* `RebalanceOnScaleUp` if an auto-rebalance related to a scale-up operation is running."
+                        - RebalanceOnImbalance
+                      description: "The current state of an auto-rebalancing operation. Possible values are: \n\n* `Idle` as the initial state when an auto-rebalancing is requested or as final state when it completes or fails.\n* `RebalanceOnScaleDown` if an auto-rebalance related to a scale-down operation is running.\n* `RebalanceOnScaleUp` if an auto-rebalance related to a scale-up operation is running.\n* `RebalanceOnImbalance` if an auto-rebalance triggered by Cruise Control goal violation detection is running."
                     lastTransitionTime:
                       type: string
                       description: The timestamp of the latest auto-rebalancing state update.
@@ -5963,13 +5966,14 @@ spec:
                             enum:
                               - add-brokers
                               - remove-brokers
-                            description: "Mode for which there is an auto-rebalancing operation in progress or queued, when brokers are added or removed. The possible modes are `add-brokers` and `remove-brokers`."
+                              - imbalance
+                            description: "Mode for which there is an auto-rebalancing operation in progress or queued. The possible modes are `add-brokers`, `remove-brokers`, and `imbalance`."
                           brokers:
                             type: array
                             items:
                               type: integer
                             description: "List of broker IDs involved in an auto-rebalancing operation related to the current mode. \nThe list contains one of the following: \n\n* Broker IDs for a current auto-rebalance. \n* Broker IDs for a queued auto-rebalance (if a previous auto-rebalance is still in progress). \n"
-                      description: "List of modes where an auto-rebalancing operation is either running or queued. \nEach mode entry (`add-brokers` or `remove-brokers`) includes one of the following: \n\n* Broker IDs for a current auto-rebalance. \n* Broker IDs for a queued auto-rebalance (if a previous rebalance is still in progress)."
+                      description: "List of modes where an auto-rebalancing operation is either running or queued. \nEach mode entry (`add-brokers`, `remove-brokers`, or `imbalance`) includes one of the following: \n\n* Broker IDs for a current auto-rebalance. \n* Broker IDs for a queued auto-rebalance (if a previous rebalance is still in progress)."
                   description: The status of an auto-rebalancing triggered by a cluster scaling request.
                 clusterSecurity:
                   type: object

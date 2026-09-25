@@ -29,9 +29,20 @@ public interface CruiseControlApi {
      * @param host The address of the Cruise Control server.
      * @param port The port the Cruise Control Server is listening on.
      * @param verbose Whether the response from state endpoint should include more details.
+     * @param substate The substate to query from the Cruise Control server.
      * @return A future for the response from the Cruise Control server with details of the Cruise Control server state.
      */
-    CompletionStage<CruiseControlStateResponse> getCruiseControlState(Reconciliation reconciliation, String host, int port, boolean verbose);
+    CompletionStage<CruiseControlStateResponse> getCruiseControlState(Reconciliation reconciliation, String host, int port, boolean verbose, String substate);
+
+    /**
+     * Checks for goal violations in the Cruise Control anomaly detector.
+     *
+     * @param reconciliation The reconciliation marker
+     * @param host The address of the Cruise Control server.
+     * @param port The port the Cruise Control Server is listening on.
+     * @return A future with GoalViolationInfo if violations detected, null otherwise
+     */
+    CompletionStage<GoalViolationInfo> getGoalViolations(Reconciliation reconciliation, String host, int port);
 
     /**
      * Send a request to the Cruise Control server to perform a cluster rebalance.
