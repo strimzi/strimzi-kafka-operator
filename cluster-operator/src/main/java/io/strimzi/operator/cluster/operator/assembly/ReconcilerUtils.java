@@ -32,23 +32,23 @@ import io.strimzi.operator.cluster.model.clustersecurity.kafka.MtlsAuthenticatio
 import io.strimzi.operator.cluster.model.clustersecurity.kafka.ServiceAccountAuthenticationConfiguration;
 import io.strimzi.operator.cluster.model.clustersecurity.kafka.TlsEncryptionConfiguration;
 import io.strimzi.operator.cluster.model.jmx.SupportsJmx;
-import io.strimzi.operator.cluster.operator.VertxUtil;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.PodOperator;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.InvalidConfigurationException;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
+import io.strimzi.operator.common.auth.AuthIdentity;
 import io.strimzi.operator.common.auth.Identity;
 import io.strimzi.operator.common.auth.PemAuthIdentity;
 import io.strimzi.operator.common.auth.PemTrustSet;
+import io.strimzi.operator.common.auth.TrustSet;
 import io.strimzi.operator.common.ca.Ca;
 import io.strimzi.operator.common.ca.CertificateUtils;
 import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.kubernetes.SecretOperator;
-import io.vertx.core.Future;
 
 import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystems;
@@ -60,6 +60,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.stream.Collectors;
 
 import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_SERVER_CERT_HASH;
@@ -81,24 +83,24 @@ public class ReconcilerUtils {
      * @param reconcileFuture   The original reconciliation future
      * @param desired           The desired state of the resource.
      *
-     * @return                  A future which completes when the resource was reconciled.
+     * @return                  A CompletionStage which completes when the resource was reconciled.
      */
-    public static Future<ReconcileResult<ClusterRoleBinding>> withIgnoreRbacError(Reconciliation reconciliation, Future<ReconcileResult<ClusterRoleBinding>> reconcileFuture, ClusterRoleBinding desired) {
-        return reconcileFuture.compose(
-                rr -> Future.succeededFuture(),
-                e -> {
-                    // The resource operators run on a CompletableFuture, which wraps exceptions thrown by the
-                    // Kubernetes client in a CompletionException. We therefore unwrap it before checking the type and
-                    // status code (a forbidden ClusterRoleBindings access which is not required is ignored).
-                    if (desired == null
-                            && Util.maybeUnwrapCompletionException(e) instanceof KubernetesClientException kce
-                            && kce.getCode() == 403) {
-                        LOGGER.debugCr(reconciliation, "Ignoring forbidden access to ClusterRoleBindings resource which does not seem to be required.");
-                        return Future.succeededFuture();
-                    }
-                    return Future.failedFuture(e.getMessage());
-                }
-        );
+    public static CompletionStage<ReconcileResult<ClusterRoleBinding>> withIgnoreRbacError(Reconciliation reconciliation, CompletionStage<ReconcileResult<ClusterRoleBinding>> reconcileFuture, ClusterRoleBinding desired) {
+        return reconcileFuture.handle((rr, e) -> {
+            if (e == null) {
+                return rr;
+            }
+            // The resource operators run on a CompletableFuture, which wraps exceptions thrown by the
+            // Kubernetes client in a CompletionException. We therefore unwrap it before checking the type and
+            // status code (a forbidden ClusterRoleBindings access which is not required is ignored).
+            if (desired == null && Util.maybeUnwrapCompletionException(e) instanceof KubernetesClientException kce
+                    && kce.getCode() == 403) {
+                LOGGER.debugCr(reconciliation, "Ignoring forbidden access to ClusterRoleBindings resource which does not seem to be required.");
+                return null;
+            }
+            Throwable throwable = Util.maybeUnwrapCompletionException(e);
+            throw throwable instanceof RuntimeException re ? re : new RuntimeException(throwable);
+        });
     }
 
     /**
@@ -109,18 +111,17 @@ public class ReconcilerUtils {
      * @param operationTimeoutMs    Operations timeout in milliseconds
      * @param podNames              List with the pod names which should be ready
      *
-     * @return  Future which completes when all pods are ready or fails when they are not ready in time
+     * @return  CompletionStage which completes when all pods are ready or fails when they are not ready in time
      */
-    public static Future<Void> podsReady(Reconciliation reconciliation, PodOperator podOperator, long operationTimeoutMs, List<String> podNames) {
-        List<Future<Void>> podFutures = new ArrayList<>(podNames.size());
+    public static CompletionStage<Void> podsReady(Reconciliation reconciliation, PodOperator podOperator, long operationTimeoutMs, List<String> podNames) {
+        List<CompletableFuture<Void>> podFutures = new ArrayList<>(podNames.size());
 
         for (String podName : podNames) {
             LOGGER.debugCr(reconciliation, "Checking readiness of pod {} in namespace {}", podName, reconciliation.namespace());
-            podFutures.add(VertxUtil.toFuture(podOperator.readiness(reconciliation, reconciliation.namespace(), podName, 1_000, operationTimeoutMs)));
+            podFutures.add(podOperator.readiness(reconciliation, reconciliation.namespace(), podName, 1_000, operationTimeoutMs).toCompletableFuture());
         }
 
-        return Future.join(podFutures)
-                .mapEmpty();
+        return CompletableFuture.allOf(podFutures.toArray(new CompletableFuture[0]));
     }
 
     /**
@@ -131,20 +132,24 @@ public class ReconcilerUtils {
      * @param secretOperator    Secret operator for working with Kubernetes Secrets that store certificates
      * @param securityContext   Kafka cluster security context
      *
-     * @return  Future containing the PemTrustSet and PemAuthIdentity to use for client authentication.
+     * @return  CompletionStage containing the PemTrustSet and PemAuthIdentity to use for client authentication.
      */
     @SuppressFBWarnings("DLS_DEAD_LOCAL_STORE") // SpotBugs does not like the unused `ignored` binding in the switch pattern
-    public static Future<Identity> coIdentity(Reconciliation reconciliation, SecretOperator secretOperator, KafkaClusterSecurityContext securityContext) {
-        return Future.join(
-            // Gets the trust based on the security context
-            securityContext.encryption() instanceof TlsEncryptionConfiguration ? clusterCaPemTrustSet(reconciliation, secretOperator) : Future.succeededFuture(null),
-            // Gets the identity based on the security context
-            switch (securityContext.authentication()) {
-                case MtlsAuthenticationConfiguration ignored -> coPemAuthIdentity(reconciliation, secretOperator);
-                case ServiceAccountAuthenticationConfiguration sa -> Future.succeededFuture(new RequestedServiceAccountAuthIdentity(reconciliation, sa.audience(), sa.expirationSeconds()));
-                default -> Future.succeededFuture();
-            }
-        ).compose(res -> Future.succeededFuture(new Identity(res.resultAt(0), res.resultAt(1))));
+    public static CompletionStage<Identity> coIdentity(Reconciliation reconciliation, SecretOperator secretOperator, KafkaClusterSecurityContext securityContext) {
+        // Gets the trust based on the security context
+        CompletionStage<TrustSet> trustFuture = securityContext.encryption() instanceof TlsEncryptionConfiguration ?
+                clusterCaPemTrustSet(reconciliation, secretOperator, securityContext).thenApply(t -> (TrustSet) t) : CompletableFuture.completedFuture(null);
+        return trustFuture
+                .thenCompose(trustSet -> {
+                    // Gets the identity based on the security context
+                    CompletionStage<AuthIdentity> authFuture = switch (securityContext.authentication()) {
+                        case MtlsAuthenticationConfiguration ignored -> coPemAuthIdentity(reconciliation, secretOperator).thenApply(a -> (AuthIdentity) a);
+                        case ServiceAccountAuthenticationConfiguration sa -> CompletableFuture.completedFuture((AuthIdentity) new RequestedServiceAccountAuthIdentity(reconciliation, sa.audience(), sa.expirationSeconds()));
+                        default -> CompletableFuture.completedFuture(null);
+                    };
+
+                    return authFuture.thenApply(r -> new Identity(trustSet, r));
+                });
     }
 
     /**
@@ -154,11 +159,11 @@ public class ReconcilerUtils {
      * @param reconciliation Reconciliation Marker
      * @param secretOperator Secret operator for working with Kubernetes Secrets that store certificates
      *
-     * @return  Future containing the trust set to use for client authentication.
+     * @return  CompletionStage containing the trust set to use for client authentication.
      */
-    private static Future<PemTrustSet> clusterCaPemTrustSet(Reconciliation reconciliation, SecretOperator secretOperator) {
+    private static CompletionStage<PemTrustSet> clusterCaPemTrustSet(Reconciliation reconciliation, SecretOperator secretOperator, KafkaClusterSecurityContext securityContext) {
         return getSecret(secretOperator, reconciliation.namespace(), KafkaResources.clusterCaCertificateSecretName(reconciliation.name()))
-                .map(PemTrustSet::new);
+                .thenApply(PemTrustSet::new);
     }
 
     /**
@@ -168,11 +173,11 @@ public class ReconcilerUtils {
      * @param reconciliation Reconciliation Marker
      * @param secretOperator Secret operator for working with Kubernetes Secrets that store certificates
      *
-     * @return  Future containing the auth identity to use for client authentication.
+     * @return  CompletionStage containing the auth identity to use for client authentication.
      */
-    private static Future<PemAuthIdentity> coPemAuthIdentity(Reconciliation reconciliation, SecretOperator secretOperator) {
+    private static CompletionStage<PemAuthIdentity> coPemAuthIdentity(Reconciliation reconciliation, SecretOperator secretOperator) {
         return getSecret(secretOperator, reconciliation.namespace(), KafkaResources.clusterOperatorCertsSecretName(reconciliation.name()))
-                .map(PemAuthIdentity::clusterOperator);
+                .thenApply(PemAuthIdentity::clusterOperator);
     }
 
     /**
@@ -184,12 +189,12 @@ public class ReconcilerUtils {
      *
      * @return                  Secret with the certificates
      */
-    private static Future<Secret> getSecret(SecretOperator secretOperator, String namespace, String secretName)  {
-        return VertxUtil.toFuture(secretOperator.getAsync(namespace, secretName)).compose(secret -> {
+    private static CompletionStage<Secret> getSecret(SecretOperator secretOperator, String namespace, String secretName)  {
+        return secretOperator.getAsync(namespace, secretName).thenCompose(secret -> {
             if (secret == null) {
-                return Future.failedFuture(missingSecretException(namespace, secretName));
+                return CompletableFuture.failedFuture(missingSecretException(namespace, secretName));
             } else {
-                return Future.succeededFuture(secret);
+                return CompletableFuture.completedFuture(secret);
             }
         });
     }
@@ -258,26 +263,24 @@ public class ReconcilerUtils {
      * @param secretOperator    Operator for managing Secrets
      * @param cluster           Cluster which implements JMX support
      *
-     * @return  Future which completes when the JMX Secret is reconciled
+     * @return  CompletionStage which completes when the JMX Secret is reconciled
      */
-    public static Future<Void> reconcileJmxSecret(Reconciliation reconciliation, SecretOperator secretOperator, SupportsJmx cluster)  {
-        return VertxUtil.toFuture(secretOperator.getAsync(reconciliation.namespace(), cluster.jmx().secretName()))
-                .compose(currentJmxSecret -> {
+    public static CompletionStage<Void> reconcileJmxSecret(Reconciliation reconciliation, SecretOperator secretOperator, SupportsJmx cluster)  {
+        return secretOperator.getAsync(reconciliation.namespace(), cluster.jmx().secretName())
+                .thenCompose(currentJmxSecret -> {
                     Secret desiredJmxSecret = cluster.jmx().jmxSecret(currentJmxSecret);
 
                     if (desiredJmxSecret != null)  {
                         // Desired secret is not null => should be updated
-                        return VertxUtil.toFuture(secretOperator.reconcile(reconciliation, reconciliation.namespace(), cluster.jmx().secretName(), desiredJmxSecret))
-                                .mapEmpty();
+                        return secretOperator.reconcile(reconciliation, reconciliation.namespace(), cluster.jmx().secretName(), desiredJmxSecret);
                     } else if (currentJmxSecret != null)    {
                         // Desired secret is null but current is not => we should delete the secret
-                        return VertxUtil.toFuture(secretOperator.reconcile(reconciliation, reconciliation.namespace(), cluster.jmx().secretName(), null))
-                                .mapEmpty();
+                        return secretOperator.reconcile(reconciliation, reconciliation.namespace(), cluster.jmx().secretName(), null);
                     } else {
                         // Both current and desired secret are null => nothing to do
-                        return Future.succeededFuture();
+                        return CompletableFuture.completedFuture(null);
                     }
-                });
+                }).thenApply(ignored -> null);
     }
 
     /**
@@ -470,15 +473,16 @@ public class ReconcilerUtils {
      * @param namespace namespace to get Secrets in
      * @param auth Authentication object to compute hash from
      * @param certs certificates list to compute hash from.
-     * @return Future computing hash from TLS + Auth
+     *
+     * @return CompletionStage computing hash from TLS + Auth
      */
-    public static Future<Integer> authTlsHash(SecretOperator secretOperations, String namespace, KafkaClientAuthentication auth, Collection<String> certs) {
-        Future<Integer> tlsFuture;
+    public static CompletionStage<Integer> authTlsHash(SecretOperator secretOperations, String namespace, KafkaClientAuthentication auth, Collection<String> certs) {
+        CompletionStage<Integer> tlsFuture;
         if (certs == null || certs.isEmpty()) {
-            tlsFuture = Future.succeededFuture(0);
+            tlsFuture = CompletableFuture.completedFuture(0);
         } else {
             // get all TLS trusted certs, compute hash from them
-            tlsFuture = Future.succeededFuture(certs.stream().mapToInt(String::hashCode).sum());
+            tlsFuture = CompletableFuture.completedFuture(certs.stream().mapToInt(String::hashCode).sum());
         }
 
         if (auth == null) {
@@ -487,16 +491,16 @@ public class ReconcilerUtils {
             // compute hash from Auth
             if (auth instanceof KafkaClientAuthenticationScram) {
                 // only passwordSecret can be changed
-                return tlsFuture.compose(tlsHash -> getPasswordAsync(secretOperations, namespace, auth)
-                        .compose(password -> Future.succeededFuture(password.hashCode() + tlsHash)));
+                return tlsFuture.thenCompose(tlsHash -> getPasswordAsync(secretOperations, namespace, auth)
+                        .thenCompose(password -> CompletableFuture.completedFuture(password.hashCode() + tlsHash)));
             } else if (auth instanceof KafkaClientAuthenticationPlain) {
                 // only passwordSecret can be changed
-                return tlsFuture.compose(tlsHash -> getPasswordAsync(secretOperations, namespace, auth)
-                        .compose(password -> Future.succeededFuture(password.hashCode() + tlsHash)));
+                return tlsFuture.thenCompose(tlsHash -> getPasswordAsync(secretOperations, namespace, auth)
+                        .thenCompose(password -> CompletableFuture.completedFuture(password.hashCode() + tlsHash)));
             } else if (auth instanceof KafkaClientAuthenticationTls authTls) {
                 // custom cert can be used (and changed)
-                return authTls.getCertificateAndKey() == null ? tlsFuture : tlsFuture.compose(tlsHash -> getCertificateAndKeyAsync(secretOperations, namespace, authTls.getCertificateAndKey())
-                                .compose(crtAndKey -> Future.succeededFuture(crtAndKey.certAsBase64String().hashCode() + crtAndKey.keyAsBase64String().hashCode() + tlsHash)));
+                return authTls.getCertificateAndKey() == null ? tlsFuture : tlsFuture.thenCompose(tlsHash -> getCertificateAndKeyAsync(secretOperations, namespace, authTls.getCertificateAndKey())
+                        .thenCompose(crtAndKey -> CompletableFuture.completedFuture(crtAndKey.certAsBase64String().hashCode() + crtAndKey.keyAsBase64String().hashCode() + tlsHash)));
             } else {
                 // unknown Auth type
                 return tlsFuture;
@@ -513,16 +517,17 @@ public class ReconcilerUtils {
      *
      * @return  Certificates extracted from the Secrets
      */
-    public static Future<List<String>> trustedCertificates(Reconciliation reconciliation, SecretOperator secretOperations, List<CertSecretSource> certificateSources)   {
+    public static CompletionStage<List<String>> trustedCertificates(Reconciliation reconciliation, SecretOperator secretOperations, List<CertSecretSource> certificateSources)   {
         if (certificateSources != null && !certificateSources.isEmpty()) {
-            return Future.join(certificateSources
-                            .stream()
-                            .map(certSecretSource -> ReconcilerUtils.getTrustedCertificateAsync(secretOperations, reconciliation.namespace(), certSecretSource))
-                            .toList())
-                    .compose(certificates -> Future.succeededFuture(certificates.list()));
+            List<CompletableFuture<String>> futures = certificateSources
+                    .stream()
+                    .map(certSecretSource -> ReconcilerUtils.getTrustedCertificateAsync(secretOperations, reconciliation.namespace(), certSecretSource).toCompletableFuture())
+                    .toList();
+            return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
+                    .thenApply(v -> futures.stream().map(CompletableFuture::join).toList());
         } else {
             // No trusted certificates to extract.
-            return Future.succeededFuture();
+            return CompletableFuture.completedFuture(null);
         }
     }
 
@@ -534,11 +539,11 @@ public class ReconcilerUtils {
      * @param name              Name of the Secret
      * @param items             List of items which should be present in the Secret
      *
-     * @return      Future with the Secret if is exits and has the required items. Failed future with an error message otherwise.
+     * @return      CompletionStage with the Secret if is exits and has the required items. Failed future with an error message otherwise.
      */
-    /* test */ static Future<Secret> getValidatedSecret(SecretOperator secretOperator, String namespace, String name, String... items) {
-        return VertxUtil.toFuture(secretOperator.getAsync(namespace, name))
-                .compose(secret -> validatedSecret(namespace, name, secret, items));
+    /* test */ static CompletionStage<Secret> getValidatedSecret(SecretOperator secretOperator, String namespace, String name, String... items) {
+        return secretOperator.getAsync(namespace, name)
+                .thenCompose(secret -> validatedSecret(namespace, name, secret, items));
     }
 
     /**
@@ -549,11 +554,11 @@ public class ReconcilerUtils {
      * @param secret            Secret that should be validated or null if the Secret does not exist
      * @param items             List of items which should be present in the Secret
      *
-     * @return      Future with the Secret if is exits and has the required items. Failed future with an error message otherwise.
+     * @return      CompletionStage with the Secret if is exits and has the required items. Failed future with an error message otherwise.
      */
-    private static Future<Secret> validatedSecret(String namespace, String name, Secret secret, String... items) {
+    private static CompletionStage<Secret> validatedSecret(String namespace, String name, Secret secret, String... items) {
         if (secret == null) {
-            return Future.failedFuture(new InvalidConfigurationException("Secret " + name + " not found in namespace " + namespace));
+            return CompletableFuture.failedFuture(new InvalidConfigurationException("Secret " + name + " not found in namespace " + namespace));
         } else {
             List<String> errors = new ArrayList<>(0);
 
@@ -567,29 +572,29 @@ public class ReconcilerUtils {
             }
 
             if (errors.isEmpty()) {
-                return Future.succeededFuture(secret);
+                return CompletableFuture.completedFuture(secret);
             } else {
-                return Future.failedFuture(new InvalidConfigurationException(String.format("Items with key(s) %s are missing in Secret %s", errors, name)));
+                return CompletableFuture.failedFuture(new InvalidConfigurationException(String.format("Items with key(s) %s are missing in Secret %s", errors, name)));
             }
         }
     }
 
-    private static Future<String> getTrustedCertificateAsync(SecretOperator secretOperator, String namespace, CertSecretSource certSecretSource) {
-        return VertxUtil.toFuture(secretOperator.getAsync(namespace, certSecretSource.getSecretName()))
-                .compose(secret -> {
+    private static CompletionStage<String> getTrustedCertificateAsync(SecretOperator secretOperator, String namespace, CertSecretSource certSecretSource) {
+        return secretOperator.getAsync(namespace, certSecretSource.getSecretName())
+                .thenCompose(secret -> {
                     if (certSecretSource.getCertificate() != null)  {
                         return validatedSecret(namespace, certSecretSource.getSecretName(), secret, certSecretSource.getCertificate())
-                                .compose(validatedSecret -> {
+                                .thenCompose(validatedSecret -> {
                                     try {
                                         String pem = CertificateUtils.x509CertificateToPem(CertificateUtils.x509Certificate(Util.decodeFromBase64(validatedSecret.getData().get(certSecretSource.getCertificate())).getBytes(StandardCharsets.US_ASCII)));
-                                        return Future.succeededFuture(pem);
+                                        return CompletableFuture.completedFuture(pem);
                                     } catch (CertificateException e) {
                                         throw new RuntimeException("Failed to load certificate from Secret " + certSecretSource.getSecretName() + " from namespace " + namespace, e);
                                     }
                                 });
                     } else if (certSecretSource.getPattern() != null)    {
                         return validatedSecret(namespace, certSecretSource.getSecretName(), secret)
-                                .compose(validatedSecret -> {
+                                .thenCompose(validatedSecret -> {
                                     PathMatcher matcher = FileSystems.getDefault().getPathMatcher("glob:" + certSecretSource.getPattern());
 
                                     String pems = validatedSecret
@@ -606,7 +611,7 @@ public class ReconcilerUtils {
                                             })
                                             .sorted()
                                             .collect(Collectors.joining("\n"));
-                                    return Future.succeededFuture(pems);
+                                    return CompletableFuture.completedFuture(pems);
                                 });
                     } else {
                         throw new InvalidResourceException("Certificate source does not contain the certificate or the pattern.");
@@ -622,24 +627,24 @@ public class ReconcilerUtils {
      * @param certAndKeySecretSource    Secret source for certificate and key
      * @return  Certificate and Key extracted from the Secret source and decoded
      */
-    public static Future<CertAndKey> getCertificateAndKeyAsync(SecretOperator secretOperator, String namespace, CertAndKeySecretSource certAndKeySecretSource) {
+    public static CompletionStage<CertAndKey> getCertificateAndKeyAsync(SecretOperator secretOperator, String namespace, CertAndKeySecretSource certAndKeySecretSource) {
         return getValidatedSecret(secretOperator, namespace, certAndKeySecretSource.getSecretName(), certAndKeySecretSource.getCertificate(), certAndKeySecretSource.getKey())
-                .compose(secret -> Future.succeededFuture(new CertAndKey(
+                .thenCompose(secret -> CompletableFuture.completedFuture(new CertAndKey(
                         Util.decodeBytesFromBase64(secret.getData().get(certAndKeySecretSource.getKey())),
                         Util.decodeBytesFromBase64(secret.getData().get(certAndKeySecretSource.getCertificate())))));
     }
 
-    private static Future<String> getPasswordAsync(SecretOperator secretOperator, String namespace, KafkaClientAuthentication auth) {
+    private static CompletionStage<String> getPasswordAsync(SecretOperator secretOperator, String namespace, KafkaClientAuthentication auth) {
         if (auth instanceof KafkaClientAuthenticationPlain plainAuth) {
 
             return getValidatedSecret(secretOperator, namespace, plainAuth.getPasswordSecret().getSecretName(), plainAuth.getPasswordSecret().getPassword())
-                    .compose(secret -> Future.succeededFuture(secret.getData().get(plainAuth.getPasswordSecret().getPassword())));
+                    .thenCompose(secret -> CompletableFuture.completedFuture(secret.getData().get(plainAuth.getPasswordSecret().getPassword())));
         } else if (auth instanceof KafkaClientAuthenticationScram scramAuth) {
 
             return getValidatedSecret(secretOperator, namespace, scramAuth.getPasswordSecret().getSecretName(), scramAuth.getPasswordSecret().getPassword())
-                    .compose(secret -> Future.succeededFuture(secret.getData().get(scramAuth.getPasswordSecret().getPassword())));
+                    .thenCompose(secret -> CompletableFuture.completedFuture(secret.getData().get(scramAuth.getPasswordSecret().getPassword())));
         } else {
-            return Future.failedFuture("Auth type " + auth.getType() + " does not have a password property");
+            return CompletableFuture.failedFuture(new RuntimeException("Auth type " + auth.getType() + " does not have a password property"));
         }
     }
 }
