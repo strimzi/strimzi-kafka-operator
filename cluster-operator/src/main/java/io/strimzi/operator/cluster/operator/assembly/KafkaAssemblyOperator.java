@@ -503,7 +503,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     config,
                     supplier,
                     pfa,
-                    vertx,
                     scalingDownBlockedNodes
             );
         }
@@ -571,7 +570,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
          */
         Future<ReconciliationState> reconcileKafka(Clock clock)    {
             return kafkaReconciler()
-                    .compose(reconciler -> reconciler.reconcile(kafkaStatus, clock))
+                    .compose(reconciler -> VertxUtil.toFuture(reconciler.reconcile(kafkaStatus, clock)))
                     .map(this);
         }
 

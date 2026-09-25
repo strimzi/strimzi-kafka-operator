@@ -371,6 +371,7 @@ public class ResourceUtils {
         ImageStreamOperator imageOps = openShift ? mock(ImageStreamOperator.class) : null;
 
         ResourceOperatorSupplier supplier = new ResourceOperatorSupplier(
+                Runnable::run,
                 mock(ServiceOperator.class),
                 routeOps,
                 imageOps,

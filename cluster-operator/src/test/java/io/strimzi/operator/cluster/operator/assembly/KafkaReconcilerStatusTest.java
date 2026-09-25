@@ -44,16 +44,7 @@ import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.PasswordGenerator;
 import io.strimzi.operator.common.operator.MockCertIssuer;
 import io.strimzi.platform.KubernetesVersion;
-import io.vertx.core.Future;
-import io.vertx.core.Vertx;
-import io.vertx.core.WorkerExecutor;
-import io.vertx.junit5.Checkpoint;
-import io.vertx.junit5.VertxExtension;
-import io.vertx.junit5.VertxTestContext;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.time.Clock;
 import java.util.ArrayList;
@@ -61,16 +52,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.CompletionStage;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
-@ExtendWith(VertxExtension.class)
 public class KafkaReconcilerStatusTest {
     private final static String NAMESPACE = "testns";
     private final static String CLUSTER_NAME = "testkafka";
@@ -127,23 +120,8 @@ public class KafkaReconcilerStatusTest {
             .endSpec()
             .build();
 
-    private static Vertx vertx;
-    private static WorkerExecutor sharedWorkerExecutor;
-
-    @BeforeAll
-    public static void beforeAll()  {
-        vertx = Vertx.vertx();
-        sharedWorkerExecutor = vertx.createSharedWorkerExecutor("kubernetes-ops-pool");
-    }
-
-    @AfterAll
-    public static void afterAll()    {
-        sharedWorkerExecutor.close();
-        vertx.close();
-    }
-
     @Test
-    public void testKafkaReconcilerStatus(VertxTestContext context) {
+    public void testKafkaReconcilerStatus() {
         KafkaNodePool kafkaNodePool = new KafkaNodePoolBuilder(KAFKA_NODE_POOL)
                 .editSpec()
                     .withReplicas(1)
@@ -162,31 +140,25 @@ public class KafkaReconcilerStatusTest {
 
         KafkaStatus status = new KafkaStatus();
 
-        Checkpoint async = context.checkpoint();
-        reconciler.reconcile(status, Clock.systemUTC()).onComplete(res -> context.verify(() -> {
-            assertThat(res.succeeded(), is(true));
+        reconciler.reconcile(status, Clock.systemUTC()).toCompletableFuture().join();
+        // Check ClusterID
+        assertThat(status.getClusterId(), is("CLUSTERID"));
 
-            // Check ClusterID
-            assertThat(status.getClusterId(), is("CLUSTERID"));
+        // Check kafka version
+        assertThat(status.getKafkaVersion(), is(VERSIONS.defaultVersion().version()));
 
-            // Check kafka version
-            assertThat(status.getKafkaVersion(), is(VERSIONS.defaultVersion().version()));
-
-            // Check model warning conditions
-            assertThat(status.getConditions().size(), is(2));
-            assertThat(status.getConditions().get(0).getType(), is("Warning"));
-            assertThat(status.getConditions().get(0).getReason(), is("KafkaStorage"));
-            assertThat(status.getConditions().get(0).getMessage(), containsString("A Kafka cluster with a single broker node and ephemeral storage will lose topic messages after any restart or rolling update"));
-            assertThat(status.getConditions().get(1).getType(), is("Warning"));
-            assertThat(status.getConditions().get(1).getReason(), is("KafkaStorage"));
-            assertThat(status.getConditions().get(1).getMessage(), containsString("A Kafka cluster with a single controller node and ephemeral storage will lose data after any restart or rolling update"));
-
-            async.flag();
-        }));
+        // Check model warning conditions
+        assertThat(status.getConditions().size(), is(2));
+        assertThat(status.getConditions().get(0).getType(), is("Warning"));
+        assertThat(status.getConditions().get(0).getReason(), is("KafkaStorage"));
+        assertThat(status.getConditions().get(0).getMessage(), containsString("A Kafka cluster with a single broker node and ephemeral storage will lose topic messages after any restart or rolling update"));
+        assertThat(status.getConditions().get(1).getType(), is("Warning"));
+        assertThat(status.getConditions().get(1).getReason(), is("KafkaStorage"));
+        assertThat(status.getConditions().get(1).getMessage(), containsString("A Kafka cluster with a single controller node and ephemeral storage will lose data after any restart or rolling update"));
     }
 
     @Test
-    public void testKafkaReconcilerStatusUpdateVersion(VertxTestContext context) {
+    public void testKafkaReconcilerStatusUpdateVersion() {
         Kafka kafka = new KafkaBuilder(KAFKA)
                 .editOrNewStatus()
                     .withKafkaVersion(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION)
@@ -204,18 +176,13 @@ public class KafkaReconcilerStatusTest {
 
         KafkaStatus status = new KafkaStatus();
 
-        Checkpoint async = context.checkpoint();
-        reconciler.reconcile(status, Clock.systemUTC()).onComplete(context.succeeding(v -> context.verify(() -> {
-
-            // Check kafka version updated to default
-            assertThat(status.getKafkaVersion(), is(VERSIONS.defaultVersion().version()));
-
-            async.flag();
-        })));
+        reconciler.reconcile(status, Clock.systemUTC()).toCompletableFuture().join();
+        // Check kafka version updated to default
+        assertThat(status.getKafkaVersion(), is(VERSIONS.defaultVersion().version()));
     }
 
     @Test
-    public void testKafkaReconcilerStatusDoesNotUpdateVersionOnFailure(VertxTestContext context) {
+    public void testKafkaReconcilerStatusDoesNotUpdateVersionOnFailure() {
         Kafka kafka = new KafkaBuilder(KAFKA)
                 .editOrNewStatus()
                     .withKafkaVersion(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION)
@@ -232,19 +199,13 @@ public class KafkaReconcilerStatusTest {
                 List.of(KAFKA_NODE_POOL));
 
         KafkaStatus status = new KafkaStatus();
-
-        Checkpoint async = context.checkpoint();
-        reconciler.reconcile(status, Clock.systemUTC()).onComplete(context.failing(i -> context.verify(() -> {
-
-            // Check kafka version is unset, KafkaReconciler treats null as use previous
-            assertThat(status.getKafkaVersion(), is(nullValue()));
-
-            async.flag();
-        })));
+        assertThrows(CompletionException.class, () -> reconciler.reconcile(status, Clock.systemUTC()).toCompletableFuture().join());
+        // Check kafka version is unset, KafkaReconciler treats null as use previous
+        assertThat(status.getKafkaVersion(), is(nullValue()));
     }
 
     @Test
-    public void testKafkaReconcilerStatusCustomKafkaVersion(VertxTestContext context) {
+    public void testKafkaReconcilerStatusCustomKafkaVersion() {
         Kafka kafka = new KafkaBuilder(KAFKA)
                 .editOrNewSpec()
                     .editOrNewKafka()
@@ -264,18 +225,13 @@ public class KafkaReconcilerStatusTest {
 
         KafkaStatus status = new KafkaStatus();
 
-        Checkpoint async = context.checkpoint();
-        reconciler.reconcile(status, Clock.systemUTC())
-            .onComplete(context.succeeding(v -> context.verify(() -> {
-                // Check kafka version
-                assertThat(status.getKafkaVersion(), is(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION));
-
-                async.flag();
-            })));
+        reconciler.reconcile(status, Clock.systemUTC()).toCompletableFuture().join();
+        // Check kafka version
+        assertThat(status.getKafkaVersion(), is(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION));
     }
 
     @Test
-    public void testKafkaReconcilerStatusWithSpecCheckerWarnings(VertxTestContext context) {
+    public void testKafkaReconcilerStatusWithSpecCheckerWarnings() {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
         // Run the test
@@ -287,23 +243,17 @@ public class KafkaReconcilerStatusTest {
 
         KafkaStatus status = new KafkaStatus();
 
-        Checkpoint async = context.checkpoint();
-        reconciler.reconcile(status, Clock.systemUTC()).onComplete(res -> context.verify(() -> {
-            assertThat(res.succeeded(), is(true));
-
-            // Check model warning conditions
-            assertThat(status.getConditions().size(), is(2));
-            assertThat(status.getConditions().get(0).getType(), is("Warning"));
-            assertThat(status.getConditions().get(0).getReason(), is("KafkaDefaultReplicationFactor"));
-            assertThat(status.getConditions().get(1).getType(), is("Warning"));
-            assertThat(status.getConditions().get(1).getReason(), is("KafkaMinInsyncReplicas"));
-
-            async.flag();
-        }));
+        reconciler.reconcile(status, Clock.systemUTC()).toCompletableFuture().join();
+        // Check model warning conditions
+        assertThat(status.getConditions().size(), is(2));
+        assertThat(status.getConditions().get(0).getType(), is("Warning"));
+        assertThat(status.getConditions().get(0).getReason(), is("KafkaDefaultReplicationFactor"));
+        assertThat(status.getConditions().get(1).getType(), is("Warning"));
+        assertThat(status.getConditions().get(1).getReason(), is("KafkaMinInsyncReplicas"));
     }
 
     @Test
-    public void testKafkaReconcilerStatusWithNodePorts(VertxTestContext context) {
+    public void testKafkaReconcilerStatusWithNodePorts() {
         Kafka kafka = new KafkaBuilder(KAFKA)
                 .editOrNewSpec()
                     .editOrNewKafka()
@@ -380,27 +330,21 @@ public class KafkaReconcilerStatusTest {
 
         KafkaStatus status = new KafkaStatus();
 
-        Checkpoint async = context.checkpoint();
-        reconciler.reconcile(status, Clock.systemUTC()).onComplete(res -> context.verify(() -> {
-            assertThat(res.succeeded(), is(true));
+        reconciler.reconcile(status, Clock.systemUTC()).toCompletableFuture().join();
+        // Check listener status
+        assertThat(status.getListeners().size(), is(1));
+        assertThat(status.getListeners().getFirst().getName(), is("external"));
+        assertThat(status.getListeners().getFirst().getBootstrapServers(), is("5.124.16.8:31234,50.35.18.119:31234,55.36.78.115:31234"));
+        assertThat(status.getListeners().getFirst().getAddresses().size(), is(3));
 
-            // Check listener status
-            assertThat(status.getListeners().size(), is(1));
-            assertThat(status.getListeners().get(0).getName(), is("external"));
-            assertThat(status.getListeners().get(0).getBootstrapServers(), is("5.124.16.8:31234,50.35.18.119:31234,55.36.78.115:31234"));
-            assertThat(status.getListeners().get(0).getAddresses().size(), is(3));
-
-            // Assert the listener addresses independently on their order
-            assertThat(status.getListeners().get(0).getAddresses().stream().anyMatch(a -> a.getPort() == 31234 && "5.124.16.8".equals(a.getHost())), is(true));
-            assertThat(status.getListeners().get(0).getAddresses().stream().anyMatch(a -> a.getPort() == 31234 && "55.36.78.115".equals(a.getHost())), is(true));
-            assertThat(status.getListeners().get(0).getAddresses().stream().anyMatch(a -> a.getPort() == 31234 && "50.35.18.119".equals(a.getHost())), is(true));
-
-            async.flag();
-        }));
+        // Assert the listener addresses independently on their order
+        assertThat(status.getListeners().getFirst().getAddresses().stream().anyMatch(a -> a.getPort() == 31234 && "5.124.16.8".equals(a.getHost())), is(true));
+        assertThat(status.getListeners().getFirst().getAddresses().stream().anyMatch(a -> a.getPort() == 31234 && "55.36.78.115".equals(a.getHost())), is(true));
+        assertThat(status.getListeners().getFirst().getAddresses().stream().anyMatch(a -> a.getPort() == 31234 && "50.35.18.119".equals(a.getHost())), is(true));
     }
 
     @Test
-    public void testKafkaReconcilerStatusWithNodePortsAndOverrides(VertxTestContext context) {
+    public void testKafkaReconcilerStatusWithNodePortsAndOverrides() {
         GenericKafkaListenerConfigurationBroker broker0 = new GenericKafkaListenerConfigurationBrokerBuilder()
                 .withBroker(0)
                 .withAdvertisedHost("my-address-0")
@@ -490,27 +434,21 @@ public class KafkaReconcilerStatusTest {
 
         KafkaStatus status = new KafkaStatus();
 
-        Checkpoint async = context.checkpoint();
-        reconciler.reconcile(status, Clock.systemUTC()).onComplete(res -> context.verify(() -> {
-            assertThat(res.succeeded(), is(true));
+        reconciler.reconcile(status, Clock.systemUTC()).toCompletableFuture().join();
+        // Check listener status
+        assertThat(status.getListeners().size(), is(1));
+        assertThat(status.getListeners().getFirst().getName(), is("external"));
+        assertThat(status.getListeners().getFirst().getBootstrapServers(), is("5.124.16.8:31234,my-address-0:31234,my-address-1:31234"));
+        assertThat(status.getListeners().getFirst().getAddresses().size(), is(3));
 
-            // Check listener status
-            assertThat(status.getListeners().size(), is(1));
-            assertThat(status.getListeners().get(0).getName(), is("external"));
-            assertThat(status.getListeners().get(0).getBootstrapServers(), is("5.124.16.8:31234,my-address-0:31234,my-address-1:31234"));
-            assertThat(status.getListeners().get(0).getAddresses().size(), is(3));
-
-            // Assert the listener addresses independently on their order
-            assertThat(status.getListeners().get(0).getAddresses().stream().anyMatch(a -> a.getPort() == 31234 && "my-address-0".equals(a.getHost())), is(true));
-            assertThat(status.getListeners().get(0).getAddresses().stream().anyMatch(a -> a.getPort() == 31234 && "my-address-1".equals(a.getHost())), is(true));
-            assertThat(status.getListeners().get(0).getAddresses().stream().anyMatch(a -> a.getPort() == 31234 && "5.124.16.8".equals(a.getHost())), is(true));
-
-            async.flag();
-        }));
+        // Assert the listener addresses independently on their order
+        assertThat(status.getListeners().getFirst().getAddresses().stream().anyMatch(a -> a.getPort() == 31234 && "my-address-0".equals(a.getHost())), is(true));
+        assertThat(status.getListeners().getFirst().getAddresses().stream().anyMatch(a -> a.getPort() == 31234 && "my-address-1".equals(a.getHost())), is(true));
+        assertThat(status.getListeners().getFirst().getAddresses().stream().anyMatch(a -> a.getPort() == 31234 && "5.124.16.8".equals(a.getHost())), is(true));
     }
 
     @Test
-    public void testKafkaReconcilerStatusWithNodePortsWithPreferredAddressType(VertxTestContext context) {
+    public void testKafkaReconcilerStatusWithNodePortsWithPreferredAddressType() {
         Kafka kafka = new KafkaBuilder(KAFKA)
                 .editOrNewSpec()
                     .editOrNewKafka()
@@ -590,27 +528,21 @@ public class KafkaReconcilerStatusTest {
 
         KafkaStatus status = new KafkaStatus();
 
-        Checkpoint async = context.checkpoint();
-        reconciler.reconcile(status, Clock.systemUTC()).onComplete(res -> context.verify(() -> {
-            assertThat(res.succeeded(), is(true));
+        reconciler.reconcile(status, Clock.systemUTC()).toCompletableFuture().join();
+        // Check listener status
+        assertThat(status.getListeners().size(), is(1));
+        assertThat(status.getListeners().getFirst().getName(), is("external"));
+        assertThat(status.getListeners().getFirst().getBootstrapServers(), is("node-0.my-kube:31234,node-1.my-kube:31234,node-3.my-kube:31234"));
+        assertThat(status.getListeners().getFirst().getAddresses().size(), is(3));
 
-            // Check listener status
-            assertThat(status.getListeners().size(), is(1));
-            assertThat(status.getListeners().get(0).getName(), is("external"));
-            assertThat(status.getListeners().get(0).getBootstrapServers(), is("node-0.my-kube:31234,node-1.my-kube:31234,node-3.my-kube:31234"));
-            assertThat(status.getListeners().get(0).getAddresses().size(), is(3));
-
-            // Assert the listener addresses independently on their order
-            assertThat(status.getListeners().get(0).getAddresses().stream().anyMatch(a -> a.getPort() == 31234 && "node-0.my-kube".equals(a.getHost())), is(true));
-            assertThat(status.getListeners().get(0).getAddresses().stream().anyMatch(a -> a.getPort() == 31234 && "node-1.my-kube".equals(a.getHost())), is(true));
-            assertThat(status.getListeners().get(0).getAddresses().stream().anyMatch(a -> a.getPort() == 31234 && "node-3.my-kube".equals(a.getHost())), is(true));
-
-            async.flag();
-        }));
+        // Assert the listener addresses independently on their order
+        assertThat(status.getListeners().getFirst().getAddresses().stream().anyMatch(a -> a.getPort() == 31234 && "node-0.my-kube".equals(a.getHost())), is(true));
+        assertThat(status.getListeners().getFirst().getAddresses().stream().anyMatch(a -> a.getPort() == 31234 && "node-1.my-kube".equals(a.getHost())), is(true));
+        assertThat(status.getListeners().getFirst().getAddresses().stream().anyMatch(a -> a.getPort() == 31234 && "node-3.my-kube".equals(a.getHost())), is(true));
     }
 
     @Test
-    public void testKafkaReconcilerStatusWithNodePortsOnSameNode(VertxTestContext context) {
+    public void testKafkaReconcilerStatusWithNodePortsOnSameNode() {
         Kafka kafka = new KafkaBuilder(KAFKA)
                 .editOrNewSpec()
                     .editOrNewKafka()
@@ -687,24 +619,18 @@ public class KafkaReconcilerStatusTest {
 
         KafkaStatus status = new KafkaStatus();
 
-        Checkpoint async = context.checkpoint();
-        reconciler.reconcile(status, Clock.systemUTC()).onComplete(res -> context.verify(() -> {
-            assertThat(res.succeeded(), is(true));
-
-            // Check listener status
-            assertThat(status.getListeners().size(), is(1));
-            assertThat(status.getListeners().get(0).getName(), is("external"));
-            assertThat(status.getListeners().get(0).getBootstrapServers(), is("50.35.18.119:31234"));
-            assertThat(status.getListeners().get(0).getAddresses().size(), is(1));
-            assertThat(status.getListeners().get(0).getAddresses().get(0).getPort(), is(31234));
-            assertThat(status.getListeners().get(0).getAddresses().get(0).getHost(), is("50.35.18.119"));
-
-            async.flag();
-        }));
+        reconciler.reconcile(status, Clock.systemUTC()).toCompletableFuture().join();
+        // Check listener status
+        assertThat(status.getListeners().size(), is(1));
+        assertThat(status.getListeners().get(0).getName(), is("external"));
+        assertThat(status.getListeners().get(0).getBootstrapServers(), is("50.35.18.119:31234"));
+        assertThat(status.getListeners().get(0).getAddresses().size(), is(1));
+        assertThat(status.getListeners().get(0).getAddresses().get(0).getPort(), is(31234));
+        assertThat(status.getListeners().get(0).getAddresses().get(0).getHost(), is("50.35.18.119"));
     }
 
     @Test
-    public void testKafkaReconcilerStatusWithNodePortsAndMissingNode(VertxTestContext context) {
+    public void testKafkaReconcilerStatusWithNodePortsAndMissingNode() {
         Kafka kafka = new KafkaBuilder(KAFKA)
                 .editOrNewSpec()
                     .editOrNewKafka()
@@ -778,22 +704,16 @@ public class KafkaReconcilerStatusTest {
 
         KafkaStatus status = new KafkaStatus();
 
-        Checkpoint async = context.checkpoint();
-        reconciler.reconcile(status, Clock.systemUTC()).onComplete(res -> context.verify(() -> {
-            assertThat(res.succeeded(), is(true));
-
-            // Check listener status
-            assertThat(status.getListeners().size(), is(1));
-            assertThat(status.getListeners().get(0).getName(), is("external"));
-            assertThat(status.getListeners().get(0).getBootstrapServers(), is(nullValue()));
-            assertThat(status.getListeners().get(0).getAddresses(), is(List.of()));
-
-            async.flag();
-        }));
+        reconciler.reconcile(status, Clock.systemUTC()).toCompletableFuture().join();
+        // Check listener status — node not found, so addresses are empty (no failure)
+        assertThat(status.getListeners().size(), is(1));
+        assertThat(status.getListeners().getFirst().getName(), is("external"));
+        assertThat(status.getListeners().getFirst().getBootstrapServers(), is(nullValue()));
+        assertThat(status.getListeners().getFirst().getAddresses(), is(List.of()));
     }
 
     @Test
-    public void testKafkaReconcilerStatusWithPodMissingNodeName(VertxTestContext context) {
+    public void testKafkaReconcilerStatusWithPodMissingNodeName() {
         Kafka kafka = new KafkaBuilder(KAFKA)
                 .editOrNewSpec()
                     .editOrNewKafka()
@@ -857,14 +777,9 @@ public class KafkaReconcilerStatusTest {
                 List.of(KAFKA_NODE_POOL));
 
         KafkaStatus status = new KafkaStatus();
-
-        Checkpoint async = context.checkpoint();
-        reconciler.reconcile(status, Clock.systemUTC()).onComplete(res -> context.verify(() -> {
-            assertThat(res.succeeded(), is(false));
-            assertThat(res.cause().getMessage(), is(containsString("has no node name specified")));
-
-            async.flag();
-        }));
+        CompletionException ex = assertThrows(CompletionException.class,
+                () -> reconciler.reconcile(status, Clock.systemUTC()).toCompletableFuture().join());
+        assertThat(ex.getCause().getMessage(), is(containsString("has no node name specified")));
     }
 
     private static void mockKubernetesWorkerNodes(NodeOperator mockNodeOps)    {
@@ -927,7 +842,7 @@ public class KafkaReconcilerStatusTest {
         private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(MockKafkaReconcilerStatusTasks.class.getName());
 
         public MockKafkaReconcilerStatusTasks(Reconciliation reconciliation, ResourceOperatorSupplier supplier, Kafka kafkaCr, List<KafkaNodePool> kafkaNodePools) {
-            super(reconciliation, kafkaCr, null, createKafkaCluster(reconciliation, supplier, kafkaCr, kafkaNodePools), CLUSTER_CA, CLIENTS_CA, CO_CONFIG, supplier, PFA, vertx, Set.of());
+            super(reconciliation, kafkaCr, null, createKafkaCluster(reconciliation, supplier, kafkaCr, kafkaNodePools), CLUSTER_CA, CLIENTS_CA, CO_CONFIG, supplier, PFA, Set.of());
         }
 
         private static KafkaCluster createKafkaCluster(Reconciliation reconciliation, ResourceOperatorSupplier supplier, Kafka kafkaCr, List<KafkaNodePool> kafkaNodePools)   {
@@ -943,32 +858,39 @@ public class KafkaReconcilerStatusTest {
         }
 
         @Override
-        public Future<Void> reconcile(KafkaStatus kafkaStatus, Clock clock)    {
+        public CompletionStage<Void> reconcile(KafkaStatus kafkaStatus, Clock clock)    {
             return modelWarnings(kafkaStatus)
-                    .compose(i -> initClusterOperatorIdentity())
-                    .compose(i -> listeners())
-                    .compose(i -> clusterId(kafkaStatus))
-                    .compose(i -> nodePortExternalListenerStatus())
-                    .compose(i -> updateKafkaStatus(kafkaStatus))
-                    .recover(error -> {
-                        LOGGER.errorCr(reconciliation, "Reconciliation failed", error);
-                        return Future.failedFuture(error);
+                    .thenCompose(i -> initClusterOperatorIdentity())
+                    .thenCompose(i -> listeners())
+                    .thenCompose(i -> clusterId(kafkaStatus))
+                    .thenCompose(i -> nodePortExternalListenerStatus())
+                    .thenCompose(i -> updateKafkaStatus(kafkaStatus))
+                    .whenComplete((r, error) -> {
+                        if (error != null) {
+                            LOGGER.errorCr(reconciliation, "Reconciliation failed", error);
+                        }
                     });
         }
 
         @Override
-        protected Future<Void> listeners()  {
+        protected CompletionStage<Void> listeners()  {
             listenerReconciliationResults = new KafkaListenersReconciler.ReconciliationResult();
             listenerReconciliationResults.bootstrapNodePorts.put("external-9094", 31234);
             listenerReconciliationResults.listenerStatuses.add(new ListenerStatusBuilder().withName("external").build());
 
-            return Future.succeededFuture();
+            return CompletableFuture.completedFuture(null);
         }
 
         @Override
-        protected Future<Void> initClusterOperatorIdentity() {
+        protected CompletionStage<Void> initClusterOperatorIdentity() {
             coIdentity = new Identity(null, null);
-            return Future.succeededFuture();
+            return CompletableFuture.completedFuture(null);
+        }
+
+        @Override
+        protected CompletionStage<Void> clusterId(KafkaStatus kafkaStatus) {
+            kafkaStatus.setClusterId("CLUSTERID");
+            return CompletableFuture.completedFuture(null);
         }
     }
 
@@ -976,7 +898,7 @@ public class KafkaReconcilerStatusTest {
         private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(MockKafkaReconcilerStatusTasks.class.getName());
 
         public MockKafkaReconcilerFailsWithVersionUpdate(Reconciliation reconciliation, ResourceOperatorSupplier supplier, Kafka kafkaCr, List<KafkaNodePool> kafkaNodePools) {
-            super(reconciliation, kafkaCr, kafkaNodePools, createKafkaCluster(reconciliation, supplier, kafkaCr, kafkaNodePools), CLUSTER_CA, CLIENTS_CA, CO_CONFIG, supplier, PFA, vertx, Set.of());
+            super(reconciliation, kafkaCr, kafkaNodePools, createKafkaCluster(reconciliation, supplier, kafkaCr, kafkaNodePools), CLUSTER_CA, CLIENTS_CA, CO_CONFIG, supplier, PFA, Set.of());
         }
 
         private static KafkaCluster createKafkaCluster(Reconciliation reconciliation, ResourceOperatorSupplier supplier, Kafka kafkaCr, List<KafkaNodePool> kafkaNodePools)   {
@@ -992,13 +914,14 @@ public class KafkaReconcilerStatusTest {
         }
 
         @Override
-        public Future<Void> reconcile(KafkaStatus kafkaStatus, Clock clock)    {
+        public CompletionStage<Void> reconcile(KafkaStatus kafkaStatus, Clock clock)    {
             return modelWarnings(kafkaStatus)
-                    .compose(i -> Future.failedFuture("Reconciliation step failed"))
-                    .compose(i -> updateKafkaStatus(kafkaStatus))
-                    .recover(error -> {
-                        LOGGER.errorCr(reconciliation, "Reconciliation failed", error);
-                        return Future.failedFuture(error);
+                    .thenCompose(i -> CompletableFuture.failedFuture(new RuntimeException("Reconciliation step failed")))
+                    .thenCompose(i -> updateKafkaStatus(kafkaStatus))
+                    .whenComplete((v, error) -> {
+                        if (error != null) {
+                            LOGGER.errorCr(reconciliation, "Reconciliation failed", error);
+                        }
                     });
         }
     }

@@ -44,7 +44,6 @@ import io.strimzi.operator.cluster.model.NodeRef;
 import io.strimzi.operator.cluster.model.PodSetUtils;
 import io.strimzi.operator.cluster.model.RestartReason;
 import io.strimzi.operator.cluster.model.RestartReasons;
-import io.strimzi.operator.cluster.operator.VertxUtil;
 import io.strimzi.operator.cluster.operator.resource.ConcurrentDeletionException;
 import io.strimzi.operator.cluster.operator.resource.KafkaAgentClientProvider;
 import io.strimzi.operator.cluster.operator.resource.KafkaRoller;
@@ -80,9 +79,6 @@ import io.strimzi.operator.common.model.StatusDiff;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.kubernetes.CrdOperator;
 import io.strimzi.operator.common.operator.resource.kubernetes.SecretOperator;
-import io.vertx.core.Future;
-import io.vertx.core.Promise;
-import io.vertx.core.Vertx;
 import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.common.KafkaException;
 
@@ -97,9 +93,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -134,7 +132,7 @@ public class KafkaReconciler {
     private final Ca clientsCa;
 
     // Tools for operating and managing various resources
-    private final Vertx vertx;
+    private final Executor asyncExecutor;
     private final StrimziPodSetOperator strimziPodSetOperator;
     private final SecretOperator secretOperator;
     private final ServiceAccountOperator serviceAccountOperator;
@@ -182,7 +180,6 @@ public class KafkaReconciler {
      * @param config                    Cluster Operator Configuration
      * @param supplier                  Supplier with Kubernetes Resource Operators
      * @param pfa                       PlatformFeaturesAvailability describing the environment we run in
-     * @param vertx                     Vert.x instance
      * @param scalingDownBlockedNodes   Set of node IDs that are blocked from scaling down and should be cordoned
      */
     public KafkaReconciler(
@@ -195,11 +192,9 @@ public class KafkaReconciler {
             ClusterOperatorConfig config,
             ResourceOperatorSupplier supplier,
             PlatformFeaturesAvailability pfa,
-            Vertx vertx,
             Set<Integer> scalingDownBlockedNodes
     ) {
         this.reconciliation = reconciliation;
-        this.vertx = vertx;
         this.operationTimeoutMs = config.getOperationTimeoutMs();
         this.kafkaNodePoolCrs = nodePools;
         this.kafka = kafka;
@@ -216,6 +211,7 @@ public class KafkaReconciler {
         this.isPodDisruptionBudgetGeneration = config.isPodDisruptionBudgetGeneration();
         this.kafkaAutoRebalanceStatus = kafkaCr.getStatus() != null ? kafkaCr.getStatus().getAutoRebalance() : null;
 
+        this.asyncExecutor = supplier.asyncExecutor;
         this.strimziPodSetOperator = supplier.strimziPodSetOperator;
         this.secretOperator = supplier.secretOperations;
         this.serviceAccountOperator = supplier.serviceAccountOperations;
@@ -250,46 +246,46 @@ public class KafkaReconciler {
      * @param clock         The clock for supplying the reconciler with the time instant of each reconciliation cycle.
      *                      That time is used for checking maintenance windows
      *
-     * @return              Future which completes when the reconciliation completes
+     * @return              CompletionStage which completes when the reconciliation completes
      */
-    public Future<Void> reconcile(KafkaStatus kafkaStatus, Clock clock)    {
+    public CompletionStage<Void> reconcile(KafkaStatus kafkaStatus, Clock clock)    {
         return modelWarnings(kafkaStatus)
-                .compose(i -> clusterOperatorServiceAccount())
-                .compose(i -> initClusterOperatorIdentity())
-                .compose(i -> manualPodCleaning())
-                .compose(i -> networkPolicy())
-                .compose(i -> updateKafkaAutoRebalanceStatus(kafkaStatus))
-                .compose(i -> manualRollingUpdate())
-                .compose(i -> pvcs(kafkaStatus))
-                .compose(i -> serviceAccount())
-                .compose(i -> initClusterRoleBinding())
-                .compose(i -> kafkaRole())
-                .compose(i -> kafkaRoleBinding())
-                .compose(i -> scaleDown())
-                .compose(i -> updateNodePoolStatuses(kafkaStatus))
-                .compose(i -> listeners())
-                .compose(i -> certificateSecrets(clock))
-                .compose(i -> brokerConfigurationConfigMaps())
-                .compose(i -> jmxSecret())
-                .compose(i -> podDisruptionBudget())
-                .compose(i -> podSet())
-                .compose(podSetDiffs -> rollingUpdate(podSetDiffs)) // We pass the PodSet reconciliation result this way to avoid storing it in the instance
-                .compose(i -> podsReady())
-                .compose(i -> serviceEndpointsReady())
-                .compose(i -> headlessServiceEndpointsReady())
-                .compose(i -> clusterId(kafkaStatus))
-                .compose(i -> defaultKafkaQuotas())
-                .compose(i -> nodeUnregistration())
-                .compose(i -> metadataVersion(kafkaStatus))
-                .compose(i -> deletePersistentClaims())
-                .compose(i -> sharedKafkaConfigurationCleanup())
-                .compose(i -> deleteOldCertificateResources())
+                .thenCompose(i -> clusterOperatorServiceAccount())
+                .thenCompose(i -> initClusterOperatorIdentity())
+                .thenCompose(i -> manualPodCleaning())
+                .thenCompose(i -> networkPolicy())
+                .thenCompose(i -> updateKafkaAutoRebalanceStatus(kafkaStatus))
+                .thenCompose(i -> manualRollingUpdate())
+                .thenCompose(i -> pvcs(kafkaStatus))
+                .thenCompose(i -> serviceAccount())
+                .thenCompose(i -> initClusterRoleBinding())
+                .thenCompose(i -> kafkaRole())
+                .thenCompose(i -> kafkaRoleBinding())
+                .thenCompose(i -> scaleDown())
+                .thenCompose(i -> updateNodePoolStatuses(kafkaStatus))
+                .thenCompose(i -> listeners())
+                .thenCompose(i -> certificateSecrets(clock))
+                .thenCompose(i -> brokerConfigurationConfigMaps())
+                .thenCompose(i -> jmxSecret())
+                .thenCompose(i -> podDisruptionBudget())
+                .thenCompose(i -> podSet())
+                .thenCompose(podSetDiffs -> rollingUpdate(podSetDiffs)) // We pass the PodSet reconciliation result this way to avoid storing it in the instance
+                .thenCompose(i -> podsReady())
+                .thenCompose(i -> serviceEndpointsReady())
+                .thenCompose(i -> headlessServiceEndpointsReady())
+                .thenCompose(i -> clusterId(kafkaStatus))
+                .thenCompose(i -> defaultKafkaQuotas())
+                .thenCompose(i -> nodeUnregistration())
+                .thenCompose(i -> metadataVersion(kafkaStatus))
+                .thenCompose(i -> deletePersistentClaims())
+                .thenCompose(i -> sharedKafkaConfigurationCleanup())
+                .thenCompose(i -> deleteOldCertificateResources())
                 // This has to run after all possible rolling updates which might move the pods to different nodes
-                .compose(i -> nodePortExternalListenerStatus())
-                .compose(i -> updateKafkaStatus(kafkaStatus));
+                .thenCompose(i -> nodePortExternalListenerStatus())
+                .thenCompose(i -> updateKafkaStatus(kafkaStatus));
     }
 
-    private Future<Void> updateKafkaAutoRebalanceStatus(KafkaStatus kafkaStatus) {
+    private CompletionStage<Void> updateKafkaAutoRebalanceStatus(KafkaStatus kafkaStatus) {
         // gather all the desired brokers' ids across the entire cluster accounting all node pools
         Set<Integer> desiredBrokers = kafka.nodes().stream().filter(NodeRef::broker).map(NodeRef::nodeId).collect(Collectors.toSet());
 
@@ -302,7 +298,7 @@ public class KafkaReconciler {
 
         KafkaRebalanceUtils.updateKafkaAutoRebalanceStatus(kafkaStatus, kafkaAutoRebalanceStatus, scaledUpBrokerNodes);
 
-        return Future.succeededFuture();
+        return CompletableFuture.completedFuture(null);
     }
 
     /**
@@ -312,12 +308,12 @@ public class KafkaReconciler {
      *
      * @return              Completes when the warnings are added to the status object
      */
-    protected Future<Void> modelWarnings(KafkaStatus kafkaStatus) {
+    protected CompletionStage<Void> modelWarnings(KafkaStatus kafkaStatus) {
         List<Condition> conditions = kafka.getWarningConditions();
 
         kafkaStatus.addConditions(conditions);
 
-        return Future.succeededFuture();
+        return CompletableFuture.completedFuture(null);
     }
 
     /**
@@ -325,10 +321,12 @@ public class KafkaReconciler {
      *
      * @return  Completes when the Cluster Operator identity have been created and stored in a record
      */
-    protected Future<Void> initClusterOperatorIdentity() {
-        return VertxUtil.toFuture(ReconcilerUtils.coIdentity(reconciliation, secretOperator, kafka.securityContext()))
-                .onSuccess(coIdentity -> this.coIdentity = coIdentity)
-                .mapEmpty();
+    protected CompletionStage<Void> initClusterOperatorIdentity() {
+        return ReconcilerUtils.coIdentity(reconciliation, secretOperator, kafka.securityContext())
+                .thenApply(coIdentity -> {
+                    this.coIdentity = coIdentity;
+                    return null;
+                });
     }
 
     /**
@@ -336,14 +334,14 @@ public class KafkaReconciler {
      *
      * @return  Completes when the manual pod cleaning is done
      */
-    protected Future<Void> manualPodCleaning() {
-        return VertxUtil.toFuture(new ManualPodCleaner(
+    protected CompletionStage<Void> manualPodCleaning() {
+        return new ManualPodCleaner(
                 reconciliation,
                 kafka.getSelectorLabels(),
                 strimziPodSetOperator,
                 podOperator,
                 pvcOperator
-        ).maybeManualPodCleaning());
+        ).maybeManualPodCleaning();
     }
 
     /**
@@ -351,12 +349,12 @@ public class KafkaReconciler {
      *
      * @return  Completes when the network policy is successfully created or updated
      */
-    protected Future<Void> networkPolicy() {
+    protected CompletionStage<Void> networkPolicy() {
         if (isNetworkPolicyGeneration) {
-            return VertxUtil.toFuture(networkPolicyOperator.reconcile(reconciliation, reconciliation.namespace(), KafkaResources.kafkaNetworkPolicyName(reconciliation.name()), kafka.generateNetworkPolicy(operatorNamespace, operatorNamespaceLabels)))
-                    .mapEmpty();
+            return networkPolicyOperator.reconcile(reconciliation, reconciliation.namespace(), KafkaResources.kafkaNetworkPolicyName(reconciliation.name()), kafka.generateNetworkPolicy(operatorNamespace, operatorNamespaceLabels))
+                    .thenApply(ignored -> null);
         } else {
-            return Future.succeededFuture();
+            return CompletableFuture.completedFuture(null);
         }
     }
 
@@ -366,44 +364,45 @@ public class KafkaReconciler {
      * the selected pods. If the annotation is present on both StrimziPodSet and one or more pods, only one rolling
      * update of all pods occurs.
      *
-     * @return  Future with the result of the rolling update
+     * @return  CompletionStage with the result of the rolling update
      */
-    protected Future<Void> manualRollingUpdate() {
-        Future<List<NodeRef>> podsToRollThroughPodSetAnno = podsForManualRollingUpdateDiscoveredThroughPodSetAnnotation();
-        Future<List<NodeRef>> podsToRollThroughPodAnno = podsForManualRollingUpdateDiscoveredThroughPodAnnotations();
+    protected CompletionStage<Void> manualRollingUpdate() {
+        CompletionStage<List<NodeRef>> podsToRollThroughPodSetAnno = podsForManualRollingUpdateDiscoveredThroughPodSetAnnotation();
+        CompletionStage<List<NodeRef>> podsToRollThroughPodAnno = podsForManualRollingUpdateDiscoveredThroughPodAnnotations();
+        return podsToRollThroughPodSetAnno.thenCompose(podSetNodes -> podsToRollThroughPodAnno.thenCompose(podNodes -> {
+            // We merge the lists into set to avoid duplicates
+            Set<NodeRef> nodes = new LinkedHashSet<>();
+            nodes.addAll(podSetNodes);
+            nodes.addAll(podNodes);
 
-        return Future
-                .join(podsToRollThroughPodSetAnno, podsToRollThroughPodAnno)
-                .compose(result -> {
-                    // We merge the lists into set to avoid duplicates
-                    Set<NodeRef> nodes = new LinkedHashSet<>();
-                    nodes.addAll(result.resultAt(0));
-                    nodes.addAll(result.resultAt(1));
+            if (!nodes.isEmpty())   {
+                return maybeRollKafka(
+                        nodes,
+                        pod -> {
+                            if (pod == null) {
+                                throw new ConcurrentDeletionException("Unexpectedly pod no longer exists during roll of StrimziPodSet.");
+                            }
 
-                    if (!nodes.isEmpty())   {
-                        return maybeRollKafka(
-                                nodes,
-                                pod -> {
-                                    if (pod == null) {
-                                        throw new ConcurrentDeletionException("Unexpectedly pod no longer exists during roll of StrimziPodSet.");
-                                    }
+                            LOGGER.debugCr(reconciliation, "Rolling Kafka pod {} due to manual rolling update annotation", pod.getMetadata().getName());
 
-                                    LOGGER.debugCr(reconciliation, "Rolling Kafka pod {} due to manual rolling update annotation", pod.getMetadata().getName());
-
-                                    return RestartReasons.of(RestartReason.MANUAL_ROLLING_UPDATE);
-                                },
-                                // Pass empty advertised hostnames and ports for the nodes
-                                nodes.stream().collect(Collectors.toMap(NodeRef::nodeId, node -> Map.of())),
-                                nodes.stream().collect(Collectors.toMap(NodeRef::nodeId, node -> Map.of())),
-                                false
-                        ).recover(error -> {
-                            LOGGER.warnCr(reconciliation, "Manual rolling update failed (reconciliation will be continued)", error);
-                            return Future.succeededFuture();
-                        });
-                    } else {
-                        return Future.succeededFuture();
+                            return RestartReasons.of(RestartReason.MANUAL_ROLLING_UPDATE);
+                        },
+                        // Pass empty advertised hostnames and ports for the nodes
+                        nodes.stream().collect(Collectors.toMap(NodeRef::nodeId, node -> Map.of())),
+                        nodes.stream().collect(Collectors.toMap(NodeRef::nodeId, node -> Map.of())),
+                        false
+                ).handle((r, error) -> {
+                    if (error == null) {
+                        return r;
                     }
+
+                    LOGGER.warnCr(reconciliation, "Manual rolling update failed (reconciliation will be continued)", error);
+                    return null;
                 });
+            } else {
+                return CompletableFuture.completedFuture(null);
+            }
+        }));
     }
 
     /**
@@ -412,9 +411,9 @@ public class KafkaReconciler {
      *
      * @return  List with node references to nodes which should be rolled
      */
-    private Future<List<NodeRef>> podsForManualRollingUpdateDiscoveredThroughPodSetAnnotation()   {
-        return VertxUtil.toFuture(strimziPodSetOperator.listAsync(reconciliation.namespace(), kafka.getSelectorLabels()))
-                .map(podSets -> {
+    private CompletionStage<List<NodeRef>> podsForManualRollingUpdateDiscoveredThroughPodSetAnnotation()   {
+        return strimziPodSetOperator.listAsync(reconciliation.namespace(), kafka.getSelectorLabels())
+                .thenApply(podSets -> {
                     List<NodeRef> nodes = new ArrayList<>();
 
                     for (StrimziPodSet podSet : podSets) {
@@ -437,9 +436,9 @@ public class KafkaReconciler {
      *
      * @return  List with node references to nodes which should be rolled
      */
-    private Future<List<NodeRef>> podsForManualRollingUpdateDiscoveredThroughPodAnnotations()   {
-        return VertxUtil.toFuture(podOperator.listAsync(reconciliation.namespace(), kafka.getSelectorLabels()))
-                .map(pods -> {
+    private CompletionStage<List<NodeRef>> podsForManualRollingUpdateDiscoveredThroughPodAnnotations()   {
+        return podOperator.listAsync(reconciliation.namespace(), kafka.getSelectorLabels())
+                .thenApply(pods -> {
                     List<NodeRef> nodes = new ArrayList<>();
 
                     for (Pod pod : pods) {
@@ -465,16 +464,16 @@ public class KafkaReconciler {
      * @param kafkaAdvertisedPorts      Map with advertised ports required to generate the per-broker configuration
      * @param allowReconfiguration      Defines whether the rolling update should also attempt to do dynamic reconfiguration or not
      *
-     * @return  Future which completes when the rolling is complete
+     * @return  CompletionStage which completes when the rolling is complete
      */
-    protected Future<Void> maybeRollKafka(
+    protected CompletionStage<Void> maybeRollKafka(
             Set<NodeRef> nodes,
             Function<Pod, RestartReasons> podNeedsRestart,
             Map<Integer, Map<String, String>> kafkaAdvertisedHostnames,
             Map<Integer, Map<String, String>> kafkaAdvertisedPorts,
             boolean allowReconfiguration
     ) {
-        return Future.fromCompletionStage(new KafkaRoller(
+        return new KafkaRoller(
                     reconciliation,
                     podOperator,
                     1_000,
@@ -488,7 +487,7 @@ public class KafkaReconciler {
                     kafka.getKafkaVersion(),
                     allowReconfiguration,
                     eventsPublisher
-            ).rollingRestart(podNeedsRestart));
+            ).rollingRestart(podNeedsRestart);
     }
 
     /**
@@ -499,10 +498,10 @@ public class KafkaReconciler {
      *
      * @return  Completes when the PVCs were successfully created or updated
      */
-    protected Future<Void> pvcs(KafkaStatus kafkaStatus) {
+    protected CompletionStage<Void> pvcs(KafkaStatus kafkaStatus) {
         List<PersistentVolumeClaim> pvcs = kafka.generatePersistentVolumeClaims();
 
-        return VertxUtil.toFuture(new PvcReconciler(reconciliation, pvcOperator, storageClassOperator)
+        return new PvcReconciler(reconciliation, pvcOperator, storageClassOperator)
                 .resizeAndReconcilePvcs(kafkaStatus, pvcs)
                 .thenCompose(podIdsToRestart -> {
                     for (Integer podId : podIdsToRestart) {
@@ -517,7 +516,7 @@ public class KafkaReconciler {
                     }
 
                     return CompletableFuture.completedFuture(null);
-                }));
+                });
     }
 
     /**
@@ -525,10 +524,10 @@ public class KafkaReconciler {
      *
      * @return  Completes when the service account was successfully created or updated
      */
-    protected Future<Void> serviceAccount() {
-        return VertxUtil.toFuture(serviceAccountOperator
-                .reconcile(reconciliation, reconciliation.namespace(), KafkaResources.kafkaComponentName(reconciliation.name()), kafka.generateServiceAccount()))
-                .mapEmpty();
+    protected CompletionStage<Void> serviceAccount() {
+        return serviceAccountOperator
+                .reconcile(reconciliation, reconciliation.namespace(), KafkaResources.kafkaComponentName(reconciliation.name()), kafka.generateServiceAccount())
+                .thenApply(i -> null);
     }
 
     /**
@@ -537,10 +536,10 @@ public class KafkaReconciler {
      *
      * @return  Completes when the service account was successfully created or updated
      */
-    protected Future<Void> clusterOperatorServiceAccount() {
-        return VertxUtil.toFuture(serviceAccountOperator
-                .reconcile(reconciliation, reconciliation.namespace(), KafkaResources.clusterOperatorServiceAccount(reconciliation.name()), kafka.generateClusterOperatorServiceAccount()))
-                .mapEmpty();
+    protected CompletionStage<Void> clusterOperatorServiceAccount() {
+        return serviceAccountOperator
+                .reconcile(reconciliation, reconciliation.namespace(), KafkaResources.clusterOperatorServiceAccount(reconciliation.name()), kafka.generateClusterOperatorServiceAccount())
+                .thenApply(i -> null);
     }
 
     /**
@@ -550,10 +549,10 @@ public class KafkaReconciler {
      *
      * @return  Completes when the Cluster Role Binding was successfully created or updated
      */
-    protected Future<Void> initClusterRoleBinding() {
+    protected CompletionStage<Void> initClusterRoleBinding() {
         ClusterRoleBinding desired = kafka.generateClusterRoleBinding(reconciliation.namespace());
 
-        return VertxUtil.toFuture(ReconcilerUtils.withIgnoreRbacError(
+        return ReconcilerUtils.withIgnoreRbacError(
                 reconciliation,
                 clusterRoleBindingOperator
                         .reconcile(
@@ -562,7 +561,7 @@ public class KafkaReconciler {
                                 desired
                         ),
                 desired
-        )).mapEmpty();
+        ).thenApply(i -> null);
     }
 
     /**
@@ -572,14 +571,14 @@ public class KafkaReconciler {
      *
      * @return  Completes when the Role was successfully created or updated
      */
-    protected Future<Void> kafkaRole() {
-        return VertxUtil.toFuture(roleOperator
+    protected CompletionStage<Void> kafkaRole() {
+        return roleOperator
                 .reconcile(
                         reconciliation,
                         reconciliation.namespace(),
                         kafka.getComponentName(),
                         kafka.generateRole()
-                )).mapEmpty();
+                ).thenApply(i -> null);
     }
 
     /**
@@ -588,22 +587,22 @@ public class KafkaReconciler {
      *
      * @return  Completes when the Role Binding was successfully created or updated
      */
-    protected Future<Void> kafkaRoleBinding() {
-        return VertxUtil.toFuture(roleBindingOperator
+    protected CompletionStage<Void> kafkaRoleBinding() {
+        return roleBindingOperator
                 .reconcile(
                         reconciliation,
                         reconciliation.namespace(),
                         KafkaResources.kafkaRoleBindingName(reconciliation.name()),
-                        kafka.generateRoleBindingForRole()))
-                .mapEmpty();
+                        kafka.generateRoleBindingForRole())
+                .thenApply(i -> null);
     }
 
     /**
      * Scales down the Kafka cluster if needed. Kafka scale-down is done in one go.
      *
-     * @return  Future which completes when the scale-down is finished
+     * @return  CompletionStage which completes when the scale-down is finished
      */
-    protected Future<Void> scaleDown() {
+    protected CompletionStage<Void> scaleDown() {
         LOGGER.debugCr(reconciliation, "Checking if Kafka scale-down is needed");
 
         Set<String> desiredPodNames = new HashSet<>();
@@ -611,12 +610,12 @@ public class KafkaReconciler {
             desiredPodNames.add(node.podName());
         }
 
-        return VertxUtil.toFuture(strimziPodSetOperator.listAsync(reconciliation.namespace(), kafka.getSelectorLabels()))
-                .compose(podSets -> {
+        return strimziPodSetOperator.listAsync(reconciliation.namespace(), kafka.getSelectorLabels())
+                .thenCompose(podSets -> {
                     if (podSets == null) {
-                        return Future.succeededFuture();
+                        return CompletableFuture.completedFuture(null);
                     } else {
-                        List<Future<Void>> ops = new ArrayList<>();
+                        List<CompletableFuture<Void>> ops = new ArrayList<>();
 
                         for (StrimziPodSet podSet : podSets) {
                             List<Map<String, Object>> desiredPods = podSet.getSpec().getPods().stream()
@@ -631,15 +630,13 @@ public class KafkaReconciler {
 
                             if (podSet.getSpec().getPods().size() > desiredPods.size())    {
                                 LOGGER.infoCr(reconciliation, "Scaling down Kafka pod set {} from {} to {} replicas", podSet.getMetadata().getName(), podSet.getSpec().getPods().size(), desiredPods.size());
-                                ops.add(
-                                        VertxUtil.toFuture(strimziPodSetOperator
-                                                .reconcile(reconciliation, reconciliation.namespace(), podSet.getMetadata().getName(), scaledDownPodSet))
-                                                .map((Void) null)
-                                );
+                                ops.add(strimziPodSetOperator
+                                                .reconcile(reconciliation, reconciliation.namespace(), podSet.getMetadata().getName(), scaledDownPodSet)
+                                                .toCompletableFuture().thenApply(i -> null));
                             }
                         }
 
-                        return Future.join(ops).mapEmpty();
+                        return CompletableFuture.allOf(ops.toArray(new CompletableFuture[0]));
                     }
                 });
     }
@@ -668,12 +665,15 @@ public class KafkaReconciler {
     /**
      * Reconciles listeners of this Kafka cluster
      *
-     * @return  Future which completes when listeners are reconciled
+     * @return  CompletionStage which completes when listeners are reconciled
      */
-    protected Future<Void> listeners()    {
-        return VertxUtil.toFuture(listenerReconciler()
+    protected CompletionStage<Void> listeners()    {
+        return listenerReconciler()
                 .reconcile()
-                .thenAccept(result -> listenerReconciliationResults = result));
+                .thenApply(result -> {
+                    listenerReconciliationResults = result;
+                    return null;
+                });
     }
 
     /**
@@ -683,13 +683,13 @@ public class KafkaReconciler {
      *
      * @param metricsAndLogging     Metrics and Logging configuration
      *
-     * @return  Future which completes when the Kafka Configuration is prepared
+     * @return  CompletionStage which completes when the Kafka Configuration is prepared
      */
-    protected Future<Void> perBrokerKafkaConfiguration(MetricsAndLogging metricsAndLogging) {
-        return VertxUtil.toFuture(configMapOperator.listAsync(reconciliation.namespace(), kafka.getSelectorLabels()))
-                .compose(existingConfigMaps -> {
+    protected CompletionStage<Void> perBrokerKafkaConfiguration(MetricsAndLogging metricsAndLogging) {
+        return configMapOperator.listAsync(reconciliation.namespace(), kafka.getSelectorLabels())
+                .thenCompose(existingConfigMaps -> {
                     List<ConfigMap> desiredConfigMaps = kafka.generatePerBrokerConfigurationConfigMaps(metricsAndLogging, listenerReconciliationResults.advertisedHostnames, listenerReconciliationResults.advertisedPorts, scalingDownBlockedNodes);
-                    List<Future<?>> ops = new ArrayList<>();
+                    List<CompletableFuture<?>> ops = new ArrayList<>();
 
                     // Delete all existing ConfigMaps which are not desired and are not the shared config map
                     List<String> desiredNames = new ArrayList<>(desiredConfigMaps.size() + 1);
@@ -699,7 +699,7 @@ public class KafkaReconciler {
                     for (ConfigMap cm : existingConfigMaps) {
                         // We delete the cms not on the desired names list
                         if (!desiredNames.contains(cm.getMetadata().getName())) {
-                            ops.add(VertxUtil.toFuture(configMapOperator.deleteAsync(reconciliation, reconciliation.namespace(), cm.getMetadata().getName(), true)));
+                            ops.add(configMapOperator.deleteAsync(reconciliation, reconciliation.namespace(), cm.getMetadata().getName(), true).toCompletableFuture());
                         }
                     }
 
@@ -744,12 +744,10 @@ public class KafkaReconciler {
                         // We store hash of the broker configurations for later use in Pod and in rolling updates
                         this.brokerConfigurationHash.put(nodeId, Util.hashStub(nodeConfiguration));
 
-                        ops.add(VertxUtil.toFuture(configMapOperator.reconcile(reconciliation, reconciliation.namespace(), cmName, cm)));
+                        ops.add(configMapOperator.reconcile(reconciliation, reconciliation.namespace(), cmName, cm).toCompletableFuture());
                     }
 
-                    return Future
-                            .join(ops)
-                            .mapEmpty();
+                    return CompletableFuture.allOf(ops.toArray(CompletableFuture[]::new));
                 });
     }
 
@@ -758,11 +756,11 @@ public class KafkaReconciler {
      * old shared Config Map used by StatefulSets. That is done only at the end of the reconciliation. However, it would
      * delete the config maps of the scaled-down brokers since scale-down happens before this is called.
      *
-     * @return  Future which completes when the Config Map(s) with configuration are created or updated
+     * @return  CompletionStage which completes when the Config Map(s) with configuration are created or updated
      */
-    protected Future<Void> brokerConfigurationConfigMaps() {
-        return VertxUtil.toFuture(MetricsAndLoggingUtils.metricsAndLogging(reconciliation, configMapOperator, kafka.logging(), kafka.metrics()))
-                .compose(metricsAndLoggingCm -> perBrokerKafkaConfiguration(metricsAndLoggingCm));
+    protected CompletionStage<Void> brokerConfigurationConfigMaps() {
+        return MetricsAndLoggingUtils.metricsAndLogging(reconciliation, configMapOperator, kafka.logging(), kafka.metrics())
+                .thenCompose(metricsAndLoggingCm -> perBrokerKafkaConfiguration(metricsAndLoggingCm));
     }
 
     /**
@@ -773,17 +771,17 @@ public class KafkaReconciler {
      *
      * @return      Completes when the Secrets were successfully created, deleted or updated
      */
-    protected Future<Void> certificateSecrets(Clock clock) {
-        return VertxUtil.toFuture(secretOperator.listAsync(reconciliation.namespace(), kafka.getSelectorLabels().withStrimziComponentType(KafkaCluster.COMPONENT_TYPE)))
-                .compose(existingSecrets -> collectListenerCustomCerts()
-                        .compose(customCertsData -> VertxUtil.toFuture(
+    protected CompletionStage<Void> certificateSecrets(Clock clock) {
+        return secretOperator.listAsync(reconciliation.namespace(), kafka.getSelectorLabels().withStrimziComponentType(KafkaCluster.COMPONENT_TYPE))
+                .thenCompose(existingSecrets -> collectListenerCustomCerts()
+                        .thenCompose(customCertsData ->
                             kafka.generateCertificatesSecrets(clusterCa,
                                 existingSecrets,
                                 customCertsData,
                                 listenerReconciliationResults.bootstrapDnsNames,
                                 listenerReconciliationResults.brokerDnsNames,
-                                Util.isMaintenanceTimeWindowsSatisfied(reconciliation, maintenanceWindows, clock.instant()))
-                        ).compose(desiredCertSecrets -> {
+                                Util.isMaintenanceTimeWindowsSatisfied(reconciliation, maintenanceWindows, clock.instant())
+                        ).thenCompose(desiredCertSecrets -> {
                             List<String> desiredCertSecretNames = desiredCertSecrets.stream().map(secret -> secret.getMetadata().getName()).toList();
                             existingSecrets.forEach(secret -> {
                                 String secretName = secret.getMetadata().getName();
@@ -800,8 +798,7 @@ public class KafkaReconciler {
                                 }
                             });
                             return updateCertificateSecrets(desiredCertSecrets);
-                        })).mapEmpty())
-                .mapEmpty();
+                        })).thenApply(i -> null));
     }
 
     /**
@@ -809,36 +806,38 @@ public class KafkaReconciler {
      * {@code brokerCertChainAndKey} configuration option. These custom certificates will be
      * merged into the broker certificate secrets alongside the generated node certificates.
      *
-     * @return A Future completing with a map of secret data entries where keys are in the format
+     * @return A CompletionStage completing with a map of secret data entries where keys are in the format
      *         "listenerName-9095.{crt|key}" and values are base64-encoded certificate/key data.
      *         Returns an empty map if no TLS listeners have custom certificates configured.
      */
-    private Future<Map<String, String>> collectListenerCustomCerts() {
+    private CompletionStage<Map<String, String>> collectListenerCustomCerts() {
         Map<String, String> customCertsData = new HashMap<>();
-        List<Future<Object>> futures = kafka.getListeners().stream()
+        List<CompletableFuture<Object>> futures = kafka.getListeners().stream()
                 .filter(l -> l.isTls() && l.getConfiguration() != null && l.getConfiguration().getBrokerCertChainAndKey() != null)
                 .map(l ->
-                        VertxUtil.toFuture(ReconcilerUtils.getCertificateAndKeyAsync(secretOperator, reconciliation.namespace(), l.getConfiguration().getBrokerCertChainAndKey()))
-                                .onSuccess(certAndKey -> customCertsData.putAll(CertSecretUtils.buildSecretData(ListenersUtils.identifier(l), certAndKey)))
-                                .mapEmpty()
+                        ReconcilerUtils.getCertificateAndKeyAsync(secretOperator, reconciliation.namespace(), l.getConfiguration().getBrokerCertChainAndKey())
+                                .thenApply(certAndKey -> {
+                                    customCertsData.putAll(CertSecretUtils.buildSecretData(ListenersUtils.identifier(l), certAndKey));
+                                    return null;
+                                }).toCompletableFuture()
                 ).toList();
-        return Future.all(futures)
-                .map(f -> customCertsData);
+        return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
+                .thenApply(f -> customCertsData);
     }
 
     /**
      * Delete old certificate resources that are no longer needed.
      *
-     * @return Future that completes when the resources have been deleted.
+     * @return CompletionStage that completes when the resources have been deleted.
      */
-    protected Future<Void> deleteOldCertificateResources() {
-        List<Future<Void>> deleteFutures = secretsToDelete.stream()
-                .map(secretName -> VertxUtil.toFuture(clusterCa.cleanupEndEntityCert(secretName)
+    protected CompletionStage<Void> deleteOldCertificateResources() {
+        List<CompletableFuture<Void>> deleteFutures = secretsToDelete.stream()
+                .map(secretName -> clusterCa.cleanupEndEntityCert(secretName)
                         .thenCompose(i -> {
                             LOGGER.debugCr(reconciliation, "Deleting old Secret {}/{} that is no longer used.", reconciliation.namespace(), secretName);
                             return secretOperator.deleteAsync(reconciliation, reconciliation.namespace(), secretName, false);
-                        }))).toList();
-        return Future.join(deleteFutures).mapEmpty();
+                        }).toCompletableFuture()).toList();
+        return CompletableFuture.allOf(deleteFutures.toArray(new CompletableFuture[0]));
     }
 
     /**
@@ -846,15 +845,15 @@ public class KafkaReconciler {
      *
      * @param secrets Secrets to update
      *
-     * @return Future that completes when the Secrets were successfully created or updated
+     * @return CompletionStage that completes when the Secrets were successfully created or updated
      */
-    protected Future<Void> updateCertificateSecrets(List<Secret> secrets) {
-        List<Future<Object>> reconcileFutures = secrets
+    protected CompletionStage<Void> updateCertificateSecrets(List<Secret> secrets) {
+        List<CompletableFuture<Object>> reconcileFutures = secrets
                 .stream()
                 .map(secret -> {
                     String secretName = secret.getMetadata().getName();
-                    return VertxUtil.toFuture(secretOperator.reconcile(reconciliation, reconciliation.namespace(), secretName, secret))
-                            .compose(patchResult -> {
+                    return secretOperator.reconcile(reconciliation, reconciliation.namespace(), secretName, secret)
+                            .thenCompose(patchResult -> {
                                 if (patchResult != null) {
                                     kafkaServerCertificateHash.put(
                                             ReconcilerUtils.getPodIndexFromPodName(secretName),
@@ -862,10 +861,10 @@ public class KafkaReconciler {
                                                     Ca.SecretEntry.CRT.asKey(secretName)
                                             ));
                                 }
-                                return Future.succeededFuture();
-                            });
+                                return CompletableFuture.completedFuture(null);
+                            }).toCompletableFuture();
                 }).toList();
-        return Future.join(reconcileFutures).mapEmpty();
+        return CompletableFuture.allOf(reconcileFutures.toArray(new CompletableFuture[0]));
     }
 
     /**
@@ -873,8 +872,8 @@ public class KafkaReconciler {
      *
      * @return  Completes when the JMX secret is successfully created or updated
      */
-    protected Future<Void> jmxSecret() {
-        return VertxUtil.toFuture(ReconcilerUtils.reconcileJmxSecret(reconciliation, secretOperator, kafka));
+    protected CompletionStage<Void> jmxSecret() {
+        return ReconcilerUtils.reconcileJmxSecret(reconciliation, secretOperator, kafka);
     }
 
     /**
@@ -882,13 +881,13 @@ public class KafkaReconciler {
      *
      * @return  Completes when the PDB was successfully created or updated
      */
-    protected Future<Void> podDisruptionBudget() {
+    protected CompletionStage<Void> podDisruptionBudget() {
         if (isPodDisruptionBudgetGeneration) {
-            return VertxUtil.toFuture(podDisruptionBudgetOperator
-                    .reconcile(reconciliation, reconciliation.namespace(), KafkaResources.kafkaComponentName(reconciliation.name()), kafka.generatePodDisruptionBudget()))
-                    .mapEmpty();
+            return podDisruptionBudgetOperator
+                    .reconcile(reconciliation, reconciliation.namespace(), KafkaResources.kafkaComponentName(reconciliation.name()), kafka.generatePodDisruptionBudget())
+                    .thenApply(i -> null);
         } else {
-            return Future.succeededFuture();
+            return CompletableFuture.completedFuture(null);
         }
     }
 
@@ -924,32 +923,32 @@ public class KafkaReconciler {
      *
      * The opposite (Kafka cluster scaled down) is handled by a dedicated scaleDown() method instead.
      *
-     * @return  Future which completes when the PodSet is created, updated or deleted and any new Pods reach the Ready state
+     * @return  CompletionStage which completes when the PodSet is created, updated or deleted and any new Pods reach the Ready state
      */
-    protected Future<Map<String, ReconcileResult<StrimziPodSet>>> podSet() {
-        return VertxUtil.toFuture(strimziPodSetOperator
+    protected CompletionStage<Map<String, ReconcileResult<StrimziPodSet>>> podSet() {
+        return strimziPodSetOperator
                 .batchReconcile(
                         reconciliation,
                         reconciliation.namespace(),
                         kafka.generatePodSets(imagePullPolicy, imagePullSecrets, this::podSetPodAnnotations),
                         kafka.getSelectorLabels()
-                ))
-                .compose(podSetDiff -> waitForNewNodes().map(podSetDiff));
+                )
+                .thenCompose(podSetDiff -> waitForNewNodes().thenApply(v -> podSetDiff));
     }
 
     /**
      * Waits for new nodes (pods) to get into a Ready state
      *
-     * @return  Future that completes when all the new nodes are ready
+     * @return  CompletionStage that completes when all the new nodes are ready
      */
-    private Future<Void> waitForNewNodes() {
-        return VertxUtil.toFuture(ReconcilerUtils
+    private CompletionStage<Void> waitForNewNodes() {
+        return ReconcilerUtils
                 .podsReady(
                         reconciliation,
                         podOperator,
                         operationTimeoutMs,
                         kafka.addedNodes().stream().map(NodeRef::podName).toList()
-                ));
+                );
     }
 
     /**
@@ -957,9 +956,9 @@ public class KafkaReconciler {
      *
      * @param podSetDiffs   Map with the PodSet reconciliation results
      *
-     * @return  Future which completes when any of the Kafka pods which need rolling is rolled
+     * @return  CompletionStage which completes when any of the Kafka pods which need rolling is rolled
      */
-    protected Future<Void> rollingUpdate(Map<String, ReconcileResult<StrimziPodSet>> podSetDiffs) {
+    protected CompletionStage<Void> rollingUpdate(Map<String, ReconcileResult<StrimziPodSet>> podSetDiffs) {
         return maybeRollKafka(
                 kafka.nodes(),
                 pod -> ReconcilerUtils.reasonsToRestartPod(
@@ -980,88 +979,92 @@ public class KafkaReconciler {
     /**
      * Checks whether the Kafka pods are ready and if not, waits for them to get ready
      *
-     * @return  Future which completes when all Kafka pods are ready
+     * @return  CompletionStage which completes when all Kafka pods are ready
      */
-    protected Future<Void> podsReady() {
-        return VertxUtil.toFuture(ReconcilerUtils
+    protected CompletionStage<Void> podsReady() {
+        return ReconcilerUtils
                 .podsReady(
                         reconciliation,
                         podOperator,
                         operationTimeoutMs,
                         kafka.nodes().stream().map(node -> node.podName()).toList()
-                ));
+                );
     }
 
     /**
      * Waits for readiness of the endpoints of the clients service
      *
-     * @return  Future which completes when the endpoints are ready
+     * @return  CompletionStage which completes when the endpoints are ready
      */
-    protected Future<Void> serviceEndpointsReady() {
-        return VertxUtil.toFuture(serviceOperator.endpointReadiness(reconciliation, reconciliation.namespace(), KafkaResources.bootstrapServiceName(reconciliation.name()), 1_000, operationTimeoutMs));
+    protected CompletionStage<Void> serviceEndpointsReady() {
+        return serviceOperator.endpointReadiness(reconciliation, reconciliation.namespace(), KafkaResources.bootstrapServiceName(reconciliation.name()), 1_000, operationTimeoutMs);
     }
 
     /**
      * Waits for readiness of the endpoints of the headless service
      *
-     * @return  Future which completes when the endpoints are ready
+     * @return  CompletionStage which completes when the endpoints are ready
      */
-    protected Future<Void> headlessServiceEndpointsReady() {
-        return VertxUtil.toFuture(serviceOperator.endpointReadiness(reconciliation, reconciliation.namespace(), KafkaResources.brokersServiceName(reconciliation.name()), 1_000, operationTimeoutMs));
+    protected CompletionStage<Void> headlessServiceEndpointsReady() {
+        return serviceOperator.endpointReadiness(reconciliation, reconciliation.namespace(), KafkaResources.brokersServiceName(reconciliation.name()), 1_000, operationTimeoutMs);
     }
 
     /**
      * Get the Cluster ID of the Kafka cluster
      *
-     * @return  Future which completes when the Cluster ID is retrieved and set in the status
+     * @return  CompletionStage which completes when the Cluster ID is retrieved and set in the status
      */
-    protected Future<Void> clusterId(KafkaStatus kafkaStatus) {
+    protected CompletionStage<Void> clusterId(KafkaStatus kafkaStatus) {
         LOGGER.debugCr(reconciliation, "Attempt to get clusterId");
-        return vertx.createSharedWorkerExecutor("kubernetes-ops-pool")
-                .executeBlocking(() -> {
-                    Admin kafkaAdmin = null;
+        return CompletableFuture.supplyAsync(() -> {
+            Admin kafkaAdmin = null;
 
-                    try {
-                        String bootstrapHostname = KafkaResources.bootstrapServiceName(reconciliation.name()) + "." + reconciliation.namespace() + ".svc:" + KafkaCluster.REPLICATION_PORT;
-                        LOGGER.debugCr(reconciliation, "Creating AdminClient for clusterId using {}", bootstrapHostname);
-                        kafkaAdmin = adminClientProvider.createAdminClient(bootstrapHostname, this.coIdentity.trustSet(), this.coIdentity.authIdentity());
-                        kafkaStatus.setClusterId(kafkaAdmin.describeCluster().clusterId().get());
-                    } catch (KafkaException e) {
-                        LOGGER.warnCr(reconciliation, "Kafka exception getting clusterId {}", e.getMessage());
-                    } catch (InterruptedException e) {
-                        LOGGER.warnCr(reconciliation, "Interrupted exception getting clusterId {}", e.getMessage());
-                    } catch (ExecutionException e) {
-                        LOGGER.warnCr(reconciliation, "Execution exception getting clusterId {}", e.getMessage());
-                    } finally {
-                        if (kafkaAdmin != null) {
-                            kafkaAdmin.close();
-                        }
-                    }
+            try {
+                String bootstrapHostname = KafkaResources.bootstrapServiceName(reconciliation.name()) + "." + reconciliation.namespace() + ".svc:" + KafkaCluster.REPLICATION_PORT;
+                LOGGER.debugCr(reconciliation, "Creating AdminClient for clusterId using {}", bootstrapHostname);
+                kafkaAdmin = adminClientProvider.createAdminClient(bootstrapHostname, this.coIdentity.trustSet(), this.coIdentity.authIdentity());
+                kafkaStatus.setClusterId(kafkaAdmin.describeCluster().clusterId().get());
+            } catch (KafkaException e) {
+                LOGGER.warnCr(reconciliation, "Kafka exception getting clusterId {}", e.getMessage());
+            } catch (InterruptedException e) {
+                LOGGER.warnCr(reconciliation, "Interrupted exception getting clusterId {}", e.getMessage());
+            } catch (ExecutionException e) {
+                LOGGER.warnCr(reconciliation, "Execution exception getting clusterId {}", e.getMessage());
+            } finally {
+                if (kafkaAdmin != null) {
+                    kafkaAdmin.close();
+                }
+            }
 
-                    return null;
-                });
+            return null;
+        }, asyncExecutor).thenApply(i -> null);
     }
 
     /**
      * Configures the default users quota in Kafka in case that the {@link QuotasPluginKafka} is used
      *
-     * @return  Future which completes when the default quotas are configured
+     * @return  CompletionStage which completes when the default quotas are configured
      */
-    protected Future<Void> defaultKafkaQuotas() {
-        return VertxUtil.toFuture(DefaultKafkaQuotasManager.reconcileDefaultUserQuotas(reconciliation, adminClientProvider, this.coIdentity.trustSet(), this.coIdentity.authIdentity(), kafka.quotas()));
+    protected CompletionStage<Void> defaultKafkaQuotas() {
+        return DefaultKafkaQuotasManager.reconcileDefaultUserQuotas(reconciliation, adminClientProvider, this.coIdentity.trustSet(), this.coIdentity.authIdentity(), kafka.quotas());
     }
 
     /**
      * Unregisters the KRaft nodes that were removed from the Kafka cluster
      *
-     * @return  Future which completes when the nodes removed from the Kafka cluster are unregistered
+     * @return  CompletionStage which completes when the nodes removed from the Kafka cluster are unregistered
      */
-    protected Future<Void> nodeUnregistration() {
+    protected CompletionStage<Void> nodeUnregistration() {
         List<Integer> currentBrokerIds = kafka.brokerNodes().stream().map(NodeRef::nodeId).sorted().toList();
-        Promise<Void> unregistrationPromise = Promise.promise();
+        CompletableFuture<Void> unregistrationPromise = new CompletableFuture<>();
 
-        Future.fromCompletionStage(KafkaNodeUnregistration.listRegisteredBrokerNodes(reconciliation, adminClientProvider, coIdentity.trustSet(), coIdentity.authIdentity(), true))
-                .onSuccess(registeredBrokerNodes -> {
+        KafkaNodeUnregistration.listRegisteredBrokerNodes(reconciliation, adminClientProvider, coIdentity.trustSet(), coIdentity.authIdentity(), true)
+                .whenComplete((registeredBrokerNodes, throwable) -> {
+                    if (throwable != null) {
+                        // listing broker nodes failed, we will retry on next reconciliation
+                        LOGGER.warnCr(reconciliation, "Failed to list Kafka nodes from the Kafka cluster", throwable);
+                        unregistrationPromise.complete(null);
+                    }
 
                     // all current registered broker nodes (fenced or not)
                     @SuppressWarnings("checkstyle:NoFullyQualifiedClassNames") // Fully qualified class name used due to a name conflict
@@ -1078,9 +1081,9 @@ public class KafkaReconciler {
                     if (!brokersIdsToUnregister.isEmpty()) {
                         LOGGER.infoCr(reconciliation, "Kafka nodes {} were removed from the Kafka cluster and will be unregistered", brokersIdsToUnregister);
 
-                        Future.fromCompletionStage(KafkaNodeUnregistration.unregisterBrokerNodes(reconciliation, adminClientProvider, coIdentity.trustSet(), coIdentity.authIdentity(), brokersIdsToUnregister))
-                                .onComplete(res -> {
-                                    if (res.succeeded()) {
+                        KafkaNodeUnregistration.unregisterBrokerNodes(reconciliation, adminClientProvider, coIdentity.trustSet(), coIdentity.authIdentity(), brokersIdsToUnregister)
+                                .whenComplete((res, err) -> {
+                                    if (err == null) {
                                         LOGGER.infoCr(reconciliation, "Kafka nodes {} were successfully unregistered from the Kafka cluster", brokersIdsToUnregister);
                                     } else {
                                         // unregistration failed, we will retry on next reconciliation
@@ -1089,19 +1092,14 @@ public class KafkaReconciler {
 
                                     // We complete the promise with success even if the unregistration failed as we do not want to
                                     // fail the reconciliation.
-                                    unregistrationPromise.complete();
+                                    unregistrationPromise.complete(null);
                                 });
                     } else {
-                        unregistrationPromise.complete();
+                        unregistrationPromise.complete(null);
                     }
-                })
-                .onFailure(throwable -> {
-                    // listing broker nodes failed, we will retry on next reconciliation
-                    LOGGER.warnCr(reconciliation, "Failed to list Kafka nodes from the Kafka cluster", throwable);
-                    unregistrationPromise.complete();
                 });
 
-        return unregistrationPromise.future();
+        return unregistrationPromise;
     }
 
     /**
@@ -1109,10 +1107,10 @@ public class KafkaReconciler {
      *
      * @param kafkaStatus   Kafka status used for updating the currently used metadata version
      *
-     * @return  Future which completes when the KRaft metadata version is set to the current version or updated.
+     * @return  CompletionStage which completes when the KRaft metadata version is set to the current version or updated.
      */
-    protected Future<Void> metadataVersion(KafkaStatus kafkaStatus) {
-        return VertxUtil.toFuture(KRaftMetadataManager.maybeUpdateMetadataVersion(reconciliation, this.coIdentity, adminClientProvider, kafka.getMetadataVersion(), kafkaStatus));
+    protected CompletionStage<Void> metadataVersion(KafkaStatus kafkaStatus) {
+        return KRaftMetadataManager.maybeUpdateMetadataVersion(reconciliation, this.coIdentity, adminClientProvider, kafka.getMetadataVersion(), kafkaStatus);
     }
 
     /**
@@ -1123,30 +1121,30 @@ public class KafkaReconciler {
      * This should be called only after the StrimziPodSet reconciliation, rolling update and scale-down when the PVCs
      * are not used any more by the pods.
      *
-     * @return  Future which completes when the PVCs which should be deleted are deleted
+     * @return  CompletionStage which completes when the PVCs which should be deleted are deleted
      */
-    protected Future<Void> deletePersistentClaims() {
-        return VertxUtil.toFuture(pvcOperator.listAsync(reconciliation.namespace(), kafka.getSelectorLabels())
+    protected CompletionStage<Void> deletePersistentClaims() {
+        return pvcOperator.listAsync(reconciliation.namespace(), kafka.getSelectorLabels())
                 .thenCompose(pvcs -> {
                     List<String> maybeDeletePvcs = pvcs.stream().map(pvc -> pvc.getMetadata().getName()).collect(Collectors.toList());
                     List<String> desiredPvcs = kafka.generatePersistentVolumeClaims().stream().map(pvc -> pvc.getMetadata().getName()).collect(Collectors.toList());
 
                     return new PvcReconciler(reconciliation, pvcOperator, storageClassOperator)
                             .deletePersistentClaims(maybeDeletePvcs, desiredPvcs);
-                }));
+                });
     }
 
     /**
      * Deletes the ConfigMap with shared Kafka configuration. This needs to be done after migrating from StatefulSets to StrimziPodSets
      *
-     * @return  Future which returns when the shared configuration config map is deleted
+     * @return  CompletionStage which returns when the shared configuration config map is deleted
      */
-    protected Future<Void> sharedKafkaConfigurationCleanup() {
+    protected CompletionStage<Void> sharedKafkaConfigurationCleanup() {
         // We use reconcile() instead of deleteAsync() because reconcile first checks if the deletion is needed.
         // Deleting resource which likely does not exist would cause more load on the Kubernetes API then trying to get
         // it first because of the watch if it was deleted etc.
-        return VertxUtil.toFuture(configMapOperator.reconcile(reconciliation, reconciliation.namespace(), KafkaResources.kafkaMetricsAndLogConfigMapName(reconciliation.name()), null))
-                .mapEmpty();
+        return configMapOperator.reconcile(reconciliation, reconciliation.namespace(), KafkaResources.kafkaMetricsAndLogConfigMapName(reconciliation.name()), null)
+                .thenApply(i -> null);
     }
 
     /**
@@ -1158,16 +1156,16 @@ public class KafkaReconciler {
      * the node information individually for each node instead of listing all nodes and then picking up the information
      * we need. This means more Kubernetes API calls, but helps us to avoid running out of memory.
      *
-     * @return  Future which completes when the Listener status is created for all node port listeners
+     * @return  CompletionStage which completes when the Listener status is created for all node port listeners
      */
-    protected Future<Void> nodePortExternalListenerStatus() {
+    protected CompletionStage<Void> nodePortExternalListenerStatus() {
         if (!ListenersUtils.nodePortListeners(kafka.getListeners()).isEmpty())   {
             Map<Integer, String> brokerNodes = new HashMap<>();
             ConcurrentMap<String, Node> nodes = new ConcurrentHashMap<>();
 
             // First we collect all the broker pods we have so that we can find out on which worker nodes they run
-            return VertxUtil.toFuture(podOperator.listAsync(reconciliation.namespace(), kafka.getSelectorLabels().withStrimziBrokerRole(true)))
-                    .compose(pods -> {
+            return podOperator.listAsync(reconciliation.namespace(), kafka.getSelectorLabels().withStrimziBrokerRole(true))
+                    .thenCompose(pods -> {
                         // We collect the nodes used by the brokers upfront to avoid asking for the same node multiple times later
                         for (Pod broker : pods) {
                             if (broker.getSpec() != null && broker.getSpec().getNodeName() != null) {
@@ -1176,31 +1174,29 @@ public class KafkaReconciler {
                             } else {
                                 // This should not happen, but to avoid some chain of errors downstream we check it and raise exception
                                 LOGGER.warnCr(reconciliation, "Kafka Pod {} has no node name specified", broker.getMetadata().getName());
-                                return Future.failedFuture(new RuntimeException("Kafka Pod " + broker.getMetadata().getName() + " has no node name specified"));
+                                return CompletableFuture.failedFuture(new RuntimeException("Kafka Pod " + broker.getMetadata().getName() + " has no node name specified"));
                             }
                         }
 
-                        List<Future<Void>> nodeFutures = new ArrayList<>();
-
                         // We get the full node resource for each node with a broker
-                        for (String nodeName : brokerNodes.values().stream().distinct().toList()) {
-                            LOGGER.debugCr(reconciliation, "Getting information on worker node {} used by one or more brokers", nodeName);
-                            Future<Void> nodeFuture = VertxUtil.toFuture(nodeOperator.getAsync(nodeName)).compose(node -> {
-                                if (node != null) {
-                                    nodes.put(nodeName, node);
-                                } else {
-                                    // Node was not found, but we do not want to fail because of this as it might be just some race condition
-                                    LOGGER.warnCr(reconciliation, "Worker node {} does not seem to exist", nodeName);
-                                }
+                        List<CompletableFuture<Object>> nodeFutures = brokerNodes.values().stream().distinct()
+                                .map(nodeName -> {
+                                    LOGGER.debugCr(reconciliation, "Getting information on worker node {} used by one or more brokers", nodeName);
+                                    return nodeOperator.getAsync(nodeName).thenApply(node -> {
+                                        if (node != null) {
+                                            nodes.put(nodeName, node);
+                                        } else {
+                                            // Node was not found, but we do not want to fail because of this as it might be just some race condition
+                                            LOGGER.warnCr(reconciliation, "Worker node {} does not seem to exist", nodeName);
+                                        }
+                                        return null;
+                                    }).toCompletableFuture();
+                                })
+                                .toList();
 
-                                return Future.succeededFuture();
-                            });
-                            nodeFutures.add(nodeFuture);
-                        }
-
-                        return Future.join(nodeFutures);
+                        return CompletableFuture.allOf(nodeFutures.toArray(new CompletableFuture[0]));
                     })
-                    .map(i -> {
+                    .thenApply(i -> {
                         // We extract the address information from the nodes
                         for (GenericKafkaListener listener : ListenersUtils.nodePortListeners(kafka.getListeners())) {
                             // Set is used to ensure each node/port is listed only once. It is later converted to List.
@@ -1240,7 +1236,7 @@ public class KafkaReconciler {
                         return null;
                     });
         } else {
-            return Future.succeededFuture();
+            return CompletableFuture.completedFuture(null);
         }
     }
 
@@ -1250,13 +1246,13 @@ public class KafkaReconciler {
      *
      * @param kafkaStatus   Kafka status where the values should be set
      *
-     * @return  Future that completes once the status is updated
+     * @return  CompletionStage that completes once the status is updated
      */
-    /* test */ Future<Void> updateKafkaStatus(KafkaStatus kafkaStatus) {
+    /* test */ CompletionStage<Void> updateKafkaStatus(KafkaStatus kafkaStatus) {
         kafkaStatus.setListeners(listenerReconciliationResults.listenerStatuses);
         kafkaStatus.setKafkaVersion(kafka.getKafkaVersion().version());
 
-        return Future.succeededFuture();
+        return CompletableFuture.completedFuture(null);
     }
 
     /**
@@ -1265,9 +1261,9 @@ public class KafkaReconciler {
      *
      * @param kafkaStatus   The status of the Kafka CR to add the list of node pools belonging to it
      *
-     * @return  Future which completes when the statuses are set
+     * @return  CompletionStage which completes when the statuses are set
      */
-    protected Future<Void> updateNodePoolStatuses(KafkaStatus kafkaStatus) {
+    protected CompletionStage<Void> updateNodePoolStatuses(KafkaStatus kafkaStatus) {
         List<KafkaNodePool> updatedNodePools = new ArrayList<>();
         List<UsedNodePoolStatus> statusesForKafka = new ArrayList<>();
         Map<String, KafkaNodePoolStatus> statuses = kafka.nodePoolStatuses();
@@ -1293,14 +1289,13 @@ public class KafkaReconciler {
         // Sets the list of used Node Pools in the Kafka CR status
         kafkaStatus.setKafkaNodePools(statusesForKafka.stream().sorted(Comparator.comparing(UsedNodePoolStatus::getName)).toList());
 
-        List<Future<KafkaNodePool>> statusUpdateFutures = new ArrayList<>();
+        List<CompletableFuture<KafkaNodePool>> statusUpdateFutures = new ArrayList<>();
 
         for (KafkaNodePool updatedNodePool : updatedNodePools) {
-            statusUpdateFutures.add(VertxUtil.toFuture(kafkaNodePoolOperator.updateStatusAsync(reconciliation, updatedNodePool)));
+            statusUpdateFutures.add(kafkaNodePoolOperator.updateStatusAsync(reconciliation, updatedNodePool).toCompletableFuture());
         }
 
         // Return future
-        return Future.join(statusUpdateFutures)
-                .mapEmpty();
+        return CompletableFuture.allOf(statusUpdateFutures.toArray(new CompletableFuture[0]));
     }
 }

@@ -40,15 +40,7 @@ import io.strimzi.operator.common.model.PasswordGenerator;
 import io.strimzi.operator.common.operator.MockCertIssuer;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.platform.KubernetesVersion;
-import io.vertx.core.Future;
-import io.vertx.core.Vertx;
-import io.vertx.core.WorkerExecutor;
-import io.vertx.junit5.VertxExtension;
-import io.vertx.junit5.VertxTestContext;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 
 import java.util.List;
@@ -65,7 +57,6 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@ExtendWith(VertxExtension.class)
 public class KafkaReconcilerServiceAccountTest {
     private final static String NAMESPACE = "my-namespace";
     private final static String CLUSTER_NAME = "my-cluster";
@@ -114,23 +105,8 @@ public class KafkaReconcilerServiceAccountTest {
 
     private final static Reconciliation RECONCILIATION = new Reconciliation("test", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME);
 
-    private static Vertx vertx;
-    private static WorkerExecutor sharedWorkerExecutor;
-
-    @BeforeAll
-    public static void beforeAll()  {
-        vertx = Vertx.vertx();
-        sharedWorkerExecutor = vertx.createSharedWorkerExecutor("kubernetes-ops-pool");
-    }
-
-    @AfterAll
-    public static void afterAll()   {
-        sharedWorkerExecutor.close();
-        vertx.close();
-    }
-
     @Test
-    public void testClusterOperatorServiceAccountIsCreatedWithServiceAccountAuthentication(VertxTestContext context) {
+    public void testClusterOperatorServiceAccountIsCreatedWithServiceAccountAuthentication() {
         KafkaClusterSecurityContext securityContext = new KafkaClusterSecurityContext(new TlsEncryptionConfiguration(),
                 AuthenticationConfiguration.fromCrd(NAMESPACE, CLUSTER_NAME, new ClusterSecurityAuthenticationBuilder().withType(ClusterSecurityAuthenticationType.SERVICE_ACCOUNT).build(), null));
 
@@ -139,23 +115,18 @@ public class KafkaReconcilerServiceAccountTest {
         when(mockSaOps.reconcile(any(), eq(NAMESPACE), any(), any())).thenReturn(CompletableFuture.completedFuture(ReconcileResult.created(new ServiceAccount())));
 
         MockKafkaReconciler reconciler = new MockKafkaReconciler(supplier, securityContext);
+        reconciler.clusterOperatorServiceAccount().toCompletableFuture().join();
+        ArgumentCaptor<ServiceAccount> saCaptor = ArgumentCaptor.forClass(ServiceAccount.class);
+        verify(mockSaOps).reconcile(any(), eq(NAMESPACE), eq(KafkaResources.clusterOperatorServiceAccount(CLUSTER_NAME)), saCaptor.capture());
 
-        Future.fromCompletionStage(reconciler.clusterOperatorServiceAccount().toCompletionStage())
-                .onComplete(context.succeeding(v -> context.verify(() -> {
-                    ArgumentCaptor<ServiceAccount> saCaptor = ArgumentCaptor.forClass(ServiceAccount.class);
-                    verify(mockSaOps).reconcile(any(), eq(NAMESPACE), eq(KafkaResources.clusterOperatorServiceAccount(CLUSTER_NAME)), saCaptor.capture());
-
-                    ServiceAccount sa = saCaptor.getValue();
-                    assertThat(sa, is(notNullValue()));
-                    assertThat(sa.getMetadata().getName(), is(KafkaResources.clusterOperatorServiceAccount(CLUSTER_NAME)));
-                    assertThat(sa.getMetadata().getNamespace(), is(NAMESPACE));
-
-                    context.completeNow();
-                })));
+        ServiceAccount sa = saCaptor.getValue();
+        assertThat(sa, is(notNullValue()));
+        assertThat(sa.getMetadata().getName(), is(KafkaResources.clusterOperatorServiceAccount(CLUSTER_NAME)));
+        assertThat(sa.getMetadata().getNamespace(), is(NAMESPACE));
     }
 
     @Test
-    public void testClusterOperatorServiceAccountIsDeletedWithoutServiceAccountAuthentication(VertxTestContext context) {
+    public void testClusterOperatorServiceAccountIsDeletedWithoutServiceAccountAuthentication() {
         KafkaClusterSecurityContext securityContext = new KafkaClusterSecurityContext(new NoneEncryptionConfiguration(), new NoneAuthenticationConfiguration());
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
@@ -164,20 +135,16 @@ public class KafkaReconcilerServiceAccountTest {
 
         MockKafkaReconciler reconciler = new MockKafkaReconciler(supplier, securityContext);
 
-        Future.fromCompletionStage(reconciler.clusterOperatorServiceAccount().toCompletionStage())
-                .onComplete(context.succeeding(v -> context.verify(() -> {
-                    // The desired Service Account is null => the operator deletes it if it exists
-                    ArgumentCaptor<ServiceAccount> saCaptor = ArgumentCaptor.forClass(ServiceAccount.class);
-                    verify(mockSaOps).reconcile(any(), eq(NAMESPACE), eq(KafkaResources.clusterOperatorServiceAccount(CLUSTER_NAME)), saCaptor.capture());
-                    assertThat(saCaptor.getValue(), is(nullValue()));
-
-                    context.completeNow();
-                })));
+        reconciler.clusterOperatorServiceAccount().toCompletableFuture().join();
+        // The desired Service Account is null => the operator deletes it if it exists
+        ArgumentCaptor<ServiceAccount> saCaptor = ArgumentCaptor.forClass(ServiceAccount.class);
+        verify(mockSaOps).reconcile(any(), eq(NAMESPACE), eq(KafkaResources.clusterOperatorServiceAccount(CLUSTER_NAME)), saCaptor.capture());
+        assertThat(saCaptor.getValue(), is(nullValue()));
     }
 
     static class MockKafkaReconciler extends KafkaReconciler {
         MockKafkaReconciler(ResourceOperatorSupplier supplier, KafkaClusterSecurityContext securityContext) {
-            super(RECONCILIATION, KAFKA, List.of(KAFKA_NODE_POOL), createKafkaCluster(supplier, securityContext), CLUSTER_CA, CLUSTER_CA, CO_CONFIG, supplier, PFA, vertx, Set.of());
+            super(RECONCILIATION, KAFKA, List.of(KAFKA_NODE_POOL), createKafkaCluster(supplier, securityContext), CLUSTER_CA, CLUSTER_CA, CO_CONFIG, supplier, PFA, Set.of());
         }
 
         private static KafkaCluster createKafkaCluster(ResourceOperatorSupplier supplier, KafkaClusterSecurityContext securityContext)   {
