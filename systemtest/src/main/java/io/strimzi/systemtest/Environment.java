@@ -360,7 +360,12 @@ public class Environment {
     }
 
     public static String getImageOutputRegistry() {
-        if (KubeClusterResource.getInstance().isOpenShift()) {
+        String defaultRegistry = getDefaultBuildRegistry();
+
+        if (defaultRegistry != null && !defaultRegistry.isEmpty()) {
+            LOGGER.info("Using container registry '{}'", defaultRegistry);
+            return defaultRegistry;
+        } else if (KubeClusterResource.getInstance().isOpenShift()) {
             return "image-registry.openshift-image-registry.svc:5000";
         } else if (KubeClusterResource.getInstance().isKind()) {
             // we will need a hostname of machine
@@ -379,8 +384,12 @@ public class Environment {
         }
     }
 
+    private static String getDefaultBuildRegistry() {
+        return ENVIRONMENT_VARIABLES.getOrDefault("CONNECT_BUILD_REGISTRY", "");
+    }
+
     private static String getHostname() {
-        String envRegistry = ENVIRONMENT_VARIABLES.getOrDefault("CONNECT_BUILD_REGISTRY", "");
+        String envRegistry = getDefaultBuildRegistry();
         if (!envRegistry.isEmpty()) {
             return envRegistry;
         }
