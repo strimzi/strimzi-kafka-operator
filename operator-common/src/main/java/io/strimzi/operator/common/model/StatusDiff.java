@@ -4,11 +4,11 @@
  */
 package io.strimzi.operator.common.model;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import io.fabric8.zjsonpatch.JsonDiff;
 import io.strimzi.api.kafka.model.kafka.Status;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
+import tools.jackson.databind.JsonNode;
 
 import java.util.regex.Pattern;
 
@@ -37,7 +37,7 @@ public class StatusDiff extends AbstractJsonDiff {
         int num = 0;
 
         for (JsonNode d : diff) {
-            String pathValue = d.get("path").asText();
+            String pathValue = d.get("path").asString();
 
             if (IGNORABLE_PATHS.matcher(pathValue).matches()) {
                 LOGGER.debugCr(reconciliation, "Ignoring Status diff {}", d);
