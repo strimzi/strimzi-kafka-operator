@@ -116,6 +116,10 @@ public class MockCruiseControl {
         return server.isRunning();
     }
 
+    public String topicConfigurationRequestBody() {
+        return server.getAllServeEvents().get(0).getRequest().getBodyAsString();
+    }
+
     public void expectTopicConfigSuccessResponse(File apiUserFile, File apiPassFile) {
         String successJson = ReadWriteUtils.readFileFromResources(getClass(), "/cruisecontrol/topic-config-success.json");
         String authHeaderValue = CruiseControlUtil.buildBasicAuthValue(
