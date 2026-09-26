@@ -10,6 +10,7 @@
   If needed, `UseBackgroundPodDeletion` can be disabled in the feature gates configuration in the Cluster Operator.
 * (Early Access) Integration with cert-manager for issuing certificates.
   While the cert-manager feature is in Early Access it is not recommended for use in production.
+* Force a fresh pull of the UBI9-minimal base image on every container image build (instead of possibly reusing a stale cached copy of the floating `latest` tag), resolving 13 CVEs in transitive OS packages (libevent, libxml2, libcurl, sqlite-libs, openssl-libs)
 
 ### Major changes, deprecations, and removals
 
