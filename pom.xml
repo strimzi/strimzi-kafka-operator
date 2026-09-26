@@ -118,7 +118,7 @@
         <skodjob-doc.version>0.6.0</skodjob-doc.version>
         <helm-client.version>0.0.15</helm-client.version>
         <access-operator.version>0.3.0</access-operator.version>
-        <test-clients.version>0.15.0-RC1</test-clients.version>
+        <test-clients.version>0.15.0-RC2</test-clients.version>
         <!-- properties to skip surefire tests during failsafe execution -->
         <skipTests>false</skipTests>
         <skip.surefire.tests>${skipTests}</skip.surefire.tests>
