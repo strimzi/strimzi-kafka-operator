@@ -37,6 +37,7 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static io.strimzi.operator.common.CruiseControlUtil.buildBasicAuthValue;
@@ -108,7 +109,7 @@ public class CruiseControlClientImpl implements CruiseControlClient {
         Map<Integer, String> requestPayload = new HashMap<>();
         topicsByReplicas.forEach((key, value) -> {
             List<String> targetNames = topicsByReplicas.get(key)
-                    .stream().map(TopicOperatorUtil::topicName).collect(Collectors.toList());
+                    .stream().map(TopicOperatorUtil::topicName).map(Pattern::quote).collect(Collectors.toList());
             requestPayload.put(key, String.join("|", targetNames));
         });
         String jsonPayload;

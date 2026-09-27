@@ -109,6 +109,28 @@ public class CruiseControlHandlerTest {
     }
 
     @Test
+    public void topicConfigurationShouldEscapeTopicNames() {
+        var config = operatorConfigs().get(0);
+        var client = TopicOperatorUtil.createCruiseControlClient(config);
+        var dottedTopic = new KafkaTopicBuilder()
+            .withNewMetadata().withName("a.c").endMetadata()
+            .withNewSpec().withReplicas(2).endSpec()
+            .build();
+        var plainTopic = new KafkaTopicBuilder()
+            .withNewMetadata().withName("acc").endMetadata()
+            .withNewSpec().withReplicas(2).endSpec()
+            .build();
+
+        server.expectTopicConfigSuccessResponse(apiUserFile, apiPassFile);
+        client.topicConfiguration(List.of(dottedTopic, plainTopic));
+
+        assertThat(server.topicConfigurationRequestBody(), is("""
+            {"replication_factor":{"topic_by_replication_factor":{"2":"\\\\Qa.c\\\\E|\\\\Qacc\\\\E"}}}\
+            """));
+        client.close();
+    }
+
+    @Test
     public void replicasChangeShouldFailWhenCruiseControlEndpointNotReachable() {
         var config = TopicOperatorConfig.buildFromMap(Map.ofEntries(
             entry(TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:9092"),
