@@ -92,7 +92,6 @@ public class CertManagerCa extends Ca {
 
     @Override
     public CompletionStage<Void> cleanupEndEntityCert(String entity) {
-        LOGGER.debugCr(reconciliation, "Deleting old Certificate {}/{} that is no longer used.", reconciliation.namespace(), entity);
         return certManagerCertificateOperator.deleteAsync(reconciliation, reconciliation.namespace(), entity, false)
                 .toCompletableFuture();
     }
