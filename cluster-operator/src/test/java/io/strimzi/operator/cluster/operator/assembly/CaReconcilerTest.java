@@ -27,7 +27,6 @@ import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.auth.RequestedServiceAccountAuthIdentity;
-import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.model.CruiseControl;
 import io.strimzi.operator.cluster.model.EntityOperator;
 import io.strimzi.operator.cluster.model.KafkaCluster;
@@ -402,7 +401,7 @@ public class CaReconcilerTest {
 
         // Its old cert generation is ignored too, so the old cert counts as unused
         verify(clusterCa).maybeDeleteOldCerts();
-        verify(supplier.secretOperations).reconcile(any(), eq(NAMESPACE), eq(AbstractModel.clusterCaCertSecretName(NAME)), any());
+        verify(supplier.secretOperations).reconcile(any(), eq(NAMESPACE), eq(KafkaResources.clusterCaCertificateSecretName(NAME)), any());
     }
 
     @Test
@@ -553,7 +552,7 @@ public class CaReconcilerTest {
         verify(clusterCa).maybeDeleteOldCerts();
 
         ArgumentCaptor<Secret> clusterCaCert = ArgumentCaptor.forClass(Secret.class);
-        verify(supplier.secretOperations).reconcile(any(), eq(NAMESPACE), eq(AbstractModel.clusterCaCertSecretName(NAME)), clusterCaCert.capture());
+        verify(supplier.secretOperations).reconcile(any(), eq(NAMESPACE), eq(KafkaResources.clusterCaCertificateSecretName(NAME)), clusterCaCert.capture());
 
         assertThat(clusterCaCert.getValue().getData(), aMapWithSize(1));
         assertThat(clusterCaCert.getValue().getData(), hasEntry(Ca.CA_CRT, CURRENT_CA_CRT));
@@ -582,7 +581,7 @@ public class CaReconcilerTest {
         new MockCaReconciler(supplier, clusterCa, clientsCa).reconcile(Clock.systemUTC()).toCompletableFuture().join();
 
         verify(clusterCa, never()).maybeDeleteOldCerts();
-        verify(supplier.secretOperations, never()).reconcile(any(), eq(NAMESPACE), eq(AbstractModel.clusterCaCertSecretName(NAME)), any());
+        verify(supplier.secretOperations, never()).reconcile(any(), eq(NAMESPACE), eq(KafkaResources.clusterCaCertificateSecretName(NAME)), any());
     }
 
     @Test
@@ -609,7 +608,7 @@ public class CaReconcilerTest {
         new MockCaReconciler(supplier, clusterCa, clientsCa).reconcile(Clock.systemUTC()).toCompletableFuture().join();
 
         verify(clusterCa, never()).maybeDeleteOldCerts();
-        verify(supplier.secretOperations, never()).reconcile(any(), eq(NAMESPACE), eq(AbstractModel.clusterCaCertSecretName(NAME)), any());
+        verify(supplier.secretOperations, never()).reconcile(any(), eq(NAMESPACE), eq(KafkaResources.clusterCaCertificateSecretName(NAME)), any());
     }
 
     private static Stream<Arguments> componentCertSecretNames() {
@@ -641,7 +640,7 @@ public class CaReconcilerTest {
         new MockCaReconciler(supplier, clusterCa, clientsCa).reconcile(Clock.systemUTC()).toCompletableFuture().join();
 
         verify(clusterCa, never()).maybeDeleteOldCerts();
-        verify(supplier.secretOperations, never()).reconcile(any(), eq(NAMESPACE), eq(AbstractModel.clusterCaCertSecretName(NAME)), any());
+        verify(supplier.secretOperations, never()).reconcile(any(), eq(NAMESPACE), eq(KafkaResources.clusterCaCertificateSecretName(NAME)), any());
     }
 
     @Test
@@ -655,7 +654,7 @@ public class CaReconcilerTest {
         new MockCaReconciler(supplier, clusterCa, clientsCa).reconcile(Clock.systemUTC()).toCompletableFuture().join();
 
         verify(clusterCa, never()).maybeDeleteOldCerts();
-        verify(supplier.secretOperations, never()).reconcile(any(), eq(NAMESPACE), eq(AbstractModel.clusterCaCertSecretName(NAME)), any());
+        verify(supplier.secretOperations, never()).reconcile(any(), eq(NAMESPACE), eq(KafkaResources.clusterCaCertificateSecretName(NAME)), any());
     }
 
     private static Ca mockClusterCa(int caCertGeneration, int caKeyGeneration, boolean keyReplaced) {
@@ -723,7 +722,7 @@ public class CaReconcilerTest {
     static class MockCaReconciler extends CaReconciler {
         private final Ca clusterCa;
         private final Ca clientsCa;
-        private final Secret providedClusterCaCertSecret = caCertSecret(AbstractModel.clusterCaCertSecretName(NAME));
+        private final Secret providedClusterCaCertSecret = caCertSecret(KafkaResources.clusterCaCertificateSecretName(NAME));
         private final Secret providedClientsCaCertSecret = caCertSecret(KafkaResources.clientsCaCertificateSecretName(NAME));
 
         Map<String, RestartReasons> kafkaRestartReasons = new HashMap<>();

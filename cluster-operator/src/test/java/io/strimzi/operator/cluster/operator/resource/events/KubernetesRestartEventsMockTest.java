@@ -38,7 +38,6 @@ import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ResourceUtils;
-import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.PodRevision;
@@ -102,8 +101,6 @@ import java.util.stream.Collectors;
 import static io.strimzi.operator.cluster.ResourceUtils.createInitialCaCertSecret;
 import static io.strimzi.operator.cluster.ResourceUtils.createInitialCaKeySecret;
 import static io.strimzi.operator.cluster.ResourceUtils.dummyClusterOperatorConfig;
-import static io.strimzi.operator.cluster.model.AbstractModel.clusterCaCertSecretName;
-import static io.strimzi.operator.cluster.model.AbstractModel.clusterCaKeySecretName;
 import static io.strimzi.operator.cluster.model.RestartReason.CA_CERT_HAS_OLD_GENERATION;
 import static io.strimzi.operator.cluster.model.RestartReason.CA_CERT_REMOVED;
 import static io.strimzi.operator.cluster.model.RestartReason.CLUSTER_CA_CERT_KEY_REPLACED;
@@ -298,7 +295,7 @@ public class KubernetesRestartEventsMockTest {
 
     @Test
     void testEventEmittedWhenCaCertHasOldGeneration(Vertx vertx, VertxTestContext context) {
-        Secret caCertSecret = createInitialCaCertSecret(namespace, CLUSTER_NAME, clusterCaCertSecretName(CLUSTER_NAME), MockCertIssuer.clusterCaCert(), MockCertIssuer.clusterCaCertStore(), "123456");
+        Secret caCertSecret = createInitialCaCertSecret(namespace, CLUSTER_NAME, KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME), MockCertIssuer.clusterCaCert(), MockCertIssuer.clusterCaCertStore(), "123456");
         Secret patched = modifySecretWithAnnotation(caCertSecret, Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION, "-1");
         InternalCa oldGenClusterCa = createClusterCaWithSecret(patched);
 
@@ -525,8 +522,8 @@ public class KubernetesRestartEventsMockTest {
                 Ca.CaRole.CLUSTER_CA,
                 new OpenSslCertIssuer(),
                 passwordGenerator,
-                createInitialCaCertSecret(namespace, CLUSTER_NAME, clusterCaCertSecretName(CLUSTER_NAME), MockCertIssuer.clusterCaCert(), MockCertIssuer.clusterCaCertStore(), "123456"),
-                createInitialCaKeySecret(namespace, CLUSTER_NAME, clusterCaKeySecretName(CLUSTER_NAME), MockCertIssuer.clusterCaKey()),
+                createInitialCaCertSecret(namespace, CLUSTER_NAME, KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME), MockCertIssuer.clusterCaCert(), MockCertIssuer.clusterCaCertStore(), "123456"),
+                createInitialCaKeySecret(namespace, CLUSTER_NAME, KafkaResources.clusterCaKeySecretName(CLUSTER_NAME), MockCertIssuer.clusterCaKey()),
                 CaConfig.createDefault()
         );
 
@@ -678,8 +675,8 @@ public class KubernetesRestartEventsMockTest {
                 Ca.CaRole.CLUSTER_CA,
                 mockCertIssuer,
                 passwordGenerator,
-                caCertSecret != null ? caCertSecret : createInitialCaCertSecret(namespace, CLUSTER_NAME, clusterCaCertSecretName(CLUSTER_NAME), MockCertIssuer.clusterCaCert(), MockCertIssuer.clusterCaCertStore(), "123456"),
-                createInitialCaKeySecret(namespace, CLUSTER_NAME, clusterCaKeySecretName(CLUSTER_NAME), MockCertIssuer.clusterCaKey()),
+                caCertSecret != null ? caCertSecret : createInitialCaCertSecret(namespace, CLUSTER_NAME, KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME), MockCertIssuer.clusterCaCert(), MockCertIssuer.clusterCaCertStore(), "123456"),
+                createInitialCaKeySecret(namespace, CLUSTER_NAME, KafkaResources.clusterCaKeySecretName(CLUSTER_NAME), MockCertIssuer.clusterCaKey()),
                 CaConfig.createDefault()
         );
     }
@@ -690,14 +687,14 @@ public class KubernetesRestartEventsMockTest {
                 Ca.CaRole.CLIENTS_CA,
                 mockCertIssuer,
                 passwordGenerator,
-                createInitialCaCertSecret(namespace, CLUSTER_NAME, clusterCaCertSecretName(CLUSTER_NAME), MockCertIssuer.clusterCaCert(), MockCertIssuer.clusterCaCertStore(), "123456"),
-                createInitialCaKeySecret(namespace, CLUSTER_NAME, clusterCaKeySecretName(CLUSTER_NAME), MockCertIssuer.clusterCaKey()),
+                createInitialCaCertSecret(namespace, CLUSTER_NAME, KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME), MockCertIssuer.clusterCaCert(), MockCertIssuer.clusterCaCertStore(), "123456"),
+                createInitialCaKeySecret(namespace, CLUSTER_NAME, KafkaResources.clusterCaKeySecretName(CLUSTER_NAME), MockCertIssuer.clusterCaKey()),
                 CaConfig.createDefault()
         );
     }
 
     private void patchClusterCaKeySecretWithAnnotation(String annotation, String value) {
-        Secret brokerSecret = client.secrets().inNamespace(namespace).withName(AbstractModel.clusterCaKeySecretName(CLUSTER_NAME)).get();
+        Secret brokerSecret = client.secrets().inNamespace(namespace).withName(KafkaResources.clusterCaKeySecretName(CLUSTER_NAME)).get();
         Secret patchedSecret = modifySecretWithAnnotation(brokerSecret, annotation, value);
 
         client.secrets().resource(patchedSecret).update();
@@ -725,8 +722,8 @@ public class KubernetesRestartEventsMockTest {
                     CaRole.CLUSTER_CA,
                     mockCertIssuer,
                     passwordGenerator,
-                    createInitialCaCertSecret(namespace, CLUSTER_NAME, clusterCaCertSecretName(CLUSTER_NAME), MockCertIssuer.clusterCaCert(), MockCertIssuer.clusterCaCertStore(), "123456"),
-                    createInitialCaKeySecret(namespace, CLUSTER_NAME, clusterCaKeySecretName(CLUSTER_NAME), MockCertIssuer.clusterCaKey()),
+                    createInitialCaCertSecret(namespace, CLUSTER_NAME, KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME), MockCertIssuer.clusterCaCert(), MockCertIssuer.clusterCaCertStore(), "123456"),
+                    createInitialCaKeySecret(namespace, CLUSTER_NAME, KafkaResources.clusterCaKeySecretName(CLUSTER_NAME), MockCertIssuer.clusterCaKey()),
                     CaConfig.createDefault());
         }
     }

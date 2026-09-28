@@ -171,7 +171,7 @@ public class CaReconciler {
 
     /**
      * Asynchronously reconciles the cluster and clients CA secrets.
-     * The cluster CA secret has to have the name determined by {@link AbstractModel#clusterCaCertSecretName(String)}.
+     * The cluster CA secret has to have the name determined by {@link KafkaResources#clusterCaCertificateSecretName(String)}.
      * The clients CA secret has to have the name determined by {@link KafkaResources#clientsCaCertificateSecretName(String)}.
      * Within both the secrets the current certificate is stored under the key {@code ca.crt}
      * and the current key is stored under the key {@code ca.key}.
@@ -180,8 +180,8 @@ public class CaReconciler {
      *                  That time is used for checking maintenance windows
      */
     CompletionStage<Void> reconcileCas(Clock clock) {
-        String clusterCaCertName = AbstractModel.clusterCaCertSecretName(reconciliation.name());
-        String clusterCaKeyName = AbstractModel.clusterCaKeySecretName(reconciliation.name());
+        String clusterCaCertName = KafkaResources.clusterCaCertificateSecretName(reconciliation.name());
+        String clusterCaKeyName = KafkaResources.clusterCaKeySecretName(reconciliation.name());
         String clientsCaCertName = KafkaResources.clientsCaCertificateSecretName(reconciliation.name());
         String clientsCaKeyName = KafkaResources.clientsCaKeySecretName(reconciliation.name());
         String clusterOperatorName = KafkaResources.clusterOperatorCertsSecretName(reconciliation.name());
@@ -527,7 +527,7 @@ public class CaReconciler {
 
             if (clusterCa.certsRemoved()) {
                 clusterCaCertSecret.setData(clusterCa.caCertData());
-                return secretOperator.reconcile(reconciliation, reconciliation.namespace(), AbstractModel.clusterCaCertSecretName(reconciliation.name()), clusterCaCertSecret)
+                return secretOperator.reconcile(reconciliation, reconciliation.namespace(), KafkaResources.clusterCaCertificateSecretName(reconciliation.name()), clusterCaCertSecret)
                         .thenApply(ignored -> null);
             } else {
                 return CompletableFuture.completedFuture(null);

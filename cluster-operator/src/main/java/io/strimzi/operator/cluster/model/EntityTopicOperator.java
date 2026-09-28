@@ -204,7 +204,7 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
         }
 
         if (securityContext.encryption() instanceof TlsEncryptionConfiguration) {
-            varList.add(ContainerUtils.createEnvVar(ENV_VAR_TLS_TRUSTED_CERTS_SECRET_NAME, AbstractModel.clusterCaCertSecretName(cluster)));
+            varList.add(ContainerUtils.createEnvVar(ENV_VAR_TLS_TRUSTED_CERTS_SECRET_NAME, KafkaResources.clusterCaCertificateSecretName(cluster)));
         }
 
         if (securityContext.authentication() instanceof MtlsAuthenticationConfiguration) {
@@ -250,7 +250,7 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
         volumeList.add(VolumeUtils.createConfigMapVolume(LOG_AND_METRICS_CONFIG_VOLUME_NAME, KafkaResources.entityTopicOperatorLoggingConfigMapName(cluster)));
 
         if (cruiseControlEnabled) {
-            volumeList.add(VolumeUtils.createSecretVolume(ETO_CA_CERTS_VOLUME_NAME, AbstractModel.clusterCaCertSecretName(cluster), isOpenShift));
+            volumeList.add(VolumeUtils.createSecretVolume(ETO_CA_CERTS_VOLUME_NAME, KafkaResources.clusterCaCertificateSecretName(cluster), isOpenShift));
             volumeList.add(VolumeUtils.createSecretVolume(ETO_CC_API_VOLUME_NAME, KafkaResources.entityTopicOperatorCcApiSecretName(cluster), isOpenShift));
         }
 
