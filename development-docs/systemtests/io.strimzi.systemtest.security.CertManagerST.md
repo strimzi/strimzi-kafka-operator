@@ -114,7 +114,8 @@
 | 3. | Wait for broker pods to roll twice (trust new CA, then re-issue certs). | All broker pods have new UIDs after both rolling updates. |
 | 4. | Wait for CO cert to be reissued with the new cert-manager CA. | CO cert secret generation matches cluster CA cert generation. |
 | 5. | Verify broker certificates are signed by the cert-manager CA. | Broker certificate issuer DN matches cert-manager CA subject DN. |
-| 6. | Produce and consume messages over TLS after switching to cert-manager. | Messages are successfully produced and consumed. |
+| 6. | Verify CA key Secret is removed. | CA key Secret is not present. |
+| 7. | Produce and consume messages over TLS after switching to cert-manager. | Messages are successfully produced and consumed. |
 
 **Labels:**
 
