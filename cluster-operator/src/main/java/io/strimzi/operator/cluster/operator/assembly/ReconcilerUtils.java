@@ -138,7 +138,7 @@ public class ReconcilerUtils {
     public static CompletionStage<Identity> coIdentity(Reconciliation reconciliation, SecretOperator secretOperator, KafkaClusterSecurityContext securityContext) {
         // Gets the trust based on the security context
         CompletionStage<TrustSet> trustFuture = securityContext.encryption() instanceof TlsEncryptionConfiguration ?
-                clusterCaPemTrustSet(reconciliation, secretOperator, securityContext).thenApply(t -> (TrustSet) t) : CompletableFuture.completedFuture(null);
+                clusterCaPemTrustSet(reconciliation, secretOperator).thenApply(t -> (TrustSet) t) : CompletableFuture.completedFuture(null);
         return trustFuture
                 .thenCompose(trustSet -> {
                     // Gets the identity based on the security context
@@ -161,7 +161,7 @@ public class ReconcilerUtils {
      *
      * @return  CompletionStage containing the trust set to use for client authentication.
      */
-    private static CompletionStage<PemTrustSet> clusterCaPemTrustSet(Reconciliation reconciliation, SecretOperator secretOperator, KafkaClusterSecurityContext securityContext) {
+    private static CompletionStage<PemTrustSet> clusterCaPemTrustSet(Reconciliation reconciliation, SecretOperator secretOperator) {
         return getSecret(secretOperator, reconciliation.namespace(), KafkaResources.clusterCaCertificateSecretName(reconciliation.name()))
                 .thenApply(PemTrustSet::new);
     }
@@ -492,15 +492,15 @@ public class ReconcilerUtils {
             if (auth instanceof KafkaClientAuthenticationScram) {
                 // only passwordSecret can be changed
                 return tlsFuture.thenCompose(tlsHash -> getPasswordAsync(secretOperations, namespace, auth)
-                        .thenCompose(password -> CompletableFuture.completedFuture(password.hashCode() + tlsHash)));
+                        .thenApply(password -> password.hashCode() + tlsHash));
             } else if (auth instanceof KafkaClientAuthenticationPlain) {
                 // only passwordSecret can be changed
                 return tlsFuture.thenCompose(tlsHash -> getPasswordAsync(secretOperations, namespace, auth)
-                        .thenCompose(password -> CompletableFuture.completedFuture(password.hashCode() + tlsHash)));
+                        .thenApply(password -> password.hashCode() + tlsHash));
             } else if (auth instanceof KafkaClientAuthenticationTls authTls) {
                 // custom cert can be used (and changed)
                 return authTls.getCertificateAndKey() == null ? tlsFuture : tlsFuture.thenCompose(tlsHash -> getCertificateAndKeyAsync(secretOperations, namespace, authTls.getCertificateAndKey())
-                        .thenCompose(crtAndKey -> CompletableFuture.completedFuture(crtAndKey.certAsBase64String().hashCode() + crtAndKey.keyAsBase64String().hashCode() + tlsHash)));
+                        .thenApply(crtAndKey -> crtAndKey.certAsBase64String().hashCode() + crtAndKey.keyAsBase64String().hashCode() + tlsHash));
             } else {
                 // unknown Auth type
                 return tlsFuture;
@@ -629,20 +629,20 @@ public class ReconcilerUtils {
      */
     public static CompletionStage<CertAndKey> getCertificateAndKeyAsync(SecretOperator secretOperator, String namespace, CertAndKeySecretSource certAndKeySecretSource) {
         return getValidatedSecret(secretOperator, namespace, certAndKeySecretSource.getSecretName(), certAndKeySecretSource.getCertificate(), certAndKeySecretSource.getKey())
-                .thenCompose(secret -> CompletableFuture.completedFuture(new CertAndKey(
+                .thenApply(secret -> new CertAndKey(
                         Util.decodeBytesFromBase64(secret.getData().get(certAndKeySecretSource.getKey())),
-                        Util.decodeBytesFromBase64(secret.getData().get(certAndKeySecretSource.getCertificate())))));
+                        Util.decodeBytesFromBase64(secret.getData().get(certAndKeySecretSource.getCertificate()))));
     }
 
     private static CompletionStage<String> getPasswordAsync(SecretOperator secretOperator, String namespace, KafkaClientAuthentication auth) {
         if (auth instanceof KafkaClientAuthenticationPlain plainAuth) {
 
             return getValidatedSecret(secretOperator, namespace, plainAuth.getPasswordSecret().getSecretName(), plainAuth.getPasswordSecret().getPassword())
-                    .thenCompose(secret -> CompletableFuture.completedFuture(secret.getData().get(plainAuth.getPasswordSecret().getPassword())));
+                    .thenApply(secret -> secret.getData().get(plainAuth.getPasswordSecret().getPassword()));
         } else if (auth instanceof KafkaClientAuthenticationScram scramAuth) {
 
             return getValidatedSecret(secretOperator, namespace, scramAuth.getPasswordSecret().getSecretName(), scramAuth.getPasswordSecret().getPassword())
-                    .thenCompose(secret -> CompletableFuture.completedFuture(secret.getData().get(scramAuth.getPasswordSecret().getPassword())));
+                    .thenApply(secret -> secret.getData().get(scramAuth.getPasswordSecret().getPassword()));
         } else {
             return CompletableFuture.failedFuture(new RuntimeException("Auth type " + auth.getType() + " does not have a password property"));
         }
