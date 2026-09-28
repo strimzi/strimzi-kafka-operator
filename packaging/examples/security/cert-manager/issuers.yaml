@@ -1,4 +1,4 @@
-# This file contains the definitions for the self-signed issuer, that is used to issue the root certificates for the Clients and Cluster CAs.
+# This file contains the definitions for the self-signed issuer that is used to issue the root certificates for the Clients and Cluster CAs.
 apiVersion: cert-manager.io/v1
 kind: Issuer
 metadata:
@@ -26,7 +26,7 @@ spec:
     group: cert-manager.io
 
 ---
-# Issuer for the Strimzi Cluster CA
+# Issuer for the Strimzi Cluster CA. This issuer is used to generate and sign the end-entity-certificates (certificates for Kafka brokers, Topic / User Operator, etc.).
 apiVersion: cert-manager.io/v1
 kind: Issuer
 metadata:
@@ -36,7 +36,7 @@ spec:
     secretName: strimzi-cluster-ca
 
 ---
-# Certificate for the Strimzi Clients CA
+# Certificate for the Strimzi Clients CA. This issuer is used to generate and sign the user certificates.
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
