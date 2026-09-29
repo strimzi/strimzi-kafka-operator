@@ -8,10 +8,6 @@
     <artifactId>kafka-thirdparty-libs</artifactId>
     <packaging>pom</packaging>
 
-    <!--
-    Kafka 4.2.1 uses different Jackson version (2.21.2) than Kafka 4.2.0. So we use separate third-party libs directory.
-    -->
-
     <licenses>
         <license>
             <name>Apache License, Version 2.0</name>
@@ -29,7 +25,8 @@
         <opentelemetry.version>1.63.0</opentelemetry.version>
         <opentelemetry.instrumentation.version>1.32.0-alpha</opentelemetry.instrumentation.version>
         <grpc-netty-shaded.version>1.79.0</grpc-netty-shaded.version>
-        <log4j.version>2.25.4</log4j.version>
+        <log4j.version>2.25.5</log4j.version>
+        <jackson.version>2.21.7</jackson.version>
     </properties>
 
     <dependencies>
@@ -336,7 +333,7 @@
         <dependency>
             <groupId>com.fasterxml.jackson.datatype</groupId>
             <artifactId>jackson-datatype-jsr310</artifactId>
-            <version>2.21.2</version>
+            <version>${jackson.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>com.fasterxml.jackson.core</groupId>

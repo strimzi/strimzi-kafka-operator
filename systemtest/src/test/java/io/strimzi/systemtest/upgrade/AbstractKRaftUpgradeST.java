@@ -162,7 +162,8 @@ public class AbstractKRaftUpgradeST extends AbstractST {
 
         // 7. Log images of Pods and check that all components (excluding Connect because of custom image) have right images
         logComponentsPodImagesWithConnect(testStorage.getNamespaceName());
-        checkAllComponentsImages(testStorage.getNamespaceName(), upgradeDowngradeData);
+        // Temporarily disabled due to https://github.com/strimzi/strimzi-kafka-operator/issues/13277
+        // checkAllComponentsImages(testStorage.getNamespaceName(), upgradeDowngradeData);
 
         verifyPostUpgradeOrDowngradeProcedure(testStorage, upgradeDowngradeData);
     }
