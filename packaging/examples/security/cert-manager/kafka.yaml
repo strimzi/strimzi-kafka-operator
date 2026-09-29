@@ -70,7 +70,7 @@ spec:
         name: strimzi-cluster-ca
         kind: Issuer
         group: cert-manager.io
-      caCertRef:
+      caCertRef: # Optionally, you can use trust-manager to isolate the CA certificate into a separate Secret or sync it from another namespace
         secretName: strimzi-cluster-ca
         certificate: ca.crt
   clientsCa:
@@ -81,6 +81,6 @@ spec:
         name: strimzi-clients-ca
         kind: Issuer
         group: cert-manager.io
-      caCertRef:
+      caCertRef: # Optionally, you can use trust-manager to isolate the CA certificate into a separate Secret or sync it from another namespace
         secretName: strimzi-clients-ca
         certificate: ca.crt
