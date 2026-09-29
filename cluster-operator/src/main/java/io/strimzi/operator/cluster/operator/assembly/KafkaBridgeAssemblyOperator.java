@@ -111,7 +111,7 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
             .compose(i -> VertxUtil.toFuture(deploymentOperations.scaleDown(reconciliation, namespace, bridge.getComponentName(), bridge.getReplicas(), operationTimeoutMs)))
             .compose(scale -> VertxUtil.toFuture(serviceOperations.reconcile(reconciliation, namespace, KafkaBridgeResources.serviceName(bridge.getCluster()), bridge.generateService())))
             .compose(i -> tlsTrustedCertsSecret(reconciliation, namespace, bridge))
-            .compose(certs -> ReconcilerUtils.authTlsHash(secretOperations, namespace, auth, certs))
+            .compose(certs -> VertxUtil.toFuture(ReconcilerUtils.authTlsHash(secretOperations, namespace, auth, certs)))
             .compose(authTlsHash -> {
                 podAnnotations.put(Annotations.ANNO_STRIMZI_AUTH_HASH, Integer.toString(authTlsHash));
                 return Future.succeededFuture();
@@ -158,7 +158,7 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
      */
     private Future<Collection<String>> tlsTrustedCertsSecret(Reconciliation reconciliation, String namespace, KafkaBridgeCluster bridge) {
         if (bridge.getTls() != null) {
-            return ReconcilerUtils.trustedCertificates(reconciliation, secretOperations, bridge.getTls().getTrustedCertificates())
+            return VertxUtil.toFuture(ReconcilerUtils.trustedCertificates(reconciliation, secretOperations, bridge.getTls().getTrustedCertificates()))
                     .compose(certificates -> {
                         if (certificates != null) {
                             return VertxUtil.toFuture(secretOperations.reconcile(
@@ -186,7 +186,7 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
     @Override
     protected Future<Boolean> delete(Reconciliation reconciliation) {
         return super.delete(reconciliation)
-                    .compose(i -> ReconcilerUtils.withIgnoreRbacError(reconciliation, VertxUtil.toFuture(clusterRoleBindingOperations.reconcile(reconciliation, KafkaBridgeResources.initContainerClusterRoleBindingName(reconciliation.name(), reconciliation.namespace()), null)), null))
+                    .compose(i -> VertxUtil.toFuture(ReconcilerUtils.withIgnoreRbacError(reconciliation, clusterRoleBindingOperations.reconcile(reconciliation, KafkaBridgeResources.initContainerClusterRoleBindingName(reconciliation.name(), reconciliation.namespace()), null), null)))
                     .map(Boolean.FALSE); // Return FALSE since other resources are still deleted by garbage collection
     }
 
@@ -203,7 +203,7 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
     }
 
     protected Future<ReconcileResult<ClusterRoleBinding>> bridgeInitClusterRoleBinding(Reconciliation reconciliation, String crbName, ClusterRoleBinding crb) {
-        return ReconcilerUtils.withIgnoreRbacError(reconciliation, VertxUtil.toFuture(clusterRoleBindingOperations.reconcile(reconciliation, crbName, crb)), crb);
+        return VertxUtil.toFuture(ReconcilerUtils.withIgnoreRbacError(reconciliation, clusterRoleBindingOperations.reconcile(reconciliation, crbName, crb), crb));
     }
 
     private Future<Void> bridgeRole(Reconciliation reconciliation, String namespace, KafkaBridgeCluster bridge) {

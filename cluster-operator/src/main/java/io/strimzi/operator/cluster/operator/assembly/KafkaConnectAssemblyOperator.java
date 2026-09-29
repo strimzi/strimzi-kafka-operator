@@ -179,7 +179,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
                 .compose(i -> VertxUtil.toFuture(serviceOperations.reconcile(reconciliation, namespace, connect.getServiceName(), connect.generateService())))
                 .compose(i -> VertxUtil.toFuture(serviceOperations.reconcile(reconciliation, namespace, connect.getComponentName(), connect.generateHeadlessService())))
                 .compose(i -> tlsTrustedCertsSecret(reconciliation, namespace, connect))
-                .compose(certs -> ReconcilerUtils.authTlsHash(secretOperations, namespace, kafkaConnect.getSpec().getAuthentication(), certs))
+                .compose(certs -> VertxUtil.toFuture(ReconcilerUtils.authTlsHash(secretOperations, namespace, kafkaConnect.getSpec().getAuthentication(), certs)))
                 .compose(hash -> {
                     podAnnotations.put(Annotations.ANNO_STRIMZI_AUTH_HASH, Integer.toString(hash));
                     return Future.succeededFuture();
@@ -189,7 +189,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
                     podAnnotations.put(Annotations.ANNO_STRIMZI_IO_CONFIGURATION_HASH, Util.hashStub(logAndMetricsConfigMap.getData().get(KafkaConnectCluster.KAFKA_CONNECT_CONFIGURATION_FILENAME)));
                     return VertxUtil.toFuture(configMapOperations.reconcile(reconciliation, namespace, logAndMetricsConfigMap.getMetadata().getName(), logAndMetricsConfigMap));
                 })
-                .compose(i -> ReconcilerUtils.reconcileJmxSecret(reconciliation, secretOperations, connect))
+                .compose(i -> VertxUtil.toFuture(ReconcilerUtils.reconcileJmxSecret(reconciliation, secretOperations, connect)))
                 .compose(i -> connectPodDisruptionBudget(reconciliation, namespace, connect))
                 .compose(i -> reconcilePodSet(reconciliation, connect, podAnnotations, controllerAnnotations, image.get()))
                 .compose(i -> useConnectorResources && !hasZeroReplicas ? reconcileAvailableConnectorPlugins(reconciliation, KafkaConnectResources.qualifiedServiceName(reconciliation.name(), namespace), kafkaConnectStatus) : Future.succeededFuture())
@@ -255,7 +255,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
     @Override
     protected Future<Boolean> delete(Reconciliation reconciliation) {
         return updateConnectorsThatConnectClusterWasDeleted(reconciliation)
-                .compose(i -> ReconcilerUtils.withIgnoreRbacError(reconciliation, VertxUtil.toFuture(clusterRoleBindingOperations.reconcile(reconciliation, KafkaConnectResources.initContainerClusterRoleBindingName(reconciliation.name(), reconciliation.namespace()), null)), null))
+                .compose(i -> VertxUtil.toFuture(ReconcilerUtils.withIgnoreRbacError(reconciliation, clusterRoleBindingOperations.reconcile(reconciliation, KafkaConnectResources.initContainerClusterRoleBindingName(reconciliation.name(), reconciliation.namespace()), null), null)))
                 .map(Boolean.FALSE); // Return FALSE since other resources are still deleted by garbage collection
     }
 

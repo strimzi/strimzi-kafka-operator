@@ -52,12 +52,7 @@ import io.strimzi.operator.common.auth.PemTrustSet;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.kubernetes.SecretOperator;
-import io.vertx.core.Future;
-import io.vertx.junit5.Checkpoint;
-import io.vertx.junit5.VertxExtension;
-import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 
 import java.util.HashMap;
@@ -80,7 +75,6 @@ import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -91,7 +85,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
-@ExtendWith(VertxExtension.class)
 @SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling"})
 public class ReconcilerUtilsTest {
     private final static String JMX_SECRET_NAME = "my-jmx-secret";
@@ -110,7 +103,7 @@ public class ReconcilerUtilsTest {
             .build();
 
     @Test
-    public void testCoIdentityWithTlsAndMtls(VertxTestContext context) {
+    public void testCoIdentityWithTlsAndMtls() {
         Secret clusterCaSecret = new SecretBuilder()
                 .withNewMetadata()
                     .withName(KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME))
@@ -134,23 +127,19 @@ public class ReconcilerUtilsTest {
         when(mockSecretOps.getAsync(NAMESPACE, KafkaResources.clusterOperatorCertsSecretName(CLUSTER_NAME)))
                 .thenReturn(CompletableFuture.completedFuture(clusterOperatorSecret));
 
-        Checkpoint async = context.checkpoint();
-        ReconcilerUtils.coIdentity(Reconciliation.DUMMY_RECONCILIATION, mockSecretOps, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT)
-                .onComplete(context.succeeding(identity -> context.verify(() -> {
-                    assertThat(identity.trustSet(), is(instanceOf(PemTrustSet.class)));
-                    assertThat(((PemTrustSet) identity.trustSet()).trustedCertificatesString(), is(DUMMY_CERT));
-                    assertThat(identity.authIdentity(), is(instanceOf(PemAuthIdentity.class)));
-                    assertThat(identity.authIdentity().kafkaClientProperties(), is(Map.of("ssl.keystore.type", "PEM",
-                            "ssl.keystore.key", "key",
-                            "ssl.keystore.certificate.chain", DUMMY_CERT)));
-                    verify(mockSecretOps).getAsync(NAMESPACE, KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME));
-                    verify(mockSecretOps).getAsync(NAMESPACE, KafkaResources.clusterOperatorCertsSecretName(CLUSTER_NAME));
-                    async.flag();
-                })));
+        Identity identity = ReconcilerUtils.coIdentity(Reconciliation.DUMMY_RECONCILIATION, mockSecretOps, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT).toCompletableFuture().join();
+        assertThat(identity.trustSet(), is(instanceOf(PemTrustSet.class)));
+        assertThat(((PemTrustSet) identity.trustSet()).trustedCertificatesString(), is(DUMMY_CERT));
+        assertThat(identity.authIdentity(), is(instanceOf(PemAuthIdentity.class)));
+        assertThat(identity.authIdentity().kafkaClientProperties(), is(Map.of("ssl.keystore.type", "PEM",
+                "ssl.keystore.key", "key",
+                "ssl.keystore.certificate.chain", DUMMY_CERT)));
+        verify(mockSecretOps).getAsync(NAMESPACE, KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME));
+        verify(mockSecretOps).getAsync(NAMESPACE, KafkaResources.clusterOperatorCertsSecretName(CLUSTER_NAME));
     }
 
     @Test
-    public void testCoIdentityWithTlsWithoutAuthentication(VertxTestContext context) {
+    public void testCoIdentityWithTlsWithoutAuthentication() {
         Secret clusterCaSecret = new SecretBuilder()
                 .withNewMetadata()
                     .withName(KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME))
@@ -166,35 +155,27 @@ public class ReconcilerUtilsTest {
         when(securityContext.encryption()).thenReturn(new TlsEncryptionConfiguration());
         when(securityContext.authentication()).thenReturn(new NoneAuthenticationConfiguration());
 
-        Checkpoint async = context.checkpoint();
-        ReconcilerUtils.coIdentity(Reconciliation.DUMMY_RECONCILIATION, mockSecretOps, securityContext)
-                .onComplete(context.succeeding(identity -> context.verify(() -> {
-                    assertThat(identity.trustSet(), is(instanceOf(PemTrustSet.class)));
-                    assertThat(identity.authIdentity(), is(nullValue()));
-                    verify(mockSecretOps).getAsync(NAMESPACE, KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME));
-                    verify(mockSecretOps, never()).getAsync(NAMESPACE, KafkaResources.clusterOperatorCertsSecretName(CLUSTER_NAME));
-                    async.flag();
-                })));
+        Identity identity = ReconcilerUtils.coIdentity(Reconciliation.DUMMY_RECONCILIATION, mockSecretOps, securityContext).toCompletableFuture().join();
+        assertThat(identity.trustSet(), is(instanceOf(PemTrustSet.class)));
+        assertThat(identity.authIdentity(), is(nullValue()));
+        verify(mockSecretOps).getAsync(NAMESPACE, KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME));
+        verify(mockSecretOps, never()).getAsync(NAMESPACE, KafkaResources.clusterOperatorCertsSecretName(CLUSTER_NAME));
     }
 
     @Test
-    public void testCoIdentityWithoutTlsOrAuthentication(VertxTestContext context) {
+    public void testCoIdentityWithoutTlsOrAuthentication() {
         SecretOperator mockSecretOps = mock(SecretOperator.class);
         KafkaClusterSecurityContext securityContext = mock(KafkaClusterSecurityContext.class);
         when(securityContext.encryption()).thenReturn(new NoneEncryptionConfiguration());
         when(securityContext.authentication()).thenReturn(new NoneAuthenticationConfiguration());
 
-        Checkpoint async = context.checkpoint();
-        ReconcilerUtils.coIdentity(Reconciliation.DUMMY_RECONCILIATION, mockSecretOps, securityContext)
-                .onComplete(context.succeeding(identity -> context.verify(() -> {
-                    assertThat(identity, is(Identity.DUMMY_IDENTITY));
-                    verifyNoInteractions(mockSecretOps);
-                    async.flag();
-                })));
+        Identity identity = ReconcilerUtils.coIdentity(Reconciliation.DUMMY_RECONCILIATION, mockSecretOps, securityContext).toCompletableFuture().join();
+        assertThat(identity, is(Identity.DUMMY_IDENTITY));
+        verifyNoInteractions(mockSecretOps);
     }
 
     @Test
-    public void testCoIdentityWithTlsAndServiceAccountAuthentication(VertxTestContext context) {
+    public void testCoIdentityWithTlsAndServiceAccountAuthentication() {
         Secret clusterCaSecret = new SecretBuilder()
                 .withNewMetadata()
                     .withName(KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME))
@@ -210,36 +191,28 @@ public class ReconcilerUtilsTest {
         when(securityContext.encryption()).thenReturn(new TlsEncryptionConfiguration());
         when(securityContext.authentication()).thenReturn(AuthenticationConfiguration.fromCrd(NAMESPACE, CLUSTER_NAME, new ClusterSecurityAuthenticationBuilder().withType(ClusterSecurityAuthenticationType.SERVICE_ACCOUNT).build(), null));
 
-        Checkpoint async = context.checkpoint();
-        ReconcilerUtils.coIdentity(Reconciliation.DUMMY_RECONCILIATION, mockSecretOps, securityContext)
-                .onComplete(context.succeeding(identity -> context.verify(() -> {
-                    assertThat(identity.trustSet(), is(instanceOf(PemTrustSet.class)));
-                    assertThat(identity.authIdentity(), is(instanceOf(RequestedServiceAccountAuthIdentity.class)));
-                    assertThat(identity.authIdentity().kafkaClientProperties().get("sasl.jaas.config"), containsString("strimzi.kubernetes.token.audience=\"strimzi.io/kafka/" + NAMESPACE + "/" + CLUSTER_NAME + "\""));
-                    assertThat(identity.authIdentity().kafkaClientProperties().get("sasl.jaas.config"), containsString("strimzi.kubernetes.token.expiration.seconds=\"3600\""));
+        Identity identity = ReconcilerUtils.coIdentity(Reconciliation.DUMMY_RECONCILIATION, mockSecretOps, securityContext).toCompletableFuture().join();
+        assertThat(identity.trustSet(), is(instanceOf(PemTrustSet.class)));
+        assertThat(identity.authIdentity(), is(instanceOf(RequestedServiceAccountAuthIdentity.class)));
+        assertThat(identity.authIdentity().kafkaClientProperties().get("sasl.jaas.config"), containsString("strimzi.kubernetes.token.audience=\"strimzi.io/kafka/" + NAMESPACE + "/" + CLUSTER_NAME + "\""));
+        assertThat(identity.authIdentity().kafkaClientProperties().get("sasl.jaas.config"), containsString("strimzi.kubernetes.token.expiration.seconds=\"3600\""));
 
-                    verify(mockSecretOps).getAsync(NAMESPACE, KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME));
-                    // The Cluster Operator certificates are not used with Service Account authentication
-                    verify(mockSecretOps, never()).getAsync(NAMESPACE, KafkaResources.clusterOperatorCertsSecretName(CLUSTER_NAME));
-                    async.flag();
-                })));
+        verify(mockSecretOps).getAsync(NAMESPACE, KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME));
+        // The Cluster Operator certificates are not used with Service Account authentication
+        verify(mockSecretOps, never()).getAsync(NAMESPACE, KafkaResources.clusterOperatorCertsSecretName(CLUSTER_NAME));
     }
 
     @Test
-    public void testCoIdentityWithServiceAccountAuthenticationWithoutTls(VertxTestContext context) {
+    public void testCoIdentityWithServiceAccountAuthenticationWithoutTls() {
         SecretOperator mockSecretOps = mock(SecretOperator.class);
         KafkaClusterSecurityContext securityContext = mock(KafkaClusterSecurityContext.class);
         when(securityContext.encryption()).thenReturn(new NoneEncryptionConfiguration());
         when(securityContext.authentication()).thenReturn(AuthenticationConfiguration.fromCrd(NAMESPACE, CLUSTER_NAME, new ClusterSecurityAuthenticationBuilder().withType(ClusterSecurityAuthenticationType.SERVICE_ACCOUNT).build(), null));
 
-        Checkpoint async = context.checkpoint();
-        ReconcilerUtils.coIdentity(Reconciliation.DUMMY_RECONCILIATION, mockSecretOps, securityContext)
-                .onComplete(context.succeeding(identity -> context.verify(() -> {
-                    assertThat(identity.trustSet(), is(nullValue()));
-                    assertThat(identity.authIdentity(), is(instanceOf(RequestedServiceAccountAuthIdentity.class)));
-                    verifyNoInteractions(mockSecretOps);
-                    async.flag();
-                })));
+        Identity identity = ReconcilerUtils.coIdentity(Reconciliation.DUMMY_RECONCILIATION, mockSecretOps, securityContext).toCompletableFuture().join();
+        assertThat(identity.trustSet(), is(nullValue()));
+        assertThat(identity.authIdentity(), is(instanceOf(RequestedServiceAccountAuthIdentity.class)));
+        verifyNoInteractions(mockSecretOps);
     }
 
     @Test
@@ -316,24 +289,19 @@ public class ReconcilerUtilsTest {
     }
 
     @Test
-    public void testDisabledJmxWithMissingSecret(VertxTestContext context) {
+    public void testDisabledJmxWithMissingSecret() {
         KafkaClusterSpec spec = new KafkaClusterSpecBuilder().build();
         JmxModel jmx = new JmxModel(NAMESPACE, JMX_SECRET_NAME, LABELS, ResourceUtils.DUMMY_OWNER_REFERENCE, spec);
 
         SecretOperator mockSecretOps = mock(SecretOperator.class);
         when(mockSecretOps.getAsync(eq(NAMESPACE), eq(JMX_SECRET_NAME))).thenReturn(CompletableFuture.completedFuture(null));
 
-        Checkpoint async = context.checkpoint();
-        ReconcilerUtils.reconcileJmxSecret(Reconciliation.DUMMY_RECONCILIATION, mockSecretOps, new MockJmxCluster(jmx))
-                .onComplete(context.succeeding(v -> context.verify(() -> {
-                    verify(mockSecretOps, never()).reconcile(any(), any(), any(), any());
-
-                    async.flag();
-                })));
+        ReconcilerUtils.reconcileJmxSecret(Reconciliation.DUMMY_RECONCILIATION, mockSecretOps, new MockJmxCluster(jmx)).toCompletableFuture().join();
+        verify(mockSecretOps, never()).reconcile(any(), any(), any(), any());
     }
 
     @Test
-    public void testDisabledJmxWithExistingSecret(VertxTestContext context) {
+    public void testDisabledJmxWithExistingSecret() {
         KafkaClusterSpec spec = new KafkaClusterSpecBuilder().build();
         JmxModel jmx = new JmxModel(NAMESPACE, JMX_SECRET_NAME, LABELS, ResourceUtils.DUMMY_OWNER_REFERENCE, spec);
 
@@ -347,34 +315,24 @@ public class ReconcilerUtilsTest {
             }
         });
 
-        Checkpoint async = context.checkpoint();
-        ReconcilerUtils.reconcileJmxSecret(Reconciliation.DUMMY_RECONCILIATION, mockSecretOps, new MockJmxCluster(jmx))
-                .onComplete(context.succeeding(v -> context.verify(() -> {
-                    verify(mockSecretOps, times(1)).reconcile(eq(Reconciliation.DUMMY_RECONCILIATION), eq(NAMESPACE), eq(JMX_SECRET_NAME), eq(null));
-
-                    async.flag();
-                })));
+        ReconcilerUtils.reconcileJmxSecret(Reconciliation.DUMMY_RECONCILIATION, mockSecretOps, new MockJmxCluster(jmx)).toCompletableFuture().join();
+        verify(mockSecretOps, times(1)).reconcile(eq(Reconciliation.DUMMY_RECONCILIATION), eq(NAMESPACE), eq(JMX_SECRET_NAME), eq(null));
     }
 
     @Test
-    public void testEnabledJmxWithoutAuthWithMissingSecret(VertxTestContext context) {
+    public void testEnabledJmxWithoutAuthWithMissingSecret() {
         KafkaClusterSpec spec = new KafkaClusterSpecBuilder().withNewJmxOptions().endJmxOptions().build();
         JmxModel jmx = new JmxModel(NAMESPACE, JMX_SECRET_NAME, LABELS, ResourceUtils.DUMMY_OWNER_REFERENCE, spec);
 
         SecretOperator mockSecretOps = mock(SecretOperator.class);
         when(mockSecretOps.getAsync(eq(NAMESPACE), eq(JMX_SECRET_NAME))).thenReturn(CompletableFuture.completedFuture(null));
 
-        Checkpoint async = context.checkpoint();
-        ReconcilerUtils.reconcileJmxSecret(Reconciliation.DUMMY_RECONCILIATION, mockSecretOps, new MockJmxCluster(jmx))
-                .onComplete(context.succeeding(v -> context.verify(() -> {
-                    verify(mockSecretOps, never()).reconcile(any(), any(), any(), any());
-
-                    async.flag();
-                })));
+        ReconcilerUtils.reconcileJmxSecret(Reconciliation.DUMMY_RECONCILIATION, mockSecretOps, new MockJmxCluster(jmx)).toCompletableFuture().join();
+        verify(mockSecretOps, never()).reconcile(any(), any(), any(), any());
     }
 
     @Test
-    public void testEnabledJmxWithoutAuthWithExistingSecret(VertxTestContext context) {
+    public void testEnabledJmxWithoutAuthWithExistingSecret() {
         KafkaClusterSpec spec = new KafkaClusterSpecBuilder().withNewJmxOptions().endJmxOptions().build();
         JmxModel jmx = new JmxModel(NAMESPACE, JMX_SECRET_NAME, LABELS, ResourceUtils.DUMMY_OWNER_REFERENCE, spec);
 
@@ -388,17 +346,13 @@ public class ReconcilerUtilsTest {
             }
         });
 
-        Checkpoint async = context.checkpoint();
-        ReconcilerUtils.reconcileJmxSecret(Reconciliation.DUMMY_RECONCILIATION, mockSecretOps, new MockJmxCluster(jmx))
-                .onComplete(context.succeeding(v -> context.verify(() -> {
-                    verify(mockSecretOps, times(1)).reconcile(eq(Reconciliation.DUMMY_RECONCILIATION), eq(NAMESPACE), eq(JMX_SECRET_NAME), eq(null));
+        ReconcilerUtils.reconcileJmxSecret(Reconciliation.DUMMY_RECONCILIATION, mockSecretOps, new MockJmxCluster(jmx)).toCompletableFuture().join();
+        verify(mockSecretOps, times(1)).reconcile(eq(Reconciliation.DUMMY_RECONCILIATION), eq(NAMESPACE), eq(JMX_SECRET_NAME), eq(null));
 
-                    async.flag();
-                })));
     }
 
     @Test
-    public void testEnabledJmxWithAuthWithMissingSecret(VertxTestContext context) {
+    public void testEnabledJmxWithAuthWithMissingSecret() {
         KafkaClusterSpec spec = new KafkaClusterSpecBuilder()
                 .withNewJmxOptions()
                     .withNewKafkaJmxAuthenticationPassword()
@@ -412,28 +366,23 @@ public class ReconcilerUtilsTest {
         ArgumentCaptor<Secret> secretCaptor = ArgumentCaptor.forClass(Secret.class);
         when(mockSecretOps.reconcile(any(), any(), any(), secretCaptor.capture())).thenAnswer(i -> CompletableFuture.completedFuture(ReconcileResult.created(i.getArgument(3))));
 
-        Checkpoint async = context.checkpoint();
-        ReconcilerUtils.reconcileJmxSecret(Reconciliation.DUMMY_RECONCILIATION, mockSecretOps, new MockJmxCluster(jmx))
-                .onComplete(context.succeeding(v -> context.verify(() -> {
-                    verify(mockSecretOps, times(1)).reconcile(eq(Reconciliation.DUMMY_RECONCILIATION), eq(NAMESPACE), eq(JMX_SECRET_NAME), any());
+        ReconcilerUtils.reconcileJmxSecret(Reconciliation.DUMMY_RECONCILIATION, mockSecretOps, new MockJmxCluster(jmx)).toCompletableFuture().join();
+        verify(mockSecretOps, times(1)).reconcile(eq(Reconciliation.DUMMY_RECONCILIATION), eq(NAMESPACE), eq(JMX_SECRET_NAME), any());
 
-                    Secret secret = secretCaptor.getValue();
-                    assertThat(secret, is(notNullValue()));
-                    assertThat(secret.getMetadata().getName(), is(JMX_SECRET_NAME));
-                    assertThat(secret.getMetadata().getNamespace(), is(NAMESPACE));
-                    assertThat(secret.getMetadata().getOwnerReferences(), is(List.of(ResourceUtils.DUMMY_OWNER_REFERENCE)));
-                    assertThat(secret.getMetadata().getLabels(), is(LABELS.toMap()));
-                    assertThat(secret.getMetadata().getAnnotations(), is(nullValue()));
-                    assertThat(secret.getData().size(), is(2));
-                    assertThat(secret.getData().get("jmx-username"), is(notNullValue()));
-                    assertThat(secret.getData().get("jmx-password"), is(notNullValue()));
-
-                    async.flag();
-                })));
+        Secret secret = secretCaptor.getValue();
+        assertThat(secret, is(notNullValue()));
+        assertThat(secret.getMetadata().getName(), is(JMX_SECRET_NAME));
+        assertThat(secret.getMetadata().getNamespace(), is(NAMESPACE));
+        assertThat(secret.getMetadata().getOwnerReferences(), is(List.of(ResourceUtils.DUMMY_OWNER_REFERENCE)));
+        assertThat(secret.getMetadata().getLabels(), is(LABELS.toMap()));
+        assertThat(secret.getMetadata().getAnnotations(), is(nullValue()));
+        assertThat(secret.getData().size(), is(2));
+        assertThat(secret.getData().get("jmx-username"), is(notNullValue()));
+        assertThat(secret.getData().get("jmx-password"), is(notNullValue()));
     }
 
     @Test
-    public void testEnabledJmxWithAuthWithExistingSecret(VertxTestContext context) {
+    public void testEnabledJmxWithAuthWithExistingSecret() {
         KafkaClusterSpec spec = new KafkaClusterSpecBuilder()
                 .withNewJmxOptions()
                     .withNewKafkaJmxAuthenticationPassword()
@@ -447,24 +396,19 @@ public class ReconcilerUtilsTest {
         ArgumentCaptor<Secret> secretCaptor = ArgumentCaptor.forClass(Secret.class);
         when(mockSecretOps.reconcile(any(), any(), any(), secretCaptor.capture())).thenAnswer(i -> CompletableFuture.completedFuture(ReconcileResult.patched(i.getArgument(3))));
 
-        Checkpoint async = context.checkpoint();
-        ReconcilerUtils.reconcileJmxSecret(Reconciliation.DUMMY_RECONCILIATION, mockSecretOps, new MockJmxCluster(jmx))
-                .onComplete(context.succeeding(v -> context.verify(() -> {
-                    verify(mockSecretOps, times(1)).reconcile(eq(Reconciliation.DUMMY_RECONCILIATION), eq(NAMESPACE), eq(JMX_SECRET_NAME), any());
+        ReconcilerUtils.reconcileJmxSecret(Reconciliation.DUMMY_RECONCILIATION, mockSecretOps, new MockJmxCluster(jmx)).toCompletableFuture().join();
+        verify(mockSecretOps, times(1)).reconcile(eq(Reconciliation.DUMMY_RECONCILIATION), eq(NAMESPACE), eq(JMX_SECRET_NAME), any());
 
-                    Secret secret = secretCaptor.getValue();
-                    assertThat(secret, is(notNullValue()));
-                    assertThat(secret.getMetadata().getName(), is(JMX_SECRET_NAME));
-                    assertThat(secret.getMetadata().getNamespace(), is(NAMESPACE));
-                    assertThat(secret.getMetadata().getOwnerReferences(), is(List.of(ResourceUtils.DUMMY_OWNER_REFERENCE)));
-                    assertThat(secret.getMetadata().getLabels(), is(LABELS.toMap()));
-                    assertThat(secret.getMetadata().getAnnotations(), is(nullValue()));
-                    assertThat(secret.getData().size(), is(2));
-                    assertThat(secret.getData().get("jmx-username"), is("username"));
-                    assertThat(secret.getData().get("jmx-password"), is("password"));
-
-                    async.flag();
-                })));
+        Secret secret = secretCaptor.getValue();
+        assertThat(secret, is(notNullValue()));
+        assertThat(secret.getMetadata().getName(), is(JMX_SECRET_NAME));
+        assertThat(secret.getMetadata().getNamespace(), is(NAMESPACE));
+        assertThat(secret.getMetadata().getOwnerReferences(), is(List.of(ResourceUtils.DUMMY_OWNER_REFERENCE)));
+        assertThat(secret.getMetadata().getLabels(), is(LABELS.toMap()));
+        assertThat(secret.getMetadata().getAnnotations(), is(nullValue()));
+        assertThat(secret.getData().size(), is(2));
+        assertThat(secret.getData().get("jmx-username"), is("username"));
+        assertThat(secret.getData().get("jmx-password"), is("password"));
     }
     
     @Test
@@ -560,12 +504,9 @@ public class ReconcilerUtilsTest {
         when(secretOps.getAsync(eq(namespace), eq("top-secret-pwd"))).thenReturn(CompletableFuture.completedFuture(secret));
         when(secretOps.getAsync(eq(namespace), eq("css-secret"))).thenReturn(CompletableFuture.completedFuture(cssSecret));
 
-        Future<Integer> res = ReconcilerUtils.authTlsHash(secretOps, "ns", kcu, List.of(DUMMY_CERT));
-        res.onComplete(v -> {
-            assertThat(v.succeeded(), is(true));
-            // we are summing "value" hash four times
-            assertThat(v.result(), is(DUMMY_CERT.hashCode() + "dmFsdWU=".hashCode()));
-        });
+        Integer v = ReconcilerUtils.authTlsHash(secretOps, "ns", kcu, List.of(DUMMY_CERT)).toCompletableFuture().join();
+        // we are summing "value" hash four times
+        assertThat(v, is(DUMMY_CERT.hashCode() + "dmFsdWU=".hashCode()));
     }
 
     @Test
@@ -584,11 +525,9 @@ public class ReconcilerUtilsTest {
         SecretOperator secretOps = mock(SecretOperator.class);
         when(secretOps.getAsync(eq(namespace), eq("top-secret-pwd"))).thenReturn(CompletableFuture.completedFuture(null));
 
-        Future<Integer> res = ReconcilerUtils.authTlsHash(secretOps, "ns", kcu, List.of());
-        res.onComplete(v -> {
-            assertThat(v.succeeded(), is(false));
-            assertThat(v.cause().getMessage(), is("Secret top-secret-pwd not found in namespace ns"));
-        });
+        CompletionException ex = assertThrows(CompletionException.class,
+                () -> ReconcilerUtils.authTlsHash(secretOps, "ns", kcu, List.of()).toCompletableFuture().join());
+        assertThat(ex.getCause().getMessage(), is("Secret top-secret-pwd not found in namespace ns"));
     }
 
     @Test
@@ -605,11 +544,9 @@ public class ReconcilerUtilsTest {
         passwordSecretSource.setSecretName("my-secret");
         passwordSecretSource.setPassword("password1");
         auth.setPasswordSecret(passwordSecretSource);
-        Future<Integer> result = ReconcilerUtils.authTlsHash(secretOperator, "anyNamespace", auth, List.of());
-        result.onComplete(handler -> {
-            assertTrue(handler.failed());
-            assertEquals("Items with key(s) [password1] are missing in Secret my-secret", handler.cause().getMessage());
-        });
+        CompletionException ex = assertThrows(CompletionException.class,
+                () -> ReconcilerUtils.authTlsHash(secretOperator, "anyNamespace", auth, List.of()).toCompletableFuture().join());
+        assertThat(ex.getCause().getMessage(), is("Items with key(s) [password1] are missing in Secret my-secret"));
     }
 
     @Test
@@ -626,11 +563,8 @@ public class ReconcilerUtilsTest {
         passwordSecretSource.setSecretName("my-secret");
         passwordSecretSource.setPassword("passwordKey");
         auth.setPasswordSecret(passwordSecretSource);
-        Future<Integer> result = ReconcilerUtils.authTlsHash(secretOperator, "anyNamespace", auth, List.of());
-        result.onComplete(handler -> {
-            assertTrue(handler.succeeded());
-            assertEquals("my-password".hashCode(), handler.result());
-        });
+        Integer r = ReconcilerUtils.authTlsHash(secretOperator, "anyNamespace", auth, List.of()).toCompletableFuture().join();
+        assertEquals("my-password".hashCode(), r);
     }
 
     @Test
@@ -647,11 +581,9 @@ public class ReconcilerUtilsTest {
         passwordSecretSource.setSecretName("my-secret");
         passwordSecretSource.setPassword("password1");
         auth.setPasswordSecret(passwordSecretSource);
-        Future<Integer> result = ReconcilerUtils.authTlsHash(secretOperator, "anyNamespace", auth, List.of());
-        result.onComplete(handler -> {
-            assertTrue(handler.failed());
-            assertEquals("Items with key(s) [password1] are missing in Secret my-secret", handler.cause().getMessage());
-        });
+        CompletionException ex = assertThrows(CompletionException.class,
+                () -> ReconcilerUtils.authTlsHash(secretOperator, "anyNamespace", auth, List.of()).toCompletableFuture().join());
+        assertThat(ex.getCause().getMessage(), is("Items with key(s) [password1] are missing in Secret my-secret"));
     }
 
     @Test
@@ -668,11 +600,8 @@ public class ReconcilerUtilsTest {
         passwordSecretSource.setSecretName("my-secret");
         passwordSecretSource.setPassword("passwordKey");
         auth.setPasswordSecret(passwordSecretSource);
-        Future<Integer> result = ReconcilerUtils.authTlsHash(secretOperator, "anyNamespace", auth, List.of());
-        result.onComplete(handler -> {
-            assertTrue(handler.succeeded());
-            assertEquals("my-password".hashCode(), handler.result());
-        });
+        Integer r = ReconcilerUtils.authTlsHash(secretOperator, "anyNamespace", auth, List.of()).toCompletableFuture().join();
+        assertEquals("my-password".hashCode(), r);
     }
 
     @Test
@@ -691,11 +620,8 @@ public class ReconcilerUtilsTest {
         SecretOperator secretOps = mock(SecretOperator.class);
         when(secretOps.getAsync(eq(namespace), eq(secretName))).thenReturn(CompletableFuture.completedFuture(secret));
 
-        ReconcilerUtils.getValidatedSecret(secretOps, namespace, secretName, "key1", "key2")
-                .onComplete(r -> {
-                    assertThat(r.succeeded(), is(true));
-                    assertThat(r.result(), is(secret));
-                });
+        Secret result = ReconcilerUtils.getValidatedSecret(secretOps, namespace, secretName, "key1", "key2").toCompletableFuture().join();
+        assertThat(result, is(secret));
     }
 
     @Test
@@ -706,11 +632,9 @@ public class ReconcilerUtilsTest {
         SecretOperator secretOps = mock(SecretOperator.class);
         when(secretOps.getAsync(eq(namespace), eq(secretName))).thenReturn(CompletableFuture.completedFuture(null));
 
-        ReconcilerUtils.getValidatedSecret(secretOps, namespace, secretName, "key1", "key2")
-                .onComplete(r -> {
-                    assertThat(r.succeeded(), is(false));
-                    assertThat(r.cause().getMessage(), is("Secret my-secret not found in namespace ns"));
-                });
+        CompletionException ex = assertThrows(CompletionException.class,
+                () -> ReconcilerUtils.getValidatedSecret(secretOps, namespace, secretName, "key1", "key2").toCompletableFuture().join());
+        assertThat(ex.getCause().getMessage(), is("Secret my-secret not found in namespace ns"));
     }
 
     @Test
@@ -729,15 +653,13 @@ public class ReconcilerUtilsTest {
         SecretOperator secretOps = mock(SecretOperator.class);
         when(secretOps.getAsync(eq(namespace), eq(secretName))).thenReturn(CompletableFuture.completedFuture(secret));
 
-        ReconcilerUtils.getValidatedSecret(secretOps, namespace, secretName, "key1", "key4", "key5")
-                .onComplete(r -> {
-                    assertThat(r.succeeded(), is(false));
-                    assertThat(r.cause().getMessage(), is("Items with key(s) [key4, key5] are missing in Secret my-secret"));
-                });
+        CompletionException ex = assertThrows(CompletionException.class,
+                () -> ReconcilerUtils.getValidatedSecret(secretOps, namespace, secretName, "key1", "key4", "key5").toCompletableFuture().join());
+        assertThat(ex.getCause().getMessage(), is("Items with key(s) [key4, key5] are missing in Secret my-secret"));
     }
 
     @Test
-    void testTrustedCertificates(VertxTestContext context) {
+    void testTrustedCertificates() {
         CertSecretSource cert1 = new CertSecretSourceBuilder()
                 .withSecretName("cert-secret")
                 .withPattern("*.crt")
@@ -767,15 +689,12 @@ public class ReconcilerUtilsTest {
         when(secretOps.getAsync(anyString(), eq("cert-secret2"))).thenReturn(CompletableFuture.completedFuture(secret2));
         when(secretOps.getAsync(anyString(), eq("cert-secret3"))).thenReturn(CompletableFuture.completedFuture(secret3));
 
-        Checkpoint async = context.checkpoint();
-        ReconcilerUtils.trustedCertificates(Reconciliation.DUMMY_RECONCILIATION, secretOps, List.of(cert1, cert2, cert3)).onComplete(context.succeeding(res -> {
-            assertThat(res, hasItems(DUMMY_CERT + "\n" + DUMMY_CERT, DUMMY_CERT, DUMMY_CERT));
-            async.flag();
-        }));
+        List<String> res = ReconcilerUtils.trustedCertificates(Reconciliation.DUMMY_RECONCILIATION, secretOps, List.of(cert1, cert2, cert3)).toCompletableFuture().join();
+        assertThat(res, hasItems(DUMMY_CERT + "\n" + DUMMY_CERT, DUMMY_CERT, DUMMY_CERT));
     }
 
     @Test
-    void testTrustedCertificatesMissingSecret(VertxTestContext context) {
+    void testTrustedCertificatesMissingSecret() {
         CertSecretSource cert1 = new CertSecretSourceBuilder()
                 .withSecretName("cert-secret")
                 .withPattern("*.crt")
@@ -793,15 +712,13 @@ public class ReconcilerUtilsTest {
         when(secretOps.getAsync(anyString(), eq("cert-secret"))).thenReturn(CompletableFuture.completedFuture(secret));
         when(secretOps.getAsync(anyString(), eq("cert-secret2"))).thenReturn(CompletableFuture.completedFuture(null));
 
-        Checkpoint async = context.checkpoint();
-        ReconcilerUtils.trustedCertificates(Reconciliation.DUMMY_RECONCILIATION, secretOps, List.of(cert1, cert2)).onComplete(context.failing(res -> {
-            assertThat(res.getMessage(), is("Secret cert-secret2 not found in namespace namespace"));
-            async.flag();
-        }));
+        CompletionException ex = assertThrows(CompletionException.class,
+                () -> ReconcilerUtils.trustedCertificates(Reconciliation.DUMMY_RECONCILIATION, secretOps, List.of(cert1, cert2)).toCompletableFuture().join());
+        assertThat(ex.getCause().getMessage(), is("Secret cert-secret2 not found in namespace namespace"));
     }
 
     @Test
-    void testTrustedCertificatesMissingCertificate(VertxTestContext context) {
+    void testTrustedCertificatesMissingCertificate() {
         CertSecretSource cert1 = new CertSecretSourceBuilder()
                 .withSecretName("cert-secret")
                 .withPattern("*.crt")
@@ -822,15 +739,13 @@ public class ReconcilerUtilsTest {
         when(secretOps.getAsync(anyString(), eq("cert-secret"))).thenReturn(CompletableFuture.completedFuture(secret));
         when(secretOps.getAsync(anyString(), eq("cert-secret2"))).thenReturn(CompletableFuture.completedFuture(secret2));
 
-        Checkpoint async = context.checkpoint();
-        ReconcilerUtils.trustedCertificates(Reconciliation.DUMMY_RECONCILIATION, secretOps, List.of(cert1, cert2)).onComplete(context.failing(res -> {
-            assertThat(res.getMessage(), is("Items with key(s) [ca.crt] are missing in Secret cert-secret2"));
-            async.flag();
-        }));
+        CompletionException ex = assertThrows(CompletionException.class,
+                () -> ReconcilerUtils.trustedCertificates(Reconciliation.DUMMY_RECONCILIATION, secretOps, List.of(cert1, cert2)).toCompletableFuture().join());
+        assertThat(ex.getCause().getMessage(), is("Items with key(s) [ca.crt] are missing in Secret cert-secret2"));
     }
 
     @Test
-    void testTrustedCertificatesInvalidCertificate(VertxTestContext context) {
+    void testTrustedCertificatesInvalidCertificate() {
         CertSecretSource cert1 = new CertSecretSourceBuilder()
                 .withSecretName("cert-secret")
                 .withPattern("*.crt")
@@ -843,15 +758,13 @@ public class ReconcilerUtilsTest {
         SecretOperator secretOps = mock(SecretOperator.class);
         when(secretOps.getAsync(anyString(), eq("cert-secret"))).thenReturn(CompletableFuture.completedFuture(secret));
 
-        Checkpoint async = context.checkpoint();
-        ReconcilerUtils.trustedCertificates(Reconciliation.DUMMY_RECONCILIATION, secretOps, List.of(cert1)).onComplete(context.failing(res -> {
-            assertThat(res.getMessage(), is("Failed to load certificate from Secret cert-secret from namespace namespace"));
-            async.flag();
-        }));
+        CompletionException ex = assertThrows(CompletionException.class,
+                () -> ReconcilerUtils.trustedCertificates(Reconciliation.DUMMY_RECONCILIATION, secretOps, List.of(cert1)).toCompletableFuture().join());
+        assertThat(ex.getCause().getMessage(), is("Failed to load certificate from Secret cert-secret from namespace namespace"));
     }
 
     @Test
-    void testTrustedCertificatesNotMatchingPattern(VertxTestContext context) {
+    void testTrustedCertificatesNotMatchingPattern() {
         CertSecretSource cert1 = new CertSecretSourceBuilder()
             .withSecretName("cert-secret")
             .withPattern("*.pem")
@@ -864,12 +777,9 @@ public class ReconcilerUtilsTest {
         SecretOperator secretOps = mock(SecretOperator.class);
         when(secretOps.getAsync(eq(NAMESPACE), eq("cert-secret"))).thenReturn(CompletableFuture.completedFuture(secret));
 
-        Checkpoint async = context.checkpoint();
-        ReconcilerUtils.trustedCertificates(Reconciliation.DUMMY_RECONCILIATION, secretOps, singletonList(cert1)).onComplete(context.succeeding(res -> {
-            assertThat(res, is(List.of("")));
-            verify(secretOps).getAsync(any(), eq("cert-secret"));
-            async.flag();
-        }));
+        List<String> res = ReconcilerUtils.trustedCertificates(Reconciliation.DUMMY_RECONCILIATION, secretOps, singletonList(cert1)).toCompletableFuture().join();
+        assertThat(res, is(List.of("")));
+        verify(secretOps).getAsync(any(), eq("cert-secret"));
     }
 
     @Test
@@ -934,34 +844,34 @@ public class ReconcilerUtilsTest {
     }
 
     @Test
-    public void testWithIgnoreRbacErrorIgnoresForbiddenWhenNotNeeded(VertxTestContext context) {
+    public void testWithIgnoreRbacErrorIgnoresForbiddenWhenNotNeeded() {
         // The resource operators run on a CompletableFuture and wrap exceptions in a CompletionException. When the
         // ClusterRoleBinding is not desired (null) and the access is forbidden (403), the error should still be ignored.
-        Future<ReconcileResult<ClusterRoleBinding>> reconcileFuture = Future.failedFuture(new CompletionException(new KubernetesClientException("Forbidden", 403, null)));
+        CompletionStage<ReconcileResult<ClusterRoleBinding>> reconcileFuture = CompletableFuture.failedFuture(new KubernetesClientException("Forbidden", 403, null));
 
-        Checkpoint async = context.checkpoint();
-        ReconcilerUtils.withIgnoreRbacError(Reconciliation.DUMMY_RECONCILIATION, reconcileFuture, null)
-                .onComplete(context.succeeding(rr -> async.flag()));
+        ReconcilerUtils.withIgnoreRbacError(Reconciliation.DUMMY_RECONCILIATION, reconcileFuture, null).toCompletableFuture().join();
     }
 
     @Test
-    public void testWithIgnoreRbacErrorPropagatesForbiddenWhenNeeded(VertxTestContext context) {
+    public void testWithIgnoreRbacErrorPropagatesForbiddenWhenNeeded() {
         // When the ClusterRoleBinding is desired (non-null), a forbidden error must not be ignored.
-        Future<ReconcileResult<ClusterRoleBinding>> reconcileFuture = Future.failedFuture(new CompletionException(new KubernetesClientException("Forbidden", 403, null)));
+        CompletionStage<ReconcileResult<ClusterRoleBinding>> reconcileFuture = CompletableFuture.failedFuture(new KubernetesClientException("Forbidden", 403, null));
 
-        Checkpoint async = context.checkpoint();
-        ReconcilerUtils.withIgnoreRbacError(Reconciliation.DUMMY_RECONCILIATION, reconcileFuture, new ClusterRoleBindingBuilder().build())
-                .onComplete(context.failing(e -> async.flag()));
+        CompletionException ex = assertThrows(CompletionException.class,
+                () -> ReconcilerUtils.withIgnoreRbacError(Reconciliation.DUMMY_RECONCILIATION, reconcileFuture, new ClusterRoleBindingBuilder().build()).toCompletableFuture().join());
+        assertThat(ex.getCause(), instanceOf(KubernetesClientException.class));
+        assertThat(((KubernetesClientException) ex.getCause()).getCode(), is(403));
     }
 
     @Test
-    public void testWithIgnoreRbacErrorPropagatesNonForbiddenError(VertxTestContext context) {
+    public void testWithIgnoreRbacErrorPropagatesNonForbiddenError() {
         // An error other than forbidden (403) must not be ignored even when the ClusterRoleBinding is not desired.
-        Future<ReconcileResult<ClusterRoleBinding>> reconcileFuture = Future.failedFuture(new CompletionException(new KubernetesClientException("Server Error", 500, null)));
+        CompletionStage<ReconcileResult<ClusterRoleBinding>> reconcileFuture = CompletableFuture.failedFuture(new KubernetesClientException("Server Error", 500, null));
 
-        Checkpoint async = context.checkpoint();
-        ReconcilerUtils.withIgnoreRbacError(Reconciliation.DUMMY_RECONCILIATION, reconcileFuture, null)
-                .onComplete(context.failing(e -> async.flag()));
+        CompletionException ex = assertThrows(CompletionException.class,
+                () -> ReconcilerUtils.withIgnoreRbacError(Reconciliation.DUMMY_RECONCILIATION, reconcileFuture, null).toCompletableFuture().join());
+        assertThat(ex.getCause(), instanceOf(KubernetesClientException.class));
+        assertThat(((KubernetesClientException) ex.getCause()).getCode(), is(500));
     }
 
     static class MockJmxCluster implements SupportsJmx {
