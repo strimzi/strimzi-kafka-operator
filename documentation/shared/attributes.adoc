@@ -21,12 +21,12 @@
 :KubernetesVersion: 1.32 and later
 
 // Kafka upgrade attributes used in kafka upgrades section
-:DefaultKafkaVersion: 4.3.1
+:DefaultKafkaVersion: 4.3.2
 :DefaultKafkaMetadataVersion: 4.3
 :KafkaMetadataVersionLower: 4.2-IV1
 :KafkaMetadataVersionHigher: 4.3-IV0
 :KafkaVersionLower: 4.2.0
-:KafkaVersionHigher: 4.3.1
+:KafkaVersionHigher: 4.3.2
 :ExampleImageTagUpgrades: quay.io/strimzi/kafka:{ProductVersion}-kafka-{KafkaVersionHigher}
 
 // Bridge version
