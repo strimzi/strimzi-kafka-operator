@@ -66,7 +66,7 @@ jobs:
         with:
           scanName: operators
           fossaTest: "true"
-          branch: ${{ inputs.releaseVersion || github.ref_name }}
+          branch: ${{ github.ref_name }}
 
   # Discover container images from build artifacts for matrix scanning
   prepare-container-scan:
@@ -130,10 +130,22 @@ jobs:
       - name: Install Docker
         uses: strimzi/github-actions/.github/actions/dependencies/install-docker@4aefb08c299693441fb87284984c760a1c708fbc # v2.4
 
+      # Derive a clean FOSSA project name from the archive filename:
+      # - strip "-latest" tag
+      # - strip "-amd64" architecture suffix
+      # - deduplicate "kafka-kafka-" prefix (kafka images carry the version in the name)
+      # - append "-container" to distinguish from Maven project
+      # Examples: operator-latest-amd64 -> operator-container
+      #           kafka-latest-kafka-4.2.0-amd64 -> kafka-4.2.0-container
+      - name: Derive FOSSA scan name
+        id: scan-name
+        run: echo "name=$(echo '${{ matrix.image }}' | sed 's/-latest//;s/-amd64$//;s/^kafka-kafka-/kafka-/;s$/-container$//')" >> "$GITHUB_OUTPUT"
+
       - name: Run FOSSA container scan
         uses: strimzi/github-actions/.github/actions/security/fossa-container-scan@4aefb08c299693441fb87284984c760a1c708fbc # v2.4
         with:
           imageFile: docker-images/container-archives/${{ matrix.image }}.tar.gz
           image: ${{ matrix.image }}
+          scanName: ${{ steps.scan-name.outputs.name }}
           fossaTest: "true"
           branch: ${{ inputs.releaseVersion || github.ref_name }}
