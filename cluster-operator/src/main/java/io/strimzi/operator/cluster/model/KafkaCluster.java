@@ -438,9 +438,9 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
     }
 
     /**
-     * Generates a map of the JBOD volumes which are going to be removed from the Kafka brokers. Only nodes which run
-     * with the broker role right now are included, because only they can hold partition replicas. Note that the Admin
-     * API does not report the KRaft metadata log, so a volume which holds only the metadata log is seen as empty.
+     * Generates a map of the JBOD volumes which are going to be removed from the Kafka brokers. Only pools which run
+     * as brokers right now are included, because only they can hold partition replicas. Note that the Admin API does
+     * not report the KRaft metadata log, so a volume which holds only the metadata log is seen as empty.
      *
      * @return  Map with the broker node IDs and the IDs of the JBOD volumes which are going to be removed from them
      */
@@ -449,7 +449,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
 
         for (KafkaPool pool : nodePools)    {
             if (!pool.removedJbodVolumeIds().isEmpty()) {
-                for (NodeRef node : pool.currentBrokerNodes())   {
+                for (NodeRef node : pool.currentNodes())   {
                     volumes.put(node.nodeId(), pool.removedJbodVolumeIds());
                 }
             }

@@ -191,7 +191,10 @@ public class KafkaPool extends AbstractModel {
                     LOGGER.warnCr(reconciliation, "The KRaft metadata log for KafkaNodePool {}/{} will be moved from volume {} to volume {}.", pool.getMetadata().getNamespace(), pool.getMetadata().getName(), VolumeUtils.kraftMetadataPath(oldStorage), VolumeUtils.kraftMetadataPath(newStorage));
                 }
 
-                result.removedJbodVolumeIds = findRemovedJbodVolumeIds(oldStorage, newStorage);
+                if (isRunningAsBroker(pool)) {
+                    result.removedJbodVolumeIds = findRemovedJbodVolumeIds(oldStorage, newStorage);
+                }
+
                 result.setStorage(newStorage);
             }
         } else {
@@ -201,6 +204,20 @@ public class KafkaPool extends AbstractModel {
         processTemplate(result, kafka.getSpec().getKafka().getTemplate(), pool.getSpec().getTemplate());
 
         return result;
+    }
+
+    /**
+     * Checks whether the nodes of this pool run with the broker role right now. This reads the status and not the
+     * spec, because only a node which is a broker today can hold partition replicas and answer the Admin API.
+     *
+     * @param pool  KafkaNodePool custom resource
+     *
+     * @return  True if the nodes run with the broker role right now. False otherwise.
+     */
+    private static boolean isRunningAsBroker(KafkaNodePool pool) {
+        return pool.getStatus() != null
+                && pool.getStatus().getRoles() != null
+                && pool.getStatus().getRoles().contains(ProcessRoles.BROKER);
     }
 
     /**
@@ -314,13 +331,13 @@ public class KafkaPool extends AbstractModel {
     }
 
     /**
-     * Gets the set with node references which run with the broker role right now. Nodes which are being added are not
+     * Gets the set with node references which run in the Kafka cluster right now. Nodes which are being added are not
      * included, because they do not exist yet.
      *
-     * @return  Set with node references which run with the broker role right now
+     * @return  Set with node references which run in the Kafka cluster right now
      */
-    public Set<NodeRef> currentBrokerNodes() {
-        return idAssignment.currentBrokers()
+    public Set<NodeRef> currentNodes() {
+        return idAssignment.current()
                 .stream()
                 .map(this::nodeRef)
                 .collect(Collectors.toCollection(LinkedHashSet::new)); // we want this in deterministic order

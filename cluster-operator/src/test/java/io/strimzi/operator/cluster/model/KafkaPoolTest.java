@@ -84,7 +84,7 @@ public class KafkaPoolTest {
                 Reconciliation.DUMMY_RECONCILIATION,
                 KAFKA,
                 POOL,
-                new NodeIdAssignment(Set.of(10, 11, 13), Set.of(10, 11, 13), Set.of(), Set.of(), Set.of(), Set.of(10, 11, 13)),
+                new NodeIdAssignment(Set.of(10, 11, 13), Set.of(10, 11, 13), Set.of(), Set.of(), Set.of()),
                 new JbodStorageBuilder().withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("100Gi").build()).build(),
                 ResourceUtils.DUMMY_OWNER_REFERENCE,
                 SHARED_ENV_PROVIDER
@@ -143,7 +143,7 @@ public class KafkaPoolTest {
                 Reconciliation.DUMMY_RECONCILIATION,
                 KAFKA,
                 pool,
-                new NodeIdAssignment(Set.of(10, 11, 13), Set.of(10, 11, 13), Set.of(), Set.of(), Set.of(), Set.of()),
+                new NodeIdAssignment(Set.of(10, 11, 13), Set.of(10, 11, 13), Set.of(), Set.of(), Set.of()),
                 new JbodStorageBuilder().withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("100Gi").build()).build(),
                 ResourceUtils.DUMMY_OWNER_REFERENCE,
                 SHARED_ENV_PROVIDER
@@ -174,7 +174,7 @@ public class KafkaPoolTest {
                 Reconciliation.DUMMY_RECONCILIATION,
                 KAFKA,
                 pool,
-                new NodeIdAssignment(Set.of(10, 11, 13), Set.of(10, 11, 13), Set.of(), Set.of(), Set.of(), Set.of(10, 11, 13)),
+                new NodeIdAssignment(Set.of(10, 11, 13), Set.of(10, 11, 13), Set.of(), Set.of(), Set.of()),
                 new JbodStorageBuilder().withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("100Gi").build()).build(),
                 ResourceUtils.DUMMY_OWNER_REFERENCE,
                 SHARED_ENV_PROVIDER
@@ -214,7 +214,7 @@ public class KafkaPoolTest {
                 Reconciliation.DUMMY_RECONCILIATION,
                 KAFKA,
                 pool,
-                new NodeIdAssignment(Set.of(10, 11, 13), Set.of(10, 11, 13), Set.of(), Set.of(), Set.of(), Set.of(10, 11, 13)),
+                new NodeIdAssignment(Set.of(10, 11, 13), Set.of(10, 11, 13), Set.of(), Set.of(), Set.of()),
                 new JbodStorageBuilder().withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("100Gi").build()).build(),
                 ResourceUtils.DUMMY_OWNER_REFERENCE,
                 SHARED_ENV_PROVIDER
@@ -258,7 +258,7 @@ public class KafkaPoolTest {
                 Reconciliation.DUMMY_RECONCILIATION,
                 kafka,
                 POOL,
-                new NodeIdAssignment(Set.of(10, 11, 13), Set.of(10, 11, 13), Set.of(), Set.of(), Set.of(), Set.of(10, 11, 13)),
+                new NodeIdAssignment(Set.of(10, 11, 13), Set.of(10, 11, 13), Set.of(), Set.of(), Set.of()),
                 new JbodStorageBuilder().withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("100Gi").build()).build(),
                 ResourceUtils.DUMMY_OWNER_REFERENCE,
                 SHARED_ENV_PROVIDER
@@ -320,7 +320,7 @@ public class KafkaPoolTest {
                 Reconciliation.DUMMY_RECONCILIATION,
                 kafka,
                 pool,
-                new NodeIdAssignment(Set.of(10, 11, 13), Set.of(10, 11, 13), Set.of(), Set.of(), Set.of(), Set.of(10, 11, 13)),
+                new NodeIdAssignment(Set.of(10, 11, 13), Set.of(10, 11, 13), Set.of(), Set.of(), Set.of()),
                 new JbodStorageBuilder().withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("100Gi").build()).build(),
                 ResourceUtils.DUMMY_OWNER_REFERENCE,
                 SHARED_ENV_PROVIDER
@@ -375,7 +375,7 @@ public class KafkaPoolTest {
                 Reconciliation.DUMMY_RECONCILIATION,
                 kafka,
                 pool,
-                new NodeIdAssignment(Set.of(10, 11, 13), Set.of(10, 11, 13), Set.of(), Set.of(), Set.of(), Set.of(10, 11, 13)),
+                new NodeIdAssignment(Set.of(10, 11, 13), Set.of(10, 11, 13), Set.of(), Set.of(), Set.of()),
                 new JbodStorageBuilder().withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("100Gi").build()).build(),
                 ResourceUtils.DUMMY_OWNER_REFERENCE,
                 SHARED_ENV_PROVIDER
@@ -412,7 +412,7 @@ public class KafkaPoolTest {
                 Reconciliation.DUMMY_RECONCILIATION,
                 KAFKA,
                 pool,
-                new NodeIdAssignment(Set.of(10, 11, 13), Set.of(10, 11, 13), Set.of(), Set.of(), Set.of(), Set.of(10, 11, 13)),
+                new NodeIdAssignment(Set.of(10, 11, 13), Set.of(10, 11, 13), Set.of(), Set.of(), Set.of()),
                 new JbodStorageBuilder().withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("100Gi").build()).build(),
                 ResourceUtils.DUMMY_OWNER_REFERENCE,
                 SHARED_ENV_PROVIDER
@@ -435,7 +435,7 @@ public class KafkaPoolTest {
                 Reconciliation.DUMMY_RECONCILIATION,
                 KAFKA,
                 pool,
-                new NodeIdAssignment(Set.of(10, 11, 13), Set.of(10, 11, 13), Set.of(), Set.of(), Set.of(), Set.of(10, 11, 13)),
+                new NodeIdAssignment(Set.of(10, 11, 13), Set.of(10, 11, 13), Set.of(), Set.of(), Set.of()),
                 null,
                 ResourceUtils.DUMMY_OWNER_REFERENCE,
                 SHARED_ENV_PROVIDER
@@ -463,7 +463,7 @@ public class KafkaPoolTest {
                 Reconciliation.DUMMY_RECONCILIATION,
                 KAFKA,
                 pool,
-                new NodeIdAssignment(Set.of(10, 11, 13), Set.of(10, 11, 13), Set.of(), Set.of(), Set.of(), Set.of(10, 11, 13)),
+                new NodeIdAssignment(Set.of(10, 11, 13), Set.of(10, 11, 13), Set.of(), Set.of(), Set.of()),
                 oldStorage,
                 ResourceUtils.DUMMY_OWNER_REFERENCE,
                 SHARED_ENV_PROVIDER
@@ -491,7 +491,7 @@ public class KafkaPoolTest {
                 Reconciliation.DUMMY_RECONCILIATION,
                 KAFKA,
                 pool,
-                new NodeIdAssignment(Set.of(10, 11, 13), Set.of(10, 11, 13), Set.of(), Set.of(), Set.of(), Set.of(10, 11, 13)),
+                new NodeIdAssignment(Set.of(10, 11, 13), Set.of(10, 11, 13), Set.of(), Set.of(), Set.of()),
                 oldStorage,
                 ResourceUtils.DUMMY_OWNER_REFERENCE,
                 SHARED_ENV_PROVIDER
@@ -520,7 +520,7 @@ public class KafkaPoolTest {
                 Reconciliation.DUMMY_RECONCILIATION,
                 KAFKA,
                 pool,
-                new NodeIdAssignment(Set.of(10, 11, 13), Set.of(10, 11, 13), Set.of(), Set.of(), Set.of(), Set.of(10, 11, 13)),
+                new NodeIdAssignment(Set.of(10, 11, 13), Set.of(10, 11, 13), Set.of(), Set.of(), Set.of()),
                 oldStorage,
                 ResourceUtils.DUMMY_OWNER_REFERENCE,
                 SHARED_ENV_PROVIDER
@@ -536,7 +536,7 @@ public class KafkaPoolTest {
                 Reconciliation.DUMMY_RECONCILIATION,
                 KAFKA,
                 POOL,
-                new NodeIdAssignment(Set.of(), Set.of(10, 11, 13), Set.of(), Set.of(10, 11, 13), Set.of(), Set.of()),
+                new NodeIdAssignment(Set.of(), Set.of(10, 11, 13), Set.of(), Set.of(10, 11, 13), Set.of()),
                 null,
                 ResourceUtils.DUMMY_OWNER_REFERENCE,
                 SHARED_ENV_PROVIDER
@@ -570,15 +570,14 @@ public class KafkaPoolTest {
                 Reconciliation.DUMMY_RECONCILIATION,
                 KAFKA,
                 pool,
-                new NodeIdAssignment(Set.of(10, 11, 13), Set.of(10, 11, 13), Set.of(), Set.of(), Set.of(), Set.of()),
+                new NodeIdAssignment(Set.of(10, 11, 13), Set.of(10, 11, 13), Set.of(), Set.of(), Set.of()),
                 oldStorage,
                 ResourceUtils.DUMMY_OWNER_REFERENCE,
                 SHARED_ENV_PROVIDER
         );
 
-        // The volume is removed from the storage, but the nodes are not brokers yet, so there is nobody to ask
-        assertThat(kp.removedJbodVolumeIds(), is(Set.of(1)));
-        assertThat(kp.currentBrokerNodes(), is(Set.of()));
+        // Nodes which are only becoming brokers hold no partition replicas and cannot answer the Admin API
+        assertThat(kp.removedJbodVolumeIds(), is(Set.of()));
     }
 
     @Test
@@ -597,7 +596,7 @@ public class KafkaPoolTest {
                 Reconciliation.DUMMY_RECONCILIATION,
                 KAFKA,
                 pool,
-                new NodeIdAssignment(Set.of(10, 11, 13), Set.of(10, 11, 13), Set.of(), Set.of(), Set.of(), Set.of(10, 11, 13)),
+                new NodeIdAssignment(Set.of(10, 11, 13), Set.of(10, 11, 13), Set.of(), Set.of(), Set.of()),
                 new PersistentClaimStorageBuilder().withSize("100Gi").build(),
                 ResourceUtils.DUMMY_OWNER_REFERENCE,
                 SHARED_ENV_PROVIDER
@@ -608,19 +607,19 @@ public class KafkaPoolTest {
     }
 
     @Test
-    public void testCurrentBrokerNodes()  {
+    public void testCurrentNodes()  {
         KafkaPool kp = KafkaPool.fromCrd(
                 Reconciliation.DUMMY_RECONCILIATION,
                 KAFKA,
                 POOL,
-                new NodeIdAssignment(Set.of(10, 11, 13), Set.of(11, 13, 14), Set.of(10), Set.of(14), Set.of(), Set.of(10, 11, 13)),
+                new NodeIdAssignment(Set.of(10, 11, 13), Set.of(11, 13, 14), Set.of(10), Set.of(14), Set.of()),
                 null,
                 ResourceUtils.DUMMY_OWNER_REFERENCE,
                 SHARED_ENV_PROVIDER
         );
 
         // Node 14 is being added, so it does not run yet. Node 10 is being removed, but it still runs.
-        assertThat(kp.currentBrokerNodes().stream().map(NodeRef::nodeId).collect(Collectors.toSet()), is(Set.of(10, 11, 13)));
+        assertThat(kp.currentNodes().stream().map(NodeRef::nodeId).collect(Collectors.toSet()), is(Set.of(10, 11, 13)));
         assertThat(kp.nodes().stream().map(NodeRef::nodeId).collect(Collectors.toSet()), is(Set.of(11, 13, 14)));
         assertThat(kp.scaledDownNodes().stream().map(NodeRef::nodeId).collect(Collectors.toSet()), is(Set.of(10)));
         assertThat(kp.scaleUpNodes().stream().map(NodeRef::nodeId).collect(Collectors.toSet()), is(Set.of(14)));
