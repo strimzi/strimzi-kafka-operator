@@ -201,7 +201,7 @@ public class BrokersInUseCheckTest {
     }
 
     @Test
-    public void testVolumesInUseWithEmptyVolumes() {
+    public void testBlockedVolumesWithEmptyVolumes() {
         Admin admin = mock(Admin.class);
         AdminClientProvider mock = mock(AdminClientProvider.class);
         when(mock.createAdminClient(anyString(), any(), any())).thenReturn(admin);
@@ -212,7 +212,7 @@ public class BrokersInUseCheckTest {
                 1, Map.of(logDir(1, 1), new LogDirDescription(null, Map.of()))));
 
         BrokersInUseCheck operations = new BrokersInUseCheck();
-        BrokersInUseCheck.VolumesInUse nodesInUse = operations.volumesInUse(RECONCILIATION, DUMMY_IDENTITY, mock, Map.of(0, Set.of(1), 1, Set.of(1)))
+        BrokersInUseCheck.BlockedVolumes nodesInUse = operations.blockedVolumes(RECONCILIATION, DUMMY_IDENTITY, mock, Map.of(0, Set.of(1), 1, Set.of(1)))
                 .toCompletableFuture()
                 .join();
 
@@ -226,7 +226,7 @@ public class BrokersInUseCheckTest {
     }
 
     @Test
-    public void testVolumesInUseWithPartitionReplicas() {
+    public void testBlockedVolumesWithPartitionReplicas() {
         Admin admin = mock(Admin.class);
         AdminClientProvider mock = mock(AdminClientProvider.class);
         when(mock.createAdminClient(anyString(), any(), any())).thenReturn(admin);
@@ -237,16 +237,16 @@ public class BrokersInUseCheckTest {
                 1, Map.of(logDir(1, 1), new LogDirDescription(null, Map.of(new TopicPartition("my-topic", 0), new ReplicaInfo(1000L, 0L, false))))));
 
         BrokersInUseCheck operations = new BrokersInUseCheck();
-        BrokersInUseCheck.VolumesInUse nodesInUse = operations.volumesInUse(RECONCILIATION, DUMMY_IDENTITY, mock, Map.of(0, Set.of(1), 1, Set.of(1)))
+        BrokersInUseCheck.BlockedVolumes nodesInUse = operations.blockedVolumes(RECONCILIATION, DUMMY_IDENTITY, mock, Map.of(0, Set.of(1), 1, Set.of(1)))
                 .toCompletableFuture()
                 .join();
 
         assertThat(nodesInUse.notEmpty(), is(Map.of(1, Set.of(1))));
-        assertThat(nodesInUse.notChecked(), is(Map.of()));
+        assertThat(nodesInUse.unknown(), is(Map.of()));
     }
 
     @Test
-    public void testVolumesInUseIgnoresVolumesWhichAreNotRemoved() {
+    public void testBlockedVolumesIgnoresVolumesWhichAreNotRemoved() {
         Admin admin = mock(Admin.class);
         AdminClientProvider mock = mock(AdminClientProvider.class);
         when(mock.createAdminClient(anyString(), any(), any())).thenReturn(admin);
@@ -257,7 +257,7 @@ public class BrokersInUseCheckTest {
                         logDir(1, 0), new LogDirDescription(null, Map.of()))));
 
         BrokersInUseCheck operations = new BrokersInUseCheck();
-        BrokersInUseCheck.VolumesInUse nodesInUse = operations.volumesInUse(RECONCILIATION, DUMMY_IDENTITY, mock, Map.of(0, Set.of(1)))
+        BrokersInUseCheck.BlockedVolumes nodesInUse = operations.blockedVolumes(RECONCILIATION, DUMMY_IDENTITY, mock, Map.of(0, Set.of(1)))
                 .toCompletableFuture()
                 .join();
 
@@ -265,7 +265,7 @@ public class BrokersInUseCheckTest {
     }
 
     @Test
-    public void testVolumesInUseWithOfflineLogDir() {
+    public void testBlockedVolumesWithOfflineLogDir() {
         Admin admin = mock(Admin.class);
         AdminClientProvider mock = mock(AdminClientProvider.class);
         when(mock.createAdminClient(anyString(), any(), any())).thenReturn(admin);
@@ -275,22 +275,22 @@ public class BrokersInUseCheckTest {
                 0, Map.of(logDir(1, 0), new LogDirDescription(new KafkaStorageException("Log dir is offline"), Map.of()))));
 
         BrokersInUseCheck operations = new BrokersInUseCheck();
-        BrokersInUseCheck.VolumesInUse nodesInUse = operations.volumesInUse(RECONCILIATION, DUMMY_IDENTITY, mock, Map.of(0, Set.of(1)))
+        BrokersInUseCheck.BlockedVolumes nodesInUse = operations.blockedVolumes(RECONCILIATION, DUMMY_IDENTITY, mock, Map.of(0, Set.of(1)))
                 .toCompletableFuture()
                 .join();
 
         assertThat(nodesInUse.notEmpty(), is(Map.of()));
-        assertThat(nodesInUse.notChecked(), is(Map.of(0, Set.of(1))));
+        assertThat(nodesInUse.unknown(), is(Map.of(0, Set.of(1))));
     }
 
     @Test
-    public void testVolumesInUseWhenTheAdminClientCannotBeCreated() {
+    public void testBlockedVolumesWhenTheAdminClientCannotBeCreated() {
         AdminClientProvider mock = mock(AdminClientProvider.class);
         when(mock.createAdminClient(anyString(), any(), any())).thenThrow(new KafkaException("Test error ..."));
 
         BrokersInUseCheck operations = new BrokersInUseCheck();
         Exception e = assertThrows(Exception.class, () ->
-                operations.volumesInUse(RECONCILIATION, DUMMY_IDENTITY, mock, Map.of(0, Set.of(1)))
+                operations.blockedVolumes(RECONCILIATION, DUMMY_IDENTITY, mock, Map.of(0, Set.of(1)))
                         .toCompletableFuture()
                         .join());
 
@@ -299,7 +299,7 @@ public class BrokersInUseCheckTest {
     }
 
     @Test
-    public void testVolumesInUseKafkaClientFailure() {
+    public void testBlockedVolumesKafkaClientFailure() {
         Admin admin = mock(Admin.class);
         AdminClientProvider mock = mock(AdminClientProvider.class);
         when(mock.createAdminClient(anyString(), any(), any())).thenReturn(admin);
@@ -308,7 +308,7 @@ public class BrokersInUseCheckTest {
 
         BrokersInUseCheck operations = new BrokersInUseCheck();
         Exception e = assertThrows(Exception.class, () ->
-                operations.volumesInUse(RECONCILIATION, DUMMY_IDENTITY, mock, Map.of(0, Set.of(1)))
+                operations.blockedVolumes(RECONCILIATION, DUMMY_IDENTITY, mock, Map.of(0, Set.of(1)))
                         .toCompletableFuture()
                         .join());
 
@@ -317,7 +317,7 @@ public class BrokersInUseCheckTest {
     }
 
     @Test
-    public void testVolumesInUseWhenNodeDoesNotAnswer() {
+    public void testBlockedVolumesWhenNodeDoesNotAnswer() {
         Admin admin = mock(Admin.class);
         AdminClientProvider mock = mock(AdminClientProvider.class);
         when(mock.createAdminClient(anyString(), any(), any())).thenReturn(admin);
@@ -331,17 +331,17 @@ public class BrokersInUseCheckTest {
                 1, failed));
 
         BrokersInUseCheck operations = new BrokersInUseCheck();
-        BrokersInUseCheck.VolumesInUse nodesInUse = operations.volumesInUse(RECONCILIATION, DUMMY_IDENTITY, mock, Map.of(0, Set.of(1), 1, Set.of(1)))
+        BrokersInUseCheck.BlockedVolumes nodesInUse = operations.blockedVolumes(RECONCILIATION, DUMMY_IDENTITY, mock, Map.of(0, Set.of(1), 1, Set.of(1)))
                 .toCompletableFuture()
                 .join();
 
         // The node which did not answer blocks the removal, but it is not reported as holding replicas
         assertThat(nodesInUse.notEmpty(), is(Map.of()));
-        assertThat(nodesInUse.notChecked(), is(Map.of(1, Set.of(1))));
+        assertThat(nodesInUse.unknown(), is(Map.of(1, Set.of(1))));
     }
 
     @Test
-    public void testVolumesInUseWhenNodeIsMissingFromTheResponse() {
+    public void testBlockedVolumesWhenNodeIsMissingFromTheResponse() {
         Admin admin = mock(Admin.class);
         AdminClientProvider mock = mock(AdminClientProvider.class);
         when(mock.createAdminClient(anyString(), any(), any())).thenReturn(admin);
@@ -349,12 +349,12 @@ public class BrokersInUseCheckTest {
         mockLogDirFutures(admin, Map.of());
 
         BrokersInUseCheck operations = new BrokersInUseCheck();
-        BrokersInUseCheck.VolumesInUse nodesInUse = operations.volumesInUse(RECONCILIATION, DUMMY_IDENTITY, mock, Map.of(0, Set.of(1)))
+        BrokersInUseCheck.BlockedVolumes nodesInUse = operations.blockedVolumes(RECONCILIATION, DUMMY_IDENTITY, mock, Map.of(0, Set.of(1)))
                 .toCompletableFuture()
                 .join();
 
         assertThat(nodesInUse.notEmpty(), is(Map.of()));
-        assertThat(nodesInUse.notChecked(), is(Map.of(0, Set.of(1))));
+        assertThat(nodesInUse.unknown(), is(Map.of(0, Set.of(1))));
     }
 
     private static String logDir(int volumeId, int nodeId) {
