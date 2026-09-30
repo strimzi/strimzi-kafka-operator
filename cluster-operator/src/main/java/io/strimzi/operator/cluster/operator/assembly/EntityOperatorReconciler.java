@@ -63,7 +63,7 @@ public class EntityOperatorReconciler {
     private final ConfigMapOperator configMapOperator;
     private final NetworkPolicyOperator networkPolicyOperator;
     private final boolean isCruiseControlEnabled;
-    private final PodDisruptionBudgetOperator podDistruptionBudgetOperator;
+    private final PodDisruptionBudgetOperator podDisruptionBudgetOperator;
 
     private String toCertificateHash = "";
     private String uoCertificateHash = "";
@@ -104,7 +104,7 @@ public class EntityOperatorReconciler {
         this.roleBindingOperator = supplier.roleBindingOperations;
         this.configMapOperator = supplier.configMapOperations;
         this.networkPolicyOperator = supplier.networkPolicyOperator;
-        this.podDistruptionBudgetOperator = supplier.podDisruptionBudgetOperator;
+        this.podDisruptionBudgetOperator = supplier.podDisruptionBudgetOperator;
     }
 
     /**
@@ -125,7 +125,7 @@ public class EntityOperatorReconciler {
                 .compose(i -> topicOperatorRole())
                 .compose(i -> userOperatorRole())
                 .compose(i -> networkPolicy())
-                .compose(i -> podDistruptionBudget())
+                .compose(i -> podDisruptionBudget())
                 .compose(i -> topicOperatorRoleBindings())
                 .compose(i -> userOperatorRoleBindings())
                 .compose(i -> topicOperatorConfigMap())
@@ -513,9 +513,9 @@ public class EntityOperatorReconciler {
      *
      * @return  Future which completes when the reconciliation is done
      */
-    protected Future<Void> podDistruptionBudget() {
+    protected Future<Void> podDisruptionBudget() {
         if (isPodDisruptionBudgetGeneration) {
-            return VertxUtil.toFuture(podDistruptionBudgetOperator
+            return VertxUtil.toFuture(podDisruptionBudgetOperator
                     .reconcile(
                             reconciliation,
                             reconciliation.namespace(),
