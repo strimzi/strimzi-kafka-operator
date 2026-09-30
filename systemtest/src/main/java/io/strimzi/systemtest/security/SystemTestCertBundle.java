@@ -148,6 +148,35 @@ public class SystemTestCertBundle {
     }
 
     /**
+     * Builds a certificate CN string derived from the test method name, guaranteed to fit within
+     * the RFC 5280 64-character commonName limit.
+     * <p>
+     * Strips the conventional {@code "test"} prefix and, if the result is still too long,
+     * truncates at the last CamelCase word boundary that fits — so the name is never cut mid-word.
+     *
+     * @param testName the test method name (e.g. from {@link io.strimzi.systemtest.storage.TestStorage#getTestName()})
+     * @param suffix   the CA-role suffix appended after the name (e.g. {@code "ClusterCA"})
+     * @return a {@code "CN=..."} string whose value is &le; 64 characters
+     */
+    public static String buildCn(final String testName, final String suffix) {
+        int maxLen = 64 - suffix.length();
+        String name = testName.startsWith("test") ? testName.substring(4) : testName;
+        if (name.length() <= maxLen) {
+            return "CN=" + name + suffix;
+        }
+        // Truncate at the last CamelCase word boundary within the allowed length
+        int cut = maxLen;
+        for (int i = maxLen - 1; i > 0; i--) {
+            if (Character.isUpperCase(name.charAt(i))) {
+                cut = i;
+                break;
+            }
+        }
+        return "CN=" + name.substring(0, cut) + suffix;
+    }
+
+
+    /**
      * Creates a SystemTestCertBundle for the ClusterCA.
      *
      * @param testStorage storage with information about test, which is used to create custom key-pair and related Secrets
@@ -155,7 +184,7 @@ public class SystemTestCertBundle {
      */
     public static SystemTestCertBundle forClusterCa(final TestStorage testStorage) {
         return new SystemTestCertBundle(
-            "CN=" + testStorage.getTestName() + "ClusterCA",
+            buildCn(testStorage.getTestName(), "ClusterCA"),
             KafkaResources.clusterCaCertificateSecretName(testStorage.getClusterName()),
             KafkaResources.clusterCaKeySecretName(testStorage.getClusterName()));
     }
@@ -168,7 +197,7 @@ public class SystemTestCertBundle {
      */
     public static SystemTestCertBundle forClientsCa(final TestStorage testStorage) {
         return new SystemTestCertBundle(
-            "CN=" + testStorage.getTestName() + "ClientsCA",
+            buildCn(testStorage.getTestName(), "ClientsCA"),
             KafkaResources.clientsCaCertificateSecretName(testStorage.getClusterName()),
             KafkaResources.clientsCaKeySecretName(testStorage.getClusterName()));
     }
