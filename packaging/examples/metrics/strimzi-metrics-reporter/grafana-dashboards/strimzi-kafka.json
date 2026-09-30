@@ -670,6 +670,326 @@
       "type": "stat"
     },
     {
+      "datasource": "${DS_PROMETHEUS}",
+      "description": "Number of brokers fenced by the controller. A fenced broker cannot host partition leaders or be in the ISR",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [
+            {
+              "options": {
+                "match": "null",
+                "result": {
+                  "text": "N/A"
+                }
+              },
+              "type": "special"
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#508642",
+                "value": null
+              },
+              {
+                "color": "#ef843c",
+                "value": 1
+              },
+              {
+                "color": "#bf1b00",
+                "value": 1
+              }
+            ]
+          },
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 0,
+        "y": 4
+      },
+      "id": 109,
+      "maxDataPoints": 100,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "7.4.5",
+      "targets": [
+        {
+          "datasource": "${DS_PROMETHEUS}",
+          "expr": "max(kafka_controller_kafkacontroller_fencedbrokercount{namespace=\"$kubernetes_namespace\",strimzi_io_cluster=\"$strimzi_cluster_name\"})",
+          "format": "time_series",
+          "hide": false,
+          "intervalFactor": 1,
+          "refId": "A"
+        }
+      ],
+      "title": "Fenced Brokers",
+      "type": "stat"
+    },
+    {
+      "datasource": "${DS_PROMETHEUS}",
+      "description": "Number of partition replicas that are offline, for example because of a failed log directory",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [
+            {
+              "options": {
+                "match": "null",
+                "result": {
+                  "text": "N/A"
+                }
+              },
+              "type": "special"
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#508642",
+                "value": null
+              },
+              {
+                "color": "#ef843c",
+                "value": 1
+              },
+              {
+                "color": "#bf1b00",
+                "value": 1
+              }
+            ]
+          },
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 6,
+        "y": 4
+      },
+      "id": 110,
+      "maxDataPoints": 100,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "7.4.5",
+      "targets": [
+        {
+          "datasource": "${DS_PROMETHEUS}",
+          "expr": "sum(kafka_server_replicamanager_offlinereplicacount{namespace=\"$kubernetes_namespace\",strimzi_io_cluster=\"$strimzi_cluster_name\"})",
+          "format": "time_series",
+          "hide": false,
+          "intervalFactor": 1,
+          "refId": "A"
+        }
+      ],
+      "title": "Offline Replicas",
+      "type": "stat"
+    },
+    {
+      "datasource": "${DS_PROMETHEUS}",
+      "description": "Rate at which partition leaders shrink or expand their in-sync replica set. Frequent changes point to followers falling behind or brokers going up and down",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [
+            {
+              "options": {
+                "match": "null",
+                "result": {
+                  "text": "N/A"
+                }
+              },
+              "type": "special"
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#299c46",
+                "value": null
+              },
+              {
+                "color": "rgba(237, 129, 40, 0.89)",
+                "value": 2
+              },
+              {
+                "color": "#d44a3a"
+              }
+            ]
+          },
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 12,
+        "y": 4
+      },
+      "id": 111,
+      "maxDataPoints": 100,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "7.4.5",
+      "targets": [
+        {
+          "datasource": "${DS_PROMETHEUS}",
+          "expr": "sum(irate(kafka_server_replicamanager_isrshrinkspersec_total{namespace=\"$kubernetes_namespace\",strimzi_io_cluster=\"$strimzi_cluster_name\"}[5m]))",
+          "format": "time_series",
+          "hide": false,
+          "intervalFactor": 1,
+          "refId": "A",
+          "legendFormat": "Shrinks"
+        },
+        {
+          "datasource": "${DS_PROMETHEUS}",
+          "expr": "sum(irate(kafka_server_replicamanager_isrexpandspersec_total{namespace=\"$kubernetes_namespace\",strimzi_io_cluster=\"$strimzi_cluster_name\"}[5m]))",
+          "format": "time_series",
+          "hide": false,
+          "intervalFactor": 1,
+          "refId": "B",
+          "legendFormat": "Expands"
+        }
+      ],
+      "title": "ISR Shrink / Expand Rate",
+      "type": "stat"
+    },
+    {
+      "datasource": "${DS_PROMETHEUS}",
+      "description": "Rate of failed attempts by partition leaders to update the in-sync replica set",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [
+            {
+              "options": {
+                "match": "null",
+                "result": {
+                  "text": "N/A"
+                }
+              },
+              "type": "special"
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#299c46",
+                "value": null
+              },
+              {
+                "color": "rgba(237, 129, 40, 0.89)",
+                "value": 2
+              },
+              {
+                "color": "#d44a3a"
+              }
+            ]
+          },
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 18,
+        "y": 4
+      },
+      "id": 112,
+      "maxDataPoints": 100,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "7.4.5",
+      "targets": [
+        {
+          "datasource": "${DS_PROMETHEUS}",
+          "expr": "sum(irate(kafka_server_replicamanager_failedisrupdatespersec_total{namespace=\"$kubernetes_namespace\",strimzi_io_cluster=\"$strimzi_cluster_name\"}[5m]))",
+          "format": "time_series",
+          "hide": false,
+          "intervalFactor": 1,
+          "refId": "A"
+        }
+      ],
+      "title": "Failed ISR Update Rate",
+      "type": "stat"
+    },
+    {
       "collapsed": false,
       "datasource": {
         "type": "datasource",
@@ -679,7 +999,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 4
+        "y": 8
       },
       "id": 28,
       "panels": [],
@@ -757,7 +1077,7 @@
         "h": 7,
         "w": 6,
         "x": 0,
-        "y": 5
+        "y": 9
       },
       "id": 82,
       "options": {
@@ -849,7 +1169,7 @@
         "h": 7,
         "w": 6,
         "x": 6,
-        "y": 5
+        "y": 9
       },
       "id": 81,
       "options": {
@@ -941,7 +1261,7 @@
         "h": 7,
         "w": 6,
         "x": 12,
-        "y": 5
+        "y": 9
       },
       "id": 83,
       "options": {
@@ -1033,7 +1353,7 @@
         "h": 7,
         "w": 6,
         "x": 18,
-        "y": 5
+        "y": 9
       },
       "id": 107,
       "options": {
@@ -1124,7 +1444,7 @@
         "h": 7,
         "w": 6,
         "x": 0,
-        "y": 12
+        "y": 16
       },
       "id": 93,
       "options": {
@@ -1214,7 +1534,7 @@
         "h": 7,
         "w": 6,
         "x": 6,
-        "y": 12
+        "y": 16
       },
       "id": 95,
       "options": {
@@ -1304,7 +1624,7 @@
         "h": 7,
         "w": 6,
         "x": 12,
-        "y": 12
+        "y": 16
       },
       "id": 97,
       "options": {
@@ -1395,7 +1715,7 @@
         "h": 7,
         "w": 6,
         "x": 18,
-        "y": 12
+        "y": 16
       },
       "id": 108,
       "options": {
@@ -1469,7 +1789,7 @@
         "h": 4,
         "w": 6,
         "x": 0,
-        "y": 19
+        "y": 23
       },
       "id": 98,
       "maxDataPoints": 100,
@@ -1550,7 +1870,7 @@
         "h": 4,
         "w": 6,
         "x": 6,
-        "y": 19
+        "y": 23
       },
       "id": 99,
       "maxDataPoints": 100,
@@ -1631,7 +1951,7 @@
         "h": 4,
         "w": 6,
         "x": 12,
-        "y": 19
+        "y": 23
       },
       "id": 100,
       "maxDataPoints": 100,
@@ -1712,7 +2032,7 @@
         "h": 4,
         "w": 6,
         "x": 18,
-        "y": 19
+        "y": 23
       },
       "id": 101,
       "maxDataPoints": 100,
@@ -1810,7 +2130,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 23
+        "y": 27
       },
       "id": 44,
       "options": {
@@ -1912,7 +2232,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 23
+        "y": 27
       },
       "id": 58,
       "options": {
@@ -2003,7 +2323,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 31
+        "y": 35
       },
       "id": 50,
       "options": {
@@ -2103,7 +2423,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 31
+        "y": 35
       },
       "id": 56,
       "options": {
@@ -2202,7 +2522,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 39
+        "y": 43
       },
       "id": 60,
       "options": {
@@ -2293,7 +2613,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 39
+        "y": 43
       },
       "id": 62,
       "options": {
@@ -2385,7 +2705,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 47
+        "y": 51
       },
       "id": 104,
       "options": {
@@ -2477,7 +2797,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 47
+        "y": 51
       },
       "id": 105,
       "options": {
@@ -2569,7 +2889,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 55
+        "y": 59
       },
       "id": 106,
       "options": {
@@ -2637,7 +2957,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 55
+        "y": 59
       },
       "id": 91,
       "links": [],
