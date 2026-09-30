@@ -26,11 +26,8 @@ import io.strimzi.operator.cluster.operator.resource.kubernetes.PodOperator;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
-import io.vertx.junit5.Checkpoint;
-import io.vertx.junit5.VertxExtension;
-import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.Timeout;
 import org.mockito.ArgumentCaptor;
 
 import java.util.List;
@@ -38,9 +35,12 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.TimeUnit;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -51,7 +51,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@ExtendWith(VertxExtension.class)
+@Timeout(value = 30, unit = TimeUnit.SECONDS)
 @SuppressWarnings("unchecked")
 public class KafkaConnectRollerTest {
     private final static String NAME = "my-connect";
@@ -177,7 +177,7 @@ public class KafkaConnectRollerTest {
     }
 
     @Test
-    public void testMaybeRollPodNoChange(VertxTestContext context)  {
+    public void testMaybeRollPodNoChange()  {
         StrimziPodSet podSet = new StrimziPodSetBuilder()
                 .withNewMetadata()
                     .withName("my-connect-connect")
@@ -193,17 +193,14 @@ public class KafkaConnectRollerTest {
 
         KafkaConnectRoller roller = new KafkaConnectRoller(RECONCILIATION, CLUSTER, 1_000L, mockPodOps);
 
-        Checkpoint async = context.checkpoint();
         roller.maybeRollPod(pod -> KafkaConnectRoller.needsRollingRestart(RECONCILIATION, podSet, pod), "my-connect-connect-0")
-                .onComplete(context.succeeding(v -> context.verify(() -> {
-                    verify(mockPodOps, never()).deleteAsync(any(), any(), any(), anyBoolean());
+                .toCompletableFuture().join();
 
-                    async.flag();
-                })));
+        verify(mockPodOps, never()).deleteAsync(any(), any(), any(), anyBoolean());
     }
 
     @Test
-    public void testMaybeRollPodMissingPod(VertxTestContext context)  {
+    public void testMaybeRollPodMissingPod()  {
         StrimziPodSet podSet = new StrimziPodSetBuilder()
                 .withNewMetadata()
                     .withName("my-connect-connect")
@@ -219,17 +216,14 @@ public class KafkaConnectRollerTest {
 
         KafkaConnectRoller roller = new KafkaConnectRoller(RECONCILIATION, CLUSTER, 1_000L, mockPodOps);
 
-        Checkpoint async = context.checkpoint();
         roller.maybeRollPod(pod -> KafkaConnectRoller.needsRollingRestart(RECONCILIATION, podSet, pod), "my-connect-connect-0")
-                .onComplete(context.succeeding(v -> context.verify(() -> {
-                    verify(mockPodOps, never()).deleteAsync(any(), any(), any(), anyBoolean());
+                .toCompletableFuture().join();
 
-                    async.flag();
-                })));
+        verify(mockPodOps, never()).deleteAsync(any(), any(), any(), anyBoolean());
     }
 
     @Test
-    public void testMaybeRollPodNeedRolling(VertxTestContext context)  {
+    public void testMaybeRollPodNeedRolling()  {
         StrimziPodSet podSet = new StrimziPodSetBuilder()
                 .withNewMetadata()
                     .withName("my-connect-connect")
@@ -246,17 +240,14 @@ public class KafkaConnectRollerTest {
 
         KafkaConnectRoller roller = new KafkaConnectRoller(RECONCILIATION, CLUSTER, 1_000L, mockPodOps);
 
-        Checkpoint async = context.checkpoint();
         roller.maybeRollPod(pod -> KafkaConnectRoller.needsRollingRestart(RECONCILIATION, podSet, pod), "my-connect-connect-0")
-                .onComplete(context.succeeding(v -> context.verify(() -> {
-                    verify(mockPodOps, times(1)).deleteAsync(any(), eq(NAMESPACE), eq("my-connect-connect-0"), eq(false));
+                .toCompletableFuture().join();
 
-                    async.flag();
-                })));
+        verify(mockPodOps, times(1)).deleteAsync(any(), eq(NAMESPACE), eq("my-connect-connect-0"), eq(false));
     }
 
     @Test
-    public void testMaybeRollPodFailsWhenNotReady(VertxTestContext context)  {
+    public void testMaybeRollPodFailsWhenNotReady()  {
         StrimziPodSet podSet = new StrimziPodSetBuilder()
                 .withNewMetadata()
                     .withName("my-connect-connect")
@@ -272,19 +263,16 @@ public class KafkaConnectRollerTest {
 
         KafkaConnectRoller roller = new KafkaConnectRoller(RECONCILIATION, CLUSTER, 1_000L, mockPodOps);
 
-        Checkpoint async = context.checkpoint();
-        roller.maybeRollPod(pod -> KafkaConnectRoller.needsRollingRestart(RECONCILIATION, podSet, pod), "my-connect-connect-0")
-                .onComplete(context.failing(v -> context.verify(() -> {
-                    verify(mockPodOps, never()).deleteAsync(any(), any(), any(), anyBoolean());
+        CompletionException ex = assertThrows(CompletionException.class, () ->
+                roller.maybeRollPod(pod -> KafkaConnectRoller.needsRollingRestart(RECONCILIATION, podSet, pod), "my-connect-connect-0")
+                        .toCompletableFuture().join());
 
-                    assertThat(v.getMessage(), is("Timeout"));
-
-                    async.flag();
-                })));
+        verify(mockPodOps, never()).deleteAsync(any(), any(), any(), anyBoolean());
+        assertThat(ex.getCause().getMessage(), is("Timeout"));
     }
 
     @Test
-    public void testMaybeRollInOrder(VertxTestContext context)  {
+    public void testMaybeRollInOrder()  {
         StrimziPodSet podSet = new StrimziPodSetBuilder()
                 .withNewMetadata()
                     .withName("my-connect-connect")
@@ -314,29 +302,26 @@ public class KafkaConnectRollerTest {
 
         KafkaConnectRoller roller = new KafkaConnectRoller(RECONCILIATION, CLUSTER, 1_000L, mockPodOps);
 
-        Checkpoint async = context.checkpoint();
         roller.maybeRoll(POD_NAMES, pod -> KafkaConnectRoller.needsRollingRestart(RECONCILIATION, podSet, pod))
-                .onComplete(context.succeeding(v -> context.verify(() -> {
-                    verify(mockPodOps, never()).deleteAsync(any(), any(), any(), anyBoolean());
+                .toCompletableFuture().join();
 
-                    List<String> getAsync = getAsyncCaptor.getAllValues();
-                    assertThat(getAsync.size(), is(3));
-                    assertThat(getAsync.get(0), is("my-connect-connect-1"));
-                    assertThat(getAsync.get(1), is("my-connect-connect-0"));
-                    assertThat(getAsync.get(2), is("my-connect-connect-2"));
+        verify(mockPodOps, never()).deleteAsync(any(), any(), any(), anyBoolean());
 
-                    List<String> readiness = readinessCaptor.getAllValues();
-                    assertThat(readiness.size(), is(3));
-                    assertThat(readiness.get(0), is("my-connect-connect-1"));
-                    assertThat(readiness.get(1), is("my-connect-connect-0"));
-                    assertThat(readiness.get(2), is("my-connect-connect-2"));
+        List<String> getAsync = getAsyncCaptor.getAllValues();
+        assertThat(getAsync.size(), is(3));
+        assertThat(getAsync.get(0), is("my-connect-connect-1"));
+        assertThat(getAsync.get(1), is("my-connect-connect-0"));
+        assertThat(getAsync.get(2), is("my-connect-connect-2"));
 
-                    async.flag();
-                })));
+        List<String> readiness = readinessCaptor.getAllValues();
+        assertThat(readiness.size(), is(3));
+        assertThat(readiness.get(0), is("my-connect-connect-1"));
+        assertThat(readiness.get(1), is("my-connect-connect-0"));
+        assertThat(readiness.get(2), is("my-connect-connect-2"));
     }
 
     @Test
-    public void testMaybeRollNotReady(VertxTestContext context)  {
+    public void testMaybeRollNotReady()  {
         StrimziPodSet podSet = new StrimziPodSetBuilder()
                 .withNewMetadata()
                     .withName("my-connect-connect")
@@ -358,12 +343,11 @@ public class KafkaConnectRollerTest {
 
         KafkaConnectRoller roller = new KafkaConnectRoller(RECONCILIATION, CLUSTER, 1_000L, mockPodOps);
 
-        Checkpoint async = context.checkpoint();
-        roller.maybeRoll(POD_NAMES, pod -> KafkaConnectRoller.needsRollingRestart(RECONCILIATION, podSet, pod))
-                .onComplete(context.failing(v -> context.verify(() -> {
-                    assertThat(v.getMessage(), is("Timeout"));
-                    async.flag();
-                })));
+        CompletionException ex = assertThrows(CompletionException.class, () ->
+                roller.maybeRoll(POD_NAMES, pod -> KafkaConnectRoller.needsRollingRestart(RECONCILIATION, podSet, pod))
+                        .toCompletableFuture().join());
+
+        assertThat(ex.getCause().getMessage(), is("Timeout"));
     }
 
     @Test
