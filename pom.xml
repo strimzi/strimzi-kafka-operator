@@ -110,7 +110,7 @@
         <wiremock.version>3.13.2</wiremock.version>
         <valid4j.version>1.1</valid4j.version>
         <javax.json.version>1.1.4</javax.json.version>
-        <bouncycastle.version>1.83</bouncycastle.version>
+        <bouncycastle.version>1.85</bouncycastle.version>
         <kindcontainer.version>2.1.0</kindcontainer.version>
         <testcontainer.version>2.0.2</testcontainer.version>
         <docker-java.version>3.4.0</docker-java.version>

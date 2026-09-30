@@ -107,7 +107,7 @@ public class CustomCaST extends AbstractST {
 
         // Create new CA and renew old one with it
         final SystemTestCertBundle newClusterCa = new SystemTestCertBundle(
-            "CN=" + testStorage.getTestName() + "ClusterCAv2",
+            SystemTestCertBundle.buildCn(testStorage.getTestName(), "ClusterCAv2"),
             KafkaResources.clusterCaCertificateSecretName(testStorage.getClusterName()),
             KafkaResources.clusterCaKeySecretName(testStorage.getClusterName()));
 
@@ -195,7 +195,7 @@ public class CustomCaST extends AbstractST {
 
         LOGGER.info("Generating a new custom 'User certificate authority' with `Root` and `Intermediate` for Strimzi and PEM bundles");
         final SystemTestCertBundle newClientsCa = new SystemTestCertBundle(
-            "CN=" + testStorage.getTestName() + "ClientsCAv2",
+            SystemTestCertBundle.buildCn(testStorage.getTestName(), "ClientsCAv2"),
             KafkaResources.clientsCaCertificateSecretName(testStorage.getClusterName()),
             KafkaResources.clientsCaKeySecretName(testStorage.getClusterName()));
 
