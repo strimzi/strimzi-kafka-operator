@@ -700,7 +700,7 @@ public class KafkaClusterCreatorTest {
 
         // Mock volumes-in-use check
         BrokersInUseCheck brokersInUseOps = supplier.brokersInUseCheck;
-        when(brokersInUseOps.volumesInUse(any(), any(), any(), any())).thenReturn(CompletableFuture.completedFuture(new BrokersInUseCheck.VolumesInUse(Map.of(1000, Set.of(1)), Map.of())));
+        when(brokersInUseOps.blockedVolumes(any(), any(), any(), any())).thenReturn(CompletableFuture.completedFuture(new BrokersInUseCheck.BlockedVolumes(Map.of(1000, Set.of(1)), Map.of())));
 
         KafkaStatus kafkaStatus = new KafkaStatus();
         KafkaClusterCreator creator = new KafkaClusterCreator(RECONCILIATION, CO_CONFIG, supplier);
@@ -726,7 +726,7 @@ public class KafkaClusterCreatorTest {
         assertThat(kafkaStatus.getConditions().get(0).getMessage(), is("Reverting all storage changes of KafkaNodePool pool-a because they remove JBOD volumes which are not empty"));
 
         // Volume removal reverted => the check runs once, and is not needed after the revert
-        verify(supplier.brokersInUseCheck, times(1)).volumesInUse(any(), any(), any(), any());
+        verify(supplier.brokersInUseCheck, times(1)).blockedVolumes(any(), any(), any(), any());
     }
 
     @Test
@@ -735,7 +735,7 @@ public class KafkaClusterCreatorTest {
 
         // Mock volumes-in-use check
         BrokersInUseCheck brokersInUseOps = supplier.brokersInUseCheck;
-        when(brokersInUseOps.volumesInUse(any(), any(), any(), any())).thenReturn(CompletableFuture.completedFuture(new BrokersInUseCheck.VolumesInUse(Map.of(), Map.of())));
+        when(brokersInUseOps.blockedVolumes(any(), any(), any(), any())).thenReturn(CompletableFuture.completedFuture(new BrokersInUseCheck.BlockedVolumes(Map.of(), Map.of())));
 
         KafkaStatus kafkaStatus = new KafkaStatus();
         KafkaClusterCreator creator = new KafkaClusterCreator(RECONCILIATION, CO_CONFIG, supplier);
@@ -754,7 +754,7 @@ public class KafkaClusterCreatorTest {
         assertThat(kafkaStatus.getConditions(), is(nullValue()));
 
         // Nothing was reverted => the check runs once
-        verify(supplier.brokersInUseCheck, times(1)).volumesInUse(any(), any(), any(), any());
+        verify(supplier.brokersInUseCheck, times(1)).blockedVolumes(any(), any(), any(), any());
     }
 
     @Test
@@ -763,7 +763,7 @@ public class KafkaClusterCreatorTest {
 
         // Mock volumes-in-use check
         BrokersInUseCheck brokersInUseOps = supplier.brokersInUseCheck;
-        when(brokersInUseOps.volumesInUse(any(), any(), any(), any())).thenReturn(CompletableFuture.completedFuture(new BrokersInUseCheck.VolumesInUse(Map.of(1000, Set.of(1)), Map.of())));
+        when(brokersInUseOps.blockedVolumes(any(), any(), any(), any())).thenReturn(CompletableFuture.completedFuture(new BrokersInUseCheck.BlockedVolumes(Map.of(1000, Set.of(1)), Map.of())));
 
         KafkaStatus kafkaStatus = new KafkaStatus();
         KafkaClusterCreator creator = new KafkaClusterCreator(RECONCILIATION, CO_CONFIG, supplier);
@@ -782,7 +782,7 @@ public class KafkaClusterCreatorTest {
         assertThat(kafkaStatus.getConditions(), is(nullValue()));
 
         // Volume removal failed => should be called once
-        verify(supplier.brokersInUseCheck, times(1)).volumesInUse(any(), any(), any(), any());
+        verify(supplier.brokersInUseCheck, times(1)).blockedVolumes(any(), any(), any(), any());
     }
 
     @Test
@@ -810,7 +810,7 @@ public class KafkaClusterCreatorTest {
         assertThat(kafkaStatus.getConditions(), is(nullValue()));
 
         // Volume removal check skipped => should be never called
-        verify(supplier.brokersInUseCheck, never()).volumesInUse(any(), any(), any(), any());
+        verify(supplier.brokersInUseCheck, never()).blockedVolumes(any(), any(), any(), any());
     }
 
     @Test
@@ -819,7 +819,7 @@ public class KafkaClusterCreatorTest {
 
         // Mock volumes-in-use check
         BrokersInUseCheck brokersInUseOps = supplier.brokersInUseCheck;
-        when(brokersInUseOps.volumesInUse(any(), any(), any(), any())).thenReturn(CompletableFuture.completedFuture(new BrokersInUseCheck.VolumesInUse(Map.of(), Map.of())));
+        when(brokersInUseOps.blockedVolumes(any(), any(), any(), any())).thenReturn(CompletableFuture.completedFuture(new BrokersInUseCheck.BlockedVolumes(Map.of(), Map.of())));
 
         KafkaStatus kafkaStatus = new KafkaStatus();
         KafkaClusterCreator creator = new KafkaClusterCreator(RECONCILIATION, CO_CONFIG, supplier);
@@ -834,7 +834,7 @@ public class KafkaClusterCreatorTest {
 
         @SuppressWarnings("unchecked")
         ArgumentCaptor<Map<Integer, Set<Integer>>> removedVolumesCaptor = ArgumentCaptor.forClass(Map.class);
-        verify(supplier.brokersInUseCheck, times(1)).volumesInUse(any(), any(), any(), removedVolumesCaptor.capture());
+        verify(supplier.brokersInUseCheck, times(1)).blockedVolumes(any(), any(), any(), removedVolumesCaptor.capture());
         assertThat(removedVolumesCaptor.getValue(), is(Map.of(1000, Set.of(1), 1001, Set.of(1))));
     }
 
@@ -847,7 +847,7 @@ public class KafkaClusterCreatorTest {
         when(brokersInUseOps.brokersInUse(any(), any(), any())).thenReturn(CompletableFuture.completedFuture(Set.of()));
 
         // Mock volumes-in-use check
-        when(brokersInUseOps.volumesInUse(any(), any(), any(), any())).thenReturn(CompletableFuture.completedFuture(new BrokersInUseCheck.VolumesInUse(Map.of(1000, Set.of(1)), Map.of())));
+        when(brokersInUseOps.blockedVolumes(any(), any(), any(), any())).thenReturn(CompletableFuture.completedFuture(new BrokersInUseCheck.BlockedVolumes(Map.of(1000, Set.of(1)), Map.of())));
 
         KafkaStatus kafkaStatus = new KafkaStatus();
         KafkaClusterCreator creator = new KafkaClusterCreator(RECONCILIATION, CO_CONFIG, supplier);
@@ -866,7 +866,7 @@ public class KafkaClusterCreatorTest {
 
         // Mock volumes-in-use check
         BrokersInUseCheck brokersInUseOps = supplier.brokersInUseCheck;
-        when(brokersInUseOps.volumesInUse(any(), any(), any(), any())).thenReturn(CompletableFuture.completedFuture(new BrokersInUseCheck.VolumesInUse(Map.of(3000, Set.of(1)), Map.of())));
+        when(brokersInUseOps.blockedVolumes(any(), any(), any(), any())).thenReturn(CompletableFuture.completedFuture(new BrokersInUseCheck.BlockedVolumes(Map.of(3000, Set.of(1)), Map.of())));
 
         KafkaStatus kafkaStatus = new KafkaStatus();
         KafkaClusterCreator creator = new KafkaClusterCreator(RECONCILIATION, CO_CONFIG, supplier);
@@ -881,7 +881,7 @@ public class KafkaClusterCreatorTest {
         assertThat(kafkaStatus.getConditions().size(), is(1));
         assertThat(kafkaStatus.getConditions().get(0).getMessage(), is("Reverting all storage changes of KafkaNodePool pool-mixed because they remove JBOD volumes which are not empty"));
 
-        verify(supplier.brokersInUseCheck, times(1)).volumesInUse(any(), any(), any(), any());
+        verify(supplier.brokersInUseCheck, times(1)).blockedVolumes(any(), any(), any(), any());
     }
 
     @Test
@@ -900,7 +900,7 @@ public class KafkaClusterCreatorTest {
         assertThat(kc.removedJbodVolumes(), is(Map.of()));
         assertThat(kafkaStatus.getConditions(), is(nullValue()));
 
-        verify(supplier.brokersInUseCheck, never()).volumesInUse(any(), any(), any(), any());
+        verify(supplier.brokersInUseCheck, never()).blockedVolumes(any(), any(), any(), any());
     }
 
     @Test
@@ -909,9 +909,9 @@ public class KafkaClusterCreatorTest {
 
         // Mock volumes-in-use check => only pool-a is blocked. After pool-a is reverted, only pool-b is left to check.
         BrokersInUseCheck brokersInUseOps = supplier.brokersInUseCheck;
-        when(brokersInUseOps.volumesInUse(any(), any(), any(), any()))
-                .thenReturn(CompletableFuture.completedFuture(new BrokersInUseCheck.VolumesInUse(Map.of(1000, Set.of(1)), Map.of())))
-                .thenReturn(CompletableFuture.completedFuture(new BrokersInUseCheck.VolumesInUse(Map.of(), Map.of())));
+        when(brokersInUseOps.blockedVolumes(any(), any(), any(), any()))
+                .thenReturn(CompletableFuture.completedFuture(new BrokersInUseCheck.BlockedVolumes(Map.of(1000, Set.of(1)), Map.of())))
+                .thenReturn(CompletableFuture.completedFuture(new BrokersInUseCheck.BlockedVolumes(Map.of(), Map.of())));
 
         KafkaStatus kafkaStatus = new KafkaStatus();
         KafkaClusterCreator creator = new KafkaClusterCreator(RECONCILIATION, CO_CONFIG, supplier);
@@ -930,7 +930,7 @@ public class KafkaClusterCreatorTest {
         assertThat(kafkaStatus.getConditions().get(0).getMessage(), is("Reverting all storage changes of KafkaNodePool pool-a because they remove JBOD volumes which are not empty"));
 
         // pool-a is reverted, so the removal left in pool-b is checked a second time
-        verify(supplier.brokersInUseCheck, times(2)).volumesInUse(any(), any(), any(), any());
+        verify(supplier.brokersInUseCheck, times(2)).blockedVolumes(any(), any(), any(), any());
     }
 
     @Test
@@ -939,7 +939,7 @@ public class KafkaClusterCreatorTest {
 
         // Mock volumes-in-use check
         BrokersInUseCheck brokersInUseOps = supplier.brokersInUseCheck;
-        when(brokersInUseOps.volumesInUse(any(), any(), any(), any())).thenReturn(CompletableFuture.completedFuture(new BrokersInUseCheck.VolumesInUse(Map.of(1000, Set.of(1)), Map.of())));
+        when(brokersInUseOps.blockedVolumes(any(), any(), any(), any())).thenReturn(CompletableFuture.completedFuture(new BrokersInUseCheck.BlockedVolumes(Map.of(1000, Set.of(1)), Map.of())));
 
         KafkaStatus kafkaStatus = new KafkaStatus();
         KafkaClusterCreator creator = new KafkaClusterCreator(RECONCILIATION, CO_CONFIG, supplier);
@@ -960,7 +960,7 @@ public class KafkaClusterCreatorTest {
 
         // Mock volumes-in-use check => the volume is empty, but the broker could not be reached
         BrokersInUseCheck brokersInUseOps = supplier.brokersInUseCheck;
-        when(brokersInUseOps.volumesInUse(any(), any(), any(), any())).thenReturn(CompletableFuture.completedFuture(new BrokersInUseCheck.VolumesInUse(Map.of(), Map.of(1000, Set.of(1)))));
+        when(brokersInUseOps.blockedVolumes(any(), any(), any(), any())).thenReturn(CompletableFuture.completedFuture(new BrokersInUseCheck.BlockedVolumes(Map.of(), Map.of(1000, Set.of(1)))));
 
         KafkaStatus kafkaStatus = new KafkaStatus();
         KafkaClusterCreator creator = new KafkaClusterCreator(RECONCILIATION, CO_CONFIG, supplier);
@@ -982,7 +982,7 @@ public class KafkaClusterCreatorTest {
 
         // Mock volumes-in-use check => one node of the pool has replicas, another node could not be reached
         BrokersInUseCheck brokersInUseOps = supplier.brokersInUseCheck;
-        when(brokersInUseOps.volumesInUse(any(), any(), any(), any())).thenReturn(CompletableFuture.completedFuture(new BrokersInUseCheck.VolumesInUse(Map.of(1000, Set.of(1)), Map.of(1001, Set.of(1)))));
+        when(brokersInUseOps.blockedVolumes(any(), any(), any(), any())).thenReturn(CompletableFuture.completedFuture(new BrokersInUseCheck.BlockedVolumes(Map.of(1000, Set.of(1)), Map.of(1001, Set.of(1)))));
 
         KafkaStatus kafkaStatus = new KafkaStatus();
         KafkaClusterCreator creator = new KafkaClusterCreator(RECONCILIATION, CO_CONFIG, supplier);
@@ -1001,7 +1001,7 @@ public class KafkaClusterCreatorTest {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
         BrokersInUseCheck brokersInUseOps = supplier.brokersInUseCheck;
-        when(brokersInUseOps.volumesInUse(any(), any(), any(), any())).thenReturn(CompletableFuture.completedFuture(new BrokersInUseCheck.VolumesInUse(Map.of(), Map.of(1000, Set.of(1)))));
+        when(brokersInUseOps.blockedVolumes(any(), any(), any(), any())).thenReturn(CompletableFuture.completedFuture(new BrokersInUseCheck.BlockedVolumes(Map.of(), Map.of(1000, Set.of(1)))));
 
         KafkaStatus kafkaStatus = new KafkaStatus();
         KafkaClusterCreator creator = new KafkaClusterCreator(RECONCILIATION, CO_CONFIG, supplier);
@@ -1021,7 +1021,7 @@ public class KafkaClusterCreatorTest {
 
         // Mock volumes-in-use check => pool-a is blocked
         BrokersInUseCheck brokersInUseOps = supplier.brokersInUseCheck;
-        when(brokersInUseOps.volumesInUse(any(), any(), any(), any())).thenReturn(CompletableFuture.completedFuture(new BrokersInUseCheck.VolumesInUse(Map.of(1000, Set.of(1)), Map.of())));
+        when(brokersInUseOps.blockedVolumes(any(), any(), any(), any())).thenReturn(CompletableFuture.completedFuture(new BrokersInUseCheck.BlockedVolumes(Map.of(1000, Set.of(1)), Map.of())));
 
         KafkaStatus kafkaStatus = new KafkaStatus();
         KafkaClusterCreator creator = new KafkaClusterCreator(RECONCILIATION, CO_CONFIG, supplier);
@@ -1049,7 +1049,7 @@ public class KafkaClusterCreatorTest {
         notEmpty.put(1002, Set.of(2));
 
         BrokersInUseCheck brokersInUseOps = supplier.brokersInUseCheck;
-        when(brokersInUseOps.volumesInUse(any(), any(), any(), any())).thenReturn(CompletableFuture.completedFuture(new BrokersInUseCheck.VolumesInUse(notEmpty, Map.of())));
+        when(brokersInUseOps.blockedVolumes(any(), any(), any(), any())).thenReturn(CompletableFuture.completedFuture(new BrokersInUseCheck.BlockedVolumes(notEmpty, Map.of())));
 
         KafkaStatus kafkaStatus = new KafkaStatus();
         KafkaClusterCreator creator = new KafkaClusterCreator(RECONCILIATION, CO_CONFIG, supplier);
@@ -1073,7 +1073,7 @@ public class KafkaClusterCreatorTest {
         when(brokersInUseOps.brokersInUse(any(), any(), any())).thenReturn(CompletableFuture.completedFuture(Set.of()));
 
         // Mock volumes-in-use check
-        when(brokersInUseOps.volumesInUse(any(), any(), any(), any())).thenReturn(CompletableFuture.completedFuture(new BrokersInUseCheck.VolumesInUse(Map.of(), Map.of())));
+        when(brokersInUseOps.blockedVolumes(any(), any(), any(), any())).thenReturn(CompletableFuture.completedFuture(new BrokersInUseCheck.BlockedVolumes(Map.of(), Map.of())));
 
         KafkaStatus kafkaStatus = new KafkaStatus();
         KafkaClusterCreator creator = new KafkaClusterCreator(RECONCILIATION, CO_CONFIG, supplier);
@@ -1097,7 +1097,7 @@ public class KafkaClusterCreatorTest {
         when(brokersInUseOps.brokersInUse(any(), any(), any())).thenReturn(CompletableFuture.completedFuture(Set.of(3000, 3001, 3002)));
 
         // Mock volumes-in-use check => the removed volume still has partition replicas as well
-        when(brokersInUseOps.volumesInUse(any(), any(), any(), any())).thenReturn(CompletableFuture.completedFuture(new BrokersInUseCheck.VolumesInUse(Map.of(3000, Set.of(1), 3001, Set.of(1), 3002, Set.of(1)), Map.of())));
+        when(brokersInUseOps.blockedVolumes(any(), any(), any(), any())).thenReturn(CompletableFuture.completedFuture(new BrokersInUseCheck.BlockedVolumes(Map.of(3000, Set.of(1), 3001, Set.of(1), 3002, Set.of(1)), Map.of())));
 
         KafkaStatus kafkaStatus = new KafkaStatus();
         KafkaClusterCreator creator = new KafkaClusterCreator(RECONCILIATION, CO_CONFIG, supplier);
@@ -1116,7 +1116,7 @@ public class KafkaClusterCreatorTest {
         assertThat(kafkaStatus.getConditions().get(0).getMessage(), is("Reverting role change of KafkaNodePool pool-mixed (setting roles to [CONTROLLER, BROKER])"));
         assertThat(kafkaStatus.getConditions().get(1).getMessage(), is("Reverting all storage changes of KafkaNodePool pool-mixed because they remove JBOD volumes which are not empty"));
 
-        verify(supplier.brokersInUseCheck, times(1)).volumesInUse(any(), any(), any(), any());
+        verify(supplier.brokersInUseCheck, times(1)).blockedVolumes(any(), any(), any(), any());
     }
 
     @Test
@@ -1125,9 +1125,9 @@ public class KafkaClusterCreatorTest {
 
         // Mock volumes-in-use check => pool-a is blocked first, and pool-b gets a new replica before it is checked again
         BrokersInUseCheck brokersInUseOps = supplier.brokersInUseCheck;
-        when(brokersInUseOps.volumesInUse(any(), any(), any(), any()))
-                .thenReturn(CompletableFuture.completedFuture(new BrokersInUseCheck.VolumesInUse(Map.of(1000, Set.of(1)), Map.of())))
-                .thenReturn(CompletableFuture.completedFuture(new BrokersInUseCheck.VolumesInUse(Map.of(2000, Set.of(1)), Map.of())));
+        when(brokersInUseOps.blockedVolumes(any(), any(), any(), any()))
+                .thenReturn(CompletableFuture.completedFuture(new BrokersInUseCheck.BlockedVolumes(Map.of(1000, Set.of(1)), Map.of())))
+                .thenReturn(CompletableFuture.completedFuture(new BrokersInUseCheck.BlockedVolumes(Map.of(2000, Set.of(1)), Map.of())));
 
         KafkaStatus kafkaStatus = new KafkaStatus();
         KafkaClusterCreator creator = new KafkaClusterCreator(RECONCILIATION, CO_CONFIG, supplier);

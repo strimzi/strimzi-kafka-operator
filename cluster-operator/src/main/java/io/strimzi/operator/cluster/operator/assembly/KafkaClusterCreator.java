@@ -60,7 +60,7 @@ public class KafkaClusterCreator {
     private boolean volumeRemovalCheckFailed = false;
     private final List<Condition> warningConditions = new ArrayList<>();
     private final Set<Integer> scalingDownBlockedNodes = new HashSet<>();
-    private BrokersInUseCheck.VolumesInUse volumesInUse = new BrokersInUseCheck.VolumesInUse(Map.of(), Map.of());
+    private BrokersInUseCheck.BlockedVolumes blockedVolumes = new BrokersInUseCheck.BlockedVolumes(Map.of(), Map.of());
 
     /**
      * Constructor
@@ -143,12 +143,12 @@ public class KafkaClusterCreator {
                             errors.add("Cannot remove the broker role from nodes " + kafka.usedToBeBrokerNodes() + " because they have assigned partition-replicas.");
                         }
 
-                        if (!volumesInUse.notEmpty().isEmpty()) {
-                            errors.add("Cannot remove the " + blockedVolumes(volumesInUse.notEmpty()) + " because they have assigned partition-replicas.");
+                        if (!blockedVolumes.notEmpty().isEmpty()) {
+                            errors.add("Cannot remove the " + describeBlockedVolumes(blockedVolumes.notEmpty()) + " because they have assigned partition-replicas.");
                         }
 
-                        if (!volumesInUse.notChecked().isEmpty()) {
-                            errors.add("Cannot remove the " + blockedVolumes(volumesInUse.notChecked()) + " because it is not known whether they are empty. The broker did not answer, or the log directory is offline.");
+                        if (!blockedVolumes.unknown().isEmpty()) {
+                            errors.add("Cannot remove the " + describeBlockedVolumes(blockedVolumes.unknown()) + " because it is not known whether they are empty. The broker did not answer, or the log directory is offline.");
                         }
 
                         return CompletableFuture.failedFuture(new InvalidResourceException("Following errors were found when processing the Kafka custom resource: " + errors));
@@ -242,21 +242,21 @@ public class KafkaClusterCreator {
         if (skipBrokerScaleDownCheck(kafkaCr) // The check was disabled by the user
                 || removedVolumes.isEmpty()) { // There are no removed volumes, so there is nothing to check
             volumeRemovalCheckFailed = false;
-            volumesInUse = new BrokersInUseCheck.VolumesInUse(Map.of(), Map.of());
+            blockedVolumes = new BrokersInUseCheck.BlockedVolumes(Map.of(), Map.of());
             return CompletableFuture.completedFuture(kafka);
         } else {
             return ReconcilerUtils.coIdentity(reconciliation, secretOperator, kafka.securityContext())
-                    .thenCompose(coTlsPemIdentity -> brokerScaleDownOperations.volumesInUse(reconciliation, coTlsPemIdentity, adminClientProvider, removedVolumes))
+                    .thenCompose(coTlsPemIdentity -> brokerScaleDownOperations.blockedVolumes(reconciliation, coTlsPemIdentity, adminClientProvider, removedVolumes))
                     .thenApply(result -> {
-                        volumesInUse = result;
+                        blockedVolumes = result;
                         volumeRemovalCheckFailed = !result.nothingBlocked();
 
                         if (!result.notEmpty().isEmpty()) {
-                            LOGGER.warnCr(reconciliation, "Cannot remove the {} because they have assigned partition-replicas", blockedVolumes(result.notEmpty()));
+                            LOGGER.warnCr(reconciliation, "Cannot remove the {} because they have assigned partition-replicas", describeBlockedVolumes(result.notEmpty()));
                         }
 
-                        if (!result.notChecked().isEmpty()) {
-                            LOGGER.warnCr(reconciliation, "Cannot remove the {} because it is not known whether they are empty. The broker did not answer, or the log directory is offline", blockedVolumes(result.notChecked()));
+                        if (!result.unknown().isEmpty()) {
+                            LOGGER.warnCr(reconciliation, "Cannot remove the {} because it is not known whether they are empty. The broker did not answer, or the log directory is offline", describeBlockedVolumes(result.unknown()));
                         }
 
                         return kafka;
@@ -391,11 +391,11 @@ public class KafkaClusterCreator {
     private String blockedReason(KafkaNodePool nodePool) {
         List<String> reasons = new ArrayList<>();
 
-        if (nodePool.getStatus().getNodeIds().stream().anyMatch(volumesInUse.notEmpty()::containsKey)) {
+        if (nodePool.getStatus().getNodeIds().stream().anyMatch(blockedVolumes.notEmpty()::containsKey)) {
             reasons.add("are not empty");
         }
 
-        if (nodePool.getStatus().getNodeIds().stream().anyMatch(volumesInUse.notChecked()::containsKey)) {
+        if (nodePool.getStatus().getNodeIds().stream().anyMatch(blockedVolumes.unknown()::containsKey)) {
             reasons.add("could not be checked, because a broker did not answer or a log directory is offline");
         }
 
@@ -410,7 +410,7 @@ public class KafkaClusterCreator {
      * @return  True when the removal was blocked. False otherwise.
      */
     private boolean isBlocked(Integer nodeId) {
-        return volumesInUse.notEmpty().containsKey(nodeId) || volumesInUse.notChecked().containsKey(nodeId);
+        return blockedVolumes.notEmpty().containsKey(nodeId) || blockedVolumes.unknown().containsKey(nodeId);
     }
 
     /**
@@ -421,7 +421,7 @@ public class KafkaClusterCreator {
      *
      * @return  Text such as "JBOD volumes [1] from Kafka brokers [1000, 1001]"
      */
-    private static String blockedVolumes(Map<Integer, Set<Integer>> volumesPerNode) {
+    private static String describeBlockedVolumes(Map<Integer, Set<Integer>> volumesPerNode) {
         Map<Set<Integer>, Set<Integer>> nodesPerVolumes = new LinkedHashMap<>();
 
         for (Map.Entry<Integer, Set<Integer>> node : volumesPerNode.entrySet()) {
