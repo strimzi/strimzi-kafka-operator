@@ -41,12 +41,14 @@ import io.strimzi.operator.common.operator.MockCertIssuer;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.platform.KubernetesVersion;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.mockito.ArgumentCaptor;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -57,6 +59,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+@Timeout(value = 30, unit = TimeUnit.SECONDS)
 public class KafkaReconcilerServiceAccountTest {
     private final static String NAMESPACE = "my-namespace";
     private final static String CLUSTER_NAME = "my-cluster";
