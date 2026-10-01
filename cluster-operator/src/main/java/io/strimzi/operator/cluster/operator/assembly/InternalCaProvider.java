@@ -8,7 +8,6 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.certs.CertIssuer;
-import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
@@ -102,7 +101,7 @@ public class InternalCaProvider extends CaProvider {
             certAnnotations.put(Annotations.ANNO_STRIMZI_IO_FORCE_RENEW, Annotations.stringAnnotation(existingCaCertSecret, Annotations.ANNO_STRIMZI_IO_FORCE_RENEW, "false"));
         }
         String caCertSecretName = switch (caRole) {
-            case CLUSTER_CA -> AbstractModel.clusterCaCertSecretName(reconciliation.name());
+            case CLUSTER_CA -> KafkaResources.clusterCaCertificateSecretName(reconciliation.name());
             case CLIENTS_CA -> KafkaResources.clientsCaCertificateSecretName(reconciliation.name());
         };
         return createCaCertSecret(caRole, caCertSecretName, internalCa.caCertData(), certAnnotations, internalCa.caCertGeneration());
@@ -118,7 +117,7 @@ public class InternalCaProvider extends CaProvider {
             keyAnnotations.put(Annotations.ANNO_STRIMZI_IO_FORCE_REPLACE, Annotations.stringAnnotation(existingCaKeySecret, Annotations.ANNO_STRIMZI_IO_FORCE_REPLACE, "false"));
         }
         String caKeySecretName = switch (caRole) {
-            case CLUSTER_CA -> AbstractModel.clusterCaKeySecretName(reconciliation.name());
+            case CLUSTER_CA -> KafkaResources.clusterCaKeySecretName(reconciliation.name());
             case CLIENTS_CA -> KafkaResources.clientsCaKeySecretName(reconciliation.name());
         };
         return createCaSecret(caKeySecretName, internalCa.caKeyData(), caLabels, keyAnnotations);

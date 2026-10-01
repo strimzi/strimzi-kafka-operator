@@ -17,7 +17,6 @@ import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.certs.OpenSslCertIssuer;
 import io.strimzi.certs.StrimziSubject;
-import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
@@ -184,7 +183,7 @@ public class CertManagerCaProviderTest {
         String hash = CertificateUtils.getCertificateThumbprint(CertificateUtils.x509Certificate(Util.decodeFromBase64(caCert).getBytes(StandardCharsets.UTF_8)));
         return new SecretBuilder()
                 .withNewMetadata()
-                    .withName(AbstractModel.clusterCaCertSecretName(NAME))
+                    .withName(KafkaResources.clusterCaCertificateSecretName(NAME))
                     .withNamespace(NAMESPACE)
                     .addToAnnotations(Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION, "0")
                     .addToAnnotations(Ca.ANNO_STRIMZI_IO_CA_KEY_GENERATION, "0")
@@ -302,8 +301,8 @@ public class CertManagerCaProviderTest {
 
         // Verify K8s calls
         ArgumentCaptor<Secret> caCertSecret = ArgumentCaptor.forClass(Secret.class);
-        verify(secretOperations).reconcile(any(), eq(NAMESPACE), eq(AbstractModel.clusterCaCertSecretName(NAME)), caCertSecret.capture());
-        verify(secretOperations, never()).reconcile(any(), eq(NAMESPACE), eq(AbstractModel.clusterCaKeySecretName(NAME)), any(Secret.class));
+        verify(secretOperations).reconcile(any(), eq(NAMESPACE), eq(KafkaResources.clusterCaCertificateSecretName(NAME)), caCertSecret.capture());
+        verify(secretOperations, never()).reconcile(any(), eq(NAMESPACE), eq(KafkaResources.clusterCaKeySecretName(NAME)), any(Secret.class));
 
         assertThat(caCertSecret.getValue(), is(result.certSecret()));
     }
@@ -399,8 +398,8 @@ public class CertManagerCaProviderTest {
 
         // Verify K8s calls
         ArgumentCaptor<Secret> caCertSecret = ArgumentCaptor.forClass(Secret.class);
-        verify(secretOperations).reconcile(any(), eq(NAMESPACE), eq(AbstractModel.clusterCaCertSecretName(NAME)), caCertSecret.capture());
-        verify(secretOperations, never()).reconcile(any(), eq(NAMESPACE), eq(AbstractModel.clusterCaKeySecretName(NAME)), any(Secret.class));
+        verify(secretOperations).reconcile(any(), eq(NAMESPACE), eq(KafkaResources.clusterCaCertificateSecretName(NAME)), caCertSecret.capture());
+        verify(secretOperations, never()).reconcile(any(), eq(NAMESPACE), eq(KafkaResources.clusterCaKeySecretName(NAME)), any(Secret.class));
 
         assertThat(caCertSecret.getValue(), is(result.certSecret()));
     }
@@ -509,8 +508,8 @@ public class CertManagerCaProviderTest {
 
         // Verify K8s calls
         ArgumentCaptor<Secret> caCertSecret = ArgumentCaptor.forClass(Secret.class);
-        verify(secretOperations).reconcile(any(), eq(NAMESPACE), eq(AbstractModel.clusterCaCertSecretName(NAME)), caCertSecret.capture());
-        verify(secretOperations, never()).reconcile(any(), eq(NAMESPACE), eq(AbstractModel.clusterCaKeySecretName(NAME)), any(Secret.class));
+        verify(secretOperations).reconcile(any(), eq(NAMESPACE), eq(KafkaResources.clusterCaCertificateSecretName(NAME)), caCertSecret.capture());
+        verify(secretOperations, never()).reconcile(any(), eq(NAMESPACE), eq(KafkaResources.clusterCaKeySecretName(NAME)), any(Secret.class));
 
         assertThat(caCertSecret.getValue(), is(result.certSecret()));
     }
@@ -623,8 +622,8 @@ public class CertManagerCaProviderTest {
 
         // Verify K8s calls
         ArgumentCaptor<Secret> caCertSecret = ArgumentCaptor.forClass(Secret.class);
-        verify(secretOperations).reconcile(any(), eq(NAMESPACE), eq(AbstractModel.clusterCaCertSecretName(NAME)), caCertSecret.capture());
-        verify(secretOperations, never()).reconcile(any(), eq(NAMESPACE), eq(AbstractModel.clusterCaKeySecretName(NAME)), any(Secret.class));
+        verify(secretOperations).reconcile(any(), eq(NAMESPACE), eq(KafkaResources.clusterCaCertificateSecretName(NAME)), caCertSecret.capture());
+        verify(secretOperations, never()).reconcile(any(), eq(NAMESPACE), eq(KafkaResources.clusterCaKeySecretName(NAME)), any(Secret.class));
 
         assertThat(caCertSecret.getValue(), is(result.certSecret()));
     }
@@ -718,8 +717,8 @@ public class CertManagerCaProviderTest {
 
         // Verify K8s calls
         ArgumentCaptor<Secret> caCertSecret = ArgumentCaptor.forClass(Secret.class);
-        verify(secretOperations).reconcile(any(), eq(NAMESPACE), eq(AbstractModel.clusterCaCertSecretName(NAME)), caCertSecret.capture());
-        verify(secretOperations, never()).reconcile(any(), eq(NAMESPACE), eq(AbstractModel.clusterCaKeySecretName(NAME)), any(Secret.class));
+        verify(secretOperations).reconcile(any(), eq(NAMESPACE), eq(KafkaResources.clusterCaCertificateSecretName(NAME)), caCertSecret.capture());
+        verify(secretOperations, never()).reconcile(any(), eq(NAMESPACE), eq(KafkaResources.clusterCaKeySecretName(NAME)), any(Secret.class));
 
         assertThat(caCertSecret.getValue(), is(result.certSecret()));
     }
@@ -765,8 +764,8 @@ public class CertManagerCaProviderTest {
 
         // Verify K8s calls
         ArgumentCaptor<Secret> caCertSecret = ArgumentCaptor.forClass(Secret.class);
-        verify(secretOperations).reconcile(any(), eq(NAMESPACE), eq(AbstractModel.clusterCaCertSecretName(NAME)), caCertSecret.capture());
-        verify(secretOperations, never()).reconcile(any(), eq(NAMESPACE), eq(AbstractModel.clusterCaKeySecretName(NAME)), any(Secret.class));
+        verify(secretOperations).reconcile(any(), eq(NAMESPACE), eq(KafkaResources.clusterCaCertificateSecretName(NAME)), caCertSecret.capture());
+        verify(secretOperations, never()).reconcile(any(), eq(NAMESPACE), eq(KafkaResources.clusterCaKeySecretName(NAME)), any(Secret.class));
 
         assertThat(caCertSecret.getValue(), is(result.certSecret()));
     }

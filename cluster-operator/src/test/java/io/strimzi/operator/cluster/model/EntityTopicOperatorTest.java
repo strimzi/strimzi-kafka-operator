@@ -119,7 +119,7 @@ public class EntityTopicOperatorTest {
         KafkaClusterSecurityContext securityContext = new KafkaClusterSecurityContext(new TlsEncryptionConfiguration(), new MtlsAuthenticationConfiguration());
 
         assertThat(getSecurityEnvVars(securityContext), is(List.of(
-                new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_TLS_TRUSTED_CERTS_SECRET_NAME).withValue(KafkaCluster.clusterCaCertSecretName(CLUSTER_NAME)).build(),
+                new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_TLS_TRUSTED_CERTS_SECRET_NAME).withValue(KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME)).build(),
                 new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_TLS_SECRET_NAME).withValue(KafkaResources.entityTopicOperatorSecretName(CLUSTER_NAME)).build(),
                 new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_TLS_KEY_NAME).withValue("entity-operator.key").build(),
                 new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_TLS_CERT_NAME).withValue("entity-operator.crt").build())));
@@ -130,7 +130,7 @@ public class EntityTopicOperatorTest {
         KafkaClusterSecurityContext securityContext = new KafkaClusterSecurityContext(new TlsEncryptionConfiguration(), new NoneAuthenticationConfiguration());
 
         assertThat(getSecurityEnvVars(securityContext), is(List.of(
-                new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_TLS_TRUSTED_CERTS_SECRET_NAME).withValue(KafkaCluster.clusterCaCertSecretName(CLUSTER_NAME)).build())));
+                new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_TLS_TRUSTED_CERTS_SECRET_NAME).withValue(KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME)).build())));
     }
 
     @Test
@@ -146,7 +146,7 @@ public class EntityTopicOperatorTest {
         KafkaClusterSecurityContext securityContext = new KafkaClusterSecurityContext(new TlsEncryptionConfiguration(), serviceAccountAuthentication());
 
         assertThat(getSecurityEnvVars(securityContext), is(List.of(
-                new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_TLS_TRUSTED_CERTS_SECRET_NAME).withValue(KafkaCluster.clusterCaCertSecretName(CLUSTER_NAME)).build(),
+                new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_TLS_TRUSTED_CERTS_SECRET_NAME).withValue(KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME)).build(),
                 new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_SERVICE_ACCOUNT_TOKEN_PATH).withValue("/var/run/secrets/strimzi.io/token").build())));
     }
 
