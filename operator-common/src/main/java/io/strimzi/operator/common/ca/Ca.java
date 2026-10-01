@@ -567,6 +567,27 @@ public abstract class Ca {
     }
 
     /**
+     * True if there are untrusted new end-entity certificates detected during reconciliation.
+     *
+     * @return Whether there are untrusted end-entity certificates
+     */
+    public boolean hasUntrustedEndEntityCertificates() {
+        return false;
+    }
+
+    /**
+     * Checks if the CA Secret contains old CA certificates (from a previous key replacement).
+     *
+     * @return Whether the CA Secret contains old CA certificates
+     */
+    public boolean hasOldCerts() {
+        if (caCertData == null || caCertData.isEmpty()) {
+            return false;
+        }
+        return caCertData.keySet().stream().anyMatch(key -> OLD_CA_CERT_PATTERN.matcher(key).matches());
+    }
+
+    /**
      * Gets the generation of the current CA certificate.
      *
      * @return the generation of the current CA certificate

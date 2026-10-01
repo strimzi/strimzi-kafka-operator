@@ -389,7 +389,7 @@ public class KubernetesRestartEventsMockTest {
         patchClusterCaKeySecretWithAnnotation(ResourceAnnotations.ANNO_STRIMZI_IO_FORCE_REPLACE, "true");
 
         CaReconciler reconciler = new CaReconciler(reconciliation, kafka, clusterOperatorConfig, supplier, mockCertIssuer, passwordGenerator, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
-        VertxUtil.toFuture(reconciler.reconcile(Clock.systemUTC())).onComplete(verifyEventPublished(CLUSTER_CA_CERT_KEY_REPLACED, context));
+        VertxUtil.toFuture(reconciler.reconcile(Clock.systemUTC(), new KafkaStatus())).onComplete(verifyEventPublished(CLUSTER_CA_CERT_KEY_REPLACED, context));
     }
 
     @Test
