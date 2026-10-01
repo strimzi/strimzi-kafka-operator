@@ -11,6 +11,7 @@
   If needed, `UseBackgroundPodDeletion` can be disabled in the feature gates configuration in the Cluster Operator.
 * (Early Access) Integration with cert-manager for issuing certificates.
   While the cert-manager feature is in Early Access it is not recommended for use in production.
+* Updated with HTTP Bridge 1.2.0
 
 ### Major changes, deprecations, and removals
 
