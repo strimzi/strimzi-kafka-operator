@@ -32,3 +32,4 @@ INFO  AbstractOperator:399 - Reconciliation #1(watch) Kafka(myproject/my-cluster
 ----
 
 Restarting the Cluster Operator can resolve such issues.
+Before restarting, check whether a long rolling update is in progress, for example when `STRIMZI_KAFKA_POD_RESTART_DELAY_MS` is set and the Cluster Operator logs `waiting <delay>ms before continuing` after each restarted pod.

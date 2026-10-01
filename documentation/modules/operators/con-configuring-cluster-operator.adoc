@@ -45,11 +45,13 @@ The interval between xref:ref-operator-cluster-periodic-reconciliation-{context}
 The timeout for internal operations, in milliseconds. Increase this value when using Strimzi on clusters where regular Kubernetes operations take longer than usual (due to factors such as prolonged download times for container images, for example).
 
 `STRIMZI_KAFKA_POD_RESTART_DELAY_MS`:: Optional, default 0 ms.
-The time to wait after a restarted Kafka pod becomes ready before the Cluster Operator considers restarting the next Kafka pod, in milliseconds.
-The delay applies to every Kafka pod restart in a rolling update, including restarts triggered by the Strimzi Drain Cleaner, and also after the last restarted pod.
-After the delay, the Cluster Operator checks the availability of the next pod as usual.
-Set this value when a restarted broker might drop out of the in-sync replicas shortly after it becomes ready, for example because of slow disks or because many nodes are drained in parallel.
-The delay increases the duration of every rolling update by the configured time for each restarted Kafka pod.
+The time to wait after a restarted Kafka pod becomes ready before the Cluster Operator checks whether the next Kafka pod can be restarted without affecting availability, in milliseconds.
+Use it when a restarted broker might drop out of the in-sync replicas shortly after it becomes ready, for example because of slow disks, especially when the Strimzi Drain Cleaner handles several node drains in parallel.
+The delay follows every successful Kafka pod restart performed by the Cluster Operator, including restarts triggered by the Strimzi Drain Cleaner and the last restart of a rolling update.
+It does not apply to pods that are evicted or deleted outside the Cluster Operator, such as during a node drain without the Strimzi Drain Cleaner.
+It is not applied if the restart fails or the restarted pod does not become ready, and it is not preserved if the Cluster Operator restarts while waiting.
+Each restarted pod adds the delay to the duration of the rolling update.
+The reconciliation stays in progress during the delay, so other changes to the Kafka cluster wait until the rolling update completes, and a rolling update can continue past the end of a maintenance time window.
 
 `STRIMZI_OPERATIONS_THREAD_POOL_SIZE`:: Optional, default 10.
 The worker thread pool size, which is used for various asynchronous and blocking operations that are run by the Cluster Operator.
