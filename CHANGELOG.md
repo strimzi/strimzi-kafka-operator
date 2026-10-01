@@ -11,6 +11,7 @@
   If needed, `UseBackgroundPodDeletion` can be disabled in the feature gates configuration in the Cluster Operator.
 * (Early Access) Integration with cert-manager for issuing certificates.
   While the cert-manager feature is in Early Access it is not recommended for use in production.
+* Add the `STRIMZI_KAFKA_POD_RESTART_DELAY_MS` environment variable to the Cluster Operator to configure a delay after each Kafka pod restart before rolling the next pod.
 
 ### Major changes, deprecations, and removals
 
