@@ -331,4 +331,10 @@ public class VolumeUtilsTest {
                 .build();
         assertThat(VolumeUtils.kraftMetadataPath(markedJbodStorage), is("/var/lib/kafka/data-1"));
     }
+
+    @Test
+    public void testKafkaLogDirPath() {
+        assertThat(VolumeUtils.kafkaLogDirPath(0, 2), is("/var/lib/kafka/data-0/kafka-log2"));
+        assertThat(VolumeUtils.kafkaLogDirPath(5, 1000), is("/var/lib/kafka/data-5/kafka-log1000"));
+    }
 }

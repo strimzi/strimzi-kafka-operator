@@ -477,6 +477,31 @@ public class VolumeUtils {
     }
 
     /**
+     * Returns the path of the Kafka log directory on a JBOD volume. This is the same path as the one configured in the
+     * {@code log.dirs} option of the Kafka node.
+     *
+     * @param volumeId  ID of the JBOD volume
+     * @param nodeId    ID of the Kafka node
+     *
+     * @return  Path of the Kafka log directory
+     */
+    public static String kafkaLogDirPath(int volumeId, int nodeId) {
+        return kafkaLogDirPathOnMount(KAFKA_DATA_VOLUME_MOUNT_PATH + "/" + createVolumePrefix(volumeId, true), nodeId);
+    }
+
+    /**
+     * Returns the path of the Kafka log directory stored on a volume mounted at the given path.
+     *
+     * @param mountPath Path where the volume is mounted
+     * @param nodeId    ID of the Kafka node
+     *
+     * @return  Path of the Kafka log directory
+     */
+    public static String kafkaLogDirPathOnMount(String mountPath, int nodeId) {
+        return mountPath + "/kafka-log" + nodeId;
+    }
+
+    /**
      * Volume names have to follow DNS label standard form RFC1123:
      *     - contain at most 63 characters
      *     - contain only lowercase alphanumeric characters or ‘-’
