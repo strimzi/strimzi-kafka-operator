@@ -130,16 +130,18 @@ jobs:
       - name: Install Docker
         uses: strimzi/github-actions/.github/actions/dependencies/install-docker@4aefb08c299693441fb87284984c760a1c708fbc # v2.4
 
-      # Derive a clean FOSSA project name from the archive filename:
-      # - strip "-latest" tag
-      # - strip "-amd64" architecture suffix
-      # - deduplicate "kafka-kafka-" prefix (kafka images carry the version in the name)
-      # - append "-container" to distinguish from Maven project
-      # Examples: operator-latest-amd64 -> operator-container
-      #           kafka-latest-kafka-4.2.0-amd64 -> kafka-4.2.0-container
       - name: Derive FOSSA scan name
         id: scan-name
-        run: echo "name=$(echo '${{ matrix.image }}' | sed 's/-latest//;s/-amd64$//;s/^kafka-kafka-/kafka-/;s$/-container$//')" >> "$GITHUB_OUTPUT"
+        # Derive a clean FOSSA project name from the archive filename.
+        # Examples: operator-latest-amd64 -> operator-container
+        #           kafka-latest-kafka-4.2.0-amd64 -> kafka-4.2.0-container
+        run: |
+          name='${{ matrix.image }}'
+          name="${name//-latest/}"        # strip "-latest" tag
+          name="${name//-amd64/}"         # strip "-amd64" architecture suffix
+          name="${name/#kafka-kafka-/kafka-}"  # deduplicate "kafka-kafka-" prefix
+          name="${name}-container"        # append "-container" to distinguish from Maven project
+          echo "name=${name}" >> "$GITHUB_OUTPUT"
 
       - name: Run FOSSA container scan
         uses: strimzi/github-actions/.github/actions/security/fossa-container-scan@4aefb08c299693441fb87284984c760a1c708fbc # v2.4
