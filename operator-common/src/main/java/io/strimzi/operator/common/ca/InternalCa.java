@@ -432,13 +432,14 @@ public class InternalCa extends Ca {
 
                     certData.put("ca-" + notAfterDate + SecretEntry.CRT.suffix, certData.remove(CA_CRT));
                 }
-                ++caCertGeneration;
-                generateCaKeyAndCert(nextCaSubject(++caKeyGeneration), keyData, certData);
+                caCertGeneration++;
+                caKeyGeneration++;
+                generateCaKeyAndCert(nextCaSubject(caKeyGeneration), keyData, certData);
             }
             case RENEW_CERT -> {
                 keyData = new HashMap<>(caKeyData);
                 certData = new HashMap<>(3);
-                ++caCertGeneration;
+                caCertGeneration++;
                 renewCaCert(nextCaSubject(caKeyGeneration), certData);
             }
             default -> {

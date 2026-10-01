@@ -119,15 +119,15 @@ public class CertManagerCa extends Ca {
             case RENEW_CERT -> {
                 updatedCertData = new HashMap<>(caCertData);
                 updatedCertData.put(CA_CRT, newCaCertAsBase64);
-                ++caCertGeneration;
+                caCertGeneration++;
             }
             case REPLACE_KEY -> {
                 String notAfterDate = DATE_TIME_FORMATTER.format(currentCaCertX509().getNotAfter().toInstant().atZone(ZoneId.of("Z")));
                 updatedCertData = new HashMap<>(caCertData);
                 updatedCertData.put(Ca.SecretEntry.CRT.asKey("ca-" + notAfterDate), caCertData.get(CA_CRT));
                 updatedCertData.put(CA_CRT, newCaCertAsBase64);
-                ++caCertGeneration;
-                ++caKeyGeneration;
+                caCertGeneration++;
+                caKeyGeneration++;
             }
             default -> throw new RuntimeException("Unsupported renewal type: " + renewalType);
         }
