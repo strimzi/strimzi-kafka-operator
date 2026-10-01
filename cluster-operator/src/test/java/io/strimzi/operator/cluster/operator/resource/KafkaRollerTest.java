@@ -50,6 +50,8 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -64,6 +66,8 @@ import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
+import static org.hamcrest.Matchers.lessThan;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -671,6 +675,44 @@ public class KafkaRollerTest {
     }
 
     @Test
+    public void testPodRestartDelayIsAppliedAfterEachRestart() {
+        long delayNs = TimeUnit.MILLISECONDS.toNanos(200);
+        Map<Integer, Long> canRollCheckedAtNs = new ConcurrentHashMap<>();
+        TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(addPodNames(3, 0, 0),
+                mockPodOps(podId -> CompletableFuture.completedFuture(null)), noException(), null, noException(), noException(),
+                brokerId -> {
+                    canRollCheckedAtNs.put(brokerId, System.nanoTime());
+                    return CompletableFuture.completedFuture(true);
+                },
+                new DefaultAdminClientProvider(), new DefaultKafkaAgentClientProvider(), false, null, -1, 200);
+
+        doSuccessfulRollingRestart(kafkaRoller,
+                asList(0, 1, 2),
+                asList(0, 1, 2));
+        long finishedAtNs = System.nanoTime();
+
+        assertThat(canRollCheckedAtNs.get(1) - kafkaRoller.restartedAtNs.get(0), greaterThanOrEqualTo(delayNs));
+        assertThat(canRollCheckedAtNs.get(2) - kafkaRoller.restartedAtNs.get(1), greaterThanOrEqualTo(delayNs));
+        assertThat(finishedAtNs - kafkaRoller.restartedAtNs.get(2), greaterThanOrEqualTo(delayNs));
+    }
+
+    @Test
+    public void testPodRestartDelayIsNotAppliedWithoutRestart() {
+        long delayMs = 10_000;
+        TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(addPodNames(3, 0, 0),
+                mockPodOps(podId -> CompletableFuture.completedFuture(null)), noException(), null, noException(), noException(),
+                brokerId -> CompletableFuture.completedFuture(true),
+                new DefaultAdminClientProvider(), new DefaultKafkaAgentClientProvider(), false, null, -1, delayMs);
+
+        long startedAtNs = System.nanoTime();
+        doSuccessfulRollingRestart(kafkaRoller,
+                emptyList(),
+                emptyList());
+
+        assertThat(TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startedAtNs), lessThan(delayMs));
+    }
+
+    @Test
     public void testControllerNoQuorum() {
         TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(addPodNames(0, 0, 3),
                 mockPodOps(podId -> CompletableFuture.completedFuture(null)), noException(), null, noException(), noException(),
@@ -1022,6 +1064,7 @@ public class KafkaRollerTest {
     private class TestingKafkaRoller extends KafkaRoller {
 
         int controllerCall;
+        private final Map<Integer, Long> restartedAtNs = new ConcurrentHashMap<>();
         private final IdentityHashMap<Admin, Throwable> unclosedAdminClients;
         private final Function<Set<NodeRef>, RuntimeException> acOpenException;
         private final Throwable acCloseException;
@@ -1043,11 +1086,28 @@ public class KafkaRollerTest {
                                    AdminClientProvider adminClientProvider,
                                    KafkaAgentClientProvider kafkaAgentClientProvider,
                                    boolean delegateAdminClientCall, BrokerState brokerState, int activeController) {
+            this(nodes, podOps, acOpenException, acCloseException, controllerException, getConfigsException, canRollFn,
+                    adminClientProvider, kafkaAgentClientProvider, delegateAdminClientCall, brokerState, activeController, 0);
+        }
+
+        @SuppressWarnings("checkstyle:ParameterNumber")
+        private TestingKafkaRoller(Set<NodeRef> nodes,
+                                   PodOperator podOps,
+                                   Function<Set<NodeRef>, RuntimeException> acOpenException,
+                                   Throwable acCloseException,
+                                   Function<Integer, Throwable> controllerException,
+                                   Function<Integer, ForceableProblem> getConfigsException,
+                                   Function<Integer, CompletableFuture<Boolean>> canRollFn,
+                                   AdminClientProvider adminClientProvider,
+                                   KafkaAgentClientProvider kafkaAgentClientProvider,
+                                   boolean delegateAdminClientCall, BrokerState brokerState, int activeController,
+                                   long podRestartDelayMs) {
             super(
                     new Reconciliation("test", "Kafka", stsNamespace(), clusterName()),
                     podOps,
                     500,
                     1000,
+                    podRestartDelayMs,
                     () -> new BackOff(10L, 2, 4),
                     nodes,
                     new Identity(null, null),
@@ -1172,6 +1232,7 @@ public class KafkaRollerTest {
         @Override
         protected CompletableFuture<Void> restart(Pod pod, RestartContext restartContext) {
             restarted.add(pod.getMetadata().getName());
+            restartedAtNs.put(podName2Number(pod.getMetadata().getName()), System.nanoTime());
             return CompletableFuture.completedFuture(null);
         }
     }
