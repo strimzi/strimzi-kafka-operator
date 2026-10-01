@@ -6,6 +6,8 @@ package io.strimzi.operator.common.ca;
 
 import io.fabric8.certmanager.api.model.v1.Certificate;
 import io.fabric8.certmanager.api.model.v1.CertificateBuilder;
+import io.fabric8.certmanager.api.model.v1.CertificateCondition;
+import io.fabric8.certmanager.api.model.v1.CertificateStatus;
 import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.strimzi.api.kafka.model.kafka.certmanager.IssuerRef;
@@ -29,6 +31,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Predicate;
@@ -227,6 +230,37 @@ public class CertManagerCa extends Ca {
         Certificate certificate = buildCertificateResource(entityName, subject, caConfig.getValidityDays(), caConfig.getRenewalDays(), labels);
         return certManagerCertificateOperator.reconcile(reconciliation, reconciliation.namespace(), entityName, certificate)
                 .thenCompose(v -> certManagerCertificateOperator.waitForReady(reconciliation, reconciliation.namespace(), entityName))
+                .exceptionallyCompose(error -> certManagerCertificateOperator.getAsync(reconciliation.namespace(), entityName)
+                        .thenCompose(cmCert -> {
+                            if (cmCert != null && cmCert.getStatus() != null) {
+                                CertificateStatus status = cmCert.getStatus();
+                                List<CertificateCondition> conditions = status.getConditions();
+                                if (conditions != null) {
+                                    Optional<CertificateCondition> notReadyCondition = conditions.stream()
+                                            .filter(condition -> "Ready".equals(condition.getType()) && !"True".equals(condition.getStatus()))
+                                            .findFirst();
+                                    if (notReadyCondition.isPresent()) {
+                                        CertificateCondition cond = notReadyCondition.get();
+                                        String reason = cond.getReason();
+                                        String msg = cond.getMessage();
+                                        StringBuilder details = new StringBuilder();
+                                        if (reason != null && !reason.isBlank()) {
+                                            details.append(reason);
+                                        }
+                                        if (msg != null && !msg.isBlank()) {
+                                            if (!details.isEmpty()) {
+                                                details.append(": ");
+                                            }
+                                            details.append(msg);
+                                        }
+                                        if (!details.isEmpty()) {
+                                            return CompletableFuture.failedFuture(new RuntimeException("cert-manager Certificate '" + entityName + "' failed to become Ready: " + details, Util.maybeUnwrapCompletionException(error)));
+                                        }
+                                    }
+                                }
+                            }
+                            return CompletableFuture.failedFuture(Util.maybeUnwrapCompletionException(error));
+                        }))
                 .thenCompose(v -> secretOperator.getAsync(reconciliation.namespace(), certManagerSecretName(entityName)))
                 .thenCompose(certSecret -> {
                     if (certSecret == null) {

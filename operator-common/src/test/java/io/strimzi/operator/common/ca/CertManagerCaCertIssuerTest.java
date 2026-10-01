@@ -5,6 +5,8 @@
 package io.strimzi.operator.common.ca;
 
 import io.fabric8.certmanager.api.model.v1.Certificate;
+import io.fabric8.certmanager.api.model.v1.CertificateCondition;
+import io.fabric8.certmanager.api.model.v1.CertificateStatus;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.strimzi.api.kafka.model.common.CertificateAuthority;
@@ -33,6 +35,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
@@ -285,6 +288,52 @@ public class CertManagerCaCertIssuerTest {
         verify(certManagerCertificateOperator, times(1)).reconcile(any(), eq(NAMESPACE), eq(RESOURCE_NAME), entityCertificateResourceCaptor.capture());
 
         assertThat(entityCertificateResourceCaptor.getValue().getSpec().getCommonName(), is(COMMON_NAME));
+    }
+
+    @Test
+    void renewalOfCertificatesWhenCertificateResourceCreationFailsWithStatusMessage() {
+        // Create cluster ca cert Secret
+        Map<String, String> clusterCaCertData = new HashMap<>();
+        clusterCaCertData.put("ca.crt", MockCertIssuer.clusterCaCert());
+        Secret clusterCaCertSecret = createCaCertSecret(clusterCaCertData, 0);
+
+        when(certManagerCertificateOperator.waitForReady(any(), eq(NAMESPACE), eq(RESOURCE_NAME)))
+                .thenReturn(CompletableFuture.failedFuture(new StrimziTimeoutException("Timed out waiting for resource to be ready")));
+
+        Certificate failedCert = new Certificate();
+        CertificateStatus status = new CertificateStatus();
+        CertificateCondition readyCond = new CertificateCondition();
+        readyCond.setType("Ready");
+        readyCond.setStatus("False");
+        readyCond.setReason("IssuerNotFound");
+        readyCond.setMessage("Issuer.cert-manager.io cm-issuer does not exist");
+        status.setConditions(List.of(readyCond));
+        failedCert.setStatus(status);
+
+        when(certManagerCertificateOperator.getAsync(eq(NAMESPACE), eq(RESOURCE_NAME)))
+                .thenReturn(CompletableFuture.completedFuture(failedCert));
+
+        CertManagerCa certManagerCa = new CertManagerCa(
+                Reconciliation.DUMMY_RECONCILIATION,
+                Ca.CaRole.CLUSTER_CA,
+                clusterCaCertSecret,
+                new CaConfig(getCertificateAuthority(), false),
+                certManagerCertificateOperator,
+                secretOperator,
+                null,
+                new IssuerRefBuilder()
+                        .withName("cm-issuer")
+                        .withKind(IssuerKind.CLUSTER_ISSUER)
+                        .build()
+        );
+
+        StrimziSubject subject = new StrimziSubject.Builder()
+                .withOrganizationName("io.strimzi")
+                .withCommonName(COMMON_NAME)
+                .build();
+
+        Exception e = assertThrows(CompletionException.class, () -> certManagerCa.maybeCopyOrGenerateCert(RESOURCE_NAME, subject, null, Labels.EMPTY).toCompletableFuture().join());
+        assertThat(e.getCause().getMessage(), is("cert-manager Certificate 'mock-component-certs' failed to become Ready: IssuerNotFound: Issuer.cert-manager.io cm-issuer does not exist"));
     }
 
     @Test
