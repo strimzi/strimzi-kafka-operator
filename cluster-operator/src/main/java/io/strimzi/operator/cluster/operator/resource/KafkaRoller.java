@@ -85,7 +85,8 @@ import static java.util.Collections.singletonList;
  *     6. Otherwise:
  *         i.   Restart the pod
  *         ii.  Wait for it to become ready (in the kube sense)
- *         iii. Continue from 1.
+ *         iii. Wait for the configured pod restart delay, if any
+ *         iv.  Continue from 1.
  * </pre>
  *
  * <p>Where "impacting availability" is defined by {@link KafkaAvailability}.</p>
@@ -109,6 +110,7 @@ public class KafkaRoller {
     private final PodOperator podOperations;
     private final long pollingIntervalMs;
     protected final long operationTimeoutMs;
+    private final long podRestartDelayMs;
     private final String cluster;
     private final Identity coIdentity;
     private final Set<NodeRef> nodes;
@@ -139,6 +141,8 @@ public class KafkaRoller {
      * @param podOperations             Pod operator for managing pods
      * @param pollingIntervalMs         Polling interval in milliseconds
      * @param operationTimeoutMs        Operation timeout in milliseconds
+     * @param podRestartDelayMs         Delay in milliseconds after a restarted pod becomes ready before continuing
+     *                                  with the next pod. Values of 0 or less disable the delay.
      * @param backOffSupplier           Backoff supplier
      * @param nodes                     List of Kafka node references to consider rolling
      * @param coIdentity                Trust set and identity for authentication for connecting to the Kafka cluster
@@ -150,7 +154,7 @@ public class KafkaRoller {
      * @param eventsPublisher           Kubernetes Events publisher for publishing events about pod restarts
      */
     public KafkaRoller(Reconciliation reconciliation, PodOperator podOperations,
-                       long pollingIntervalMs, long operationTimeoutMs, Supplier<BackOff> backOffSupplier, Set<NodeRef> nodes,
+                       long pollingIntervalMs, long operationTimeoutMs, long podRestartDelayMs, Supplier<BackOff> backOffSupplier, Set<NodeRef> nodes,
                        Identity coIdentity, AdminClientProvider adminClientProvider, KafkaAgentClientProvider kafkaAgentClientProvider,
                        Function<Integer, String> kafkaConfigProvider, KafkaVersion kafkaVersion, boolean allowReconfiguration, KubernetesRestartEventPublisher eventsPublisher) {
         this.namespace = reconciliation.namespace();
@@ -163,6 +167,7 @@ public class KafkaRoller {
         this.backoffSupplier = backOffSupplier;
         this.coIdentity = coIdentity;
         this.operationTimeoutMs = operationTimeoutMs;
+        this.podRestartDelayMs = podRestartDelayMs;
         this.podOperations = podOperations;
         this.pollingIntervalMs = pollingIntervalMs;
         this.adminClientProvider = adminClientProvider;
@@ -809,6 +814,8 @@ public class KafkaRoller {
     /**
      * Synchronously restart the given pod
      * by deleting it and letting it be recreated by K8s, then synchronously wait for it to be ready.
+     * When a pod restart delay is configured, wait for it after the pod is ready. The delay is applied also after the
+     * last restarted pod, so that the next reconciliation does not restart another pod right away.
      *
      * @param pod               The Pod to restart.
      * @param timeoutMs         The timeout in milliseconds.
@@ -820,6 +827,11 @@ public class KafkaRoller {
         LOGGER.debugCr(reconciliation, "Rolling pod {}", podName);
         await(restart(pod, restartContext), timeoutMs, e -> new UnforceableProblem("Error while trying to restart pod " + podName + " to become ready", e));
         awaitReadiness(pod, timeoutMs);
+
+        if (podRestartDelayMs > 0) {
+            LOGGER.infoCr(reconciliation, "Pod {} was restarted and is ready, waiting {}ms before continuing", podName, podRestartDelayMs);
+            Thread.sleep(podRestartDelayMs);
+        }
     }
 
     private void awaitReadiness(Pod pod, long timeoutMs) throws FatalProblem, InterruptedException {
