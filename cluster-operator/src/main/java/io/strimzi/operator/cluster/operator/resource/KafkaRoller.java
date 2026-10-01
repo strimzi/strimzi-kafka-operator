@@ -815,7 +815,8 @@ public class KafkaRoller {
      * Synchronously restart the given pod
      * by deleting it and letting it be recreated by K8s, then synchronously wait for it to be ready.
      * When a pod restart delay is configured, wait for it after the pod is ready. The delay is applied also after the
-     * last restarted pod, so that the next reconciliation does not restart another pod right away.
+     * last restarted pod, so that the next rolling update, in this or a later reconciliation, does not restart another
+     * pod right away.
      *
      * @param pod               The Pod to restart.
      * @param timeoutMs         The timeout in milliseconds.

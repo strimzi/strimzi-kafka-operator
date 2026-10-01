@@ -676,7 +676,8 @@ public class KafkaRollerTest {
 
     @Test
     public void testPodRestartDelayIsAppliedAfterEachRestart() {
-        long delayNs = TimeUnit.MILLISECONDS.toNanos(200);
+        long delayMs = 200;
+        long delayNs = TimeUnit.MILLISECONDS.toNanos(delayMs);
         Map<Integer, Long> canRollCheckedAtNs = new ConcurrentHashMap<>();
         TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(addPodNames(3, 0, 0),
                 mockPodOps(podId -> CompletableFuture.completedFuture(null)), noException(), null, noException(), noException(),
@@ -684,30 +685,56 @@ public class KafkaRollerTest {
                     canRollCheckedAtNs.put(brokerId, System.nanoTime());
                     return CompletableFuture.completedFuture(true);
                 },
-                new DefaultAdminClientProvider(), new DefaultKafkaAgentClientProvider(), false, null, -1, 200);
+                new DefaultAdminClientProvider(), new DefaultKafkaAgentClientProvider(), false, null, -1, delayMs);
 
         doSuccessfulRollingRestart(kafkaRoller,
                 asList(0, 1, 2),
                 asList(0, 1, 2));
         long finishedAtNs = System.nanoTime();
 
+        assertThat(canRollCheckedAtNs.keySet(), is(Set.of(0, 1, 2)));
         assertThat(canRollCheckedAtNs.get(1) - kafkaRoller.restartedAtNs.get(0), greaterThanOrEqualTo(delayNs));
         assertThat(canRollCheckedAtNs.get(2) - kafkaRoller.restartedAtNs.get(1), greaterThanOrEqualTo(delayNs));
         assertThat(finishedAtNs - kafkaRoller.restartedAtNs.get(2), greaterThanOrEqualTo(delayNs));
     }
 
     @Test
-    public void testPodRestartDelayIsNotAppliedWithoutRestart() {
+    public void testPodRestartDelayIsNotAppliedWhenPodsAreReconfiguredWithoutRestart() {
         long delayMs = 10_000;
+        Set<Integer> canRollChecked = ConcurrentHashMap.newKeySet();
         TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(addPodNames(3, 0, 0),
                 mockPodOps(podId -> CompletableFuture.completedFuture(null)), noException(), null, noException(), noException(),
-                brokerId -> CompletableFuture.completedFuture(true),
+                brokerId -> {
+                    canRollChecked.add(brokerId);
+                    return CompletableFuture.completedFuture(true);
+                },
                 new DefaultAdminClientProvider(), new DefaultKafkaAgentClientProvider(), false, null, -1, delayMs);
 
         long startedAtNs = System.nanoTime();
         doSuccessfulRollingRestart(kafkaRoller,
                 emptyList(),
                 emptyList());
+
+        assertThat(canRollChecked, is(Set.of(0, 1, 2)));
+        assertThat(TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startedAtNs), lessThan(delayMs));
+    }
+
+    @Test
+    public void testPodRestartDelayIsNotAppliedWhenRestartedPodIsNotReady() {
+        long delayMs = 10_000;
+        PodOperator podOps = mockPodOps(podId ->
+                podId == 0 ? CompletableFuture.failedFuture(new TimeoutException("Timeout")) : CompletableFuture.completedFuture(null)
+        );
+        TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(addPodNames(REPLICAS, 0, 0), podOps,
+                noException(), null, noException(), noException(),
+                brokerId -> CompletableFuture.completedFuture(true),
+                new DefaultAdminClientProvider(), new DefaultKafkaAgentClientProvider(), false, null, -1, delayMs);
+
+        long startedAtNs = System.nanoTime();
+        doFailingRollingRestart(kafkaRoller,
+                asList(0, 1, 2, 3, 4),
+                KafkaRoller.FatalProblem.class, "Error while waiting for restarted pod c-kafka-0 to become ready",
+                singletonList(0));
 
         assertThat(TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startedAtNs), lessThan(delayMs));
     }
