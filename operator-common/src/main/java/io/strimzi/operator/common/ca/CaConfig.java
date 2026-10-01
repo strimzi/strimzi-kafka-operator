@@ -21,14 +21,6 @@ public class CaConfig {
     private final CertificateManagerType certificateManagerType;
 
     /**
-     * Constructor to create CaConfig with default values
-     * @return CaConfig initialised with default values
-     */
-    public static CaConfig createDefault() {
-        return new CaConfig(null, true);
-    }
-
-    /**
      * CaConfig constructor
      *
      * @param certificateAuthority  CertificateAuthority configuration from the Custom Resource

@@ -355,7 +355,7 @@ public class InternalCaCertIssuerTest {
         private final AtomicInteger invocationCount = new AtomicInteger(0);
 
         public MockedClusterCa() {
-            super(Reconciliation.DUMMY_RECONCILIATION, CaRole.CLUSTER_CA, null, null, null, null, CaConfig.createDefault());
+            super(Reconciliation.DUMMY_RECONCILIATION, CaRole.CLUSTER_CA, null, null, null, null, new CaConfig(null, true));
         }
 
         @Override
