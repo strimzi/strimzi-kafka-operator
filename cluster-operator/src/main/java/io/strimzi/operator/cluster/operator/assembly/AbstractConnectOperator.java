@@ -330,7 +330,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                     if (!podNamesToRoll.isEmpty())  {
                         // There are some pods to roll
                         KafkaConnectRoller roller = new KafkaConnectRoller(reconciliation, connect, operationTimeoutMs, podOperations);
-                        return roller.maybeRoll(podNamesToRoll, pod -> RestartReasons.of(RestartReason.MANUAL_ROLLING_UPDATE))
+                        return VertxUtil.toFuture(roller.maybeRoll(podNamesToRoll, pod -> RestartReasons.of(RestartReason.MANUAL_ROLLING_UPDATE)))
                             .recover(error -> {
                                 LOGGER.warnCr(reconciliation, "Manual rolling update failed (reconciliation will be continued)", error);
                                 return Future.succeededFuture();
@@ -373,7 +373,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         return VertxUtil.toFuture(podSetOperations.reconcile(reconciliation, reconciliation.namespace(), connect.getComponentName(), connect.generatePodSet(connect.getReplicas(), podSetAnnotations, podAnnotations, imagePullPolicy, imagePullSecrets, customContainerImage)))
                 .compose(reconciliationResult -> {
                     KafkaConnectRoller roller = new KafkaConnectRoller(reconciliation, connect, operationTimeoutMs, podOperations);
-                    return roller.maybeRoll(PodSetUtils.podNames(reconciliationResult.resource()), pod -> KafkaConnectRoller.needsRollingRestart(reconciliation, reconciliationResult.resource(), pod));
+                    return VertxUtil.toFuture(roller.maybeRoll(PodSetUtils.podNames(reconciliationResult.resource()), pod -> KafkaConnectRoller.needsRollingRestart(reconciliation, reconciliationResult.resource(), pod)));
                 })
                 .compose(i -> VertxUtil.toFuture(podSetOperations.readiness(reconciliation, reconciliation.namespace(), connect.getComponentName(), 1_000, operationTimeoutMs)));
     }

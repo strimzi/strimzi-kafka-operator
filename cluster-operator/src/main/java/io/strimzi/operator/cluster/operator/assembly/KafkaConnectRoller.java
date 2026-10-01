@@ -12,16 +12,16 @@ import io.strimzi.operator.cluster.model.KafkaConnectCluster;
 import io.strimzi.operator.cluster.model.PodRevision;
 import io.strimzi.operator.cluster.model.RestartReason;
 import io.strimzi.operator.cluster.model.RestartReasons;
-import io.strimzi.operator.cluster.operator.VertxUtil;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.PodOperator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
-import io.vertx.core.Future;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.List;
 import java.util.Queue;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.function.Function;
 
 /**
@@ -65,12 +65,11 @@ public class KafkaConnectRoller {
      * @param podNeedsRestart       Function that evaluates the PodSet and Pods and decides if restart of the Pod is
      *                              needed or not
      *
-     * @return  Future which completes when the rolling update is done
+     * @return  CompletionStage which completes when the rolling update is done
      */
-    public Future<Void> maybeRoll(List<String> podNamesToConsider, Function<Pod, RestartReasons> podNeedsRestart)    {
-        return VertxUtil.toFuture(podOperator.listAsync(reconciliation.namespace(), connect.getSelectorLabels()))
-                .compose(pods -> Future.succeededFuture(prepareRollingOrder(podNamesToConsider, pods)))
-                .compose(rollingOrder -> maybeRollPods(podNeedsRestart, rollingOrder));
+    public CompletionStage<Void> maybeRoll(List<String> podNamesToConsider, Function<Pod, RestartReasons> podNeedsRestart)    {
+        return podOperator.listAsync(reconciliation.namespace(), connect.getSelectorLabels())
+                .thenCompose(pods -> maybeRollPods(podNeedsRestart, prepareRollingOrder(podNamesToConsider, pods)));
     }
 
     /* test */ Queue<String> prepareRollingOrder(List<String> podNamesToConsider, List<Pod> pods)   {
@@ -100,19 +99,18 @@ public class KafkaConnectRoller {
      *                          or not
      * @param rollingOrder      Queue with the pod names in the order of their rolling
      *
-     * @return  Future which completes when all pods were rolled / considered for rolling
+     * @return  CompletionStage which completes when all pods were rolled / considered for rolling
      */
-    private Future<Void> maybeRollPods(Function<Pod, RestartReasons> podNeedsRestart,
-                                       Queue<String> rollingOrder)  {
+    private CompletionStage<Void> maybeRollPods(Function<Pod, RestartReasons> podNeedsRestart, Queue<String> rollingOrder)  {
         String podName = rollingOrder.poll();
 
         if (podName != null)    {
             // The queue is not empty. We consider rolling of this pod and call this method again to handle the next pod
             return maybeRollPod(podNeedsRestart, podName)
-                    .compose(i -> maybeRollPods(podNeedsRestart, rollingOrder));
+                    .thenCompose(i -> maybeRollPods(podNeedsRestart, rollingOrder));
         } else {
             // Queue is empty => we return completely
-            return Future.succeededFuture();
+            return CompletableFuture.completedFuture(null);
         }
     }
 
@@ -125,32 +123,31 @@ public class KafkaConnectRoller {
      *                          or not
      * @param podName           Name of the pod which should be considered
      *
-     * @return  Future which completes when the pod is maybe rolled and ready
+     * @return  CompletionStage which completes when the pod is maybe rolled and ready
      */
-    /* test */ Future<Void> maybeRollPod(Function<Pod, RestartReasons> podNeedsRestart,
-                                         String podName) {
-        return VertxUtil.toFuture(podOperator.getAsync(reconciliation.namespace(), podName))
-                .compose(pod -> {
+    /* test */ CompletionStage<Void> maybeRollPod(Function<Pod, RestartReasons> podNeedsRestart, String podName) {
+        return podOperator.getAsync(reconciliation.namespace(), podName)
+                .thenCompose(pod -> {
                     if (pod == null) {
                         LOGGER.debugCr(reconciliation, "Pod {} does not exist => waiting for its creation", podName);
-                        return Future.succeededFuture();
+                        return CompletableFuture.completedFuture(null);
                     } else {
                         RestartReasons restartReasons = podNeedsRestart.apply(pod);
 
                         if (restartReasons.shouldRestart())  {
                             // Pods changed and needs rolling
                             LOGGER.infoCr(reconciliation, "Rolling pod {}: {}", podName, restartReasons.getAllReasonNotes());
-                            return VertxUtil.toFuture(podOperator.deleteAsync(reconciliation, reconciliation.namespace(), podName, false));
+                            return podOperator.deleteAsync(reconciliation, reconciliation.namespace(), podName, false);
                         } else {
                             // Pod exists and does not need to be rolled
                             LOGGER.debugCr(reconciliation, "Pod {} does not need to be rolled", podName);
-                            return Future.succeededFuture();
+                            return CompletableFuture.completedFuture(null);
                         }
                     }
                 })
-                .compose(i -> {
+                .thenCompose(i -> {
                     LOGGER.debugCr(reconciliation, "Waiting for pod {} to become ready", podName);
-                    return VertxUtil.toFuture(podOperator.readiness(reconciliation, reconciliation.namespace(), podName, 1_000, operationTimeoutMs));
+                    return podOperator.readiness(reconciliation, reconciliation.namespace(), podName, 1_000, operationTimeoutMs);
                 });
     }
 
