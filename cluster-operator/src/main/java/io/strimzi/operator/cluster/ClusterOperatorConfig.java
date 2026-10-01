@@ -144,6 +144,11 @@ public class ClusterOperatorConfig {
     public static final ConfigParameter<Long> CONNECT_BUILD_TIMEOUT_MS = new ConfigParameter<>("STRIMZI_CONNECT_BUILD_TIMEOUT_MS", LONG, "300000", CONFIG_VALUES);
 
     /**
+     * Delay after a restarted Kafka pod becomes ready before the next Kafka pod is considered for restart, specified in milliseconds
+     */
+    public static final ConfigParameter<Long> KAFKA_POD_RESTART_DELAY_MS = new ConfigParameter<>("STRIMZI_KAFKA_POD_RESTART_DELAY_MS", LONG, "0", CONFIG_VALUES);
+
+    /**
      * Set true to generate Network Policies
      */
     public static final ConfigParameter<Boolean> NETWORK_POLICY_GENERATION = new ConfigParameter<>("STRIMZI_NETWORK_POLICY_GENERATION", BOOLEAN, "true", CONFIG_VALUES);
@@ -468,6 +473,16 @@ public class ClusterOperatorConfig {
     }
 
     /**
+     * Gets the delay in milliseconds after a restarted Kafka pod becomes ready before the next Kafka pod is considered
+     * for restart.
+     *
+     * @return  Number of milliseconds to wait after a Kafka pod restart
+     */
+    public long getKafkaPodRestartDelayMs() {
+        return get(KAFKA_POD_RESTART_DELAY_MS);
+    }
+
+    /**
      * Checks whether Network policies should be generated.
      *
      * @return  Indicates whether Network policies should be generated
@@ -686,6 +701,7 @@ public class ClusterOperatorConfig {
                 "\n\treconciliationIntervalMs=" + getReconciliationIntervalMs() +
                 "\n\toperationTimeoutMs=" + getOperationTimeoutMs() +
                 "\n\tconnectBuildTimeoutMs=" + getConnectBuildTimeoutMs() +
+                "\n\tkafkaPodRestartDelayMs=" + getKafkaPodRestartDelayMs() +
                 "\n\tnetworkPolicyGeneration=" + isNetworkPolicyGeneration() +
                 "\n\tversions='" + versions() + '\'' +
                 "\n\timagePullPolicy='" + getImagePullPolicy() + '\'' +
