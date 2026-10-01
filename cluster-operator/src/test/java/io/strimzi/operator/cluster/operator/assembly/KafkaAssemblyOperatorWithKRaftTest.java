@@ -92,6 +92,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 
@@ -1823,28 +1824,28 @@ public class KafkaAssemblyOperatorWithKRaftTest {
         Function<Pod, RestartReasons> kafkaPodNeedsRestart = null;
 
         public MockKafkaReconciler(Reconciliation reconciliation, Vertx vertx, ClusterOperatorConfig config, ResourceOperatorSupplier supplier, PlatformFeaturesAvailability pfa, Kafka kafkaAssembly, List<KafkaNodePool> nodePools, KafkaCluster kafkaCluster, Ca clusterCa, Ca clientsCa) {
-            super(reconciliation, kafkaAssembly, nodePools, kafkaCluster, clusterCa, clientsCa, config, supplier, pfa, vertx, Set.of());
+            super(reconciliation, kafkaAssembly, nodePools, kafkaCluster, clusterCa, clientsCa, config, supplier, pfa, Set.of());
 
             this.coIdentity = new Identity(null, null);
         }
 
         @Override
-        public Future<Void> reconcile(KafkaStatus kafkaStatus, Clock clock)    {
+        public CompletionStage<Void> reconcile(KafkaStatus kafkaStatus, Clock clock)    {
             return manualPodCleaning()
-                    .compose(i -> manualRollingUpdate())
-                    .compose(i -> pvcs(kafkaStatus))
-                    .compose(i -> scaleDown())
-                    .compose(i -> updateNodePoolStatuses(kafkaStatus))
-                    .compose(i -> listeners())
-                    .compose(i -> brokerConfigurationConfigMaps())
-                    .compose(i -> podSet())
-                    .compose(this::rollingUpdate)
-                    .compose(i -> nodeUnregistration())
-                    .compose(i -> sharedKafkaConfigurationCleanup());
+                    .thenCompose(i -> manualRollingUpdate())
+                    .thenCompose(i -> pvcs(kafkaStatus))
+                    .thenCompose(i -> scaleDown())
+                    .thenCompose(i -> updateNodePoolStatuses(kafkaStatus))
+                    .thenCompose(i -> listeners())
+                    .thenCompose(i -> brokerConfigurationConfigMaps())
+                    .thenCompose(i -> podSet())
+                    .thenCompose(this::rollingUpdate)
+                    .thenCompose(i -> nodeUnregistration())
+                    .thenCompose(i -> sharedKafkaConfigurationCleanup());
         }
 
         @Override
-        protected Future<Void> maybeRollKafka(
+        protected CompletionStage<Void> maybeRollKafka(
                 Set<NodeRef> nodes,
                 Function<Pod, RestartReasons> podNeedsRestart,
                 Map<Integer, Map<String, String>> kafkaAdvertisedHostnames,
@@ -1853,16 +1854,16 @@ public class KafkaAssemblyOperatorWithKRaftTest {
         ) {
             maybeRollKafkaInvocations++;
             kafkaPodNeedsRestart = podNeedsRestart;
-            return Future.succeededFuture();
+            return CompletableFuture.completedFuture(null);
         }
 
         @Override
-        protected Future<Void> listeners()  {
+        protected CompletionStage<Void> listeners()  {
             listenerReconciliationResults = new KafkaListenersReconciler.ReconciliationResult();
             listenerReconciliationResults.advertisedHostnames.putAll(ADVERTISED_HOSTNAMES);
             listenerReconciliationResults.advertisedPorts.putAll(ADVERTISED_PORTS);
 
-            return Future.succeededFuture();
+            return CompletableFuture.completedFuture(null);
         }
     }
 }
