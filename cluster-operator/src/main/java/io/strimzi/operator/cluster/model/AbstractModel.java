@@ -12,7 +12,6 @@ import io.strimzi.api.kafka.model.common.JvmOptions;
 import io.strimzi.api.kafka.model.common.StrimziProbe;
 import io.strimzi.api.kafka.model.common.template.ContainerTemplate;
 import io.strimzi.api.kafka.model.common.template.ResourceTemplate;
-import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.operator.cluster.model.securityprofiles.PodSecurityProviderFactory;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
@@ -156,26 +155,6 @@ public abstract class AbstractModel {
      */
     public String getCluster() {
         return cluster;
-    }
-
-    /**
-     * Gets the name of the Cluster CA certificate secret.
-     *
-     * @param cluster The cluster name
-     * @return The name of the Cluster CA certificate secret.
-     */
-    public static String clusterCaCertSecretName(String cluster)  {
-        return KafkaResources.clusterCaCertificateSecretName(cluster);
-    }
-
-    /**
-     * Gets the name of the Cluster CA key secret.
-     *
-     * @param cluster The cluster name
-     * @return The name of the Cluster CA key secret.
-     */
-    public static String clusterCaKeySecretName(String cluster)  {
-        return KafkaResources.clusterCaKeySecretName(cluster);
     }
 
     /**

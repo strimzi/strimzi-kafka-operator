@@ -19,7 +19,6 @@ import io.strimzi.certs.OpenSslCertIssuer;
 import io.strimzi.certs.StrimziSubject;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.TestUtils;
-import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.ca.Ca;
@@ -177,8 +176,8 @@ public class InternalCaProviderTest {
     private List<Secret> initialClusterCaSecrets(CertificateAuthority certificateAuthority)
             throws IOException, CertificateException, KeyStoreException, NoSuchAlgorithmException {
         return initialCaSecrets(certificateAuthority, "cluster-ca",
-                AbstractModel.clusterCaKeySecretName(NAME),
-                AbstractModel.clusterCaCertSecretName(NAME));
+                KafkaResources.clusterCaKeySecretName(NAME),
+                KafkaResources.clusterCaCertificateSecretName(NAME));
     }
 
     private List<Secret> initialClientsCaSecrets(CertificateAuthority certificateAuthority)
@@ -235,8 +234,8 @@ public class InternalCaProviderTest {
         ArgumentCaptor<Secret> clusterCaKey = ArgumentCaptor.forClass(Secret.class);
         ArgumentCaptor<Secret> clientsCaCert = ArgumentCaptor.forClass(Secret.class);
         ArgumentCaptor<Secret> clientsCaKey = ArgumentCaptor.forClass(Secret.class);
-        verify(secretOps).reconcile(any(), eq(NAMESPACE), eq(AbstractModel.clusterCaCertSecretName(NAME)), clusterCaCert.capture());
-        verify(secretOps).reconcile(any(), eq(NAMESPACE), eq(AbstractModel.clusterCaKeySecretName(NAME)), clusterCaKey.capture());
+        verify(secretOps).reconcile(any(), eq(NAMESPACE), eq(KafkaResources.clusterCaCertificateSecretName(NAME)), clusterCaCert.capture());
+        verify(secretOps).reconcile(any(), eq(NAMESPACE), eq(KafkaResources.clusterCaKeySecretName(NAME)), clusterCaKey.capture());
         verify(secretOps).reconcile(any(), eq(NAMESPACE), eq(KafkaResources.clientsCaCertificateSecretName(NAME)), clientsCaCert.capture());
         verify(secretOps).reconcile(any(), eq(NAMESPACE), eq(KafkaResources.clientsCaKeySecretName(NAME)), clientsCaKey.capture());
 

@@ -345,7 +345,7 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
             // The CC certificate is needed for encryption of the HTTP server.
             // So we need both volumes regardless whether mTLS is enabled or not.
             volumes.add(VolumeUtils.createSecretVolume(TLS_CC_CERTS_VOLUME_NAME, CruiseControlResources.secretName(cluster), isOpenShift));
-            volumes.add(VolumeUtils.createSecretVolume(TLS_CA_CERTS_VOLUME_NAME, AbstractModel.clusterCaCertSecretName(cluster), isOpenShift));
+            volumes.add(VolumeUtils.createSecretVolume(TLS_CA_CERTS_VOLUME_NAME, KafkaResources.clusterCaCertificateSecretName(cluster), isOpenShift));
         }
 
         if (securityContext.authentication() instanceof ServiceAccountAuthenticationConfiguration saAuthentication)   {

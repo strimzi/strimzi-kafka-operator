@@ -9,7 +9,6 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.strimzi.api.kafka.model.common.CertificateAuthority;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
-import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
@@ -126,7 +125,7 @@ public class CertManagerCaProvider extends CaProvider {
         String secretName = switch (caRole) {
             case CLUSTER_CA -> {
                 certAnnotations.put(ANNO_STRIMZI_IO_CA_KEY_GENERATION, String.valueOf(caKeyGeneration));
-                yield AbstractModel.clusterCaCertSecretName(reconciliation.name());
+                yield KafkaResources.clusterCaCertificateSecretName(reconciliation.name());
             }
             case CLIENTS_CA -> KafkaResources.clientsCaCertificateSecretName(reconciliation.name());
         };

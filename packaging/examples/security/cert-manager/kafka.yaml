@@ -1,0 +1,86 @@
+apiVersion: kafka.strimzi.io/v1
+kind: KafkaNodePool
+metadata:
+  name: controller
+  labels:
+    strimzi.io/cluster: my-cluster
+spec:
+  replicas: 3
+  roles:
+    - controller
+  storage:
+    type: jbod
+    volumes:
+      - id: 0
+        type: persistent-claim
+        size: 100Gi
+        kraftMetadata: shared
+---
+
+apiVersion: kafka.strimzi.io/v1
+kind: KafkaNodePool
+metadata:
+  name: broker
+  labels:
+    strimzi.io/cluster: my-cluster
+spec:
+  replicas: 3
+  roles:
+    - broker
+  storage:
+    type: jbod
+    volumes:
+      - id: 0
+        type: persistent-claim
+        size: 100Gi
+        kraftMetadata: shared
+---
+
+apiVersion: kafka.strimzi.io/v1
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+  kafka:
+    version: 4.3.1
+    metadataVersion: 4.3-IV0
+    listeners:
+      - name: tls
+        port: 9093
+        type: internal
+        tls: true
+        authentication:
+          type: tls
+    authorization:
+      type: simple
+    config:
+      offsets.topic.replication.factor: 3
+      transaction.state.log.replication.factor: 3
+      transaction.state.log.min.isr: 2
+      default.replication.factor: 3
+      min.insync.replicas: 2
+  entityOperator:
+    topicOperator: {}
+    userOperator: {}
+  clusterCa:
+    generateCertificateAuthority: false
+    type: cert-manager
+    certManager:
+      issuerRef:
+        name: strimzi-cluster-ca
+        kind: Issuer
+        group: cert-manager.io
+      caCertRef: # Optionally, you can use trust-manager to isolate the CA certificate into a separate Secret or sync it from another namespace
+        secretName: strimzi-cluster-ca
+        certificate: ca.crt
+  clientsCa:
+    generateCertificateAuthority: false
+    type: cert-manager
+    certManager:
+      issuerRef:
+        name: strimzi-clients-ca
+        kind: Issuer
+        group: cert-manager.io
+      caCertRef: # Optionally, you can use trust-manager to isolate the CA certificate into a separate Secret or sync it from another namespace
+        secretName: strimzi-clients-ca
+        certificate: ca.crt

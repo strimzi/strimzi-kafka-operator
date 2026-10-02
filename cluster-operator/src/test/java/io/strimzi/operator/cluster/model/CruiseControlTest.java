@@ -272,7 +272,7 @@ public class CruiseControlTest {
 
         volume = volumes.stream().filter(vol -> CruiseControl.TLS_CA_CERTS_VOLUME_NAME.equals(vol.getName())).findFirst().orElseThrow();
         assertThat(volume, is(notNullValue()));
-        assertThat(volume.getSecret().getSecretName(), is(AbstractModel.clusterCaCertSecretName(CLUSTER_NAME)));
+        assertThat(volume.getSecret().getSecretName(), is(KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME)));
 
         volume = volumes.stream().filter(vol -> CruiseControl.API_AUTH_CONFIG_VOLUME_NAME.equals(vol.getName())).findFirst().orElseThrow();
         assertThat(volume, is(notNullValue()));
