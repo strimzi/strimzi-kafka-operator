@@ -4,9 +4,6 @@
  */
 package io.strimzi.systemtest.utils;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.skodjob.kubetest4j.resources.KubeResourceManager;
@@ -15,6 +12,9 @@ import io.strimzi.systemtest.kafkaclients.internalClients.admin.AdminClient;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -101,7 +101,7 @@ public class AdminClientUtils {
             .build();
     }
 
-    public static long getPartitionsOffset(String data, String partition) throws JsonProcessingException {
+    public static long getPartitionsOffset(String data, String partition) throws JacksonException {
         // Create ObjectMapper instance
         ObjectMapper mapper = new ObjectMapper();
 
@@ -125,17 +125,17 @@ public class AdminClientUtils {
 
             JsonNode nodeObject = mapper.createObjectNode();
 
-            Iterator<JsonNode> nodeIterator = rootNode.withArray("nodes").elements();
+            Iterator<JsonNode> nodeIterator = rootNode.withArray("nodes").values().iterator();
 
             while (nodeIterator.hasNext()) {
                 nodeObject = nodeIterator.next();
-                if (nodeObject.get("id").textValue().equals(nodeId)) {
+                if (nodeObject.get("id").stringValue().equals(nodeId)) {
                     break;
                 }
             }
 
-            return nodeObject != null ? nodeObject.get("rack").textValue() : "";
-        } catch (JsonProcessingException e) {
+            return nodeObject != null ? nodeObject.get("rack").stringValue() : "";
+        } catch (JacksonException e) {
             LOGGER.error("There was an error parsing the JSON object from: {}. Exception: {}", data, e.getMessage());
             throw new RuntimeException(e);
         }

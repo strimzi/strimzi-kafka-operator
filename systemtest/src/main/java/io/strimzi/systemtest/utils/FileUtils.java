@@ -4,15 +4,14 @@
  */
 package io.strimzi.systemtest.utils;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.exc.InvalidFormatException;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.fasterxml.jackson.dataformat.yaml.YAMLParser;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.JsonParser;
+import tools.jackson.databind.exc.InvalidFormatException;
+import tools.jackson.dataformat.yaml.YAMLMapper;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -134,11 +133,10 @@ public class FileUtils {
      * @return  Extracted ConfigMap
      */
     public static ConfigMap extractConfigMapFromYAMLWithResources(String yamlPath, String name) {
-        try {
-            YAMLFactory yaml = new YAMLFactory();
-            ObjectMapper mapper = new ObjectMapper(yaml);
-            YAMLParser yamlParser = yaml.createParser(new File(yamlPath));
-            List<ConfigMap> list = mapper.readValues(yamlParser, new TypeReference<ConfigMap>() { }).readAll();
+        YAMLMapper mapper = new YAMLMapper();
+
+        try (JsonParser yamlParser = mapper.createParser(new File(yamlPath))) {
+            List<ConfigMap> list = mapper.readValues(yamlParser, ConfigMap.class).readAll();
             Optional<ConfigMap> cmOpt = list.stream().filter(cm -> "ConfigMap".equals(cm.getKind()) && name.equals(cm.getMetadata().getName())).findFirst();
             if (cmOpt.isPresent()) {
                 return cmOpt.get();
@@ -148,7 +146,7 @@ public class FileUtils {
             }
         } catch (InvalidFormatException e) {
             throw new IllegalArgumentException(e);
-        } catch (IOException e) {
+        } catch (JacksonException e) {
             throw new RuntimeException(e);
         }
     }

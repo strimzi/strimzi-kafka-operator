@@ -4,10 +4,6 @@
  */
 package io.strimzi.systemtest.connect;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.ConfigMapKeySelectorBuilder;
@@ -87,6 +83,10 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.node.ObjectNode;
 
 import java.util.Base64;
 import java.util.Collections;
@@ -1806,7 +1806,7 @@ class ConnectST extends AbstractST {
             @Label(value = TestDocsLabels.CONNECT)
         }
     )
-    void testConnectorOffsetManagement() throws JsonProcessingException {
+    void testConnectorOffsetManagement() throws JacksonException {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         final String offsetConfigMap = testStorage.getClusterName() + "-offsets";
         final int desiredNewOffset = 20;

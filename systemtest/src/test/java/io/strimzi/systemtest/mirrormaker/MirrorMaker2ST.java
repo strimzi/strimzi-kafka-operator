@@ -4,9 +4,6 @@
  */
 package io.strimzi.systemtest.mirrormaker;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.skodjob.annotations.Desc;
@@ -74,6 +71,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -890,7 +890,7 @@ class MirrorMaker2ST extends AbstractST {
             @Label(TestDocsLabels.MIRROR_MAKER_2),
         }
     )
-    void testKafkaMirrorMaker2ConnectorsStateAndOffsetManagement() throws JsonProcessingException {
+    void testKafkaMirrorMaker2ConnectorsStateAndOffsetManagement() throws JacksonException {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
         final String listOffsetsConfigMap = testStorage.getClusterName() + "-offsets-list";

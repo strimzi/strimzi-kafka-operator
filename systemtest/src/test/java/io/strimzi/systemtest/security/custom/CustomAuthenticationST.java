@@ -4,9 +4,6 @@
  */
 package io.strimzi.systemtest.security.custom;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.fabric8.kubernetes.api.model.ServiceAccountTokenProjectionBuilder;
 import io.fabric8.kubernetes.api.model.VolumeMountBuilder;
 import io.fabric8.kubernetes.api.model.batch.v1.Job;
@@ -42,6 +39,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
 import static io.strimzi.systemtest.TestTags.CONNECT;
 import static io.strimzi.systemtest.TestTags.CONNECT_COMPONENTS;
@@ -281,9 +281,9 @@ public class CustomAuthenticationST extends AbstractST {
 
         try {
             JsonNode json = new ObjectMapper().readTree(discoveryDocument);
-            issuerUri = json.path("issuer").asText(null);
-            jwksEndpointUri = json.path("jwks_uri").asText(null);
-        } catch (JsonProcessingException e) {
+            issuerUri = json.path("issuer").asString(null);
+            jwksEndpointUri = json.path("jwks_uri").asString(null);
+        } catch (JacksonException e) {
             throw new RuntimeException("Failed to parse the Kubernetes OIDC discovery document: " + discoveryDocument, e);
         }
 
