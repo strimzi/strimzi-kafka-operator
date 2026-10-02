@@ -4,10 +4,10 @@
  */
 package io.strimzi.systemtest.kafkaclients.internalClients.admin;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.skodjob.kubetest4j.executor.ExecResult;
 import io.skodjob.kubetest4j.resources.KubeResourceManager;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -51,7 +51,7 @@ public class AdminClient {
         if (result.returnCode() == 0 && !result.out().isEmpty()) {
             try {
                 return MAPPER.readValue(result.out(), responseType);
-            } catch (JsonProcessingException e) {
+            } catch (JacksonException e) {
                 throw new RuntimeException(e);
             }
         }

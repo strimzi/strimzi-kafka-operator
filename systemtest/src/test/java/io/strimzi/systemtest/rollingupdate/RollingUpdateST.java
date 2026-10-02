@@ -5,9 +5,6 @@
 package io.strimzi.systemtest.rollingupdate;
 
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.ConfigMapKeySelectorBuilder;
@@ -53,6 +50,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.dataformat.yaml.YAMLMapper;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -373,7 +373,7 @@ class RollingUpdateST extends AbstractST {
      */
     @IsolatedTest
     @Tag(ROLLING_UPDATE)
-    void testMetricsChange() throws JsonProcessingException {
+    void testMetricsChange() throws JacksonException {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
         //Kafka
@@ -388,7 +388,7 @@ class RollingUpdateST extends AbstractST {
 
         final String metricsCMNameK = "k-metrics-cm";
 
-        ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
+        ObjectMapper mapper = new YAMLMapper();
         final String yaml = mapper.writeValueAsString(kafkaMetrics);
         ConfigMap metricsCMK = new ConfigMapBuilder()
             .withNewMetadata()
@@ -467,7 +467,7 @@ class RollingUpdateST extends AbstractST {
         assertThat(PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getBrokerSelector()), is(brokerPods));
 
         LOGGER.info("Check if Kafka metrics are changed");
-        ObjectMapper yamlReader = new ObjectMapper(new YAMLFactory());
+        ObjectMapper yamlReader = new YAMLMapper();
         String kafkaMetricsConf = KubeResourceManager.get().kubeClient().getClient().configMaps().inNamespace(testStorage.getNamespaceName()).withName(metricsCMNameK).get().getData().get("metrics-config.yml");
         Object kafkaMetricsJsonToYaml = yamlReader.readValue(kafkaMetricsConf, Object.class);
         ObjectMapper jsonWriter = new ObjectMapper();

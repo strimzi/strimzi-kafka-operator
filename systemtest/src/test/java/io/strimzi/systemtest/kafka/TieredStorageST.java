@@ -4,7 +4,6 @@
  */
 package io.strimzi.systemtest.kafka;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.VolumeMountBuilder;
 import io.skodjob.annotations.Desc;
@@ -47,6 +46,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
+import tools.jackson.core.JacksonException;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -349,7 +349,7 @@ public class TieredStorageST extends AbstractST {
                 try {
                     earliestLocalOffset = AdminClientUtils.getPartitionsOffset(offsetData, "0");
                     LOGGER.info("earliest-local offset for topic {} is {}", topicName, earliestLocalOffset);
-                } catch (JsonProcessingException e) {
+                } catch (JacksonException e) {
                     return false;
                 }
                 return earliestLocalOffset > 0;
