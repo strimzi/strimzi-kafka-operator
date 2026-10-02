@@ -4,7 +4,6 @@
  */
 package io.strimzi.systemtest.upgrade;
 
-import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import io.fabric8.openshift.api.model.operatorhub.v1alpha1.Subscription;
 import io.skodjob.kubetest4j.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
@@ -29,6 +28,7 @@ import io.strimzi.testclients.clients.kafka.KafkaProducerConsumerBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.Tag;
+import tools.jackson.dataformat.yaml.YAMLMapper;
 
 import java.io.File;
 import java.io.IOException;

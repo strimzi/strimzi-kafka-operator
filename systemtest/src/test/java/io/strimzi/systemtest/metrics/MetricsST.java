@@ -4,8 +4,6 @@
  */
 package io.strimzi.systemtest.metrics;
 
-import com.fasterxml.jackson.core.json.JsonReadFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.ConfigMapKeySelector;
@@ -551,12 +549,6 @@ public class MetricsST extends AbstractST {
     void testKafkaMetricsSettings() {
         String metricsConfigJson = "{\"lowercaseOutputName\":true}";
         String metricsConfigYaml = "lowercaseOutputName: true";
-
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.configure(
-                JsonReadFeature.ALLOW_UNESCAPED_CONTROL_CHARS.mappedFeature(),
-                true
-        );
 
         ConfigMap externalMetricsCm = new ConfigMapBuilder()
                 .withData(Collections.singletonMap(TestConstants.METRICS_CONFIG_YAML_NAME, metricsConfigYaml))

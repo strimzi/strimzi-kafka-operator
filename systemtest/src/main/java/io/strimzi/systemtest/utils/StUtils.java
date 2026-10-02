@@ -4,11 +4,6 @@
  */
 package io.strimzi.systemtest.utils;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import io.fabric8.kubernetes.api.model.Affinity;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Event;
@@ -37,6 +32,12 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.ClassDescriptor;
 import org.junit.jupiter.api.extension.ExtensionContext;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.ObjectNode;
+import tools.jackson.dataformat.yaml.YAMLMapper;
 
 import java.io.File;
 import java.io.IOException;
@@ -329,7 +330,7 @@ public class StUtils {
             // Change the docker org of the images in the 060-deployment.yaml
             ObjectNode containerNode = (ObjectNode) node.at("/spec/template/spec/containers").get(0);
             for (JsonNode envVar : containerNode.get("env")) {
-                String varName = envVar.get("name").textValue();
+                String varName = envVar.get("name").stringValue();
                 if (varName.matches("STRIMZI_NAMESPACE")) {
                     // Replace all the default images with ones from the $DOCKER_ORG org and with the $DOCKER_TAG tag
                     ((ObjectNode) envVar).remove("valueFrom");
@@ -355,7 +356,7 @@ public class StUtils {
             }
             ((ArrayNode) containerNode.get("env")).add(imagePulPolicyEnvVar);
             return mapper.writeValueAsString(node);
-        } catch (IOException e) {
+        } catch (JacksonException e) {
             throw new RuntimeException(e);
         }
     }
@@ -592,7 +593,7 @@ public class StUtils {
                 .put("name", "strimzi-cluster-operator")
                 .put("namespace", namespace);
             return mapper.writeValueAsString(node);
-        } catch (IOException e) {
+        } catch (JacksonException e) {
             throw new RuntimeException(e);
         }
     }
