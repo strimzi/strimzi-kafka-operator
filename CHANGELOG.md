@@ -2,12 +2,12 @@
 
 ## 1.4.0
 
+* Add support for Kafka 4.3.2 and 4.4.0
 * Strimzi Drain Cleaner updated to 1.7.0 (included in the Strimzi installation files)
 
 ## 1.3.0
 
 * (Early Access) Configurable internal cluster security allows users to configure encryption and authentication on the internal connections within the Apache Kafka cluster.
-* Add support for Kafka 4.2.2 and 4.3.2
 * Update Kafka Exporter to [1.10.0](https://github.com/danielqsj/kafka_exporter/releases/tag/v1.10.0)
 * Support for mounting projected service account tokens into Strimzi-managed Pods
 * The `UseConnectBuildWithBuildah` feature gate moves to GA stage, is enabled by default without option to be disabled
