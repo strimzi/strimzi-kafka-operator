@@ -61,6 +61,7 @@ import static io.strimzi.systemtest.TestTags.REGRESSION;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
@@ -338,6 +339,8 @@ public class CertManagerST extends AbstractST {
                       expected = "CO cert secret generation matches cluster CA cert generation."),
                 @Step(value = "Verify broker certificates are signed by the cert-manager CA.",
                       expected = "Broker certificate issuer DN matches cert-manager CA subject DN."),
+                @Step(value = "Verify CA key Secret is removed.",
+                        expected = "CA key Secret is not present."),
                 @Step(value = "Produce and consume messages over TLS after switching to cert-manager.",
                       expected = "Messages are successfully produced and consumed.")
             },
@@ -443,6 +446,15 @@ public class CertManagerST extends AbstractST {
 
         LOGGER.info("Verified that broker cert is signed by cert-manager CA (issuer '{}')",
                 brokerCert.getIssuerX500Principal().getName());
+
+        Secret caKeySecret = KubeResourceManager.get().kubeClient().getClient()
+                .secrets()
+                .inNamespace(testStorage.getNamespaceName())
+                .withName(KafkaResources.clusterCaKeySecretName(testStorage.getClusterName()))
+                .get();
+
+        assertThat("Secret for CA key must be null", caKeySecret, nullValue());
+        LOGGER.info("Verified that the CA key Secret has been deleted");
 
         KafkaProducerConsumer kafkaProducerConsumer =
                 new KafkaProducerConsumerBuilder()

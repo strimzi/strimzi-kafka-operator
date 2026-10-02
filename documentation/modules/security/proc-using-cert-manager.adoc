@@ -10,6 +10,12 @@
 [role="_abstract"]
 Perform the steps in this procedure to enable cert-manager to issue certificates on either a new or existing cluster.
 
+[NOTE]
+====
+When performing these steps in an existing cluster, the Secret containing the existing CA private key, called `<kafka_cluster_name>-cluster-ca` or `<kafka_cluster_name>-clients-ca` is automatically deleted by the operator.
+The existing CA certificate is kept in the truststore and relevant Secrets of all components until the new CA used for cert-manager issued certificates is fully rolled out.
+====
+
 .Prerequisites
 
 * cert-manager is installed in the cluster with a ready `Issuer` or `ClusterIssuer` configured with a Secret that contains a certificate and key pair for the CA. The Secret must have `tls.crt` and `tls.key` keys, where `tls.crt` is the CA certificate. You provide this certificate to the Cluster Operator as `ca.crt` in a Secret in the following step.
