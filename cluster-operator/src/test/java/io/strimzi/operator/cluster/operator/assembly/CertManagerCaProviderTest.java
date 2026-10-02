@@ -124,7 +124,7 @@ public class CertManagerCaProviderTest {
                 .withOrganizationName("io.strimzi")
                 .withCommonName(commonName).build();
 
-        CERT_ISSUER.generateSelfSignedCert(clusterCaKeyFile.toFile(), clusterCaCertFile.toFile(), sbj, CERT_AUTHORITY.getValidityDays());
+        CERT_ISSUER.generateSelfSignedCert(clusterCaKeyFile.toFile(), clusterCaCertFile.toFile(), sbj, CERT_AUTHORITY.getValidityDays(), 2048);
 
         CERT_ISSUER.addCertToTrustStore(clusterCaCertFile.toFile(), CA_CRT, clusterCaStoreFile.toFile(), clusterCaStorePassword);
         return new CertAndKey(
@@ -147,7 +147,7 @@ public class CertManagerCaProviderTest {
                 .withOrganizationName("io.strimzi")
                 .withCommonName("cluster-ca").build();
 
-        CERT_ISSUER.renewSelfSignedCert(caKeyFile.toFile(), caCertFile.toFile(), sbj, 10);
+        CERT_ISSUER.renewSelfSignedCert(caKeyFile.toFile(), caCertFile.toFile(), sbj, 10, 2048);
 
         return new CertAndKey(
                 Files.readAllBytes(caKeyFile),
@@ -169,7 +169,7 @@ public class CertManagerCaProviderTest {
                 .withOrganizationName("io.strimzi")
                 .withCommonName("cluster-operator").build();
 
-        CERT_ISSUER.generateCsr(keyFile, csrFile, sbj);
+        CERT_ISSUER.generateCsr(keyFile, csrFile, sbj, 2048);
         CERT_ISSUER.generateCert(csrFile, ca.key(), ca.cert(), certFile, sbj, 10);
 
         return new CertAndKey(

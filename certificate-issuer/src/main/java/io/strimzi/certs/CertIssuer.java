@@ -24,9 +24,10 @@ public interface CertIssuer {
      * @param certFile path to the file which will contain the self signed certificate
      * @param sbj subject information
      * @param days certificate duration
+     * @param keySize RSA key size in bits
      * @throws IOException If an input or output file could not be read/written.
      */
-    void generateSelfSignedCert(File keyFile, File certFile, StrimziSubject sbj, int days) throws IOException;
+    void generateSelfSignedCert(File keyFile, File certFile, StrimziSubject sbj, int days, int keySize) throws IOException;
 
     /**
      * Renew a new self-signed certificate, keeping the existing private key
@@ -35,9 +36,10 @@ public interface CertIssuer {
      *                 will contain the new self signed certificate.
      * @param sbj subject information
      * @param days certificate duration
+     * @param keySize RSA key size in bits
      * @throws IOException If an input or output file could not be read/written.
      */
-    void renewSelfSignedCert(File keyFile, File certFile, StrimziSubject sbj, int days) throws IOException;
+    void renewSelfSignedCert(File keyFile, File certFile, StrimziSubject sbj, int days, int keySize) throws IOException;
 
     /**
      * Generates the Root CA certificate
@@ -48,11 +50,12 @@ public interface CertIssuer {
      * @param notBefore         Not valid before
      * @param notAfter          Not valid after
      * @param pathLength        Maximal length of the CA path
+     * @param keySize           RSA key size in bits
      *
      * @throws IOException  If an input or output file cannot be read / written
      */
     void generateRootCaCert(StrimziSubject subject, File subjectKeyFile, File subjectCertFile,
-                            ZonedDateTime notBefore, ZonedDateTime notAfter, int pathLength) throws IOException;
+                            ZonedDateTime notBefore, ZonedDateTime notAfter, int pathLength, int keySize) throws IOException;
 
     /**
      * Generates the Intermediate CA certificate
@@ -65,13 +68,14 @@ public interface CertIssuer {
      * @param notBefore         Not valid before
      * @param notAfter          Not valid after
      * @param pathLength        Maximal length of the CA path
+     * @param keySize           RSA key size in bits
      *
      * @throws IOException  If an input or output file cannot be read / written
      */
     void generateIntermediateCaCert(File issuerCaKeyFile, File issuerCaCertFile,
                                     StrimziSubject subject,
                                     File subjectKeyFile, File subjectCertFile,
-                                    ZonedDateTime notBefore, ZonedDateTime notAfter, int pathLength) throws IOException;
+                                    ZonedDateTime notBefore, ZonedDateTime notAfter, int pathLength, int keySize) throws IOException;
 
     /**
      * Add the provided certificate to the truststore which is created if it doesn't exist
@@ -125,9 +129,10 @@ public interface CertIssuer {
      * @param keyFile path to the file which will contain the private key
      * @param csrFile path to the file which will contain the certificate sign request
      * @param sbj subject information
+     * @param keySize RSA key size in bits
      * @throws IOException If an input or output file could not be read/written.
      */
-    void generateCsr(File keyFile, File csrFile, StrimziSubject sbj) throws IOException;
+    void generateCsr(File keyFile, File csrFile, StrimziSubject sbj, int keySize) throws IOException;
 
     /**
      * Generate a certificate signed by a Certificate Authority

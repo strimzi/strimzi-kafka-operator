@@ -26,6 +26,7 @@ public class CaConfigTest {
 
         assertThat(caConfig.getValidityDays(), is(CertificateAuthority.DEFAULT_CERTS_VALIDITY_DAYS));
         assertThat(caConfig.getRenewalDays(), is(CertificateAuthority.DEFAULT_CERTS_RENEWAL_DAYS));
+        assertThat(caConfig.getKeySize(), is(CertificateAuthority.DEFAULT_CERTS_KEY_SIZE));
         assertTrue(caConfig.isGenerateCa());
         assertTrue(caConfig.isGenerateSecretOwnerRef());
         assertThat(caConfig.getCertificateExpirationPolicy(), is(CertificateExpirationPolicy.RENEW_CERTIFICATE));
@@ -38,6 +39,7 @@ public class CaConfigTest {
 
         assertThat(caConfig.getValidityDays(), is(CertificateAuthority.DEFAULT_CERTS_VALIDITY_DAYS));
         assertThat(caConfig.getRenewalDays(), is(CertificateAuthority.DEFAULT_CERTS_RENEWAL_DAYS));
+        assertThat(caConfig.getKeySize(), is(CertificateAuthority.DEFAULT_CERTS_KEY_SIZE));
         assertTrue(caConfig.isGenerateCa());
         assertTrue(caConfig.isGenerateSecretOwnerRef());
         assertThat(caConfig.getCertificateExpirationPolicy(), is(CertificateExpirationPolicy.RENEW_CERTIFICATE));
@@ -49,6 +51,7 @@ public class CaConfigTest {
         CertificateAuthority ca = new CertificateAuthorityBuilder()
                 .withValidityDays(6)
                 .withRenewalDays(4)
+                .withKeySize(2048)
                 .withGenerateCertificateAuthority(false)
                 .withGenerateSecretOwnerReference(false)
                 .withCertificateExpirationPolicy(CertificateExpirationPolicy.REPLACE_KEY)
@@ -58,6 +61,7 @@ public class CaConfigTest {
 
         assertThat(caConfig.getValidityDays(), is(6));
         assertThat(caConfig.getRenewalDays(), is(4));
+        assertThat(caConfig.getKeySize(), is(2048));
         assertFalse(caConfig.isGenerateCa());
         assertFalse(caConfig.isGenerateSecretOwnerRef());
         assertThat(caConfig.getCertificateExpirationPolicy(), is(CertificateExpirationPolicy.REPLACE_KEY));
@@ -66,10 +70,11 @@ public class CaConfigTest {
 
     @Test
     void testConstructorPassingSomeVariables() {
-        CaConfig caConfig = new CaConfig(6, 4, false, true, CertificateManagerType.CERT_MANAGER);
+        CaConfig caConfig = new CaConfig(6, 4, 4096, false, true, CertificateManagerType.CERT_MANAGER);
 
         assertThat(caConfig.getValidityDays(), is(6));
         assertThat(caConfig.getRenewalDays(), is(4));
+        assertThat(caConfig.getKeySize(), is(4096));
         assertFalse(caConfig.isGenerateCa());
         assertTrue(caConfig.isGenerateSecretOwnerRef());
         assertThat(caConfig.getCertificateExpirationPolicy(), is(CertificateExpirationPolicy.RENEW_CERTIFICATE));
