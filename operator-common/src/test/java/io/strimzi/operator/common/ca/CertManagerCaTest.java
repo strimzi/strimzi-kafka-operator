@@ -39,7 +39,7 @@ public class CertManagerCaTest {
                 Reconciliation.DUMMY_RECONCILIATION,
                 Ca.CaRole.CLUSTER_CA,
                 existingCertSecret,
-                new CaConfig(100, 10, false, false, CertificateManagerType.CERT_MANAGER),
+                new CaConfig(100, 10, 2048, false, false, CertificateManagerType.CERT_MANAGER),
                 null,
                 null,
                 null,

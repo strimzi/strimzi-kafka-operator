@@ -351,6 +351,7 @@ public class KafkaUserOperator {
                         userSecret,
                         config.getClientsCaValidityDays(),
                         config.getClientsCaRenewalDays(),
+                        config.getClientsCaKeySize(),
                         config.getMaintenanceWindows(),
                         Clock.systemUTC(),
                         config.isPkcs12KeystoreGeneration()));
