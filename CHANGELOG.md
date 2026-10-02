@@ -12,6 +12,7 @@
 * (Early Access) Integration with cert-manager for issuing certificates.
   While the cert-manager feature is in Early Access it is not recommended for use in production.
 * Updated HTTP Bridge to 1.2.0
+* Add fenced brokers, offline replicas and ISR shrink/expand/failed update panels to the example Kafka Grafana dashboards
 
 ### Major changes, deprecations, and removals
 
