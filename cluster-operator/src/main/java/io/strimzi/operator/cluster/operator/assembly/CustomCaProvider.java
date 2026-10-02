@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.certs.CertIssuer;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.ca.Ca;
 import io.strimzi.operator.common.ca.CaConfig;
 import io.strimzi.operator.common.ca.CertificateUtils;
@@ -15,6 +16,7 @@ import io.strimzi.operator.common.ca.InternalCa;
 import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.common.model.PasswordGenerator;
 
+import java.security.cert.X509Certificate;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
@@ -23,6 +25,8 @@ import java.util.concurrent.CompletionStage;
  * Uses existing CA certificates and keys provided by the user.
  */
 public class CustomCaProvider extends CaProvider {
+    private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(CustomCaProvider.class);
+
     private final CertIssuer certIssuer;
     private final PasswordGenerator passwordGenerator;
 
@@ -51,6 +55,17 @@ public class CustomCaProvider extends CaProvider {
         }
         CertificateUtils.validateCaCertChain(reconciliation, caRole, existingCaCertSecret.getData());
         InternalCa internalCa = new InternalCa(reconciliation, caRole, certIssuer, passwordGenerator, existingCaCertSecret, existingCaKeySecret, caConfig);
+        maybeWarnCertExpiry(internalCa);
         return CompletableFuture.completedStage(new CaProviderResult(internalCa, existingCaCertSecret));
+    }
+
+    private void maybeWarnCertExpiry(InternalCa ca) {
+        X509Certificate caCert = ca.currentCaCertX509();
+        if (caCert != null && ca.isExpiring(ca.currentCaCertBytes())) {
+            LOGGER.warnCr(reconciliation, "{} certificate is expiring (expires on {}). " +
+                    "Since generateCertificateAuthority is false, the certificate will not be renewed automatically. " +
+                    "Please provide a new CA certificate before it expires.",
+                    caRole.caName(), caCert.getNotAfter());
+        }
     }
 }
