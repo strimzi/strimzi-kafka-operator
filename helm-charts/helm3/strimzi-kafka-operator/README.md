@@ -6,6 +6,9 @@ See our [website](https://strimzi.io) for more details about the project.
 
 **!!! IMPORTANT !!!**
 
+**From Strimzi 1.3.0 on, we support only Kubernetes 1.32 and newer.**
+Kubernetes 1.30 and 1.31 are not supported anymore.
+
 **From Strimzi 1.2.0, the Helm Chart uses the default container security context that matches the [Restricted Kubernetes Pod Security Standard](https://kubernetes.io/docs/concepts/security/pod-security-standards/).**
 ```yaml
 securityContext:
@@ -75,7 +78,7 @@ Strimzi is licensed under the [Apache License, Version 2.0](https://github.com/s
 
 ## Prerequisites
 
-- Kubernetes 1.30+
+- Kubernetes 1.32+
 
 ## Installing the Chart
 
@@ -112,7 +115,7 @@ See the documentation for more details.
 | `watchAnyNamespace`                              | Watch the whole Kubernetes cluster (all namespaces)                             | `false`                                                                                                             |
 | `defaultImageRegistry`                           | Default image registry for all the images                                       | `quay.io`                                                                                                           |
 | `defaultImageRepository`                         | Default image registry for all the images                                       | `strimzi`                                                                                                           |
-| `defaultImageTag`                                | Default image tag for all the images except Kafka Bridge                        | `1.2.0`                                                                                                            |
+| `defaultImageTag`                                | Default image tag for all the images except Kafka Bridge                        | `1.3.0`                                                                                                            |
 | `deploymentAnnotations`                          | Annotations for the operator deployment                                         | `{}`                                                                                                                |
 | `deploymentLabels`                               | Labels for the operator deployment                                              | `{}`                                                                                                                |
 | `image.registry`                                 | Override default Cluster Operator image registry                                | `nil`                                                                                                               |
@@ -176,7 +179,7 @@ See the documentation for more details.
 | `kafkaBridge.image.registry`                     | Override default Kafka Bridge image registry                                    | `quay.io`                                                                                                           |
 | `kafkaBridge.image.repository`                   | Override default Kafka Bridge image repository                                  | `strimzi`                                                                                                           |
 | `kafkaBridge.image.name`                         | Kafka Bridge image name                                                         | `kafka-bridge`                                                                                                      |
-| `kafkaBridge.image.tag`                          | Override default Kafka Bridge image tag                                         | `1.1.0`                                                                                                             |
+| `kafkaBridge.image.tag`                          | Override default Kafka Bridge image tag                                         | `1.2.0`                                                                                                             |
 | `kafkaBridge.image.digest`                       | Override Kafka Bridge image tag with digest                                     | `nil`                                                                                                               |
 | `kafkaExporter.image.registry`                   | Override default Kafka Exporter image registry                                  | `nil`                                                                                                               |
 | `kafkaExporter.image.repository`                 | Override default Kafka Exporter image repository                                | `nil`                                                                                                               |
@@ -190,11 +193,6 @@ See the documentation for more details.
 | `kafkaMirrorMaker2.image.tagPrefix`              | Override default Kafka Mirror Maker 2 image tag prefix                          | `nil`                                                                                                               |
 | `kafkaMirrorMaker2.image.tag`                    | Override default Kafka Mirror Maker 2 image tag and ignore suffix               | `nil`                                                                                                               |
 | `kafkaMirrorMaker2.image.digest`                 | Override Kafka Mirror Maker 2 image tag with digest                             | `nil`                                                                                                               |
-| `kanikoExecutor.image.registry`                  | Override default Kaniko Executor image registry                                 | `nil`                                                                                                               |
-| `kanikoExecutor.image.repository`                | Override default Kaniko Executor image repository                               | `nil`                                                                                                               |
-| `kanikoExecutor.image.name`                      | Kaniko Executor image name                                                      | `kaniko-executor`                                                                                                   |
-| `kanikoExecutor.image.tag`                       | Override default Kaniko Executor image tag                                      | `nil`                                                                                                               |
-| `kanikoExecutor.image.digest`                    | Override Kaniko Executor image tag with digest                                  | `nil`                                                                                                               |
 | `buildah.image.registry`                         | Override default Buildah image registry                                         | `nil`                                                                                                               |
 | `buildah.image.repository`                       | Override default Buildah image repository                                       | `nil`                                                                                                               |
 | `buildah.image.name`                             | Buildah image name                                                              | `buildah`                                                                                                           |

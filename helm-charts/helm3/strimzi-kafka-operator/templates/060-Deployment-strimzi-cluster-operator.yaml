@@ -137,8 +137,6 @@ spec:
               value: {{ template "strimzi.image" (set . "key" "kafkaInit") }}
             - name: STRIMZI_DEFAULT_KAFKA_BRIDGE_IMAGE
               value: {{ template "strimzi.image" (set . "key" "kafkaBridge") }}
-            - name: STRIMZI_DEFAULT_KANIKO_EXECUTOR_IMAGE
-              value: {{ template "strimzi.image" (set . "key" "kanikoExecutor") }}
             - name: STRIMZI_DEFAULT_BUILDAH_IMAGE
               value: {{ template "strimzi.image" (set . "key" "buildah") }}
             - name: STRIMZI_DEFAULT_MAVEN_BUILDER

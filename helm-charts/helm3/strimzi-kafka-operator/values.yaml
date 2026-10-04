@@ -9,7 +9,7 @@ watchAnyNamespace: false
 
 defaultImageRegistry: quay.io
 defaultImageRepository: strimzi
-defaultImageTag: 1.2.0
+defaultImageTag: 1.3.0
 
 image:
   registry: ""
@@ -160,7 +160,7 @@ kafkaBridge:
     registry: ""
     repository:
     name: kafka-bridge
-    tag: 1.1.0
+    tag: 1.2.0
 kafkaExporter:
   image:
     registry: ""
@@ -179,12 +179,6 @@ cruiseControl:
     repository: ""
     name: kafka
     tagPrefix: ""
-kanikoExecutor:
-  image:
-    registry: ""
-    repository: ""
-    name: kaniko-executor
-    tag: ""
 buildah:
   image:
     registry: ""
