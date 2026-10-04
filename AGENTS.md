@@ -94,6 +94,11 @@ Multi-module Maven project.
   - `DOCKER_TAG`: image tag (default: `latest`)
   - `DOCKER_ARCHITECTURE`: target architecture for container images (e.g., `amd64`, `arm64`)
 
+**Examples, installation files and Helm charts:**
+- Do not touch the `install/`, `examples/`, and `helm-charts/` folders in the repository root.
+- These folders are changed only as part of a new Strimzi release.
+- If you need to change any examples, installation files, or the Helm charts, do the changes in `packaging/` directory only.
+
 ## Documentation
 
 User-facing documentation is in `documentation/` folder (AsciiDoc format):
