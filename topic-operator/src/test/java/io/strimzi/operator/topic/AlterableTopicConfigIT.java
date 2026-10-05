@@ -14,12 +14,14 @@ import io.strimzi.operator.topic.cruisecontrol.CruiseControlHandler;
 import io.strimzi.operator.topic.metrics.TopicOperatorMetricsHolder;
 import io.strimzi.operator.topic.metrics.TopicOperatorMetricsProvider;
 import io.strimzi.operator.topic.model.ReconcilableTopic;
+import io.strimzi.test.TestUtils;
 import io.strimzi.test.container.StrimziKafkaCluster;
 import io.strimzi.test.interfaces.TestSeparator;
 import io.strimzi.test.mockkube3.MockKube3;
 import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.clients.admin.NewTopic;
+import org.apache.kafka.common.config.ConfigResource;
 import org.apache.kafka.common.config.TopicConfig;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
@@ -27,6 +29,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mockito;
 
@@ -98,6 +101,80 @@ class AlterableTopicConfigIT implements TestSeparator {
             new CruiseControlHandler(config, metricsHolder, TopicOperatorUtil.createCruiseControlClient(config)));
 
         verifyNoInteractions(kafkaAdmin);
+    }
+
+    static List<Object> equivalentDoubleConfigValues() {
+        return List.of(1, "1");
+    }
+
+    @ParameterizedTest
+    @MethodSource("equivalentDoubleConfigValues")
+    public void shouldOnlyAlterDoubleConfigWhenValueChanges(Object desiredValue) throws InterruptedException, ExecutionException {
+        var kafkaAdminClientSpy = Mockito.spy(kafkaAdminClient);
+        var config = TopicOperatorConfig.buildFromMap(Map.of(
+            TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), kafkaCluster.getBootstrapServers(),
+            TopicOperatorConfig.WATCHED_NAMESPACE.key(), NAMESPACE
+        ));
+        var configName = TopicConfig.MIN_CLEANABLE_DIRTY_RATIO_CONFIG;
+        var topicResource = new ConfigResource(ConfigResource.Type.TOPIC, "my-topic");
+
+        kafkaAdminClient.createTopics(List.of(new NewTopic("my-topic", 1, (short) 1)
+            .configs(Map.of(configName, "1.0")))).all().get();
+        assertEquals("1.0", kafkaAdminClient.describeConfigs(List.of(topicResource))
+            .all().get().get(topicResource).get(configName).value());
+
+        var testTopic = Crds.topicOperation(kubernetesClient).resource(
+            new KafkaTopicBuilder()
+                .withNewMetadata()
+                    .withName("my-topic")
+                    .withNamespace(NAMESPACE)
+                    .addToLabels("key", "VALUE")
+                .endMetadata()
+                .withNewSpec()
+                    .withConfig(Map.of(configName, desiredValue))
+                    .withPartitions(1)
+                    .withReplicas(1)
+                .endSpec()
+                .build()).create();
+
+        var metricsHolder = new TopicOperatorMetricsHolder(KafkaTopic.RESOURCE_KIND, null, new TopicOperatorMetricsProvider(new SimpleMeterRegistry()));
+        var controller = new BatchingTopicController(config, Map.of("key", "VALUE"),
+            new KubernetesHandler(config, metricsHolder, kubernetesClient),
+            new KafkaHandler(config, metricsHolder, kafkaAdminClientSpy), metricsHolder,
+            new CruiseControlHandler(config, metricsHolder, TopicOperatorUtil.createCruiseControlClient(config)));
+
+        // Kafka reports the double as 1.0, but an equivalent desired value must not trigger updates.
+        for (int i = 0; i < 2; i++) {
+            controller.onUpdate(List.of(new ReconcilableTopic(
+                new Reconciliation("test", KafkaTopic.RESOURCE_KIND, NAMESPACE, "my-topic"), testTopic, "my-topic")));
+            testTopic = Crds.topicOperation(kubernetesClient).inNamespace(NAMESPACE).withName("my-topic").get();
+            assertEquals(1, testTopic.getStatus().getConditions().size());
+            assertEquals("True", testTopic.getStatus().getConditions().get(0).getStatus());
+        }
+        Mockito.verify(kafkaAdminClientSpy, Mockito.never()).incrementalAlterConfigs(any());
+
+        testTopic = Crds.topicOperation(kubernetesClient).resource(new KafkaTopicBuilder(testTopic)
+            .editSpec()
+                .withConfig(Map.of(configName, 0.5))
+            .endSpec()
+            .build()).update();
+        controller.onUpdate(List.of(new ReconcilableTopic(
+            new Reconciliation("test", KafkaTopic.RESOURCE_KIND, NAMESPACE, "my-topic"), testTopic, "my-topic")));
+        Mockito.verify(kafkaAdminClientSpy, Mockito.times(1)).incrementalAlterConfigs(any());
+
+        TestUtils.waitFor("double config update", 100, 30_000, () -> {
+            try {
+                return "0.5".equals(kafkaAdminClient.describeConfigs(List.of(topicResource))
+                    .all().get().get(topicResource).get(configName).value());
+            } catch (InterruptedException | ExecutionException e) {
+                throw new RuntimeException(e);
+            }
+        });
+
+        testTopic = Crds.topicOperation(kubernetesClient).inNamespace(NAMESPACE).withName("my-topic").get();
+        controller.onUpdate(List.of(new ReconcilableTopic(
+            new Reconciliation("test", KafkaTopic.RESOURCE_KIND, NAMESPACE, "my-topic"), testTopic, "my-topic")));
+        Mockito.verify(kafkaAdminClientSpy, Mockito.times(1)).incrementalAlterConfigs(any());
     }
 
     @Test
