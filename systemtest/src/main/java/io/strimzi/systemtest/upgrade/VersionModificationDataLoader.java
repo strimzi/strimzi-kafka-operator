@@ -57,8 +57,8 @@ public class VersionModificationDataLoader {
             });
             this.bundleVersionModificationDataList = upgradeDatalist;
         } catch (JacksonException e) {
-            LOGGER.error("Error while parsing ST data from YAML ");
-            throw new RuntimeException(e);
+            LOGGER.error("Error while parsing ST data from YAML");
+            throw new RuntimeException("Error while parsing ST data from YAML", e);
         }
     }
 
@@ -68,8 +68,8 @@ public class VersionModificationDataLoader {
             CollectionType modificationDataListType = mapper.getTypeFactory().constructCollectionType(List.class, BundleVersionModificationData.class);
             this.bundleVersionModificationDataList = mapper.readValue(new File(TestUtils.USER_PATH + "/src/test/resources/upgrade/BundleDowngrade.yaml"), modificationDataListType);
         } catch (JacksonException e) {
-            LOGGER.error("Error while parsing ST data from YAML ");
-            throw new RuntimeException(e);
+            LOGGER.error("Error while parsing ST data from YAML");
+            throw new RuntimeException("Error while parsing ST data from YAML", e);
         }
     }
 
@@ -82,8 +82,8 @@ public class VersionModificationDataLoader {
             this.olmUpgradeData.setProcedures(new UpgradeKafkaVersion(TestKafkaVersion.getDefaultSupportedKafkaVersion()));
             this.olmUpgradeData.setToUrl("HEAD");
         } catch (JacksonException e) {
-            LOGGER.error("Error while parsing ST data from YAML ");
-            throw new RuntimeException(e);
+            LOGGER.error("Error while parsing ST data from YAML");
+            throw new RuntimeException("Error while parsing ST data from YAML", e);
         }
     }
 

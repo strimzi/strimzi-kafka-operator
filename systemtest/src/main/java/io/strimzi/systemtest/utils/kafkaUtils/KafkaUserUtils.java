@@ -19,7 +19,6 @@ import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import tools.jackson.core.JacksonException;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.node.ObjectNode;
 import tools.jackson.dataformat.yaml.YAMLMapper;
@@ -134,14 +133,10 @@ public class KafkaUserUtils {
 
     public static String removeKafkaUserPart(File kafkaUserFile, String partName) {
         YAMLMapper mapper = new YAMLMapper();
-        try {
-            JsonNode node = mapper.readTree(kafkaUserFile);
-            ObjectNode kafkaUserSpec = (ObjectNode) node.at("/spec");
-            kafkaUserSpec.remove(partName);
-            return mapper.writeValueAsString(node);
-        } catch (JacksonException e) {
-            throw new RuntimeException(e);
-        }
+        JsonNode node = mapper.readTree(kafkaUserFile);
+        ObjectNode kafkaUserSpec = (ObjectNode) node.at("/spec");
+        kafkaUserSpec.remove(partName);
+        return mapper.writeValueAsString(node);
     }
 
     public static void waitForAllUsersWithPrefixReady(String namespaceName, String usersPrefix) {

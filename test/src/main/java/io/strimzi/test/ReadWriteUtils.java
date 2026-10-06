@@ -7,7 +7,6 @@ package io.strimzi.test;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import tools.jackson.core.JacksonException;
 import tools.jackson.databind.DeserializationFeature;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.exc.InvalidFormatException;
@@ -151,7 +150,7 @@ public final class ReadWriteUtils {
             return mapper.readValue(stream, c);
         } catch (InvalidFormatException e) {
             throw new IllegalArgumentException(e);
-        } catch (IOException | JacksonException e) {
+        } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
@@ -174,8 +173,6 @@ public final class ReadWriteUtils {
             return mapper.readValue(yamlContent, c);
         } catch (InvalidFormatException e) {
             throw new IllegalArgumentException(e);
-        } catch (JacksonException e) {
-            throw new RuntimeException(e);
         }
     }
 
@@ -195,8 +192,6 @@ public final class ReadWriteUtils {
             return mapper.readValue(yamlFile, c);
         } catch (InvalidFormatException e) {
             throw new IllegalArgumentException(e);
-        } catch (JacksonException e) {
-            throw new RuntimeException(e);
         }
     }
 
@@ -224,15 +219,11 @@ public final class ReadWriteUtils {
      * @param <T>   Type of the object
      */
     public static <T> String writeObjectToYamlString(T instance) {
-        try {
-            ObjectMapper mapper = YAMLMapper.builder()
-                    .disable(YAMLWriteFeature.USE_NATIVE_TYPE_ID)
-                    .changeDefaultPropertyInclusion(incl -> incl.withValueInclusion(JsonInclude.Include.NON_EMPTY))
-                    .build();
-            return mapper.writeValueAsString(instance);
-        } catch (JacksonException e) {
-            throw new RuntimeException(e);
-        }
+        ObjectMapper mapper = YAMLMapper.builder()
+                .disable(YAMLWriteFeature.USE_NATIVE_TYPE_ID)
+                .changeDefaultPropertyInclusion(incl -> incl.withValueInclusion(JsonInclude.Include.NON_EMPTY))
+                .build();
+        return mapper.writeValueAsString(instance);
     }
 
     /**
@@ -245,14 +236,10 @@ public final class ReadWriteUtils {
      * @param <T>   Type of the object
      */
     public static <T> String writeObjectToJsonString(T instance) {
-        try {
-            ObjectMapper mapper = JsonMapper.builder()
-                    .changeDefaultPropertyInclusion(incl -> incl.withValueInclusion(JsonInclude.Include.NON_NULL))
-                    .build();
-            return mapper.writeValueAsString(instance);
-        } catch (JacksonException e) {
-            throw new RuntimeException(e);
-        }
+        ObjectMapper mapper = JsonMapper.builder()
+                .changeDefaultPropertyInclusion(incl -> incl.withValueInclusion(JsonInclude.Include.NON_NULL))
+                .build();
+        return mapper.writeValueAsString(instance);
     }
 
     /**

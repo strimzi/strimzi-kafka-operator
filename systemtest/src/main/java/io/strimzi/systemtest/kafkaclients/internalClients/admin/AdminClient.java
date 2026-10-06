@@ -6,7 +6,6 @@ package io.strimzi.systemtest.kafkaclients.internalClients.admin;
 
 import io.skodjob.kubetest4j.executor.ExecResult;
 import io.skodjob.kubetest4j.resources.KubeResourceManager;
-import tools.jackson.core.JacksonException;
 import tools.jackson.databind.ObjectMapper;
 
 import java.util.ArrayList;
@@ -49,11 +48,7 @@ public class AdminClient {
 
     private static <T> T responseFromJSONExecResult(ExecResult result, Class<T> responseType) {
         if (result.returnCode() == 0 && !result.out().isEmpty()) {
-            try {
-                return MAPPER.readValue(result.out(), responseType);
-            } catch (JacksonException e) {
-                throw new RuntimeException(e);
-            }
+            return MAPPER.readValue(result.out(), responseType);
         }
         throw new KafkaAdminException(result.err());
     }

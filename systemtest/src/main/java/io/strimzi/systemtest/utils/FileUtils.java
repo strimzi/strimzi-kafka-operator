@@ -8,7 +8,6 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import tools.jackson.core.JacksonException;
 import tools.jackson.core.JsonParser;
 import tools.jackson.databind.exc.InvalidFormatException;
 import tools.jackson.dataformat.yaml.YAMLMapper;
@@ -146,8 +145,6 @@ public class FileUtils {
             }
         } catch (InvalidFormatException e) {
             throw new IllegalArgumentException(e);
-        } catch (JacksonException e) {
-            throw new RuntimeException(e);
         }
     }
 }

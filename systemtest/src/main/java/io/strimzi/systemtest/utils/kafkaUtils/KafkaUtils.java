@@ -34,7 +34,6 @@ import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hamcrest.CoreMatchers;
-import tools.jackson.core.JacksonException;
 import tools.jackson.core.JsonParser;
 import tools.jackson.databind.node.ObjectNode;
 import tools.jackson.dataformat.yaml.YAMLMapper;
@@ -404,8 +403,6 @@ public class KafkaUtils {
             }
 
             return output.toString();
-        } catch (JacksonException e) {
-            throw new RuntimeException(e);
         }
     }
 

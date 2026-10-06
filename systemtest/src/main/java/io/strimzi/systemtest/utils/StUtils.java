@@ -32,7 +32,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.ClassDescriptor;
 import org.junit.jupiter.api.extension.ExtensionContext;
-import tools.jackson.core.JacksonException;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.node.ArrayNode;
@@ -325,40 +324,36 @@ public class StUtils {
      */
     public static String changeDeploymentConfiguration(String namespaceName, File deploymentFile, final String strimziFeatureGatesValue) {
         YAMLMapper mapper = new YAMLMapper();
-        try {
-            JsonNode node = mapper.readTree(deploymentFile);
-            // Change the docker org of the images in the 060-deployment.yaml
-            ObjectNode containerNode = (ObjectNode) node.at("/spec/template/spec/containers").get(0);
-            for (JsonNode envVar : containerNode.get("env")) {
-                String varName = envVar.get("name").stringValue();
-                if (varName.matches("STRIMZI_NAMESPACE")) {
-                    // Replace all the default images with ones from the $DOCKER_ORG org and with the $DOCKER_TAG tag
-                    ((ObjectNode) envVar).remove("valueFrom");
-                    ((ObjectNode) envVar).put("value", namespaceName);
-                }
-
-                if (varName.matches("STRIMZI_LOG_LEVEL")) {
-                    ((ObjectNode) envVar).put("value", Environment.STRIMZI_LOG_LEVEL);
-                }
+        JsonNode node = mapper.readTree(deploymentFile);
+        // Change the docker org of the images in the 060-deployment.yaml
+        ObjectNode containerNode = (ObjectNode) node.at("/spec/template/spec/containers").get(0);
+        for (JsonNode envVar : containerNode.get("env")) {
+            String varName = envVar.get("name").stringValue();
+            if (varName.matches("STRIMZI_NAMESPACE")) {
+                // Replace all the default images with ones from the $DOCKER_ORG org and with the $DOCKER_TAG tag
+                ((ObjectNode) envVar).remove("valueFrom");
+                ((ObjectNode) envVar).put("value", namespaceName);
             }
 
-            // Change image pull policy
-            ObjectMapper objectMapper = new ObjectMapper();
-            ObjectNode imagePulPolicyEnvVar = objectMapper.createObjectNode();
-            imagePulPolicyEnvVar.put("name", "STRIMZI_IMAGE_PULL_POLICY");
-            imagePulPolicyEnvVar.put("value", Environment.COMPONENTS_IMAGE_PULL_POLICY);
-
-            if (strimziFeatureGatesValue != null && !strimziFeatureGatesValue.isEmpty()) {
-                ObjectNode strimziFeatureGates =  new ObjectMapper().createObjectNode();
-                strimziFeatureGates.put("name", "STRIMZI_FEATURE_GATES");
-                strimziFeatureGates.put("value", strimziFeatureGatesValue);
-                ((ArrayNode) containerNode.get("env")).add(strimziFeatureGates);
+            if (varName.matches("STRIMZI_LOG_LEVEL")) {
+                ((ObjectNode) envVar).put("value", Environment.STRIMZI_LOG_LEVEL);
             }
-            ((ArrayNode) containerNode.get("env")).add(imagePulPolicyEnvVar);
-            return mapper.writeValueAsString(node);
-        } catch (JacksonException e) {
-            throw new RuntimeException(e);
         }
+
+        // Change image pull policy
+        ObjectMapper objectMapper = new ObjectMapper();
+        ObjectNode imagePulPolicyEnvVar = objectMapper.createObjectNode();
+        imagePulPolicyEnvVar.put("name", "STRIMZI_IMAGE_PULL_POLICY");
+        imagePulPolicyEnvVar.put("value", Environment.COMPONENTS_IMAGE_PULL_POLICY);
+
+        if (strimziFeatureGatesValue != null && !strimziFeatureGatesValue.isEmpty()) {
+            ObjectNode strimziFeatureGates =  new ObjectMapper().createObjectNode();
+            strimziFeatureGates.put("name", "STRIMZI_FEATURE_GATES");
+            strimziFeatureGates.put("value", strimziFeatureGatesValue);
+            ((ArrayNode) containerNode.get("env")).add(strimziFeatureGates);
+        }
+        ((ArrayNode) containerNode.get("env")).add(imagePulPolicyEnvVar);
+        return mapper.writeValueAsString(node);
     }
 
     public static String getLineFromPodContainer(String namespaceName, String podName, String containerName, String filePath, String grepString) {
@@ -585,17 +580,13 @@ public class StUtils {
      */
     public static String changeRoleBindingSubject(File roleBindingFile, String namespace) {
         YAMLMapper mapper = new YAMLMapper();
-        try {
-            JsonNode node = mapper.readTree(roleBindingFile);
-            ArrayNode subjects = (ArrayNode) node.get("subjects");
-            ObjectNode subject = (ObjectNode) subjects.get(0);
-            subject.put("kind", "ServiceAccount")
-                .put("name", "strimzi-cluster-operator")
-                .put("namespace", namespace);
-            return mapper.writeValueAsString(node);
-        } catch (JacksonException e) {
-            throw new RuntimeException(e);
-        }
+        JsonNode node = mapper.readTree(roleBindingFile);
+        ArrayNode subjects = (ArrayNode) node.get("subjects");
+        ObjectNode subject = (ObjectNode) subjects.get(0);
+        subject.put("kind", "ServiceAccount")
+            .put("name", "strimzi-cluster-operator")
+            .put("namespace", namespace);
+        return mapper.writeValueAsString(node);
     }
 
     /**

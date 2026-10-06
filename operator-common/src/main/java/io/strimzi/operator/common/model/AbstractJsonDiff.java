@@ -4,19 +4,16 @@
  */
 package io.strimzi.operator.common.model;
 
-import io.fabric8.kubernetes.client.utils.Serialization;
 import tools.jackson.databind.JsonNode;
-import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.SerializationFeature;
+import tools.jackson.databind.json.JsonMapper;
 import tools.jackson.databind.node.MissingNode;
 
 /**
  * Abstract class for diffing Json and YAML resources
  */
 public abstract class AbstractJsonDiff {
-    // use SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS just for better human readability in the logs
-    @SuppressWarnings("deprecation") // Suppress deprecated warning of SerializationFeature.WRITE_EMPTY_JSON_ARRAYS which currently does not have proper alternative
-    protected static final ObjectMapper PATCH_MAPPER = Serialization.jsonMapper().rebuild()
+    protected static final JsonMapper PATCH_MAPPER = JsonMapper.builder()
             .enable(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS)
             .disable(SerializationFeature.WRITE_EMPTY_JSON_ARRAYS)
             .build();
