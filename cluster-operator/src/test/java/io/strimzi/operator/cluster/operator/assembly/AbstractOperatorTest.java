@@ -11,6 +11,7 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.model.common.Spec;
+import io.strimzi.api.kafka.model.kafka.KafkaStatus;
 import io.strimzi.api.kafka.model.kafka.Status;
 import io.strimzi.operator.common.MetricsProvider;
 import io.strimzi.operator.common.MicrometerMetricsProvider;
@@ -32,6 +33,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.concurrent.Callable;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
@@ -214,6 +216,27 @@ class AbstractOperatorTest {
             })));
 
         handlersRegistered.complete();
+    }
+
+    @Test
+    /*
+     * Verifies that updateStatus() succeeds (rather than failing the reconciliation) when the resource
+     * is deleted concurrently and getAsync returns null before the status write can happen.
+     */
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+    void testUpdateStatusResourceNotFoundSucceeds(VertxTestContext context) {
+        var resourceOperator = new DefaultWatchableStatusedResourceOperator<>(vertx, null, "TestResource") {
+            @Override
+            public CompletionStage<HasMetadata> getAsync(String namespace, String name) {
+                return CompletableFuture.completedFuture(null);
+            }
+        };
+        var target = new DefaultOperator(vertx, "Test", resourceOperator, new MicrometerMetricsProvider(BackendRegistries.getDefaultNow()), null);
+        Reconciliation reconciliation = new Reconciliation("test", "TestResource", "my-namespace", "my-resource");
+
+        Checkpoint checkpoint = context.checkpoint();
+        target.updateStatus(reconciliation, new KafkaStatus())
+                .onComplete(context.succeeding(v -> checkpoint.flag()));
     }
 
     private static class DefaultOperator<
