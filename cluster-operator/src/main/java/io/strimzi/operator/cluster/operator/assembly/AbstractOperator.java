@@ -333,8 +333,8 @@ public abstract class AbstractOperator<
                             return Future.succeededFuture();
                         }
                     } else {
-                        LOGGER.errorCr(reconciliation, "Current {} resource not found", reconciliation.kind());
-                        return Future.failedFuture("Current " + reconciliation.kind() + " resource with name " + name + " not found");
+                        LOGGER.warnCr(reconciliation, "Current {} resource not found, skipping status update", reconciliation.kind());
+                        return Future.succeededFuture();
                     }
                 }, error -> {
                         LOGGER.errorCr(reconciliation, "Failed to get the current {} resource and its status", reconciliation.kind(), error);
