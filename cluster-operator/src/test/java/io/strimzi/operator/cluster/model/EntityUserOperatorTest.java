@@ -299,6 +299,7 @@ public class EntityUserOperatorTest {
                     .withNewClientsCa()
                         .withValidityDays(42)
                         .withRenewalDays(69)
+                        .withKeySize(2048)
                     .endClientsCa()
                 .endSpec()
                 .build();
@@ -316,15 +317,19 @@ public class EntityUserOperatorTest {
 
         assertThat(entityUserOperator.clientsCaValidityDays, is(42));
         assertThat(entityUserOperator.clientsCaRenewalDays, is(69));
+        assertThat(entityUserOperator.clientsCaKeySize, is(2048));
         assertThat(entityUserOperator2.clientsCaValidityDays, is(CertificateAuthority.DEFAULT_CERTS_VALIDITY_DAYS));
         assertThat(entityUserOperator2.clientsCaRenewalDays, is(CertificateAuthority.DEFAULT_CERTS_RENEWAL_DAYS));
+        assertThat(entityUserOperator2.clientsCaKeySize, is(CertificateAuthority.DEFAULT_CERTS_KEY_SIZE));
 
         List<EnvVar> envVars = entityUserOperator.getEnvVars();
         List<EnvVar> envVars2 = entityUserOperator2.getEnvVars();
         assertThat(Integer.parseInt(envVars.stream().filter(a -> a.getName().equals(EntityUserOperator.ENV_VAR_CLIENTS_CA_VALIDITY)).findFirst().orElseThrow().getValue()), is(42));
         assertThat(Integer.parseInt(envVars.stream().filter(a -> a.getName().equals(EntityUserOperator.ENV_VAR_CLIENTS_CA_RENEWAL)).findFirst().orElseThrow().getValue()), is(69));
+        assertThat(Integer.parseInt(envVars.stream().filter(a -> a.getName().equals(EntityUserOperator.ENV_VAR_CLIENTS_CA_KEY_SIZE)).findFirst().orElseThrow().getValue()), is(2048));
         assertThat(Integer.parseInt(envVars2.stream().filter(a -> a.getName().equals(EntityUserOperator.ENV_VAR_CLIENTS_CA_VALIDITY)).findFirst().orElseThrow().getValue()), is(CertificateAuthority.DEFAULT_CERTS_VALIDITY_DAYS));
         assertThat(Integer.parseInt(envVars2.stream().filter(a -> a.getName().equals(EntityUserOperator.ENV_VAR_CLIENTS_CA_RENEWAL)).findFirst().orElseThrow().getValue()), is(CertificateAuthority.DEFAULT_CERTS_RENEWAL_DAYS));
+        assertThat(Integer.parseInt(envVars2.stream().filter(a -> a.getName().equals(EntityUserOperator.ENV_VAR_CLIENTS_CA_KEY_SIZE)).findFirst().orElseThrow().getValue()), is(CertificateAuthority.DEFAULT_CERTS_KEY_SIZE));
     }
 
     @Test
@@ -483,6 +488,7 @@ public class EntityUserOperatorTest {
         expected.add(new EnvVarBuilder().withName(EntityUserOperator.ENV_VAR_STRIMZI_GC_LOG_ENABLED).withValue(Boolean.toString(JvmOptions.DEFAULT_GC_LOGGING_ENABLED)).build());
         expected.add(new EnvVarBuilder().withName(EntityUserOperator.ENV_VAR_CLIENTS_CA_VALIDITY).withValue(Integer.toString(CertificateAuthority.DEFAULT_CERTS_VALIDITY_DAYS)).build());
         expected.add(new EnvVarBuilder().withName(EntityUserOperator.ENV_VAR_CLIENTS_CA_RENEWAL).withValue(Integer.toString(CertificateAuthority.DEFAULT_CERTS_RENEWAL_DAYS)).build());
+        expected.add(new EnvVarBuilder().withName(EntityUserOperator.ENV_VAR_CLIENTS_CA_KEY_SIZE).withValue(Integer.toString(CertificateAuthority.DEFAULT_CERTS_KEY_SIZE)).build());
         expected.add(new EnvVarBuilder().withName(EntityUserOperator.ENV_VAR_STRIMZI_JAVA_OPTS).withValue("-Xmx256m").build());
         expected.add(new EnvVarBuilder().withName(EntityUserOperator.ENV_VAR_STRIMZI_JAVA_SYSTEM_PROPERTIES).withValue("-Djavax.net.debug=verbose -Dsomething.else=42").build());
         expected.add(new EnvVarBuilder().withName(EntityUserOperator.ENV_VAR_SECRET_PREFIX).withValue("strimzi-").build());

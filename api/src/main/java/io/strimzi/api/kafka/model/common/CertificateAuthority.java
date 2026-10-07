@@ -40,18 +40,21 @@ import java.util.Map;
 })
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
 @JsonPropertyOrder({ "generateCertificateAuthority", "type", "generateSecretOwnerReference", "validityDays",
-    "renewalDays", "certificateExpirationPolicy", "certManager" })
+    "renewalDays", "keySize", "certificateExpirationPolicy", "certManager" })
 @EqualsAndHashCode
 @ToString
 public class CertificateAuthority implements UnknownPropertyPreserving {
     public static final int DEFAULT_CERTS_VALIDITY_DAYS = 365;
     public static final int DEFAULT_CERTS_RENEWAL_DAYS = 30;
-    
+    public static final int MIN_CERTS_KEY_SIZE = 2048;
+    public static final int DEFAULT_CERTS_KEY_SIZE = 4096;
+
     private int validityDays;
     private boolean generateCertificateAuthority = true;
     private CertificateManagerType type = CertificateManagerType.STRIMZI;
     private boolean generateSecretOwnerReference = true;
     private int renewalDays;
+    private int keySize;
     private CertificateExpirationPolicy certificateExpirationPolicy;
     private CertManager certManager;
     private Map<String, Object> additionalProperties;
@@ -118,6 +121,19 @@ public class CertificateAuthority implements UnknownPropertyPreserving {
 
     public void setRenewalDays(int renewalDays) {
         this.renewalDays = renewalDays;
+    }
+
+    @Description("The RSA key size in bits for CA and end-entity certificate keys. " +
+            "Must be at least " + MIN_CERTS_KEY_SIZE + ". " +
+            "The default is " + DEFAULT_CERTS_KEY_SIZE + ".")
+    @Minimum(2048)
+    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
+    public int getKeySize() {
+        return keySize;
+    }
+
+    public void setKeySize(int keySize) {
+        this.keySize = keySize;
     }
 
     @Description("How should CA certificate expiration be handled when `generateCertificateAuthority=true`. " +

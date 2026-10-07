@@ -275,7 +275,7 @@ public class CertManagerCa extends Ca {
                     .withNewPrivateKey()
                         .withAlgorithm("RSA")
                         .withEncoding("PKCS8")
-                        .withSize(4096)
+                        .withSize(caConfig.getKeySize())
                     .endPrivateKey()
                     .withDuration(convertToFabric8Duration(validityDays))
                     .withRenewBefore(convertToFabric8Duration(renewalDays))

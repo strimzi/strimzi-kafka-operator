@@ -94,10 +94,10 @@ class CertificateUtilsTest {
         Instant now = Instant.now();
         ZonedDateTime notBefore = now.truncatedTo(ChronoUnit.SECONDS).atZone(Clock.systemUTC().getZone());
         ZonedDateTime notAfter = now.plus(2, ChronoUnit.HOURS).truncatedTo(ChronoUnit.SECONDS).atZone(Clock.systemUTC().getZone());
-        ssl.generateRootCaCert(rootSubject, rootKey, rootCert, notBefore, notAfter, 1);
+        ssl.generateRootCaCert(rootSubject, rootKey, rootCert, notBefore, notAfter, 1, 4096);
 
         // Generate alternate root cert
-        ssl.generateRootCaCert(rootSubject, alternateRootKey, alternateRootCert, notBefore, notAfter, 1);
+        ssl.generateRootCaCert(rootSubject, alternateRootKey, alternateRootCert, notBefore, notAfter, 1, 4096);
 
         StrimziSubject subject = new StrimziSubject.Builder()
                 .withCommonName("MyCommonName")
@@ -106,7 +106,7 @@ class CertificateUtilsTest {
                 .addDnsName("example2.com").build();
 
         // Generate cert
-        ssl.generateCsr(key, csr, subject);
+        ssl.generateCsr(key, csr, subject, 4096);
         ssl.generateCert(csr, rootKey, rootCert, cert, subject, 1);
 
         X509Certificate x509RootCert = (X509Certificate) certFactory.generateCertificate(new FileInputStream(rootCert));
@@ -139,15 +139,15 @@ class CertificateUtilsTest {
         Instant now = Instant.now();
         ZonedDateTime notBefore = now.truncatedTo(ChronoUnit.SECONDS).atZone(Clock.systemUTC().getZone());
         ZonedDateTime notAfter = now.plus(2, ChronoUnit.HOURS).truncatedTo(ChronoUnit.SECONDS).atZone(Clock.systemUTC().getZone());
-        ssl.generateRootCaCert(rootSubject, rootKey, rootCert, notBefore, notAfter, 1);
+        ssl.generateRootCaCert(rootSubject, rootKey, rootCert, notBefore, notAfter, 1, 4096);
 
         // Generate an intermediate cert
         StrimziSubject intermediateSubject1 = new StrimziSubject.Builder().withCommonName("IntermediateCn1").withOrganizationName("MyOrganization").build();
-        ssl.generateIntermediateCaCert(rootKey, rootCert, intermediateSubject1, intermediateKey1, intermediateCert1, notBefore, notAfter, 1);
+        ssl.generateIntermediateCaCert(rootKey, rootCert, intermediateSubject1, intermediateKey1, intermediateCert1, notBefore, notAfter, 1, 4096);
 
         // Generate an additional intermediate cert
         StrimziSubject intermediateSubject2 = new StrimziSubject.Builder().withCommonName("IntermediateCn2").withOrganizationName("MyOrganization").build();
-        ssl.generateIntermediateCaCert(intermediateKey1, intermediateCert1, intermediateSubject2, intermediateKey2, intermediateCert2, notBefore, notAfter, 1);
+        ssl.generateIntermediateCaCert(intermediateKey1, intermediateCert1, intermediateSubject2, intermediateKey2, intermediateCert2, notBefore, notAfter, 1, 4096);
 
 
         StrimziSubject subject = new StrimziSubject.Builder()
@@ -157,7 +157,7 @@ class CertificateUtilsTest {
                 .addDnsName("example2.com").build();
 
         // Generate leaf cert
-        ssl.generateCsr(leafKey, csr, subject);
+        ssl.generateCsr(leafKey, csr, subject, 4096);
         ssl.generateCert(csr, intermediateKey2, intermediateCert2, leafCert, subject, 1);
 
         X509Certificate x509RootCert = (X509Certificate) certFactory.generateCertificate(new FileInputStream(rootCert));
@@ -198,7 +198,7 @@ class CertificateUtilsTest {
         Instant instant = Instant.now();
         ZonedDateTime notBefore = instant.truncatedTo(ChronoUnit.SECONDS).atZone(Clock.systemUTC().getZone());
         ZonedDateTime notAfter = instant.plus(2, ChronoUnit.HOURS).truncatedTo(ChronoUnit.SECONDS).atZone(Clock.systemUTC().getZone());
-        ssl.generateRootCaCert(rootSubject, rootKey, rootCert, notBefore, notAfter, 1);
+        ssl.generateRootCaCert(rootSubject, rootKey, rootCert, notBefore, notAfter, 1, 4096);
 
         Map<String, String> cert;
         try (FileInputStream fis = new FileInputStream(rootCert)) {
@@ -226,15 +226,15 @@ class CertificateUtilsTest {
         Instant instant = Instant.now();
         ZonedDateTime notBefore = instant.truncatedTo(ChronoUnit.SECONDS).atZone(Clock.systemUTC().getZone());
         ZonedDateTime notAfter = instant.plus(2, ChronoUnit.HOURS).truncatedTo(ChronoUnit.SECONDS).atZone(Clock.systemUTC().getZone());
-        ssl.generateRootCaCert(rootSubject, rootKey, rootCert, notBefore, notAfter, 1);
+        ssl.generateRootCaCert(rootSubject, rootKey, rootCert, notBefore, notAfter, 1, 4096);
 
         // Generate an intermediate cert
         StrimziSubject intermediateSubject1 = new StrimziSubject.Builder().withCommonName("IntermediateCn1").withOrganizationName("MyOrganization").build();
-        ssl.generateIntermediateCaCert(rootKey, rootCert, intermediateSubject1, intermediateKey1, intermediateCert1, notBefore, notAfter, 1);
+        ssl.generateIntermediateCaCert(rootKey, rootCert, intermediateSubject1, intermediateKey1, intermediateCert1, notBefore, notAfter, 1, 4096);
 
         // Generate an additional intermediate cert
         StrimziSubject intermediateSubject2 = new StrimziSubject.Builder().withCommonName("IntermediateCn2").withOrganizationName("MyOrganization").build();
-        ssl.generateIntermediateCaCert(intermediateKey1, intermediateCert1, intermediateSubject2, intermediateKey2, intermediateCert2, notBefore, notAfter, 1);
+        ssl.generateIntermediateCaCert(intermediateKey1, intermediateCert1, intermediateSubject2, intermediateKey2, intermediateCert2, notBefore, notAfter, 1, 4096);
 
         // Generate combined Pem files with CA chain in correct order
         String validCombinedPem;
