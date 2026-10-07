@@ -171,7 +171,7 @@ public class KafkaClusterTest {
     }
 
     private List<Secret> generateBrokerSecrets(Set<String> externalBootstrapAddress, Map<Integer, Set<String>> externalAddresses) {
-        InternalCa clusterCa = new InternalCa(Reconciliation.DUMMY_RECONCILIATION, Ca.CaRole.CLUSTER_CA, new OpenSslCertIssuer(), new PasswordGenerator(10, "a", "a"), null, null, CaConfig.createDefault());
+        InternalCa clusterCa = new InternalCa(Reconciliation.DUMMY_RECONCILIATION, Ca.CaRole.CLUSTER_CA, new OpenSslCertIssuer(), new PasswordGenerator(10, "a", "a"), null, null, new CaConfig(null, true));
         clusterCa.createRenewOrReplace(true, false, false);
         return KC.generateCertificatesSecrets(clusterCa, List.of(), Map.of(), externalBootstrapAddress, externalAddresses, true).toCompletableFuture().join();
     }
@@ -842,7 +842,7 @@ public class KafkaClusterTest {
 
     @Test
     public void testGenerateBrokerSecretWithCustomCerts() {
-        InternalCa clusterCa = new InternalCa(Reconciliation.DUMMY_RECONCILIATION, Ca.CaRole.CLUSTER_CA, new OpenSslCertIssuer(), new PasswordGenerator(10, "a", "a"), null, null, CaConfig.createDefault());
+        InternalCa clusterCa = new InternalCa(Reconciliation.DUMMY_RECONCILIATION, Ca.CaRole.CLUSTER_CA, new OpenSslCertIssuer(), new PasswordGenerator(10, "a", "a"), null, null, new CaConfig(null, true));
         clusterCa.createRenewOrReplace(true, false, false);
 
         List<Secret> secrets = KC.generateCertificatesSecrets(clusterCa, List.of(), Map.of("listener1-9999.crt", "cert", "listener1-9999.key", "key"), null, Map.of(), true).toCompletableFuture().join();
