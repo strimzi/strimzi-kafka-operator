@@ -17,7 +17,12 @@ Strimzi provides two cluster roles that you can use to assign these rights to ot
 
 When you install these roles, they will automatically aggregate (add) these rights to the default Kubernetes cluster roles.
 `strimzi-view` aggregates to the `view` role, and `strimzi-admin` aggregates to the `edit` and `admin` roles.
+The `strimzi-admin` role also grants the read access, so users with the `edit` or `admin` role can view Strimzi resources too.
+(When you install the Cluster Operator using the Helm chart, `strimzi-view` also aggregates to the `edit` and `admin` roles.)
 Because of the aggregation, you might not need to assign these roles to users who already have similar rights.
+
+If you deploy the Cluster Operator using the Helm chart, the `strimzi-view` and `strimzi-admin` roles are created by default (`createAggregateViewRole=true` and `createAggregateRoles=true`).
+To not create them, set these options to `false`.
 
 The following procedure shows how to assign a `strimzi-admin` role that allows non-cluster administrators to manage Strimzi resources.
 

@@ -2,6 +2,15 @@
 
 ## 1.4.0
 
+* Add the `createAggregateViewRole` Helm chart option (enabled by default) to create the `strimzi-view` ClusterRole that aggregates read-only access to Strimzi custom resources into the Kubernetes `view`, `edit` and `admin` roles.
+  Write access to the Strimzi custom resources in the `edit` and `admin` roles through the `strimzi-admin` ClusterRole is controlled by `createAggregateRoles`, which is also enabled by default.
+
+### Major changes, deprecations, and removals
+
+* The Helm chart now creates the read-only `strimzi-view` ClusterRole by default, which grants users with the Kubernetes `view`, `edit` and `admin` roles read access to the Strimzi custom resources.
+  To restore the previous behavior, set `createAggregateViewRole=false` and `createAggregateRoles=false`.
+  Because `createAggregateRoles` is now enabled by default, users with the Kubernetes `edit` and `admin` roles also gain write access to the Strimzi custom resources (including `Kafka`, `KafkaConnect` and `KafkaUser`).
+
 
 ## 1.3.0
 

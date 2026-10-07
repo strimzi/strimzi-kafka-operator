@@ -1,0 +1,137 @@
+suite: strimzi aggregate cluster roles
+release:
+  name: strimzi-test
+  namespace: strimzi-test-namespace
+templates:
+  - 070-ClusterRole-strimzi-admin.yaml
+  - 080-ClusterRole-strimzi-view.yaml
+tests:
+  - it: should render both roles by default
+    asserts:
+      - isKind:
+          of: ClusterRole
+        template: 070-ClusterRole-strimzi-admin.yaml
+      - equal:
+          path: metadata.name
+          value: strimzi-admin
+        template: 070-ClusterRole-strimzi-admin.yaml
+      - equal:
+          path: metadata.labels["rbac.authorization.k8s.io/aggregate-to-edit"]
+          value: "true"
+        template: 070-ClusterRole-strimzi-admin.yaml
+      - equal:
+          path: metadata.labels["rbac.authorization.k8s.io/aggregate-to-admin"]
+          value: "true"
+        template: 070-ClusterRole-strimzi-admin.yaml
+      - isKind:
+          of: ClusterRole
+        template: 080-ClusterRole-strimzi-view.yaml
+      - equal:
+          path: metadata.name
+          value: strimzi-view
+        template: 080-ClusterRole-strimzi-view.yaml
+      - equal:
+          path: metadata.labels["rbac.authorization.k8s.io/aggregate-to-view"]
+          value: "true"
+        template: 080-ClusterRole-strimzi-view.yaml
+
+  - it: should not render the admin role when createAggregateRoles is disabled
+    set:
+      createAggregateRoles: false
+    asserts:
+      - hasDocuments:
+          count: 0
+        template: 070-ClusterRole-strimzi-admin.yaml
+      - equal:
+          path: metadata.name
+          value: strimzi-view
+        template: 080-ClusterRole-strimzi-view.yaml
+
+  - it: should not render the view role when createAggregateViewRole is disabled and createAggregateRoles is disabled
+    set:
+      createAggregateViewRole: false
+      createAggregateRoles: false
+    asserts:
+      - hasDocuments:
+          count: 0
+        template: 070-ClusterRole-strimzi-admin.yaml
+      - hasDocuments:
+          count: 0
+        template: 080-ClusterRole-strimzi-view.yaml
+
+  - it: should not render any role when rbac.create is disabled
+    set:
+      rbac.create: false
+    asserts:
+      - hasDocuments:
+          count: 0
+        template: 070-ClusterRole-strimzi-admin.yaml
+      - hasDocuments:
+          count: 0
+        template: 080-ClusterRole-strimzi-view.yaml
+
+  - it: should aggregate the view role into view, edit and admin
+    asserts:
+      - equal:
+          path: metadata.labels["rbac.authorization.k8s.io/aggregate-to-edit"]
+          value: "true"
+        template: 080-ClusterRole-strimzi-view.yaml
+      - equal:
+          path: metadata.labels["rbac.authorization.k8s.io/aggregate-to-admin"]
+          value: "true"
+        template: 080-ClusterRole-strimzi-view.yaml
+
+  - it: should grant the view role read-only access to all Strimzi resources
+    asserts:
+      - contains:
+          path: rules[0].resources
+          content: kafkas
+        template: 080-ClusterRole-strimzi-view.yaml
+      - contains:
+          path: rules[0].resources
+          content: kafkaconnectors
+        template: 080-ClusterRole-strimzi-view.yaml
+      - equal:
+          path: rules[0].verbs
+          value:
+            - get
+            - list
+            - watch
+        template: 080-ClusterRole-strimzi-view.yaml
+
+  - it: should grant the admin role access to all Strimzi resources
+    asserts:
+      - contains:
+          path: rules[0].resources
+          content: kafkas
+        template: 070-ClusterRole-strimzi-admin.yaml
+      - contains:
+          path: rules[0].resources
+          content: kafkaconnectors
+        template: 070-ClusterRole-strimzi-admin.yaml
+
+  - it: should not render the view role when createAggregateViewRole is disabled and createAggregateRoles is enabled
+    set:
+      createAggregateViewRole: false
+      createAggregateRoles: true
+    asserts:
+      - hasDocuments:
+          count: 0
+        template: 080-ClusterRole-strimzi-view.yaml
+      - equal:
+          path: metadata.name
+          value: strimzi-admin
+        template: 070-ClusterRole-strimzi-admin.yaml
+
+  - it: should render only the view role when createAggregateViewRole is enabled and createAggregateRoles is disabled
+    set:
+      createAggregateViewRole: true
+      createAggregateRoles: false
+    asserts:
+      - hasDocuments:
+          count: 0
+        template: 070-ClusterRole-strimzi-admin.yaml
+      - equal:
+          path: metadata.name
+          value: strimzi-view
+        template: 080-ClusterRole-strimzi-view.yaml
