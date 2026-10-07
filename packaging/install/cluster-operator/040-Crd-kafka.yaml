@@ -3513,7 +3513,11 @@ spec:
                   renewalDays:
                     type: integer
                     minimum: 1
-                    description: "The number of days in the certificate renewal period. This is the number of days before the a certificate expires during which renewal actions may be performed. When `generateCertificateAuthority` is true, this will cause the generation of a new certificate. When `generateCertificateAuthority` is false, this will cause extra logging at WARN level about the pending certificate expiry. Default is 30."
+                    description: "The number of days in the certificate renewal period. This is the number of days before the a certificate expires during which renewal actions may be performed. When `generateCertificateAuthority` is true, this will cause the generation of a new certificate. When `generateCertificateAuthority` is true, this will cause extra logging at WARN level about the pending certificate expiry. Default is 30."
+                  keySize:
+                    type: integer
+                    minimum: 2048
+                    description: The RSA key size in bits for CA and end-entity certificate keys. Must be at least 2048. The default is 4096.
                   certificateExpirationPolicy:
                     type: string
                     enum:
@@ -3589,7 +3593,11 @@ spec:
                   renewalDays:
                     type: integer
                     minimum: 1
-                    description: "The number of days in the certificate renewal period. This is the number of days before the a certificate expires during which renewal actions may be performed. When `generateCertificateAuthority` is true, this will cause the generation of a new certificate. When `generateCertificateAuthority` is false, this will cause extra logging at WARN level about the pending certificate expiry. Default is 30."
+                    description: "The number of days in the certificate renewal period. This is the number of days before the a certificate expires during which renewal actions may be performed. When `generateCertificateAuthority` is true, this will cause the generation of a new certificate. When `generateCertificateAuthority` is true, this will cause extra logging at WARN level about the pending certificate expiry. Default is 30."
+                  keySize:
+                    type: integer
+                    minimum: 2048
+                    description: The RSA key size in bits for CA and end-entity certificate keys. Must be at least 2048. The default is 4096.
                   certificateExpirationPolicy:
                     type: string
                     enum:
