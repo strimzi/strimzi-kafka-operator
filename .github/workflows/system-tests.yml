@@ -63,11 +63,11 @@ jobs:
     steps:
       - name: Should Run
         id: should_run
-        uses: strimzi/github-actions/.github/actions/utils/should-run@4aefb08c299693441fb87284984c760a1c708fbc # v2.4
+        uses: strimzi/github-actions/.github/actions/utils/should-run@8a88edc07beb03fbd99d6d72f59c86d7d7aadda4 # v3.0
       - name: Determine checkout ref
         id: determine_ref
         if: steps.should_run.outputs.shouldRun == 'true'
-        uses: strimzi/github-actions/.github/actions/utils/determine-ref@4aefb08c299693441fb87284984c760a1c708fbc # v2.4
+        uses: strimzi/github-actions/.github/actions/utils/determine-ref@8a88edc07beb03fbd99d6d72f59c86d7d7aadda4 # v3.0
 
   check-rights:
     needs:
@@ -80,7 +80,7 @@ jobs:
       pull-requests: write
       statuses: write
     steps:
-      - uses: strimzi/github-actions/.github/actions/utils/check-permissions@4aefb08c299693441fb87284984c760a1c708fbc # v2.4
+      - uses: strimzi/github-actions/.github/actions/utils/check-permissions@8a88edc07beb03fbd99d6d72f59c86d7d7aadda4 # v3.0
 
   check-build:
     needs:
@@ -255,29 +255,29 @@ jobs:
           ref: ${{ needs.parse-params.outputs.ref }}
 
       - name: Setup Java and Maven
-        uses: strimzi/github-actions/.github/actions/dependencies/setup-java@4aefb08c299693441fb87284984c760a1c708fbc # v2.4
+        uses: strimzi/github-actions/.github/actions/dependencies/setup-java@8a88edc07beb03fbd99d6d72f59c86d7d7aadda4 # v3.0
         with:
           javaVersion: "21"
 
       - name: Install yq
-        uses: strimzi/github-actions/.github/actions/dependencies/install-yq@4aefb08c299693441fb87284984c760a1c708fbc # v2.4
+        uses: strimzi/github-actions/.github/actions/dependencies/install-yq@8a88edc07beb03fbd99d6d72f59c86d7d7aadda4 # v3.0
         with:
           version: "v4.6.3"
           architecture: "amd64"
 
       - name: Install Shellcheck
-        uses: strimzi/github-actions/.github/actions/dependencies/install-shellcheck@4aefb08c299693441fb87284984c760a1c708fbc # v2.4
+        uses: strimzi/github-actions/.github/actions/dependencies/install-shellcheck@8a88edc07beb03fbd99d6d72f59c86d7d7aadda4 # v3.0
         with:
           version: "0.11.0"
           architecture: "amd64"
 
       - name: Install Helm
-        uses: strimzi/github-actions/.github/actions/dependencies/install-helm@4aefb08c299693441fb87284984c760a1c708fbc # v2.4
+        uses: strimzi/github-actions/.github/actions/dependencies/install-helm@8a88edc07beb03fbd99d6d72f59c86d7d7aadda4 # v3.0
         with:
           helmVersion: "v3.16.0"
 
       - name: Build binaries using build-binaries action
-        uses: strimzi/github-actions/.github/actions/build/build-binaries@4aefb08c299693441fb87284984c760a1c708fbc # v2.4
+        uses: strimzi/github-actions/.github/actions/build/build-binaries@8a88edc07beb03fbd99d6d72f59c86d7d7aadda4 # v3.0
         with:
           mainJavaBuild: "true"
           artifactSuffix: "operators"
@@ -314,21 +314,21 @@ jobs:
           ref: ${{ needs.parse-params.outputs.ref }}
 
       - name: Install Docker
-        uses: strimzi/github-actions/.github/actions/dependencies/install-docker@4aefb08c299693441fb87284984c760a1c708fbc # v2.4
+        uses: strimzi/github-actions/.github/actions/dependencies/install-docker@8a88edc07beb03fbd99d6d72f59c86d7d7aadda4 # v3.0
 
       - name: Install yq
-        uses: strimzi/github-actions/.github/actions/dependencies/install-yq@4aefb08c299693441fb87284984c760a1c708fbc # v2.4
+        uses: strimzi/github-actions/.github/actions/dependencies/install-yq@8a88edc07beb03fbd99d6d72f59c86d7d7aadda4 # v3.0
         with:
           version: "v4.6.3"
           architecture: "amd64"
 
       - name: Install Shellcheck
-        uses: strimzi/github-actions/.github/actions/dependencies/install-shellcheck@4aefb08c299693441fb87284984c760a1c708fbc # v2.4
+        uses: strimzi/github-actions/.github/actions/dependencies/install-shellcheck@8a88edc07beb03fbd99d6d72f59c86d7d7aadda4 # v3.0
         with:
           version: "0.11.0"
           architecture: "amd64"
 
-      - uses: strimzi/github-actions/.github/actions/build/build-containers@4aefb08c299693441fb87284984c760a1c708fbc # v2.4
+      - uses: strimzi/github-actions/.github/actions/build/build-containers@8a88edc07beb03fbd99d6d72f59c86d7d7aadda4 # v3.0
         with:
           architecture: ${{ matrix.architecture }}
           imagesLocation: "./docker-images/container-archives"

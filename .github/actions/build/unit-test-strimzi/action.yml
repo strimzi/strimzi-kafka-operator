@@ -5,20 +5,20 @@ runs:
   using: "composite"
   steps:
     - name: Setup Java and Maven
-      uses: strimzi/github-actions/.github/actions/dependencies/setup-java@4aefb08c299693441fb87284984c760a1c708fbc # v2.4
+      uses: strimzi/github-actions/.github/actions/dependencies/setup-java@8a88edc07beb03fbd99d6d72f59c86d7d7aadda4 # v3.0
       with:
         javaVersion: "21"
 
     - name: Install Docker
-      uses: strimzi/github-actions/.github/actions/dependencies/install-docker@4aefb08c299693441fb87284984c760a1c708fbc # v2.4
+      uses: strimzi/github-actions/.github/actions/dependencies/install-docker@8a88edc07beb03fbd99d6d72f59c86d7d7aadda4 # v3.0
 
     - name: Install yq
-      uses: strimzi/github-actions/.github/actions/dependencies/install-yq@4aefb08c299693441fb87284984c760a1c708fbc # v2.4
+      uses: strimzi/github-actions/.github/actions/dependencies/install-yq@8a88edc07beb03fbd99d6d72f59c86d7d7aadda4 # v3.0
       with:
         version: "v4.6.3"
 
     - name: Install Helm
-      uses: strimzi/github-actions/.github/actions/dependencies/install-helm@4aefb08c299693441fb87284984c760a1c708fbc # v2.4
+      uses: strimzi/github-actions/.github/actions/dependencies/install-helm@8a88edc07beb03fbd99d6d72f59c86d7d7aadda4 # v3.0
       with:
         helmVersion: "v3.16.0"
 
@@ -52,7 +52,7 @@ runs:
         fail-on-error: false
 
     - name: Upload test coverage to Codecov
-      uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
+      uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
       with:
         files: ./**/target/site/jacoco/jacoco.xml
         flags: unittests
