@@ -57,8 +57,8 @@ RUN set -ex; \
 # Get Prometheus JMX Exporter
 #####
 ENV JMX_EXPORTER_HOME=/opt/prometheus-jmx-exporter
-ENV JMX_EXPORTER_VERSION=1.6.0
-ENV JMX_EXPORTER_CHECKSUM="2b1278f76480c0d5053ca0c7622716403de0e6f6f3ee70acda8157cf97cba2c5eeb2234025e5d66b57951429397c38a6770e934e6e8ffc5a75b0337c719530de  jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.jar"
+ENV JMX_EXPORTER_VERSION=1.7.0
+ENV JMX_EXPORTER_CHECKSUM="7322be2ffd6c0d418622cd48a4dbd9fcd62eca7d163e4ff02992fdd907c1e2dc7dc330e7dd15548d755330c9c512773a8c0f89f9b6bb2b8826ecf6c539f25e0c  jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.jar"
 
 RUN set -ex; \
     curl -LO https://github.com/prometheus/jmx_exporter/releases/download/${JMX_EXPORTER_VERSION}/jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.jar; \
