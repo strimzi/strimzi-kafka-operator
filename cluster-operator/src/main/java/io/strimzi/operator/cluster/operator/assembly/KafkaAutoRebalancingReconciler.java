@@ -123,14 +123,7 @@ public class KafkaAutoRebalancingReconciler {
             LOGGER.infoCr(reconciliation, "Reconciling auto-rebalance in the [{}] state with scaling nodes: blocked scale down = {}, added scale up = {}",
                     kafkaAutoRebalanceStatus.getState(), scalingNodes.blocked(), scalingNodes.added());
         }
-        // When not idle or scaling is in progress, handle scaling directly without imbalance checks
-        if (kafkaAutoRebalanceStatus.getState() != KafkaAutoRebalanceState.Idle || !scalingNodes.isEmpty()) {
-            return maybeRebalance(scalingNodes)
-                    .whenComplete((ignored, ignored2) -> kafkaStatus.setAutoRebalance(kafkaAutoRebalanceStatus));
-        }
-
-        // Idle with no scaling: check for imbalance if that mode is configured
-        return maybeCheckForImbalance(kafkaStatus)
+        return maybeRebalance(scalingNodes, kafkaStatus)
                 .whenComplete((ignored, ignored2) -> kafkaStatus.setAutoRebalance(kafkaAutoRebalanceStatus));
     }
 
@@ -158,13 +151,13 @@ public class KafkaAutoRebalancingReconciler {
         return templateValidation
                 .thenCompose(isValid -> {
                     if (!isValid) {
-                        LOGGER.warnCr(reconciliation, "Template goals validation failed, auto-rebalance on imbalance will not be triggered until the template configuration is corrected");
+                        LOGGER.warnCr(reconciliation, "Template goals validation failed, auto-rebalance on imbalance will not be triggered until the template configuration is fixed");
                         return CompletableFuture.completedFuture(null);
                     }
 
                     return imbalanceDetector.hasActiveRebalance()
-                            .thenCompose(blocked -> {
-                                if (blocked) {
+                            .thenCompose(isActiveRebalance -> {
+                                if (isActiveRebalance) {
                                     return CompletableFuture.completedFuture(null);
                                 }
                                 return imbalanceDetector.checkForGoalViolations()
@@ -222,22 +215,22 @@ public class KafkaAutoRebalancingReconciler {
                     } else if (shouldTrigger) {
                         LOGGER.infoCr(reconciliation, "Goal violations detected at {} but outside maintenance window, auto-rebalance on imbalance is deferred", goalViolationInfo.detectionTime());
                     } else {
-                        LOGGER.debugCr(reconciliation, "Goal violations detected at {} were already addressed by a previous rebalance, skipping", goalViolationInfo.detectionTime());
+                        LOGGER.debugCr(reconciliation, "Goal violations detected at {} were detected before the last rebalance, skipping", goalViolationInfo.detectionTime());
                     }
                     return CompletableFuture.completedFuture(null);
                 });
     }
 
-    private CompletionStage<Void> maybeRebalance(ScalingNodes scalingNodes) {
+    private CompletionStage<Void> maybeRebalance(ScalingNodes scalingNodes, KafkaStatus kafkaStatus) {
         return switch (kafkaAutoRebalanceStatus.getState()) {
-            case Idle -> onIdle(scalingNodes);
+            case Idle -> onIdle(scalingNodes, kafkaStatus);
             case RebalanceOnScaleDown -> onRebalanceOnScaleDown(scalingNodes);
             case RebalanceOnScaleUp -> onRebalanceOnScaleUp(scalingNodes);
             case RebalanceOnImbalance -> onRebalanceOnImbalance(scalingNodes);
         };
     }
 
-    private CompletionStage<Void> onIdle(ScalingNodes scalingNodes) {
+    private CompletionStage<Void> onIdle(ScalingNodes scalingNodes, KafkaStatus kafkaStatus) {
         if (!scalingNodes.blocked().isEmpty()) {
             // if there is a queued rebalancing scale down (Kafka.status.autoRebalance.modes[remove-brokers] exists), start the rebalancing
             // scale down and transition to RebalanceOnScaleDown.
@@ -263,8 +256,8 @@ public class KafkaAutoRebalancingReconciler {
                         return CompletableFuture.completedFuture(null);
                     });
         }
-        // No queued rebalancing (so no scale down/up requested), stay in Idle, no status update
-        return CompletableFuture.completedFuture(null);
+        // No scaling requested while idle - check for cluster imbalance if that mode is configured
+        return maybeCheckForImbalance(kafkaStatus);
     }
 
     private CompletionStage<Void> onRebalanceOnScaleDown(ScalingNodes scalingNodes) {
@@ -780,7 +773,7 @@ public class KafkaAutoRebalancingReconciler {
                 })
                 .exceptionally(error -> {
                     LOGGER.warnCr(reconciliation, "Failed to update rebalance completion time: {}", error.getMessage());
-                    return (Void) null;
+                    return null;
                 });
     }
 
