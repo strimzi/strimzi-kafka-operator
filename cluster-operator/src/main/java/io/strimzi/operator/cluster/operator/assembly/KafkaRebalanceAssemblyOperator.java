@@ -77,6 +77,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CompletionStage;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -428,6 +429,7 @@ public class KafkaRebalanceAssemblyOperator
                                 .onComplete(ignoredConfigMapResult -> {
                                     KafkaRebalanceStatus kafkaRebalanceStatus = updateStatus(kafkaRebalance, desiredStatusAndMap.getStatus(), null);
                                     KafkaRebalanceState newRebalanceState = KafkaRebalanceUtils.rebalanceState(kafkaRebalanceStatus);
+                                    Future<Void> configMapFuture = Future.succeededFuture();
                                     if (kafkaRebalance.getStatus() != null
                                             && kafkaRebalanceStatus != null
                                             && KafkaRebalanceUtils.rebalanceState(kafkaRebalance.getStatus()) !=  newRebalanceState) {
@@ -446,31 +448,33 @@ public class KafkaRebalanceAssemblyOperator
                                             String clusterName = kafkaRebalance.getMetadata().getLabels() == null ? null
                                                     : kafkaRebalance.getMetadata().getLabels().get(Labels.STRIMZI_CLUSTER_LABEL);
                                             if (clusterName != null) {
-                                                updateImbalanceTrackerConfigMap(reconciliation, kafkaRebalance.getMetadata().getNamespace(), clusterName);
+                                                configMapFuture = VertxUtil.toFuture(updateImbalanceTrackerConfigMap(reconciliation, kafkaRebalance.getMetadata().getNamespace(), clusterName));
                                             }
                                         }
                                     }
-                                    if (hasRebalanceAnnotation(kafkaRebalance)) {
-                                        if (currentState != KafkaRebalanceState.ReconciliationPaused && rebalanceAnnotation != KafkaRebalanceAnnotation.none && !currentState.isValidateAnnotation(rebalanceAnnotation)) {
-                                            reconcilePromise.complete(kafkaRebalanceStatus);
+                                    configMapFuture.onComplete(ignored -> {
+                                        if (hasRebalanceAnnotation(kafkaRebalance)) {
+                                            if (currentState != KafkaRebalanceState.ReconciliationPaused && rebalanceAnnotation != KafkaRebalanceAnnotation.none && !currentState.isValidateAnnotation(rebalanceAnnotation)) {
+                                                reconcilePromise.complete(kafkaRebalanceStatus);
+                                            } else {
+                                                LOGGER.infoCr(reconciliation, "Removing annotation {}={}",
+                                                        ANNO_STRIMZI_IO_REBALANCE,
+                                                        rawRebalanceAnnotation(kafkaRebalance));
+                                                // Updated KafkaRebalance has rebalance annotation removed as
+                                                // action specified by user has been completed.
+                                                KafkaRebalance patchedKafkaRebalance = new KafkaRebalanceBuilder(kafkaRebalance)
+                                                        .editMetadata()
+                                                            .removeFromAnnotations(ANNO_STRIMZI_IO_REBALANCE)
+                                                        .endMetadata()
+                                                        .build();
+                                                VertxUtil.toFuture(kafkaRebalanceOperator.patchAsync(reconciliation, patchedKafkaRebalance))
+                                                        .onComplete(ignoredKafkaRebalanceResult -> reconcilePromise.complete(kafkaRebalanceStatus));
+                                            }
                                         } else {
-                                            LOGGER.infoCr(reconciliation, "Removing annotation {}={}",
-                                                    ANNO_STRIMZI_IO_REBALANCE,
-                                                    rawRebalanceAnnotation(kafkaRebalance));
-                                            // Updated KafkaRebalance has rebalance annotation removed as
-                                            // action specified by user has been completed.
-                                            KafkaRebalance patchedKafkaRebalance = new KafkaRebalanceBuilder(kafkaRebalance)
-                                                    .editMetadata()
-                                                        .removeFromAnnotations(ANNO_STRIMZI_IO_REBALANCE)
-                                                    .endMetadata()
-                                                    .build();
-                                            VertxUtil.toFuture(kafkaRebalanceOperator.patchAsync(reconciliation, patchedKafkaRebalance))
-                                                    .onComplete(ignoredKafkaRebalanceResult -> reconcilePromise.complete(kafkaRebalanceStatus));
+                                            LOGGER.debugCr(reconciliation, "No annotation {}", ANNO_STRIMZI_IO_REBALANCE);
+                                            reconcilePromise.complete(kafkaRebalanceStatus);
                                         }
-                                    } else {
-                                        LOGGER.debugCr(reconciliation, "No annotation {}", ANNO_STRIMZI_IO_REBALANCE);
-                                        reconcilePromise.complete(kafkaRebalanceStatus);
-                                    }
+                                    });
                                 });
                     }).onFailure(exception -> {
                         LOGGER.errorCr(reconciliation, "Status updated to [NotReady] due to error: {}", exception.getMessage());
@@ -1468,14 +1472,14 @@ public class KafkaRebalanceAssemblyOperator
         }
     }
 
-    private void updateImbalanceTrackerConfigMap(Reconciliation reconciliation, String namespace, String clusterName) {
+    private CompletionStage<Void> updateImbalanceTrackerConfigMap(Reconciliation reconciliation, String namespace, String clusterName) {
         String configMapName = clusterName + KafkaAutoRebalancingReconciler.AUTO_REBALANCE_IMBALANCE_TRACKER_SUFFIX;
         String completionTime = Instant.now().toString();
-        VertxUtil.toFuture(kafkaOperator.getAsync(namespace, clusterName))
-                .onSuccess(kafka -> {
+        return VertxUtil.toFuture(kafkaOperator.getAsync(namespace, clusterName))
+                .compose(kafka -> {
                     if (kafka == null) {
                         LOGGER.debugCr(reconciliation, "Kafka CR not found, skipping imbalance tracker ConfigMap update for {}", configMapName);
-                        return;
+                        return Future.succeededFuture();
                     }
                     ConfigMap desiredConfigMap = new ConfigMapBuilder()
                             .withNewMetadata()
@@ -1486,11 +1490,13 @@ public class KafkaRebalanceAssemblyOperator
                             .endMetadata()
                             .withData(Map.of("lastRebalanceCompletionTime", completionTime))
                             .build();
-                    VertxUtil.toFuture(configMapOperator.reconcile(reconciliation, namespace, configMapName, desiredConfigMap))
+                    return VertxUtil.toFuture(configMapOperator.reconcile(reconciliation, namespace, configMapName, desiredConfigMap))
                             .onSuccess(ignored -> LOGGER.debugCr(reconciliation, "Updated imbalance tracker ConfigMap {} with completion time {}", configMapName, completionTime))
-                            .onFailure(error -> LOGGER.warnCr(reconciliation, "Failed to update imbalance tracker ConfigMap {}: {}", configMapName, error.getMessage()));
+                            .onFailure(error -> LOGGER.warnCr(reconciliation, "Failed to update imbalance tracker ConfigMap {}: {}", configMapName, error.getMessage()))
+                            .<Void>mapEmpty();
                 })
-                .onFailure(error -> LOGGER.warnCr(reconciliation, "Failed to fetch Kafka CR to set owner reference on imbalance tracker ConfigMap {}: {}", configMapName, error.getMessage()));
+                .onFailure(error -> LOGGER.warnCr(reconciliation, "Failed to fetch Kafka CR to set owner reference on imbalance tracker ConfigMap {}: {}", configMapName, error.getMessage()))
+                .toCompletionStage();
     }
 
     @Override
