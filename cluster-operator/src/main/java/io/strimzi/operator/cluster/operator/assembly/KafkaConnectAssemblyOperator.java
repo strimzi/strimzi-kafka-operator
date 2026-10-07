@@ -166,7 +166,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
                 .compose(i -> connectNetworkPolicy(reconciliation, namespace, connect, isUseResources(kafkaConnect)))
                 .compose(i -> manualRollingUpdate(reconciliation, connect))
                 .compose(i -> VertxUtil.toFuture(podSetOperations.getAsync(reconciliation.namespace(), connect.getComponentName())))
-                .compose(podSet -> connectBuildOperator.reconcile(reconciliation, namespace, podSet, build))
+                .compose(podSet -> VertxUtil.toFuture(connectBuildOperator.reconcile(reconciliation, namespace, podSet, build)))
                 .compose(buildInfo -> {
                     if (buildInfo != null) {
                         podAnnotations.put(Annotations.STRIMZI_IO_CONNECT_BUILD_REVISION, buildInfo.buildRevision());
@@ -195,7 +195,8 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
                 .compose(i -> useConnectorResources && !hasZeroReplicas ? reconcileAvailableConnectorPlugins(reconciliation, KafkaConnectResources.qualifiedServiceName(reconciliation.name(), namespace), kafkaConnectStatus) : Future.succeededFuture())
                 .compose(i -> useConnectorResources ? reconcileConnectors(reconciliation, kafkaConnect, hasZeroReplicas) : Future.succeededFuture())
                 .onComplete(reconciliationResult -> {
-                    StatusUtils.setStatusConditionAndObservedGeneration(kafkaConnect, kafkaConnectStatus, reconciliationResult.cause());
+                    Throwable cause = Util.maybeUnwrapCompletionException(reconciliationResult.cause());
+                    StatusUtils.setStatusConditionAndObservedGeneration(kafkaConnect, kafkaConnectStatus, cause);
 
                     if (!hasZeroReplicas) {
                         kafkaConnectStatus.setUrl(KafkaConnectResources.url(connect.getCluster(), namespace, port));
@@ -207,7 +208,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
                     if (reconciliationResult.succeeded())   {
                         createOrUpdatePromise.complete(kafkaConnectStatus);
                     } else {
-                        createOrUpdatePromise.fail(new ReconciliationException(kafkaConnectStatus, reconciliationResult.cause()));
+                        createOrUpdatePromise.fail(new ReconciliationException(kafkaConnectStatus, cause));
                     }
                 });
 
