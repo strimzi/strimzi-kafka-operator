@@ -237,19 +237,19 @@ public class ConnectBuildOperator {
 
         return podOperator.waitFor(reconciliation, namespace, buildPodName, "complete", 1_000, connectBuildTimeoutMs, (ignore1, ignore2) -> kubernetesBuildPodFinished(namespace, buildPodName, containerName))
                 .thenCompose(ignore -> podOperator.getAsync(namespace, buildPodName))
-                .thenApply(pod -> {
+                .thenCompose(pod -> {
                     if (KafkaConnectBuildUtils.buildPodSucceeded(pod, containerName)) {
                         ContainerStateTerminated state = KafkaConnectBuildUtils.getConnectBuildContainerStateTerminated(pod, containerName);
                         String image = state.getMessage().trim();
                         LOGGER.infoCr(reconciliation, "Build completed successfully. New image is {}.", image);
-                        return image;
+                        return CompletableFuture.completedFuture(image);
                     } else if (KafkaConnectBuildUtils.buildPodFailed(pod, buildPodName)) {
                         ContainerStateTerminated state = KafkaConnectBuildUtils.getConnectBuildContainerStateTerminated(pod, containerName);
                         LOGGER.warnCr(reconciliation, "Build failed with code {}: {}", state.getExitCode(), state.getMessage());
                     } else {
                         LOGGER.warnCr(reconciliation, "Build failed - no container with name {}", containerName);
                     }
-                    throw new RuntimeException("The Kafka Connect build failed");
+                    return CompletableFuture.failedFuture(new RuntimeException("The Kafka Connect build failed"));
                 });
     }
 
@@ -335,11 +335,11 @@ public class ConnectBuildOperator {
         if (buildOutput != null && buildOutput.getType().equals(Output.TYPE_IMAGESTREAM)) {
             String imageName = buildOutput.getImage().split(":")[0];
             return imageStreamOperations.getAsync(namespace, imageName)
-                .thenApply(is -> {
+                .thenCompose(is -> {
                     if (is == null) {
-                        throw new InvalidConfigurationException(String.format("The build can't start because there is no image stream with name %s", imageName));
+                        return CompletableFuture.failedFuture(new InvalidConfigurationException(String.format("The build can't start because there is no image stream with name %s", imageName)));
                     }
-                    return (Void) null;
+                    return CompletableFuture.completedFuture(null);
                 });
         }
         return CompletableFuture.completedFuture(null);
@@ -370,7 +370,7 @@ public class ConnectBuildOperator {
     private CompletionStage<String> openShiftBuildWaitForFinish(Reconciliation reconciliation, String namespace, String buildName)   {
         return buildOperator.waitFor(reconciliation, namespace, buildName, "complete", 1_000, connectBuildTimeoutMs, (ignore1, ignore2) -> openShiftBuildFinished(namespace, buildName))
                 .thenCompose(ignore -> buildOperator.getAsync(namespace, buildName))
-                .thenApply(build -> {
+                .thenCompose(build -> {
                     if (KafkaConnectBuildUtils.buildSucceeded(build))   {
                         // Build completed successfully. Let's extract the new image
                         if (build.getStatus().getOutputDockerImageReference() != null
@@ -384,10 +384,10 @@ public class ConnectBuildOperator {
                             String imageWithDigest = image.replace(tag, digest);
 
                             LOGGER.infoCr(reconciliation, "Build {} completed successfully. New image is {}.", buildName, imageWithDigest);
-                            return imageWithDigest;
+                            return CompletableFuture.completedFuture(imageWithDigest);
                         } else {
                             LOGGER.warnCr(reconciliation, "Build {} completed successfully. But the new container image was not found.", buildName);
-                            throw new RuntimeException("The Kafka Connect build completed, but the new container image was not found.");
+                            return CompletableFuture.failedFuture(new RuntimeException("The Kafka Connect build completed, but the new container image was not found."));
                         }
                     } else {
                         // Build failed. If the Status exists, we try to provide more detailed information
@@ -397,7 +397,7 @@ public class ConnectBuildOperator {
                             LOGGER.warnCr(reconciliation, "Build {} failed for unknown reason", buildName);
                         }
 
-                        throw new RuntimeException("The Kafka Connect build failed.");
+                        return CompletableFuture.failedFuture(new RuntimeException("The Kafka Connect build failed."));
                     }
                 });
     }
