@@ -46,6 +46,10 @@ import java.util.Map;
 public class CertificateAuthority implements UnknownPropertyPreserving {
     public static final int DEFAULT_CERTS_VALIDITY_DAYS = 365;
     public static final int DEFAULT_CERTS_RENEWAL_DAYS = 30;
+    // Strimzi's base container, UBI (RHEL 9), enforces a minimum RSA key size of 2048 bits through its system-wide
+    // crypto policy. This policy is applied to the JDK via `jdk.certpath.disabledAlgorithms` and
+    // `jdk.tls.disabledAlgorithms` in `/etc/crypto-policies/back-ends/java.config` causing TLS handshakes to reject
+    // RSA keys smaller than 2048 bits.
     public static final int MIN_CERTS_KEY_SIZE = 2048;
     public static final int DEFAULT_CERTS_KEY_SIZE = 4096;
 

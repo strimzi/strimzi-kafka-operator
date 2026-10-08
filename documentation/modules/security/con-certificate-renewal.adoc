@@ -43,8 +43,10 @@ The default key size is 4096 bits for both CAs.
 |===
 
 The minimum supported value for `keySize` is 2048 bits.
-The Strimzi container images are based on UBI (RHEL 9) whose `DEFAULT` crypto policy enforces `RSA keySize < 2048` in both `jdk.certpath.disabledAlgorithms` and `jdk.tls.disabledAlgorithms` via `/etc/crypto-policies/back-ends/java.config`.
-Keys smaller than 2048 bits are rejected during TLS handshake between brokers even though OpenSSL can generate them.
+Strimzi's base container, UBI (RHEL 9), enforces a minimum RSA key size of 2048 bits through its system-wide crypto policy.
+This policy is applied to the JDK via `jdk.certpath.disabledAlgorithms` and `jdk.tls.disabledAlgorithms` in
+`/etc/crypto-policies/back-ends/java.config`.
+Keys smaller than 2048 bits are rejected during TLS handshake between brokers.
 
 Changing `keySize` does not trigger immediate key regeneration.
 The new key size takes effect the next time a key is generated, such as during CA private key replacement or when new certificates are issued for scaling or new `KafkaUser` resources.

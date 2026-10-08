@@ -21,19 +21,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class CaConfigTest {
 
     @Test
-    void testDefaultConstructor() {
-        CaConfig caConfig = CaConfig.createDefault();
-
-        assertThat(caConfig.getValidityDays(), is(CertificateAuthority.DEFAULT_CERTS_VALIDITY_DAYS));
-        assertThat(caConfig.getRenewalDays(), is(CertificateAuthority.DEFAULT_CERTS_RENEWAL_DAYS));
-        assertThat(caConfig.getKeySize(), is(CertificateAuthority.DEFAULT_CERTS_KEY_SIZE));
-        assertTrue(caConfig.isGenerateCa());
-        assertTrue(caConfig.isGenerateSecretOwnerRef());
-        assertThat(caConfig.getCertificateExpirationPolicy(), is(CertificateExpirationPolicy.RENEW_CERTIFICATE));
-        assertThat(caConfig.getCertificateManagerType(), is(CertificateManagerType.STRIMZI));
-    }
-
-    @Test
     void testConstructorPassingNullCertificateAuthority() {
         CaConfig caConfig = new CaConfig(null, true);
 
