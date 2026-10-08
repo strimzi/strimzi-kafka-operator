@@ -419,7 +419,7 @@ jobs:
           echo "───────────────────────────────────────"
           echo "🎉 All $TOTAL perf-report scenarios passed!"
 
-  test-github-actions-integration:
+  github-actions-validation:
     uses: strimzi/github-actions/.github/workflows/reusable-test-integrations.yml@8a88edc07beb03fbd99d6d72f59c86d7d7aadda4 # v3.0
     with:
       repo: ${{ github.repository }}
@@ -435,5 +435,5 @@ jobs:
       imagesLocation: "./docker-images/container-archives"
       clusterOperatorBuild: true
       checkTests: false
-      githubActionsRef: "v2.2"
+      githubActionsRef: "v3.0"
     secrets: inherit
