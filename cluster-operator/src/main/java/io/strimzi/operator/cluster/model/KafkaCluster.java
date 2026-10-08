@@ -1870,7 +1870,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
                 .withRackId(rack)
                 .withKRaft(cluster, namespace, nodes())
                 .withKRaftMetadataLogDir(VolumeUtils.kraftMetadataPath(pool.storage))
-                .withCordonedLogDirs(cordoned, kafkaVersion)
+                .withCordonedLogDirs(cordoned)
                 .withLogDirs(VolumeUtils.createVolumeMounts(pool.storage, false))
                 .withListeners(cluster,
                         namespace,

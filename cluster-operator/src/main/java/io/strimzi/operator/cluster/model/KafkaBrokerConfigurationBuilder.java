@@ -845,15 +845,13 @@ public class KafkaBrokerConfigurationBuilder {
     /**
      * Configures cordoned log dirs for brokers scheduled for removal during scale-down.
      * When cordoned, the controller will not assign new partitions to this broker.
-     * This is only emitted when the Kafka version is 4.3.0 or later (KIP-1066).
      *
      * @param cordoned      Whether this broker should be cordoned
-     * @param kafkaVersion  The Kafka version of the cluster
      *
      * @return  Returns the builder instance
      */
-    public KafkaBrokerConfigurationBuilder withCordonedLogDirs(boolean cordoned, KafkaVersion kafkaVersion) {
-        if (cordoned && KafkaVersion.compareVersions(kafkaVersion.version(), "4.3.0") >= 0) {
+    public KafkaBrokerConfigurationBuilder withCordonedLogDirs(boolean cordoned) {
+        if (cordoned) {
             printSectionHeader("Cordoned log dirs configuration");
             writer.println("cordoned.log.dirs=*");
             writer.println();
