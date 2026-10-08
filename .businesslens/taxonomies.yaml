@@ -1,0 +1,16 @@
+scenarioKinds:
+  - id: primary
+    name: Primary
+    description: The usual way the behavior succeeds.
+  - id: alternative
+    name: Alternative
+    description: Another way the behavior succeeds.
+  - id: validation
+    name: Validation
+    description: A request the Product refuses or does not carry out, with what it reports.
+  - id: edge
+    name: Edge
+    description: A conflict, an unavailable dependency or another unusual situation the Product distinguishes.
+  - id: automatic
+    name: Automatic
+    description: Behavior the Product runs on its own, without a person acting.
