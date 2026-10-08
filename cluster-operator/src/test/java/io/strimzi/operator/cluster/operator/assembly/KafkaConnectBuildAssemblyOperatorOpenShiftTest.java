@@ -64,10 +64,12 @@ import org.mockito.ArgumentCaptor;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.function.BiPredicate;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonMap;
+import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
@@ -366,7 +368,8 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
         Checkpoint async = context.checkpoint();
         ops.reconcile(new Reconciliation("test-trigger", KafkaConnect.RESOURCE_KIND, NAMESPACE, NAME))
             .onComplete(context.failing(v -> context.verify(() -> {
-                assertThat(v.getMessage(), is("The Kafka Connect build failed."));
+                assertThat(v, instanceOf(CompletionException.class));
+                assertThat(v.getMessage(), is("java.lang.RuntimeException: The Kafka Connect build failed."));
                 async.flag();
             })));
     }

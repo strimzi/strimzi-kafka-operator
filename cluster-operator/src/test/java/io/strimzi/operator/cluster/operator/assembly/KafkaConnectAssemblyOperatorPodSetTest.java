@@ -76,6 +76,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiPredicate;
@@ -84,6 +85,7 @@ import static io.strimzi.operator.cluster.ResourceUtils.DUMMY_CERT;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -1757,7 +1759,7 @@ public class KafkaConnectAssemblyOperatorPodSetTest {
     @Test
     public void testImageStreamValidation(VertxTestContext context) {
         //String kcName = "my-connect", kcNamespace = "test";
-        String failureMsg = String.format("The build can't start because there is no image stream with name %s", NAME);
+        String failureMsg = String.format("io.strimzi.operator.common.InvalidConfigurationException: The build can't start because there is no image stream with name %s", NAME);
 
         KafkaConnect kc = new KafkaConnectBuilder(CONNECT).build();
                 //ResourceUtils.createEmptyKafkaConnect(kcNamespace, kcName);
@@ -1799,6 +1801,7 @@ public class KafkaConnectAssemblyOperatorPodSetTest {
         Checkpoint async = context.checkpoint();
         ops.reconcile(new Reconciliation("unit-test", KafkaConnect.RESOURCE_KIND, NAMESPACE, NAME))
             .onComplete(context.failing(v -> context.verify(() -> {
+                assertThat(v, instanceOf(CompletionException.class));
                 List<KafkaConnect> capturedConnects = connectCaptor.getAllValues();
                 assertThat(capturedConnects, hasSize(1));
                 KafkaConnectStatus connectStatus = capturedConnects.get(0).getStatus();

@@ -195,8 +195,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
                 .compose(i -> useConnectorResources && !hasZeroReplicas ? reconcileAvailableConnectorPlugins(reconciliation, KafkaConnectResources.qualifiedServiceName(reconciliation.name(), namespace), kafkaConnectStatus) : Future.succeededFuture())
                 .compose(i -> useConnectorResources ? reconcileConnectors(reconciliation, kafkaConnect, hasZeroReplicas) : Future.succeededFuture())
                 .onComplete(reconciliationResult -> {
-                    Throwable cause = Util.maybeUnwrapCompletionException(reconciliationResult.cause());
-                    StatusUtils.setStatusConditionAndObservedGeneration(kafkaConnect, kafkaConnectStatus, cause);
+                    StatusUtils.setStatusConditionAndObservedGeneration(kafkaConnect, kafkaConnectStatus, reconciliationResult.cause());
 
                     if (!hasZeroReplicas) {
                         kafkaConnectStatus.setUrl(KafkaConnectResources.url(connect.getCluster(), namespace, port));
@@ -208,7 +207,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
                     if (reconciliationResult.succeeded())   {
                         createOrUpdatePromise.complete(kafkaConnectStatus);
                     } else {
-                        createOrUpdatePromise.fail(new ReconciliationException(kafkaConnectStatus, cause));
+                        createOrUpdatePromise.fail(new ReconciliationException(kafkaConnectStatus, reconciliationResult.cause()));
                     }
                 });
 
