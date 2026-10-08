@@ -3514,7 +3514,7 @@ spec:
                     renewalDays:
                       type: integer
                       minimum: 1
-                      description: "The number of days in the certificate renewal period. This is the number of days before the a certificate expires during which renewal actions may be performed. When `generateCertificateAuthority` is true, this will cause the generation of a new certificate. When `generateCertificateAuthority` is true, this will cause extra logging at WARN level about the pending certificate expiry. Default is 30."
+                      description: "The number of days in the certificate renewal period. This is the number of days before the a certificate expires during which renewal actions may be performed. When `generateCertificateAuthority` is true, this will cause the generation of a new certificate. When `generateCertificateAuthority` is false, this will cause extra logging at WARN level about the pending certificate expiry. Default is 30."
                     keySize:
                       type: integer
                       minimum: 2048
@@ -3594,7 +3594,7 @@ spec:
                     renewalDays:
                       type: integer
                       minimum: 1
-                      description: "The number of days in the certificate renewal period. This is the number of days before the a certificate expires during which renewal actions may be performed. When `generateCertificateAuthority` is true, this will cause the generation of a new certificate. When `generateCertificateAuthority` is true, this will cause extra logging at WARN level about the pending certificate expiry. Default is 30."
+                      description: "The number of days in the certificate renewal period. This is the number of days before the a certificate expires during which renewal actions may be performed. When `generateCertificateAuthority` is true, this will cause the generation of a new certificate. When `generateCertificateAuthority` is false, this will cause extra logging at WARN level about the pending certificate expiry. Default is 30."
                     keySize:
                       type: integer
                       minimum: 2048

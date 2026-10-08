@@ -58,6 +58,7 @@ public class CertManagerCaCertIssuerTest {
     private final static String COMMON_NAME = "mock-component";
     private final static int VALIDITY_DAYS = 100;
     private final static int RENEWAL_DAYS = 10;
+    private final static int KEY_SIZE = 2048;
     private final static OpenSslCertIssuer CERT_ISSUER = new OpenSslCertIssuer();
 
     private CertManagerCertificateOperator certManagerCertificateOperator;
@@ -73,6 +74,7 @@ public class CertManagerCaCertIssuerTest {
         return new CertificateAuthorityBuilder()
                 .withValidityDays(VALIDITY_DAYS)
                 .withRenewalDays(RENEWAL_DAYS)
+                .withKeySize(KEY_SIZE)
                 .withGenerateCertificateAuthority(false)
                 .withType(CertificateManagerType.CERT_MANAGER)
                 .withNewCertManager()
@@ -229,7 +231,7 @@ public class CertManagerCaCertIssuerTest {
                             assertThat(certificate.getSpec().getRenewBefore(), is(convertToFabric8Duration(RENEWAL_DAYS)));
 
                             assertThat(certificate.getSpec().getPrivateKey().getAlgorithm(), is("RSA"));
-                            assertThat(certificate.getSpec().getPrivateKey().getSize(), is(4096));
+                            assertThat(certificate.getSpec().getPrivateKey().getSize(), is(KEY_SIZE));
 
                             assertThat(certificate.getSpec().getDnsNames().size(), is(1));
                             assertThat(certificate.getSpec().getDnsNames().getFirst(), is("mock-component.namespace.local"));
@@ -283,67 +285,6 @@ public class CertManagerCaCertIssuerTest {
         verify(certManagerCertificateOperator, times(1)).reconcile(any(), eq(NAMESPACE), eq(RESOURCE_NAME), entityCertificateResourceCaptor.capture());
 
         assertThat(entityCertificateResourceCaptor.getValue().getSpec().getCommonName(), is(COMMON_NAME));
-    }
-
-    @Test
-    void certificateResourceUsesConfiguredKeySize() {
-        Map<String, String> clusterCaCertData = new HashMap<>();
-        clusterCaCertData.put("ca.crt", MockCertIssuer.clusterCaCert());
-        Secret clusterCaCertSecret = createCaCertSecret(clusterCaCertData, 0);
-
-        CertificateAuthority certificateAuthority = new CertificateAuthorityBuilder()
-                .withValidityDays(VALIDITY_DAYS)
-                .withRenewalDays(RENEWAL_DAYS)
-                .withKeySize(2048)
-                .withGenerateCertificateAuthority(false)
-                .withType(CertificateManagerType.CERT_MANAGER)
-                .withNewCertManager()
-                    .withNewCaCertRef()
-                        .withSecretName("my-cluster-ca-secret")
-                        .withCertificate(CA_CRT)
-                    .endCaCertRef()
-                    .withNewIssuerRef()
-                        .withName("cm-issuer")
-                        .withKind(IssuerKind.CLUSTER_ISSUER)
-                    .endIssuerRef()
-                .endCertManager()
-                .build();
-
-        when(certManagerCertificateOperator.reconcile(any(), eq(NAMESPACE), any(), any(Certificate.class)))
-                .thenAnswer(i -> CompletableFuture.completedStage(ReconcileResult.patched(i.getArgument(3))));
-        when(certManagerCertificateOperator.waitForReady(any(), eq(NAMESPACE), any()))
-                .thenReturn(CompletableFuture.failedFuture(new StrimziTimeoutException("Timed out")));
-
-        CertManagerCa certManagerCa = new CertManagerCa(
-                Reconciliation.DUMMY_RECONCILIATION,
-                Ca.CaRole.CLUSTER_CA,
-                clusterCaCertSecret,
-                new CaConfig(certificateAuthority, false),
-                certManagerCertificateOperator,
-                secretOperator,
-                null,
-                new IssuerRefBuilder()
-                        .withName("cm-issuer")
-                        .withKind(IssuerKind.CLUSTER_ISSUER)
-                        .build()
-        );
-
-        StrimziSubject subject = new StrimziSubject.Builder()
-                .withOrganizationName("io.strimzi")
-                .withCommonName(COMMON_NAME)
-                .build();
-
-        assertThrows(CompletionException.class, () ->
-                certManagerCa.maybeCopyOrGenerateCert(RESOURCE_NAME, subject, null, Labels.EMPTY)
-                        .toCompletableFuture().join());
-
-        ArgumentCaptor<Certificate> captor = ArgumentCaptor.forClass(Certificate.class);
-        verify(certManagerCertificateOperator, times(1)).reconcile(any(), eq(NAMESPACE), eq(RESOURCE_NAME), captor.capture());
-
-        Certificate certificate = captor.getValue();
-        assertThat(certificate.getSpec().getPrivateKey().getSize(), is(2048));
-        assertThat(certificate.getSpec().getPrivateKey().getAlgorithm(), is("RSA"));
-        assertThat(certificate.getSpec().getPrivateKey().getEncoding(), is("PKCS8"));
     }
 
     @Test

@@ -32,9 +32,6 @@ public class CaConfig {
                 : CertificateAuthority.DEFAULT_CERTS_VALIDITY_DAYS;
         this.renewalDays = certificateAuthority != null && certificateAuthority.getRenewalDays() > 0 ? certificateAuthority.getRenewalDays()
                 : CertificateAuthority.DEFAULT_CERTS_RENEWAL_DAYS;
-        // The default crypto policy of Strimzi's base container, UBI (RHEL9), sets RSA keySize < 2048 in
-        // jdk.certpath.disabledAlgorithms and jdk.tls.disabledAlgorithms so keys below 2048 bits are rejected
-        // during TLS handshake.
         this.keySize = certificateAuthority != null && certificateAuthority.getKeySize() >= CertificateAuthority.MIN_CERTS_KEY_SIZE ? certificateAuthority.getKeySize()
                 : CertificateAuthority.DEFAULT_CERTS_KEY_SIZE;
         this.generateCa = certificateAuthority == null || certificateAuthority.isGenerateCertificateAuthority();
