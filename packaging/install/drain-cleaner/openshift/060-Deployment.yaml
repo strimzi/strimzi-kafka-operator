@@ -16,9 +16,10 @@ spec:
         app: strimzi-drain-cleaner
     spec:
       serviceAccountName: strimzi-drain-cleaner
+      automountServiceAccountToken: false
       containers:
         - name: strimzi-drain-cleaner
-          image: quay.io/strimzi/drain-cleaner:1.6.1
+          image: quay.io/strimzi/drain-cleaner:1.7.0
           ports:
             - containerPort: 8080
               name: http
@@ -43,7 +44,19 @@ spec:
                   fieldPath: metadata.name
           args:
             - /opt/strimzi/bin/drain_cleaner_run.sh
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
           volumeMounts:
+            - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+              name: kube-api-access
+              readOnly: true
             - name: webhook-certificates
               mountPath: "/etc/webhook-certificates"
               readOnly: true
@@ -62,6 +75,23 @@ spec:
             initialDelaySeconds: 10
             periodSeconds: 30
       volumes:
+        - name: kube-api-access
+          projected:
+            defaultMode: 420
+            sources:
+              - serviceAccountToken:
+                  path: token
+              - configMap:
+                  name: kube-root-ca.crt
+                  items:
+                    - key: ca.crt
+                      path: ca.crt
+              - downwardAPI:
+                  items:
+                    - path: namespace
+                      fieldRef:
+                        apiVersion: v1
+                        fieldPath: metadata.namespace
         - name: webhook-certificates
           secret:
             secretName: strimzi-drain-cleaner
