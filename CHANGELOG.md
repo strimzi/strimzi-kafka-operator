@@ -3,6 +3,7 @@
 ## 1.4.0
 
 * Add support for Kafka 4.3.2 and 4.4.0
+* Remove support for Kafka 4.2.x
 * Strimzi Drain Cleaner updated to 1.7.0 (included in the Strimzi installation files)
 
 ## 1.3.0
