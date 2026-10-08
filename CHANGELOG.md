@@ -2,6 +2,7 @@
 
 ## 1.4.0
 
+* Strimzi Drain Cleaner updated to 1.7.0 (included in the Strimzi installation files)
 
 ## 1.3.0
 
