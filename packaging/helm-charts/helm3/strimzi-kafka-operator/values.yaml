@@ -206,9 +206,11 @@ readinessProbe:
   periodSeconds: 30
 
 createGlobalResources: true
-# Create clusterroles that extend existing clusterroles to interact with strimzi crds
+# Create a clusterrole that aggregates read-only access to strimzi crds into the default "view", "edit" and "admin" clusterroles
 # Ref: https://kubernetes.io/docs/reference/access-authn-authz/rbac/#aggregated-clusterroles
-createAggregateRoles: false
+createAggregateViewRole: true
+# Create a clusterrole that aggregates write access to strimzi crds into the default "edit" and "admin" clusterroles
+createAggregateRoles: true
 # Override the exclude pattern for exclude some labels
 labelsExclusionPattern: ""
 # Controls whether Strimzi generates network policy resources (By default true)
