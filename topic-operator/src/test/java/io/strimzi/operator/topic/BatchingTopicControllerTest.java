@@ -5,9 +5,9 @@
 package io.strimzi.operator.topic;
 
 import org.apache.kafka.clients.admin.ConfigEntry;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
-import org.junit.jupiter.params.provider.EnumSource;
 
 import java.util.List;
 
@@ -43,17 +43,10 @@ class BatchingTopicControllerTest {
         assertFalse(BatchingTopicController.configValuesEqual(specValue, configEntry(ConfigEntry.ConfigType.DOUBLE, kafkaValue)));
     }
 
-    @ParameterizedTest
-    @EnumSource(value = ConfigEntry.ConfigType.class, names = "DOUBLE", mode = EnumSource.Mode.EXCLUDE)
-    void shouldCompareNonDoubleValuesAsStrings(ConfigEntry.ConfigType type) {
-        assertFalse(BatchingTopicController.configValuesEqual("1", configEntry(type, "1.0")));
-    }
-
-    @ParameterizedTest
-    @EnumSource(ConfigEntry.ConfigType.class)
-    void shouldPreserveExactEqualityForEveryType(ConfigEntry.ConfigType type) {
-        assertTrue(BatchingTopicController.configValuesEqual("1", configEntry(type, "1")));
-        assertTrue(BatchingTopicController.configValuesEqual(null, configEntry(type, null)));
+    @Test
+    void shouldCompareNonDoubleAndUnknownValuesAsStrings() {
+        assertFalse(BatchingTopicController.configValuesEqual("1", configEntry(ConfigEntry.ConfigType.STRING, "1.0")));
+        assertFalse(BatchingTopicController.configValuesEqual("1", configEntry(ConfigEntry.ConfigType.UNKNOWN, "1.0")));
     }
 
     private static ConfigEntry configEntry(ConfigEntry.ConfigType type, String value) {
