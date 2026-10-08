@@ -340,8 +340,8 @@
 - version: 4.4.0
   maven-version: 4.4.0
   metadata: 4.4-IV2
-  url: https://dist.apache.org/repos/dist/dev/kafka/4.4.0-rc3/kafka_2.13-4.4.0.tgz
-  checksum: 27CF3B42C66348059AD231495948B146414CCF6B6008F1F3639C00D2FD198DEC5BF18616E0C45A10BA34AA7B7D4EC025BD8D29E398216615BF3A49B3BA6C6C68
+  url: https://dist.apache.org/repos/dist/dev/kafka/4.4.0-rc4/kafka_2.13-4.4.0.tgz
+  checksum: F5CEBA8A265AB6BB2D68362B1F6859A95E15D60EF92BA83B43FDF065B557DC18E98D6383C15B9977320E25B3A2C8B6F11DECB17B0FA6C0F163423793A0EB95CB
   third-party-libs: 4.4.x
   supported: true
   default: true
