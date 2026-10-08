@@ -5,15 +5,14 @@
 package io.strimzi.test;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.exc.InvalidFormatException;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
-import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.exc.InvalidFormatException;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.dataformat.yaml.YAMLMapper;
+import tools.jackson.dataformat.yaml.YAMLWriteFeature;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -144,9 +143,11 @@ public final class ReadWriteUtils {
         if (url == null) {
             return null;
         }
-        ObjectMapper mapper = new YAMLMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, !ignoreUnknownProperties);
-        try {
-            return mapper.readValue(url.openStream(), c);
+        ObjectMapper mapper = YAMLMapper.builder()
+                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, !ignoreUnknownProperties)
+                .build();
+        try (InputStream stream = url.openStream()) {
+            return mapper.readValue(stream, c);
         } catch (InvalidFormatException e) {
             throw new IllegalArgumentException(e);
         } catch (IOException e) {
@@ -166,12 +167,12 @@ public final class ReadWriteUtils {
      */
     public static <T> T readObjectFromYamlString(String yamlContent, Class<T> c) {
         try {
-            ObjectMapper mapper = new YAMLMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, true);
+            ObjectMapper mapper = YAMLMapper.builder()
+                    .enable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+                    .build();
             return mapper.readValue(yamlContent, c);
         } catch (InvalidFormatException e) {
             throw new IllegalArgumentException(e);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
         }
     }
 
@@ -187,12 +188,10 @@ public final class ReadWriteUtils {
      */
     public static <T> T readObjectFromYamlFilepath(File yamlFile, Class<T> c) {
         try {
-            ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
+            ObjectMapper mapper = new YAMLMapper();
             return mapper.readValue(yamlFile, c);
         } catch (InvalidFormatException e) {
             throw new IllegalArgumentException(e);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
         }
     }
 
@@ -220,14 +219,11 @@ public final class ReadWriteUtils {
      * @param <T>   Type of the object
      */
     public static <T> String writeObjectToYamlString(T instance) {
-        try {
-            ObjectMapper mapper = new YAMLMapper()
-                    .disable(YAMLGenerator.Feature.USE_NATIVE_TYPE_ID)
-                    .setDefaultPropertyInclusion(JsonInclude.Include.NON_EMPTY);
-            return mapper.writeValueAsString(instance);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
+        ObjectMapper mapper = YAMLMapper.builder()
+                .disable(YAMLWriteFeature.USE_NATIVE_TYPE_ID)
+                .changeDefaultPropertyInclusion(incl -> incl.withValueInclusion(JsonInclude.Include.NON_EMPTY))
+                .build();
+        return mapper.writeValueAsString(instance);
     }
 
     /**
@@ -240,12 +236,10 @@ public final class ReadWriteUtils {
      * @param <T>   Type of the object
      */
     public static <T> String writeObjectToJsonString(T instance) {
-        try {
-            ObjectMapper mapper = new ObjectMapper().setDefaultPropertyInclusion(JsonInclude.Include.NON_NULL);
-            return mapper.writeValueAsString(instance);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
+        ObjectMapper mapper = JsonMapper.builder()
+                .changeDefaultPropertyInclusion(incl -> incl.withValueInclusion(JsonInclude.Include.NON_NULL))
+                .build();
+        return mapper.writeValueAsString(instance);
     }
 
     /**

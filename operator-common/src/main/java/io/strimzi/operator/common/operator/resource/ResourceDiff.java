@@ -4,12 +4,12 @@
  */
 package io.strimzi.operator.common.operator.resource;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.zjsonpatch.JsonDiff;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.model.AbstractJsonDiff;
+import tools.jackson.databind.JsonNode;
 
 import java.util.regex.Pattern;
 
@@ -54,7 +54,7 @@ public class ResourceDiff<T extends HasMetadata> extends AbstractJsonDiff {
         int num = 0;
 
         for (JsonNode d : diff) {
-            String pathValue = d.get("path").asText();
+            String pathValue = d.get("path").asString();
 
             if (ignorableFields.matcher(pathValue).matches()) {
                 LOGGER.debugCr(reconciliation, "Ignoring {} {} diff {}", resourceKind, resourceName, d);

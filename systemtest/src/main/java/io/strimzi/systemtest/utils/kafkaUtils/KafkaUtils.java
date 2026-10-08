@@ -4,12 +4,6 @@
  */
 package io.strimzi.systemtest.utils.kafkaUtils;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLParser;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.skodjob.kubetest4j.enums.LogLevel;
@@ -40,9 +34,11 @@ import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hamcrest.CoreMatchers;
+import tools.jackson.core.JsonParser;
+import tools.jackson.databind.node.ObjectNode;
+import tools.jackson.dataformat.yaml.YAMLMapper;
 
 import java.io.File;
-import java.io.IOException;
 import java.nio.charset.Charset;
 import java.time.Duration;
 import java.util.List;
@@ -377,19 +373,16 @@ public class KafkaUtils {
     }
 
     public static String changeOrRemoveKafkaConfigurationInKRaft(File file, String version, String metadataVersion) {
-        YAMLFactory yamlFactory = new YAMLFactory();
-        ObjectMapper mapper = new ObjectMapper();
         YAMLMapper yamlMapper = new YAMLMapper();
 
-        try {
-            YAMLParser yamlParser = yamlFactory.createParser(file);
-            List<ObjectNode> objects = mapper.readValues(yamlParser, new TypeReference<ObjectNode>() { }).readAll();
+        try (JsonParser yamlParser = yamlMapper.createParser(file)) {
+            List<ObjectNode> objects = yamlMapper.readValues(yamlParser, ObjectNode.class).readAll();
 
             ObjectNode kafkaResourceNode = objects.get(2);
             ObjectNode kafkaNode = (ObjectNode) kafkaResourceNode.at("/spec/kafka");
 
             ObjectNode entity = (ObjectNode) kafkaResourceNode.at("/spec/entityOperator");
-            entity.set("topicOperator", mapper.createObjectNode());
+            entity.set("topicOperator", yamlMapper.createObjectNode());
 
             if (version == null) {
                 kafkaNode.remove("version");
@@ -410,8 +403,6 @@ public class KafkaUtils {
             }
 
             return output.toString();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
         }
     }
 

@@ -4,13 +4,13 @@
  */
 package io.strimzi.operator.cluster.model;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.strimzi.api.kafka.model.podset.StrimziPodSet;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.SerializationFeature;
+import tools.jackson.dataformat.yaml.YAMLMapper;
 
 import java.util.List;
 import java.util.Map;
@@ -20,12 +20,8 @@ import java.util.stream.Collectors;
  * Shared methods for working with StrimziPodSet resources
  */
 public class PodSetUtils {
-    private static final ObjectMapper MAPPER = new ObjectMapper();
+    private static final YAMLMapper MAPPER = YAMLMapper.builder().enable(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS).build();
     private static final TypeReference<Map<String, Object>> POD_TYPE = new TypeReference<>() { };
-
-    static {
-        MAPPER.configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true);
-    }
 
     private PodSetUtils() { }
 
@@ -45,11 +41,11 @@ public class PodSetUtils {
      *
      * @param pod   Pod which should be converted
      *
-     * @throws JsonProcessingException  Throws JsonProcessingException when the conversion to String fails
+     * @throws JacksonException  Throws JacksonException when the conversion to String fails
      *
      * @return      String with the Pod definition
      */
-    public static String podToString(Pod pod) throws JsonProcessingException {
+    public static String podToString(Pod pod) throws JacksonException {
         return MAPPER.writeValueAsString(pod);
     }
 
@@ -58,11 +54,11 @@ public class PodSetUtils {
      *
      * @param resources   List of resources to be converted
      *
-     * @throws JsonProcessingException  Throws JsonProcessingException when the conversion to String fails
+     * @throws JacksonException  Throws JacksonException when the conversion to String fails
      *
      * @return      String with the resource definitions
      */
-    public static String resourcesToString(List<ResourceRequirements> resources) throws JsonProcessingException {
+    public static String resourcesToString(List<ResourceRequirements> resources) throws JacksonException {
         return MAPPER.writeValueAsString(resources);
     }
 

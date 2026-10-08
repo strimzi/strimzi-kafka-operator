@@ -4,9 +4,6 @@
  */
 package io.strimzi.systemtest.utils.kafkaUtils;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.skodjob.kubetest4j.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.connect.KafkaConnectResources;
 import io.strimzi.api.kafka.model.connector.KafkaConnector;
@@ -18,6 +15,9 @@ import io.strimzi.test.TestUtils;
 import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
 import java.util.ArrayList;
 import java.util.Map;
@@ -235,14 +235,14 @@ public class KafkaConnectorUtils {
      * @param serviceName       name of the service which exposes the 8083 port
      * @param connectorName     name of the connector that should be checked for the offsets
      * @return  JsonNode object with the offsets (the result of the API call)
-     * @throws JsonProcessingException  when the JsonNode object cannot be processed
+     * @throws JacksonException  when the JsonNode object cannot be processed
      */
     public static JsonNode getOffsetOfConnectorFromConnectAPI(
         String namespaceName,
         String scraperPodName,
         String serviceName,
         String connectorName
-    ) throws JsonProcessingException {
+    ) throws JacksonException {
         final ObjectMapper mapper = new ObjectMapper();
 
         return mapper.readTree(KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName).execInPod(scraperPodName,

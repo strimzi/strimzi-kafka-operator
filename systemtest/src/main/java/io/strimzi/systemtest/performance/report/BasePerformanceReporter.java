@@ -4,14 +4,14 @@
  */
 package io.strimzi.systemtest.performance.report;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.systemtest.performance.PerformanceConstants;
 import io.strimzi.systemtest.resources.CrdClients;
 import io.strimzi.systemtest.storage.TestStorage;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.dataformat.yaml.YAMLMapper;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -139,7 +139,7 @@ public abstract class BasePerformanceReporter {
 
         // Check if the Kafka resource has deployed
         if (kafkaResource != null && kafkaResource.getSpec() != null) {
-            ObjectMapper mapper = new ObjectMapper(new YAMLFactory()); // for JSON, just use ObjectMapper()
+            ObjectMapper mapper = new YAMLMapper(); // for JSON, just use ObjectMapper()
             try {
                 // Serialize the Kafka spec part of the Kafka CR to YAML
                 return mapper.writeValueAsString(kafkaResource.getSpec());
