@@ -4,7 +4,6 @@
  */
 package io.strimzi.crdgenerator;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.strimzi.crdgenerator.annotations.AddedIn;
 import io.strimzi.crdgenerator.annotations.Crd;
@@ -15,6 +14,7 @@ import io.strimzi.crdgenerator.annotations.DescriptionFile;
 import io.strimzi.crdgenerator.annotations.ExternalLink;
 import io.strimzi.crdgenerator.annotations.KubeLink;
 import io.strimzi.crdgenerator.annotations.PresentInVersions;
+import tools.jackson.databind.JsonNode;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -298,8 +298,8 @@ class DocGenerator {
         } else if (propertyType.isEnum()) {
             Set<String> strings = new HashSet<>();
             for (JsonNode n : Schema.enumCases(propertyType.getEnumElements())) {
-                if (n.isTextual()) {
-                    strings.add(n.asText());
+                if (n.isString()) {
+                    strings.add(n.asString());
                 } else {
                     throw new RuntimeException("Enum case is not a string");
                 }
@@ -311,8 +311,8 @@ class DocGenerator {
                 Method valuesMethod = propertyType.arrayBase().getMethod("values");
 
                 for (JsonNode n : Schema.enumCases((Enum<?>[]) valuesMethod.invoke(null))) {
-                    if (n.isTextual()) {
-                        strings.add(n.asText());
+                    if (n.isString()) {
+                        strings.add(n.asString());
                     } else {
                         throw new RuntimeException("Enum case is not a string");
                     }
