@@ -270,7 +270,7 @@ public class KafkaAutoRebalanceImbalanceDetector {
             return defaultGoals;
         }
 
-        Object goalsConfig = ccConfig != null ? ccConfig.get(CruiseControlConfigurationParameters.ANOMALY_DETECTION_CONFIG_KEY.toString()) : null;
+        Object goalsConfig = ccConfig.get(CruiseControlConfigurationParameters.ANOMALY_DETECTION_CONFIG_KEY.toString());
         String goalsString = goalsConfig != null ? goalsConfig.toString() : "";
 
         if (goalsString.isEmpty()) {
