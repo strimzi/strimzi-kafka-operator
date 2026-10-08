@@ -34,6 +34,7 @@ function create_keystore {
     # PKCS12KDF, not FIPS-approved). The keystore is ephemeral (regenerated in /tmp on every
     # start from read-only secrets, never persisted), so a tamper-detection MAC adds nothing;
     # key material stays encrypted via -keypbe regardless.
+    # See https://github.com/strimzi/strimzi-kafka-operator/issues/12606 for details about migration from PKCS12
     PASSWORD=$2 RANDFILE=/tmp/.rnd openssl pkcs12 -export -in "$3" -inkey "$4" -chain -CAfile "$5" -name "$6" -password env:PASSWORD -out "$1" -certpbe aes-128-cbc -keypbe aes-128-cbc -nomac
 }
 
@@ -45,6 +46,7 @@ function create_keystore {
 # $5: Alias of the certificate
 function create_keystore_without_ca_file {
     # See create_keystore: no PKCS12 MAC needed for this ephemeral, in-container-only keystore.
+    # See https://github.com/strimzi/strimzi-kafka-operator/issues/12606 for details about migration from PKCS12
     PASSWORD=$2 RANDFILE=/tmp/.rnd openssl pkcs12 -export -in "$3" -inkey "$4" -name "$5" -password env:PASSWORD -out "$1" -certpbe aes-128-cbc -keypbe aes-128-cbc -nomac
 }
 

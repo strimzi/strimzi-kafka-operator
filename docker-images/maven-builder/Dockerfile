@@ -24,10 +24,15 @@ RUN microdnf install \
         --setopt=tsflags=nodocs \
         --releasever 9 \
         -y \
+        # Java runtime
         java-${JAVA_VERSION}-openjdk-headless \
+        # Required to build Kafka Connect plugins
         maven \
+        # Required to download files from the internet (e.g. connectors)
         curl-minimal \
+        # Required for entrypoint scripts
         bash \
+        # Required for timezone configuration
         tzdata \
     && microdnf \
         --installroot /mnt/rootfs \
