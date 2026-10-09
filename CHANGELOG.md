@@ -17,6 +17,7 @@
   While the cert-manager feature is in Early Access it is not recommended for use in production.
 * Updated HTTP Bridge to 1.2.0
 * Add fenced brokers, offline replicas and ISR shrink/expand/failed update panels to the example Kafka Grafana dashboards
+* Add the `STRIMZI_KAFKA_POD_RESTART_DELAY_MS` environment variable to the Cluster Operator to configure a delay after each Kafka pod restart before rolling the next pod.
 
 ### Major changes, deprecations, and removals
 
