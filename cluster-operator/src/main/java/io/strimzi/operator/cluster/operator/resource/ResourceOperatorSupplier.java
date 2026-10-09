@@ -236,6 +236,11 @@ public class ResourceOperatorSupplier {
     public final CertManagerCertificateOperator certManagerCertificateOperator;
 
     /**
+     * Async executor for running blocking operations
+     */
+    public final Executor asyncExecutor;
+
+    /**
      * Constructor
      *
      * @param asyncExecutor         Executor on which the resource operators run their blocking Kubernetes API calls.
@@ -296,7 +301,8 @@ public class ResourceOperatorSupplier {
                                      PlatformFeaturesAvailability pfa,
                                      KubernetesRestartEventPublisher restartEventPublisher,
                                      FeatureGates featureGates) {
-        this(new ServiceOperator(asyncExecutor, client, true),
+        this(asyncExecutor,
+                new ServiceOperator(asyncExecutor, client, true),
                 pfa.hasRoutes() ? new RouteOperator(asyncExecutor, client.adapt(OpenShiftClient.class)) : null,
                 pfa.hasImages() ? new ImageStreamOperator(asyncExecutor, client.adapt(OpenShiftClient.class)) : null,
                 new ConfigMapOperator(asyncExecutor, client, true),
@@ -336,6 +342,7 @@ public class ResourceOperatorSupplier {
     /**
      * Constructor
      *
+     * @param asyncExecutor                         Async Executor
      * @param serviceOperations                     Service operator
      * @param routeOperations                       Route operator
      * @param imageStreamOperations                 ImageStream operator
@@ -373,7 +380,8 @@ public class ResourceOperatorSupplier {
      * @param certManagerCertificateOperator        cert-manager Certificate operator
      */
     @SuppressWarnings({"checkstyle:ParameterNumber"})
-    public ResourceOperatorSupplier(ServiceOperator serviceOperations,
+    public ResourceOperatorSupplier(Executor asyncExecutor,
+                                    ServiceOperator serviceOperations,
                                     RouteOperator routeOperations,
                                     ImageStreamOperator imageStreamOperations,
                                     ConfigMapOperator configMapOperations,
@@ -408,6 +416,7 @@ public class ResourceOperatorSupplier {
                                     SharedEnvironmentProvider sharedEnvironmentProvider,
                                     BrokersInUseCheck brokersInUseCheck,
                                     CertManagerCertificateOperator certManagerCertificateOperator) {
+        this.asyncExecutor = asyncExecutor;
         this.serviceOperations = serviceOperations;
         this.routeOperations = routeOperations;
         this.imageStreamOperations = imageStreamOperations;
