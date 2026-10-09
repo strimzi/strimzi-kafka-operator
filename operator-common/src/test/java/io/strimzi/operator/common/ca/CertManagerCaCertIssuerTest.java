@@ -58,6 +58,7 @@ public class CertManagerCaCertIssuerTest {
     private final static String COMMON_NAME = "mock-component";
     private final static int VALIDITY_DAYS = 100;
     private final static int RENEWAL_DAYS = 10;
+    private final static int KEY_SIZE = 2048;
     private final static OpenSslCertIssuer CERT_ISSUER = new OpenSslCertIssuer();
 
     private CertManagerCertificateOperator certManagerCertificateOperator;
@@ -73,6 +74,7 @@ public class CertManagerCaCertIssuerTest {
         return new CertificateAuthorityBuilder()
                 .withValidityDays(VALIDITY_DAYS)
                 .withRenewalDays(RENEWAL_DAYS)
+                .withKeySize(KEY_SIZE)
                 .withGenerateCertificateAuthority(false)
                 .withType(CertificateManagerType.CERT_MANAGER)
                 .withNewCertManager()
@@ -120,7 +122,7 @@ public class CertManagerCaCertIssuerTest {
                 .withOrganizationName("io.strimzi")
                 .withCommonName("cluster-ca").build();
 
-        CERT_ISSUER.generateSelfSignedCert(clusterCaKeyFile.toFile(), clusterCaCertFile.toFile(), sbj, certificateAuthority.getValidityDays());
+        CERT_ISSUER.generateSelfSignedCert(clusterCaKeyFile.toFile(), clusterCaCertFile.toFile(), sbj, certificateAuthority.getValidityDays(), 2048);
         return new CertAndKey(
                 Files.readAllBytes(clusterCaKeyFile),
                 Files.readAllBytes(clusterCaCertFile),
@@ -141,7 +143,7 @@ public class CertManagerCaCertIssuerTest {
                 .withOrganizationName("io.strimzi")
                 .withCommonName("cluster-ca").build();
 
-        CERT_ISSUER.renewSelfSignedCert(caKeyFile.toFile(), caCertFile.toFile(), sbj, 10);
+        CERT_ISSUER.renewSelfSignedCert(caKeyFile.toFile(), caCertFile.toFile(), sbj, 10, 2048);
 
         return new CertAndKey(
                 Files.readAllBytes(caKeyFile),
@@ -159,7 +161,7 @@ public class CertManagerCaCertIssuerTest {
         File certFile = Files.createTempFile("tls", "cert").toFile();
         certFile.deleteOnExit();
 
-        CERT_ISSUER.generateCsr(keyFile, csrFile, sbj);
+        CERT_ISSUER.generateCsr(keyFile, csrFile, sbj, 2048);
         CERT_ISSUER.generateCert(csrFile, ca.key(), ca.cert(), certFile, sbj, 10);
 
         return new CertAndKey(
@@ -227,6 +229,9 @@ public class CertManagerCaCertIssuerTest {
 
                             assertThat(certificate.getSpec().getDuration(), is(convertToFabric8Duration(VALIDITY_DAYS)));
                             assertThat(certificate.getSpec().getRenewBefore(), is(convertToFabric8Duration(RENEWAL_DAYS)));
+
+                            assertThat(certificate.getSpec().getPrivateKey().getAlgorithm(), is("RSA"));
+                            assertThat(certificate.getSpec().getPrivateKey().getSize(), is(KEY_SIZE));
 
                             assertThat(certificate.getSpec().getDnsNames().size(), is(1));
                             assertThat(certificate.getSpec().getDnsNames().getFirst(), is("mock-component.namespace.local"));

@@ -29,6 +29,7 @@ public class UserOperatorConfigTest {
         ENV_VARS.put(UserOperatorConfig.CA_NAMESPACE.key(), "differentnamespace");
         ENV_VARS.put(UserOperatorConfig.CERTS_VALIDITY_DAYS.key(), "1000");
         ENV_VARS.put(UserOperatorConfig.CERTS_RENEWAL_DAYS.key(), "10");
+        ENV_VARS.put(UserOperatorConfig.CERTS_KEY_SIZE.key(), "2048");
         ENV_VARS.put(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.key(), "false");
         ENV_VARS.put(UserOperatorConfig.SCRAM_SHA_PASSWORD_LENGTH.key(), "20");
         ENV_VARS.put(UserOperatorConfig.PKCS12_KEYSTORE_GENERATION.key(), "false");
@@ -56,6 +57,7 @@ public class UserOperatorConfigTest {
         envVars.remove(UserOperatorConfig.CA_NAMESPACE.key());
         envVars.remove(UserOperatorConfig.CERTS_VALIDITY_DAYS.key());
         envVars.remove(UserOperatorConfig.CERTS_RENEWAL_DAYS.key());
+        envVars.remove(UserOperatorConfig.CERTS_KEY_SIZE.key());
         envVars.remove(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.key());
         envVars.remove(UserOperatorConfig.SCRAM_SHA_PASSWORD_LENGTH.key());
         envVars.remove(UserOperatorConfig.PKCS12_KEYSTORE_GENERATION.key());
@@ -69,6 +71,7 @@ public class UserOperatorConfigTest {
         assertThat(config.getCaNamespaceOrNamespace(), is(ENV_VARS.get(UserOperatorConfig.NAMESPACE.key())));
         assertThat(config.getClientsCaValidityDays(), is(365));
         assertThat(config.getClientsCaRenewalDays(), is(30));
+        assertThat(config.getClientsCaKeySize(), is(4096));
         assertThat(config.isAclsAdminApiSupported(), is(true));
         assertThat(config.getScramPasswordLength(), is(32));
         assertThat(config.getMaintenanceWindows(), is(nullValue()));
@@ -95,6 +98,7 @@ public class UserOperatorConfigTest {
         assertThat(config.getCaNamespaceOrNamespace(), is(ENV_VARS.get(UserOperatorConfig.CA_NAMESPACE.key())));
         assertThat(config.getClientsCaValidityDays(), is(1000));
         assertThat(config.getClientsCaRenewalDays(), is(10));
+        assertThat(config.getClientsCaKeySize(), is(2048));
         assertThat(config.isAclsAdminApiSupported(), is(false));
         assertThat(config.getScramPasswordLength(), is(20));
         assertThat(config.getMaintenanceWindows(), is(nullValue()));
@@ -191,10 +195,12 @@ public class UserOperatorConfigTest {
         Map<String, String> envVars = new HashMap<>(UserOperatorConfigTest.ENV_VARS);
         envVars.remove(UserOperatorConfig.CERTS_VALIDITY_DAYS.key());
         envVars.remove(UserOperatorConfig.CERTS_RENEWAL_DAYS.key());
+        envVars.remove(UserOperatorConfig.CERTS_KEY_SIZE.key());
 
         UserOperatorConfig config =  UserOperatorConfig.buildFromMap(envVars);
         assertThat(config.get(UserOperatorConfig.CERTS_VALIDITY_DAYS), is(Integer.parseInt(UserOperatorConfig.CERTS_VALIDITY_DAYS.defaultValue())));
         assertThat(config.get(UserOperatorConfig.CERTS_RENEWAL_DAYS), is(Integer.parseInt(UserOperatorConfig.CERTS_RENEWAL_DAYS.defaultValue())));
+        assertThat(config.get(UserOperatorConfig.CERTS_KEY_SIZE), is(Integer.parseInt(UserOperatorConfig.CERTS_KEY_SIZE.defaultValue())));
     }
 
     @Test
