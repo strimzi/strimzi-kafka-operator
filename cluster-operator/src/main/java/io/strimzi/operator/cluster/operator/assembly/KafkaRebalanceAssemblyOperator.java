@@ -10,6 +10,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -68,6 +69,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -75,6 +77,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CompletionStage;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -425,39 +428,53 @@ public class KafkaRebalanceAssemblyOperator
                                         kafkaRebalance.getMetadata().getName(), desiredStatusAndMap.getLoadAndProgressConfigMap()))
                                 .onComplete(ignoredConfigMapResult -> {
                                     KafkaRebalanceStatus kafkaRebalanceStatus = updateStatus(kafkaRebalance, desiredStatusAndMap.getStatus(), null);
+                                    KafkaRebalanceState newRebalanceState = KafkaRebalanceUtils.rebalanceState(kafkaRebalanceStatus);
+                                    Future<Void> configMapFuture = Future.succeededFuture();
                                     if (kafkaRebalance.getStatus() != null
                                             && kafkaRebalanceStatus != null
-                                            && KafkaRebalanceUtils.rebalanceState(kafkaRebalance.getStatus()) !=  KafkaRebalanceUtils.rebalanceState(kafkaRebalanceStatus)) {
+                                            && KafkaRebalanceUtils.rebalanceState(kafkaRebalance.getStatus()) !=  newRebalanceState) {
                                         String message = "KafkaRebalance state is now updated to [{}]";
 
                                         if (rawRebalanceAnnotation(kafkaRebalance) != null) {
                                             message = message + " with annotation {}={} applied on the KafkaRebalance resource";
                                         }
-                                        LOGGER.infoCr(reconciliation, message, KafkaRebalanceUtils.rebalanceState(kafkaRebalanceStatus),
+                                        LOGGER.infoCr(reconciliation, message, newRebalanceState,
                                                 ANNO_STRIMZI_IO_REBALANCE,
                                                 rawRebalanceAnnotation(kafkaRebalance));
-                                    }
-                                    if (hasRebalanceAnnotation(kafkaRebalance)) {
-                                        if (currentState != KafkaRebalanceState.ReconciliationPaused && rebalanceAnnotation != KafkaRebalanceAnnotation.none && !currentState.isValidateAnnotation(rebalanceAnnotation)) {
-                                            reconcilePromise.complete(kafkaRebalanceStatus);
-                                        } else {
-                                            LOGGER.infoCr(reconciliation, "Removing annotation {}={}",
-                                                    ANNO_STRIMZI_IO_REBALANCE,
-                                                    rawRebalanceAnnotation(kafkaRebalance));
-                                            // Updated KafkaRebalance has rebalance annotation removed as
-                                            // action specified by user has been completed.
-                                            KafkaRebalance patchedKafkaRebalance = new KafkaRebalanceBuilder(kafkaRebalance)
-                                                    .editMetadata()
-                                                        .removeFromAnnotations(ANNO_STRIMZI_IO_REBALANCE)
-                                                    .endMetadata()
-                                                    .build();
-                                            VertxUtil.toFuture(kafkaRebalanceOperator.patchAsync(reconciliation, patchedKafkaRebalance))
-                                                    .onComplete(ignoredKafkaRebalanceResult -> reconcilePromise.complete(kafkaRebalanceStatus));
+
+                                        if (newRebalanceState == KafkaRebalanceState.Ready
+                                                || newRebalanceState == KafkaRebalanceState.NotReady
+                                                || newRebalanceState == KafkaRebalanceState.Stopped) {
+                                            String clusterName = kafkaRebalance.getMetadata().getLabels() == null ? null
+                                                    : kafkaRebalance.getMetadata().getLabels().get(Labels.STRIMZI_CLUSTER_LABEL);
+                                            if (clusterName != null) {
+                                                configMapFuture = VertxUtil.toFuture(updateImbalanceTrackerConfigMap(reconciliation, kafkaRebalance.getMetadata().getNamespace(), clusterName));
+                                            }
                                         }
-                                    } else {
-                                        LOGGER.debugCr(reconciliation, "No annotation {}", ANNO_STRIMZI_IO_REBALANCE);
-                                        reconcilePromise.complete(kafkaRebalanceStatus);
                                     }
+                                    configMapFuture.onComplete(ignored -> {
+                                        if (hasRebalanceAnnotation(kafkaRebalance)) {
+                                            if (currentState != KafkaRebalanceState.ReconciliationPaused && rebalanceAnnotation != KafkaRebalanceAnnotation.none && !currentState.isValidateAnnotation(rebalanceAnnotation)) {
+                                                reconcilePromise.complete(kafkaRebalanceStatus);
+                                            } else {
+                                                LOGGER.infoCr(reconciliation, "Removing annotation {}={}",
+                                                        ANNO_STRIMZI_IO_REBALANCE,
+                                                        rawRebalanceAnnotation(kafkaRebalance));
+                                                // Updated KafkaRebalance has rebalance annotation removed as
+                                                // action specified by user has been completed.
+                                                KafkaRebalance patchedKafkaRebalance = new KafkaRebalanceBuilder(kafkaRebalance)
+                                                        .editMetadata()
+                                                            .removeFromAnnotations(ANNO_STRIMZI_IO_REBALANCE)
+                                                        .endMetadata()
+                                                        .build();
+                                                VertxUtil.toFuture(kafkaRebalanceOperator.patchAsync(reconciliation, patchedKafkaRebalance))
+                                                        .onComplete(ignoredKafkaRebalanceResult -> reconcilePromise.complete(kafkaRebalanceStatus));
+                                            }
+                                        } else {
+                                            LOGGER.debugCr(reconciliation, "No annotation {}", ANNO_STRIMZI_IO_REBALANCE);
+                                            reconcilePromise.complete(kafkaRebalanceStatus);
+                                        }
+                                    });
                                 });
                     }).onFailure(exception -> {
                         LOGGER.errorCr(reconciliation, "Status updated to [NotReady] due to error: {}", exception.getMessage());
@@ -1453,6 +1470,33 @@ public class KafkaRebalanceAssemblyOperator
             }
             return false;
         }
+    }
+
+    private CompletionStage<Void> updateImbalanceTrackerConfigMap(Reconciliation reconciliation, String namespace, String clusterName) {
+        String configMapName = clusterName + KafkaAutoRebalancingReconciler.AUTO_REBALANCE_IMBALANCE_TRACKER_SUFFIX;
+        String completionTime = Instant.now().toString();
+        return VertxUtil.toFuture(kafkaOperator.getAsync(namespace, clusterName))
+                .compose(kafka -> {
+                    if (kafka == null) {
+                        LOGGER.debugCr(reconciliation, "Kafka CR not found, skipping imbalance tracker ConfigMap update for {}", configMapName);
+                        return Future.succeededFuture();
+                    }
+                    ConfigMap desiredConfigMap = new ConfigMapBuilder()
+                            .withNewMetadata()
+                                .withName(configMapName)
+                                .withNamespace(namespace)
+                                .withLabels(Map.of(Labels.STRIMZI_CLUSTER_LABEL, clusterName))
+                                .withOwnerReferences(ModelUtils.createOwnerReference(kafka, false))
+                            .endMetadata()
+                            .withData(Map.of("lastRebalanceCompletionTime", completionTime))
+                            .build();
+                    return VertxUtil.toFuture(configMapOperator.reconcile(reconciliation, namespace, configMapName, desiredConfigMap))
+                            .onSuccess(ignored -> LOGGER.debugCr(reconciliation, "Updated imbalance tracker ConfigMap {} with completion time {}", configMapName, completionTime))
+                            .onFailure(error -> LOGGER.warnCr(reconciliation, "Failed to update imbalance tracker ConfigMap {}: {}", configMapName, error.getMessage()))
+                            .<Void>mapEmpty();
+                })
+                .onFailure(error -> LOGGER.warnCr(reconciliation, "Failed to fetch Kafka CR to set owner reference on imbalance tracker ConfigMap {}: {}", configMapName, error.getMessage()))
+                .toCompletionStage();
     }
 
     @Override
