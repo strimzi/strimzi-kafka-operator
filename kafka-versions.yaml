@@ -335,7 +335,7 @@
   url: https://dist.apache.org/repos/dist/dev/kafka/4.3.2-rc0/kafka_2.13-4.3.2.tgz
   checksum: EC1181C8EADA234853D258FAD46CFF409612AEC94F7D1E3416C40E24683C9436B7BCEA81F8A27A91E00FA479B11E842952BED20D1A9AC9A43BF9437F38771232
   third-party-libs: 4.3.2
-  supported: true
+  supported: false
   default: false
 - version: 4.4.0
   maven-version: 4.4.0
