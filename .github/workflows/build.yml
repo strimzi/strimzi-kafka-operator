@@ -34,7 +34,7 @@ jobs:
           echo "Stored commit SHA: ${{ github.sha }}"
 
       - name: Upload build metadata
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: commit-sha.txt
           path: commit-sha.txt
@@ -44,24 +44,24 @@ jobs:
           rm -rf commit-sha.txt
 
       - name: Setup Java and Maven
-        uses: strimzi/github-actions/.github/actions/dependencies/setup-java@4aefb08c299693441fb87284984c760a1c708fbc # v2.4
+        uses: strimzi/github-actions/.github/actions/dependencies/setup-java@8a88edc07beb03fbd99d6d72f59c86d7d7aadda4 # v3.0
         with:
           javaVersion: "21"
 
       - name: Install yq
-        uses: strimzi/github-actions/.github/actions/dependencies/install-yq@4aefb08c299693441fb87284984c760a1c708fbc # v2.4
+        uses: strimzi/github-actions/.github/actions/dependencies/install-yq@8a88edc07beb03fbd99d6d72f59c86d7d7aadda4 # v3.0
         with:
           version: "v4.6.3"
           architecture: "amd64"
 
       - name: Install Shellcheck
-        uses: strimzi/github-actions/.github/actions/dependencies/install-shellcheck@4aefb08c299693441fb87284984c760a1c708fbc # v2.4
+        uses: strimzi/github-actions/.github/actions/dependencies/install-shellcheck@8a88edc07beb03fbd99d6d72f59c86d7d7aadda4 # v3.0
         with:
           version: "0.11.0"
           architecture: "amd64"
 
       - name: Install Helm
-        uses: strimzi/github-actions/.github/actions/dependencies/install-helm@4aefb08c299693441fb87284984c760a1c708fbc # v2.4
+        uses: strimzi/github-actions/.github/actions/dependencies/install-helm@8a88edc07beb03fbd99d6d72f59c86d7d7aadda4 # v3.0
         with:
           helmVersion: "v3.16.0"
 
@@ -74,7 +74,7 @@ jobs:
             kafka-binaries-
 
       - name: Build binaries using build-binaries action
-        uses: strimzi/github-actions/.github/actions/build/build-binaries@4aefb08c299693441fb87284984c760a1c708fbc # v2.4
+        uses: strimzi/github-actions/.github/actions/build/build-binaries@8a88edc07beb03fbd99d6d72f59c86d7d7aadda4 # v3.0
         with:
           mainJavaBuild: "true"
           artifactSuffix: "operators"
@@ -134,12 +134,12 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Install yq
-        uses: strimzi/github-actions/.github/actions/dependencies/install-yq@4aefb08c299693441fb87284984c760a1c708fbc # v2.4
+        uses: strimzi/github-actions/.github/actions/dependencies/install-yq@8a88edc07beb03fbd99d6d72f59c86d7d7aadda4 # v3.0
         with:
           version: "v4.6.3"
 
       - name: Install AsciiDoctor
-        uses: strimzi/github-actions/.github/actions/dependencies/install-ascii-doctor@4aefb08c299693441fb87284984c760a1c708fbc # v2.4
+        uses: strimzi/github-actions/.github/actions/dependencies/install-ascii-doctor@8a88edc07beb03fbd99d6d72f59c86d7d7aadda4 # v3.0
         with:
           rubyVersion: "3.2"
 
@@ -165,21 +165,21 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Install Docker
-        uses: strimzi/github-actions/.github/actions/dependencies/install-docker@4aefb08c299693441fb87284984c760a1c708fbc # v2.4
+        uses: strimzi/github-actions/.github/actions/dependencies/install-docker@8a88edc07beb03fbd99d6d72f59c86d7d7aadda4 # v3.0
 
       - name: Install yq
-        uses: strimzi/github-actions/.github/actions/dependencies/install-yq@4aefb08c299693441fb87284984c760a1c708fbc # v2.4
+        uses: strimzi/github-actions/.github/actions/dependencies/install-yq@8a88edc07beb03fbd99d6d72f59c86d7d7aadda4 # v3.0
         with:
           version: "v4.6.3"
           architecture: "amd64"
 
       - name: Install Shellcheck
-        uses: strimzi/github-actions/.github/actions/dependencies/install-shellcheck@4aefb08c299693441fb87284984c760a1c708fbc # v2.4
+        uses: strimzi/github-actions/.github/actions/dependencies/install-shellcheck@8a88edc07beb03fbd99d6d72f59c86d7d7aadda4 # v3.0
         with:
           version: "0.11.0"
           architecture: "amd64"
 
-      - uses: strimzi/github-actions/.github/actions/build/build-containers@4aefb08c299693441fb87284984c760a1c708fbc # v2.4
+      - uses: strimzi/github-actions/.github/actions/build/build-containers@8a88edc07beb03fbd99d6d72f59c86d7d7aadda4 # v3.0
         with:
           architecture: ${{ matrix.architecture }}
           imagesLocation: "./docker-images/container-archives"
@@ -208,21 +208,21 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Install Docker
-        uses: strimzi/github-actions/.github/actions/dependencies/install-docker@4aefb08c299693441fb87284984c760a1c708fbc # v2.4
+        uses: strimzi/github-actions/.github/actions/dependencies/install-docker@8a88edc07beb03fbd99d6d72f59c86d7d7aadda4 # v3.0
 
       - name: Install yq
-        uses: strimzi/github-actions/.github/actions/dependencies/install-yq@4aefb08c299693441fb87284984c760a1c708fbc # v2.4
+        uses: strimzi/github-actions/.github/actions/dependencies/install-yq@8a88edc07beb03fbd99d6d72f59c86d7d7aadda4 # v3.0
         with:
           version: "v4.6.3"
 
       - name: Install Syft
-        uses: strimzi/github-actions/.github/actions/dependencies/install-syft@4aefb08c299693441fb87284984c760a1c708fbc # v2.4
+        uses: strimzi/github-actions/.github/actions/dependencies/install-syft@8a88edc07beb03fbd99d6d72f59c86d7d7aadda4 # v3.0
         with:
           version: "1.20.0"
 
       - name: Push containers using push-containers action
         id: push-containers
-        uses: strimzi/github-actions/.github/actions/build/push-containers@4aefb08c299693441fb87284984c760a1c708fbc # v2.4
+        uses: strimzi/github-actions/.github/actions/build/push-containers@8a88edc07beb03fbd99d6d72f59c86d7d7aadda4 # v3.0
         with:
           registryUser: ${{ secrets.QUAY_USER }}
           registryPassword: ${{ secrets.QUAY_PASS }}
@@ -241,7 +241,7 @@ jobs:
       contents: read
       id-token: write
       attestations: write
-    uses: strimzi/github-actions/.github/workflows/reusable-attest.yml@4aefb08c299693441fb87284984c760a1c708fbc # v2.4
+    uses: strimzi/github-actions/.github/workflows/reusable-attest.yml@8a88edc07beb03fbd99d6d72f59c86d7d7aadda4 # v3.0
     with:
       containerImages: ${{ needs.push-containers.outputs.images }}
       sbomsArtifact: ${{ needs.push-containers.outputs.sbomsArtifact }}
@@ -283,17 +283,17 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Setup Java and Maven
-        uses: strimzi/github-actions/.github/actions/dependencies/setup-java@4aefb08c299693441fb87284984c760a1c708fbc # v2.4
+        uses: strimzi/github-actions/.github/actions/dependencies/setup-java@8a88edc07beb03fbd99d6d72f59c86d7d7aadda4 # v3.0
         with:
           javaVersion: "21"
 
       - name: Install yq
-        uses: strimzi/github-actions/.github/actions/dependencies/install-yq@4aefb08c299693441fb87284984c760a1c708fbc # v2.4
+        uses: strimzi/github-actions/.github/actions/dependencies/install-yq@8a88edc07beb03fbd99d6d72f59c86d7d7aadda4 # v3.0
         with:
           version: "v4.6.3"
 
       - name: Deploy to Maven Central
-        uses: strimzi/github-actions/.github/actions/build/deploy-java@4aefb08c299693441fb87284984c760a1c708fbc # v2.4
+        uses: strimzi/github-actions/.github/actions/build/deploy-java@8a88edc07beb03fbd99d6d72f59c86d7d7aadda4 # v3.0
         with:
           modules: "./,crd-annotations,crd-generator,test,api"
           gpgPassphrase: ${{ secrets.GPG_PASSPHRASE }}
