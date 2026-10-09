@@ -20,10 +20,10 @@
         <!-- Must match Kafka 4.1.x log4j-api (2.24.x). Mixing with 2.17.x core
              causes NoSuchMethodError: LoaderUtil.getClassLoaders() at CC startup. -->
         <log4j.version>2.24.3</log4j.version>
-        <jackson.version>2.21.4</jackson.version>
+        <jackson.version>2.21.7</jackson.version>
         <commons-io.version>2.14.0</commons-io.version>
         <kafka-clients.version>4.1.2</kafka-clients.version>
-        <netty.version>4.1.136.Final</netty.version>
+        <netty.version>4.1.137.Final</netty.version>
     </properties>
 
     <repositories>
