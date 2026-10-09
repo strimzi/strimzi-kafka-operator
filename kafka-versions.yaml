@@ -257,7 +257,7 @@
   url: https://archive.apache.org/dist/kafka/4.0.0/kafka_2.13-4.0.0.tgz
   checksum: 00722AB0A6B954E0006994B8D589DCD8F26E1827C47F70B6E820FB45AA35945C19163B0F188CAF0CAF976C11F7AB005FD368C54E5851E899D2DE687A804A5EB9
   third-party-libs: 4.0.x
-  supported: false
+  supported: true
   default: false
 - version: 4.0.1
   metadata: 4.0

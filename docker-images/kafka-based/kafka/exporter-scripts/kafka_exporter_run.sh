@@ -57,7 +57,7 @@ tls="--tls.enabled --tls.ca-file=$CA_CERTS --tls.cert-file=/etc/kafka-exporter/k
 
 # starting Kafka Exporter with final configuration
 cat <<EOT > /tmp/run.sh
-#!/usr/bin/env bash \
+#!/usr/bin/env bash
 $KAFKA_EXPORTER_HOME/kafka_exporter \
 $groupregex \
 $topicregex \
