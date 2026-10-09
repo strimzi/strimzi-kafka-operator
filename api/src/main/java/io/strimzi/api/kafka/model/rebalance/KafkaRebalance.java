@@ -6,7 +6,6 @@ package io.strimzi.api.kafka.model.rebalance;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import io.fabric8.kubernetes.api.model.Namespaced;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.model.annotation.Group;
@@ -27,7 +26,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
 
-@JsonDeserialize
 @Crd(
     spec = @Crd.Spec(
         names = @Crd.Spec.Names(
