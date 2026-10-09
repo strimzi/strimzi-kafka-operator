@@ -8,14 +8,6 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.databind.node.TextNode;
-import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
-import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.client.CustomResource;
@@ -31,6 +23,15 @@ import io.strimzi.crdgenerator.annotations.Pattern;
 import io.strimzi.crdgenerator.annotations.PreserveUnknownFields;
 import io.strimzi.crdgenerator.annotations.RequiredInVersions;
 import io.strimzi.crdgenerator.annotations.Type;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.JsonNodeFactory;
+import tools.jackson.databind.node.ObjectNode;
+import tools.jackson.databind.node.StringNode;
+import tools.jackson.dataformat.yaml.YAMLMapper;
+import tools.jackson.dataformat.yaml.YAMLWriteFeature;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -162,12 +163,13 @@ import static java.util.Arrays.asList;
  */
 @SuppressWarnings("ClassFanOutComplexity")
 class CrdGenerator {
-    public static final YAMLMapper YAML_MAPPER = new YAMLMapper()
-            .configure(YAMLGenerator.Feature.MINIMIZE_QUOTES, true)
-            .configure(YAMLGenerator.Feature.SPLIT_LINES, false)
-            .configure(YAMLGenerator.Feature.LITERAL_BLOCK_STYLE, true)
-            .configure(YAMLGenerator.Feature.WRITE_DOC_START_MARKER, false);
-    public static final ObjectMapper JSON_MATTER = new ObjectMapper();
+    public static final YAMLMapper YAML_MAPPER = YAMLMapper.builder()
+            .enable(YAMLWriteFeature.MINIMIZE_QUOTES)
+            .disable(YAMLWriteFeature.SPLIT_LINES)
+            .enable(YAMLWriteFeature.LITERAL_BLOCK_STYLE)
+            .disable(YAMLWriteFeature.WRITE_DOC_START_MARKER)
+            .build();
+    public static final ObjectMapper JSON_MAPPER = new JsonMapper();
     private final ApiVersion crdApiVersion;
     private final List<ApiVersion> generateVersions;
     private final ApiVersion storageVersion;
@@ -311,7 +313,7 @@ class CrdGenerator {
                         .setAll(labels.entrySet().stream()
                         .collect(Collectors.<Map.Entry<String, String>, String, JsonNode, LinkedHashMap<String, JsonNode>>toMap(
                             Map.Entry::getKey,
-                            e -> new TextNode(
+                            e -> new StringNode(
                                 e.getValue()
                                     .replace("%group%", crd.spec().group())
                                     .replace("%plural%", crd.spec().names().plural())
@@ -1299,7 +1301,7 @@ class CrdGenerator {
         CommandOptions opts = new CommandOptions(args);
 
         CrdGenerator generator = new CrdGenerator(opts.targetKubeVersions, opts.crdApiVersion,
-                opts.yaml ? YAML_MAPPER.configure(YAMLGenerator.Feature.MINIMIZE_QUOTES, true) : JSON_MATTER,
+                opts.yaml ? YAML_MAPPER : JSON_MAPPER,
                 opts.labels, new DefaultReporter(),
                 opts.apiVersions, opts.storageVersion, null, opts.conversionStrategy, opts.describeVersions);
         for (Map.Entry<String, Class<? extends CustomResource>> entry : opts.classes.entrySet()) {
