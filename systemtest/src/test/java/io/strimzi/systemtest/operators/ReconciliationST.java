@@ -40,6 +40,7 @@ import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 
 import java.util.Collections;
@@ -167,6 +168,7 @@ public class ReconciliationST extends AbstractST {
             @Label(value = TestDocsLabels.CRUISE_CONTROL)
         }
     )
+    @Disabled // Cruise Control is not compatible with Kafka 4.4.0
     void testPauseReconciliationInKafkaRebalanceAndTopic() {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 

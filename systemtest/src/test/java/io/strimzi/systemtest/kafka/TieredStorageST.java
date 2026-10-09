@@ -45,6 +45,7 @@ import org.apache.kafka.common.requests.ListOffsetsRequest;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import tools.jackson.core.JacksonException;
 
@@ -76,6 +77,7 @@ import static io.strimzi.systemtest.utils.specific.NfsUtils.NFS_PVC_NAME;
         @Label(value = TestDocsLabels.KAFKA)
     }
 )
+@Disabled // Tiered storage is not compatible with Kafka 4.4.0
 public class TieredStorageST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(TieredStorageST.class);
 
