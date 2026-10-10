@@ -53,4 +53,7 @@
     <suppress checks="(MissingCtor|HideUtilityClassConstructor)" files="systemtest[/\\]src[/\\]main[/\\]java[/\\]io[/\\]strimzi[/\\].*"/>
     <suppress checks="(MissingCtor|HideUtilityClassConstructor)" files="systemtest[/\\]src[/\\]test[/\\]java[/\\]io[/\\]strimzi[/\\].*"/>
 
+    <!-- The Kafka Agent runs inside the Kafka brokers and uses the Jackson 2 library provided by Kafka -->
+    <suppress id="jackson2Import" files="kafka-agent[/\\]src[/\\].*"/>
+
 </suppressions>

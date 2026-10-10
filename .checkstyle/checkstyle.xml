@@ -28,7 +28,14 @@
             <property name="processJavadoc" value="true" />
         </module>
         <module name="RedundantImport"/>
+        <!-- This default instance bans the importas banned by default by Checkstyle (e.g. sun.*).
+             It is not replaced by the second instance below banning Jackson 2 -->
         <module name="IllegalImport" />
+        <!-- Jackson 3 should be used instead of Jackson 2 (the Jackson annotations are shared by both and remain allowed) -->
+        <module name="IllegalImport">
+            <property name="id" value="jackson2Import"/>
+            <property name="illegalPkgs" value="com.fasterxml.jackson.core, com.fasterxml.jackson.databind, com.fasterxml.jackson.dataformat, com.fasterxml.jackson.datatype, com.fasterxml.jackson.module"/>
+        </module>
         <module name="EqualsHashCode"/>
         <module name="SimplifyBooleanExpression"/>
         <module name="OneStatementPerLine"/>
