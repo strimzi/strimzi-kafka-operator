@@ -4,9 +4,6 @@
  */
 package io.strimzi.operator.cluster.model.metrics;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.strimzi.api.kafka.model.common.HasConfigurableMetrics;
 import io.strimzi.api.kafka.model.common.metrics.JmxPrometheusExporterMetrics;
@@ -14,6 +11,13 @@ import io.strimzi.operator.common.InvalidConfigurationException;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.model.InvalidResourceException;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.dataformat.yaml.YAMLFactory;
+import tools.jackson.dataformat.yaml.YAMLMapper;
+import tools.jackson.dataformat.yaml.YAMLSchema;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,6 +27,12 @@ import java.util.List;
  */
 public class JmxPrometheusExporterModel implements MetricsModel {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(JmxPrometheusExporterModel.class);
+    // The YAML 1.2 Core schema resolves null, boolean, and number values closest to how Jackson 2 did. The trailing
+    // tokens check is disabled so that only the first document is used when the YAML has multiple documents.
+    private static final ObjectMapper YAML_READER = YAMLMapper.builder(YAMLFactory.builder().yamlSchema(YAMLSchema.CORE).build())
+            .disable(DeserializationFeature.FAIL_ON_TRAILING_TOKENS)
+            .build();
+    private static final ObjectMapper JSON_WRITER = new JsonMapper();
 
     /**
      * Key under which the metrics configuration is stored in the ConfigMap
@@ -91,12 +101,10 @@ public class JmxPrometheusExporterModel implements MetricsModel {
                 }
 
                 try {
-                    ObjectMapper yamlReader = new ObjectMapper(new YAMLFactory());
-                    Object yaml = yamlReader.readValue(data, Object.class);
-                    ObjectMapper jsonWriter = new ObjectMapper();
+                    Object yaml = YAML_READER.readValue(data, Object.class);
 
-                    return jsonWriter.writeValueAsString(yaml);
-                } catch (JsonProcessingException e) {
+                    return JSON_WRITER.writeValueAsString(yaml);
+                } catch (JacksonException e) {
                     throw new InvalidConfigurationException("Failed to parse metrics configuration", e);
                 }
             }

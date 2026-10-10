@@ -7,10 +7,11 @@ package io.strimzi.operator.cluster.model;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.common.model.InvalidResourceException;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.dataformat.yaml.YAMLMapper;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -43,10 +44,9 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
      * @throws IllegalArgumentException If there are duplicate versions listed in the versions file or more than one
      *                                  version is listed as the default.
      * @throws RuntimeException If no default version was set.
-     * @throws IOException If the Kafka versions file cannot be read.
      */
     public static KafkaVersion parseKafkaVersions(Reader reader, Map<String, KafkaVersion> mapOfVersions)
-            throws IOException, IllegalArgumentException {
+            throws IllegalArgumentException {
 
         YAMLMapper mapper = new YAMLMapper();
 
@@ -107,7 +107,7 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
             InputStream versions = Objects.requireNonNull(KafkaVersion.class.getResourceAsStream("/" + KAFKA_VERSIONS_RESOURCE), KAFKA_VERSIONS_RESOURCE + " file was not found in resources");
             try (InputStreamReader reader = new InputStreamReader(versions, StandardCharsets.UTF_8))    {
                 this.defaultVersion = parseKafkaVersions(reader, this.map);
-            } catch (IOException | IllegalArgumentException e) {
+            } catch (IOException | IllegalArgumentException | JacksonException e) {
                 throw new RuntimeException("Error reading " + KAFKA_VERSIONS_RESOURCE, e);
             }
         }

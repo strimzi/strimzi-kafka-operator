@@ -4,8 +4,6 @@
  */
 package io.strimzi.operator.cluster.model.clustersecurity.kafka;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.clustersecurity.ClusterSecurity;
 import io.strimzi.api.kafka.model.kafka.clustersecurity.ClusterSecurityAuthenticationType;
@@ -16,13 +14,16 @@ import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.model.InvalidResourceException;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 /**
  * Class that holds the security configuration of the Kafka cluster.
  */
 public class KafkaClusterSecurityContext {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(KafkaClusterSecurityContext.class);
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    private static final ObjectMapper OBJECT_MAPPER = new JsonMapper();
     private static final String INTERNAL_CLUSTER_SECURITY_ANNOTATION = "strimzi.io/internal-cluster-security";
 
     /**
@@ -102,7 +103,7 @@ public class KafkaClusterSecurityContext {
                 }
 
                 return status;
-            } catch (IllegalArgumentException e) {
+            } catch (IllegalArgumentException | JacksonException e) {
                 throw new InvalidResourceException("Failed to deserialize ClusterSecurityStatus", e);
             }
         }
@@ -121,7 +122,7 @@ public class KafkaClusterSecurityContext {
         } else {
             try {
                 return OBJECT_MAPPER.readValue(clusterSecurityJson, ClusterSecurity.class);
-            } catch (IllegalArgumentException | JsonProcessingException e) {
+            } catch (IllegalArgumentException | JacksonException e) {
                 throw new InvalidResourceException("Failed to deserialize ClusterSecurity configuration", e);
             }
         }

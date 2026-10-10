@@ -4,12 +4,12 @@
  */
 package io.strimzi.operator.cluster.model;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.exc.InvalidFormatException;
-import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.CustomResource;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.exc.InvalidFormatException;
+import tools.jackson.dataformat.yaml.YAMLMapper;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -51,7 +51,7 @@ class ResourceTester<R extends HasMetadata, M extends AbstractModel> {
             return mapper.readValue(url.openStream(), c);
         } catch (InvalidFormatException e) {
             throw new IllegalArgumentException(e);
-        } catch (IOException e) {
+        } catch (IOException | JacksonException e) {
             throw new RuntimeException(e);
         }
     }
@@ -60,7 +60,7 @@ class ResourceTester<R extends HasMetadata, M extends AbstractModel> {
         ObjectMapper mapper = new YAMLMapper();
         try {
             return mapper.writeValueAsString(instance);
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             throw new RuntimeException(e);
         }
     }

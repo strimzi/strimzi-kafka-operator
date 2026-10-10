@@ -4,8 +4,6 @@
  */
 package io.strimzi.operator.cluster.model;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
@@ -36,6 +34,9 @@ import io.strimzi.operator.cluster.model.securityprofiles.PodSecurityProviderCon
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
 import io.strimzi.plugin.security.profiles.PodSecurityProviderContext;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.dataformat.yaml.YAMLMapper;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -333,10 +334,10 @@ public class EntityOperator extends AbstractModel {
             )
         ) {
             String yaml = br.lines().collect(Collectors.joining(System.lineSeparator()));
-            ObjectMapper yamlReader = new ObjectMapper(new YAMLFactory());
+            ObjectMapper yamlReader = new YAMLMapper();
             ClusterRole cr = yamlReader.readValue(yaml, ClusterRole.class);
             rules = filterRulesByPermissions(cr.getRules(), permissions);
-        } catch (IOException e) {
+        } catch (IOException | JacksonException e) {
             LOGGER.errorCr(reconciliation, "Failed to read entity-operator ClusterRole.", e);
             throw new RuntimeException(e);
         }

@@ -4,8 +4,6 @@
  */
 package io.strimzi.operator.cluster;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.fabric8.kubernetes.api.model.APIGroup;
 import io.fabric8.kubernetes.api.model.APIGroupBuilder;
 import io.fabric8.kubernetes.api.model.APIResource;
@@ -30,6 +28,9 @@ import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.text.ParseException;
 import java.util.ArrayList;
@@ -49,7 +50,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @ExtendWith(VertxExtension.class)
 public class PlatformFeaturesAvailabilityTest {
-    private final static ObjectMapper OBJECTMAPPER = new ObjectMapper();
+    private final static ObjectMapper OBJECTMAPPER = new JsonMapper();
 
     private HttpServer server;
 
@@ -383,7 +384,7 @@ public class PlatformFeaturesAvailabilityTest {
 
                 try {
                     request.response().setStatusCode(200).end(OBJECTMAPPER.writeValueAsString(group));
-                } catch (JsonProcessingException e) {
+                } catch (JacksonException e) {
                     e.printStackTrace();
                 }
             } else if (HttpMethod.GET.equals(request.method()) && apiResourcePaths.contains(request.uri())) {
@@ -392,7 +393,7 @@ public class PlatformFeaturesAvailabilityTest {
 
                 try {
                     request.response().setStatusCode(200).end(OBJECTMAPPER.writeValueAsString(list));
-                } catch (JsonProcessingException e) {
+                } catch (JacksonException e) {
                     e.printStackTrace();
                 }
             } else if (HttpMethod.GET.equals(request.method()) && "/version".equals(request.uri())) {

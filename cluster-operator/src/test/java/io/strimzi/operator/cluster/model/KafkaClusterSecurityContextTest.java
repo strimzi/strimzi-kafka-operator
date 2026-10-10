@@ -19,6 +19,7 @@ import io.strimzi.operator.cluster.model.clustersecurity.kafka.ServiceAccountAut
 import io.strimzi.operator.cluster.model.clustersecurity.kafka.TlsEncryptionConfiguration;
 import io.strimzi.operator.common.model.InvalidResourceException;
 import org.junit.jupiter.api.Test;
+import tools.jackson.core.JacksonException;
 
 import java.util.List;
 import java.util.Map;
@@ -466,14 +467,14 @@ public class KafkaClusterSecurityContextTest {
         InvalidResourceException e = assertThrows(InvalidResourceException.class, () -> KafkaClusterSecurityContext.deserializeStatus("tls"));
         assertThat(e.getMessage(), is("Failed to deserialize ClusterSecurityStatus"));
         assertThat(e.getCause(), is(notNullValue()));
-        assertThat(e.getCause(), is(instanceOf(IllegalArgumentException.class)));
+        assertThat(e.getCause(), is(instanceOf(JacksonException.class)));
     }
 
     @Test
     public void testDeserializeStatusFromList()  {
         InvalidResourceException e = assertThrows(InvalidResourceException.class, () -> KafkaClusterSecurityContext.deserializeStatus(List.of(VALID_STATUS)));
         assertThat(e.getMessage(), is("Failed to deserialize ClusterSecurityStatus"));
-        assertThat(e.getCause(), is(instanceOf(IllegalArgumentException.class)));
+        assertThat(e.getCause(), is(instanceOf(JacksonException.class)));
     }
 
     //////////////////////////////////////////////////
