@@ -4,8 +4,7 @@ topic_operator_dist := ../artifacts/binaries/topic-operator-$(jar_version)-dist.
 user_operator_dist := ../artifacts/binaries/user-operator-$(jar_version)-dist.zip
 cluster_operator_dist := ../artifacts/binaries/cluster-operator-$(jar_version)-dist.zip
 kafka_init_dist := ../artifacts/binaries/kafka-init-$(jar_version)-dist.zip
-
-clean: 
+clean:
 	rm -rf .topic-operator.tmp .user-operator.tmp .kafka-init.tmp .cluster-operator.tmp ./tmp
 
 # We unzip each of the -dist.zip files into tmp which is then
