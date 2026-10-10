@@ -5,7 +5,6 @@
 package io.strimzi.crdgenerator;
 
 import tools.jackson.databind.JsonNode;
-import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;
 
 import java.util.ArrayList;
@@ -34,9 +33,9 @@ class Schema {
 
     static List<JsonNode> enumCases(Enum<?>[] values) {
         List<JsonNode> result = new ArrayList<>();
-        ObjectMapper objectMapper = new JsonMapper();
+        JsonMapper jsonMapper = new JsonMapper();
         for (Object o : values) {
-            result.add(objectMapper.readTree(objectMapper.writeValueAsString(o)));
+            result.add(jsonMapper.readTree(jsonMapper.writeValueAsString(o)));
         }
         return result;
     }

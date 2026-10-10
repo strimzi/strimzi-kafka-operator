@@ -13,7 +13,6 @@ import kafka.server.KafkaConfig$;
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.server.common.MetadataVersion;
 import tools.jackson.databind.MapperFeature;
-import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.SerializationFeature;
 import tools.jackson.databind.json.JsonMapper;
 
@@ -60,11 +59,11 @@ public class KafkaConfigModelGenerator {
         Map<String, ConfigModel> configs = configs(version);
         addPrometheusMetricsReporterAllowListConfig(configs);
 
-        ObjectMapper mapper = JsonMapper.builder().enable(SerializationFeature.INDENT_OUTPUT).enable(MapperFeature.SORT_PROPERTIES_ALPHABETICALLY).build();
+        JsonMapper jsonMapper = JsonMapper.builder().enable(SerializationFeature.INDENT_OUTPUT).enable(MapperFeature.SORT_PROPERTIES_ALPHABETICALLY).build();
         ConfigModels root = new ConfigModels();
         root.setVersion(version);
         root.setConfigs(configs);
-        mapper.writeValue(new File(args[0]), root);
+        jsonMapper.writeValue(new File(args[0]), root);
     }
 
     private static String kafkaVersion() throws IOException {
