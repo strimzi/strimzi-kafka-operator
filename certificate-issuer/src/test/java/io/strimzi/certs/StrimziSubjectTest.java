@@ -4,9 +4,8 @@
  */
 package io.strimzi.certs;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.util.List;
 import java.util.Map;
@@ -55,7 +54,7 @@ public class StrimziSubjectTest {
     }
 
     @Test
-    public void testSerialization() throws JsonProcessingException {
+    public void testSerialization() {
         StrimziSubject subject = new StrimziSubject.Builder()
                 .withCommonName("joe")
                 .withOrganizationName("MyOrg")
@@ -64,9 +63,9 @@ public class StrimziSubjectTest {
                 .addIpAddress("123.123.123.123")
                 .addIpAddress("127.0.0.1")
                 .build();
-        ObjectMapper mapper = new ObjectMapper();
-        String json = mapper.writeValueAsString(subject);
-        assertEquals(subject, mapper.readValue(json, StrimziSubject.class));
+        JsonMapper jsonMapper = new JsonMapper();
+        String json = jsonMapper.writeValueAsString(subject);
+        assertEquals(subject, jsonMapper.readValue(json, StrimziSubject.class));
         assertEquals("{\"commonName\":\"joe\"," +
                 "\"organizationName\":\"MyOrg\"," +
                 "\"dnsNames\":[\"example.org\",\"example.com\"]," +
