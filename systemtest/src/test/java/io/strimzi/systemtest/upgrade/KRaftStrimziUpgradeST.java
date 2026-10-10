@@ -22,6 +22,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -51,6 +52,7 @@ public class KRaftStrimziUpgradeST extends AbstractKRaftUpgradeST {
     @KindIPv6NotSupported("Our current CI setup doesn't allow pushing into internal registries that is needed in this test")
     @ParameterizedTest(name = "from: {0} (using FG <{2}>) to: {1} (using FG <{3}>)")
     @MethodSource("io.strimzi.systemtest.upgrade.VersionModificationDataLoader#loadYamlUpgradeDataForKRaft")
+    @Disabled // Disabled due to FileStreamSourceConnector incompatibility between Kafka versions
     void testUpgradeOfKafkaKafkaConnectAndKafkaConnector(String fromVersion, String toVersion, String fgBefore, String fgAfter, BundleVersionModificationData upgradeData) throws IOException {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         UpgradeKafkaVersion upgradeKafkaVersion = new UpgradeKafkaVersion(upgradeData.getDeployKafkaVersion());

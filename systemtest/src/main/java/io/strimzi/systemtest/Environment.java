@@ -185,7 +185,9 @@ public class Environment {
 
     private static final String ST_KAFKA_VERSION_DEFAULT = TestKafkaVersion.getDefaultSupportedKafkaVersion();
     private static final String ST_KAFKA_MAVEN_VERSION_DEFAULT = TestKafkaVersion.getSpecificVersion(ST_KAFKA_VERSION_DEFAULT).mavenVersion();
-    public static final String ST_FILE_PLUGIN_URL_DEFAULT = (Environment.ST_MAVEN_MIRROR_URL != null ? Environment.ST_MAVEN_MIRROR_URL : "https://repo.maven.apache.org/maven2") + "/org/apache/kafka/connect-file/" + ST_KAFKA_MAVEN_VERSION_DEFAULT + "/connect-file-" + ST_KAFKA_MAVEN_VERSION_DEFAULT + ".jar";
+    // TODO: Temporary fix for RC builds
+    //public static final String ST_FILE_PLUGIN_URL_DEFAULT = (Environment.ST_MAVEN_MIRROR_URL != null ? Environment.ST_MAVEN_MIRROR_URL : "https://repo.maven.apache.org/maven2") + "/org/apache/kafka/connect-file/" + ST_KAFKA_MAVEN_VERSION_DEFAULT + "/connect-file-" + ST_KAFKA_MAVEN_VERSION_DEFAULT + ".jar";
+    public static final String ST_FILE_PLUGIN_URL_DEFAULT = (Environment.ST_MAVEN_MIRROR_URL != null ? Environment.ST_MAVEN_MIRROR_URL : "https://repository.apache.org/content/groups/staging") + "/org/apache/kafka/connect-file/" + ST_KAFKA_MAVEN_VERSION_DEFAULT + "/connect-file-" + ST_KAFKA_MAVEN_VERSION_DEFAULT + ".jar";
 
     public static final String IP_FAMILY_DEFAULT = "ipv4";
     public static final String IP_FAMILY_VERSION_6 = "ipv6";

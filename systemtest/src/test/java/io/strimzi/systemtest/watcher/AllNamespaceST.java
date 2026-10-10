@@ -14,6 +14,7 @@ import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 
 import java.util.List;
@@ -22,6 +23,7 @@ import static io.strimzi.systemtest.TestTags.REGRESSION;
 import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 @Tag(REGRESSION)
+@Disabled // Cruise Control is not compatible with Kafka 4.4.0
 class AllNamespaceST extends AbstractNamespaceST {
 
     private static final Logger LOGGER = LogManager.getLogger(AllNamespaceST.class);

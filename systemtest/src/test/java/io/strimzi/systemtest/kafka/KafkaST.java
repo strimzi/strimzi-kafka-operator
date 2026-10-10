@@ -89,6 +89,7 @@ import io.strimzi.testclients.clients.kafka.KafkaProducerConsumerBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 
 import java.util.ArrayList;
@@ -938,6 +939,7 @@ class KafkaST extends AbstractST {
             @Label(value = TestDocsLabels.KAFKA)
         }
     )
+    @Disabled // Cruise Control is not compatible with Kafka 4.4.0
     void testReadOnlyRootFileSystem() {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
