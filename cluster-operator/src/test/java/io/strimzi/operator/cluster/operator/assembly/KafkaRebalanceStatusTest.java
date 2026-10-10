@@ -5,11 +5,6 @@
 
 package io.strimzi.operator.cluster.operator.assembly;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalance;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceBuilder;
@@ -19,6 +14,11 @@ import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlLoadParameters;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlRebalanceKeys;
 import org.junit.jupiter.api.Test;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.ObjectNode;
 
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -36,7 +36,7 @@ public class KafkaRebalanceStatusTest {
     private static final String RESOURCE_NAME = "my-rebalance";
     private static final String CLUSTER_NAMESPACE = "cruise-control-namespace";
     private static final String CLUSTER_NAME = "kafka-cruise-control-test-cluster";
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    private static final JsonMapper JSON_MAPPER = new JsonMapper();
 
 
     private KafkaRebalance createKafkaRebalance(String namespace, String clusterName, String resourceName,
@@ -52,14 +52,14 @@ public class KafkaRebalanceStatusTest {
     }
 
     public static JsonNode buildOptimizationProposal() {
-        ObjectNode proposal = OBJECT_MAPPER.createObjectNode();
+        ObjectNode proposal = JSON_MAPPER.createObjectNode();
 
-        ObjectNode summary = OBJECT_MAPPER.createObjectNode();
+        ObjectNode summary = JSON_MAPPER.createObjectNode();
 
-        ObjectNode brokersBeforeObject = OBJECT_MAPPER.createObjectNode();
-        ArrayNode brokerLoadBeforeArray = OBJECT_MAPPER.createArrayNode();
+        ObjectNode brokersBeforeObject = JSON_MAPPER.createObjectNode();
+        ArrayNode brokerLoadBeforeArray = JSON_MAPPER.createArrayNode();
 
-        ObjectNode brokerOneBefore = OBJECT_MAPPER.createObjectNode();
+        ObjectNode brokerOneBefore = JSON_MAPPER.createObjectNode();
         brokerOneBefore.put(CruiseControlRebalanceKeys.BROKER_ID.getKey(), BROKER_ONE_KEY);
         brokerOneBefore.put(CruiseControlLoadParameters.CPU_PERCENTAGE.getCruiseControlKey(), 10.0);
         brokerOneBefore.put(CruiseControlLoadParameters.REPLICAS.getCruiseControlKey(), 10);
@@ -67,10 +67,10 @@ public class KafkaRebalanceStatusTest {
         brokerLoadBeforeArray.add(brokerOneBefore);
         brokersBeforeObject.set(CruiseControlRebalanceKeys.BROKERS.getKey(), brokerLoadBeforeArray);
 
-        ObjectNode brokersAfterObject = OBJECT_MAPPER.createObjectNode();
-        ArrayNode brokerLoadAfterArray = OBJECT_MAPPER.createArrayNode();
+        ObjectNode brokersAfterObject = JSON_MAPPER.createObjectNode();
+        ArrayNode brokerLoadAfterArray = JSON_MAPPER.createArrayNode();
 
-        ObjectNode brokerOneAfter = OBJECT_MAPPER.createObjectNode();
+        ObjectNode brokerOneAfter = JSON_MAPPER.createObjectNode();
         brokerOneAfter.put(CruiseControlRebalanceKeys.BROKER_ID.getKey(), BROKER_ONE_KEY);
         brokerOneAfter.put(CruiseControlLoadParameters.CPU_PERCENTAGE.getCruiseControlKey(), 20.0);
         brokerOneAfter.put(CruiseControlLoadParameters.REPLICAS.getCruiseControlKey(), 5);
@@ -148,7 +148,7 @@ public class KafkaRebalanceStatusTest {
 
         try {
 
-            Map<String, LinkedHashMap<String, String>> brokerLoadMap = OBJECT_MAPPER.readValue(brokerMap.get(KafkaRebalanceAssemblyOperator.BROKER_LOAD_KEY), LinkedHashMap.class);
+            Map<String, LinkedHashMap<String, String>> brokerLoadMap = JSON_MAPPER.readValue(brokerMap.get(KafkaRebalanceAssemblyOperator.BROKER_LOAD_KEY), LinkedHashMap.class);
 
             assertThat(brokerMap, hasKey(KafkaRebalanceAssemblyOperator.BROKER_LOAD_KEY));
 
@@ -166,7 +166,7 @@ public class KafkaRebalanceStatusTest {
             assertThat((Integer) m.get("replicas").get("after"), is(5));
             assertThat((Integer) m.get("replicas").get("diff"), is(-5));
 
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             e.printStackTrace();
         }
     }

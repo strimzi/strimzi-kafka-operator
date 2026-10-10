@@ -4,10 +4,10 @@
  */
 package io.strimzi.operator.cluster.operator.resource.cruisecontrol;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.strimzi.operator.cluster.model.cruisecontrol.CruiseControlExecutorState;
 import org.junit.jupiter.api.Test;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.node.ObjectNode;
 
 import static io.strimzi.operator.cluster.operator.resource.cruisecontrol.ExecutorStatus.FINISHED_DATA_MOVEMENT_KEY;
 import static io.strimzi.operator.cluster.operator.resource.cruisecontrol.ExecutorStatus.STATE_KEY;
@@ -24,8 +24,8 @@ public class ExecutorStatusTest {
     private static final String DEFAULT_TRIGGERED_TASK_REASON = "No reason provided (Client: 172.17.0.1, Date: 2024-11-15T19:41:27Z)";
 
     public static ObjectNode createExecutorStatusJson(CruiseControlExecutorState state, String finishedDataMovement, String totalDataToMove, String triggeredTaskReason) {
-        ObjectMapper objectMapper = new ObjectMapper();
-        ObjectNode objectNode = objectMapper.createObjectNode();
+        JsonMapper jsonMapper = new JsonMapper();
+        ObjectNode objectNode = jsonMapper.createObjectNode();
         if (state != null) {
             objectNode.put(STATE_KEY, state.toString());
         }

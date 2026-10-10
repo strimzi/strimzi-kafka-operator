@@ -4,7 +4,7 @@
  */
 package io.strimzi.operator.cluster.operator.resource.cruisecontrol;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 
 /**
  * Response to user tasks request
