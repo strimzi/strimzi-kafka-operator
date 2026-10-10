@@ -571,6 +571,13 @@ When configured to use Prometheus JMX Exporter, Strimzi converts the JMX metrics
 To enable Prometheus metrics export without further configuration, you can reference a `ConfigMap` containing an empty file under `metricsConfig.valueFrom.configMapKeyRef.key`.
 When referencing an empty file, all metrics are exposed as long as they have not been renamed.
 
+The JMX Exporter configuration in the `ConfigMap` must use YAML 1.2 syntax.
+Strimzi parses it using the YAML 1.2 Core schema and converts it to JSON before passing it to the JMX Exporter.
+Use `true` and `false` for boolean values.
+Unquoted `yes`, `no`, `on`, and `off` values are treated as strings, not booleans.
+Using them for boolean options, such as `lowercaseOutputName`, prevents the JMX Exporter from starting.
+If the `ConfigMap` key contains multiple YAML documents, only the first document is used.
+
 .Example ConfigMap with metrics configuration for Kafka
 [source,yaml,subs="+attributes"]
 ----
