@@ -29,7 +29,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import tools.jackson.core.JacksonException;
-import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;
 
 import java.text.ParseException;
@@ -50,7 +49,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @ExtendWith(VertxExtension.class)
 public class PlatformFeaturesAvailabilityTest {
-    private final static ObjectMapper OBJECTMAPPER = new JsonMapper();
+    private final static JsonMapper JSON_MAPPER = new JsonMapper();
 
     private HttpServer server;
 
@@ -383,7 +382,7 @@ public class PlatformFeaturesAvailabilityTest {
                 APIGroup group = apis.stream().filter(g -> groupName.equals(g.getName())).findFirst().orElse(null);
 
                 try {
-                    request.response().setStatusCode(200).end(OBJECTMAPPER.writeValueAsString(group));
+                    request.response().setStatusCode(200).end(JSON_MAPPER.writeValueAsString(group));
                 } catch (JacksonException e) {
                     e.printStackTrace();
                 }
@@ -392,7 +391,7 @@ public class PlatformFeaturesAvailabilityTest {
                 APIResourceList list = apiResourceLists.stream().filter(l -> groupVersion.equals(l.getGroupVersion())).findFirst().orElse(null);
 
                 try {
-                    request.response().setStatusCode(200).end(OBJECTMAPPER.writeValueAsString(list));
+                    request.response().setStatusCode(200).end(JSON_MAPPER.writeValueAsString(list));
                 } catch (JacksonException e) {
                     e.printStackTrace();
                 }

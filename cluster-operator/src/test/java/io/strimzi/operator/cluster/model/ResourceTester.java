@@ -7,7 +7,6 @@ package io.strimzi.operator.cluster.model;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.CustomResource;
 import tools.jackson.core.JacksonException;
-import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.exc.InvalidFormatException;
 import tools.jackson.dataformat.yaml.YAMLMapper;
 
@@ -46,9 +45,9 @@ class ResourceTester<R extends HasMetadata, M extends AbstractModel> {
         if (url == null) {
             return null;
         }
-        ObjectMapper mapper = new YAMLMapper();
+        YAMLMapper yamlMapper = new YAMLMapper();
         try {
-            return mapper.readValue(url.openStream(), c);
+            return yamlMapper.readValue(url.openStream(), c);
         } catch (InvalidFormatException e) {
             throw new IllegalArgumentException(e);
         } catch (IOException | JacksonException e) {
@@ -57,9 +56,9 @@ class ResourceTester<R extends HasMetadata, M extends AbstractModel> {
     }
 
     private static <T> String toYamlString(T instance) {
-        ObjectMapper mapper = new YAMLMapper();
+        YAMLMapper yamlMapper = new YAMLMapper();
         try {
-            return mapper.writeValueAsString(instance);
+            return yamlMapper.writeValueAsString(instance);
         } catch (JacksonException e) {
             throw new RuntimeException(e);
         }

@@ -11,7 +11,6 @@ import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.operator.common.operator.resource.kubernetes.AbstractNonNamespacedResourceOperator;
 import tools.jackson.core.JacksonException;
-import tools.jackson.databind.ObjectMapper;
 import tools.jackson.dataformat.yaml.YAMLMapper;
 
 import java.util.concurrent.Executor;
@@ -45,7 +44,7 @@ public class ClusterRoleOperator extends AbstractNonNamespacedResourceOperator<K
      */
     public static ClusterRole convertYamlToClusterRole(String yaml) {
         try {
-            ObjectMapper yamlReader = new YAMLMapper();
+            YAMLMapper yamlReader = new YAMLMapper();
             return yamlReader.readValue(yaml, ClusterRole.class);
         } catch (JacksonException e)   {
             throw new RuntimeException(e);

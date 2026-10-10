@@ -13,7 +13,6 @@ import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.model.InvalidResourceException;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.DeserializationFeature;
-import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;
 import tools.jackson.dataformat.yaml.YAMLFactory;
 import tools.jackson.dataformat.yaml.YAMLMapper;
@@ -29,10 +28,10 @@ public class JmxPrometheusExporterModel implements MetricsModel {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(JmxPrometheusExporterModel.class);
     // The YAML 1.2 Core schema resolves null, boolean, and number values closest to how Jackson 2 did. The trailing
     // tokens check is disabled so that only the first document is used when the YAML has multiple documents.
-    private static final ObjectMapper YAML_READER = YAMLMapper.builder(YAMLFactory.builder().yamlSchema(YAMLSchema.CORE).build())
+    private static final YAMLMapper YAML_READER = YAMLMapper.builder(YAMLFactory.builder().yamlSchema(YAMLSchema.CORE).build())
             .disable(DeserializationFeature.FAIL_ON_TRAILING_TOKENS)
             .build();
-    private static final ObjectMapper JSON_WRITER = new JsonMapper();
+    private static final JsonMapper JSON_WRITER = new JsonMapper();
 
     /**
      * Key under which the metrics configuration is stored in the ConfigMap

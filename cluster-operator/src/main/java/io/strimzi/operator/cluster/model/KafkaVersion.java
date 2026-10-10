@@ -48,9 +48,9 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
     public static KafkaVersion parseKafkaVersions(Reader reader, Map<String, KafkaVersion> mapOfVersions)
             throws IllegalArgumentException {
 
-        YAMLMapper mapper = new YAMLMapper();
+        YAMLMapper yamlMapper = new YAMLMapper();
 
-        List<KafkaVersion> kafkaVersions = mapper.readValue(reader, new TypeReference<>() { });
+        List<KafkaVersion> kafkaVersions = yamlMapper.readValue(reader, new TypeReference<>() { });
 
         KafkaVersion defaultVersion = null;
 
