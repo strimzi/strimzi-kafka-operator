@@ -4,8 +4,8 @@
  */
 package io.strimzi.operator.cluster.operator.resource.cruisecontrol;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import io.strimzi.operator.cluster.model.cruisecontrol.CruiseControlExecutorState;
+import tools.jackson.databind.JsonNode;
 
 import java.time.Instant;
 import java.util.regex.Matcher;
@@ -106,12 +106,12 @@ public class ExecutorStatus {
             throw new IllegalArgumentException(
                     String.format("Executor state: `%s` does not contain \"state\" entry", executorStateJson));
         }
-        return CruiseControlExecutorState.fromString(executorStateJson.get(STATE_KEY).asText());
+        return CruiseControlExecutorState.fromString(executorStateJson.get(STATE_KEY).asString());
     }
 
     private static void verifyFieldExists(JsonNode executorStateJson, String field) {
         if (!executorStateJson.has(field)) {
-            throw new IllegalArgumentException(String.format("Executor State %s does not contain required '%s' field.", executorStateJson.textValue(), field));
+            throw new IllegalArgumentException(String.format("Executor State %s does not contain required '%s' field.", executorStateJson, field));
         }
     }
 
@@ -126,7 +126,7 @@ public class ExecutorStatus {
      */
     private static Integer extractTotalDataToMove(JsonNode executorStateJson) {
         verifyFieldExists(executorStateJson, TOTAL_DATA_TO_MOVE_KEY);
-        return executorStateJson.get(TOTAL_DATA_TO_MOVE_KEY).asInt();
+        return executorStateJson.get(TOTAL_DATA_TO_MOVE_KEY).asInt(0);
     }
 
     /**
@@ -139,7 +139,7 @@ public class ExecutorStatus {
      */
     private static Integer extractFinishedDataMovement(JsonNode executorStateJson) {
         verifyFieldExists(executorStateJson, FINISHED_DATA_MOVEMENT_KEY);
-        return executorStateJson.get(FINISHED_DATA_MOVEMENT_KEY).asInt();
+        return executorStateJson.get(FINISHED_DATA_MOVEMENT_KEY).asInt(0);
     }
 
     /**
@@ -156,7 +156,7 @@ public class ExecutorStatus {
      */
     private static Instant extractTaskStartTime(JsonNode executorStateJson) {
         verifyFieldExists(executorStateJson, TRIGGERED_TASK_REASON_KEY);
-        String triggeredTaskReason = executorStateJson.get(TRIGGERED_TASK_REASON_KEY).asText();
+        String triggeredTaskReason = executorStateJson.get(TRIGGERED_TASK_REASON_KEY).asString();
         // Extract the timestamp from the string, assuming it's in ISO 8601 format
         String dateString = extractDateFromTriggeredTaskReason(triggeredTaskReason);
 
