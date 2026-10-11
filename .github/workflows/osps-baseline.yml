@@ -1,0 +1,64 @@
+# OSPS Baseline evaluation for the Security Slam Mechanizer badge (Option 1: the scanner action).
+# Runs the OpenSSF Baseline scanner (Maturity Level 1) on a schedule, on pushes
+# to main, and on demand. Results go to a workflow artifact and the Security tab,
+# and are not published to grc.store.
+#
+# Requires the octo-sts GitHub App (https://github.com/octo-sts/app) installed on
+# the strimzi org, with the trust policy in .github/chainguard/osps-baseline.sts.yaml
+# merged to main.
+name: OSPS Baseline
+
+on:
+  schedule:
+    - cron: "0 9 * * 1" # Weekly, Mondays 09:00 UTC
+  push:
+    branches: [main]
+  workflow_dispatch:
+  # No pull_request trigger: the octo-sts trust policy only issues a token to
+  # this workflow on main, and fork code never runs here.
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  assess:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      id-token: write # Federate with octo-sts for a read-only scanner token
+      security-events: write # Upload failed controls as SARIF to the Security tab
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Get a read-only token from octo-sts
+        uses: octo-sts/action@f603d3be9d8dd9871a265776e625a27b00effe05 # v1.1.1
+        id: octo-sts
+        with:
+          scope: ${{ github.repository }}
+          identity: osps-baseline
+
+      - name: OSPS Baseline scan
+        uses: revanite-io/osps-baseline-action@1af7ff8b44af83f120b20cc5f63b877286849257 # v1.5.2
+        with:
+          owner: ${{ github.repository_owner }}
+          repo: ${{ github.event.repository.name }}
+          # The built-in GITHUB_TOKEN cannot read the repo settings the scanner
+          # checks; octo-sts issues a short-lived, read-only token instead of a PAT.
+          token: ${{ steps.octo-sts.outputs.token }}
+          catalog: "osps-baseline-2026-08" # current OSPS Baseline release (2026-08-28)
+          upload-sarif: "true"
+          fail-on-error: "true"
+
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: osps-baseline-results-${{ github.run_number }}
+          path: evaluation_results/
+          retention-days: 30

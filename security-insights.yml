@@ -1,0 +1,232 @@
+header:
+  schema-version: 2.2.0
+  last-updated: '2026-10-08'
+  last-reviewed: '2026-10-08'
+  url: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/main/security-insights.yml
+
+project:
+  name: Strimzi
+  homepage: https://strimzi.io
+  administrators:
+    - name: Jakub Scholz
+      affiliation: Cloudera
+      email: github@scholzj.com
+      primary: false
+    - name: Paolo Patierno
+      affiliation: IBM
+      email: ppatierno@live.com
+      primary: false
+    - name: Tom Bentley
+      affiliation: IBM
+      email: tbentley@redhat.com
+      primary: false
+    - name: Sam Hawker
+      affiliation: IBM
+      email: sam.b.hawker@gmail.com
+      primary: false
+    - name: Jakub Stejskal
+      affiliation: IBM
+      email: xstejs24@gmail.com
+      primary: false
+    - name: Stanislav Knot
+      affiliation: CIKLUM Czechia
+      email: stkn@ciklum.com
+      primary: false
+    - name: Lukáš Král
+      affiliation: IBM
+      email: l.kral@outlook.com
+      primary: false
+    - name: Maroš Orsák
+      affiliation: IBM
+      email: maros.orsak159@gmail.com
+      primary: false
+    - name: Kate Stanley
+      affiliation: IBM
+      email: katherisibm@gmail.com
+      primary: false
+    - name: Gantigmaa Selenge
+      affiliation: IBM
+      email: tina.selenge@gmail.com
+      primary: false
+  repositories:
+    - name: strimzi-kafka-operator
+      url: https://github.com/strimzi/strimzi-kafka-operator
+      comment: Primary repository. Runs Apache Kafka on Kubernetes and OpenShift, including the Cluster, Topic and User Operators.
+    - name: drain-cleaner
+      url: https://github.com/strimzi/drain-cleaner
+      comment: Utility to help with draining nodes running Strimzi-managed Apache Kafka or ZooKeeper pods.
+    - name: strimzi-kafka-bridge
+      url: https://github.com/strimzi/strimzi-kafka-bridge
+      comment: HTTP bridge for Apache Kafka.
+    - name: strimzi-kafka-oauth
+      url: https://github.com/strimzi/strimzi-kafka-oauth
+      comment: OAuth2 support for Apache Kafka to work with many OAuth2 authorization servers.
+    - name: strimzi-mqtt-bridge
+      url: https://github.com/strimzi/strimzi-mqtt-bridge
+      comment: MQTT bridge for Apache Kafka.
+    - name: kafka-access-operator
+      url: https://github.com/strimzi/kafka-access-operator
+      comment: Operator for sharing access to Strimzi clusters across namespaces.
+    - name: kafka-kubernetes-config-provider
+      url: https://github.com/strimzi/kafka-kubernetes-config-provider
+      comment: Kubernetes Configuration Provider for Apache Kafka.
+    - name: kafka-quotas-plugin
+      url: https://github.com/strimzi/kafka-quotas-plugin
+      comment: Broker quota plugin for Apache Kafka to allow setting per-broker limits statically in the broker configuration.
+    - name: metrics-reporter
+      url: https://github.com/strimzi/metrics-reporter
+      comment: Prometheus Metrics Reporter for Apache Kafka server and client components.
+  vulnerability-reporting:
+    reports-accepted: true
+    bug-bounty-available: false
+    contact:
+      name: Strimzi Maintainers
+      email: cncf-strimzi-maintainers@lists.cncf.io
+      primary: true
+    policy: https://github.com/strimzi/.github/blob/main/SECURITY.md
+    comment: Report privately via the Strimzi maintainers mailing list. Do not open public GitHub issues for security vulnerabilities.
+  documentation:
+    design: https://strimzi.io/docs/operators/latest/overview
+    detailed-guide: https://strimzi.io/documentation/
+    quickstart-guide: https://strimzi.io/quickstarts/
+    code-of-conduct: https://github.com/strimzi/.github/blob/main/CODE_OF_CONDUCT.md
+    signature-verification: https://github.com/strimzi/strimzi-kafka-operator/blob/main/README.md#container-signatures
+
+repository:
+  url: https://github.com/strimzi/strimzi-kafka-operator
+  status: active
+  accepts-change-request: true
+  accepts-automated-change-request: false
+  core-team:
+    - name: Jakub Scholz
+      affiliation: Cloudera
+      email: github@scholzj.com
+      primary: false
+    - name: Paolo Patierno
+      affiliation: IBM
+      email: ppatierno@live.com
+      primary: false
+    - name: Tom Bentley
+      affiliation: IBM
+      email: tbentley@redhat.com
+      primary: false
+    - name: Sam Hawker
+      affiliation: IBM
+      email: sam.b.hawker@gmail.com
+      primary: false
+    - name: Jakub Stejskal
+      affiliation: IBM
+      email: xstejs24@gmail.com
+      primary: false
+    - name: Stanislav Knot
+      affiliation: CIKLUM Czechia
+      email: stkn@ciklum.com
+      primary: false
+    - name: Lukáš Král
+      affiliation: IBM
+      email: l.kral@outlook.com
+      primary: false
+    - name: Maroš Orsák
+      affiliation: IBM
+      email: maros.orsak159@gmail.com
+      primary: false
+    - name: Kate Stanley
+      affiliation: IBM
+      email: katherisibm@gmail.com
+      primary: false
+    - name: Gantigmaa Selenge
+      affiliation: IBM
+      email: tina.selenge@gmail.com
+      primary: false
+  license:
+    url: https://github.com/strimzi/strimzi-kafka-operator/blob/main/LICENSE
+    expression: Apache-2.0
+  documentation:
+    contributing-guide: https://github.com/strimzi/strimzi-kafka-operator/blob/main/README.md#contributing
+    dependency-management-policy: https://github.com/strimzi/strimzi-kafka-operator/blob/main/development-docs/DEV_GUIDE.md#dependency-management
+    governance: https://github.com/strimzi/governance/blob/main/GOVERNANCE.md
+    security-policy: https://github.com/strimzi/.github/blob/main/SECURITY.md
+  release:
+    automated-pipeline: true
+    changelog: https://github.com/strimzi/strimzi-kafka-operator/blob/main/CHANGELOG.md
+    distribution-points:
+      - uri: https://github.com/strimzi/strimzi-kafka-operator/releases
+        comment: GitHub Releases page with binaries, Kubernetes/OpenShift YAML archives and SBOMs.
+      - uri: https://quay.io/repository/strimzi/operator
+        comment: Container images, cosign-signed (keyless since 0.49.0).
+      - uri: https://central.sonatype.com/namespace/io.strimzi
+        comment: Java artifacts published to Maven Central.
+      - uri: https://artifacthub.io/packages/search?repo=strimzi-kafka-operator
+        comment: Helm charts.
+  security:
+    assessments:
+      self:
+        comment: A security self-assessment is in progress but not yet merged or published. It is being drafted in the strimzi/governance repository.
+    tools:
+      - name: CodeQL
+        type: SAST
+        rulesets:
+          - default
+        integration:
+          adhoc: true
+          ci: true
+          release: false
+        results:
+          ci:
+            name: CodeQL Analysis
+            predicate-uri: https://github.com/github/codeql-action
+            location: https://github.com/strimzi/strimzi-kafka-operator/actions/workflows/codeql-analysis.yml
+      - name: Snyk
+        type: SCA
+        rulesets:
+          - default
+        integration:
+          adhoc: false
+          ci: true
+          release: true
+        results:
+          ci:
+            name: Snyk Scanning
+            predicate-uri: https://snyk.io
+            location: https://github.com/strimzi/strimzi-kafka-operator/actions/workflows/snyk.yml
+      - name: FOSSA
+        type: other
+        comment: License compliance and dependency scanning.
+        rulesets:
+          - default
+        integration:
+          adhoc: false
+          ci: true
+          release: true
+        results:
+          ci:
+            name: FOSSA Scanning
+            predicate-uri: https://fossa.com
+            location: https://github.com/strimzi/strimzi-kafka-operator/actions/workflows/fossa.yml
+      - name: OpenSSF Scorecard
+        type: other
+        rulesets:
+          - default
+        integration:
+          adhoc: true
+          ci: true
+          release: false
+        results:
+          ci:
+            name: OpenSSF Scorecard Analysis
+            predicate-uri: https://github.com/ossf/scorecard-action
+            location: https://github.com/strimzi/strimzi-kafka-operator/actions/workflows/scorecards.yml
+      - name: OSPS Baseline Scanner
+        type: other
+        comment: Evaluated against the osps-baseline-2026-08 catalog at Maturity Level 1. Results are not published to grc.store.
+        rulesets:
+          - osps-baseline-2026-08
+        integration:
+          adhoc: true
+          ci: true
+          release: false
+        results:
+          ci:
+            name: OSPS Baseline evaluation
+            predicate-uri: https://github.com/revanite-io/osps-baseline-action
+            location: https://github.com/strimzi/strimzi-kafka-operator/actions/workflows/osps-baseline.yml
