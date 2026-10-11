@@ -28,7 +28,7 @@
         <opentelemetry.instrumentation.version>1.32.0-alpha</opentelemetry.instrumentation.version>
         <grpc-netty-shaded.version>1.79.0</grpc-netty-shaded.version>
         <log4j.version>2.25.5</log4j.version>
-        <jackson.version>2.21.6</jackson.version>
+        <jackson.version>2.21.7</jackson.version>
     </properties>
 
     <repositories>
