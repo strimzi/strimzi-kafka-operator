@@ -8,6 +8,10 @@ on:
       - completed
     branches:
       - main
+    # `branches` matches the triggering run's head branch by name only. A fork PR
+    # whose branch is also named "main" matches it, and workflow_run jobs get the
+    # org secrets regardless of who produced the build. Every job below therefore
+    # also checks head_repository before touching the build artifact.
   # Allow to run it also as reusable workflow from releases
   workflow_call:
     inputs:
@@ -37,7 +41,10 @@ jobs:
   # Scan Maven dependencies using FOSSA
   fossa-maven-scan:
     name: FOSSA Maven Scan
-    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name != 'workflow_run' }}
+    if: >-
+      ${{ github.event_name != 'workflow_run' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.head_repository.full_name == github.repository) }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:
@@ -71,7 +78,10 @@ jobs:
   # Discover container images from build artifacts for matrix scanning
   prepare-container-scan:
     name: Prepare Container Scan
-    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name != 'workflow_run' }}
+    if: >-
+      ${{ github.event_name != 'workflow_run' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.head_repository.full_name == github.repository) }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -92,16 +102,22 @@ jobs:
       - name: List container images
         id: list-images
         run: |
+          # Names come from filenames inside the downloaded artifact and flow on into
+          # shell and action inputs, so restrict them to a safe charset here.
           IMAGES=$(find docker-images/container-archives -name '*.tar.gz' ! -name 'base-*' -print0 | \
             xargs -0 -I{} basename {} | \
             sed 's/\.tar\.gz$//' | \
-            jq -R -s -c 'split("\n") | map(select(. != ""))')
+            jq -R -s -c 'split("\n") | map(select(test("^[A-Za-z0-9._-]+$")))')
           echo "images=$IMAGES" >> "$GITHUB_OUTPUT"
           echo "Found images: $IMAGES"
 
   # Scan each container image using FOSSA
   fossa-container-scan:
     name: FOSSA Container Scan (${{ matrix.image }})
+    if: >-
+      ${{ github.event_name != 'workflow_run' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.head_repository.full_name == github.repository) }}
     needs:
       - prepare-container-scan
     runs-on: ubuntu-latest
@@ -135,8 +151,10 @@ jobs:
         # Derive a clean FOSSA project name from the archive filename.
         # Examples: operator-latest-amd64 -> operator-container
         #           kafka-latest-kafka-4.2.0-amd64 -> kafka-4.2.0-container
+        env:
+          IMAGE: ${{ matrix.image }}
         run: |
-          name='${{ matrix.image }}'
+          name="$IMAGE"
           name="${name//-latest/}"        # strip "-latest" tag
           name="${name//-amd64/}"         # strip "-amd64" architecture suffix
           name="${name/#kafka-kafka-/kafka-}"  # deduplicate "kafka-kafka-" prefix
