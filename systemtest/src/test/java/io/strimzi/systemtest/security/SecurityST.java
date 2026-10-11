@@ -68,7 +68,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 
 import java.io.InputStream;
@@ -132,7 +131,6 @@ class SecurityST extends AbstractST {
     @Tag(ROLLING_UPDATE)
     @Tag(CRUISE_CONTROL)
     @Tag("ClusterCaCerts")
-    @Disabled // Cruise Control is not compatible with Kafka 4.4.0
     void testAutoRenewClusterCaCertsTriggeredByAnno() {
         autoRenewSomeCaCertsTriggeredByAnno(
                 /* brokers need new certs */
@@ -159,7 +157,6 @@ class SecurityST extends AbstractST {
     @Tag(ROLLING_UPDATE)
     @Tag(CRUISE_CONTROL)
     @Tag("ClientsCaCerts")
-    @Disabled // Cruise Control is not compatible with Kafka 4.4.0
     void testAutoRenewClientsCaCertsTriggeredByAnno() {
         autoRenewSomeCaCertsTriggeredByAnno(
                 /* brokers need to trust client certs with new cert */
@@ -188,7 +185,6 @@ class SecurityST extends AbstractST {
     @Tag(ROLLING_UPDATE)
     @Tag(CRUISE_CONTROL)
     @Tag("AllCaCerts")
-    @Disabled // Cruise Control is not compatible with Kafka 4.4.0
     void testAutoRenewAllCaCertsTriggeredByAnno() {
         autoRenewSomeCaCertsTriggeredByAnno(
                 true,
@@ -336,7 +332,6 @@ class SecurityST extends AbstractST {
     @Tag(ROLLING_UPDATE)
     @Tag(CRUISE_CONTROL)
     @Tag("ClusterCaKeys")
-    @Disabled // Cruise Control is not compatible with Kafka 4.4.0
     void testAutoReplaceClusterCaKeysTriggeredByAnno() {
         autoReplaceSomeKeysTriggeredByAnno(
                 3, // additional third rolling due to the removal of the older cluster CA certificate
@@ -362,7 +357,6 @@ class SecurityST extends AbstractST {
     @Tag(ROLLING_UPDATE)
     @Tag(CRUISE_CONTROL)
     @Tag("ClientsCaKeys")
-    @Disabled // Cruise Control is not compatible with Kafka 4.4.0
     void testAutoReplaceClientsCaKeysTriggeredByAnno() {
         autoReplaceSomeKeysTriggeredByAnno(
                 1,
@@ -388,7 +382,6 @@ class SecurityST extends AbstractST {
     @Tag(ROLLING_UPDATE)
     @Tag(CRUISE_CONTROL)
     @Tag("AllCaKeys")
-    @Disabled // Cruise Control is not compatible with Kafka 4.4.0
     void testAutoReplaceAllCaKeysTriggeredByAnno() {
         autoReplaceSomeKeysTriggeredByAnno(
                 3, // additional third rolling due to the removal of the older cluster CA certificate
@@ -612,7 +605,6 @@ class SecurityST extends AbstractST {
     )
     @ParallelNamespaceTest
     @Tag(CRUISE_CONTROL)
-    @Disabled // Cruise Control is not compatible with Kafka 4.4.0
     void testAutoRenewCaCertsTriggerByExpiredCertificate() {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 

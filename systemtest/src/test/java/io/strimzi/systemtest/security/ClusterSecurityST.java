@@ -49,7 +49,6 @@ import io.strimzi.systemtest.utils.specific.ClusterSecuritySTUtils;
 import io.strimzi.testclients.clients.kafka.KafkaProducerConsumer;
 import io.strimzi.testclients.clients.kafka.KafkaProducerConsumerBuilder;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -113,7 +112,6 @@ class ClusterSecurityST extends AbstractST {
     )
     @ParameterizedTest(name = "Encryption: {0}; Authentication: {1}")
     @MethodSource("securityConfigurationCombos")
-    @Disabled // Cruise Control is not compatible with Kafka 4.4.0
     void testClusterSecurityConfiguration(ClusterSecurityEncryptionType encryption, ClusterSecurityAuthenticationType authentication) {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 

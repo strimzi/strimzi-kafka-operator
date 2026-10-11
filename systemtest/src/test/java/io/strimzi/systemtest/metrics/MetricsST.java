@@ -66,7 +66,6 @@ import io.strimzi.testclients.clients.kafka.KafkaProducerConsumerBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 
 import java.io.IOException;
@@ -132,7 +131,6 @@ import static org.junit.jupiter.api.Assumptions.assumeFalse;
         @Label(value = TestDocsLabels.METRICS),
     }
 )
-@Disabled // Cruise Control is not compatible with Kafka 4.4.0
 public class MetricsST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(MetricsST.class);

@@ -54,7 +54,6 @@ import io.strimzi.testclients.clients.kafka.KafkaProducerConsumer;
 import io.strimzi.testclients.clients.kafka.KafkaProducerConsumerBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 
 import java.util.ArrayList;
@@ -377,7 +376,6 @@ public class NetworkPoliciesST extends AbstractST {
     @Tag(CRUISE_CONTROL)
     @SkipDefaultNetworkPolicyCreation("NetworkPolicy generation from CO is disabled in this test, resulting in problems with connection" +
         " in case of that DENY ALL global NetworkPolicy is used")
-    @Disabled // Cruise Control is not compatible with Kafka 4.4.0
     void testNPGenerationEnvironmentVariable() {
         assumeTrue(!Environment.isHelmInstall() && !Environment.isOlmInstall());
 
