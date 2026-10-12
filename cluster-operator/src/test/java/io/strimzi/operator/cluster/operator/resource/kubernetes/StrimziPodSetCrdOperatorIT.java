@@ -4,8 +4,6 @@
  */
 package io.strimzi.operator.cluster.operator.resource.kubernetes;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.fabric8.kubernetes.api.model.ContainerBuilder;
 import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.fabric8.kubernetes.api.model.Pod;
@@ -22,6 +20,8 @@ import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.Test;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.util.Map;
 import java.util.concurrent.CompletionException;
@@ -43,7 +43,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 public class StrimziPodSetCrdOperatorIT extends AbstractCustomResourceOperatorIT<KubernetesClient, StrimziPodSet, StrimziPodSetList> {
     protected static final Logger LOGGER = LogManager.getLogger(StrimziPodSetCrdOperatorIT.class);
 
-    private final ObjectMapper mapper = new ObjectMapper();
+    private final JsonMapper jsonMapper = new JsonMapper();
 
     @Override
     protected StrimziPodSetOperator operator() {
@@ -85,7 +85,7 @@ public class StrimziPodSetCrdOperatorIT extends AbstractCustomResourceOperatorIT
                 .endMetadata()
                 .withNewSpec()
                     .withSelector(new LabelSelectorBuilder().withMatchLabels(Map.of("role", "broker")).build())
-                    .withPods(mapper.convertValue(pod, new TypeReference<Map<String, Object>>() { }))
+                    .withPods(jsonMapper.convertValue(pod, new TypeReference<Map<String, Object>>() { }))
                 .endSpec()
                 .withNewStatus()
                     .withPods(1)
@@ -110,7 +110,7 @@ public class StrimziPodSetCrdOperatorIT extends AbstractCustomResourceOperatorIT
 
         return new StrimziPodSetBuilder(resourceInCluster)
                 .editSpec()
-                    .addToPods(mapper.convertValue(pod, new TypeReference<Map<String, Object>>() { }))
+                    .addToPods(jsonMapper.convertValue(pod, new TypeReference<Map<String, Object>>() { }))
                 .endSpec()
                 .build();
 

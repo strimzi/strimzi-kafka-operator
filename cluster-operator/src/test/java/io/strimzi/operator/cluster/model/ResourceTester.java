@@ -4,12 +4,11 @@
  */
 package io.strimzi.operator.cluster.model;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.exc.InvalidFormatException;
-import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.CustomResource;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.exc.InvalidFormatException;
+import tools.jackson.dataformat.yaml.YAMLMapper;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -46,21 +45,21 @@ class ResourceTester<R extends HasMetadata, M extends AbstractModel> {
         if (url == null) {
             return null;
         }
-        ObjectMapper mapper = new YAMLMapper();
+        YAMLMapper yamlMapper = new YAMLMapper();
         try {
-            return mapper.readValue(url.openStream(), c);
+            return yamlMapper.readValue(url.openStream(), c);
         } catch (InvalidFormatException e) {
             throw new IllegalArgumentException(e);
-        } catch (IOException e) {
+        } catch (IOException | JacksonException e) {
             throw new RuntimeException(e);
         }
     }
 
     private static <T> String toYamlString(T instance) {
-        ObjectMapper mapper = new YAMLMapper();
+        YAMLMapper yamlMapper = new YAMLMapper();
         try {
-            return mapper.writeValueAsString(instance);
-        } catch (JsonProcessingException e) {
+            return yamlMapper.writeValueAsString(instance);
+        } catch (JacksonException e) {
             throw new RuntimeException(e);
         }
     }

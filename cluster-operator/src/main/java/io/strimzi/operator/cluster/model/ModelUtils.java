@@ -4,8 +4,6 @@
  */
 package io.strimzi.operator.cluster.model;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.fabric8.kubernetes.api.model.Affinity;
 import io.fabric8.kubernetes.api.model.AffinityBuilder;
 import io.fabric8.kubernetes.api.model.HasMetadata;
@@ -27,8 +25,9 @@ import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.common.model.Labels;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.json.JsonMapper;
 
-import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
@@ -105,8 +104,8 @@ public class ModelUtils {
      */
     public static Storage decodeStorageFromJson(String json) {
         try {
-            return new ObjectMapper().readValue(json, Storage.class);
-        } catch (IOException e) {
+            return new JsonMapper().readValue(json, Storage.class);
+        } catch (JacksonException e) {
             throw new RuntimeException(e);
         }
     }
@@ -120,8 +119,8 @@ public class ModelUtils {
      */
     public static String encodeStorageToJson(Storage storage) {
         try {
-            return new ObjectMapper().writeValueAsString(storage);
-        } catch (JsonProcessingException e) {
+            return new JsonMapper().writeValueAsString(storage);
+        } catch (JacksonException e) {
             throw new RuntimeException(e);
         }
     }

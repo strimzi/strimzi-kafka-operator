@@ -4,13 +4,14 @@
  */
 package io.strimzi.operator.cluster.model;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.strimzi.api.kafka.model.kafka.KafkaClusterSpec;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListener;
 import io.strimzi.kafka.config.model.ConfigModel;
 import io.strimzi.kafka.config.model.ConfigModels;
 import io.strimzi.kafka.config.model.Type;
 import io.strimzi.operator.common.Reconciliation;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -137,7 +138,7 @@ public class KafkaConfiguration extends AbstractConfiguration {
         try {
             try (InputStream in = KafkaConfiguration.class.getResourceAsStream(name)) {
                 if (in != null) {
-                    ConfigModels configModels = new ObjectMapper().readValue(in, ConfigModels.class);
+                    ConfigModels configModels = new JsonMapper().readValue(in, ConfigModels.class);
                     if (!kafkaVersion.mavenVersion().equals(configModels.getVersion())) {
                         throw new RuntimeException("Incorrect version");
                     }
@@ -147,7 +148,7 @@ public class KafkaConfiguration extends AbstractConfiguration {
                     throw new RuntimeException("Configuration model " + name + " was not found");
                 }
             }
-        } catch (IOException e) {
+        } catch (IOException | JacksonException e) {
             throw new RuntimeException("Error reading from classpath resource " + name, e);
         }
     }

@@ -4,8 +4,6 @@
  */
 package io.strimzi.operator.cluster;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.fabric8.kubernetes.api.model.APIGroup;
 import io.fabric8.kubernetes.api.model.APIResourceList;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -18,6 +16,8 @@ import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.text.ParseException;
 import java.util.Map;
@@ -288,9 +288,9 @@ public class PlatformFeaturesAvailability implements PlatformFeatures {
             return null;
         }
 
-        JsonNode json = new ObjectMapper().readTree(discoveryDocument);
-        String issuer = json.path("issuer").asText(null);
-        String jwksUri = json.path("jwks_uri").asText(null);
+        JsonNode json = new JsonMapper().readTree(discoveryDocument);
+        String issuer = json.path("issuer").asString(null);
+        String jwksUri = json.path("jwks_uri").asString(null);
 
         if (issuer == null || issuer.isBlank() || jwksUri == null || jwksUri.isBlank()) {
             LOGGER.warn("Kubernetes OIDC discovery document is missing the issuer or the JWKS URI: {}", discoveryDocument);

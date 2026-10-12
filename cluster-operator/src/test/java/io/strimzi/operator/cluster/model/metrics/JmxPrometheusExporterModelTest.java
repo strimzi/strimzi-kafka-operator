@@ -48,6 +48,39 @@ public class JmxPrometheusExporterModelTest {
     }
 
     @Test
+    public void testMetricsYamlParsing()   {
+        MetricsConfig metricsConfig = new JmxPrometheusExporterMetricsBuilder()
+                .withNewValueFrom()
+                    .withConfigMapKeyRef(new ConfigMapKeySelector("my-key", "my-name", false))
+                .endValueFrom()
+                .build();
+
+        JmxPrometheusExporterModel metrics = new JmxPrometheusExporterModel(new KafkaConnectSpecBuilder().withMetricsConfig(metricsConfig).build());
+
+        // The YAML 1.2 Core schema is used => YAML 1.1 booleans such as yes, no, on, or off are strings
+        String yaml = """
+                bool1: true
+                bool2: False
+                yes1: yes
+                no1: no
+                on1: on
+                off1: off
+                null1: ~
+                null2: null
+                null3:
+                int1: 10
+                float1: .5
+                hex1: 0x1F
+                str1: "true"
+                """;
+        assertThat(metrics.metricsJson(Reconciliation.DUMMY_RECONCILIATION, new ConfigMapBuilder().withData(Map.of("my-key", yaml)).build()),
+                is("{\"bool1\":true,\"bool2\":false,\"yes1\":\"yes\",\"no1\":\"no\",\"on1\":\"on\",\"off1\":\"off\",\"null1\":null,\"null2\":null,\"null3\":null,\"int1\":10,\"float1\":0.5,\"hex1\":31,\"str1\":\"true\"}"));
+
+        // Only the first document is used
+        assertThat(metrics.metricsJson(Reconciliation.DUMMY_RECONCILIATION, new ConfigMapBuilder().withData(Map.of("my-key", "foo: bar\n---\nfoo: baz\n")).build()), is("{\"foo\":\"bar\"}"));
+    }
+
+    @Test
     public void testProblemWithConfigMap()   {
         MetricsConfig metricsConfig = new JmxPrometheusExporterMetricsBuilder()
                 .withNewValueFrom()
