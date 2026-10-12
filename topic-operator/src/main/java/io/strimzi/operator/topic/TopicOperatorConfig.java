@@ -4,10 +4,6 @@
  */
 package io.strimzi.operator.topic;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.strimzi.operator.common.InvalidConfigurationException;
 import io.strimzi.operator.common.config.ConfigParameter;
 import io.strimzi.operator.common.config.ConfigParameterParser;
@@ -17,6 +13,10 @@ import io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties
 import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.common.config.SaslConfigs;
 import org.apache.kafka.common.config.SslConfigs;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.json.JsonReadFeature;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -497,11 +497,12 @@ public class TopicOperatorConfig {
             throw new InvalidConfigurationException("Custom SASL config properties are not set");
         }
 
-        ObjectMapper objectMapper = new ObjectMapper();
-        objectMapper.configure(JsonParser.Feature.ALLOW_COMMENTS, true);
+        JsonMapper jsonMapper = JsonMapper.builder()
+                .enable(JsonReadFeature.ALLOW_JAVA_COMMENTS)
+                .build();
 
         try {
-            Map<String, String> customProperties = objectMapper.readValue(saslCustomConfigJson(), STRING_HASH_MAP_TYPE_REFERENCE);
+            Map<String, String> customProperties = jsonMapper.readValue(saslCustomConfigJson(), STRING_HASH_MAP_TYPE_REFERENCE);
 
             if (customProperties.isEmpty()) {
                 throw new InvalidConfigurationException("SASL custom config properties empty");
@@ -517,7 +518,7 @@ public class TopicOperatorConfig {
 
                 kafkaClientProps.put(key, value);
             }
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             throw new InvalidConfigurationException("SASL custom config properties deserialize failed. customProperties: '" + saslCustomConfigJson() + "'");
         }
     }

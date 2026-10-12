@@ -4,8 +4,6 @@
  */
 package io.strimzi.operator.topic.cruisecontrol;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.strimzi.api.kafka.model.topic.KafkaTopic;
 import io.strimzi.operator.common.ReconciliationLogger;
@@ -13,6 +11,8 @@ import io.strimzi.operator.common.model.cruisecontrol.CruiseControlEndpoints;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlHeaders;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlParameters;
 import io.strimzi.operator.topic.TopicOperatorUtil;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.json.JsonMapper;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManagerFactory;
@@ -62,7 +62,7 @@ public class CruiseControlClientImpl implements CruiseControlClient {
     
     private final ExecutorService httpClientExecutor;
     private HttpClient httpClient;
-    private final ObjectMapper objectMapper;
+    private final JsonMapper jsonMapper;
     
     CruiseControlClientImpl(String serverHostname,
                             int serverPort,
@@ -82,7 +82,7 @@ public class CruiseControlClientImpl implements CruiseControlClient {
         this.authPassword = authPassword;
         this.httpClientExecutor = Executors.newCachedThreadPool();
         this.httpClient = buildHttpClient();
-        this.objectMapper = new ObjectMapper();
+        this.jsonMapper = new JsonMapper();
     }
 
     @Override
@@ -114,9 +114,9 @@ public class CruiseControlClientImpl implements CruiseControlClient {
         });
         String jsonPayload;
         try {
-            jsonPayload = objectMapper.writeValueAsString(
+            jsonPayload = jsonMapper.writeValueAsString(
                 new ReplicationFactorChanges(new ReplicationFactor(requestPayload)));
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             throw new RuntimeException(format("Request serialization failed: %s", e.getMessage()));
         }
         
@@ -189,8 +189,8 @@ public class CruiseControlClientImpl implements CruiseControlClient {
             }
 
             try {
-                return objectMapper.readValue(response.body(), UserTasksResponse.class);
-            } catch (JsonProcessingException e) {
+                return jsonMapper.readValue(response.body(), UserTasksResponse.class);
+            } catch (JacksonException e) {
                 throw new RuntimeException(format("Response deserialization failed, %s", e.getMessage()));
             }
         }).exceptionally(t -> {
@@ -210,7 +210,7 @@ public class CruiseControlClientImpl implements CruiseControlClient {
             }
             if (response.body() != null && !response.body().isEmpty()) {
                 try {
-                    ErrorResponse errorResponse = objectMapper.readValue(response.body(), ErrorResponse.class);
+                    ErrorResponse errorResponse = jsonMapper.readValue(response.body(), ErrorResponse.class);
                     if (errorResponse.errorMessage() != null) {
                         if (errorResponse.errorMessage().contains("NotEnoughValidWindowsException")) {
                             return Optional.of("Cluster model not ready");
@@ -221,7 +221,7 @@ public class CruiseControlClientImpl implements CruiseControlClient {
                             return Optional.of(errorResponse.errorMessage());
                         }
                     }
-                } catch (JsonProcessingException e) {
+                } catch (JacksonException e) {
                     throw new RuntimeException(format("Error deserialization failed: %s", e.getMessage()));
                 }
             }
