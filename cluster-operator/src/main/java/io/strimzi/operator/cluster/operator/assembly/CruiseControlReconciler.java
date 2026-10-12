@@ -243,7 +243,7 @@ public class CruiseControlReconciler {
     protected CompletionStage<Void> certificatesSecret(Clock clock) {
         if (cruiseControl != null) {
             return secretOperator.getAsync(reconciliation.namespace(), CruiseControlResources.secretName(reconciliation.name()))
-                    .thenCompose(oldSecret -> cruiseControl.generateCertificatesSecret(reconciliation.namespace(), reconciliation.name(), clusterCa, oldSecret, Util.isMaintenanceTimeWindowsSatisfied(reconciliation, maintenanceWindows, clock.instant())))
+                    .thenCompose(oldSecret -> cruiseControl.generateCertificatesSecret(clusterCa, oldSecret, Util.isMaintenanceTimeWindowsSatisfied(reconciliation, maintenanceWindows, clock.instant())))
                     .thenCompose(newSecret ->
                             secretOperator.reconcile(reconciliation, reconciliation.namespace(), CruiseControlResources.secretName(reconciliation.name()), newSecret)
                                     .thenApply(i -> {
