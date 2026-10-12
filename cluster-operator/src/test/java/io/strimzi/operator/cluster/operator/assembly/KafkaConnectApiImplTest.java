@@ -4,7 +4,6 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import com.github.tomakehurst.wiremock.stubbing.Scenario;
@@ -16,6 +15,7 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.util.Collections;
 import java.util.Map;
@@ -141,7 +141,7 @@ public class KafkaConnectApiImplTest {
         server.stubFor(get(urlPathMatching(".*"))
                 .willReturn(aResponse()
                         .withStatus(200)
-                        .withBody(new ObjectMapper().writeValueAsString(
+                        .withBody(new JsonMapper().writeValueAsString(
                                 Map.of(
                                         "org.apache.kafka.connect",
                                         Map.of(
@@ -164,7 +164,7 @@ public class KafkaConnectApiImplTest {
         server.stubFor(get(urlPathMatching(".*"))
                 .willReturn(aResponse()
                         .withStatus(200)
-                        .withBody(new ObjectMapper().writeValueAsString(
+                        .withBody(new JsonMapper().writeValueAsString(
                                 Map.of(
                                         "org.apache.kafka.connect",
                                         Map.of(

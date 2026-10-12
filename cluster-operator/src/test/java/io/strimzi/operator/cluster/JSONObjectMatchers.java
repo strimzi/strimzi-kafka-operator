@@ -4,10 +4,10 @@
  */
 package io.strimzi.operator.cluster;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
+import tools.jackson.databind.JsonNode;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -25,7 +25,7 @@ public class JSONObjectMatchers {
                     mismatchDescription.appendText("\n There are actually ")
                             .appendValue(actual.size())
                             .appendText(" entries : ")
-                            .appendValue(actual.fieldNames().toString());
+                            .appendValue(actual.propertyNames().toString());
                     return false;
                 }
                 return true;
@@ -43,7 +43,7 @@ public class JSONObjectMatchers {
             @Override
             protected boolean matchesSafely(JsonNode actual, Description mismatchDescription) {
                 List<String> fieldNames = new ArrayList<>();
-                actual.fieldNames().forEachRemaining(fieldNames::add);
+                fieldNames.addAll(actual.propertyNames());
                 mismatchDescription.appendText("was ").appendValue(fieldNames);
                 if (!fieldNames.contains(key)) {
                     mismatchDescription.appendText("\nDoes not contain desired key");
@@ -65,7 +65,7 @@ public class JSONObjectMatchers {
             @Override
             protected boolean matchesSafely(JsonNode actual, Description mismatchDescription) {
                 List<String> fieldNames = new ArrayList<>();
-                actual.fieldNames().forEachRemaining(fieldNames::add);
+                fieldNames.addAll(actual.propertyNames());
                 mismatchDescription.appendText("was ").appendValue(fieldNames);
                 boolean matches = true;
                 for (String key : keys) {
@@ -97,7 +97,7 @@ public class JSONObjectMatchers {
                     return false;
                 }
 
-                String actualValue = actual.get(key).asText();
+                String actualValue = actual.get(key).asString();
                 if (!value.equals(actualValue)) {
                     mismatchDescription.appendText("\nKey does not have expected value, found " + actualValue);
                     return false;

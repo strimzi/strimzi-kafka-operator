@@ -4,8 +4,6 @@
  */
 package io.strimzi.operator.cluster.operator.resource;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.operator.cluster.auth.RequestedServiceAccountAuthIdentity;
 import io.strimzi.operator.cluster.auth.ServiceAccountTokenService;
@@ -15,6 +13,8 @@ import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.auth.Identity;
 import io.strimzi.operator.common.auth.PemAuthIdentity;
 import io.strimzi.operator.common.auth.PemTrustSet;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.json.JsonMapper;
 
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
@@ -34,7 +34,7 @@ import java.time.Duration;
  */
 public class KafkaAgentClient {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(KafkaAgentClient.class.getName());
-    private static final ObjectMapper MAPPER = new ObjectMapper();
+    private static final JsonMapper JSON_MAPPER = new JsonMapper();
 
     private static final String BROKER_STATE_REST_PATH = "/v1/broker-state/";
     private static final int KAFKA_AGENT_HTTPS_PORT = 8443;
@@ -141,8 +141,8 @@ public class KafkaAgentClient {
         String host = DnsNameGenerator.podDnsName(namespace, KafkaResources.brokersServiceName(cluster), podName);
         try {
             URI uri = new URI(identity.trustSet() instanceof PemTrustSet ? "https" : "http", null, host, KAFKA_AGENT_HTTPS_PORT, BROKER_STATE_REST_PATH, null, null);
-            brokerstate = MAPPER.readValue(doGet(uri), BrokerState.class);
-        } catch (JsonProcessingException e) {
+            brokerstate = JSON_MAPPER.readValue(doGet(uri), BrokerState.class);
+        } catch (JacksonException e) {
             LOGGER.warnCr(reconciliation, "Failed to parse broker state", e);
         } catch (URISyntaxException e) {
             LOGGER.warnCr(reconciliation, "Failed to get broker state due to invalid URI", e);

@@ -5,21 +5,20 @@
 
 package io.strimzi.operator.cluster.operator.assembly;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.databind.node.TextNode;
 import io.strimzi.api.kafka.model.common.ConnectorState;
 import io.strimzi.api.kafka.model.connect.ConnectorPlugin;
 import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.vertx.core.json.JsonObject;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.ObjectNode;
+import tools.jackson.databind.node.StringNode;
 
-import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -43,7 +42,7 @@ import static java.util.Arrays.asList;
 
 class KafkaConnectApiImpl implements KafkaConnectApi {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(KafkaConnectApiImpl.class);
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    private static final JsonMapper JSON_MAPPER = new JsonMapper();
     public static final TypeReference<Map<String, Object>> TREE_TYPE = new TypeReference<>() { };
     public static final TypeReference<Map<String, String>> MAP_OF_STRINGS = new TypeReference<>() { };
     public static final TypeReference<Map<String, Map<String, String>>> MAP_OF_MAP_OF_STRINGS = new TypeReference<>() { };
@@ -77,7 +76,7 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
                     int statusCode = response.statusCode();
                     if (statusCode == 200 || statusCode == 201) {
                         JsonNode json = parseToJsonNode(response);
-                        Map<String, Object> t = OBJECT_MAPPER.convertValue(json, TREE_TYPE);
+                        Map<String, Object> t = JSON_MAPPER.convertValue(json, TREE_TYPE);
                         LOGGER.debugCr(reconciliation, "Got {} response to PUT request to {}: {}", statusCode, path, t);
                         return CompletableFuture.completedFuture(t);
                     } else if (statusCode == 409) {
@@ -117,7 +116,7 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
                     int statusCode = response.statusCode();
                     if (statusCode == 201) {
                         JsonNode json = parseToJsonNode(response);
-                        Map<String, Object> t = OBJECT_MAPPER.convertValue(json, TREE_TYPE);
+                        Map<String, Object> t = JSON_MAPPER.convertValue(json, TREE_TYPE);
                         LOGGER.debugCr(reconciliation, "Got {} response to POST request to {}: {}", statusCode, path, t);
                         return CompletableFuture.completedFuture(t);
                     } else if (statusCode == 409) {
@@ -143,8 +142,8 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
     private JsonNode parseToJsonNode(HttpResponse<String> responseBody) {
         JsonNode json;
         try {
-            json = OBJECT_MAPPER.readTree(responseBody.body());
-        } catch (JsonProcessingException e) {
+            json = JSON_MAPPER.readTree(responseBody.body());
+        } catch (JacksonException e) {
             throw new ConnectRestException(responseBody, "Could not deserialize response: " + e);
         }
         return json;
@@ -170,8 +169,8 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
                     int statusCode = response.statusCode();
                     if (okStatusCodes.contains(statusCode)) {
                         JsonNode json = parseToJsonNode(response);
-                        LOGGER.debugCr(reconciliation, "Got {} response to GET request to {}: {}", statusCode, path, json.asText());
-                        return CompletableFuture.completedFuture(OBJECT_MAPPER.convertValue(json, type));
+                        LOGGER.debugCr(reconciliation, "Got {} response to GET request to {}: {}", statusCode, path, json);
+                        return CompletableFuture.completedFuture(JSON_MAPPER.convertValue(json, type));
                     } else {
                         LOGGER.debugCr(reconciliation, "Got unexpected {} response to GET request to {}. Ok status codes: {}",
                                 statusCode, path, okStatusCodes);
@@ -353,8 +352,8 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
                         List<String> list = new ArrayList<>(objects.size());
 
                         for (Object o : objects) {
-                            if (o instanceof TextNode) {
-                                list.add(((TextNode) o).asText());
+                            if (o instanceof StringNode) {
+                                list.add(((StringNode) o).asString());
                             } else {
                                 return CompletableFuture.failedFuture(new ConnectRestException(response, o == null ? "null" : o.getClass().getName()));
                             }
@@ -383,8 +382,8 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
                     if (statusCode == 200) {
                         try {
                             LOGGER.debugCr(reconciliation, "Got {} response to GET request to {}", statusCode);
-                            return CompletableFuture.completedFuture(asList(OBJECT_MAPPER.readValue(response.body().getBytes(StandardCharsets.UTF_8), ConnectorPlugin[].class)));
-                        } catch (IOException e) {
+                            return CompletableFuture.completedFuture(asList(JSON_MAPPER.readValue(response.body().getBytes(StandardCharsets.UTF_8), ConnectorPlugin[].class)));
+                        } catch (JacksonException e) {
                             LOGGER.warnCr(reconciliation, "Failed to parse list of connector plugins", e);
                             return CompletableFuture.failedFuture(new ConnectRestException(response, "Failed to parse list of connector plugins", e));
                         }
@@ -397,12 +396,12 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
     private CompletionStage<Void> updateConnectorLogger(Reconciliation reconciliation, String host, int port, String logger, String level) {
         String path = "/admin/loggers/" + logger + "?scope=cluster";
 
-        ObjectNode levelJO = OBJECT_MAPPER.createObjectNode();
+        ObjectNode levelJO = JSON_MAPPER.createObjectNode();
         levelJO.put("level", level);
         String data;
         try {
-            data = OBJECT_MAPPER.writeValueAsString(levelJO);
-        } catch (JsonProcessingException e) {
+            data = JSON_MAPPER.writeValueAsString(levelJO);
+        } catch (JacksonException e) {
             return CompletableFuture.failedFuture(new RuntimeException("Could not deserialize the request data for updating logger " + logger + ": " + e));
         }
 
@@ -443,7 +442,7 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
                     if (statusCode == 200) {
                         try {
                             LOGGER.debugCr(reconciliation, "Got {} response to GET request to {}", statusCode, path);
-                            Map<String, Map<String, String>> fetchedLoggers = OBJECT_MAPPER.readValue(response.body().getBytes(StandardCharsets.UTF_8), MAP_OF_MAP_OF_STRINGS);
+                            Map<String, Map<String, String>> fetchedLoggers = JSON_MAPPER.readValue(response.body().getBytes(StandardCharsets.UTF_8), MAP_OF_MAP_OF_STRINGS);
                             Map<String, String> loggerMap = new HashMap<>(fetchedLoggers.size());
                             for (var loggerEntry : fetchedLoggers.entrySet()) {
                                 String level = loggerEntry.getValue().get("level");
@@ -452,7 +451,7 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
                                 }
                             }
                             return CompletableFuture.completedFuture(loggerMap);
-                        } catch (IOException e) {
+                        } catch (JacksonException e) {
                             LOGGER.warnCr(reconciliation, "Failed to get list of connector loggers", e);
                             return CompletableFuture.failedFuture(new ConnectRestException(response, "Failed to get connector loggers", e));
                         }
@@ -498,8 +497,8 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
                 .thenCompose(response -> {
                     if (response.statusCode() == 202) {
                         try {
-                            return CompletableFuture.completedFuture(OBJECT_MAPPER.readValue(response.body().getBytes(StandardCharsets.UTF_8), TREE_TYPE));
-                        } catch (IOException e) {
+                            return CompletableFuture.completedFuture(JSON_MAPPER.readValue(response.body().getBytes(StandardCharsets.UTF_8), TREE_TYPE));
+                        } catch (JacksonException e) {
                             return CompletableFuture.failedFuture(new ConnectRestException(response, "Failed to parse restart status response", e));
                         }
                     } else if (response.statusCode() == 204) {
@@ -526,10 +525,10 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
                     int statusCode = response.statusCode();
                     if (statusCode == 200) {
                         try {
-                            Map<String, Map<String, List<String>>> t = OBJECT_MAPPER.readValue(response.body().getBytes(StandardCharsets.UTF_8), MAP_OF_MAP_OF_LIST_OF_STRING);
+                            Map<String, Map<String, List<String>>> t = JSON_MAPPER.readValue(response.body().getBytes(StandardCharsets.UTF_8), MAP_OF_MAP_OF_LIST_OF_STRING);
                             LOGGER.debugCr(reconciliation, "Got {} response to GET request to {}: {}", statusCode, path, t);
                             return CompletableFuture.completedFuture(t.get(connectorName).get("topics"));
-                        } catch (IOException e) {
+                        } catch (JacksonException e) {
                             LOGGER.warnCr(reconciliation, "Failed to parse list of connector topics", e);
                             return CompletableFuture.failedFuture(new ConnectRestException(response, "Failed to parse list of connector topics", e));
                         }
@@ -556,11 +555,11 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
                     int statusCode = response.statusCode();
                     if (statusCode == 200) {
                         try {
-                            Object offsets = OBJECT_MAPPER.readValue(response.body().getBytes(StandardCharsets.UTF_8), Object.class);
-                            String prettyPrintedOffsets = OBJECT_MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(offsets);
+                            Object offsets = JSON_MAPPER.readValue(response.body().getBytes(StandardCharsets.UTF_8), Object.class);
+                            String prettyPrintedOffsets = JSON_MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(offsets);
                             LOGGER.debugCr(reconciliation, "Got {} response to GET request to {}: {}", statusCode, path, offsets);
                             return CompletableFuture.completedFuture(prettyPrintedOffsets);
-                        } catch (IOException e) {
+                        } catch (JacksonException e) {
                             LOGGER.warnCr(reconciliation, "Failed to parse connector offsets", e);
                             return CompletableFuture.failedFuture(new ConnectRestException(response, "Failed to parse connector offsets", e));
                         }
@@ -587,11 +586,11 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
                     int statusCode = response.statusCode();
                     if (statusCode == 200) {
                         try {
-                            Map<String, String> body = OBJECT_MAPPER.readValue(response.body().getBytes(StandardCharsets.UTF_8), MAP_OF_STRINGS);
+                            Map<String, String> body = JSON_MAPPER.readValue(response.body().getBytes(StandardCharsets.UTF_8), MAP_OF_STRINGS);
                             String message = body.get("message");
                             LOGGER.debugCr(reconciliation, "Got {} response to PATCH request to {}: {}", statusCode, path, message);
                             return CompletableFuture.completedFuture(null);
-                        } catch (IOException e) {
+                        } catch (JacksonException e) {
                             LOGGER.warnCr(reconciliation, "Failed to parse connector offsets alter response", e);
                             return CompletableFuture.failedFuture(new ConnectRestException(response, "Failed to parse connector offsets alter response", e));
                         }
@@ -617,11 +616,11 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
                     int statusCode = response.statusCode();
                     if (statusCode == 200) {
                         try {
-                            Map<String, String> body = OBJECT_MAPPER.readValue(response.body().getBytes(StandardCharsets.UTF_8), MAP_OF_STRINGS);
+                            Map<String, String> body = JSON_MAPPER.readValue(response.body().getBytes(StandardCharsets.UTF_8), MAP_OF_STRINGS);
                             String message = body.get("message");
                             LOGGER.debugCr(reconciliation, "Got {} response to DELETE request to {}: {}", statusCode, path, message);
                             return CompletableFuture.completedFuture(null);
-                        } catch (IOException e) {
+                        } catch (JacksonException e) {
                             LOGGER.warnCr(reconciliation, "Failed to parse connector offsets reset response", e);
                             return CompletableFuture.failedFuture(new ConnectRestException(response, "Failed to parse connector offsets reset response", e));
                         }
@@ -634,13 +633,13 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
     /* test */ static String tryToExtractErrorMessage(Reconciliation reconciliation, String body) {
         JsonNode json;
         try {
-            json = OBJECT_MAPPER.readTree(body);
+            json = JSON_MAPPER.readTree(body);
             if (json.has("message")) {
-                return json.get("message").asText();
+                return json.get("message").asString();
             } else {
                 LOGGER.warnCr(reconciliation, "Failed to decode the error message from the response: " + body);
             }
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             LOGGER.warnCr(reconciliation, "Failed to deserialize the error message from the response: " + body);
         }
         return "Unknown error message";

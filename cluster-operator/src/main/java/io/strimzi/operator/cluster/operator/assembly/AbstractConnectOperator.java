@@ -4,7 +4,6 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.DefaultKubernetesResourceList;
 import io.fabric8.kubernetes.api.model.HasMetadata;
@@ -71,8 +70,9 @@ import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.json.JsonMapper;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -972,9 +972,9 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
 
                     try {
                         String offsets = configMap.getData().get(configMapKeyName);
-                        new ObjectMapper().readValue(offsets, Object.class);
+                        new JsonMapper().readValue(offsets, Object.class);
                         return Future.succeededFuture(offsets);
-                    } catch (IOException e) {
+                    } catch (JacksonException e) {
                         return Future.failedFuture(String.format("Failed to parse contents of %s as JSON: %s", configMapKeyName, e.getMessage()));
                     }
                 });
