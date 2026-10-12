@@ -1,0 +1,107 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: my-connect
+spec:
+  commonName: my-connect # Has to be the same as the name of the KafkaUser resource
+  secretName: my-connect
+  privateKey:
+    algorithm: RSA
+    encoding: PKCS8
+    size: 4096
+  issuerRef:
+    name: strimzi-clients-ca
+    kind: Issuer
+    group: cert-manager.io
+
+---
+apiVersion: kafka.strimzi.io/v1
+kind: KafkaUser
+metadata:
+  name: my-connect
+  labels:
+    strimzi.io/cluster: my-cluster
+spec:
+  authentication:
+    type: tls-external
+  authorization:
+    type: simple
+    acls:
+    # Kafka Connects internal topics used to store configuration, offsets or status
+    - resource:
+        type: group
+        name: my-connect-group
+      operations:
+        - Read
+    - resource:
+        type: topic
+        name: my-connect-configs
+      operations:
+        - Read
+        - Describe
+        - Write
+        - Create
+    - resource:
+        type: topic
+        name: my-connect-status
+      operations:
+        - Read
+        - Describe
+        - Write
+        - Create
+    - resource:
+        type: topic
+        name: my-connect-offsets
+      operations:
+        - Read
+        - Describe
+        - Write
+        - Create
+    # Additional topics and groups used by connectors
+    # Change to match the topics used by your connectors
+    - resource:
+        type: group
+        name: my-connect-group
+      operations:
+        - Read
+    - resource:
+        type: topic
+        name: my-topic
+      operations:
+        - Read
+        - Describe
+        - Write
+        - Create
+---
+apiVersion: kafka.strimzi.io/v1
+kind: KafkaConnect
+metadata:
+  name: my-connect
+#  annotations:
+#  # use-connector-resources configures this KafkaConnect
+#  # to use KafkaConnector resources to avoid
+#  # needing to call the Connect REST API directly
+#    strimzi.io/use-connector-resources: "true"
+spec:
+  version: 4.3.1
+  replicas: 1
+  bootstrapServers: my-cluster-kafka-bootstrap:9093
+  groupId: my-connect-group
+  configStorageTopic: my-connect-configs
+  statusStorageTopic: my-connect-status
+  offsetStorageTopic: my-connect-offsets
+  tls:
+    trustedCertificates:
+      - secretName: strimzi-cluster-ca
+        pattern: ca.crt
+  authentication:
+    type: tls
+    certificateAndKey:
+      secretName: my-connect
+      certificate: tls.crt
+      key: tls.key
+  config:
+    # -1 means it will use the default replication factor configured in the broker
+    config.storage.replication.factor: -1
+    offset.storage.replication.factor: -1
+    status.storage.replication.factor: -1

@@ -709,7 +709,7 @@
           "targets": [
             {
               "datasource": "${DS_PROMETHEUS}",
-              "expr": "sum(rate(kafka_producer_producer_topic_metrics_byte{topic != \"\"}[5m])) by (clientId, topic)",
+              "expr": "sum(rate(kafka_producer_producer_topic_metrics_byte{topic != \"\"}[5m])) by (client_id, topic)",
               "format": "time_series",
               "intervalFactor": 1,
               "refId": "B"

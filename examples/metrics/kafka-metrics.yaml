@@ -113,30 +113,13 @@ data:
         clientSoftwareVersion: "$3"
         listener: "$4"
         networkProcessor: "$5"
-    - pattern: "kafka.server<type=(.+), listener=(.+), networkProcessor=(.+)><>(.+-total):"
-      name: kafka_server_$1_$4
-      type: COUNTER
-      labels:
-        listener: "$2"
-        networkProcessor: "$3"
-    - pattern: "kafka.server<type=(.+), listener=(.+), networkProcessor=(.+)><>(.+):"
-      name: kafka_server_$1_$4
+    # Keep only connection-count from socket-server-metrics (the only metric of this shape used by our dashboards/alerts)
+    - pattern: kafka.server<type=socket-server-metrics, listener=(.+), networkProcessor=(.+)><>connection-count
+      name: kafka_server_socket_server_metrics_connection_count
       type: GAUGE
       labels:
-        listener: "$2"
-        networkProcessor: "$3"
-    - pattern: kafka.server<type=(.+), listener=(.+), networkProcessor=(.+)><>(.+-total)
-      name: kafka_server_$1_$4
-      type: COUNTER
-      labels:
-        listener: "$2"
-        networkProcessor: "$3"
-    - pattern: kafka.server<type=(.+), listener=(.+), networkProcessor=(.+)><>(.+)
-      name: kafka_server_$1_$4
-      type: GAUGE
-      labels:
-        listener: "$2"
-        networkProcessor: "$3"
+        listener: "$1"
+        networkProcessor: "$2"
     # Some percent metrics use MeanRate attribute
     # Ex) kafka.server<type=(KafkaRequestHandlerPool), name=(RequestHandlerAvgIdlePercent)><>MeanRate
     - pattern: kafka.(\w+)<type=(.+), name=(.+)Percent\w*><>MeanRate
@@ -152,18 +135,19 @@ data:
       labels:
         "$4": "$5"
     # Generic per-second counters with 0-2 key/value pairs
-    - pattern: kafka.(\w+)<type=(.+), name=(.+)PerSec\w*, (.+)=(.+), (.+)=(.+)><>Count
+    # RequestMetrics is excluded here, its metrics aren't used by our dashboards/alerts and are numerous
+    - pattern: kafka.(\w+)<type=(?!RequestMetrics)(.+), name=(.+)PerSec\w*, (.+)=(.+), (.+)=(.+)><>Count
       name: kafka_$1_$2_$3_total
       type: COUNTER
       labels:
         "$4": "$5"
         "$6": "$7"
-    - pattern: kafka.(\w+)<type=(.+), name=(.+)PerSec\w*, (.+)=(.+)><>Count
+    - pattern: kafka.(\w+)<type=(?!RequestMetrics)(.+), name=(.+)PerSec\w*, (.+)=(.+)><>Count
       name: kafka_$1_$2_$3_total
       type: COUNTER
       labels:
         "$4": "$5"
-    - pattern: kafka.(\w+)<type=(.+), name=(.+)PerSec\w*><>Count
+    - pattern: kafka.(\w+)<type=(?!RequestMetrics)(.+), name=(.+)PerSec\w*><>Count
       name: kafka_$1_$2_$3_total
       type: COUNTER
     # Generic gauges with 0-2 key/value pairs
@@ -183,34 +167,35 @@ data:
       type: GAUGE
     # Emulate Prometheus 'Summary' metrics for the exported 'Histogram's.
     # Note that these are missing the '_sum' metric!
-    - pattern: kafka.(\w+)<type=(.+), name=(.+), (.+)=(.+), (.+)=(.+)><>Count
+    # RequestMetrics is excluded here, its metrics aren't used by our dashboards/alerts and are numerous
+    - pattern: kafka.(\w+)<type=(?!RequestMetrics)(.+), name=(.+), (.+)=(.+), (.+)=(.+)><>Count
       name: kafka_$1_$2_$3_count
       type: COUNTER
       labels:
         "$4": "$5"
         "$6": "$7"
-    - pattern: kafka.(\w+)<type=(.+), name=(.+), (.+)=(.*), (.+)=(.+)><>(\d+)thPercentile
+    - pattern: kafka.(\w+)<type=(?!RequestMetrics)(.+), name=(.+), (.+)=(.*), (.+)=(.+)><>(\d+)thPercentile
       name: kafka_$1_$2_$3
       type: GAUGE
       labels:
         "$4": "$5"
         "$6": "$7"
         quantile: "0.$8"
-    - pattern: kafka.(\w+)<type=(.+), name=(.+), (.+)=(.+)><>Count
+    - pattern: kafka.(\w+)<type=(?!RequestMetrics)(.+), name=(.+), (.+)=(.+)><>Count
       name: kafka_$1_$2_$3_count
       type: COUNTER
       labels:
         "$4": "$5"
-    - pattern: kafka.(\w+)<type=(.+), name=(.+), (.+)=(.*)><>(\d+)thPercentile
+    - pattern: kafka.(\w+)<type=(?!RequestMetrics)(.+), name=(.+), (.+)=(.*)><>(\d+)thPercentile
       name: kafka_$1_$2_$3
       type: GAUGE
       labels:
         "$4": "$5"
         quantile: "0.$6"
-    - pattern: kafka.(\w+)<type=(.+), name=(.+)><>Count
+    - pattern: kafka.(\w+)<type=(?!RequestMetrics)(.+), name=(.+)><>Count
       name: kafka_$1_$2_$3_count
       type: COUNTER
-    - pattern: kafka.(\w+)<type=(.+), name=(.+)><>(\d+)thPercentile
+    - pattern: kafka.(\w+)<type=(?!RequestMetrics)(.+), name=(.+)><>(\d+)thPercentile
       name: kafka_$1_$2_$3
       type: GAUGE
       labels:
@@ -230,13 +215,10 @@ data:
       name: kafka_server_raftmetrics_$1
       type: GAUGE
     # KRaft "low level" channels related metrics
-    # distinguish between always increasing COUNTER (total and max) and variable GAUGE (all others) metrics
-    - pattern: "kafka.server<type=raft-channel-metrics><>(.+-total|.+-max):"
+    # Keep only the attributes used by the KRaft dashboard
+    - pattern: "kafka.server<type=raft-channel-metrics><>(incoming-byte-total|outgoing-byte-total|request-total|response-total):"
       name: kafka_server_raftchannelmetrics_$1
       type: COUNTER
-    - pattern: "kafka.server<type=raft-channel-metrics><>(.+):"
-      name: kafka_server_raftchannelmetrics_$1
-      type: GAUGE
     # Broker metrics related to fetching metadata topic records in KRaft mode
     - pattern: "kafka.server<type=broker-metadata-metrics><>(.+):"
       name: kafka_server_brokermetadatametrics_$1
