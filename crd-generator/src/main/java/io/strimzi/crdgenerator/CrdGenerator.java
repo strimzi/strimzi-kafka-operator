@@ -169,7 +169,7 @@ class CrdGenerator {
             .enable(YAMLWriteFeature.LITERAL_BLOCK_STYLE)
             .disable(YAMLWriteFeature.WRITE_DOC_START_MARKER)
             .build();
-    public static final ObjectMapper JSON_MAPPER = new JsonMapper();
+    public static final JsonMapper JSON_MAPPER = new JsonMapper();
     private final ApiVersion crdApiVersion;
     private final List<ApiVersion> generateVersions;
     private final ApiVersion storageVersion;
