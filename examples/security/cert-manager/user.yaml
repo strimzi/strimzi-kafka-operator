@@ -1,0 +1,47 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: my-user
+spec:
+  commonName: my-user # Has to be the same as the name of the KafkaUser resource
+  secretName: my-user
+  privateKey:
+    algorithm: RSA
+    encoding: PKCS8
+    size: 4096
+  issuerRef:
+    name: strimzi-clients-ca
+    kind: Issuer
+    group: cert-manager.io
+
+---
+apiVersion: kafka.strimzi.io/v1
+kind: KafkaUser
+metadata:
+  name: my-user
+  labels:
+    strimzi.io/cluster: my-cluster
+spec:
+  authentication:
+    type: tls-external
+  authorization:
+    type: simple
+    acls:
+      # Example ACL rules for creating, describing, consuming and producing from my-topic using consumer group my-group
+      - resource:
+          type: topic
+          name: my-topic
+          patternType: literal
+        operations:
+          - Read
+          - Describe
+          - Write
+          - Create
+        host: "*"
+      - resource:
+          type: group
+          name: my-group
+          patternType: literal
+        operations:
+          - Read
+        host: "*"
