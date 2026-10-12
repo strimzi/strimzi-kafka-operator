@@ -184,8 +184,6 @@ public class Environment {
     private static final String RESOURCE_ALLOCATION_STRATEGY_DEFAULT = "SHARE_MEMORY_FOR_ALL_COMPONENTS";
 
     private static final String ST_KAFKA_VERSION_DEFAULT = TestKafkaVersion.getDefaultSupportedKafkaVersion();
-    private static final String ST_KAFKA_MAVEN_VERSION_DEFAULT = TestKafkaVersion.getSpecificVersion(ST_KAFKA_VERSION_DEFAULT).mavenVersion();
-    public static final String ST_FILE_PLUGIN_URL_DEFAULT = (Environment.ST_MAVEN_MIRROR_URL != null ? Environment.ST_MAVEN_MIRROR_URL : "https://repo.maven.apache.org/maven2") + "/org/apache/kafka/connect-file/" + ST_KAFKA_MAVEN_VERSION_DEFAULT + "/connect-file-" + ST_KAFKA_MAVEN_VERSION_DEFAULT + ".jar";
 
     public static final String IP_FAMILY_DEFAULT = "ipv4";
     public static final String IP_FAMILY_VERSION_6 = "ipv6";
@@ -244,6 +242,7 @@ public class Environment {
     public static final String RESOURCE_ALLOCATION_STRATEGY = ENVIRONMENT_VARIABLES.getOrDefault(RESOURCE_ALLOCATION_STRATEGY_ENV, RESOURCE_ALLOCATION_STRATEGY_DEFAULT);
 
     // Connect build-related variables
+    public static final String ST_FILE_PLUGIN_URL_DEFAULT = getConnectFileSinkPluginDefaultUrl(ST_KAFKA_VERSION);
     public static final String ST_FILE_PLUGIN_URL = ENVIRONMENT_VARIABLES.getOrDefault(ST_FILE_PLUGIN_URL_ENV, ST_FILE_PLUGIN_URL_DEFAULT);
     public static final String ST_MAVEN_MIRROR_URL = ENVIRONMENT_VARIABLES.getOrDefault(ST_MAVEN_MIRROR_URL_ENV, null);
 
@@ -417,5 +416,25 @@ public class Environment {
 
     public static String getIfNotEmptyOrDefault(String envVar, String defaultValue) {
         return envVar.isEmpty() ? defaultValue : envVar;
+    }
+
+    public static String getConnectFileSinkPluginDefaultUrl(String kafkaVersion) {
+        String kafkaMavenVersion = TestKafkaVersion.getSpecificVersion(kafkaVersion).mavenVersion();
+        String pathToFileSinkJar = "/org/apache/kafka/connect-file/" + kafkaMavenVersion + "/connect-file-" + kafkaMavenVersion + ".jar";
+
+        String connectRootUri;
+
+        if (Environment.ST_MAVEN_MIRROR_URL != null) {
+            connectRootUri = Environment.ST_MAVEN_MIRROR_URL;
+        } else {
+            connectRootUri = "https://repo.maven.apache.org/maven2";
+            // When running RCs for a new version, you can uncomment following lines and specify there desired Kafka version.
+            // The Connect tests that are using file-sink plugin will then pick up the right link.
+            // if (kafkaVersion.equals("4.4.0")) {
+            //    connectRootUri = "https://repository.apache.org/content/groups/staging";
+            // }
+        }
+
+        return connectRootUri + pathToFileSinkJar;
     }
 }

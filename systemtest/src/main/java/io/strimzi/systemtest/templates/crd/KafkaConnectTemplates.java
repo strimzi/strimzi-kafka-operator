@@ -174,6 +174,10 @@ public class KafkaConnectTemplates {
             .endSpec();
     }
 
+    public static KafkaConnectBuilder kafkaConnectWithFilePlugin(String namespaceName, String kafkaClusterName, int replicas, String fileSinkUrl) {
+        return addFileSinkPluginOrImage(kafkaConnectBuild(namespaceName, kafkaClusterName, kafkaClusterName, replicas), fileSinkUrl);
+    }
+
     public static KafkaConnectBuilder kafkaConnectWithFilePlugin(String namespaceName, String kafkaClusterName, int replicas) {
         return kafkaConnectWithFilePlugin(namespaceName, kafkaClusterName, kafkaClusterName, replicas);
     }
@@ -192,17 +196,33 @@ public class KafkaConnectTemplates {
 
     /**
      * Method for adding Connect Build with file-sink plugin to the Connect spec or set Connect's image in case that
-     * the image is set in `CONNECT_IMAGE_WITH_FILE_SINK_PLUGIN` env. variable
-     * @param kafkaConnectBuilder builder of the Connect resource
-     * @return updated Connect resource in builder
+     * the image is set in `CONNECT_IMAGE_WITH_FILE_SINK_PLUGIN` env. variable.
+     * This method works with the {@link Environment#ST_FILE_PLUGIN_URL} as a source for the JAR.
+     *
+     * @param kafkaConnectBuilder   builder of the Connect resource
+     *
+     * @return  updated Connect resource in builder
      */
     public static KafkaConnectBuilder addFileSinkPluginOrImage(KafkaConnectBuilder kafkaConnectBuilder) {
+        return addFileSinkPluginOrImage(kafkaConnectBuilder, Environment.ST_FILE_PLUGIN_URL);
+    }
+
+    /**
+     * Method for adding Connect Build with file-sink plugin to the Connect spec or set Connect's image in case that
+     * the image is set in `CONNECT_IMAGE_WITH_FILE_SINK_PLUGIN` env. variable.
+     * This method works with the {@param filePluginUrl} as a source for the JAR.
+     *
+     * @param kafkaConnectBuilder   builder of the Connect resource
+     *
+     * @return  updated Connect resource in builder
+     */
+    public static KafkaConnectBuilder addFileSinkPluginOrImage(KafkaConnectBuilder kafkaConnectBuilder, String filePluginUrl) {
         if (!KubeClusterResource.getInstance().isMicroShift() && Environment.CONNECT_IMAGE_WITH_FILE_SINK_PLUGIN.isEmpty()) {
             final Plugin fileSinkPlugin = new PluginBuilder()
                 .withName("file-plugin")
                 .withArtifacts(
                     new JarArtifactBuilder()
-                        .withUrl(Environment.ST_FILE_PLUGIN_URL)
+                        .withUrl(filePluginUrl)
                         .build()
                 )
                 .build();
