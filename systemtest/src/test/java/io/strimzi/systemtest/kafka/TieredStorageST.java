@@ -30,6 +30,7 @@ import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.utils.AdminClientUtils;
 import io.strimzi.systemtest.utils.ClientUtils;
+import io.strimzi.systemtest.utils.TestKafkaVersion;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.NetworkPolicyUtils;
@@ -45,7 +46,6 @@ import org.apache.kafka.common.requests.ListOffsetsRequest;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import tools.jackson.core.JacksonException;
 
@@ -60,6 +60,7 @@ import static io.strimzi.systemtest.TestConstants.GLOBAL_TIMEOUT;
 import static io.strimzi.systemtest.TestTags.REGRESSION;
 import static io.strimzi.systemtest.TestTags.TIERED_STORAGE;
 import static io.strimzi.systemtest.utils.specific.NfsUtils.NFS_PVC_NAME;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 @MicroShiftNotSupported("We are using Buildah and OpenShift builds to build Kafka image with TS. To make it working on Microshift we will invest much time with not much additional value.")
 @Tag(REGRESSION)
@@ -77,7 +78,6 @@ import static io.strimzi.systemtest.utils.specific.NfsUtils.NFS_PVC_NAME;
         @Label(value = TestDocsLabels.KAFKA)
     }
 )
-@Disabled // Tiered storage is not compatible with Kafka 4.4.0
 public class TieredStorageST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(TieredStorageST.class);
 
@@ -414,6 +414,9 @@ public class TieredStorageST extends AbstractST {
 
     @BeforeAll
     void setup() throws IOException {
+        assumeTrue(TestKafkaVersion.compareDottedVersions(Environment.ST_KAFKA_VERSION, "4.4.0") >= 0,
+                "The Aiven tiered storage plugin we use for testing is current not compatible with Apache Kafka 4.4.0 and higher");
+
         // for RBAC, we are creating everything in co-namespace
         // in order to not delete the Namespace (as in the install() method) we need to install CO first and then
         // do everything else.
