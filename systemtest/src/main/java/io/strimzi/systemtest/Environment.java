@@ -427,7 +427,13 @@ public class Environment {
         if (Environment.ST_MAVEN_MIRROR_URL != null) {
             connectRootUri = Environment.ST_MAVEN_MIRROR_URL;
         } else {
-            connectRootUri = "https://repo.maven.apache.org/maven2";
+            if (kafkaVersion.equals("4.4.0")) {
+                connectRootUri = "https://repository.apache.org/content/groups/staging";
+            } else {
+                connectRootUri = "https://repo.maven.apache.org/maven2";
+            }
+
+            // connectRootUri = "https://repo.maven.apache.org/maven2";
             // When running RCs for a new version, you can uncomment following lines and specify there desired Kafka version.
             // The Connect tests that are using file-sink plugin will then pick up the right link.
             // if (kafkaVersion.equals("4.4.0")) {
