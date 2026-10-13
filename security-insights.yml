@@ -218,7 +218,7 @@ repository:
             location: https://github.com/strimzi/strimzi-kafka-operator/actions/workflows/scorecards.yml
       - name: OSPS Baseline Scanner
         type: other
-        comment: Evaluated against the osps-baseline-2026-08 catalog at Maturity Level 1. Results are not published to grc.store.
+        comment: Evaluated against the osps-baseline-2026-08 catalog at Maturity Level 2. Signed results are published to the CNCF-owned strimzi namespace on grc.store.
         rulesets:
           - osps-baseline-2026-08
         integration:
@@ -228,5 +228,5 @@ repository:
         results:
           ci:
             name: OSPS Baseline evaluation
-            predicate-uri: https://github.com/revanite-io/osps-baseline-action
-            location: https://github.com/strimzi/strimzi-kafka-operator/actions/workflows/osps-baseline.yml
+            predicate-uri: https://github.com/revanite-io/pvtr-publish-results
+            location: https://grc.store/targets/strimzi/strimzi-kafka-operator

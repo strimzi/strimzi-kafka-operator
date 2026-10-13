@@ -1,64 +1,76 @@
-# OSPS Baseline evaluation for the Security Slam Mechanizer badge (Option 1: the scanner action).
-# Runs the OpenSSF Baseline scanner (Maturity Level 1) on a schedule, on pushes
-# to main, and on demand. Results go to a workflow artifact and the Security tab,
-# and are not published to grc.store.
+# OSPS Baseline results published to grc.store, for the Security Slam
+# Mechanizer badge (Option 2) and the Defender badge.
 #
-# Requires the octo-sts GitHub App (https://github.com/octo-sts/app) installed on
-# the strimzi org, with the trust policy in .github/chainguard/osps-baseline.sts.yaml
-# merged to main.
-name: OSPS Baseline
+# Results appear at https://grc.store/targets/strimzi/strimzi-kafka-operator
+# The strimzi namespace is owned by the CNCF enterprise on grc.store, and this
+# repository must be bound to it as a trusted publisher for publishing to work.
+name: Publish OSPS Baseline results to grc.store
 
 on:
-  schedule:
-    - cron: "0 9 * * 1" # Weekly, Mondays 09:00 UTC
+  workflow_dispatch:
+    inputs:
+      dry-run:
+        description: "Run the scan but publish nothing (bundles land in the pvtr-bundles artifact)"
+        type: boolean
+        default: false
   push:
     branches: [main]
-  workflow_dispatch:
-  # No pull_request trigger: the octo-sts trust policy only issues a token to
-  # this workflow on main, and fork code never runs here.
+  schedule:
+    - cron: "17 6 * * 1" # Weekly, Mondays 06:17 UTC
+  # Never pull_request: the hub stores one log per target and catalog every
+  # ten minutes and refuses the rest with rate_limited. A release trigger is
+  # also allowed, but a release usually follows a push inside that window, so
+  # pick one of the two.
 
 permissions: {}
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
-  cancel-in-progress: false
-
 jobs:
-  assess:
+  version:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
     permissions:
-      id-token: write # Federate with octo-sts for a read-only scanner token
-      security-events: write # Upload failed controls as SARIF to the Security tab
+      contents: read # Read the latest release tag
+    outputs:
+      version: ${{ steps.tag.outputs.version }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
+      - name: Latest release tag
+        id: tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          tag=$(gh release view --repo "$GITHUB_REPOSITORY" --json tagName --jq .tagName 2>/dev/null || echo v0.0.0)
+          echo "version=${tag#v}" >> "$GITHUB_OUTPUT"
 
-      - name: Get a read-only token from octo-sts
-        uses: octo-sts/action@f603d3be9d8dd9871a265776e625a27b00effe05 # v1.1.1
-        id: octo-sts
-        with:
-          scope: ${{ github.repository }}
-          identity: osps-baseline
-
-      - name: OSPS Baseline scan
-        uses: revanite-io/osps-baseline-action@1af7ff8b44af83f120b20cc5f63b877286849257 # v1.5.2
-        with:
-          owner: ${{ github.repository_owner }}
-          repo: ${{ github.event.repository.name }}
-          # The built-in GITHUB_TOKEN cannot read the repo settings the scanner
-          # checks; octo-sts issues a short-lived, read-only token instead of a PAT.
-          token: ${{ steps.octo-sts.outputs.token }}
-          catalog: "osps-baseline-2026-08" # current OSPS Baseline release (2026-08-28)
-          upload-sarif: "true"
-          fail-on-error: "true"
-
-      - name: Upload results
-        if: always()
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: osps-baseline-results-${{ github.run_number }}
-          path: evaluation_results/
-          retention-days: 30
+  results:
+    needs: version
+    permissions:
+      contents: read # The scanner reads this repository through the job token
+      id-token: write # Trusted publishing to the hub and the Sigstore signing identity
+      # The called workflow's report job declares it, and GitHub checks every
+      # called job at startup, even one that upload-sarif: false skips.
+      security-events: write
+    # By tag, not SHA, on purpose: the hub compares the signing certificate's
+    # workflow ref to this exact tag and rejects a SHA-pinned call.
+    uses: revanite-io/pvtr-publish-results/.github/workflows/publish.yml@v1 # zizmor: ignore[unpinned-uses] the hub requires the tag
+    with:
+      target: strimzi/strimzi-kafka-operator@${{ needs.version.outputs.version }}
+      license: CC0-1.0 # SPDX expression the result is published under
+      dry-run: ${{ inputs.dry-run == true }}
+      upload-sarif: true # Surface failed controls in the Security tab
+    secrets:
+      # Inline because the plugin reads its token only from these config vars.
+      # The job token is read-only and scoped to this repository; settings it
+      # cannot read (org MFA, some admin settings) report "Needs Review".
+      config: |
+        targets:
+          strimzi-kafka-operator:
+            plugin: openssf/github-repo
+            policy:
+              catalogs:
+                - osps-baseline-2026-08
+              applicability:
+                - maturity-2 # Strimzi is a CNCF Incubating project
+            vars:
+              owner: strimzi
+              repo: strimzi-kafka-operator
+              token: ${{ secrets.GITHUB_TOKEN }}
