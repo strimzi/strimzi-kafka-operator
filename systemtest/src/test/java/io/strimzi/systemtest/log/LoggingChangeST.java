@@ -48,7 +48,6 @@ import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.specific.ScraperTemplates;
 import io.strimzi.systemtest.utils.RollingUpdateUtils;
 import io.strimzi.systemtest.utils.StUtils;
-import io.strimzi.systemtest.utils.TestKafkaVersion;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaBridgeUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectorUtils;
@@ -108,7 +107,6 @@ class LoggingChangeST extends AbstractST {
     @TestDoc(
         description = @Desc("Test verifying that the logging in JSON format works correctly across Kafka and operators using the JsonTemplateLayout."),
         steps = {
-            @Step(value = "Assume Kafka version is 4.0.0 or greater.", expected = "Assumption holds true."),
             @Step(value = "Assume non-Helm and non-OLM installation.", expected = "Assumption holds true."),
             @Step(value = "Create ConfigMaps for Kafka and operators with JSON logging configuration.", expected = "ConfigMaps created and applied."),
             @Step(value = "Deploy Kafka cluster with the configured logging setup.", expected = "Kafka cluster deployed successfully."),
@@ -123,10 +121,6 @@ class LoggingChangeST extends AbstractST {
     )
     @SuppressWarnings("checkstyle:MethodLength")
     void testJsonTemplateLayoutFormatLogging() {
-
-        assumeTrue(TestKafkaVersion.compareDottedVersions(Environment.ST_KAFKA_VERSION, "4.0.0") >= 0,
-            "Kafka version is lower than 4.0.0, JsonTemplateLayout is not supported");
-
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
         // In this test scenario we change configuration for CO and we have to be sure, that CO is installed via YAML bundle instead of helm or OLM
