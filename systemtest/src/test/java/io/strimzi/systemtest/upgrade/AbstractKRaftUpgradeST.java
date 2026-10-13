@@ -431,7 +431,8 @@ public class AbstractKRaftUpgradeST extends AbstractST {
         if (!KubeResourceManager.get().kubeCmdClient().inNamespace(testStorage.getNamespaceName())
             .getResourcesAsYaml(getResourceApiVersion(KafkaConnect.RESOURCE_PLURAL)).contains(CLUSTER_NAME)) {
             if (acrossUpgradeData.getFromVersion().equals("HEAD")) {
-                KubeResourceManager.get().createResourceWithWait(KafkaConnectTemplates.kafkaConnectWithFilePlugin(testStorage.getNamespaceName(), CLUSTER_NAME, 1)
+                KubeResourceManager.get().createResourceWithWait(KafkaConnectTemplates.kafkaConnectWithFilePlugin(testStorage.getNamespaceName(), CLUSTER_NAME, 1,
+                        Environment.getConnectFileSinkPluginDefaultUrl(upgradeKafkaVersion.getVersion()))
                     .editMetadata()
                         .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
                     .endMetadata()
@@ -459,7 +460,7 @@ public class AbstractKRaftUpgradeST extends AbstractST {
                         .withName("file-plugin")
                         .withArtifacts(
                             new JarArtifactBuilder()
-                                .withUrl(Environment.ST_FILE_PLUGIN_URL)
+                                .withUrl(Environment.getConnectFileSinkPluginDefaultUrl(upgradeKafkaVersion.getVersion()))
                                 .build())
                         .build()
                     )
