@@ -67,7 +67,6 @@ public class KafkaAutoRebalancingReconciler {
     private final CrdOperator<KubernetesClient, KafkaRebalance, KafkaRebalanceList> kafkaRebalanceOperator;
     private final Set<Integer> scalingDownBlockedNodes;
     private final ConfigMapOperator configMapOperator;
-    private final ResourceOperatorSupplier supplier;
     private final KafkaAutoRebalanceImbalanceDetector imbalanceDetector;
     private final KafkaAssemblyOperatorMetricsHolder metricsHolder;
 
@@ -90,7 +89,6 @@ public class KafkaAutoRebalancingReconciler {
             KafkaAutoRebalanceImbalanceDetector imbalanceDetector) {
         this.reconciliation = reconciliation;
         this.kafkaCr = kafkaCr;
-        this.supplier = supplier;
         // load current autorebalance status if it exists (before starting the reconciliation) or initialize it to Idle
         this.kafkaAutoRebalanceStatus =
                 (kafkaCr.getStatus() != null && kafkaCr.getStatus().getAutoRebalance() != null) ?
