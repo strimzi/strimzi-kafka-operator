@@ -420,13 +420,9 @@ public class EntityOperatorReconcilerTest {
         assertThat(saCaptor.getAllValues().size(), is(1));
         assertThat(saCaptor.getValue(), is(notNullValue()));
 
-        if (cruiseControlEnabled) {
-            assertThat(toSecretCaptor.getAllValues().size(), is(1));
-            assertThat(toSecretCaptor.getAllValues().get(0), is(notNullValue()));
-        } else {
-            assertThat(toSecretCaptor.getAllValues().size(), is(1));
-            assertThat(toSecretCaptor.getAllValues().get(0), is(notNullValue()));
-        }
+        assertThat(toSecretCaptor.getAllValues().size(), is(1));
+        assertThat(toSecretCaptor.getAllValues().get(0), is(notNullValue()));
+
         assertThat(uoSecretCaptor.getAllValues().size(), is(1));
         assertThat(uoSecretCaptor.getAllValues().get(0), is(nullValue()));
 
