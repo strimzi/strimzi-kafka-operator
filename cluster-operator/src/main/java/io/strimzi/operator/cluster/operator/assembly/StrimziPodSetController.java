@@ -52,6 +52,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 
 /**
@@ -60,7 +64,8 @@ import java.util.stream.Collectors;
 public class StrimziPodSetController implements Runnable {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(StrimziPodSetController.class);
 
-    private static final long DEFAULT_RESYNC_PERIOD_MS = 5 * 60 * 1_000L; // 5 minutes by default
+    private static final long WAIT_FOR_INFORMER_START_MS = 5 * 60 * 1_000L;
+    private static final long RESYNC_PERIOD_MS = 5 * 60 * 1_000L;
     private static final LabelSelector POD_LABEL_SELECTOR = new LabelSelector(List.of(new LabelSelectorRequirement(Labels.STRIMZI_KIND_LABEL, "Exists", null)), null);
 
     private final Thread controllerThread;
@@ -118,15 +123,15 @@ public class StrimziPodSetController implements Runnable {
 
         // Kafka, KafkaConnect and KafkaMirrorMaker2 informers and listers are used to get the CRs quickly.
         // This is needed for verification of the CR selector labels.
-        this.kafkaInformer = kafkaOperator.informer(watchedNamespace, crSelector, DEFAULT_RESYNC_PERIOD_MS);
-        this.kafkaConnectInformer = kafkaConnectOperator.informer(watchedNamespace, crSelector, DEFAULT_RESYNC_PERIOD_MS);
-        this.kafkaMirrorMaker2Informer = kafkaMirrorMaker2Operator.informer(watchedNamespace, crSelector, DEFAULT_RESYNC_PERIOD_MS);
+        this.kafkaInformer = kafkaOperator.informer(watchedNamespace, crSelector, RESYNC_PERIOD_MS);
+        this.kafkaConnectInformer = kafkaConnectOperator.informer(watchedNamespace, crSelector, RESYNC_PERIOD_MS);
+        this.kafkaMirrorMaker2Informer = kafkaMirrorMaker2Operator.informer(watchedNamespace, crSelector, RESYNC_PERIOD_MS);
 
         // StrimziPodSet informer and lister is used to get events about StrimziPodSet and get StrimziPodSet quickly
-        this.strimziPodSetInformer = strimziPodSetOperator.informer(watchedNamespace, new LabelSelector(), DEFAULT_RESYNC_PERIOD_MS);
+        this.strimziPodSetInformer = strimziPodSetOperator.informer(watchedNamespace, new LabelSelector(), RESYNC_PERIOD_MS);
 
         // Pod informer and lister is used to get events about pods and get pods quickly
-        this.podInformer = podOperator.informer(watchedNamespace, POD_LABEL_SELECTOR, DEFAULT_RESYNC_PERIOD_MS);
+        this.podInformer = podOperator.informer(watchedNamespace, POD_LABEL_SELECTOR, RESYNC_PERIOD_MS);
 
         this.controllerThread = new Thread(this, "StrimziPodSetController");
     }
@@ -135,26 +140,19 @@ public class StrimziPodSetController implements Runnable {
         return metrics;
     }
 
-    protected boolean isSynced() {
-        return podInformer.hasSynced()
-                && strimziPodSetInformer.hasSynced()
-                && kafkaInformer.hasSynced()
-                && kafkaConnectInformer.hasSynced()
-                && kafkaMirrorMaker2Informer.hasSynced();
-    }
-
-    protected void startController() {
+    protected void startInformers() throws ExecutionException, InterruptedException, TimeoutException {
         strimziPodSetInformer.addEventHandler(new PodSetEventHandler());
         podInformer.addEventHandler(new PodEventHandler());
 
-        strimziPodSetInformer.start();
-        podInformer.start();
-        kafkaInformer.start();
-        kafkaConnectInformer.start();
-        kafkaMirrorMaker2Informer.start();
+        CompletableFuture.allOf(podInformer.start().toCompletableFuture(),
+                        kafkaInformer.start().toCompletableFuture(),
+                        kafkaConnectInformer.start().toCompletableFuture(),
+                        kafkaMirrorMaker2Informer.start().toCompletableFuture())
+                .thenCompose(i -> strimziPodSetInformer.start())
+                .get(WAIT_FOR_INFORMER_START_MS, TimeUnit.MILLISECONDS);
     }
 
-    protected void stopController() {
+    protected void stopInformers() {
         InformerUtils.stopAll(5_000L, strimziPodSetInformer, podInformer, kafkaInformer, kafkaConnectInformer, kafkaMirrorMaker2Informer);
     }
 
@@ -546,16 +544,6 @@ public class StrimziPodSetController implements Runnable {
      */
     @Override
     public void run() {
-        LOGGER.infoOp("Starting StrimziPodSet controller for namespace {}", watchedNamespace);
-        startController();
-
-        LOGGER.infoOp("Waiting for informers to sync");
-        while (!stop && !isSynced())   {
-            // Nothing to do => just loop
-        }
-
-        LOGGER.infoOp("Informers are in-sync");
-
         while (!stop) {
             try {
                 LOGGER.debugOp("Waiting for next event from work queue");
@@ -570,15 +558,32 @@ public class StrimziPodSetController implements Runnable {
 
         LOGGER.infoOp("Stopping StrimziPodSet controller");
 
-        stopController();
+        stopInformers();
     }
 
     /**
-     * Starts the controller: this method creates a new thread in which the controller will run
+     * Starts the controller: this method starts the informers for the various resources and creates and starts a new
+     * thread in which the controller will run. This method blocks until the informers are started.
      */
     public void start()  {
-        LOGGER.infoOp("Starting the StrimziPodSet controller");
+        LOGGER.infoOp("Starting StrimziPodSet controller informers for namespace {}", watchedNamespace);
+        try {
+            startInformers();
+        } catch (InterruptedException e) {
+            LOGGER.errorOp("Interrupted while trying to start StrimziPodSet controller informers for namespace {}", watchedNamespace, e);
+            stopInformers();
+            Thread.currentThread().interrupt();
+            throw new RuntimeException("Interrupted while trying to start StrimziPodSet controller informers for namespace " + watchedNamespace, e);
+        } catch (ExecutionException | TimeoutException e) {
+            LOGGER.errorOp("Failed to start StrimziPodSet controller informers for namespace {}", watchedNamespace, e);
+            stopInformers();
+            throw new RuntimeException("Failed to start StrimziPodSet controller informers for namespace " + watchedNamespace, e);
+        }
+        LOGGER.infoOp("StrimziPodSet controller informers for namespace {} started", watchedNamespace);
+
+        LOGGER.infoOp("Starting the StrimziPodSet controller for namespace {}", watchedNamespace);
         controllerThread.start();
+        LOGGER.infoOp("StrimziPodSet controller for namespace {} started", watchedNamespace);
     }
 
     /**
