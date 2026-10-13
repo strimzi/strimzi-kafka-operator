@@ -79,13 +79,15 @@ public class KafkaAutoRebalancingReconciler {
      * @param supplier  Supplies the operators for different resources
      * @param scalingDownBlockedNodes  nodes blocked on scaling down because of the need for auto-rebalancing first
      * @param metricsHolder  Metrics holder for operator metrics
+     * @param imbalanceDetector  Detector used to check for cluster imbalance
      */
     public KafkaAutoRebalancingReconciler(
             Reconciliation reconciliation,
             Kafka kafkaCr,
             ResourceOperatorSupplier supplier,
             Set<Integer> scalingDownBlockedNodes,
-            KafkaAssemblyOperatorMetricsHolder metricsHolder) {
+            KafkaAssemblyOperatorMetricsHolder metricsHolder,
+            KafkaAutoRebalanceImbalanceDetector imbalanceDetector) {
         this.reconciliation = reconciliation;
         this.kafkaCr = kafkaCr;
         this.supplier = supplier;
@@ -102,11 +104,7 @@ public class KafkaAutoRebalancingReconciler {
         this.scalingDownBlockedNodes = scalingDownBlockedNodes;
         this.configMapOperator = supplier.configMapOperations;
         this.metricsHolder = metricsHolder;
-        this.imbalanceDetector = createImbalanceDetector();
-    }
-
-    /* test */ KafkaAutoRebalanceImbalanceDetector createImbalanceDetector() {
-        return new KafkaAutoRebalanceImbalanceDetector(reconciliation, kafkaCr, supplier);
+        this.imbalanceDetector = imbalanceDetector;
     }
 
     /**

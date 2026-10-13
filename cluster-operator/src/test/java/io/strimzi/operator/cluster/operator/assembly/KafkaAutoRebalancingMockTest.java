@@ -238,34 +238,27 @@ public class KafkaAutoRebalancingMockTest {
         podSetController.start();
 
         ClusterOperatorConfig config = ResourceUtils.dummyClusterOperatorConfig(VERSIONS);
-        KafkaAssemblyOperatorMetricsHolder testMetricsHolder = new KafkaAssemblyOperatorMetricsHolder(
-                Kafka.RESOURCE_KIND, config.getCustomResourceSelector(), supplier.metricsProvider);
         operator = new KafkaAssemblyOperator(vertx, PFA, CERT_ISSUER, PASSWORD_GENERATOR, supplier, config) {
             @Override
             ReconciliationState createReconciliationState(Reconciliation reconciliation, Kafka kafkaAssembly) {
                 return new ReconciliationState(reconciliation, kafkaAssembly) {
                     @Override
-                    KafkaAutoRebalancingReconciler kafkaAutoRebalancingReconciler() {
-                        return new KafkaAutoRebalancingReconciler(reconciliation, kafkaAssembly, supplier, getScalingDownBlockedNodes(), testMetricsHolder) {
+                    KafkaAutoRebalanceImbalanceDetector kafkaAutoRebalanceImbalanceDetector() {
+                        return new KafkaAutoRebalanceImbalanceDetector(reconciliation, kafkaAssembly, supplier) {
                             @Override
-                            KafkaAutoRebalanceImbalanceDetector createImbalanceDetector() {
-                                return new KafkaAutoRebalanceImbalanceDetector(reconciliation, kafkaAssembly, supplier) {
-                                    @Override
-                                    protected String cruiseControlHost(String clusterName, String clusterNamespace) {
-                                        return "localhost";
-                                    }
+                            protected String cruiseControlHost(String clusterName, String clusterNamespace) {
+                                return "localhost";
+                            }
 
-                                    @Override
-                                    protected int cruiseControlPort() {
-                                        return cruiseControlPort;
-                                    }
+                            @Override
+                            protected int cruiseControlPort() {
+                                return cruiseControlPort;
+                            }
 
-                                    @Override
-                                    protected CruiseControlApi cruiseControlClientProvider(Secret ccSecret, Secret ccApiSecret,
-                                                                                           boolean apiAuthEnabled, boolean apiSslEnabled) {
-                                        return new CruiseControlApiImpl(1, MockCruiseControl.CLUSTER_CA_CERT_SECRET, MockCruiseControl.CC_API_SECRET, true, true);
-                                    }
-                                };
+                            @Override
+                            protected CruiseControlApi cruiseControlClientProvider(Secret ccSecret, Secret ccApiSecret,
+                                                                                   boolean apiAuthEnabled, boolean apiSslEnabled) {
+                                return new CruiseControlApiImpl(1, MockCruiseControl.CLUSTER_CA_CERT_SECRET, MockCruiseControl.CC_API_SECRET, true, true);
                             }
                         };
                     }
