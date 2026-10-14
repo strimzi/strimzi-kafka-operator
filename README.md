@@ -4,6 +4,7 @@
 
 [![OpenSSF Best Practices](https://www.bestpractices.dev/projects/13184/badge)](https://www.bestpractices.dev/projects/13184)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/strimzi/strimzi-kafka-operator/badge)](https://scorecard.dev/viewer/?uri=github.com/strimzi/strimzi-kafka-operator)
+[![OSPS Baseline](https://github.com/strimzi/strimzi-kafka-operator/actions/workflows/osps-baseline.yml/badge.svg?branch=main)](https://grc.store/targets/strimzi/strimzi-kafka-operator)
 [![Build Status](https://github.com/strimzi/strimzi-kafka-operator/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/strimzi/strimzi-kafka-operator/actions/workflows/build.yml?query=branch%3Amain)
 [![GitHub release](https://img.shields.io/github/release/strimzi/strimzi-kafka-operator.svg)](https://github.com/strimzi/strimzi-kafka-operator/releases/latest)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](http://www.apache.org/licenses/LICENSE-2.0)

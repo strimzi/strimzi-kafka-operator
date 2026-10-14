@@ -24,6 +24,7 @@ This document gives a detailed breakdown of the various build processes and opti
 - [Running system tests](#running-system-tests)
 - [DCO Signoff](#dco-signoff)
 - [Building container images for other platforms](#building-container-images-for-other-platforms)
+- [Dependency Management](#dependency-management)
 
 <!-- /TOC -->
 
@@ -553,3 +554,16 @@ Following steps are needed to add support for new Kafka releases:
 * Run `make all` to regenerate / update all files
 * Update the versions in `attributes.adoc` in `documentation/`
 * Update all example in `packaging/examples/`
+
+## Dependency Management
+
+Java dependency versions are managed through the `pom.xml` files and reviewed as part of the normal pull request process; any version change is visible in the diff and requires maintainer approval like any other change.
+Supported Apache Kafka versions are tracked explicitly in `kafka-versions.yaml`.
+
+Routine version bumps are not automated: Strimzi deliberately has no Dependabot version-update configuration and does not use Renovate.
+Large dependencies such as Kafka, fabric8, Netty, and Vert.x need coordinated changes across modules that have to be handled manually.
+
+Dependabot security updates are enabled, so GitHub opens a pull request when a dependency has a known vulnerability.
+Those pull requests are suggestions and go through the same review as any other change.
+
+Dependencies are continuously monitored for known vulnerabilities and license issues by [Snyk](https://snyk.io/test/github/strimzi/strimzi-kafka-operator) and [FOSSA](https://app.fossa.com/projects/git%2Bgithub.com%2Fstrimzi%2Fstrimzi-kafka-operator), which run on every push to `main` and as part of the release process, and by the [OSPS Baseline](../.github/workflows/osps-baseline.yml) scan, whose results are published to [grc.store](https://grc.store/targets/strimzi/strimzi-kafka-operator).

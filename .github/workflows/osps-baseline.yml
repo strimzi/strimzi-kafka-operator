@@ -1,0 +1,76 @@
+# OSPS Baseline results published to grc.store, for the Security Slam
+# Mechanizer badge (Option 2) and the Defender badge.
+#
+# Results appear at https://grc.store/targets/strimzi/strimzi-kafka-operator
+# The strimzi namespace is owned by the CNCF enterprise on grc.store, and this
+# repository must be bound to it as a trusted publisher for publishing to work.
+name: Publish OSPS Baseline results to grc.store
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry-run:
+        description: "Run the scan but publish nothing (bundles land in the pvtr-bundles artifact)"
+        type: boolean
+        default: false
+  push:
+    branches: [main]
+  schedule:
+    - cron: "17 6 * * 1" # Weekly, Mondays 06:17 UTC
+  # Never pull_request: the hub stores one log per target and catalog every
+  # ten minutes and refuses the rest with rate_limited. A release trigger is
+  # also allowed, but a release usually follows a push inside that window, so
+  # pick one of the two.
+
+permissions: {}
+
+jobs:
+  version:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read # Read the latest release tag
+    outputs:
+      version: ${{ steps.tag.outputs.version }}
+    steps:
+      - name: Latest release tag
+        id: tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          tag=$(gh release view --repo "$GITHUB_REPOSITORY" --json tagName --jq .tagName 2>/dev/null || echo v0.0.0)
+          echo "version=${tag#v}" >> "$GITHUB_OUTPUT"
+
+  results:
+    needs: version
+    permissions:
+      contents: read # The scanner reads this repository through the job token
+      id-token: write # Trusted publishing to the hub and the Sigstore signing identity
+      # The called workflow's report job declares it, and GitHub checks every
+      # called job at startup, even one that upload-sarif: false skips.
+      security-events: write
+    # By tag, not SHA, on purpose: the hub compares the signing certificate's
+    # workflow ref to this exact tag and rejects a SHA-pinned call.
+    uses: revanite-io/pvtr-publish-results/.github/workflows/publish.yml@v1 # zizmor: ignore[unpinned-uses] the hub requires the tag
+    with:
+      target: strimzi/strimzi-kafka-operator@${{ needs.version.outputs.version }}
+      license: CC0-1.0 # SPDX expression the result is published under
+      dry-run: ${{ inputs.dry-run == true }}
+      upload-sarif: true # Surface failed controls in the Security tab
+    secrets:
+      # Inline because the plugin reads its token only from these config vars.
+      # The job token is read-only and scoped to this repository; settings it
+      # cannot read (org MFA, some admin settings) report "Needs Review".
+      config: |
+        targets:
+          strimzi-kafka-operator:
+            plugin: openssf/github-repo
+            policy:
+              catalogs:
+                - osps-baseline-2026-08
+              applicability:
+                - maturity-2 # Strimzi is a CNCF Incubating project
+            vars:
+              owner: strimzi
+              repo: strimzi-kafka-operator
+              token: ${{ secrets.GITHUB_TOKEN }}
