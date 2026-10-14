@@ -17,18 +17,29 @@ get_kafka_does_not_support
 # Set the default images
 kafka_exporter_version="{{ template \"strimzi.image\" (merge . (dict \"key\" \"kafkaExporter\" \"tagSuffix\" \"-kafka-${default_kafka_version}\")) }}"
 
+# Default multi-platform image digests for quay.io/strimzi/kafka:latest-kafka-<version>.
+# Refresh when publishing new images or changing supported Kafka versions.
+declare -A kafka_image_digests=(
+    ["4.2.0"]="sha256:379ad6201a9a3d6f72d4a69a2d134544f4dbb3c10feb2a6a60e3c52b41ed16cb"
+    ["4.2.1"]="sha256:56faef470161bb1b856108c6dfa4f11f53f4ea71104736c9066e1df78f953fad"
+    ["4.2.2"]="sha256:b87c118d2a895e362f23da2e2aa55a632941c140f62aa01b25b5ece70ae3bf9d"
+    ["4.3.0"]="sha256:5ee2b5814103b6f450ad37c7198e7adb1b9ca820213fdadf930549bcb0c0d961"
+    ["4.3.1"]="sha256:7d097c26074d1a3a01f479a8d0bae4835ee433bf55e6cbc5487a68e6bff0667e"
+)
+
 for version in "${versions[@]}"
 do
+    digest="${kafka_image_digests[$version]:?Missing default Kafka image digest for $version}"
     kafka_exporter_version="{{ template \"strimzi.image\" (merge . (dict \"key\" \"kafkaExporter\" \"tagSuffix\" \"-kafka-${version}\")) }}"
     cruise_control_version="{{ template \"strimzi.image\" (merge . (dict \"key\" \"cruiseControl\" \"tagSuffix\" \"-kafka-${version}\")) }}"
     kafka_versions="${kafka_versions}
-${version}={{ template \"strimzi.image\" (merge . (dict \"key\" \"kafka\" \"tagSuffix\" \"-kafka-${version}\")) }}"
+${version}={{ template \"strimzi.image\" (merge . (dict \"key\" \"kafka\" \"defaultDigest\" \"${digest}\" \"tagSuffix\" \"-kafka-${version}\")) }}"
     kafka_connect_versions="${kafka_connect_versions}
-${version}={{ template \"strimzi.image\" (merge . (dict \"key\" \"kafkaConnect\" \"tagSuffix\" \"-kafka-${version}\")) }}"
+${version}={{ template \"strimzi.image\" (merge . (dict \"key\" \"kafkaConnect\" \"defaultDigest\" \"${digest}\" \"tagSuffix\" \"-kafka-${version}\")) }}"
     kafka_exporter_versions="${kafka_exporter_versions}
 ${version}={{ template \"strimzi.image\" (merge . (dict \"key\" \"kafkaExporter\" \"tagSuffix\" \"-kafka-${version}\")) }}"
     kafka_mirror_maker_2_versions="${kafka_mirror_maker_2_versions}
-${version}={{ template \"strimzi.image\" (merge . (dict \"key\" \"kafkaMirrorMaker2\" \"tagSuffix\" \"-kafka-${version}\")) }}"
+${version}={{ template \"strimzi.image\" (merge . (dict \"key\" \"kafkaMirrorMaker2\" \"defaultDigest\" \"${digest}\" \"tagSuffix\" \"-kafka-${version}\")) }}"
 done
 
 kafka_versions=$(echo "$kafka_versions" | sed 's/^/                /g')

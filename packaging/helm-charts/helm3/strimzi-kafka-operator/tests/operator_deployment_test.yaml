@@ -182,13 +182,13 @@ tests:
           pattern: 'quay.io/strimzi/kafka:(latest|[0-9]+\.[0-9]+\.[0-9]+)-kafka-[0-9]+\.[0-9]+\.[0-9]+'
       - matchRegex:
           path: spec.template.spec.containers[0].env[5].value
-          pattern: '[0-9]+\.[0-9]+\.[0-9]+=quay.io/strimzi/kafka:(latest|[0-9]+\.[0-9]+\.[0-9]+)-kafka-[0-9]+\.[0-9]+\.[0-9]+'
+          pattern: '[0-9]+\.[0-9]+\.[0-9]+=quay.io/strimzi/kafka:latest-kafka-[0-9]+\.[0-9]+\.[0-9]+@sha256:[a-f0-9]{64}'
       - matchRegex:
           path: spec.template.spec.containers[0].env[6].value
-          pattern: '[0-9]+\.[0-9]+\.[0-9]+=quay.io/strimzi/kafka:(latest|[0-9]+\.[0-9]+\.[0-9]+)-kafka-[0-9]+\.[0-9]+\.[0-9]+'
+          pattern: '[0-9]+\.[0-9]+\.[0-9]+=quay.io/strimzi/kafka:latest-kafka-[0-9]+\.[0-9]+\.[0-9]+@sha256:[a-f0-9]{64}'
       - matchRegex:
           path: spec.template.spec.containers[0].env[7].value
-          pattern: '[0-9]+\.[0-9]+\.[0-9]+=quay.io/strimzi/kafka:(latest|[0-9]+\.[0-9]+\.[0-9]+)-kafka-[0-9]+\.[0-9]+\.[0-9]+'
+          pattern: '[0-9]+\.[0-9]+\.[0-9]+=quay.io/strimzi/kafka:latest-kafka-[0-9]+\.[0-9]+\.[0-9]+@sha256:[a-f0-9]{64}'
 
   - it: should construct custom kafka images from specified image registry if provided
     set:
@@ -278,3 +278,73 @@ tests:
           content:
             name: STRIMZI_CONNECT_BUILD_TIMEOUT_MS
             value: "999999999999"
+
+  - it: should pin each Kafka version independently in image map 5
+    asserts:
+      - matchRegex:
+          path: spec.template.spec.containers[0].env[5].value
+          pattern: '4.2.0=quay.io/strimzi/kafka:latest-kafka-4.2.0@sha256:379ad6201a9a3d6f72d4a69a2d134544f4dbb3c10feb2a6a60e3c52b41ed16cb'
+      - matchRegex:
+          path: spec.template.spec.containers[0].env[5].value
+          pattern: '4.2.1=quay.io/strimzi/kafka:latest-kafka-4.2.1@sha256:56faef470161bb1b856108c6dfa4f11f53f4ea71104736c9066e1df78f953fad'
+      - matchRegex:
+          path: spec.template.spec.containers[0].env[5].value
+          pattern: '4.2.2=quay.io/strimzi/kafka:latest-kafka-4.2.2@sha256:b87c118d2a895e362f23da2e2aa55a632941c140f62aa01b25b5ece70ae3bf9d'
+      - matchRegex:
+          path: spec.template.spec.containers[0].env[5].value
+          pattern: '4.3.0=quay.io/strimzi/kafka:latest-kafka-4.3.0@sha256:5ee2b5814103b6f450ad37c7198e7adb1b9ca820213fdadf930549bcb0c0d961'
+      - matchRegex:
+          path: spec.template.spec.containers[0].env[5].value
+          pattern: '4.3.1=quay.io/strimzi/kafka:latest-kafka-4.3.1@sha256:7d097c26074d1a3a01f479a8d0bae4835ee433bf55e6cbc5487a68e6bff0667e'
+
+  - it: should pin each Kafka version independently in image map 6
+    asserts:
+      - matchRegex:
+          path: spec.template.spec.containers[0].env[6].value
+          pattern: '4.2.0=quay.io/strimzi/kafka:latest-kafka-4.2.0@sha256:379ad6201a9a3d6f72d4a69a2d134544f4dbb3c10feb2a6a60e3c52b41ed16cb'
+      - matchRegex:
+          path: spec.template.spec.containers[0].env[6].value
+          pattern: '4.2.1=quay.io/strimzi/kafka:latest-kafka-4.2.1@sha256:56faef470161bb1b856108c6dfa4f11f53f4ea71104736c9066e1df78f953fad'
+      - matchRegex:
+          path: spec.template.spec.containers[0].env[6].value
+          pattern: '4.2.2=quay.io/strimzi/kafka:latest-kafka-4.2.2@sha256:b87c118d2a895e362f23da2e2aa55a632941c140f62aa01b25b5ece70ae3bf9d'
+      - matchRegex:
+          path: spec.template.spec.containers[0].env[6].value
+          pattern: '4.3.0=quay.io/strimzi/kafka:latest-kafka-4.3.0@sha256:5ee2b5814103b6f450ad37c7198e7adb1b9ca820213fdadf930549bcb0c0d961'
+      - matchRegex:
+          path: spec.template.spec.containers[0].env[6].value
+          pattern: '4.3.1=quay.io/strimzi/kafka:latest-kafka-4.3.1@sha256:7d097c26074d1a3a01f479a8d0bae4835ee433bf55e6cbc5487a68e6bff0667e'
+
+  - it: should pin each Kafka version independently in image map 7
+    asserts:
+      - matchRegex:
+          path: spec.template.spec.containers[0].env[7].value
+          pattern: '4.2.0=quay.io/strimzi/kafka:latest-kafka-4.2.0@sha256:379ad6201a9a3d6f72d4a69a2d134544f4dbb3c10feb2a6a60e3c52b41ed16cb'
+      - matchRegex:
+          path: spec.template.spec.containers[0].env[7].value
+          pattern: '4.2.1=quay.io/strimzi/kafka:latest-kafka-4.2.1@sha256:56faef470161bb1b856108c6dfa4f11f53f4ea71104736c9066e1df78f953fad'
+      - matchRegex:
+          path: spec.template.spec.containers[0].env[7].value
+          pattern: '4.2.2=quay.io/strimzi/kafka:latest-kafka-4.2.2@sha256:b87c118d2a895e362f23da2e2aa55a632941c140f62aa01b25b5ece70ae3bf9d'
+      - matchRegex:
+          path: spec.template.spec.containers[0].env[7].value
+          pattern: '4.3.0=quay.io/strimzi/kafka:latest-kafka-4.3.0@sha256:5ee2b5814103b6f450ad37c7198e7adb1b9ca820213fdadf930549bcb0c0d961'
+      - matchRegex:
+          path: spec.template.spec.containers[0].env[7].value
+          pattern: '4.3.1=quay.io/strimzi/kafka:latest-kafka-4.3.1@sha256:7d097c26074d1a3a01f479a8d0bae4835ee433bf55e6cbc5487a68e6bff0667e'
+
+  - it: should retain explicit digest and tag overrides
+    set:
+      kafka.image.digest: sha256:custom
+      kafkaConnect.image.tag: custom-tag
+      defaultImageTag: custom-release
+    asserts:
+      - matchRegex:
+          path: spec.template.spec.containers[0].env[5].value
+          pattern: '=quay.io/strimzi/kafka@sha256:custom'
+      - matchRegex:
+          path: spec.template.spec.containers[0].env[6].value
+          pattern: '=quay.io/strimzi/kafka:custom-tag'
+      - matchRegex:
+          path: spec.template.spec.containers[0].env[7].value
+          pattern: '=quay.io/strimzi/kafka:custom-release-kafka-'

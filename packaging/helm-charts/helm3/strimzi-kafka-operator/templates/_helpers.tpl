@@ -39,6 +39,7 @@ Creates the image name from the registry, repository, image, tag, and digest
 - tagSuffix can be ignored by using tag instead of tagPrefix
 To use, add the following key/value pairs to the scope:
 - "key" [optional]: the key to lookup under .Values for the image map
+- "defaultDigest" [optional]: default digest when no image tag or digest override is configured
 - "tagSuffix" [optional]: the suffix to add to tagPrefix or the default tag
 - Example: `template "strimzi.image" (merge . (dict "key" "cruiseControl" "tagSuffix" "-kafka-3.1.0"))`
 */}}
@@ -46,9 +47,20 @@ To use, add the following key/value pairs to the scope:
 {{- $vals := ternary .Values.image (index .Values .key).image (empty .key) -}}
 {{- $ref := join "/" (compact (list (default .Values.defaultImageRegistry $vals.registry) (default .Values.defaultImageRepository $vals.repository) (default .Values.defaultImageName $vals.name))) -}}
 {{- $tag := join "" (compact (list (coalesce $vals.tag $vals.tagPrefix .Values.defaultImageTag) (ternary .tagSuffix "" (empty $vals.tag)))) -}}
-{{- join "" (compact (list $ref (ternary ":" "@" (empty $vals.digest)) (default $tag $vals.digest))) -}}
+{{- $digest := $vals.digest -}}
+{{- $useDefaultDigest := false -}}
+{{- if and (empty $digest) (empty $vals.tag) (empty $vals.tagPrefix) (eq .Values.defaultImageTag "latest") -}}
+{{- $digest = .defaultDigest -}}
+{{- $useDefaultDigest = not (empty $digest) -}}
+{{- end -}}
+{{- if $useDefaultDigest -}}
+{{- printf "%s:%s@%s" $ref $tag $digest -}}
+{{- else -}}
+{{- join "" (compact (list $ref (ternary ":" "@" (empty $digest)) (default $tag $digest))) -}}
+{{- end -}}
 {{- $_ := unset . "key" -}}
 {{- $_ := unset . "tagSuffix" -}}
+{{- $_ := unset . "defaultDigest" -}}
 {{- end -}}
 
 {{/*

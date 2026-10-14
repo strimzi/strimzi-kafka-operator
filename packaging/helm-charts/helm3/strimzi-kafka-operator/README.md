@@ -239,3 +239,20 @@ Specify each parameter using the `--set key=value[,key=value]` argument to `helm
 ```bash
 helm install my-strimzi-cluster-operator --set replicas=2 oci://quay.io/strimzi-helm/strimzi-kafka-operator
 ```
+
+### Default Kafka image digests
+
+The generated Kafka, Kafka Connect, and MirrorMaker 2 image maps pin each Kafka
+version to a default multi-platform image digest. No additional values are needed.
+Default image references retain the Kafka version tag for readability, for example
+`quay.io/strimzi/kafka:latest-kafka-4.2.0@sha256:<digest>`.
+The digest determines the image that is pulled; the tag is informational.
+The digests are maintained in `packaging/helm-charts/kafka-version-tpl.sh` and must
+be refreshed when the default images change. Regenerate `_kafka_image_map.tpl`
+after updating them; do not edit the generated file directly.
+
+Explicit component `image.digest`, `image.tag`, or `image.tagPrefix` settings take
+precedence. Setting `defaultImageTag` to a value other than `latest` retains the
+existing tag-based image selection. Custom registries using the default digests
+must contain the same image manifests. Kafka Exporter and Cruise Control retain
+their existing image settings.
