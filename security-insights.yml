@@ -1,7 +1,7 @@
 header:
   schema-version: 2.2.0
-  last-updated: '2026-10-08'
-  last-reviewed: '2026-10-08'
+  last-updated: '2026-10-14'
+  last-reviewed: '2026-10-14'
   url: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/main/security-insights.yml
 
 project:
@@ -145,6 +145,7 @@ repository:
     contributing-guide: https://github.com/strimzi/strimzi-kafka-operator/blob/main/README.md#contributing
     dependency-management-policy: https://github.com/strimzi/strimzi-kafka-operator/blob/main/development-docs/DEV_GUIDE.md#dependency-management
     governance: https://github.com/strimzi/governance/blob/main/GOVERNANCE.md
+    review-policy: https://github.com/strimzi/governance/blob/main/GOVERNANCE.md#pr-approval-rules
     security-policy: https://github.com/strimzi/.github/blob/main/SECURITY.md
   release:
     automated-pipeline: true
