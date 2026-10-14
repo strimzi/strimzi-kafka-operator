@@ -205,11 +205,11 @@ public class CruiseControlApiImpl implements CruiseControlApi {
         // Fallback to detectionDate (string format from CC API)
         if (violation.has("detectionDate")) {
             JsonNode node = violation.get("detectionDate");
-            if (node.isTextual()) {
+            if (node.isString()) {
                 try {
-                    return Instant.parse(node.asText());
+                    return Instant.parse(node.asString());
                 } catch (Exception e) {
-                    LOGGER.warnCr(reconciliation, "Failed to parse detection time '{}' from CC response", node.asText());
+                    LOGGER.warnCr(reconciliation, "Failed to parse detection time '{}' from CC response", node.asString());
                     return null;
                 }
             } else if (node.isNumber()) {
