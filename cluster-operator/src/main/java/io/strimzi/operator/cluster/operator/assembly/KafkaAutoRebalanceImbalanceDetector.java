@@ -138,9 +138,14 @@ public class KafkaAutoRebalanceImbalanceDetector {
      * @return CompletionStage with GoalViolationInfo if violations detected, null otherwise
      */
     public CompletionStage<GoalViolationInfo> checkForGoalViolations() {
-        return secretOperator.getAsync(reconciliation.namespace(), CruiseControlResources.secretName(reconciliation.name()))
-                .thenCompose(ccSecret -> secretOperator.getAsync(reconciliation.namespace(), CruiseControlResources.apiSecretName(reconciliation.name()))
-                .thenCompose(ccApiSecret -> {
+        CompletableFuture<Secret> ccSecretFuture = secretOperator.getAsync(reconciliation.namespace(), CruiseControlResources.secretName(reconciliation.name())).toCompletableFuture();
+        CompletableFuture<Secret> ccApiSecretFuture = secretOperator.getAsync(reconciliation.namespace(), CruiseControlResources.apiSecretName(reconciliation.name())).toCompletableFuture();
+
+        return CompletableFuture.allOf(ccSecretFuture, ccApiSecretFuture)
+                .thenCompose(ignored -> {
+                    Secret ccSecret = ccSecretFuture.join();
+                    Secret ccApiSecret = ccApiSecretFuture.join();
+
                     if (ccSecret == null) {
                         LOGGER.warnCr(reconciliation, "Cruise Control secret not found: Skipping goal violation detection this reconciliation");
                         return CompletableFuture.completedFuture(null);
@@ -168,7 +173,7 @@ public class KafkaAutoRebalanceImbalanceDetector {
                                 LOGGER.debugCr(reconciliation, "Unable to query Cruise Control for goal violations: Pod may not be ready yet", error);
                                 return null;
                             });
-                }));
+                });
     }
 
     /**
