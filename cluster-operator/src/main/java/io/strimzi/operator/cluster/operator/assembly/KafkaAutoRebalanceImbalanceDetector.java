@@ -26,6 +26,7 @@ import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlConfigurationParameters;
 import io.strimzi.operator.common.operator.resource.kubernetes.CrdOperator;
+import io.strimzi.operator.common.operator.resource.kubernetes.SecretOperator;
 
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
@@ -35,6 +36,7 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Handles imbalance detection and Cruise Control querying for the auto-rebalancing feature.
@@ -48,8 +50,8 @@ public class KafkaAutoRebalanceImbalanceDetector {
     private final Reconciliation reconciliation;
     private final Kafka kafkaCr;
     private final CrdOperator<KubernetesClient, KafkaRebalance, KafkaRebalanceList> kafkaRebalanceOperator;
+    private final SecretOperator secretOperator;
     private final ConfigMapOperator configMapOperator;
-    private final ResourceOperatorSupplier supplier;
 
     /**
      * Constructs the imbalance detector
@@ -64,7 +66,7 @@ public class KafkaAutoRebalanceImbalanceDetector {
             ResourceOperatorSupplier supplier) {
         this.reconciliation = reconciliation;
         this.kafkaCr = kafkaCr;
-        this.supplier = supplier;
+        this.secretOperator = supplier.secretOperations;
         this.kafkaRebalanceOperator = supplier.kafkaRebalanceOperator;
         this.configMapOperator = supplier.configMapOperations;
     }
@@ -121,14 +123,9 @@ public class KafkaAutoRebalanceImbalanceDetector {
                         KafkaRebalanceState state = KafkaRebalanceUtils.rebalanceState(rebalance.getStatus());
 
                         if (state == KafkaRebalanceState.Rebalancing) {
-                            LOGGER.debugCr(reconciliation, "KafkaRebalance {}/{} is actively rebalancing: Auto-rebalance on imbalance will be skipped until it completes",
+                            LOGGER.infoCr(reconciliation, "KafkaRebalance {}/{} is actively rebalancing: Auto-rebalance on imbalance will be skipped until it completes",
                                     rebalance.getMetadata().getNamespace(), rebalance.getMetadata().getName());
                             return true;
-                        } else if (state == KafkaRebalanceState.New ||
-                                   state == KafkaRebalanceState.PendingProposal ||
-                                   state == KafkaRebalanceState.ProposalReady) {
-                            LOGGER.traceCr(reconciliation, "KafkaRebalance {}/{} is in {} state (not yet executing)",
-                                    rebalance.getMetadata().getNamespace(), rebalance.getMetadata().getName(), state);
                         }
                     }
                     return false;
@@ -141,8 +138,8 @@ public class KafkaAutoRebalanceImbalanceDetector {
      * @return CompletionStage with GoalViolationInfo if violations detected, null otherwise
      */
     public CompletionStage<GoalViolationInfo> checkForGoalViolations() {
-        return supplier.secretOperations.getAsync(reconciliation.namespace(), CruiseControlResources.secretName(reconciliation.name()))
-                .thenCompose(ccSecret -> supplier.secretOperations.getAsync(reconciliation.namespace(), CruiseControlResources.apiSecretName(reconciliation.name()))
+        return secretOperator.getAsync(reconciliation.namespace(), CruiseControlResources.secretName(reconciliation.name()))
+                .thenCompose(ccSecret -> secretOperator.getAsync(reconciliation.namespace(), CruiseControlResources.apiSecretName(reconciliation.name()))
                 .thenCompose(ccApiSecret -> {
                     if (ccSecret == null) {
                         LOGGER.warnCr(reconciliation, "Cruise Control secret not found: Skipping goal violation detection this reconciliation");
@@ -259,8 +256,7 @@ public class KafkaAutoRebalanceImbalanceDetector {
      * @return List of anomaly detection goal names
      */
     private List<String> getAnomalyDetectionGoals() {
-        List<String> defaultGoals = List.of(CruiseControlConfiguration.CRUISE_CONTROL_DEFAULT_ANOMALY_DETECTION_GOALS.split(","))
-                .stream()
+        List<String> defaultGoals = Stream.of(CruiseControlConfiguration.CRUISE_CONTROL_DEFAULT_ANOMALY_DETECTION_GOALS.split(","))
                 .map(String::trim)
                 .map(this::extractGoalShortName)
                 .toList();
@@ -277,8 +273,7 @@ public class KafkaAutoRebalanceImbalanceDetector {
             return defaultGoals;
         }
 
-        return List.of(goalsString.split(","))
-                .stream()
+        return Stream.of(goalsString.split(","))
                 .map(String::trim)
                 .map(this::extractGoalShortName)
                 .toList();

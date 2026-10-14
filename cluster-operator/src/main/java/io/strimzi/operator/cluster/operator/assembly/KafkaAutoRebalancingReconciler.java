@@ -4,8 +4,6 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
-import io.fabric8.kubernetes.api.model.ConfigMap;
-import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
@@ -23,7 +21,6 @@ import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceBuilder;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceList;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceMode;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceState;
-import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.GoalViolationInfo;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.GoalViolationInfo.Fixability;
@@ -34,7 +31,6 @@ import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.StatusUtils;
 import io.strimzi.operator.common.operator.resource.kubernetes.CrdOperator;
 
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -677,11 +673,8 @@ public class KafkaAutoRebalancingReconciler {
                                                     });
                                         } else {
                                             LOGGER.infoCr(reconciliation, "Rebalancing completed, transitioning to Idle");
-                                            return updateRebalanceCompletionTime()
-                                                    .thenCompose(updated -> {
-                                                        updateStatus(kafkaAutoRebalanceStatus, KafkaAutoRebalanceState.Idle);
-                                                        return CompletableFuture.completedFuture(null);
-                                                    });
+                                            updateStatus(kafkaAutoRebalanceStatus, KafkaAutoRebalanceState.Idle);
+                                            return CompletableFuture.completedFuture(null);
                                         }
                                     });
                         case New:
@@ -723,7 +716,6 @@ public class KafkaAutoRebalancingReconciler {
                             LOGGER.warnCr(reconciliation, "Auto-rebalance on imbalance failed (KafkaRebalance {}/{} is NotReady): Will retry if Cruise Control re-detects the violation",
                                     kafkaRebalance.getMetadata().getNamespace(), kafkaRebalance.getMetadata().getName());
                             return deleteKafkaRebalance(kafkaRebalance)
-                                    .thenCompose(v -> updateRebalanceCompletionTime())
                                     .thenApply(v -> {
                                         updateStatus(kafkaAutoRebalanceStatus, KafkaAutoRebalanceState.Idle);
                                         return (Void) null;
@@ -731,7 +723,6 @@ public class KafkaAutoRebalancingReconciler {
                         case Stopped:
                             LOGGER.infoCr(reconciliation, "Auto-rebalance on imbalance was stopped");
                             return deleteKafkaRebalance(kafkaRebalance)
-                                    .thenCompose(v -> updateRebalanceCompletionTime())
                                     .thenApply(v -> {
                                         updateStatus(kafkaAutoRebalanceStatus, KafkaAutoRebalanceState.Idle);
                                         return (Void) null;
@@ -739,37 +730,6 @@ public class KafkaAutoRebalancingReconciler {
                         default:
                             return CompletableFuture.failedFuture(new RuntimeException("Unexpected state " + kafkaRebalanceState));
                     }
-                });
-    }
-
-    /**
-     * Updates the ConfigMap with the current rebalance completion time
-     * This prevents re-triggering for the same violation
-     *
-     * @return Future that completes when ConfigMap is updated
-     */
-    private CompletionStage<Void> updateRebalanceCompletionTime() {
-        String configMapName = reconciliation.name() + AUTO_REBALANCE_IMBALANCE_TRACKER_SUFFIX;
-        String completionTime = Instant.now().toString();
-
-        ConfigMap desiredConfigMap = new ConfigMapBuilder()
-                .withNewMetadata()
-                    .withName(configMapName)
-                    .withNamespace(reconciliation.namespace())
-                    .withLabels(Map.of(Labels.STRIMZI_CLUSTER_LABEL, reconciliation.name()))
-                    .withOwnerReferences(ModelUtils.createOwnerReference(kafkaCr, false))
-                .endMetadata()
-                .withData(Map.of("lastRebalanceCompletionTime", completionTime))
-                .build();
-
-        return configMapOperator.reconcile(reconciliation, reconciliation.namespace(), configMapName, desiredConfigMap)
-                .thenApply(result -> {
-                    LOGGER.debugCr(reconciliation, "Updated rebalance completion time to {}", completionTime);
-                    return (Void) null;
-                })
-                .exceptionally(error -> {
-                    LOGGER.warnCr(reconciliation, "Failed to update rebalance completion time: {}", error.getMessage());
-                    return null;
                 });
     }
 
