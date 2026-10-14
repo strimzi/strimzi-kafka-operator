@@ -29,10 +29,10 @@ public interface CruiseControlApi {
      * @param host The address of the Cruise Control server.
      * @param port The port the Cruise Control Server is listening on.
      * @param verbose Whether the response from state endpoint should include more details.
-     * @param substate The substate to query from the Cruise Control server.
+     * @param substates The substate to query from the Cruise Control server.
      * @return A future for the response from the Cruise Control server with details of the Cruise Control server state.
      */
-    CompletionStage<CruiseControlStateResponse> getCruiseControlState(Reconciliation reconciliation, String host, int port, boolean verbose, String substate);
+    CompletionStage<CruiseControlStateResponse> getCruiseControlState(Reconciliation reconciliation, String host, int port, boolean verbose, String substates);
 
     /**
      * Checks for goal violations in the Cruise Control anomaly detector.

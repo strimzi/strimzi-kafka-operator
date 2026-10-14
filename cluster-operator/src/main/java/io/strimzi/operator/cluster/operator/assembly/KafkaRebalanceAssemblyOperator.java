@@ -77,6 +77,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -1475,11 +1476,11 @@ public class KafkaRebalanceAssemblyOperator
     private CompletionStage<Void> updateImbalanceTrackerConfigMap(Reconciliation reconciliation, String namespace, String clusterName) {
         String configMapName = clusterName + KafkaAutoRebalancingReconciler.AUTO_REBALANCE_IMBALANCE_TRACKER_SUFFIX;
         String completionTime = Instant.now().toString();
-        return VertxUtil.toFuture(kafkaOperator.getAsync(namespace, clusterName))
-                .compose(kafka -> {
+        return kafkaOperator.getAsync(namespace, clusterName)
+                .thenCompose(kafka -> {
                     if (kafka == null) {
                         LOGGER.debugCr(reconciliation, "Kafka CR not found, skipping imbalance tracker ConfigMap update for {}", configMapName);
-                        return Future.succeededFuture();
+                        return CompletableFuture.completedFuture(null);
                     }
                     ConfigMap desiredConfigMap = new ConfigMapBuilder()
                             .withNewMetadata()
@@ -1490,13 +1491,16 @@ public class KafkaRebalanceAssemblyOperator
                             .endMetadata()
                             .withData(Map.of("lastRebalanceCompletionTime", completionTime))
                             .build();
-                    return VertxUtil.toFuture(configMapOperator.reconcile(reconciliation, namespace, configMapName, desiredConfigMap))
-                            .onSuccess(ignored -> LOGGER.debugCr(reconciliation, "Updated imbalance tracker ConfigMap {} with completion time {}", configMapName, completionTime))
-                            .onFailure(error -> LOGGER.warnCr(reconciliation, "Failed to update imbalance tracker ConfigMap {}: {}", configMapName, error.getMessage()))
-                            .<Void>mapEmpty();
+                    return configMapOperator.reconcile(reconciliation, namespace, configMapName, desiredConfigMap)
+                            .thenApply(ignored -> {
+                                LOGGER.debugCr(reconciliation, "Updated imbalance tracker ConfigMap {} with completion time {}", configMapName, completionTime);
+                                return (Void) null;
+                            });
                 })
-                .onFailure(error -> LOGGER.warnCr(reconciliation, "Failed to fetch Kafka CR to set owner reference on imbalance tracker ConfigMap {}: {}", configMapName, error.getMessage()))
-                .toCompletionStage();
+                .exceptionally(error -> {
+                    LOGGER.warnCr(reconciliation, "Failed to update imbalance tracker ConfigMap {}: {}", configMapName, error.getMessage());
+                    return null;
+                });
     }
 
     @Override
