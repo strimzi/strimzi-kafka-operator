@@ -1,4 +1,5 @@
 {{- if .Values.rbac.create -}}
+{{- $preferNamespaced := and .Values.rbac.preferNamespaced (not .Values.watchAnyNamespace) -}}
 {{- $namespaces := include "strimzi.watchNamespacesList" . | fromYamlArray }}
 {{- range $i, $ns := $namespaces }}
 ---
@@ -26,7 +27,7 @@ subjects:
     name: {{ $.Values.serviceAccount }}
     namespace: {{ $.Release.Namespace }}
 roleRef:
-  kind: ClusterRole
+  kind: {{ ternary "Role" "ClusterRole" $preferNamespaced }}
   name: strimzi-entity-operator
   apiGroup: rbac.authorization.k8s.io
 {{- end }}

@@ -1,8 +1,12 @@
-{{- if and .Values.rbac.create .Values.createGlobalResources -}}
+{{- $preferNamespaced := and .Values.rbac.preferNamespaced (not .Values.watchAnyNamespace) -}}
+{{- if and .Values.rbac.create (or $preferNamespaced .Values.createGlobalResources) -}}
 apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
+kind: {{ ternary "Role" "ClusterRole" $preferNamespaced }}
 metadata:
   name: strimzi-cluster-operator-leader-election
+  {{- if $preferNamespaced }}
+  namespace: {{ .Release.Namespace }}
+  {{- end }}
   labels:
     app: {{ template "strimzi.name" . }}
     chart: {{ template "strimzi.chart" . }}

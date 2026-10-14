@@ -1,14 +1,27 @@
-{{- if and .Values.rbac.create .Values.createGlobalResources -}}
+{{- $preferNamespaced := and .Values.rbac.preferNamespaced (not .Values.watchAnyNamespace) -}}
+{{- if and .Values.rbac.create (or $preferNamespaced .Values.createGlobalResources) -}}
+{{- $root := . -}}
+{{- $namespaces := list "" -}}
+{{- if $preferNamespaced -}}
+{{- $namespaces = include "strimzi.watchNamespacesList" . | fromYamlArray -}}
+{{- end -}}
+{{- range $index, $namespace := $namespaces }}
+{{- if gt $index 0 }}
+---
+{{- end }}
 apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
+kind: {{ ternary "Role" "ClusterRole" $preferNamespaced }}
 metadata:
   name: strimzi-cluster-operator-namespaced
+  {{- if $preferNamespaced }}
+  namespace: {{ $namespace }}
+  {{- end }}
   labels:
-    app: {{ template "strimzi.name" . }}
-    chart: {{ template "strimzi.chart" . }}
+    app: {{ template "strimzi.name" $root }}
+    chart: {{ template "strimzi.chart" $root }}
     component: role
-    release: {{ .Release.Name }}
-    heritage: {{ .Release.Service }}
+    release: {{ $root.Release.Name }}
+    heritage: {{ $root.Release.Service }}
 rules:
 # Resources in this role are used by the operator based on an operand being deployed in some namespace. When needed, you
 # can deploy the operator as a cluster-wide operator. But grant the rights listed in this role only on the namespaces
@@ -199,4 +212,5 @@ rules:
   - delete
   - patch
   - update
+{{- end }}
 {{- end -}}
