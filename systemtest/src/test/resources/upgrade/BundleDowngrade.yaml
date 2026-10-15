@@ -40,8 +40,8 @@
   additionalTopics: 2
   imagesAfterOperations:
     kafka: strimzi/kafka:1.3.0-kafka-4.2.0
-    topicOperator: strimzi/operator:1.2.0
-    userOperator: strimzi/operator:1.2.0
+    topicOperator: strimzi/operator:1.3.0
+    userOperator: strimzi/operator:1.3.0
   deployKafkaVersion: 4.2.0
   client:
     continuousClientsMessages: 400
