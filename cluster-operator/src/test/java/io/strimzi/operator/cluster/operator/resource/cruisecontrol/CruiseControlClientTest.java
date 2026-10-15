@@ -52,7 +52,7 @@ public class CruiseControlClientTest {
         File tlsCrtFile = ReadWriteUtils.tempFile(CruiseControlClientTest.class.getSimpleName(), ".crt");
         
         new MockCertIssuer().generateSelfSignedCert(tlsKeyFile, tlsCrtFile,
-            new StrimziSubject.Builder().withCommonName("Trusted Test CA").build(), 365);
+            new StrimziSubject.Builder().withCommonName("Trusted Test CA").build(), 365, 4096);
 
         cruiseControlServer = new MockCruiseControl(cruiseControlPort, tlsKeyFile, tlsCrtFile);
     }
