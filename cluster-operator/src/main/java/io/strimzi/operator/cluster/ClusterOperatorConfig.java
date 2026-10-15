@@ -146,7 +146,7 @@ public class ClusterOperatorConfig {
     /**
      * Delay after a restarted Kafka pod becomes ready before the next Kafka pod is considered for restart, specified in milliseconds
      */
-    public static final ConfigParameter<Long> KAFKA_POD_RESTART_DELAY_MS = new ConfigParameter<>("STRIMZI_KAFKA_POD_RESTART_DELAY_MS", LONG, "0", CONFIG_VALUES);
+    public static final ConfigParameter<Long> POST_KAFKA_RESTART_DELAY_MS = new ConfigParameter<>("STRIMZI_POST_KAFKA_RESTART_DELAY_MS", LONG, "0", CONFIG_VALUES);
 
     /**
      * Set true to generate Network Policies
@@ -479,7 +479,7 @@ public class ClusterOperatorConfig {
      * @return  Number of milliseconds to wait after a Kafka pod restart
      */
     public long getKafkaPodRestartDelayMs() {
-        return get(KAFKA_POD_RESTART_DELAY_MS);
+        return get(POST_KAFKA_RESTART_DELAY_MS);
     }
 
     /**

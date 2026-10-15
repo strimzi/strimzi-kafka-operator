@@ -38,7 +38,7 @@ public class ClusterOperatorConfigTest {
         ENV_VARS.put(ClusterOperatorConfig.FULL_RECONCILIATION_INTERVAL_MS.key(), "30000");
         ENV_VARS.put(ClusterOperatorConfig.OPERATION_TIMEOUT_MS.key(), "30000");
         ENV_VARS.put(ClusterOperatorConfig.CONNECT_BUILD_TIMEOUT_MS.key(), "40000");
-        ENV_VARS.put(ClusterOperatorConfig.KAFKA_POD_RESTART_DELAY_MS.key(), "60000");
+        ENV_VARS.put(ClusterOperatorConfig.POST_KAFKA_RESTART_DELAY_MS.key(), "60000");
         ENV_VARS.put(ClusterOperatorConfig.STRIMZI_KAFKA_IMAGES, KafkaVersionTestUtils.getKafkaImagesEnvVarString());
         ENV_VARS.put(ClusterOperatorConfig.STRIMZI_KAFKA_CONNECT_IMAGES, KafkaVersionTestUtils.getKafkaConnectImagesEnvVarString());
         ENV_VARS.put(ClusterOperatorConfig.STRIMZI_KAFKA_MIRROR_MAKER_2_IMAGES, KafkaVersionTestUtils.getKafkaMirrorMaker2ImagesEnvVarString());
@@ -62,7 +62,7 @@ public class ClusterOperatorConfigTest {
         envVars.remove(ClusterOperatorConfig.FULL_RECONCILIATION_INTERVAL_MS.key());
         envVars.remove(ClusterOperatorConfig.OPERATION_TIMEOUT_MS.key());
         envVars.remove(ClusterOperatorConfig.CONNECT_BUILD_TIMEOUT_MS.key());
-        envVars.remove(ClusterOperatorConfig.KAFKA_POD_RESTART_DELAY_MS.key());
+        envVars.remove(ClusterOperatorConfig.POST_KAFKA_RESTART_DELAY_MS.key());
         envVars.remove(ClusterOperatorConfig.FEATURE_GATES.key());
         envVars.remove(ClusterOperatorConfig.POD_SECURITY_PROVIDER_CLASS.key());
         envVars.remove(ClusterOperatorConfig.POD_DISRUPTION_BUDGET_GENERATION.key());
