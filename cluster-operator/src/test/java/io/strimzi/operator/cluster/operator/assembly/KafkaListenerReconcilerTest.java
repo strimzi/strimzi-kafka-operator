@@ -166,7 +166,7 @@ public class KafkaListenerReconcilerTest {
 
         // Check status
         assertThat(res.listenerStatuses.size(), is(1));
-        ListenerStatus listenerStatus = res.listenerStatuses.get(0);
+        ListenerStatus listenerStatus = res.listenerStatuses.get("external");
         assertThat(listenerStatus.getBootstrapServers(), is("my-kafka-kafka-external-bootstrap.test.svc:9094"));
         assertThat(listenerStatus.getAddresses().size(), is(1));
         assertThat(listenerStatus.getAddresses().get(0).getHost(), is("my-kafka-kafka-external-bootstrap.test.svc"));
@@ -234,7 +234,7 @@ public class KafkaListenerReconcilerTest {
 
         // Check status
         assertThat(res.listenerStatuses.size(), is(1));
-        ListenerStatus listenerStatus = res.listenerStatuses.get(0);
+        ListenerStatus listenerStatus = res.listenerStatuses.get("external");
         assertThat(listenerStatus.getBootstrapServers(), is("my-kafka-kafka-external-bootstrap.test.svc:9094"));
         assertThat(listenerStatus.getAddresses().size(), is(1));
         assertThat(listenerStatus.getAddresses().get(0).getHost(), is("my-kafka-kafka-external-bootstrap.test.svc"));
@@ -317,7 +317,7 @@ public class KafkaListenerReconcilerTest {
 
         // Check status
         assertThat(res.listenerStatuses.size(), is(1));
-        ListenerStatus listenerStatus = res.listenerStatuses.get(0);
+        ListenerStatus listenerStatus = res.listenerStatuses.get("external");
         assertThat(listenerStatus.getBootstrapServers(), is("my-kafka-kafka-external-bootstrap.test.svc:9094"));
         assertThat(listenerStatus.getAddresses().size(), is(1));
         assertThat(listenerStatus.getAddresses().get(0).getHost(), is("my-kafka-kafka-external-bootstrap.test.svc"));
@@ -396,7 +396,7 @@ public class KafkaListenerReconcilerTest {
 
         // Check status
         assertThat(res.listenerStatuses.size(), is(1));
-        ListenerStatus listenerStatus = res.listenerStatuses.get(0);
+        ListenerStatus listenerStatus = res.listenerStatuses.get("external");
         assertThat(listenerStatus.getBootstrapServers(), is("my-kafka-kafka-external-bootstrap.test.svc:9094"));
         assertThat(listenerStatus.getAddresses().size(), is(1));
         assertThat(listenerStatus.getAddresses().get(0).getHost(), is("my-kafka-kafka-external-bootstrap.test.svc"));
@@ -470,7 +470,7 @@ public class KafkaListenerReconcilerTest {
 
         // Check status
         assertThat(res.listenerStatuses.size(), is(1));
-        ListenerStatus listenerStatus = res.listenerStatuses.get(0);
+        ListenerStatus listenerStatus = res.listenerStatuses.get("external");
         assertThat(listenerStatus.getBootstrapServers(), is("broker-10.test.dns.name:9094,broker-11.test.dns.name:9094,broker-12.test.dns.name:9094"));
         assertThat(listenerStatus.getAddresses().size(), is(3));
         assertThat(listenerStatus.getAddresses().get(0).getHost(), is(DNS_NAME_FOR_BROKER_10));
@@ -533,7 +533,7 @@ public class KafkaListenerReconcilerTest {
 
         // Check status
         assertThat(res.listenerStatuses.size(), is(1));
-        ListenerStatus listenerStatus = res.listenerStatuses.get(0);
+        ListenerStatus listenerStatus = res.listenerStatuses.get("external");
         assertThat(listenerStatus.getBootstrapServers(), is(DNS_NAME_FOR_BOOTSTRAP_SERVICE + ":9094"));
         assertThat(listenerStatus.getAddresses().size(), is(1));
         assertThat(listenerStatus.getAddresses().get(0).getHost(), is(DNS_NAME_FOR_BOOTSTRAP_SERVICE));
@@ -590,7 +590,7 @@ public class KafkaListenerReconcilerTest {
 
         // Check status
         assertThat(res.listenerStatuses.size(), is(1));
-        ListenerStatus listenerStatus = res.listenerStatuses.get(0);
+        ListenerStatus listenerStatus = res.listenerStatuses.get("external");
         assertThat(listenerStatus.getBootstrapServers(), is(DNS_NAME_FOR_BOOTSTRAP_SERVICE + ":9094"));
         assertThat(listenerStatus.getAddresses().size(), is(1));
         assertThat(listenerStatus.getAddresses().get(0).getHost(), is(DNS_NAME_FOR_BOOTSTRAP_SERVICE));
