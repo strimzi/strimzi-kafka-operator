@@ -60,7 +60,7 @@ import static io.strimzi.systemtest.TestConstants.GLOBAL_TIMEOUT;
 import static io.strimzi.systemtest.TestTags.REGRESSION;
 import static io.strimzi.systemtest.TestTags.TIERED_STORAGE;
 import static io.strimzi.systemtest.utils.specific.NfsUtils.NFS_PVC_NAME;
-import static org.junit.jupiter.api.Assumptions.assumeTrue;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 @MicroShiftNotSupported("We are using Buildah and OpenShift builds to build Kafka image with TS. To make it working on Microshift we will invest much time with not much additional value.")
 @Tag(REGRESSION)
@@ -414,7 +414,7 @@ public class TieredStorageST extends AbstractST {
 
     @BeforeAll
     void setup() throws IOException {
-        assumeTrue(TestKafkaVersion.compareDottedVersions(Environment.ST_KAFKA_VERSION, "4.4.0") >= 0,
+        assumeFalse(TestKafkaVersion.compareDottedVersions(Environment.ST_KAFKA_VERSION, "4.4.0") >= 0,
                 "The Aiven tiered storage plugin we use for testing is current not compatible with Apache Kafka 4.4.0 and higher");
 
         // for RBAC, we are creating everything in co-namespace
