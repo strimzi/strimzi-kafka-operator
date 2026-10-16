@@ -35,3 +35,12 @@ spec:
           refresh.groups.interval.seconds: 600
       topicsPattern: ".*"
       groupsPattern: ".*"
+  template:
+    pod:
+      nodeSelector:
+        example.com/workload: kafka
+        kubernetes.io/os: linux
+    buildPod:
+      nodeSelector:
+        example.com/workload: kafka
+        kubernetes.io/os: linux

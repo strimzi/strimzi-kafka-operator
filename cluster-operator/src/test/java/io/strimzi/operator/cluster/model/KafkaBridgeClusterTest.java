@@ -553,6 +553,7 @@ public class KafkaBridgeClusterTest {
                             .withTmpDirSizeLimit("10Mi")
                             .withVolumes(additionalVolumes)
                             .withHostUsers(false)
+                            .withNodeSelector(Map.of("example.com/workload", "kafka", "kubernetes.io/os", "linux"))
                         .endPod()
                         .withNewBridgeContainer()
                             .withVolumeMounts(additionalVolumeMounts)
@@ -599,6 +600,7 @@ public class KafkaBridgeClusterTest {
         assertThat(dep.getSpec().getTemplate().getSpec().getTopologySpreadConstraints(), containsInAnyOrder(tsc1, tsc2));
         assertThat(dep.getSpec().getTemplate().getSpec().getEnableServiceLinks(), is(false));
         assertThat(dep.getSpec().getTemplate().getSpec().getHostUsers(), is(false));
+        assertThat(dep.getSpec().getTemplate().getSpec().getNodeSelector(), is(Map.of("example.com/workload", "kafka", "kubernetes.io/os", "linux")));
         assertThat(getVolume(dep, VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME).getEmptyDir().getSizeLimit(), is(new Quantity("10Mi")));
         assertThat(getVolume(dep, "secret-volume-name").getSecret(), is(secret));
         assertThat(getVolumeMount(dep.getSpec().getTemplate().getSpec().getContainers().get(0), "secret-volume-name"), is(additionalVolumeMounts.get(0)));

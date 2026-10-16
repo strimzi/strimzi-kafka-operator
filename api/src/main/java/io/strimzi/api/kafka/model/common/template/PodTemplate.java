@@ -37,8 +37,8 @@ import java.util.Map;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
-@JsonPropertyOrder({"metadata", "imagePullSecrets", "securityContext", "terminationGracePeriodSeconds", "affinity",
-    "tolerations", "topologySpreadConstraints", "priorityClassName", "schedulerName", "hostAliases", "dnsPolicy", "dnsConfig", 
+@JsonPropertyOrder({"metadata", "imagePullSecrets", "securityContext", "terminationGracePeriodSeconds", "nodeSelector", "affinity",
+    "tolerations", "topologySpreadConstraints", "priorityClassName", "schedulerName", "hostAliases", "dnsPolicy", "dnsConfig",
     "enableServiceLinks", "tmpDirSizeLimit", "volumes", "hostUsers"})
 @EqualsAndHashCode
 @ToString
@@ -48,6 +48,7 @@ public class PodTemplate implements HasMetadataTemplate, UnknownPropertyPreservi
     private List<LocalObjectReference> imagePullSecrets;
     private PodSecurityContext securityContext;
     private int terminationGracePeriodSeconds = 30;
+    private Map<String, String> nodeSelector;
     private Affinity affinity;
     private List<Toleration> tolerations;
     private List<TopologySpreadConstraint> topologySpreadConstraints;
@@ -110,6 +111,17 @@ public class PodTemplate implements HasMetadataTemplate, UnknownPropertyPreservi
 
     public void setTerminationGracePeriodSeconds(int terminationGracePeriodSeconds) {
         this.terminationGracePeriodSeconds = terminationGracePeriodSeconds;
+    }
+
+    @Description("Node labels used to select the nodes on which the pod can be scheduled. " +
+            "When used with required node affinity, both constraints must be satisfied.")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public Map<String, String> getNodeSelector() {
+        return nodeSelector;
+    }
+
+    public void setNodeSelector(Map<String, String> nodeSelector) {
+        this.nodeSelector = nodeSelector;
     }
 
     @Description("The pod's affinity rules.")
@@ -178,8 +190,8 @@ public class PodTemplate implements HasMetadataTemplate, UnknownPropertyPreservi
         this.hostAliases = hostAliases;
     }
 
-    @Description("The pod's DNSPolicy. " + 
-        "Defaults to `ClusterFirst`. " + 
+    @Description("The pod's DNSPolicy. " +
+        "Defaults to `ClusterFirst`. " +
         "Valid values are `ClusterFirstWithHostNet`, `ClusterFirst`, `Default` or `None`.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public DnsPolicy getDnsPolicy() {
@@ -190,7 +202,7 @@ public class PodTemplate implements HasMetadataTemplate, UnknownPropertyPreservi
         this.dnsPolicy = dnsPolicy;
     }
 
-    @Description("The pod's DNSConfig. " + 
+    @Description("The pod's DNSConfig. " +
         "If specified, it will be merged to the generated DNS configuration based on the DNSPolicy.")
     @KubeLink(group = "core", version = "v1", kind = "poddnsconfig")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)

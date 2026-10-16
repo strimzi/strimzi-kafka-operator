@@ -9,6 +9,7 @@ import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.strimzi.api.kafka.model.bridge.KafkaBridge;
+import io.strimzi.api.kafka.model.common.template.PodTemplate;
 import io.strimzi.api.kafka.model.connect.KafkaConnect;
 import io.strimzi.api.kafka.model.connector.KafkaConnector;
 import io.strimzi.api.kafka.model.kafka.Kafka;
@@ -28,7 +29,13 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Stream;
+
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * Installs every Strimzi production CRD once, then exercises each CRD's {@code -minimal} and {@code -regular}
@@ -86,5 +93,39 @@ public class CrdIT implements TestSeparator {
     void testCreateDelete(Class<? extends CustomResource> crdClass, String yamlResource) {
         String content = ReadWriteUtils.readFileFromResources(crdClass, yamlResource);
         CrdUtils.createDeleteCustomResource(client, content);
+    }
+
+    static Stream<Arguments> nodeSelectorResources() {
+        return Stream.of(
+                Arguments.of(Kafka.class, (Function<Kafka, List<PodTemplate>>) kafka -> List.of(
+                        kafka.getSpec().getKafka().getTemplate().getPod(),
+                        kafka.getSpec().getEntityOperator().getTemplate().getPod(),
+                        kafka.getSpec().getKafkaExporter().getTemplate().getPod(),
+                        kafka.getSpec().getCruiseControl().getTemplate().getPod())),
+                Arguments.of(KafkaNodePool.class, (Function<KafkaNodePool, List<PodTemplate>>) pool -> List.of(
+                        pool.getSpec().getTemplate().getPod())),
+                Arguments.of(KafkaConnect.class, (Function<KafkaConnect, List<PodTemplate>>) connect -> List.of(
+                        connect.getSpec().getTemplate().getPod(), connect.getSpec().getTemplate().getBuildPod())),
+                Arguments.of(KafkaBridge.class, (Function<KafkaBridge, List<PodTemplate>>) bridge -> List.of(
+                        bridge.getSpec().getTemplate().getPod())),
+                Arguments.of(KafkaMirrorMaker2.class, (Function<KafkaMirrorMaker2, List<PodTemplate>>) mirrorMaker -> List.of(
+                        mirrorMaker.getSpec().getTemplate().getPod(), mirrorMaker.getSpec().getTemplate().getBuildPod()))
+        );
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("nodeSelectorResources")
+    <T extends CustomResource<?, ?>> void testNodeSelectorsArePreserved(Class<T> crdClass, Function<T, List<PodTemplate>> templates) {
+        T desired = ReadWriteUtils.readObjectFromYamlFileInResources(crdClass.getSimpleName() + "-regular.yaml", crdClass);
+        var resource = client.resource(desired);
+        try {
+            resource.create();
+            T actual = resource.get();
+            for (PodTemplate template : templates.apply(actual)) {
+                assertThat(template.getNodeSelector(), is(Map.of("example.com/workload", "kafka", "kubernetes.io/os", "linux")));
+            }
+        } finally {
+            resource.delete();
+        }
     }
 }

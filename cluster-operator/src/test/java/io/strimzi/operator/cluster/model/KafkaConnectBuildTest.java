@@ -378,6 +378,7 @@ public class KafkaConnectBuildTest {
                             .withEnableServiceLinks(false)
                             .withVolumes(additionalVolume)
                             .withHostUsers(false)
+                            .withNodeSelector(Map.of("example.com/workload", "kafka", "kubernetes.io/os", "linux"))
                         .endBuildPod()
                         .withNewBuildContainer()
                             .withEnv(new ContainerEnvVarBuilder().withName("TEST_ENV_VAR").withValue("testValue").build())
@@ -409,6 +410,7 @@ public class KafkaConnectBuildTest {
         assertThat(pod.getSpec().getSchedulerName(), is("my-scheduler"));
         assertThat(pod.getSpec().getEnableServiceLinks(), is(false));
         assertThat(pod.getSpec().getHostUsers(), is(false));
+        assertThat(pod.getSpec().getNodeSelector(), is(Map.of("example.com/workload", "kafka", "kubernetes.io/os", "linux")));
         assertThat(pod.getSpec().getContainers().get(0).getEnv().stream().filter(env -> "TEST_ENV_VAR".equals(env.getName())).findFirst().orElseThrow().getValue(), is("testValue"));
         assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().stream().filter(volumeMount -> "secret-volume-name".equals(volumeMount.getName())).iterator().next(), is(additionalVolumeMount));
         assertThat(pod.getSpec().getVolumes().stream().filter(volume -> "secret-volume-name".equals(volume.getName())).iterator().next().getSecret(), is(secret));

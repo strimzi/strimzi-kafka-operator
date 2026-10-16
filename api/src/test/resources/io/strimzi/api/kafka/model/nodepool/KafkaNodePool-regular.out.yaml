@@ -16,3 +16,8 @@ spec:
       kraftMetadata: "shared"
   roles:
   - "broker"
+  template:
+    pod:
+      nodeSelector:
+        example.com/workload: "kafka"
+        kubernetes.io/os: "linux"

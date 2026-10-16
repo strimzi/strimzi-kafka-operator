@@ -15,3 +15,8 @@ spec:
         type: persistent-claim
         size: 100Gi
         kraftMetadata: shared
+  template:
+    pod:
+      nodeSelector:
+        example.com/workload: kafka
+        kubernetes.io/os: linux

@@ -946,6 +946,7 @@ public class KafkaMirrorMaker2ClusterTest {
                             .withVolumes(additionalVolumeConfigMap, additionalVolumePvc)
                             .withTemplatedVolumes(additionalTemplatedVolume)
                             .withHostUsers(false)
+                            .withNodeSelector(Map.of("example.com/workload", "kafka", "kubernetes.io/os", "linux"))
                         .endPod()
                         .withNewInitContainer()
                             .withVolumeMounts(additionalVolumeMountPvc)
@@ -999,6 +1000,7 @@ public class KafkaMirrorMaker2ClusterTest {
             assertThat(pod.getSpec().getDnsConfig(), is(dnsConfig));
             assertThat(pod.getSpec().getEnableServiceLinks(), is(false));
             assertThat(pod.getSpec().getHostUsers(), is(false));
+            assertThat(pod.getSpec().getNodeSelector(), is(Map.of("example.com/workload", "kafka", "kubernetes.io/os", "linux")));
 
             assertThat(pod.getSpec().getVolumes().size(), is(7));
             assertThat(pod.getSpec().getVolumes().get(0).getName(), is(VolumeUtils.SERVICE_ACCOUNT_TOKEN_VOLUME_NAME));

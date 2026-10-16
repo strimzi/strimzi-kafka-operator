@@ -881,6 +881,7 @@ public class KafkaConnectClusterTest {
                             .withVolumes(additionalVolumeSecret, additionalVolumeEmptyDir, additionalVolumeConfigMap)
                             .withTemplatedVolumes(additionalTemplatedVolume)
                             .withHostUsers(false)
+                            .withNodeSelector(Map.of("example.com/workload", "kafka", "kubernetes.io/os", "linux"))
                         .endPod()
                         .withNewConnectContainer()
                             .withVolumeMounts(additionalVolumeMountSecret, additionalVolumeMountEmptyDir, additionalTemplatedVolumeMount)
@@ -935,6 +936,7 @@ public class KafkaConnectClusterTest {
             assertThat(pod.getSpec().getTopologySpreadConstraints(), containsInAnyOrder(tsc1, tsc2));
             assertThat(pod.getSpec().getEnableServiceLinks(), is(false));
             assertThat(pod.getSpec().getHostUsers(), is(false));
+            assertThat(pod.getSpec().getNodeSelector(), is(Map.of("example.com/workload", "kafka", "kubernetes.io/os", "linux")));
 
             assertThat(pod.getSpec().getVolumes().size(), is(8));
             assertThat(pod.getSpec().getVolumes().get(0).getName(), is(VolumeUtils.SERVICE_ACCOUNT_TOKEN_VOLUME_NAME));

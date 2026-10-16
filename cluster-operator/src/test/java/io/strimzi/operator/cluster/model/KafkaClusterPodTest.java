@@ -66,6 +66,8 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.platform.KubernetesVersion;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -2163,6 +2165,7 @@ public class KafkaClusterPodTest {
                                 .withHostAliases(hostAlias1, hostAlias2)
                                 .withTopologySpreadConstraints(tsc1, tsc2)
                                 .withAffinity(affinity)
+                                .withNodeSelector(Map.of("example.com/workload", "kafka", "kubernetes.io/os", "linux"))
                                 .withTolerations(toleration)
                                 .withEnableServiceLinks(false)
                                 .withTmpDirSizeLimit("10Mi")
@@ -2219,6 +2222,7 @@ public class KafkaClusterPodTest {
                 assertThat(pod.getSpec().getSecurityContext().getRunAsGroup(), is(456L));
                 assertThat(pod.getSpec().getSecurityContext().getRunAsUser(), is(789L));
                 assertThat(pod.getSpec().getAffinity(), is(affinity));
+                assertThat(pod.getSpec().getNodeSelector(), is(Map.of("example.com/workload", "kafka", "kubernetes.io/os", "linux")));
                 assertThat(pod.getSpec().getTolerations(), is(toleration));
                 assertThat(pod.getSpec().getHostUsers(), is(false));
 
@@ -2278,8 +2282,9 @@ public class KafkaClusterPodTest {
     }
 
     @SuppressWarnings({"checkstyle:MethodLength"})
-    @Test
-    public void testCustomizedPodSetInKafkaAndNodePool()   {
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    public void testCustomizedPodSetInKafkaAndNodePool(boolean poolNodeSelector)   {
         // Prepare various template values
         Map<String, String> spsLabels = Map.of("l1", "v1", "l2", "v2");
         Map<String, String> spsAnnotations = Map.of("a1", "v1", "a2", "v2");
@@ -2451,6 +2456,7 @@ public class KafkaClusterPodTest {
                                 .withHostAliases(hostAlias2)
                                 .withTopologySpreadConstraints(tsc2)
                                 .withAffinity(affinity)
+                                .withNodeSelector(Map.of("example.com/workload", "kafka", "kubernetes.io/os", "linux"))
                                 .withTolerations(toleration)
                                 .withEnableServiceLinks(false)
                                 .withTmpDirSizeLimit("13Mi")
@@ -2495,6 +2501,7 @@ public class KafkaClusterPodTest {
                             .withHostAliases(hostAlias1)
                             .withTopologySpreadConstraints(tsc1)
                             .withAffinity(poolAffinity)
+                            .withNodeSelector(poolNodeSelector ? Map.of("example.com/pool", "mixed", "kubernetes.io/os", "linux") : null)
                             .withTolerations(poolToleration)
                             .withEnableServiceLinks(false)
                             .withTmpDirSizeLimit("10Mi")
@@ -2553,6 +2560,7 @@ public class KafkaClusterPodTest {
                     assertThat(pod.getSpec().getSecurityContext().getRunAsGroup(), is(456L));
                     assertThat(pod.getSpec().getSecurityContext().getRunAsUser(), is(789L));
                     assertThat(pod.getSpec().getAffinity(), is(poolAffinity));
+                    assertThat(pod.getSpec().getNodeSelector(), is(poolNodeSelector ? Map.of("example.com/pool", "mixed", "kubernetes.io/os", "linux") : Map.of()));
                     assertThat(pod.getSpec().getTolerations(), is(poolToleration));
 
                     assertThat(pod.getSpec().getVolumes().size(), is(6));
@@ -2607,6 +2615,7 @@ public class KafkaClusterPodTest {
                     assertThat(pod.getSpec().getSecurityContext().getRunAsGroup(), is(4560L));
                     assertThat(pod.getSpec().getSecurityContext().getRunAsUser(), is(7890L));
                     assertThat(pod.getSpec().getAffinity(), is(affinity));
+                    assertThat(pod.getSpec().getNodeSelector(), is(Map.of("example.com/workload", "kafka", "kubernetes.io/os", "linux")));
                     assertThat(pod.getSpec().getTolerations(), is(toleration));
 
                     assertThat(pod.getSpec().getVolumes().size(), is(6));
@@ -2779,6 +2788,7 @@ public class KafkaClusterPodTest {
                             .withHostAliases(hostAlias1, hostAlias2)
                             .withTopologySpreadConstraints(tsc1, tsc2)
                             .withAffinity(affinity)
+                            .withNodeSelector(Map.of("example.com/workload", "kafka", "kubernetes.io/os", "linux"))
                             .withTolerations(toleration)
                             .withEnableServiceLinks(false)
                             .withTmpDirSizeLimit("10Mi")
@@ -2838,6 +2848,7 @@ public class KafkaClusterPodTest {
                     assertThat(pod.getSpec().getSecurityContext().getRunAsGroup(), is(456L));
                     assertThat(pod.getSpec().getSecurityContext().getRunAsUser(), is(789L));
                     assertThat(pod.getSpec().getAffinity(), is(affinity));
+                    assertThat(pod.getSpec().getNodeSelector(), is(Map.of("example.com/workload", "kafka", "kubernetes.io/os", "linux")));
                     assertThat(pod.getSpec().getTolerations(), is(toleration));
 
                     assertThat(pod.getSpec().getVolumes().size(), is(6));
@@ -2894,6 +2905,7 @@ public class KafkaClusterPodTest {
                     assertThat(pod.getSpec().getImagePullSecrets().size(), is(0));
                     assertThat(pod.getSpec().getSecurityContext().getFsGroup(), is(0L));
                     assertThat(pod.getSpec().getAffinity(), is(nullValue()));
+                    assertThat(pod.getSpec().getNodeSelector(), is(Map.of()));
                     assertThat(pod.getSpec().getTolerations(), is(List.of()));
 
                     assertThat(pod.getSpec().getVolumes().size(), is(5));

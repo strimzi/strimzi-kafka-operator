@@ -25,8 +25,8 @@ import java.util.Map;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
-@JsonPropertyOrder({"metadata", "imagePullSecrets", "securityContext", "terminationGracePeriodSeconds", "affinity",
-    "tolerations", "topologySpreadConstraints", "priorityClassName", "schedulerName", "hostAliases", "dnsPolicy", "dnsConfig", 
+@JsonPropertyOrder({"metadata", "imagePullSecrets", "securityContext", "terminationGracePeriodSeconds", "nodeSelector", "affinity",
+    "tolerations", "topologySpreadConstraints", "priorityClassName", "schedulerName", "hostAliases", "dnsPolicy", "dnsConfig",
     "enableServiceLinks", "tmpDirSizeLimit", "volumes", "templatedVolumes", "hostUsers"})
 @EqualsAndHashCode(callSuper = true)
 @ToString

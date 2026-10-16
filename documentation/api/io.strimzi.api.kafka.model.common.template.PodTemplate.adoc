@@ -19,6 +19,8 @@ template:
       runAsUser: 1000001
       fsGroup: 0
     terminationGracePeriodSeconds: 120
+    nodeSelector:
+      example.com/workload: kafka
     hostAliases:
       - ip: "192.168.1.86"
         hostnames:
@@ -30,3 +32,6 @@ template:
 Use the `hostAliases` property to a specify a list of hosts and IP addresses,
 which are injected into the `/etc/hosts` file of the pod.
 This configuration is especially useful for Kafka Connect or MirrorMaker when a connection outside of the cluster is also requested by users.
+
+Use `nodeSelector` to restrict the pod to nodes with all the specified labels.
+If you also configure required node affinity, both the selector and the affinity rules must be satisfied.

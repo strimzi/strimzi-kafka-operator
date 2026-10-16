@@ -326,6 +326,7 @@ public class EntityOperatorTest {
                                 .withEnableServiceLinks(false)
                                 .withVolumes(additionalVolumes)
                                 .withHostUsers(false)
+                                .withNodeSelector(Map.of("example.com/workload", "kafka", "kubernetes.io/os", "linux"))
                             .endPod()
                             .withNewTopicOperatorContainer()
                                 .withVolumeMounts(additionalVolumeMounts)
@@ -371,6 +372,7 @@ public class EntityOperatorTest {
         assertThat(dep.getSpec().getTemplate().getSpec().getTopologySpreadConstraints(), containsInAnyOrder(tsc1, tsc2));
         assertThat(dep.getSpec().getTemplate().getSpec().getEnableServiceLinks(), is(false));
         assertThat(dep.getSpec().getTemplate().getSpec().getHostUsers(), is(false));
+        assertThat(dep.getSpec().getTemplate().getSpec().getNodeSelector(), is(Map.of("example.com/workload", "kafka", "kubernetes.io/os", "linux")));
         assertThat(dep.getSpec().getTemplate().getSpec().getTolerations(), is(singletonList(toleration)));
         assertThat(dep.getSpec().getTemplate().getSpec().getVolumes().stream().filter(volume -> "secret-volume-name".equals(volume.getName())).iterator().next().getSecret(), is(secret));
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getVolumeMounts().stream().filter(volumeMount -> "secret-volume-name".equals(volumeMount.getName())).iterator().next(), is(additionalVolumeMounts.get(0)));

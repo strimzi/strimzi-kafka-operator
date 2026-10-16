@@ -83,6 +83,25 @@ public class PodRevisionTest {
     }
 
     @Test
+    public void testNodeSelectorRevisions() {
+        String initialRevision = PodRevision.getRevision(Reconciliation.DUMMY_RECONCILIATION, POD);
+        Pod selected = new PodBuilder(POD).editSpec()
+                .withNodeSelector(Map.of("example.com/workload", "kafka", "kubernetes.io/os", "linux"))
+                .endSpec().build();
+        String selectedRevision = PodRevision.getRevision(Reconciliation.DUMMY_RECONCILIATION, selected);
+        assertThat(selectedRevision, is(not(initialRevision)));
+        assertThat(PodRevision.getRevision(Reconciliation.DUMMY_RECONCILIATION, new PodBuilder(selected).build()), is(selectedRevision));
+
+        Pod changed = new PodBuilder(selected).editSpec().addToNodeSelector("example.com/workload", "connect").endSpec().build();
+        assertThat(PodRevision.getRevision(Reconciliation.DUMMY_RECONCILIATION, changed), is(not(selectedRevision)));
+
+        Pod removed = new PodBuilder(selected).editSpec().withNodeSelector(null).endSpec().build();
+        assertThat(PodRevision.getRevision(Reconciliation.DUMMY_RECONCILIATION, removed), is(initialRevision));
+        Pod empty = new PodBuilder(selected).editSpec().withNodeSelector(Map.of()).endSpec().build();
+        assertThat(PodRevision.getRevision(Reconciliation.DUMMY_RECONCILIATION, empty), is(initialRevision));
+    }
+
+    @Test
     public void testResourceRevisions() {
         String basicPodRevision = PodRevision.getResourceRevision(Reconciliation.DUMMY_RECONCILIATION, POD);
 

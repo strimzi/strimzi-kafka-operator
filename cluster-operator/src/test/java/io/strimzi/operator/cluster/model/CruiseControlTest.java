@@ -573,6 +573,7 @@ public class CruiseControlTest {
                                 .withTolerations(tolerations)
                                 .withVolumes(additionalVolumes)
                                 .withHostUsers(false)
+                                .withNodeSelector(Map.of("example.com/workload", "kafka", "kubernetes.io/os", "linux"))
                             .endPod()
                             .withNewCruiseControlContainer()
                                 .withVolumeMounts(additionalVolumeMounts)
@@ -619,6 +620,7 @@ public class CruiseControlTest {
         assertThat(dep.getSpec().getTemplate().getSpec().getAffinity(), is(affinity));
         assertThat(dep.getSpec().getTemplate().getSpec().getTolerations(), is(tolerations));
         assertThat(dep.getSpec().getTemplate().getSpec().getHostUsers(), is(false));
+        assertThat(dep.getSpec().getTemplate().getSpec().getNodeSelector(), is(Map.of("example.com/workload", "kafka", "kubernetes.io/os", "linux")));
         assertThat(dep.getSpec().getTemplate().getSpec().getHostAliases(), containsInAnyOrder(hostAlias1, hostAlias2));
         assertThat(dep.getSpec().getTemplate().getSpec().getVolumes().stream().filter(volume -> "secret-volume-name".equals(volume.getName())).iterator().next().getSecret(), is(secret));
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getVolumeMounts().stream().filter(volumeMount -> "secret-volume-name".equals(volumeMount.getName())).iterator().next(), is(additionalVolumeMounts.get(0)));

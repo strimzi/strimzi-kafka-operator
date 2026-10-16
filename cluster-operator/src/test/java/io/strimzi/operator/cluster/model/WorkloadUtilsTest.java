@@ -35,7 +35,6 @@ import io.strimzi.api.kafka.model.common.template.DnsPolicy;
 import io.strimzi.api.kafka.model.common.template.PodTemplate;
 import io.strimzi.api.kafka.model.common.template.PodTemplateBuilder;
 import io.strimzi.api.kafka.model.common.template.ResourceTemplateBuilder;
-import io.strimzi.api.kafka.model.common.template.StatefulPodTemplate;
 import io.strimzi.api.kafka.model.common.template.StatefulPodTemplateBuilder;
 import io.strimzi.api.kafka.model.common.template.StrimziDeploymentStrategy;
 import io.strimzi.api.kafka.model.kafka.PersistentClaimStorageBuilder;
@@ -46,6 +45,8 @@ import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullAndEmptySource;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -53,11 +54,13 @@ import java.util.Map;
 import java.util.Set;
 
 import static java.util.Collections.singletonMap;
+import static org.hamcrest.CoreMatchers.anyOf;
 import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.anEmptyMap;
 import static org.hamcrest.Matchers.hasEntry;
 
 @SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling"})
@@ -454,6 +457,7 @@ public class WorkloadUtilsTest {
         assertThat(pod.getSpec().getServiceAccountName(), is(NAME + "-sa"));
         assertThat(pod.getSpec().getAutomountServiceAccountToken(), is(false));
         assertThat(pod.getSpec().getEnableServiceLinks(), is(nullValue()));
+        assertThat(pod.getSpec().getNodeSelector(), anyOf(nullValue(), anEmptyMap()));
         assertThat(pod.getSpec().getAffinity(), is(nullValue()));
         assertThat(pod.getSpec().getInitContainers(), is(nullValue()));
         assertThat(pod.getSpec().getContainers().size(), is(1));
@@ -506,6 +510,7 @@ public class WorkloadUtilsTest {
         assertThat(pod.getSpec().getServiceAccountName(), is(NAME + "-sa"));
         assertThat(pod.getSpec().getAutomountServiceAccountToken(), is(false));
         assertThat(pod.getSpec().getEnableServiceLinks(), is(nullValue()));
+        assertThat(pod.getSpec().getNodeSelector(), anyOf(nullValue(), anEmptyMap()));
         assertThat(pod.getSpec().getAffinity(), is(DEFAULT_AFFINITY));
         assertThat(pod.getSpec().getInitContainers().size(), is(1));
         assertThat(pod.getSpec().getInitContainers().get(0).getName(), is("init-container"));
@@ -524,8 +529,9 @@ public class WorkloadUtilsTest {
         assertThat(pod.getSpec().getTopologySpreadConstraints(), is(nullValue()));
     }
 
-    @Test
-    public void testCreateStatefulPodWithEmptyTemplate()  {
+    @ParameterizedTest
+    @NullAndEmptySource
+    public void testCreateStatefulPodWithEmptyTemplate(Map<String, String> nodeSelector)  {
         Pod pod = WorkloadUtils.createStatefulPod(
                 Reconciliation.DUMMY_RECONCILIATION,
                 NAME + "-0",    // => Pod name
@@ -533,7 +539,7 @@ public class WorkloadUtilsTest {
                 LABELS,
                 NAME,   // => Workload name
                 NAME + "-sa",   // => Service Account name
-                new StatefulPodTemplate(),
+                new StatefulPodTemplateBuilder().withNodeSelector(nodeSelector).build(),
                 Map.of("default-label", "default-value"),
                 Map.of("extra", "annotations"),
                 HEADLESS_SERVICE_NAME,
@@ -562,6 +568,7 @@ public class WorkloadUtilsTest {
         assertThat(pod.getSpec().getServiceAccountName(), is(NAME + "-sa"));
         assertThat(pod.getSpec().getAutomountServiceAccountToken(), is(false));
         assertThat(pod.getSpec().getEnableServiceLinks(), is(nullValue()));
+        assertThat(pod.getSpec().getNodeSelector(), anyOf(nullValue(), anEmptyMap()));
         assertThat(pod.getSpec().getAffinity(), is(DEFAULT_AFFINITY));
         assertThat(pod.getSpec().getInitContainers().size(), is(1));
         assertThat(pod.getSpec().getInitContainers().get(0).getName(), is("init-container"));
@@ -595,6 +602,7 @@ public class WorkloadUtilsTest {
                             .withAnnotations(Map.of("anno-1", "value-1", "anno-2", "value-2"))
                         .endMetadata()
                         .withEnableServiceLinks(false)
+                        .withNodeSelector(Map.of("example.com/workload", "kafka", "kubernetes.io/os", "linux"))
                         .withAffinity(new Affinity()) // => should be ignored
                         .withImagePullSecrets(List.of(new LocalObjectReference("some-other-pull-secret")))
                         .withPriorityClassName("my-priority-class")
@@ -625,13 +633,14 @@ public class WorkloadUtilsTest {
                 .withStrimziPodName(NAME + "-0")
                 .withAdditionalLabels(Map.of("default-label", "default-value", "label-3", "value-3", "label-4", "value-4"))
                 .toMap()));
-        assertThat(pod.getMetadata().getAnnotations(), is(Map.of("extra", "annotations", "anno-1", "value-1", "anno-2", "value-2", PodRevision.STRIMZI_REVISION_ANNOTATION, "cbdfeb4a", PodRevision.STRIMZI_RESOURCE_REVISION_ANNOTATION, "d5cd64ac")));
+        assertThat(pod.getMetadata().getAnnotations(), is(Map.of("extra", "annotations", "anno-1", "value-1", "anno-2", "value-2", PodRevision.STRIMZI_REVISION_ANNOTATION, "b3cd7afc", PodRevision.STRIMZI_RESOURCE_REVISION_ANNOTATION, "d5cd64ac")));
 
         assertThat(pod.getSpec().getRestartPolicy(), is("Always"));
         assertThat(pod.getSpec().getHostname(), is(NAME + "-0"));
         assertThat(pod.getSpec().getServiceAccountName(), is(NAME + "-sa"));
         assertThat(pod.getSpec().getAutomountServiceAccountToken(), is(false));
         assertThat(pod.getSpec().getEnableServiceLinks(), is(false));
+        assertThat(pod.getSpec().getNodeSelector(), is(Map.of("example.com/workload", "kafka", "kubernetes.io/os", "linux")));
         assertThat(pod.getSpec().getAffinity(), is(DEFAULT_AFFINITY));
         assertThat(pod.getSpec().getInitContainers().size(), is(1));
         assertThat(pod.getSpec().getInitContainers().get(0).getName(), is("init-container"));
@@ -676,6 +685,7 @@ public class WorkloadUtilsTest {
         assertThat(pod.getSpec().getServiceAccountName(), is(NAME));
         assertThat(pod.getSpec().getAutomountServiceAccountToken(), is(false));
         assertThat(pod.getSpec().getEnableServiceLinks(), is(nullValue()));
+        assertThat(pod.getSpec().getNodeSelector(), anyOf(nullValue(), anEmptyMap()));
         assertThat(pod.getSpec().getAffinity(), is(nullValue()));
         assertThat(pod.getSpec().getInitContainers(), is(nullValue()));
         assertThat(pod.getSpec().getContainers().size(), is(1));
@@ -715,6 +725,7 @@ public class WorkloadUtilsTest {
         assertThat(pod.getSpec().getServiceAccountName(), is(NAME));
         assertThat(pod.getSpec().getAutomountServiceAccountToken(), is(false));
         assertThat(pod.getSpec().getEnableServiceLinks(), is(nullValue()));
+        assertThat(pod.getSpec().getNodeSelector(), anyOf(nullValue(), anEmptyMap()));
         assertThat(pod.getSpec().getAffinity(), is(DEFAULT_AFFINITY));
         assertThat(pod.getSpec().getInitContainers().size(), is(1));
         assertThat(pod.getSpec().getInitContainers().get(0).getName(), is("init-container"));
@@ -733,12 +744,13 @@ public class WorkloadUtilsTest {
         assertThat(pod.getSpec().getTopologySpreadConstraints(), is(nullValue()));
     }
 
-    @Test
-    public void testCreatePodTemplateSpecWithEmptyTemplate()  {
+    @ParameterizedTest
+    @NullAndEmptySource
+    public void testCreatePodTemplateSpecWithEmptyTemplate(Map<String, String> nodeSelector)  {
         PodTemplateSpec pod = WorkloadUtils.createPodTemplateSpec(
                 NAME,
                 LABELS,
-                new PodTemplate(),
+                new PodTemplateBuilder().withNodeSelector(nodeSelector).build(),
                 Map.of("default-label", "default-value"),
                 Map.of("extra", "annotations"),
                 DEFAULT_AFFINITY,
@@ -755,6 +767,7 @@ public class WorkloadUtilsTest {
         assertThat(pod.getSpec().getServiceAccountName(), is(NAME));
         assertThat(pod.getSpec().getAutomountServiceAccountToken(), is(false));
         assertThat(pod.getSpec().getEnableServiceLinks(), is(nullValue()));
+        assertThat(pod.getSpec().getNodeSelector(), anyOf(nullValue(), anEmptyMap()));
         assertThat(pod.getSpec().getAffinity(), is(DEFAULT_AFFINITY));
         assertThat(pod.getSpec().getInitContainers().size(), is(1));
         assertThat(pod.getSpec().getInitContainers().get(0).getName(), is("init-container"));
@@ -784,6 +797,7 @@ public class WorkloadUtilsTest {
                             .withAnnotations(Map.of("anno-1", "value-1", "anno-2", "value-2"))
                         .endMetadata()
                         .withEnableServiceLinks(false)
+                        .withNodeSelector(Map.of("example.com/workload", "kafka", "kubernetes.io/os", "linux"))
                         .withAffinity(new Affinity()) // => should be ignored
                         .withImagePullSecrets(List.of(new LocalObjectReference("some-other-pull-secret")))
                         .withPriorityClassName("my-priority-class")
@@ -812,6 +826,7 @@ public class WorkloadUtilsTest {
         assertThat(pod.getSpec().getServiceAccountName(), is(NAME));
         assertThat(pod.getSpec().getAutomountServiceAccountToken(), is(false));
         assertThat(pod.getSpec().getEnableServiceLinks(), is(false));
+        assertThat(pod.getSpec().getNodeSelector(), is(Map.of("example.com/workload", "kafka", "kubernetes.io/os", "linux")));
         assertThat(pod.getSpec().getAffinity(), is(DEFAULT_AFFINITY));
         assertThat(pod.getSpec().getInitContainers().size(), is(1));
         assertThat(pod.getSpec().getInitContainers().get(0).getName(), is("init-container"));
@@ -861,6 +876,7 @@ public class WorkloadUtilsTest {
         assertThat(pod.getSpec().getServiceAccountName(), is(NAME));
         assertThat(pod.getSpec().getAutomountServiceAccountToken(), is(false));
         assertThat(pod.getSpec().getEnableServiceLinks(), is(nullValue()));
+        assertThat(pod.getSpec().getNodeSelector(), anyOf(nullValue(), anEmptyMap()));
         assertThat(pod.getSpec().getAffinity(), is(nullValue()));
         assertThat(pod.getSpec().getInitContainers(), is(nullValue()));
         assertThat(pod.getSpec().getContainers().size(), is(1));
@@ -905,6 +921,7 @@ public class WorkloadUtilsTest {
         assertThat(pod.getSpec().getServiceAccountName(), is(NAME));
         assertThat(pod.getSpec().getAutomountServiceAccountToken(), is(false));
         assertThat(pod.getSpec().getEnableServiceLinks(), is(nullValue()));
+        assertThat(pod.getSpec().getNodeSelector(), anyOf(nullValue(), anEmptyMap()));
         assertThat(pod.getSpec().getAffinity(), is(DEFAULT_AFFINITY));
         assertThat(pod.getSpec().getInitContainers().size(), is(1));
         assertThat(pod.getSpec().getInitContainers().get(0).getName(), is("init-container"));
@@ -923,14 +940,15 @@ public class WorkloadUtilsTest {
         assertThat(pod.getSpec().getTopologySpreadConstraints(), is(nullValue()));
     }
 
-    @Test
-    public void testCreatePodWithEmptyTemplate()  {
+    @ParameterizedTest
+    @NullAndEmptySource
+    public void testCreatePodWithEmptyTemplate(Map<String, String> nodeSelector)  {
         Pod pod = WorkloadUtils.createPod(
                 NAME,
                 NAMESPACE,
                 LABELS,
                 ResourceUtils.DUMMY_OWNER_REFERENCE,
-                new PodTemplate(),
+                new PodTemplateBuilder().withNodeSelector(nodeSelector).build(),
                 Map.of("default-label", "default-value"),
                 Map.of("extra", "annotations"),
                 DEFAULT_AFFINITY,
@@ -950,6 +968,7 @@ public class WorkloadUtilsTest {
         assertThat(pod.getSpec().getServiceAccountName(), is(NAME));
         assertThat(pod.getSpec().getAutomountServiceAccountToken(), is(false));
         assertThat(pod.getSpec().getEnableServiceLinks(), is(nullValue()));
+        assertThat(pod.getSpec().getNodeSelector(), anyOf(nullValue(), anEmptyMap()));
         assertThat(pod.getSpec().getAffinity(), is(DEFAULT_AFFINITY));
         assertThat(pod.getSpec().getInitContainers().size(), is(1));
         assertThat(pod.getSpec().getInitContainers().get(0).getName(), is("init-container"));
@@ -981,6 +1000,7 @@ public class WorkloadUtilsTest {
                         .withAnnotations(Map.of("anno-1", "value-1", "anno-2", "value-2"))
                         .endMetadata()
                         .withEnableServiceLinks(false)
+                        .withNodeSelector(Map.of("example.com/workload", "kafka", "kubernetes.io/os", "linux"))
                         .withAffinity(new Affinity()) // => should be ignored
                         .withImagePullSecrets(List.of(new LocalObjectReference("some-other-pull-secret")))
                         .withPriorityClassName("my-priority-class")
@@ -1012,6 +1032,7 @@ public class WorkloadUtilsTest {
         assertThat(pod.getSpec().getServiceAccountName(), is(NAME));
         assertThat(pod.getSpec().getAutomountServiceAccountToken(), is(false));
         assertThat(pod.getSpec().getEnableServiceLinks(), is(false));
+        assertThat(pod.getSpec().getNodeSelector(), is(Map.of("example.com/workload", "kafka", "kubernetes.io/os", "linux")));
         assertThat(pod.getSpec().getAffinity(), is(DEFAULT_AFFINITY));
         assertThat(pod.getSpec().getInitContainers().size(), is(1));
         assertThat(pod.getSpec().getInitContainers().get(0).getName(), is("init-container"));

@@ -22,6 +22,28 @@ spec:
       transaction.state.log.min.isr: 2
       default.replication.factor: 3
       min.insync.replicas: 2
+    template:
+      pod:
+        nodeSelector:
+          example.com/workload: "kafka"
+          kubernetes.io/os: "linux"
   entityOperator:
     topicOperator: {}
     userOperator: {}
+    template:
+      pod:
+        nodeSelector:
+          example.com/workload: "kafka"
+          kubernetes.io/os: "linux"
+  cruiseControl:
+    template:
+      pod:
+        nodeSelector:
+          example.com/workload: "kafka"
+          kubernetes.io/os: "linux"
+  kafkaExporter:
+    template:
+      pod:
+        nodeSelector:
+          example.com/workload: "kafka"
+          kubernetes.io/os: "linux"

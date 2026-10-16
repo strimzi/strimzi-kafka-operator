@@ -459,6 +459,7 @@ public class KafkaExporterTest {
                                 .withEnableServiceLinks(false)
                                 .withVolumes(additionalVolumeConfigMap)
                                 .withHostUsers(false)
+                                .withNodeSelector(Map.of("example.com/workload", "kafka", "kubernetes.io/os", "linux"))
                             .endPod()
                             .withNewContainer()
                                 .withVolumeMounts(additionalVolumeMountConfigMap)
@@ -496,6 +497,7 @@ public class KafkaExporterTest {
         assertThat(dep.getSpec().getTemplate().getSpec().getTopologySpreadConstraints(), containsInAnyOrder(tsc1, tsc2));
         assertThat(dep.getSpec().getTemplate().getSpec().getEnableServiceLinks(), is(false));
         assertThat(dep.getSpec().getTemplate().getSpec().getHostUsers(), is(false));
+        assertThat(dep.getSpec().getTemplate().getSpec().getNodeSelector(), is(Map.of("example.com/workload", "kafka", "kubernetes.io/os", "linux")));
         assertThat(getVolume(dep.getSpec().getTemplate().getSpec(), additionalVolumeConfigMap.getName()).getConfigMap(), is(configMap));
         assertThat(getVolumeMount(dep.getSpec().getTemplate().getSpec().getContainers().get(0), additionalVolumeMountConfigMap.getName()), is(additionalVolumeMountConfigMap));
 

@@ -18,3 +18,12 @@ spec:
     config.storage.replication.factor: -1
     offset.storage.replication.factor: -1
     status.storage.replication.factor: -1
+  template:
+    pod:
+      nodeSelector:
+        example.com/workload: kafka
+        kubernetes.io/os: linux
+    buildPod:
+      nodeSelector:
+        example.com/workload: kafka
+        kubernetes.io/os: linux

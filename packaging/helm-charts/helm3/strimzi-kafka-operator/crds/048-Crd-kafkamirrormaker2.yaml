@@ -763,6 +763,11 @@ spec:
                           type: integer
                           minimum: 0
                           description: "The grace period is the duration in seconds after the processes running in the pod are sent a termination signal, and the time when the processes are forcibly halted with a kill signal. Set this value to longer than the expected cleanup time for your process. Value must be a non-negative integer. A zero value indicates delete immediately. You might need to increase the grace period for very large Kafka clusters, so that the Kafka brokers have enough time to transfer their work to another broker before they are terminated. Defaults to 30 seconds."
+                        nodeSelector:
+                          additionalProperties:
+                            type: string
+                          type: object
+                          description: "Node labels used to select the nodes on which the pod can be scheduled. When used with required node affinity, both constraints must be satisfied."
                         affinity:
                           type: object
                           properties:
@@ -1935,6 +1940,11 @@ spec:
                           type: integer
                           minimum: 0
                           description: "The grace period is the duration in seconds after the processes running in the pod are sent a termination signal, and the time when the processes are forcibly halted with a kill signal. Set this value to longer than the expected cleanup time for your process. Value must be a non-negative integer. A zero value indicates delete immediately. You might need to increase the grace period for very large Kafka clusters, so that the Kafka brokers have enough time to transfer their work to another broker before they are terminated. Defaults to 30 seconds."
+                        nodeSelector:
+                          additionalProperties:
+                            type: string
+                          type: object
+                          description: "Node labels used to select the nodes on which the pod can be scheduled. When used with required node affinity, both constraints must be satisfied."
                         affinity:
                           type: object
                           properties:
