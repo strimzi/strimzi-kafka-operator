@@ -62,6 +62,8 @@ securityContext:
     type: RuntimeDefault
 rbac:
   create: yes
+  # Use Roles and RoleBindings in watched namespaces wherever cluster-scoped access is not required
+  preferNamespaced: false
 serviceAccountCreate: yes
 serviceAccount: strimzi-cluster-operator
 

@@ -1,4 +1,5 @@
 {{- if .Values.rbac.create }}
+{{- $preferNamespaced := and .Values.rbac.preferNamespaced (not .Values.watchAnyNamespace) -}}
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
@@ -15,7 +16,7 @@ subjects:
     name: {{ .Values.serviceAccount }}
     namespace: {{ .Release.Namespace }}
 roleRef:
-  kind: ClusterRole
+  kind: {{ ternary "Role" "ClusterRole" $preferNamespaced }}
   name: strimzi-cluster-operator-leader-election
   apiGroup: rbac.authorization.k8s.io
 {{- end }}

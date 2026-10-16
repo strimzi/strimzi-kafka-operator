@@ -1,0 +1,236 @@
+suite: strimzi operator RBAC
+release:
+  name: strimzi-test
+  namespace: operator-namespace
+templates:
+  - 020-ClusterRole-strimzi-cluster-operator-role.yaml
+  - 020-RoleBinding-strimzi-cluster-operator.yaml
+  - 021-ClusterRole-strimzi-cluster-operator-role.yaml
+  - 021-ClusterRoleBinding-strimzi-cluster-operator.yaml
+  - 022-ClusterRole-strimzi-cluster-operator-role.yaml
+  - 022-RoleBinding-strimzi-cluster-operator.yaml
+  - 023-ClusterRole-strimzi-cluster-operator-role.yaml
+  - 023-RoleBinding-strimzi-cluster-operator.yaml
+  - 030-ClusterRole-strimzi-kafka-broker.yaml
+  - 030-ClusterRoleBinding-strimzi-cluster-operator-kafka-broker-delegation.yaml
+  - 031-ClusterRole-strimzi-entity-operator.yaml
+  - 031-RoleBinding-strimzi-cluster-operator-entity-operator-delegation.yaml
+  - 033-ClusterRole-strimzi-kafka-client.yaml
+  - 033-ClusterRoleBinding-strimzi-cluster-operator-kafka-client-delegation.yaml
+  - 070-ClusterRole-strimzi-admin.yaml
+  - 080-ClusterRole-strimzi-view.yaml
+tests:
+  - it: should use cluster-scoped RBAC by default
+    template: 020-ClusterRole-strimzi-cluster-operator-role.yaml
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: ClusterRole
+      - notExists:
+          path: metadata.namespace
+
+  - it: should create the namespaced operator role in every watched namespace when namespaced RBAC is preferred
+    template: 020-ClusterRole-strimzi-cluster-operator-role.yaml
+    set:
+      rbac.preferNamespaced: true
+      watchNamespaces:
+        - watched-a
+        - watched-b
+    asserts:
+      - hasDocuments:
+          count: 3
+      - isKind:
+          of: Role
+      - equal:
+          path: metadata.namespace
+          value: operator-namespace
+        documentIndex: 0
+      - equal:
+          path: metadata.namespace
+          value: watched-a
+        documentIndex: 1
+      - equal:
+          path: metadata.namespace
+          value: watched-b
+        documentIndex: 2
+
+  - it: should bind the namespaced operator roles when namespaced RBAC is preferred
+    template: 020-RoleBinding-strimzi-cluster-operator.yaml
+    set:
+      rbac.preferNamespaced: true
+      watchNamespaces:
+        - watched-a
+        - watched-b
+    asserts:
+      - hasDocuments:
+          count: 3
+      - isKind:
+          of: RoleBinding
+      - equal:
+          path: roleRef.kind
+          value: Role
+
+  - it: should create leader election RBAC only in the operator namespace when namespaced RBAC is preferred
+    set:
+      rbac.preferNamespaced: true
+      watchNamespaces:
+        - watched-a
+        - watched-b
+    asserts:
+      - isKind:
+          of: Role
+        template: 022-ClusterRole-strimzi-cluster-operator-role.yaml
+      - equal:
+          path: metadata.namespace
+          value: operator-namespace
+        template: 022-ClusterRole-strimzi-cluster-operator-role.yaml
+      - isKind:
+          of: RoleBinding
+        template: 022-RoleBinding-strimzi-cluster-operator.yaml
+      - equal:
+          path: metadata.namespace
+          value: operator-namespace
+        template: 022-RoleBinding-strimzi-cluster-operator.yaml
+      - equal:
+          path: roleRef.kind
+          value: Role
+        template: 022-RoleBinding-strimzi-cluster-operator.yaml
+
+  - it: should create watched and entity operator roles in every watched namespace when namespaced RBAC is preferred
+    set:
+      rbac.preferNamespaced: true
+      watchNamespaces:
+        - watched-a
+        - watched-b
+    asserts:
+      - hasDocuments:
+          count: 3
+        template: 023-ClusterRole-strimzi-cluster-operator-role.yaml
+      - isKind:
+          of: Role
+        template: 023-ClusterRole-strimzi-cluster-operator-role.yaml
+      - hasDocuments:
+          count: 3
+        template: 031-ClusterRole-strimzi-entity-operator.yaml
+      - isKind:
+          of: Role
+        template: 031-ClusterRole-strimzi-entity-operator.yaml
+      - equal:
+          path: roleRef.kind
+          value: Role
+        template: 023-RoleBinding-strimzi-cluster-operator.yaml
+      - equal:
+          path: roleRef.kind
+          value: Role
+        template: 031-RoleBinding-strimzi-cluster-operator-entity-operator-delegation.yaml
+
+  - it: should retain cluster-scoped RBAC for cluster-scoped resources when namespaced RBAC is preferred
+    set:
+      rbac.preferNamespaced: true
+    asserts:
+      - isKind:
+          of: ClusterRole
+        template: 021-ClusterRole-strimzi-cluster-operator-role.yaml
+      - isKind:
+          of: ClusterRoleBinding
+        template: 021-ClusterRoleBinding-strimzi-cluster-operator.yaml
+      - isKind:
+          of: ClusterRole
+        template: 030-ClusterRole-strimzi-kafka-broker.yaml
+      - isKind:
+          of: ClusterRoleBinding
+        template: 030-ClusterRoleBinding-strimzi-cluster-operator-kafka-broker-delegation.yaml
+      - isKind:
+          of: ClusterRole
+        template: 033-ClusterRole-strimzi-kafka-client.yaml
+      - isKind:
+          of: ClusterRoleBinding
+        template: 033-ClusterRoleBinding-strimzi-cluster-operator-kafka-client-delegation.yaml
+
+  - it: should create namespaced roles even when global resource creation is disabled
+    template: 020-ClusterRole-strimzi-cluster-operator-role.yaml
+    set:
+      rbac.preferNamespaced: true
+      createGlobalResources: false
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: Role
+      - equal:
+          path: metadata.namespace
+          value: operator-namespace
+
+  - it: should leave optional aggregate ClusterRoles unchanged when namespaced RBAC is preferred
+    set:
+      rbac.preferNamespaced: true
+      createAggregateRoles: true
+      watchNamespaces:
+        - watched-a
+        - watched-b
+    asserts:
+      - hasDocuments:
+          count: 1
+        template: 070-ClusterRole-strimzi-admin.yaml
+      - isKind:
+          of: ClusterRole
+        template: 070-ClusterRole-strimzi-admin.yaml
+      - exists:
+          path: metadata.labels["rbac.authorization.k8s.io/aggregate-to-admin"]
+        template: 070-ClusterRole-strimzi-admin.yaml
+      - hasDocuments:
+          count: 1
+        template: 080-ClusterRole-strimzi-view.yaml
+      - isKind:
+          of: ClusterRole
+        template: 080-ClusterRole-strimzi-view.yaml
+      - exists:
+          path: metadata.labels["rbac.authorization.k8s.io/aggregate-to-view"]
+        template: 080-ClusterRole-strimzi-view.yaml
+
+  - it: should fall back to cluster-scoped RBAC when watching all namespaces
+    set:
+      rbac.preferNamespaced: true
+      watchAnyNamespace: true
+    asserts:
+      - isKind:
+          of: ClusterRole
+        template: 020-ClusterRole-strimzi-cluster-operator-role.yaml
+      - isKind:
+          of: ClusterRoleBinding
+        template: 020-RoleBinding-strimzi-cluster-operator.yaml
+      - notExists:
+          path: metadata.namespace
+        template: 020-RoleBinding-strimzi-cluster-operator.yaml
+      - equal:
+          path: roleRef.kind
+          value: ClusterRole
+        template: 020-RoleBinding-strimzi-cluster-operator.yaml
+      - isKind:
+          of: ClusterRole
+        template: 022-ClusterRole-strimzi-cluster-operator-role.yaml
+      - equal:
+          path: roleRef.kind
+          value: ClusterRole
+        template: 022-RoleBinding-strimzi-cluster-operator.yaml
+      - isKind:
+          of: ClusterRole
+        template: 023-ClusterRole-strimzi-cluster-operator-role.yaml
+      - isKind:
+          of: ClusterRoleBinding
+        template: 023-RoleBinding-strimzi-cluster-operator.yaml
+      - equal:
+          path: roleRef.kind
+          value: ClusterRole
+        template: 023-RoleBinding-strimzi-cluster-operator.yaml
+      - isKind:
+          of: ClusterRole
+        template: 031-ClusterRole-strimzi-entity-operator.yaml
+      - isKind:
+          of: ClusterRoleBinding
+        template: 031-RoleBinding-strimzi-cluster-operator-entity-operator-delegation.yaml
+      - equal:
+          path: roleRef.kind
+          value: ClusterRole
+        template: 031-RoleBinding-strimzi-cluster-operator-entity-operator-delegation.yaml

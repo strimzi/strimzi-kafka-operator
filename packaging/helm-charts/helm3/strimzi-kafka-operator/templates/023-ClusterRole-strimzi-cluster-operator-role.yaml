@@ -1,14 +1,27 @@
-{{- if and .Values.rbac.create .Values.createGlobalResources -}}
+{{- $preferNamespaced := and .Values.rbac.preferNamespaced (not .Values.watchAnyNamespace) -}}
+{{- if and .Values.rbac.create (or $preferNamespaced .Values.createGlobalResources) -}}
+{{- $root := . -}}
+{{- $namespaces := list "" -}}
+{{- if $preferNamespaced -}}
+{{- $namespaces = include "strimzi.watchNamespacesList" . | fromYamlArray -}}
+{{- end -}}
+{{- range $index, $namespace := $namespaces }}
+{{- if gt $index 0 }}
+---
+{{- end }}
 apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
+kind: {{ ternary "Role" "ClusterRole" $preferNamespaced }}
 metadata:
   name: strimzi-cluster-operator-watched
+  {{- if $preferNamespaced }}
+  namespace: {{ $namespace }}
+  {{- end }}
   labels:
-    app: {{ template "strimzi.name" . }}
-    chart: {{ template "strimzi.chart" . }}
+    app: {{ template "strimzi.name" $root }}
+    chart: {{ template "strimzi.chart" $root }}
     component: role
-    release: {{ .Release.Name }}
-    heritage: {{ .Release.Service }}
+    release: {{ $root.Release.Name }}
+    heritage: {{ $root.Release.Service }}
 rules:
 # Resources in this role are being watched by the operator. When operator is deployed as cluster-wide, these permissions
 # need to be granted to the operator on a cluster wide level as well, even if the operands will be deployed only in
@@ -104,4 +117,5 @@ rules:
     - kafkarebalances
   verbs:
     - delete
+{{- end }}
 {{- end -}}
