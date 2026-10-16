@@ -159,7 +159,10 @@ public class AbstractKRaftUpgradeST extends AbstractST {
 
         // 6. Wait for components to roll
         maybeWaitForRollingUpdate(testStorage.getNamespaceName(), upgradeKafkaVersion);
+
+        // 7. Log images of Pods and check that all components (excluding Connect because of custom image) have right images
         logComponentsPodImagesWithConnect(testStorage.getNamespaceName());
+        checkAllComponentsImages(testStorage.getNamespaceName(), upgradeDowngradeData);
 
         verifyPostUpgradeOrDowngradeProcedure(testStorage, upgradeDowngradeData);
     }
