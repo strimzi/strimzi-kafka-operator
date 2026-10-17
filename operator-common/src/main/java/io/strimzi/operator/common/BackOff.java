@@ -6,7 +6,7 @@ package io.strimzi.operator.common;
 
 /**
  * <p>Encapsulates computing delays for an exponential back-off, when an operation has to be retried.
- * The {@link #delayMs()} method will return an increasing delay to be used between operation attempts.</p>
+ * The {@link #nextDelayMs()} method will return an increasing delay to be used between operation attempts.</p>
  * <pre>{@literal
  *     |<-attempt->    |<-attempt->        |<-attempt->|*fail*
  *     |<-- delayMs -->|<---- delayMs ---->|           |}</pre>
@@ -85,7 +85,7 @@ public class BackOff {
      * @return Return the next delay to use, in milliseconds.
      * @throws MaxAttemptsExceededException if the next attempt would exceed the configured number of attempts.
      */
-    public long delayMs() {
+    public long nextDelayMs() {
         if (attempt == maxAttempts) {
             throw new MaxAttemptsExceededException();
         }
@@ -93,9 +93,9 @@ public class BackOff {
     }
 
     /**
-     * Checks whether the next call to {@link #delayMs()} will throw MaxAttemptsExceededException.
+     * Checks whether the next call to {@link #nextDelayMs()} will throw MaxAttemptsExceededException.
      *
-     * @return Whether the next call to {@link #delayMs()} will throw MaxAttemptsExceededException.
+     * @return Whether the next call to {@link #nextDelayMs()} will throw MaxAttemptsExceededException.
      */
     public boolean done() {
         return attempt >= maxAttempts;
@@ -129,9 +129,9 @@ public class BackOff {
     }
 
     /**
-     * Gets the cumulative delay issued by {@link #delayMs()} so far.
+     * Gets the cumulative delay issued by {@link #nextDelayMs()} so far.
      *
-     * @return The cumulative delay issued by {@link #delayMs()} so far.
+     * @return The cumulative delay issued by {@link #nextDelayMs()} so far.
      */
     public long cumulativeDelayMs() {
         return cumulativeDelayAttemptMs(attempt);

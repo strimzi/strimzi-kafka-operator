@@ -271,12 +271,12 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
                             statusFuture.completeExceptionally(cause);
                         } else {
                             LOGGER.debugCr(reconciliation, "Connector {} {} returned HTTP {} - backing off", connectorName, attribute, ((ConnectRestException) cause).getStatusCode());
-                            long delay1 = backOff.delayMs();
+                            long nextDelayMs = backOff.nextDelayMs();
 
                             LOGGER.debugCr(reconciliation, "Status for connector {} not found; " +
                                             "backing off for {}ms (cumulative {}ms)",
                                     connectorName, delay, backOff.cumulativeDelayMs());
-                            executeBackOffInternal(reconciliation, backOff, connectorName, retriableStatusCodes, singleExecutor, statusFuture, supplier, attribute, delay1);
+                            executeBackOffInternal(reconciliation, backOff, connectorName, retriableStatusCodes, singleExecutor, statusFuture, supplier, attribute, nextDelayMs);
                         }
                     } else {
                         statusFuture.completeExceptionally(cause);
