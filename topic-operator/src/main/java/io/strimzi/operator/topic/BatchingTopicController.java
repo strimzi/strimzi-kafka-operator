@@ -493,7 +493,7 @@ public class BatchingTopicController {
                 var specValueStr = TopicOperatorUtil.configValueAsString(specConfigEntry.getKey(), specConfigEntry.getValue());
                 var kafkaConfigEntry = configs.get(key);
                 if (kafkaConfigEntry == null
-                    || !Objects.equals(specValueStr, kafkaConfigEntry.value())) {
+                    || !configValuesEqual(specValueStr, kafkaConfigEntry)) {
                     alterConfigOps.add(new AlterConfigOp(
                         new ConfigEntry(key, specValueStr),
                         AlterConfigOp.OpType.SET));
@@ -512,6 +512,22 @@ public class BatchingTopicController {
                 AlterConfigOp.OpType.DELETE));
         }
         return alterConfigOps;
+    }
+
+    /* test */ static boolean configValuesEqual(String specValue, ConfigEntry kafkaEntry) {
+        if (Objects.equals(specValue, kafkaEntry.value())) {
+            return true;
+        } else if (kafkaEntry.type() == ConfigEntry.ConfigType.DOUBLE && specValue != null && kafkaEntry.value() != null) {
+            try {
+                // Kafka can return an equivalent double using a different string representation.
+                return Double.parseDouble(specValue) == Double.parseDouble(kafkaEntry.value());
+            } catch (NumberFormatException e) {
+                // Leave invalid values to Kafka's existing configuration validation.
+                return false;
+            }
+        } else {
+            return false;
+        }
     }
 
     /**
