@@ -125,7 +125,7 @@ public class KafkaRebalanceConfigMapUtils {
         KafkaRebalanceState state = KafkaRebalanceUtils.rebalanceState(status);
         if (state == KafkaRebalanceState.Rebalancing) {
             return Future.fromCompletionStage(
-                    apiClient.getCruiseControlState(reconciliation, host, port, false))
+                    apiClient.getCruiseControlState(reconciliation, host, port, false, null))
                     .compose(response -> {
                         ExecutorStatus executorStatus = response.getExecutorStatus();
                         if (executorStatus.isInProgressState()) {
