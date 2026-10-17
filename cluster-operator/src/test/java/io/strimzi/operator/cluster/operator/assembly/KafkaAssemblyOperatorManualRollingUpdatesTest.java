@@ -58,6 +58,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.function.Function;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -384,7 +385,6 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
 
         MockKafkaReconciler kr = new MockKafkaReconciler(
                 reconciliation,
-                vertx,
                 config,
                 supplier,
                 new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
@@ -468,22 +468,22 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
         Function<Pod, RestartReasons> kafkaRestartReasons = null;
         List<String> kafkaNodesNeedRestart = new ArrayList<>();
         private final boolean forceErrorWhenRollKafka;
-        public MockKafkaReconciler(Reconciliation reconciliation, Vertx vertx, ClusterOperatorConfig config, ResourceOperatorSupplier supplier, PlatformFeaturesAvailability pfa, Kafka kafkaAssembly, List<KafkaNodePool> nodePools, KafkaCluster kafkaCluster, Ca clusterCa, Ca clientsCa, boolean forceErrorWhenRollKafka) {
-            super(reconciliation, kafkaAssembly, nodePools, kafkaCluster, clusterCa, clientsCa, config, supplier, pfa, vertx, Set.of());
+        public MockKafkaReconciler(Reconciliation reconciliation, ClusterOperatorConfig config, ResourceOperatorSupplier supplier, PlatformFeaturesAvailability pfa, Kafka kafkaAssembly, List<KafkaNodePool> nodePools, KafkaCluster kafkaCluster, Ca clusterCa, Ca clientsCa, boolean forceErrorWhenRollKafka) {
+            super(reconciliation, kafkaAssembly, nodePools, kafkaCluster, clusterCa, clientsCa, config, supplier, pfa, Set.of());
             this.forceErrorWhenRollKafka = forceErrorWhenRollKafka;
         }
 
         public MockKafkaReconciler(Reconciliation reconciliation, Vertx vertx, ClusterOperatorConfig config, ResourceOperatorSupplier supplier, PlatformFeaturesAvailability pfa, Kafka kafkaAssembly, List<KafkaNodePool> nodePools, KafkaCluster kafkaCluster, Ca clusterCa, Ca clientsCa) {
-            this(reconciliation, vertx, config, supplier, pfa, kafkaAssembly, nodePools, kafkaCluster, clusterCa, clientsCa, false);
+            this(reconciliation, config, supplier, pfa, kafkaAssembly, nodePools, kafkaCluster, clusterCa, clientsCa, false);
         }
 
         @Override
-        public Future<Void> reconcile(KafkaStatus kafkaStatus, Clock clock)    {
+        public CompletionStage<Void> reconcile(KafkaStatus kafkaStatus, Clock clock)    {
             return manualRollingUpdate();
         }
 
         @Override
-        protected Future<Void> maybeRollKafka(
+        protected CompletionStage<Void> maybeRollKafka(
                 Set<NodeRef> nodes,
                 Function<Pod, RestartReasons> podNeedsRestart,
                 Map<Integer, Map<String, String>> kafkaAdvertisedHostnames,
@@ -494,9 +494,9 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
             kafkaRestartReasons = podNeedsRestart;
             kafkaNodesNeedRestart.addAll(nodes.stream().map(NodeRef::podName).toList());
             if (forceErrorWhenRollKafka) {
-                return Future.failedFuture("Force failure");
+                return CompletableFuture.failedFuture(new RuntimeException("Force failure"));
             }
-            return Future.succeededFuture();
+            return CompletableFuture.completedFuture(null);
         }
     }
 }

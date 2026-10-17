@@ -53,6 +53,7 @@ import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.kubernetes.SecretOperator;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.mockito.ArgumentCaptor;
 
 import java.util.HashMap;
@@ -62,6 +63,7 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.TimeUnit;
 
 import static io.strimzi.operator.cluster.ResourceUtils.DUMMY_CERT;
 import static java.util.Collections.emptyMap;
@@ -86,6 +88,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling"})
+@Timeout(value = 30, unit = TimeUnit.SECONDS)
 public class ReconcilerUtilsTest {
     private final static String JMX_SECRET_NAME = "my-jmx-secret";
     private final static String NAMESPACE = "namespace";
