@@ -469,8 +469,6 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
      * Generate the Secret containing the Cruise Control certificate signed by the cluster CA certificate used for TLS based
      * internal communication with Kafka. It also contains the related Cruise Control private key.
      *
-     * @param namespace                             Namespace in which the Cruise Control cluster runs
-     * @param clusterName                           Name of the Kafka cluster (it is used for the SANs in the certificate)
      * @param clusterCa                             The cluster CA.
      * @param existingSecret                        The existing secret with Kafka certificates
      * @param isMaintenanceTimeWindowsSatisfied     Indicates whether we are in the maintenance window or not.
@@ -478,11 +476,11 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
      *
      * @return The generated Secret.
      */
-    public CompletionStage<Secret> generateCertificatesSecret(String namespace, String clusterName, Ca clusterCa, Secret existingSecret, boolean isMaintenanceTimeWindowsSatisfied) {
+    public CompletionStage<Secret> generateCertificatesSecret(Ca clusterCa, Secret existingSecret, boolean isMaintenanceTimeWindowsSatisfied) {
         LOGGER.debugCr(reconciliation, "Generating certificates");
         CertAndKey existingCertAndKey = CertSecretUtils.keyStoreCertAndKey(existingSecret, CruiseControl.COMPONENT_TYPE, clusterCa.caCertGenerationAnnotation());
 
-        StrimziSubject subject = buildCruiseControlCertSubject(namespace, clusterName);
+        StrimziSubject subject = buildCruiseControlCertSubject();
 
         return clusterCa.maybeCopyOrGenerateServerCerts(reconciliation, CruiseControlResources.secretName(cluster), subject, existingCertAndKey, isMaintenanceTimeWindowsSatisfied, false, labels)
                 .thenApply(ccCerts -> {
@@ -499,15 +497,15 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
                 });
     }
 
-    private StrimziSubject buildCruiseControlCertSubject(String namespace, String clusterName) {
-        DnsNameGenerator ccDnsGenerator = DnsNameGenerator.of(namespace, CruiseControlResources.serviceName(clusterName));
+    private StrimziSubject buildCruiseControlCertSubject() {
+        DnsNameGenerator ccDnsGenerator = DnsNameGenerator.of(namespace, CruiseControlResources.serviceName(cluster));
 
         StrimziSubject.Builder subject = new StrimziSubject.Builder()
                 .withOrganizationName(Ca.IO_STRIMZI)
-                .withCommonName(CruiseControlResources.serviceName(clusterName));
+                .withCommonName(CruiseControlResources.serviceName(cluster));
 
-        subject.addDnsName(CruiseControlResources.serviceName(clusterName));
-        subject.addDnsName(format("%s.%s", CruiseControlResources.serviceName(clusterName), namespace));
+        subject.addDnsName(CruiseControlResources.serviceName(cluster));
+        subject.addDnsName(format("%s.%s", CruiseControlResources.serviceName(cluster), namespace));
         subject.addDnsName(ccDnsGenerator.serviceDnsNameWithoutClusterDomain());
         subject.addDnsName(ccDnsGenerator.serviceDnsName());
         subject.addDnsName("localhost");
