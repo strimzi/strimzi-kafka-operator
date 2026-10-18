@@ -1446,6 +1446,9 @@ class CoreFeaturesIT implements TestSeparator {
             throws ExecutionException, InterruptedException, TimeoutException {
         startKafkaCluster(1, 1, Map.of("auto.create.topics.enable", "false"));
 
+        // Normally a conflicting KafkaTopic never gets the finalizer, because conflicts are detected before the
+        // finalizer is added. The steps below follow the reproducer from #13264 to get a conflicting KafkaTopic
+        // which has the finalizer anyway.
         var topicName = "collide";
 
         // given an older KafkaTopic for the topic, which is temporarily unmanaged
@@ -1457,7 +1460,8 @@ class CoreFeaturesIT implements TestSeparator {
                 .build(),
             unmanagedIsTrue());
 
-        // and the operator is restarted, so it no longer tracks kt1 as the resource managing the topic
+        // and the operator is restarted. A running operator keeps tracking kt1 as the resource managing the
+        // topic even after it becomes unmanaged, so without the restart kt2 would go straight into conflict.
         operator.stop();
         operator = null;
         kafkaAdminClientOp.close();
