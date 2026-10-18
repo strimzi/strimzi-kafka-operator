@@ -3,7 +3,7 @@
 ## 1.4.0
 
 * Use ubi9-micro as a base image for operators, kafka-based, and maven-builder images.
-* Strimzi Drain Cleaner updated to 1.7.0 (included in the Strimzi installation files)
+* Strimzi Drain Cleaner updated to 1.8.0 (included in the Strimzi installation files)
 * Add support for Strimzi-native configurable RSA key sizes
 
 ### Major changes, deprecations, and removals
