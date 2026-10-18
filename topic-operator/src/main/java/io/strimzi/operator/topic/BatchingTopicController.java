@@ -136,6 +136,14 @@ public class BatchingTopicController {
             if (TopicOperatorUtil.isManaged(reconcilableTopic.kt())) {
                 var e = validate(reconcilableTopic);
                 if (e.isRightEqual(true)) {
+                    var managing = validateSingleManagingResource(reconcilableTopic);
+                    if (!managing.isRight()) {
+                        // Another KafkaTopic manages this topic, so the topic must not be deleted in Kafka
+                        LOGGER.infoCr(reconcilableTopic.reconciliation(),
+                            "Not deleting topic '{}' from Kafka: {}", reconcilableTopic.topicName(), managing.left().getMessage());
+                        deleteUnmanagedTopic(reconcilableTopic);
+                        return false;
+                    }
                     // adminDelete, removeFinalizer, forgetTopic, updateStatus
                     return true;
                 } else if (e.isRightEqual(false)) {

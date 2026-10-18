@@ -1442,6 +1442,33 @@ class CoreFeaturesIT implements TestSeparator {
     }
 
     @Test
+    public void shouldNotDeleteTopicInKafkaWhenConflictingResourceIsDeleted()
+            throws ExecutionException, InterruptedException, TimeoutException {
+        startKafkaCluster(1, 1, Map.of("auto.create.topics.enable", "false"));
+
+        // given a KafkaTopic managing the topic
+        var kt1 = kafkaTopic(NAMESPACE, "kt1", true, "collide", 1, 1);
+        createTopicAndAssertSuccess(kafkaCluster, kt1);
+        var topicId = awaitTopicDescription("collide").topicId();
+
+        // and a conflicting KafkaTopic which (e.g. due to an earlier race) already has the finalizer
+        Thread.sleep(1_000L);
+        var kt2 = new KafkaTopicBuilder(kafkaTopic(NAMESPACE, "kt2", true, "collide", 1, 1))
+            .editMetadata().addToFinalizers(KubernetesHandler.FINALIZER_STRIMZI_IO_TO).endMetadata()
+            .build();
+        var st2 = createTopic(kafkaCluster, kt2, readyIsFalse()).getStatus();
+        assertEquals(TopicOperatorException.Reason.RESOURCE_CONFLICT.value, st2.getConditions().get(0).getReason());
+
+        // when the conflicting KafkaTopic is deleted
+        Crds.topicOperation(kubernetesClient).resource(kt2).delete();
+        TestUtil.waitUntilCondition(Crds.topicOperation(kubernetesClient).resource(kt2), Objects::isNull);
+
+        // then the topic in Kafka is still the one managed by the other KafkaTopic
+        assertEquals(topicId, awaitTopicDescription("collide").topicId());
+        waitUntil(kt1, readyIsTrue());
+    }
+
+    @Test
     public void shouldFailCreationIfMoreReplicasThanBrokers() {
         startKafkaCluster(1, 1, Map.of("auto.create.topics.enable", "false"));
 
