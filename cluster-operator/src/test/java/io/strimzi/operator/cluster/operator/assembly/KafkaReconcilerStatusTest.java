@@ -960,7 +960,7 @@ public class KafkaReconcilerStatusTest {
         protected Future<Void> listeners()  {
             listenerReconciliationResults = new KafkaListenersReconciler.ReconciliationResult();
             listenerReconciliationResults.bootstrapNodePorts.put("external-9094", 31234);
-            listenerReconciliationResults.listenerStatuses.add(new ListenerStatusBuilder().withName("external").build());
+            listenerReconciliationResults.listenerStatuses.put("external", new ListenerStatusBuilder().withName("external").build());
 
             return Future.succeededFuture();
         }

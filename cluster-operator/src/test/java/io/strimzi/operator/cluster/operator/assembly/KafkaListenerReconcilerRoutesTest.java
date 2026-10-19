@@ -247,7 +247,7 @@ public class KafkaListenerReconcilerRoutesTest {
 
         // Check status
         assertThat(res.listenerStatuses.size(), is(1));
-        ListenerStatus listenerStatus = res.listenerStatuses.get(0);
+        ListenerStatus listenerStatus = res.listenerStatuses.get("external");
         assertThat(listenerStatus.getBootstrapServers(), is(DNS_NAME_FOR_BOOTSTRAP_SERVICE + ":443"));
         assertThat(listenerStatus.getAddresses().size(), is(1));
         assertThat(listenerStatus.getAddresses().get(0).getHost(), is(DNS_NAME_FOR_BOOTSTRAP_SERVICE));
