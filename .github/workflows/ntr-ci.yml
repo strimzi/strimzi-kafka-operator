@@ -26,6 +26,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      packages: read
     outputs:
       operator_image: ${{ steps.meta.outputs.operator_image }}
       strimzi_version: ${{ steps.meta.outputs.strimzi_version }}
@@ -47,6 +48,29 @@ jobs:
             https://github.com/mikefarah/yq/releases/download/v4.44.3/yq_linux_amd64
           sudo chmod +x /usr/local/bin/yq
           yq --version
+
+      - name: Configure Maven for GitHub Packages (cruise-control)
+        env:
+          KAFKA_DIST_TOKEN: ${{ secrets.KAFKA_DIST_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          # Prefer a PAT with read:packages if GITHUB_TOKEN cannot read another repo's packages.
+          TOKEN="${KAFKA_DIST_TOKEN:-${GITHUB_TOKEN}}"
+          mkdir -p "$HOME/.m2"
+          cat > "$HOME/.m2/settings.xml" <<EOF
+          <settings xmlns="http://maven.apache.org/SETTINGS/1.2.0"
+                    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                    xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.2.0 https://maven.apache.org/xsd/settings-1.2.0.xsd">
+            <servers>
+              <server>
+                <id>cruise-control</id>
+                <username>x-access-token</username>
+                <password>${TOKEN}</password>
+              </server>
+            </servers>
+          </settings>
+          EOF
 
       - name: Show Kafka download URLs
         run: |

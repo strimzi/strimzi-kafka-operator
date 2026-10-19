@@ -37,9 +37,10 @@
     </properties>
 
     <repositories>
+        <!-- NTR: cruise-control is published to GitHub Packages (see cruise-control NTR CI). -->
         <repository>
             <id>cruise-control</id>
-            <url>https://linkedin.jfrog.io/artifactory/cruise-control/</url>
+            <url>https://maven.pkg.github.com/devbykidle/cruise-control</url>
         </repository>
     </repositories>
 
