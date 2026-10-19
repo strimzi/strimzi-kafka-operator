@@ -201,7 +201,8 @@ jobs:
       - name: Install Trivy
         run: |
           set -euo pipefail
-          VER=0.54.1
+          # Pin to a release that still exists on GitHub (older tags are pruned).
+          VER=0.76.0
           curl -sSfL \
             "https://github.com/aquasecurity/trivy/releases/download/v${VER}/trivy_${VER}_Linux-64bit.tar.gz" \
             -o /tmp/trivy.tgz
