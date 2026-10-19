@@ -9,7 +9,7 @@ stages:
   - scan
 
 variables:
-  KAFKA_VERSION: "4.3.0"
+  KAFKA_VERSION: "4.2.0"
   DOCKER_HOST: tcp://docker:2375
   DOCKER_TLS_CERTDIR: ""
   DOCKER_DRIVER: overlay2
@@ -38,9 +38,9 @@ build:strimzi-kafka-images:
   script:
     - export STRIMZI_VERSION="$(cat release.version)"
     - export IMAGE_TAG="${STRIMZI_VERSION}"
-    - cp ".gitlab/ci/kafka-versions-${KAFKA_VERSION}.yaml" kafka-versions.yaml
+    - cp ".gitlab/ci/kafka-versions-ntr.yaml" kafka-versions.yaml
     - make java_install MVN_ARGS="$MVN_ARGS"
-    - make -C docker-images/base docker_build RELEASE_VERSION="$STRIMZI_VERSION" BUILD_TAG=$STRIMZI_VERSION" BUILD_ID="$CI_PIPELINE_ID" BUILD_COMMIT="$CI_COMMIT_SHA"
+    - make -C docker-images/base docker_build RELEASE_VERSION="$STRIMZI_VERSION" BUILD_TAG="$STRIMZI_VERSION" BUILD_ID="$CI_PIPELINE_ID" BUILD_COMMIT="$CI_COMMIT_SHA"
     - make -C docker-images/operator docker_build docker_push RELEASE_VERSION="$STRIMZI_VERSION" DOCKER_REGISTRY="$CI_REGISTRY" DOCKER_ORG="$CI_PROJECT_PATH" DOCKER_TAG="$IMAGE_TAG" BUILD_TAG="$STRIMZI_VERSION" BUILD_ID="$CI_PIPELINE_ID" BUILD_COMMIT="$CI_COMMIT_SHA"
     - make -C docker-images/kafka-based docker_build docker_push RELEASE_VERSION="$STRIMZI_VERSION" DOCKER_REGISTRY="$CI_REGISTRY" DOCKER_ORG="$CI_PROJECT_PATH" DOCKER_TAG="$IMAGE_TAG" BUILD_ID="$CI_PIPELINE_ID" BUILD_COMMIT="$CI_COMMIT_SHA"
     - echo "STRIMZI_OPERATOR_IMAGE=${CI_REGISTRY_IMAGE}/operator:${IMAGE_TAG}" > image.env

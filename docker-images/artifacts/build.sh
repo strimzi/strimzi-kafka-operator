@@ -144,22 +144,53 @@ function fetch_and_unpack_kafka_binaries {
 }
 
 function download_kafka_binaries_from_cdn {
-    # This function extracts the remote path from the archive URL and tries to download from the CDN.
-    # If it fails for any reason (e.g. 404), then it reverts back to the archive URL.
+    # Downloads Kafka binaries.
+    # - file:// paths are copied locally
+    # - Apache archive URLs try the CDN first, then fall back to the archive
+    # - Other HTTP(S) URLs (e.g. GitHub Releases) are downloaded directly
+    # Optional auth: KAFKA_DIST_TOKEN (PRIVATE-TOKEN / Bearer) or GH_TOKEN / GITHUB_TOKEN for GitHub
     local archive_url=$1
     local local_path=$2
-    
-    local remote_path="${archive_url/https:\/\/archive.apache.org\/dist\//}"
-    local cdn_url="https://dlcdn.apache.org/${remote_path}"
 
-    echo "Downloading from CDN: ${cdn_url}"
-    local cdn_code=$(curl -L ${CURL_ARGS} -o "${local_path}" -w %{http_code} "${cdn_url}")
-    echo "CDN HTTP code: ${cdn_code}"
+    if [[ "${archive_url}" == file://* ]]; then
+        local src="${archive_url#file://}"
+        echo "Copying local Kafka archive: ${src}"
+        cp "${src}" "${local_path}"
+        return
+    fi
 
-    if [[ "${cdn_code}" != "200" ]]; then
-        echo "Download from CDN failed. Retrying with archive: ${archive_url}"
-        local archive_code=$(curl -L ${CURL_ARGS} -o "${local_path}" -w %{http_code} "${archive_url}")
-        echo "Archive HTTP code: ${archive_code}"
+    local auth_args=()
+    if [[ -n "${KAFKA_DIST_TOKEN:-}" ]]; then
+        auth_args=(-H "Authorization: Bearer ${KAFKA_DIST_TOKEN}")
+    elif [[ -n "${GH_TOKEN:-}${GITHUB_TOKEN:-}" ]]; then
+        auth_args=(-H "Authorization: Bearer ${GH_TOKEN:-$GITHUB_TOKEN}")
+    fi
+
+    if [[ "${archive_url}" == https://archive.apache.org/dist/* ]]; then
+        local remote_path="${archive_url/https:\/\/archive.apache.org\/dist\//}"
+        local cdn_url="https://dlcdn.apache.org/${remote_path}"
+
+        echo "Downloading from CDN: ${cdn_url}"
+        local cdn_code
+        cdn_code=$(curl -L ${CURL_ARGS} -o "${local_path}" -w %{http_code} "${cdn_url}")
+        echo "CDN HTTP code: ${cdn_code}"
+
+        if [[ "${cdn_code}" != "200" ]]; then
+            echo "Download from CDN failed. Retrying with archive: ${archive_url}"
+            local archive_code
+            archive_code=$(curl -L ${CURL_ARGS} -o "${local_path}" -w %{http_code} "${archive_url}")
+            echo "Archive HTTP code: ${archive_code}"
+        fi
+        return
+    fi
+
+    echo "Downloading Kafka archive: ${archive_url}"
+    local http_code
+    http_code=$(curl -L ${CURL_ARGS} "${auth_args[@]}" -o "${local_path}" -w %{http_code} "${archive_url}")
+    echo "HTTP code: ${http_code}"
+    if [[ "${http_code}" != "200" ]]; then
+        echo "ERROR: failed to download Kafka archive from ${archive_url}" >&2
+        return 1
     fi
 }
 

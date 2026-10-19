@@ -1,0 +1,58 @@
+version: 2
+updates:
+  - package-ecosystem: maven
+    directory: "/"
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 10
+    labels:
+      - dependencies
+
+  - package-ecosystem: maven
+    directory: "/docker-images/artifacts/kafka-thirdparty-libs/4.1.x"
+    schedule:
+      interval: weekly
+    labels:
+      - dependencies
+      -
+  - package-ecosystem: maven
+    directory: "/docker-images/artifacts/kafka-thirdparty-libs/4.0.x"
+    schedule:
+      interval: weekly
+    labels:
+      - dependencies
+
+  - package-ecosystem: maven
+    directory: "/docker-images/artifacts/kafka-thirdparty-libs/cc"
+    schedule:
+      interval: weekly
+    labels:
+      - dependencies
+
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+    labels:
+      - dependencies
+
+  - package-ecosystem: docker
+    directory: "/docker-images/base"
+    schedule:
+      interval: weekly
+    labels:
+      - dependencies
+
+  - package-ecosystem: docker
+    directory: "/docker-images/operator"
+    schedule:
+      interval: weekly
+    labels:
+      - dependencies
+
+  - package-ecosystem: docker
+    directory: "/docker-images/kafka-based/kafka"
+    schedule:
+      interval: weekly
+    labels:
+      - dependencies

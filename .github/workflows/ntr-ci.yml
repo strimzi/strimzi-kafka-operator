@@ -1,0 +1,163 @@
+# NTR: build Strimzi images (Kafka URLs from kafka-versions.yaml), scan with Trivy.
+name: NTR CI
+
+on:
+  push:
+    branches: ["ntr/**"]
+    tags: ["ntr/**"]
+  pull_request:
+    branches: ["ntr/**"]
+  workflow_dispatch:
+
+concurrency:
+  group: ntr-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  KAFKA_VERSIONS: "4.0.0 4.1.0"
+  JAVA_VERSION: "21"
+  MVN_ARGS: "-B -ntp -DskipTests"
+  TRIVY_SEVERITY: "HIGH,CRITICAL"
+  TRIVY_EXIT_CODE: "1"
+
+jobs:
+  build:
+    name: Build images
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      operator_image: ${{ steps.meta.outputs.operator_image }}
+      strimzi_version: ${{ steps.meta.outputs.strimzi_version }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+          cache: maven
+
+      - name: Install build tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y make yq shellcheck
+
+      - name: Show Kafka download URLs
+        run: |
+          echo "=== supported Kafka versions (from kafka-versions.yaml) ==="
+          yq '.[] | select(.supported == true) | {.version, .url, .checksum, .default}' kafka-versions.yaml
+
+      - name: Build Java and images
+        id: meta
+        env:
+          DOCKER_BUILDKIT: "1"
+          # Auth for private GitHub Releases referenced in kafka-versions.yaml
+          KAFKA_DIST_TOKEN: ${{ secrets.KAFKA_DIST_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          export GH_TOKEN="${KAFKA_DIST_TOKEN:-${GITHUB_TOKEN:-}}"
+          STRIMZI_VERSION="$(cat release.version)"
+          IMAGE_TAG="${STRIMZI_VERSION}"
+          OPERATOR_IMAGE="strimzi/operator:${IMAGE_TAG}"
+
+          make java_install MVN_ARGS="${{ env.MVN_ARGS }}"
+          make -C docker-images/artifacts java_install MVN_ARGS="${{ env.MVN_ARGS }}"
+          make -C docker-images/base docker_build \
+            RELEASE_VERSION="$STRIMZI_VERSION" \
+            BUILD_TAG="$STRIMZI_VERSION" \
+            BUILD_ID="${{ github.run_id }}" \
+            BUILD_COMMIT="${{ github.sha }}"
+          make -C docker-images/operator docker_build \
+            RELEASE_VERSION="$STRIMZI_VERSION" \
+            DOCKER_TAG="$IMAGE_TAG" \
+            BUILD_TAG="$STRIMZI_VERSION" \
+            BUILD_ID="${{ github.run_id }}" \
+            BUILD_COMMIT="${{ github.sha }}"
+          make -C docker-images/kafka-based docker_build \
+            RELEASE_VERSION="$STRIMZI_VERSION" \
+            DOCKER_TAG="$IMAGE_TAG" \
+            BUILD_TAG="$STRIMZI_VERSION" \
+            BUILD_ID="${{ github.run_id }}" \
+            BUILD_COMMIT="${{ github.sha }}"
+
+          echo "operator_image=${OPERATOR_IMAGE}" >> "$GITHUB_OUTPUT"
+          echo "strimzi_version=${STRIMZI_VERSION}" >> "$GITHUB_OUTPUT"
+
+      - name: Save images
+        run: |
+          set -euo pipefail
+          mkdir -p images
+          STRIMZI_VERSION="${{ steps.meta.outputs.strimzi_version }}"
+          docker save -o "images/operator-${STRIMZI_VERSION}.tar" \
+            "${{ steps.meta.outputs.operator_image }}"
+          for v in ${{ env.KAFKA_VERSIONS }}; do
+            docker save -o "images/kafka-${v}.tar" \
+              "strimzi/kafka:${STRIMZI_VERSION}-kafka-${v}"
+          done
+
+      - name: Upload image tarballs
+        uses: actions/upload-artifact@v4
+        with:
+          name: strimzi-images
+          path: images/
+          if-no-files-found: error
+
+  scan:
+    name: Trivy scan
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download images
+        uses: actions/download-artifact@v4
+        with:
+          name: strimzi-images
+          path: images
+
+      - name: Load images
+        run: |
+          set -euo pipefail
+          for f in images/*.tar; do
+            docker load -i "$f"
+          done
+          docker images
+
+      - name: Install Trivy
+        run: |
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh \
+            | sh -s -- -b /usr/local/bin v0.54.1
+
+      - name: Trivy scan images
+        run: |
+          set -euo pipefail
+          scan_status=0
+          OPERATOR_IMAGE="${{ needs.build.outputs.operator_image }}"
+          STRIMZI_VERSION="${{ needs.build.outputs.strimzi_version }}"
+
+          echo "=== Trivy ${OPERATOR_IMAGE} ==="
+          trivy image --no-progress --severity "${{ env.TRIVY_SEVERITY }}" \
+            --exit-code "${{ env.TRIVY_EXIT_CODE }}" \
+            --format json --output trivy-operator.json "$OPERATOR_IMAGE" || scan_status=$?
+          trivy image --no-progress --severity "${{ env.TRIVY_SEVERITY }}" \
+            --format table "$OPERATOR_IMAGE" || true
+
+          for v in ${{ env.KAFKA_VERSIONS }}; do
+            img="strimzi/kafka:${STRIMZI_VERSION}-kafka-${v}"
+            echo "=== Trivy ${img} ==="
+            trivy image --no-progress --severity "${{ env.TRIVY_SEVERITY }}" \
+              --exit-code "${{ env.TRIVY_EXIT_CODE }}" \
+              --format json --output "trivy-kafka-${v}.json" "$img" || scan_status=$?
+            trivy image --no-progress --severity "${{ env.TRIVY_SEVERITY }}" \
+              --format table "$img" || true
+          done
+          exit "$scan_status"
+
+      - name: Upload Trivy reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-strimzi
+          path: |
+            trivy-operator.json
+            trivy-kafka-*.json
