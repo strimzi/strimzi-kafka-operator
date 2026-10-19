@@ -1229,11 +1229,12 @@ public class KafkaReconciler {
                                 statusAddresses.add(address);
                             }
 
-                            ListenerStatus ls = listenerReconciliationResults.listenerStatuses
-                                    .stream()
-                                    .filter(listenerStatus -> listener.getName().equals(listenerStatus.getName()))
-                                    .findFirst()
-                                    .orElseThrow(() -> new RuntimeException("Status for listener " + listener.getName() + " not found"));
+                            ListenerStatus ls = listenerReconciliationResults.listenerStatuses.get(listener.getName());
+
+                            if (ls == null) {
+                                throw new RuntimeException("Status for listener " + listener.getName() + " not found");
+                            }
+
                             ls.setAddresses(new ArrayList<>(statusAddresses));
                         }
 
@@ -1253,7 +1254,7 @@ public class KafkaReconciler {
      * @return  Future that completes once the status is updated
      */
     /* test */ Future<Void> updateKafkaStatus(KafkaStatus kafkaStatus) {
-        kafkaStatus.setListeners(listenerReconciliationResults.listenerStatuses);
+        kafkaStatus.setListeners(new ArrayList<>(listenerReconciliationResults.listenerStatuses.values()));
         kafkaStatus.setKafkaVersion(kafka.getKafkaVersion().version());
 
         return Future.succeededFuture();
