@@ -14,7 +14,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  KAFKA_VERSIONS: "4.0.0 4.1.0"
+  KAFKA_VERSIONS: "4.0.0 4.1.2"
   JAVA_VERSION: "21"
   MVN_ARGS: "-B -ntp -DskipTests"
   TRIVY_SEVERITY: "HIGH,CRITICAL"
@@ -41,12 +41,19 @@ jobs:
       - name: Install build tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y make yq shellcheck
+          sudo apt-get install -y make shellcheck wget
+          # apt "yq" is kislyuk/yq (jq wrapper); use mikefarah/yq for consistent YAML filters
+          sudo wget -qO /usr/local/bin/yq \
+            https://github.com/mikefarah/yq/releases/download/v4.44.3/yq_linux_amd64
+          sudo chmod +x /usr/local/bin/yq
+          yq --version
 
       - name: Show Kafka download URLs
         run: |
           echo "=== supported Kafka versions (from kafka-versions.yaml) ==="
-          yq '.[] | select(.supported == true) | {.version, .url, .checksum, .default}' kafka-versions.yaml
+          yq -o=json \
+            '.[] | select(.supported == true) | {"version": .version, "url": .url, "checksum": .checksum, "default": .default}' \
+            kafka-versions.yaml
 
       - name: Build Java and images
         id: meta
