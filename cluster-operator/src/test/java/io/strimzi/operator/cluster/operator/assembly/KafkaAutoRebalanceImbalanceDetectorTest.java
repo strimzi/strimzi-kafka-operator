@@ -66,18 +66,18 @@ public class KafkaAutoRebalanceImbalanceDetectorTest {
         when(rebalanceOperator.listAsync(eq(NAMESPACE), any(Labels.class)))
                 .thenReturn(CompletableFuture.completedFuture(List.of()));
 
-        boolean result = detector(buildKafka(null, null)).hasActiveRebalance().toCompletableFuture().join();
+        boolean result = detector(buildKafka(null, null)).isRebalanceRunning().toCompletableFuture().join();
 
         assertThat(result, is(false));
     }
 
     @Test
-    public void testHasActiveRebalanceWithRebalancingState() {
+    public void testIsRebalanceRunningWithRebalancingState() {
         KafkaRebalance rebalancing = buildRebalance("kr1", KafkaRebalanceState.Rebalancing);
         when(rebalanceOperator.listAsync(eq(NAMESPACE), any(Labels.class)))
                 .thenReturn(CompletableFuture.completedFuture(List.of(rebalancing)));
 
-        boolean result = detector(buildKafka(null, null)).hasActiveRebalance().toCompletableFuture().join();
+        boolean result = detector(buildKafka(null, null)).isRebalanceRunning().toCompletableFuture().join();
 
         assertThat(result, is(true));
     }
@@ -90,7 +90,7 @@ public class KafkaAutoRebalanceImbalanceDetectorTest {
         when(rebalanceOperator.listAsync(eq(NAMESPACE), any(Labels.class)))
                 .thenReturn(CompletableFuture.completedFuture(List.of(newRebalance, pendingRebalance)));
 
-        boolean result = detector(buildKafka(null, null)).hasActiveRebalance().toCompletableFuture().join();
+        boolean result = detector(buildKafka(null, null)).isRebalanceRunning().toCompletableFuture().join();
 
         assertThat(result, is(false));
     }
