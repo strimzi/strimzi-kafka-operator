@@ -310,7 +310,8 @@ public class KafkaRoller {
         RestartContext(Supplier<BackOff> backOffSupplier) {
             completableFuture = new CompletableFuture<>();
             backOff = backOffSupplier.get();
-            backOff.delayMs();
+            // this call "burns" the first (zero) delay so that the first actual retry will use a non-zero backoff delay.
+            backOff.nextDelayMs();
         }
 
         @Override
@@ -358,10 +359,10 @@ public class KafkaRoller {
                             new StrimziTimeoutException() :
                             e);
                 } else {
-                    long delay1Ms = ctx.backOff.delayMs();
+                    long nextDelayMs = ctx.backOff.nextDelayMs();
                     LOGGER.infoCr(reconciliation, "Will temporarily skip verifying pod {} is up-to-date due to {}, retrying after at least {}ms",
-                            nodeRef, e, delay1Ms);
-                    schedule(nodeRef, delay1Ms);
+                            nodeRef, e, nextDelayMs);
+                    schedule(nodeRef, nextDelayMs);
                 }
             }
         }, delayMs, TimeUnit.MILLISECONDS);
