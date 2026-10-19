@@ -104,8 +104,8 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
             this.kafkaConnectImages = kafkaConnectImages;
             this.kafkaMirrorMaker2Images = kafkaMirrorMaker2Images;
 
-            InputStream versions = Objects.requireNonNull(KafkaVersion.class.getResourceAsStream("/" + KAFKA_VERSIONS_RESOURCE), KAFKA_VERSIONS_RESOURCE + " file was not found in resources");
-            try (InputStreamReader reader = new InputStreamReader(versions, StandardCharsets.UTF_8))    {
+            try (InputStream versions = Objects.requireNonNull(KafkaVersion.class.getResourceAsStream("/" + KAFKA_VERSIONS_RESOURCE), KAFKA_VERSIONS_RESOURCE + " file was not found in resources");
+                 InputStreamReader reader = new InputStreamReader(versions, StandardCharsets.UTF_8))    {
                 this.defaultVersion = parseKafkaVersions(reader, this.map);
             } catch (IOException | IllegalArgumentException | JacksonException e) {
                 throw new RuntimeException("Error reading " + KAFKA_VERSIONS_RESOURCE, e);
