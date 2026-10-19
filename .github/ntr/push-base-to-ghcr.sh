@@ -36,5 +36,10 @@ echo "Pushing ${DST_IMAGE}"
 docker push "$DST_IMAGE"
 echo "OK: ${DST_IMAGE}"
 echo
-echo "Make the package public (or grant Actions read) under:"
+echo "GitHub Actions cannot pull a private package with GITHUB_TOKEN unless you:"
+echo "  A) Package settings → Manage Actions access → add strimzi-kafka-operator (Read)"
+echo "  B) OR make the package Public"
+echo "  C) OR set repo secret KAFKA_DIST_TOKEN = PAT with read:packages"
+echo
+echo "Settings:"
 echo "  https://github.com/users/${GHCR_OWNER}/packages/container/axiom-jdk-alpine-musl/settings"
