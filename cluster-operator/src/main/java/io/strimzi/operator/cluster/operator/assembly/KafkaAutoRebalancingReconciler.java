@@ -147,7 +147,7 @@ public class KafkaAutoRebalancingReconciler {
                         return CompletableFuture.completedFuture(null);
                     }
 
-                    return imbalanceDetector.hasActiveRebalance()
+                    return imbalanceDetector.isRebalanceRunning()
                             .thenCompose(isActiveRebalance -> {
                                 if (isActiveRebalance) {
                                     return CompletableFuture.completedFuture(null);
