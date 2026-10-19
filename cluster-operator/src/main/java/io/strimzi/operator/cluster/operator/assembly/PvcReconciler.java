@@ -5,6 +5,7 @@
 package io.strimzi.operator.cluster.operator.assembly;
 
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
+import io.strimzi.api.kafka.model.common.Condition;
 import io.strimzi.api.kafka.model.kafka.KafkaStatus;
 import io.strimzi.operator.cluster.model.StorageUtils;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.PvcOperator;
@@ -16,12 +17,14 @@ import io.strimzi.operator.common.model.StatusUtils;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentSkipListMap;
 
 /**
  * This class reconciles the PVCs for the Kafka clusters. It has two public methods:
@@ -60,7 +63,10 @@ public class PvcReconciler {
      * @return CompletionStage with set of node IDs which should be restarted to complete the filesystem resizing
      */
     public CompletionStage<Collection<Integer>> resizeAndReconcilePvcs(KafkaStatus kafkaStatus, List<PersistentVolumeClaim> pvcs) {
-        Set<Integer> podIdsToRestart = new HashSet<>();
+        // The per-PVC futures run in parallel => the collections they write into need to be thread-safe. The warnings
+        // are sorted by the PVC name to keep the order of the conditions stable.
+        Set<Integer> podIdsToRestart = ConcurrentHashMap.newKeySet();
+        Map<String, Condition> warnings = new ConcurrentSkipListMap<>();
         List<CompletableFuture<Void>> completableFutures = new ArrayList<>(pvcs.size());
 
         for (PersistentVolumeClaim desiredPvc : pvcs)  {
@@ -88,7 +94,7 @@ public class PvcReconciler {
 
                             if (!currentSize.equals(desiredSize))   {
                                 // The sizes are different => we should resize (shrinking will be handled in StorageDiff, so we do not need to check that)
-                                return resizePvc(kafkaStatus, currentPvc, desiredPvc);
+                                return resizePvc(warnings, currentPvc, desiredPvc);
                             } else  {
                                 // size didn't change, just reconcile
                                 return pvcOperator.reconcile(reconciliation, reconciliation.namespace(), desiredPvc.getMetadata().getName(), desiredPvc)
@@ -101,34 +107,40 @@ public class PvcReconciler {
         }
 
         return CompletableFuture.allOf(completableFutures.toArray(CompletableFuture[]::new))
-                .thenApply(i -> podIdsToRestart);
+                .thenApply(i -> {
+                    if (!warnings.isEmpty()) {
+                        kafkaStatus.addConditions(warnings.values());
+                    }
+
+                    return podIdsToRestart;
+                });
     }
 
     /**
      * Resizes a PVC. This includes the check whether the Storage Class used by this PVC allows volume resizing. This
      * method does not wait for the resizing to happen. It just requests it from Kubernetes / Storage Class.
      *
-     * @param kafkaStatus   Status of the Kafka custom resource where warnings about any issues with resizing will be added
+     * @param warnings      Map where warnings about any issues with resizing will be added (mapped by the PVC name)
      * @param current       The current PVC with the old size
      * @param desired       The desired PVC with the new size
      *
      * @return          CompletionStage which completes when the PVC / PV resizing is completed.
      */
-    private CompletionStage<Void> resizePvc(KafkaStatus kafkaStatus, PersistentVolumeClaim current, PersistentVolumeClaim desired)  {
+    private CompletionStage<Void> resizePvc(Map<String, Condition> warnings, PersistentVolumeClaim current, PersistentVolumeClaim desired)  {
         String storageClassName = current.getSpec().getStorageClassName();
 
         if (storageClassName != null && !storageClassName.isEmpty()) {
             return storageClassOperator.getAsync(storageClassName)
                     .thenCompose(sc -> {
                         if (sc == null) {
-                            kafkaStatus.addCondition(StatusUtils.buildWarningCondition("PvcResizingWarning",
+                            warnings.put(desired.getMetadata().getName(), StatusUtils.buildWarningCondition("PvcResizingWarning",
                                     "Storage Class " + storageClassName + " not found. " +
                                             "PVC " + desired.getMetadata().getName() + " cannot be resized."));
                             LOGGER.warnCr(reconciliation, "Storage Class {} not found. PVC {} cannot be resized. Reconciliation will proceed without reconciling this PVC.", storageClassName, desired.getMetadata().getName());
                             return CompletableFuture.completedFuture(null);
                         } else if (sc.getAllowVolumeExpansion() == null || !sc.getAllowVolumeExpansion())    {
                             // Resizing not supported in SC => do nothing
-                            kafkaStatus.addCondition(StatusUtils.buildWarningCondition("PvcResizingWarning",
+                            warnings.put(desired.getMetadata().getName(), StatusUtils.buildWarningCondition("PvcResizingWarning",
                                     "Storage Class " + storageClassName + " does not support resizing of volumes. " +
                                             "PVC " + desired.getMetadata().getName() + " cannot be resized."));
                             LOGGER.warnCr(reconciliation, "Storage Class {} does not support resizing of volumes. PVC {} cannot be resized. Reconciliation will proceed without reconciling this PVC.", storageClassName, desired.getMetadata().getName());
@@ -141,7 +153,7 @@ public class PvcReconciler {
                         }
                     });
         } else {
-            kafkaStatus.addCondition(StatusUtils.buildWarningCondition("PvcResizingWarning",
+            warnings.put(desired.getMetadata().getName(), StatusUtils.buildWarningCondition("PvcResizingWarning",
                     "PVC " + desired.getMetadata().getName() + " does not use any Storage Class and cannot be resized."));
             LOGGER.warnCr(reconciliation, "PVC {} does not use any Storage Class and cannot be resized. Reconciliation will proceed without reconciling this PVC.", desired.getMetadata().getName());
             return CompletableFuture.completedFuture(null);
