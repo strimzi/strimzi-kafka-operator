@@ -182,6 +182,7 @@ public class KafkaAutoRebalancingReconciler {
             return CompletableFuture.completedFuture(null);
         }
 
+        metricsHolder.anomaliesDetectedCounter(reconciliation.namespace(), "goal_violation", goalViolationInfo.fixability().label()).increment();
         return imbalanceDetector.shouldTriggerRebalance(goalViolationInfo.detectionTime())
                 .thenCompose(shouldTrigger -> {
                     if (shouldTrigger && imbalanceDetector.isInMaintenanceWindow()) {
@@ -189,14 +190,12 @@ public class KafkaAutoRebalancingReconciler {
                         return getKafkaRebalance(reconciliation.namespace(), reconciliation.name(), KafkaAutoRebalanceMode.IMBALANCE)
                                 .thenCompose(existingKr -> {
                                     if (existingKr != null) {
-                                        // KafkaRebalance already exists and is being processed: skip creation and counter increment
                                         LOGGER.debugCr(reconciliation, "Auto-rebalance KafkaRebalance already exists, skipping");
                                         return CompletableFuture.completedFuture(null);
                                     }
                                     return createKafkaRebalance(reconciliation.namespace(), reconciliation.name(), KafkaAutoRebalanceMode.IMBALANCE, null)
                                             .thenApply(created -> {
                                                 if (created) {
-                                                    metricsHolder.anomaliesDetectedCounter(reconciliation.namespace(), "goal_violation", goalViolationInfo.fixability().label()).increment();
                                                     updateStatus(kafkaAutoRebalanceStatus, KafkaAutoRebalanceState.RebalanceOnImbalance);
                                                 } else {
                                                     updateStatus(kafkaAutoRebalanceStatus, KafkaAutoRebalanceState.Idle);
