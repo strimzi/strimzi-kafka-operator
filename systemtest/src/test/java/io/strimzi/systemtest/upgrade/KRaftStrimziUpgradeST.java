@@ -90,7 +90,8 @@ public class KRaftStrimziUpgradeST extends AbstractKRaftUpgradeST {
         RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), controllerSelector, 3, controllerSnapshot);
         RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), brokerSelector, 3, brokerSnapshot);
         DeploymentUtils.waitTillDepHasRolled(testStorage.getNamespaceName(), KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), 1, eoSnapshot);
-        checkAllComponentsImages(testStorage.getNamespaceName(), acrossUpgradeData);
+        // Temporarily disabled due to https://github.com/strimzi/strimzi-kafka-operator/issues/13277
+        //checkAllComponentsImages(testStorage.getNamespaceName(), acrossUpgradeData);
 
         // Verify that Pods are stable
         PodUtils.verifyThatRunningPodsAreStable(testStorage.getNamespaceName(), CLUSTER_NAME);
@@ -128,7 +129,8 @@ public class KRaftStrimziUpgradeST extends AbstractKRaftUpgradeST {
 
         logPodImages(CO_NAMESPACE, coSelector);
 
-        checkAllComponentsImages(testStorage.getNamespaceName(), acrossUpgradeData);
+        // Temporarily disabled due to https://github.com/strimzi/strimzi-kafka-operator/issues/13277
+        //checkAllComponentsImages(testStorage.getNamespaceName(), acrossUpgradeData);
 
         // Verify that Pods are stable
         PodUtils.verifyThatRunningPodsAreStable(testStorage.getNamespaceName(), CLUSTER_NAME);
@@ -158,7 +160,8 @@ public class KRaftStrimziUpgradeST extends AbstractKRaftUpgradeST {
         // Upgrade kafka
         changeKafkaVersion(testStorage.getNamespaceName(), acrossUpgradeData);
         logComponentsPodImages(testStorage.getNamespaceName());
-        checkAllComponentsImages(testStorage.getNamespaceName(), acrossUpgradeData);
+        // Temporarily disabled due to https://github.com/strimzi/strimzi-kafka-operator/issues/13277
+        //checkAllComponentsImages(testStorage.getNamespaceName(), acrossUpgradeData);
 
         // Verify that Pods are stable
         PodUtils.verifyThatRunningPodsAreStable(testStorage.getNamespaceName(), CLUSTER_NAME);
