@@ -49,13 +49,15 @@ public abstract class Status implements UnknownPropertyPreserving {
         return oldConditions != null ? new ArrayList<>(oldConditions) : new ArrayList<>(0);
     }
 
-    public void addCondition(Condition condition) {
+    // The add methods are synchronized because the conditions might be added from parallel callbacks (e.g. when
+    // reconciling multiple connectors in parallel). Without that, concurrent additions might be lost.
+    public synchronized void addCondition(Condition condition) {
         List<Condition> newConditions = prepareConditionsUpdate();
         newConditions.add(condition);
         setConditions(Collections.unmodifiableList(newConditions));
     }
 
-    public void addConditions(Collection<Condition> conditions) {
+    public synchronized void addConditions(Collection<Condition> conditions) {
         List<Condition> newConditions = prepareConditionsUpdate();
         newConditions.addAll(conditions);
         setConditions(Collections.unmodifiableList(newConditions));
