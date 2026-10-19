@@ -1,4 +1,4 @@
-# NTR: build Strimzi images (Kafka URLs from kafka-versions.yaml), scan with Trivy.
+# NTR: build Strimzi images (Kafka URLs from kafka-versions.yaml), push to GHCR, scan with Trivy.
 name: NTR CI
 
 on:
@@ -19,6 +19,7 @@ env:
   MVN_ARGS: "-B -ntp -DskipTests"
   TRIVY_SEVERITY: "HIGH,CRITICAL"
   TRIVY_EXIT_CODE: "1"
+  DOCKER_REGISTRY: ghcr.io
 
 jobs:
   build:
@@ -26,12 +27,20 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      packages: read
+      packages: write
     outputs:
       operator_image: ${{ steps.meta.outputs.operator_image }}
       strimzi_version: ${{ steps.meta.outputs.strimzi_version }}
+      docker_org: ${{ steps.meta.outputs.docker_org }}
     steps:
       - uses: actions/checkout@v4
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - uses: actions/setup-java@v4
         with:
@@ -91,6 +100,7 @@ jobs:
           export GH_TOKEN="${KAFKA_DIST_TOKEN:-${GITHUB_TOKEN:-}}"
           STRIMZI_VERSION="$(cat release.version)"
           IMAGE_TAG="${STRIMZI_VERSION}"
+          DOCKER_ORG="${{ github.repository_owner }}"
           OPERATOR_IMAGE="strimzi/operator:${IMAGE_TAG}"
 
           make java_install MVN_ARGS="${{ env.MVN_ARGS }}"
@@ -115,6 +125,40 @@ jobs:
 
           echo "operator_image=${OPERATOR_IMAGE}" >> "$GITHUB_OUTPUT"
           echo "strimzi_version=${STRIMZI_VERSION}" >> "$GITHUB_OUTPUT"
+          echo "docker_org=${DOCKER_ORG}" >> "$GITHUB_OUTPUT"
+
+      - name: Push images to GHCR
+        if: github.event_name != 'pull_request'
+        env:
+          DOCKER_BUILDKIT: "1"
+        run: |
+          set -euo pipefail
+          STRIMZI_VERSION="${{ steps.meta.outputs.strimzi_version }}"
+          DOCKER_ORG="${{ steps.meta.outputs.docker_org }}"
+          export DOCKER_REGISTRY="${{ env.DOCKER_REGISTRY }}"
+          export DOCKER_ORG
+
+          make -C docker-images/base docker_push \
+            DOCKER_REGISTRY="$DOCKER_REGISTRY" \
+            DOCKER_ORG="$DOCKER_ORG" \
+            DOCKER_TAG="$STRIMZI_VERSION" \
+            BUILD_TAG="$STRIMZI_VERSION"
+          make -C docker-images/operator docker_push \
+            DOCKER_REGISTRY="$DOCKER_REGISTRY" \
+            DOCKER_ORG="$DOCKER_ORG" \
+            DOCKER_TAG="$STRIMZI_VERSION" \
+            BUILD_TAG="$STRIMZI_VERSION"
+          make -C docker-images/kafka-based docker_push \
+            DOCKER_REGISTRY="$DOCKER_REGISTRY" \
+            DOCKER_ORG="$DOCKER_ORG" \
+            DOCKER_TAG="$STRIMZI_VERSION" \
+            BUILD_TAG="$STRIMZI_VERSION"
+
+          echo "Pushed:"
+          echo "  ${DOCKER_REGISTRY}/${DOCKER_ORG}/operator:${STRIMZI_VERSION}"
+          for v in ${{ env.KAFKA_VERSIONS }}; do
+            echo "  ${DOCKER_REGISTRY}/${DOCKER_ORG}/kafka:${STRIMZI_VERSION}-kafka-${v}"
+          done
 
       - name: Save images
         run: |
@@ -156,8 +200,13 @@ jobs:
 
       - name: Install Trivy
         run: |
-          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh \
-            | sh -s -- -b /usr/local/bin v0.54.1
+          set -euo pipefail
+          VER=0.54.1
+          curl -sSfL \
+            "https://github.com/aquasecurity/trivy/releases/download/v${VER}/trivy_${VER}_Linux-64bit.tar.gz" \
+            -o /tmp/trivy.tgz
+          sudo tar -xzf /tmp/trivy.tgz -C /usr/local/bin trivy
+          trivy --version
 
       - name: Trivy scan images
         run: |

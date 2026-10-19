@@ -1,4 +1,4 @@
-FROM registry.ntrlab.ru/cbr/axiom-jdk-alpine-musl:17
+FROM ghcr.io/devbykidle/axiom-jdk-alpine-musl:17
 
 ARG TARGETOS
 ARG TARGETARCH
