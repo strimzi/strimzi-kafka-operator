@@ -115,7 +115,7 @@ public class KafkaAutoRebalanceImbalanceDetector {
      *
      * @return CompletionStage with boolean - true if there is an active rebalance, false otherwise
      */
-    public CompletionStage<Boolean> hasActiveRebalance() {
+    public CompletionStage<Boolean> isRebalanceRunning() {
         return kafkaRebalanceOperator.listAsync(reconciliation.namespace(),
                 Labels.fromMap(Map.of(Labels.STRIMZI_CLUSTER_LABEL, reconciliation.name())))
                 .thenApply(rebalanceList -> {
