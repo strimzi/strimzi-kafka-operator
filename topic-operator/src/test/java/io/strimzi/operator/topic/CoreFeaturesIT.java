@@ -1446,9 +1446,10 @@ class CoreFeaturesIT implements TestSeparator {
             throws ExecutionException, InterruptedException, TimeoutException {
         startKafkaCluster(1, 1, Map.of("auto.create.topics.enable", "false"));
 
-        // Normally a conflicting KafkaTopic never gets the finalizer, because conflicts are detected before the
-        // finalizer is added. The steps below follow the reproducer from #13264 to get a conflicting KafkaTopic
-        // which has the finalizer anyway.
+        // Deleting a KafkaTopic that is in conflict with another KafkaTopic must not delete the Kafka topic, which
+        // the other KafkaTopic still manages. Normally a conflicting KafkaTopic never gets the finalizer, because
+        // conflicts are detected before the finalizer is added. To get a conflicting KafkaTopic that has the
+        // finalizer, the older KafkaTopic is made unmanaged and managed again after the newer one was reconciled.
         var topicName = "collide";
 
         // given an older KafkaTopic for the topic, which is temporarily unmanaged
