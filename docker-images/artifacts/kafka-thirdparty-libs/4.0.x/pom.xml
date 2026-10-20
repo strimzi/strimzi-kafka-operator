@@ -30,7 +30,7 @@
         <guava.version>32.1.3-jre</guava.version>
         <log4j.version>2.24.3</log4j.version>
         <!-- Keep in sync with Jackson shipped in the Kafka 4.0.x distribution -->
-        <jackson.version>2.18.6</jackson.version>
+        <jackson.version>2.18.11</jackson.version>
     </properties>
 
     <repositories>
