@@ -770,4 +770,55 @@ public class KafkaSpecCheckerTest {
         assertThat(warning.getStatus(), is("True"));
         assertThat(warning.getMessage(), is("ingress type listeners are deprecated."));
     }
+
+    @Test
+    @SuppressWarnings("deprecation")
+    public void checkKafkaExporterAndExtraMetricsBothConfigured() {
+        Kafka kafka = new KafkaBuilder(KAFKA)
+                .editSpec()
+                    .withNewKafkaExporter()
+                    .endKafkaExporter()
+                    .withNewExtraMetrics()
+                    .endExtraMetrics()
+                .endSpec()
+                .build();
+
+        KafkaSpecChecker checker = generateChecker(kafka, List.of(CONTROLLERS, POOL_A), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE);
+        List<Condition> warnings = checker.run();
+        assertThat(warnings, hasSize(1));
+
+        Condition warning = warnings.get(0);
+        assertThat(warning.getReason(), is("KafkaExporterAndExtraMetrics"));
+        assertThat(warning.getStatus(), is("True"));
+        assertThat(warning.getMessage(), is("Both spec.kafkaExporter and spec.extraMetrics are configured. kafkaExporter is deprecated and extraMetrics should be used instead."));
+    }
+
+    @Test
+    @SuppressWarnings("deprecation")
+    public void checkKafkaExporterOnlyConfiguredProducesNoExtraMetricsWarning() {
+        Kafka kafka = new KafkaBuilder(KAFKA)
+                .editSpec()
+                    .withNewKafkaExporter()
+                    .endKafkaExporter()
+                .endSpec()
+                .build();
+
+        KafkaSpecChecker checker = generateChecker(kafka, List.of(CONTROLLERS, POOL_A), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE);
+        List<Condition> warnings = checker.run();
+        assertThat(warnings, hasSize(0));
+    }
+
+    @Test
+    public void checkExtraMetricsOnlyConfiguredProducesNoWarning() {
+        Kafka kafka = new KafkaBuilder(KAFKA)
+                .editSpec()
+                    .withNewExtraMetrics()
+                    .endExtraMetrics()
+                .endSpec()
+                .build();
+
+        KafkaSpecChecker checker = generateChecker(kafka, List.of(CONTROLLERS, POOL_A), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE);
+        List<Condition> warnings = checker.run();
+        assertThat(warnings, hasSize(0));
+    }
 }

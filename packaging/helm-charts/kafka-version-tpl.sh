@@ -16,6 +16,7 @@ get_kafka_does_not_support
 
 # Set the default images
 kafka_exporter_version="{{ template \"strimzi.image\" (merge . (dict \"key\" \"kafkaExporter\" \"tagSuffix\" \"-kafka-${default_kafka_version}\")) }}"
+sova_version="{{ template \"strimzi.image\" (merge . (dict \"key\" \"sova\" \"tagSuffix\" \"-kafka-${default_kafka_version}\")) }}"
 
 for version in "${versions[@]}"
 do
@@ -46,6 +47,8 @@ cat >"$out" <<EOF
 {{- define "strimzi.kafka.image.map" }}
             - name: STRIMZI_DEFAULT_KAFKA_EXPORTER_IMAGE
               value: ${kafka_exporter_version}
+            - name: STRIMZI_DEFAULT_SOVA_IMAGE
+              value: ${sova_version}
             - name: STRIMZI_DEFAULT_CRUISE_CONTROL_IMAGE
               value: ${cruise_control_version}
             - name: STRIMZI_KAFKA_IMAGES

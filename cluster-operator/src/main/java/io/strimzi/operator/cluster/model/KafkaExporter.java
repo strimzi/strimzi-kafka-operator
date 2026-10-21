@@ -129,6 +129,7 @@ public class KafkaExporter extends AbstractModel {
      *
      * @return  KafkaExporter model object when Kafka Exporter is enabled or null if it is disabled.
      */
+    @SuppressWarnings("deprecation")
     public static KafkaExporter fromCrd(Reconciliation reconciliation, Kafka kafkaAssembly, KafkaVersion.Lookup versions, SharedEnvironmentProvider sharedEnvironmentProvider, KafkaClusterSecurityContext securityContext) {
         KafkaExporterSpec spec = kafkaAssembly.getSpec().getKafkaExporter();
 

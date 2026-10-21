@@ -20,6 +20,7 @@ import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlResources;
 import io.strimzi.api.kafka.model.kafka.exporter.KafkaExporterResources;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
+import io.strimzi.api.kafka.model.kafka.sova.SovaResources;
 import io.strimzi.api.kafka.model.podset.StrimziPodSet;
 import io.strimzi.api.kafka.model.podset.StrimziPodSetBuilder;
 import io.strimzi.certs.CertAndKey;
@@ -37,6 +38,7 @@ import io.strimzi.operator.cluster.model.NodeRef;
 import io.strimzi.operator.cluster.model.PodSetUtils;
 import io.strimzi.operator.cluster.model.RestartReason;
 import io.strimzi.operator.cluster.model.RestartReasons;
+import io.strimzi.operator.cluster.model.Sova;
 import io.strimzi.operator.cluster.model.clustersecurity.kafka.AuthenticationConfiguration;
 import io.strimzi.operator.cluster.model.clustersecurity.kafka.KafkaClusterSecurityContext;
 import io.strimzi.operator.cluster.model.clustersecurity.kafka.NoneAuthenticationConfiguration;
@@ -641,7 +643,8 @@ public class CaReconcilerTest {
         return Stream.of(Arguments.of(CruiseControlResources.secretName(NAME), CruiseControl.COMPONENT_TYPE),
                 Arguments.of(KafkaResources.entityTopicOperatorSecretName(NAME), EntityOperator.COMPONENT_TYPE),
                 Arguments.of(KafkaResources.entityUserOperatorSecretName(NAME), EntityOperator.COMPONENT_TYPE),
-                Arguments.of(KafkaExporterResources.secretName(NAME), KafkaExporter.COMPONENT_TYPE));
+                Arguments.of(KafkaExporterResources.secretName(NAME), KafkaExporter.COMPONENT_TYPE),
+                Arguments.of(SovaResources.secretName(NAME), Sova.COMPONENT_TYPE));
     }
 
     @ParameterizedTest
