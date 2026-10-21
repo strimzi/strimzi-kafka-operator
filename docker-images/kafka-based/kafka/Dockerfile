@@ -163,6 +163,17 @@ COPY --from=downloader $KAFKA_EXPORTER_HOME/kafka_exporter $KAFKA_EXPORTER_HOME/
 COPY ./exporter-scripts $KAFKA_EXPORTER_HOME
 
 #####
+# Add Sova
+#####
+ENV SOVA_HOME=/opt/sova
+COPY tmp/sova/ $SOVA_HOME/
+COPY ./sova-scripts $SOVA_HOME/bin
+
+# The Kubernetes Configuration Provider for Apache Kafka and its dependencies. Sova uses the provider to load the
+# certificates from Kubernetes Secrets, but it is not part of the Sova distribution.
+COPY tmp/sova-libs/ $SOVA_HOME/libs/
+
+#####
 # Copy Prometheus JMX Exporter from the downloader stage
 #####
 ENV JMX_EXPORTER_HOME=/opt/prometheus-jmx-exporter

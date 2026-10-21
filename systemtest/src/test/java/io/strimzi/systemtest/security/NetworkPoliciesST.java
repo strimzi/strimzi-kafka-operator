@@ -29,6 +29,7 @@ import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.exporter.KafkaExporterResources;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
+import io.strimzi.api.kafka.model.kafka.sova.SovaResources;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
@@ -37,6 +38,7 @@ import io.strimzi.systemtest.annotations.SkipDefaultNetworkPolicyCreation;
 import io.strimzi.systemtest.docs.TestDocsLabels;
 import io.strimzi.systemtest.kafkaclients.ClientsAuthentication;
 import io.strimzi.systemtest.metrics.KafkaExporterMetricsComponent;
+import io.strimzi.systemtest.metrics.SovaMetricsComponent;
 import io.strimzi.systemtest.resources.CrdClients;
 import io.strimzi.systemtest.resources.operator.ClusterOperatorConfigurationBuilder;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
@@ -183,6 +185,8 @@ public class NetworkPoliciesST extends AbstractST {
                 .endKafka()
                 .withNewKafkaExporter()
                 .endKafkaExporter()
+                .withNewExtraMetrics()
+                .endExtraMetrics()
             .endSpec()
             .build(),
             ScraperTemplates.scraperPod(testStorage.getNamespaceName(), testStorage.getScraperName()).build(),
@@ -270,6 +274,16 @@ public class NetworkPoliciesST extends AbstractST {
 
         metricsCollector.collectMetricsFromPods(TestConstants.METRICS_COLLECT_TIMEOUT);
         assertThat("KafkaExporter metrics should be non-empty", metricsCollector.getCollectedData().size() > 0);
+
+        LOGGER.info("Check metrics exposed by Sova");
+        MetricsCollector sovaMetricsCollector = new MetricsCollector.Builder()
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withScraperPodName(scraperPodName)
+            .withComponent(SovaMetricsComponent.create(testStorage.getNamespaceName(), testStorage.getClusterName()))
+            .build();
+        sovaMetricsCollector.collectMetricsFromPods(TestConstants.METRICS_COLLECT_TIMEOUT);
+        assertThat("Sova metrics should be non-empty", sovaMetricsCollector.getCollectedData().size() > 0);
+
         for (Map.Entry<String, List<Metric>> entry : metricsCollector.getCollectedData().entrySet()) {
             assertThat("Value from collected metric should be non-empty", !entry.getValue().isEmpty());
             MetricsUtils.assertContainsMetric(entry.getValue(), "kafka_consumergroup_current_offset");
@@ -466,6 +480,23 @@ public class NetworkPoliciesST extends AbstractST {
         // if KE is enabled
         if (CrdClients.kafkaClient().inNamespace(namespaceName).withName(clusterName).get().getSpec().getKafkaExporter() != null) {
             assertNotNull(networkPolicyList.stream().filter(networkPolicy ->  networkPolicy.getMetadata().getName().contains(KafkaExporterResources.componentName(clusterName))).findFirst());
+        }
+
+        // if Sova is enabled
+        if (CrdClients.kafkaClient().inNamespace(namespaceName).withName(clusterName).get().getSpec().getExtraMetrics() != null) {
+            NetworkPolicy sovaNp = networkPolicyList.stream()
+                .filter(networkPolicy -> networkPolicy.getMetadata().getName().contains(SovaResources.componentName(clusterName)))
+                .findFirst()
+                .orElse(null);
+            assertNotNull(sovaNp);
+            // Management port (8080) must not have an ingress rule.
+            // Kubelet liveness/readiness probes originate from the node network, not a Pod, so they bypass
+            // NetworkPolicy enforcement — no ingress rule is needed for probes to succeed on a default-deny cluster.
+            assertThat("Sova NetworkPolicy must not open management port 8080",
+                sovaNp.getSpec().getIngress().stream()
+                    .flatMap(rule -> rule.getPorts().stream())
+                    .noneMatch(p -> p.getPort() != null && p.getPort().getIntVal() != null && p.getPort().getIntVal() == 8080),
+                is(true));
         }
     }
 
