@@ -445,7 +445,7 @@ public class KafkaBrokerConfigurationBuilderTest {
 
         assertThat(configuration, isEquivalent("node.id=2",
                 "authorizer.class.name=org.apache.kafka.metadata.authorizer.StandardAuthorizer",
-                "super.users=User:CN=my-cluster-kafka,O=io.strimzi;User:CN=cluster-operator,O=io.strimzi;User:CN=my-cluster-entity-topic-operator,O=io.strimzi;User:CN=my-cluster-entity-user-operator,O=io.strimzi;User:CN=my-cluster-kafka-exporter,O=io.strimzi;User:CN=my-cluster-cruise-control,O=io.strimzi;User:jakub;User:CN=kuba"));
+                "super.users=User:CN=my-cluster-kafka,O=io.strimzi;User:CN=cluster-operator,O=io.strimzi;User:CN=my-cluster-entity-topic-operator,O=io.strimzi;User:CN=my-cluster-entity-user-operator,O=io.strimzi;User:CN=my-cluster-kafka-exporter,O=io.strimzi;User:CN=my-cluster-sova,O=io.strimzi;User:CN=my-cluster-cruise-control,O=io.strimzi;User:jakub;User:CN=kuba"));
     }
 
     @Test
@@ -490,7 +490,7 @@ public class KafkaBrokerConfigurationBuilderTest {
 
         assertThat(configuration, isEquivalent("node.id=2",
                 "authorizer.class.name=org.apache.kafka.metadata.authorizer.StandardAuthorizer",
-                "super.users=User:CN=my-cluster-kafka,O=io.strimzi;User:CN=cluster-operator,O=io.strimzi;User:CN=my-cluster-entity-topic-operator,O=io.strimzi;User:CN=my-cluster-entity-user-operator,O=io.strimzi;User:CN=my-cluster-kafka-exporter,O=io.strimzi;User:CN=my-cluster-cruise-control,O=io.strimzi;User:jakub;User:CN=kuba"));
+                "super.users=User:CN=my-cluster-kafka,O=io.strimzi;User:CN=cluster-operator,O=io.strimzi;User:CN=my-cluster-entity-topic-operator,O=io.strimzi;User:CN=my-cluster-entity-user-operator,O=io.strimzi;User:CN=my-cluster-kafka-exporter,O=io.strimzi;User:CN=my-cluster-sova,O=io.strimzi;User:CN=my-cluster-cruise-control,O=io.strimzi;User:jakub;User:CN=kuba"));
     }
 
     @Test
@@ -2364,7 +2364,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .build();
         assertThat(configuration, isEquivalent("node.id=1",
                 "authorizer.class.name=org.apache.kafka.metadata.authorizer.StandardAuthorizer",
-                "super.users=User:CN=my-cluster-kafka,O=io.strimzi;User:CN=cluster-operator,O=io.strimzi;User:CN=my-cluster-entity-topic-operator,O=io.strimzi;User:CN=my-cluster-entity-user-operator,O=io.strimzi;User:CN=my-cluster-kafka-exporter,O=io.strimzi;User:CN=my-cluster-cruise-control,O=io.strimzi"));
+                "super.users=User:CN=my-cluster-kafka,O=io.strimzi;User:CN=cluster-operator,O=io.strimzi;User:CN=my-cluster-entity-topic-operator,O=io.strimzi;User:CN=my-cluster-entity-user-operator,O=io.strimzi;User:CN=my-cluster-kafka-exporter,O=io.strimzi;User:CN=my-cluster-sova,O=io.strimzi;User:CN=my-cluster-cruise-control,O=io.strimzi"));
 
         configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, broker, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT, KafkaClusterDeployedComponents.ALL)
                 .withAuthorization("my-cluster", auth)

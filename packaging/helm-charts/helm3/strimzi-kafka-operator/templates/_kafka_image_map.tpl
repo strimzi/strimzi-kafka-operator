@@ -7,6 +7,8 @@
 {{- define "strimzi.kafka.image.map" }}
             - name: STRIMZI_DEFAULT_KAFKA_EXPORTER_IMAGE
               value: {{ template "strimzi.image" (merge . (dict "key" "kafkaExporter" "tagSuffix" "-kafka-4.4.0")) }}
+            - name: STRIMZI_DEFAULT_SOVA_IMAGE
+              value: {{ template "strimzi.image" (merge . (dict "key" "sova" "tagSuffix" "-kafka-4.4.0")) }}
             - name: STRIMZI_DEFAULT_CRUISE_CONTROL_IMAGE
               value: {{ template "strimzi.image" (merge . (dict "key" "cruiseControl" "tagSuffix" "-kafka-4.4.0")) }}
             - name: STRIMZI_KAFKA_IMAGES

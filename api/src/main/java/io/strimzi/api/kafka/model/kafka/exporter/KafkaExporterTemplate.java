@@ -13,6 +13,8 @@ import io.strimzi.api.kafka.model.common.template.DeploymentTemplate;
 import io.strimzi.api.kafka.model.common.template.PodDisruptionBudgetTemplate;
 import io.strimzi.api.kafka.model.common.template.PodTemplate;
 import io.strimzi.api.kafka.model.common.template.ResourceTemplate;
+import io.strimzi.api.kafka.model.kafka.sova.SovaTemplate;
+import io.strimzi.crdgenerator.annotations.DeprecatedType;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
@@ -32,6 +34,8 @@ import java.util.Map;
 @JsonPropertyOrder({"deployment", "pod", "container", "serviceAccount", "podDisruptionBudget"})
 @EqualsAndHashCode
 @ToString
+@Deprecated
+@DeprecatedType(replacedWithType = SovaTemplate.class)
 public class KafkaExporterTemplate implements UnknownPropertyPreserving {
     private DeploymentTemplate deployment;
     private PodTemplate pod;

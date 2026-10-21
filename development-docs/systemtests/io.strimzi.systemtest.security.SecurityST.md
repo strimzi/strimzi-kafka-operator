@@ -55,7 +55,7 @@
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Deploy Kafka cluster with TLS listener, Entity Operator, Cruise Control, and KafkaExporter. | Kafka cluster is deployed. |
+| 1. | Deploy Kafka cluster with TLS listener, Entity Operator, Cruise Control, KafkaExporter, and Sova. | Kafka cluster is deployed. |
 | 2. | Create KafkaUser and KafkaTopic, produce and consume messages over TLS. | Messages are exchanged successfully. |
 | 3. | Annotate both cluster and clients CA certificate secrets with strimzi.io/force-renew. | CA cert renewal is triggered for both CAs. |
 | 4. | Wait for rolling updates of all components. | All components roll. |
@@ -87,16 +87,16 @@
 
 ## testAutoRenewClientsCaCertsTriggeredByAnno
 
-**Description:** Test verifying that annotating the clients CA certificate secret with strimzi.io/force-renew triggers automatic renewal of the clients CA certificate, causing rolling updates of Kafka brokers without rolling Entity Operator, KafkaExporter, or Cruise Control.
+**Description:** Test verifying that annotating the clients CA certificate secret with strimzi.io/force-renew triggers automatic renewal of the clients CA certificate, causing rolling updates of Kafka brokers without rolling Entity Operator, KafkaExporter, Sova, or Cruise Control.
 
 **Steps:**
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Deploy Kafka cluster with TLS listener, Entity Operator, Cruise Control, and KafkaExporter. | Kafka cluster is deployed. |
+| 1. | Deploy Kafka cluster with TLS listener, Entity Operator, Cruise Control, KafkaExporter, and Sova. | Kafka cluster is deployed. |
 | 2. | Create KafkaUser and KafkaTopic, produce and consume messages over TLS. | Messages are exchanged successfully. |
 | 3. | Annotate the clients CA certificate secret with strimzi.io/force-renew. | CA cert renewal is triggered. |
-| 4. | Wait for Kafka rolling update; verify Entity Operator, KafkaExporter, and Cruise Control do not roll. | Only Kafka rolls. |
+| 4. | Wait for Kafka rolling update; verify Entity Operator, KafkaExporter, Sova, and Cruise Control do not roll. | Only Kafka rolls. |
 | 5. | Verify the CA certificate has changed, the original client can still consume, and a newly created KafkaUser can also consume. | New certificate is in use, existing client works, and new user receives a valid cert signed by the renewed CA. |
 
 **Labels:**
@@ -106,16 +106,16 @@
 
 ## testAutoRenewClusterCaCertsTriggeredByAnno
 
-**Description:** Test verifying that annotating the cluster CA certificate secret with strimzi.io/force-renew triggers automatic renewal of the cluster CA certificate, causing rolling updates of Kafka brokers, controllers, Entity Operator, KafkaExporter, and Cruise Control.
+**Description:** Test verifying that annotating the cluster CA certificate secret with strimzi.io/force-renew triggers automatic renewal of the cluster CA certificate, causing rolling updates of Kafka brokers, controllers, Entity Operator, KafkaExporter, Sova, and Cruise Control.
 
 **Steps:**
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Deploy Kafka cluster with TLS listener, Entity Operator, Cruise Control, and KafkaExporter. | Kafka cluster is deployed. |
+| 1. | Deploy Kafka cluster with TLS listener, Entity Operator, Cruise Control, KafkaExporter, and Sova. | Kafka cluster is deployed. |
 | 2. | Create KafkaUser and KafkaTopic, produce and consume messages over TLS. | Messages are exchanged successfully. |
 | 3. | Annotate the cluster CA certificate secret with strimzi.io/force-renew. | CA cert renewal is triggered. |
-| 4. | Wait for rolling updates of Kafka, Entity Operator, KafkaExporter, and Cruise Control. | All components roll. |
+| 4. | Wait for rolling updates of Kafka, Entity Operator, KafkaExporter, Sova, and Cruise Control. | All components roll. |
 | 5. | Verify the CA certificate has changed, the original client can still consume, and a newly created KafkaUser can also consume. | New certificate is in use, existing client works, and new user receives a valid cert signed by the renewed CA. |
 
 **Labels:**
@@ -131,7 +131,7 @@
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Deploy Kafka cluster with TLS listener, Entity Operator, Cruise Control, and KafkaExporter. | Kafka cluster is deployed. |
+| 1. | Deploy Kafka cluster with TLS listener, Entity Operator, Cruise Control, KafkaExporter, and Sova. | Kafka cluster is deployed. |
 | 2. | Create KafkaUser and KafkaTopic, produce and consume messages over TLS. | Messages are exchanged successfully. |
 | 3. | Annotate both cluster and clients CA key secrets with strimzi.io/force-replace. | CA key replacement is triggered for both CAs. |
 | 4. | Wait for 3 rolling updates of all components; delete the CO pod after the first roll to verify recovery. | All components complete 3 rolling updates and the CO recovers. |
@@ -144,16 +144,16 @@
 
 ## testAutoReplaceClientsCaKeysTriggeredByAnno
 
-**Description:** Test verifying that annotating the clients CA key secret with strimzi.io/force-replace triggers automatic replacement of the clients CA key pair, causing 1 rolling update of Kafka brokers without rolling Entity Operator, KafkaExporter, or Cruise Control.
+**Description:** Test verifying that annotating the clients CA key secret with strimzi.io/force-replace triggers automatic replacement of the clients CA key pair, causing 1 rolling update of Kafka brokers without rolling Entity Operator, KafkaExporter, Sova, or Cruise Control.
 
 **Steps:**
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Deploy Kafka cluster with TLS listener, Entity Operator, Cruise Control, and KafkaExporter. | Kafka cluster is deployed. |
+| 1. | Deploy Kafka cluster with TLS listener, Entity Operator, Cruise Control, KafkaExporter, and Sova. | Kafka cluster is deployed. |
 | 2. | Create KafkaUser and KafkaTopic, produce and consume messages over TLS. | Messages are exchanged successfully. |
 | 3. | Annotate the clients CA key secret with strimzi.io/force-replace. | CA key replacement is triggered. |
-| 4. | Wait for 1 Kafka rolling update; verify Entity Operator, KafkaExporter, and Cruise Control do not roll. | Only Kafka rolls once. |
+| 4. | Wait for 1 Kafka rolling update; verify Entity Operator, KafkaExporter, Sova, and Cruise Control do not roll. | Only Kafka rolls once. |
 | 5. | Verify the CA key has changed, the original client can still consume, and a newly created KafkaUser can also consume. | New key is in use, existing client works, and new user receives a valid cert signed by the new CA key. |
 
 **Labels:**
@@ -169,7 +169,7 @@
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Deploy Kafka cluster with TLS listener, Entity Operator, Cruise Control, and KafkaExporter. | Kafka cluster is deployed. |
+| 1. | Deploy Kafka cluster with TLS listener, Entity Operator, Cruise Control, KafkaExporter, and Sova. | Kafka cluster is deployed. |
 | 2. | Create KafkaUser and KafkaTopic, produce and consume messages over TLS. | Messages are exchanged successfully. |
 | 3. | Annotate the cluster CA key secret with strimzi.io/force-replace. | CA key replacement is triggered. |
 | 4. | Wait for 3 rolling updates of all components; delete the CO pod after the first roll to verify recovery. | All components complete 3 rolling updates and the CO recovers. |

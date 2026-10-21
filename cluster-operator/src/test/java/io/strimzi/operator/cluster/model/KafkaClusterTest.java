@@ -39,6 +39,7 @@ import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlResources;
 import io.strimzi.api.kafka.model.kafka.exporter.KafkaExporterResources;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
+import io.strimzi.api.kafka.model.kafka.sova.SovaResources;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePool;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePoolBuilder;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePoolStatus;
@@ -898,6 +899,12 @@ public class KafkaClusterTest {
                 .endPodSelector()
                 .build();
 
+        NetworkPolicyPeer sovaPeer = new NetworkPolicyPeerBuilder()
+                .withNewPodSelector()
+                    .withMatchLabels(Map.of(Labels.STRIMZI_NAME_LABEL, SovaResources.componentName(CLUSTER)))
+                .endPodSelector()
+                .build();
+
         NetworkPolicyPeer cruiseControlPeer = new NetworkPolicyPeerBuilder()
                 .withNewPodSelector()
                     .withMatchLabels(Map.of(Labels.STRIMZI_NAME_LABEL, CruiseControlResources.componentName(CLUSTER)))
@@ -933,10 +940,11 @@ public class KafkaClusterTest {
 
         List<NetworkPolicyPeer> rules = np.getSpec().getIngress().stream().filter(ing -> ing.getPorts().get(0).getPort().equals(new IntOrString(KafkaCluster.REPLICATION_PORT))).map(NetworkPolicyIngressRule::getFrom).findFirst().orElseThrow();
 
-        assertThat(rules.size(), is(5));
+        assertThat(rules.size(), is(6));
         assertThat(rules.contains(kafkaBrokersPeer), is(true));
         assertThat(rules.contains(eoPeer), is(true));
         assertThat(rules.contains(kafkaExporterPeer), is(true));
+        assertThat(rules.contains(sovaPeer), is(true));
         assertThat(rules.contains(cruiseControlPeer), is(true));
         assertThat(rules.contains(clusterOperatorPeer), is(true));
 
@@ -947,10 +955,11 @@ public class KafkaClusterTest {
 
         rules = np.getSpec().getIngress().stream().filter(ing -> ing.getPorts().get(0).getPort().equals(new IntOrString(KafkaCluster.REPLICATION_PORT))).map(NetworkPolicyIngressRule::getFrom).findFirst().orElseThrow();
 
-        assertThat(rules.size(), is(5));
+        assertThat(rules.size(), is(6));
         assertThat(rules.contains(kafkaBrokersPeer), is(true));
         assertThat(rules.contains(eoPeer), is(true));
         assertThat(rules.contains(kafkaExporterPeer), is(true));
+        assertThat(rules.contains(sovaPeer), is(true));
         assertThat(rules.contains(cruiseControlPeer), is(true));
         assertThat(rules.contains(clusterOperatorPeerSameNamespace), is(true));
 
@@ -961,10 +970,11 @@ public class KafkaClusterTest {
 
         rules = np.getSpec().getIngress().stream().filter(ing -> ing.getPorts().get(0).getPort().equals(new IntOrString(KafkaCluster.REPLICATION_PORT))).map(NetworkPolicyIngressRule::getFrom).findFirst().orElseThrow();
 
-        assertThat(rules.size(), is(5));
+        assertThat(rules.size(), is(6));
         assertThat(rules.contains(kafkaBrokersPeer), is(true));
         assertThat(rules.contains(eoPeer), is(true));
         assertThat(rules.contains(kafkaExporterPeer), is(true));
+        assertThat(rules.contains(sovaPeer), is(true));
         assertThat(rules.contains(cruiseControlPeer), is(true));
         assertThat(rules.contains(clusterOperatorPeerNamespaceWithLabels), is(true));
     }

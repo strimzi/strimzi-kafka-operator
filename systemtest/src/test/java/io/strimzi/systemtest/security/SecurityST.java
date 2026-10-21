@@ -30,6 +30,7 @@ import io.strimzi.api.kafka.model.kafka.exporter.KafkaExporterResources;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthenticationTls;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
+import io.strimzi.api.kafka.model.kafka.sova.SovaResources;
 import io.strimzi.api.kafka.model.user.acl.StrimziAclOperation;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.ca.Ca;
@@ -115,12 +116,12 @@ class SecurityST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(SecurityST.class);
 
     @TestDoc(
-        description = @Desc("Test verifying that annotating the cluster CA certificate secret with strimzi.io/force-renew triggers automatic renewal of the cluster CA certificate, causing rolling updates of Kafka brokers, controllers, Entity Operator, KafkaExporter, and Cruise Control."),
+        description = @Desc("Test verifying that annotating the cluster CA certificate secret with strimzi.io/force-renew triggers automatic renewal of the cluster CA certificate, causing rolling updates of Kafka brokers, controllers, Entity Operator, KafkaExporter, Sova, and Cruise Control."),
         steps = {
-            @Step(value = "Deploy Kafka cluster with TLS listener, Entity Operator, Cruise Control, and KafkaExporter.", expected = "Kafka cluster is deployed."),
+            @Step(value = "Deploy Kafka cluster with TLS listener, Entity Operator, Cruise Control, KafkaExporter, and Sova.", expected = "Kafka cluster is deployed."),
             @Step(value = "Create KafkaUser and KafkaTopic, produce and consume messages over TLS.", expected = "Messages are exchanged successfully."),
             @Step(value = "Annotate the cluster CA certificate secret with strimzi.io/force-renew.", expected = "CA cert renewal is triggered."),
-            @Step(value = "Wait for rolling updates of Kafka, Entity Operator, KafkaExporter, and Cruise Control.", expected = "All components roll."),
+            @Step(value = "Wait for rolling updates of Kafka, Entity Operator, KafkaExporter, Sova, and Cruise Control.", expected = "All components roll."),
             @Step(value = "Verify the CA certificate has changed, the original client can still consume, and a newly created KafkaUser can also consume.", expected = "New certificate is in use, existing client works, and new user receives a valid cert signed by the renewed CA.")
         },
         labels = {
@@ -141,12 +142,12 @@ class SecurityST extends AbstractST {
     }
 
     @TestDoc(
-        description = @Desc("Test verifying that annotating the clients CA certificate secret with strimzi.io/force-renew triggers automatic renewal of the clients CA certificate, causing rolling updates of Kafka brokers without rolling Entity Operator, KafkaExporter, or Cruise Control."),
+        description = @Desc("Test verifying that annotating the clients CA certificate secret with strimzi.io/force-renew triggers automatic renewal of the clients CA certificate, causing rolling updates of Kafka brokers without rolling Entity Operator, KafkaExporter, Sova, or Cruise Control."),
         steps = {
-            @Step(value = "Deploy Kafka cluster with TLS listener, Entity Operator, Cruise Control, and KafkaExporter.", expected = "Kafka cluster is deployed."),
+            @Step(value = "Deploy Kafka cluster with TLS listener, Entity Operator, Cruise Control, KafkaExporter, and Sova.", expected = "Kafka cluster is deployed."),
             @Step(value = "Create KafkaUser and KafkaTopic, produce and consume messages over TLS.", expected = "Messages are exchanged successfully."),
             @Step(value = "Annotate the clients CA certificate secret with strimzi.io/force-renew.", expected = "CA cert renewal is triggered."),
-            @Step(value = "Wait for Kafka rolling update; verify Entity Operator, KafkaExporter, and Cruise Control do not roll.", expected = "Only Kafka rolls."),
+            @Step(value = "Wait for Kafka rolling update; verify Entity Operator, KafkaExporter, Sova, and Cruise Control do not roll.", expected = "Only Kafka rolls."),
             @Step(value = "Verify the CA certificate has changed, the original client can still consume, and a newly created KafkaUser can also consume.", expected = "New certificate is in use, existing client works, and new user receives a valid cert signed by the renewed CA.")
         },
         labels = {
@@ -169,7 +170,7 @@ class SecurityST extends AbstractST {
     @TestDoc(
         description = @Desc("Test verifying that annotating both cluster and clients CA certificate secrets with strimzi.io/force-renew triggers automatic renewal of all CA certificates, causing rolling updates of all components."),
         steps = {
-            @Step(value = "Deploy Kafka cluster with TLS listener, Entity Operator, Cruise Control, and KafkaExporter.", expected = "Kafka cluster is deployed."),
+            @Step(value = "Deploy Kafka cluster with TLS listener, Entity Operator, Cruise Control, KafkaExporter, and Sova.", expected = "Kafka cluster is deployed."),
             @Step(value = "Create KafkaUser and KafkaTopic, produce and consume messages over TLS.", expected = "Messages are exchanged successfully."),
             @Step(value = "Annotate both cluster and clients CA certificate secrets with strimzi.io/force-renew.", expected = "CA cert renewal is triggered for both CAs."),
             @Step(value = "Wait for rolling updates of all components.", expected = "All components roll."),
@@ -243,6 +244,7 @@ class SecurityST extends AbstractST {
         Map<String, String> eoPod = DeploymentUtils.depSnapshot(testStorage.getNamespaceName(), testStorage.getEoDeploymentName());
         Map<String, String> ccPod = DeploymentUtils.depSnapshot(testStorage.getNamespaceName(), CruiseControlResources.componentName(testStorage.getClusterName()));
         Map<String, String> kePod = DeploymentUtils.depSnapshot(testStorage.getNamespaceName(), KafkaExporterResources.componentName(testStorage.getClusterName()));
+        Map<String, String> sovaPod = DeploymentUtils.depSnapshot(testStorage.getNamespaceName(), SovaResources.componentName(testStorage.getClusterName()));
 
         LOGGER.info("Triggering CA cert renewal by adding the annotation");
         Map<String, String> initialCaCerts = new HashMap<>();
@@ -271,8 +273,9 @@ class SecurityST extends AbstractST {
             eoPod = DeploymentUtils.waitTillDepHasRolled(testStorage.getNamespaceName(), testStorage.getEoDeploymentName(), 1, eoPod);
         }
         if (keAndCCShouldRoll) {
-            LOGGER.info("Waiting for CC and KE rolling restart");
+            LOGGER.info("Waiting for CC, KE and Sova rolling restart");
             kePod = DeploymentUtils.waitTillDepHasRolled(testStorage.getNamespaceName(), KafkaExporterResources.componentName(testStorage.getClusterName()), 1, kePod);
+            sovaPod = DeploymentUtils.waitTillDepHasRolled(testStorage.getNamespaceName(), SovaResources.componentName(testStorage.getClusterName()), 1, sovaPod);
             ccPod = DeploymentUtils.waitTillDepHasRolled(testStorage.getNamespaceName(), CruiseControlResources.componentName(testStorage.getClusterName()), 1, ccPod);
         }
 
@@ -312,13 +315,14 @@ class SecurityST extends AbstractST {
         if (!keAndCCShouldRoll) {
             assertThat("CC Pod should not roll, but did.", DeploymentUtils.depSnapshot(testStorage.getNamespaceName(), CruiseControlResources.componentName(testStorage.getClusterName())), is(ccPod));
             assertThat("KE Pod should not roll, but did.", DeploymentUtils.depSnapshot(testStorage.getNamespaceName(), KafkaExporterResources.componentName(testStorage.getClusterName())), is(kePod));
+            assertThat("Sova Pod should not roll, but did.", DeploymentUtils.depSnapshot(testStorage.getNamespaceName(), SovaResources.componentName(testStorage.getClusterName())), is(sovaPod));
         }
     }
 
     @TestDoc(
         description = @Desc("Test verifying that annotating the cluster CA key secret with strimzi.io/force-replace triggers automatic replacement of the cluster CA key pair, causing 3 rolling updates of all components (including a final roll for old certificate removal), with a CO pod restart between rolls to verify recovery."),
         steps = {
-            @Step(value = "Deploy Kafka cluster with TLS listener, Entity Operator, Cruise Control, and KafkaExporter.", expected = "Kafka cluster is deployed."),
+            @Step(value = "Deploy Kafka cluster with TLS listener, Entity Operator, Cruise Control, KafkaExporter, and Sova.", expected = "Kafka cluster is deployed."),
             @Step(value = "Create KafkaUser and KafkaTopic, produce and consume messages over TLS.", expected = "Messages are exchanged successfully."),
             @Step(value = "Annotate the cluster CA key secret with strimzi.io/force-replace.", expected = "CA key replacement is triggered."),
             @Step(value = "Wait for 3 rolling updates of all components; delete the CO pod after the first roll to verify recovery.", expected = "All components complete 3 rolling updates and the CO recovers."),
@@ -341,12 +345,12 @@ class SecurityST extends AbstractST {
     }
 
     @TestDoc(
-        description = @Desc("Test verifying that annotating the clients CA key secret with strimzi.io/force-replace triggers automatic replacement of the clients CA key pair, causing 1 rolling update of Kafka brokers without rolling Entity Operator, KafkaExporter, or Cruise Control."),
+        description = @Desc("Test verifying that annotating the clients CA key secret with strimzi.io/force-replace triggers automatic replacement of the clients CA key pair, causing 1 rolling update of Kafka brokers without rolling Entity Operator, KafkaExporter, Sova, or Cruise Control."),
         steps = {
-            @Step(value = "Deploy Kafka cluster with TLS listener, Entity Operator, Cruise Control, and KafkaExporter.", expected = "Kafka cluster is deployed."),
+            @Step(value = "Deploy Kafka cluster with TLS listener, Entity Operator, Cruise Control, KafkaExporter, and Sova.", expected = "Kafka cluster is deployed."),
             @Step(value = "Create KafkaUser and KafkaTopic, produce and consume messages over TLS.", expected = "Messages are exchanged successfully."),
             @Step(value = "Annotate the clients CA key secret with strimzi.io/force-replace.", expected = "CA key replacement is triggered."),
-            @Step(value = "Wait for 1 Kafka rolling update; verify Entity Operator, KafkaExporter, and Cruise Control do not roll.", expected = "Only Kafka rolls once."),
+            @Step(value = "Wait for 1 Kafka rolling update; verify Entity Operator, KafkaExporter, Sova, and Cruise Control do not roll.", expected = "Only Kafka rolls once."),
             @Step(value = "Verify the CA key has changed, the original client can still consume, and a newly created KafkaUser can also consume.", expected = "New key is in use, existing client works, and new user receives a valid cert signed by the new CA key.")
         },
         labels = {
@@ -368,7 +372,7 @@ class SecurityST extends AbstractST {
     @TestDoc(
         description = @Desc("Test verifying that annotating both cluster and clients CA key secrets with strimzi.io/force-replace triggers automatic replacement of all CA key pairs, causing 3 rolling updates of all components (including a final roll for old certificate removal), with a CO pod restart between rolls to verify recovery."),
         steps = {
-            @Step(value = "Deploy Kafka cluster with TLS listener, Entity Operator, Cruise Control, and KafkaExporter.", expected = "Kafka cluster is deployed."),
+            @Step(value = "Deploy Kafka cluster with TLS listener, Entity Operator, Cruise Control, KafkaExporter, and Sova.", expected = "Kafka cluster is deployed."),
             @Step(value = "Create KafkaUser and KafkaTopic, produce and consume messages over TLS.", expected = "Messages are exchanged successfully."),
             @Step(value = "Annotate both cluster and clients CA key secrets with strimzi.io/force-replace.", expected = "CA key replacement is triggered for both CAs."),
             @Step(value = "Wait for 3 rolling updates of all components; delete the CO pod after the first roll to verify recovery.", expected = "All components complete 3 rolling updates and the CO recovers."),
@@ -442,6 +446,7 @@ class SecurityST extends AbstractST {
         Map<String, String> eoPod = DeploymentUtils.depSnapshot(testStorage.getNamespaceName(), testStorage.getEoDeploymentName());
         Map<String, String> ccPod = DeploymentUtils.depSnapshot(testStorage.getNamespaceName(), CruiseControlResources.componentName(testStorage.getClusterName()));
         Map<String, String> kePod = DeploymentUtils.depSnapshot(testStorage.getNamespaceName(), KafkaExporterResources.componentName(testStorage.getClusterName()));
+        Map<String, String> sovaPod = DeploymentUtils.depSnapshot(testStorage.getNamespaceName(), SovaResources.componentName(testStorage.getClusterName()));
 
         LOGGER.info("Triggering CA cert renewal by adding the annotation");
         Map<String, String> initialCaKeys = new HashMap<>();
@@ -486,10 +491,14 @@ class SecurityST extends AbstractST {
             }
 
             if (keAndCCShouldRoll) {
-                LOGGER.info("Waiting for KafkaExporter and CruiseControl rolling restart ({})", i);
+                LOGGER.info("Waiting for KafkaExporter, Sova and CruiseControl rolling restart ({})", i);
                 kePod = i < expectedRolls ?
                     DeploymentUtils.waitTillDepHasRolled(testStorage.getNamespaceName(), KafkaExporterResources.componentName(testStorage.getClusterName()), kePod) :
                     DeploymentUtils.waitTillDepHasRolled(testStorage.getNamespaceName(), KafkaExporterResources.componentName(testStorage.getClusterName()), 1, kePod);
+
+                sovaPod = i < expectedRolls ?
+                    DeploymentUtils.waitTillDepHasRolled(testStorage.getNamespaceName(), SovaResources.componentName(testStorage.getClusterName()), sovaPod) :
+                    DeploymentUtils.waitTillDepHasRolled(testStorage.getNamespaceName(), SovaResources.componentName(testStorage.getClusterName()), 1, sovaPod);
 
                 ccPod = i < expectedRolls ?
                     DeploymentUtils.waitTillDepHasRolled(testStorage.getNamespaceName(), CruiseControlResources.componentName(testStorage.getClusterName()), ccPod) :
@@ -536,6 +545,7 @@ class SecurityST extends AbstractST {
         if (!keAndCCShouldRoll) {
             assertThat("CC Pod should not roll, but did.", DeploymentUtils.depSnapshot(testStorage.getNamespaceName(), CruiseControlResources.componentName(testStorage.getClusterName())), is(ccPod));
             assertThat("KE Pod should not roll, but did.", DeploymentUtils.depSnapshot(testStorage.getNamespaceName(), KafkaExporterResources.componentName(testStorage.getClusterName())), is(kePod));
+            assertThat("Sova Pod should not roll, but did.", DeploymentUtils.depSnapshot(testStorage.getNamespaceName(), SovaResources.componentName(testStorage.getClusterName())), is(sovaPod));
         }
     }
 
@@ -584,6 +594,8 @@ class SecurityST extends AbstractST {
                 .endCruiseControl()
                 .withNewKafkaExporter()
                 .endKafkaExporter()
+                .withNewExtraMetrics()
+                .endExtraMetrics()
             .endSpec()
             .build();
 
