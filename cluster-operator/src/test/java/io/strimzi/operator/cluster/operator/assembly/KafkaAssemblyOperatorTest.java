@@ -47,6 +47,7 @@ import io.strimzi.api.kafka.model.kafka.exporter.KafkaExporterSpec;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListener;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
+import io.strimzi.api.kafka.model.kafka.sova.SovaResources;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePool;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePoolBuilder;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePoolList;
@@ -676,12 +677,13 @@ public class KafkaAssemblyOperatorTest {
                 }
 
                 // Check PDBs
-                assertThat(pdbCaptor.getAllValues(), hasSize(4));
+                assertThat(pdbCaptor.getAllValues(), hasSize(5));
                 Set<String> expectedPdbNames = new HashSet<>();
                 expectedPdbNames.add(KafkaResources.kafkaComponentName(CLUSTER_NAME));
                 String entityOperatorName = KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME);
                 String exporterName = KafkaExporterResources.componentName(CLUSTER_NAME);
                 String cruiseControlName = CruiseControlResources.componentName(CLUSTER_NAME);
+                String sovaName = SovaResources.componentName(CLUSTER_NAME);
                 if (kafka.getSpec().getEntityOperator() != null) {
                     expectedPdbNames.add(entityOperatorName);
                 }
@@ -690,6 +692,9 @@ public class KafkaAssemblyOperatorTest {
                 }
                 if (kafka.getSpec().getCruiseControl() != null) {
                     expectedPdbNames.add(cruiseControlName);
+                }
+                if (kafka.getSpec().getExtraMetrics() != null) {
+                    expectedPdbNames.add(sovaName);
                 }
                 assertThat(
                     pdbCaptor.getAllValues().stream()
