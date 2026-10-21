@@ -43,8 +43,9 @@ include::assembly_metrics-prometheus-setup.adoc[leveloffset=+1]
 include::../../modules/metrics/proc_metrics-grafana-dashboard.adoc[leveloffset=+1]
 //How to monitor custom resources managed by Strimzi
 include::../../modules/metrics/proc_metrics-custom-resource-monitoring.adoc[leveloffset=+1]
-//How to monitor Consumer lag
+//How to monitor Consumer lag with Sova
 include::../../modules/metrics/con_kafka-exporter-lag.adoc[leveloffset=+1]
+include::../../modules/metrics/proc-sova-deploy.adoc[leveloffset=+2]
 include::../../modules/metrics/proc-kafka-exporter-deploy.adoc[leveloffset=+2]
 //Understanding metrics for Cruise Control
 include::../../modules/metrics/con-metrics-cruise-control.adoc[leveloffset=+1]
