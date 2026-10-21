@@ -1,0 +1,40 @@
+:_mod-docs-content-type: CONCEPT
+
+// Module included in the following assemblies:
+//
+// assembly-config.adoc
+
+[id='con-sova-{context}']
+= Capturing consumer lag metrics with Sova
+
+[role="_abstract"]
+Capture consumer group lag metrics to monitor whether consumers are keeping up with message production.
+Consumer lag metrics help you detect slow or stalled consumers and diagnose processing issues.
+
+Sova is a JVM-based consumer lag exporter that replaces the deprecated `kafkaExporter` component.
+It exposes consumer group lag metrics that are not available through broker JMX metrics.
+These metrics are typically scraped by Prometheus and visualized in monitoring dashboards.
+
+Sova exposes the same metric names as Kafka Exporter, so existing Prometheus rules and Grafana dashboards continue to work without modification after migration.
+
+Enable Sova when you need to do the following:
+
+* Monitor consumer group lag
+* Track consumer progress over time
+* Alert on slow consumers
+
+Enable Sova by adding an `extraMetrics` section to the `Kafka` custom resource.
+
+[source,yaml,subs="+attributes"]
+----
+spec:
+  # Sova (optional)
+  extraMetrics: {} # <1>
+----
+<1> An empty object enables Sova with default settings (collect all groups and topics).
+
+NOTE: `spec.kafkaExporter` is deprecated.
+Migrate to `spec.extraMetrics` by mapping your existing fields as described in xref:proc-sova-deploy-{context}[].
+
+For configuration details, metrics, and dashboards, see
+xref:con-metrics-kafka-exporter-lag-{context}[Consumer lag monitoring].

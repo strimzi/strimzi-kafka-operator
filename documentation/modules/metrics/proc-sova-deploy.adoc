@@ -1,0 +1,168 @@
+:_mod-docs-content-type: PROCEDURE
+
+// This assembly is included in the following assemblies:
+//
+// metrics/assembly-metrics.adoc
+
+[id='proc-sova-deploy-{context}']
+= Deploying Sova
+
+[role="_abstract"]
+To monitor consumer lag in your Kafka cluster, configure Sova in the `Kafka` custom resource.
+Sova exposes lag data as Prometheus metrics, which can be visualized in Grafana.
+A dedicated Grafana dashboard for Sova (`strimzi-sova.json`) is included in the xref:ref-metrics-dashboards-{context}[example Grafana dashboards] provided by Strimzi.
+The Kafka Exporter dashboard (`strimzi-kafka-exporter.json`) also works unchanged because Sova exposes the same metric names.
+
+IMPORTANT: Sova provides only metrics related to consumer groups and lag.
+To collect general Kafka metrics, configure metrics on the Kafka brokers.
+For more information, see xref:assembly-metrics-setup-{context}[].
+
+.Prerequisites
+
+* Consumer groups must be in use.
++
+Sova relies on data from the `__consumer_offsets` topic to report consumer lag metrics.
+This topic only contains information if consumer groups are actively committing offsets.
+
+.Procedure
+
+. Add `extraMetrics` configuration to the `spec` section of the `Kafka` resource.
++
+.Example configuration for deploying Sova
+[source,yaml,subs="attributes+"]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+  # ...
+  extraMetrics: # <1>
+    # Collection filters (recommended)
+    groupRegex: ".*" # <2>
+    topicRegex: ".*" # <3>
+    groupExcludeRegex: "^excluded-.*" # <4>
+    topicExcludeRegex: "^excluded-.*" # <5>
+    # Resources requests and limits (recommended)
+    resources: # <6>
+      requests:
+        cpu: 200m
+        memory: 64Mi
+      limits:
+        cpu: 500m
+        memory: 128Mi
+    # Readiness probe (optional)
+    readinessProbe: # <7>
+      initialDelaySeconds: 15
+      timeoutSeconds: 5
+    # Liveness probe (optional)
+    livenessProbe: # <8>
+      initialDelaySeconds: 15
+      timeoutSeconds: 5
+    # Pod template (optional)
+    template: # <9>
+      pod:
+        metadata:
+          labels:
+            label1: value1
+        imagePullSecrets:
+          - name: my-docker-credentials
+        securityContext:
+          runAsUser: 1000001
+          fsGroup: 0
+        terminationGracePeriodSeconds: 120
+    # Custom image (optional)
+    image: my-registry.io/my-org/my-sova-cluster:latest # <10>
+# ...
+----
+<1> Enables Sova. An empty object (`extraMetrics: {}`) uses default settings.
+<2> Regular expression to specify consumer groups to include in metrics.
+<3> Regular expression to specify topics to include in metrics.
+<4> Regular expression to specify consumer groups to exclude from metrics.
+<5> Regular expression to specify topics to exclude from metrics.
+<6> CPU and memory resources to reserve.
+<7> Readiness probe to check when Sova is ready to serve metrics.
+<8> Liveness probe to detect and restart Sova if it becomes unresponsive.
+<9> Template customization. Here a pod is scheduled with additional security attributes.
+<10> **ADVANCED OPTION:** Container image configuration, which is recommended only in special situations.
+
+. Apply the changes to the `Kafka` configuration.
++
+Resources, including a `Deployment` and `Pods`, are created for Sova.
+The Sova pods expose metrics on the port named `tcp-prometheus`.
+
+. Configure Prometheus to scrape metrics from the Sova endpoint.
++
+If you are using the example Prometheus deployment, it is already set up to discover and scrape Sova metrics.
+The `PodMonitor` resource named `kafka-resources-metrics` matches pods with the `strimzi.io/kind: Kafka` label, which includes Sova pods.
+For more information, see xref:proc-metrics-deploying-prometheus-{context}[].
+
+. Import the Sova dashboard into Grafana to visualize consumer lag.
++
+Import `strimzi-sova.json` from the `examples/metrics/grafana-dashboards` directory.
+The `strimzi-kafka-exporter.json` dashboard also works without modification because Sova exposes the same metric names.
+For more information, see xref:proc-metrics-grafana-dashboard-{context}[].
++
+TIP: Use the _Lag by consumer group_ and _Messages consumed per second_ panels to evaluate lag and the impact of tuning actions.
+
+.Migrating from `kafkaExporter` to `extraMetrics`
+
+The `spec.kafkaExporter` field is deprecated.
+Migrate by moving the configuration to `spec.extraMetrics` using the field mapping in the following table.
+
+[cols="2,2,3a",options="header"]
+|===
+|`kafkaExporter` field |`extraMetrics` field |Notes
+
+|`groupRegex`
+|`groupRegex`
+|Regex semantics differ: Sova performs a full match against the entire group name (equivalent to anchoring with `^` and `$`), while the Go-based Kafka Exporter applies an unanchored search. Update patterns that relied on unanchored matching.
+
+|`groupExcludeRegex`
+|`groupExcludeRegex`
+|Same regex difference as `groupRegex` applies.
+
+|`topicRegex`
+|`topicRegex`
+|Same regex difference as `groupRegex` applies.
+
+|`topicExcludeRegex`
+|`topicExcludeRegex`
+|Same regex difference as `groupRegex` applies.
+
+|`resources`
+|`resources`
+|No change.
+
+|`livenessProbe`
+|`livenessProbe`
+|No change.
+
+|`readinessProbe`
+|`readinessProbe`
+|No change.
+
+|`template`
+|`template`
+|No change.
+
+|`image`
+|`image`
+|No change. The default image is now controlled by the `STRIMZI_DEFAULT_SOVA_IMAGE` environment variable in the Cluster Operator.
+
+|`logging`
+|`logging`
+|Sova uses Log4j 2 inline or external logging instead of the Go severity string used by Kafka Exporter.
+
+|`enableSaramaLogging`
+|_(removed)_
+|Sarama is a Go library used only by Kafka Exporter; Sova is JVM-based and does not use Sarama.
+
+|`showAllOffsets`
+|_(removed)_
+|Sova always reports metrics for active consumer groups. Disconnected consumer group data is not retained.
+
+|===
+
+NOTE: The emitted metric names (`kafka_consumergroup_lag`, `kafka_topic_partition_current_offset`, and related metrics) are identical between Kafka Exporter and Sova.
+Existing Prometheus alerting rules and Grafana dashboards work unchanged after migration.
