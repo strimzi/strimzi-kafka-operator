@@ -300,3 +300,33 @@ jobs:
           gpgSigningKey: ${{ secrets.GPG_SIGNING_KEY }}
           centralUsername: ${{ secrets.CENTRAL_USERNAME }}
           centralPassword: ${{ secrets.CENTRAL_PASSWORD }}
+
+  # Single required status check covering every job above.
+  # Matrix jobs cannot be required by their exact check names, so the ruleset requires this gate instead.
+  # Jobs that only run on main report "skipped" on pull requests, which is not a failure.
+  # The rulest is then check by OSPS baseline workflow to pass required checks.
+  build-gate:
+    name: Build Gate
+    if: ${{ always() }}
+    needs:
+      - build-strimzi
+      - unit-test-strimzi
+      - integration-test-strimzi
+      - build-docs
+      - build-containers
+      - push-containers
+      - attest
+      - publish-docs
+      - deploy-java
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Fail and report which jobs did not pass
+        if: ${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}
+        env:
+          NEEDED_JOBS: ${{ toJSON(needs) }}
+        run: |
+          echo "$NEEDED_JOBS" | jq -r 'to_entries[]
+            | select(.value.result != "success" and .value.result != "skipped")
+            | "- \(.key): \(.value.result)"' | tee -a "$GITHUB_STEP_SUMMARY"
+          exit 1
