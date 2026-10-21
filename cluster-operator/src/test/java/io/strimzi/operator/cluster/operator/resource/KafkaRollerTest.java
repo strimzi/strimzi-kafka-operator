@@ -75,6 +75,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+@SuppressWarnings("checkstyle:ClassDataAbstractionCoupling")
 public class KafkaRollerTest {
 
     private static final int REPLICAS = 5;
