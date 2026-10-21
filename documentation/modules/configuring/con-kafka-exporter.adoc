@@ -5,7 +5,7 @@
 // assembly-config.adoc
 
 [id='con-kafka-exporter-{context}']
-= Capturing consumer lag metrics
+= Capturing consumer lag metrics with Kafka Exporter
 
 [role="_abstract"]
 Capture consumer group lag metrics to monitor whether consumers are keeping up with message production.
