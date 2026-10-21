@@ -26,6 +26,7 @@ metrics
 │   ├── strimzi-kafka.json
 |   ├── strimzi-kraft.json
 │   ├── strimzi-operators.json
+│   ├── strimzi-sova.json
 ├── grafana-install
 │   └── grafana.yaml <2>
 ├── kube-state-metrics <3>
