@@ -544,8 +544,8 @@ public class CaReconciler {
                 // For cert-manager or manual CAs, this indicates that the user or external issuer has
                 // not reissued the end-entity certificates with the new CA key yet.
                 kafkaStatus.addCondition(StatusUtils.buildWarningCondition(
-                        "CaKeyReplacementInProgress",
-                        "New Cluster CA key is trusted by all pods, but end-entity certificates have not been reissued with the new CA key yet."
+                        "CaKeyReplacement",
+                        "New Cluster CA key is trusted by all pods. Reissue all end-entity certificates with the new CA key to complete the replacement!"
                 ));
             }
             return CompletableFuture.completedFuture(null);

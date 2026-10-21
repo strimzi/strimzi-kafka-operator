@@ -591,8 +591,8 @@ public class CaReconcilerTest {
 
         assertThat(status.getConditions().size(), is(1));
         assertThat(status.getConditions().get(0).getType(), is("Warning"));
-        assertThat(status.getConditions().get(0).getReason(), is("CaKeyReplacementInProgress"));
-        assertThat(status.getConditions().get(0).getMessage(), is("New Cluster CA key is trusted by all pods, but end-entity certificates have not been reissued with the new CA key yet."));
+        assertThat(status.getConditions().get(0).getReason(), is("CaKeyReplacement"));
+        assertThat(status.getConditions().get(0).getMessage(), is("New Cluster CA key is trusted by all pods. Reissue all end-entity certificates with the new CA key to complete the replacement!"));
     }
 
     @Test
@@ -625,8 +625,8 @@ public class CaReconcilerTest {
 
         assertThat(status.getConditions().size(), is(1));
         assertThat(status.getConditions().get(0).getType(), is("Warning"));
-        assertThat(status.getConditions().get(0).getReason(), is("CaKeyReplacementInProgress"));
-        assertThat(status.getConditions().get(0).getMessage(), is("New Cluster CA key is trusted by all pods, but end-entity certificates have not been reissued with the new CA key yet."));
+        assertThat(status.getConditions().get(0).getReason(), is("CaKeyReplacement"));
+        assertThat(status.getConditions().get(0).getMessage(), is("New Cluster CA key is trusted by all pods. Reissue all end-entity certificates with the new CA key to complete the replacement!"));
     }
 
     private static Stream<Arguments> componentCertSecretNames() {
@@ -664,8 +664,8 @@ public class CaReconcilerTest {
 
         assertThat(status.getConditions().size(), is(1));
         assertThat(status.getConditions().get(0).getType(), is("Warning"));
-        assertThat(status.getConditions().get(0).getReason(), is("CaKeyReplacementInProgress"));
-        assertThat(status.getConditions().get(0).getMessage(), is("New Cluster CA key is trusted by all pods, but end-entity certificates have not been reissued with the new CA key yet."));
+        assertThat(status.getConditions().get(0).getReason(), is("CaKeyReplacement"));
+        assertThat(status.getConditions().get(0).getMessage(), is("New Cluster CA key is trusted by all pods. Reissue all end-entity certificates with the new CA key to complete the replacement!"));
     }
 
     @Test

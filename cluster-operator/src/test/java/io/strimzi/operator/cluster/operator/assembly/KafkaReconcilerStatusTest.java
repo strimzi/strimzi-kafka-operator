@@ -902,10 +902,9 @@ public class KafkaReconcilerStatusTest {
 
             assertThat(status.getConditions().stream().anyMatch(c ->
                     "Warning".equals(c.getType()) &&
-                    "CaKeyReplacementInProgress".equals(c.getReason()) &&
-                    ("End-entity certificates have been reissued by cert-manager, but are signed by an untrusted CA key. " +
-                            "Check if the user-provided CA certificate secret has been updated.").equals(c.getMessage())), is(true));
-
+                    "CaKeyReplacement".equals(c.getReason()) &&
+                    ("End-entity certificates have been reissued with a new CA key, but the new CA key is not trusted by all pods. " +
+                            "Update the user-provided CA certificate secret with the new CA certificate!").equals(c.getMessage())), is(true));
             async.flag();
         }));
     }
