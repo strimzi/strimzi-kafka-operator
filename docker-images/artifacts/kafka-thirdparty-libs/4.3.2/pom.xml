@@ -15,7 +15,7 @@
         </license>
     </licenses>
 
-    <!-- Kafka 4.3.2 uses different version of Log4j2 and Jackson libraries compared to 4.2.1.
+    <!-- Kafka 4.3.2 uses different version of Log4j2 and Jackson libraries compared to 4.3.0 and 4.3.1.
                             That is why it has its own 3rd party libraries directory.-->
     <properties>
         <strimzi-oauth.version>0.18.0</strimzi-oauth.version>
