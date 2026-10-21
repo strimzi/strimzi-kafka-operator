@@ -10,7 +10,7 @@
             - name: STRIMZI_DEFAULT_CRUISE_CONTROL_IMAGE
               value: {{ template "strimzi.image" (merge . (dict "key" "cruiseControl" "tagSuffix" "-kafka-4.3.2")) }}
             - name: STRIMZI_KAFKA_IMAGES
-              value: |
+              value: |                 
                 4.2.0={{ template "strimzi.image" (merge . (dict "key" "kafka" "tagSuffix" "-kafka-4.2.0")) }}
                 4.2.1={{ template "strimzi.image" (merge . (dict "key" "kafka" "tagSuffix" "-kafka-4.2.1")) }}
                 4.2.2={{ template "strimzi.image" (merge . (dict "key" "kafka" "tagSuffix" "-kafka-4.2.2")) }}
@@ -18,7 +18,7 @@
                 4.3.1={{ template "strimzi.image" (merge . (dict "key" "kafka" "tagSuffix" "-kafka-4.3.1")) }}
                 4.3.2={{ template "strimzi.image" (merge . (dict "key" "kafka" "tagSuffix" "-kafka-4.3.2")) }}
             - name: STRIMZI_KAFKA_CONNECT_IMAGES
-              value: |
+              value: |                 
                 4.2.0={{ template "strimzi.image" (merge . (dict "key" "kafkaConnect" "tagSuffix" "-kafka-4.2.0")) }}
                 4.2.1={{ template "strimzi.image" (merge . (dict "key" "kafkaConnect" "tagSuffix" "-kafka-4.2.1")) }}
                 4.2.2={{ template "strimzi.image" (merge . (dict "key" "kafkaConnect" "tagSuffix" "-kafka-4.2.2")) }}
@@ -26,7 +26,7 @@
                 4.3.1={{ template "strimzi.image" (merge . (dict "key" "kafkaConnect" "tagSuffix" "-kafka-4.3.1")) }}
                 4.3.2={{ template "strimzi.image" (merge . (dict "key" "kafkaConnect" "tagSuffix" "-kafka-4.3.2")) }}
             - name: STRIMZI_KAFKA_MIRROR_MAKER_2_IMAGES
-              value: |
+              value: |                 
                 4.2.0={{ template "strimzi.image" (merge . (dict "key" "kafkaMirrorMaker2" "tagSuffix" "-kafka-4.2.0")) }}
                 4.2.1={{ template "strimzi.image" (merge . (dict "key" "kafkaMirrorMaker2" "tagSuffix" "-kafka-4.2.1")) }}
                 4.2.2={{ template "strimzi.image" (merge . (dict "key" "kafkaMirrorMaker2" "tagSuffix" "-kafka-4.2.2")) }}
