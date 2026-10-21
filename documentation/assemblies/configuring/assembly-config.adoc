@@ -58,7 +58,9 @@ include::../../modules/configuring/con-config-kafka-authorization.adoc[leveloffs
 include::../../modules/configuring/con-config-kafka-broker-configuration.adoc[leveloffset=+2]
 // Automating Kafka resource distribution and storage management
 include::../../modules/configuring/con-kafka-cruise-control.adoc[leveloffset=+2]
-// Capturing consumer lag metrics
+// Capturing consumer lag metrics with Sova
+include::../../modules/configuring/con-sova.adoc[leveloffset=+2]
+// Capturing consumer lag metrics with Kafka Exporter (deprecated)
 include::../../modules/configuring/con-kafka-exporter.adoc[leveloffset=+2]
 // Controlling throughput and storage usage
 include::../../modules/managing/con-choosing-a-quota-plugin.adoc[leveloffset=+2]
