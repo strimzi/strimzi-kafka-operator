@@ -1442,6 +1442,59 @@ class CoreFeaturesIT implements TestSeparator {
     }
 
     @Test
+    public void shouldNotDeleteTopicInKafkaWhenConflictingResourceIsDeleted()
+            throws ExecutionException, InterruptedException, TimeoutException {
+        startKafkaCluster(1, 1, Map.of("auto.create.topics.enable", "false"));
+
+        // Deleting a KafkaTopic that is in conflict with another KafkaTopic must not delete the Kafka topic, which
+        // the other KafkaTopic still manages. Normally a conflicting KafkaTopic never gets the finalizer, because
+        // conflicts are detected before the finalizer is added. To get a conflicting KafkaTopic that has the
+        // finalizer, the older KafkaTopic is made unmanaged and managed again after the newer one was reconciled.
+        var topicName = "collide";
+
+        // given an older KafkaTopic for the topic, which is temporarily unmanaged
+        var kt1 = kafkaTopic(NAMESPACE, "kt1", true, topicName, 1, 1);
+        createTopicAndAssertSuccess(kafkaCluster, kt1);
+        var topicId = awaitTopicDescription(topicName).topicId();
+        modifyTopicAndAwait(kt1, theKt -> new KafkaTopicBuilder(theKt)
+                .editMetadata().addToAnnotations(TopicOperatorUtil.MANAGED, "false").endMetadata()
+                .build(),
+            unmanagedIsTrue());
+
+        // and the operator is restarted. A running operator keeps tracking kt1 as the resource managing the
+        // topic even after it becomes unmanaged, so without the restart kt2 would go straight into conflict.
+        operator.stop();
+        operator = null;
+        kafkaAdminClientOp.close();
+        kafkaAdminClientOp = null;
+        maybeStartOperator(topicOperatorConfig(NAMESPACE, kafkaCluster));
+
+        // and a newer KafkaTopic for the same topic, which is reconciled and gets the finalizer.
+        // The oldest resource wins a conflict, and creationTimestamp only has a resolution of one second,
+        // so wait to make sure kt2 is strictly newer than kt1.
+        Thread.sleep(1_000L);
+        var kt2 = createTopic(kafkaCluster, kafkaTopic(NAMESPACE, "kt2", true, topicName, 1, 1), readyIsTrue());
+        assertTrue(kt2.getMetadata().getFinalizers().contains(KubernetesHandler.FINALIZER_STRIMZI_IO_TO));
+
+        // when kt1 is managed again, kt2 goes into conflict but keeps its finalizer
+        modifyTopicAndAwait(kt1, theKt -> new KafkaTopicBuilder(theKt)
+                .editMetadata().addToAnnotations(TopicOperatorUtil.MANAGED, "true").endMetadata()
+                .build(),
+            readyIsTrue());
+        var conflicting = waitUntil(kt2, readyIsFalseAndReasonIs(TopicOperatorException.Reason.RESOURCE_CONFLICT.value,
+            String.format("Managed by Ref{namespace='%s', name='%s'}", NAMESPACE, "kt1")));
+        assertTrue(conflicting.getMetadata().getFinalizers().contains(KubernetesHandler.FINALIZER_STRIMZI_IO_TO));
+
+        // and the conflicting KafkaTopic is deleted
+        Crds.topicOperation(kubernetesClient).resource(kt2).delete();
+        TestUtil.waitUntilCondition(Crds.topicOperation(kubernetesClient).resource(kt2), Objects::isNull);
+
+        // then the topic in Kafka is still the one managed by kt1
+        assertEquals(topicId, awaitTopicDescription(topicName).topicId());
+        waitUntil(kt1, readyIsTrue());
+    }
+
+    @Test
     public void shouldFailCreationIfMoreReplicasThanBrokers() {
         startKafkaCluster(1, 1, Map.of("auto.create.topics.enable", "false"));
 
