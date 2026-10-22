@@ -84,7 +84,7 @@
         <fasterxml.jackson-jaxrs.version>2.22.3</fasterxml.jackson-jaxrs.version>
         <jackson3-core.version>3.2.3</jackson3-core.version>
         <jackson3-dataformat.version>3.2.3</jackson3-dataformat.version>
-        <vertx.version>5.2.1</vertx.version>
+        <vertx.version>5.2.2</vertx.version>
         <vertx-junit5.version>5.2.1</vertx-junit5.version>
         <kafka.version>4.4.0</kafka.version>
         <yammer-metrics.version>2.2.0</yammer-metrics.version>
