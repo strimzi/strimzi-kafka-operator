@@ -66,6 +66,7 @@ import org.apache.kafka.clients.admin.ListTopicsResult;
 import org.apache.kafka.clients.admin.QuorumInfo;
 import org.apache.kafka.clients.admin.TopicListing;
 import org.apache.kafka.clients.admin.UnregisterBrokerResult;
+import org.apache.kafka.clients.admin.UnregisterControllerResult;
 import org.apache.kafka.common.KafkaFuture;
 import org.apache.kafka.common.Node;
 import org.apache.kafka.common.internals.KafkaFutureImpl;
@@ -317,6 +318,10 @@ public class ResourceUtils {
         UnregisterBrokerResult ubr = mock(UnregisterBrokerResult.class);
         when(ubr.all()).thenReturn(KafkaFuture.completedFuture(null));
         when(mock.unregisterBroker(anyInt())).thenReturn(ubr);
+
+        UnregisterControllerResult ucr = mock(UnregisterControllerResult.class);
+        when(ucr.all()).thenReturn(KafkaFuture.completedFuture(null));
+        when(mock.unregisterController(anyInt())).thenReturn(ucr);
 
         return mock;
     }
