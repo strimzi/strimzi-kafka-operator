@@ -158,9 +158,9 @@ public class KafkaAutoRebalanceImbalanceDetectorTest {
         when(rebalanceOperator.getAsync(eq(NAMESPACE), eq("my-template")))
                 .thenReturn(CompletableFuture.completedFuture(null));
 
-        boolean result = detector(kafka).validateTemplateGoals("my-template").toCompletableFuture().join();
+        List<String> result = detector(kafka).validateTemplateGoals("my-template").toCompletableFuture().join();
 
-        assertThat(result, is(true));
+        assertThat(result.isEmpty(), is(true));
     }
 
     @Test
@@ -173,9 +173,9 @@ public class KafkaAutoRebalanceImbalanceDetectorTest {
         when(rebalanceOperator.getAsync(eq(NAMESPACE), eq("my-template")))
                 .thenReturn(CompletableFuture.completedFuture(template));
 
-        boolean result = detector(kafka).validateTemplateGoals("my-template").toCompletableFuture().join();
+        List<String> result = detector(kafka).validateTemplateGoals("my-template").toCompletableFuture().join();
 
-        assertThat(result, is(true));
+        assertThat(result.isEmpty(), is(true));
     }
 
     @Test
@@ -196,9 +196,9 @@ public class KafkaAutoRebalanceImbalanceDetectorTest {
         when(rebalanceOperator.getAsync(eq(NAMESPACE), eq("my-template")))
                 .thenReturn(CompletableFuture.completedFuture(template));
 
-        boolean result = detector(kafka).validateTemplateGoals("my-template").toCompletableFuture().join();
+        List<String> result = detector(kafka).validateTemplateGoals("my-template").toCompletableFuture().join();
 
-        assertThat(result, is(true));
+        assertThat(result.isEmpty(), is(true));
     }
 
     @Test
@@ -214,9 +214,9 @@ public class KafkaAutoRebalanceImbalanceDetectorTest {
         when(rebalanceOperator.getAsync(eq(NAMESPACE), eq("my-template")))
                 .thenReturn(CompletableFuture.completedFuture(template));
 
-        boolean result = detector(kafka).validateTemplateGoals("my-template").toCompletableFuture().join();
+        List<String> result = detector(kafka).validateTemplateGoals("my-template").toCompletableFuture().join();
 
-        assertThat(result, is(false));
+        assertThat(result.isEmpty(), is(false));
     }
 
     @Test
@@ -236,9 +236,9 @@ public class KafkaAutoRebalanceImbalanceDetectorTest {
         when(rebalanceOperator.getAsync(eq(NAMESPACE), eq("my-template")))
                 .thenReturn(CompletableFuture.completedFuture(template));
 
-        boolean result = detector(kafka).validateTemplateGoals("my-template").toCompletableFuture().join();
+        List<String> result = detector(kafka).validateTemplateGoals("my-template").toCompletableFuture().join();
 
-        assertThat(result, is(true));
+        assertThat(result.isEmpty(), is(true));
     }
 
     @Test
@@ -256,9 +256,9 @@ public class KafkaAutoRebalanceImbalanceDetectorTest {
         when(rebalanceOperator.getAsync(eq(NAMESPACE), eq("my-template")))
                 .thenReturn(CompletableFuture.completedFuture(template));
 
-        boolean result = detector(kafka).validateTemplateGoals("my-template").toCompletableFuture().join();
+        List<String> result = detector(kafka).validateTemplateGoals("my-template").toCompletableFuture().join();
 
-        assertThat(result, is(true));
+        assertThat(result.isEmpty(), is(true));
     }
 
 
@@ -278,7 +278,7 @@ public class KafkaAutoRebalanceImbalanceDetectorTest {
         Kafka kafka = buildKafka(null, null);
         Secret ccSecret = new SecretBuilder().withNewMetadata().withName("cc-secret").endMetadata().build();
         Secret ccApiSecret = new SecretBuilder().withNewMetadata().withName("cc-api-secret").endMetadata().build();
-        GoalViolationInfo expectedInfo = new GoalViolationInfo(Instant.now(), GoalViolationInfo.Fixability.FIXABLE);
+        GoalViolationInfo expectedInfo = new GoalViolationInfo(Instant.now(), GoalViolationInfo.Fixability.FIXABLE, List.of(), List.of());
         CruiseControlApi mockApi = mock(CruiseControlApi.class);
 
         when(supplier.secretOperations.getAsync(eq(NAMESPACE), eq(CruiseControlResources.secretName(CLUSTER_NAME))))

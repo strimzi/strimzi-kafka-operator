@@ -5,14 +5,17 @@
 package io.strimzi.operator.cluster.operator.resource.cruisecontrol;
 
 import java.time.Instant;
+import java.util.List;
 
 /**
  * Information about goal violations detected by Cruise Control.
  *
  * @param detectionTime The time when the goal violations were detected
  * @param fixability The fixability of the detected violations (fixable, unfixable, or mixed)
+ * @param fixableGoals List of fixable violated goal names
+ * @param unfixableGoals List of unfixable violated goal names
  */
-public record GoalViolationInfo(Instant detectionTime, Fixability fixability) {
+public record GoalViolationInfo(Instant detectionTime, Fixability fixability, List<String> fixableGoals, List<String> unfixableGoals) {
 
     /**
      * Represents the fixability classification of detected goal violations.
