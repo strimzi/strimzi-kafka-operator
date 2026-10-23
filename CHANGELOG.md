@@ -4,6 +4,7 @@
 
 * Add support for Kafka 4.3.2 and 4.4.0
 * Remove support for Kafka 4.2.x
+* Update Kafka Exporter to [1.11.0](https://github.com/danielqsj/kafka_exporter/releases/tag/v1.11.0)
 * Use ubi9-micro as a base image for operators, kafka-based, and maven-builder images.
 * Strimzi Drain Cleaner updated to 1.8.0 (included in the Strimzi installation files)
 * Add support for Strimzi-native configurable RSA key sizes
