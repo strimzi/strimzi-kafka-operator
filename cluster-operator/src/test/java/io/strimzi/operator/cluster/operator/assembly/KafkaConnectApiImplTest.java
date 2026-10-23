@@ -38,6 +38,7 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class KafkaConnectApiImplTest {
@@ -69,6 +70,17 @@ public class KafkaConnectApiImplTest {
         assertThat(KafkaConnectApiImpl.tryToExtractErrorMessage(Reconciliation.DUMMY_RECONCILIATION, "{\"message\": \"This is the error\"}"), is("This is the error"));
         assertThat(KafkaConnectApiImpl.tryToExtractErrorMessage(Reconciliation.DUMMY_RECONCILIATION, "{\"message\": \"This is the error\""), is("Unknown error message"));
         assertThat(KafkaConnectApiImpl.tryToExtractErrorMessage(Reconciliation.DUMMY_RECONCILIATION, "Not a JSON"), is("Unknown error message"));
+    }
+
+    @Test
+    public void testHttpClientIsSharedAcrossInstances() {
+        // Every KafkaConnectApiImpl used to build its own java.net.http.HttpClient, and the clients were
+        // never closed, so each reconciliation and each connector watch event leaked the client's
+        // selector and worker threads (see #13295). The implementation holds no per-instance state
+        // (host and port are passed to every method), so all instances must share a single HttpClient.
+        KafkaConnectApiImpl api1 = new KafkaConnectApiImpl();
+        KafkaConnectApiImpl api2 = new KafkaConnectApiImpl();
+        assertThat(api1.getHttpClient(), is(sameInstance(api2.getHttpClient())));
     }
 
     @Test

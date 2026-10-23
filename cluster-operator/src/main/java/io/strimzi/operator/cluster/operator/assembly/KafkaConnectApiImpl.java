@@ -47,12 +47,22 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
     public static final TypeReference<Map<String, String>> MAP_OF_STRINGS = new TypeReference<>() { };
     public static final TypeReference<Map<String, Map<String, String>>> MAP_OF_MAP_OF_STRINGS = new TypeReference<>() { };
     public static final TypeReference<Map<String, Map<String, List<String>>>> MAP_OF_MAP_OF_LIST_OF_STRING = new TypeReference<>() { };
+    // A single HttpClient is shared by all KafkaConnectApiImpl instances. The HttpClient is thread-safe
+    // and designed to be shared, and this class holds no per-instance state on top of it (the host and port
+    // are passed to every method). Creating a new HttpClient for every reconciliation or connector event
+    // and never closing it leaked its selector and worker threads (see #13295).
+    private static final HttpClient HTTP_CLIENT = HttpClient.newBuilder()
+            .followRedirects(HttpClient.Redirect.NORMAL)
+            .build();
+
     private final HttpClient httpClient;
 
     public KafkaConnectApiImpl() {
-        this.httpClient = HttpClient.newBuilder()
-                .followRedirects(HttpClient.Redirect.NORMAL)
-                .build();
+        this.httpClient = HTTP_CLIENT;
+    }
+
+    /* test */ HttpClient getHttpClient() {
+        return httpClient;
     }
 
     @Override
