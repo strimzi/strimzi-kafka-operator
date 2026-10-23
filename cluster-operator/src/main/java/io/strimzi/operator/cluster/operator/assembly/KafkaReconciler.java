@@ -38,6 +38,7 @@ import io.strimzi.operator.cluster.model.ImagePullPolicy;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaConfiguration;
 import io.strimzi.operator.cluster.model.KafkaPool;
+import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.ListenersUtils;
 import io.strimzi.operator.cluster.model.MetricsAndLogging;
 import io.strimzi.operator.cluster.model.NodeRef;
@@ -1111,6 +1112,12 @@ public class KafkaReconciler {
      * @return  Future which completes when the controller unregistration is done (or skipped)
      */
     protected Future<Void> controllerUnregistration() {
+        if (KafkaVersion.compareVersions(kafka.getKafkaVersion().version(), "4.4.0") < 0) {
+            // The UNREGISTER_CONTROLLER Kafka Admin API was introduced in Kafka 4.4.0
+            LOGGER.debugCr(reconciliation, "Skipping controller unregistration: Kafka {} does not support the UNREGISTER_CONTROLLER Admin API (requires 4.4.0+)", kafka.getKafkaVersion().version());
+            return Future.succeededFuture();
+        }
+
         List<Integer> currentControllerIds = kafka.controllerNodes().stream().map(NodeRef::nodeId).sorted().toList();
         Promise<Void> unregistrationPromise = Promise.promise();
 
