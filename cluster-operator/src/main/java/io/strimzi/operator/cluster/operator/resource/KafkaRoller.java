@@ -872,9 +872,10 @@ public class KafkaRoller {
      * @return a Future which completes when the Pod has been recreated
      */
     protected CompletionStage<Void> restart(Pod pod, RestartContext restartContext) {
+        RestartReasons reasons = RestartReasons.copyOf(restartContext.restartReasons);
         return podOperations.restart(reconciliation, pod, operationTimeoutMs)
                 .thenCompose(i -> {
-                    publishEventExecutor.execute(() -> eventsPublisher.publishRestartEvents(reconciliation, pod, restartContext.restartReasons));
+                    publishEventExecutor.execute(() -> eventsPublisher.publishRestartEvents(reconciliation, pod, reasons));
                     return CompletableFuture.completedFuture(null);
                 });
     }
