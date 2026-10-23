@@ -77,6 +77,7 @@ import io.strimzi.operator.common.ca.Ca;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.NodeUtils;
 import io.strimzi.operator.common.model.StatusDiff;
+import io.strimzi.operator.common.model.StatusUtils;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.kubernetes.CrdOperator;
 import io.strimzi.operator.common.operator.resource.kubernetes.SecretOperator;
@@ -268,7 +269,7 @@ public class KafkaReconciler {
                 .compose(i -> scaleDown())
                 .compose(i -> updateNodePoolStatuses(kafkaStatus))
                 .compose(i -> listeners())
-                .compose(i -> certificateSecrets(clock))
+                .compose(i -> certificateSecrets(clock, kafkaStatus))
                 .compose(i -> brokerConfigurationConfigMaps())
                 .compose(i -> jmxSecret())
                 .compose(i -> podDisruptionBudget())
@@ -773,7 +774,7 @@ public class KafkaReconciler {
      *
      * @return      Completes when the Secrets were successfully created, deleted or updated
      */
-    protected Future<Void> certificateSecrets(Clock clock) {
+    protected Future<Void> certificateSecrets(Clock clock, KafkaStatus kafkaStatus) {
         return VertxUtil.toFuture(secretOperator.listAsync(reconciliation.namespace(), kafka.getSelectorLabels().withStrimziComponentType(KafkaCluster.COMPONENT_TYPE)))
                 .compose(existingSecrets -> collectListenerCustomCerts()
                         .compose(customCertsData -> VertxUtil.toFuture(
@@ -800,7 +801,17 @@ public class KafkaReconciler {
                                 }
                             });
                             return updateCertificateSecrets(desiredCertSecrets);
-                        })).mapEmpty())
+                        }))
+                        .compose(i -> {
+                            if (clusterCa.hasUntrustedEndEntityCertificates()) {
+                                kafkaStatus.addCondition(StatusUtils.buildWarningCondition(
+                                        "CaKeyReplacement",
+                                        "End-entity certificates have been reissued with a new CA key, but the new CA key is not trusted by all pods. " +
+                                                "Update the user-provided CA certificate secret with the new CA certificate!"
+                                ));
+                            }
+                            return Future.succeededFuture();
+                        }))
                 .mapEmpty();
     }
 

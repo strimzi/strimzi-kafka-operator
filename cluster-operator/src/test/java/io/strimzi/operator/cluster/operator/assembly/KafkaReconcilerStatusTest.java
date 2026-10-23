@@ -9,6 +9,7 @@ import io.fabric8.kubernetes.api.model.NodeAddress;
 import io.fabric8.kubernetes.api.model.NodeBuilder;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodBuilder;
+import io.fabric8.kubernetes.api.model.Secret;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
@@ -23,6 +24,7 @@ import io.strimzi.api.kafka.model.kafka.listener.NodeAddressType;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePool;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePoolBuilder;
 import io.strimzi.api.kafka.model.nodepool.ProcessRoles;
+import io.strimzi.certs.CertAndKey;
 import io.strimzi.certs.OpenSslCertIssuer;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
@@ -36,6 +38,7 @@ import io.strimzi.operator.cluster.operator.resource.kubernetes.NodeOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.PodOperator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
+import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.auth.Identity;
 import io.strimzi.operator.common.ca.Ca;
 import io.strimzi.operator.common.ca.CaConfig;
@@ -43,6 +46,7 @@ import io.strimzi.operator.common.ca.InternalCa;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.PasswordGenerator;
 import io.strimzi.operator.common.operator.MockCertIssuer;
+import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.platform.KubernetesVersion;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
@@ -67,7 +71,9 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(VertxExtension.class)
@@ -867,6 +873,42 @@ public class KafkaReconcilerStatusTest {
         }));
     }
 
+    @Test
+    public void testKafkaReconcilerStatusWithUntrustedEndEntityCertificates(VertxTestContext context) {
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
+
+        Ca clusterCa = mock(Ca.class);
+        when(clusterCa.hasUntrustedEndEntityCertificates()).thenReturn(true);
+        when(clusterCa.caCertGenerationAnnotation()).thenReturn(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION);
+        when(clusterCa.caCertGeneration()).thenReturn(1);
+        when(clusterCa.maybeCopyOrGenerateServerCerts(any(), any(), any(), any(), anyBoolean(), anyBoolean(), any()))
+                .thenReturn(CompletableFuture.completedStage(new CertAndKey(
+                        Util.decodeBytesFromBase64(MockCertIssuer.clusterCaKey()),
+                        Util.decodeBytesFromBase64(MockCertIssuer.clusterCaCert()),
+                        1)));
+
+        KafkaReconciler reconciler = new MockKafkaReconcilerStatusTasks(
+                new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME),
+                supplier,
+                KAFKA,
+                List.of(KAFKA_NODE_POOL),
+                clusterCa);
+
+        KafkaStatus status = new KafkaStatus();
+
+        Checkpoint async = context.checkpoint();
+        reconciler.reconcile(status, Clock.systemUTC()).onComplete(res -> context.verify(() -> {
+            assertThat(res.succeeded(), is(true));
+
+            assertThat(status.getConditions().stream().anyMatch(c ->
+                    "Warning".equals(c.getType()) &&
+                    "CaKeyReplacement".equals(c.getReason()) &&
+                    ("End-entity certificates have been reissued with a new CA key, but the new CA key is not trusted by all pods. " +
+                            "Update the user-provided CA certificate secret with the new CA certificate!").equals(c.getMessage())), is(true));
+            async.flag();
+        }));
+    }
+
     private static void mockKubernetesWorkerNodes(NodeOperator mockNodeOps)    {
         Node node0 = new NodeBuilder()
                 .withNewMetadata()
@@ -927,7 +969,13 @@ public class KafkaReconcilerStatusTest {
         private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(MockKafkaReconcilerStatusTasks.class.getName());
 
         public MockKafkaReconcilerStatusTasks(Reconciliation reconciliation, ResourceOperatorSupplier supplier, Kafka kafkaCr, List<KafkaNodePool> kafkaNodePools) {
-            super(reconciliation, kafkaCr, null, createKafkaCluster(reconciliation, supplier, kafkaCr, kafkaNodePools), CLUSTER_CA, CLIENTS_CA, CO_CONFIG, supplier, PFA, vertx, Set.of());
+            this(reconciliation, supplier, kafkaCr, kafkaNodePools, CLUSTER_CA);
+        }
+
+        public MockKafkaReconcilerStatusTasks(Reconciliation reconciliation, ResourceOperatorSupplier supplier, Kafka kafkaCr, List<KafkaNodePool> kafkaNodePools, Ca clusterCa) {
+            super(reconciliation, kafkaCr, null, createKafkaCluster(reconciliation, supplier, kafkaCr, kafkaNodePools), clusterCa, CLIENTS_CA, CO_CONFIG, supplier, PFA, vertx, Set.of());
+            when(supplier.secretOperations.listAsync(any(), any(Labels.class))).thenReturn(CompletableFuture.completedFuture(List.of()));
+            when(supplier.secretOperations.reconcile(any(), any(), any(), any(Secret.class))).thenAnswer(i -> CompletableFuture.completedFuture(ReconcileResult.noop(i.getArgument(3))));
         }
 
         private static KafkaCluster createKafkaCluster(Reconciliation reconciliation, ResourceOperatorSupplier supplier, Kafka kafkaCr, List<KafkaNodePool> kafkaNodePools)   {
@@ -947,6 +995,7 @@ public class KafkaReconcilerStatusTest {
             return modelWarnings(kafkaStatus)
                     .compose(i -> initClusterOperatorIdentity())
                     .compose(i -> listeners())
+                    .compose(i -> certificateSecrets(clock, kafkaStatus))
                     .compose(i -> clusterId(kafkaStatus))
                     .compose(i -> nodePortExternalListenerStatus())
                     .compose(i -> updateKafkaStatus(kafkaStatus))
