@@ -1764,7 +1764,7 @@ Used in: xref:type-CruiseControlSpec-{context}[`CruiseControlSpec`]
 
 |template
 |xref:type-LocalObjectReference-{context}[`LocalObjectReference`]
-|Reference to the KafkaRebalance custom resource to be used as the configuration template for auto-rebalancing when running for the corresponding mode. For the `imbalance` mode, the template goals must be a superset of the configured anomaly detection goals.
+|Reference to the KafkaRebalance custom resource to be used as the configuration template for auto-rebalancing when running for the corresponding mode. The template goals must be a superset of the configured anomaly detection goals.
 |====
 
 [id='type-LocalObjectReference-{context}']

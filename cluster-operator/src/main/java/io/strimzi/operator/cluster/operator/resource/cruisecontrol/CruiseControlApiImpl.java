@@ -36,8 +36,10 @@ import java.net.http.HttpResponse;
 import java.net.http.HttpTimeoutException;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.stream.StreamSupport;
 
 import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlHeaders.USER_TASK_ID_HEADER;
 
@@ -156,15 +158,17 @@ public class CruiseControlApiImpl implements CruiseControlApi {
             return CompletableFuture.completedFuture(null);
         }
 
-        // Get the most recent violation (first element)
-        JsonNode recentViolation = recentGoalViolations.get(0);
-        if (recentViolation == null) {
-            return CompletableFuture.completedFuture(null);
+        JsonNode recentViolation = null;
+        Instant detectionTime = null;
+        for (JsonNode violation : recentGoalViolations) {
+            Instant violationTime = parseDetectionTime(reconciliation, violation);
+            if (violationTime != null && (detectionTime == null || violationTime.isAfter(detectionTime))) {
+                detectionTime = violationTime;
+                recentViolation = violation;
+            }
         }
 
-        // Parse detection time - CC returns either epoch ms (detectionMs) or ISO 8601 string (detectionDate)
-        Instant detectionTime = parseDetectionTime(reconciliation, recentViolation);
-        if (detectionTime == null) {
+        if (recentViolation == null || detectionTime == null) {
             return CompletableFuture.completedFuture(null);
         }
 
@@ -178,6 +182,9 @@ public class CruiseControlApiImpl implements CruiseControlApi {
             return CompletableFuture.completedFuture(null);
         }
 
+        List<String> fixableGoals = toStringList(fixableViolatedGoals);
+        List<String> unfixableGoals = toStringList(unfixableViolatedGoals);
+
         GoalViolationInfo.Fixability fixability;
         if (hasFixable && hasUnfixable) {
             fixability = GoalViolationInfo.Fixability.MIXED;
@@ -190,7 +197,16 @@ public class CruiseControlApiImpl implements CruiseControlApi {
             LOGGER.debugCr(reconciliation, "Found fixable goal violations detected at {}", detectionTime);
         }
 
-        return CompletableFuture.completedFuture(new GoalViolationInfo(detectionTime, fixability));
+        return CompletableFuture.completedFuture(new GoalViolationInfo(detectionTime, fixability, fixableGoals, unfixableGoals));
+    }
+
+    private List<String> toStringList(ArrayNode arrayNode) {
+        if (arrayNode == null || arrayNode.isEmpty()) {
+            return List.of();
+        }
+        return StreamSupport.stream(arrayNode.spliterator(), false)
+                .map(JsonNode::asString)
+                .toList();
     }
 
     private Instant parseDetectionTime(Reconciliation reconciliation, JsonNode violation) {
