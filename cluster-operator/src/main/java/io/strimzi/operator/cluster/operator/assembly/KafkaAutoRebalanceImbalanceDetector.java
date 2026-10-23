@@ -199,6 +199,7 @@ public class KafkaAutoRebalanceImbalanceDetector {
                 });
     }
 
+
     /**
      * Checks if current time is within maintenance windows
      *
@@ -219,18 +220,18 @@ public class KafkaAutoRebalanceImbalanceDetector {
      * rebalance proposal actually addresses the detected violations.
      *
      * @param templateName  Name of the KafkaRebalance template to validate
-     * @return CompletionStage with boolean value - true if validation passes, false if validation fails
+     * @return CompletionStage with the list of missing goals - empty list means validation passed
      */
-    public CompletionStage<Boolean> validateTemplateGoals(String templateName) {
+    public CompletionStage<List<String>> validateTemplateGoals(String templateName) {
         return kafkaRebalanceOperator.getAsync(reconciliation.namespace(), templateName)
                 .thenApply(template -> {
                     if (template == null) {
                         LOGGER.warnCr(reconciliation, "KafkaRebalance template '{}' not found: Skipping template goal validation and proceeding with detection", templateName);
-                        return true;
+                        return List.<String>of();
                     }
 
                     if (template.getSpec().getGoals() == null || template.getSpec().getGoals().isEmpty()) {
-                        return true;
+                        return List.<String>of();
                     }
 
                     List<String> anomalyDetectionGoals = getAnomalyDetectionGoals();
@@ -249,9 +250,8 @@ public class KafkaAutoRebalanceImbalanceDetector {
                                 "The template must include all anomaly detection goals so that the rebalance addresses detected violations. " +
                                 "Template goals: {}. Add the missing goals to the template.",
                                 missingGoals, templateName, templateGoals);
-                        return false;
                     }
-                    return true;
+                    return missingGoals;
                 });
     }
 

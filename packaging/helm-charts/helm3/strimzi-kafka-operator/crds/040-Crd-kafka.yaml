@@ -4858,7 +4858,7 @@ spec:
                             properties:
                               name:
                                 type: string
-                            description: "Reference to the KafkaRebalance custom resource to be used as the configuration template for auto-rebalancing when running for the corresponding mode. For the `imbalance` mode, the template goals must be a superset of the configured anomaly detection goals."
+                            description: Reference to the KafkaRebalance custom resource to be used as the configuration template for auto-rebalancing when running for the corresponding mode. The template goals must be a superset of the configured anomaly detection goals.
                         required:
                           - mode
                       description: "Auto-rebalancing on scaling related configuration listing the modes, when brokers are added or removed, with the corresponding rebalance template configurations.If this field is set, at least one mode has to be defined."

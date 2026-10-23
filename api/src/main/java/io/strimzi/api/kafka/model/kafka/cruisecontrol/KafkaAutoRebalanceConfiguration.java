@@ -50,7 +50,7 @@ public class KafkaAutoRebalanceConfiguration implements UnknownPropertyPreservin
 
     @Description("Reference to the KafkaRebalance custom resource to be used as the configuration template " +
             "for auto-rebalancing when running for the corresponding mode. " +
-            "For the `imbalance` mode, the template goals must be a superset of the configured anomaly detection goals.")
+            "The template goals must be a superset of the configured anomaly detection goals.")
     public LocalObjectReference getTemplate() {
         return template;
     }
