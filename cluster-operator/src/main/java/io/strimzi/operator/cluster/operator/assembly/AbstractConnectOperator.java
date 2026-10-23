@@ -105,7 +105,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
     private final boolean isNetworkPolicyGeneration;
     private final boolean isPodDisruptionBudgetGeneration;
 
-    protected final Function<Vertx, KafkaConnectApi> connectClientProvider;
+    protected final KafkaConnectApiProvider connectClientProvider;
     protected final ImagePullPolicy imagePullPolicy;
     protected final StrimziPodSetOperator podSetOperations;
     protected final PodOperator podOperations;
@@ -151,7 +151,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
     public AbstractConnectOperator(Vertx vertx, PlatformFeaturesAvailability pfa, String kind,
                                    CrdOperator<C, T, L> resourceOperator,
                                    ResourceOperatorSupplier supplier, ClusterOperatorConfig config,
-                                   Function<Vertx, KafkaConnectApi> connectClientProvider,
+                                   KafkaConnectApiProvider connectClientProvider,
                                    int port) {
         super(vertx, kind, resourceOperator, new ConnectOperatorMetricsHolder(kind, config.getCustomResourceSelector(), supplier.metricsProvider), config.getCustomResourceSelector());
 
@@ -178,6 +178,33 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         this.sharedEnvironmentProvider = supplier.sharedEnvironmentProvider;
         this.port = port;
         this.isPodDisruptionBudgetGeneration = config.isPodDisruptionBudgetGeneration();
+    }
+
+    /**
+     * Runs the action with a Kafka Connect REST API client created for the given Connect cluster and closes the client
+     * when the future returned by the action completes. Each client owns an HTTP client with its own threads, so it
+     * should not be left behind once the work is done.
+     *
+     * @param reconciliation    Reconciliation marker identifying the Connect cluster
+     * @param action            Action to run with the REST API client
+     * @param <R>               Type of the result of the action
+     *
+     * @return  Future with the result of the action
+     */
+    protected <R> Future<R> withConnectApi(Reconciliation reconciliation, Function<KafkaConnectApi, Future<R>> action) {
+        KafkaConnectApi apiClient = connectClientProvider.createKafkaConnectApi(reconciliation);
+
+        Future<R> result;
+        try {
+            result = action.apply(apiClient);
+        } catch (RuntimeException e) {
+            result = Future.failedFuture(e);
+        }
+
+        return result.eventually(() -> {
+            apiClient.close();
+            return Future.succeededFuture();
+        });
     }
 
     @Override
