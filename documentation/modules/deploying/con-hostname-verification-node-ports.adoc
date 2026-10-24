@@ -4,7 +4,7 @@
 //
 // deploying/assembly-securing-access.adoc
 
-[id='con-hostname-varification-node-ports-{context}']
+[id='con-hostname-verification-node-ports-{context}']
 = Troubleshooting TLS hostname verification with node ports
 
 [role="_abstract"]
