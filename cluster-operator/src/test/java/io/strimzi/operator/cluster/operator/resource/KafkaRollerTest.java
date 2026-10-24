@@ -307,6 +307,70 @@ public class KafkaRollerTest {
     }
 
     @Test
+    public void testReadyPodsNotRestartedWhenAdminClientCannotBeCreated() {
+        PodOperator podOps = mockPodOps(podId -> CompletableFuture.completedFuture(null));
+        TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(addPodNames(REPLICAS, 0, 0), podOps,
+                bootstrapBrokers -> new RuntimeException("No resolvable bootstrap urls given in bootstrap.servers"),
+                null, noException(), noException(),
+                brokerId -> CompletableFuture.completedFuture(true),
+                new DefaultAdminClientProvider(), new DefaultKafkaAgentClientProvider(), false, null, -1);
+
+        // The operator failing to create the Admin client (for example because of a DNS failure) says nothing about
+        // the pods being unhealthy, so the Ready pods should be left alone
+        CompletionException e = assertThrows(CompletionException.class,
+                () -> kafkaRoller.rollingRestart(pod -> RestartReasons.empty()).toCompletableFuture().join());
+        assertThat(e.getCause(), instanceOf(KafkaRoller.UnforceableProblem.class));
+        assertThat(restarted(), is(emptyList()));
+        assertNoUnclosedAdminClient(kafkaRoller);
+    }
+
+    @Test
+    public void testReadyControllersNotRestartedWhenAdminClientCannotBeCreated() {
+        PodOperator podOps = mockPodOps(podId -> CompletableFuture.completedFuture(null));
+        TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(addPodNames(0, 0, REPLICAS), podOps,
+                bootstrapBrokers -> new RuntimeException("No resolvable bootstrap urls given in bootstrap.servers"),
+                null, noException(), noException(),
+                brokerId -> CompletableFuture.completedFuture(true),
+                new DefaultAdminClientProvider(), new DefaultKafkaAgentClientProvider(), false, null, -1);
+
+        CompletionException e = assertThrows(CompletionException.class,
+                () -> kafkaRoller.rollingRestart(pod -> RestartReasons.empty()).toCompletableFuture().join());
+        assertThat(e.getCause(), instanceOf(KafkaRoller.UnforceableProblem.class));
+        assertThat(restarted(), is(emptyList()));
+        assertNoUnclosedAdminClient(kafkaRoller);
+    }
+
+    @Test
+    public void testTransientAdminClientCreationFailureDoesNotRestartReadyPods() {
+        PodOperator podOps = mockPodOps(podId -> CompletableFuture.completedFuture(null));
+        AtomicInteger attempts = new AtomicInteger(0);
+        TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(addPodNames(REPLICAS, 0, 0), podOps,
+                bootstrapBrokers -> attempts.getAndIncrement() < 2 ? new RuntimeException("No resolvable bootstrap urls given in bootstrap.servers") : null,
+                null, noException(), noException(),
+                brokerId -> CompletableFuture.completedFuture(true),
+                new DefaultAdminClientProvider(), new DefaultKafkaAgentClientProvider(), false, null, -1);
+
+        // The creation of the Admin client is retried and succeeds, so nothing needs to be restarted
+        doSuccessfulRollingRestart(kafkaRoller, emptyList(), emptyList());
+        assertThat(attempts.get(), is(3));
+    }
+
+    @Test
+    public void testUnreadyPodRestartedWhenAdminClientCannotBeCreated() {
+        // Pod 0 stays unready until it is restarted
+        PodOperator podOps = mockPodOps(podId -> podId == 0 && !restarted().contains(0)
+                ? CompletableFuture.failedFuture(new TimeoutException("fail"))
+                : CompletableFuture.completedFuture(null));
+        TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(addPodNames(1, 0, 0), podOps,
+                bootstrapBrokers -> new RuntimeException("No resolvable bootstrap urls given in bootstrap.servers"),
+                null, noException(), noException(),
+                brokerId -> CompletableFuture.completedFuture(true),
+                new DefaultAdminClientProvider(), new DefaultKafkaAgentClientProvider(), false, null, -1);
+
+        doSuccessfulRollingRestart(kafkaRoller, emptyList(), singletonList(0));
+    }
+
+    @Test
     public void testRollHandlesErrorWhenGettingActiveControllerFromController() {
         int activeController = 2;
         int nonActiveController = 1;

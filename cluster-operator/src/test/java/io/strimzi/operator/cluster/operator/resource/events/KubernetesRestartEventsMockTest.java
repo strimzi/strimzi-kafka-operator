@@ -9,6 +9,7 @@ import io.fabric8.kubernetes.api.model.PersistentVolumeClaimBuilder;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaimList;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodBuilder;
+import io.fabric8.kubernetes.api.model.PodConditionBuilder;
 import io.fabric8.kubernetes.api.model.PodList;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.Secret;
@@ -452,6 +453,26 @@ public class KubernetesRestartEventsMockTest {
 
     @Test
     void testEventEmittedWhenPodIsUnresponsive(Vertx vertx, VertxTestContext context) {
+        // A Ready pod is not restarted when the Admin client cannot be created. So the pod needs to be not ready.
+        podOps().withName(KafkaResources.kafkaPodName(CLUSTER_NAME, NODE_POOL_NAME, 0)).edit(pod -> new PodBuilder(pod)
+                .editOrNewMetadata()
+                    // Need to do this as the mock pod controller will otherwise override the Status below
+                    .addToAnnotations(MockPodController.ANNO_DO_NOT_SET_READY, "True")
+                .endMetadata()
+                .build());
+
+        podOps().withName(KafkaResources.kafkaPodName(CLUSTER_NAME, NODE_POOL_NAME, 0)).editStatus(pod -> new PodBuilder(pod)
+                .editOrNewStatus()
+                    .withPhase("Running")
+                    .withConditions(new PodConditionBuilder().withType("Ready").withStatus("False").build())
+                .endStatus()
+                .build());
+
+        // The roller waits for the pod to become ready, so we use a short timeout to not wait for too long
+        ClusterOperatorConfig shortTimeoutConfig = new ClusterOperatorConfig.ClusterOperatorConfigBuilder(clusterOperatorConfig, VERSIONS)
+                .with(ClusterOperatorConfig.OPERATION_TIMEOUT_MS.key(), "2000")
+                .build();
+
         try (Admin adminClient = ResourceUtils.adminClientProvider().createAdminClient(null, null, null)) {
             // Simulate not being able to initiate an initial admin client connection broker at all
             AtomicInteger failCounter = new AtomicInteger(0);
@@ -477,7 +498,7 @@ public class KubernetesRestartEventsMockTest {
                     kafkaCluster,
                     clusterCa,
                     clientsCa,
-                    clusterOperatorConfig,
+                    shortTimeoutConfig,
                     supplierWithModifiedAdmin,
                     PFA,
                     vertx,

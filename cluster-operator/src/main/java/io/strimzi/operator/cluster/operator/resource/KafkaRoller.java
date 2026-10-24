@@ -565,7 +565,7 @@ public class KafkaRoller {
      * Determine whether the pod should be restarted, or the broker reconfigured.
      */
     @SuppressWarnings("checkstyle:CyclomaticComplexity")
-    private void checkIfRestartOrReconfigureRequired(NodeRef nodeRef, boolean isController, boolean isBroker, RestartContext restartContext) throws ForceableProblem, InterruptedException, FatalProblem {
+    private void checkIfRestartOrReconfigureRequired(NodeRef nodeRef, boolean isController, boolean isBroker, RestartContext restartContext) throws ForceableProblem, UnforceableProblem, InterruptedException, FatalProblem {
         RestartReasons reasonToRestartPod = restartContext.restartReasons;
         if (restartContext.podStuck && !reasonToRestartPod.contains(RestartReason.POD_HAS_OLD_REVISION) && !reasonToRestartPod.contains(RestartReason.POD_HAS_OLD_RESOURCE_REVISION)) {
             // If the pod is unschedulable then deleting it, or trying to open an Admin client to it will make no difference
@@ -589,18 +589,14 @@ public class KafkaRoller {
             if (maybeInitControllerAdminClient()) {
                 restartContext.quorumCheck = quorumCheck(controllerAdminClient, nodeRef);
             } else {
-                LOGGER.infoCr(reconciliation, "Pod {} needs to be restarted, because it does not seem to responding to connection attempts", nodeRef);
-                reasonToRestartPod.add(RestartReason.POD_UNRESPONSIVE);
-                markRestartContextWithForceRestart(restartContext);
+                handleAdminClientCreationFailure(nodeRef, restartContext);
                 return;
             }
         }
 
         if (isBroker) {
             if (!maybeInitBrokerAdminClient()) {
-                LOGGER.infoCr(reconciliation, "Pod {} needs to be restarted, because it does not seem to responding to connection attempts", nodeRef);
-                reasonToRestartPod.add(RestartReason.POD_UNRESPONSIVE);
-                markRestartContextWithForceRestart(restartContext);
+                handleAdminClientCreationFailure(nodeRef, restartContext);
                 return;
             }
         }
@@ -640,6 +636,23 @@ public class KafkaRoller {
         restartContext.needsReconfig = needsReconfig;
         restartContext.forceRestart = false;
         restartContext.configDiff = configDiff;
+    }
+
+    /**
+     * Handles a failure to create an Admin client for the given pod. The failure happens on the operator side (for
+     * example when the pod DNS names cannot be resolved), so it is not a proof that a Ready pod is unhealthy. In that
+     * case, the pod is not restarted. The problem is reported instead, so that the creation of the Admin client is retried
+     * with the back-off and, if it keeps failing, the next reconciliation tries again. A pod that is not Ready is still
+     * marked for a forced restart.
+     */
+    private void handleAdminClientCreationFailure(NodeRef nodeRef, RestartContext restartContext) throws UnforceableProblem {
+        if (podOperations.isReady(namespace, nodeRef.podName())) {
+            throw new UnforceableProblem("Pod " + nodeRef.podName() + " is ready, but the Admin client to connect to it could not be created");
+        }
+
+        LOGGER.infoCr(reconciliation, "Pod {} needs to be restarted, because it does not seem to responding to connection attempts", nodeRef);
+        restartContext.restartReasons.add(RestartReason.POD_UNRESPONSIVE);
+        markRestartContextWithForceRestart(restartContext);
     }
 
     /**
