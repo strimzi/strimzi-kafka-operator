@@ -5,12 +5,14 @@
 package io.strimzi.operator.cluster.operator.assembly;
 
 import io.strimzi.operator.cluster.ResourceUtils;
+import io.strimzi.operator.cluster.model.NodeRef;
 import io.strimzi.operator.common.AdminClientProvider;
 import io.strimzi.operator.common.Reconciliation;
 import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.DescribeClusterOptions;
 import org.apache.kafka.clients.admin.DescribeClusterResult;
 import org.apache.kafka.clients.admin.UnregisterBrokerResult;
+import org.apache.kafka.clients.admin.UnregisterControllerResult;
 import org.apache.kafka.common.KafkaFuture;
 import org.apache.kafka.common.Node;
 import org.apache.kafka.common.errors.TimeoutException;
@@ -120,5 +122,92 @@ public class KafkaNodeUnregistrationTest {
                         assertThat(node.isFenced(), is(false));
                     }
                 }).toCompletableFuture().join();
+    }
+
+    @Test
+    void testListRegisteredControllerNodes() {
+        Admin mockAdmin = ResourceUtils.adminClient();
+
+        // describeCluster() via controller endpoint returns all controllers present in the metadata log,
+        // including node 7 which was removed from the quorum voters but never explicitly unregistered.
+        List<Node> registeredControllers = List.of(
+                new Node(3, "my-cluster-controllers-3", 9090),
+                new Node(4, "my-cluster-controllers-4", 9090),
+                new Node(5, "my-cluster-controllers-5", 9090),
+                new Node(6, "my-cluster-controllers-6", 9090),
+                new Node(7, "my-cluster-controllers-7", 9090)
+        );
+
+        DescribeClusterResult dcr = mock(DescribeClusterResult.class);
+        when(dcr.nodes()).thenReturn(KafkaFuture.completedFuture(registeredControllers));
+        when(mockAdmin.describeCluster()).thenReturn(dcr);
+
+        AdminClientProvider mockProvider = ResourceUtils.adminClientProvider(mockAdmin);
+
+        // The desired (active) controller set after scale-down -- node 7 is missing here.
+        Set<NodeRef> controllerNodes = Set.of(
+                new NodeRef("my-cluster-controllers-3", 3, "controllers", true, false),
+                new NodeRef("my-cluster-controllers-4", 4, "controllers", true, false),
+                new NodeRef("my-cluster-controllers-5", 5, "controllers", true, false),
+                new NodeRef("my-cluster-controllers-6", 6, "controllers", true, false)
+        );
+
+        KafkaNodeUnregistration.listRegisteredControllerNodes(Reconciliation.DUMMY_RECONCILIATION, mockProvider, null, null, controllerNodes)
+                .whenComplete((nodes, t) -> {
+                    assertThat(nodes.size(), is(5));
+                    assertThat(nodes.stream().map(Node::id).toList(), hasItems(3, 4, 5, 6, 7));
+                }).toCompletableFuture().join();
+    }
+
+    @Test
+    void testControllerUnregistration() {
+        Admin mockAdmin = ResourceUtils.adminClient();
+
+        UnregisterControllerResult ucr = mock(UnregisterControllerResult.class);
+        when(ucr.all()).thenReturn(KafkaFuture.completedFuture(null));
+        ArgumentCaptor<Integer> unregisteredNodeIdCaptor = ArgumentCaptor.forClass(Integer.class);
+        when(mockAdmin.unregisterController(unregisteredNodeIdCaptor.capture())).thenReturn(ucr);
+
+        AdminClientProvider mockProvider = ResourceUtils.adminClientProvider(mockAdmin);
+
+        KafkaNodeUnregistration.unregisterControllerNodes(Reconciliation.DUMMY_RECONCILIATION, mockProvider, null, null, Set.of(1874, 1919))
+                .whenComplete((v, t) -> {
+                    assertThat(unregisteredNodeIdCaptor.getAllValues().size(), is(2));
+                    assertThat(unregisteredNodeIdCaptor.getAllValues(), hasItems(1874, 1919));
+                }).toCompletableFuture().join();
+    }
+
+    @Test
+    void testFailingControllerNodeUnregistration() {
+        Admin mockAdmin = ResourceUtils.adminClient();
+
+        ArgumentCaptor<Integer> unregisteredNodeIdCaptor = ArgumentCaptor.forClass(Integer.class);
+        when(mockAdmin.unregisterController(unregisteredNodeIdCaptor.capture())).thenAnswer(i -> {
+            if (i.getArgument(0, Integer.class) == 1919)   {
+                KafkaFutureImpl<Void> unregistrationFuture = new KafkaFutureImpl<>();
+                unregistrationFuture.completeExceptionally(new TimeoutException("Fake timeout"));
+                UnregisterControllerResult ucr = mock(UnregisterControllerResult.class);
+                when(ucr.all()).thenReturn(unregistrationFuture);
+                return ucr;
+            } else {
+                UnregisterControllerResult ucr = mock(UnregisterControllerResult.class);
+                when(ucr.all()).thenReturn(KafkaFuture.completedFuture(null));
+                return ucr;
+            }
+        });
+
+        AdminClientProvider mockProvider = ResourceUtils.adminClientProvider(mockAdmin);
+
+        try {
+            KafkaNodeUnregistration.unregisterControllerNodes(Reconciliation.DUMMY_RECONCILIATION, mockProvider, null, null, Set.of(1874, 1919))
+                    .toCompletableFuture()
+                    .join();
+            throw new AssertionError("Expected TimeoutException but none was thrown");
+        } catch (Exception e) {
+            assertThat(e, instanceOf(CompletionException.class));
+            assertThat(e.getCause(), instanceOf(TimeoutException.class));
+            assertThat(unregisteredNodeIdCaptor.getAllValues().size(), is(2));
+            assertThat(unregisteredNodeIdCaptor.getAllValues(), hasItems(1874, 1919));
+        }
     }
 }
