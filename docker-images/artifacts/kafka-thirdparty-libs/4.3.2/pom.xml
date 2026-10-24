@@ -18,7 +18,7 @@
     <!-- Kafka 4.3.2 uses different version of Log4j2 and Jackson libraries compared to 4.3.0 and 4.3.1.
                             That is why it has its own 3rd party libraries directory.-->
     <properties>
-        <strimzi-oauth.version>0.18.0</strimzi-oauth.version>
+        <strimzi-oauth.version>0.18.1</strimzi-oauth.version>
         <strimzi-metrics-reporter.version>0.4.0</strimzi-metrics-reporter.version>
         <prometheus.version>1.3.6</prometheus.version>
         <cruise-control.version>3.1.0</cruise-control.version>

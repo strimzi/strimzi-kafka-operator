@@ -17,7 +17,7 @@
 
     <properties>
         <cruise-control.version>3.1.0</cruise-control.version>
-        <strimzi-oauth.version>0.18.0</strimzi-oauth.version>
+        <strimzi-oauth.version>0.18.1</strimzi-oauth.version>
         <log4j.version>2.25.5</log4j.version>
     </properties>
 
