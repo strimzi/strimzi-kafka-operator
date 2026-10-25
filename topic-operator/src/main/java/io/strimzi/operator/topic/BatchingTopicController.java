@@ -118,7 +118,19 @@ public class BatchingTopicController {
      */
     void onDelete(List<ReconcilableTopic> reconcilableTopics) throws InterruptedException {
         try {
-            deleteInternal(reconcilableTopics, true);
+            // A KafkaTopic not matched by the selector is ignored, as on the upsert path,
+            // so its deletion must not delete the topic in Kafka.
+            var selected = reconcilableTopics.stream().filter(reconcilableTopic -> {
+                var kt = reconcilableTopic.kt();
+                if (!matchesSelector(selector, kt.getMetadata().getLabels())) {
+                    forgetReconcilableTopic(reconcilableTopic);
+                    LOGGER.debugCr(reconcilableTopic.reconciliation(), "Ignoring deletion of KafkaTopic with labels {} not selected by selector {}",
+                        kt.getMetadata().getLabels(), selector);
+                    return false;
+                }
+                return true;
+            }).toList();
+            deleteInternal(selected, true);
         } catch (UncheckedInterruptedException e) {
             throw e.getCause();
         } catch (KubernetesClientException e) {
