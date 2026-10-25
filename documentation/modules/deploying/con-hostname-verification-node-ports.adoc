@@ -4,7 +4,7 @@
 //
 // deploying/assembly-securing-access.adoc
 
-[id='con-hostname-varification-node-ports-{context}']
+[id='con-hostname-verification-node-ports-{context}']
 = Troubleshooting TLS hostname verification with node ports
 
 [role="_abstract"]
@@ -36,4 +36,4 @@ props.put("ssl.endpoint.identification.algorithm", "");
 
 Alternatively, if you know the addresses of the worker nodes where the brokers are scheduled, you can add them as additional SANs (Subject Alternative Names) to the broker certificates manually. 
 For example, this might apply if your cluster is running on a bare metal deployment with a limited number of available worker nodes. 
-Use the link:{BookURLConfiguring}#property-listener-config-altnames-reference[`alternativeNames` property ^] to specify additional SANS.
+Use the link:{BookURLConfiguring}#property-listener-config-altnames-reference[`alternativeNames` property ^] to specify additional SANs.
