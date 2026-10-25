@@ -19,7 +19,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 public class KeycloakUtils {
 
-    public final static String LATEST_KEYCLOAK_VERSION = "25.0.2";
+    public final static String LATEST_KEYCLOAK_VERSION = "26.8.0";
 
     private final static LabelSelector SCRAPER_SELECTOR = new LabelSelector(null, Map.of(TestConstants.APP_POD_LABEL, TestConstants.SCRAPER_NAME));
     private static final Logger LOGGER = LogManager.getLogger(KeycloakUtils.class);
