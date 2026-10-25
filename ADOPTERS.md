@@ -48,6 +48,8 @@ Please let us know by adding your company name and, if you want, a description o
 * [Moniepoint](https://moniepoint.com/)
     * Use Strimzi to run Kafka and Kafka Connect on Kubernetes for CDC pipelines, database replication, and event messaging.
 
+* [Wordfully](https://wordfully.ai)
+
 ### Vendors
 
 * [Ænix](https://aenix.io)
