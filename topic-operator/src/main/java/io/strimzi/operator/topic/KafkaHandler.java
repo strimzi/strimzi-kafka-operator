@@ -213,7 +213,7 @@ public class KafkaHandler {
             .filter(pair -> pair.getValue().description().partitions().stream()
                 .anyMatch(pi -> {
                     TopicPartition tp = new TopicPartition(pair.getKey().topicName(), pi.partition());
-                    Integer targetRf = partitionToTargetRf.get(tp);
+                    Integer targetRf = partitionToTargetRf.getOrDefault(tp, pi.replicas().size());
                     Integer desiredRf = pair.getKey().kt().getSpec().getReplicas();
                     return !Objects.equals(targetRf, desiredRf);
                 })

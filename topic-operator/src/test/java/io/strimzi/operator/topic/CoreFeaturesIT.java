@@ -1654,6 +1654,36 @@ class CoreFeaturesIT implements TestSeparator {
     }
 
     @Test
+    public void shouldRejectMixedPartitionReplicationFactors() throws ExecutionException, InterruptedException {
+        startKafkaCluster(3, 1, Map.of("auto.create.topics.enable", "false"));
+        kafkaAdminClient = Admin.create(Map.of(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaCluster.getBootstrapServers()));
+        var topicName = "mixed-replicas";
+        var brokers = kafkaAdminClient.describeCluster().nodes().get().stream().map(Node::id).sorted().toList();
+        kafkaAdminClient.createTopics(List.of(new NewTopic(topicName, Map.of(
+            0, brokers.subList(0, 2), 1, brokers.subList(0, 2))))).all().get();
+
+        var partition = new TopicPartition(topicName, 1);
+        kafkaAdminClient.alterPartitionReassignments(Map.of(
+            partition, Optional.of(new NewPartitionReassignment(brokers)))).all().get();
+        TestUtils.waitFor("completed reassignment with mixed replica counts", 100, 30_000, () -> {
+            try {
+                var description = kafkaAdminClient.describeTopics(Set.of(topicName)).topicNameValues().get(topicName).get();
+                return kafkaAdminClient.listPartitionReassignments(Set.of(partition)).reassignments().get().isEmpty()
+                    && replicationFactors(description).equals(Set.of(2, 3));
+            } catch (ExecutionException | InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        });
+
+        var kt = kafkaTopic(NAMESPACE, topicName, true, topicName, 2, 2);
+        var reconciled = createTopic(kafkaCluster, kt);
+        var condition = assertExactlyOneCondition(reconciled);
+        assertEquals("False", condition.getStatus());
+        assertEquals(TopicOperatorException.Reason.NOT_SUPPORTED.value, condition.getReason());
+        assertEquals("Replication factor change not supported, but required for partitions [1]", condition.getMessage());
+    }
+
+    @Test
     public void shouldAccountForReassigningPartitionsNoRfChange() throws ExecutionException, InterruptedException, TimeoutException {
         startKafkaCluster(3, 1, Map.of("auto.create.topics.enable", "false"));
 
