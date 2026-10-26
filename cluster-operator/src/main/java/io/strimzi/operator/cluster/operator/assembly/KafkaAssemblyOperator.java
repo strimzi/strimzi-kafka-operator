@@ -436,7 +436,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
          */
         Future<ReconciliationState> reconcileCas(Clock clock)    {
             return VertxUtil.toFuture(caReconciler()
-                    .reconcile(clock)
+                    .reconcile(clock, kafkaStatus)
                     .thenApply(cas -> {
                         this.clusterCa = cas.clusterCa();
                         this.clientsCa = cas.clientsCa();

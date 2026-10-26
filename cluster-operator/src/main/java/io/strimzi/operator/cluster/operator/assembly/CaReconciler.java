@@ -11,6 +11,7 @@ import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
+import io.strimzi.api.kafka.model.kafka.KafkaStatus;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlResources;
 import io.strimzi.api.kafka.model.kafka.exporter.KafkaExporterResources;
 import io.strimzi.api.kafka.model.podset.StrimziPodSet;
@@ -50,6 +51,7 @@ import io.strimzi.operator.common.ca.Ca;
 import io.strimzi.operator.common.ca.CaConfig;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.PasswordGenerator;
+import io.strimzi.operator.common.model.StatusUtils;
 import io.strimzi.operator.common.operator.resource.kubernetes.CertManagerCertificateOperator;
 import io.strimzi.operator.common.operator.resource.kubernetes.SecretOperator;
 
@@ -154,18 +156,19 @@ public class CaReconciler {
      * The main reconciliation method which triggers the whole reconciliation pipeline. This is the method which is
      * expected to be called from the outside to trigger the reconciliation.
      *
-     * @param clock     The clock for supplying the reconciler with the time instant of each reconciliation cycle.
-     *                  That time is used for checking maintenance windows
+     * @param clock         The clock for supplying the reconciler with the time instant of each reconciliation cycle.
+     *                      That time is used for checking maintenance windows
+     * @param kafkaStatus   Kafka status
      *
      * @return  Future with the CA reconciliation result containing the Cluster and Clients CAs
      */
-    public CompletionStage<CaReconciliationResult> reconcile(Clock clock)    {
+    public CompletionStage<CaReconciliationResult> reconcile(Clock clock, KafkaStatus kafkaStatus)    {
         return reconcileCas(clock)
                 .thenCompose(i -> reconcileTrustBundleSecret())
                 .thenCompose(i -> verifyClusterCaFullyTrustedAndUsed())
                 .thenCompose(i -> reconcileClusterOperatorSecret(clock))
                 .thenCompose(i -> maybeRollingUpdateForNewClusterCaKey())
-                .thenCompose(i -> maybeRemoveOldClusterCaCertificates())
+                .thenCompose(i -> maybeRemoveOldClusterCaCertificates(kafkaStatus))
                 .thenApply(i -> new CaReconciliationResult(clusterCa, clientsCa));
     }
 
@@ -519,7 +522,7 @@ public class CaReconciler {
      * Remove older cluster CA certificates if present in the corresponding Secret after a renewal by replacing the
      * corresponding CA private key.
      */
-    /* test */ CompletionStage<Void> maybeRemoveOldClusterCaCertificates() {
+    /* test */ CompletionStage<Void> maybeRemoveOldClusterCaCertificates(KafkaStatus kafkaStatus) {
         // if the new CA certificate is used to sign all server certificates
         if (isClusterCaFullyUsed) {
             LOGGER.debugCr(reconciliation, "Maybe there are old cluster CA certificates to remove");
@@ -533,6 +536,18 @@ public class CaReconciler {
                 return CompletableFuture.completedFuture(null);
             }
         } else {
+            if (!clusterCa.keyReplaced() && !isClusterCaNeedFullTrust && clusterCa.hasOldCerts()) {
+                // Pods already trust the new CA key from previous reconciliation(s), but the new CA key
+                // is not yet used to sign all end-entity certificates.
+                // For Strimzi-managed CAs, end-entity certificates are generated automatically unless
+                // hindered by an error or maintenance time windows.
+                // For cert-manager or manual CAs, this indicates that the user or external issuer has
+                // not reissued the end-entity certificates with the new CA key yet.
+                kafkaStatus.addCondition(StatusUtils.buildWarningCondition(
+                        "CaKeyReplacement",
+                        "New Cluster CA key is trusted by all pods. Reissue all end-entity certificates with the new CA key to complete the replacement!"
+                ));
+            }
             return CompletableFuture.completedFuture(null);
         }
     }

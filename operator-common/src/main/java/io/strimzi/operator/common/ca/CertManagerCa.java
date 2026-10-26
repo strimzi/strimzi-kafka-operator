@@ -29,8 +29,10 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Predicate;
 
 import static io.strimzi.operator.common.ca.CertificateUtils.getCertificateThumbprint;
@@ -47,6 +49,7 @@ public class CertManagerCa extends Ca {
     private final SecretOperator secretOperator;
     private final OwnerReference ownerReference;
     protected final IssuerRef issuerRef;
+    private final Set<String> componentsWithUntrustedCert = ConcurrentHashMap.newKeySet();
 
     /**
      * Constructs the CA object
@@ -194,6 +197,11 @@ public class CertManagerCa extends Ca {
         deleteOldCerts();
     }
 
+    @Override
+    public boolean hasUntrustedEndEntityCertificates() {
+        return !componentsWithUntrustedCert.isEmpty();
+    }
+
     CompletionStage<CertAndKey> maybeCopyOrGenerateCert(String resourceName, StrimziSubject subject, CertAndKey existingCert, Labels labels) {
         return generateSignedCert(resourceName, subject, labels)
                 .thenApply(newCertAndKey -> {
@@ -202,9 +210,11 @@ public class CertManagerCa extends Ca {
                     } else if (certManagerCertUpdated(existingCert, newCertAndKey)) {
                         if (CertificateUtils.certIsTrusted(reconciliation, CertificateUtils.extractCertChain(resourceName, newCertAndKey.cert()), currentCaCertX509())) {
                             LOGGER.infoCr(reconciliation, "New certificate for {}/{}", reconciliation.namespace(), resourceName);
+                            componentsWithUntrustedCert.remove(resourceName);
                             return newCertAndKey;
                         } else {
                             LOGGER.warnCr(reconciliation, "New certificate for {}/{}, but not trusted yet so keeping existing certificate.", reconciliation.namespace(), resourceName);
+                            componentsWithUntrustedCert.add(resourceName);
                             return existingCert;
                         }
                     } else {

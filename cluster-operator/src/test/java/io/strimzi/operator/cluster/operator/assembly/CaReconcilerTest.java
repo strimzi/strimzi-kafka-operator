@@ -13,6 +13,7 @@ import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
+import io.strimzi.api.kafka.model.kafka.KafkaStatus;
 import io.strimzi.api.kafka.model.kafka.clustersecurity.ClusterSecurityAuthenticationBuilder;
 import io.strimzi.api.kafka.model.kafka.clustersecurity.ClusterSecurityAuthenticationType;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlResources;
@@ -162,7 +163,7 @@ public class CaReconcilerTest {
                 .thenAnswer(i -> CompletableFuture.completedFuture(null));
 
         MockCaReconciler mockCaReconciler = new MockCaReconciler(supplier, clusterCa, clientsCa);
-        mockCaReconciler.reconcile(Clock.systemUTC()).toCompletableFuture().join();
+        mockCaReconciler.reconcile(Clock.systemUTC(), new KafkaStatus()).toCompletableFuture().join();
 
         assertThat("Kafka restart reasons", mockCaReconciler.kafkaRestartReasons, aMapWithSize(6));
         mockCaReconciler.kafkaRestartReasons.forEach((podName, restartReasons) -> {
@@ -202,7 +203,7 @@ public class CaReconcilerTest {
                 .thenAnswer(i -> CompletableFuture.completedFuture(null));
 
         MockCaReconciler mockCaReconciler = new MockCaReconciler(supplier, clusterCa, clientsCa);
-        mockCaReconciler.reconcile(Clock.systemUTC()).toCompletableFuture().join();
+        mockCaReconciler.reconcile(Clock.systemUTC(), new KafkaStatus()).toCompletableFuture().join();
 
         assertThat(mockCaReconciler.capturedCoIdentity.trustSet(), is(instanceOf(PemTrustSet.class)));
         assertThat(mockCaReconciler.capturedCoIdentity.authIdentity(), is(instanceOf(PemAuthIdentity.class)));
@@ -223,7 +224,7 @@ public class CaReconcilerTest {
                 AuthenticationConfiguration.fromCrd(NAMESPACE, NAME, new ClusterSecurityAuthenticationBuilder().withType(ClusterSecurityAuthenticationType.SERVICE_ACCOUNT).build(), null));
 
         MockCaReconciler mockCaReconciler = new MockCaReconciler(supplier, clusterCa, clientsCa, securityContext);
-        mockCaReconciler.reconcile(Clock.systemUTC()).toCompletableFuture().join();
+        mockCaReconciler.reconcile(Clock.systemUTC(), new KafkaStatus()).toCompletableFuture().join();
 
         assertThat(mockCaReconciler.capturedCoIdentity.trustSet(), is(instanceOf(PemTrustSet.class)));
         assertThat(mockCaReconciler.capturedCoIdentity.authIdentity(), is(instanceOf(RequestedServiceAccountAuthIdentity.class)));
@@ -245,7 +246,7 @@ public class CaReconcilerTest {
         KafkaClusterSecurityContext securityContext = new KafkaClusterSecurityContext(new NoneEncryptionConfiguration(), new NoneAuthenticationConfiguration());
 
         MockCaReconciler mockCaReconciler = new MockCaReconciler(supplier, clusterCa, clientsCa, securityContext);
-        mockCaReconciler.reconcile(Clock.systemUTC()).toCompletableFuture().join();
+        mockCaReconciler.reconcile(Clock.systemUTC(), new KafkaStatus()).toCompletableFuture().join();
 
         assertThat(mockCaReconciler.capturedCoIdentity.trustSet(), is(nullValue()));
         assertThat(mockCaReconciler.capturedCoIdentity.authIdentity(), is(nullValue()));
@@ -271,7 +272,7 @@ public class CaReconcilerTest {
                 .thenAnswer(i -> CompletableFuture.completedFuture(null));
 
         MockCaReconciler mockCaReconciler = new MockCaReconciler(supplier, clusterCa, clientsCa);
-        mockCaReconciler.reconcile(Clock.systemUTC()).toCompletableFuture().join();
+        mockCaReconciler.reconcile(Clock.systemUTC(), new KafkaStatus()).toCompletableFuture().join();
 
         assertThat("Kafka restart reasons", mockCaReconciler.kafkaRestartReasons, aMapWithSize(6));
         mockCaReconciler.kafkaRestartReasons.forEach((podName, restartReasons) -> {
@@ -316,7 +317,7 @@ public class CaReconcilerTest {
                         brokerPodWithCaGenerations("my-cluster-brokers-2", 0, 0)));
 
         MockCaReconciler mockCaReconciler = new MockCaReconciler(supplier, clusterCa, clientsCa);
-        CaReconciler.CaReconciliationResult result = mockCaReconciler.reconcile(Clock.systemUTC()).toCompletableFuture().join();
+        CaReconciler.CaReconciliationResult result = mockCaReconciler.reconcile(Clock.systemUTC(), new KafkaStatus()).toCompletableFuture().join();
 
         assertThat("Kafka restart reasons", mockCaReconciler.kafkaRestartReasons, anEmptyMap());
         assertThat("Deployment restart reasons", mockCaReconciler.deploymentRestartReasons, anEmptyMap());
@@ -341,7 +342,7 @@ public class CaReconcilerTest {
                         brokerPodWithCaGenerations("my-cluster-brokers-2", 0, 0)));
 
         MockCaReconciler mockCaReconciler = new MockCaReconciler(supplier, clusterCa, clientsCa);
-        mockCaReconciler.reconcile(Clock.systemUTC()).toCompletableFuture().join();
+        mockCaReconciler.reconcile(Clock.systemUTC(), new KafkaStatus()).toCompletableFuture().join();
 
         assertThat("Kafka restart reasons", mockCaReconciler.kafkaRestartReasons, anEmptyMap());
         assertThat("Deployment restart reasons", mockCaReconciler.deploymentRestartReasons, anEmptyMap());
@@ -363,7 +364,7 @@ public class CaReconcilerTest {
                         brokerPodWithCaGenerations("my-cluster-brokers-2", 0, 0)));
 
         MockCaReconciler mockCaReconciler = new MockCaReconciler(supplier, clusterCa, clientsCa);
-        mockCaReconciler.reconcile(Clock.systemUTC()).toCompletableFuture().join();
+        mockCaReconciler.reconcile(Clock.systemUTC(), new KafkaStatus()).toCompletableFuture().join();
 
         assertThat("Kafka restart reasons", mockCaReconciler.kafkaRestartReasons, anEmptyMap());
         assertThat("Deployment restart reasons", mockCaReconciler.deploymentRestartReasons, anEmptyMap());
@@ -393,7 +394,7 @@ public class CaReconcilerTest {
                 brokerPods);
 
         MockCaReconciler mockCaReconciler = new MockCaReconciler(supplier, clusterCa, clientsCa);
-        mockCaReconciler.reconcile(Clock.systemUTC()).toCompletableFuture().join();
+        mockCaReconciler.reconcile(Clock.systemUTC(), new KafkaStatus()).toCompletableFuture().join();
 
         // Its old key generation is ignored, so nothing is rolled
         assertThat("Kafka restart reasons", mockCaReconciler.kafkaRestartReasons, anEmptyMap());
@@ -418,7 +419,7 @@ public class CaReconcilerTest {
                         brokerPodWithCaGenerations("my-cluster-brokers-1", 1, 0),
                         brokerPodWithCaGenerations("my-cluster-brokers-2", 1, 0)));
 
-        new MockCaReconciler(supplier, clusterCa, clientsCa).reconcile(Clock.systemUTC()).toCompletableFuture().join();
+        new MockCaReconciler(supplier, clusterCa, clientsCa).reconcile(Clock.systemUTC(), new KafkaStatus()).toCompletableFuture().join();
 
         ArgumentCaptor<Secret> trustBundle = ArgumentCaptor.forClass(Secret.class);
         verify(supplier.secretOperations).reconcile(any(), eq(NAMESPACE), eq(KafkaResources.trustBundleSecretName(NAME)), trustBundle.capture());
@@ -444,7 +445,7 @@ public class CaReconcilerTest {
                         brokerPodWithCaGenerations("my-cluster-brokers-1", 1, 0),
                         brokerPodWithCaGenerations("my-cluster-brokers-2", 1, 0)));
 
-        new MockCaReconciler(supplier, clusterCa, clientsCa).reconcile(Clock.systemUTC()).toCompletableFuture().join();
+        new MockCaReconciler(supplier, clusterCa, clientsCa).reconcile(Clock.systemUTC(), new KafkaStatus()).toCompletableFuture().join();
 
         verify(clusterCa).maybeCopyOrGenerateClientCert(any(), eq(KafkaResources.clusterOperatorCertsSecretName(NAME)), eq("cluster-operator"), isNull(), anyBoolean(), any());
 
@@ -482,7 +483,7 @@ public class CaReconcilerTest {
                         brokerPodWithCaGenerations("my-cluster-brokers-1", 2, 0),
                         brokerPodWithCaGenerations("my-cluster-brokers-2", 2, 0)));
 
-        new MockCaReconciler(supplier, clusterCa, clientsCa).reconcile(Clock.systemUTC()).toCompletableFuture().join();
+        new MockCaReconciler(supplier, clusterCa, clientsCa).reconcile(Clock.systemUTC(), new KafkaStatus()).toCompletableFuture().join();
 
         ArgumentCaptor<CertAndKey> oldCertAndKey = ArgumentCaptor.forClass(CertAndKey.class);
         verify(clusterCa).maybeCopyOrGenerateClientCert(any(), eq(KafkaResources.clusterOperatorCertsSecretName(NAME)), eq("cluster-operator"), oldCertAndKey.capture(), anyBoolean(), any());
@@ -525,7 +526,7 @@ public class CaReconcilerTest {
         when(supplier.strimziPodSetOperator.batchReconcile(any(), eq(NAMESPACE), any(), any(Labels.class)))
                 .thenAnswer(i -> CompletableFuture.completedFuture(null));
 
-        new MockCaReconciler(supplier, clusterCa, clientsCa).reconcile(Clock.systemUTC()).toCompletableFuture().join();
+        new MockCaReconciler(supplier, clusterCa, clientsCa).reconcile(Clock.systemUTC(), new KafkaStatus()).toCompletableFuture().join();
 
         verify(clusterCa, never()).maybeCopyOrGenerateClientCert(any(), any(), any(), any(), anyBoolean(), any());
         verify(supplier.secretOperations, never()).reconcile(any(), eq(NAMESPACE), eq(KafkaResources.clusterOperatorCertsSecretName(NAME)), any());
@@ -547,7 +548,8 @@ public class CaReconcilerTest {
                         brokerPodWithCaGenerations("my-cluster-brokers-1", 1, 1),
                         brokerPodWithCaGenerations("my-cluster-brokers-2", 1, 1)));
 
-        new MockCaReconciler(supplier, clusterCa, clientsCa).reconcile(Clock.systemUTC()).toCompletableFuture().join();
+        KafkaStatus status = new KafkaStatus();
+        new MockCaReconciler(supplier, clusterCa, clientsCa).reconcile(Clock.systemUTC(), status).toCompletableFuture().join();
 
         verify(clusterCa).maybeDeleteOldCerts();
 
@@ -558,6 +560,8 @@ public class CaReconcilerTest {
         assertThat(clusterCaCert.getValue().getData(), hasEntry(Ca.CA_CRT, CURRENT_CA_CRT));
         assertThat(clusterCaCert.getValue().getData(), not(hasKey(OLD_CA_CRT_ALIAS)));
 
+        assertThat(status.getConditions(), is(nullValue()));
+
         // Clients CA cert doesn't have old CA certs removed automatically
         verify(supplier.secretOperations, never()).reconcile(any(), eq(NAMESPACE), eq(KafkaResources.clientsCaCertificateSecretName(NAME)), any());
     }
@@ -565,6 +569,7 @@ public class CaReconcilerTest {
     @Test
     public void testOldClusterCaCertsKeptWhileOldCertStillUsed() {
         Ca clusterCa = mockClusterCa(1, 0, false);
+        when(clusterCa.hasOldCerts()).thenReturn(true);
         Ca clientsCa = mockClientsCa(0);
         // One pod still presents a certificate signed by the previous Cluster CA cert
         List<Pod> brokerPods = List.of(
@@ -578,15 +583,22 @@ public class CaReconcilerTest {
                         controllerPodWithCaGenerations("my-cluster-controllers-5", 1, 0)),
                 brokerPods);
 
-        new MockCaReconciler(supplier, clusterCa, clientsCa).reconcile(Clock.systemUTC()).toCompletableFuture().join();
+        KafkaStatus status = new KafkaStatus();
+        new MockCaReconciler(supplier, clusterCa, clientsCa).reconcile(Clock.systemUTC(), status).toCompletableFuture().join();
 
         verify(clusterCa, never()).maybeDeleteOldCerts();
         verify(supplier.secretOperations, never()).reconcile(any(), eq(NAMESPACE), eq(KafkaResources.clusterCaCertificateSecretName(NAME)), any());
+
+        assertThat(status.getConditions().size(), is(1));
+        assertThat(status.getConditions().get(0).getType(), is("Warning"));
+        assertThat(status.getConditions().get(0).getReason(), is("CaKeyReplacement"));
+        assertThat(status.getConditions().get(0).getMessage(), is("New Cluster CA key is trusted by all pods. Reissue all end-entity certificates with the new CA key to complete the replacement!"));
     }
 
     @Test
     public void testOldClusterCaCertsKeptWhileBrokerSecretNotUpdated() {
         Ca clusterCa = mockClusterCa(1, 0, false);
+        when(clusterCa.hasOldCerts()).thenReturn(true);
         Ca clientsCa = mockClientsCa(0);
 
         // One secret still contains a certificate signed by the previous Cluster CA cert
@@ -605,10 +617,16 @@ public class CaReconcilerTest {
                         brokerPodWithCaGenerations("my-cluster-brokers-1", 1, 0),
                         brokerPodWithCaGenerations("my-cluster-brokers-2", 1, 0)));
 
-        new MockCaReconciler(supplier, clusterCa, clientsCa).reconcile(Clock.systemUTC()).toCompletableFuture().join();
+        KafkaStatus status = new KafkaStatus();
+        new MockCaReconciler(supplier, clusterCa, clientsCa).reconcile(Clock.systemUTC(), status).toCompletableFuture().join();
 
         verify(clusterCa, never()).maybeDeleteOldCerts();
         verify(supplier.secretOperations, never()).reconcile(any(), eq(NAMESPACE), eq(KafkaResources.clusterCaCertificateSecretName(NAME)), any());
+
+        assertThat(status.getConditions().size(), is(1));
+        assertThat(status.getConditions().get(0).getType(), is("Warning"));
+        assertThat(status.getConditions().get(0).getReason(), is("CaKeyReplacement"));
+        assertThat(status.getConditions().get(0).getMessage(), is("New Cluster CA key is trusted by all pods. Reissue all end-entity certificates with the new CA key to complete the replacement!"));
     }
 
     private static Stream<Arguments> componentCertSecretNames() {
@@ -622,6 +640,7 @@ public class CaReconcilerTest {
     @MethodSource("componentCertSecretNames")
     public void testOldClusterCaCertsKeptWhileCertSecretNotUpdated(String secretName, String componentType) {
         Ca clusterCa = mockClusterCa(1, 0, false);
+        when(clusterCa.hasOldCerts()).thenReturn(true);
         Ca clientsCa = mockClientsCa(0);
 
         // Component cert secret still contains a certificate signed by the previous Cluster CA cert
@@ -637,10 +656,16 @@ public class CaReconcilerTest {
                         brokerPodWithCaGenerations("my-cluster-brokers-1", 1, 0),
                         brokerPodWithCaGenerations("my-cluster-brokers-2", 1, 0)));
 
-        new MockCaReconciler(supplier, clusterCa, clientsCa).reconcile(Clock.systemUTC()).toCompletableFuture().join();
+        KafkaStatus status = new KafkaStatus();
+        new MockCaReconciler(supplier, clusterCa, clientsCa).reconcile(Clock.systemUTC(), status).toCompletableFuture().join();
 
         verify(clusterCa, never()).maybeDeleteOldCerts();
         verify(supplier.secretOperations, never()).reconcile(any(), eq(NAMESPACE), eq(KafkaResources.clusterCaCertificateSecretName(NAME)), any());
+
+        assertThat(status.getConditions().size(), is(1));
+        assertThat(status.getConditions().get(0).getType(), is("Warning"));
+        assertThat(status.getConditions().get(0).getReason(), is("CaKeyReplacement"));
+        assertThat(status.getConditions().get(0).getMessage(), is("New Cluster CA key is trusted by all pods. Reissue all end-entity certificates with the new CA key to complete the replacement!"));
     }
 
     @Test
@@ -651,10 +676,13 @@ public class CaReconcilerTest {
         // still no Pods, a new Kafka cluster is under creation
         mockKubernetesState(List.of(), List.of());
 
-        new MockCaReconciler(supplier, clusterCa, clientsCa).reconcile(Clock.systemUTC()).toCompletableFuture().join();
+        KafkaStatus status = new KafkaStatus();
+        new MockCaReconciler(supplier, clusterCa, clientsCa).reconcile(Clock.systemUTC(), status).toCompletableFuture().join();
 
         verify(clusterCa, never()).maybeDeleteOldCerts();
         verify(supplier.secretOperations, never()).reconcile(any(), eq(NAMESPACE), eq(KafkaResources.clusterCaCertificateSecretName(NAME)), any());
+
+        assertThat(status.getConditions(), is(nullValue()));
     }
 
     private static Ca mockClusterCa(int caCertGeneration, int caKeyGeneration, boolean keyReplaced) {
