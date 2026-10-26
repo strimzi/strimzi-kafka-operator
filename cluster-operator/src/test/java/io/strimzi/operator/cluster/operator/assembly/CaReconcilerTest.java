@@ -26,6 +26,7 @@ import io.strimzi.certs.CertAndKey;
 import io.strimzi.certs.CertIssuer;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
+import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.auth.RequestedServiceAccountAuthIdentity;
 import io.strimzi.operator.cluster.model.CruiseControl;
@@ -56,6 +57,7 @@ import io.strimzi.operator.common.ca.CaConfig;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.PasswordGenerator;
 import io.strimzi.operator.common.operator.resource.kubernetes.SecretOperator;
+import io.strimzi.platform.KubernetesVersion;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
@@ -768,6 +770,8 @@ public class CaReconcilerTest {
                     supplier,
                     mock(CertIssuer.class),
                     mock(PasswordGenerator.class),
+
+                    new PlatformFeaturesAvailability(true, KubernetesVersion.MINIMAL_SUPPORTED_VERSION),
                     securityContext
             );
             this.clusterCa = clusterCa;
