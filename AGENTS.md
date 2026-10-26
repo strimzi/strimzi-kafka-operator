@@ -55,6 +55,10 @@ Multi-module Maven project.
   - Run locally: `mvn checkstyle:check@validate`
   - CI will fail if checkstyle errors are found
 
+- **Opening issues**:
+  - Do NOT open an issue without following the issue template. Fill in all template sections.
+  - Do NOT open an issue without applying the labels suggested by the issue template.
+
 - **Pull request prerequisites**:
   - Do NOT open a pull request for an issue that has the `needs-triage` label. Wait until triage is complete and the label is removed.
   - Do NOT open a pull request for an issue that has the `needs-proposal` label unless a corresponding proposal has been accepted (i.e., merged) in the https://github.com/strimzi/proposals repository. A proposal that is merely open or under review is not sufficient.
