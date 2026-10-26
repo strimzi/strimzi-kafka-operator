@@ -18,6 +18,7 @@ import io.strimzi.api.kafka.model.podset.StrimziPodSet;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.certs.CertIssuer;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
+import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.auth.RequestedServiceAccountAuthIdentity;
 import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.model.CertSecretUtils;
@@ -84,6 +85,7 @@ public class CaReconciler {
     private final CertIssuer certIssuer;
     private final PasswordGenerator passwordGenerator;
     private final KubernetesRestartEventPublisher eventPublisher;
+    private final PlatformFeaturesAvailability pfa;
 
     // Fields based on the Kafka CR config required for the reconciliation
     private final Kafka kafkaCr;
@@ -111,6 +113,7 @@ public class CaReconciler {
      * @param supplier          Supplier with Kubernetes Resource Operators
      * @param certIssuer        Certificate Issuer for issuing certificates
      * @param passwordGenerator Password generator for generating passwords
+     * @param pfa               PlatformFeaturesAvailability describing the environment we run in
      * @param securityContext   Kafka cluster security context
      */
     public CaReconciler(
@@ -120,6 +123,7 @@ public class CaReconciler {
             ResourceOperatorSupplier supplier,
             CertIssuer certIssuer,
             PasswordGenerator passwordGenerator,
+            PlatformFeaturesAvailability pfa,
             KafkaClusterSecurityContext securityContext
     ) {
         this.reconciliation = reconciliation;
@@ -135,6 +139,7 @@ public class CaReconciler {
         this.kafkaAgentClientProvider = supplier.kafkaAgentClientProvider;
         this.certIssuer = certIssuer;
         this.passwordGenerator = passwordGenerator;
+        this.pfa = pfa;
 
         this.eventPublisher = supplier.restartEventsPublisher;
 
@@ -269,7 +274,7 @@ public class CaReconciler {
      * @return  CaProvider instance
      */
     /*test*/ CaProvider createCaProvider(Ca.CaRole caRole, CaConfig caConfig, Secret existingCaCertSecret, Secret existingCaKeySecret, Secret coSecret, Clock clock) {
-        return CaProvider.create(reconciliation, caRole, caConfig, kafkaCr, certManagerCertificateOperator, secretOperator, certIssuer, passwordGenerator, clock, existingCaCertSecret, existingCaKeySecret, coSecret);
+        return CaProvider.create(reconciliation, caRole, caConfig, kafkaCr, certManagerCertificateOperator, secretOperator, certIssuer, passwordGenerator, pfa, clock, existingCaCertSecret, existingCaKeySecret, coSecret);
     }
 
     /**

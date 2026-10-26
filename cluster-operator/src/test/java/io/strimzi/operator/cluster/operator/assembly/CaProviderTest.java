@@ -11,16 +11,19 @@ import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.certs.OpenSslCertIssuer;
+import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ca.Ca;
 import io.strimzi.operator.common.ca.CaConfig;
 import io.strimzi.operator.common.model.PasswordGenerator;
+import io.strimzi.platform.KubernetesVersion;
 import org.junit.jupiter.api.Test;
 
 import java.time.Clock;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class CaProviderTest {
     private static final String NAMESPACE = Reconciliation.DUMMY_RECONCILIATION.namespace();
@@ -64,6 +67,7 @@ public class CaProviderTest {
                 null,
                 CERT_ISSUER,
                 PASSWORD_GENERATOR,
+                new PlatformFeaturesAvailability(false, KubernetesVersion.MINIMAL_SUPPORTED_VERSION),
                 Clock.systemUTC(),
                 null,
                 null,
@@ -86,6 +90,7 @@ public class CaProviderTest {
                 null,
                 CERT_ISSUER,
                 PASSWORD_GENERATOR,
+                new PlatformFeaturesAvailability(false, KubernetesVersion.MINIMAL_SUPPORTED_VERSION),
                 Clock.systemUTC(),
                 null,
                 null,
@@ -109,11 +114,34 @@ public class CaProviderTest {
                 null,
                 CERT_ISSUER,
                 PASSWORD_GENERATOR,
+                new PlatformFeaturesAvailability(false, false, true, KubernetesVersion.MINIMAL_SUPPORTED_VERSION),
                 Clock.systemUTC(),
                 null,
                 null,
                 null);
 
         assertThat(provider, instanceOf(CertManagerCaProvider.class));
+    }
+
+    @Test
+    public void testCreateProviderThrowsExceptionWhenTypeIsCertManagerButPFAReturnsFalse() {
+        CaConfig caConfig = new CaConfig(new CertificateAuthorityBuilder()
+                .withGenerateCertificateAuthority(false)
+                .withType(CertificateManagerType.CERT_MANAGER)
+                .build(), true);
+
+        assertThrows(RuntimeException.class, () -> CaProvider.create(Reconciliation.DUMMY_RECONCILIATION,
+                Ca.CaRole.CLUSTER_CA,
+                caConfig,
+                KAFKA,
+                null,
+                null,
+                CERT_ISSUER,
+                PASSWORD_GENERATOR,
+                new PlatformFeaturesAvailability(false, false, false, KubernetesVersion.MINIMAL_SUPPORTED_VERSION),
+                Clock.systemUTC(),
+                null,
+                null,
+                null));
     }
 }
