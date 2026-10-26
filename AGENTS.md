@@ -56,8 +56,8 @@ Multi-module Maven project.
   - CI will fail if checkstyle errors are found
 
 - **Opening issues**:
-  - Do NOT open an issue without following the issue template. Fill in all template sections.
-  - Do NOT open an issue without applying the labels suggested by the issue template.
+  - You MUST follow the issue template when opening a new issue. Do NOT skip or ignore any template sections.
+  - You MUST apply the labels suggested by the issue template. Do NOT open an issue without the appropriate labels.
 
 - **Pull request prerequisites**:
   - Do NOT open a pull request for an issue that has the `needs-triage` label. Wait until triage is complete and the label is removed.
