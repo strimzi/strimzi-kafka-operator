@@ -57,7 +57,7 @@ public enum KafkaAutoRebalanceState {
      * Transitions to:
      * <dl>
      *     <dt>RebalanceOnImbalance</dt>
-     *     <dd>if a rebalancing on imbalance is still running.</dd>
+     *     <dd>if a rebalancing on imbalance is still running or another one was requested while first one ended</dd>
      *     <dt>RebalanceOnScaleDown</dt>
      *     <dd>
      *          if a scale down operation was requested while imbalance rebalancing is active, so the current rebalancing
