@@ -29,7 +29,6 @@ public class KeycloakInstance {
     private String validIssuerUri;
     private String jwksEndpointUri;
     private String oauthTokenEndpointUri;
-    private String introspectionEndpointUri;
 
     public KeycloakInstance(String namespace, String password, String username) {
 
@@ -41,7 +40,6 @@ public class KeycloakInstance {
         this.validIssuerUri = "https://" + httpsUri + "/realms/internal";
         this.jwksEndpointUri = "https://" + httpsUri + "/realms/internal/protocol/openid-connect/certs";
         this.oauthTokenEndpointUri = "https://" + httpsUri + "/realms/internal/protocol/openid-connect/token";
-        this.introspectionEndpointUri = "https://" + httpsUri + "/realms/internal/protocol/openid-connect/token/introspect";
         this.userNameClaim = "preferred_username";
     }
 
@@ -84,12 +82,6 @@ public class KeycloakInstance {
     public String getOauthTokenEndpointUri() {
         return oauthTokenEndpointUri;
     }
-    public String getIntrospectionEndpointUri() {
-        return introspectionEndpointUri;
-    }
-    public void setIntrospectionEndpointUri(String introspectionEndpointUri) {
-        this.introspectionEndpointUri = introspectionEndpointUri;
-    }
     public String getUserNameClaim() {
         return userNameClaim;
     }
@@ -112,7 +104,6 @@ public class KeycloakInstance {
             ", validIssuerUri='" + validIssuerUri + '\'' +
             ", jwksEndpointUri='" + jwksEndpointUri + '\'' +
             ", oauthTokenEndpointUri='" + oauthTokenEndpointUri + '\'' +
-            ", introspectionEndpointUri='" + introspectionEndpointUri + '\'' +
             ", userNameClaim='" + userNameClaim + '\'' +
             ", keystorePattern=" + keystorePattern +
             ", keystorePasswordPattern=" + keystorePasswordPattern +
