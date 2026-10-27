@@ -98,7 +98,7 @@
         <commons-codec.version>1.13</commons-codec.version>
         <snakeyaml.version>2.5</snakeyaml.version>
         <javaluator.version>3.0.6</javaluator.version>
-        <strimzi-oauth.version>0.18.0</strimzi-oauth.version>
+        <strimzi-oauth.version>0.18.1</strimzi-oauth.version>
 
         <!-- Test only dependencies -->
         <hamcrest.version>2.2</hamcrest.version>
