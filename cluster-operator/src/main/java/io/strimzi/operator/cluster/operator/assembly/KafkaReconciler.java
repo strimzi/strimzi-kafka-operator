@@ -83,7 +83,6 @@ import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.kubernetes.CrdOperator;
 import io.strimzi.operator.common.operator.resource.kubernetes.SecretOperator;
 import io.vertx.core.Future;
-import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.common.KafkaException;
@@ -281,8 +280,8 @@ public class KafkaReconciler {
                 .compose(i -> headlessServiceEndpointsReady())
                 .compose(i -> clusterId(kafkaStatus))
                 .compose(i -> defaultKafkaQuotas())
-                .compose(i -> nodeUnregistration())
-                .compose(i -> controllerUnregistration())
+                .compose(i -> brokerNodesUnregistration())
+                .compose(i -> controllerNodesUnregistration())
                 .compose(i -> metadataVersion(kafkaStatus))
                 .compose(i -> deletePersistentClaims())
                 .compose(i -> sharedKafkaConfigurationCleanup())
@@ -1065,56 +1064,12 @@ public class KafkaReconciler {
     }
 
     /**
-     * Unregisters the KRaft nodes that were removed from the Kafka cluster
+     * Unregisters the KRaft broker nodes that were removed from the Kafka cluster
      *
-     * @return  Future which completes when the nodes removed from the Kafka cluster are unregistered
+     * @return  Future which completes when the broker nodes removed from the Kafka cluster are unregistered
      */
-    protected Future<Void> nodeUnregistration() {
-        List<Integer> currentBrokerIds = kafka.brokerNodes().stream().map(NodeRef::nodeId).sorted().toList();
-        Promise<Void> unregistrationPromise = Promise.promise();
-
-        VertxUtil.toFuture(KafkaNodeUnregistration.listRegisteredBrokerNodes(reconciliation, adminClientProvider, coIdentity.trustSet(), coIdentity.authIdentity(), true))
-                .onSuccess(registeredBrokerNodes -> {
-
-                    // all current registered broker nodes (fenced or not)
-                    @SuppressWarnings("checkstyle:NoFullyQualifiedClassNames") // Fully qualified class name used due to a name conflict
-                    List<Integer> registeredBrokersIds = registeredBrokerNodes.stream()
-                            .map(org.apache.kafka.common.Node::id)
-                            .toList();
-
-                    LOGGER.debugCr(reconciliation, "Nodes unregistration: currentBrokerIds = {}, registeredBrokersIds = {}",
-                            currentBrokerIds, registeredBrokersIds);
-
-                    Set<Integer> brokersIdsToUnregister = new HashSet<>(registeredBrokersIds);
-                    brokersIdsToUnregister.removeAll(currentBrokerIds);
-
-                    if (!brokersIdsToUnregister.isEmpty()) {
-                        LOGGER.infoCr(reconciliation, "Kafka nodes {} were removed from the Kafka cluster and will be unregistered", brokersIdsToUnregister);
-
-                        VertxUtil.toFuture(KafkaNodeUnregistration.unregisterBrokerNodes(reconciliation, adminClientProvider, coIdentity.trustSet(), coIdentity.authIdentity(), brokersIdsToUnregister))
-                                .onComplete(res -> {
-                                    if (res.succeeded()) {
-                                        LOGGER.infoCr(reconciliation, "Kafka nodes {} were successfully unregistered from the Kafka cluster", brokersIdsToUnregister);
-                                    } else {
-                                        // unregistration failed, we will retry on next reconciliation
-                                        LOGGER.warnCr(reconciliation, "Failed to unregister Kafka nodes {} from the Kafka cluster", brokersIdsToUnregister);
-                                    }
-
-                                    // We complete the promise with success even if the unregistration failed as we do not want to
-                                    // fail the reconciliation.
-                                    unregistrationPromise.complete();
-                                });
-                    } else {
-                        unregistrationPromise.complete();
-                    }
-                })
-                .onFailure(throwable -> {
-                    // listing broker nodes failed, we will retry on next reconciliation
-                    LOGGER.warnCr(reconciliation, "Failed to list Kafka nodes from the Kafka cluster", throwable);
-                    unregistrationPromise.complete();
-                });
-
-        return unregistrationPromise.future();
+    protected Future<Void> brokerNodesUnregistration() {
+        return VertxUtil.toFuture(KafkaNodeUnregistration.unregisterBrokerNodes(reconciliation, adminClientProvider, coIdentity.trustSet(), coIdentity.authIdentity(), kafka.brokerNodes()));
     }
 
     /**
@@ -1122,58 +1077,14 @@ public class KafkaReconciler {
      *
      * @return  Future which completes when the controller unregistration is done (or skipped)
      */
-    protected Future<Void> controllerUnregistration() {
+    protected Future<Void> controllerNodesUnregistration() {
         if (KafkaVersion.compareVersions(kafka.getKafkaVersion().version(), "4.4.0") < 0) {
             // The UNREGISTER_CONTROLLER Kafka Admin API was introduced in Kafka 4.4.0
             LOGGER.debugCr(reconciliation, "Skipping controller unregistration: Kafka {} does not support the UNREGISTER_CONTROLLER Admin API (requires 4.4.0+)", kafka.getKafkaVersion().version());
             return Future.succeededFuture();
         }
 
-        List<Integer> currentControllerIds = kafka.controllerNodes().stream().map(NodeRef::nodeId).sorted().toList();
-        Promise<Void> unregistrationPromise = Promise.promise();
-
-        VertxUtil.toFuture(KafkaNodeUnregistration.listRegisteredControllerNodes(reconciliation, adminClientProvider, coIdentity.trustSet(), coIdentity.authIdentity(), kafka.controllerNodes()))
-                .onSuccess(registeredControllerNodes -> {
-
-                    // all current registered controller nodes
-                    @SuppressWarnings("checkstyle:NoFullyQualifiedClassNames") // Fully qualified class name used due to a name conflict
-                    List<Integer> registeredControllerIds = registeredControllerNodes.stream()
-                            .map(org.apache.kafka.common.Node::id)
-                            .toList();
-
-                    LOGGER.debugCr(reconciliation, "Controllers unregistration: currentControllerIds = {}, registeredControllerIds = {}",
-                            currentControllerIds, registeredControllerIds);
-
-                    Set<Integer> controllerIdsToUnregister = new HashSet<>(registeredControllerIds);
-                    controllerIdsToUnregister.removeAll(currentControllerIds);
-
-                    if (!controllerIdsToUnregister.isEmpty()) {
-                        LOGGER.infoCr(reconciliation, "Kafka controller nodes {} were removed from the Kafka cluster and will be unregistered", controllerIdsToUnregister);
-
-                        VertxUtil.toFuture(KafkaNodeUnregistration.unregisterControllerNodes(reconciliation, adminClientProvider, coIdentity.trustSet(), coIdentity.authIdentity(), controllerIdsToUnregister))
-                                .onComplete(res -> {
-                                    if (res.succeeded()) {
-                                        LOGGER.infoCr(reconciliation, "Kafka controller nodes {} were successfully unregistered from the Kafka cluster", controllerIdsToUnregister);
-                                    } else {
-                                        // unregistration failed, we will retry on next reconciliation
-                                        LOGGER.warnCr(reconciliation, "Failed to unregister Kafka controller nodes {} from the Kafka cluster", controllerIdsToUnregister);
-                                    }
-
-                                    // We complete the promise with success even if the unregistration failed as we do not want to
-                                    // fail the reconciliation.
-                                    unregistrationPromise.complete();
-                                });
-                    } else {
-                        unregistrationPromise.complete();
-                    }
-                })
-                .onFailure(throwable -> {
-                    // listing registered controller nodes failed, we will retry on next reconciliation
-                    LOGGER.warnCr(reconciliation, "Failed to list registered controller nodes from the Kafka cluster", throwable);
-                    unregistrationPromise.complete();
-                });
-
-        return unregistrationPromise.future();
+        return VertxUtil.toFuture(KafkaNodeUnregistration.unregisterControllerNodes(reconciliation, adminClientProvider, coIdentity.trustSet(), coIdentity.authIdentity(), kafka.controllerNodes()));
     }
 
     /**

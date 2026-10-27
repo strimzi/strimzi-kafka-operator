@@ -20,6 +20,7 @@ import org.apache.kafka.common.Node;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -37,53 +38,84 @@ public class KafkaNodeUnregistration {
     private KafkaNodeUnregistration() { }
 
     /**
-     * Unregisters Kafka broker nodes from a KRaft-based Kafka cluster
+     * Unregisters Kafka broker nodes that were removed from a KRaft-based Kafka cluster.
+     * It lists all registered broker nodes and unregisters those not present in {@code currentBrokerNodes}.
+     * Any listing or unregistration failures are logged and swallowed, the returned future always completes successfully.
      *
      * @param reconciliation        Reconciliation marker
      * @param adminClientProvider   Kafka Admin API client provider
      * @param kafkaTrustSet         Trust set for the admin client to connect to the Kafka cluster
-     * @param authIdentity          Key set  for the admin client to connect to the Kafka cluster
-     * @param nodeIdsToUnregister   List of node IDs that should be unregistered
+     * @param authIdentity          Key set for the admin client to connect to the Kafka cluster
+     * @param currentBrokerNodes    Currently active broker nodes after scale-down
      *
-     * @return  CompletionStage that completes when all broker nodes are unregistered
+     * @return  CompletionStage that always completes successfully when broker unregistration is done
      */
     public static CompletionStage<Void> unregisterBrokerNodes(
             Reconciliation reconciliation,
             AdminClientProvider adminClientProvider,
             TrustSet kafkaTrustSet,
             AuthIdentity authIdentity,
-            Set<Integer> nodeIdsToUnregister
+            Set<NodeRef> currentBrokerNodes
     ) {
-        try {
-            String bootstrapHostname = KafkaResources.bootstrapServiceName(reconciliation.name()) + "." + reconciliation.namespace() + ".svc:" + KafkaCluster.REPLICATION_PORT;
-            Admin adminClient = adminClientProvider.createAdminClient(bootstrapHostname, kafkaTrustSet, authIdentity);
+        List<Integer> currentBrokerIds = currentBrokerNodes.stream().map(NodeRef::nodeId).sorted().toList();
+        CompletableFuture<Void> result = new CompletableFuture<>();
 
-            List<CompletionStage<Void>> futures = new ArrayList<>();
-            for (Integer nodeId : nodeIdsToUnregister) {
-                futures.add(unregisterBrokerNode(reconciliation, adminClient, nodeId));
-            }
-            return CompletableFuture.allOf(futures.stream().map(CompletionStage::toCompletableFuture).toArray(CompletableFuture[]::new))
-                    .whenComplete((v, t) -> {
-                        adminClient.close();
-                    });
-        } catch (KafkaException e) {
-            LOGGER.warnCr(reconciliation, "Failed to unregister nodes", e);
-            return CompletableFuture.failedFuture(e);
-        }
+        listRegisteredBrokerNodes(reconciliation, adminClientProvider, kafkaTrustSet, authIdentity, true)
+                .whenComplete((registeredBrokerNodes, listingFailure) -> {
+                    if (listingFailure != null) {
+                        // listing broker nodes failed, we will retry on next reconciliation
+                        LOGGER.warnCr(reconciliation, "Failed to list Kafka broker nodes from the Kafka cluster", listingFailure);
+                        // We complete the future with success even if listing failed as we do not want to fail the reconciliation.
+                        result.complete(null);
+                        return;
+                    }
+
+                    List<Integer> registeredBrokerIds = registeredBrokerNodes.stream().map(Node::id).toList();
+
+                    LOGGER.debugCr(reconciliation, "Broker nodes unregistration: currentBrokerIds = {}, registeredBrokerIds = {}", currentBrokerIds, registeredBrokerIds);
+
+                    Set<Integer> brokerIdsToUnregister = new HashSet<>(registeredBrokerIds);
+                    brokerIdsToUnregister.removeAll(currentBrokerIds);
+
+                    if (brokerIdsToUnregister.isEmpty()) {
+                        result.complete(null);
+                        return;
+                    }
+
+                    LOGGER.infoCr(reconciliation, "Kafka broker nodes {} were removed from the Kafka cluster and will be unregistered", brokerIdsToUnregister);
+
+                    try {
+                        String bootstrapHostname = KafkaResources.bootstrapServiceName(reconciliation.name()) + "." + reconciliation.namespace() + ".svc:" + KafkaCluster.REPLICATION_PORT;
+                        Admin adminClient = adminClientProvider.createAdminClient(bootstrapHostname, kafkaTrustSet, authIdentity);
+
+                        List<CompletionStage<Void>> futures = new ArrayList<>();
+                        for (Integer nodeId : brokerIdsToUnregister) {
+                            futures.add(unregisterBrokerNode(reconciliation, adminClient, nodeId));
+                        }
+                        CompletableFuture.allOf(futures.stream().map(CompletionStage::toCompletableFuture).toArray(CompletableFuture[]::new))
+                                .whenComplete((v, unregistrationFailure) -> {
+                                    adminClient.close();
+                                    if (unregistrationFailure == null) {
+                                        LOGGER.infoCr(reconciliation, "Kafka broker nodes {} were successfully unregistered from the Kafka cluster", brokerIdsToUnregister);
+                                    } else {
+                                        // unregistration failed, we will retry on next reconciliation
+                                        LOGGER.warnCr(reconciliation, "Failed to unregister Kafka broker nodes {} from the Kafka cluster", brokerIdsToUnregister);
+                                    }
+                                    // We complete the future with success even if the unregistration failed as we do not want to fail the reconciliation.
+                                    result.complete(null);
+                                });
+                    } catch (KafkaException e) {
+                        // unregistration failed, we will retry on next reconciliation
+                        LOGGER.warnCr(reconciliation, "Failed to unregister broker nodes", e);
+                        // We complete the future with success even if the unregistration failed as we do not want to fail the reconciliation.
+                        result.complete(null);
+                    }
+                });
+
+        return result;
     }
 
-    /**
-     * List registered Kafka broker nodes within a KRaft-based cluster
-     *
-     * @param reconciliation        Reconciliation marker
-     * @param adminClientProvider   Kafka Admin API client provider
-     * @param kafkaTrustSet         Trust set for the admin client to connect to the Kafka cluster
-     * @param authIdentity          Key set  for the admin client to connect to the Kafka cluster
-     * @param includeFencedBrokers  If listing should include fenced brokers
-     *
-     * @return  CompletionStage that completes when all registered broker nodes are listed
-     */
-    public static CompletionStage<Collection<Node>> listRegisteredBrokerNodes(
+    /* test */ static CompletionStage<Collection<Node>> listRegisteredBrokerNodes(
             Reconciliation reconciliation,
             AdminClientProvider adminClientProvider,
             TrustSet kafkaTrustSet,
@@ -99,34 +131,96 @@ public class KafkaNodeUnregistration {
             return adminClient.describeCluster(option).nodes()
                     .whenComplete((nodes, t) -> {
                         if (t == null) {
-                            LOGGER.debugCr(reconciliation, "Describe cluster: nodes (fenced included) = {}", nodes);
+                            LOGGER.debugCr(reconciliation, "Describe cluster: broker nodes (fenced included) = {}", nodes);
                         }
                         adminClient.close();
                     })
                     .toCompletionStage();
         } catch (KafkaException e) {
-            LOGGER.warnCr(reconciliation, "Failed to list nodes", e);
+            LOGGER.warnCr(reconciliation, "Failed to list broker nodes", e);
             return CompletableFuture.failedFuture(e);
         }
     }
 
     /**
-     * List registered controller nodes within a KRaft-based cluster.
+     * Unregisters Kafka controller nodes that were removed from a KRaft-based Kafka cluster.
+     * It lists all registered controller nodes and unregisters those not present in {@code currentControllerNodes}.
+     * Any listing or unregistration failures are logged and swallowed, the returned future always completes successfully.
      *
-     * It leverages the describeCluster() API call by querying the controller endpoint.
-     * The result reflects the metadata log state: a controller whose RegisterControllerRecord was written
-     * but whose UnregisterControllerRecord was never written (e.g. after a scale-down) will still appear
-     * here, making it possible to detect and unregister it explicitly.
+     * @param reconciliation            Reconciliation marker
+     * @param adminClientProvider       Kafka Admin API client provider
+     * @param kafkaTrustSet             Trust set for the admin client to connect to the Kafka cluster
+     * @param authIdentity              Key set for the admin client to connect to the Kafka cluster
+     * @param currentControllerNodes    Currently active controller nodes after scale-down
      *
-     * @param reconciliation        Reconciliation marker
-     * @param adminClientProvider   Kafka Admin API client provider
-     * @param kafkaTrustSet         Trust set for the admin client to connect to the Kafka cluster
-     * @param authIdentity          Key set  for the admin client to connect to the Kafka cluster
-     * @param controllerNodes       Active controller nodes used to build the controller bootstrap addresses
-     *
-     * @return  CompletionStage that completes with the registered controller nodes
+     * @return  CompletionStage that always completes successfully when controller unregistration is done
      */
-    public static CompletionStage<Collection<Node>> listRegisteredControllerNodes(
+    public static CompletionStage<Void> unregisterControllerNodes(
+            Reconciliation reconciliation,
+            AdminClientProvider adminClientProvider,
+            TrustSet kafkaTrustSet,
+            AuthIdentity authIdentity,
+            Set<NodeRef> currentControllerNodes
+    ) {
+        List<Integer> currentControllerIds = currentControllerNodes.stream().map(NodeRef::nodeId).sorted().toList();
+        CompletableFuture<Void> result = new CompletableFuture<>();
+
+        listRegisteredControllerNodes(reconciliation, adminClientProvider, kafkaTrustSet, authIdentity, currentControllerNodes)
+                .whenComplete((registeredControllerNodes, listingFailure) -> {
+                    if (listingFailure != null) {
+                        // listing registered controller nodes failed, we will retry on next reconciliation
+                        LOGGER.warnCr(reconciliation, "Failed to list registered Kafka controller nodes from the Kafka cluster", listingFailure);
+                        // We complete the future with success even if listing failed as we do not want to fail the reconciliation.
+                        result.complete(null);
+                        return;
+                    }
+
+                    List<Integer> registeredControllerIds = registeredControllerNodes.stream().map(Node::id).toList();
+
+                    LOGGER.debugCr(reconciliation, "Controller nodes unregistration: currentControllerIds = {}, registeredControllerIds = {}", currentControllerIds, registeredControllerIds);
+
+                    Set<Integer> controllerIdsToUnregister = new HashSet<>(registeredControllerIds);
+                    controllerIdsToUnregister.removeAll(currentControllerIds);
+
+                    if (controllerIdsToUnregister.isEmpty()) {
+                        result.complete(null);
+                        return;
+                    }
+
+                    LOGGER.infoCr(reconciliation, "Kafka controller nodes {} were removed from the Kafka cluster and will be unregistered", controllerIdsToUnregister);
+
+                    try {
+                        String bootstrapHostname = KafkaResources.bootstrapServiceName(reconciliation.name()) + "." + reconciliation.namespace() + ".svc:" + KafkaCluster.REPLICATION_PORT;
+                        Admin adminClient = adminClientProvider.createAdminClient(bootstrapHostname, kafkaTrustSet, authIdentity);
+
+                        List<CompletionStage<Void>> futures = new ArrayList<>();
+                        for (Integer nodeId : controllerIdsToUnregister) {
+                            futures.add(unregisterControllerNode(reconciliation, adminClient, nodeId));
+                        }
+                        CompletableFuture.allOf(futures.stream().map(CompletionStage::toCompletableFuture).toArray(CompletableFuture[]::new))
+                                .whenComplete((v, unregistrationFailure) -> {
+                                    adminClient.close();
+                                    if (unregistrationFailure == null) {
+                                        LOGGER.infoCr(reconciliation, "Kafka controller nodes {} were successfully unregistered from the Kafka cluster", controllerIdsToUnregister);
+                                    } else {
+                                        // unregistration failed, we will retry on next reconciliation
+                                        LOGGER.warnCr(reconciliation, "Failed to unregister Kafka controller nodes {} from the Kafka cluster", controllerIdsToUnregister);
+                                    }
+                                    // We complete the future with success even if the unregistration failed as we do not want to fail the reconciliation.
+                                    result.complete(null);
+                                });
+                    } catch (KafkaException e) {
+                        // unregistration failed, we will retry on next reconciliation
+                        LOGGER.warnCr(reconciliation, "Failed to unregister controller nodes", e);
+                        // We complete the future with success even if the unregistration failed as we do not want to fail the reconciliation.
+                        result.complete(null);
+                    }
+                });
+
+        return result;
+    }
+
+    /* test */ static CompletionStage<Collection<Node>> listRegisteredControllerNodes(
             Reconciliation reconciliation,
             AdminClientProvider adminClientProvider,
             TrustSet kafkaTrustSet,
@@ -155,42 +249,6 @@ public class KafkaNodeUnregistration {
                     .toCompletionStage();
         } catch (KafkaException e) {
             LOGGER.warnCr(reconciliation, "Failed to list registered controller nodes", e);
-            return CompletableFuture.failedFuture(e);
-        }
-    }
-
-    /**
-     * Unregisters Kafka controller nodes from a KRaft-based Kafka cluster
-     *
-     * @param reconciliation        Reconciliation marker
-     * @param adminClientProvider   Kafka Admin API client provider
-     * @param kafkaTrustSet         Trust set for the admin client to connect to the Kafka cluster
-     * @param authIdentity          Key set  for the admin client to connect to the Kafka cluster
-     * @param nodeIdsToUnregister   List of node IDs that should be unregistered
-     *
-     * @return  CompletionStage that completes when all controller nodes are unregistered
-     */
-    public static CompletionStage<Void> unregisterControllerNodes(
-            Reconciliation reconciliation,
-            AdminClientProvider adminClientProvider,
-            TrustSet kafkaTrustSet,
-            AuthIdentity authIdentity,
-            Set<Integer> nodeIdsToUnregister
-    ) {
-        try {
-            String bootstrapHostname = KafkaResources.bootstrapServiceName(reconciliation.name()) + "." + reconciliation.namespace() + ".svc:" + KafkaCluster.REPLICATION_PORT;
-            Admin adminClient = adminClientProvider.createAdminClient(bootstrapHostname, kafkaTrustSet, authIdentity);
-
-            List<CompletionStage<Void>> futures = new ArrayList<>();
-            for (Integer nodeId : nodeIdsToUnregister) {
-                futures.add(unregisterControllerNode(reconciliation, adminClient, nodeId));
-            }
-            return CompletableFuture.allOf(futures.stream().map(CompletionStage::toCompletableFuture).toArray(CompletableFuture[]::new))
-                    .whenComplete((v, t) -> {
-                        adminClient.close();
-                    });
-        } catch (KafkaException e) {
-            LOGGER.warnCr(reconciliation, "Failed to unregister nodes", e);
             return CompletableFuture.failedFuture(e);
         }
     }

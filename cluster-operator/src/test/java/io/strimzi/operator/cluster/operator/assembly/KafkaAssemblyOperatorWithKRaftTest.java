@@ -1810,7 +1810,7 @@ public class KafkaAssemblyOperatorWithKRaftTest {
                     assertThat(kafkaNodePoolStatusCaptor.getAllValues().get(1).getStatus().getRoles(), hasItems(ProcessRoles.BROKER));
                     assertThat(kao.state.kafkaStatus.getKafkaNodePools().stream().map(UsedNodePoolStatus::getName).toList(), is(List.of("brokers", "controllers")));
 
-                    // Reconciliation succeeds even though unregistration failed -- will retry on next reconciliation
+                    // Reconciliation succeeds even though unregistration failed, will retry on next reconciliation
                     verify(mockAdmin, times(1)).describeCluster();
                     verify(mockAdmin, never()).unregisterBroker(anyInt());
                     verify(mockAdmin, times(1)).unregisterController(anyInt());
@@ -2191,8 +2191,8 @@ public class KafkaAssemblyOperatorWithKRaftTest {
                     .compose(i -> brokerConfigurationConfigMaps())
                     .compose(i -> podSet())
                     .compose(this::rollingUpdate)
-                    .compose(i -> nodeUnregistration())
-                    .compose(i -> controllerUnregistration())
+                    .compose(i -> brokerNodesUnregistration())
+                    .compose(i -> controllerNodesUnregistration())
                     .compose(i -> sharedKafkaConfigurationCleanup());
         }
 
