@@ -9,10 +9,11 @@ The User Operator has its own preconfigured loggers:
 
 [cols="1m,2,1",options="header"]
 |===
-| Logger     | Description                    | Default Level
+| Logger     | Description                             | Default Level
 
-| rootLogger | Default logger for all classes | INFO
-| jetty      | Logs HTTP server activity      | INFO
+| rootLogger | Default logger for all classes          | INFO
+| jetty      | Logs HTTP server activity               | INFO
+| kafka      | Logs Apache Kafka Admin client activity | INFO
 |===
 
 The User Operator uses the Apache `log4j2` logger implementation.
