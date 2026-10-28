@@ -1,7 +1,7 @@
 header:
   schema-version: 2.2.0
-  last-updated: '2026-10-14'
-  last-reviewed: '2026-10-14'
+  last-updated: '2026-10-27'
+  last-reviewed: '2026-10-27'
   url: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/main/security-insights.yml
 
 project:
@@ -162,7 +162,9 @@ repository:
   security:
     assessments:
       self:
-        comment: A security self-assessment is in progress but not yet merged or published. It is being drafted in the strimzi/governance repository.
+        comment: Strimzi has completed a security self-assessment. The assessment document is linked below.
+        evidence-url:
+          - https://github.com/strimzi/strimzi-kafka-operator/blob/main/SECURITY-SELF-ASSESSMENT.md
     tools:
       - name: CodeQL
         type: SAST
