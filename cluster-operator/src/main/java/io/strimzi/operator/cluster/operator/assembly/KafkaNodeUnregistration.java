@@ -264,13 +264,13 @@ public class KafkaNodeUnregistration {
      * @return  CompletionStage that completes when the node is unregistered
      */
     private static CompletionStage<Void> unregisterBrokerNode(Reconciliation reconciliation, Admin adminClient, Integer nodeIdToUnregister) {
-        LOGGER.debugCr(reconciliation, "Unregistering node {} from the Kafka cluster", nodeIdToUnregister);
+        LOGGER.debugCr(reconciliation, "Unregistering broker node {} from the Kafka cluster", nodeIdToUnregister);
 
         return adminClient.unregisterBroker(nodeIdToUnregister).all()
                 .whenComplete((v, t) -> {
                     if (t != null) {
                         Throwable cause = maybeUnwrapCompletionException(t);
-                        LOGGER.warnCr(reconciliation, "Failed to unregister node {} from the Kafka cluster", nodeIdToUnregister, cause);
+                        LOGGER.warnCr(reconciliation, "Failed to unregister broker node {} from the Kafka cluster", nodeIdToUnregister, cause);
                     }
                 })
                 .toCompletionStage();
@@ -293,7 +293,7 @@ public class KafkaNodeUnregistration {
                 .whenComplete((v, t) -> {
                     if (t != null) {
                         Throwable cause = maybeUnwrapCompletionException(t);
-                        LOGGER.warnCr(reconciliation, "Failed to unregister node {} from the Kafka cluster", nodeIdToUnregister, cause);
+                        LOGGER.warnCr(reconciliation, "Failed to unregister controller node {} from the Kafka cluster", nodeIdToUnregister, cause);
                     }
                 })
                 .toCompletionStage();
