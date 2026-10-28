@@ -19,6 +19,7 @@ import io.strimzi.test.interfaces.TestSeparator;
 import io.strimzi.test.mockkube3.MockKube3;
 import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.AdminClientConfig;
+import org.apache.kafka.clients.admin.ConfigEntry;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.common.config.ConfigResource;
 import org.apache.kafka.common.config.TopicConfig;
@@ -115,6 +116,7 @@ class AlterableTopicConfigIT implements TestSeparator {
         kafkaAdminClient.createTopics(List.of(new NewTopic("my-topic", 1, (short) 1)
             .configs(Map.of(configName, "1.0")))).all().get();
         var kafkaConfig = kafkaAdminClient.describeConfigs(List.of(topicResource)).all().get().get(topicResource).get(configName);
+        assertEquals(ConfigEntry.ConfigType.DOUBLE, kafkaConfig.type());
         // Ensure the broker value differs from the desired integer 1 so the test exercises numeric comparison.
         assertEquals("1.0", kafkaConfig.value());
 
