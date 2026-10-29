@@ -73,6 +73,7 @@ public class CaReconciler {
 
     /* test */ final Reconciliation reconciliation;
     private final long operationTimeoutMs;
+    private final long kafkaPodRestartDelayMs;
 
     /* test */ final DeploymentOperator deploymentOperator;
     private final StrimziPodSetOperator strimziPodSetOperator;
@@ -124,6 +125,7 @@ public class CaReconciler {
     ) {
         this.reconciliation = reconciliation;
         this.operationTimeoutMs = config.getOperationTimeoutMs();
+        this.kafkaPodRestartDelayMs = config.getKafkaPodRestartDelayMs();
 
         this.deploymentOperator = supplier.deploymentOperations;
         this.strimziPodSetOperator = supplier.strimziPodSetOperator;
@@ -487,6 +489,7 @@ public class CaReconciler {
                 podOperator,
                 1_000,
                 operationTimeoutMs,
+                kafkaPodRestartDelayMs,
                 () -> new BackOff(250, 2, 10),
                 nodes,
                 coIdentity,

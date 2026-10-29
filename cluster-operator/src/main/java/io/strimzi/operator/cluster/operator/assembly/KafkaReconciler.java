@@ -118,6 +118,7 @@ public class KafkaReconciler {
 
     // Various settings
     private final long operationTimeoutMs;
+    private final long kafkaPodRestartDelayMs;
     private final boolean isNetworkPolicyGeneration;
     private final boolean isPodDisruptionBudgetGeneration;
     private final List<String> maintenanceWindows;
@@ -202,6 +203,7 @@ public class KafkaReconciler {
         this.reconciliation = reconciliation;
         this.vertx = vertx;
         this.operationTimeoutMs = config.getOperationTimeoutMs();
+        this.kafkaPodRestartDelayMs = config.getKafkaPodRestartDelayMs();
         this.kafkaNodePoolCrs = nodePools;
         this.kafka = kafka;
 
@@ -481,6 +483,7 @@ public class KafkaReconciler {
                     podOperator,
                     1_000,
                     operationTimeoutMs,
+                    kafkaPodRestartDelayMs,
                     () -> new BackOff(250, 2, 10),
                     nodes,
                     this.coIdentity,
