@@ -5,8 +5,7 @@
 package io.strimzi.operator.common.ca;
 
 import io.fabric8.certmanager.api.model.v1.Certificate;
-import io.fabric8.certmanager.api.model.v1.CertificateCondition;
-import io.fabric8.certmanager.api.model.v1.CertificateStatus;
+import io.fabric8.certmanager.api.model.v1.CertificateBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.strimzi.api.kafka.model.common.CertificateAuthority;
@@ -35,7 +34,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
@@ -300,15 +298,16 @@ public class CertManagerCaCertIssuerTest {
         when(certManagerCertificateOperator.waitForReady(any(), eq(NAMESPACE), eq(RESOURCE_NAME)))
                 .thenReturn(CompletableFuture.failedFuture(new StrimziTimeoutException("Timed out waiting for resource to be ready")));
 
-        Certificate failedCert = new Certificate();
-        CertificateStatus status = new CertificateStatus();
-        CertificateCondition readyCond = new CertificateCondition();
-        readyCond.setType("Ready");
-        readyCond.setStatus("False");
-        readyCond.setReason("IssuerNotFound");
-        readyCond.setMessage("Issuer.cert-manager.io cm-issuer does not exist");
-        status.setConditions(List.of(readyCond));
-        failedCert.setStatus(status);
+        Certificate failedCert = new CertificateBuilder()
+                .withNewStatus()
+                    .addNewCondition()
+                        .withType("Ready")
+                        .withStatus("False")
+                        .withReason("IssuerNotFound")
+                        .withMessage("Issuer.cert-manager.io cm-issuer does not exist")
+                    .endCondition()
+                .endStatus()
+                .build();
 
         when(certManagerCertificateOperator.getAsync(eq(NAMESPACE), eq(RESOURCE_NAME)))
                 .thenReturn(CompletableFuture.completedFuture(failedCert));
