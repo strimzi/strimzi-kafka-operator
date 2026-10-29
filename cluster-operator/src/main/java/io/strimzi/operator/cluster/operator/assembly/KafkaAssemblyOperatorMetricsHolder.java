@@ -37,11 +37,11 @@ public class KafkaAssemblyOperatorMetricsHolder extends OperatorMetricsHolder {
     /**
      * Metric name for auto-rebalance triggered counter, broken down per violated goal.
      */
-    public static final String METRICS_AUTO_REBALANCE_TRIGGERED = METRICS_PREFIX + "auto.rebalance.triggered.total";
+    public static final String METRICS_AUTO_REBALANCE_ON_IMBALANCE_TRIGGERED = METRICS_PREFIX + "auto.rebalance.on.imbalance.triggered.total";
 
     protected final Map<MetricKey, AtomicLong> certificateExpirationMap = new ConcurrentHashMap<>(1);
     protected final Map<MetricKey, AtomicInteger> nodePoolResourceCounterMap = new ConcurrentHashMap<>(1);
-    protected final Map<MetricKey, Counter> autoRebalanceTriggeredCounterMap = new ConcurrentHashMap<>(1);
+    protected final Map<MetricKey, Counter> autoRebalanceOnImbalanceTriggeredCounterMap = new ConcurrentHashMap<>(1);
 
     /**
      * Constructs the operator metrics holder
@@ -137,7 +137,7 @@ public class KafkaAssemblyOperatorMetricsHolder extends OperatorMetricsHolder {
     }
 
     /**
-     * Counter metric for auto-rebalances triggered per violated goal.
+     * Counter metric for triggered auto-rebalances on imbalance per violated goal.
      * Incremented once per violated goal when a KafkaRebalance is actually created in response to a detected anomaly.
      *
      * @param namespace  Namespace of the resources being reconciled
@@ -145,13 +145,13 @@ public class KafkaAssemblyOperatorMetricsHolder extends OperatorMetricsHolder {
      *
      * @return  Metrics counter
      */
-    public Counter autoRebalanceTriggeredCounter(String namespace, String goal) {
+    public Counter autoRebalanceOnImbalanceTriggeredCounter(String namespace, String goal) {
         return getCounter(
                 new GoalMetricKey(kind, namespace, goal),
-                METRICS_AUTO_REBALANCE_TRIGGERED,
-                "Total number of auto-rebalances triggered per violated Cruise Control goal",
+                METRICS_AUTO_REBALANCE_ON_IMBALANCE_TRIGGERED,
+                "Total number of auto-rebalances on imbalance triggered per violated Cruise Control goal",
                 Optional.of(getLabelSelectorValues()),
-                autoRebalanceTriggeredCounterMap,
+                autoRebalanceOnImbalanceTriggeredCounterMap,
                 Tag.of("goal", goal));
     }
 }
