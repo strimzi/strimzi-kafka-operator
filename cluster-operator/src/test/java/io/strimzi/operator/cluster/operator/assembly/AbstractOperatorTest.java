@@ -231,7 +231,7 @@ class AbstractOperatorTest {
                 return CompletableFuture.completedFuture(null);
             }
         };
-        var target = new DefaultOperator(vertx, "Test", resourceOperator, new MicrometerMetricsProvider(BackendRegistries.getDefaultNow()), null);
+        var target = new DefaultOperator(vertx, "Test", resourceOperator, new MicrometerMetricsProvider(new SimpleMeterRegistry()), null);
         Reconciliation reconciliation = new Reconciliation("test", "TestResource", "my-namespace", "my-resource");
 
         Checkpoint checkpoint = context.checkpoint();

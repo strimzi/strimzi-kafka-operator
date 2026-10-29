@@ -15,6 +15,7 @@ The rules are specified in the example `prometheus-rules` directory for use in a
 The `prometheus-rules` directory contains example rules for the following components:
 
 * Kafka
+* Cluster Operator
 * Entity Operator
 * Kafka Connect
 * HTTP Bridge

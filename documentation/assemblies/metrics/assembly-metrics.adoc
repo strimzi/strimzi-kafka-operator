@@ -15,6 +15,8 @@ Metrics from Strimzi components can be collected using Prometheus and visualized
 Prometheus collects metrics from running pods in your cluster, while Grafana provides an intuitive interface for exploring and visualizing these metrics. 
 
 The Strimzi operators expose Prometheus metrics by default, including reconciliation counts, durations, JVM data, and resource processing statistics.
+The `strimzi_reconciliations_in_progress_start_time_seconds` metric exposes the start time of each reconciliation that is currently running, with `kind`, `namespace`, and `name` labels identifying the resource.
+The metric is removed when the reconciliation completes, so you can use it to alert on stuck reconciliations, as shown in the example Prometheus rules for the Cluster Operator.
 Other components and features require configuration to expose their metrics.
 
 In addition, you can use kube-state-metrics (KSM) to monitor the state and readiness of Strimzi custom resources, and to raise alerts for warning conditions.

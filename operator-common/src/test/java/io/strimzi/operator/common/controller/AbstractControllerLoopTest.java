@@ -51,7 +51,7 @@ public class AbstractControllerLoopTest {
         CountDownLatch reconciliationStarted = new CountDownLatch(1);
         CountDownLatch reconciliationBlocked = new CountDownLatch(1);
 
-        TestControllerLoop loop = new TestControllerLoop(new ControllerQueue(10, metrics), metrics, reconciliationStarted, reconciliationBlocked);
+        TestControllerLoop loop = new TestControllerLoop(new ControllerQueue(10, metrics), new ReconciliationLockManager(), metrics, reconciliationStarted, reconciliationBlocked);
         loop.start();
 
         try {
@@ -78,6 +78,51 @@ public class AbstractControllerLoopTest {
         }
     }
 
+    @Test
+    public void testInProgressStartTimeMetricWhenLockNotAcquired() throws InterruptedException {
+        ControllerMetricsHolder metrics = new ControllerMetricsHolder(KIND, null, new MicrometerMetricsProvider(new SimpleMeterRegistry()));
+        MeterRegistry registry = metrics.metricsProvider().meterRegistry();
+        ReconciliationLockManager lockManager = new ReconciliationLockManager();
+
+        CountDownLatch reconciliationStarted = new CountDownLatch(1);
+        CountDownLatch reconciliationBlocked = new CountDownLatch(1);
+
+        TestControllerLoop loop = new TestControllerLoop(new ControllerQueue(10, metrics), lockManager, metrics, reconciliationStarted, reconciliationBlocked);
+        loop.start();
+
+        SimplifiedReconciliation reconciliation = new SimplifiedReconciliation(KIND, NAMESPACE, NAME);
+        String lockName = reconciliation.lockName();
+
+        // The test holds the lock, so the controller loop cannot acquire it and re-queues the reconciliation without registering the metric
+        assertThat(lockManager.tryLock(lockName, 1_000, TimeUnit.MILLISECONDS), is(true));
+
+        try {
+            loop.enqueue(reconciliation);
+
+            TestUtils.waitFor("reconciliation to fail to acquire the lock", 100, 10_000,
+                    () -> metrics.lockedReconciliationsCounter(NAMESPACE).count() >= 1.0);
+
+            assertThat(reconciliationStarted.getCount(), is(1L));
+            assertThat(registry.find(MetricsHolder.METRICS_RECONCILIATIONS_IN_PROGRESS_START_TIME).gauges().isEmpty(), is(true));
+        } finally {
+            lockManager.unlock(lockName);
+        }
+
+        try {
+            // Once the lock is released, the re-queued reconciliation runs and registers the metric
+            assertThat(reconciliationStarted.await(10_000, TimeUnit.MILLISECONDS), is(true));
+            assertThat(registry.find(MetricsHolder.METRICS_RECONCILIATIONS_IN_PROGRESS_START_TIME).gauges().isEmpty(), is(false));
+
+            reconciliationBlocked.countDown();
+
+            TestUtils.waitFor("in-progress start time metric to be removed", 100, 10_000,
+                    () -> registry.find(MetricsHolder.METRICS_RECONCILIATIONS_IN_PROGRESS_START_TIME).gauges().isEmpty());
+        } finally {
+            reconciliationBlocked.countDown();
+            loop.stop();
+        }
+    }
+
     /**
      * Controller loop which blocks inside the reconciliation until it is released by the test
      */
@@ -87,8 +132,8 @@ public class AbstractControllerLoopTest {
         private final CountDownLatch reconciliationStarted;
         private final CountDownLatch reconciliationBlocked;
 
-        public TestControllerLoop(ControllerQueue workQueue, ControllerMetricsHolder metrics, CountDownLatch reconciliationStarted, CountDownLatch reconciliationBlocked) {
-            super("test-controller-loop", workQueue, new ReconciliationLockManager(), scheduledExecutor);
+        public TestControllerLoop(ControllerQueue workQueue, ReconciliationLockManager lockManager, ControllerMetricsHolder metrics, CountDownLatch reconciliationStarted, CountDownLatch reconciliationBlocked) {
+            super("test-controller-loop", workQueue, lockManager, scheduledExecutor);
             this.workQueue = workQueue;
             this.metrics = metrics;
             this.reconciliationStarted = reconciliationStarted;
