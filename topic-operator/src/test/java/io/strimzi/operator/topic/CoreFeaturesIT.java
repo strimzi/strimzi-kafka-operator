@@ -1674,7 +1674,6 @@ class CoreFeaturesIT implements TestSeparator {
     }
 
     @Test
-    @Disabled("Seems to fail with Strimzi test container for unknown reason -> possibly the same as the next test already disabled?")
     public void shouldAccountForReassigningPartitionsIncreasingRf() throws ExecutionException, InterruptedException, TimeoutException {
         startKafkaCluster(3, 1, Map.of("auto.create.topics.enable", "false"));
 
@@ -1718,16 +1717,16 @@ class CoreFeaturesIT implements TestSeparator {
     private void accountForReassigningPartitions(
         StrimziKafkaCluster kafkaCluster,
         Producer<String, String> producer,
-        KafkaTopic kt,
+        KafkaTopic kafkaTopic,
         Function<List<Integer>, List<Integer>> newReplicasFn,
         Predicate<KafkaTopic> duringReassignmentPredicate,
         Predicate<KafkaTopic> postReassignmentPredicate)
         throws ExecutionException, InterruptedException, TimeoutException {
         // given
-        assertEquals(1, kt.getSpec().getPartitions());
-        var topicName = TopicOperatorUtil.topicName(kt);
+        assertEquals(1, kafkaTopic.getSpec().getPartitions());
+        var topicName = TopicOperatorUtil.topicName(kafkaTopic);
         var tp = new TopicPartition(topicName, 0);
-        var created = createTopicAndAssertSuccess(kafkaCluster, kt);
+        var created = createTopicAndAssertSuccess(kafkaCluster, kafkaTopic);
 
         List<Future<RecordMetadata>> futs = new ArrayList<>(1000);
         for (int i = 0; i < 1000; i++) {
@@ -1746,9 +1745,30 @@ class CoreFeaturesIT implements TestSeparator {
         var removingReplicas = new HashSet<>(initialReplicas);
         newReplicas.forEach(removingReplicas::remove);
 
+        // Keep the topic-level throttle configuration in the desired state.
+        // This prevents the Topic Operator from reverting it during reconciliation.
+        created = modifyTopicAndAwait(
+                created,
+                kt -> setThrottleReplicasConfig(kt, tp, initialLeader, addedReplicas),
+                readyIsTrue()
+        );
+
         var throttledRate = "1";
-        Map<ConfigResource, Collection<AlterConfigOp>> throttles = buildThrottles(initialLeader, addedReplicas, throttledRate, tp, AlterConfigOp.OpType.SET);
-        Map<ConfigResource, Collection<AlterConfigOp>> removeThrottles = buildThrottles(initialLeader, addedReplicas, throttledRate, tp, AlterConfigOp.OpType.DELETE);
+        Map<ConfigResource, Collection<AlterConfigOp>> throttles =
+                buildBrokerThrottles(
+                        initialLeader,
+                        addedReplicas,
+                        throttledRate,
+                        AlterConfigOp.OpType.SET
+                );
+        Map<ConfigResource, Collection<AlterConfigOp>> removeThrottles =
+                buildBrokerThrottles(
+                        initialLeader,
+                        addedReplicas,
+                        throttledRate,
+                        AlterConfigOp.OpType.DELETE
+                );
+
         LOGGER.debug("Initial leader {}", initialLeader);
         LOGGER.debug("Initial replicas {}", initialReplicas);
         LOGGER.debug("New replicas {}", newReplicas);
@@ -1757,12 +1777,10 @@ class CoreFeaturesIT implements TestSeparator {
         LOGGER.debug("Throttles {}", throttles);
         LOGGER.debug("Remove throttles {}", removeThrottles);
 
-        // throttle replication to zero. This is to ensure the operator will actually observe the topic state
-        // during reassignment
+        // Apply broker-level rates before starting the reassignment
         kafkaAdminClient.incrementalAlterConfigs(throttles).all().get();
 
-        // when: reassignment is on-going
-
+        // Start the reassignment
         var reassignStartResult = kafkaAdminClient.alterPartitionReassignments(
             Map.of(
                 tp, Optional.of(new NewPartitionReassignment(newReplicas))
@@ -1773,8 +1791,7 @@ class CoreFeaturesIT implements TestSeparator {
         assertFalse(kafkaAdminClient.listPartitionReassignments(Set.of(tp)).reassignments().get().isEmpty(),
             "Expect on-going reassignment prior to reconcile");
 
-        // then
-        // trigger reconciliation by change a config
+        // Trigger reconciliation while the reassignment is in progress
         var modified = modifyTopicAndAwait(created,
             CoreFeaturesIT::setSnappyCompression,
             duringReassignmentPredicate);
@@ -1782,7 +1799,7 @@ class CoreFeaturesIT implements TestSeparator {
         assertFalse(kafkaAdminClient.listPartitionReassignments(Set.of(tp)).reassignments().get().isEmpty(),
             "Expect on-going reassignment after reconcile");
 
-        // let reassignment complete normally by removing the throttles
+        // Remove broker-level rates to let the reassignment complete
         kafkaAdminClient.incrementalAlterConfigs(removeThrottles).all().get();
 
         long deadline = System.currentTimeMillis() + 30_000;
@@ -1793,28 +1810,106 @@ class CoreFeaturesIT implements TestSeparator {
             TimeUnit.MILLISECONDS.sleep(1_000);
         }
 
-        // trigger reconciliation by changing a config again
-        modifyTopicAndAwait(modified,
+        // Trigger reconciliation after the reassignment completes
+        var completed = modifyTopicAndAwait(modified,
             CoreFeaturesIT::setGzipCompression,
             postReassignmentPredicate);
+
+        // Remove the temporary topic-level throttle settings from the desired state
+        modifyTopicAndAwait(
+                completed,
+                CoreFeaturesIT::removeThrottleReplicasConfig,
+                postReassignmentPredicate
+        );
     }
 
-    private static HashMap<ConfigResource, Collection<AlterConfigOp>> buildThrottles(
-        int initialLeader,
-        HashSet<Integer> addedReplicas,
-        String throttledRate,
-        TopicPartition tp,
-        AlterConfigOp.OpType set) {
+    private static KafkaTopic setThrottleReplicasConfig(
+            KafkaTopic kt,
+            TopicPartition tp,
+            int initialLeader,
+            Set<Integer> addedReplicas
+    ) {
+        Map<String, Object> topicConfig = new LinkedHashMap<>();
+
+        if (kt.getSpec().getConfig() != null) {
+            topicConfig.putAll(kt.getSpec().getConfig());
+        }
+
+        topicConfig.put(
+                "leader.replication.throttled.replicas",
+                "%d:%d".formatted(tp.partition(), initialLeader)
+        );
+
+        if (!addedReplicas.isEmpty()) {
+            String followerThrottledReplicas = addedReplicas.stream()
+                    .sorted()
+                    .map(replica -> "%d:%d".formatted(tp.partition(), replica))
+                    .collect(Collectors.joining(","));
+
+            topicConfig.put(
+                    "follower.replication.throttled.replicas",
+                    followerThrottledReplicas
+            );
+        } else {
+            topicConfig.remove("follower.replication.throttled.replicas");
+        }
+
+        return new KafkaTopicBuilder(kt)
+                .editOrNewSpec()
+                .withConfig(topicConfig)
+                .endSpec()
+                .build();
+    }
+
+    private static KafkaTopic removeThrottleReplicasConfig(KafkaTopic kt) {
+        Map<String, Object> topicConfig = new LinkedHashMap<>();
+
+        if (kt.getSpec().getConfig() != null) {
+            topicConfig.putAll(kt.getSpec().getConfig());
+        }
+
+        topicConfig.remove("leader.replication.throttled.replicas");
+        topicConfig.remove("follower.replication.throttled.replicas");
+
+        return new KafkaTopicBuilder(kt)
+                .editOrNewSpec()
+                .withConfig(topicConfig)
+                .endSpec()
+                .build();
+    }
+
+    private static Map<ConfigResource, Collection<AlterConfigOp>> buildBrokerThrottles(
+            int initialLeader,
+            Set<Integer> addedReplicas,
+            String throttledRate,
+            AlterConfigOp.OpType operation
+    ) {
         var throttles = new LinkedHashMap<ConfigResource, Collection<AlterConfigOp>>();
-        throttles.put(new ConfigResource(ConfigResource.Type.BROKER, Integer.toString(initialLeader)),
-            List.of(new AlterConfigOp(new ConfigEntry("leader.replication.throttled.rate", throttledRate), set)));
+
+        throttles.put(
+                new ConfigResource(
+                        ConfigResource.Type.BROKER,
+                        Integer.toString(initialLeader)
+                ),
+                List.of(new AlterConfigOp(
+                        new ConfigEntry("leader.replication.throttled.rate", throttledRate),
+                        operation
+                ))
+        );
+
         addedReplicas.forEach(addedReplica ->
-            throttles.put(new ConfigResource(ConfigResource.Type.BROKER, Integer.toString(addedReplica)),
-                List.of(new AlterConfigOp(new ConfigEntry("follower.replication.throttled.rate", throttledRate), set))));
-        throttles.put(new ConfigResource(ConfigResource.Type.TOPIC, tp.topic()),
-            List.of(new AlterConfigOp(new ConfigEntry("leader.replication.throttled.replicas", "%d:%d".formatted(tp.partition(), initialLeader)), set)));
-        addedReplicas.forEach(addedReplica -> throttles.put(new ConfigResource(ConfigResource.Type.TOPIC, tp.topic()),
-            List.of(new AlterConfigOp(new ConfigEntry("follower.replication.throttled.replicas", "%d:%d".formatted(tp.partition(), addedReplica)), set))));
+                throttles.put(
+                        new ConfigResource(
+                                ConfigResource.Type.BROKER,
+                                Integer.toString(addedReplica)
+                        ),
+                        List.of(new AlterConfigOp(
+                                new ConfigEntry("follower.replication.throttled.rate", throttledRate),
+                                operation
+                        ))
+                )
+        );
+
         return throttles;
     }
 
