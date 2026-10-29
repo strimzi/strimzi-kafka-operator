@@ -29,6 +29,7 @@ import javax.net.ssl.TrustManagerFactory;
 
 import java.net.ConnectException;
 import java.net.NoRouteToHostException;
+import java.net.SocketException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -599,12 +600,11 @@ public class CruiseControlApiImpl implements CruiseControlApi {
     private RuntimeException httpExceptionHandler(Throwable ex, String requestMethod, long timeout) {
         if (ex.getCause() instanceof HttpTimeoutException) {
             return new StrimziTimeoutException("The timeout period of " + timeout * 1000 + "ms has been exceeded while executing " + requestMethod);
-        } else if (ex.getCause() instanceof NoRouteToHostException || ex.getCause() instanceof ConnectException) {
+        } else if (ex.getCause() instanceof NoRouteToHostException || ex.getCause() instanceof ConnectException
+                || ex.getCause() instanceof SocketException) {
             return new CruiseControlRetriableConnectionException(ex.getCause());
-        } else if (ex.getCause() instanceof RuntimeException) {
-            return (RuntimeException) ex.getCause();
         } else {
-            return new CruiseControlRetriableConnectionException(ex.getCause());
+            return new RuntimeException(ex.getCause());
         }
     }
 }
