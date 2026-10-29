@@ -198,7 +198,7 @@ public class KafkaAutoRebalancingReconciler {
                                             .thenApply(created -> {
                                                 if (created) {
                                                     goalViolationInfo.fixableGoals().forEach(goal ->
-                                                            metricsHolder.autoRebalanceTriggeredCounter(reconciliation.namespace(), goal).increment());
+                                                            metricsHolder.autoRebalanceOnImbalanceTriggeredCounter(reconciliation.namespace(), goal).increment());
                                                     updateStatus(kafkaAutoRebalanceStatus, KafkaAutoRebalanceState.RebalanceOnImbalance);
                                                 } else {
                                                     updateStatus(kafkaAutoRebalanceStatus, KafkaAutoRebalanceState.Idle);
