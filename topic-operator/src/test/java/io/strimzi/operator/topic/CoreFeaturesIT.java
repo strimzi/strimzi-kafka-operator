@@ -54,7 +54,6 @@ import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -1695,23 +1694,55 @@ class CoreFeaturesIT implements TestSeparator {
     }
 
     @Test
-    @Disabled("Throttles don't provide a way to ensure that reconciliation happens when the UTO will observe a non-empty removing set")
-    public void shouldAccountForReassigningPartitionsDecreasingRf() throws ExecutionException, InterruptedException, TimeoutException {
+    public void shouldAccountForCompletedReassigningPartitionsDecreasingRf() throws ExecutionException, InterruptedException, TimeoutException {
         startKafkaCluster(3, 1, Map.of("auto.create.topics.enable", "false"));
 
-        try (Producer<String, String> producer = new KafkaProducer<>(Map.of(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaCluster.getBootstrapServers(), 
-                ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringSerializer", 
-                ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringSerializer"))) {
-            var topicName = "my-topic";
-            var kt = kafkaTopic(NAMESPACE, topicName, true, topicName, 1, 2);
-            accountForReassigningPartitions(kafkaCluster, producer, kt,
-                    initialReplicas -> {
-                        assertEquals(2, initialReplicas.size());
-                        return List.of(initialReplicas.get(0));
-                    },
-                    readyIsFalseAndReasonIs("NotSupported", "Replication factor change not supported, but required for partitions [0]"),
-                    readyIsFalseAndReasonIs("NotSupported", "Replication factor change not supported, but required for partitions [0]"));
+        var topicName = "my-topic";
+        var kt = kafkaTopic(NAMESPACE, topicName, true, topicName, 1, 2);
+        createTopicAndAssertSuccess(kafkaCluster, kt);
+        var tp = new TopicPartition(topicName, 0);
+
+        // The topic initially has two replicas
+        var initialReplicas = awaitTopicDescription(topicName).partitions().get(0).replicas()
+                .stream()
+                .map(Node::id)
+                .toList();
+        assertEquals(2, initialReplicas.size());
+
+        // Decrease the replication factor from two to one
+        var newReplicas = List.of(initialReplicas.get(0));
+        kafkaAdminClient.alterPartitionReassignments(
+                Map.of(tp, Optional.of(new NewPartitionReassignment(newReplicas)))
+        ).all().get();
+
+        // Wait for both the reassignment to finish and the new assignment
+        // to become visible in topic metadata
+        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(30);
+        while (true) {
+            var reassignments = kafkaAdminClient.listPartitionReassignments(Set.of(tp)).reassignments().get();
+            var actualRf = awaitTopicDescription(topicName).partitions().get(0).replicas().size();
+            if (reassignments.isEmpty() && actualRf == 1) {
+                break;
+            }
+            if (System.nanoTime() >= deadline) {
+                throw new TimeoutException("Expected reassignment to complete with replication factor 1");
+            }
+            TimeUnit.MILLISECONDS.sleep(250);
         }
+
+        // The externally changed RF is unsupported by the Topic Operator
+        var current = Crds.topicOperation(kubernetesClient)
+                .inNamespace(NAMESPACE)
+                .withName(topicName)
+                .get();
+
+        modifyTopicAndAwait(
+                current,
+                CoreFeaturesIT::setSnappyCompression,
+                readyIsFalseAndReasonIs("NotSupported",
+                        "Replication factor change not supported, but required for partitions [0]"
+                )
+        );
     }
 
     private void accountForReassigningPartitions(
