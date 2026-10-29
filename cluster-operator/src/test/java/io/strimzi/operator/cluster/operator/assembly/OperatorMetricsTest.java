@@ -52,6 +52,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.lessThanOrEqualTo;
 
 @ExtendWith(VertxExtension.class)
@@ -261,22 +262,25 @@ public class OperatorMetricsTest {
         operator.reconcile(new Reconciliation("test", "TestResource", "my-namespace", "my-resource"))
                 .onComplete(ignored -> async.flag());
 
-        // The metric is registered asynchronously after the reconciliation lock is acquired
-        TestUtils.waitFor("in-progress start time metric to be registered", 100, 10_000,
-                () -> !registry.find(MetricsHolder.METRICS_RECONCILIATIONS_IN_PROGRESS_START_TIME).gauges().isEmpty());
+        try {
+            // The metric is registered asynchronously after the reconciliation lock is acquired
+            TestUtils.waitFor("in-progress start time metric to be registered", 100, 10_000,
+                    () -> !registry.find(MetricsHolder.METRICS_RECONCILIATIONS_IN_PROGRESS_START_TIME).gauges().isEmpty());
 
-        double startTime = registry.get(MetricsHolder.METRICS_RECONCILIATIONS_IN_PROGRESS_START_TIME)
-                .tag("kind", "TestResource")
-                .tag("namespace", "my-namespace")
-                .tag("name", "my-resource")
-                .gauge().value();
-        assertThat(startTime, is(greaterThanOrEqualTo((double) beforeReconcile)));
-        assertThat(startTime, is(lessThanOrEqualTo((double) Instant.now().getEpochSecond())));
-
-        if (successfulReconciliation) {
-            blockedReconciliation.complete();
-        } else {
-            blockedReconciliation.fail(new RuntimeException("Test error"));
+            double startTime = registry.get(MetricsHolder.METRICS_RECONCILIATIONS_IN_PROGRESS_START_TIME)
+                    .tag("kind", "TestResource")
+                    .tag("namespace", "my-namespace")
+                    .tag("name", "my-resource")
+                    .gauge().value();
+            assertThat(startTime, is(greaterThanOrEqualTo((double) beforeReconcile)));
+            assertThat(startTime, is(lessThanOrEqualTo((double) Instant.now().getEpochSecond())));
+        } finally {
+            // Unblock the reconciliation even when the assertions fail, so that the lock is not kept for the other tests
+            if (successfulReconciliation) {
+                blockedReconciliation.complete();
+            } else {
+                blockedReconciliation.fail(new RuntimeException("Test error"));
+            }
         }
 
         // The metric is removed asynchronously when the reconciliation completes
@@ -292,6 +296,90 @@ public class OperatorMetricsTest {
     @Test
     public void testInProgressStartTimeMetricWithFailingReconcile(VertxTestContext context)  {
         inProgressStartTimeMetric(context, false);
+    }
+
+    @Test
+    public void testInProgressStartTimeMetricWithPausedReconcile(VertxTestContext context)  {
+        MetricsProvider metricsProvider = createCleanMetricsProvider();
+
+        AbstractWatchableStatusedNamespacedResourceOperator resourceOperator = resourceOperatorWithExistingPausedResource();
+
+        AbstractOperator operator = new AbstractOperator(vertx, "TestResource", resourceOperator, metricsProvider, null) {
+            @Override
+            protected Future createOrUpdate(Reconciliation reconciliation, CustomResource resource) {
+                return Future.succeededFuture();
+            }
+
+            @Override
+            protected Future<Boolean> delete(Reconciliation reconciliation) {
+                return null;
+            }
+
+            @Override
+            protected Status createStatus(CustomResource ignored) {
+                return new Status() { };
+            }
+        };
+
+        MeterRegistry registry = metricsProvider.meterRegistry();
+
+        Checkpoint async = context.checkpoint();
+        Future<Void> reconcileResult = operator.reconcile(new Reconciliation("test", "TestResource", "my-namespace", "my-resource"));
+        reconcileResult
+                // The lock is released only after the metric is removed => once the lock can be acquired, the metric should be gone
+                .compose(v -> vertx.sharedData().getLockWithTimeout(operator.getLockName("my-namespace", "my-resource"), 10_000L))
+                .onComplete(context.succeeding(lock -> context.verify(() -> {
+                    lock.release();
+
+                    assertThat(registry.get(MetricsHolder.METRICS_RESOURCES_PAUSED).tag("kind", "TestResource").gauge().value(), is(1.0));
+                    assertThat(registry.find(MetricsHolder.METRICS_RECONCILIATIONS_IN_PROGRESS_START_TIME).gauges().isEmpty(), is(true));
+
+                    async.flag();
+                })));
+    }
+
+    @Test
+    public void testInProgressStartTimeMetricWhenLockNotAcquired(VertxTestContext context)  {
+        MetricsProvider metricsProvider = createCleanMetricsProvider();
+
+        AbstractWatchableStatusedNamespacedResourceOperator resourceOperator = resourceOperatorWithExistingResourceWithoutSelectorLabel();
+
+        AbstractOperator operator = new AbstractOperator(vertx, "TestResource", resourceOperator, metricsProvider, null) {
+            @Override
+            protected Future createOrUpdate(Reconciliation reconciliation, CustomResource resource) {
+                return Future.succeededFuture();
+            }
+
+            @Override
+            protected Future<Boolean> delete(Reconciliation reconciliation) {
+                return null;
+            }
+
+            @Override
+            protected Status createStatus(CustomResource ignored) {
+                return new Status() { };
+            }
+        };
+
+        MeterRegistry registry = metricsProvider.meterRegistry();
+        Reconciliation reconciliation = new Reconciliation("test", "TestResource", "my-namespace", "my-resource");
+
+        Checkpoint async = context.checkpoint();
+        // The test holds the lock, so the reconciliation cannot acquire it and should not register the metric
+        vertx.sharedData().getLockWithTimeout(operator.getLockName("my-namespace", "my-resource"), 10_000L)
+                .compose(lock -> {
+                    Future<Void> withLockResult = operator.withLock(reconciliation, 100L, () -> Future.succeededFuture());
+                    return withLockResult.eventually(() -> {
+                        lock.release();
+                        return Future.succeededFuture();
+                    });
+                })
+                .onComplete(context.failing(e -> context.verify(() -> {
+                    assertThat(e, instanceOf(AbstractOperator.UnableToAcquireLockException.class));
+                    assertThat(registry.find(MetricsHolder.METRICS_RECONCILIATIONS_IN_PROGRESS_START_TIME).gauges().isEmpty(), is(true));
+
+                    async.flag();
+                })));
     }
 
     @Test
