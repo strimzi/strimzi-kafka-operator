@@ -15,6 +15,9 @@
   Unquoted `yes`, `no`, `on`, and `off` values are not converted to booleans anymore and are passed to the JMX Exporter as strings.
   The JMX Exporter fails to start when these values are used for boolean options such as `lowercaseOutputName`, which prevents the container from starting.
   Before upgrading, make sure your metrics configuration uses `true` and `false` for boolean values.
+* Topic and User Operators now use a separate logger for the Apache Kafka Admin client.
+  The default log level is set to INFO.
+  To change the log level for the Admin client, you must configure this logger explicitly rather than relying solely on the root logger.
 
 ## 1.3.0
 
