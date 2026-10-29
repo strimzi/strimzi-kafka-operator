@@ -168,58 +168,51 @@ public class KafkaAutoRebalancingReconciler {
 
     private CompletionStage<Void> handleDetectedViolations(GoalViolationInfo goalViolationInfo, KafkaStatus kafkaStatus) {
         return switch (goalViolationInfo.fixability()) {
-            case UNFIXABLE -> imbalanceDetector.shouldTriggerRebalance(goalViolationInfo.detectionTime())
-                    .thenApply(isNew -> {
-                        if (isNew) {
-                            metricsHolder.anomaliesDetectedCounter(reconciliation.namespace(), "goal_violation", goalViolationInfo.fixability().label()).increment();
-                        }
-                        LOGGER.warnCr(reconciliation, "Detected only unfixable goal violations at {}. Auto-rebalance on imbalance is blocked: Manual infrastructure intervention is required", goalViolationInfo.detectionTime());
-                        kafkaStatus.addCondition(StatusUtils.buildWarningCondition("AutoRebalanceOnImbalanceFailure",
-                                "Unfixable goal violations detected: " + goalViolationInfo.unfixableGoals() + ". Auto-rebalance on imbalance is blocked until resolved."));
-                        return (Void) null;
-                    });
-            case MIXED -> imbalanceDetector.shouldTriggerRebalance(goalViolationInfo.detectionTime())
-                    .thenApply(isNew -> {
-                        if (isNew) {
-                            metricsHolder.anomaliesDetectedCounter(reconciliation.namespace(), "goal_violation", goalViolationInfo.fixability().label()).increment();
-                        }
-                        LOGGER.warnCr(reconciliation, "Detected both fixable and unfixable goal violations at {}. Auto-rebalance on imbalance is blocked: Resolve unfixable violations first, or use a manual KafkaRebalance with skipHardGoalCheck: true", goalViolationInfo.detectionTime());
-                        kafkaStatus.addCondition(StatusUtils.buildWarningCondition("AutoRebalanceOnImbalanceFailure",
-                                "Both fixable and unfixable goal violations detected. Unfixable goals: " + goalViolationInfo.unfixableGoals() +
-                                ". Fixable goals: " + goalViolationInfo.fixableGoals() +
-                                ". Auto-rebalance on imbalance is blocked until resolved. To address fixable violations, create a manual KafkaRebalance with skipHardGoalCheck: true."));
-                        return (Void) null;
-                    });
+            case UNFIXABLE -> {
+                LOGGER.warnCr(reconciliation, "Detected only unfixable goal violations at {}. Auto-rebalance on imbalance is blocked: Manual infrastructure intervention is required", goalViolationInfo.detectionTime());
+                kafkaStatus.addCondition(StatusUtils.buildWarningCondition("AutoRebalanceOnImbalanceFailure",
+                        "Unfixable goal violations detected: " + goalViolationInfo.unfixableGoals() + ". Auto-rebalance on imbalance is blocked until resolved."));
+                yield CompletableFuture.completedFuture(null);
+            }
+            case MIXED -> {
+                LOGGER.warnCr(reconciliation, "Detected both fixable and unfixable goal violations at {}. Auto-rebalance on imbalance is blocked: Resolve unfixable violations first, or use a manual KafkaRebalance with skipHardGoalCheck: true", goalViolationInfo.detectionTime());
+                kafkaStatus.addCondition(StatusUtils.buildWarningCondition("AutoRebalanceOnImbalanceFailure",
+                        "Both fixable and unfixable goal violations detected. Unfixable goals: " + goalViolationInfo.unfixableGoals() +
+                        ". Fixable goals: " + goalViolationInfo.fixableGoals() +
+                        ". Auto-rebalance on imbalance is blocked until resolved. To address fixable violations, create a manual KafkaRebalance with skipHardGoalCheck: true."));
+                yield CompletableFuture.completedFuture(null);
+            }
             case FIXABLE -> imbalanceDetector.shouldTriggerRebalance(goalViolationInfo.detectionTime())
-                    .thenCompose(shouldTrigger -> {
-                        if (shouldTrigger) {
-                            metricsHolder.anomaliesDetectedCounter(reconciliation.namespace(), "goal_violation", goalViolationInfo.fixability().label()).increment();
-                        }
-                        if (shouldTrigger && imbalanceDetector.isInMaintenanceWindow()) {
-                            LOGGER.infoCr(reconciliation, "Fixable goal violations detected at {}, triggering auto-rebalance on imbalance", goalViolationInfo.detectionTime());
-                            return getKafkaRebalance(reconciliation.namespace(), reconciliation.name(), KafkaAutoRebalanceMode.IMBALANCE)
-                                    .thenCompose(existingKr -> {
-                                        if (existingKr != null) {
-                                            LOGGER.debugCr(reconciliation, "Auto-rebalance KafkaRebalance already exists, skipping");
-                                            return CompletableFuture.completedFuture(null);
-                                        }
-                                        return createKafkaRebalance(reconciliation.namespace(), reconciliation.name(), KafkaAutoRebalanceMode.IMBALANCE, null)
-                                                .thenApply(created -> {
-                                                    if (created) {
-                                                        updateStatus(kafkaAutoRebalanceStatus, KafkaAutoRebalanceState.RebalanceOnImbalance);
-                                                    } else {
-                                                        updateStatus(kafkaAutoRebalanceStatus, KafkaAutoRebalanceState.Idle);
-                                                    }
-                                                    return (Void) null;
-                                                });
-                                    });
-                        } else if (shouldTrigger) {
-                            LOGGER.infoCr(reconciliation, "Goal violations detected at {} but outside maintenance window, auto-rebalance on imbalance is deferred", goalViolationInfo.detectionTime());
-                        } else {
-                            LOGGER.debugCr(reconciliation, "Goal violations detected at {} were detected before the last rebalance, skipping", goalViolationInfo.detectionTime());
-                        }
-                        return CompletableFuture.completedFuture(null);
-                    });
+                .thenCompose(shouldTrigger -> {
+                    if (shouldTrigger && imbalanceDetector.isInMaintenanceWindow()) {
+                        LOGGER.infoCr(reconciliation, "Fixable goal violations detected at {}, triggering auto-rebalance on imbalance", goalViolationInfo.detectionTime());
+                        return getKafkaRebalance(reconciliation.namespace(), reconciliation.name(), KafkaAutoRebalanceMode.IMBALANCE)
+                                .thenCompose(existingKr -> {
+                                    if (existingKr != null) {
+                                        // KR already exists (e.g. crash recovery) — transition state without counting again
+                                        LOGGER.debugCr(reconciliation, "Auto-rebalance KafkaRebalance already exists, transitioning to RebalanceOnImbalance");
+                                        updateStatus(kafkaAutoRebalanceStatus, KafkaAutoRebalanceState.RebalanceOnImbalance);
+                                        return CompletableFuture.completedFuture(null);
+                                    }
+                                    return createKafkaRebalance(reconciliation.namespace(), reconciliation.name(), KafkaAutoRebalanceMode.IMBALANCE, null)
+                                            .thenApply(created -> {
+                                                if (created) {
+                                                    goalViolationInfo.fixableGoals().forEach(goal ->
+                                                            metricsHolder.autoRebalanceTriggeredCounter(reconciliation.namespace(), goal).increment());
+                                                    updateStatus(kafkaAutoRebalanceStatus, KafkaAutoRebalanceState.RebalanceOnImbalance);
+                                                } else {
+                                                    updateStatus(kafkaAutoRebalanceStatus, KafkaAutoRebalanceState.Idle);
+                                                }
+                                                return (Void) null;
+                                            });
+                                });
+                    } else if (shouldTrigger) {
+                        LOGGER.infoCr(reconciliation, "Goal violations detected at {} but outside maintenance window, auto-rebalance on imbalance is deferred", goalViolationInfo.detectionTime());
+                    } else {
+                        LOGGER.debugCr(reconciliation, "Goal violations detected at {} were detected during the last rebalance, skipping", goalViolationInfo.detectionTime());
+                    }
+                    return CompletableFuture.completedFuture(null);
+                });
         };
     }
 

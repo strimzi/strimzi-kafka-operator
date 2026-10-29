@@ -10,8 +10,8 @@ import io.micrometer.core.instrument.Tags;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePool;
 import io.strimzi.operator.common.MetricsProvider;
 import io.strimzi.operator.common.config.ConfigParameter;
-import io.strimzi.operator.common.metrics.AnomalyMetricKey;
 import io.strimzi.operator.common.metrics.CertificateMetricKey;
+import io.strimzi.operator.common.metrics.GoalMetricKey;
 import io.strimzi.operator.common.metrics.MetricKey;
 import io.strimzi.operator.common.metrics.MetricsUtils;
 import io.strimzi.operator.common.metrics.OperatorMetricsHolder;
@@ -35,13 +35,13 @@ public class KafkaAssemblyOperatorMetricsHolder extends OperatorMetricsHolder {
      */
     public static final String METRICS_CERTIFICATE_EXPIRATION_MS = METRICS_PREFIX + "certificate.expiration.timestamp.ms";
     /**
-     * Metric name for anomalies detected counter.
+     * Metric name for auto-rebalance triggered counter, broken down per violated goal.
      */
-    public static final String METRICS_ANOMALIES_DETECTED = METRICS_PREFIX + "auto.rebalance.anomalies.detected.total";
+    public static final String METRICS_AUTO_REBALANCE_TRIGGERED = METRICS_PREFIX + "auto.rebalance.triggered.total";
 
     protected final Map<MetricKey, AtomicLong> certificateExpirationMap = new ConcurrentHashMap<>(1);
     protected final Map<MetricKey, AtomicInteger> nodePoolResourceCounterMap = new ConcurrentHashMap<>(1);
-    protected final Map<MetricKey, Counter> anomaliesDetectedCounterMap = new ConcurrentHashMap<>(1);
+    protected final Map<MetricKey, Counter> autoRebalanceTriggeredCounterMap = new ConcurrentHashMap<>(1);
 
     /**
      * Constructs the operator metrics holder
@@ -137,22 +137,21 @@ public class KafkaAssemblyOperatorMetricsHolder extends OperatorMetricsHolder {
     }
 
     /**
-     * Counter metric for anomalies detected by Cruise Control.
+     * Counter metric for auto-rebalances triggered per violated goal.
+     * Incremented once per violated goal when a KafkaRebalance is actually created in response to a detected anomaly.
      *
-     * @param namespace     Namespace of the resources being reconciled
-     * @param type          Type of anomaly detected (e.g. goal_violation)
-     * @param fixability    Fixability classification of the detected anomaly
+     * @param namespace  Namespace of the resources being reconciled
+     * @param goal       Short name of the violated goal (e.g. DiskUsageDistributionGoal)
      *
      * @return  Metrics counter
      */
-    public Counter anomaliesDetectedCounter(String namespace, String type, String fixability) {
+    public Counter autoRebalanceTriggeredCounter(String namespace, String goal) {
         return getCounter(
-                new AnomalyMetricKey(kind, namespace, type, fixability),
-                METRICS_ANOMALIES_DETECTED,
-                "Total number of anomalies detected by Cruise Control",
+                new GoalMetricKey(kind, namespace, goal),
+                METRICS_AUTO_REBALANCE_TRIGGERED,
+                "Total number of auto-rebalances triggered per violated Cruise Control goal",
                 Optional.of(getLabelSelectorValues()),
-                anomaliesDetectedCounterMap,
-                Tag.of("type", type),
-                Tag.of("fixability", fixability));
+                autoRebalanceTriggeredCounterMap,
+                Tag.of("goal", goal));
     }
 }
