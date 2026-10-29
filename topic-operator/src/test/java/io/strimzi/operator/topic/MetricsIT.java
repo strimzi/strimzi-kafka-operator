@@ -205,6 +205,41 @@ public class MetricsIT implements TestSeparator {
     }
 
     @Test
+    public void batchingLoopInProgressStartTimeMetricRemovedOnStop() throws InterruptedException {
+        var config = TopicOperatorConfig.buildFromMap(Map.of(
+            TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:9092",
+            TopicOperatorConfig.WATCHED_NAMESPACE.key(), NAMESPACE,
+            TopicOperatorConfig.MAX_QUEUE_SIZE.key(), String.valueOf(MAX_QUEUE_SIZE),
+            TopicOperatorConfig.MAX_BATCH_SIZE.key(), String.valueOf(MAX_BATCH_SIZE),
+            TopicOperatorConfig.MAX_BATCH_LINGER_MS.key(), "100"
+        ));
+        var metricsHolder = new TopicOperatorMetricsHolder(KafkaTopic.RESOURCE_KIND, null, new TopicOperatorMetricsProvider(new SimpleMeterRegistry()));
+
+        var reconciliationBlocked = new CountDownLatch(1);
+        var controller = mock(BatchingTopicController.class);
+        Mockito.doAnswer(invocation -> {
+            reconciliationBlocked.await();
+            return null;
+        }).when(controller).onUpdate(anyList());
+
+        var batchingLoop = new BatchingLoop(config, controller, 1, mock(ItemStore.class), mock(Runnable.class), metricsHolder);
+        batchingLoop.start();
+
+        try {
+            batchingLoop.offer(new TopicUpsert(0, NAMESPACE, "my-topic", "100100"));
+            assertMetricMatches(metricsHolder, MetricsHolder.METRICS_RECONCILIATIONS_IN_PROGRESS_START_TIME, "gauge", greaterThan(0.0));
+
+            // Stopping the loop interrupts the blocked reconciliation => the metric must not outlive the loop
+            batchingLoop.stop();
+
+            assertThat(metricsHolder.metricsProvider().meterRegistry().find(MetricsHolder.METRICS_RECONCILIATIONS_IN_PROGRESS_START_TIME).gauges().isEmpty(), is(true));
+        } finally {
+            reconciliationBlocked.countDown();
+            batchingLoop.stop();
+        }
+    }
+
+    @Test
     @SuppressWarnings({"checkstyle:JavaNCSS", "checkstyle:MethodLength"})
     public void batchingTopicControllerMetrics() throws InterruptedException {
         try (var kafkaAdminClient = Admin.create(Map.of(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaCluster.getBootstrapServers()))) {
