@@ -31,6 +31,8 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mockito;
 
 import java.time.Instant;
@@ -154,8 +156,9 @@ public class MetricsIT implements TestSeparator {
         batchingLoop.stop();
     }
 
-    @Test
-    public void batchingLoopInProgressStartTimeMetric() throws InterruptedException {
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    public void batchingLoopInProgressStartTimeMetric(boolean failReconciliation) throws InterruptedException {
         var config = TopicOperatorConfig.buildFromMap(Map.of(
             TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:9092",
             TopicOperatorConfig.WATCHED_NAMESPACE.key(), NAMESPACE,
@@ -169,6 +172,9 @@ public class MetricsIT implements TestSeparator {
         var controller = mock(BatchingTopicController.class);
         Mockito.doAnswer(invocation -> {
             reconciliationBlocked.await();
+            if (failReconciliation) {
+                throw new RuntimeException("Test error");
+            }
             return null;
         }).when(controller).onUpdate(anyList());
 
