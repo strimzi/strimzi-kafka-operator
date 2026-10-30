@@ -233,6 +233,22 @@ public class AbstractConfigurationTest {
     }
 
     @Test
+    public void testKafkaDelegationTokenOptionsAreForbidden() {
+        Map<String, Object> conf = new HashMap<>();
+        conf.put("num.partitions", "3"); // valid
+        conf.put("delegation.token.secret.key", "top-secret"); // forbidden
+        conf.put("delegation.token.master.key", "top-secret"); // forbidden
+        conf.put("delegation.token.max.lifetime.ms", "604800000"); // forbidden
+
+        KafkaConfiguration kc = new KafkaConfiguration(Reconciliation.DUMMY_RECONCILIATION, conf.entrySet());
+
+        assertThat(kc.asOrderedProperties().asMap().get("num.partitions"), is("3"));
+        assertThat(kc.asOrderedProperties().asMap().get("delegation.token.secret.key"), is(nullValue()));
+        assertThat(kc.asOrderedProperties().asMap().get("delegation.token.master.key"), is(nullValue()));
+        assertThat(kc.asOrderedProperties().asMap().get("delegation.token.max.lifetime.ms"), is(nullValue()));
+    }
+
+    @Test
     public void testKafkaConnectHostnameVerification() {
         Map<String, Object> conf = new HashMap<>();
         conf.put("key.converter", "my.package.Converter"); // valid

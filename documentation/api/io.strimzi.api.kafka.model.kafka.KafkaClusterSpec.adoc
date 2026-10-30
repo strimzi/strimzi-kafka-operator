@@ -54,6 +54,7 @@ Properties with the following prefixes cannot be set:
 * `cordoned.log.dirs`
 * `cruise.control.metrics.reporter.bootstrap.`
 * `cruise.control.metrics.topic`
+* `delegation.token.`
 * `host.name`
 * `inter.broker.listener.name`
 * `listener.`
