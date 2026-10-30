@@ -119,7 +119,7 @@
         <skodjob.kubetest4j.version>1.4.0</skodjob.kubetest4j.version>
         <skodjob-doc.version>0.6.0</skodjob-doc.version>
         <helm-client.version>0.0.15</helm-client.version>
-        <access-operator.version>0.3.0</access-operator.version>
+        <access-operator.version>0.4.0</access-operator.version>
         <test-clients.version>0.15.0</test-clients.version>
         <!-- properties to skip surefire tests during failsafe execution -->
         <skipTests>false</skipTests>
