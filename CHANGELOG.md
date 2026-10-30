@@ -8,6 +8,7 @@
 * Use ubi9-micro as a base image for operators, kafka-based, and maven-builder images.
 * Strimzi Drain Cleaner updated to 1.8.0 (included in the Strimzi installation files)
 * Add support for Strimzi-native configurable RSA key sizes
+* Add new metric `strimzi_reconciliations_in_progress_start_time_seconds` to the Cluster, Topic, and User Operators with the start time of currently running reconciliations to help detect stuck reconciliations
 
 ### Major changes, deprecations, and removals
 

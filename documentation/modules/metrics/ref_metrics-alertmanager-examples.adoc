@@ -15,6 +15,7 @@ The rules are specified in the example `prometheus-rules` directory for use in a
 The `prometheus-rules` directory contains example rules for the following components:
 
 * Kafka
+* Cluster Operator
 * Entity Operator
 * Kafka Connect
 * HTTP Bridge
@@ -22,6 +23,9 @@ The `prometheus-rules` directory contains example rules for the following compon
 * Kafka Exporter
 
 A description of each of the example rules is provided in the file.
+
+The `StuckReconciliation` rule in the Cluster Operator rules file covers the Cluster, Topic, and User Operators.
+It uses a six-hour threshold as an example; adjust the threshold to suit your deployment.
 
 Alerting rules provide notifications about specific conditions observed in metrics.
 Rules are declared on the Prometheus server, but Prometheus Alertmanager is responsible for alert notifications.
