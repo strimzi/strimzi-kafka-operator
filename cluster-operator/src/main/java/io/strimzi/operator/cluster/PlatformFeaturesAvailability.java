@@ -38,6 +38,7 @@ public class PlatformFeaturesAvailability implements PlatformFeatures {
     private boolean builds = false;
     private boolean images = false;
     private boolean tlsRoutes = false;
+    private boolean certManagerCertificates = false;
     private KubernetesVersion kubernetesVersion;
     private OidcDiscovery oidcDiscovery = null;
 
@@ -59,13 +60,15 @@ public class PlatformFeaturesAvailability implements PlatformFeatures {
     /**
      * This constructor is used in tests. It sets all OpenShift APIs to true or false depending on the isOpenShift parameter
      *
-     * @param isOpenShift       Set all OpenShift APIs to true
-     * @param hasTlsRoutes      Set TLS Routes support
-     * @param kubernetesVersion Set the Kubernetes version
+     * @param isOpenShift                   Set all OpenShift APIs to true
+     * @param hasTlsRoutes                  Set TLS Routes support
+     * @param hasCertManagerCertificates    Set cert-manager Certificates support
+     * @param kubernetesVersion             Set the Kubernetes version
      */
-    public PlatformFeaturesAvailability(boolean isOpenShift, boolean hasTlsRoutes, KubernetesVersion kubernetesVersion) {
+    public PlatformFeaturesAvailability(boolean isOpenShift, boolean hasTlsRoutes, boolean hasCertManagerCertificates, KubernetesVersion kubernetesVersion) {
         this.kubernetesVersion = kubernetesVersion;
         this.tlsRoutes = hasTlsRoutes;
+        this.certManagerCertificates = hasCertManagerCertificates;
         this.routes = isOpenShift;
         this.images = isOpenShift;
         this.builds = isOpenShift;
@@ -106,6 +109,9 @@ public class PlatformFeaturesAvailability implements PlatformFeatures {
             return detectOidcDiscovery(vertx, client);
         }).compose(oidcDiscovery -> {
             pfa.setOidcDiscovery(oidcDiscovery);
+            return checkApiAvailability(vertx, client, "cert-manager.io", "v1", "Certificate");
+        }).compose(supported -> {
+            pfa.setCertManagerCertificates(supported);
             return Future.succeededFuture(pfa);
         }).onComplete(pfaPromise);
 
@@ -388,6 +394,19 @@ public class PlatformFeaturesAvailability implements PlatformFeatures {
         this.oidcDiscovery = oidcDiscovery;
     }
 
+    /**
+     * Checks if the cert-manager Certificates API is supported on this cluster
+     *
+     * @return True if cert-manager Certificates API is supported on this cluster
+     */
+    public boolean hasCertManagerCertificates() {
+        return this.certManagerCertificates;
+    }
+
+    private void setCertManagerCertificates(boolean certManagerCertificates) {
+        this.certManagerCertificates = certManagerCertificates;
+    }
+
     @Override
     public String toString() {
         return "PlatformFeaturesAvailability(" +
@@ -397,6 +416,7 @@ public class PlatformFeaturesAvailability implements PlatformFeatures {
                 ",OpenShiftImageStreams=" + images +
                 ",TLSRoutes=" + tlsRoutes +
                 ",OidcDiscovery=" + oidcDiscovery +
+                ",CertManagerCertificates=" + certManagerCertificates +
                 ")";
     }
 
