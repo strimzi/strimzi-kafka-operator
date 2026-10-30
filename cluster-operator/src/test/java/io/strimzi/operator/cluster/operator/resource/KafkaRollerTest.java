@@ -68,11 +68,14 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+@SuppressWarnings("checkstyle:ClassDataAbstractionCoupling")
 public class KafkaRollerTest {
 
     private static final int REPLICAS = 5;
@@ -883,6 +886,45 @@ public class KafkaRollerTest {
                 assertThat(restarted(), is(asList(0, 1, 2, 3, 4)));
                 assertNoUnclosedAdminClient(kafkaRoller);
             }).toCompletableFuture().join();
+    }
+
+    @Test
+    public void testRestartTakesSnapshotOfRestartReasons() {
+        PodOperator mockPodOps = mock(PodOperator.class);
+        when(mockPodOps.restart(any(), any(), anyLong())).thenReturn(CompletableFuture.completedFuture(null));
+        KubernetesRestartEventPublisher mockEventPublisher = mock(KubernetesRestartEventPublisher.class);
+
+        String podName = ssName() + "-0";
+        KafkaRoller kafkaRoller = new KafkaRoller(
+                Reconciliation.DUMMY_RECONCILIATION,
+                mockPodOps,
+                1000,
+                1000,
+                () -> new BackOff(10L, 2, 4),
+                Set.of(new NodeRef(podName, 0, "pool", false, true)),
+                new Identity(null, null),
+                new DefaultAdminClientProvider(),
+                new DefaultKafkaAgentClientProvider(),
+                id -> null,
+                KafkaVersionTestUtils.getLatestVersion(),
+                true,
+                mockEventPublisher
+        );
+
+        Pod pod = new PodBuilder().withNewMetadata().withName(podName).withNamespace(stsNamespace()).endMetadata().build();
+        KafkaRoller.RestartContext restartContext = new KafkaRoller.RestartContext(() -> new BackOff(10L, 2, 4));
+        restartContext.restartReasons = RestartReasons.of(RestartReason.MANUAL_ROLLING_UPDATE);
+
+        kafkaRoller.restart(pod, restartContext).toCompletableFuture().join();
+
+        // Mutate restartContext.restartReasons immediately after restart was initiated
+        restartContext.restartReasons.add(RestartReason.POD_STUCK);
+
+        // Verify that the event publisher received only the snapshot (MANUAL_ROLLING_UPDATE) and not POD_STUCK
+        ArgumentCaptor<RestartReasons> captor = ArgumentCaptor.forClass(RestartReasons.class);
+        verify(mockEventPublisher, timeout(1000)).publishRestartEvents(any(), eq(pod), captor.capture());
+        assertThat(captor.getValue().contains(RestartReason.MANUAL_ROLLING_UPDATE), is(true));
+        assertThat(captor.getValue().contains(RestartReason.POD_STUCK), is(false));
     }
 
     private TestingKafkaRoller rollerWithActiveController(PodOperator podOps, Set<NodeRef> nodes, int activeController) {

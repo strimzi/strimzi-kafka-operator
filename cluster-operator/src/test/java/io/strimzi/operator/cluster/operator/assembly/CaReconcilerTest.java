@@ -171,6 +171,12 @@ public class CaReconcilerTest {
             assertThat("Restart reasons for pod " + podName, restartReasons.contains(RestartReason.CLUSTER_CA_CERT_KEY_REPLACED), is(true));
         });
 
+        // Verify that mutating one pod's restart reasons does not leak into other pods' restart reasons
+        RestartReasons firstPodReasons = mockCaReconciler.kafkaRestartReasons.values().iterator().next();
+        firstPodReasons.add(RestartReason.POD_STUCK);
+        long countWithPodStuck = mockCaReconciler.kafkaRestartReasons.values().stream().filter(r -> r.contains(RestartReason.POD_STUCK)).count();
+        assertThat("Mutating one pod's restart reasons must not affect other pods", countWithPodStuck, is(1L));
+
         assertThat("Deployment restart reasons", mockCaReconciler.deploymentRestartReasons, aMapWithSize(3));
         mockCaReconciler.deploymentRestartReasons.forEach((deploymentName, restartReason) ->
                 assertThat("Deployment restart reason for " + deploymentName, restartReason, is(RestartReason.CLUSTER_CA_CERT_KEY_REPLACED.getDefaultNote())));

@@ -477,7 +477,7 @@ public class CaReconciler {
                 return RestartReasons.empty();
             } else {
                 LOGGER.debugCr(reconciliation, "Rolling Pod {} due to {}", pod.getMetadata().getName(), podRollReasons.getReasons());
-                return podRollReasons;
+                return RestartReasons.copyOf(podRollReasons);
             }
         });
     }
