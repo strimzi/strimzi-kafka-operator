@@ -655,12 +655,21 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         /**
+         * Provider method for the Kafka auto-rebalance imbalance detector. Overriding this method can be used to get a mocked detector.
+         *
+         * @return Kafka auto-rebalance imbalance detector
+         */
+        /* test */ KafkaAutoRebalanceImbalanceDetector kafkaAutoRebalanceImbalanceDetector() {
+            return new KafkaAutoRebalanceImbalanceDetector(reconciliation, kafkaAssembly, supplier);
+        }
+
+        /**
          * Provider method for the Kafka auto-rebalancing reconciler. Overriding this method can be used to get mocked reconciler.
          *
          * @return Kafka auto-rebalancing reconciler
          */
         KafkaAutoRebalancingReconciler kafkaAutoRebalancingReconciler() {
-            return new KafkaAutoRebalancingReconciler(reconciliation, kafkaAssembly, supplier, scalingDownBlockedNodes);
+            return new KafkaAutoRebalancingReconciler(reconciliation, kafkaAssembly, supplier, scalingDownBlockedNodes, metrics, kafkaAutoRebalanceImbalanceDetector());
         }
 
         /**

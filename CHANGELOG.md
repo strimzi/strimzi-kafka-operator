@@ -8,6 +8,7 @@
 * Use ubi9-micro as a base image for operators, kafka-based, and maven-builder images.
 * Strimzi Drain Cleaner updated to 1.8.0 (included in the Strimzi installation files)
 * Add support for Strimzi-native configurable RSA key sizes
+* Add support for running an automatic rebalancing, via Cruise Control, when a goal violation is detected.
 
 ### Major changes, deprecations, and removals
 
