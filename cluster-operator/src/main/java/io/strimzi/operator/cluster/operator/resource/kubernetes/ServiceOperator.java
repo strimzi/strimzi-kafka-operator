@@ -51,7 +51,6 @@ public class ServiceOperator extends AbstractNamespacedResourceOperator<Kubernet
             annotation -> annotation.startsWith("field.cattle.io")
     );
 
-    private final EndpointOperator endpointOperations;
     /**
      * Constructor
      *
@@ -61,7 +60,6 @@ public class ServiceOperator extends AbstractNamespacedResourceOperator<Kubernet
      */
     public ServiceOperator(Executor asyncExecutor, KubernetesClient client, boolean useServerSideApply) {
         super(asyncExecutor, client, "Service", useServerSideApply);
-        this.endpointOperations = new EndpointOperator(asyncExecutor, client);
     }
 
     @Override
@@ -196,21 +194,6 @@ public class ServiceOperator extends AbstractNamespacedResourceOperator<Kubernet
      */
     protected CompletionStage<ReconcileResult<Service>> internalDelete(Reconciliation reconciliation, String namespace, String name) {
         return internalDelete(reconciliation, namespace, name, true);
-    }
-
-    /**
-     * Waits for endpoint readiness
-     *
-     * @param reconciliation        Reconciliation marker
-     * @param namespace             Namespace
-     * @param name                  Name
-     * @param pollInterval          Interval in which it will poll for the readiness
-     * @param operationTimeoutMs    How long to wait for the endpoint to be ready
-     *
-     * @return  Future which completes when the endpoint is ready
-     */
-    public CompletionStage<Void> endpointReadiness(Reconciliation reconciliation, String namespace, String name, long pollInterval, long operationTimeoutMs) {
-        return endpointOperations.readiness(reconciliation, namespace, name, pollInterval, operationTimeoutMs);
     }
 
     /**
