@@ -473,7 +473,6 @@ public class KafkaAssemblyOperatorTest {
 
         ArgumentCaptor<Service> serviceCaptor = ArgumentCaptor.forClass(Service.class);
         when(mockServiceOps.reconcile(any(), anyString(), anyString(), serviceCaptor.capture())).thenReturn(CompletableFuture.completedFuture(ReconcileResult.created(new Service())));
-        when(mockServiceOps.endpointReadiness(any(), anyString(), any(), anyLong(), anyLong())).thenReturn(CompletableFuture.completedFuture(null));
         when(mockServiceOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(CompletableFuture.completedFuture(emptyList()));
 
         // PVCs
@@ -933,7 +932,6 @@ public class KafkaAssemblyOperatorTest {
         Map<String, Service> expectedServicesMap = expectedServices.stream().collect(Collectors.toMap(s -> s.getMetadata().getName(), s -> s));
 
         when(mockServiceOps.batchReconcile(any(), eq(NAMESPACE), any(), any())).thenCallRealMethod();
-        when(mockServiceOps.endpointReadiness(any(), eq(NAMESPACE), any(), anyLong(), anyLong())).thenReturn(CompletableFuture.completedFuture(null));
         when(mockServiceOps.getAsync(eq(NAMESPACE), anyString())).thenAnswer(i -> {
             Service svc = expectedServicesMap.get(i.<String>getArgument(1));
 
