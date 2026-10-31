@@ -55,6 +55,15 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
                 .build();
     }
 
+    /**
+     * Shuts down the HTTP client and its threads. Requests that are already in progress are allowed to finish,
+     * new requests are not accepted anymore.
+     */
+    @Override
+    public void close() {
+        httpClient.shutdown();
+    }
+
     @Override
     public CompletionStage<Map<String, Object>> createOrUpdatePutRequest(
             Reconciliation reconciliation,

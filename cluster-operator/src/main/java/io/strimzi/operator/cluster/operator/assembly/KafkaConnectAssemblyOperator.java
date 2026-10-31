@@ -59,7 +59,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static io.strimzi.api.ResourceAnnotations.ANNO_STRIMZI_IO_CONNECTOR_OFFSETS;
@@ -89,7 +88,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
     public KafkaConnectAssemblyOperator(Vertx vertx, PlatformFeaturesAvailability pfa,
                                         ResourceOperatorSupplier supplier,
                                         ClusterOperatorConfig config) {
-        this(vertx, pfa, supplier, config, connect -> new KafkaConnectApiImpl());
+        this(vertx, pfa, supplier, config, new DefaultKafkaConnectApiProvider());
     }
 
     /**
@@ -105,7 +104,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
     protected KafkaConnectAssemblyOperator(Vertx vertx, PlatformFeaturesAvailability pfa,
                                         ResourceOperatorSupplier supplier,
                                         ClusterOperatorConfig config,
-                                        Function<Vertx, KafkaConnectApi> connectClientProvider) {
+                                        KafkaConnectApiProvider connectClientProvider) {
         this(vertx, pfa, supplier, config, connectClientProvider, KafkaConnectCluster.REST_API_PORT);
     }
 
@@ -124,7 +123,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
     protected KafkaConnectAssemblyOperator(Vertx vertx, PlatformFeaturesAvailability pfa,
                                         ResourceOperatorSupplier supplier,
                                         ClusterOperatorConfig config,
-                                        Function<Vertx, KafkaConnectApi> connectClientProvider, int port) {
+                                        KafkaConnectApiProvider connectClientProvider, int port) {
         super(vertx, pfa, KafkaConnect.RESOURCE_KIND, supplier.connectOperator, supplier, config, connectClientProvider, port);
 
         this.connectorOperator = supplier.kafkaConnectorOperator;
@@ -289,13 +288,12 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
      * @return  Future that succeeds once the list of connector plugins from the Connect REST API is obtained and stored in the status.
      */
     private Future<Void> reconcileAvailableConnectorPlugins(Reconciliation reconciliation, String host, KafkaConnectStatus connectStatus)  {
-        KafkaConnectApi apiClient = connectClientProvider.apply(vertx);
-        return Future.fromCompletionStage(apiClient.listConnectorPlugins(reconciliation, host, port))
+        return withConnectApi(reconciliation, apiClient -> Future.fromCompletionStage(apiClient.listConnectorPlugins(reconciliation, host, port))
                 .compose(connectorPlugins -> {
                     LOGGER.debugCr(reconciliation, "Setting list of connector plugins in Kafka Connect status");
                     connectStatus.setConnectorPlugins(connectorPlugins);
-                    return Future.succeededFuture();
-                });
+                    return Future.<Void>succeededFuture();
+                }));
     }
 
     /**
@@ -321,9 +319,8 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
                 )).mapEmpty();
         } else {
             String host = KafkaConnectResources.qualifiedServiceName(connectName, namespace);
-            KafkaConnectApi apiClient = connectClientProvider.apply(vertx);
 
-            return Future.join(
+            return withConnectApi(reconciliation, apiClient -> Future.join(
                     Future.fromCompletionStage(apiClient.list(reconciliation, host, port)),
                     VertxUtil.toFuture(connectorOperator.listAsync(namespace, new LabelSelectorBuilder().addToMatchLabels(Labels.STRIMZI_CLUSTER_LABEL, connectName).build()))
             ).compose(cf -> {
@@ -337,7 +334,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
                 Future<Void> createOrUpdateFuture = createOrUpdateConnectors(reconciliation, host, apiClient, desiredConnectors);
 
                 return Future.join(deletionFuture, createOrUpdateFuture).map((Void) null);
-            }).recover(error -> {
+            })).recover(error -> {
                 if (Util.maybeUnwrapCompletionException(error) instanceof ConnectTimeoutException) {
                     Promise<Void> connectorStatuses = Promise.promise();
                     LOGGER.warnCr(reconciliation, "Failed to connect to the REST API => trying to update the connector status");
@@ -477,7 +474,6 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
                     // Check whether a KafkaConnect exists
                     VertxUtil.toFuture(resourceOperator.getAsync(namespace, connectName))
                             .compose(connect -> {
-                                KafkaConnectApi apiClient = connectClientProvider.apply(vertx);
                                 if (connect == null) {
                                     Reconciliation r = new Reconciliation("connector-watch", kind(),
                                             resource.getMetadata().getNamespace(), connectName);
@@ -504,15 +500,17 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
                                     } else {
                                         LOGGER.infoCr(reconciliation, "{} {} in namespace {} was {}", connectorKind, connectorName, namespace, action);
 
+                                        // The client is created only once we hold the lock for the Connect cluster
+                                        // and closed as soon as the connector is reconciled
                                         return withLock(reconciliation, LOCK_TIMEOUT_MS,
-                                                () -> reconcileConnectorAndHandleResult(reconciliation,
+                                                () -> withConnectApi(reconciliation, apiClient -> reconcileConnectorAndHandleResult(reconciliation,
                                                                 KafkaConnectResources.qualifiedServiceName(connectName, namespace), apiClient,
                                                                 isUseResources(connect),
                                                                 resource.getMetadata().getName(), action == Watcher.Action.DELETED ? null : resource)
                                                         .compose(reconcileResult -> {
                                                             LOGGER.infoCr(reconciliation, "reconciled");
                                                             return Future.succeededFuture(reconcileResult);
-                                                        }));
+                                                        })));
                                     }
                                 }
                             });

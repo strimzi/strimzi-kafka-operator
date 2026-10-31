@@ -45,7 +45,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.stream.Collectors;
 
@@ -80,7 +79,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
     public KafkaMirrorMaker2AssemblyOperator(Vertx vertx, PlatformFeaturesAvailability pfa,
                                         ResourceOperatorSupplier supplier,
                                         ClusterOperatorConfig config) {
-        this(vertx, pfa, supplier, config, connect -> new KafkaConnectApiImpl());
+        this(vertx, pfa, supplier, config, new DefaultKafkaConnectApiProvider());
     }
 
     /**
@@ -95,7 +94,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
     protected KafkaMirrorMaker2AssemblyOperator(Vertx vertx, PlatformFeaturesAvailability pfa,
                                         ResourceOperatorSupplier supplier,
                                         ClusterOperatorConfig config,
-                                        Function<Vertx, KafkaConnectApi> connectClientProvider) {
+                                        KafkaConnectApiProvider connectClientProvider) {
         super(vertx, pfa, KafkaMirrorMaker2.RESOURCE_KIND, supplier.mirrorMaker2Operator, supplier, config, connectClientProvider, KafkaConnectCluster.REST_API_PORT);
     }
 
@@ -296,17 +295,16 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
      */
     /* test */ Future<Void> reconcileConnectors(Reconciliation reconciliation, KafkaMirrorMaker2 kafkaMirrorMaker2, KafkaMirrorMaker2Cluster mirrorMaker2Cluster, KafkaMirrorMaker2Status mirrorMaker2Status) {
         String host = KafkaMirrorMaker2Resources.qualifiedServiceName(mirrorMaker2Cluster.getCluster(), reconciliation.namespace());
-        KafkaConnectApi apiClient = connectClientProvider.apply(vertx);
         List<KafkaConnector> desiredConnectors = mirrorMaker2Cluster.connectors().generateConnectorDefinitions();
 
-        return Future.fromCompletionStage(apiClient.list(reconciliation, host, port)).compose(currentConnectors -> {
+        return withConnectApi(reconciliation, apiClient -> Future.fromCompletionStage(apiClient.list(reconciliation, host, port)).compose(currentConnectors -> {
             currentConnectors.removeAll(desiredConnectors.stream().map(c -> c.getMetadata().getName()).collect(Collectors.toSet()));
 
             Future<Void> deletionFuture = deleteConnectors(reconciliation, host, apiClient, currentConnectors);
             Future<Void> createOrUpdateFuture = createOrUpdateConnectors(reconciliation, host, apiClient, kafkaMirrorMaker2, desiredConnectors, mirrorMaker2Status);
 
-            return Future.join(deletionFuture, createOrUpdateFuture).mapEmpty();
-        });
+            return Future.join(deletionFuture, createOrUpdateFuture).<Void>mapEmpty();
+        }));
     }
 
     private Future<Void> deleteConnectors(Reconciliation reconciliation, String host, KafkaConnectApi apiClient, List<String> connectorsForDeletion) {
