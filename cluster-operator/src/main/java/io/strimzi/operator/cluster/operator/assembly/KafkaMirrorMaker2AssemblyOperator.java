@@ -303,7 +303,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
             Future<Void> deletionFuture = deleteConnectors(reconciliation, host, apiClient, currentConnectors);
             Future<Void> createOrUpdateFuture = createOrUpdateConnectors(reconciliation, host, apiClient, kafkaMirrorMaker2, desiredConnectors, mirrorMaker2Status);
 
-            return Future.join(deletionFuture, createOrUpdateFuture).<Void>mapEmpty();
+            return Future.join(deletionFuture, createOrUpdateFuture).mapEmpty();
         }));
     }
 

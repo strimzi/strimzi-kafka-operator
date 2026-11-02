@@ -292,7 +292,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
                 .compose(connectorPlugins -> {
                     LOGGER.debugCr(reconciliation, "Setting list of connector plugins in Kafka Connect status");
                     connectStatus.setConnectorPlugins(connectorPlugins);
-                    return Future.<Void>succeededFuture();
+                    return Future.succeededFuture();
                 }));
     }
 
