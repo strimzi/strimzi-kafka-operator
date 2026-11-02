@@ -128,6 +128,9 @@ public class KafkaRebalanceConfigMapUtils {
                     apiClient.getCruiseControlState(reconciliation, host, port, false, null))
                     .compose(response -> {
                         ExecutorStatus executorStatus = response.getExecutorStatus();
+                        if (executorStatus == null) {
+                            throw new IllegalStateException("ExecutorState missing from Cruise Control state response");
+                        }
                         if (executorStatus.isInProgressState()) {
                             // We can only estimate the rate of partition movement once some data has been moved.
                             if (executorStatus.getFinishedDataMovement() > 0) {

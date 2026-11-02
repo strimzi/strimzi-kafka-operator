@@ -604,7 +604,7 @@ public class CruiseControlApiImpl implements CruiseControlApi {
                 || ex.getCause() instanceof SocketException) {
             return new CruiseControlRetriableConnectionException(ex.getCause());
         } else {
-            return new RuntimeException(ex.getCause());
+            return (RuntimeException) ex.getCause();
         }
     }
 }
