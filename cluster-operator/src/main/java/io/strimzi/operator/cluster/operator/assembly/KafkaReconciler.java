@@ -276,8 +276,6 @@ public class KafkaReconciler {
                 .compose(i -> podSet())
                 .compose(podSetDiffs -> rollingUpdate(podSetDiffs)) // We pass the PodSet reconciliation result this way to avoid storing it in the instance
                 .compose(i -> podsReady())
-                .compose(i -> serviceEndpointsReady())
-                .compose(i -> headlessServiceEndpointsReady())
                 .compose(i -> clusterId(kafkaStatus))
                 .compose(i -> defaultKafkaQuotas())
                 .compose(i -> brokerNodesUnregistration())
@@ -1002,24 +1000,6 @@ public class KafkaReconciler {
                         operationTimeoutMs,
                         kafka.nodes().stream().map(node -> node.podName()).toList()
                 ));
-    }
-
-    /**
-     * Waits for readiness of the endpoints of the clients service
-     *
-     * @return  Future which completes when the endpoints are ready
-     */
-    protected Future<Void> serviceEndpointsReady() {
-        return VertxUtil.toFuture(serviceOperator.endpointReadiness(reconciliation, reconciliation.namespace(), KafkaResources.bootstrapServiceName(reconciliation.name()), 1_000, operationTimeoutMs));
-    }
-
-    /**
-     * Waits for readiness of the endpoints of the headless service
-     *
-     * @return  Future which completes when the endpoints are ready
-     */
-    protected Future<Void> headlessServiceEndpointsReady() {
-        return VertxUtil.toFuture(serviceOperator.endpointReadiness(reconciliation, reconciliation.namespace(), KafkaResources.brokersServiceName(reconciliation.name()), 1_000, operationTimeoutMs));
     }
 
     /**

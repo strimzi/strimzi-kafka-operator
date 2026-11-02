@@ -62,8 +62,10 @@ rules:
   - serviceaccounts
     # The cluster operator needs to access and manage config maps for Strimzi components configuration
   - configmaps
-    # The cluster operator needs to access and manage services and endpoints to expose Strimzi components to network traffic
+    # The cluster operator needs to access and manage services to expose Strimzi components to network traffic
   - services
+    # Endpoints are not used anymore by Strimzi, but it remains part of the RBAC for the time being for upgrade purposes
+    # Tracked by https://github.com/strimzi/strimzi-kafka-operator/issues/13341
   - endpoints
     # The cluster operator needs to access and manage secrets to handle credentials
   - secrets
