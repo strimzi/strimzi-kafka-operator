@@ -9,7 +9,7 @@
 * Strimzi Drain Cleaner updated to 1.8.0 (included in the Strimzi installation files)
 * Add support for Strimzi-native configurable RSA key sizes
 * Strimzi Access Operator updated to 0.4.0 - included in Strimzi installation files, examples, and documentation
-* Use Java 25 as the runtime for all containers (but still leaving Java 21 at languange level) for supporting Post-Quantum Hybrid Key Exchange
+* Use Java 25 as the runtime for all containers (but still leaving Java 21 at language level) for supporting Post-Quantum Hybrid Key Exchange
 
 ### Major changes, deprecations, and removals
 
