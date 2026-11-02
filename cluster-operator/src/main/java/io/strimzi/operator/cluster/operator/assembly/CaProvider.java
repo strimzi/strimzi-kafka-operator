@@ -99,7 +99,7 @@ public abstract class CaProvider {
                             clusterOperatorCertSecret, certManagerCertificateOperator, secretOperator);
                 } else {
                     String errorMessage = String.format("The cert-manager Certificates API is not available in this Kubernetes cluster. Using the cert-manager CA type in Kafka cluster %s is not possible. " +
-                            "If the API has become available since the cluster operator was started, restart the pod to update the available features.", reconciliation.name());
+                            "If the API has become available since the cluster operator was started, delete the cluster operator pod so it is recreated. The cluster operator refreshes the set of available features during startup.", reconciliation.name());
                     LOGGER.errorCr(reconciliation, errorMessage);
                     throw new RuntimeException(errorMessage);
                 }
