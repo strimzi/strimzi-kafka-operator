@@ -16,7 +16,6 @@ import java.util.List;
  * @param unfixableGoals List of unfixable violated goal names
  */
 public record GoalViolationInfo(Instant detectionTime, Fixability fixability, List<String> fixableGoals, List<String> unfixableGoals) {
-
     /**
      * Represents the fixability classification of detected goal violations.
      */

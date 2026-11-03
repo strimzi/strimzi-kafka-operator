@@ -38,7 +38,7 @@ public class KafkaAutoRebalanceConfiguration implements UnknownPropertyPreservin
     @Description("Specifies the mode for automatic rebalancing. " +
             "Supported modes are `add-brokers`, `remove-brokers`, and `imbalance`. " +
             "The `add-brokers` and `remove-brokers` modes trigger rebalancing when brokers are added or removed. " +
-            "The `imbalance` mode triggers rebalancing when Cruise Control detects goal violations in the cluster.\n")
+            "The `imbalance` mode triggers rebalancing when Cruise Control detects goal violations in the cluster.")
     @JsonProperty(required = true)
     public KafkaAutoRebalanceMode getMode() {
         return mode;

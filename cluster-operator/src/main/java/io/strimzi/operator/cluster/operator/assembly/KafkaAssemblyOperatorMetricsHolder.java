@@ -11,7 +11,6 @@ import io.strimzi.api.kafka.model.nodepool.KafkaNodePool;
 import io.strimzi.operator.common.MetricsProvider;
 import io.strimzi.operator.common.config.ConfigParameter;
 import io.strimzi.operator.common.metrics.CertificateMetricKey;
-import io.strimzi.operator.common.metrics.GoalMetricKey;
 import io.strimzi.operator.common.metrics.MetricKey;
 import io.strimzi.operator.common.metrics.MetricsUtils;
 import io.strimzi.operator.common.metrics.OperatorMetricsHolder;

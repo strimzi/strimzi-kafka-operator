@@ -58,7 +58,7 @@ public class KafkaAutoRebalanceStatus implements UnknownPropertyPreserving {
     }
 
     @Description("List of modes where an auto-rebalancing operation is either running or queued. \n" +
-            "Each mode entry (`add-brokers`, `remove-brokers`, or `imbalance`) includes one of the following: \n\n" +
+            "Each mode entry (`add-brokers` or `remove-brokers`) includes one of the following: \n\n" +
             "* Broker IDs for a current auto-rebalance. \n" +
             "* Broker IDs for a queued auto-rebalance (if a previous rebalance is still in progress).")
     public List<KafkaAutoRebalanceStatusBrokers> getModes() {
