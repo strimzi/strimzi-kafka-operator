@@ -57,10 +57,9 @@ public class KafkaAutoRebalanceStatus implements UnknownPropertyPreserving {
         this.lastTransitionTime = lastTransitionTime;
     }
 
-    @Description("List of modes where an auto-rebalancing operation is either running or queued. \n" +
-            "Each mode entry (`add-brokers` or `remove-brokers`) includes one of the following: \n\n" +
-            "* Broker IDs for a current auto-rebalance. \n" +
-            "* Broker IDs for a queued auto-rebalance (if a previous rebalance is still in progress).")
+    @Description("List of auto-rebalancing mode entries where an operation is currently running or queued. " +
+            "For `add-brokers` or `remove-brokers` entries, the IDs of the brokers being rebalanced or waiting to be rebalanced are included. " +
+            "For the `imbalance` entry, no broker IDs are included since the rebalance applies to the whole cluster.")
     public List<KafkaAutoRebalanceStatusBrokers> getModes() {
         return modes;
     }
