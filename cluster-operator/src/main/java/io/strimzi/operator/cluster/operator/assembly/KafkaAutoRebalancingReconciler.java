@@ -616,9 +616,14 @@ public class KafkaAutoRebalancingReconciler {
     }
 
     private void updateStatus(KafkaAutoRebalanceStatus kafkaAutoRebalanceStatus, KafkaAutoRebalanceState state, ScalingNodes scalingNodes) {
-        // just clear the modes field when there are no added nodes or blocked ones
         List<KafkaAutoRebalanceStatusBrokers> modes = null;
-        if (!scalingNodes.blocked().isEmpty() || !scalingNodes.added().isEmpty()) {
+        if (state == KafkaAutoRebalanceState.RebalanceOnImbalance) {
+            modes = List.of(
+                    new KafkaAutoRebalanceStatusBrokersBuilder()
+                            .withMode(KafkaAutoRebalanceMode.IMBALANCE)
+                            .build()
+            );
+        } else if (!scalingNodes.blocked().isEmpty() || !scalingNodes.added().isEmpty()) {
             modes = new ArrayList<>(2);
             if (!scalingNodes.blocked().isEmpty()) {
                 modes.add(

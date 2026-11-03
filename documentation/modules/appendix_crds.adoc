@@ -1761,7 +1761,6 @@ Used in: xref:type-CruiseControlSpec-{context}[`CruiseControlSpec`]
 |mode
 |string (one of [imbalance, remove-brokers, add-brokers])
 |Specifies the mode for automatic rebalancing. Supported modes are `add-brokers`, `remove-brokers`, and `imbalance`. The `add-brokers` and `remove-brokers` modes trigger rebalancing when brokers are added or removed. The `imbalance` mode triggers rebalancing when Cruise Control detects goal violations in the cluster.
-
 |template
 |xref:type-LocalObjectReference-{context}[`LocalObjectReference`]
 |Reference to the KafkaRebalance custom resource to be used as the configuration template for auto-rebalancing when running for the corresponding mode. The template goals must be a superset of the configured anomaly detection goals.
@@ -1997,11 +1996,7 @@ Used in: xref:type-KafkaStatus-{context}[`KafkaStatus`]
 |The timestamp of the latest auto-rebalancing state update.
 |modes
 |xref:type-KafkaAutoRebalanceStatusBrokers-{context}[`KafkaAutoRebalanceStatusBrokers`] array
-|List of modes where an auto-rebalancing operation is either running or queued. 
-Each mode entry (`add-brokers`, `remove-brokers`, or `imbalance`) includes one of the following: 
-
-* Broker IDs for a current auto-rebalance. 
-* Broker IDs for a queued auto-rebalance (if a previous rebalance is still in progress).
+|List of auto-rebalancing mode entries where an operation is currently running or queued. For `add-brokers` or `remove-brokers` entries, the IDs of the brokers being rebalanced or waiting to be rebalanced are included. For the `imbalance` entry, no broker IDs are included since the rebalance applies to the whole cluster.
 |====
 
 [id='type-KafkaAutoRebalanceStatusBrokers-{context}']
