@@ -12,7 +12,8 @@ import com.fasterxml.jackson.annotation.JsonValue;
  */
 public enum KafkaAutoRebalanceMode {
     ADD_BROKERS("add-brokers"),
-    REMOVE_BROKERS("remove-brokers");
+    REMOVE_BROKERS("remove-brokers"),
+    IMBALANCE("imbalance");
 
     private final String name;
 
@@ -27,6 +28,8 @@ public enum KafkaAutoRebalanceMode {
                 return ADD_BROKERS;
             case "remove-brokers":
                 return REMOVE_BROKERS;
+            case "imbalance":
+                return IMBALANCE;
             default:
                 return null;
         }
