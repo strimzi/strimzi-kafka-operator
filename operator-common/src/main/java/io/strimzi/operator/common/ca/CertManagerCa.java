@@ -7,7 +7,6 @@ package io.strimzi.operator.common.ca;
 import io.fabric8.certmanager.api.model.v1.Certificate;
 import io.fabric8.certmanager.api.model.v1.CertificateBuilder;
 import io.fabric8.certmanager.api.model.v1.CertificateCondition;
-import io.fabric8.certmanager.api.model.v1.CertificateStatus;
 import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.strimzi.api.kafka.model.kafka.certmanager.IssuerRef;
@@ -239,9 +238,9 @@ public class CertManagerCa extends Ca {
     private CompletionStage<CertAndKey> generateSignedCert(String entityName, StrimziSubject subject, Labels labels) {
         Certificate certificate = buildCertificateResource(entityName, subject, caConfig.getValidityDays(), caConfig.getRenewalDays(), labels);
         return certManagerCertificateOperator.reconcile(reconciliation, reconciliation.namespace(), entityName, certificate)
-                .thenCompose(v -> certManagerCertificateOperator.waitForReady(reconciliation, reconciliation.namespace(), entityName))
-                .exceptionallyCompose(error -> certManagerCertificateOperator.getAsync(reconciliation.namespace(), entityName)
-                        .thenCompose(cmCert -> getErrorFromCmCert(cmCert, entityName, error)))
+                .thenCompose(v -> certManagerCertificateOperator.waitForReady(reconciliation, reconciliation.namespace(), entityName)
+                        .exceptionallyCompose(error -> certManagerCertificateOperator.getAsync(reconciliation.namespace(), entityName)
+                                .thenCompose(cmCert -> getErrorFromCmCert(cmCert, entityName, error))))
                 .thenCompose(v -> secretOperator.getAsync(reconciliation.namespace(), certManagerSecretName(entityName)))
                 .thenCompose(certSecret -> {
                     if (certSecret == null) {
@@ -269,8 +268,7 @@ public class CertManagerCa extends Ca {
 
     private CompletionStage<Void> getErrorFromCmCert(Certificate cmCert, String entityName, Throwable error) {
         if (cmCert != null && cmCert.getStatus() != null) {
-            CertificateStatus status = cmCert.getStatus();
-            List<CertificateCondition> conditions = status.getConditions();
+            List<CertificateCondition> conditions = cmCert.getStatus().getConditions();
             if (conditions != null) {
                 Optional<CertificateCondition> notReadyCondition = conditions.stream()
                         .filter(condition -> "Ready".equals(condition.getType()) && !"True".equals(condition.getStatus()))
@@ -288,12 +286,12 @@ public class CertManagerCa extends Ca {
                         details.append(cond.getMessage());
                     }
                     if (!details.isEmpty()) {
-                        return CompletableFuture.failedFuture(new RuntimeException("cert-manager Certificate '" + entityName + "' failed to become Ready: " + details, Util.maybeUnwrapCompletionException(error)));
+                        return CompletableFuture.failedFuture(new RuntimeException("cert-manager Certificate '" + entityName + "' failed to become Ready: " + details, error));
                     }
                 }
             }
         }
-        return CompletableFuture.failedFuture(Util.maybeUnwrapCompletionException(error));
+        return CompletableFuture.failedFuture(error);
     }
 
     /**
