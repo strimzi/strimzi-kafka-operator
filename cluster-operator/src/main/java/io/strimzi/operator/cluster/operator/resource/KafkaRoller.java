@@ -872,6 +872,8 @@ public class KafkaRoller {
      * @return a Future which completes when the Pod has been recreated
      */
     protected CompletionStage<Void> restart(Pod pod, RestartContext restartContext) {
+        // Deep copy, because the events are published asynchronously while the roller may still modify the
+        // non-thread-safe restart reasons in the RestartContext.
         RestartReasons reasons = RestartReasons.copyOf(restartContext.restartReasons);
         return podOperations.restart(reconciliation, pod, operationTimeoutMs)
                 .thenCompose(i -> {
