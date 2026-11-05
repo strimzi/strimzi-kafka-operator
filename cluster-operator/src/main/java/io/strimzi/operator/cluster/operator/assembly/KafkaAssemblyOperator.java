@@ -422,7 +422,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
          * @return  CaReconciler instance
          */
         CaReconciler caReconciler()   {
-            return new CaReconciler(reconciliation, kafkaAssembly, config, supplier, certIssuer, passwordGenerator, securityContext);
+            return new CaReconciler(reconciliation, kafkaAssembly, config, supplier, certIssuer, passwordGenerator, pfa, securityContext);
         }
 
         /**

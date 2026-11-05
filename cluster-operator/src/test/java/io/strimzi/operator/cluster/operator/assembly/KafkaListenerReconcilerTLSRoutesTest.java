@@ -174,7 +174,7 @@ public class KafkaListenerReconcilerTLSRoutesTest {
         MockKafkaListenersReconciler reconciler = new MockKafkaListenersReconciler(
                 reconciliation,
                 kafkaCluster,
-                new PlatformFeaturesAvailability(true, false, KubernetesVersion.MINIMAL_SUPPORTED_VERSION),
+                new PlatformFeaturesAvailability(true, false, false, KubernetesVersion.MINIMAL_SUPPORTED_VERSION),
                 supplier.secretOperations,
                 supplier.serviceOperations,
                 supplier.routeOperations,
@@ -274,7 +274,7 @@ public class KafkaListenerReconcilerTLSRoutesTest {
         MockKafkaListenersReconciler reconciler = new MockKafkaListenersReconciler(
                 reconciliation,
                 kafkaCluster,
-                new PlatformFeaturesAvailability(false, true, KubernetesVersion.MINIMAL_SUPPORTED_VERSION),
+                new PlatformFeaturesAvailability(false, true, false, KubernetesVersion.MINIMAL_SUPPORTED_VERSION),
                 supplier.secretOperations,
                 supplier.serviceOperations,
                 supplier.routeOperations,
@@ -386,7 +386,7 @@ public class KafkaListenerReconcilerTLSRoutesTest {
         MockKafkaListenersReconciler reconciler = new MockKafkaListenersReconciler(
                 reconciliation,
                 kafkaCluster,
-                new PlatformFeaturesAvailability(false, true, KubernetesVersion.MINIMAL_SUPPORTED_VERSION),
+                new PlatformFeaturesAvailability(false, true, false, KubernetesVersion.MINIMAL_SUPPORTED_VERSION),
                 supplier.secretOperations,
                 supplier.serviceOperations,
                 supplier.routeOperations,
@@ -499,7 +499,7 @@ public class KafkaListenerReconcilerTLSRoutesTest {
         MockKafkaListenersReconciler reconciler = new MockKafkaListenersReconciler(
                 reconciliation,
                 kafkaCluster,
-                new PlatformFeaturesAvailability(false, true, KubernetesVersion.MINIMAL_SUPPORTED_VERSION),
+                new PlatformFeaturesAvailability(false, true, false, KubernetesVersion.MINIMAL_SUPPORTED_VERSION),
                 supplier.secretOperations,
                 supplier.serviceOperations,
                 supplier.routeOperations,

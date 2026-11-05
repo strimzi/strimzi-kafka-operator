@@ -18,7 +18,11 @@ The existing CA certificate is kept in the truststore and relevant Secrets of al
 
 .Prerequisites
 
-* cert-manager is installed in the cluster with a ready `Issuer` or `ClusterIssuer` configured with a Secret that contains a certificate and key pair for the CA. The Secret must have `tls.crt` and `tls.key` keys, where `tls.crt` is the CA certificate. You provide this certificate to the Cluster Operator as `ca.crt` in a Secret in the following step.
+* cert-manager is installed in the cluster with a ready `Issuer` or `ClusterIssuer` configured with a Secret that contains a certificate and key pair for the CA.
+  The Secret must have `tls.crt` and `tls.key` keys, where `tls.crt` is the CA certificate.
+  You provide this certificate to the Cluster Operator as `ca.crt` in a Secret in the following step.
+  If cert-manager is installed after the Cluster Operator, you must restart the Cluster Operator before proceeding.
+  This ensures the set of platform features available to the Cluster Operator is up-to-date.
 
 [NOTE]
 ====
