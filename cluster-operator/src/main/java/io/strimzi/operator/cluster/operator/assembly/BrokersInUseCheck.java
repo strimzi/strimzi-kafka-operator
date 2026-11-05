@@ -106,29 +106,29 @@ public class BrokersInUseCheck {
         try {
             Map<Integer, CompletionStage<Map<String, LogDirDescription>>> logDirs = describeLogDirs(kafkaAdmin, removedVolumes.keySet());
 
-            List<CompletionStage<NodeResult>> checks = removedVolumes.entrySet()
+            List<CompletionStage<NodeResult>> nodeResults = removedVolumes.entrySet()
                     .stream()
                     .map(node -> checkNode(reconciliation, node.getKey(), node.getValue(), logDirs.get(node.getKey())))
                     .toList();
 
-            return CompletableFuture.allOf(checks.stream().map(CompletionStage::toCompletableFuture).toArray(CompletableFuture[]::new))
+            return CompletableFuture.allOf(nodeResults.stream().map(CompletionStage::toCompletableFuture).toArray(CompletableFuture[]::new))
                     .thenApply(i -> {
-                        Map<Integer, Set<Integer>> notEmpty = new LinkedHashMap<>();
+                        Map<Integer, Set<Integer>> withReplicas = new LinkedHashMap<>();
                         Map<Integer, Set<Integer>> unknown = new LinkedHashMap<>();
 
-                        for (CompletionStage<NodeResult> check : checks) {
-                            NodeResult result = check.toCompletableFuture().join();
+                        for (CompletionStage<NodeResult> future : nodeResults) {
+                            NodeResult nodeResult = future.toCompletableFuture().join();
 
-                            if (!result.notEmpty().isEmpty())    {
-                                notEmpty.put(result.nodeId(), result.notEmpty());
+                            if (!nodeResult.withReplicas().isEmpty())    {
+                                withReplicas.put(nodeResult.nodeId(), nodeResult.withReplicas());
                             }
 
-                            if (!result.unknown().isEmpty())  {
-                                unknown.put(result.nodeId(), result.unknown());
+                            if (!nodeResult.unknown().isEmpty())  {
+                                unknown.put(nodeResult.nodeId(), nodeResult.unknown());
                             }
                         }
 
-                        return new BlockedVolumes(notEmpty, unknown);
+                        return new BlockedVolumes(withReplicas, unknown);
                     })
                     .whenComplete((result, error) -> {
                         if (error != null) {
@@ -161,7 +161,7 @@ public class BrokersInUseCheck {
 
         return logDirs
                 .thenApply(nodeLogDirs -> {
-                    Set<Integer> nonEmptyVolumes = new LinkedHashSet<>();
+                    Set<Integer> volumesWithReplicas = new LinkedHashSet<>();
                     Set<Integer> unknownVolumes = new LinkedHashSet<>();
 
                     for (Integer volumeId : volumeIds) {
@@ -174,11 +174,11 @@ public class BrokersInUseCheck {
                             // An offline log dir reports an error and no replicas, so its content is not known
                             unknownVolumes.add(volumeId);
                         } else if (!logDir.replicaInfos().isEmpty()) {
-                            nonEmptyVolumes.add(volumeId);
+                            volumesWithReplicas.add(volumeId);
                         }
                     }
 
-                    return new NodeResult(nodeId, nonEmptyVolumes, unknownVolumes);
+                    return new NodeResult(nodeId, volumesWithReplicas, unknownVolumes);
                 })
                 .exceptionally(error -> {
                     LOGGER.warnCr(reconciliation, "Failed to get the log directories of Kafka node {}, so it is not possible to check if its volumes are empty", nodeId, error);
@@ -242,17 +242,17 @@ public class BrokersInUseCheck {
     /**
      * The JBOD volumes which cannot be removed, grouped by the reason.
      *
-     * @param notEmpty      Map of the node IDs and the removed volumes which still contain partition replicas
+     * @param withReplicas  Map of the node IDs and the removed volumes which still contain partition replicas
      * @param unknown       Map of the node IDs and the removed volumes whose content is unknown
      */
-    public record BlockedVolumes(Map<Integer, Set<Integer>> notEmpty, Map<Integer, Set<Integer>> unknown) {
+    public record BlockedVolumes(Map<Integer, Set<Integer>> withReplicas, Map<Integer, Set<Integer>> unknown) {
         /**
          * Checks whether the removal can go ahead.
          *
          * @return  True when no volume is blocked. False otherwise.
          */
         public boolean nothingBlocked() {
-            return notEmpty.isEmpty() && unknown.isEmpty();
+            return withReplicas.isEmpty() && unknown.isEmpty();
         }
     }
 
@@ -260,8 +260,8 @@ public class BrokersInUseCheck {
      * Result of the check for one Kafka node.
      *
      * @param nodeId        ID of the Kafka node
-     * @param notEmpty      IDs of the removed volumes which still contain partition replicas
+     * @param withReplicas  IDs of the removed volumes which still contain partition replicas
      * @param unknown       IDs of the removed volumes whose content is unknown
      */
-    private record NodeResult(Integer nodeId, Set<Integer> notEmpty, Set<Integer> unknown) { }
+    private record NodeResult(Integer nodeId, Set<Integer> withReplicas, Set<Integer> unknown) { }
 }

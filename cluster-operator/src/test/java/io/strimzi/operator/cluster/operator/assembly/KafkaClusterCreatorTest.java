@@ -1043,13 +1043,13 @@ public class KafkaClusterCreatorTest {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
         // Mock volumes-in-use check => two nodes are blocked on volume 1 and one node on volume 2
-        Map<Integer, Set<Integer>> notEmpty = new LinkedHashMap<>();
-        notEmpty.put(1000, Set.of(1));
-        notEmpty.put(1001, Set.of(1));
-        notEmpty.put(1002, Set.of(2));
+        Map<Integer, Set<Integer>> withReplicas = new LinkedHashMap<>();
+        withReplicas.put(1000, Set.of(1));
+        withReplicas.put(1001, Set.of(1));
+        withReplicas.put(1002, Set.of(2));
 
         BrokersInUseCheck brokersInUseOps = supplier.brokersInUseCheck;
-        when(brokersInUseOps.blockedVolumes(any(), any(), any(), any())).thenReturn(CompletableFuture.completedFuture(new BrokersInUseCheck.BlockedVolumes(notEmpty, Map.of())));
+        when(brokersInUseOps.blockedVolumes(any(), any(), any(), any())).thenReturn(CompletableFuture.completedFuture(new BrokersInUseCheck.BlockedVolumes(withReplicas, Map.of())));
 
         KafkaStatus kafkaStatus = new KafkaStatus();
         KafkaClusterCreator creator = new KafkaClusterCreator(RECONCILIATION, CO_CONFIG, supplier);

@@ -143,8 +143,8 @@ public class KafkaClusterCreator {
                             errors.add("Cannot remove the broker role from nodes " + kafka.usedToBeBrokerNodes() + " because they have assigned partition-replicas.");
                         }
 
-                        if (!blockedVolumes.notEmpty().isEmpty()) {
-                            errors.add("Cannot remove the " + describeBlockedVolumes(blockedVolumes.notEmpty()) + " because they have assigned partition-replicas.");
+                        if (!blockedVolumes.withReplicas().isEmpty()) {
+                            errors.add("Cannot remove the " + describeBlockedVolumes(blockedVolumes.withReplicas()) + " because they have assigned partition-replicas.");
                         }
 
                         if (!blockedVolumes.unknown().isEmpty()) {
@@ -251,8 +251,8 @@ public class KafkaClusterCreator {
                         blockedVolumes = result;
                         volumeRemovalCheckFailed = !result.nothingBlocked();
 
-                        if (!result.notEmpty().isEmpty()) {
-                            LOGGER.warnCr(reconciliation, "Cannot remove the {} because they have assigned partition-replicas", describeBlockedVolumes(result.notEmpty()));
+                        if (!result.withReplicas().isEmpty()) {
+                            LOGGER.warnCr(reconciliation, "Cannot remove the {} because they have assigned partition-replicas", describeBlockedVolumes(result.withReplicas()));
                         }
 
                         if (!result.unknown().isEmpty()) {
@@ -391,7 +391,7 @@ public class KafkaClusterCreator {
     private String blockedReason(KafkaNodePool nodePool) {
         List<String> reasons = new ArrayList<>();
 
-        if (nodePool.getStatus().getNodeIds().stream().anyMatch(blockedVolumes.notEmpty()::containsKey)) {
+        if (nodePool.getStatus().getNodeIds().stream().anyMatch(blockedVolumes.withReplicas()::containsKey)) {
             reasons.add("are not empty");
         }
 
@@ -410,7 +410,7 @@ public class KafkaClusterCreator {
      * @return  True when the removal was blocked. False otherwise.
      */
     private boolean isBlocked(Integer nodeId) {
-        return blockedVolumes.notEmpty().containsKey(nodeId) || blockedVolumes.unknown().containsKey(nodeId);
+        return blockedVolumes.withReplicas().containsKey(nodeId) || blockedVolumes.unknown().containsKey(nodeId);
     }
 
     /**

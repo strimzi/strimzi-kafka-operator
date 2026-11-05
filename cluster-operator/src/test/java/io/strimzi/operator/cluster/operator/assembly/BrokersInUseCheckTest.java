@@ -241,7 +241,7 @@ public class BrokersInUseCheckTest {
                 .toCompletableFuture()
                 .join();
 
-        assertThat(nodesInUse.notEmpty(), is(Map.of(1, Set.of(1))));
+        assertThat(nodesInUse.withReplicas(), is(Map.of(1, Set.of(1))));
         assertThat(nodesInUse.unknown(), is(Map.of()));
     }
 
@@ -279,7 +279,7 @@ public class BrokersInUseCheckTest {
                 .toCompletableFuture()
                 .join();
 
-        assertThat(nodesInUse.notEmpty(), is(Map.of()));
+        assertThat(nodesInUse.withReplicas(), is(Map.of()));
         assertThat(nodesInUse.unknown(), is(Map.of(0, Set.of(1))));
     }
 
@@ -336,7 +336,7 @@ public class BrokersInUseCheckTest {
                 .join();
 
         // The node which did not answer blocks the removal, but it is not reported as holding replicas
-        assertThat(nodesInUse.notEmpty(), is(Map.of()));
+        assertThat(nodesInUse.withReplicas(), is(Map.of()));
         assertThat(nodesInUse.unknown(), is(Map.of(1, Set.of(1))));
     }
 
@@ -353,7 +353,7 @@ public class BrokersInUseCheckTest {
                 .toCompletableFuture()
                 .join();
 
-        assertThat(nodesInUse.notEmpty(), is(Map.of()));
+        assertThat(nodesInUse.withReplicas(), is(Map.of()));
         assertThat(nodesInUse.unknown(), is(Map.of(0, Set.of(1))));
     }
 
