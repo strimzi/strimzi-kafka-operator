@@ -106,7 +106,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -445,7 +444,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
      * @return  Map with the broker node IDs and the IDs of the JBOD volumes which are going to be removed from them
      */
     public Map<Integer, Set<Integer>> removedJbodVolumes() {
-        Map<Integer, Set<Integer>> volumes = new LinkedHashMap<>();
+        Map<Integer, Set<Integer>> volumes = new HashMap<>();
 
         for (KafkaPool pool : nodePools)    {
             if (!pool.removedJbodVolumeIds().isEmpty()) {
