@@ -25,6 +25,19 @@ public class RestartReasons implements Iterable<RestartReason> {
     public RestartReasons() { }
 
     /**
+     * Copy constructor that creates a deep copy of the provided restart reasons.
+     *
+     * @param reasonsToCopy Restart reasons instance to copy
+     */
+    private RestartReasons(RestartReasons reasonsToCopy) {
+        if (reasonsToCopy != null) {
+            for (var entry : reasonsToCopy.reasons.entrySet()) {
+                this.reasons.put(entry.getKey(), new HashSet<>(entry.getValue()));
+            }
+        }
+    }
+
+    /**
      * Creates an empty restart reasons instance.
      *
      * @return  Empty restart reasons instance
@@ -42,6 +55,17 @@ public class RestartReasons implements Iterable<RestartReason> {
      */
     public static RestartReasons of(RestartReason reason) {
         return new RestartReasons().add(reason);
+    }
+
+    /**
+     * Creates a deep copy of the provided restart reasons instance.
+     *
+     * @param reasonsToCopy Restart reasons instance to copy
+     *
+     * @return  New RestartReasons instance containing the same reasons and notes as the provided instance
+     */
+    public static RestartReasons copyOf(RestartReasons reasonsToCopy) {
+        return new RestartReasons(reasonsToCopy);
     }
 
     /**
