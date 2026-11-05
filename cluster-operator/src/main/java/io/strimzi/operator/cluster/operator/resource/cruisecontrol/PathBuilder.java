@@ -4,13 +4,16 @@
  */
 package io.strimzi.operator.cluster.operator.resource.cruisecontrol;
 
-import io.strimzi.api.kafka.model.rebalance.BrokerAndVolumeIds;
+import io.strimzi.api.kafka.model.rebalance.RebalanceNode;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlEndpoints;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlParameters;
 
 import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -82,10 +85,10 @@ public class PathBuilder {
      *
      * @return  Instance of this builder
      */
-    private List<String> brokerAndVolumeIdsParameterList(List<BrokerAndVolumeIds> values) {
+    private List<String> brokerAndVolumeIdsParameterList(List<RebalanceNode> values) {
 
         List<String> brokerandVolumeIds = new ArrayList<>(values.size());
-        for (BrokerAndVolumeIds brokerAndVolumeIds : values) {
+        for (RebalanceNode brokerAndVolumeIds : values) {
             brokerAndVolumeIds.getVolumeIds().forEach(volumeId -> brokerandVolumeIds.add(brokerAndVolumeIds.getBrokerId() + "-/var/lib/kafka/data-" + volumeId + "/kafka-log" + brokerAndVolumeIds.getBrokerId()));
         }
 
@@ -135,6 +138,9 @@ public class PathBuilder {
 
             if (options.getGoals() != null) {
                 builder.withParameter(CruiseControlParameters.GOALS, options.getGoals());
+            }
+            if (options.getAdditionalConfig() != null) {
+                builder.withAdditionalConfig(options.getAdditionalConfig());
             }
             return builder;
         } else {
@@ -188,6 +194,27 @@ public class PathBuilder {
         } else {
             return this;
         }
+    }
+
+    /**
+     * Adds additional Cruise Control REST API parameters as raw key-value query parameters.
+     *
+     * @param config   Map of additional config parameters
+     *
+     * @return  Instance of this builder
+     */
+    public PathBuilder withAdditionalConfig(Map<String, String> config) {
+        if (config != null) {
+            for (Map.Entry<String, String> entry : config.entrySet()) {
+                if (!firstParam) {
+                    constructedPath += "&";
+                } else {
+                    firstParam = false;
+                }
+                constructedPath += URLEncoder.encode(entry.getKey(), StandardCharsets.UTF_8) + "=" + URLEncoder.encode(entry.getValue(), StandardCharsets.UTF_8);
+            }
+        }
+        return this;
     }
 
     /**
