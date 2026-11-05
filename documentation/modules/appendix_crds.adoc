@@ -44,7 +44,10 @@ Used in: xref:type-Kafka-{context}[`Kafka`]
 |Configuration for Cruise Control deployment. Deploys a Cruise Control instance when specified.
 |kafkaExporter
 |xref:type-KafkaExporterSpec-{context}[`KafkaExporterSpec`]
-|Configuration of the Kafka Exporter. Kafka Exporter can provide additional metrics, for example lag of consumer group at topic/partition.
+|**The `kafkaExporter` property has been deprecated, and should now be configured using `spec.extraMetrics`.** Configuration of the Kafka Exporter. Kafka Exporter can provide additional metrics, for example lag of consumer group at topic/partition.
+|extraMetrics
+|xref:type-SovaSpec-{context}[`SovaSpec`]
+|Configuration of Sova. Sova can provide additional metrics, for example lag of consumer group at topic/partition.
 |maintenanceTimeWindows
 |string array
 |A list of time windows for maintenance tasks (that is, certificates renewal). Each time window is defined by a cron expression.
@@ -561,7 +564,7 @@ It must have the value `environment-variable` for the type `EnvironmentVariableR
 [id='type-StrimziProbe-{context}']
 = `StrimziProbe` schema reference
 
-Used in: xref:type-CruiseControlSpec-{context}[`CruiseControlSpec`], xref:type-EntityTopicOperatorSpec-{context}[`EntityTopicOperatorSpec`], xref:type-EntityUserOperatorSpec-{context}[`EntityUserOperatorSpec`], xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaExporterSpec-{context}[`KafkaExporterSpec`], xref:type-KafkaMirrorMaker2Spec-{context}[`KafkaMirrorMaker2Spec`]
+Used in: xref:type-CruiseControlSpec-{context}[`CruiseControlSpec`], xref:type-EntityTopicOperatorSpec-{context}[`EntityTopicOperatorSpec`], xref:type-EntityUserOperatorSpec-{context}[`EntityUserOperatorSpec`], xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaExporterSpec-{context}[`KafkaExporterSpec`], xref:type-KafkaMirrorMaker2Spec-{context}[`KafkaMirrorMaker2Spec`], xref:type-SovaSpec-{context}[`SovaSpec`]
 
 
 [cols="2,2,3a",options="header"]
@@ -587,7 +590,7 @@ Used in: xref:type-CruiseControlSpec-{context}[`CruiseControlSpec`], xref:type-E
 [id='type-JvmOptions-{context}']
 = `JvmOptions` schema reference
 
-Used in: xref:type-CruiseControlSpec-{context}[`CruiseControlSpec`], xref:type-EntityTopicOperatorSpec-{context}[`EntityTopicOperatorSpec`], xref:type-EntityUserOperatorSpec-{context}[`EntityUserOperatorSpec`], xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaMirrorMaker2Spec-{context}[`KafkaMirrorMaker2Spec`], xref:type-KafkaNodePoolSpec-{context}[`KafkaNodePoolSpec`]
+Used in: xref:type-CruiseControlSpec-{context}[`CruiseControlSpec`], xref:type-EntityTopicOperatorSpec-{context}[`EntityTopicOperatorSpec`], xref:type-EntityUserOperatorSpec-{context}[`EntityUserOperatorSpec`], xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaMirrorMaker2Spec-{context}[`KafkaMirrorMaker2Spec`], xref:type-KafkaNodePoolSpec-{context}[`KafkaNodePoolSpec`], xref:type-SovaSpec-{context}[`SovaSpec`]
 
 
 [cols="2,2,3a",options="header"]
@@ -733,7 +736,7 @@ Used in: xref:type-StrimziMetricsReporter-{context}[`StrimziMetricsReporter`]
 [id='type-InlineLogging-{context}']
 = `InlineLogging` schema reference
 
-Used in: xref:type-CruiseControlSpec-{context}[`CruiseControlSpec`], xref:type-EntityTopicOperatorSpec-{context}[`EntityTopicOperatorSpec`], xref:type-EntityUserOperatorSpec-{context}[`EntityUserOperatorSpec`], xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaMirrorMaker2Spec-{context}[`KafkaMirrorMaker2Spec`]
+Used in: xref:type-CruiseControlSpec-{context}[`CruiseControlSpec`], xref:type-EntityTopicOperatorSpec-{context}[`EntityTopicOperatorSpec`], xref:type-EntityUserOperatorSpec-{context}[`EntityUserOperatorSpec`], xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaMirrorMaker2Spec-{context}[`KafkaMirrorMaker2Spec`], xref:type-SovaSpec-{context}[`SovaSpec`]
 
 
 The `type` property is a discriminator that distinguishes use of the `InlineLogging` type from xref:type-ExternalLogging-{context}[`ExternalLogging`].
@@ -752,7 +755,7 @@ It must have the value `inline` for the type `InlineLogging`.
 [id='type-ExternalLogging-{context}']
 = `ExternalLogging` schema reference
 
-Used in: xref:type-CruiseControlSpec-{context}[`CruiseControlSpec`], xref:type-EntityTopicOperatorSpec-{context}[`EntityTopicOperatorSpec`], xref:type-EntityUserOperatorSpec-{context}[`EntityUserOperatorSpec`], xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaMirrorMaker2Spec-{context}[`KafkaMirrorMaker2Spec`]
+Used in: xref:type-CruiseControlSpec-{context}[`CruiseControlSpec`], xref:type-EntityTopicOperatorSpec-{context}[`EntityTopicOperatorSpec`], xref:type-EntityUserOperatorSpec-{context}[`EntityUserOperatorSpec`], xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaMirrorMaker2Spec-{context}[`KafkaMirrorMaker2Spec`], xref:type-SovaSpec-{context}[`SovaSpec`]
 
 
 The `type` property is a discriminator that distinguishes use of the `ExternalLogging` type from xref:type-InlineLogging-{context}[`InlineLogging`].
@@ -1052,7 +1055,7 @@ Used in: xref:type-CruiseControlTemplate-{context}[`CruiseControlTemplate`], xre
 [id='type-ResourceTemplate-{context}']
 = `ResourceTemplate` schema reference
 
-Used in: xref:type-CruiseControlTemplate-{context}[`CruiseControlTemplate`], xref:type-EntityOperatorTemplate-{context}[`EntityOperatorTemplate`], xref:type-KafkaBridgeTemplate-{context}[`KafkaBridgeTemplate`], xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`], xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`], xref:type-KafkaExporterTemplate-{context}[`KafkaExporterTemplate`], xref:type-KafkaNodePoolTemplate-{context}[`KafkaNodePoolTemplate`], xref:type-KafkaUserTemplate-{context}[`KafkaUserTemplate`]
+Used in: xref:type-CruiseControlTemplate-{context}[`CruiseControlTemplate`], xref:type-EntityOperatorTemplate-{context}[`EntityOperatorTemplate`], xref:type-KafkaBridgeTemplate-{context}[`KafkaBridgeTemplate`], xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`], xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`], xref:type-KafkaExporterTemplate-{context}[`KafkaExporterTemplate`], xref:type-KafkaNodePoolTemplate-{context}[`KafkaNodePoolTemplate`], xref:type-KafkaUserTemplate-{context}[`KafkaUserTemplate`], xref:type-SovaTemplate-{context}[`SovaTemplate`]
 
 
 [cols="2,2,3a",options="header"]
@@ -1066,7 +1069,7 @@ Used in: xref:type-CruiseControlTemplate-{context}[`CruiseControlTemplate`], xre
 [id='type-PodDisruptionBudgetTemplate-{context}']
 = `PodDisruptionBudgetTemplate` schema reference
 
-Used in: xref:type-CruiseControlTemplate-{context}[`CruiseControlTemplate`], xref:type-EntityOperatorTemplate-{context}[`EntityOperatorTemplate`], xref:type-KafkaBridgeTemplate-{context}[`KafkaBridgeTemplate`], xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`], xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`], xref:type-KafkaExporterTemplate-{context}[`KafkaExporterTemplate`]
+Used in: xref:type-CruiseControlTemplate-{context}[`CruiseControlTemplate`], xref:type-EntityOperatorTemplate-{context}[`EntityOperatorTemplate`], xref:type-KafkaBridgeTemplate-{context}[`KafkaBridgeTemplate`], xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`], xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`], xref:type-KafkaExporterTemplate-{context}[`KafkaExporterTemplate`], xref:type-SovaTemplate-{context}[`SovaTemplate`]
 
 xref:type-PodDisruptionBudgetTemplate-schema-{context}[Full list of `PodDisruptionBudgetTemplate` schema properties]
 
@@ -1090,7 +1093,7 @@ include::../api/io.strimzi.api.kafka.model.common.template.PodDisruptionBudgetTe
 [id='type-ContainerTemplate-{context}']
 = `ContainerTemplate` schema reference
 
-Used in: xref:type-CruiseControlTemplate-{context}[`CruiseControlTemplate`], xref:type-EntityOperatorTemplate-{context}[`EntityOperatorTemplate`], xref:type-KafkaBridgeTemplate-{context}[`KafkaBridgeTemplate`], xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`], xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`], xref:type-KafkaExporterTemplate-{context}[`KafkaExporterTemplate`], xref:type-KafkaNodePoolTemplate-{context}[`KafkaNodePoolTemplate`]
+Used in: xref:type-CruiseControlTemplate-{context}[`CruiseControlTemplate`], xref:type-EntityOperatorTemplate-{context}[`EntityOperatorTemplate`], xref:type-KafkaBridgeTemplate-{context}[`KafkaBridgeTemplate`], xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`], xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`], xref:type-KafkaExporterTemplate-{context}[`KafkaExporterTemplate`], xref:type-KafkaNodePoolTemplate-{context}[`KafkaNodePoolTemplate`], xref:type-SovaTemplate-{context}[`SovaTemplate`]
 
 xref:type-ContainerTemplate-schema-{context}[Full list of `ContainerTemplate` schema properties]
 
@@ -1407,7 +1410,7 @@ Used in: xref:type-EntityOperatorSpec-{context}[`EntityOperatorSpec`]
 [id='type-DeploymentTemplate-{context}']
 = `DeploymentTemplate` schema reference
 
-Used in: xref:type-CruiseControlTemplate-{context}[`CruiseControlTemplate`], xref:type-EntityOperatorTemplate-{context}[`EntityOperatorTemplate`], xref:type-KafkaBridgeTemplate-{context}[`KafkaBridgeTemplate`], xref:type-KafkaExporterTemplate-{context}[`KafkaExporterTemplate`]
+Used in: xref:type-CruiseControlTemplate-{context}[`CruiseControlTemplate`], xref:type-EntityOperatorTemplate-{context}[`EntityOperatorTemplate`], xref:type-KafkaBridgeTemplate-{context}[`KafkaBridgeTemplate`], xref:type-KafkaExporterTemplate-{context}[`KafkaExporterTemplate`], xref:type-SovaTemplate-{context}[`SovaTemplate`]
 
 xref:type-DeploymentTemplate-schema-{context}[Full list of `DeploymentTemplate` schema properties]
 
@@ -1431,7 +1434,7 @@ include::../api/io.strimzi.api.kafka.model.common.template.DeploymentTemplate.ad
 [id='type-PodTemplate-{context}']
 = `PodTemplate` schema reference
 
-Used in: xref:type-CruiseControlTemplate-{context}[`CruiseControlTemplate`], xref:type-EntityOperatorTemplate-{context}[`EntityOperatorTemplate`], xref:type-KafkaBridgeTemplate-{context}[`KafkaBridgeTemplate`], xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`], xref:type-KafkaExporterTemplate-{context}[`KafkaExporterTemplate`]
+Used in: xref:type-CruiseControlTemplate-{context}[`CruiseControlTemplate`], xref:type-EntityOperatorTemplate-{context}[`EntityOperatorTemplate`], xref:type-KafkaBridgeTemplate-{context}[`KafkaBridgeTemplate`], xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`], xref:type-KafkaExporterTemplate-{context}[`KafkaExporterTemplate`], xref:type-SovaTemplate-{context}[`SovaTemplate`]
 
 xref:type-PodTemplate-schema-{context}[Full list of `PodTemplate` schema properties]
 
@@ -1784,6 +1787,9 @@ Used in: xref:type-AlterOffsets-{context}[`AlterOffsets`], xref:type-KafkaAutoRe
 [id='type-KafkaExporterSpec-{context}']
 = `KafkaExporterSpec` schema reference
 
+*The type `KafkaExporterSpec` has been deprecated.*
+Please use xref:type-SovaSpec-{context}[`SovaSpec`] instead.
+
 Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 
 
@@ -1831,6 +1837,9 @@ Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 [id='type-KafkaExporterTemplate-{context}']
 = `KafkaExporterTemplate` schema reference
 
+*The type `KafkaExporterTemplate` has been deprecated.*
+Please use xref:type-SovaTemplate-{context}[`SovaTemplate`] instead.
+
 Used in: xref:type-KafkaExporterSpec-{context}[`KafkaExporterSpec`]
 
 
@@ -1852,6 +1861,76 @@ Used in: xref:type-KafkaExporterSpec-{context}[`KafkaExporterSpec`]
 |podDisruptionBudget
 |xref:type-PodDisruptionBudgetTemplate-{context}[`PodDisruptionBudgetTemplate`]
 |Template for the Pod Disruption Budget for Kafka Exporter pods.
+|====
+
+[id='type-SovaSpec-{context}']
+= `SovaSpec` schema reference
+
+Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
+
+
+[cols="2,2,3a",options="header"]
+|====
+|Property |Property type |Description
+|image
+|string
+|The container image used for the Sova pods. If no image name is explicitly specified, the image name corresponds to the name specified in the Cluster Operator configuration. If an image name is not defined in the Cluster Operator configuration, a default value is used.
+|groupRegex
+|string
+|Regular expression to specify which consumer groups to collect. Default value is `.*`.
+|groupExcludeRegex
+|string
+|Regular expression to specify which consumer groups to exclude.
+|topicRegex
+|string
+|Regular expression to specify which topics to collect. Default value is `.*`.
+|topicExcludeRegex
+|string
+|Regular expression to specify which topics to exclude.
+|logging
+|xref:type-InlineLogging-{context}[`InlineLogging`], xref:type-ExternalLogging-{context}[`ExternalLogging`]
+|Logging configuration (Log4j 2) for Sova.
+|jvmOptions
+|xref:type-JvmOptions-{context}[`JvmOptions`]
+|JVM Options for the Sova container.
+|resources
+|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.32/#resourcerequirements-v1-core[ResourceRequirements]
+|CPU and memory resources to reserve.
+|livenessProbe
+|xref:type-StrimziProbe-{context}[`StrimziProbe`]
+|Pod liveness check.
+|readinessProbe
+|xref:type-StrimziProbe-{context}[`StrimziProbe`]
+|Pod readiness check.
+|template
+|xref:type-SovaTemplate-{context}[`SovaTemplate`]
+|Customization of deployment templates and pods.
+|====
+
+[id='type-SovaTemplate-{context}']
+= `SovaTemplate` schema reference
+
+Used in: xref:type-SovaSpec-{context}[`SovaSpec`]
+
+
+[cols="2,2,3a",options="header"]
+|====
+|Property |Property type |Description
+|deployment
+|xref:type-DeploymentTemplate-{context}[`DeploymentTemplate`]
+|Template for Sova `Deployment`.
+|pod
+|xref:type-PodTemplate-{context}[`PodTemplate`]
+|Template for Sova `Pods`.
+|container
+|xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
+|Template for the Sova container.
+|serviceAccount
+|xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
+|Template for the Sova service account.
+|podDisruptionBudget
+|xref:type-PodDisruptionBudgetTemplate-{context}[`PodDisruptionBudgetTemplate`]
+|Template for the Pod Disruption Budget for Sova pods.
 |====
 
 [id='type-KafkaStatus-{context}']

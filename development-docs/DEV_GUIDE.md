@@ -370,6 +370,15 @@ Dockerfile in the subdirectory named by `ALTERNATE_BASE`. For example, to build 
 use `ALTERNATE_BASE=alpine make docker_build`. Alternative docker images are an experimental feature not supported by
 the core Strimzi team.
 
+#### Building with a local Sova snapshot
+
+When developing against a local Sova build, you can build the Sova distribution zip in the Sova repository (`mvn clean package -DskipTests`) and pass `SOVA_DIST` when building the Kafka Docker image:
+
+```bash
+export SOVA_DIST=/path/to/sova/target/sova-0.1.0-SNAPSHOT-dist.zip
+make -C docker-images/kafka-based/kafka docker_build
+```
+
 ### Build customization
 
 The `make all` target can be used to trigger both the `docker_build` and the `docker_push` targets described above. This

@@ -14,6 +14,7 @@ import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.KafkaStatus;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlResources;
 import io.strimzi.api.kafka.model.kafka.exporter.KafkaExporterResources;
+import io.strimzi.api.kafka.model.kafka.sova.SovaResources;
 import io.strimzi.api.kafka.model.podset.StrimziPodSet;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.certs.CertIssuer;
@@ -262,7 +263,8 @@ public class CaReconciler {
                     CruiseControlResources.secretName(reconciliation.name()),
                     KafkaResources.entityTopicOperatorSecretName(reconciliation.name()),
                     KafkaResources.entityUserOperatorSecretName(reconciliation.name()),
-                    KafkaExporterResources.secretName(reconciliation.name())
+                    KafkaExporterResources.secretName(reconciliation.name()),
+                    SovaResources.secretName(reconciliation.name())
             );
             return endEntityCertSecrets.contains(secret.getMetadata().getName());
         }
@@ -354,6 +356,7 @@ public class CaReconciler {
                     .thenCompose(nodes -> rollKafkaBrokers(nodes, RestartReasons.of(restartReason), coIdentity))
                     .thenCompose(i -> rollDeploymentIfExists(KafkaResources.entityOperatorDeploymentName(reconciliation.name()), restartReason))
                     .thenCompose(i -> rollDeploymentIfExists(KafkaExporterResources.componentName(reconciliation.name()), restartReason))
+                    .thenCompose(i -> rollDeploymentIfExists(SovaResources.componentName(reconciliation.name()), restartReason))
                     .thenCompose(i -> rollDeploymentIfExists(CruiseControlResources.componentName(reconciliation.name()), restartReason));
         } else {
             return CompletableFuture.completedFuture(null);
