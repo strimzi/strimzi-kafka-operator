@@ -9,8 +9,11 @@ import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyList;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
+import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.kubernetes.AbstractNamespacedResourceOperator;
 
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executor;
 import java.util.regex.Pattern;
 
@@ -42,6 +45,28 @@ public class NetworkPolicyOperator extends AbstractNamespacedResourceOperator<Ku
     @Override
     protected MixedOperation<NetworkPolicy, NetworkPolicyList, Resource<NetworkPolicy>> operation() {
         return client.network().networkPolicies();
+    }
+
+    /**
+     * Keeps the finalizers set on the existing NetworkPolicy (for example by the EKS network policy
+     * controller). The patch is computed against the desired resource, so a patch for a real change
+     * would otherwise remove them.
+     *
+     * @param reconciliation The reconciliation
+     * @param namespace Namespace of the NetworkPolicy
+     * @param name      Name of the NetworkPolicy
+     * @param current   Current NetworkPolicy
+     * @param desired   Desired NetworkPolicy
+     *
+     * @return  Future with reconciliation result
+     */
+    @Override
+    protected CompletionStage<ReconcileResult<NetworkPolicy>> internalUpdate(Reconciliation reconciliation, String namespace, String name, NetworkPolicy current, NetworkPolicy desired) {
+        if (current.getMetadata() != null && desired.getMetadata() != null) {
+            desired.getMetadata().setFinalizers(current.getMetadata().getFinalizers());
+        }
+
+        return super.internalUpdate(reconciliation, namespace, name, current, desired);
     }
 
     /**

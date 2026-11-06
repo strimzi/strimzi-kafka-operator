@@ -10,6 +10,7 @@
 * Add support for Strimzi-native configurable RSA key sizes
 * Strimzi Access Operator updated to 0.4.0 - included in Strimzi installation files, examples, and documentation
 * Use Java 25 as the runtime for all containers (leaving the language level at Java 21) for supporting Post-Quantum Hybrid Key Exchange
+* Keep finalizers that other controllers (such as the EKS network policy controller) set on NetworkPolicies, so the operator no longer removes them
 
 ### Major changes, deprecations, and removals
 
