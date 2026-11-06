@@ -10,6 +10,8 @@
 * Add support for Strimzi-native configurable RSA key sizes
 * Strimzi Access Operator updated to 0.4.0 - included in Strimzi installation files, examples, and documentation
 * Use Java 25 as the runtime for all containers (leaving the language level at Java 21) for supporting Post-Quantum Hybrid Key Exchange
+* Add support for a delay before each Kafka node restart during rolling updates.
+  The delay is configured with the `STRIMZI_POST_KAFKA_RESTART_DELAY_MS` environment variable of the Cluster Operator and can be overridden per Kafka cluster with the `strimzi.io/post-kafka-restart-delay-ms` annotation on the `Kafka` resource.
 
 ### Major changes, deprecations, and removals
 

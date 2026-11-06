@@ -82,7 +82,10 @@ import static java.util.Collections.singletonList;
  *         If not then:
  *           i.  Reschedule the restart of this pod by appending it the list
  *           ii. Continue from 1.
- *     6. Otherwise:
+ *     6. Otherwise, if a post-restart delay is configured and this pod has not waited for it yet:
+ *         i.   Wait for the delay without blocking the other pods
+ *         ii.  Continue from 3. for this pod (the checks are repeated before the restart)
+ *     7. Otherwise:
  *         i.   Restart the pod
  *         ii.  Wait for it to become ready (in the kube sense)
  *         iii. Continue from 1.
@@ -97,6 +100,9 @@ import static java.util.Collections.singletonList;
  *     <li>rolling should happen without impacting any topic's min.isr.</li>
  *     <li>even pods which aren't candidates for rolling are checked for readiness which partly avoids
  *     successive reconciliations each restarting a pod which never becomes ready</li>
+ *     <li>while a pod waits for the post-restart delay, the other pods which need to be restarted or
+ *     reconfigured are considered again only once the delay ends. The waiting does not use up any
+ *     of the retries of the pods.</li>
  * </ul>
  */
 @SuppressWarnings({"checkstyle:ClassFanOutComplexity", "checkstyle:ParameterNumber"})
@@ -109,6 +115,7 @@ public class KafkaRoller {
     private final PodOperator podOperations;
     private final long pollingIntervalMs;
     protected final long operationTimeoutMs;
+    private final long postRestartDelayMs;
     private final String cluster;
     private final Identity coIdentity;
     private final Set<NodeRef> nodes;
@@ -131,6 +138,16 @@ public class KafkaRoller {
      */
     private Admin controllerAdminClient;
     private KafkaAgentClient kafkaAgentClient;
+    /**
+     * The node which is currently waiting for the post-restart delay before being restarted, or null when no node is
+     * waiting. Only one node waits at a time. The other nodes which need to be restarted or reconfigured are
+     * considered again when its delay ends. Accessed only from the single-threaded executor.
+     */
+    private NodeRef nodeWaitingForRestartDelay;
+    /**
+     * The {@link System#nanoTime()} at which the post-restart delay of {@link #nodeWaitingForRestartDelay} ends.
+     */
+    private long restartDelayEndNanos;
 
     /**
      * Constructor
@@ -139,6 +156,9 @@ public class KafkaRoller {
      * @param podOperations             Pod operator for managing pods
      * @param pollingIntervalMs         Polling interval in milliseconds
      * @param operationTimeoutMs        Operation timeout in milliseconds
+     * @param postRestartDelayMs        Delay in milliseconds to wait before restarting a node once it has been
+     *                                  found safe to restart. The checks are repeated after the delay. Values of 0
+     *                                  or less disable the delay.
      * @param backOffSupplier           Backoff supplier
      * @param nodes                     List of Kafka node references to consider rolling
      * @param coIdentity                Trust set and identity for authentication for connecting to the Kafka cluster
@@ -150,7 +170,7 @@ public class KafkaRoller {
      * @param eventsPublisher           Kubernetes Events publisher for publishing events about pod restarts
      */
     public KafkaRoller(Reconciliation reconciliation, PodOperator podOperations,
-                       long pollingIntervalMs, long operationTimeoutMs, Supplier<BackOff> backOffSupplier, Set<NodeRef> nodes,
+                       long pollingIntervalMs, long operationTimeoutMs, long postRestartDelayMs, Supplier<BackOff> backOffSupplier, Set<NodeRef> nodes,
                        Identity coIdentity, AdminClientProvider adminClientProvider, KafkaAgentClientProvider kafkaAgentClientProvider,
                        Function<Integer, String> kafkaConfigProvider, KafkaVersion kafkaVersion, boolean allowReconfiguration, KubernetesRestartEventPublisher eventsPublisher) {
         this.namespace = reconciliation.namespace();
@@ -163,6 +183,7 @@ public class KafkaRoller {
         this.backoffSupplier = backOffSupplier;
         this.coIdentity = coIdentity;
         this.operationTimeoutMs = operationTimeoutMs;
+        this.postRestartDelayMs = postRestartDelayMs;
         this.podOperations = podOperations;
         this.pollingIntervalMs = pollingIntervalMs;
         this.adminClientProvider = adminClientProvider;
@@ -304,6 +325,17 @@ public class KafkaRoller {
         boolean needsReconfig;
         boolean forceRestart;
         boolean podStuck;
+        /**
+         * True when the pod has already waited for the post-restart delay and is being checked again before the
+         * restart. Reset when the check after the delay fails so that a new delay starts once the pod can be
+         * restarted again.
+         */
+        boolean waitedForRestartDelay;
+        /**
+         * True when a dynamic configuration update of the pod has failed. The pod is then restarted without
+         * trying the dynamic update again.
+         */
+        boolean dynamicUpdateFailed;
         KafkaConfigurationDiff configDiff;
         KafkaQuorumCheck quorumCheck;
 
@@ -340,8 +372,10 @@ public class KafkaRoller {
         singleExecutor.schedule(() -> {
             LOGGER.debugCr(reconciliation, "Considering updating pod {} after a delay of {} milliseconds", nodeRef, delayMs);
             try {
-                restartIfNecessary(nodeRef, ctx);
-                ctx.completableFuture.complete(null);
+                if (restartIfNecessary(nodeRef, ctx)) {
+                    clearRestartDelay(nodeRef);
+                    ctx.completableFuture.complete(null);
+                }
             } catch (InterruptedException e) {
                 // Let the executor deal with interruption.
                 Thread.currentThread().interrupt();
@@ -352,6 +386,12 @@ public class KafkaRoller {
                 singleExecutor.shutdownNow();
                 podToContext.forEachValue(Integer.MAX_VALUE, f -> f.completableFuture.completeExceptionally(e));
             } catch (Exception e) {
+                clearRestartDelay(nodeRef);
+                if (ctx.waitedForRestartDelay) {
+                    LOGGER.infoCr(reconciliation, "Pod {} cannot be restarted after waiting {}ms for the post-restart delay. A new delay will start once it can be restarted again",
+                            nodeRef, postRestartDelayMs);
+                    ctx.waitedForRestartDelay = false;
+                }
                 if (ctx.backOff.done()) {
                     LOGGER.infoCr(reconciliation, "Could not verify pod {} is up-to-date, giving up after {} attempts. Total delay between attempts {}ms",
                             nodeRef, ctx.backOff.maxAttempts(), ctx.backOff.totalDelayMs(), e);
@@ -376,20 +416,24 @@ public class KafkaRoller {
      * @param nodeRef           Reference of pod to roll.
      * @param restartContext    Restart context
      *
+     * @return  True when the pod has been dealt with (restarted, reconfigured or found not to need either) and
+     *          false when the pod has been rescheduled because of the post-restart delay and will be considered again
+     *          later.
+     *
      * @throws InterruptedException     Interrupted while waiting.
      * @throws ForceableProblem         Some error. Not thrown when one of restartContext.podStuck, restartContext.backOff.done()
      *                                  or exception.forceNow is true AND canRoll is true. Otherwise, is thrown.
      * @throws UnforceableProblem       Some error, always thrown.
      */
     @SuppressWarnings({"checkstyle:CyclomaticComplexity"})
-    private void restartIfNecessary(NodeRef nodeRef, RestartContext restartContext)
+    private boolean restartIfNecessary(NodeRef nodeRef, RestartContext restartContext)
             throws Exception {
         final Pod pod;
         try {
             pod = podOperations.get(namespace, nodeRef.podName());
             if (pod == null) {
                 LOGGER.debugCr(reconciliation, "Pod {} doesn't exist. There seems to be some problem with the creation of pod by StrimziPodSets controller", nodeRef.podName());
-                return;
+                return true;
             }
         } catch (KubernetesClientException e) {
             throw new UnforceableProblem("Error getting pod " + nodeRef.podName(), e);
@@ -436,6 +480,15 @@ public class KafkaRoller {
                 LOGGER.debugCr(reconciliation, "Pod {} can be rolled now", nodeRef);
                 restartAndAwaitReadiness(pod, operationTimeoutMs, restartContext);
             } else if (restartContext.needsRestart || restartContext.needsReconfig) {
+                long pendingDelayMs = pendingRestartDelayOfAnotherPodMs(nodeRef);
+                if (pendingDelayMs >= 0) {
+                    // Another pod is waiting for the post-restart delay. This pod is considered again once the delay ends.
+                    // This does not use up any of the retries of this pod.
+                    LOGGER.debugCr(reconciliation, "Pod {} will be considered again in {}ms, when the post-restart delay of pod {} ends", nodeRef, pendingDelayMs, nodeWaitingForRestartDelay);
+                    schedule(nodeRef, pendingDelayMs);
+                    return false;
+                }
+
                 if (isController && deferController(nodeRef, restartContext)) {
                     LOGGER.debugCr(reconciliation, "Pod {} is the active controller and there are other pods to verify first.", nodeRef);
                     throw new ForceableProblem("Pod " + nodeRef.podName() + " is the active controller and there are other pods to verify first");
@@ -443,12 +496,21 @@ public class KafkaRoller {
                     LOGGER.debugCr(reconciliation, "Pod {} cannot be updated right now", nodeRef);
                     throw new UnforceableProblem("Pod " + nodeRef.podName() + " cannot be updated right now.");
                 } else {
-                    // Check for rollability before trying a dynamic update so that if the dynamic update fails we can go to a full restart
-                    if (!maybeDynamicUpdateBrokerConfig(nodeRef, restartContext, isController && !isBroker)) {
+                    // Rollability is checked before trying a dynamic update so that if the dynamic update fails we can go to a full restart
+                    if (maybeDynamicUpdateBrokerConfig(nodeRef, restartContext, isController && !isBroker)) {
+                        awaitReadiness(pod, operationTimeoutMs);
+                    } else if (postRestartDelayMs > 0 && !restartContext.waitedForRestartDelay) {
+                        // The pod can be restarted. Wait for the post-restart delay first and then check again before restarting it.
+                        startRestartDelay(nodeRef, restartContext);
+                        return false;
+                    } else {
+                        if (restartContext.waitedForRestartDelay) {
+                            LOGGER.infoCr(reconciliation, "Pod {} can still be restarted after waiting {}ms for the post-restart delay", nodeRef, postRestartDelayMs);
+                            // The delay has been used. If the restart itself fails and is retried, the pod waits for a new delay.
+                            restartContext.waitedForRestartDelay = false;
+                        }
                         LOGGER.infoCr(reconciliation, "Rolling Pod {} due to {}", nodeRef, restartContext.restartReasons.getAllReasonNotes());
                         restartAndAwaitReadiness(pod, operationTimeoutMs, restartContext);
-                    } else {
-                        awaitReadiness(pod, operationTimeoutMs);
                     }
                 }
             } else {
@@ -480,6 +542,54 @@ public class KafkaRoller {
             } else {
                 throw e;
             }
+        }
+
+        return true;
+    }
+
+    /**
+     * Starts the post-restart delay for a pod which has been found safe to restart. The pod is scheduled again
+     * after the delay, when the checks are repeated before it is restarted. The other pods which need to be
+     * restarted or reconfigured wait for the delay to end without using up their retries (see
+     * {@link #pendingRestartDelayOfAnotherPodMs(NodeRef)}).
+     *
+     * @param nodeRef           Reference of the pod which waits for the delay
+     * @param restartContext    Restart context of the pod
+     */
+    private void startRestartDelay(NodeRef nodeRef, RestartContext restartContext) {
+        LOGGER.infoCr(reconciliation, "Pod {} can be restarted, waiting {}ms for the post-restart delay before checking again and restarting it", nodeRef, postRestartDelayMs);
+        nodeWaitingForRestartDelay = nodeRef;
+        restartDelayEndNanos = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(postRestartDelayMs);
+        restartContext.waitedForRestartDelay = true;
+        schedule(nodeRef, postRestartDelayMs);
+    }
+
+    /**
+     * Returns the time left until the post-restart delay of another pod ends.
+     *
+     * @param nodeRef   Reference of the pod which is being considered
+     *
+     * @return  The number of milliseconds to wait (rounded up) when another pod is waiting for the post-restart
+     *          delay, or -1 when no other pod is waiting.
+     */
+    private long pendingRestartDelayOfAnotherPodMs(NodeRef nodeRef) {
+        if (nodeWaitingForRestartDelay == null || nodeWaitingForRestartDelay.podName().equals(nodeRef.podName())) {
+            return -1;
+        }
+
+        long remainingNanos = restartDelayEndNanos - System.nanoTime();
+        return remainingNanos <= 0 ? 0 : TimeUnit.NANOSECONDS.toMillis(remainingNanos) + 1;
+    }
+
+    /**
+     * Clears the pending post-restart delay when it belongs to the given pod. Called when the pod is dealt with or
+     * when the check after the delay failed, so that the other pods are not held back anymore.
+     *
+     * @param nodeRef   Reference of the pod
+     */
+    private void clearRestartDelay(NodeRef nodeRef) {
+        if (nodeWaitingForRestartDelay != null && nodeWaitingForRestartDelay.podName().equals(nodeRef.podName())) {
+            nodeWaitingForRestartDelay = null;
         }
     }
 
@@ -529,7 +639,9 @@ public class KafkaRoller {
     private boolean maybeDynamicUpdateBrokerConfig(NodeRef nodeRef, RestartContext restartContext, boolean isControllerOnly) throws InterruptedException {
         boolean updatedDynamically;
         // needsReconfig is true, if node doesn't need to be restarted but updated configs can be dynamically updated.
-        if (restartContext.needsReconfig) {
+        // A dynamic update which already failed is not tried again when the pod is considered again after the
+        // post-restart delay: the pod is restarted instead.
+        if (restartContext.needsReconfig && !restartContext.dynamicUpdateFailed) {
             try {
                 if (isControllerOnly) {
                     dynamicUpdateKafkaConfig(reconciliation, nodeRef, controllerAdminClient, restartContext.configDiff);
@@ -539,6 +651,7 @@ public class KafkaRoller {
                 updatedDynamically = true;
             } catch (ForceableProblem e) {
                 LOGGER.debugCr(reconciliation, "Pod {} could not be updated dynamically ({}), will restart", nodeRef, e);
+                restartContext.dynamicUpdateFailed = true;
                 updatedDynamically = false;
             }
         } else {
