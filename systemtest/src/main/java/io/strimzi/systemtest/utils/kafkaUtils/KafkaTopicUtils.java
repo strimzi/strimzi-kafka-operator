@@ -7,7 +7,7 @@ package io.strimzi.systemtest.utils.kafkaUtils;
 import io.skodjob.kubetest4j.executor.ExecResult;
 import io.skodjob.kubetest4j.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
-import io.strimzi.api.kafka.model.rebalance.BrokerAndVolumeIds;
+import io.strimzi.api.kafka.model.rebalance.RebalanceNode;
 import io.strimzi.api.kafka.model.topic.KafkaTopic;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
@@ -518,9 +518,9 @@ public class KafkaTopicUtils {
      * @throws RuntimeException if the command to list directories fails.
      */
     public static Map<String, Set<Integer>> getPartitionDirectories(final TestStorage testStorage,
-                                                                    final List<BrokerAndVolumeIds> brokerAndVolumeIdsList) {
+                                                                    final List<RebalanceNode> brokerAndVolumeIdsList) {
         final Map<String, Set<Integer>> partitionDirs = new HashMap<>();
-        for (final BrokerAndVolumeIds brokerAndVolumeIds : brokerAndVolumeIdsList) {
+        for (final RebalanceNode brokerAndVolumeIds : brokerAndVolumeIdsList) {
             final String brokerPodName = KafkaComponents.getBrokerPodSetName(testStorage.getClusterName())
                 + "-" + brokerAndVolumeIds.getBrokerId();
             for (final int volumeId : brokerAndVolumeIds.getVolumeIds()) {
@@ -583,9 +583,9 @@ public class KafkaTopicUtils {
      * @throws RuntimeException if directory size retrieval fails.
      */
     public static Map<String, Long> getDataDirectorySizes(final TestStorage testStorage,
-                                                          final List<BrokerAndVolumeIds> brokerAndVolumeIdsList) {
+                                                          final List<RebalanceNode> brokerAndVolumeIdsList) {
         final Map<String, Long> dataDirSizes = new HashMap<>();
-        for (final BrokerAndVolumeIds brokerAndVolumeIds : brokerAndVolumeIdsList) {
+        for (final RebalanceNode brokerAndVolumeIds : brokerAndVolumeIdsList) {
             final String brokerPodName = KafkaComponents.getBrokerPodSetName(testStorage.getClusterName())
                 + "-" + brokerAndVolumeIds.getBrokerId();
             for (final int volumeId : brokerAndVolumeIds.getVolumeIds()) {
@@ -609,7 +609,7 @@ public class KafkaTopicUtils {
      * @param initialDataDirSizes       a map of initial data directory paths to their sizes in bytes.
      */
     public static void waitUntilDataMovedOffSpecifiedDisks(final TestStorage testStorage,
-                                                           final List<BrokerAndVolumeIds> brokersWithRemovedVolumes,
+                                                           final List<RebalanceNode> brokersWithRemovedVolumes,
                                                            final Map<String, Long> initialDataDirSizes) {
         LOGGER.info("Waiting until data has been moved off the specified disks...");
 

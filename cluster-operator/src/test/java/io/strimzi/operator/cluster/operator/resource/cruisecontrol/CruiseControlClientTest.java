@@ -3,8 +3,8 @@
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
 package io.strimzi.operator.cluster.operator.resource.cruisecontrol;
-import io.strimzi.api.kafka.model.rebalance.BrokerAndVolumeIds;
-import io.strimzi.api.kafka.model.rebalance.BrokerAndVolumeIdsBuilder;
+import io.strimzi.api.kafka.model.rebalance.RebalanceNode;
+import io.strimzi.api.kafka.model.rebalance.RebalanceNodeBuilder;
 import io.strimzi.certs.StrimziSubject;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlEndpoints;
@@ -204,7 +204,7 @@ public class CruiseControlClientTest {
 
     @Test
     public void testCCRemoveBrokerDisks()  {
-        BrokerAndVolumeIds brokerAndVolumeIds = new BrokerAndVolumeIdsBuilder()
+        RebalanceNode brokerAndVolumeIds = new RebalanceNodeBuilder()
                 .withBrokerId(0)
                 .withVolumeIds(1, 2, 3)
                 .build();
@@ -221,7 +221,7 @@ public class CruiseControlClientTest {
 
     @Test
     public void testCCMoveReplicasOffVolumesProposalNotReady()  {
-        BrokerAndVolumeIds brokerAndVolumeIds = new BrokerAndVolumeIdsBuilder()
+        RebalanceNode brokerAndVolumeIds = new RebalanceNodeBuilder()
                 .withVolumeIds(1)
                 .withBrokerId(0)
                 .build();
@@ -236,7 +236,7 @@ public class CruiseControlClientTest {
 
     @Test
     public void testCCMoveReplicasOffVolumesNotEnoughValidWindowsException()  {
-        BrokerAndVolumeIds brokerAndVolumeIds = new BrokerAndVolumeIdsBuilder()
+        RebalanceNode brokerAndVolumeIds = new RebalanceNodeBuilder()
                 .withVolumeIds(1)
                 .withBrokerId(0)
                 .build();
@@ -251,7 +251,7 @@ public class CruiseControlClientTest {
 
     @Test
     public void testCCMoveReplicasOffVolumesBrokerDoesNotExist()  {
-        BrokerAndVolumeIds brokerAndVolumeIds = new BrokerAndVolumeIdsBuilder()
+        RebalanceNode brokerAndVolumeIds = new RebalanceNodeBuilder()
                 .withVolumeIds(1)
                 .withBrokerId(0)
                 .build();

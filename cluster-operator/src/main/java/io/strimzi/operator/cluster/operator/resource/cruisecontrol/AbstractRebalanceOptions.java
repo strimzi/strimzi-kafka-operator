@@ -5,6 +5,7 @@
 package io.strimzi.operator.cluster.operator.resource.cruisecontrol;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * Abstract class for different sets of rebalance options - e.g. regular rebalance, add-brokers rebalance, remove-brokers rebalance.
@@ -31,6 +32,8 @@ public abstract class AbstractRebalanceOptions {
     private final long replicationThrottle;
     /** A list of strategy class names used to determine the execution order for the replica movements in the generated optimization proposal. */
     private final List<String> replicaMovementStrategies;
+    /** Additional Cruise Control REST API parameters passed through from spec.config */
+    private final Map<String, String> additionalConfig;
 
     /**
      * Checks if this is a dry-run only operation.
@@ -122,6 +125,15 @@ public abstract class AbstractRebalanceOptions {
         return replicaMovementStrategies;
     }
 
+    /**
+     * Gets additional Cruise Control REST API parameters passed through from spec.config.
+     *
+     * @return  Map of additional config parameters, or null if not set
+     */
+    public Map<String, String> getAdditionalConfig() {
+        return additionalConfig;
+    }
+
     AbstractRebalanceOptions(AbstractRebalanceOptionsBuilder builder) {
         this.isDryRun = builder.isDryRun;
         this.goals = builder.goals;
@@ -133,6 +145,7 @@ public abstract class AbstractRebalanceOptions {
         this.concurrentLeaderMovements = builder.concurrentLeaderMovements;
         this.replicationThrottle = builder.replicationThrottle;
         this.replicaMovementStrategies = builder.replicaMovementStrategies;
+        this.additionalConfig = builder.additionalConfig;
     }
 
     /**
@@ -152,6 +165,7 @@ public abstract class AbstractRebalanceOptions {
         private int concurrentLeaderMovements;
         private long replicationThrottle;
         private List<String> replicaMovementStrategies;
+        private Map<String, String> additionalConfig;
 
         AbstractRebalanceOptionsBuilder() {
             isDryRun = true;
@@ -164,6 +178,7 @@ public abstract class AbstractRebalanceOptions {
             concurrentLeaderMovements = 0;
             replicationThrottle = 0;
             replicaMovementStrategies = null;
+            additionalConfig = null;
         }
 
         protected abstract B self();
@@ -283,6 +298,18 @@ public abstract class AbstractRebalanceOptions {
          */
         public B withReplicaMovementStrategies(List<String> replicaMovementStrategies) {
             this.replicaMovementStrategies = replicaMovementStrategies;
+            return self();
+        }
+
+        /**
+         * Sets additional Cruise Control REST API parameters to be passed through as query parameters
+         *
+         * @param additionalConfig     Map of additional config parameters
+         *
+         * @return  Instance of this builder
+         */
+        public B withAdditionalConfig(Map<String, String> additionalConfig) {
+            this.additionalConfig = additionalConfig;
             return self();
         }
     }

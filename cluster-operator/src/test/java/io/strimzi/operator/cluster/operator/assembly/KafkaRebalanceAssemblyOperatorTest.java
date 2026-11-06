@@ -12,7 +12,6 @@ import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
-import io.strimzi.api.kafka.model.rebalance.BrokerAndVolumeIdsBuilder;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalance;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceAnnotation;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceBuilder;
@@ -21,6 +20,7 @@ import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceSpec;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceSpecBuilder;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceState;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceStatus;
+import io.strimzi.api.kafka.model.rebalance.RebalanceNodeBuilder;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
@@ -73,7 +73,7 @@ public class KafkaRebalanceAssemblyOperatorTest extends AbstractKafkaRebalanceAs
             new KafkaRebalanceSpecBuilder()
                     .withMode(KafkaRebalanceMode.REMOVE_DISKS)
                     .withMoveReplicasOffVolumes(
-                            new BrokerAndVolumeIdsBuilder()
+                            new RebalanceNodeBuilder()
                                     .withBrokerId(0)
                                     .withVolumeIds(1)
                                     .build())
@@ -1137,7 +1137,7 @@ public class KafkaRebalanceAssemblyOperatorTest extends AbstractKafkaRebalanceAs
                     // the resource moved from New to NotReady due to validation error
                     assertState(context, client, namespace, kr.getMetadata().getName(),
                             KafkaRebalanceState.NotReady, IllegalArgumentException.class,
-                            "The goals list should be empty when using the `rebalanceDisk: true` configuration for intra-broker disk balancing");
+                            "The goals list should be empty when using the `rebalance_disk: true` configuration for intra-broker disk balancing");
                     checkpoint.flag();
                 })));
     }

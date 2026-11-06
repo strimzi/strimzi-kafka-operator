@@ -4,7 +4,7 @@
  */
 package io.strimzi.operator.cluster.operator.resource.cruisecontrol;
 
-import io.strimzi.api.kafka.model.rebalance.BrokerAndVolumeIds;
+import io.strimzi.api.kafka.model.rebalance.RebalanceNode;
 
 import java.util.List;
 
@@ -13,14 +13,14 @@ import java.util.List;
  */
 public class RemoveDisksOptions extends AbstractRebalanceOptions {
     /** list with the IDs of the broker and volumes which will be used by remove-disks endpoint */
-    private final List<BrokerAndVolumeIds> brokerAndVolumeIds;
+    private final List<RebalanceNode> brokerAndVolumeIds;
 
     /**
      * Gets the list of brokers and volume IDs for the remove-disks endpoint.
      *
      * @return  List of brokers and volume IDs which will be used by remove-disks endpoint
      */
-    public List<BrokerAndVolumeIds> getBrokersandVolumeIds() {
+    public List<RebalanceNode> getBrokersandVolumeIds() {
         return brokerAndVolumeIds;
     }
 
@@ -33,7 +33,7 @@ public class RemoveDisksOptions extends AbstractRebalanceOptions {
      * Builder class for RemoveDisksOptions
      */
     public static class RemoveDisksOptionsBuilder extends AbstractRebalanceOptionsBuilder<RemoveDisksOptionsBuilder, RemoveDisksOptions> {
-        private List<BrokerAndVolumeIds> brokerAndVolumeIdsList;
+        private List<RebalanceNode> brokerAndVolumeIdsList;
 
         /**
          * Constructor
@@ -54,7 +54,7 @@ public class RemoveDisksOptions extends AbstractRebalanceOptions {
          *
          * @return  Instance of this builder
          */
-        public RemoveDisksOptionsBuilder withBrokersandVolumeIds(List<BrokerAndVolumeIds> brokerAndVolumeIdsList) {
+        public RemoveDisksOptionsBuilder withBrokersandVolumeIds(List<RebalanceNode> brokerAndVolumeIdsList) {
             this.brokerAndVolumeIdsList = brokerAndVolumeIdsList;
             return this;
         }

@@ -44,6 +44,7 @@ import static io.strimzi.api.ResourceAnnotations.ANNO_STRIMZI_IO_REBALANCE_AUTOA
 /**
  * This class runs the reconciliation for the auto-rebalancing process when the Kafka cluster is scaled up/down.
  */
+@SuppressWarnings("deprecation")
 public class KafkaAutoRebalancingReconciler {
 
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(KafkaAutoRebalancingReconciler.class.getName());

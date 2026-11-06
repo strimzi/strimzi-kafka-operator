@@ -14,7 +14,6 @@ import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaList;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlResources;
-import io.strimzi.api.kafka.model.rebalance.BrokerAndVolumeIds;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalance;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceAnnotation;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceBuilder;
@@ -25,6 +24,7 @@ import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceSpec;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceState;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceStatus;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceStatusBuilder;
+import io.strimzi.api.kafka.model.rebalance.RebalanceNode;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.model.ConfigMapUtils;
@@ -150,12 +150,14 @@ import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_IO_REBALANCE_A
  *    |-----------→|               |                   |
  * </code></pre>
  */
-@SuppressWarnings({"checkstyle:ClassFanOutComplexity", "checkstyle:CyclomaticComplexity"})
+@SuppressWarnings({"checkstyle:ClassFanOutComplexity", "checkstyle:CyclomaticComplexity", "checkstyle:NPathComplexity"})
 public class KafkaRebalanceAssemblyOperator
        extends AbstractOperator<KafkaRebalance, KafkaRebalanceSpec, KafkaRebalanceStatus, AbstractWatchableStatusedNamespacedResourceOperator<KubernetesClient, KafkaRebalance, KafkaRebalanceList, Resource<KafkaRebalance>>> {
 
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(KafkaRebalanceAssemblyOperator.class.getName());
     private static final JsonMapper JSON_MAPPER = new JsonMapper();
+    private static final Set<String> FORBIDDEN_CONFIG_KEYS =
+            Set.of(KafkaRebalanceSpec.FORBIDDEN_KEYS.split(",\\s*"));
 
     /* test */ static final String BROKER_LOAD_KEY = "brokerLoad.json";
     private final CrdOperator<KubernetesClient, KafkaRebalance, KafkaRebalanceList> kafkaRebalanceOperator;
@@ -253,86 +255,261 @@ public class KafkaRebalanceAssemblyOperator
         return kafkaRebalance.getStatus();
     }
 
-    /* test */ AbstractRebalanceOptions.AbstractRebalanceOptionsBuilder<?, ?> convertRebalanceSpecToRebalanceOptions(KafkaRebalanceSpec kafkaRebalanceSpec) {
+    /**
+     * Resolves the target nodes from either the new {@code nodes} field or the deprecated
+     * {@code brokers}/{@code moveReplicasOffVolumes} fields. The new field takes priority.
+     */
+    @SuppressWarnings("deprecation")
+    /* test */ List<RebalanceNode> resolveNodes(Reconciliation reconciliation, KafkaRebalanceSpec spec) {
+        if (spec.getNodes() != null && !spec.getNodes().isEmpty()) {
+            if (spec.getBrokers() != null && !spec.getBrokers().isEmpty()) {
+                LOGGER.warnCr(reconciliation, "Both `brokers` and `nodes` are set. Using `nodes` and ignoring the deprecated `brokers` field.");
+            }
+            if (spec.getMoveReplicasOffVolumes() != null && !spec.getMoveReplicasOffVolumes().isEmpty()) {
+                LOGGER.warnCr(reconciliation, "Both `moveReplicasOffVolumes` and `nodes` are set. Using `nodes` and ignoring the deprecated `moveReplicasOffVolumes` field.");
+            }
+            return spec.getNodes();
+        }
+
+        if (spec.getBrokers() != null && !spec.getBrokers().isEmpty()) {
+            return spec.getBrokers().stream()
+                    .map(brokerId -> {
+                        RebalanceNode node = new RebalanceNode();
+                        node.setBrokerId(brokerId);
+                        return node;
+                    })
+                    .collect(Collectors.toList());
+        }
+
+        if (spec.getMoveReplicasOffVolumes() != null && !spec.getMoveReplicasOffVolumes().isEmpty()) {
+            return spec.getMoveReplicasOffVolumes();
+        }
+
+        return null;
+    }
+
+    /**
+     * Resolves the config map by merging the new {@code config} field with deprecated
+     * individual fields. The new field takes priority for each key.
+     */
+    @SuppressWarnings("deprecation")
+    /* test */ Map<String, String> resolveConfig(Reconciliation reconciliation, KafkaRebalanceSpec spec) {
+        Map<String, String> config = spec.getConfig() != null ? new HashMap<>(spec.getConfig()) : new HashMap<>();
+
+        resolveConfigKey(reconciliation, config, "goals",
+                spec.getGoals() != null && !spec.getGoals().isEmpty() ? String.join(",", spec.getGoals()) : null,
+                "goals");
+        resolveConfigKey(reconciliation, config, "skip_hard_goal_check",
+                spec.isSkipHardGoalCheck() ? "true" : null,
+                "skipHardGoalCheck");
+        resolveConfigKey(reconciliation, config, "rebalance_disk",
+                spec.isRebalanceDisk() ? "true" : null,
+                "rebalanceDisk");
+        resolveConfigKey(reconciliation, config, "excluded_topics",
+                spec.getExcludedTopics(),
+                "excludedTopics");
+        resolveConfigKey(reconciliation, config, "concurrent_partition_movements_per_broker",
+                spec.getConcurrentPartitionMovementsPerBroker() > 0 ? String.valueOf(spec.getConcurrentPartitionMovementsPerBroker()) : null,
+                "concurrentPartitionMovementsPerBroker");
+        resolveConfigKey(reconciliation, config, "concurrent_intra_broker_partition_movements",
+                spec.getConcurrentIntraBrokerPartitionMovements() > 0 ? String.valueOf(spec.getConcurrentIntraBrokerPartitionMovements()) : null,
+                "concurrentIntraBrokerPartitionMovements");
+        resolveConfigKey(reconciliation, config, "concurrent_leader_movements",
+                spec.getConcurrentLeaderMovements() > 0 ? String.valueOf(spec.getConcurrentLeaderMovements()) : null,
+                "concurrentLeaderMovements");
+        resolveConfigKey(reconciliation, config, "replication_throttle",
+                spec.getReplicationThrottle() > 0 ? String.valueOf(spec.getReplicationThrottle()) : null,
+                "replicationThrottle");
+        resolveConfigKey(reconciliation, config, "replica_movement_strategies",
+                spec.getReplicaMovementStrategies() != null && !spec.getReplicaMovementStrategies().isEmpty() ? String.join(",", spec.getReplicaMovementStrategies()) : null,
+                "replicaMovementStrategies");
+
+        return config;
+    }
+
+    /**
+     * Sets a config key from a deprecated field value if the key is not already present in config.
+     */
+    private void resolveConfigKey(Reconciliation reconciliation, Map<String, String> config,
+                                  String configKey, String deprecatedValue, String deprecatedFieldName) {
+        if (deprecatedValue != null) {
+            if (config.containsKey(configKey)) {
+                LOGGER.warnCr(reconciliation, "Both `{}` and `spec.config[{}]` are set. Using the value from `spec.config` and ignoring the deprecated field.",
+                        deprecatedFieldName, configKey);
+            } else {
+                config.put(configKey, deprecatedValue);
+            }
+        }
+    }
+
+    /**
+     * Filters forbidden config keys from the config map, logging a warning for each removed key.
+     *
+     * @return A new map with forbidden keys removed
+     */
+    /* test */ Map<String, String> filterForbiddenConfigKeys(Reconciliation reconciliation, Map<String, String> config) {
+        if (config == null || config.isEmpty()) {
+            return Map.of();
+        }
+        Map<String, String> filtered = new HashMap<>(config);
+        for (String forbiddenKey : FORBIDDEN_CONFIG_KEYS) {
+            if (filtered.remove(forbiddenKey) != null) {
+                LOGGER.warnCr(reconciliation, "The config key `{}` is forbidden because it is managed by the operator. The key has been ignored.", forbiddenKey);
+            }
+        }
+        return filtered;
+    }
+
+    /**
+     * Validates that the nodes field matches the requirements of the selected mode.
+     */
+    /* test */ static void validateNodesForMode(KafkaRebalanceMode mode, List<RebalanceNode> nodes) {
+        switch (mode) {
+            case FULL:
+                if (nodes != null && !nodes.isEmpty()) {
+                    throw new IllegalArgumentException("The `nodes` field is not supported in `full` mode. Remove the `nodes` field to proceed.");
+                }
+                break;
+            case ADD_BROKERS:
+            case REMOVE_BROKERS:
+                if (nodes == null || nodes.isEmpty()) {
+                    throw new IllegalArgumentException("The `nodes` field is required when using the " + mode.toValue() + " rebalancing mode.");
+                }
+                for (RebalanceNode node : nodes) {
+                    if (node.getVolumeIds() != null && !node.getVolumeIds().isEmpty()) {
+                        throw new IllegalArgumentException("The `volumeIds` field in `nodes` entries is not supported in `" + mode.toValue() + "` mode. Remove `volumeIds` from all `nodes` entries to proceed.");
+                    }
+                }
+                break;
+            case REMOVE_DISKS:
+                if (nodes == null || nodes.isEmpty()) {
+                    throw new IllegalArgumentException("The `nodes` field is required when using the " + mode.toValue() + " rebalancing mode.");
+                }
+                for (RebalanceNode node : nodes) {
+                    if (node.getVolumeIds() == null || node.getVolumeIds().isEmpty()) {
+                        throw new IllegalArgumentException("The `volumeIds` field is required on every `nodes` entry in `" + mode.toValue() + "` mode.");
+                    }
+                }
+                break;
+            default:
+                break;
+        }
+    }
+
+    /* test */ AbstractRebalanceOptions.AbstractRebalanceOptionsBuilder<?, ?> convertRebalanceSpecToRebalanceOptions(
+            Reconciliation reconciliation, KafkaRebalanceSpec kafkaRebalanceSpec) {
 
         AbstractRebalanceOptions.AbstractRebalanceOptionsBuilder<?, ?> rebalanceOptionsBuilder;
-        // backward compatibility, no mode specified means "full"
         KafkaRebalanceMode mode = Optional.ofNullable(kafkaRebalanceSpec)
-                .map(kr -> kr.getMode())
+                .map(KafkaRebalanceSpec::getMode)
                 .orElse(KafkaRebalanceMode.FULL);
-        List<Integer> brokers = Optional.ofNullable(kafkaRebalanceSpec)
-                .map(kr -> kr.getBrokers())
-                .orElse(null);
-        List<BrokerAndVolumeIds> brokerAndVolumeIds = Optional.ofNullable(kafkaRebalanceSpec)
-                .map(kr -> kr.getMoveReplicasOffVolumes())
-                .orElse(null);
+
+        List<RebalanceNode> nodes = kafkaRebalanceSpec != null ? resolveNodes(reconciliation, kafkaRebalanceSpec) : null;
+        Map<String, String> config = kafkaRebalanceSpec != null
+                ? filterForbiddenConfigKeys(reconciliation, resolveConfig(reconciliation, kafkaRebalanceSpec))
+                : Map.of();
+
+        validateNodesForMode(mode, nodes);
+
+        Map<String, String> additionalConfig = new HashMap<>(config);
 
         switch (mode) {
             case ADD_BROKERS:
                 rebalanceOptionsBuilder = new AddBrokerOptions.AddBrokerOptionsBuilder();
-                if (brokers != null && !brokers.isEmpty()) {
-                    ((AddBrokerOptions.AddBrokerOptionsBuilder) rebalanceOptionsBuilder).withBrokers(brokers);
-                } else {
-                    throw new IllegalArgumentException("The brokers list is mandatory when using the " + mode.toValue() + " rebalancing mode");
-                }
+                ((AddBrokerOptions.AddBrokerOptionsBuilder) rebalanceOptionsBuilder)
+                        .withBrokers(nodes.stream().map(RebalanceNode::getBrokerId).collect(Collectors.toList()));
                 break;
             case REMOVE_BROKERS:
                 rebalanceOptionsBuilder = new RemoveBrokerOptions.RemoveBrokerOptionsBuilder();
-                if (brokers != null && !brokers.isEmpty()) {
-                    ((RemoveBrokerOptions.RemoveBrokerOptionsBuilder) rebalanceOptionsBuilder).withBrokers(brokers);
-                } else {
-                    throw new IllegalArgumentException("The brokers list is mandatory when using the " + mode.toValue() + " rebalancing mode");
-                }
+                ((RemoveBrokerOptions.RemoveBrokerOptionsBuilder) rebalanceOptionsBuilder)
+                        .withBrokers(nodes.stream().map(RebalanceNode::getBrokerId).collect(Collectors.toList()));
                 break;
             case REMOVE_DISKS:
                 rebalanceOptionsBuilder = new RemoveDisksOptions.RemoveDisksOptionsBuilder();
-                if (brokerAndVolumeIds != null && !brokerAndVolumeIds.isEmpty()) {
-                    ((RemoveDisksOptions.RemoveDisksOptionsBuilder) rebalanceOptionsBuilder).withBrokersandVolumeIds(brokerAndVolumeIds);
-                } else {
-                    throw new IllegalArgumentException("The brokers and volume IDs list is mandatory when using the " + mode.toValue() + " rebalancing mode");
-                }
+                ((RemoveDisksOptions.RemoveDisksOptionsBuilder) rebalanceOptionsBuilder)
+                        .withBrokersandVolumeIds(nodes);
                 break;
             default:
                 rebalanceOptionsBuilder = new RebalanceOptions.RebalanceOptionsBuilder();
-                if (kafkaRebalanceSpec.isRebalanceDisk()) {
-                    if (kafkaRebalanceSpec.getGoals() != null && !kafkaRebalanceSpec.getGoals().isEmpty()) {
-                        throw new IllegalArgumentException("The goals list should be empty when using the `rebalanceDisk: true` configuration for intra-broker disk balancing");
+                if ("true".equalsIgnoreCase(additionalConfig.get("rebalance_disk"))) {
+                    String goalsValue = additionalConfig.get("goals");
+                    if (goalsValue != null && !goalsValue.isEmpty()) {
+                        throw new IllegalArgumentException("The goals list should be empty when using the `rebalance_disk: true` configuration for intra-broker disk balancing");
                     }
                     ((RebalanceOptions.RebalanceOptionsBuilder) rebalanceOptionsBuilder).withRebalanceDisk();
+                    additionalConfig.remove("rebalance_disk");
                 }
-                if (kafkaRebalanceSpec.getConcurrentIntraBrokerPartitionMovements() > 0) {
-                    ((RebalanceOptions.RebalanceOptionsBuilder) rebalanceOptionsBuilder)
-                            .withConcurrentIntraPartitionMovements(kafkaRebalanceSpec.getConcurrentIntraBrokerPartitionMovements());
-                }
-                if (brokers != null && !brokers.isEmpty()) {
-                    LOGGER.warnOp("The {} mode is used. The specified list of brokers is ignored", mode.toValue());
+                String concurrentIntra = additionalConfig.remove("concurrent_intra_broker_partition_movements");
+                if (concurrentIntra != null) {
+                    int movements = Integer.parseInt(concurrentIntra);
+                    if (movements > 0) {
+                        ((RebalanceOptions.RebalanceOptionsBuilder) rebalanceOptionsBuilder)
+                                .withConcurrentIntraPartitionMovements(movements);
+                    }
                 }
                 break;
         }
 
-        if (kafkaRebalanceSpec.getGoals() != null) {
-            rebalanceOptionsBuilder.withGoals(kafkaRebalanceSpec.getGoals());
+        String goalsValue = additionalConfig.remove("goals");
+        if (goalsValue != null && !goalsValue.isEmpty()) {
+            rebalanceOptionsBuilder.withGoals(List.of(goalsValue.split(",")));
         }
-        if (kafkaRebalanceSpec.isSkipHardGoalCheck()) {
+
+        String skipHardGoalCheck = additionalConfig.remove("skip_hard_goal_check");
+        if ("true".equalsIgnoreCase(skipHardGoalCheck)) {
             rebalanceOptionsBuilder.withSkipHardGoalCheck();
         }
-        if (kafkaRebalanceSpec.getExcludedTopics() != null) {
-            rebalanceOptionsBuilder.withExcludedTopics(kafkaRebalanceSpec.getExcludedTopics());
+
+        String excludedTopics = additionalConfig.remove("excluded_topics");
+        if (excludedTopics != null) {
+            rebalanceOptionsBuilder.withExcludedTopics(excludedTopics);
         }
-        if (kafkaRebalanceSpec.getConcurrentPartitionMovementsPerBroker() > 0) {
-            rebalanceOptionsBuilder.withConcurrentPartitionMovementsPerBroker(kafkaRebalanceSpec.getConcurrentPartitionMovementsPerBroker());
+
+        String concurrentPartitionMovements = additionalConfig.remove("concurrent_partition_movements_per_broker");
+        if (concurrentPartitionMovements != null) {
+            int movements = Integer.parseInt(concurrentPartitionMovements);
+            if (movements > 0) {
+                rebalanceOptionsBuilder.withConcurrentPartitionMovementsPerBroker(movements);
+            }
         }
-        if (kafkaRebalanceSpec.getConcurrentLeaderMovements() > 0) {
-            rebalanceOptionsBuilder.withConcurrentLeaderMovements(kafkaRebalanceSpec.getConcurrentLeaderMovements());
+
+        String concurrentLeaderMovements = additionalConfig.remove("concurrent_leader_movements");
+        if (concurrentLeaderMovements != null) {
+            int movements = Integer.parseInt(concurrentLeaderMovements);
+            if (movements > 0) {
+                rebalanceOptionsBuilder.withConcurrentLeaderMovements(movements);
+            }
         }
-        if (kafkaRebalanceSpec.getReplicationThrottle() > 0) {
-            rebalanceOptionsBuilder.withReplicationThrottle(kafkaRebalanceSpec.getReplicationThrottle());
+
+        String replicationThrottle = additionalConfig.remove("replication_throttle");
+        if (replicationThrottle != null) {
+            long throttle = Long.parseLong(replicationThrottle);
+            if (throttle > 0) {
+                rebalanceOptionsBuilder.withReplicationThrottle(throttle);
+            }
         }
-        if (kafkaRebalanceSpec.getReplicaMovementStrategies() != null) {
-            rebalanceOptionsBuilder.withReplicaMovementStrategies(kafkaRebalanceSpec.getReplicaMovementStrategies());
+
+        String replicaMovementStrategies = additionalConfig.remove("replica_movement_strategies");
+        if (replicaMovementStrategies != null && !replicaMovementStrategies.isEmpty()) {
+            rebalanceOptionsBuilder.withReplicaMovementStrategies(List.of(replicaMovementStrategies.split(",")));
+        }
+
+        // Remaining config entries are passed through as additional query parameters
+        if (!additionalConfig.isEmpty()) {
+            rebalanceOptionsBuilder.withAdditionalConfig(additionalConfig);
         }
 
         return rebalanceOptionsBuilder;
+    }
+
+    /**
+     * Converts rebalance spec to rebalance options using a dummy reconciliation for logging.
+     *
+     * @deprecated Use {@link #convertRebalanceSpecToRebalanceOptions(Reconciliation, KafkaRebalanceSpec)} instead
+     */
+    @Deprecated
+    /* test */ AbstractRebalanceOptions.AbstractRebalanceOptionsBuilder<?, ?> convertRebalanceSpecToRebalanceOptions(KafkaRebalanceSpec kafkaRebalanceSpec) {
+        return convertRebalanceSpecToRebalanceOptions(Reconciliation.DUMMY_RECONCILIATION, kafkaRebalanceSpec);
     }
 
     private static Future<MapAndStatus<ConfigMap, KafkaRebalanceStatus>> updateProgressFields(
@@ -415,7 +592,7 @@ public class KafkaRebalanceAssemblyOperator
         Promise<KafkaRebalanceStatus> reconcilePromise = Promise.promise();
 
         try {
-            AbstractRebalanceOptions.AbstractRebalanceOptionsBuilder<?, ?> rebalanceOptionsBuilder = convertRebalanceSpecToRebalanceOptions(kafkaRebalance.getSpec());
+            AbstractRebalanceOptions.AbstractRebalanceOptionsBuilder<?, ?> rebalanceOptionsBuilder = convertRebalanceSpecToRebalanceOptions(reconciliation, kafkaRebalance.getSpec());
 
             computeNextStatus(reconciliation, host, apiClient, kafkaRebalance, currentState, rebalanceOptionsBuilder)
                     .compose(statusAndMap -> updateProgressFields(reconciliation, host, cruiseControlPort, apiClient, kafkaRebalance, configMapOperator, statusAndMap))
