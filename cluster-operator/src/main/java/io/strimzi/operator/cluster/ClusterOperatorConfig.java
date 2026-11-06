@@ -144,6 +144,13 @@ public class ClusterOperatorConfig {
     public static final ConfigParameter<Long> CONNECT_BUILD_TIMEOUT_MS = new ConfigParameter<>("STRIMZI_CONNECT_BUILD_TIMEOUT_MS", LONG, "300000", CONFIG_VALUES);
 
     /**
+     * Delay between the availability check passing for a Kafka node and its restart during a rolling update, specified
+     * in milliseconds. The check is repeated at the end of the delay. The value cannot be higher than
+     * {@code STRIMZI_OPERATION_TIMEOUT_MS}.
+     */
+    public static final ConfigParameter<Long> POST_KAFKA_RESTART_DELAY_MS = new ConfigParameter<>("STRIMZI_POST_KAFKA_RESTART_DELAY_MS", LONG, "0", CONFIG_VALUES);
+
+    /**
      * Set true to generate Network Policies
      */
     public static final ConfigParameter<Boolean> NETWORK_POLICY_GENERATION = new ConfigParameter<>("STRIMZI_NETWORK_POLICY_GENERATION", BOOLEAN, "true", CONFIG_VALUES);
@@ -290,7 +297,23 @@ public class ClusterOperatorConfig {
         envMap.keySet().retainAll(ClusterOperatorConfig.keyNames());
 
         Map<String, Object> generatedMap = ConfigParameter.define(envMap, CONFIG_VALUES);
+        validatePostKafkaRestartDelay(generatedMap);
         return new ClusterOperatorConfig(generatedMap, lookup);
+    }
+
+    /**
+     * Checks that the post-Kafka-restart delay is not longer than the operation timeout. A longer delay would hold
+     * a reconciliation for an unreasonably long time, for example when the value is mistyped.
+     *
+     * @param map   Map with the parsed configuration values
+     */
+    private static void validatePostKafkaRestartDelay(Map<String, Object> map) {
+        long delayMs = (Long) map.get(POST_KAFKA_RESTART_DELAY_MS.key());
+        long operationTimeoutMs = (Long) map.get(OPERATION_TIMEOUT_MS.key());
+
+        if (delayMs > operationTimeoutMs) {
+            throw new InvalidConfigurationException(POST_KAFKA_RESTART_DELAY_MS.key() + " (" + delayMs + "ms) cannot be higher than " + OPERATION_TIMEOUT_MS.key() + " (" + operationTimeoutMs + "ms)");
+        }
     }
 
     private final Map<String, Object> map;
@@ -465,6 +488,16 @@ public class ClusterOperatorConfig {
      */
     public long getConnectBuildTimeoutMs() {
         return get(CONNECT_BUILD_TIMEOUT_MS);
+    }
+
+    /**
+     * Gets the delay in milliseconds between the availability check passing for a Kafka node and its restart during
+     * a rolling update. An annotation on the Kafka resource can override it for a cluster.
+     *
+     * @return  Number of milliseconds to wait before a Kafka node restart, 0 or less meaning no delay
+     */
+    public long getPostKafkaRestartDelayMs() {
+        return get(POST_KAFKA_RESTART_DELAY_MS);
     }
 
     /**
@@ -686,6 +719,7 @@ public class ClusterOperatorConfig {
                 "\n\treconciliationIntervalMs=" + getReconciliationIntervalMs() +
                 "\n\toperationTimeoutMs=" + getOperationTimeoutMs() +
                 "\n\tconnectBuildTimeoutMs=" + getConnectBuildTimeoutMs() +
+                "\n\tpostKafkaRestartDelayMs=" + getPostKafkaRestartDelayMs() +
                 "\n\tnetworkPolicyGeneration=" + isNetworkPolicyGeneration() +
                 "\n\tversions='" + versions() + '\'' +
                 "\n\timagePullPolicy='" + getImagePullPolicy() + '\'' +
