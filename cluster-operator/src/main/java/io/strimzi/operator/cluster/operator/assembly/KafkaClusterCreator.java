@@ -143,12 +143,14 @@ public class KafkaClusterCreator {
                             errors.add("Cannot remove the broker role from nodes " + kafka.usedToBeBrokerNodes() + " because they have assigned partition-replicas.");
                         }
 
-                        if (!blockedVolumes.withReplicas().isEmpty()) {
-                            errors.add("Cannot remove the " + describeBlockedVolumes(blockedVolumes.withReplicas()) + " because they have assigned partition-replicas.");
-                        }
+                        if (volumeRemovalCheckFailed) {
+                            if (!blockedVolumes.withReplicas().isEmpty()) {
+                                errors.add("Cannot remove the " + describeBlockedVolumes(blockedVolumes.withReplicas()) + " because they have assigned partition-replicas.");
+                            }
 
-                        if (!blockedVolumes.unknown().isEmpty()) {
-                            errors.add("Cannot remove the " + describeBlockedVolumes(blockedVolumes.unknown()) + " because it is not known whether they are empty. The broker did not answer, or the log directory is offline.");
+                            if (!blockedVolumes.unknown().isEmpty()) {
+                                errors.add("Cannot remove the " + describeBlockedVolumes(blockedVolumes.unknown()) + " because it is not known whether they are empty. The broker did not answer, or the log directory is offline.");
+                            }
                         }
 
                         return CompletableFuture.failedFuture(new InvalidResourceException("Following errors were found when processing the Kafka custom resource: " + errors));
