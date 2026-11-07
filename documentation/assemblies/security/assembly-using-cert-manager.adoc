@@ -17,5 +17,18 @@ cert-manager is responsible for issuing and renewing all end-entity certificates
 
 NOTE: This feature is currently Early Access and is not recommended for production.
 
+[WARNING]
+====
+Kafka trusts any certificate signed by the CA that backs the configured `Issuer` or `ClusterIssuer`.
+Anyone who can get a certificate signed by that issuer, for example by creating a cert-manager `Certificate` or `CertificateRequest` resource that references it, can authenticate to the Kafka cluster:
+
+* When the issuer is used for the Cluster CA, they can authenticate to the internal replication and control plane listeners and act as an internal component of the Kafka cluster, such as a broker, controller, or the Cluster Operator.
+* When the issuer is used for the Clients CA, they can authenticate as any user to all listeners that use `tls` authentication.
+
+Use dedicated issuers for the Cluster CA and the Clients CA, and restrict who can use them.
+Prefer an `Issuer` in the namespace of the Kafka cluster over a `ClusterIssuer`, because a `ClusterIssuer` can be referenced by `Certificate` resources in any namespace.
+Use Kubernetes RBAC to limit who can create `Certificate` and `CertificateRequest` resources, and consider using a cert-manager approval policy, such as link:https://cert-manager.io/docs/policy/approval/approver-policy/[approver-policy^], to control which certificate requests are approved.
+====
+
 include::../../modules/security/proc-using-cert-manager.adoc[leveloffset=+1]
 include::../../modules/security/con-renewing-certificates-cert-manager.adoc[leveloffset=+1]

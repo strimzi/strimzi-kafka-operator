@@ -147,6 +147,17 @@ The service account exists only while service account authentication is enabled.
 
 When Kafka authorization is configured, Strimzi adds these principals to the list of Kafka super users so that internal components can operate.
 
+[WARNING]
+====
+Kafka brokers and controllers accept any valid service account token issued by the Kubernetes cluster for the audience used by the Kafka cluster, regardless of the service account or namespace it was issued for.
+Anyone who can mint such a token can authenticate to the internal replication and control plane listeners and to the Kafka Agent, using the identity of the service account the token was issued for.
+Tokens can be minted directly through the Kubernetes `TokenRequest` API, by users with permission to `create` the `serviceaccounts/token` subresource, or by creating a Pod that mounts a projected service account token with the matching audience, by users with permission to create Pods.
+
+Enable Kafka authorization to protect the cluster.
+With authorization enabled, only the service accounts of the Strimzi components listed above are granted super user access, and connections authenticated with tokens of other service accounts have no access unless you grant it to them explicitly.
+Also use Kubernetes RBAC to restrict who can create Pods and service account tokens in the namespace of the Kafka cluster, because anyone who can create a Pod that uses one of the service accounts listed above, or request a token for it, can act as the corresponding Strimzi component.
+====
+
 Service account authentication has the following requirements:
 
 * The Cluster Operator must be allowed to create tokens by requesting them from the Kubernetes API.
