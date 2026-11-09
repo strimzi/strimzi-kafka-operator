@@ -235,7 +235,7 @@ public class KafkaPool extends AbstractModel {
             return oldJbod.getVolumes().stream()
                     .map(SingleVolumeStorage::getId)
                     .filter(id -> !desiredIds.contains(id))
-                    .collect(Collectors.toCollection(LinkedHashSet::new)); // we want this in deterministic order
+                    .collect(Collectors.toSet());
         } else {
             return Set.of();
         }
@@ -340,7 +340,7 @@ public class KafkaPool extends AbstractModel {
         return idAssignment.current()
                 .stream()
                 .map(this::nodeRef)
-                .collect(Collectors.toCollection(LinkedHashSet::new)); // we want this in deterministic order
+                .collect(Collectors.toSet());
     }
 
     /**

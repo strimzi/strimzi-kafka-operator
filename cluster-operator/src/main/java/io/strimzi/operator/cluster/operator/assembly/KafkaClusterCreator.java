@@ -29,9 +29,8 @@ import io.strimzi.operator.common.model.StatusUtils;
 import io.strimzi.operator.common.operator.resource.kubernetes.SecretOperator;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -424,10 +423,10 @@ public class KafkaClusterCreator {
      * @return  Text such as "JBOD volumes [1] from Kafka brokers [1000, 1001]"
      */
     private static String describeBlockedVolumes(Map<Integer, Set<Integer>> volumesPerNode) {
-        Map<Set<Integer>, Set<Integer>> nodesPerVolumes = new LinkedHashMap<>();
+        Map<Set<Integer>, Set<Integer>> nodesPerVolumes = new HashMap<>();
 
         for (Map.Entry<Integer, Set<Integer>> node : volumesPerNode.entrySet()) {
-            nodesPerVolumes.computeIfAbsent(node.getValue(), volumes -> new LinkedHashSet<>()).add(node.getKey());
+            nodesPerVolumes.computeIfAbsent(node.getValue(), volumes -> new HashSet<>()).add(node.getKey());
         }
 
         return nodesPerVolumes.entrySet()

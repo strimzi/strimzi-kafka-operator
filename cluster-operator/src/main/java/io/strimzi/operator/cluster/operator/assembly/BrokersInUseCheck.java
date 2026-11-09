@@ -19,9 +19,8 @@ import org.apache.kafka.common.KafkaException;
 import org.apache.kafka.common.Node;
 import org.apache.kafka.common.TopicPartitionInfo;
 
+import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -113,8 +112,8 @@ public class BrokersInUseCheck {
 
             return CompletableFuture.allOf(nodeResults.stream().map(CompletionStage::toCompletableFuture).toArray(CompletableFuture[]::new))
                     .thenApply(i -> {
-                        Map<Integer, Set<Integer>> withReplicas = new LinkedHashMap<>();
-                        Map<Integer, Set<Integer>> unknown = new LinkedHashMap<>();
+                        Map<Integer, Set<Integer>> withReplicas = new HashMap<>();
+                        Map<Integer, Set<Integer>> unknown = new HashMap<>();
 
                         for (CompletionStage<NodeResult> future : nodeResults) {
                             NodeResult nodeResult = future.toCompletableFuture().join();
@@ -161,8 +160,8 @@ public class BrokersInUseCheck {
 
         return logDirs
                 .thenApply(nodeLogDirs -> {
-                    Set<Integer> volumesWithReplicas = new LinkedHashSet<>();
-                    Set<Integer> unknownVolumes = new LinkedHashSet<>();
+                    Set<Integer> volumesWithReplicas = new HashSet<>();
+                    Set<Integer> unknownVolumes = new HashSet<>();
 
                     for (Integer volumeId : volumeIds) {
                         LogDirDescription logDir = nodeLogDirs.get(VolumeUtils.kafkaLogDirPath(volumeId, nodeId));
