@@ -47,8 +47,9 @@ Please let us know by adding your company name and, if you want, a description o
     * Use Strimzi to deploy and manage multiple Kafka clusters and MirrorMaker2 instances.
 * [Moniepoint](https://moniepoint.com/)
     * Use Strimzi to run Kafka and Kafka Connect on Kubernetes for CDC pipelines, database replication, and event messaging.
-
 * [Wordfully](https://wordfully.ai)
+* [Klarrio](https://klarrio.com/)
+    * Use Strimzi to deploy Kafka on multi-tenant streaming data platforms.  
 
 ### Vendors
 
