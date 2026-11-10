@@ -285,10 +285,8 @@ public class PlatformFeaturesAvailability implements PlatformFeatures {
      *
      * @return  OIDC discovery information or null if the discovery document is null or does not contain both the
      *          issuer and the JWKS URI
-     *
-     * @throws Exception    If the discovery document cannot be parsed
      */
-    /* test */ static OidcDiscovery parseOidcDiscovery(String discoveryDocument) throws Exception {
+    /* test */ static OidcDiscovery parseOidcDiscovery(String discoveryDocument) {
         if (discoveryDocument == null) {
             // Endpoint returned 404
             return null;

@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.common.operator.resource.kubernetes;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.fabric8.kubernetes.api.model.DefaultKubernetesResourceList;
 import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.fabric8.kubernetes.client.CustomResource;
@@ -52,6 +53,8 @@ public class CrdOperator<C extends KubernetesClient,
     }
 
     @Override
+    @SuppressFBWarnings(value = "IAOM_DO_NOT_INCREASE_METHOD_ACCESSIBILITY",
+        justification = "Exposed as public so integration tests in other modules can access the underlying Fabric8 operation.")
     public MixedOperation<T, L, Resource<T>> operation() {
         return client.resources(cls, listCls);
     }

@@ -4,7 +4,6 @@
  */
 package io.strimzi.test.mockkube3.controllers;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
@@ -62,7 +61,6 @@ public class MockDeletionController extends AbstractMockController {
      * Starts the watch for handling of deletion
      */
     @Override
-    @SuppressFBWarnings({"SIC_INNER_SHOULD_BE_STATIC_ANON"}) // Just a test util, no need to complicate the code bay factoring the anonymous watcher class out
     @SuppressWarnings({"checkstyle:methodlength"})
     public void start(KubernetesClient client) {
         watches.add(client.services().inAnyNamespace().watch(new Watcher<>() {

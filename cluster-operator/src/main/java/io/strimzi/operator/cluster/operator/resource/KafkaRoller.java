@@ -4,7 +4,6 @@
  */
 package io.strimzi.operator.cluster.operator.resource;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.fabric8.kubernetes.api.model.ContainerStateWaiting;
 import io.fabric8.kubernetes.api.model.ContainerStatus;
 import io.fabric8.kubernetes.api.model.Pod;
@@ -925,7 +924,6 @@ public class KafkaRoller {
      *
      * @return true if the given {@code nodeId} is the active controller and there are other controllers we might yet have to consider.
      */
-    @SuppressFBWarnings("RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE") // seems to be completely spurious
     boolean deferController(NodeRef nodeRef, RestartContext restartContext) throws Exception {
         int id = await(restartContext.quorumCheck.quorumLeaderId(), operationTimeoutMs,
                 t -> new UnforceableProblem("An error while trying to determine the active controller", t));

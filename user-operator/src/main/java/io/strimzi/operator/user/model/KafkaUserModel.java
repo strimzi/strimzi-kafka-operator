@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.user.model;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.OwnerReferenceBuilder;
@@ -69,9 +70,13 @@ public class KafkaUserModel {
     protected final String name;
     protected final Labels labels;
 
+    @SuppressFBWarnings(value = "UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR",
+        justification = "This field is initialized in the fromCrd method")
     protected KafkaUserAuthentication authentication;
     protected String caCert;
     protected CertAndKey userCertAndKey;
+    @SuppressFBWarnings(value = "UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR",
+        justification = "This field is initialized in the fromCrd method when SCRAM-SHA-512 authentication is used")
     protected String scramSha512Password;
     protected Set<SimpleAclRule> simpleAclRules = null;
 

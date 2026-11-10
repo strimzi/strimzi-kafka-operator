@@ -4,7 +4,6 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.OwnerReferenceBuilder;
 import io.fabric8.kubernetes.api.model.Pod;
@@ -562,7 +561,6 @@ public class CaReconciler {
      *
      * @return  Cluster operator identity
      */
-    @SuppressFBWarnings("DLS_DEAD_LOCAL_STORE") // SpotBugs does not like the unused `ignored` binding in the switch pattern
     private Identity createCoIdentity() {
         return new Identity(
             securityContext.encryption() instanceof TlsEncryptionConfiguration ? new PemTrustSet(clusterCaCertSecret) : null,

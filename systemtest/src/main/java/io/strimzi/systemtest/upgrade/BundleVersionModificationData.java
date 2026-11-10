@@ -4,10 +4,12 @@
  */
 package io.strimzi.systemtest.upgrade;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.strimzi.systemtest.utils.TestKafkaVersion;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -18,7 +20,9 @@ public class BundleVersionModificationData extends CommonVersionModificationData
     private String defaultKafka;
     private String deployKafkaVersion;
     private String startingKafkaVersion;
-    private Map<String, String> imagesAfterOperations;
+    private Map<String, String> imagesAfterOperations = new HashMap<>();
+    @SuppressFBWarnings(value = "UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR",
+        justification = "Populated via setClient during test data setup")
     private Map<String, Object> client;
     private Map<String, String> environmentInfo;
 

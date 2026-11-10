@@ -24,15 +24,18 @@ public class TestSuiteNamespaceManager {
 
     private static final Logger LOGGER = LogManager.getLogger(TestSuiteNamespaceManager.class);
 
+    private static final Object INSTANCE_LOCK = new Object();
     private static AtomicInteger counterOfNamespaces;
     private static TestSuiteNamespaceManager instance;
 
-    public synchronized static TestSuiteNamespaceManager getInstance() {
-        if (instance == null) {
-            instance = new TestSuiteNamespaceManager();
-            counterOfNamespaces = new AtomicInteger(0);
+    public static TestSuiteNamespaceManager getInstance() {
+        synchronized (INSTANCE_LOCK) {
+            if (instance == null) {
+                instance = new TestSuiteNamespaceManager();
+                counterOfNamespaces = new AtomicInteger(0);
+            }
+            return instance;
         }
-        return instance;
     }
 
     /**

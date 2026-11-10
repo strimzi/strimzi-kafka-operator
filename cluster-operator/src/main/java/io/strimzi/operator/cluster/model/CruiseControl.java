@@ -120,7 +120,6 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
     private HashLoginServiceApiCredentials apiCredentials;
     @SuppressFBWarnings({"UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR"}) // This field is initialized in the fromCrd method
     private CapacityConfiguration capacityConfiguration;
-    @SuppressFBWarnings({"UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR"}) // This field is initialized in the fromCrd method
     private MetricsModel metrics;
     private LoggingModel logging;
     @SuppressFBWarnings({"UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR"}) // This field is initialized in the fromCrd method

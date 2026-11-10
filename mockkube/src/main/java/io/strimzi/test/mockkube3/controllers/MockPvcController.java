@@ -4,7 +4,6 @@
  */
 package io.strimzi.test.mockkube3.controllers;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaimBuilder;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaimStatusBuilder;
@@ -33,7 +32,6 @@ public class MockPvcController extends AbstractMockController {
     }
 
     @Override
-    @SuppressFBWarnings({"SIC_INNER_SHOULD_BE_STATIC_ANON"}) // Just a test util, no need to complicate the code bay factoring the anonymous watcher class out
     public void start(KubernetesClient client) {
         watch = client.persistentVolumeClaims().watch(new Watcher<>() {
             @Override
@@ -71,6 +69,8 @@ public class MockPvcController extends AbstractMockController {
 
     @Override
     public void stop() {
-        watch.close();
+        if (watch != null) {
+            watch.close();
+        }
     }
 }

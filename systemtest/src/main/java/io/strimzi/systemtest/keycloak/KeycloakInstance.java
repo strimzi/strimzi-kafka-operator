@@ -14,11 +14,11 @@ public class KeycloakInstance {
     private static final Logger LOGGER = LogManager.getLogger(KeycloakInstance.class);
     public static final String KEYCLOAK_SECRET_NAME = "example-tls-secret";
     public static final String KEYCLOAK_SECRET_CERT = "tls.crt";
+    private static final int JWKS_EXPIRE_SECONDS = 500;
+    private static final int JWKS_REFRESH_SECONDS = 400;
 
     private final Pattern keystorePattern = Pattern.compile("<tls>\\s*<key-stores>\\s*<key-store name=\"kcKeyStore\">\\s*<credential-reference clear-text=\".*\"\\/>");
     private final Pattern keystorePasswordPattern = Pattern.compile("\\\".*\\\"");
-    private final int jwksExpireSeconds = 500;
-    private final int jwksRefreshSeconds = 400;
     private final String username;
     private final String password;
     private final String namespace;
@@ -86,17 +86,17 @@ public class KeycloakInstance {
         return userNameClaim;
     }
     public int getJwksExpireSeconds() {
-        return jwksExpireSeconds;
+        return JWKS_EXPIRE_SECONDS;
     }
     public int getJwksRefreshSeconds() {
-        return jwksRefreshSeconds;
+        return JWKS_REFRESH_SECONDS;
     }
 
     @Override
     public String toString() {
         return "KeycloakInstance{" +
-            "jwksExpireSeconds=" + jwksExpireSeconds +
-            ", jwksRefreshSeconds=" + jwksRefreshSeconds +
+            "jwksExpireSeconds=" + JWKS_EXPIRE_SECONDS +
+            ", jwksRefreshSeconds=" + JWKS_REFRESH_SECONDS +
             ", username='" + username + '\'' +
             ", password='" + password + '\'' +
             ", httpsUri='" + httpsUri + '\'' +

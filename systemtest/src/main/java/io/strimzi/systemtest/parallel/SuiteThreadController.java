@@ -22,15 +22,18 @@ public class SuiteThreadController {
     private static final Logger LOGGER = LogManager.getLogger(SuiteThreadController.class);
     private static final String JUNIT_PARALLEL_COUNT_PROPERTY_NAME = "junit.jupiter.execution.parallel.config.fixed.parallelism";
 
+    private static final Object INSTANCE_LOCK = new Object();
     private static volatile SuiteThreadController instance;
     private static Integer maxTestsInParallel;
     private final Semaphore parallelSlots;
 
-    public synchronized static SuiteThreadController getInstance() {
-        if (instance == null) {
-            instance = new SuiteThreadController();
+    public static SuiteThreadController getInstance() {
+        synchronized (INSTANCE_LOCK) {
+            if (instance == null) {
+                instance = new SuiteThreadController();
+            }
+            return instance;
         }
-        return instance;
     }
 
     @SuppressFBWarnings("ST_WRITE_TO_STATIC_FROM_INSTANCE_METHOD")

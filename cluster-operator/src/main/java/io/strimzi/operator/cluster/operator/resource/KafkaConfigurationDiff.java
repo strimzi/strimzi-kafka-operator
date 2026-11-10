@@ -419,7 +419,7 @@ public class KafkaConfigurationDiff extends AbstractJsonDiff {
         try {
             return current.containsKey(optionName) // Option is missing in current = they are not equal
                     && desired.containsKey(optionName) // Option is missing in desired = they are not equal
-                    && Double.parseDouble(current.get(optionName)) == Double.parseDouble(desired.get(optionName));
+                    && Double.compare(Double.parseDouble(current.get(optionName)), Double.parseDouble(desired.get(optionName))) == 0;
         } catch (NumberFormatException e) {
             // Note: We validate the input earlier during the reconciliation based on the type. So this exception should
             //   likely never happen. But it is there to cover any edge situations when we fail to validate it properly.

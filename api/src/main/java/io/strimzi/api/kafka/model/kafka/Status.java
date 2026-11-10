@@ -32,7 +32,7 @@ import java.util.Map;
 @ToString
 public abstract class Status implements UnknownPropertyPreserving {
     private List<Condition> conditions;
-    private long observedGeneration;
+    private volatile long observedGeneration;
     private Map<String, Object> additionalProperties;
 
     @Description("List of status conditions")

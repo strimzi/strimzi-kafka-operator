@@ -4,7 +4,6 @@
  */
 package io.strimzi.test.mockkube3.controllers;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodBuilder;
@@ -46,7 +45,6 @@ public class MockPodController extends AbstractMockController {
      * Starts the watch for new or updated Pods
      */
     @Override
-    @SuppressFBWarnings({"SIC_INNER_SHOULD_BE_STATIC_ANON"}) // Just a test util, no need to complicate the code bay factoring the anonymous watcher class out
     public void start(KubernetesClient client) {
         watch = client.pods().inAnyNamespace().watch(new Watcher<>() {
             @Override
@@ -101,6 +99,8 @@ public class MockPodController extends AbstractMockController {
      */
     @Override
     public void stop() {
-        watch.close();
+        if (watch != null) {
+            watch.close();
+        }
     }
 }

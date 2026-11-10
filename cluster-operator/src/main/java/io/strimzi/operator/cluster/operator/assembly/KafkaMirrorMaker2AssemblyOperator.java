@@ -382,7 +382,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
      * @return  True if the provided resource instance has the strimzi.io/restart-connector annotation. False otherwise.
      */
     @Override
-    protected boolean hasRestartAnnotation(HasMetadata resource, String connectorName) {
+    boolean hasRestartAnnotation(HasMetadata resource, String connectorName) {
         String restartAnnotationConnectorName = Annotations.stringAnnotation(resource, ANNO_STRIMZI_IO_RESTART_CONNECTOR, null);
         return restartAnnotationConnectorName != null && restartAnnotationConnectorName.contains(connectorName);
     }
@@ -399,7 +399,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
      *
      * @return True if the provided resource has valid restart annotation. False otherwise.
      * */
-    protected boolean restartAnnotationIsValid(HasMetadata resource, String connectorName) {
+    boolean restartAnnotationIsValid(HasMetadata resource, String connectorName) {
         String restartValue = Annotations.stringAnnotation(resource, ANNO_STRIMZI_IO_RESTART_CONNECTOR, "");
         String[] values = restartValue.split(":");
 
@@ -436,7 +436,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
      * @return True if the provided resource has argument includeTasks in restart annotation. False otherwise.
      */
     @Override
-    protected boolean restartAnnotationHasIncludeTasksArg(HasMetadata resource) {
+    boolean restartAnnotationHasIncludeTasksArg(HasMetadata resource) {
         return Annotations.stringAnnotation(resource, ANNO_STRIMZI_IO_RESTART_CONNECTOR, "")
                 .contains(STRIMZI_IO_RESTART_INCLUDE_TASKS_ARG);
     }
@@ -450,7 +450,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
      * @return True if the provided resource has argument onlyFailedTasks in restart annotation. False otherwise.
      */
     @Override
-    protected boolean restartAnnotationHasOnlyFailedTasksArg(HasMetadata resource) {
+    boolean restartAnnotationHasOnlyFailedTasksArg(HasMetadata resource) {
         return Annotations.stringAnnotation(resource, ANNO_STRIMZI_IO_RESTART_CONNECTOR, "")
                 .contains(STRIMZI_IO_RESTART_ONLY_FAILED_ARG);
     }
@@ -465,7 +465,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
      */
     @SuppressWarnings({ "rawtypes" })
     @Override
-    protected int getRestartTaskAnnotationTaskID(CustomResource resource, String connectorName) {
+    int getRestartTaskAnnotationTaskID(CustomResource resource, String connectorName) {
         int taskID = -1;
         String connectorTask = Annotations.stringAnnotation(resource, ANNO_STRIMZI_IO_RESTART_CONNECTOR_TASK, "").trim();
         Matcher connectorTaskMatcher = ANNO_STRIMZI_IO_RESTART_CONNECTOR_TASK_PATTERN.matcher(connectorTask);
@@ -485,7 +485,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
      */
     @SuppressWarnings({ "rawtypes" })
     @Override
-    protected Future<Void> removeRestartAnnotation(Reconciliation reconciliation, CustomResource resource) {
+    Future<Void> removeRestartAnnotation(Reconciliation reconciliation, CustomResource resource) {
         return removeAnnotation(reconciliation, (KafkaMirrorMaker2) resource, ANNO_STRIMZI_IO_RESTART_CONNECTOR);
     }
 
@@ -500,7 +500,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
      */
     @SuppressWarnings({ "rawtypes" })
     @Override
-    protected Future<Void> removeRestartTaskAnnotation(Reconciliation reconciliation, CustomResource resource) {
+    Future<Void> removeRestartTaskAnnotation(Reconciliation reconciliation, CustomResource resource) {
         return removeAnnotation(reconciliation, (KafkaMirrorMaker2) resource, ANNO_STRIMZI_IO_RESTART_CONNECTOR_TASK);
     }
 
@@ -558,7 +558,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
      */
     @SuppressWarnings({ "rawtypes" })
     @Override
-    protected Future<AutoRestartStatus> previousAutoRestartStatus(Reconciliation reconciliation, String connectorName, CustomResource resource)  {
+    Future<AutoRestartStatus> previousAutoRestartStatus(Reconciliation reconciliation, String connectorName, CustomResource resource)  {
         if (resource instanceof KafkaMirrorMaker2 kafkaMirrorMaker2)    {
             if (kafkaMirrorMaker2.getStatus() != null
                     && kafkaMirrorMaker2.getStatus().getAutoRestartStatuses() != null)    {
@@ -592,7 +592,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
      */
     @SuppressWarnings({ "rawtypes" })
     @Override
-    protected KafkaConnectorOffsetsAnnotation getConnectorOffsetsOperation(CustomResource resource, String connectorName) {
+    KafkaConnectorOffsetsAnnotation getConnectorOffsetsOperation(CustomResource resource, String connectorName) {
         boolean offsetsAnnotationPresent = Annotations.hasAnnotation(resource, ANNO_STRIMZI_IO_CONNECTOR_OFFSETS);
         boolean connectorAnnotationPresent = Annotations.hasAnnotation(resource, ANNO_STRIMZI_IO_MIRRORMAKER_CONNECTOR);
         if (offsetsAnnotationPresent && !connectorAnnotationPresent) {
@@ -617,7 +617,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
      */
     @SuppressWarnings({ "rawtypes" })
     @Override
-    protected Future<Void> removeConnectorOffsetsAnnotations(Reconciliation reconciliation, CustomResource resource) {
+    Future<Void> removeConnectorOffsetsAnnotations(Reconciliation reconciliation, CustomResource resource) {
         return removeAnnotations(reconciliation, (KafkaMirrorMaker2) resource, List.of(ANNO_STRIMZI_IO_CONNECTOR_OFFSETS, ANNO_STRIMZI_IO_MIRRORMAKER_CONNECTOR));
     }
 
@@ -630,7 +630,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
      * @return The String to use when interacting with ConfigMap resources.
      */
     @Override
-    protected String getConnectorOffsetsConfigMapEntryKey(String connectorName) {
+    String getConnectorOffsetsConfigMapEntryKey(String connectorName) {
         return connectorName.replace("->", "--") + ".json";
     }
 }

@@ -34,7 +34,7 @@ public class FileUtils {
 
     private FileUtils() { }
 
-    @SuppressFBWarnings({"RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE", "RV_RETURN_VALUE_IGNORED_BAD_PRACTICE"})
+    @SuppressFBWarnings({"RV_RETURN_VALUE_IGNORED_BAD_PRACTICE"})
     public static File downloadAndUnzip(String url) throws IOException {
         File dir = Files.createTempDirectory(FileUtils.class.getName()).toFile();
 
@@ -79,7 +79,6 @@ public class FileUtils {
         return dir;
     }
 
-    @SuppressFBWarnings("RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE")
     public static File downloadYaml(String url) throws IOException {
         File yamlFile = Files.createTempFile("temp-file", ".yaml").toFile();
 

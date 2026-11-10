@@ -44,4 +44,23 @@
   <Match>
     <Class name="~io\.strimzi\.systemtest\.(kafkaclients|resources\.operator)\..+(Builder|Fluent)(\$.*)?" />
   </Match>
+  <Match>
+    <!-- Allow methods to intentionally throw RuntimeException -->
+    <Bug pattern="THROWS_METHOD_THROWS_RUNTIMEEXCEPTION"/>
+  </Match>
+  <Match>
+    <!-- Operator constructors intentionally throw when given invalid configuration
+         or when model building fails. This is expected behaviour. -->
+    <Bug pattern="CT_CONSTRUCTOR_THROW"/>
+  </Match>
+  <Match>
+    <!-- These system test helpers read values from the JUnit ExtensionContext store, which is
+         guaranteed to be populated for a running test, so the dereferenced value is never null. -->
+    <Bug pattern="NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE"/>
+    <Or>
+        <Class name="io.strimzi.systemtest.storage.TestStorage"/>
+        <Class name="io.strimzi.systemtest.utils.StUtils"/>
+        <Class name="io.strimzi.systemtest.utils.kubeUtils.objects.NetworkPolicyUtils"/>
+    </Or>
+  </Match>
 </FindBugsFilter>

@@ -60,14 +60,14 @@
         <maven.enforcer.version>3.0.0-M2</maven.enforcer.version>
         <maven.jar.version>3.1.0</maven.jar.version>
         <central-publishing-maven-plugin.version>0.11.0</central-publishing-maven-plugin.version>
-        <maven.spotbugs.version>4.7.3.4</maven.spotbugs.version>
+        <maven.spotbugs.version>4.10.5.0</maven.spotbugs.version>
         <maven.jacoco.version>0.8.12</maven.jacoco.version>
         <maven.exec.version>3.1.0</maven.exec.version>
         <maven.resources.version>3.1.0</maven.resources.version>
 
         <!-- Build tools -->
         <checkstyle.version>10.18.1</checkstyle.version>
-        <spotbugs.version>4.7.3</spotbugs.version>
+        <spotbugs.version>4.10.5</spotbugs.version>
         <sundrio.version>0.230.2</sundrio.version>
         <lombok.version>1.18.32</lombok.version>
 

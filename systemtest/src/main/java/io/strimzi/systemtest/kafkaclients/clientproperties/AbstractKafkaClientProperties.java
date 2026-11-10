@@ -43,7 +43,6 @@ import java.util.regex.Pattern;
  * @see io.strimzi.systemtest.kafkaclients.externalClients.ExternalKafkaClient
  */
 //  This practically means, always make sure that before invoking this withSharedProperties(), you need first execute withCaSecretName().
-@SuppressFBWarnings({"NP_NONNULL_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR", "UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR"})
 abstract public class AbstractKafkaClientProperties<C extends AbstractKafkaClientProperties<C>>  {
 
     private static final Logger LOGGER = LogManager.getLogger(AbstractKafkaClientProperties.class);

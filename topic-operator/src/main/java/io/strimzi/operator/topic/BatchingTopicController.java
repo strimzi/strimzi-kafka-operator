@@ -528,7 +528,7 @@ public class BatchingTopicController {
         } else if (kafkaEntry.type() == ConfigEntry.ConfigType.DOUBLE && specValue != null && kafkaEntry.value() != null) {
             try {
                 // Kafka can return an equivalent double using a different string representation.
-                return Double.parseDouble(specValue) == Double.parseDouble(kafkaEntry.value());
+                return Double.compare(Double.parseDouble(specValue), Double.parseDouble(kafkaEntry.value())) == 0;
             } catch (NumberFormatException e) {
                 // Leave invalid values to Kafka's existing configuration validation.
                 return false;

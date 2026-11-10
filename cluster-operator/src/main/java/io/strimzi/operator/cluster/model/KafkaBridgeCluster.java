@@ -4,7 +4,6 @@
  */
 package io.strimzi.operator.cluster.model;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerPort;
@@ -134,7 +133,6 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
 
     private Tracing tracing;
 
-    @SuppressFBWarnings({"UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR"}) // This field is initialized in the fromCrd method
     private Rack rack;
 
     private String initImage;

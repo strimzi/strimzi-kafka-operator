@@ -4,7 +4,6 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.Pod;
@@ -134,7 +133,6 @@ public class ReconcilerUtils {
      *
      * @return  CompletionStage containing the PemTrustSet and PemAuthIdentity to use for client authentication.
      */
-    @SuppressFBWarnings("DLS_DEAD_LOCAL_STORE") // SpotBugs does not like the unused `ignored` binding in the switch pattern
     public static CompletionStage<Identity> coIdentity(Reconciliation reconciliation, SecretOperator secretOperator, KafkaClusterSecurityContext securityContext) {
         // Gets the trust based on the security context
         CompletionStage<TrustSet> trustFuture = securityContext.encryption() instanceof TlsEncryptionConfiguration ?

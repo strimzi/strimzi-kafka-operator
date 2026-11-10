@@ -52,9 +52,10 @@ public class KafkaConfigModelGenerator {
      *
      * @param args  Arguments
      *
-     * @throws Exception    Throws an exception if generating the config model fails
+     * @throws IOException  If reading the Kafka version or writing the config model file fails
+     * @throws ReflectiveOperationException If building the config models via reflection fails
      */
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) throws IOException, ReflectiveOperationException {
         String version = kafkaVersion();
         Map<String, ConfigModel> configs = configs(version);
         addPrometheusMetricsReporterAllowListConfig(configs);
