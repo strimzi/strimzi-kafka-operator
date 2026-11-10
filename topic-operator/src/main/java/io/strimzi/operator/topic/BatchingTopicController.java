@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.topic;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.strimzi.api.kafka.model.common.Condition;
 import io.strimzi.api.kafka.model.common.ConditionBuilder;
@@ -522,13 +523,15 @@ public class BatchingTopicController {
         return alterConfigOps;
     }
 
+    @SuppressFBWarnings(value = "FE_FLOATING_POINT_EQUALITY",
+        justification = "Intentional equality of two re-parsed double values so different string representations are equal; +0.0 and -0.0 must compare equal, which Double.compare does not provide")
     /* test */ static boolean configValuesEqual(String specValue, ConfigEntry kafkaEntry) {
         if (Objects.equals(specValue, kafkaEntry.value())) {
             return true;
         } else if (kafkaEntry.type() == ConfigEntry.ConfigType.DOUBLE && specValue != null && kafkaEntry.value() != null) {
             try {
                 // Kafka can return an equivalent double using a different string representation.
-                return Double.compare(Double.parseDouble(specValue), Double.parseDouble(kafkaEntry.value())) == 0;
+                return Double.parseDouble(specValue) == Double.parseDouble(kafkaEntry.value());
             } catch (NumberFormatException e) {
                 // Leave invalid values to Kafka's existing configuration validation.
                 return false;
