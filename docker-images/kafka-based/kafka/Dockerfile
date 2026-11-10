@@ -169,12 +169,6 @@ ENV JMX_EXPORTER_HOME=/opt/prometheus-jmx-exporter
 COPY --from=downloader $JMX_EXPORTER_HOME/jmx_prometheus_javaagent*.jar $JMX_EXPORTER_HOME/
 
 #####
-# Add Strimzi agents
-#####
-COPY ./tmp/kafka-agent-${STRIMZI_VERSION}.jar ${KAFKA_HOME}/libs/
-COPY ./tmp/tracing-agent-${STRIMZI_VERSION}.jar ${KAFKA_HOME}/libs/
-
-#####
 # Add 3rd party libs
 #####
 COPY tmp/thirdparty-libs-${THIRD_PARTY_LIBS}/ ${KAFKA_HOME}/libs/

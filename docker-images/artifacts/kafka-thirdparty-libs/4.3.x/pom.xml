@@ -16,6 +16,7 @@
     </licenses>
 
     <properties>
+        <strimzi.version>1.4.0-SNAPSHOT</strimzi.version>
         <strimzi-oauth.version>0.18.1</strimzi-oauth.version>
         <strimzi-metrics-reporter.version>0.4.0</strimzi-metrics-reporter.version>
         <prometheus.version>1.3.6</prometheus.version>
@@ -29,6 +30,25 @@
     </properties>
 
     <dependencies>
+        <!-- Strimzi agents -->
+        <dependency>
+            <groupId>io.strimzi</groupId>
+            <artifactId>kafka-agent</artifactId>
+            <version>${strimzi.version}</version>
+            <exclusions>
+                <!-- Dependencies are supplied by Kafka and the third-party libraries below. -->
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>io.strimzi</groupId>
+            <artifactId>tracing-agent</artifactId>
+            <version>${strimzi.version}</version>
+        </dependency>
+
         <!-- Support for the new JsonTemplateLayout as appender type -->
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
