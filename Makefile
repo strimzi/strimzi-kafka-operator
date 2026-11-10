@@ -29,6 +29,10 @@ next_version:
 	echo $(shell echo $(NEXT_VERSION) | tr a-z A-Z) > release.version
 	mvn versions:set -DnewVersion=$(shell echo $(NEXT_VERSION) | tr a-z A-Z)
 	mvn versions:commit
+	# The glob [0-9]* matches directories starting with a digit (e.g. 4.4.0 or 4.4.x), excluding cc.
+	for pom in $(wildcard docker-images/artifacts/kafka-thirdparty-libs/[0-9]*/pom.xml); do \
+		mvn versions:set-property -f $$pom -Dproperty=strimzi.version -DnewVersion=$(shell echo $(NEXT_VERSION) | tr a-z A-Z) -DgenerateBackupPoms=false || exit $$?; \
+	done
 
 bridge_version:
 	# Set Kafka Bridge version to its own version
@@ -67,6 +71,10 @@ release_maven:
 	echo "Update pom versions to $(RELEASE_VERSION)"
 	mvn versions:set -DnewVersion=$(shell echo $(RELEASE_VERSION) | tr a-z A-Z)
 	mvn versions:commit
+	# The glob [0-9]* matches directories starting with a digit (e.g. 4.4.0 or 4.4.x), excluding cc.
+	for pom in $(wildcard docker-images/artifacts/kafka-thirdparty-libs/[0-9]*/pom.xml); do \
+		mvn versions:set-property -f $$pom -Dproperty=strimzi.version -DnewVersion=$(shell echo $(RELEASE_VERSION) | tr a-z A-Z) -DgenerateBackupPoms=false || exit $$?; \
+	done
 
 release_pkg: helm_pkg
 	tar -z -cf ./strimzi-$(RELEASE_VERSION).tar.gz strimzi-$(RELEASE_VERSION)/
