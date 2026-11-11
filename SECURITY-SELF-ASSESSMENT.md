@@ -24,22 +24,18 @@
 
 ## Metadata
 
-|                       |                                                                                                                                                                                                                                                                                                                                                                                                  |
-|-----------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Assessment Stage      | Complete                                                                                                                                                                                                                                                                                                                                                                                         |
-| Assessment Date       | 2026-10-08                                                                                                                                                                                                                                                                                                                                                                                       |
-| Software              | [Strimzi](https://github.com/strimzi/strimzi-kafka-operator)                                                                                                                                                                                                                                                                                                                                     |
-| Assessment Basis      | Strimzi `release-1.3.x` branch                                                                                                                                                                                                                                                                                                                                                                   |
-| Target Release        | Strimzi 1.3.0                                                                                                                                                                                                                                                                                                                                                                                    |
-| Release Status        | Released                                                                                                                                                                                                                                                                                                                                                                                         |
-| Kubernetes Versions   | 1.32+ (as supported by the assessed release)                                                                                                                                                                                                                                                                                                                                                     |
-| Apache Kafka Versions | 4.2.0, 4.2.1, 4.2.2, 4.3.0, 4.3.1 (default)                                                                                                                                                                                                                                                                                                                                                      |
-| Website               | https://strimzi.io                                                                                                                                                                                                                                                                                                                                                                               |
-| Security Provider     | No — Strimzi manages Apache Kafka on Kubernetes; it is not a security product                                                                                                                                                                                                                                                                                                                    |
-| Languages             | Java 21                                                                                                                                                                                                                                                                                                                                                                                          |
-| SBOM                  | Published per release via Syft, attached as attestations to container images using Sigstore                                                                                                                                                                                                                                                                                                      |
-| Included Repositories | [strimzi-kafka-operator](https://github.com/strimzi/strimzi-kafka-operator) (1.3.0), [drain-cleaner](https://github.com/strimzi/drain-cleaner) (1.6.1), [strimzi-kafka-bridge](https://github.com/strimzi/strimzi-kafka-bridge) (1.2.0), [strimzi-kafka-oauth](https://github.com/strimzi/strimzi-kafka-oauth) (0.18.0), [metrics-reporter](https://github.com/strimzi/metrics-reporter) (0.4.0) |
-| Excluded from Scope   | Kubernetes control plane, CNI plugins, CSI drivers, external identity providers, third-party Kafka Connect plugins, client applications, cert-manager deployment                                                                                                                                                                                                                                 |
+|                       |                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+|-----------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Assessment Stage      | Complete                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| Assessment Date       | 2026-11-10                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| Software              | [Strimzi](https://github.com/strimzi/strimzi-kafka-operator)                                                                                                                                                                                                                                                                                                                                                                                         |
+| Assessment Basis      | Strimzi `1.3.1` tag (`555c3e0f0`)                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| Target Release        | Strimzi 1.3.1                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| Website               | https://strimzi.io                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| Security Provider     | No — Strimzi manages Apache Kafka on Kubernetes; it is not a security product                                                                                                                                                                                                                                                                                                                                                                        |
+| SBOM                  | Published per release via Syft, attached as attestations to container images using Sigstore                                                                                                                                                                                                                                                                                                                                                          |
+| Included Repositories | [strimzi-kafka-operator](https://github.com/strimzi/strimzi-kafka-operator) (1.3.1), [drain-cleaner](https://github.com/strimzi/drain-cleaner) (1.6.1, the version shipped by the 1.3.1 install manifests), [strimzi-kafka-bridge](https://github.com/strimzi/strimzi-kafka-bridge) (1.2.1), [strimzi-kafka-oauth](https://github.com/strimzi/strimzi-kafka-oauth) (0.18.1), [metrics-reporter](https://github.com/strimzi/metrics-reporter) (0.4.0) |
+| Excluded from Scope   | Kubernetes control plane, CNI plugins, CSI drivers, external identity providers, third-party Kafka Connect plugins, client applications, cert-manager deployment                                                                                                                                                                                                                                                                                     |
 
 ### Security Links
 
@@ -47,6 +43,7 @@
 |----------------------------|-----------------------------------------------------------------------------------------|
 | Security Policy            | https://github.com/strimzi/.github/blob/main/SECURITY.md                                |
 | Security Documentation     | https://strimzi.io/docs/operators/latest/overview#security-overview_str                 |
+| Security Assurance Case    | [SECURITY-ASSURANCE-CASE.md](SECURITY-ASSURANCE-CASE.md)                                |
 | OpenSSF Best Practices     | https://www.bestpractices.dev/en/projects/13184                                         |
 | OpenSSF Scorecard          | https://scorecard.dev/viewer/?uri=github.com/strimzi/strimzi-kafka-operator             |
 | GitHub Security Advisories | https://github.com/strimzi/strimzi-kafka-operator/security/advisories                   |
@@ -75,7 +72,7 @@ Operators may run as standalone Deployments (the Cluster Operator) or as multipl
 Components use dedicated Kubernetes ServiceAccounts.
 Security properties vary by interface: Kafka-protocol connections, Kubernetes API access, REST APIs, metrics endpoints, and health endpoints have independent security configurations.
 Strimzi manages TLS certificates for internal Kafka-facing connections by default.
-Both encryption and authentication for internal communication are configurable via the `strimzi.io/internal-cluster-security` annotation (see [SIP-150](https://github.com/strimzi/proposals/blob/main/150-configurable-security-of-internal-communication.md)) and can be optionally disabled by users. 
+Both encryption and authentication for internal communication are configurable via the `strimzi.io/internal-cluster-security` annotation (see [SIP-150](https://github.com/strimzi/proposals/blob/main/150-configurable-security-of-internal-communication.md), Early Access in 1.3.0) and can be optionally disabled by users. 
 Other interfaces have independent or user-configurable controls.
 Prometheus metrics endpoints and health/readiness probes are served over plain HTTP without authentication. Access control for these endpoints is expected to be handled through Kubernetes NetworkPolicies or external mechanisms.
 
@@ -85,7 +82,7 @@ The Cluster Operator is the primary component of Strimzi.
 It watches for `Kafka`, `KafkaNodePool`, `KafkaConnect`, `KafkaConnector`, `KafkaBridge`, `KafkaMirrorMaker2`, `KafkaRebalance`, and `StrimziPodSet` custom resources and reconciles the Kubernetes resources needed to run those components.
 The Cluster Operator can be configured to watch specific namespaces or all namespaces.
 Limiting the watched namespaces reduces the scope of cluster-wide resources the operator can manage, but does not eliminate all cluster-scoped roles — ClusterRoles and some ClusterRoleBindings are required for privilege delegation and for reading cluster-scoped resources such as Nodes.
-During reconciliation, it manages certificates and security configuration for inter-component communication — by default generating TLS certificates (or creating cert-manager `Certificate` CRs via [SIP-100](https://github.com/strimzi/proposals/blob/main/100-external-certificate-manager.md)), but encryption and authentication can be reconfigured or disabled entirely via [SIP-150](https://github.com/strimzi/proposals/blob/main/150-configurable-security-of-internal-communication.md) — creates NetworkPolicy resources to restrict traffic between pods, and delegates RBAC to operand service accounts.
+During reconciliation, it manages certificates and security configuration for inter-component communication — by default generating TLS certificates (or creating cert-manager `Certificate` CRs via [SIP-100](https://github.com/strimzi/proposals/blob/main/100-external-certificate-manager.md), Early Access in 1.3.0), but encryption and authentication can be reconfigured or disabled entirely via [SIP-150](https://github.com/strimzi/proposals/blob/main/150-configurable-security-of-internal-communication.md), also Early Access in 1.3.0 — creates NetworkPolicy resources to restrict traffic between pods, and delegates RBAC to operand service accounts.
 It uses seven Roles/ClusterRoles to implement least-privilege access control.
 
 Kafka pods are managed through `StrimziPodSet` custom resources, a Strimzi-internal alternative to StatefulSets that provides finer control over pod lifecycle during rolling updates and scaling.
@@ -98,7 +95,7 @@ Reconciliation can be extended through the [Gatekeeper plugin system](https://gi
 The Topic Operator is an optional component that manages `KafkaTopic` custom resources, creating, updating, and deleting Kafka topics to match the desired state declared in Kubernetes.
 It can be enabled and configured via the `Kafka` CR.
 It can run in two modes: as a container within the Entity Operator pod alongside the User Operator when deployed as part of a Strimzi-managed Kafka cluster, or as a standalone deployment connecting to an external Kafka cluster not managed by Strimzi.
-When deployed as part of a Strimzi-managed Kafka cluster, the security of the Kafka connection follows the cluster security configuration set via the `strimzi.io/internal-cluster-security` annotation: mTLS by default, but encryption and authentication are independently configurable and can each be disabled (see [SIP-150](https://github.com/strimzi/proposals/blob/main/150-configurable-security-of-internal-communication.md)).
+When deployed as part of a Strimzi-managed Kafka cluster, the security of the Kafka connection follows the cluster security configuration set via the `strimzi.io/internal-cluster-security` annotation: mTLS by default, but encryption and authentication are independently configurable and can each be disabled (see [SIP-150](https://github.com/strimzi/proposals/blob/main/150-configurable-security-of-internal-communication.md), Early Access in 1.3.0).
 In standalone mode, communication is secured via mTLS using certificates provided by the user.
 The Topic Operator operates within a single namespace and uses the Kafka Admin API to create, alter, and delete topics.
 
@@ -111,7 +108,7 @@ It can be enabled and configured via the `Kafka` CR.
 It creates TLS client certificates or SCRAM-SHA-512 passwords and stores them as Kubernetes Secrets in the same namespace as the KafkaUser resource.
 The User Operator synchronizes ACL rules and quotas to Kafka, ensuring that the Kafka-side configuration matches the declared desired state.
 Like the Topic Operator, it supports two deployment modes: within the Entity Operator pod as part of a Strimzi-managed Kafka cluster, or as a standalone deployment connecting to an external Kafka cluster not managed by Strimzi.
-When deployed as part of a Strimzi-managed Kafka cluster, the security of the Kafka connection follows the cluster security configuration set via the `strimzi.io/internal-cluster-security` annotation: mTLS by default, but encryption and authentication are independently configurable and can each be disabled (see [SIP-150](https://github.com/strimzi/proposals/blob/main/150-configurable-security-of-internal-communication.md)).
+When deployed as part of a Strimzi-managed Kafka cluster, the security of the Kafka connection follows the cluster security configuration set via the `strimzi.io/internal-cluster-security` annotation: mTLS by default, but encryption and authentication are independently configurable and can each be disabled (see [SIP-150](https://github.com/strimzi/proposals/blob/main/150-configurable-security-of-internal-communication.md), Early Access in 1.3.0).
 In standalone mode, it communicates with Kafka via mTLS.
 
 **Custom Resources:** `KafkaUser`
@@ -151,7 +148,7 @@ These can be configured within the `KafkaConnect` custom resource.
 
 The Kafka Agent is a Java agent embedded in the Kafka node JVM via the `-javaagent:` mechanism.
 It runs within the same Kafka node container process — not as a separate sidecar container.
-It exposes the Kafka node's readiness status and metadata over HTTPS on port 8443.
+It exposes the Kafka node's readiness status and metadata on port 8443 over HTTPS, or over plain HTTP when internal encryption is set to `none`.
 Only the Cluster Operator communicates with the Kafka Agent, and this communication is secured in the same way as the communication between the Kafka nodes.
 The Agent enables the Cluster Operator to monitor Kafka node health and coordinate rolling updates without direct access to the Kafka protocol.
 
@@ -174,7 +171,7 @@ As with Kafka Connect, the internal worker-to-worker communication and embedded 
 
 #### Kafka Exporter
 
-The Kafka Exporter (version 1.10.0 in Strimzi 1.3.0) uses Kafka APIs to read consumer-group and topic metadata and exposes the resulting metrics in Prometheus format.
+The Kafka Exporter (version 1.11.0 in Strimzi 1.3.1) uses Kafka APIs to read consumer-group and topic metadata and exposes the resulting metrics in Prometheus format.
 It runs as a separate Deployment, connecting to the internal replication listener (port 9091) using mTLS.
 When Kafka authorization is enabled, the Exporter's identity (`User:CN=<cluster>-kafka-exporter,O=io.strimzi`) is automatically added to `super.users` in the broker configuration, bypassing all ACLs.
 This is necessary for the Exporter to read metadata without requiring per-topic ACL grants, but means a compromised Exporter pod has unrestricted access to the Kafka cluster.
@@ -209,6 +206,7 @@ Enforcement of NetworkPolicy resources depends on the Kubernetes cluster's CNI p
 Kafka-protocol communication between Strimzi-managed components is configured with TLS and mTLS authentication by default, using certificates managed by two separate certificate authorities: the Cluster CA for component identity and the Clients CA for client authentication.
 When Kafka authorization is enabled, Strimzi internal component identities (Cluster Operator, Entity Operator, Kafka Exporter, Cruise Control, and broker peers) are automatically granted `super.users` status in the broker configuration to allow internal operations without requiring explicit ACL grants.
 Other interfaces (REST APIs, metrics endpoints, health endpoints) have independent security configurations.
+Cruise Control's REST API uses HTTP Basic authentication by default, and JMX supports password authentication when `jmxOptions.authentication.type` is set; Prometheus metrics, the Kafka Connect REST API, and health endpoints have no authentication of their own.
 
 Kafka brokers, Kafka Connect workers, and Kafka MirrorMaker 2 workers are managed through `StrimziPodSet` custom resources.
 Cruise Control, Kafka Bridge, and Kafka Exporter run as standard Kubernetes `Deployment` resources.
@@ -235,7 +233,7 @@ The Cluster Operator monitors certificate expiration and initiates renewal befor
 During renewal, the operator generates new certificates, maintains the old CA certificate alongside the new one during a configurable grace period, and performs a rolling restart of affected components to pick up the new certificates.
 Users can also provide their own CA certificates through Kubernetes Secrets, in which case Strimzi manages only the end-entity certificates.
 
-As an alternative, Strimzi supports delegating certificate issuance to [cert-manager](https://github.com/strimzi/proposals/blob/main/100-external-certificate-manager.md) (SIP-100).
+As an alternative, Strimzi supports delegating certificate issuance to [cert-manager](https://github.com/strimzi/proposals/blob/main/100-external-certificate-manager.md) (SIP-100), which is Early Access in 1.3.0 and is documented as not recommended for production use.
 When using cert-manager, Strimzi never holds the CA private keys — the user provides a cert-manager Issuer reference and the CA public certificate, and cert-manager handles issuance and renewal.
 This enables integration with enterprise PKI systems and external certificate authorities.
 
@@ -248,7 +246,7 @@ The User Operator then configures the corresponding ACLs and quotas in Kafka.
 All credential storage uses Kubernetes Secrets with the operator managing the full lifecycle, including renewal for TLS credentials.
 
 The PKCS12 format for credential Secrets is deprecated as of Strimzi 1.3.0.
-PEM will be the only supported format in a future releases.
+PEM will be the only supported format in a future release.
 
 #### Listener Security Configuration
 
@@ -267,13 +265,13 @@ The Cluster Operator generates listener-specific NetworkPolicy rules; source res
 * Automate the deployment, configuration, and lifecycle management of Kafka clusters on Kubernetes
 * Support multiple Kafka versions and provide upgrade paths between them
 * Support namespace-scoped deployments with configurable operator watch scope and delegated RBAC
-* Integrate with the broader cloud-native ecosystem including monitoring (Prometheus, Grafana), tracing (OpenTelemetry), packaging (Helm, OLM), authorization (OPA, Keycloak), and others.
+* Integrate with the broader cloud-native ecosystem including monitoring (Prometheus, Grafana), tracing (OpenTelemetry), packaging (Helm, OLM), authorization (OPA, Keycloak — through `type: custom` authorizer plugins), and others.
 * Provide extensive configurability through custom resources and extensibility through plugin interfaces such as custom authentication, authorization, pod security providers, and the [Gatekeeper plugin system](https://github.com/strimzi/proposals/blob/main/144-Strimzi-Gatekeeper-plugin-system.md) for validating and mutating resources during reconciliation
 
 #### Security Goals
 
-* Configure internal Kafka-protocol communication with TLS and mTLS authentication by default, with [configurable security modes](https://github.com/strimzi/proposals/blob/main/150-configurable-security-of-internal-communication.md) to allow integration with service meshes or trade encryption for performance in isolated environments
-* Automate the certificate lifecycle including CA generation, certificate issuance, renewal, and rotation — directly via the built-in CA or delegated to cert-manager (SIP-100)
+* Configure internal Kafka-protocol communication with TLS and mTLS authentication by default, with [configurable security modes](https://github.com/strimzi/proposals/blob/main/150-configurable-security-of-internal-communication.md) (Early Access in 1.3.0) to allow integration with service meshes or trade encryption for performance in isolated environments
+* Automate the certificate lifecycle including CA generation, certificate issuance, renewal, and rotation — directly via the built-in CA or delegated to cert-manager (SIP-100, Early Access in 1.3.0)
 * Implement least-privilege RBAC through dedicated ClusterRoles for each component
 * Generate NetworkPolicy resources for managed components to support network segmentation
 * Support configurable per-listener authentication and cluster-level Kafka authorization
@@ -331,7 +329,7 @@ For additional context on how these features interact across components, see the
 
 **Configurable internal communication security ([SIP-150](https://github.com/strimzi/proposals/blob/main/150-configurable-security-of-internal-communication.md)) — Early Access in 1.3.0.**
 Communication between Strimzi-managed Kafka cluster components (brokers, controllers, Cluster Operator, Entity Operator, Cruise Control, Kafka Exporter, and Kafka Agent) is configured with TLS encryption and mTLS authentication by default.
-As of Strimzi 1.3.0 (Early Access - not recommended for production use), encryption (`tls` or `none`) and authentication (`mtls`, `service-account`, or `none`) can be configured independently via the `strimzi.io/internal-cluster-security` annotation to support service mesh integration or performance optimization in isolated environments.
+As of Strimzi 1.3.0 (Early Access — the annotation interface is explicitly subject to change, not recommended for production use), encryption (`tls` or `none`) and authentication (`mtls`, `service-account`, or `none`) can be configured independently via the `strimzi.io/internal-cluster-security` annotation to support service mesh integration or performance optimization in isolated environments.
 This feature applies to Strimzi internal connections only. 
 It does not extend to Kafka Connect or MirrorMaker 2 worker-to-worker communication.
 
@@ -346,7 +344,7 @@ Strimzi generates and manages two internal certificate authorities: the Cluster 
 Certificate renewal, rotation, and the transition period during CA replacement are handled automatically by the Cluster Operator.
 Users can also provide their own CA certificates.
 
-As an alternative, Strimzi supports delegating certificate issuance to cert-manager ([SIP-100](https://github.com/strimzi/proposals/blob/main/100-external-certificate-manager.md)); in this mode, Strimzi never holds the CA private keys — the user provides a cert-manager Issuer reference and the CA public certificate.
+As an alternative, Strimzi supports delegating certificate issuance to cert-manager ([SIP-100](https://github.com/strimzi/proposals/blob/main/100-external-certificate-manager.md), Early Access in 1.3.0); in this mode, Strimzi never holds the CA private keys — the user provides a cert-manager Issuer reference and the CA public certificate.
 
 **RBAC delegation model.**
 The Cluster Operator uses ClusterRoles with namespace-scoped RoleBindings and, where required, ClusterRoleBindings.
@@ -354,7 +352,8 @@ The roles are separated and scoped by function to reduce unnecessary permissions
 See the [Isolation](#isolation) section for details on the seven ClusterRoles.
 
 **Automatic NetworkPolicy generation.**
-The Cluster Operator generates Kubernetes NetworkPolicy resources for each managed component.
+The Cluster Operator generates Kubernetes NetworkPolicy resources for Kafka, Kafka Connect and MirrorMaker 2, Cruise Control, the Entity Operator, and Kafka Exporter.
+No policy is generated for the Kafka Bridge, the standalone Topic and User Operators, or the Drain Cleaner.
 For Kafka listeners, the generated policies allow connections from all namespaces by default; source restrictions require explicit `networkPolicyPeers` configuration.
 NetworkPolicy generation is enabled by default and can be disabled if the cluster uses an alternative network security mechanism.
 Enforcement depends on the Kubernetes cluster's CNI plugin.
@@ -365,10 +364,15 @@ The default pod security provider for managed operands is `BaselinePodSecurityPr
 The `RestrictedPodSecurityProvider` is available for environments that support the restricted Kubernetes pod security profile; as of Strimzi 1.2.0, the operator's own Deployment uses a restricted security context in the installation files and Helm chart.
 Template overrides in custom resources can modify these defaults.
 
+**Custom resource write access is a privileged grant.**
+Write access to a Strimzi custom resource is equivalent to read access to every Secret in that namespace and to code execution under the operand ServiceAccounts.
+A resource author can mount any Secret through `template.pod.volumes` or `env.valueFrom.secretKeyRef` — both validated by volume name only — and can run any container image through `spec.image`.
+`create`, `update`, and `patch` on Strimzi resources should therefore be granted only to identities that are already trusted with those privileges.
+
 ### Security Relevant
 
 **Per-listener authentication.**
-Each Kafka listener can be configured with its own authentication mechanism: mTLS, SCRAM-SHA-512, OAuth 2.0, or custom authentication plugins.
+Each Kafka listener can be configured with its own authentication mechanism: mTLS, SCRAM-SHA-512, or custom authentication plugins (`type: custom`), which is how OAuth 2.0 is supported.
 
 **Cluster-level Kafka authorization.**
 Kafka authorization is configured at the cluster level through the broker authorizer using the `simple` built-in model or `custom` authorizer plugins.
@@ -401,8 +405,8 @@ This does not constitute a product-level FIPS certification and depends on the c
 
 **Gatekeeper plugin system ([SIP-144](https://github.com/strimzi/proposals/blob/main/144-Strimzi-Gatekeeper-plugin-system.md)).**
 An extensible plugin system that supports validating and mutating plugins invoked during reconciliation.
-Mandatory plugins are hardcoded and cannot be disabled.
-Default plugins ship with Strimzi but can be overridden, custom plugins can be added via the operator classpath.
+No mandatory or default Gatekeeper plugins ship in Strimzi 1.3.1; both lists are empty.
+Custom plugins are opt-in and are added via the operator classpath and the `STRIMZI_GATEKEEPER_CUSTOM_PLUGINS` configuration.
 
 Custom plugins execute third-party code within the operator process and have access to the Kubernetes API client — they must be treated as trusted code.
 Mutating plugins can alter the effective custom-resource configuration used during reconciliation without persisting those mutations back to the Kubernetes API.
@@ -412,7 +416,7 @@ Operators should use trusted plugins and retain appropriate Cluster Operator log
 **Kubernetes ServiceAccount authentication ([SIP-150](https://github.com/strimzi/proposals/blob/main/150-configurable-security-of-internal-communication.md)) — Early Access in 1.3.0.**
 An alternative to mTLS for internal Kafka authentication using short-lived, audience-scoped Kubernetes ServiceAccount tokens via the OAUTHBEARER SASL mechanism.
 Tokens are scoped to a specific Strimzi audience to prevent cross-cluster reuse.
-This authentication mode is available as part of the SIP-150 Early Access feature in 1.3.0 and is not recommended for production use.
+This authentication mode is available as part of the SIP-150 Early Access feature in 1.3.0, and its configuration interface is subject to change (not recommended for production use now).
 
 **cert-manager integration ([SIP-100](https://github.com/strimzi/proposals/blob/main/100-external-certificate-manager.md)) — Early Access in 1.3.0.**
 Allows delegating end-entity certificate issuance to cert-manager instead of the built-in CA.
@@ -462,7 +466,7 @@ All pull requests require approval from at least two maintainers, or one maintai
 Strimzi operates within the broader cloud-native and Apache Kafka ecosystems.
 It requires Kubernetes as its deployment platform and can be installed via YAML files, Helm charts, or the Operator Lifecycle Manager (OLM).
 Strimzi integrates with a wide range of cloud-native projects: Prometheus and Grafana for monitoring, OpenTelemetry for tracing, Istio for service mesh networking, and cert-manager for external certificate management.
-Strimzi supports custom authentication and authorization plugins, including integrations built around OAuth 2.0, OPA, Keycloak, and other external security services.
+Strimzi supports custom authentication and authorization plugins (`type: custom`), including integrations built around OAuth 2.0, OPA, Keycloak, and other external security services.
 The project manages integrations with components from the Apache Kafka ecosystem including Kafka Connect for data integration, MirrorMaker 2 for cross-cluster replication, and Cruise Control for automated cluster rebalancing.
 
 ## Security Issue Resolution
@@ -491,7 +495,7 @@ The incident response process follows a structured workflow: triage of the repor
 
 ### Known Issues Over Time
 
-As of 2026-07-26, Strimzi has published five security advisories:
+As of 2026-11-10, Strimzi has published five security advisories:
 
 | CVE                                                                                                         | Severity | Description                                                                                                       | Affected Boundary                           |
 |-------------------------------------------------------------------------------------------------------------|----------|-------------------------------------------------------------------------------------------------------------------|---------------------------------------------|
