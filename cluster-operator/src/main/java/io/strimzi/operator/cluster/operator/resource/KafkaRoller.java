@@ -108,13 +108,13 @@ public class KafkaRoller {
 
     private final PodOperator podOperations;
     private final long pollingIntervalMs;
-    protected final long operationTimeoutMs;
+    private final long operationTimeoutMs;
     private final String cluster;
     private final Identity coIdentity;
     private final Set<NodeRef> nodes;
     private final KubernetesRestartEventPublisher eventsPublisher;
     private final Supplier<BackOff> backoffSupplier;
-    protected String namespace;
+    private final String namespace;
     private final AdminClientProvider adminClientProvider;
     private final KafkaAgentClientProvider kafkaAgentClientProvider;
     private final Function<Integer, String> kafkaConfigProvider;
@@ -295,7 +295,7 @@ public class KafkaRoller {
         return result;
     }
 
-    protected static class RestartContext {
+    private static class RestartContext {
         final CompletableFuture<Void> completableFuture;
         final BackOff backOff;
         RestartReasons restartReasons;
@@ -483,7 +483,7 @@ public class KafkaRoller {
         }
     }
 
-    KafkaAgentClient initKafkaAgentClient() throws FatalProblem {
+    private KafkaAgentClient initKafkaAgentClient() throws FatalProblem {
         try {
             return kafkaAgentClientProvider.createKafkaAgentClient(reconciliation, coIdentity);
         } catch (Exception e) {
@@ -871,7 +871,7 @@ public class KafkaRoller {
      *
      * @return a Future which completes when the Pod has been recreated
      */
-    protected CompletionStage<Void> restart(Pod pod, RestartContext restartContext) {
+    private CompletionStage<Void> restart(Pod pod, RestartContext restartContext) {
         // Deep copy, because the events are published asynchronously while the roller may still modify the
         // non-thread-safe restart reasons in the RestartContext.
         RestartReasons reasons = RestartReasons.copyOf(restartContext.restartReasons);
@@ -886,7 +886,7 @@ public class KafkaRoller {
      * Returns an AdminClient instance bootstrapped from the given nodes. If nodes is an
      * empty set, use the brokers service to bootstrap the client.
      */
-    /* test */ Admin adminClient(Set<NodeRef> nodes, boolean isController) throws ForceableProblem {
+    private Admin adminClient(Set<NodeRef> nodes, boolean isController) throws ForceableProblem {
         String bootstrapHostnames = null;
         try {
             if (isController) {
@@ -903,7 +903,7 @@ public class KafkaRoller {
         }
     }
 
-    /* test */ KafkaQuorumCheck quorumCheck(Admin ac, NodeRef nodeRef) {
+    private KafkaQuorumCheck quorumCheck(Admin ac, NodeRef nodeRef) {
         String controllerQuorumFetchTimeout = CONTROLLER_QUORUM_FETCH_TIMEOUT_MS_CONFIG_DEFAULT;
         String desiredConfig = kafkaConfigProvider.apply(nodeRef.nodeId());
 
@@ -915,7 +915,7 @@ public class KafkaRoller {
     }
 
 
-    /* test */ KafkaAvailability availability(Admin ac) {
+    private KafkaAvailability availability(Admin ac) {
         return new KafkaAvailability(reconciliation, ac);
     }
 
@@ -926,7 +926,7 @@ public class KafkaRoller {
      * @return true if the given {@code nodeId} is the active controller and there are other controllers we might yet have to consider.
      */
     @SuppressFBWarnings("RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE") // seems to be completely spurious
-    boolean deferController(NodeRef nodeRef, RestartContext restartContext) throws Exception {
+    private boolean deferController(NodeRef nodeRef, RestartContext restartContext) throws Exception {
         int id = await(restartContext.quorumCheck.quorumLeaderId(), operationTimeoutMs,
                 t -> new UnforceableProblem("An error while trying to determine the active controller", t));
         LOGGER.debugCr(reconciliation, "Active controller is {}", id);
@@ -945,11 +945,11 @@ public class KafkaRoller {
         return podToContext.toString();
     }
 
-    protected CompletionStage<Void> isReady(Pod pod) {
+    private CompletionStage<Void> isReady(Pod pod) {
         return isReady(pod.getMetadata().getNamespace(), pod.getMetadata().getName());
     }
 
-    protected CompletionStage<Void> isReady(String namespace, String podName) {
+    private CompletionStage<Void> isReady(String namespace, String podName) {
         return podOperations.readiness(reconciliation, namespace, podName, pollingIntervalMs, operationTimeoutMs)
                 .whenComplete((i, t) -> {
                     if (t != null) {
