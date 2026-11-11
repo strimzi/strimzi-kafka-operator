@@ -1,7 +1,7 @@
 header:
   schema-version: 2.2.0
-  last-updated: '2026-10-27'
-  last-reviewed: '2026-10-27'
+  last-updated: '2026-11-10'
+  last-reviewed: '2026-11-10'
   url: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/main/security-insights.yml
 
 project:
@@ -70,6 +70,7 @@ project:
     - name: kafka-kubernetes-config-provider
       url: https://github.com/strimzi/kafka-kubernetes-config-provider
       comment: Kubernetes Configuration Provider for Apache Kafka.
+
     - name: kafka-quotas-plugin
       url: https://github.com/strimzi/kafka-quotas-plugin
       comment: Broker quota plugin for Apache Kafka to allow setting per-broker limits statically in the broker configuration.
@@ -162,7 +163,10 @@ repository:
   security:
     assessments:
       self:
-        comment: Strimzi has completed a security self-assessment. The assessment document is linked below.
+        name: Strimzi Security Self-Assessment
+        comment: >-
+          Strimzi has completed a security self-assessment (SECURITY-SELF-ASSESSMENT.md) and an accompanying
+          security assurance case (https://github.com/strimzi/strimzi-kafka-operator/blob/main/SECURITY-ASSURANCE-CASE.md).
         evidence: https://github.com/strimzi/strimzi-kafka-operator/blob/main/SECURITY-SELF-ASSESSMENT.md
     tools:
       - name: CodeQL
