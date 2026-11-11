@@ -4,8 +4,6 @@ SOVA_VERSION ?= $(shell cat ../../../sova.version)
 
 include ../../../Makefile.docker
 
-kafka_agent_dist := ../../artifacts/binaries/kafka-agent-$(RELEASE_VERSION)-dist.zip
-tracing_agent_dist := ../../artifacts/binaries/tracing-agent-$(RELEASE_VERSION)-dist.zip
 sova_dist := ../../artifacts/binaries/sova-$(SOVA_VERSION)-dist.zip
 
 clean:
@@ -44,7 +42,7 @@ clean:
 	cp ../../artifacts/binaries/kafka/$(KAFKA_VERSION).ignorelist tmp/$(KAFKA_VERSION).ignorelist
 	touch .kafka-$(KAFKA_VERSION)-ignorelist.tmp
 
-docker_build: .sova.tmp .thirdparty-libs-$(THIRD_PARTY_LIBS).tmp .thirdparty-libs-cc.tmp .kafka-$(KAFKA_VERSION).tmp .kafka-$(KAFKA_VERSION)-ignorelist.tmp docker_build_default
+docker_build: .sova.tmp .thirdparty-libs-sova.tmp .thirdparty-libs-$(THIRD_PARTY_LIBS).tmp .thirdparty-libs-cc.tmp .kafka-$(KAFKA_VERSION).tmp .kafka-$(KAFKA_VERSION)-ignorelist.tmp docker_build_default
 	# Pull dependencies first
 
 docker_build:
