@@ -13,6 +13,8 @@ import io.strimzi.api.kafka.model.common.Spec;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlSpec;
 import io.strimzi.api.kafka.model.kafka.entityoperator.EntityOperatorSpec;
 import io.strimzi.api.kafka.model.kafka.exporter.KafkaExporterSpec;
+import io.strimzi.api.kafka.model.kafka.sova.SovaSpec;
+import io.strimzi.crdgenerator.annotations.DeprecatedProperty;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
@@ -28,7 +30,7 @@ import java.util.List;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({ "kafka", "entityOperator", "clusterCa", "clientsCa", "cruiseControl", "kafkaExporter", "maintenanceTimeWindows"})
+@JsonPropertyOrder({ "kafka", "entityOperator", "clusterCa", "clientsCa", "cruiseControl", "kafkaExporter", "extraMetrics", "maintenanceTimeWindows"})
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class KafkaSpec extends Spec {
@@ -36,6 +38,7 @@ public class KafkaSpec extends Spec {
     private EntityOperatorSpec entityOperator;
     private CertificateAuthority clusterCa;
     private KafkaExporterSpec kafkaExporter;
+    private SovaSpec extraMetrics;
     private CruiseControlSpec cruiseControl;
     private CertificateAuthority clientsCa;
     private List<String> maintenanceTimeWindows;
@@ -87,12 +90,24 @@ public class KafkaSpec extends Spec {
     }
 
     @Description("Configuration of the Kafka Exporter. Kafka Exporter can provide additional metrics, for example lag of consumer group at topic/partition.")
+    @Deprecated
+    @DeprecatedProperty(movedToPath = "spec.extraMetrics")
     public KafkaExporterSpec getKafkaExporter() {
         return kafkaExporter;
     }
 
+    @Deprecated
     public void setKafkaExporter(KafkaExporterSpec kafkaExporter) {
         this.kafkaExporter = kafkaExporter;
+    }
+
+    @Description("Configuration of Sova. Sova can provide additional metrics, for example lag of consumer group at topic/partition.")
+    public SovaSpec getExtraMetrics() {
+        return extraMetrics;
+    }
+
+    public void setExtraMetrics(SovaSpec extraMetrics) {
+        this.extraMetrics = extraMetrics;
     }
 
     @Description("Configuration for Cruise Control deployment. Deploys a Cruise Control instance when specified")

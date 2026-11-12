@@ -164,15 +164,18 @@ tests:
           value: STRIMZI_DEFAULT_KAFKA_EXPORTER_IMAGE
       - equal:
           path: spec.template.spec.containers[0].env[4].name
-          value: STRIMZI_DEFAULT_CRUISE_CONTROL_IMAGE
+          value: STRIMZI_DEFAULT_SOVA_IMAGE
       - equal:
           path: spec.template.spec.containers[0].env[5].name
-          value: STRIMZI_KAFKA_IMAGES
+          value: STRIMZI_DEFAULT_CRUISE_CONTROL_IMAGE
       - equal:
           path: spec.template.spec.containers[0].env[6].name
-          value: STRIMZI_KAFKA_CONNECT_IMAGES
+          value: STRIMZI_KAFKA_IMAGES
       - equal:
           path: spec.template.spec.containers[0].env[7].name
+          value: STRIMZI_KAFKA_CONNECT_IMAGES
+      - equal:
+          path: spec.template.spec.containers[0].env[8].name
           value: STRIMZI_KAFKA_MIRROR_MAKER_2_IMAGES
       - matchRegex:
           path: spec.template.spec.containers[0].env[3].value
@@ -182,12 +185,15 @@ tests:
           pattern: 'quay.io/strimzi/kafka:(latest|[0-9]+\.[0-9]+\.[0-9]+)-kafka-[0-9]+\.[0-9]+\.[0-9]+'
       - matchRegex:
           path: spec.template.spec.containers[0].env[5].value
-          pattern: '[0-9]+\.[0-9]+\.[0-9]+=quay.io/strimzi/kafka:(latest|[0-9]+\.[0-9]+\.[0-9]+)-kafka-[0-9]+\.[0-9]+\.[0-9]+'
+          pattern: 'quay.io/strimzi/kafka:(latest|[0-9]+\.[0-9]+\.[0-9]+)-kafka-[0-9]+\.[0-9]+\.[0-9]+'
       - matchRegex:
           path: spec.template.spec.containers[0].env[6].value
           pattern: '[0-9]+\.[0-9]+\.[0-9]+=quay.io/strimzi/kafka:(latest|[0-9]+\.[0-9]+\.[0-9]+)-kafka-[0-9]+\.[0-9]+\.[0-9]+'
       - matchRegex:
           path: spec.template.spec.containers[0].env[7].value
+          pattern: '[0-9]+\.[0-9]+\.[0-9]+=quay.io/strimzi/kafka:(latest|[0-9]+\.[0-9]+\.[0-9]+)-kafka-[0-9]+\.[0-9]+\.[0-9]+'
+      - matchRegex:
+          path: spec.template.spec.containers[0].env[8].value
           pattern: '[0-9]+\.[0-9]+\.[0-9]+=quay.io/strimzi/kafka:(latest|[0-9]+\.[0-9]+\.[0-9]+)-kafka-[0-9]+\.[0-9]+\.[0-9]+'
 
   - it: should construct custom kafka images from specified image registry if provided
@@ -200,10 +206,10 @@ tests:
           tagPrefix: test-tag
     asserts:
       - equal:
-          path: spec.template.spec.containers[0].env[5].name
+          path: spec.template.spec.containers[0].env[6].name
           value: STRIMZI_KAFKA_IMAGES
       - matchRegex:
-          path: spec.template.spec.containers[0].env[5].value
+          path: spec.template.spec.containers[0].env[6].value
           pattern: '[0-9]+\.[0-9]+\.[0-9]+=test.registry.com/test-repo/kafka-test:test-tag-kafka-[0-9]+\.[0-9]+\.[0-9]+'
 
   - it: should set IMAGE_PULL_SECRETS literally if provided as string
@@ -216,12 +222,11 @@ tests:
       - equal:
           path: spec.template.spec.imagePullSecrets[0].name
           value: test-secret
-      - equal:
-          path: spec.template.spec.containers[0].env[15].name
-          value: STRIMZI_IMAGE_PULL_SECRETS
-      - equal:
-          path: spec.template.spec.containers[0].env[15].value
-          value: test-secret
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: STRIMZI_IMAGE_PULL_SECRETS
+            value: test-secret
 
   - it: should set IMAGE_PULL_SECRETS as comma separated list if provided as array
     set:
@@ -238,12 +243,11 @@ tests:
       - equal:
           path: spec.template.spec.imagePullSecrets[1].name
           value: test-secret2
-      - equal:
-          path: spec.template.spec.containers[0].env[15].name
-          value: STRIMZI_IMAGE_PULL_SECRETS
-      - equal:
-          path: spec.template.spec.containers[0].env[15].value
-          value: test-secret,test-secret2
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: STRIMZI_IMAGE_PULL_SECRETS
+            value: test-secret,test-secret2
 
   - it: should fail if imagePullSecrets is not correctly formatted
     set:

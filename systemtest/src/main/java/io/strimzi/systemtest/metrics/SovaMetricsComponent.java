@@ -1,0 +1,41 @@
+/*
+ * Copyright Strimzi authors.
+ * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
+ */
+package io.strimzi.systemtest.metrics;
+
+import io.fabric8.kubernetes.api.model.LabelSelector;
+import io.skodjob.kubetest4j.resources.KubeResourceManager;
+import io.strimzi.api.kafka.model.kafka.sova.SovaResources;
+
+/**
+ * Concrete implementation of BaseMetricsComponent for Sova.
+ */
+public class SovaMetricsComponent extends BaseMetricsComponent {
+
+    /**
+     * Factory method to create a new instance of SovaMetricsComponent.
+     * @param namespaceName     the namespace in which the component is deployed
+     * @param componentName     the name of the component
+     * @return                  a new instance of SovaMetricsComponent
+     */
+    public static SovaMetricsComponent create(final String namespaceName, final String componentName) {
+        return new SovaMetricsComponent(namespaceName, componentName);
+    }
+
+    /**
+     * Private constructor to enforce the use of the factory method.
+     */
+    private SovaMetricsComponent(String namespaceName, String componentName) {
+        super(namespaceName, componentName);
+    }
+
+    /**
+     * Provides the label selector specific to Sova.
+     * @return LabelSelector for the Sova deployment
+     */
+    @Override
+    public LabelSelector getLabelSelector() {
+        return KubeResourceManager.get().kubeClient().getClient().apps().deployments().inNamespace(namespaceName).withName(SovaResources.componentName(componentName)).get().getSpec().getSelector();
+    }
+}

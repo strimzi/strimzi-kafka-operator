@@ -24,6 +24,7 @@ import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthenticationTls;
 import io.strimzi.api.kafka.model.kafka.quotas.QuotasPlugin;
 import io.strimzi.api.kafka.model.kafka.quotas.QuotasPluginKafka;
 import io.strimzi.api.kafka.model.kafka.quotas.QuotasPluginStrimzi;
+import io.strimzi.api.kafka.model.kafka.sova.SovaResources;
 import io.strimzi.api.kafka.model.kafka.tieredstorage.RemoteStorageManager;
 import io.strimzi.api.kafka.model.kafka.tieredstorage.TieredStorage;
 import io.strimzi.api.kafka.model.kafka.tieredstorage.TieredStorageCustom;
@@ -580,6 +581,7 @@ public class KafkaBrokerConfigurationBuilder {
                 superUsers.add(String.format("User:CN=%s-%s,O=io.strimzi", clusterName, "entity-topic-operator"));
                 superUsers.add(String.format("User:CN=%s-%s,O=io.strimzi", clusterName, "entity-user-operator"));
                 superUsers.add(String.format("User:CN=%s,O=io.strimzi", KafkaExporterResources.componentName(clusterName)));
+                superUsers.add(String.format("User:CN=%s,O=io.strimzi", SovaResources.componentName(clusterName)));
                 superUsers.add(String.format("User:CN=%s,O=io.strimzi", CruiseControlResources.componentName(clusterName)));
                 superUsers.add(String.format("User:CN=%s,O=io.strimzi", "cluster-operator"));
             } else if (securityContext.authentication() instanceof ServiceAccountAuthenticationConfiguration) {
@@ -587,6 +589,7 @@ public class KafkaBrokerConfigurationBuilder {
                 superUsers.add(String.format("User:system:serviceaccount:%s:%s", reconciliation.namespace(), KafkaResources.kafkaComponentName(clusterName)));
                 superUsers.add(String.format("User:system:serviceaccount:%s:%s", reconciliation.namespace(), KafkaResources.entityOperatorDeploymentName(clusterName)));
                 superUsers.add(String.format("User:system:serviceaccount:%s:%s", reconciliation.namespace(), KafkaExporterResources.serviceAccountName(clusterName)));
+                superUsers.add(String.format("User:system:serviceaccount:%s:%s", reconciliation.namespace(), SovaResources.serviceAccountName(clusterName)));
                 superUsers.add(String.format("User:system:serviceaccount:%s:%s", reconciliation.namespace(), CruiseControlResources.serviceAccountName(clusterName)));
                 superUsers.add(String.format("User:system:serviceaccount:%s:%s", reconciliation.namespace(), KafkaResources.clusterOperatorServiceAccount(clusterName)));
             }

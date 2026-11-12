@@ -54,6 +54,11 @@ To build this project you must first install several command line utilities and 
 - [`docker`](https://docs.docker.com/install/) - Docker command line client
 - [`shellcheck`](https://github.com/koalaman/shellcheck) - ShellCheck is a GPLv3 tool that gives warnings and
   suggestions for bash/sh shell scripts.
+- [`oras`](https://oras.land/) - OCI registry client, used to pull snapshot distributions from GHCR.
+    - Unlike the tools above this one is optional. A released versions are downloaded from its GitHub release with `curl`; only a `-SNAPSHOT` artifacts has no release to download from and is pulled from GHCR instead.
+    - It is also skipped when the dist zip is already in `docker-images/artifacts/binaries/`, so if you would rather not install it, put that zip there yourself.
+    - The GHCR package is public, so no `oras login` and no credentials are needed.
+    - Currently, it is required only for Sova snapshots
 
 In order to use `make` these all need to be available on your `$PATH`.
 
@@ -369,6 +374,15 @@ variable `ALTERNATE_BASE`. When this environment variable is set, for each compo
 Dockerfile in the subdirectory named by `ALTERNATE_BASE`. For example, to build docker images based on alpine,
 use `ALTERNATE_BASE=alpine make docker_build`. Alternative docker images are an experimental feature not supported by
 the core Strimzi team.
+
+#### Building with a local Sova snapshot
+
+When developing against a local Sova build, you can build the Sova distribution zip in the Sova repository (`mvn clean package -DskipTests`) and pass `SOVA_DIST` when building the Kafka Docker image:
+
+```bash
+export SOVA_DIST=/path/to/sova/target/sova-0.1.0-SNAPSHOT-dist.zip
+make -C docker-images/kafka-based/kafka docker_build
+```
 
 ### Build customization
 
