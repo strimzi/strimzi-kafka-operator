@@ -36,14 +36,17 @@
             <artifactId>kafka-agent</artifactId>
             <version>${strimzi.version}</version>
             <exclusions>
+                <!-- SLF4J API is already included in the Kafka distribution -->
                 <exclusion>
                     <groupId>org.slf4j</groupId>
                     <artifactId>slf4j-api</artifactId>
                 </exclusion>
+                <!-- Jackson annotations are already included in the Kafka distribution -->
                 <exclusion>
                     <groupId>com.fasterxml.jackson.core</groupId>
                     <artifactId>jackson-annotations</artifactId>
                 </exclusion>
+                <!-- The various Fabric8 models are not needed by the Kafka Agent -->
                 <exclusion>
                     <groupId>io.fabric8</groupId>
                     <artifactId>kubernetes-model-admissionregistration</artifactId>
