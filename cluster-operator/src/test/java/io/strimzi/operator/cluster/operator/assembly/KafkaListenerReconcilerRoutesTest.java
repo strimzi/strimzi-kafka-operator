@@ -169,7 +169,7 @@ public class KafkaListenerReconcilerRoutesTest {
                 reconciler.reconcile().toCompletableFuture().join()
         );
         assertThat(ex.getCause(), is(instanceOf(RuntimeException.class)));
-        assertThat(ex.getCause().getMessage(), is("The OpenShift route API is not available in this Kubernetes cluster. Exposing Kafka cluster my-kafka using routes is not possible."));
+        assertThat(ex.getCause().getMessage(), is("The OpenShift route API is not available in this Kubernetes cluster. Exposing Kafka cluster my-kafka using routes is not possible. If the API has become available since the cluster operator was started, delete the cluster operator pod so it is recreated. The cluster operator refreshes the set of available features during startup."));
     }
 
     @Test
