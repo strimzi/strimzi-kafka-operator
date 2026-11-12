@@ -38,6 +38,7 @@ public class ClusterOperatorConfigTest {
         ENV_VARS.put(ClusterOperatorConfig.FULL_RECONCILIATION_INTERVAL_MS.key(), "30000");
         ENV_VARS.put(ClusterOperatorConfig.OPERATION_TIMEOUT_MS.key(), "30000");
         ENV_VARS.put(ClusterOperatorConfig.CONNECT_BUILD_TIMEOUT_MS.key(), "40000");
+        ENV_VARS.put(ClusterOperatorConfig.POST_KAFKA_RESTART_DELAY_MS.key(), "20000");
         ENV_VARS.put(ClusterOperatorConfig.STRIMZI_KAFKA_IMAGES, KafkaVersionTestUtils.getKafkaImagesEnvVarString());
         ENV_VARS.put(ClusterOperatorConfig.STRIMZI_KAFKA_CONNECT_IMAGES, KafkaVersionTestUtils.getKafkaConnectImagesEnvVarString());
         ENV_VARS.put(ClusterOperatorConfig.STRIMZI_KAFKA_MIRROR_MAKER_2_IMAGES, KafkaVersionTestUtils.getKafkaMirrorMaker2ImagesEnvVarString());
@@ -61,6 +62,7 @@ public class ClusterOperatorConfigTest {
         envVars.remove(ClusterOperatorConfig.FULL_RECONCILIATION_INTERVAL_MS.key());
         envVars.remove(ClusterOperatorConfig.OPERATION_TIMEOUT_MS.key());
         envVars.remove(ClusterOperatorConfig.CONNECT_BUILD_TIMEOUT_MS.key());
+        envVars.remove(ClusterOperatorConfig.POST_KAFKA_RESTART_DELAY_MS.key());
         envVars.remove(ClusterOperatorConfig.FEATURE_GATES.key());
         envVars.remove(ClusterOperatorConfig.POD_SECURITY_PROVIDER_CLASS.key());
         envVars.remove(ClusterOperatorConfig.POD_DISRUPTION_BUDGET_GENERATION.key());
@@ -73,6 +75,7 @@ public class ClusterOperatorConfigTest {
         assertThat(config.getReconciliationIntervalMs(), is(Long.parseLong(ClusterOperatorConfig.FULL_RECONCILIATION_INTERVAL_MS.defaultValue())));
         assertThat(config.getOperationTimeoutMs(), is(Long.parseLong(ClusterOperatorConfig.OPERATION_TIMEOUT_MS.defaultValue())));
         assertThat(config.getConnectBuildTimeoutMs(), is(Long.parseLong(ClusterOperatorConfig.CONNECT_BUILD_TIMEOUT_MS.defaultValue())));
+        assertThat(config.getPostKafkaRestartDelayMs(), is(0L));
         assertThat(config.getOperatorNamespace(), is("operator-namespace"));
         assertThat(config.getOperatorNamespaceLabels(), is(nullValue()));
         assertThat(config.featureGates(), is(new FeatureGates("")));
@@ -109,6 +112,7 @@ public class ClusterOperatorConfigTest {
         assertThat(config.getReconciliationIntervalMs(), is(30_000L));
         assertThat(config.getOperationTimeoutMs(), is(30_000L));
         assertThat(config.getConnectBuildTimeoutMs(), is(40_000L));
+        assertThat(config.getPostKafkaRestartDelayMs(), is(20_000L));
         assertThat(config.getOperatorNamespace(), is("operator-namespace"));
         assertThat(config.featureGates().useBackgroundPodDeletionEnabled(), is(false));
         assertThat(config.getDnsCacheTtlSec(), is(10));
@@ -347,6 +351,23 @@ public class ClusterOperatorConfigTest {
 
         InvalidConfigurationException e = assertThrows(InvalidConfigurationException.class, () -> ClusterOperatorConfig.buildFromMap(envVars, KafkaVersionTestUtils.getKafkaVersionLookup()));
         assertThat(e.getMessage(), containsString("Unknown feature gate NonExistingGate found in the configuration"));
+    }
+
+    @Test
+    public void testPostKafkaRestartDelayEqualToOperationTimeout() {
+        Map<String, String> envVars = new HashMap<>(ClusterOperatorConfigTest.ENV_VARS);
+        envVars.put(ClusterOperatorConfig.POST_KAFKA_RESTART_DELAY_MS.key(), "30000");
+
+        assertThat(ClusterOperatorConfig.buildFromMap(envVars, KafkaVersionTestUtils.getKafkaVersionLookup()).getPostKafkaRestartDelayMs(), is(30_000L));
+    }
+
+    @Test
+    public void testPostKafkaRestartDelayLongerThanOperationTimeout() {
+        Map<String, String> envVars = new HashMap<>(ClusterOperatorConfigTest.ENV_VARS);
+        envVars.put(ClusterOperatorConfig.POST_KAFKA_RESTART_DELAY_MS.key(), "30001");
+
+        InvalidConfigurationException e = assertThrows(InvalidConfigurationException.class, () -> ClusterOperatorConfig.buildFromMap(envVars, KafkaVersionTestUtils.getKafkaVersionLookup()));
+        assertThat(e.getMessage(), is("STRIMZI_POST_KAFKA_RESTART_DELAY_MS (30001ms) cannot be higher than STRIMZI_OPERATION_TIMEOUT_MS (30000ms)"));
     }
 
     @Test
