@@ -126,6 +126,12 @@ public class KafkaAgentTest {
 
     @AfterEach
     public void tearDown() throws Exception {
+        // The HTTP clients have to be closed before stopping the server. Otherwise, the server waits for the
+        // keep-alive connections to be closed during the graceful shutdown which slows down the tests.
+        if (httpsClient != null) {
+            httpsClient.close();
+        }
+
         if (server != null) {
             server.stop();
         }
@@ -154,14 +160,15 @@ public class KafkaAgentTest {
         KafkaAgent agent = new KafkaAgent(client, TLS_CONFIG, brokerState, null, null);
         server = agent.startHttpServer();
 
-        HttpClient tlsClient = HttpClient.newBuilder()
+        try (HttpClient tlsClient = HttpClient.newBuilder()
                 .connectTimeout(Duration.ofSeconds(10))
                 .sslContext(getClientSSLContext(caCertSecret, null))
-                .build();
-        HttpResponse<String> response = tlsClient.send(httpsReq, HttpResponse.BodyHandlers.ofString());
+                .build()) {
+            HttpResponse<String> response = tlsClient.send(httpsReq, HttpResponse.BodyHandlers.ofString());
 
-        assertThat(response.statusCode(), is(HttpServletResponse.SC_OK));
-        assertThat(response.body(), is("{\"brokerState\":3}"));
+            assertThat(response.statusCode(), is(HttpServletResponse.SC_OK));
+            assertThat(response.body(), is("{\"brokerState\":3}"));
+        }
     }
 
     @Test
@@ -177,10 +184,12 @@ public class KafkaAgentTest {
                 .uri(new URI("http://localhost:8443/v1/broker-state/"))
                 .GET()
                 .build();
-        HttpResponse<String> response = HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString());
+        try (HttpClient httpClient = HttpClient.newHttpClient()) {
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
-        assertThat(response.statusCode(), is(HttpServletResponse.SC_OK));
-        assertThat(response.body(), is("{\"brokerState\":3}"));
+            assertThat(response.statusCode(), is(HttpServletResponse.SC_OK));
+            assertThat(response.body(), is("{\"brokerState\":3}"));
+        }
     }
 
     @Test
@@ -225,11 +234,11 @@ public class KafkaAgentTest {
         KafkaAgent agent = new KafkaAgent(client, MTLS_CONFIG, brokerState, null, null);
         server = agent.startHttpServer();
 
-        HttpResponse<String> response = HttpClient.newBuilder()
-                .build()
-                .send(httpReq, HttpResponse.BodyHandlers.ofString());
+        try (HttpClient httpClient = HttpClient.newHttpClient()) {
+            HttpResponse<String> response = httpClient.send(httpReq, HttpResponse.BodyHandlers.ofString());
 
-        assertThat(response.statusCode(), is(HttpServletResponse.SC_NO_CONTENT));
+            assertThat(response.statusCode(), is(HttpServletResponse.SC_NO_CONTENT));
+        }
     }
 
     @Test
@@ -241,11 +250,11 @@ public class KafkaAgentTest {
         KafkaAgent agent = new KafkaAgent(client, MTLS_CONFIG, brokerState, null, null);
         server = agent.startHttpServer();
 
-        HttpResponse<String> response = HttpClient.newBuilder()
-                .build()
-                .send(httpReq, HttpResponse.BodyHandlers.ofString());
+        try (HttpClient httpClient = HttpClient.newHttpClient()) {
+            HttpResponse<String> response = httpClient.send(httpReq, HttpResponse.BodyHandlers.ofString());
 
-        assertThat(response.statusCode(), is(HttpServletResponse.SC_SERVICE_UNAVAILABLE));
+            assertThat(response.statusCode(), is(HttpServletResponse.SC_SERVICE_UNAVAILABLE));
+        }
     }
 
     /**
@@ -285,13 +294,14 @@ public class KafkaAgentTest {
         KafkaAgent agent = new KafkaAgent(client, serviceAccountAuthenticationConfig(), brokerState, null, null);
         server = agent.startHttpServer();
 
-        HttpClient tlsClient = HttpClient.newBuilder()
+        try (HttpClient tlsClient = HttpClient.newBuilder()
                 .connectTimeout(Duration.ofSeconds(10))
                 .sslContext(getClientSSLContext(caCertSecret, null))
-                .build();
-        HttpResponse<String> response = tlsClient.send(httpsReq, HttpResponse.BodyHandlers.ofString());
+                .build()) {
+            HttpResponse<String> response = tlsClient.send(httpsReq, HttpResponse.BodyHandlers.ofString());
 
-        assertThat(response.statusCode(), is(HttpServletResponse.SC_UNAUTHORIZED));
+            assertThat(response.statusCode(), is(HttpServletResponse.SC_UNAUTHORIZED));
+        }
     }
 
     @Test
@@ -303,11 +313,11 @@ public class KafkaAgentTest {
         KafkaAgent agent = new KafkaAgent(client, serviceAccountAuthenticationConfig(), brokerState, null, null);
         server = agent.startHttpServer();
 
-        HttpResponse<String> response = HttpClient.newBuilder()
-                .build()
-                .send(httpReq, HttpResponse.BodyHandlers.ofString());
+        try (HttpClient httpClient = HttpClient.newHttpClient()) {
+            HttpResponse<String> response = httpClient.send(httpReq, HttpResponse.BodyHandlers.ofString());
 
-        assertThat(response.statusCode(), is(HttpServletResponse.SC_NO_CONTENT));
+            assertThat(response.statusCode(), is(HttpServletResponse.SC_NO_CONTENT));
+        }
     }
 
     @Test
@@ -319,13 +329,14 @@ public class KafkaAgentTest {
         KafkaAgent agent = new KafkaAgent(client, TLS_CONFIG, brokerState, null, null);
         server = agent.startHttpServer();
 
-        HttpClient tlsClient = HttpClient.newBuilder()
+        try (HttpClient tlsClient = HttpClient.newBuilder()
                 .connectTimeout(Duration.ofSeconds(10))
                 .sslContext(getClientSSLContext(caCertSecret, null))
-                .build();
-        HttpResponse<String> response = tlsClient.send(httpsReq, HttpResponse.BodyHandlers.ofString());
+                .build()) {
+            HttpResponse<String> response = tlsClient.send(httpsReq, HttpResponse.BodyHandlers.ofString());
 
-        assertThat(response.statusCode(), is(HttpServletResponse.SC_OK));
+            assertThat(response.statusCode(), is(HttpServletResponse.SC_OK));
+        }
     }
 
     @Test
@@ -337,10 +348,10 @@ public class KafkaAgentTest {
         KafkaAgent agent = new KafkaAgent(client, MTLS_CONFIG, brokerState, null, null);
         server = agent.startHttpServer();
 
-        HttpResponse<String> response = HttpClient.newBuilder()
-                .build()
-                .send(httpReq, HttpResponse.BodyHandlers.ofString());
+        try (HttpClient httpClient = HttpClient.newHttpClient()) {
+            HttpResponse<String> response = httpClient.send(httpReq, HttpResponse.BodyHandlers.ofString());
 
-        assertThat(response.statusCode(), is(HttpServletResponse.SC_SERVICE_UNAVAILABLE));
+            assertThat(response.statusCode(), is(HttpServletResponse.SC_SERVICE_UNAVAILABLE));
+        }
     }
 }
