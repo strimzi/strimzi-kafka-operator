@@ -22,7 +22,7 @@ You must provide a Gateway API implementation and a `Gateway` that accepts the `
 ====
 Strimzi uses and supports the `gateway.networking.k8s.io/v1` API version of the `TLSRoute` resource.
 The Cluster Operator checks for this API version only at startup.
-If the Gateway API CRDs are installed, removed, or changed to serve a different version while the Cluster Operator is running, the change is not detected.
+If the `v1` API version of the `TLSRoute` resource is added or removed while the Cluster Operator is running, the change is not detected.
 For example, if the `v1` version of the `TLSRoute` resource is no longer served, reconciliation fails for all `Kafka` resources, including those that do not use a `tlsroute` listener.
 To refresh the set of platform features available to the Cluster Operator, restart the Cluster Operator.
 ====
@@ -55,7 +55,7 @@ The client uses the Gateway certificate, and TLS client authentication between t
 .Prerequisites
 
 * A Gateway API implementation that supports `gateway.networking.k8s.io/v1` `TLSRoute` resources is installed.
-  If the Gateway API CRDs are installed or changed after the Cluster Operator is started, you must restart the Cluster Operator before proceeding.
+  If the Gateway API CRDs are installed after the Cluster Operator is started, you must restart the Cluster Operator before proceeding.
   This ensures the set of platform features available to the Cluster Operator is up-to-date.
 * A Gateway API `Gateway` is configured for Kafka traffic and accepts TLSRoutes from the Kafka namespace
 * DNS records for the bootstrap and per-broker hostnames resolve to the Gateway address

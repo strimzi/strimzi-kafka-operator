@@ -172,10 +172,8 @@ public class KafkaListenersReconciler {
             return routeOperator.batchReconcile(reconciliation, reconciliation.namespace(), routes, kafka.getSelectorLabels()).thenApply(i -> null);
         } else {
             if (!routes.isEmpty()) {
-                String errorMessage = String.format("The OpenShift route API is not available in this Kubernetes cluster. Exposing Kafka cluster %s using routes is not possible. " +
-                        "If the API has become available since the cluster operator was started, delete the cluster operator pod so it is recreated. The cluster operator refreshes the set of available features during startup.", reconciliation.name());
-                LOGGER.warnCr(reconciliation, errorMessage);
-                return CompletableFuture.failedFuture(new RuntimeException(errorMessage));
+                LOGGER.warnCr(reconciliation, "The OpenShift route API is not available in this Kubernetes cluster. Exposing Kafka cluster {} using routes is not possible.", reconciliation.name());
+                return CompletableFuture.failedFuture(new RuntimeException("The OpenShift route API is not available in this Kubernetes cluster. Exposing Kafka cluster " + reconciliation.name() + " using routes is not possible."));
             } else {
                 return CompletableFuture.completedFuture(null);
             }
