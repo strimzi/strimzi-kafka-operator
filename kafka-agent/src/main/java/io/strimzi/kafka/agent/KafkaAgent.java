@@ -4,7 +4,6 @@
  */
 package io.strimzi.kafka.agent;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yammer.metrics.core.Gauge;
 import com.yammer.metrics.core.Metric;
 import com.yammer.metrics.core.MetricName;
@@ -32,6 +31,7 @@ import org.eclipse.jetty.util.Callback;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import tools.jackson.databind.ObjectMapper;
 
 import java.io.FileInputStream;
 import java.io.IOException;
