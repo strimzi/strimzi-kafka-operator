@@ -52,6 +52,7 @@ public class KafkaAutoRebalancingReconcilerTest {
     private static final String CLUSTER_NAME = "my-cluster";
     private static final Reconciliation RECONCILIATION = new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME);
     private static final Instant DETECTION_TIME = Instant.now();
+    private static final String IMBALANCE_KR_NAME = KafkaResources.autoRebalancingKafkaRebalanceResourceName(CLUSTER_NAME, KafkaAutoRebalanceMode.IMBALANCE);
 
     private ResourceOperatorSupplier supplier;
     private CrdOperator<KubernetesClient, KafkaRebalance, KafkaRebalanceList> rebalanceOperator;
@@ -63,18 +64,17 @@ public class KafkaAutoRebalancingReconcilerTest {
     }
 
     /**
-     * When the cluster is Idle and Cruise Control detects fixable goal violations,
+     * When the auto-rebalance state is Idle and Cruise Control detects fixable goal violations,
      * the reconciler creates the auto-rebalancing KafkaRebalance CR and transitions to RebalanceOnImbalance.
      */
     @Test
     public void testAutoRebalanceOnImbalanceSuccessful() {
-        String krName = KafkaResources.autoRebalancingKafkaRebalanceResourceName(CLUSTER_NAME, KafkaAutoRebalanceMode.IMBALANCE);
-        when(rebalanceOperator.getAsync(eq(NAMESPACE), eq(krName)))
+        when(rebalanceOperator.getAsync(eq(NAMESPACE), eq(IMBALANCE_KR_NAME)))
                 .thenReturn(CompletableFuture.completedFuture(null));
         when(rebalanceOperator.createOrUpdate(any(), any()))
-                .thenReturn(CompletableFuture.completedFuture(ReconcileResult.created(buildImbalanceAutoRebalancingKr(KafkaRebalanceState.New))));
+                .thenReturn(CompletableFuture.completedFuture(ReconcileResult.created(buildKafkaRebalance(IMBALANCE_KR_NAME, KafkaRebalanceMode.FULL, KafkaRebalanceState.New))));
 
-        Kafka kafka = buildKafkaWithState(KafkaAutoRebalanceState.Idle);
+        Kafka kafka = buildKafkaWithAutoRebalanceState(KafkaAutoRebalanceState.Idle, KafkaAutoRebalanceMode.IMBALANCE);
         KafkaStatus kafkaStatus = reconcile(buildReconciler(kafka, fixableViolationsDetector(kafka), Set.of()));
 
         assertThat(kafkaStatus.getAutoRebalance().getState(), is(KafkaAutoRebalanceState.RebalanceOnImbalance));
@@ -83,44 +83,54 @@ public class KafkaAutoRebalancingReconcilerTest {
     }
 
     /**
-     * When the cluster is Idle but the auto-rebalancing KafkaRebalance CR already exists (operator crash recovery),
-     * the reconciler skips creation and transitions directly to RebalanceOnImbalance without incrementing metrics.
+     * When the auto-rebalance state is Idle but the auto-rebalancing KafkaRebalance CR already exists
+     * (operator crash recovery), the reconciler skips creation and transitions directly to RebalanceOnImbalance
+     * without incrementing metrics.
      */
     @Test
     public void testAutoRebalanceOnImbalanceKrAlreadyExistsCrashRecovery() {
-        String krName = KafkaResources.autoRebalancingKafkaRebalanceResourceName(CLUSTER_NAME, KafkaAutoRebalanceMode.IMBALANCE);
-        when(rebalanceOperator.getAsync(eq(NAMESPACE), eq(krName)))
-                .thenReturn(CompletableFuture.completedFuture(buildImbalanceAutoRebalancingKr(KafkaRebalanceState.Rebalancing)));
+        when(rebalanceOperator.getAsync(eq(NAMESPACE), eq(IMBALANCE_KR_NAME)))
+                .thenReturn(CompletableFuture.completedFuture(buildKafkaRebalance(IMBALANCE_KR_NAME, KafkaRebalanceMode.FULL, KafkaRebalanceState.Rebalancing)));
 
-        Kafka kafka = buildKafkaWithState(KafkaAutoRebalanceState.Idle);
+        Kafka kafka = buildKafkaWithAutoRebalanceState(KafkaAutoRebalanceState.Idle, KafkaAutoRebalanceMode.IMBALANCE);
         KafkaStatus kafkaStatus = reconcile(buildReconciler(kafka, fixableViolationsDetector(kafka), Set.of()));
 
         assertThat(kafkaStatus.getAutoRebalance().getState(), is(KafkaAutoRebalanceState.RebalanceOnImbalance));
+        assertThat(kafkaStatus.getAutoRebalance().getModes(), notNullValue());
+        assertThat(kafkaStatus.getAutoRebalance().getModes().get(0).getMode(), is(KafkaAutoRebalanceMode.IMBALANCE));
     }
 
     /**
-     * When the cluster is in RebalanceOnImbalance and the auto-rebalancing KafkaRebalance CR is still Rebalancing,
-     * the reconciler keeps the state as RebalanceOnImbalance and waits for the rebalance to complete.
+     * When the auto-rebalance state is RebalanceOnImbalance and the auto-rebalancing KafkaRebalance CR is still
+     * Rebalancing, the reconciler keeps the state as RebalanceOnImbalance and waits for the rebalance to complete.
      */
     @Test
     public void testAutoRebalanceOnImbalanceInRebalancingState() {
-        KafkaRebalance kr = buildImbalanceAutoRebalancingKr(KafkaRebalanceState.Rebalancing);
+        KafkaRebalance kr = buildKafkaRebalance(IMBALANCE_KR_NAME, KafkaRebalanceMode.FULL, KafkaRebalanceState.Rebalancing);
         when(rebalanceOperator.getAsync(eq(NAMESPACE), eq(kr.getMetadata().getName())))
                 .thenReturn(CompletableFuture.completedFuture(kr));
 
-        Kafka kafka = buildKafkaWithState(KafkaAutoRebalanceState.RebalanceOnImbalance);
+        // Build Kafka with modes pre-set in status to simulate the state after transitioning to RebalanceOnImbalance
+        Kafka kafka = new KafkaBuilder(buildKafkaWithAutoRebalanceState(KafkaAutoRebalanceState.RebalanceOnImbalance, KafkaAutoRebalanceMode.IMBALANCE))
+                .editStatus()
+                    .editAutoRebalance()
+                        .withModes(new KafkaAutoRebalanceStatusBrokersBuilder().withMode(KafkaAutoRebalanceMode.IMBALANCE).build())
+                    .endAutoRebalance()
+                .endStatus()
+                .build();
         KafkaStatus kafkaStatus = reconcile(buildReconciler(kafka, noViolationsDetector(kafka), Set.of()));
 
         assertThat(kafkaStatus.getAutoRebalance().getState(), is(KafkaAutoRebalanceState.RebalanceOnImbalance));
+        assertThat(kafkaStatus.getAutoRebalance().getModes().get(0).getMode(), is(KafkaAutoRebalanceMode.IMBALANCE));
     }
 
     /**
      * When the auto-rebalancing KafkaRebalance CR transitions to Ready,
-     * the reconciler deletes it and transitions the cluster back to Idle.
+     * the reconciler deletes it and transitions the auto-rebalance state back to Idle.
      */
     @Test
     public void testAutoRebalanceOnImbalanceReady() {
-        KafkaRebalance kr = buildImbalanceAutoRebalancingKr(KafkaRebalanceState.Ready);
+        KafkaRebalance kr = buildKafkaRebalance(IMBALANCE_KR_NAME, KafkaRebalanceMode.FULL, KafkaRebalanceState.Ready);
         when(rebalanceOperator.getAsync(eq(NAMESPACE), eq(kr.getMetadata().getName())))
                 .thenReturn(CompletableFuture.completedFuture(kr));
         when(rebalanceOperator.patchAsync(any(), any()))
@@ -128,7 +138,7 @@ public class KafkaAutoRebalancingReconcilerTest {
         when(rebalanceOperator.deleteAsync(any(), eq(NAMESPACE), eq(kr.getMetadata().getName()), eq(true)))
                 .thenReturn(CompletableFuture.completedFuture(null));
 
-        Kafka kafka = buildKafkaWithState(KafkaAutoRebalanceState.RebalanceOnImbalance);
+        Kafka kafka = buildKafkaWithAutoRebalanceState(KafkaAutoRebalanceState.RebalanceOnImbalance, KafkaAutoRebalanceMode.IMBALANCE);
         KafkaStatus kafkaStatus = reconcile(buildReconciler(kafka, noViolationsDetector(kafka), Set.of()));
 
         assertThat(kafkaStatus.getAutoRebalance().getState(), is(KafkaAutoRebalanceState.Idle));
@@ -137,11 +147,11 @@ public class KafkaAutoRebalancingReconcilerTest {
 
     /**
      * When the auto-rebalancing KafkaRebalance CR transitions to NotReady (e.g. Cruise Control unavailable),
-     * the reconciler deletes it and returns to Idle to allow a retry on the next reconciliation.
+     * the reconciler deletes it and returns the auto-rebalance state to Idle to allow a retry on the next reconciliation.
      */
     @Test
     public void testAutoRebalanceOnImbalanceNotReady() {
-        KafkaRebalance kr = buildImbalanceAutoRebalancingKr(KafkaRebalanceState.NotReady);
+        KafkaRebalance kr = buildKafkaRebalance(IMBALANCE_KR_NAME, KafkaRebalanceMode.FULL, KafkaRebalanceState.NotReady);
         when(rebalanceOperator.getAsync(eq(NAMESPACE), eq(kr.getMetadata().getName())))
                 .thenReturn(CompletableFuture.completedFuture(kr));
         when(rebalanceOperator.patchAsync(any(), any()))
@@ -149,27 +159,7 @@ public class KafkaAutoRebalancingReconcilerTest {
         when(rebalanceOperator.deleteAsync(any(), eq(NAMESPACE), eq(kr.getMetadata().getName()), eq(true)))
                 .thenReturn(CompletableFuture.completedFuture(null));
 
-        Kafka kafka = buildKafkaWithState(KafkaAutoRebalanceState.RebalanceOnImbalance);
-        KafkaStatus kafkaStatus = reconcile(buildReconciler(kafka, noViolationsDetector(kafka), Set.of()));
-
-        assertThat(kafkaStatus.getAutoRebalance().getState(), is(KafkaAutoRebalanceState.Idle));
-    }
-
-    /**
-     * When the auto-rebalancing KafkaRebalance CR is manually stopped by the user,
-     * the reconciler deletes it and transitions back to Idle.
-     */
-    @Test
-    public void testAutoRebalanceOnImbalanceStopped() {
-        KafkaRebalance kr = buildImbalanceAutoRebalancingKr(KafkaRebalanceState.Stopped);
-        when(rebalanceOperator.getAsync(eq(NAMESPACE), eq(kr.getMetadata().getName())))
-                .thenReturn(CompletableFuture.completedFuture(kr));
-        when(rebalanceOperator.patchAsync(any(), any()))
-                .thenReturn(CompletableFuture.completedFuture(kr));
-        when(rebalanceOperator.deleteAsync(any(), eq(NAMESPACE), eq(kr.getMetadata().getName()), eq(true)))
-                .thenReturn(CompletableFuture.completedFuture(null));
-
-        Kafka kafka = buildKafkaWithState(KafkaAutoRebalanceState.RebalanceOnImbalance);
+        Kafka kafka = buildKafkaWithAutoRebalanceState(KafkaAutoRebalanceState.RebalanceOnImbalance, KafkaAutoRebalanceMode.IMBALANCE);
         KafkaStatus kafkaStatus = reconcile(buildReconciler(kafka, noViolationsDetector(kafka), Set.of()));
 
         assertThat(kafkaStatus.getAutoRebalance().getState(), is(KafkaAutoRebalanceState.Idle));
@@ -177,33 +167,52 @@ public class KafkaAutoRebalancingReconcilerTest {
     }
 
     /**
-     * When the cluster is in RebalanceOnImbalance but the auto-rebalancing KafkaRebalance CR is missing
-     * (e.g. deleted externally), the reconciler transitions back to Idle and waits for Cruise Control
-     * to re-detect the violation.
+     * When the auto-rebalancing KafkaRebalance CR is manually stopped by the user,
+     * the reconciler deletes it and transitions the auto-rebalance state back to Idle.
+     */
+    @Test
+    public void testAutoRebalanceOnImbalanceStopped() {
+        KafkaRebalance kr = buildKafkaRebalance(IMBALANCE_KR_NAME, KafkaRebalanceMode.FULL, KafkaRebalanceState.Stopped);
+        when(rebalanceOperator.getAsync(eq(NAMESPACE), eq(kr.getMetadata().getName())))
+                .thenReturn(CompletableFuture.completedFuture(kr));
+        when(rebalanceOperator.patchAsync(any(), any()))
+                .thenReturn(CompletableFuture.completedFuture(kr));
+        when(rebalanceOperator.deleteAsync(any(), eq(NAMESPACE), eq(kr.getMetadata().getName()), eq(true)))
+                .thenReturn(CompletableFuture.completedFuture(null));
+
+        Kafka kafka = buildKafkaWithAutoRebalanceState(KafkaAutoRebalanceState.RebalanceOnImbalance, KafkaAutoRebalanceMode.IMBALANCE);
+        KafkaStatus kafkaStatus = reconcile(buildReconciler(kafka, noViolationsDetector(kafka), Set.of()));
+
+        assertThat(kafkaStatus.getAutoRebalance().getState(), is(KafkaAutoRebalanceState.Idle));
+        verify(rebalanceOperator).deleteAsync(any(), eq(NAMESPACE), eq(kr.getMetadata().getName()), eq(true));
+    }
+
+    /**
+     * When the auto-rebalance state is RebalanceOnImbalance but the auto-rebalancing KafkaRebalance CR is missing
+     * (e.g. deleted externally), the reconciler transitions the auto-rebalance state back to Idle and waits for
+     * Cruise Control to re-detect the violation.
      */
     @Test
     public void testAutoRebalanceOnImbalanceKrMissing() {
-        String krName = KafkaResources.autoRebalancingKafkaRebalanceResourceName(CLUSTER_NAME, KafkaAutoRebalanceMode.IMBALANCE);
-        when(rebalanceOperator.getAsync(eq(NAMESPACE), eq(krName)))
+        when(rebalanceOperator.getAsync(eq(NAMESPACE), eq(IMBALANCE_KR_NAME)))
                 .thenReturn(CompletableFuture.completedFuture(null));
 
-        Kafka kafka = buildKafkaWithState(KafkaAutoRebalanceState.RebalanceOnImbalance);
+        Kafka kafka = buildKafkaWithAutoRebalanceState(KafkaAutoRebalanceState.RebalanceOnImbalance, KafkaAutoRebalanceMode.IMBALANCE);
         KafkaStatus kafkaStatus = reconcile(buildReconciler(kafka, noViolationsDetector(kafka), Set.of()));
 
         assertThat(kafkaStatus.getAutoRebalance().getState(), is(KafkaAutoRebalanceState.Idle));
     }
 
     /**
-     * When Cruise Control detects only unfixable goal violations, the reconciler stays Idle
-     * and does not create an auto-rebalancing KafkaRebalance CR.
+     * When Cruise Control detects only unfixable goal violations, the auto-rebalance state stays Idle
+     * and the reconciler does not create an auto-rebalancing KafkaRebalance CR.
      */
     @Test
     public void testAutoRebalanceOnImbalanceUnfixableViolations() {
-        String krName = KafkaResources.autoRebalancingKafkaRebalanceResourceName(CLUSTER_NAME, KafkaAutoRebalanceMode.IMBALANCE);
-        when(rebalanceOperator.getAsync(eq(NAMESPACE), eq(krName)))
+        when(rebalanceOperator.getAsync(eq(NAMESPACE), eq(IMBALANCE_KR_NAME)))
                 .thenReturn(CompletableFuture.completedFuture(null));
 
-        Kafka kafka = buildKafkaWithState(KafkaAutoRebalanceState.Idle);
+        Kafka kafka = buildKafkaWithAutoRebalanceState(KafkaAutoRebalanceState.Idle, KafkaAutoRebalanceMode.IMBALANCE);
         KafkaStatus kafkaStatus = reconcile(buildReconciler(kafka, unfixableViolationsDetector(kafka), Set.of()));
 
         assertThat(kafkaStatus.getAutoRebalance().getState(), is(KafkaAutoRebalanceState.Idle));
@@ -217,7 +226,7 @@ public class KafkaAutoRebalancingReconcilerTest {
      */
     @Test
     public void testAutoRebalanceOnImbalanceInterruptedByScaleDown() {
-        KafkaRebalance kr = buildImbalanceAutoRebalancingKr(KafkaRebalanceState.Rebalancing);
+        KafkaRebalance kr = buildKafkaRebalance(IMBALANCE_KR_NAME, KafkaRebalanceMode.FULL, KafkaRebalanceState.Rebalancing);
         when(rebalanceOperator.getAsync(eq(NAMESPACE), eq(kr.getMetadata().getName())))
                 .thenReturn(CompletableFuture.completedFuture(kr));
         when(rebalanceOperator.patchAsync(any(), any()))
@@ -233,10 +242,13 @@ public class KafkaAutoRebalancingReconcilerTest {
                 .thenReturn(CompletableFuture.completedFuture(ReconcileResult.created(scaleDownKr)));
 
         // Kafka needs REMOVE_BROKERS mode configured so the scale-down KR can be created
-        Kafka kafkaWithBothModes = buildKafkaWithState(KafkaAutoRebalanceState.RebalanceOnImbalance, KafkaAutoRebalanceMode.IMBALANCE, KafkaAutoRebalanceMode.REMOVE_BROKERS);
+        Kafka kafkaWithBothModes = buildKafkaWithAutoRebalanceState(KafkaAutoRebalanceState.RebalanceOnImbalance, KafkaAutoRebalanceMode.IMBALANCE, KafkaAutoRebalanceMode.REMOVE_BROKERS);
         KafkaStatus kafkaStatus = reconcile(buildReconciler(kafkaWithBothModes, noViolationsDetector(kafkaWithBothModes), Set.of(3)));
 
+        verify(rebalanceOperator).deleteAsync(any(), eq(NAMESPACE), eq(kr.getMetadata().getName()), eq(true));
         assertThat(kafkaStatus.getAutoRebalance().getState(), is(KafkaAutoRebalanceState.RebalanceOnScaleDown));
+        assertThat(kafkaStatus.getAutoRebalance().getModes(), notNullValue());
+        assertThat(kafkaStatus.getAutoRebalance().getModes().get(0).getMode(), is(KafkaAutoRebalanceMode.REMOVE_BROKERS));
     }
 
     /**
@@ -246,7 +258,7 @@ public class KafkaAutoRebalancingReconcilerTest {
      */
     @Test
     public void testAutoRebalanceOnImbalanceInterruptedByScaleUp() {
-        KafkaRebalance kr = buildImbalanceAutoRebalancingKr(KafkaRebalanceState.Rebalancing);
+        KafkaRebalance kr = buildKafkaRebalance(IMBALANCE_KR_NAME, KafkaRebalanceMode.FULL, KafkaRebalanceState.Rebalancing);
         when(rebalanceOperator.getAsync(eq(NAMESPACE), eq(kr.getMetadata().getName())))
                 .thenReturn(CompletableFuture.completedFuture(kr))
                 .thenReturn(CompletableFuture.completedFuture(kr));
@@ -271,46 +283,17 @@ public class KafkaAutoRebalancingReconcilerTest {
                         .build())
                 .build());
 
-        Kafka kafkaWithBothModes = buildKafkaWithState(KafkaAutoRebalanceState.RebalanceOnImbalance, KafkaAutoRebalanceMode.IMBALANCE, KafkaAutoRebalanceMode.ADD_BROKERS);
+        Kafka kafkaWithBothModes = buildKafkaWithAutoRebalanceState(KafkaAutoRebalanceState.RebalanceOnImbalance, KafkaAutoRebalanceMode.IMBALANCE, KafkaAutoRebalanceMode.ADD_BROKERS);
         buildReconciler(kafkaWithBothModes, noViolationsDetector(kafkaWithBothModes), Set.of()).reconcile(kafkaStatus).toCompletableFuture().join();
 
         assertThat(kafkaStatus.getAutoRebalance().getState(), is(KafkaAutoRebalanceState.RebalanceOnScaleUp));
+        assertThat(kafkaStatus.getAutoRebalance().getModes(), notNullValue());
+        assertThat(kafkaStatus.getAutoRebalance().getModes().get(0).getMode(), is(KafkaAutoRebalanceMode.ADD_BROKERS));
     }
 
     /**
-     * When a scale-down is detected while the imbalance auto-rebalancing KafkaRebalance CR is still in progress
-     * (Rebalancing), the reconciler stops and deletes the imbalance KafkaRebalance CR and prioritizes the
-     * scale-down rebalance, transitioning to RebalanceOnScaleDown.
-     */
-    @Test
-    public void testImbalanceAutoRebalancingKrDeletedAndScaleDownPrioritized() {
-        KafkaRebalance kr = buildImbalanceAutoRebalancingKr(KafkaRebalanceState.Rebalancing);
-        when(rebalanceOperator.getAsync(eq(NAMESPACE), eq(kr.getMetadata().getName())))
-                .thenReturn(CompletableFuture.completedFuture(kr))
-                .thenReturn(CompletableFuture.completedFuture(kr));
-        when(rebalanceOperator.patchAsync(any(), any()))
-                .thenReturn(CompletableFuture.completedFuture(kr));
-        when(rebalanceOperator.deleteAsync(any(), eq(NAMESPACE), eq(kr.getMetadata().getName()), eq(true)))
-                .thenReturn(CompletableFuture.completedFuture(null));
-
-        String scaleDownKrName = KafkaResources.autoRebalancingKafkaRebalanceResourceName(CLUSTER_NAME, KafkaAutoRebalanceMode.REMOVE_BROKERS);
-        when(rebalanceOperator.getAsync(eq(NAMESPACE), eq(scaleDownKrName)))
-                .thenReturn(CompletableFuture.completedFuture(null));
-        KafkaRebalance scaleDownKr = new KafkaRebalanceBuilder().withNewMetadata().withName(scaleDownKrName).endMetadata().build();
-        when(rebalanceOperator.createOrUpdate(any(), any()))
-                .thenReturn(CompletableFuture.completedFuture(ReconcileResult.created(scaleDownKr)));
-
-        // scalingDownBlockedNodes = {3, 4} simulates a scale-down detected while imbalance rebalance is in progress
-        Kafka kafkaWithBothModes = buildKafkaWithState(KafkaAutoRebalanceState.RebalanceOnImbalance, KafkaAutoRebalanceMode.IMBALANCE, KafkaAutoRebalanceMode.REMOVE_BROKERS);
-        KafkaStatus kafkaStatus = reconcile(buildReconciler(kafkaWithBothModes, noViolationsDetector(kafkaWithBothModes), Set.of(3, 4)));
-
-        verify(rebalanceOperator).deleteAsync(any(), eq(NAMESPACE), eq(kr.getMetadata().getName()), eq(true));
-        assertThat(kafkaStatus.getAutoRebalance().getState(), is(KafkaAutoRebalanceState.RebalanceOnScaleDown));
-    }
-
-    /**
-     * When a scale operation is already in progress (RebalanceOnScaleUp), imbalance detection
-     * is not invoked and the reconciler stays in RebalanceOnScaleUp regardless of any goal violations.
+     * When a scale operation is already in progress (auto-rebalance state is RebalanceOnScaleUp), imbalance
+     * detection is not invoked and the reconciler stays in RebalanceOnScaleUp regardless of any goal violations.
      */
     @Test
     public void testAutoRebalanceOnImbalanceIgnoredDuringScaleOperation() {
@@ -338,7 +321,7 @@ public class KafkaAutoRebalancingReconcilerTest {
                         .build())
                 .build());
 
-        Kafka kafkaWithBothModes = buildKafkaWithState(KafkaAutoRebalanceState.RebalanceOnScaleUp, KafkaAutoRebalanceMode.IMBALANCE, KafkaAutoRebalanceMode.ADD_BROKERS);
+        Kafka kafkaWithBothModes = buildKafkaWithAutoRebalanceState(KafkaAutoRebalanceState.RebalanceOnScaleUp, KafkaAutoRebalanceMode.IMBALANCE, KafkaAutoRebalanceMode.ADD_BROKERS);
         buildReconciler(kafkaWithBothModes, fixableViolationsDetector(kafkaWithBothModes), Set.of()).reconcile(kafkaStatus).toCompletableFuture().join();
 
         // Should remain in RebalanceOnScaleUp — imbalance detection is not invoked during scale operations
@@ -347,14 +330,15 @@ public class KafkaAutoRebalancingReconcilerTest {
 
     /**
      * When a manual KafkaRebalance is already running (detected by Cruise Control), the reconciler
-     * stays Idle and does not trigger an additional auto-rebalance on imbalance.
+     * stays in Idle auto-rebalance state and does not trigger an additional auto-rebalance on imbalance.
      */
     @Test
     public void testAutoRebalanceOnImbalanceBlockedByActiveManualRebalance() {
-        Kafka kafka = buildKafkaWithState(KafkaAutoRebalanceState.Idle);
+        Kafka kafka = buildKafkaWithAutoRebalanceState(KafkaAutoRebalanceState.Idle, KafkaAutoRebalanceMode.IMBALANCE);
         KafkaStatus kafkaStatus = reconcile(buildReconciler(kafka, activeRebalanceDetector(kafka), Set.of()));
 
         assertThat(kafkaStatus.getAutoRebalance().getState(), is(KafkaAutoRebalanceState.Idle));
+        assertThat(kafkaStatus.getAutoRebalance().getModes(), nullValue());
     }
 
     private KafkaStatus reconcile(KafkaAutoRebalancingReconciler reconciler) {
@@ -459,11 +443,7 @@ public class KafkaAutoRebalancingReconcilerTest {
         };
     }
 
-    private Kafka buildKafkaWithState(KafkaAutoRebalanceState state) {
-        return buildKafkaWithState(state, KafkaAutoRebalanceMode.IMBALANCE);
-    }
-
-    private Kafka buildKafkaWithState(KafkaAutoRebalanceState state, KafkaAutoRebalanceMode... modes) {
+    private Kafka buildKafkaWithAutoRebalanceState(KafkaAutoRebalanceState autoRebalanceState, KafkaAutoRebalanceMode... modes) {
         List<KafkaAutoRebalanceConfiguration> configs = Arrays.stream(modes)
                 .map(m -> new KafkaAutoRebalanceConfigurationBuilder().withMode(m).build())
                 .toList();
@@ -476,21 +456,21 @@ public class KafkaAutoRebalancingReconcilerTest {
                 .endSpec();
         builder.withNewStatus()
                 .withAutoRebalance(new KafkaAutoRebalanceStatusBuilder()
-                        .withState(state)
+                        .withState(autoRebalanceState)
                         .withLastTransitionTime(StatusUtils.iso8601Now())
                         .build())
                 .endStatus();
         return builder.build();
     }
 
-    private KafkaRebalance buildImbalanceAutoRebalancingKr(KafkaRebalanceState state) {
+    private KafkaRebalance buildKafkaRebalance(String name, KafkaRebalanceMode mode, KafkaRebalanceState state) {
         return new KafkaRebalanceBuilder()
                 .withNewMetadata()
-                    .withName(KafkaResources.autoRebalancingKafkaRebalanceResourceName(CLUSTER_NAME, KafkaAutoRebalanceMode.IMBALANCE))
+                    .withName(name)
                     .withNamespace(NAMESPACE)
                 .endMetadata()
                 .withNewSpec()
-                    .withMode(KafkaRebalanceMode.FULL)
+                    .withMode(mode)
                 .endSpec()
                 .withNewStatus()
                     .withConditions(new ConditionBuilder().withType(state.name()).withStatus("True").build())
