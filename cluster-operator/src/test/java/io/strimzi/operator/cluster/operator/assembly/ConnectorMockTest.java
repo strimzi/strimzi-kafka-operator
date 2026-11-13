@@ -69,6 +69,8 @@ import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Proxy;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -209,7 +211,7 @@ public class ConnectorMockTest {
             pfa,
             ros,
             config,
-            x -> api));
+            x -> withoutClose(api)));
 
         Checkpoint async = testContext.checkpoint();
         // Fail test if watcher closes for any reason
@@ -232,6 +234,29 @@ public class ConnectorMockTest {
         client.namespaces().withName(namespace).delete();
         sharedWorkerExecutor.close();
         vertx.close();
+    }
+
+    /**
+     * The operator closes the Connect API client on its own thread right after it updates the connector status, which
+     * is also when the tests change the stubbing of the mock. Mockito does not support calling a mock while it is being
+     * stubbed from another thread, so the close call must not reach the mock.
+     *
+     * @param delegate  Mocked Kafka Connect API
+     *
+     * @return  Kafka Connect API which passes all calls except close() to the mock
+     */
+    private static KafkaConnectApi withoutClose(KafkaConnectApi delegate) {
+        return (KafkaConnectApi) Proxy.newProxyInstance(KafkaConnectApi.class.getClassLoader(), new Class<?>[] {KafkaConnectApi.class}, (proxy, method, args) -> {
+            if (method.getName().equals("close")) {
+                return null;
+            }
+
+            try {
+                return method.invoke(delegate, args);
+            } catch (InvocationTargetException e) {
+                throw e.getCause();
+            }
+        });
     }
 
     @SuppressWarnings({"checkstyle:JavaNCSS", "checkstyle:NPathComplexity", "checkstyle:MethodLength"})

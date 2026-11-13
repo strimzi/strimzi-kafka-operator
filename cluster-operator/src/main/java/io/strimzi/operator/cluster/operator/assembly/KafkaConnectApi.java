@@ -19,7 +19,13 @@ import java.util.concurrent.CompletionStage;
 /**
  * A Java client for the Kafka Connect REST API.
  */
-public interface KafkaConnectApi {
+public interface KafkaConnectApi extends AutoCloseable {
+    /**
+     * Releases the resources used by the client. The default implementation does nothing.
+     */
+    @Override
+    default void close() { }
+
     /**
      * Make a {@code PUT} request to {@code /connectors/${connectorName}/config}.
      * @param reconciliation The reconciliation
