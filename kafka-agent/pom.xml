@@ -58,10 +58,10 @@
             <artifactId>jakarta.servlet-api</artifactId>
             <scope>provided</scope>
         </dependency>
+        <!-- Jackson 3 is used by Fabric8 Kubernetes Client and shipped as part of the third-party libraries -->
         <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
+            <groupId>tools.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
-            <scope>provided</scope>
         </dependency>
         <!-- Used to validate the Kubernetes Service Account tokens. It is shipped in the Kafka image as one of the
         third-party libraries, so it is available on the classpath of the Kafka broker at runtime. -->
