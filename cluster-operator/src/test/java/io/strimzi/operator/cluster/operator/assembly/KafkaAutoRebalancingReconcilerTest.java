@@ -321,11 +321,22 @@ public class KafkaAutoRebalancingReconcilerTest {
                         .build())
                 .build());
 
-        Kafka kafkaWithBothModes = buildKafkaWithAutoRebalanceState(KafkaAutoRebalanceState.RebalanceOnScaleUp, KafkaAutoRebalanceMode.IMBALANCE, KafkaAutoRebalanceMode.ADD_BROKERS);
+        // Pre-set modes in Kafka status to simulate the state after transitioning to RebalanceOnScaleUp
+        Kafka kafkaWithBothModes = new KafkaBuilder(buildKafkaWithAutoRebalanceState(KafkaAutoRebalanceState.RebalanceOnScaleUp, KafkaAutoRebalanceMode.IMBALANCE, KafkaAutoRebalanceMode.ADD_BROKERS))
+                .editStatus()
+                    .editAutoRebalance()
+                        .withModes(new KafkaAutoRebalanceStatusBrokersBuilder()
+                                .withMode(KafkaAutoRebalanceMode.ADD_BROKERS)
+                                .withBrokers(List.of(5, 6))
+                                .build())
+                    .endAutoRebalance()
+                .endStatus()
+                .build();
         buildReconciler(kafkaWithBothModes, fixableViolationsDetector(kafkaWithBothModes), Set.of()).reconcile(kafkaStatus).toCompletableFuture().join();
 
         // Should remain in RebalanceOnScaleUp — imbalance detection is not invoked during scale operations
         assertThat(kafkaStatus.getAutoRebalance().getState(), is(KafkaAutoRebalanceState.RebalanceOnScaleUp));
+        assertThat(kafkaStatus.getAutoRebalance().getModes().get(0).getMode(), is(KafkaAutoRebalanceMode.ADD_BROKERS));
     }
 
     /**
