@@ -357,8 +357,8 @@ public class OauthAuthorizationST extends OauthAbstractST {
                 Map.of(
                         "unsecuredLoginStringClaim_sub", "thePrincipalName",
                         "oauth.valid.issuer.uri", keycloakInstance.getValidIssuerUri(),
-                        "oauth.jwks.expiry.seconds", Integer.toString(keycloakInstance.getJwksExpireSeconds()),
-                        "oauth.jwks.refresh.seconds", Integer.toString(keycloakInstance.getJwksRefreshSeconds()),
+                        "oauth.jwks.expiry.seconds", Integer.toString(KeycloakInstance.JWKS_EXPIRE_SECONDS),
+                        "oauth.jwks.refresh.seconds", Integer.toString(KeycloakInstance.JWKS_REFRESH_SECONDS),
                         "oauth.jwks.endpoint.uri", keycloakInstance.getJwksEndpointUri(),
                         "oauth.username.claim", keycloakInstance.getUserNameClaim(),
                         "oauth.ssl.endpoint.identification.algorithm", "",

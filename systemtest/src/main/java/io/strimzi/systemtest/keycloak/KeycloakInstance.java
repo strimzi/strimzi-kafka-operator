@@ -7,18 +7,14 @@ package io.strimzi.systemtest.keycloak;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.util.regex.Pattern;
-
 public class KeycloakInstance {
 
     private static final Logger LOGGER = LogManager.getLogger(KeycloakInstance.class);
     public static final String KEYCLOAK_SECRET_NAME = "example-tls-secret";
     public static final String KEYCLOAK_SECRET_CERT = "tls.crt";
-    private static final int JWKS_EXPIRE_SECONDS = 500;
-    private static final int JWKS_REFRESH_SECONDS = 400;
+    public static final int JWKS_EXPIRE_SECONDS = 500;
+    public static final int JWKS_REFRESH_SECONDS = 400;
 
-    private final Pattern keystorePattern = Pattern.compile("<tls>\\s*<key-stores>\\s*<key-store name=\"kcKeyStore\">\\s*<credential-reference clear-text=\".*\"\\/>");
-    private final Pattern keystorePasswordPattern = Pattern.compile("\\\".*\\\"");
     private final String username;
     private final String password;
     private final String namespace;
@@ -85,12 +81,6 @@ public class KeycloakInstance {
     public String getUserNameClaim() {
         return userNameClaim;
     }
-    public int getJwksExpireSeconds() {
-        return JWKS_EXPIRE_SECONDS;
-    }
-    public int getJwksRefreshSeconds() {
-        return JWKS_REFRESH_SECONDS;
-    }
 
     @Override
     public String toString() {
@@ -105,8 +95,6 @@ public class KeycloakInstance {
             ", jwksEndpointUri='" + jwksEndpointUri + '\'' +
             ", oauthTokenEndpointUri='" + oauthTokenEndpointUri + '\'' +
             ", userNameClaim='" + userNameClaim + '\'' +
-            ", keystorePattern=" + keystorePattern +
-            ", keystorePasswordPattern=" + keystorePasswordPattern +
             '}';
     }
 }
