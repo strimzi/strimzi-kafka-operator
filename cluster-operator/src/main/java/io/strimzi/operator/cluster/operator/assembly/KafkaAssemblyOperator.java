@@ -660,7 +660,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
          * @return Kafka auto-rebalancing reconciler
          */
         KafkaAutoRebalancingReconciler kafkaAutoRebalancingReconciler() {
-            return new KafkaAutoRebalancingReconciler(reconciliation, kafkaAssembly, supplier, scalingDownBlockedNodes);
+            return new KafkaAutoRebalancingReconciler(reconciliation, kafkaAssembly, supplier, scalingDownBlockedNodes, metrics);
         }
 
         /**
