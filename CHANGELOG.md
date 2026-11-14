@@ -10,6 +10,7 @@
 * Add support for Strimzi-native configurable RSA key sizes
 * Strimzi Access Operator updated to 0.4.0 - included in Strimzi installation files, examples, and documentation
 * Use Java 25 as the runtime for all containers (leaving the language level at Java 21) for supporting Post-Quantum Hybrid Key Exchange
+* Prevent removal of JBOD volumes which still contain partition replicas. The check can be disabled with the `strimzi.io/skip-broker-scaledown-check` annotation on the `Kafka` resource.
 
 ### Major changes, deprecations, and removals
 
