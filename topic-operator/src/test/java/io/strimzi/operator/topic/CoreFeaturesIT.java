@@ -1398,6 +1398,80 @@ class CoreFeaturesIT implements TestSeparator {
         }
     }
 
+    @Test
+    public void shouldNotDeleteTopicWhenUnselectedTopicDeletedAndFinalizersDisabled() throws ExecutionException, InterruptedException, TimeoutException {
+        startKafkaCluster(1, 1, Map.of("auto.create.topics.enable", "false"));
+        maybeStartOperator(topicOperatorConfig(NAMESPACE, kafkaCluster, false));
+
+        // given a topic in Kafka and a KafkaTopic for it which is not selected by this operator
+        var topicName = "unselected-delete";
+        kafkaAdminClient.createTopics(Set.of(new NewTopic(topicName, 1, (short) 1))).all().get();
+        var topicId = awaitTopicDescription(topicName).topicId();
+        var kt = kafkaTopic(NAMESPACE, topicName, Map.of("foo", "FOO"), null, true, topicName, 1, 1, null);
+        assertFalse(BatchingTopicController.matchesSelector(SELECTOR, kt.getMetadata().getLabels()));
+        try (var ignored = LogCaptor.logMessageMatches(BatchingTopicController.LOGGER,
+                Level.DEBUG,
+                "Ignoring KafkaTopic .*? not selected by selector",
+                5L,
+                TimeUnit.SECONDS)) {
+            Crds.topicOperation(kubernetesClient).resource(kt).create();
+        }
+
+        // when
+        try (var ignored = LogCaptor.logMessageMatches(BatchingTopicController.LOGGER,
+                Level.DEBUG,
+                "Ignoring deletion of KafkaTopic .*? not selected by selector",
+                5L,
+                TimeUnit.SECONDS)) {
+            Crds.topicOperation(kubernetesClient).resource(kt).delete();
+            TestUtil.waitUntilCondition(Crds.topicOperation(kubernetesClient).resource(kt), Objects::isNull);
+        }
+
+        // then
+        assertEquals(topicId, awaitTopicDescription(topicName).topicId());
+    }
+
+    @Test
+    public void shouldNotDeleteTopicWhenKafkaTopicBecomesUnselectedThenDeletedAndFinalizersDisabled() throws ExecutionException, InterruptedException, TimeoutException {
+        startKafkaCluster(1, 1, Map.of("auto.create.topics.enable", "false"));
+        maybeStartOperator(topicOperatorConfig(NAMESPACE, kafkaCluster, false));
+
+        // given a selected KafkaTopic whose topic was created by this operator
+        var topicName = "relabel-then-delete";
+        var kt = kafkaTopic(NAMESPACE, topicName, true, topicName, 1, 1);
+        var created = Crds.topicOperation(kubernetesClient).resource(kt).create();
+        waitUntil(created, readyIsTrue());
+        var topicId = awaitTopicDescription(topicName).topicId();
+
+        // and the KafkaTopic is relabelled so this operator no longer selects it
+        Map<String, String> unmatchedLabels = Map.of("foo", "FOO");
+        assertFalse(BatchingTopicController.matchesSelector(SELECTOR, unmatchedLabels));
+        KafkaTopic unselected;
+        try (var ignored = LogCaptor.logMessageMatches(BatchingTopicController.LOGGER,
+                Level.DEBUG,
+                "Ignoring KafkaTopic .*? not selected by selector",
+                5L,
+                TimeUnit.SECONDS)) {
+            unselected = TestUtil.changeTopic(kubernetesClient, created, theKt -> {
+                theKt.getMetadata().setLabels(unmatchedLabels);
+                return theKt;
+            });
+        }
+
+        // when
+        try (var ignored = LogCaptor.logMessageMatches(BatchingTopicController.LOGGER,
+                Level.DEBUG,
+                "Ignoring deletion of KafkaTopic .*? not selected by selector",
+                5L,
+                TimeUnit.SECONDS)) {
+            Crds.topicOperation(kubernetesClient).resource(unselected).delete();
+            TestUtil.waitUntilCondition(Crds.topicOperation(kubernetesClient).resource(unselected), Objects::isNull);
+        }
+
+        // then
+        assertEquals(topicId, awaitTopicDescription(topicName).topicId());
+    }
+
     static List<List<KafkaTopic>> collidingManagedTopics_sameNamespace() {
         return List.of(
                 // both use spec.topicName
