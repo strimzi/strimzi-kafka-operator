@@ -476,7 +476,6 @@ public class MockCruiseControl {
                 .withQueryParam(CruiseControlParameters.DRY_RUN.toString(), matching("true|false"))
                 .withQueryParam(CruiseControlParameters.VERBOSE.toString(), matching("true|false"))
                 .withQueryParam(CruiseControlParameters.GOALS.toString(), matching(".+"))
-                .withQueryParam(CruiseControlParameters.SKIP_HARD_GOAL_CHECK.toString(), equalTo("false"))
                 .withHeader("Authorization", equalTo(AUTH_HEADER_VALUE))
                 .willReturn(aResponse()
                         .withStatus(500)

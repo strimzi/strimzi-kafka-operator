@@ -4,13 +4,16 @@
  */
 package io.strimzi.operator.cluster.operator.resource.cruisecontrol;
 
-import io.strimzi.api.kafka.model.rebalance.BrokerAndVolumeIds;
+import io.strimzi.api.kafka.model.rebalance.RebalanceNode;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlEndpoints;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlParameters;
 
 import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -76,26 +79,26 @@ public class PathBuilder {
     }
 
     /**
-     * Converts the list of broker and volume IDs to a list of string
+     * Adds additional Cruise Control REST API parameters as raw key-value query parameters.
      *
-     * @param values    List of parameter value
+     * @param config   Map of additional config parameters
      *
      * @return  Instance of this builder
      */
-    private List<String> brokerAndVolumeIdsParameterList(List<BrokerAndVolumeIds> values) {
-
-        List<String> brokerandVolumeIds = new ArrayList<>(values.size());
-        for (BrokerAndVolumeIds brokerAndVolumeIds : values) {
-            brokerAndVolumeIds.getVolumeIds().forEach(volumeId -> brokerandVolumeIds.add(brokerAndVolumeIds.getBrokerId() + "-/var/lib/kafka/data-" + volumeId + "/kafka-log" + brokerAndVolumeIds.getBrokerId()));
+    public PathBuilder withAdditionalConfig(Map<String, String> config) {
+        if (config != null) {
+            for (Map.Entry<String, String> entry : config.entrySet()) {
+                if (!firstParam) {
+                    constructedPath += "&";
+                } else {
+                    firstParam = false;
+                }
+                constructedPath += URLEncoder.encode(entry.getKey(), StandardCharsets.UTF_8)
+                    + "="
+                    + URLEncoder.encode(entry.getValue(), StandardCharsets.UTF_8);
+            }
         }
-
-        return brokerandVolumeIds;
-    }
-
-    private void addIfNotZero(PathBuilder builder, CruiseControlParameters param, long value) {
-        if (value > 0) {
-            builder.withParameter(param, String.valueOf(value));
-        }
+        return this;
     }
 
     /**
@@ -106,88 +109,65 @@ public class PathBuilder {
      * @return  Instance of this builder
      */
     public PathBuilder withRebalanceParameters(RebalanceOptions options) {
-        if (options != null) {
-            PathBuilder builder = withAbstractRebalanceParameters(options)
-                    .withParameter(CruiseControlParameters.REBALANCE_DISK, String.valueOf(options.isRebalanceDisk()));
-            addIfNotZero(builder, CruiseControlParameters.CONCURRENT_INTRA_PARTITION_MOVEMENTS, options.getConcurrentIntraBrokerPartitionMovements());
-            return builder;
-        } else {
-            return this;
+        if (options != null && options.getConfig() != null) {
+            withAdditionalConfig(options.getConfig());
         }
-    }
-
-    private PathBuilder withAbstractRebalanceParameters(AbstractRebalanceOptions options) {
-        if (options != null) {
-            PathBuilder builder = withParameter(CruiseControlParameters.DRY_RUN, String.valueOf(options.isDryRun()))
-                    .withParameter(CruiseControlParameters.VERBOSE, String.valueOf(options.isVerbose()))
-                    .withParameter(CruiseControlParameters.SKIP_HARD_GOAL_CHECK, String.valueOf(options.isSkipHardGoalCheck()));
-
-            if (options.getExcludedTopics() != null) {
-                builder.withParameter(CruiseControlParameters.EXCLUDED_TOPICS, options.getExcludedTopics());
-            }
-            if (options.getReplicaMovementStrategies() != null) {
-                builder.withParameter(CruiseControlParameters.REPLICA_MOVEMENT_STRATEGIES, options.getReplicaMovementStrategies());
-            }
-
-            addIfNotZero(builder, CruiseControlParameters.CONCURRENT_PARTITION_MOVEMENTS, options.getConcurrentPartitionMovementsPerBroker());
-            addIfNotZero(builder, CruiseControlParameters.CONCURRENT_LEADER_MOVEMENTS, options.getConcurrentLeaderMovements());
-            addIfNotZero(builder, CruiseControlParameters.REPLICATION_THROTTLE, options.getReplicationThrottle());
-
-            if (options.getGoals() != null) {
-                builder.withParameter(CruiseControlParameters.GOALS, options.getGoals());
-            }
-            return builder;
-        } else {
-            return this;
-        }
+        return this;
     }
 
     /**
-     * Adds add-broker options to the path
+     * Adds rebalance options and broker ID parameters for add-broker operations.
      *
-     * @param options   Add broker options
+     * @param options   Rebalance options containing node list
      *
      * @return  Instance of this builder
      */
-    public PathBuilder withAddBrokerParameters(AddBrokerOptions options) {
+    public PathBuilder withAddBrokerParameters(RebalanceOptions options) {
         if (options != null) {
-            return withAbstractRebalanceParameters(options)
-                    .withParameter(CruiseControlParameters.BROKER_ID, options.getBrokers().stream().map(String::valueOf).collect(Collectors.joining(",")));
-        } else {
-            return this;
+            withRebalanceParameters(options)
+                    .withParameter(CruiseControlParameters.BROKER_ID,
+                            options.getNodes().stream().map(n -> String.valueOf(n.getBrokerId())).collect(Collectors.joining(",")));
         }
+        return this;
     }
 
     /**
-     * Adds remove broker options to the path
+     * Adds rebalance options and broker ID parameters for remove-broker operations.
      *
-     * @param options   Remove-broker options
+     * @param options   Rebalance options containing node list
      *
      * @return  Instance of this builder
      */
-    public PathBuilder withRemoveBrokerParameters(RemoveBrokerOptions options) {
+    public PathBuilder withRemoveBrokerParameters(RebalanceOptions options) {
         if (options != null) {
-            return withAbstractRebalanceParameters(options)
-                    .withParameter(CruiseControlParameters.BROKER_ID, options.getBrokers().stream().map(String::valueOf).collect(Collectors.joining(",")));
-        } else {
-            return this;
+            withRebalanceParameters(options)
+                    .withParameter(CruiseControlParameters.BROKER_ID,
+                            options.getNodes().stream().map(n -> String.valueOf(n.getBrokerId())).collect(Collectors.joining(",")));
         }
+        return this;
     }
 
     /**
-     * Adds remove disks options to the path
+     * Adds rebalance options and broker-and-logdirs parameters for remove-disks operations.
      *
-     * @param options   Remove-disks options
+     * @param options   Rebalance options containing node list with volume IDs
      *
      * @return  Instance of this builder
      */
-    public PathBuilder withRemoveBrokerDisksParameters(RemoveDisksOptions options) {
+    public PathBuilder withRemoveDisksParameters(RebalanceOptions options) {
         if (options != null) {
-            return withParameter(CruiseControlParameters.DRY_RUN, String.valueOf(options.isDryRun())).
-                    withParameter(CruiseControlParameters.BROKER_ID_AND_LOG_DIRS, brokerAndVolumeIdsParameterList(options.getBrokersandVolumeIds()));
-        } else {
-            return this;
+            return withRebalanceParameters(options)
+                    .withParameter(CruiseControlParameters.BROKER_ID_AND_LOG_DIRS, nodeParameterList(options.getNodes()));
         }
+        return this;
+    }
+
+    private static List<String> nodeParameterList(List<RebalanceNode> nodes) {
+        List<String> params = new ArrayList<>(nodes.size());
+        for (RebalanceNode node : nodes) {
+            node.getVolumeIds().forEach(volumeId -> params.add(node.getBrokerId() + "-/var/lib/kafka/data-" + volumeId + "/kafka-log" + node.getBrokerId()));
+        }
+        return params;
     }
 
     /**
