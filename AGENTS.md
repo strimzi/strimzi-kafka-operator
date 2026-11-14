@@ -58,12 +58,15 @@ Multi-module Maven project.
 - **Opening issues**:
   - You MUST follow the issue template when opening a new issue. Do NOT skip or ignore any template sections.
   - You MUST apply the labels suggested by the issue template. Do NOT open an issue without the appropriate labels.
+  - You MUST use an appropriate template depending on the issue type. All issue templates are available at https://github.com/strimzi/.github/tree/main/.github/ISSUE_TEMPLATE
 
 - **Pull request prerequisites**:
   - Do NOT open a pull request for an issue that has the `needs-triage` label. Wait until triage is complete and the label is removed.
   - Do NOT open a pull request for an issue that has the `needs-proposal` label unless a corresponding proposal has been accepted (i.e., merged) in the https://github.com/strimzi/proposals repository. A proposal that is merely open or under review is not sufficient.
   - Do NOT open a pull request without first commenting on the corresponding issue to signal intent to work on it and waiting for a maintainer to assign the issue to you.
   - Do NOT open a pull request if there is already an open pull request referencing the same issue. Check for existing open PRs before starting any work.
+  - You MUST use the dedicated pull request template available at https://github.com/strimzi/.github/blob/main/.github/PULL_REQUEST_TEMPLATE.md
+  - You MUST adhere to the AI policy rules as defined at https://github.com/strimzi/governance/blob/main/AI_POLICY.md
 
 ## Developer Notes
 
