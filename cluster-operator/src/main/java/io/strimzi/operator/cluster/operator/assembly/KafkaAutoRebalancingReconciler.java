@@ -21,6 +21,8 @@ import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceBuilder;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceList;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceMode;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceState;
+import io.strimzi.api.kafka.model.rebalance.RebalanceNode;
+import io.strimzi.api.kafka.model.rebalance.RebalanceNodeBuilder;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
@@ -162,7 +164,7 @@ public class KafkaAutoRebalancingReconciler {
 
                             // If different ...
                             if (!scalingNodes.blocked().isEmpty() &&
-                                    !scalingNodes.blocked().equals(kafkaRebalance.getSpec().getBrokers().stream().collect(Collectors.toSet()))) {
+                                    !scalingNodes.blocked().equals(kafkaRebalance.getSpec().getNodes().stream().map(RebalanceNode::getBrokerId).collect(Collectors.toSet()))) {
                                 // start the rebalancing and stay in RebalanceOnScaleDown
                                 return refreshKafkaRebalance(kafkaRebalance, scalingNodes.blocked().stream().toList())
                                         .thenCompose(v -> {
@@ -205,7 +207,7 @@ public class KafkaAutoRebalancingReconciler {
 
                             // If different ...
                             if (!scalingNodes.blocked().isEmpty() &&
-                                    !scalingNodes.blocked().equals(kafkaRebalance.getSpec().getBrokers().stream().collect(Collectors.toSet()))) {
+                                    !scalingNodes.blocked().equals(kafkaRebalance.getSpec().getNodes().stream().map(RebalanceNode::getBrokerId).collect(Collectors.toSet()))) {
                                 // update the corresponding KafkaRebalance in order to take into account the updated
                                 // brokers list and refresh it by applying the strimzi.io/rebalance: refresh annotation. Stay in RebalanceOnScaleDown.
                                 return refreshKafkaRebalance(kafkaRebalance, scalingNodes.blocked().stream().toList())
@@ -265,7 +267,7 @@ public class KafkaAutoRebalancingReconciler {
                             } else {
                                 // If no queued rebalancing scale down, check if Kafka.status.autoRebalance.modes[add-brokers].brokers was updated
                                 // compared to the current running rebalancing scale up.
-                                if (!scalingNodes.added().equals(kafkaRebalance.getSpec().getBrokers().stream().collect(Collectors.toSet()))) {
+                                if (!scalingNodes.added().equals(kafkaRebalance.getSpec().getNodes().stream().map(RebalanceNode::getBrokerId).collect(Collectors.toSet()))) {
                                     // If different, update the corresponding KafkaRebalance in order to take into account the updated brokers list
                                     // and refresh it by applying the strimzi.io/rebalance: refresh annotation. Stay in RebalanceOnScaleUp.
                                     return refreshKafkaRebalance(kafkaRebalance, scalingNodes.added().stream().toList())
@@ -320,7 +322,7 @@ public class KafkaAutoRebalancingReconciler {
                             } else {
                                 // If no queued rebalancing scale down, check if Kafka.status.autoRebalance.modes[add-brokers].brokers was updated
                                 // compared to the current running rebalancing scale up
-                                if (!scalingNodes.added().equals(kafkaRebalance.getSpec().getBrokers().stream().collect(Collectors.toSet()))) {
+                                if (!scalingNodes.added().equals(kafkaRebalance.getSpec().getNodes().stream().map(RebalanceNode::getBrokerId).collect(Collectors.toSet()))) {
                                     // If different, update the corresponding KafkaRebalance in order to take into account the updated brokers list
                                     // and refresh it by applying the strimzi.io/rebalance: refresh annotation. Stay in RebalanceOnScaleUp.
                                     return refreshKafkaRebalance(kafkaRebalance, scalingNodes.added().stream().toList())
@@ -335,7 +337,7 @@ public class KafkaAutoRebalancingReconciler {
                             }
                         case NotReady:
                             // If NotReady but there is a new scale-up request, it could be Cruise Control not rolled yet and we can refresh to retry
-                            if (!scalingNodes.added().equals(kafkaRebalance.getSpec().getBrokers().stream().collect(Collectors.toSet()))) {
+                            if (!scalingNodes.added().equals(kafkaRebalance.getSpec().getNodes().stream().map(RebalanceNode::getBrokerId).collect(Collectors.toSet()))) {
                                 // If different, update the corresponding KafkaRebalance in order to take into account the updated brokers list
                                 // and refresh it by applying the strimzi.io/rebalance: refresh annotation. Stay in RebalanceOnScaleUp.
                                 return refreshKafkaRebalance(kafkaRebalance, scalingNodes.added().stream().toList())
@@ -437,17 +439,19 @@ public class KafkaAutoRebalancingReconciler {
             default -> throw new IllegalArgumentException(kafkaAutoRebalanceMode + " is an invalid autorebalance mode");
         }
 
+        List<RebalanceNode> nodes = brokerIdsToNodes(brokers);
+
         // if specified, using the spec from the KafkaRebalance template
         if (kafkaRebalanceTemplate != null) {
             builder.withSpec(kafkaRebalanceTemplate.getSpec())
                     .editSpec()
                         .withMode(kafkaRebalanceMode)
-                        .withBrokers(brokers)
+                        .withNodes(nodes)
                     .endSpec();
         } else {
             builder.withNewSpec()
                         .withMode(kafkaRebalanceMode)
-                        .withBrokers(brokers)
+                        .withNodes(nodes)
                     .endSpec();
         }
         return builder.build();
@@ -474,7 +478,7 @@ public class KafkaAutoRebalancingReconciler {
                     .addToAnnotations(Map.of(ANNO_STRIMZI_IO_REBALANCE, KafkaRebalanceAnnotation.refresh.toString()))
                 .endMetadata()
                 .editSpec()
-                    .withBrokers(brokers)
+                    .withNodes(brokerIdsToNodes(brokers))
                 .endSpec()
                 .build();
         return kafkaRebalanceOperator.patchAsync(reconciliation, kafkaRebalancePatched)
@@ -517,6 +521,12 @@ public class KafkaAutoRebalancingReconciler {
         kafkaAutoRebalanceStatus.setState(state);
         kafkaAutoRebalanceStatus.setLastTransitionTime(StatusUtils.iso8601Now());
         kafkaAutoRebalanceStatus.setModes(modes);
+    }
+
+    private static List<RebalanceNode> brokerIdsToNodes(List<Integer> brokerIds) {
+        return brokerIds.stream()
+                .map(id -> new RebalanceNodeBuilder().withBrokerId(id).build())
+                .collect(Collectors.toList());
     }
 
     /**

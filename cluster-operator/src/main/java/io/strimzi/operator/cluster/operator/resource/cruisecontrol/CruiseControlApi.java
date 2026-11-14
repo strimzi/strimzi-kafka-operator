@@ -61,7 +61,7 @@ public interface CruiseControlApi {
      *                   request.
      * @return A future for the rebalance response from the Cruise Control server containing details of the optimization.
      */
-    CompletionStage<CruiseControlRebalanceResponse> addBroker(Reconciliation reconciliation, String host, int port, AddBrokerOptions options, String userTaskId);
+    CompletionStage<CruiseControlRebalanceResponse> addBroker(Reconciliation reconciliation, String host, int port, RebalanceOptions options, String userTaskId);
 
     /**
      * Send a request to the Cruise Control server to perform a cluster rebalance when removing existing brokers.
@@ -76,7 +76,7 @@ public interface CruiseControlApi {
      *                   request.
      * @return A future for the rebalance response from the Cruise Control server containing details of the optimization.
      */
-    CompletionStage<CruiseControlRebalanceResponse> removeBroker(Reconciliation reconciliation, String host, int port, RemoveBrokerOptions options, String userTaskId);
+    CompletionStage<CruiseControlRebalanceResponse> removeBroker(Reconciliation reconciliation, String host, int port, RebalanceOptions options, String userTaskId);
 
     /**
      * Send a request to the Cruise Control server to perform a cluster rebalance when moving replicas off a broker's volumes.
@@ -91,7 +91,7 @@ public interface CruiseControlApi {
      *                   request.
      * @return A future for the rebalance response from the Cruise Control server containing details of the optimization.
      */
-    CompletionStage<CruiseControlRebalanceResponse> removeDisks(Reconciliation reconciliation, String host, int port, RemoveDisksOptions options, String userTaskId);
+    CompletionStage<CruiseControlRebalanceResponse> removeDisks(Reconciliation reconciliation, String host, int port, RebalanceOptions options, String userTaskId);
 
     /**
      *  Get the state of a specific task (e.g. a rebalance) from the Cruise Control server.

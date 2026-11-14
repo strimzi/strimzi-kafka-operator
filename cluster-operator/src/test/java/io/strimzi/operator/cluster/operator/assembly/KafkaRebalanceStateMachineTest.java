@@ -7,7 +7,6 @@ package io.strimzi.operator.cluster.operator.assembly;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.model.common.Condition;
-import io.strimzi.api.kafka.model.rebalance.BrokerAndVolumeIdsBuilder;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalance;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceAnnotation;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceBuilder;
@@ -17,14 +16,15 @@ import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceSpec;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceSpecBuilder;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceState;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceStatus;
+import io.strimzi.api.kafka.model.rebalance.RebalanceNodeBuilder;
 import io.strimzi.certs.StrimziSubject;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
-import io.strimzi.operator.cluster.operator.resource.cruisecontrol.AbstractRebalanceOptions;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlApi;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlApiImpl;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.MockCruiseControl;
+import io.strimzi.operator.cluster.operator.resource.cruisecontrol.RebalanceOptions;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.ConfigMapOperator;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
@@ -74,19 +74,19 @@ public class KafkaRebalanceStateMachineTest {
     private static final KafkaRebalanceSpec ADD_BROKER_KAFKA_REBALANCE_SPEC =
             new KafkaRebalanceSpecBuilder()
                     .withMode(KafkaRebalanceMode.ADD_BROKERS)
-                    .withBrokers(3)
+                    .withNodes(new RebalanceNodeBuilder().withBrokerId(3).build())
                     .build();
     private static final KafkaRebalanceSpec REMOVE_BROKER_KAFKA_REBALANCE_SPEC =
             new KafkaRebalanceSpecBuilder()
                     .withMode(KafkaRebalanceMode.REMOVE_BROKERS)
-                    .withBrokers(3)
+                    .withNodes(new RebalanceNodeBuilder().withBrokerId(3).build())
                     .build();
 
     private static final KafkaRebalanceSpec REMOVE_DISKS_KAFKA_REBALANCE_SPEC =
             new KafkaRebalanceSpecBuilder()
                     .withMode(KafkaRebalanceMode.REMOVE_DISKS)
-                    .withMoveReplicasOffVolumes(
-                            new BrokerAndVolumeIdsBuilder()
+                    .withNodes(
+                            new RebalanceNodeBuilder()
                                     .withBrokerId(0)
                                     .withVolumeIds(1)
                                     .build())
@@ -199,7 +199,7 @@ public class KafkaRebalanceStateMachineTest {
 
         Reconciliation recon = new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, CLUSTER_NAMESPACE, RESOURCE_NAME);
 
-        AbstractRebalanceOptions.AbstractRebalanceOptionsBuilder<?, ?> rbOptions = kcrao.convertRebalanceSpecToRebalanceOptions(kcRebalance.getSpec());
+        RebalanceOptions.RebalanceOptionsBuilder rbOptions = kcrao.convertRebalanceSpecToRebalanceOptions(recon, kcRebalance.getSpec());
 
         CrdOperator<KubernetesClient,
                                 KafkaRebalance,
@@ -215,7 +215,8 @@ public class KafkaRebalanceStateMachineTest {
                     context.verify(() -> {
                         assertThat(result.getStatus().getConditions(), StateMatchers.hasStateInConditions(nextState));
                         if (initialAnnotation != KafkaRebalanceAnnotation.none && !currentState.isValidateAnnotation(initialAnnotation)) {
-                            assertThat("InvalidAnnotation", is(result.status.getConditions().get(0).getReason()));
+                            assertTrue(result.status.getConditions().stream()
+                                    .anyMatch(c -> "InvalidAnnotation".equals(c.getReason())));
                         }
                         if (result.getLoadAndProgressConfigMap() != null) {
                             Map<String, String> cmLabels = result.getLoadAndProgressConfigMap().getMetadata().getLabels();
@@ -436,7 +437,7 @@ public class KafkaRebalanceStateMachineTest {
 
         KafkaRebalanceSpec rebalanceSpec = new KafkaRebalanceSpecBuilder()
                 .withMode(KafkaRebalanceMode.ADD_BROKERS)
-                .withBrokers(3)
+                .withNodes(new RebalanceNodeBuilder().withBrokerId(3).build())
                 .addAllToGoals(customGoals)
                 .build();
         KafkaRebalance kcRebalance = createKafkaRebalance(KafkaRebalanceState.New, null, null, rebalanceSpec, null, false);
@@ -455,7 +456,7 @@ public class KafkaRebalanceStateMachineTest {
 
         KafkaRebalanceSpec rebalanceSpec = new KafkaRebalanceSpecBuilder()
                 .withMode(KafkaRebalanceMode.REMOVE_BROKERS)
-                .withBrokers(3)
+                .withNodes(new RebalanceNodeBuilder().withBrokerId(3).build())
                 .addAllToGoals(customGoals)
                 .build();
         KafkaRebalance kcRebalance = createKafkaRebalance(KafkaRebalanceState.New, null, null, rebalanceSpec, null, false);
@@ -511,7 +512,7 @@ public class KafkaRebalanceStateMachineTest {
 
         KafkaRebalanceSpec rebalanceSpec = new KafkaRebalanceSpecBuilder()
                 .withMode(KafkaRebalanceMode.ADD_BROKERS)
-                .withBrokers(3)
+                .withNodes(new RebalanceNodeBuilder().withBrokerId(3).build())
                 .addAllToGoals(customGoals)
                 .withSkipHardGoalCheck(true)
                 .build();
@@ -531,7 +532,7 @@ public class KafkaRebalanceStateMachineTest {
 
         KafkaRebalanceSpec rebalanceSpec = new KafkaRebalanceSpecBuilder()
                 .withMode(KafkaRebalanceMode.REMOVE_BROKERS)
-                .withBrokers(3)
+                .withNodes(new RebalanceNodeBuilder().withBrokerId(3).build())
                 .addAllToGoals(customGoals)
                 .withSkipHardGoalCheck(true)
                 .build();

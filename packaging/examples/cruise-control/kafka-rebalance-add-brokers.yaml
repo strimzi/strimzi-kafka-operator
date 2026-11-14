@@ -7,4 +7,6 @@ metadata:
 # no goals specified, using the default goals from the Cruise Control configuration
 spec:
   mode: add-brokers
-  brokers: [3, 4]
+  nodes:
+    - brokerId: 3
+    - brokerId: 4

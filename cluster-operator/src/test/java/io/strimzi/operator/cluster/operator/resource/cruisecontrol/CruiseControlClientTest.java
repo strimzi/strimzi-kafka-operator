@@ -3,11 +3,12 @@
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
 package io.strimzi.operator.cluster.operator.resource.cruisecontrol;
-import io.strimzi.api.kafka.model.rebalance.BrokerAndVolumeIds;
-import io.strimzi.api.kafka.model.rebalance.BrokerAndVolumeIdsBuilder;
+import io.strimzi.api.kafka.model.rebalance.RebalanceNode;
+import io.strimzi.api.kafka.model.rebalance.RebalanceNodeBuilder;
 import io.strimzi.certs.StrimziSubject;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlEndpoints;
+import io.strimzi.operator.common.model.cruisecontrol.CruiseControlParameters;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlRebalanceKeys;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlUserTaskStatus;
 import io.strimzi.operator.common.operator.MockCertIssuer;
@@ -20,10 +21,12 @@ import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 import static io.strimzi.operator.cluster.JSONObjectMatchers.hasEntry;
 import static io.strimzi.operator.cluster.JSONObjectMatchers.hasKeys;
@@ -71,6 +74,12 @@ public class CruiseControlClientTest {
         }
     }
 
+    private static List<RebalanceNode> brokerNodes(int... brokerIds) {
+        return Arrays.stream(brokerIds)
+                .mapToObj(id -> new RebalanceNodeBuilder().withBrokerId(id).build())
+                .collect(Collectors.toList());
+    }
+
     private CruiseControlApi cruiseControlClientProvider() {
         return new CruiseControlApiImpl(HTTP_DEFAULT_IDLE_TIMEOUT_SECONDS, MockCruiseControl.CLUSTER_CA_CERT_SECRET, MockCruiseControl.CC_API_SECRET, API_AUTH_ENABLED, API_SSL_ENABLED);
     }
@@ -95,7 +104,7 @@ public class CruiseControlClientTest {
     }
     @Test
     public void testCCRebalanceVerbose()  {
-        RebalanceOptions options = new RebalanceOptions.RebalanceOptionsBuilder().withVerboseResponse().build();
+        RebalanceOptions options = new RebalanceOptions.RebalanceOptionsBuilder().withConfigEntry(CruiseControlParameters.VERBOSE.toString(), "true").build();
         this.ccRebalanceVerbose(0, options, CruiseControlEndpoints.REBALANCE,
                 result -> {
                     assertThat(result.getUserTaskId(), is(MockCruiseControl.REBALANCE_NO_GOALS_VERBOSE_RESPONSE_UTID));
@@ -135,8 +144,8 @@ public class CruiseControlClientTest {
 
     @Test
     public void testCCAddBroker()  {
-        AddBrokerOptions options = new AddBrokerOptions.AddBrokerOptionsBuilder()
-                .withBrokers(List.of(3))
+        RebalanceOptions options = new RebalanceOptions.RebalanceOptionsBuilder()
+                .withNodes(brokerNodes(3))
                 .build();
         this.ccRebalance(0, options, CruiseControlEndpoints.ADD_BROKER,
                 result -> {
@@ -147,9 +156,9 @@ public class CruiseControlClientTest {
 
     @Test
     public void testCCAddBrokerVerbose()  {
-        AddBrokerOptions options = new AddBrokerOptions.AddBrokerOptionsBuilder()
-                .withVerboseResponse()
-                .withBrokers(List.of(3))
+        RebalanceOptions options = new RebalanceOptions.RebalanceOptionsBuilder()
+                .withConfigEntry("verbose", "true")
+                .withNodes(brokerNodes(3))
                 .build();
         this.ccRebalanceVerbose(0, options, CruiseControlEndpoints.ADD_BROKER,
                 result -> {
@@ -160,8 +169,8 @@ public class CruiseControlClientTest {
 
     @Test
     public void testCCAddBrokerNotEnoughValidWindowsException()  {
-        AddBrokerOptions options = new AddBrokerOptions.AddBrokerOptionsBuilder()
-                .withBrokers(List.of(3))
+        RebalanceOptions options = new RebalanceOptions.RebalanceOptionsBuilder()
+                .withNodes(brokerNodes(3))
                 .build();
         this.ccRebalanceNotEnoughValidWindowsException(options, CruiseControlEndpoints.ADD_BROKER,
                 result -> assertThat(result.isNotEnoughDataForProposal(), is(true))
@@ -170,8 +179,8 @@ public class CruiseControlClientTest {
 
     @Test
     public void testCCAddBrokerProposalNotReady()  {
-        AddBrokerOptions options = new AddBrokerOptions.AddBrokerOptionsBuilder()
-                .withBrokers(List.of(3))
+        RebalanceOptions options = new RebalanceOptions.RebalanceOptionsBuilder()
+                .withNodes(brokerNodes(3))
                 .build();
         this.ccRebalanceProposalNotReady(1, options, CruiseControlEndpoints.ADD_BROKER,
                 result -> assertThat(result.isProposalStillCalculating(), is(true))
@@ -180,8 +189,8 @@ public class CruiseControlClientTest {
 
     @Test
     public void testCCAddBrokerDoesNotExist()  {
-        AddBrokerOptions options = new AddBrokerOptions.AddBrokerOptionsBuilder()
-                .withBrokers(List.of(3))
+        RebalanceOptions options = new RebalanceOptions.RebalanceOptionsBuilder()
+                .withNodes(brokerNodes(3))
                 .build();
         this.ccBrokerDoesNotExist(options, CruiseControlEndpoints.ADD_BROKER,
                 result -> {
@@ -192,8 +201,8 @@ public class CruiseControlClientTest {
 
     @Test
     public void testCCRemoveBroker()  {
-        RemoveBrokerOptions options = new RemoveBrokerOptions.RemoveBrokerOptionsBuilder()
-                .withBrokers(List.of(3))
+        RebalanceOptions options = new RebalanceOptions.RebalanceOptionsBuilder()
+                .withNodes(brokerNodes(3))
                 .build();
         this.ccRebalance(0, options, CruiseControlEndpoints.REMOVE_BROKER,
                 result -> {
@@ -204,13 +213,13 @@ public class CruiseControlClientTest {
 
     @Test
     public void testCCRemoveBrokerDisks()  {
-        BrokerAndVolumeIds brokerAndVolumeIds = new BrokerAndVolumeIdsBuilder()
+        RebalanceNode node = new RebalanceNodeBuilder()
                 .withBrokerId(0)
                 .withVolumeIds(1, 2, 3)
                 .build();
 
-        RemoveDisksOptions options = new RemoveDisksOptions.RemoveDisksOptionsBuilder()
-                .withBrokersandVolumeIds(List.of(brokerAndVolumeIds))
+        RebalanceOptions options = new RebalanceOptions.RebalanceOptionsBuilder()
+                .withNodes(List.of(node))
                 .build();
         this.ccRebalance(0, options, CruiseControlEndpoints.REMOVE_DISKS,
                 result -> {
@@ -221,13 +230,13 @@ public class CruiseControlClientTest {
 
     @Test
     public void testCCMoveReplicasOffVolumesProposalNotReady()  {
-        BrokerAndVolumeIds brokerAndVolumeIds = new BrokerAndVolumeIdsBuilder()
+        RebalanceNode node = new RebalanceNodeBuilder()
                 .withVolumeIds(1)
                 .withBrokerId(0)
                 .build();
 
-        RemoveDisksOptions options = new RemoveDisksOptions.RemoveDisksOptionsBuilder()
-                .withBrokersandVolumeIds(List.of(brokerAndVolumeIds))
+        RebalanceOptions options = new RebalanceOptions.RebalanceOptionsBuilder()
+                .withNodes(List.of(node))
                 .build();
         this.ccRebalanceProposalNotReady(1, options, CruiseControlEndpoints.REMOVE_DISKS,
                 result -> assertThat(result.isProposalStillCalculating(), is(true))
@@ -236,13 +245,13 @@ public class CruiseControlClientTest {
 
     @Test
     public void testCCMoveReplicasOffVolumesNotEnoughValidWindowsException()  {
-        BrokerAndVolumeIds brokerAndVolumeIds = new BrokerAndVolumeIdsBuilder()
+        RebalanceNode node = new RebalanceNodeBuilder()
                 .withVolumeIds(1)
                 .withBrokerId(0)
                 .build();
 
-        RemoveDisksOptions options = new RemoveDisksOptions.RemoveDisksOptionsBuilder()
-                .withBrokersandVolumeIds(List.of(brokerAndVolumeIds))
+        RebalanceOptions options = new RebalanceOptions.RebalanceOptionsBuilder()
+                .withNodes(List.of(node))
                 .build();
         this.ccRebalanceNotEnoughValidWindowsException(options, CruiseControlEndpoints.REMOVE_DISKS,
                 result -> assertThat(result.isNotEnoughDataForProposal(), is(true))
@@ -251,13 +260,13 @@ public class CruiseControlClientTest {
 
     @Test
     public void testCCMoveReplicasOffVolumesBrokerDoesNotExist()  {
-        BrokerAndVolumeIds brokerAndVolumeIds = new BrokerAndVolumeIdsBuilder()
+        RebalanceNode node = new RebalanceNodeBuilder()
                 .withVolumeIds(1)
                 .withBrokerId(0)
                 .build();
 
-        RemoveDisksOptions options = new RemoveDisksOptions.RemoveDisksOptionsBuilder()
-                .withBrokersandVolumeIds(List.of(brokerAndVolumeIds))
+        RebalanceOptions options = new RebalanceOptions.RebalanceOptionsBuilder()
+                .withNodes(List.of(node))
                 .build();
         this.ccBrokerDoesNotExist(options, CruiseControlEndpoints.REMOVE_DISKS,
                 result -> {
@@ -268,9 +277,9 @@ public class CruiseControlClientTest {
 
     @Test
     public void testCCRemoveBrokerVerbose()  {
-        RemoveBrokerOptions options = new RemoveBrokerOptions.RemoveBrokerOptionsBuilder()
-                .withVerboseResponse()
-                .withBrokers(List.of(3))
+        RebalanceOptions options = new RebalanceOptions.RebalanceOptionsBuilder()
+                .withConfigEntry("verbose", "true")
+                .withNodes(brokerNodes(3))
                 .build();
         this.ccRebalanceVerbose(0, options, CruiseControlEndpoints.REMOVE_BROKER,
                 result -> {
@@ -281,8 +290,8 @@ public class CruiseControlClientTest {
 
     @Test
     public void testCCRemoveBrokerNotEnoughValidWindowsException()  {
-        RemoveBrokerOptions options = new RemoveBrokerOptions.RemoveBrokerOptionsBuilder()
-                .withBrokers(List.of(3))
+        RebalanceOptions options = new RebalanceOptions.RebalanceOptionsBuilder()
+                .withNodes(brokerNodes(3))
                 .build();
         this.ccRebalanceNotEnoughValidWindowsException(options, CruiseControlEndpoints.REMOVE_BROKER,
                 result -> assertThat(result.isNotEnoughDataForProposal(), is(true))
@@ -291,8 +300,8 @@ public class CruiseControlClientTest {
 
     @Test
     public void testCCRemoveBrokerProposalNotReady()  {
-        RemoveBrokerOptions options = new RemoveBrokerOptions.RemoveBrokerOptionsBuilder()
-                .withBrokers(List.of(3))
+        RebalanceOptions options = new RebalanceOptions.RebalanceOptionsBuilder()
+                .withNodes(brokerNodes(3))
                 .build();
         this.ccRebalanceProposalNotReady(1, options, CruiseControlEndpoints.REMOVE_BROKER,
                 result -> assertThat(result.isProposalStillCalculating(), is(true))
@@ -301,8 +310,8 @@ public class CruiseControlClientTest {
 
     @Test
     public void testCCRemoveBrokerDoesNotExist()  {
-        RemoveBrokerOptions options = new RemoveBrokerOptions.RemoveBrokerOptionsBuilder()
-                .withBrokers(List.of(3))
+        RebalanceOptions options = new RebalanceOptions.RebalanceOptionsBuilder()
+                .withNodes(brokerNodes(3))
                 .build();
         this.ccBrokerDoesNotExist(options, CruiseControlEndpoints.REMOVE_BROKER,
                 result -> {
@@ -311,7 +320,7 @@ public class CruiseControlClientTest {
                 });
     }
 
-    private void ccRebalance(int pendingCalls, AbstractRebalanceOptions options, CruiseControlEndpoints endpoint, Consumer<CruiseControlRebalanceResponse> assertion)  {
+    private void ccRebalance(int pendingCalls, RebalanceOptions options, CruiseControlEndpoints endpoint, Consumer<CruiseControlRebalanceResponse> assertion)  {
         if (endpoint == CruiseControlEndpoints.REMOVE_DISKS) {
             cruiseControlServer.setupCCRebalanceResponse(pendingCalls, endpoint, null);
         } else {
@@ -321,50 +330,50 @@ public class CruiseControlClientTest {
         CruiseControlApi client = cruiseControlClientProvider();
         switch (endpoint) {
             case REBALANCE:
-                client.rebalance(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, (RebalanceOptions) options, null)
+                client.rebalance(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, options, null)
                         .whenComplete((result, ex) -> {
                             assertion.accept(result);
                         }).toCompletableFuture().join();
                 break;
             case ADD_BROKER:
-                client.addBroker(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, (AddBrokerOptions) options, null)
+                client.addBroker(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, options, null)
                         .whenComplete((result, ex) -> {
                             assertion.accept(result);
                         }).toCompletableFuture().join();
                 break;
             case REMOVE_BROKER:
-                client.removeBroker(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, (RemoveBrokerOptions) options, null)
+                client.removeBroker(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, options, null)
                         .whenComplete((result, ex) -> {
                             assertion.accept(result);
                         }).toCompletableFuture().join();
                 break;
             case REMOVE_DISKS:
-                client.removeDisks(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, (RemoveDisksOptions) options, null)
+                client.removeDisks(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, options, null)
                         .whenComplete((result, ex) -> {
                             assertion.accept(result);
                         }).toCompletableFuture().join();
         }
     }
 
-    private void ccRebalanceVerbose(int pendingCalls, AbstractRebalanceOptions options, CruiseControlEndpoints endpoint, Consumer<CruiseControlRebalanceResponse> assertion)  {
+    private void ccRebalanceVerbose(int pendingCalls, RebalanceOptions options, CruiseControlEndpoints endpoint, Consumer<CruiseControlRebalanceResponse> assertion)  {
         cruiseControlServer.setupCCRebalanceResponse(pendingCalls, endpoint, "true");
 
         CruiseControlApi client = cruiseControlClientProvider();
         switch (endpoint) {
             case REBALANCE:
-                client.rebalance(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, (RebalanceOptions) options, null)
+                client.rebalance(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, options, null)
                         .whenComplete((result, ex) -> {
                             assertion.accept(result);
                         }).toCompletableFuture().join();
                 break;
             case ADD_BROKER:
-                client.addBroker(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, (AddBrokerOptions) options, null)
+                client.addBroker(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, options, null)
                         .whenComplete((result, ex) -> {
                             assertion.accept(result);
                         }).toCompletableFuture().join();
                 break;
             case REMOVE_BROKER:
-                client.removeBroker(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, (RemoveBrokerOptions) options, null)
+                client.removeBroker(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, options, null)
                         .whenComplete((result, ex) -> {
                             assertion.accept(result);
                         }).toCompletableFuture().join();
@@ -372,7 +381,7 @@ public class CruiseControlClientTest {
         }
     }
 
-    private void ccRebalanceNotEnoughValidWindowsException(AbstractRebalanceOptions options, CruiseControlEndpoints endpoint, Consumer<CruiseControlRebalanceResponse> assertion)  {
+    private void ccRebalanceNotEnoughValidWindowsException(RebalanceOptions options, CruiseControlEndpoints endpoint, Consumer<CruiseControlRebalanceResponse> assertion)  {
         if (endpoint == CruiseControlEndpoints.REMOVE_DISKS) {
             cruiseControlServer.setupCCRebalanceNotEnoughDataError(endpoint, null);
         } else {
@@ -383,25 +392,25 @@ public class CruiseControlClientTest {
 
         switch (endpoint) {
             case REBALANCE:
-                client.rebalance(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, (RebalanceOptions) options, MockCruiseControl.REBALANCE_NOT_ENOUGH_VALID_WINDOWS_ERROR)
+                client.rebalance(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, options, MockCruiseControl.REBALANCE_NOT_ENOUGH_VALID_WINDOWS_ERROR)
                         .whenComplete((result, ex) -> {
                             assertion.accept(result);
                         }).toCompletableFuture().join();
                 break;
             case ADD_BROKER:
-                client.addBroker(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, (AddBrokerOptions) options, MockCruiseControl.REBALANCE_NOT_ENOUGH_VALID_WINDOWS_ERROR)
+                client.addBroker(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, options, MockCruiseControl.REBALANCE_NOT_ENOUGH_VALID_WINDOWS_ERROR)
                         .whenComplete((result, ex) -> {
                             assertion.accept(result);
                         }).toCompletableFuture().join();
                 break;
             case REMOVE_BROKER:
-                client.removeBroker(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, (RemoveBrokerOptions) options, MockCruiseControl.REBALANCE_NOT_ENOUGH_VALID_WINDOWS_ERROR)
+                client.removeBroker(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, options, MockCruiseControl.REBALANCE_NOT_ENOUGH_VALID_WINDOWS_ERROR)
                         .whenComplete((result, ex) -> {
                             assertion.accept(result);
                         }).toCompletableFuture().join();
                 break;
             case REMOVE_DISKS:
-                client.removeDisks(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, (RemoveDisksOptions) options, MockCruiseControl.REBALANCE_NOT_ENOUGH_VALID_WINDOWS_ERROR)
+                client.removeDisks(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, options, MockCruiseControl.REBALANCE_NOT_ENOUGH_VALID_WINDOWS_ERROR)
                         .whenComplete((result, ex) -> {
                             assertion.accept(result);
                         }).toCompletableFuture().join();
@@ -409,7 +418,7 @@ public class CruiseControlClientTest {
         }
     }
 
-    private void ccRebalanceProposalNotReady(int pendingCalls, AbstractRebalanceOptions options, CruiseControlEndpoints endpoint, Consumer<CruiseControlRebalanceResponse> assertion)  {
+    private void ccRebalanceProposalNotReady(int pendingCalls, RebalanceOptions options, CruiseControlEndpoints endpoint, Consumer<CruiseControlRebalanceResponse> assertion)  {
         if (endpoint == CruiseControlEndpoints.REMOVE_DISKS) {
             cruiseControlServer.setupCCRebalanceResponse(pendingCalls, endpoint, null);
         } else {
@@ -420,19 +429,19 @@ public class CruiseControlClientTest {
 
         switch (endpoint) {
             case REBALANCE:
-                client.rebalance(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, (RebalanceOptions) options, MockCruiseControl.REBALANCE_NOT_ENOUGH_VALID_WINDOWS_ERROR)
+                client.rebalance(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, options, MockCruiseControl.REBALANCE_NOT_ENOUGH_VALID_WINDOWS_ERROR)
                         .whenComplete((result, ex) -> assertion.accept(result)).toCompletableFuture().join();
                 break;
             case ADD_BROKER:
-                client.addBroker(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, (AddBrokerOptions) options, MockCruiseControl.REBALANCE_NOT_ENOUGH_VALID_WINDOWS_ERROR)
+                client.addBroker(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, options, MockCruiseControl.REBALANCE_NOT_ENOUGH_VALID_WINDOWS_ERROR)
                         .whenComplete((result, ex) -> assertion.accept(result)).toCompletableFuture().join();
                 break;
             case REMOVE_BROKER:
-                client.removeBroker(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, (RemoveBrokerOptions) options, MockCruiseControl.REBALANCE_NOT_ENOUGH_VALID_WINDOWS_ERROR)
+                client.removeBroker(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, options, MockCruiseControl.REBALANCE_NOT_ENOUGH_VALID_WINDOWS_ERROR)
                         .whenComplete((result, ex) -> assertion.accept(result)).toCompletableFuture().join();
                 break;
             case REMOVE_DISKS:
-                client.removeDisks(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, (RemoveDisksOptions) options, MockCruiseControl.REBALANCE_NOT_ENOUGH_VALID_WINDOWS_ERROR)
+                client.removeDisks(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, options, MockCruiseControl.REBALANCE_NOT_ENOUGH_VALID_WINDOWS_ERROR)
                         .whenComplete((result, ex) -> {
                             assertion.accept(result);
                         }).toCompletableFuture().join();
@@ -440,7 +449,7 @@ public class CruiseControlClientTest {
         }
     }
 
-    private void ccBrokerDoesNotExist(AbstractRebalanceOptions options, CruiseControlEndpoints endpoint, Consumer<Throwable> assertion)  {
+    private void ccBrokerDoesNotExist(RebalanceOptions options, CruiseControlEndpoints endpoint, Consumer<Throwable> assertion)  {
         if (endpoint == CruiseControlEndpoints.REMOVE_DISKS) {
             cruiseControlServer.setupCCBrokerDoesNotExist(endpoint, null);
         } else {
@@ -451,15 +460,15 @@ public class CruiseControlClientTest {
 
         switch (endpoint) {
             case ADD_BROKER:
-                assertThrows(Exception.class, client.addBroker(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, (AddBrokerOptions) options, MockCruiseControl.BROKERS_NOT_EXIST_ERROR)
+                assertThrows(Exception.class, client.addBroker(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, options, MockCruiseControl.BROKERS_NOT_EXIST_ERROR)
                         .whenComplete((result, ex) -> assertion.accept(ex)).toCompletableFuture()::join);
                 break;
             case REMOVE_BROKER:
-                assertThrows(Exception.class, client.removeBroker(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, (RemoveBrokerOptions) options, MockCruiseControl.BROKERS_NOT_EXIST_ERROR)
+                assertThrows(Exception.class, client.removeBroker(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, options, MockCruiseControl.BROKERS_NOT_EXIST_ERROR)
                         .whenComplete((result, ex) -> assertion.accept(ex)).toCompletableFuture()::join);
                 break;
             case REMOVE_DISKS:
-                assertThrows(Exception.class, client.removeDisks(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, (RemoveDisksOptions) options, MockCruiseControl.BROKERS_NOT_EXIST_ERROR)
+                assertThrows(Exception.class, client.removeDisks(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, options, MockCruiseControl.BROKERS_NOT_EXIST_ERROR)
                         .whenComplete((result, ex) -> assertion.accept(ex)).toCompletableFuture()::join);
                 break;
             default:

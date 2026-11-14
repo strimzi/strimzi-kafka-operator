@@ -85,16 +85,15 @@ public class PathBuilderTest {
     @Test
     public void testQueryRebalanceOptions() {
 
-        RebalanceOptions options = new RebalanceOptions.RebalanceOptionsBuilder()
-                .withVerboseResponse()
-                .withFullRun()
-                .withExcludedTopics("test-.*")
-                .withGoals(GOALS)
-                .build();
-
         String path = new PathBuilder(CruiseControlEndpoints.REBALANCE)
                 .withParameter(CruiseControlParameters.JSON, "true")
-                .withRebalanceParameters(options).build();
+                .withParameter(CruiseControlParameters.DRY_RUN, "false")
+                .withParameter(CruiseControlParameters.VERBOSE, "true")
+                .withParameter(CruiseControlParameters.SKIP_HARD_GOAL_CHECK, "false")
+                .withParameter(CruiseControlParameters.EXCLUDED_TOPICS, "test-.*")
+                .withParameter(CruiseControlParameters.GOALS, GOALS)
+                .withParameter(CruiseControlParameters.REBALANCE_DISK, "false")
+                .build();
 
         assertThat(path, is(getExpectedRebalanceString()));
     }
