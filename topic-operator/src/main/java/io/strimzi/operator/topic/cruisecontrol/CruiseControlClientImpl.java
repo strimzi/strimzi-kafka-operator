@@ -4,7 +4,6 @@
  */
 package io.strimzi.operator.topic.cruisecontrol;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.strimzi.api.kafka.model.topic.KafkaTopic;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlEndpoints;
@@ -229,7 +228,6 @@ public class CruiseControlClientImpl implements CruiseControlClient {
         return Optional.empty();
     }
     
-    @SuppressFBWarnings("SIC_INNER_SHOULD_BE_STATIC_ANON")
     private HttpClient buildHttpClient() {
         try {
             HttpClient.Builder builder = HttpClient.newBuilder().executor(httpClientExecutor);

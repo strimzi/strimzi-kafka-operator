@@ -4,7 +4,6 @@
  */
 package io.strimzi.plugin.security.profiles;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.fabric8.kubernetes.api.model.PodSecurityContext;
 import io.fabric8.kubernetes.api.model.SecurityContext;
 import io.strimzi.platform.PlatformFeatures;
@@ -477,7 +476,6 @@ public interface PodSecurityProvider {
      *
      * @return  If the user-supplied hostUsers flag is set, it will be returned. Otherwise, it returns null.
      */
-    @SuppressFBWarnings({"NP_BOOLEAN_RETURN_NULL"}) // We intentionally return null in this method in otder to default to Kubernetes's own default
     private Boolean hostUsersOrNull(PodSecurityProviderContext context) {
         return context != null ? context.userSuppliedHostUsers() : null;
     }

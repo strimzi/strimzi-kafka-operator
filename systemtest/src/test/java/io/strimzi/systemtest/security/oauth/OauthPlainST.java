@@ -34,6 +34,7 @@ import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.docs.TestDocsLabels;
 import io.strimzi.systemtest.kafkaclients.ClientsAuthentication;
+import io.strimzi.systemtest.keycloak.KeycloakInstance;
 import io.strimzi.systemtest.labels.LabelSelectors;
 import io.strimzi.systemtest.metrics.KafkaBridgeMetricsComponent;
 import io.strimzi.systemtest.metrics.KafkaConnectMetricsComponent;
@@ -384,8 +385,8 @@ public class OauthPlainST extends OauthAbstractST {
                 Map.of(
                         "unsecuredLoginStringClaim_sub", "thePrincipalName",
                         "oauth.valid.issuer.uri", keycloakInstance.getValidIssuerUri(),
-                        "oauth.jwks.expiry.seconds", Integer.toString(keycloakInstance.getJwksExpireSeconds()),
-                        "oauth.jwks.refresh.seconds", Integer.toString(keycloakInstance.getJwksRefreshSeconds()),
+                        "oauth.jwks.expiry.seconds", Integer.toString(KeycloakInstance.JWKS_EXPIRE_SECONDS),
+                        "oauth.jwks.refresh.seconds", Integer.toString(KeycloakInstance.JWKS_REFRESH_SECONDS),
                         "oauth.jwks.endpoint.uri", keycloakInstance.getJwksEndpointUri(),
                         "oauth.username.claim", keycloakInstance.getUserNameClaim()
                 ));
@@ -678,8 +679,8 @@ public class OauthPlainST extends OauthAbstractST {
                 Map.of(
                         "unsecuredLoginStringClaim_sub", "thePrincipalName",
                         "oauth.valid.issuer.uri", keycloakInstance.getValidIssuerUri(),
-                        "oauth.jwks.expiry.seconds", Integer.toString(keycloakInstance.getJwksExpireSeconds()),
-                        "oauth.jwks.refresh.seconds", Integer.toString(keycloakInstance.getJwksRefreshSeconds()),
+                        "oauth.jwks.expiry.seconds", Integer.toString(KeycloakInstance.JWKS_EXPIRE_SECONDS),
+                        "oauth.jwks.refresh.seconds", Integer.toString(KeycloakInstance.JWKS_REFRESH_SECONDS),
                         "oauth.jwks.endpoint.uri", keycloakInstance.getJwksEndpointUri(),
                         "oauth.username.claim", keycloakInstance.getUserNameClaim(),
                         "oauth.groups.claim", GROUPS_CLAIM,
@@ -689,8 +690,8 @@ public class OauthPlainST extends OauthAbstractST {
         String plainPlainJaasConfig = JAAS_CONFIG_BUILDER.apply("org.apache.kafka.common.security.plain.PlainLoginModule",
                 Map.of(
                         "oauth.valid.issuer.uri", keycloakInstance.getValidIssuerUri(),
-                        "oauth.jwks.expiry.seconds", Integer.toString(keycloakInstance.getJwksExpireSeconds()),
-                        "oauth.jwks.refresh.seconds", Integer.toString(keycloakInstance.getJwksRefreshSeconds()),
+                        "oauth.jwks.expiry.seconds", Integer.toString(KeycloakInstance.JWKS_EXPIRE_SECONDS),
+                        "oauth.jwks.refresh.seconds", Integer.toString(KeycloakInstance.JWKS_REFRESH_SECONDS),
                         "oauth.jwks.endpoint.uri", keycloakInstance.getJwksEndpointUri(),
                         "oauth.username.claim", keycloakInstance.getUserNameClaim(),
                         "oauth.token.endpoint.uri", keycloakInstance.getOauthTokenEndpointUri(),

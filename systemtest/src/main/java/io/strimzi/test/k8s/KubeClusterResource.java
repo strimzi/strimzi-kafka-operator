@@ -32,16 +32,19 @@ public class KubeClusterResource {
     private static final Logger LOGGER = LogManager.getLogger(KubeClusterResource.class);
 
     private KubeCluster kubeCluster;
+    private static final Object INSTANCE_LOCK = new Object();
     private static KubeClusterResource kubeClusterResource;
 
     private String namespace;
 
-    public static synchronized KubeClusterResource getInstance() {
-        if (kubeClusterResource == null) {
-            kubeClusterResource = new KubeClusterResource();
-            LOGGER.info("Cluster default namespace is '{}'", kubeClusterResource.getNamespace());
+    public static KubeClusterResource getInstance() {
+        synchronized (INSTANCE_LOCK) {
+            if (kubeClusterResource == null) {
+                kubeClusterResource = new KubeClusterResource();
+                LOGGER.info("Cluster default namespace is '{}'", kubeClusterResource.getNamespace());
+            }
+            return kubeClusterResource;
         }
-        return kubeClusterResource;
     }
 
     private KubeClusterResource() { }

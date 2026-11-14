@@ -4,7 +4,6 @@
  */
 package io.strimzi.systemtest.utils.specific;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.skodjob.kubetest4j.enums.LogLevel;
 import io.skodjob.kubetest4j.executor.ExecResult;
 import io.skodjob.kubetest4j.resources.KubeResourceManager;
@@ -101,7 +100,6 @@ public class CruiseControlUtils {
         );
     }
 
-    @SuppressFBWarnings("DM_CONVERT_CASE")
     public static ApiResult callApi(String namespaceName, HttpMethod method, Scheme scheme, int port, String endpoint, String endpointParameters, String userCreds) {
         String ccPodName = PodUtils.getFirstPodNameContaining(namespaceName, CONTAINER_NAME);
         String args = " -k -w \"%{http_code}\" ";

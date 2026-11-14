@@ -57,6 +57,8 @@ public class KafkaUtils {
     private static final Logger LOGGER = LogManager.getLogger(KafkaUtils.class);
     private static final long DELETION_TIMEOUT = ResourceOperation.getTimeoutForResourceDeletion();
     private static final Random RANDOM = new Random();
+    // Shared lock used to serialize dynamic configuration verification (previously via the class monitor)
+    private static final Object DYNAMIC_CONFIG_LOCK = new Object();
 
     private KafkaUtils() {}
 
@@ -239,14 +241,16 @@ public class KafkaUtils {
      * @param brokerConfigName key of specific property
      * @param value value of specific property
      */
-    public synchronized static boolean verifyCrDynamicConfiguration(final String namespaceName, String clusterName, String brokerConfigName, Object value) {
-        LOGGER.info("Dynamic Configuration in Kafka CR is {}={} and expected is {}={}",
-            brokerConfigName,
-            kafkaClient().inNamespace(namespaceName).withName(clusterName).get().getSpec().getKafka().getConfig().get(brokerConfigName),
-            brokerConfigName,
-            value);
+    public static boolean verifyCrDynamicConfiguration(final String namespaceName, String clusterName, String brokerConfigName, Object value) {
+        synchronized (DYNAMIC_CONFIG_LOCK) {
+            LOGGER.info("Dynamic Configuration in Kafka CR is {}={} and expected is {}={}",
+                brokerConfigName,
+                kafkaClient().inNamespace(namespaceName).withName(clusterName).get().getSpec().getKafka().getConfig().get(brokerConfigName),
+                brokerConfigName,
+                value);
 
-        return kafkaClient().inNamespace(namespaceName).withName(clusterName).get().getSpec().getKafka().getConfig().get(brokerConfigName).equals(value);
+            return kafkaClient().inNamespace(namespaceName).withName(clusterName).get().getSpec().getKafka().getConfig().get(brokerConfigName).equals(value);
+        }
     }
 
     /**
@@ -262,7 +266,20 @@ public class KafkaUtils {
      * true = if specific property match the excepted property
      * false = if specific property doesn't match the excepted property
      */
-    public synchronized static boolean verifyPodDynamicConfiguration(
+    public static boolean verifyPodDynamicConfiguration(
+        final String namespaceName,
+        final String clusterName,
+        String scraperPodName,
+        String scope,
+        String configName,
+        String value
+    ) {
+        synchronized (DYNAMIC_CONFIG_LOCK) {
+            return doVerifyPodDynamicConfiguration(namespaceName, clusterName, scraperPodName, scope, configName, value);
+        }
+    }
+
+    private static boolean doVerifyPodDynamicConfiguration(
         final String namespaceName,
         final String clusterName,
         String scraperPodName,

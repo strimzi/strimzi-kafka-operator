@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.cluster.operator.resource;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.fabric8.zjsonpatch.JsonDiff;
 import io.strimzi.kafka.config.model.ConfigModel;
 import io.strimzi.kafka.config.model.Scope;
@@ -415,6 +416,8 @@ public class KafkaConfigurationDiff extends AbstractJsonDiff {
      *
      * @return  True if the option is set in both current and desired configuration and if they are equal. False otherwise.
      */
+    @SuppressFBWarnings(value = "FE_FLOATING_POINT_EQUALITY",
+        justification = "Intentional equality of two re-parsed double values so different string representations are equal; +0.0 and -0.0 must compare equal, which Double.compare does not provide")
     /* test */ static boolean areDoublesEqual(String optionName, Map<String, String> current, Map<String, String> desired) {
         try {
             return current.containsKey(optionName) // Option is missing in current = they are not equal

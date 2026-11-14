@@ -5,6 +5,7 @@
 package io.strimzi.api.kafka.model.kafka;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.strimzi.api.kafka.model.common.Condition;
 import io.strimzi.api.kafka.model.common.Constants;
 import io.strimzi.api.kafka.model.common.UnknownPropertyPreserving;
@@ -69,6 +70,7 @@ public abstract class Status implements UnknownPropertyPreserving {
         return observedGeneration;
     }
 
+    @SuppressFBWarnings(value = {"AT_NONATOMIC_64BIT_PRIMITIVE"}, justification = "The observedGeneration field is not really accessed concurrently")
     public void setObservedGeneration(long observedGeneration) {
         this.observedGeneration = observedGeneration;
     }

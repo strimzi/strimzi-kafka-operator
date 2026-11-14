@@ -579,7 +579,7 @@ public class InternalCa extends Ca {
     }
 
     @Override
-    public boolean removeCerts(Map<String, String> newData, Predicate<Map.Entry<String, String>> predicate) {
+    protected boolean removeCerts(Map<String, String> newData, Predicate<Map.Entry<String, String>> predicate) {
         Iterator<Map.Entry<String, String>> iter = newData.entrySet().iterator();
         List<String> removed = new ArrayList<>();
         while (iter.hasNext()) {

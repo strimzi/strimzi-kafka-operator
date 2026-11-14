@@ -97,6 +97,7 @@ We also control imports only in production classes and not in tests. This is con
         <allow pkg="javax.naming" />
         <allow pkg="org.apache.kafka.common" />
         <allow pkg="io.fabric8.kubernetes.api.model" />
+        <allow class="edu.umd.cs.findbugs.annotations.SuppressFBWarnings" />
 
         <!-- Strimzi Operators classes -->
         <allow pkg="io.strimzi.api.kafka" />

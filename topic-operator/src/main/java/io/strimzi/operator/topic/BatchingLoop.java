@@ -50,7 +50,8 @@ public class BatchingLoop {
      * Guarded by the monitor of the BatchingLoop.
      * This functions as mechanism for preventing concurrent reconciliation of the same topic.
      */
-    private final Set<KubeRef> inFlight = new HashSet<>(); // guarded by this
+    private final Object lock = new Object();
+    private final Set<KubeRef> inFlight = new HashSet<>(); // guarded by lock
     private final LoopRunnable[] threads;
 
     /**
@@ -202,7 +203,7 @@ public class BatchingLoop {
 
         private boolean runOnce(int batchId, Batch batch) {
             try {
-                synchronized (BatchingLoop.this) {
+                synchronized (lock) {
                     // remove the old batch from the inflight set and reset the batch
                     LOGGER.traceOp("[Batch #{}] Removing batch from inflight", batchId - 1);
                     batch.toUpdate.stream().map(TopicEvent::toRef).forEach(inFlight::remove);

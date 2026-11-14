@@ -585,7 +585,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
      * @return  True if the KafkaConnector resource has the strimzi.io/restart annotation. False otherwise.
      */
     @Override
-    protected boolean hasRestartAnnotation(HasMetadata resource, String connectorName) {
+    boolean hasRestartAnnotation(HasMetadata resource, String connectorName) {
         String annoValue = Annotations.stringAnnotation(resource, ANNO_STRIMZI_IO_RESTART, null);
         return annoValue != null && !annoValue.isBlank() && !annoValue.contains(Boolean.FALSE.toString());
     }
@@ -605,7 +605,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
      *
      * @return True if the provided resource has valid restart annotation. False otherwise.
      * */
-    protected boolean restartAnnotationIsValid(HasMetadata resource, String connectorName) {
+    boolean restartAnnotationIsValid(HasMetadata resource, String connectorName) {
         String restartValue = Annotations.stringAnnotation(resource, ANNO_STRIMZI_IO_RESTART, "");
         String[] values = restartValue.split(",");
         boolean hasBooleanValue = false;
@@ -641,7 +641,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
      * @return True if the provided resource has argument includeTasks in restart annotation. False otherwise.
      */
     @Override
-    protected boolean restartAnnotationHasIncludeTasksArg(HasMetadata resource) {
+    boolean restartAnnotationHasIncludeTasksArg(HasMetadata resource) {
         return Annotations.stringAnnotation(resource, ANNO_STRIMZI_IO_RESTART, "")
                 .contains(STRIMZI_IO_RESTART_INCLUDE_TASKS_ARG);
     }
@@ -654,7 +654,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
      * @return True if the provided resource has argument onlyFailedTasks in restart annotation. False otherwise.
      */
     @Override
-    protected boolean restartAnnotationHasOnlyFailedTasksArg(HasMetadata resource) {
+    boolean restartAnnotationHasOnlyFailedTasksArg(HasMetadata resource) {
         return Annotations.stringAnnotation(resource, ANNO_STRIMZI_IO_RESTART, "")
                 .contains(STRIMZI_IO_RESTART_ONLY_FAILED_ARG);
     }
@@ -669,7 +669,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
      */
     @SuppressWarnings({ "rawtypes" })
     @Override
-    protected int getRestartTaskAnnotationTaskID(CustomResource resource, String connectorName) {
+    int getRestartTaskAnnotationTaskID(CustomResource resource, String connectorName) {
         return Annotations.intAnnotation(resource, ANNO_STRIMZI_IO_RESTART_TASK, -1);
     }
 
@@ -683,7 +683,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
      */
     @SuppressWarnings({ "rawtypes" })
     @Override
-    protected Future<Void> removeRestartAnnotation(Reconciliation reconciliation, CustomResource resource) {
+    Future<Void> removeRestartAnnotation(Reconciliation reconciliation, CustomResource resource) {
         return removeAnnotation(reconciliation, (KafkaConnector) resource, ANNO_STRIMZI_IO_RESTART);
     }
 
@@ -697,7 +697,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
      */
     @SuppressWarnings({ "rawtypes" })
     @Override
-    protected Future<Void> removeRestartTaskAnnotation(Reconciliation reconciliation, CustomResource resource) {
+    Future<Void> removeRestartTaskAnnotation(Reconciliation reconciliation, CustomResource resource) {
         return removeAnnotation(reconciliation, (KafkaConnector) resource, ANNO_STRIMZI_IO_RESTART_TASK);
     }
 
@@ -735,7 +735,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
      */
     @SuppressWarnings({ "rawtypes" })
     @Override
-    protected Future<AutoRestartStatus> previousAutoRestartStatus(Reconciliation reconciliation, String connectorName, CustomResource resource)  {
+    Future<AutoRestartStatus> previousAutoRestartStatus(Reconciliation reconciliation, String connectorName, CustomResource resource)  {
         return VertxUtil.toFuture(connectorOperator.getAsync(resource.getMetadata().getNamespace(), resource.getMetadata().getName()))
                 .compose(result -> {
                     if (result != null) {
@@ -763,7 +763,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
      */
     @SuppressWarnings({ "rawtypes" })
     @Override
-    protected KafkaConnectorOffsetsAnnotation getConnectorOffsetsOperation(CustomResource resource, String connectorName) {
+    KafkaConnectorOffsetsAnnotation getConnectorOffsetsOperation(CustomResource resource, String connectorName) {
         String annotation = Annotations.stringAnnotation(resource, ANNO_STRIMZI_IO_CONNECTOR_OFFSETS, KafkaConnectorOffsetsAnnotation.none.toString());
         return KafkaConnectorOffsetsAnnotation.valueOf(annotation);
     }
@@ -778,7 +778,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
      */
     @SuppressWarnings({ "rawtypes" })
     @Override
-    protected Future<Void> removeConnectorOffsetsAnnotations(Reconciliation reconciliation, CustomResource resource) {
+    Future<Void> removeConnectorOffsetsAnnotations(Reconciliation reconciliation, CustomResource resource) {
         return removeAnnotation(reconciliation, (KafkaConnector) resource, ANNO_STRIMZI_IO_CONNECTOR_OFFSETS);
     }
 
@@ -791,7 +791,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
      * @return The String to use when interacting with ConfigMap resources.
      */
     @Override
-    protected String getConnectorOffsetsConfigMapEntryKey(String connectorName) {
+    String getConnectorOffsetsConfigMapEntryKey(String connectorName) {
         return "offsets.json";
     }
 

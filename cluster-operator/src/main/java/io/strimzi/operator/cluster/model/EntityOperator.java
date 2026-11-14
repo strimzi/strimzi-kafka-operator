@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.cluster.model;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
@@ -91,7 +92,8 @@ public class EntityOperator extends AbstractModel {
 
     private EntityTopicOperator topicOperator;
     private EntityUserOperator userOperator;
-    /* test */ boolean cruiseControlEnabled;
+    @SuppressFBWarnings(value = "UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR",
+        justification = "This field is initialized in the fromCrd method")
     private KafkaClusterSecurityContext securityContext;
 
     private ResourceTemplate templateRole;
@@ -144,7 +146,6 @@ public class EntityOperator extends AbstractModel {
             EntityUserOperator userOperator = EntityUserOperator.fromCrd(reconciliation, kafkaAssembly, sharedEnvironmentProvider, config, securityContext);
 
             result.topicOperator = topicOperator;
-            result.cruiseControlEnabled = kafkaAssembly.getSpec().getCruiseControl() != null;
             result.userOperator = userOperator;
             result.securityContext = securityContext;
 

@@ -5,7 +5,6 @@
 package io.strimzi.test.mockkube3;
 
 import com.dajudge.kindcontainer.ApiServerContainer;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.fabric8.kubernetes.api.model.DefaultKubernetesResourceList;
 import io.fabric8.kubernetes.api.model.NamespaceBuilder;
 import io.fabric8.kubernetes.api.model.ServiceAccountBuilder;
@@ -50,7 +49,6 @@ public class MockKube3 {
     private final List<Kafka> initialKafkas = new ArrayList<>();
     private final List<KafkaNodePool> initialKafkaNodePools = new ArrayList<>();
 
-    @SuppressFBWarnings({"UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR"}) // This field is initialized in the start method after the API server is started
     private KubernetesClient client;
 
     /**
