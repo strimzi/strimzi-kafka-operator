@@ -181,6 +181,7 @@ public class KRaftKafkaUpgradeDowngradeST extends AbstractKRaftUpgradeST {
         }
 
         LOGGER.info("Deployment of initial Kafka version ({}) complete", initialVersion.version());
+        verifyClusterSecurityStatus(testStorage.getNamespaceName());
 
         String controllerVersionResult = CrdClients.kafkaClient().inNamespace(testStorage.getNamespaceName()).withName(CLUSTER_NAME).get().getStatus().getKafkaVersion();
         LOGGER.info("Pre-change Kafka version: {}", controllerVersionResult);
@@ -263,5 +264,6 @@ public class KRaftKafkaUpgradeDowngradeST extends AbstractKRaftUpgradeST {
 
         LOGGER.info("Waiting till Kafka Cluster {}/{} with specified version {} has the same version in status and specification", testStorage.getNamespaceName(), CLUSTER_NAME, newVersion.version());
         KafkaUtils.waitUntilStatusKafkaVersionMatchesExpectedVersion(testStorage.getNamespaceName(), CLUSTER_NAME, newVersion.version());
+        verifyClusterSecurityStatus(testStorage.getNamespaceName());
     }
 }

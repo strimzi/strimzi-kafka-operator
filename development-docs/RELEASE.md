@@ -95,6 +95,12 @@ After releasing RC, we need to run the System tests:
 * regression (multiple times, one for each supported Kafka version)
 * regression-fg (multiple times, one for each supported Kafka version)
 
+The upgrade, regression, and regression-fg pipelines should be run with the default internal cluster configuration settings (TLS + mTLS).
+And at least for one of the Kafka versions with the following combinations:
+* No encryption + no authentication (none + none)
+* No encryption + and Service Account-based authentication (none + service-account)
+* Encryption + and Service Account-based authentication (TLS + service-account)
+
 Run them manually in GitHub Actions UI:
 
 * Select the release branch from the list

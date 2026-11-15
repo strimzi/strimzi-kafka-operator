@@ -365,8 +365,10 @@ They are applied to every `Kafka` custom resource created by the tests through t
 When the default combination (`tls` encryption with `mtls` authentication) is used, the annotation is not set at all, so that the default behaviour of the Cluster Operator is covered as well.
 Tests that verify a specific internal cluster security configuration (such as `ClusterSecurityST`) set the annotation on their own and are not affected by these environment variables.
 
-The operator upgrade and downgrade tests (`AbstractKRaftUpgradeST` and its subclasses) and the OLM tests (`OlmAbstractST` and its subclasses) always run with the default configuration and ignore these environment variables.
-The Kafka clusters in these tests are deployed from the examples of a given Strimzi release and are reconciled by a version of the Cluster Operator that might not know the `strimzi.io/internal-cluster-security` annotation.
+The upgrade and downgrade tests (`AbstractKRaftUpgradeST` and its subclasses) and the OLM tests (`OlmAbstractST` and its subclasses) use these environment variables as well.
+When the Kafka cluster is deployed or updated from the examples of a given Strimzi release or from the OLM examples, the `strimzi.io/internal-cluster-security` annotation is added to the Kafka custom resource from the examples.
+The upgrade and downgrade tests are skipped when the Strimzi version they upgrade from or downgrade to does not support the configurable internal cluster security (versions older than 1.3.0).
+The OLM tests use the Strimzi version available in the configured OLM catalog, so non-default configuration can be used only when this version is 1.3.0 or newer.
 
 ##### Specific Kafka version
 

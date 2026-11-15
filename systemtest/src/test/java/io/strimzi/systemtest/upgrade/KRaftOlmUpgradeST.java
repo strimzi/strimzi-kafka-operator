@@ -21,6 +21,7 @@ import io.strimzi.systemtest.upgrade.VersionModificationDataLoader.ModificationT
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.FileUtils;
 import io.strimzi.systemtest.utils.RollingUpdateUtils;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.specific.OlmUtils;
 import io.strimzi.testclients.clients.kafka.KafkaProducerConsumer;
@@ -85,8 +86,9 @@ public class KRaftOlmUpgradeST extends AbstractKRaftUpgradeST {
         File kafkaYaml = new File(dir, olmUpgradeData.getFromExamples() + olmUpgradeData.getFromKafkaFilePath());
 
         LOGGER.info("Deploying Kafka in Namespace: {} from file: {}", CO_NAMESPACE, kafkaYaml.getPath());
-        KubeResourceManager.get().kubeCmdClient().inNamespace(CO_NAMESPACE).create(kafkaYaml);
+        KubeResourceManager.get().kubeCmdClient().inNamespace(CO_NAMESPACE).applyContent(KafkaUtils.changeOrRemoveKafkaConfigurationInKRaft(kafkaYaml, "", null, clusterSecurityAnnotationIfNeeded()));
         waitForReadinessOfKafkaCluster(CO_NAMESPACE);
+        verifyClusterSecurityStatus(CO_NAMESPACE);
 
         // Create KafkaTopic
         final String topicUpgradeName = "topic-upgrade";
@@ -157,6 +159,8 @@ public class KRaftOlmUpgradeST extends AbstractKRaftUpgradeST {
 
         // Wait for messages of previously created clients
         ClientUtils.waitForClientsSuccess(CO_NAMESPACE, testStorage.getConsumerName(), testStorage.getProducerName(), testStorage.getMessageCount());
+
+        verifyClusterSecurityStatus(CO_NAMESPACE);
     }
 
     private void upgradeClusterOperator(ClusterOperatorConfiguration clusterOperatorConfiguration) {

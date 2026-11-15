@@ -16,6 +16,7 @@ import io.strimzi.api.kafka.model.topic.KafkaTopic;
 import io.strimzi.api.kafka.model.user.KafkaUser;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
+import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.resources.crd.KafkaComponents;
 import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
@@ -28,6 +29,7 @@ import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.NamespaceUtils;
+import io.strimzi.systemtest.utils.specific.ClusterSecuritySTUtils;
 import io.vertx.core.json.JsonObject;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -73,8 +75,19 @@ public class OlmAbstractST extends AbstractST {
      */
     void doTestDeployExampleKafka() {
         JsonObject kafkaResource = exampleResources.get(Kafka.RESOURCE_KIND);
+        String kafkaName = kafkaResource.getJsonObject("metadata").getString("name");
+
+        // Same as the KafkaTemplates, set the Cluster Security annotation only when non-default configuration is used
+        if (!Environment.isDefaultClusterSecurity()) {
+            JsonObject metadata = kafkaResource.getJsonObject("metadata");
+            JsonObject annotations = metadata.containsKey("annotations") ? metadata.getJsonObject("annotations") : new JsonObject();
+            annotations.put(ClusterSecuritySTUtils.INTERNAL_CLUSTER_SECURITY_ANNOTATION, ClusterSecuritySTUtils.clusterSecurityAnnotation());
+            metadata.put("annotations", annotations);
+        }
+
         KubeResourceManager.get().kubeCmdClient().inNamespace(NAMESPACE).applyContent(kafkaResource.toString());
-        KafkaUtils.waitForKafkaReady(NAMESPACE, kafkaResource.getJsonObject("metadata").getString("name"));
+        KafkaUtils.waitForKafkaReady(NAMESPACE, kafkaName);
+        ClusterSecuritySTUtils.assertClusterSecurityStatus(NAMESPACE, kafkaName, Environment.CLUSTER_SECURITY_ENCRYPTION, Environment.CLUSTER_SECURITY_AUTHENTICATION);
     }
 
     /**
