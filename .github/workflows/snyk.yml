@@ -57,12 +57,12 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Setup Java and Maven
-        uses: strimzi/github-actions/.github/actions/dependencies/setup-java@8a88edc07beb03fbd99d6d72f59c86d7d7aadda4 # v3.0
+        uses: strimzi/github-actions/.github/actions/dependencies/setup-java@bb4758d4afacd9c0ff8f426395bbbece41fd142a # v4.0
         with:
           javaVersion: "21"
 
       - name: Install yq
-        uses: strimzi/github-actions/.github/actions/dependencies/install-yq@8a88edc07beb03fbd99d6d72f59c86d7d7aadda4 # v3.0
+        uses: strimzi/github-actions/.github/actions/dependencies/install-yq@bb4758d4afacd9c0ff8f426395bbbece41fd142a # v4.0
         with:
           version: "v4.6.3"
 
@@ -91,7 +91,7 @@ jobs:
           MAVEN_TEST_MODULES: "systemtest,mockkube,test"
 
       - name: Run Snyk Maven scan (prod)
-        uses: strimzi/github-actions/.github/actions/security/snyk-maven-scan@8a88edc07beb03fbd99d6d72f59c86d7d7aadda4 # v3.0
+        uses: strimzi/github-actions/.github/actions/security/snyk-maven-scan@bb4758d4afacd9c0ff8f426395bbbece41fd142a # v4.0
         with:
           scanName: operators-prod
           snykMonitor: "true"
@@ -100,7 +100,7 @@ jobs:
           exclude: "${{ steps.compute-excludes.outputs.maven-test-modules }},docker-images"
 
       - name: Run Snyk Maven scan (test)
-        uses: strimzi/github-actions/.github/actions/security/snyk-maven-scan@8a88edc07beb03fbd99d6d72f59c86d7d7aadda4 # v3.0
+        uses: strimzi/github-actions/.github/actions/security/snyk-maven-scan@bb4758d4afacd9c0ff8f426395bbbece41fd142a # v4.0
         with:
           scanName: operators-test
           snykMonitor: "true"
@@ -109,7 +109,7 @@ jobs:
           exclude: "${{ steps.compute-excludes.outputs.maven-prod-modules }},docker-images"
 
       - name: Run Snyk Maven scan (3rd-party)
-        uses: strimzi/github-actions/.github/actions/security/snyk-maven-scan@8a88edc07beb03fbd99d6d72f59c86d7d7aadda4 # v3.0
+        uses: strimzi/github-actions/.github/actions/security/snyk-maven-scan@bb4758d4afacd9c0ff8f426395bbbece41fd142a # v4.0
         with:
           scanName: kafka-3rd-party
           snykMonitor: "true"
@@ -187,10 +187,10 @@ jobs:
         run: tar -xvf "$CONTAINERS_ARCHIVE"
 
       - name: Install Docker
-        uses: strimzi/github-actions/.github/actions/dependencies/install-docker@8a88edc07beb03fbd99d6d72f59c86d7d7aadda4 # v3.0
+        uses: strimzi/github-actions/.github/actions/dependencies/install-docker@bb4758d4afacd9c0ff8f426395bbbece41fd142a # v4.0
 
       - name: Run Snyk container scan
-        uses: strimzi/github-actions/.github/actions/security/snyk-container-scan@8a88edc07beb03fbd99d6d72f59c86d7d7aadda4 # v3.0
+        uses: strimzi/github-actions/.github/actions/security/snyk-container-scan@bb4758d4afacd9c0ff8f426395bbbece41fd142a # v4.0
         with:
           imageFile: docker-images/container-archives/${{ matrix.image }}.tar.gz
           image: ${{ matrix.image }}
