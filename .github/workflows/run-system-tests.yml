@@ -127,6 +127,7 @@ jobs:
         uses: strimzi/github-actions/.github/actions/dependencies/install-helm@bb4758d4afacd9c0ff8f426395bbbece41fd142a # v4.0
         with:
           helmVersion: "v3.16.0"
+          helmUnitTestVersion: "v1.0.3"
 
       - name: Setup Kind cluster
         uses: strimzi/github-actions/.github/actions/dependencies/setup-kind@bb4758d4afacd9c0ff8f426395bbbece41fd142a # v4.0

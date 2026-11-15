@@ -50,6 +50,7 @@ jobs:
         uses: strimzi/github-actions/.github/actions/dependencies/install-helm@bb4758d4afacd9c0ff8f426395bbbece41fd142a # v4.0
         with:
           helmVersion: "v3.16.0"
+          helmUnitTestVersion: "v1.0.3"
 
       - name: Install AsciiDoctor
         uses: strimzi/github-actions/.github/actions/dependencies/install-ascii-doctor@bb4758d4afacd9c0ff8f426395bbbece41fd142a # v4.0
@@ -242,6 +243,7 @@ jobs:
         uses: strimzi/github-actions/.github/actions/dependencies/install-helm@bb4758d4afacd9c0ff8f426395bbbece41fd142a # v4.0
         with:
           helmVersion: "v3.16.0"
+          helmUnitTestVersion: "v1.0.3"
 
       - name: Publish Helm charts using publish-helm action
         id: publish-helm-chart
