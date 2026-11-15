@@ -64,6 +64,7 @@ jobs:
         uses: strimzi/github-actions/.github/actions/dependencies/install-helm@bb4758d4afacd9c0ff8f426395bbbece41fd142a # v4.0
         with:
           helmVersion: "v3.16.0"
+          helmUnitTestVersion: 'v1.0.3'
 
       - name: Restore Kafka binaries cache
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
