@@ -34,6 +34,7 @@ import java.util.concurrent.CompletionException;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -192,13 +193,13 @@ public class CustomCaProviderTest {
 
         CustomCaProvider clusterCaProvider = new CustomCaProvider(Reconciliation.DUMMY_RECONCILIATION, Ca.CaRole.CLUSTER_CA, CA_CONFIG, KAFKA, null, null, initialClusterCaCertSecret, initialClusterCaKeySecret);
         Exception clusterCaException = assertThrows(RuntimeException.class, () -> clusterCaProvider.createAndReconcileCa().toCompletableFuture().join());
-        assertThat(clusterCaException.getMessage(), is("User supplied Cluster CA cert chain ca.crt is not valid. Certificates must be provided in the correct order."));
+        assertThat(clusterCaException.getMessage(), startsWith("User supplied Cluster CA cert chain ca.crt is not valid. Certificates must be provided in the correct order and the chain must be complete. Reason: NO_TRUST_ANCHOR"));
 
         Secret initialClientsCaKeySecret = ResourceUtils.createInitialCaKeySecret(NAMESPACE, NAME, KafkaResources.clientsCaKeySecretName(NAME), caKey);
         Secret initialClientsCaCertSecret = ResourceUtils.createInitialCaCertSecret(NAMESPACE, NAME, KafkaResources.clientsCaCertificateSecretName(NAME), invalidCombinedPem, null, null);
 
         CustomCaProvider clientsCaProvider = new CustomCaProvider(Reconciliation.DUMMY_RECONCILIATION, Ca.CaRole.CLIENTS_CA, CA_CONFIG, KAFKA, null, null, initialClientsCaCertSecret, initialClientsCaKeySecret);
         Exception clientsCaException = assertThrows(RuntimeException.class, () -> clientsCaProvider.createAndReconcileCa().toCompletableFuture().join());
-        assertThat(clientsCaException.getMessage(), is("User supplied Clients CA cert chain ca.crt is not valid. Certificates must be provided in the correct order."));
+        assertThat(clientsCaException.getMessage(), startsWith("User supplied Clients CA cert chain ca.crt is not valid. Certificates must be provided in the correct order and the chain must be complete. Reason: NO_TRUST_ANCHOR"));
     }
 }

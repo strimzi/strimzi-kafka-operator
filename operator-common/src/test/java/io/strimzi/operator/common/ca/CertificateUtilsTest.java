@@ -26,7 +26,10 @@ import java.util.List;
 import java.util.Map;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.startsWith;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -236,6 +239,12 @@ class CertificateUtilsTest {
         StrimziSubject intermediateSubject2 = new StrimziSubject.Builder().withCommonName("IntermediateCn2").withOrganizationName("MyOrganization").build();
         ssl.generateIntermediateCaCert(intermediateKey1, intermediateCert1, intermediateSubject2, intermediateKey2, intermediateCert2, notBefore, notAfter, 1, 4096);
 
+        // Generate another intermediate cert signed directly by the root cert
+        File intermediateKey3 = createTempFile("key-", ".key");
+        File intermediateCert3 = createTempFile("crt-", ".crt");
+        StrimziSubject intermediateSubject3 = new StrimziSubject.Builder().withCommonName("IntermediateCn3").withOrganizationName("MyOrganization").build();
+        ssl.generateIntermediateCaCert(rootKey, rootCert, intermediateSubject3, intermediateKey3, intermediateCert3, notBefore, notAfter, 1, 4096);
+
         // Generate combined Pem files with CA chain in correct order
         String validCombinedPem;
         try (FileInputStream int2CertFis = new FileInputStream(intermediateCert2);
@@ -260,16 +269,88 @@ class CertificateUtilsTest {
             invalidCombinedPem = Base64.getEncoder().encodeToString(combinedPem.getBytes(StandardCharsets.US_ASCII));
         }
 
+        // Generate combined Pem file with incomplete CA chain (the first intermediate cert is missing)
+        String incompleteCombinedPem;
+        try (FileInputStream int2CertFis = new FileInputStream(intermediateCert2);
+             FileInputStream rootCertFis = new FileInputStream(rootCert)) {
+            String combinedPem = String.join("\n",
+                    new String(int2CertFis.readAllBytes(), StandardCharsets.US_ASCII),
+                    new String(rootCertFis.readAllBytes(), StandardCharsets.US_ASCII));
+            incompleteCombinedPem = Base64.getEncoder().encodeToString(combinedPem.getBytes(StandardCharsets.US_ASCII));
+        }
+
+        // Generate combined Pem file where the first cert is not issued by the next one (the next one is issued by the root cert)
+        String brokenChainCombinedPem;
+        try (FileInputStream int3CertFis = new FileInputStream(intermediateCert3);
+             FileInputStream int1CertFis = new FileInputStream(intermediateCert1);
+             FileInputStream rootCertFis = new FileInputStream(rootCert)) {
+            String combinedPem = String.join("\n",
+                    new String(int3CertFis.readAllBytes(), StandardCharsets.US_ASCII),
+                    new String(int1CertFis.readAllBytes(), StandardCharsets.US_ASCII),
+                    new String(rootCertFis.readAllBytes(), StandardCharsets.US_ASCII));
+            brokenChainCombinedPem = Base64.getEncoder().encodeToString(combinedPem.getBytes(StandardCharsets.US_ASCII));
+        }
+
         Map<String, String> validCert = Map.of("ca.crt", validCombinedPem, "ca-2026-02-01T09-00-00.crt", validCombinedPem);
         assertDoesNotThrow(() -> CertificateUtils.validateCaCertChain(Reconciliation.DUMMY_RECONCILIATION, Ca.CaRole.CLUSTER_CA, validCert));
 
         Map<String, String> invalidCert = Map.of("ca.crt", invalidCombinedPem);
         Exception exception = assertThrows(RuntimeException.class, () -> CertificateUtils.validateCaCertChain(Reconciliation.DUMMY_RECONCILIATION, Ca.CaRole.CLUSTER_CA, invalidCert));
-        assertEquals("User supplied Cluster CA cert chain ca.crt is not valid. Certificates must be provided in the correct order.", exception.getMessage());
+        assertThat(exception.getMessage(), startsWith("User supplied Cluster CA cert chain ca.crt is not valid. Certificates must be provided in the correct order and the chain must be complete. Reason: NO_TRUST_ANCHOR"));
 
         Map<String, String> partiallyValidCert = Map.of("ca.crt", validCombinedPem, "ca-2026-02-01T09-00-00.crt", invalidCombinedPem);
         Exception exception1 = assertThrows(RuntimeException.class, () -> CertificateUtils.validateCaCertChain(Reconciliation.DUMMY_RECONCILIATION, Ca.CaRole.CLUSTER_CA, partiallyValidCert));
-        assertEquals("User supplied Cluster CA cert chain ca-2026-02-01T09-00-00.crt is not valid. Certificates must be provided in the correct order.", exception1.getMessage());
+        assertThat(exception1.getMessage(), startsWith("User supplied Cluster CA cert chain ca-2026-02-01T09-00-00.crt is not valid. Certificates must be provided in the correct order and the chain must be complete. Reason: NO_TRUST_ANCHOR"));
+
+        Map<String, String> incompleteCert = Map.of("ca.crt", incompleteCombinedPem);
+        Exception exception2 = assertThrows(RuntimeException.class, () -> CertificateUtils.validateCaCertChain(Reconciliation.DUMMY_RECONCILIATION, Ca.CaRole.CLUSTER_CA, incompleteCert));
+        assertThat(exception2.getMessage(), startsWith("User supplied Cluster CA cert chain ca.crt is not valid. Certificates must be provided in the correct order and the chain must be complete. Reason: NO_TRUST_ANCHOR"));
+
+        Map<String, String> brokenChainCert = Map.of("ca.crt", brokenChainCombinedPem);
+        Exception exception3 = assertThrows(RuntimeException.class, () -> CertificateUtils.validateCaCertChain(Reconciliation.DUMMY_RECONCILIATION, Ca.CaRole.CLUSTER_CA, brokenChainCert));
+        assertThat(exception3.getMessage(), startsWith("User supplied Cluster CA cert chain ca.crt is not valid. Certificates must be provided in the correct order and the chain must be complete. Reason: NAME_CHAINING"));
+    }
+
+    @Test
+    @DisplayName("When the CA chain contains an expired intermediate cert then validateCaCertChain reports the expiration as the reason")
+    public void testValidateCaCertChainWithExpiredIntermediate() throws IOException {
+        OpenSslCertIssuer ssl = new OpenSslCertIssuer();
+
+        File rootKey = createTempFile("key-", ".key");
+        File rootCert = createTempFile("crt-", ".crt");
+        File intermediateKey = createTempFile("key-", ".key");
+        File intermediateCert = createTempFile("crt-", ".crt");
+
+        Instant instant = Instant.now();
+
+        // Generate a valid root cert
+        StrimziSubject rootSubject = new StrimziSubject.Builder().withCommonName("RootCn").withOrganizationName("MyOrganization").build();
+        ZonedDateTime rootNotBefore = instant.truncatedTo(ChronoUnit.SECONDS).atZone(Clock.systemUTC().getZone());
+        ZonedDateTime rootNotAfter = instant.plus(2, ChronoUnit.HOURS).truncatedTo(ChronoUnit.SECONDS).atZone(Clock.systemUTC().getZone());
+        ssl.generateRootCaCert(rootSubject, rootKey, rootCert, rootNotBefore, rootNotAfter, 1, 2048);
+
+        // Generate an intermediate cert which already expired
+        StrimziSubject intermediateSubject = new StrimziSubject.Builder().withCommonName("ExpiredIntermediateCn").withOrganizationName("MyOrganization").build();
+        ZonedDateTime intermediateNotBefore = instant.minus(2, ChronoUnit.DAYS).truncatedTo(ChronoUnit.SECONDS).atZone(Clock.systemUTC().getZone());
+        ZonedDateTime intermediateNotAfter = instant.minus(1, ChronoUnit.DAYS).truncatedTo(ChronoUnit.SECONDS).atZone(Clock.systemUTC().getZone());
+        ssl.generateIntermediateCaCert(rootKey, rootCert, intermediateSubject, intermediateKey, intermediateCert, intermediateNotBefore, intermediateNotAfter, 0, 2048);
+
+        // Generate combined Pem file with the CA chain in the correct order
+        String combinedPem;
+        try (FileInputStream intCertFis = new FileInputStream(intermediateCert);
+             FileInputStream rootCertFis = new FileInputStream(rootCert)) {
+            String pem = String.join("\n",
+                    new String(intCertFis.readAllBytes(), StandardCharsets.US_ASCII),
+                    new String(rootCertFis.readAllBytes(), StandardCharsets.US_ASCII));
+            combinedPem = Base64.getEncoder().encodeToString(pem.getBytes(StandardCharsets.US_ASCII));
+        }
+
+        Map<String, String> expiredCert = Map.of("ca.crt", combinedPem);
+        Exception exception = assertThrows(RuntimeException.class, () -> CertificateUtils.validateCaCertChain(Reconciliation.DUMMY_RECONCILIATION, Ca.CaRole.CLUSTER_CA, expiredCert));
+        assertThat(exception.getMessage(), startsWith("User supplied Cluster CA cert chain ca.crt is not valid."));
+        assertThat(exception.getMessage(), containsString("CN=ExpiredIntermediateCn"));
+        assertThat(exception.getMessage(), containsString("Reason: EXPIRED"));
+        assertThat(exception.getMessage(), not(containsString("Certificates must be provided in the correct order")));
     }
 
     private File createTempFile(String prefix, String suffix) throws IOException {
