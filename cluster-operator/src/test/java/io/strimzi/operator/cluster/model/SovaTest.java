@@ -39,8 +39,10 @@ import io.strimzi.operator.common.model.InvalidResourceException;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
 
+import java.io.StringReader;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.hasItem;
@@ -586,6 +588,26 @@ public class SovaTest {
                 resource, VERSIONS, SHARED_ENV_PROVIDER, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT));
         assertThat(e.getMessage(), containsString("Kafka.spec.extraMetrics.topicRegex"));
         assertThat(e.getMessage(), containsString("Kafka.spec.extraMetrics.topicExcludeRegex"));
+    }
+
+    @Test
+    public void testUserAdminConfigCannotInjectForbiddenOptions() throws Exception {
+        Kafka resource = withAdminConfig(Map.of(
+                "client.id", "x\nbootstrap.servers=evil:9093\nconfig.providers=evil",
+                " security.protocol", "PLAINTEXT"));
+        KafkaClusterSecurityContext securityContext = new KafkaClusterSecurityContext(
+                new TlsEncryptionConfiguration(), new MtlsAuthenticationConfiguration());
+        Sova sova = Sova.fromCrd(new Reconciliation("test", resource.getKind(), NAMESPACE, CLUSTER_NAME),
+                resource, VERSIONS, SHARED_ENV_PROVIDER, securityContext);
+
+        // Sova parses the configuration with java.util.Properties, so check what it would actually see
+        Properties parsed = new Properties();
+        parsed.load(new StringReader(sova.kafkaAdminClientConfiguration()));
+
+        assertThat(parsed.getProperty("bootstrap.servers"), is(KafkaResources.bootstrapServiceName(CLUSTER_NAME) + ":" + KafkaCluster.REPLICATION_PORT));
+        assertThat(parsed.getProperty("config.providers"), is("strimzisecrets"));
+        assertThat(parsed.getProperty("security.protocol"), is("SSL"));
+        assertThat(parsed.getProperty("client.id"), is("x\nbootstrap.servers=evil:9093\nconfig.providers=evil"));
     }
 
     // Utility methods
