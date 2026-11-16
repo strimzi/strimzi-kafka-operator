@@ -1886,6 +1886,12 @@ Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 |topicExcludeRegex
 |string
 |Regular expression to specify which topics to exclude.
+|collectionIntervalMs
+|integer
+|Interval between metric collection cycles in milliseconds. Defaults to 30000.
+|config
+|map
+|Kafka Admin client configuration used by Sova. Properties with the following prefixes cannot be set: ssl., sasl., security., bootstrap.servers, config.providers (with the exception of: ssl.endpoint.identification.algorithm, ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols). 
 |logging
 |xref:type-InlineLogging-{context}[`InlineLogging`], xref:type-ExternalLogging-{context}[`ExternalLogging`]
 |Logging configuration (Log4j 2) for Sova.

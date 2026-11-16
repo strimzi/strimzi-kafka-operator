@@ -16,6 +16,7 @@ import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.rbac.Role;
 import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
 import io.strimzi.api.kafka.model.common.SystemPropertyBuilder;
+import io.strimzi.api.kafka.model.common.template.ContainerEnvVarBuilder;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
@@ -40,12 +41,16 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 import java.util.Map;
 
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.startsWith;
 
 @SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "checkstyle:NoFullyQualifiedClassNames"}) // Fully qualified class names are used in the expected config strings
 public class SovaTest {
@@ -436,7 +441,128 @@ public class SovaTest {
                 .noneMatch(p -> p.getPort().getIntVal() == Sova.MANAGEMENT_PORT), is(true));
     }
 
+    @Test
+    public void testNoTuningSettingsWhenFieldsUnset() {
+        Sova withoutConfig = Sova.fromCrd(
+                new Reconciliation("test", KAFKA.getKind(), NAMESPACE, CLUSTER_NAME),
+                KAFKA, VERSIONS, SHARED_ENV_PROVIDER, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
+        Kafka emptyConfig = new KafkaBuilder(KAFKA)
+                .editSpec()
+                    .editExtraMetrics()
+                        .withConfig(Map.of())
+                    .endExtraMetrics()
+                .endSpec()
+                .build();
+        Sova withEmptyConfig = Sova.fromCrd(
+                new Reconciliation("test", emptyConfig.getKind(), NAMESPACE, CLUSTER_NAME),
+                emptyConfig, VERSIONS, SHARED_ENV_PROVIDER, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
+
+        assertNoEnvVar(withoutConfig.getEnvVars(), Sova.ENV_VAR_COLLECT_INTERVAL_MS);
+        assertThat(withoutConfig.kafkaAdminClientConfiguration(), not(containsString("default.api.timeout.ms")));
+        assertThat(withEmptyConfig.kafkaAdminClientConfiguration(), is(withoutConfig.kafkaAdminClientConfiguration()));
+    }
+
+    @Test
+    public void testCollectionIntervalEnvVar() {
+        Kafka resource = new KafkaBuilder(KAFKA)
+                .editSpec()
+                    .editExtraMetrics()
+                        .withCollectionIntervalMs(5000L)
+                    .endExtraMetrics()
+                .endSpec()
+                .build();
+        Sova sova = Sova.fromCrd(
+                new Reconciliation("test", resource.getKind(), NAMESPACE, CLUSTER_NAME),
+                resource, VERSIONS, SHARED_ENV_PROVIDER, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
+
+        assertEnvVar(sova.getEnvVars(), Sova.ENV_VAR_COLLECT_INTERVAL_MS, "5000");
+    }
+
+    @Test
+    public void testUserAdminConfigIsAppended() {
+        Kafka resource = withAdminConfig(Map.of("default.api.timeout.ms", 10000, "request.timeout.ms", 5000));
+        List<KafkaClusterSecurityContext> contexts = List.of(
+                new KafkaClusterSecurityContext(new TlsEncryptionConfiguration(), new MtlsAuthenticationConfiguration()),
+                new KafkaClusterSecurityContext(new TlsEncryptionConfiguration(), serviceAccountAuthentication()),
+                new KafkaClusterSecurityContext(new NoneEncryptionConfiguration(), new NoneAuthenticationConfiguration()));
+
+        for (KafkaClusterSecurityContext securityContext : contexts) {
+            String withoutUserConfig = Sova.fromCrd(new Reconciliation("test", KAFKA.getKind(), NAMESPACE, CLUSTER_NAME),
+                    KAFKA, VERSIONS, SHARED_ENV_PROVIDER, securityContext).kafkaAdminClientConfiguration();
+            String withUserConfig = Sova.fromCrd(new Reconciliation("test", resource.getKind(), NAMESPACE, CLUSTER_NAME),
+                    resource, VERSIONS, SHARED_ENV_PROVIDER, securityContext).kafkaAdminClientConfiguration();
+
+            assertThat(withUserConfig, startsWith(withoutUserConfig));
+            assertThat(withUserConfig.substring(withoutUserConfig.length()).lines().sorted().toList(),
+                    contains("default.api.timeout.ms=10000", "request.timeout.ms=5000"));
+        }
+    }
+
+    @Test
+    public void testForbiddenAdminConfigIsIgnored() {
+        Kafka resource = withAdminConfig(Map.of(
+                "bootstrap.servers", "evil:9092",
+                "security.protocol", "PLAINTEXT",
+                "sasl.mechanism", "PLAIN",
+                "ssl.truststore.location", "/x",
+                "config.providers", "x"));
+        KafkaClusterSecurityContext securityContext = new KafkaClusterSecurityContext(
+                new TlsEncryptionConfiguration(), new MtlsAuthenticationConfiguration());
+
+        String withoutUserConfig = Sova.fromCrd(new Reconciliation("test", KAFKA.getKind(), NAMESPACE, CLUSTER_NAME),
+                KAFKA, VERSIONS, SHARED_ENV_PROVIDER, securityContext).kafkaAdminClientConfiguration();
+        String withUserConfig = Sova.fromCrd(new Reconciliation("test", resource.getKind(), NAMESPACE, CLUSTER_NAME),
+                resource, VERSIONS, SHARED_ENV_PROVIDER, securityContext).kafkaAdminClientConfiguration();
+
+        assertThat(withUserConfig, is(withoutUserConfig));
+    }
+
+    @Test
+    public void testAllowedSslExceptionPassesThrough() {
+        Kafka resource = withAdminConfig(Map.of("ssl.endpoint.identification.algorithm", ""));
+        Sova sova = Sova.fromCrd(new Reconciliation("test", resource.getKind(), NAMESPACE, CLUSTER_NAME),
+                resource, VERSIONS, SHARED_ENV_PROVIDER, new KafkaClusterSecurityContext(
+                        new TlsEncryptionConfiguration(), new MtlsAuthenticationConfiguration()));
+
+        assertThat(sova.kafkaAdminClientConfiguration().lines().toList(), hasItem("ssl.endpoint.identification.algorithm="));
+    }
+
+    @Test
+    public void testCollectionIntervalFieldWinsOverTemplateEnv() {
+        Kafka resource = new KafkaBuilder(KAFKA)
+                .editSpec()
+                    .editExtraMetrics()
+                        .withCollectionIntervalMs(5000L)
+                        .editTemplate()
+                            .withNewContainer()
+                                .withEnv(new ContainerEnvVarBuilder().withName(Sova.ENV_VAR_COLLECT_INTERVAL_MS).withValue("9999").build())
+                            .endContainer()
+                        .endTemplate()
+                    .endExtraMetrics()
+                .endSpec()
+                .build();
+        Sova sova = Sova.fromCrd(
+                new Reconciliation("test", resource.getKind(), NAMESPACE, CLUSTER_NAME),
+                resource, VERSIONS, SHARED_ENV_PROVIDER, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT);
+
+        List<String> values = sova.getEnvVars().stream()
+                .filter(v -> Sova.ENV_VAR_COLLECT_INTERVAL_MS.equals(v.getName()))
+                .map(EnvVar::getValue)
+                .toList();
+        assertThat(values, contains("5000"));
+    }
+
     // Utility methods
+
+    private static Kafka withAdminConfig(Map<String, Object> config) {
+        return new KafkaBuilder(KAFKA)
+                .editSpec()
+                    .editExtraMetrics()
+                        .withConfig(config)
+                    .endExtraMetrics()
+                .endSpec()
+                .build();
+    }
 
     private static String placeholder(String secretName, String key) {
         return "${strimzisecrets:" + NAMESPACE + "/" + secretName + ":" + key + "}";

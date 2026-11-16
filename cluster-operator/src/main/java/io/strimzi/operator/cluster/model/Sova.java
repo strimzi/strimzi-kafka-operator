@@ -94,6 +94,7 @@ public class Sova extends AbstractModel implements SupportsLogging {
     protected static final String ENV_VAR_METRICS_PORT = "STRIMZI_METRICS_PORT";
     protected static final String ENV_VAR_MANAGEMENT_PORT = "STRIMZI_MANAGEMENT_PORT";
     protected static final String ENV_VAR_KAFKA_ADMIN_CLIENT_CONFIGURATION = "STRIMZI_KAFKA_ADMIN_CLIENT_CONFIGURATION";
+    protected static final String ENV_VAR_COLLECT_INTERVAL_MS = "STRIMZI_COLLECT_INTERVAL_MS";
 
     // Placeholder used to load the values from Kubernetes Secrets using the Kubernetes Secret config provider
     private static final String PLACEHOLDER_SECRET_TEMPLATE_KUBE_CONFIG_PROVIDER = "${strimzisecrets:%s/%s:%s}";
@@ -102,6 +103,8 @@ public class Sova extends AbstractModel implements SupportsLogging {
     protected String topicRegex = ".*";
     protected String groupExcludeRegex;
     protected String topicExcludeRegex;
+    protected Long collectionIntervalMs;
+    private SovaAdminClientConfiguration adminClientConfiguration;
 
     @SuppressFBWarnings({"UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR"}) // Initialized in fromCrd
     private KafkaClusterSecurityContext securityContext;
@@ -158,6 +161,11 @@ public class Sova extends AbstractModel implements SupportsLogging {
             result.topicRegex = spec.getTopicRegex();
             result.groupExcludeRegex = spec.getGroupExcludeRegex();
             result.topicExcludeRegex = spec.getTopicExcludeRegex();
+            result.collectionIntervalMs = spec.getCollectionIntervalMs();
+
+            if (spec.getConfig() != null && !spec.getConfig().isEmpty()) {
+                result.adminClientConfiguration = new SovaAdminClientConfiguration(reconciliation, spec.getConfig().entrySet());
+            }
 
             result.jvmOptions = spec.getJvmOptions();
 
@@ -283,6 +291,13 @@ public class Sova extends AbstractModel implements SupportsLogging {
             config.append("config.providers.strimzisecrets.class=io.strimzi.kafka.KubernetesSecretConfigProvider\n");
         }
 
+        // User-provided options go last. Forbidden options (connection, security and config providers) were already
+        // filtered out, so they cannot override anything generated above.
+        if (adminClientConfiguration != null) {
+            adminClientConfiguration.asOrderedProperties().asMap()
+                    .forEach((key, value) -> config.append(key).append("=").append(value).append("\n"));
+        }
+
         return config.toString();
     }
 
@@ -354,6 +369,9 @@ public class Sova extends AbstractModel implements SupportsLogging {
         }
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_METRICS_PORT, String.valueOf(MetricsModel.METRICS_PORT)));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_MANAGEMENT_PORT, String.valueOf(MANAGEMENT_PORT)));
+        if (collectionIntervalMs != null) {
+            varList.add(ContainerUtils.createEnvVar(ENV_VAR_COLLECT_INTERVAL_MS, String.valueOf(collectionIntervalMs)));
+        }
 
         // JVM options
         JvmOptionUtils.heapOptions(varList, 75, 0L, jvmOptions, resources);
