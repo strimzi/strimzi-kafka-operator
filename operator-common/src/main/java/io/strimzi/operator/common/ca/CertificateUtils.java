@@ -19,6 +19,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertPath;
 import java.security.cert.CertPathValidator;
 import java.security.cert.CertPathValidatorException;
+import java.security.cert.CertPathValidatorException.BasicReason;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
@@ -140,7 +141,7 @@ public class CertificateUtils {
                     try {
                         validateCertPath(reconciliation, certChain.subList(0, certChain.size() - 1), certChain.getLast());
                     } catch (CertPathValidatorException e) {
-                        String errorMessage = invalidCertChainMessage(caRole, entry.getKey(), e);
+                        String errorMessage = buildInvalidCertChainMessage(caRole, entry.getKey(), e);
                         LOGGER.errorCr(reconciliation, errorMessage);
                         throw new RuntimeException(errorMessage);
                     }
@@ -294,19 +295,57 @@ public class CertificateUtils {
      *
      * @return  Error message describing why the validation failed
      */
-    private static String invalidCertChainMessage(Ca.CaRole caRole, String key, CertPathValidatorException e) {
+    private static String buildInvalidCertChainMessage(Ca.CaRole caRole, String key, CertPathValidatorException e) {
         String message = "User supplied " + caRole.caName() + " cert chain " + key + " is not valid.";
 
         CertPathValidatorException.Reason reason = e.getReason();
+        X509Certificate failedCert = getFailedCertificate(e);
+
         if (reason == PKIXReason.NAME_CHAINING || reason == PKIXReason.NO_TRUST_ANCHOR) {
             message += " Certificates must be provided in the correct order and the chain must be complete.";
-        } else if (e.getCertPath() != null
-                && e.getIndex() >= 0
-                && e.getCertPath().getCertificates().get(e.getIndex()) instanceof X509Certificate failedCert) {
-            message += " Certificate " + failedCert.getSubjectX500Principal().getName() + " failed the validation.";
+        } else if (failedCert != null) {
+            message += " " + getCertificateProblem(failedCert, reason);
         }
 
         return message + " Reason: " + reason + " (" + e.getMessage() + ")";
+    }
+
+    /**
+     * Describes why the certificate failed the validation. The most common reasons get a dedicated description. For
+     * the other reasons, a generic description is returned and the reason itself is added to the error message.
+     *
+     * @param cert      The certificate which failed the validation
+     * @param reason    Reason of the validation failure
+     *
+     * @return  Description of the certificate problem
+     */
+    private static String getCertificateProblem(X509Certificate cert, CertPathValidatorException.Reason reason) {
+        String subject = cert.getSubjectX500Principal().getName();
+
+        return switch (reason) {
+            case BasicReason.EXPIRED -> "Certificate " + subject + " expired on " + cert.getNotAfter().toInstant() + ".";
+            case BasicReason.NOT_YET_VALID -> "Certificate " + subject + " is not valid before " + cert.getNotBefore().toInstant() + ".";
+            case BasicReason.INVALID_SIGNATURE -> "Certificate " + subject + " is not signed by the next certificate in the chain.";
+            case PKIXReason.NOT_CA_CERT, PKIXReason.INVALID_KEY_USAGE -> "Certificate " + subject + " is not allowed to sign other certificates. It must be a CA certificate with the keyCertSign key usage.";
+            default -> "Certificate " + subject + " failed the validation.";
+        };
+    }
+
+    /**
+     * Returns the certificate which failed the validation, if it is known.
+     *
+     * @param e     Exception thrown by the certificate chain validation
+     *
+     * @return  The certificate which failed the validation or null if it is not known
+     */
+    private static X509Certificate getFailedCertificate(CertPathValidatorException e) {
+        if (e.getCertPath() != null
+                && e.getIndex() >= 0
+                && e.getCertPath().getCertificates().get(e.getIndex()) instanceof X509Certificate cert) {
+            return cert;
+        }
+
+        return null;
     }
 
 }
