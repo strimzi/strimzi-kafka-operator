@@ -393,8 +393,8 @@ public class UserOperatorPerformanceUtils {
             final long startTime = System.nanoTime();
 
             final KafkaUserQuotas kafkaUserQuotas = new KafkaUserQuotasBuilder()
-                .withConsumerByteRate(1000L + i * 100) // Vary quotas to ensure actual modification
-                .withProducerByteRate(2000L + i * 100)
+                .withConsumerByteRate(1000L + i * 100L) // Vary quotas to ensure actual modification
+                .withProducerByteRate(2000L + i * 100L)
                 .withRequestPercentage(42)
                 .withControllerMutationRate(10d)
                 .build();
