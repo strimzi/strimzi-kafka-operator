@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest.metrics;
 
+import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.skodjob.annotations.Desc;
@@ -40,6 +41,7 @@ import io.strimzi.testclients.clients.kafka.KafkaProducerConsumerBuilder;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 
+import java.util.List;
 import java.util.Map;
 
 import static io.strimzi.systemtest.TestTags.METRICS;
@@ -106,6 +108,7 @@ public class SovaST extends AbstractST {
             kafka.getSpec().getExtraMetrics().setTopicRegex(TOPIC_CHECKOUT);
         });
         snapshot = DeploymentUtils.waitTillDepHasRolled(namespaceName, sovaName, 1, snapshot);
+        waitForCollectionAfterRoll();
         waitForMetric("kafka_consumergroup_current_offset\\{.*consumergroup=\"" + GROUP_ORDERS + "\".*\\}", true);
         waitForMetric("kafka_consumergroup_current_offset\\{.*consumergroup=\"" + GROUP_BILLING + "\".*\\}", false);
         waitForMetric("kafka_topic_partitions\\{topic=\"" + TOPIC_CHECKOUT + "\"\\}", true);
@@ -114,6 +117,7 @@ public class SovaST extends AbstractST {
         // "sova" is only a prefix of the topic names, so with a full match nothing should be exposed
         KafkaUtils.replace(namespaceName, clusterName, kafka -> kafka.getSpec().getExtraMetrics().setTopicRegex("sova"));
         snapshot = DeploymentUtils.waitTillDepHasRolled(namespaceName, sovaName, 1, snapshot);
+        waitForCollectionAfterRoll();
         waitForMetric("kafka_topic_partitions\\{topic=\"" + TOPIC_CHECKOUT + "\"\\}", false);
 
         KafkaUtils.replace(namespaceName, clusterName, kafka -> {
@@ -123,6 +127,7 @@ public class SovaST extends AbstractST {
             kafka.getSpec().getExtraMetrics().setTopicExcludeRegex(TOPIC_AUDIT);
         });
         snapshot = DeploymentUtils.waitTillDepHasRolled(namespaceName, sovaName, 1, snapshot);
+        waitForCollectionAfterRoll();
         waitForMetric("kafka_consumergroup_current_offset\\{.*consumergroup=\"" + GROUP_BILLING + "\".*\\}", true);
         waitForMetric("kafka_consumergroup_current_offset\\{.*consumergroup=\"" + GROUP_AUDIT + "\".*\\}", false);
         waitForMetric("kafka_topic_partitions\\{topic=\"" + TOPIC_PAYMENTS + "\"\\}", true);
@@ -135,6 +140,7 @@ public class SovaST extends AbstractST {
             kafka.getSpec().getExtraMetrics().setTopicExcludeRegex(null);
         });
         DeploymentUtils.waitTillDepHasRolled(namespaceName, sovaName, 1, snapshot);
+        waitForCollectionAfterRoll();
         waitForMetric("kafka_topic_partitions\\{topic=\"" + TOPIC_AUDIT + "\"\\}", true);
     }
 
@@ -161,6 +167,58 @@ public class SovaST extends AbstractST {
         // The Pod was recreated, so the metrics have to be collected again from the new Pod
         sovaCollector.collectMetricsFromPods(TestConstants.METRICS_COLLECT_TIMEOUT);
         assertMetricValueNotNull(sovaCollector, "kafka_topic_partitions\\{topic=\"" + TOPIC_CHECKOUT + "\"\\}");
+
+        // Collection health is reported through metrics, while the Kafka custom resource stays Ready
+        assertThat("Sova reported failed collection cycles",
+            createPatternAndCollectWithoutWait(sovaCollector, "sova_collection_failures_total"), is(List.of(0.0)));
+        assertMetricValueNotNull(sovaCollector, "sova_collection_duration_seconds");
+        assertThat("Kafka is not Ready", KafkaUtils.waitForKafkaReady(testStorage.getNamespaceName(), testStorage.getClusterName()), is(true));
+    }
+
+    @IsolatedTest
+    @TestDoc(
+        description = @Desc("This test case checks that `collectionIntervalMs` and the Kafka Admin client options in `config` are passed to Sova."),
+        steps = {
+            @Step(value = "Set `collectionIntervalMs` to 10000 and `config` with `default.api.timeout.ms` of 5000 and wait for the Sova rolling update.", expected = "Sova starts with a 10 second collection interval and the Admin client configuration contains the timeout."),
+            @Step(value = "Wait for the first collection cycle of the new Pod.", expected = "Sova exposes freshly collected metrics."),
+            @Step(value = "Restore the default configuration.", expected = "Sova rolls back to the default configuration.")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.METRICS),
+        }
+    )
+    void testCollectionTuning() {
+        final String namespaceName = testStorage.getNamespaceName();
+        final String clusterName = testStorage.getClusterName();
+        final String sovaName = SovaResources.componentName(clusterName);
+        Map<String, String> snapshot = DeploymentUtils.depSnapshot(namespaceName, sovaName);
+
+        KafkaUtils.replace(namespaceName, clusterName, kafka -> {
+            kafka.getSpec().getExtraMetrics().setCollectionIntervalMs(10_000L);
+            kafka.getSpec().getExtraMetrics().setConfig(Map.of("default.api.timeout.ms", 5000));
+        });
+        snapshot = DeploymentUtils.waitTillDepHasRolled(namespaceName, sovaName, 1, snapshot);
+
+        final String podName = PodUtils.getPodNameByPrefix(namespaceName, sovaName);
+        assertThat("Collection interval is not applied",
+            StUtils.getLogFromPodByTime(namespaceName, podName, sovaName, "10m"), containsString("collect.interval=10000ms"));
+
+        final String adminClientConfiguration = KubeResourceManager.get().kubeClient().getClient().apps().deployments()
+            .inNamespace(namespaceName).withName(sovaName).get()
+            .getSpec().getTemplate().getSpec().getContainers().get(0).getEnv().stream()
+            .filter(env -> "STRIMZI_KAFKA_ADMIN_CLIENT_CONFIGURATION".equals(env.getName()))
+            .map(EnvVar::getValue)
+            .findFirst()
+            .orElse("");
+        assertThat("Admin client option from config is missing", adminClientConfiguration, containsString("default.api.timeout.ms=5000"));
+
+        waitForCollectionAfterRoll();
+
+        KafkaUtils.replace(namespaceName, clusterName, kafka -> {
+            kafka.getSpec().getExtraMetrics().setCollectionIntervalMs(null);
+            kafka.getSpec().getExtraMetrics().setConfig(null);
+        });
+        DeploymentUtils.waitTillDepHasRolled(namespaceName, sovaName, 1, snapshot);
     }
 
     @IsolatedTest
@@ -244,6 +302,19 @@ public class SovaST extends AbstractST {
 
         KafkaUtils.replace(namespaceName, clusterName, kafka -> kafka.getSpec().getExtraMetrics().setLogging(null));
         assertThat("Sova Pod should not roll, but did.", DeploymentUtils.depSnapshot(namespaceName, sovaName), is(snapshot));
+    }
+
+    /**
+     * Waits until the current Sova Pod has finished its first successful collection cycle. Sova is Ready as soon as
+     * its HTTP server is up and serves an empty snapshot until then, so checks that a metric is absent would pass
+     * trivially on a freshly rolled Pod without this wait.
+     */
+    private void waitForCollectionAfterRoll() {
+        TestUtils.waitFor("first Sova collection cycle", TestConstants.GLOBAL_POLL_INTERVAL_MEDIUM, TestConstants.GLOBAL_TIMEOUT, () -> {
+            sovaCollector.collectMetricsFromPods(TestConstants.METRICS_COLLECT_TIMEOUT);
+            return createPatternAndCollectWithoutWait(sovaCollector, "sova_last_successful_collection_timestamp_seconds")
+                .stream().anyMatch(value -> value > 0);
+        });
     }
 
     /**
