@@ -51,6 +51,7 @@ metrics
 │    │  ├── prometheus-kafka-rules.yaml
 │    │  ├── prometheus-kafka-exporter-topic-rules.yaml
 │    │  ├── prometheus-mirrormaker2-rules.yaml
+│    │  ├── prometheus-sova-rules.yaml
 │    │  ├── prometheus-strimzi-cluster-operator-rules.yaml
 │    │  └── prometheus-strimzi-entity-operator-rules.yaml
 │    └── prometheus.yaml <9>
