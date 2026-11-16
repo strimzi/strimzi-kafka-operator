@@ -30,7 +30,7 @@
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Set `collectionIntervalMs` to 10000 and `config` with `default.api.timeout.ms` of 5000 and wait for the Sova rolling update. | Sova starts with a 10 second collection interval and the Admin client configuration contains the timeout. |
+| 1. | Set `collectionIntervalMs` to 10000 and `config` with `default.api.timeout.ms` of 60000 and wait for the Sova rolling update. | Sova starts with a 10 second collection interval and the Admin client configuration contains the timeout. |
 | 2. | Wait for the first collection cycle of the new Pod. | Sova exposes freshly collected metrics. |
 | 3. | Restore the default configuration. | Sova rolls back to the default configuration. |
 
