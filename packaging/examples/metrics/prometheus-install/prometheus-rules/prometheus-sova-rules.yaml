@@ -1,0 +1,27 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  labels:
+    role: alert-rules
+    app: strimzi
+  name: sova
+spec:
+  groups:
+  - name: sova
+    rules:
+    - alert: SovaMetricsStale
+      expr: time() - sova_last_successful_collection_timestamp_seconds > 300
+      for: 1m
+      labels:
+        severity: warning
+      annotations:
+        summary: 'Sova metrics are stale'
+        description: 'Sova in namespace {{ $labels.namespace }} for Kafka cluster {{ $labels.strimzi_io_cluster }} has not collected metrics successfully for {{ $value | humanizeDuration }}'
+    - alert: SovaCollectionFailing
+      expr: increase(sova_collection_failures_total[10m]) > 2
+      for: 5m
+      labels:
+        severity: warning
+      annotations:
+        summary: 'Sova metrics collection is failing'
+        description: 'Sova in namespace {{ $labels.namespace }} for Kafka cluster {{ $labels.strimzi_io_cluster }} failed {{ $value }} collection cycles in the last 10 minutes'
