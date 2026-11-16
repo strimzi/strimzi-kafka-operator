@@ -327,10 +327,10 @@ public class Sova extends AbstractModel implements SupportsLogging {
         }
 
         // User-provided options go last. Forbidden options (connection, security and config providers) were already
-        // filtered out, so they cannot override anything generated above.
+        // filtered out, and getConfiguration() escapes keys and values in the properties format, so a user value
+        // cannot inject additional lines that would override anything generated above.
         if (adminClientConfiguration != null) {
-            adminClientConfiguration.asOrderedProperties().asMap()
-                    .forEach((key, value) -> config.append(key).append("=").append(value).append("\n"));
+            config.append(adminClientConfiguration.getConfiguration());
         }
 
         return config.toString();
