@@ -4,15 +4,18 @@ SOVA_VERSION ?= $(shell cat ../../../sova.version)
 
 include ../../../Makefile.docker
 
-sova_dist := ../../artifacts/binaries/sova-$(SOVA_VERSION)-dist.zip
+# SOVA_DIST can point to a locally built Sova distribution zip (see DEV_GUIDE.md)
+SOVA_DIST ?= ../../artifacts/binaries/sova-$(SOVA_VERSION)-dist.zip
 
 clean:
 	rm -rf tmp
 	rm -f .*.tmp
 
-.sova.tmp: $(sova_dist)
+.sova.tmp: $(SOVA_DIST)
 	test -d tmp || mkdir tmp
-	unzip -qo $(sova_dist) -d tmp/sova
+	# Remove the previous distribution first, so that JARs of another Sova version do not stay on the classpath
+	rm -rf tmp/sova
+	unzip -qo $(SOVA_DIST) -d tmp/sova
 	mv tmp/sova/sova-*/* tmp/sova/
 	rm -rf tmp/sova/sova-*
 	touch .sova.tmp
