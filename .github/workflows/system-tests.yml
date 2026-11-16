@@ -63,11 +63,11 @@ jobs:
     steps:
       - name: Should Run
         id: should_run
-        uses: strimzi/github-actions/.github/actions/utils/should-run@8a88edc07beb03fbd99d6d72f59c86d7d7aadda4 # v3.0
+        uses: strimzi/github-actions/.github/actions/utils/should-run@bb4758d4afacd9c0ff8f426395bbbece41fd142a # v4.0
       - name: Determine checkout ref
         id: determine_ref
         if: steps.should_run.outputs.shouldRun == 'true'
-        uses: strimzi/github-actions/.github/actions/utils/determine-ref@8a88edc07beb03fbd99d6d72f59c86d7d7aadda4 # v3.0
+        uses: strimzi/github-actions/.github/actions/utils/determine-ref@bb4758d4afacd9c0ff8f426395bbbece41fd142a # v4.0
 
   check-rights:
     needs:
@@ -80,7 +80,7 @@ jobs:
       pull-requests: write
       statuses: write
     steps:
-      - uses: strimzi/github-actions/.github/actions/utils/check-permissions@8a88edc07beb03fbd99d6d72f59c86d7d7aadda4 # v3.0
+      - uses: strimzi/github-actions/.github/actions/utils/check-permissions@bb4758d4afacd9c0ff8f426395bbbece41fd142a # v4.0
 
   check-build:
     needs:
@@ -255,33 +255,34 @@ jobs:
           ref: ${{ needs.parse-params.outputs.ref }}
 
       - name: Setup Java and Maven
-        uses: strimzi/github-actions/.github/actions/dependencies/setup-java@8a88edc07beb03fbd99d6d72f59c86d7d7aadda4 # v3.0
+        uses: strimzi/github-actions/.github/actions/dependencies/setup-java@bb4758d4afacd9c0ff8f426395bbbece41fd142a # v4.0
         with:
           javaVersion: "21"
 
       - name: Install yq
-        uses: strimzi/github-actions/.github/actions/dependencies/install-yq@8a88edc07beb03fbd99d6d72f59c86d7d7aadda4 # v3.0
+        uses: strimzi/github-actions/.github/actions/dependencies/install-yq@bb4758d4afacd9c0ff8f426395bbbece41fd142a # v4.0
         with:
           version: "v4.6.3"
           architecture: "amd64"
 
       - name: Install Shellcheck
-        uses: strimzi/github-actions/.github/actions/dependencies/install-shellcheck@8a88edc07beb03fbd99d6d72f59c86d7d7aadda4 # v3.0
+        uses: strimzi/github-actions/.github/actions/dependencies/install-shellcheck@bb4758d4afacd9c0ff8f426395bbbece41fd142a # v4.0
         with:
           version: "0.11.0"
           architecture: "amd64"
 
       - name: Install Helm
-        uses: strimzi/github-actions/.github/actions/dependencies/install-helm@8a88edc07beb03fbd99d6d72f59c86d7d7aadda4 # v3.0
+        uses: strimzi/github-actions/.github/actions/dependencies/install-helm@bb4758d4afacd9c0ff8f426395bbbece41fd142a # v4.0
         with:
           helmVersion: "v3.16.0"
+          helmUnitTestVersion: "v1.0.3"
 
       - name: Build binaries using build-binaries action
-        uses: strimzi/github-actions/.github/actions/build/build-binaries@8a88edc07beb03fbd99d6d72f59c86d7d7aadda4 # v3.0
+        uses: strimzi/github-actions/.github/actions/build/build-binaries@bb4758d4afacd9c0ff8f426395bbbece41fd142a # v4.0
         with:
           mainJavaBuild: "true"
           artifactSuffix: "operators"
-          clusterOperatorBuild: "true"
+          skipTests: "true"
         env:
           MVN_ARGS: "-DskipTests -Dmaven.javadoc.skip=true"
 
@@ -314,16 +315,16 @@ jobs:
           ref: ${{ needs.parse-params.outputs.ref }}
 
       - name: Install Docker
-        uses: strimzi/github-actions/.github/actions/dependencies/install-docker@8a88edc07beb03fbd99d6d72f59c86d7d7aadda4 # v3.0
+        uses: strimzi/github-actions/.github/actions/dependencies/install-docker@bb4758d4afacd9c0ff8f426395bbbece41fd142a # v4.0
 
       - name: Install yq
-        uses: strimzi/github-actions/.github/actions/dependencies/install-yq@8a88edc07beb03fbd99d6d72f59c86d7d7aadda4 # v3.0
+        uses: strimzi/github-actions/.github/actions/dependencies/install-yq@bb4758d4afacd9c0ff8f426395bbbece41fd142a # v4.0
         with:
           version: "v4.6.3"
           architecture: "amd64"
 
       - name: Install Shellcheck
-        uses: strimzi/github-actions/.github/actions/dependencies/install-shellcheck@8a88edc07beb03fbd99d6d72f59c86d7d7aadda4 # v3.0
+        uses: strimzi/github-actions/.github/actions/dependencies/install-shellcheck@bb4758d4afacd9c0ff8f426395bbbece41fd142a # v4.0
         with:
           version: "0.11.0"
           architecture: "amd64"
@@ -336,7 +337,7 @@ jobs:
           restore-keys: |
             kafka-binaries-
 
-      - uses: strimzi/github-actions/.github/actions/build/build-containers@8a88edc07beb03fbd99d6d72f59c86d7d7aadda4 # v3.0
+      - uses: strimzi/github-actions/.github/actions/build/build-containers@bb4758d4afacd9c0ff8f426395bbbece41fd142a # v4.0
         with:
           architecture: ${{ matrix.architecture }}
           imagesLocation: "./docker-images/container-archives"

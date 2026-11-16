@@ -39,6 +39,9 @@ The release process should normally look like this:
     * Go to Maven Central > Publish and publish the release artifacts
     * Because GitHub Actions doesn't support retaining builds forever, the workflow push OCI image with Java binaries into GHCR to make them available forever
 11. Create a GitHub tag and release based on the release branch. Attach the release artifacts and docs as downloaded from the GitHub Actions.
+    * Also attach the attestation bundle `release-<version>.intoto.jsonl` and the `sbom.tar.gz` archive from the `release-operators-<version>.tar` artifact of the release workflow.
+      The `attest` job adds these files to that artifact. Attach them **without changing the file names**:
+      the `.intoto.jsonl` name is what the OpenSSF Scorecard `Signed-Releases` check looks for, and the README tells users to verify the release archives with `gh attestation verify <archive> --bundle release-<version>.intoto.jsonl`.
     * For GAs, prepare steps 13 and 14 before creating the release in GitHub.
     * For RCs, the tag should be named with the RC suffix, e.g. `0.45.0-rc1`
 12. _(only for RCs, not for GAs) Run system tests workflow. For more details see [Running System Tests workflow](#running-system-tests-workflow) section.
@@ -75,6 +78,7 @@ The release process should normally look like this:
 17. _(only for GA, not for RCs)_ Add the new version to the `systemtest/src/test/resources/upgrade/BundleUpgrade.yaml` file for the upgrade tests
 18. _(only for GA, not for RCs)_ Add the new version to the `systemtest/src/test/resources/upgrade/BundleDowngrade.yaml` file and remove the old one for the downgrade tests
 19. _(only for GA, not for RCs)_ Add the new version to the `systemtest/src/test/resources/upgrade/OlmUpgrade.yaml` file for the OLM upgrade tests
+20. Revisit [self-assessment](../SECURITY-SELF-ASSESSMENT.md) and [assurance-case](../SECURITY-ASSURANCE-CASE.md) docs and update if needed.
 
 ## Updating Kafka Bridge version
 
