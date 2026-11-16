@@ -10,6 +10,7 @@ Proper verification of metrics is crucial for observability, debugging, and perf
 <!-- generated part -->
 **Tests:**
 - [testClusterOperatorMetrics](../io.strimzi.systemtest.metrics.MetricsST.md)
+- [testCollectionTuning](../io.strimzi.systemtest.metrics.SovaST.md)
 - [testCruiseControlMetrics](../io.strimzi.systemtest.metrics.MetricsST.md)
 - [testDynamicReconfigurationAllowList](../io.strimzi.systemtest.metrics.StrimziMetricsReporterST.md)
 - [testEnableDisable](../io.strimzi.systemtest.metrics.SovaST.md)
