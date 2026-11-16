@@ -44,6 +44,15 @@ The interval between xref:ref-operator-cluster-periodic-reconciliation-{context}
 `STRIMZI_OPERATION_TIMEOUT_MS`:: Optional, default 300000 ms.
 The timeout for internal operations, in milliseconds. Increase this value when using Strimzi on clusters where regular Kubernetes operations take longer than usual (due to factors such as prolonged download times for container images, for example).
 
+`STRIMZI_POST_KAFKA_RESTART_DELAY_MS`:: Optional, default 0 ms.
+The time to wait before restarting a Kafka node during a rolling update, in milliseconds.
+When the Cluster Operator finds that a Kafka node can be restarted without affecting availability, it waits for the delay, checks the node again, and restarts it only if the checks still pass.
+Use it when a restarted broker might drop out of the in-sync replicas shortly after it becomes ready, for example because of slow disks.
+The default of 0 disables the delay.
+The value cannot be higher than `STRIMZI_OPERATION_TIMEOUT_MS`; the Cluster Operator fails to start otherwise.
+The delay applies to all Kafka clusters managed by the Cluster Operator and can be overridden for a Kafka cluster with the `strimzi.io/post-kafka-restart-delay-ms` annotation on the `Kafka` resource.
+For details, see xref:con-post-kafka-restart-delay-{context}[].
+
 `STRIMZI_OPERATIONS_THREAD_POOL_SIZE`:: Optional, default 10.
 The worker thread pool size, which is used for various asynchronous and blocking operations that are run by the Cluster Operator.
 

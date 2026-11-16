@@ -125,6 +125,40 @@ public class ReconcilerUtils {
     }
 
     /**
+     * Resolves the delay between the availability check passing for a Kafka node and its restart during a rolling
+     * update. The {@code strimzi.io/post-kafka-restart-delay-ms} annotation on the Kafka resource takes precedence
+     * over the operator-wide default from the {@code STRIMZI_POST_KAFKA_RESTART_DELAY_MS} environment variable,
+     * including a {@code 0} which disables the delay for the cluster. An annotation value which is not an integer is
+     * ignored with a warning. A delay longer than the operation timeout is capped to it with a warning.
+     *
+     * @param reconciliation        Reconciliation marker
+     * @param kafkaCr               The Kafka custom resource which might carry the annotation
+     * @param defaultDelayMs        Operator-wide default delay in milliseconds
+     * @param operationTimeoutMs    Operation timeout in milliseconds, which is the upper limit of the delay
+     *
+     * @return  The effective delay in milliseconds, 0 or less meaning no delay
+     */
+    public static long postKafkaRestartDelayMs(Reconciliation reconciliation, HasMetadata kafkaCr, long defaultDelayMs, long operationTimeoutMs) {
+        long delayMs = defaultDelayMs;
+        String annotation = Annotations.stringAnnotation(kafkaCr, Annotations.ANNO_STRIMZI_IO_POST_KAFKA_RESTART_DELAY_MS, null);
+
+        if (annotation != null) {
+            try {
+                delayMs = Long.parseLong(annotation.trim());
+            } catch (NumberFormatException e) {
+                LOGGER.warnCr(reconciliation, "Ignoring the {} annotation with value {} which is not an integer number of milliseconds", Annotations.ANNO_STRIMZI_IO_POST_KAFKA_RESTART_DELAY_MS, annotation);
+            }
+        }
+
+        if (delayMs > operationTimeoutMs) {
+            LOGGER.warnCr(reconciliation, "The delay of {}ms before restarting Kafka nodes is longer than the operation timeout of {}ms and is capped to it", delayMs, operationTimeoutMs);
+            delayMs = operationTimeoutMs;
+        }
+
+        return delayMs;
+    }
+
+    /**
      * Utility method which helps to get the set of trusted certificates and client auth identities for the Cluster Operator
      * needed to bootstrap different clients used during the reconciliation.
      *

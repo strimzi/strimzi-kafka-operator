@@ -126,4 +126,11 @@ public class ResourceAnnotations {
      * Annotation used to skip the check on broker scale-down
      */
     public static final String ANNO_STRIMZI_IO_SKIP_BROKER_SCALEDOWN_CHECK = STRIMZI_DOMAIN + "skip-broker-scaledown-check";
+
+    /**
+     * Annotation on the Kafka resource to configure the delay in milliseconds between the availability check passing
+     * for a Kafka node and its restart during a rolling update. It overrides the STRIMZI_POST_KAFKA_RESTART_DELAY_MS
+     * environment variable of the Cluster Operator for that cluster.
+     */
+    public static final String ANNO_STRIMZI_IO_POST_KAFKA_RESTART_DELAY_MS = STRIMZI_DOMAIN + "post-kafka-restart-delay-ms";
 }

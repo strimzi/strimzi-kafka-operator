@@ -24,3 +24,5 @@ This avoids the risk of a `StrimziPodSet` annotation being overwritten during re
 include::../../modules/managing/proc-manual-rolling-update-pods.adoc[leveloffset=+1]
 //steps for manual rolling updates with strimzipodset
 include::../../modules/managing/proc-manual-rolling-update-strimzipodset.adoc[leveloffset=+1]
+//delay before each Kafka node restart
+include::../../modules/managing/con-post-kafka-restart-delay.adoc[leveloffset=+1]

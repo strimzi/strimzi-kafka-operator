@@ -24,6 +24,8 @@ import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticatio
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationPlain;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationScramSha512;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationScramSha512Builder;
+import io.strimzi.api.kafka.model.kafka.Kafka;
+import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
 import io.strimzi.api.kafka.model.kafka.KafkaClusterSpec;
 import io.strimzi.api.kafka.model.kafka.KafkaClusterSpecBuilder;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
@@ -872,6 +874,44 @@ public class ReconcilerUtilsTest {
                 () -> ReconcilerUtils.withIgnoreRbacError(Reconciliation.DUMMY_RECONCILIATION, reconcileFuture, null).toCompletableFuture().join());
         assertThat(ex.getCause(), instanceOf(KubernetesClientException.class));
         assertThat(((KubernetesClientException) ex.getCause()).getCode(), is(500));
+    }
+
+    @Test
+    public void testPostKafkaRestartDelayWithoutAnnotation() {
+        Kafka kafka = new KafkaBuilder().withNewMetadata().withName(CLUSTER_NAME).withNamespace(NAMESPACE).endMetadata().build();
+
+        assertThat(ReconcilerUtils.postKafkaRestartDelayMs(Reconciliation.DUMMY_RECONCILIATION, kafka, 0, 300_000), is(0L));
+        assertThat(ReconcilerUtils.postKafkaRestartDelayMs(Reconciliation.DUMMY_RECONCILIATION, kafka, 60_000, 300_000), is(60_000L));
+    }
+
+    @Test
+    public void testPostKafkaRestartDelayAnnotationOverridesDefault() {
+        assertThat(ReconcilerUtils.postKafkaRestartDelayMs(Reconciliation.DUMMY_RECONCILIATION, kafkaWithPostRestartDelayAnnotation("120000"), 60_000, 300_000), is(120_000L));
+        // Zero disables the delay for the cluster even when the operator has a default
+        assertThat(ReconcilerUtils.postKafkaRestartDelayMs(Reconciliation.DUMMY_RECONCILIATION, kafkaWithPostRestartDelayAnnotation("0"), 60_000, 300_000), is(0L));
+        assertThat(ReconcilerUtils.postKafkaRestartDelayMs(Reconciliation.DUMMY_RECONCILIATION, kafkaWithPostRestartDelayAnnotation(" 30000 "), 60_000, 300_000), is(30_000L));
+    }
+
+    @Test
+    public void testPostKafkaRestartDelayInvalidAnnotationIsIgnored() {
+        assertThat(ReconcilerUtils.postKafkaRestartDelayMs(Reconciliation.DUMMY_RECONCILIATION, kafkaWithPostRestartDelayAnnotation("2m"), 60_000, 300_000), is(60_000L));
+        assertThat(ReconcilerUtils.postKafkaRestartDelayMs(Reconciliation.DUMMY_RECONCILIATION, kafkaWithPostRestartDelayAnnotation(""), 60_000, 300_000), is(60_000L));
+    }
+
+    @Test
+    public void testPostKafkaRestartDelayIsCappedToOperationTimeout() {
+        assertThat(ReconcilerUtils.postKafkaRestartDelayMs(Reconciliation.DUMMY_RECONCILIATION, kafkaWithPostRestartDelayAnnotation("600000"), 60_000, 300_000), is(300_000L));
+        assertThat(ReconcilerUtils.postKafkaRestartDelayMs(Reconciliation.DUMMY_RECONCILIATION, kafkaWithPostRestartDelayAnnotation("300000"), 60_000, 300_000), is(300_000L));
+    }
+
+    private static Kafka kafkaWithPostRestartDelayAnnotation(String value) {
+        return new KafkaBuilder()
+                .withNewMetadata()
+                    .withName(CLUSTER_NAME)
+                    .withNamespace(NAMESPACE)
+                    .withAnnotations(Map.of(Annotations.ANNO_STRIMZI_IO_POST_KAFKA_RESTART_DELAY_MS, value))
+                .endMetadata()
+                .build();
     }
 
     static class MockJmxCluster implements SupportsJmx {

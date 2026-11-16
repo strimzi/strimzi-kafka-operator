@@ -1,0 +1,60 @@
+:_mod-docs-content-type: CONCEPT
+
+// Module included in the following assemblies:
+//
+// deploying/assembly-rolling-updates.adoc
+
+[id='con-post-kafka-restart-delay-{context}']
+= Delaying restarts of Kafka nodes during rolling updates
+
+[role="_abstract"]
+During a rolling update, the Cluster Operator restarts a Kafka node only when the restart does not affect availability, for example when all the partitions hosted by the node have enough in-sync replicas.
+The check runs as soon as the previously restarted node is ready.
+A broker that has just become ready can still drop out of the in-sync replicas shortly afterwards, for example because of slow disks.
+Restarting the next broker at that moment can make partitions unavailable.
+
+To give restarted nodes time to settle, configure a delay before each restart.
+When a Kafka node is found safe to restart, the Cluster Operator waits for the delay, runs the checks again, and restarts the node only if it is still safe to do so.
+If the checks fail after the delay, the node is retried as usual and waits for a new delay once it can be restarted again.
+Only one node waits for the delay at a time.
+The other nodes that need to be restarted are considered again when the delay ends, without using up their retries.
+
+The delay applies to restarts performed by the Cluster Operator, including the restarts triggered by the Strimzi Drain Cleaner.
+It does not apply to pods that are deleted outside the Cluster Operator, to nodes that are stuck, unresponsive, or force-restarted after repeated failed checks, and to dynamic configuration updates that do not restart the node.
+The first node of a rolling update waits for the delay, and no delay follows the last restart.
+Each restarted node extends the rolling update by the delay, so other changes to the Kafka cluster wait longer for the reconciliation to complete.
+
+Set the delay for all Kafka clusters with the `STRIMZI_POST_KAFKA_RESTART_DELAY_MS` environment variable of the Cluster Operator.
+Override it for a Kafka cluster with the `strimzi.io/post-kafka-restart-delay-ms` annotation on the `Kafka` resource.
+Both values are in milliseconds and `0` disables the delay.
+The delay cannot be longer than the operation timeout (`STRIMZI_OPERATION_TIMEOUT_MS`).
+The Cluster Operator fails to start when the environment variable is higher than the operation timeout, and it caps the annotation to the operation timeout with a warning in the log.
+An annotation that is not an integer is ignored with a warning in the log.
+
+.Setting a 2 minute delay for a Kafka cluster
+[source,shell,subs="+quotes,attributes+"]
+----
+kubectl annotate Kafka my-kafka-cluster strimzi.io/post-kafka-restart-delay-ms="120000"
+----
+
+Replace `my-kafka-cluster` with the name of your `Kafka` resource.
+The annotation is read at the start of each reconciliation, so a change applies to the next rolling update.
+
+To disable the delay for a Kafka cluster while keeping it for the other clusters, set the annotation to `0`.
+To use the delay of the Cluster Operator again, remove the annotation:
+
+.Removing the annotation
+[source,shell,subs="+quotes,attributes+"]
+----
+kubectl annotate Kafka my-kafka-cluster strimzi.io/post-kafka-restart-delay-ms-
+----
+
+While a node waits for the delay, the Cluster Operator logs the following messages at the `INFO` level:
+
+.Example log messages for a delayed restart
+[source,shell,subs="+quotes"]
+----
+INFO  KafkaRoller:... Pod my-cluster-kafka-0/0 can be restarted, waiting 120000ms for the post-restart delay before checking again and restarting it
+INFO  KafkaRoller:... Pod my-cluster-kafka-0/0 can still be restarted after waiting 120000ms for the post-restart delay
+INFO  KafkaRoller:... Rolling Pod my-cluster-kafka-0/0 due to [...]
+----
