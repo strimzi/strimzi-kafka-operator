@@ -17,6 +17,7 @@ import io.strimzi.api.kafka.model.common.StrimziProbe;
 import io.strimzi.api.kafka.model.common.UnknownPropertyPreserving;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.KubeLink;
+import io.strimzi.crdgenerator.annotations.Minimum;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -34,15 +35,26 @@ import java.util.Map;
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
 @JsonPropertyOrder({
     "image", "groupRegex", "groupExcludeRegex", "topicRegex", "topicExcludeRegex",
-    "logging", "jvmOptions", "resources", "livenessProbe", "readinessProbe", "template"})
+    "collectionIntervalMs", "config", "logging", "jvmOptions", "resources", "livenessProbe", "readinessProbe", "template"})
 @EqualsAndHashCode
 @ToString
 public class SovaSpec implements HasConfigurableLogging, HasLivenessProbe, HasReadinessProbe, UnknownPropertyPreserving {
+    /**
+     * Prefixes of Kafka Admin client options which cannot be set by the user in {@code config}
+     */
+    public static final String FORBIDDEN_PREFIXES = "ssl., sasl., security., bootstrap.servers, config.providers";
+    /**
+     * Exceptions from the forbidden prefixes which can be set by the user in {@code config}
+     */
+    public static final String FORBIDDEN_PREFIX_EXCEPTIONS = "ssl.endpoint.identification.algorithm, ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols";
+
     private String image;
     private String groupRegex = ".*";
     private String groupExcludeRegex;
     private String topicRegex = ".*";
     private String topicExcludeRegex;
+    private Long collectionIntervalMs;
+    private Map<String, Object> config = new HashMap<>(0);
     private Logging logging;
     private JvmOptions jvmOptions;
     private ResourceRequirements resources;
@@ -104,6 +116,28 @@ public class SovaSpec implements HasConfigurableLogging, HasLivenessProbe, HasRe
 
     public void setTopicExcludeRegex(String topicExcludeRegex) {
         this.topicExcludeRegex = topicExcludeRegex;
+    }
+
+    @Description("Interval between metric collection cycles in milliseconds. Defaults to 30000.")
+    @Minimum(1)
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public Long getCollectionIntervalMs() {
+        return collectionIntervalMs;
+    }
+
+    public void setCollectionIntervalMs(Long collectionIntervalMs) {
+        this.collectionIntervalMs = collectionIntervalMs;
+    }
+
+    @Description("Kafka Admin client configuration used by Sova. "
+        + "Properties with the following prefixes cannot be set: " + FORBIDDEN_PREFIXES + " (with the exception of: " + FORBIDDEN_PREFIX_EXCEPTIONS + "). ")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public Map<String, Object> getConfig() {
+        return config;
+    }
+
+    public void setConfig(Map<String, Object> config) {
+        this.config = config;
     }
 
     @Description("Logging configuration (Log4j 2) for Sova.")

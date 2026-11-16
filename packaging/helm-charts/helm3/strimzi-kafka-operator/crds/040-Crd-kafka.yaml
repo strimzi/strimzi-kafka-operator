@@ -5882,6 +5882,14 @@ spec:
                     topicExcludeRegex:
                       type: string
                       description: Regular expression to specify which topics to exclude.
+                    collectionIntervalMs:
+                      type: integer
+                      minimum: 1
+                      description: Interval between metric collection cycles in milliseconds. Defaults to 30000.
+                    config:
+                      x-kubernetes-preserve-unknown-fields: true
+                      type: object
+                      description: "Kafka Admin client configuration used by Sova. Properties with the following prefixes cannot be set: ssl., sasl., security., bootstrap.servers, config.providers (with the exception of: ssl.endpoint.identification.algorithm, ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols). "
                     logging:
                       type: object
                       properties:
