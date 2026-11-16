@@ -57,10 +57,6 @@ public class KafkaAutoRebalancingReconcilerTest {
     private static final String IMBALANCE_KR_NAME = KafkaResources.autoRebalancingKafkaRebalanceResourceName(CLUSTER_NAME, KafkaAutoRebalanceMode.IMBALANCE);
     private static final GoalViolationInfo FIXABLE_VIOLATION = new GoalViolationInfo(
             DETECTION_TIME, GoalViolationInfo.Fixability.FIXABLE, List.of("DiskUsageDistributionGoal"), List.of());
-    private static final GoalViolationInfo UNFIXABLE_VIOLATION = new GoalViolationInfo(
-            DETECTION_TIME, GoalViolationInfo.Fixability.UNFIXABLE, List.of(), List.of("RackAwareGoal"));
-    private static final GoalViolationInfo MIXED_VIOLATION = new GoalViolationInfo(
-            DETECTION_TIME, GoalViolationInfo.Fixability.MIXED, List.of("DiskUsageDistributionGoal"), List.of("RackAwareGoal"));
 
     private ResourceOperatorSupplier supplier;
     private CrdOperator<KubernetesClient, KafkaRebalance, KafkaRebalanceList> rebalanceOperator;
@@ -85,7 +81,7 @@ public class KafkaAutoRebalancingReconcilerTest {
                 .thenReturn(CompletableFuture.completedFuture(ReconcileResult.created(buildKafkaRebalance(IMBALANCE_KR_NAME, KafkaRebalanceMode.FULL, KafkaRebalanceState.New))));
 
         Kafka kafka = buildKafkaWithAutoRebalance(KafkaAutoRebalanceState.Idle, KafkaAutoRebalanceMode.IMBALANCE);
-        KafkaStatus kafkaStatus = reconcile(buildReconciler(kafka, buildImbalanceDetector(FIXABLE_VIOLATION, false), Set.of()));
+        KafkaStatus kafkaStatus = reconcile(buildReconciler(kafka, mockImbalanceDetector(FIXABLE_VIOLATION), Set.of()));
 
         assertThat(kafkaStatus.getAutoRebalance().getState(), is(KafkaAutoRebalanceState.RebalanceOnImbalance));
         assertThat(kafkaStatus.getAutoRebalance().getModes(), notNullValue());
@@ -104,7 +100,7 @@ public class KafkaAutoRebalancingReconcilerTest {
                 .thenReturn(CompletableFuture.completedFuture(buildKafkaRebalance(IMBALANCE_KR_NAME, KafkaRebalanceMode.FULL, KafkaRebalanceState.Rebalancing)));
 
         Kafka kafka = buildKafkaWithAutoRebalance(KafkaAutoRebalanceState.Idle, KafkaAutoRebalanceMode.IMBALANCE);
-        KafkaStatus kafkaStatus = reconcile(buildReconciler(kafka, buildImbalanceDetector(FIXABLE_VIOLATION, false), Set.of()));
+        KafkaStatus kafkaStatus = reconcile(buildReconciler(kafka, mockImbalanceDetector(FIXABLE_VIOLATION), Set.of()));
 
         assertThat(kafkaStatus.getAutoRebalance().getState(), is(KafkaAutoRebalanceState.RebalanceOnImbalance));
         assertThat(kafkaStatus.getAutoRebalance().getModes(), notNullValue());
@@ -130,7 +126,7 @@ public class KafkaAutoRebalancingReconcilerTest {
                     .endAutoRebalance()
                 .endStatus()
                 .build();
-        KafkaStatus kafkaStatus = reconcile(buildReconciler(kafka, buildImbalanceDetector(null, false), Set.of()));
+        KafkaStatus kafkaStatus = reconcile(buildReconciler(kafka, mockImbalanceDetector(null), Set.of()));
 
         assertThat(kafkaStatus.getAutoRebalance().getState(), is(KafkaAutoRebalanceState.RebalanceOnImbalance));
         assertThat(kafkaStatus.getAutoRebalance().getModes().get(0).getMode(), is(KafkaAutoRebalanceMode.IMBALANCE));
@@ -151,7 +147,7 @@ public class KafkaAutoRebalancingReconcilerTest {
                 .thenReturn(CompletableFuture.completedFuture(null));
 
         Kafka kafka = buildKafkaWithAutoRebalance(KafkaAutoRebalanceState.RebalanceOnImbalance, KafkaAutoRebalanceMode.IMBALANCE);
-        KafkaStatus kafkaStatus = reconcile(buildReconciler(kafka, buildImbalanceDetector(null, false), Set.of()));
+        KafkaStatus kafkaStatus = reconcile(buildReconciler(kafka, mockImbalanceDetector(null), Set.of()));
 
         assertThat(kafkaStatus.getAutoRebalance().getState(), is(KafkaAutoRebalanceState.Idle));
         verify(rebalanceOperator).deleteAsync(any(), eq(NAMESPACE), eq(kr.getMetadata().getName()), eq(true));
@@ -172,7 +168,7 @@ public class KafkaAutoRebalancingReconcilerTest {
                 .thenReturn(CompletableFuture.completedFuture(null));
 
         Kafka kafka = buildKafkaWithAutoRebalance(KafkaAutoRebalanceState.RebalanceOnImbalance, KafkaAutoRebalanceMode.IMBALANCE);
-        KafkaStatus kafkaStatus = reconcile(buildReconciler(kafka, buildImbalanceDetector(null, false), Set.of()));
+        KafkaStatus kafkaStatus = reconcile(buildReconciler(kafka, mockImbalanceDetector(null), Set.of()));
 
         assertThat(kafkaStatus.getAutoRebalance().getState(), is(KafkaAutoRebalanceState.Idle));
         verify(rebalanceOperator).deleteAsync(any(), eq(NAMESPACE), eq(kr.getMetadata().getName()), eq(true));
@@ -193,7 +189,7 @@ public class KafkaAutoRebalancingReconcilerTest {
                 .thenReturn(CompletableFuture.completedFuture(null));
 
         Kafka kafka = buildKafkaWithAutoRebalance(KafkaAutoRebalanceState.RebalanceOnImbalance, KafkaAutoRebalanceMode.IMBALANCE);
-        KafkaStatus kafkaStatus = reconcile(buildReconciler(kafka, buildImbalanceDetector(null, false), Set.of()));
+        KafkaStatus kafkaStatus = reconcile(buildReconciler(kafka, mockImbalanceDetector(null), Set.of()));
 
         assertThat(kafkaStatus.getAutoRebalance().getState(), is(KafkaAutoRebalanceState.Idle));
         verify(rebalanceOperator).deleteAsync(any(), eq(NAMESPACE), eq(kr.getMetadata().getName()), eq(true));
@@ -210,7 +206,7 @@ public class KafkaAutoRebalancingReconcilerTest {
                 .thenReturn(CompletableFuture.completedFuture(null));
 
         Kafka kafka = buildKafkaWithAutoRebalance(KafkaAutoRebalanceState.RebalanceOnImbalance, KafkaAutoRebalanceMode.IMBALANCE);
-        KafkaStatus kafkaStatus = reconcile(buildReconciler(kafka, buildImbalanceDetector(null, false), Set.of()));
+        KafkaStatus kafkaStatus = reconcile(buildReconciler(kafka, mockImbalanceDetector(null), Set.of()));
 
         assertThat(kafkaStatus.getAutoRebalance().getState(), is(KafkaAutoRebalanceState.Idle));
     }
@@ -221,8 +217,10 @@ public class KafkaAutoRebalancingReconcilerTest {
      */
     @Test
     public void testAutoRebalanceOnImbalanceUnfixableViolations() {
+        GoalViolationInfo unfixableViolation = new GoalViolationInfo(
+                DETECTION_TIME, GoalViolationInfo.Fixability.UNFIXABLE, List.of(), List.of("RackAwareGoal"));
         Kafka kafka = buildKafkaWithAutoRebalance(KafkaAutoRebalanceState.Idle, KafkaAutoRebalanceMode.IMBALANCE);
-        KafkaStatus kafkaStatus = reconcile(buildReconciler(kafka, buildImbalanceDetector(UNFIXABLE_VIOLATION, false), Set.of()));
+        KafkaStatus kafkaStatus = reconcile(buildReconciler(kafka, mockImbalanceDetector(unfixableViolation), Set.of()));
 
         assertThat(kafkaStatus.getAutoRebalance().getState(), is(KafkaAutoRebalanceState.Idle));
         assertThat(kafkaStatus.getAutoRebalance().getModes(), nullValue());
@@ -239,8 +237,10 @@ public class KafkaAutoRebalancingReconcilerTest {
      */
     @Test
     public void testAutoRebalanceOnImbalanceMixedViolations() {
+        GoalViolationInfo mixedViolation = new GoalViolationInfo(
+                DETECTION_TIME, GoalViolationInfo.Fixability.MIXED, List.of("DiskUsageDistributionGoal"), List.of("RackAwareGoal"));
         Kafka kafka = buildKafkaWithAutoRebalance(KafkaAutoRebalanceState.Idle, KafkaAutoRebalanceMode.IMBALANCE);
-        KafkaStatus kafkaStatus = reconcile(buildReconciler(kafka, buildImbalanceDetector(MIXED_VIOLATION, false), Set.of()));
+        KafkaStatus kafkaStatus = reconcile(buildReconciler(kafka, mockImbalanceDetector(mixedViolation), Set.of()));
 
         assertThat(kafkaStatus.getAutoRebalance().getState(), is(KafkaAutoRebalanceState.Idle));
         assertThat(kafkaStatus.getAutoRebalance().getModes(), nullValue());
@@ -259,7 +259,7 @@ public class KafkaAutoRebalancingReconcilerTest {
      */
     @Test
     public void testAutoRebalanceOnImbalanceOutsideMaintenanceWindow() {
-        KafkaAutoRebalanceImbalanceDetector det = buildImbalanceDetector(FIXABLE_VIOLATION, false);
+        KafkaAutoRebalanceImbalanceDetector det = mockImbalanceDetector(FIXABLE_VIOLATION);
         when(det.isInMaintenanceWindow()).thenReturn(false);
 
         Kafka kafka = buildKafkaWithAutoRebalance(KafkaAutoRebalanceState.Idle, KafkaAutoRebalanceMode.IMBALANCE);
@@ -275,7 +275,7 @@ public class KafkaAutoRebalancingReconcilerTest {
      */
     @Test
     public void testAutoRebalanceOnImbalanceShouldNotTrigger() {
-        KafkaAutoRebalanceImbalanceDetector det = buildImbalanceDetector(FIXABLE_VIOLATION, false);
+        KafkaAutoRebalanceImbalanceDetector det = mockImbalanceDetector(FIXABLE_VIOLATION);
         when(det.shouldTriggerRebalance(any())).thenReturn(CompletableFuture.completedFuture(false));
 
         Kafka kafka = buildKafkaWithAutoRebalance(KafkaAutoRebalanceState.Idle, KafkaAutoRebalanceMode.IMBALANCE);
@@ -292,7 +292,7 @@ public class KafkaAutoRebalancingReconcilerTest {
      */
     @Test
     public void testAutoRebalanceOnImbalanceTemplateValidationFailure() {
-        KafkaAutoRebalanceImbalanceDetector det = buildImbalanceDetector(FIXABLE_VIOLATION, false);
+        KafkaAutoRebalanceImbalanceDetector det = mockImbalanceDetector(FIXABLE_VIOLATION);
         when(det.validateTemplateGoals(any())).thenReturn(CompletableFuture.completedFuture(List.of("RackAwareGoal")));
 
         Kafka kafka = new KafkaBuilder(buildKafkaWithAutoRebalance(KafkaAutoRebalanceState.Idle, KafkaAutoRebalanceMode.IMBALANCE))
@@ -339,7 +339,7 @@ public class KafkaAutoRebalancingReconcilerTest {
 
         // Kafka needs REMOVE_BROKERS mode configured so the scale-down KR can be created
         Kafka kafkaWithBothModes = buildKafkaWithAutoRebalance(KafkaAutoRebalanceState.RebalanceOnImbalance, KafkaAutoRebalanceMode.IMBALANCE, KafkaAutoRebalanceMode.REMOVE_BROKERS);
-        KafkaStatus kafkaStatus = reconcile(buildReconciler(kafkaWithBothModes, buildImbalanceDetector(null, false), Set.of(3)));
+        KafkaStatus kafkaStatus = reconcile(buildReconciler(kafkaWithBothModes, mockImbalanceDetector(null), Set.of(3)));
 
         verify(rebalanceOperator).deleteAsync(any(), eq(NAMESPACE), eq(kr.getMetadata().getName()), eq(true));
         assertThat(kafkaStatus.getAutoRebalance().getState(), is(KafkaAutoRebalanceState.RebalanceOnScaleDown));
@@ -380,7 +380,7 @@ public class KafkaAutoRebalancingReconcilerTest {
                 .build());
 
         Kafka kafkaWithBothModes = buildKafkaWithAutoRebalance(KafkaAutoRebalanceState.RebalanceOnImbalance, KafkaAutoRebalanceMode.IMBALANCE, KafkaAutoRebalanceMode.ADD_BROKERS);
-        buildReconciler(kafkaWithBothModes, buildImbalanceDetector(null, false), Set.of()).reconcile(kafkaStatus).toCompletableFuture().join();
+        buildReconciler(kafkaWithBothModes, mockImbalanceDetector(null), Set.of()).reconcile(kafkaStatus).toCompletableFuture().join();
 
         assertThat(kafkaStatus.getAutoRebalance().getState(), is(KafkaAutoRebalanceState.RebalanceOnScaleUp));
         assertThat(kafkaStatus.getAutoRebalance().getModes(), notNullValue());
@@ -428,7 +428,7 @@ public class KafkaAutoRebalancingReconcilerTest {
                     .endAutoRebalance()
                 .endStatus()
                 .build();
-        KafkaAutoRebalanceImbalanceDetector imbalanceDetector = buildImbalanceDetector(FIXABLE_VIOLATION, false);
+        KafkaAutoRebalanceImbalanceDetector imbalanceDetector = mockImbalanceDetector(FIXABLE_VIOLATION);
         buildReconciler(kafkaWithBothModes, imbalanceDetector, Set.of()).reconcile(kafkaStatus).toCompletableFuture().join();
 
         // Should remain in RebalanceOnScaleUp — imbalance detection is not invoked during scale operations
@@ -444,7 +444,8 @@ public class KafkaAutoRebalancingReconcilerTest {
     @Test
     public void testAutoRebalanceOnImbalanceBlockedByActiveManualRebalance() {
         Kafka kafka = buildKafkaWithAutoRebalance(KafkaAutoRebalanceState.Idle, KafkaAutoRebalanceMode.IMBALANCE);
-        KafkaAutoRebalanceImbalanceDetector imbalanceDetector = buildImbalanceDetector(null, true);
+        KafkaAutoRebalanceImbalanceDetector imbalanceDetector = mockImbalanceDetector(null);
+        when(imbalanceDetector.isRebalanceRunning()).thenReturn(CompletableFuture.completedFuture(true));
         KafkaStatus kafkaStatus = reconcile(buildReconciler(kafka, imbalanceDetector, Set.of()));
 
         assertThat(kafkaStatus.getAutoRebalance().getState(), is(KafkaAutoRebalanceState.Idle));
@@ -469,9 +470,9 @@ public class KafkaAutoRebalancingReconcilerTest {
         };
     }
 
-    private KafkaAutoRebalanceImbalanceDetector buildImbalanceDetector(GoalViolationInfo violation, boolean rebalanceRunning) {
+    private KafkaAutoRebalanceImbalanceDetector mockImbalanceDetector(GoalViolationInfo violation) {
         KafkaAutoRebalanceImbalanceDetector imbalanceDetector = mock(KafkaAutoRebalanceImbalanceDetector.class);
-        when(imbalanceDetector.isRebalanceRunning()).thenReturn(CompletableFuture.completedFuture(rebalanceRunning));
+        when(imbalanceDetector.isRebalanceRunning()).thenReturn(CompletableFuture.completedFuture(false));
         when(imbalanceDetector.checkForGoalViolations()).thenReturn(CompletableFuture.completedFuture(violation));
         when(imbalanceDetector.shouldTriggerRebalance(any())).thenReturn(CompletableFuture.completedFuture(true));
         when(imbalanceDetector.isInMaintenanceWindow()).thenReturn(true);
