@@ -102,8 +102,8 @@ public class ResourceUtils {
                         .endAcl()
                     .endKafkaUserAuthorizationSimple()
                     .withNewQuotas()
-                        .withConsumerByteRate(1_024 * 1_024)
-                        .withProducerByteRate(1_024 * 1_024)
+                        .withConsumerByteRate(1_024L * 1_024)
+                        .withProducerByteRate(1_024L * 1_024)
                     .endQuotas()
                 .endSpec()
                 .build();
@@ -144,7 +144,7 @@ public class ResourceUtils {
         return createKafkaUser(namespace, new KafkaUserScramSha512ClientAuthentication());
     }
 
-    public static KafkaUser createKafkaUserQuotas(String namespace, Integer consumerByteRate, Integer producerByteRate, Integer requestPercentage, Double controllerMutationRate) {
+    public static KafkaUser createKafkaUserQuotas(String namespace, Long consumerByteRate, Long producerByteRate, Integer requestPercentage, Double controllerMutationRate) {
         KafkaUserQuotas kuq = new KafkaUserQuotasBuilder()
                 .withConsumerByteRate(consumerByteRate)
                 .withProducerByteRate(producerByteRate)

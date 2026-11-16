@@ -33,8 +33,8 @@ import java.util.Map;
 @EqualsAndHashCode
 @ToString
 public class KafkaUserQuotas implements UnknownPropertyPreserving {
-    private Integer producerByteRate;
-    private Integer consumerByteRate;
+    private Long producerByteRate;
+    private Long consumerByteRate;
     private Integer requestPercentage;
     private Double controllerMutationRate;
 
@@ -52,21 +52,21 @@ public class KafkaUserQuotas implements UnknownPropertyPreserving {
 
     @Description("A quota on the maximum bytes per-second that each client group can publish to a broker before the clients in the group are throttled. Defined on a per-broker basis.")
     @Minimum(0)
-    public Integer getProducerByteRate() {
+    public Long getProducerByteRate() {
         return producerByteRate;
     }
 
-    public void setProducerByteRate(Integer producerByteRate) {
+    public void setProducerByteRate(Long producerByteRate) {
         this.producerByteRate = producerByteRate;
     }
 
     @Description("A quota on the maximum bytes per-second that each client group can fetch from a broker before the clients in the group are throttled. Defined on a per-broker basis.")
     @Minimum(0)
-    public Integer getConsumerByteRate() {
+    public Long getConsumerByteRate() {
         return consumerByteRate;
     }
 
-    public void setConsumerByteRate(Integer consumerByteRate) {
+    public void setConsumerByteRate(Long consumerByteRate) {
         this.consumerByteRate = consumerByteRate;
     }
 

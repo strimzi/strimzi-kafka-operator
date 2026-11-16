@@ -27,10 +27,10 @@ public class QuotaUtils {
     public static KafkaUserQuotas fromClientQuota(Map<String, Double> map) {
         KafkaUserQuotas kuq = new KafkaUserQuotas();
         if (map.containsKey("producer_byte_rate")) {
-            kuq.setProducerByteRate(map.get("producer_byte_rate").intValue());
+            kuq.setProducerByteRate(map.get("producer_byte_rate").longValue());
         }
         if (map.containsKey("consumer_byte_rate")) {
-            kuq.setConsumerByteRate(map.get("consumer_byte_rate").intValue());
+            kuq.setConsumerByteRate(map.get("consumer_byte_rate").longValue());
         }
         if (map.containsKey("request_percentage")) {
             kuq.setRequestPercentage(map.get("request_percentage").intValue());

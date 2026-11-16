@@ -281,8 +281,8 @@ class UserST extends AbstractST {
     void testUserWithQuotas(KafkaUser user) {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
-        final Integer prodRate = 1111;
-        final Integer consRate = 2222;
+        final Long prodRate = 1111L;
+        final Long consRate = 2222L;
         final Integer reqPerc = 42;
         final Double mutRate = 10d;
 
