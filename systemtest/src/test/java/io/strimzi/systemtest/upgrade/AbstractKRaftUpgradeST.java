@@ -756,7 +756,7 @@ public class AbstractKRaftUpgradeST extends AbstractST {
      * @param componentsNamespaceName   Namespace of the Kafka cluster
      */
     protected void verifyClusterSecurityStatus(String componentsNamespaceName) {
-        LOGGER.info("Verifying internal cluster security status of Kafka: {}/{}", componentsNamespaceName, CLUSTER_NAME);
+        LOGGER.info("Verifying internal cluster security status of Kafka: {}/{} ({}/{})", componentsNamespaceName, CLUSTER_NAME, Environment.CLUSTER_SECURITY_ENCRYPTION, Environment.CLUSTER_SECURITY_AUTHENTICATION);
         ClusterSecuritySTUtils.assertClusterSecurityStatus(componentsNamespaceName, CLUSTER_NAME, Environment.CLUSTER_SECURITY_ENCRYPTION, Environment.CLUSTER_SECURITY_AUTHENTICATION);
     }
 
