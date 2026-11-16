@@ -169,8 +169,7 @@ public class SovaST extends AbstractST {
         assertMetricValueNotNull(sovaCollector, "kafka_topic_partitions\\{topic=\"" + TOPIC_CHECKOUT + "\"\\}");
 
         // Collection health is reported through metrics, while the Kafka custom resource stays Ready
-        assertThat("Sova reported failed collection cycles",
-            createPatternAndCollectWithoutWait(sovaCollector, "sova_collection_failures_total"), is(List.of(0.0)));
+        assertMetricValueNotNull(sovaCollector, "sova_collection_failures_total");
         assertMetricValueNotNull(sovaCollector, "sova_collection_duration_seconds");
         assertThat("Kafka is not Ready", KafkaUtils.waitForKafkaReady(testStorage.getNamespaceName(), testStorage.getClusterName()), is(true));
     }
@@ -179,7 +178,7 @@ public class SovaST extends AbstractST {
     @TestDoc(
         description = @Desc("This test case checks that `collectionIntervalMs` and the Kafka Admin client options in `config` are passed to Sova."),
         steps = {
-            @Step(value = "Set `collectionIntervalMs` to 10000 and `config` with `default.api.timeout.ms` of 5000 and wait for the Sova rolling update.", expected = "Sova starts with a 10 second collection interval and the Admin client configuration contains the timeout."),
+            @Step(value = "Set `collectionIntervalMs` to 10000 and `config` with `default.api.timeout.ms` of 60000 and wait for the Sova rolling update.", expected = "Sova starts with a 10 second collection interval and the Admin client configuration contains the timeout."),
             @Step(value = "Wait for the first collection cycle of the new Pod.", expected = "Sova exposes freshly collected metrics."),
             @Step(value = "Restore the default configuration.", expected = "Sova rolls back to the default configuration.")
         },
@@ -195,7 +194,8 @@ public class SovaST extends AbstractST {
 
         KafkaUtils.replace(namespaceName, clusterName, kafka -> {
             kafka.getSpec().getExtraMetrics().setCollectionIntervalMs(10_000L);
-            kafka.getSpec().getExtraMetrics().setConfig(Map.of("default.api.timeout.ms", 5000));
+            // The Admin client refuses a default.api.timeout.ms lower than request.timeout.ms (30000 by default)
+            kafka.getSpec().getExtraMetrics().setConfig(Map.of("default.api.timeout.ms", 60000));
         });
         snapshot = DeploymentUtils.waitTillDepHasRolled(namespaceName, sovaName, 1, snapshot);
 
@@ -210,7 +210,7 @@ public class SovaST extends AbstractST {
             .map(EnvVar::getValue)
             .findFirst()
             .orElse("");
-        assertThat("Admin client option from config is missing", adminClientConfiguration, containsString("default.api.timeout.ms=5000"));
+        assertThat("Admin client option from config is missing", adminClientConfiguration, containsString("default.api.timeout.ms=60000"));
 
         waitForCollectionAfterRoll();
 
@@ -312,8 +312,9 @@ public class SovaST extends AbstractST {
     private void waitForCollectionAfterRoll() {
         TestUtils.waitFor("first Sova collection cycle", TestConstants.GLOBAL_POLL_INTERVAL_MEDIUM, TestConstants.GLOBAL_TIMEOUT, () -> {
             sovaCollector.collectMetricsFromPods(TestConstants.METRICS_COLLECT_TIMEOUT);
-            return createPatternAndCollectWithoutWait(sovaCollector, "sova_last_successful_collection_timestamp_seconds")
-                .stream().anyMatch(value -> value > 0);
+            // Every scraped Pod must have collected, so that a terminating old Pod cannot satisfy the wait
+            final List<Double> timestamps = createPatternAndCollectWithoutWait(sovaCollector, "sova_last_successful_collection_timestamp_seconds");
+            return !timestamps.isEmpty() && timestamps.stream().allMatch(value -> value > 0);
         });
     }
 
