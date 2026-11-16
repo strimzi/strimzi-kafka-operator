@@ -46,6 +46,7 @@ import io.strimzi.operator.cluster.model.securityprofiles.PodSecurityProviderCon
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.ca.Ca;
+import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.plugin.security.profiles.PodSecurityProviderContext;
 
 import java.util.ArrayList;
@@ -55,6 +56,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletionStage;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 /**
  * Sova model
@@ -150,6 +153,7 @@ public class Sova extends AbstractModel implements SupportsLogging {
 
         if (spec != null) {
             ModelUtils.validateComputeResources(spec.getResources(), "Kafka.spec.extraMetrics.resources");
+            validateRegexes(spec);
             Sova result = new Sova(reconciliation, kafkaAssembly, sharedEnvironmentProvider);
 
             result.securityContext = securityContext;
@@ -191,6 +195,37 @@ public class Sova extends AbstractModel implements SupportsLogging {
             return result;
         } else {
             return null;
+        }
+    }
+
+    /**
+     * Validates the regular expressions used to filter topics and consumer groups. Sova compiles them with the same
+     * Java regular expression engine at startup and exits when any of them is invalid, so rejecting them here turns
+     * a crash-looping Pod into a clear error in the Kafka custom resource status.
+     *
+     * @param spec  The Sova specification
+     *
+     * @throws InvalidResourceException if any of the regular expressions is invalid
+     */
+    private static void validateRegexes(SovaSpec spec) {
+        List<String> errors = new ArrayList<>();
+        validateRegex("Kafka.spec.extraMetrics.groupRegex", spec.getGroupRegex(), errors);
+        validateRegex("Kafka.spec.extraMetrics.groupExcludeRegex", spec.getGroupExcludeRegex(), errors);
+        validateRegex("Kafka.spec.extraMetrics.topicRegex", spec.getTopicRegex(), errors);
+        validateRegex("Kafka.spec.extraMetrics.topicExcludeRegex", spec.getTopicExcludeRegex(), errors);
+
+        if (!errors.isEmpty()) {
+            throw new InvalidResourceException("Sova configuration is invalid: " + String.join(", ", errors));
+        }
+    }
+
+    private static void validateRegex(String fieldPath, String regex, List<String> errors) {
+        if (regex != null) {
+            try {
+                Pattern.compile(regex);
+            } catch (PatternSyntaxException e) {
+                errors.add(fieldPath + ": " + e.getDescription());
+            }
         }
     }
 

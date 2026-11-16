@@ -35,6 +35,7 @@ import io.strimzi.operator.cluster.model.clustersecurity.kafka.NoneEncryptionCon
 import io.strimzi.operator.cluster.model.clustersecurity.kafka.TlsEncryptionConfiguration;
 import io.strimzi.operator.cluster.model.metrics.MetricsModel;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.model.InvalidResourceException;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
 
@@ -51,6 +52,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.startsWith;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "checkstyle:NoFullyQualifiedClassNames"}) // Fully qualified class names are used in the expected config strings
 public class SovaTest {
@@ -550,6 +552,40 @@ public class SovaTest {
                 .map(EnvVar::getValue)
                 .toList();
         assertThat(values, contains("5000"));
+    }
+
+    @Test
+    public void testInvalidRegexIsRejected() {
+        Kafka resource = new KafkaBuilder(KAFKA)
+                .editSpec()
+                    .editExtraMetrics()
+                        .withGroupRegex("[")
+                    .endExtraMetrics()
+                .endSpec()
+                .build();
+
+        InvalidResourceException e = assertThrows(InvalidResourceException.class, () -> Sova.fromCrd(
+                new Reconciliation("test", resource.getKind(), NAMESPACE, CLUSTER_NAME),
+                resource, VERSIONS, SHARED_ENV_PROVIDER, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT));
+        assertThat(e.getMessage(), containsString("Kafka.spec.extraMetrics.groupRegex"));
+    }
+
+    @Test
+    public void testAllInvalidRegexesAreReported() {
+        Kafka resource = new KafkaBuilder(KAFKA)
+                .editSpec()
+                    .editExtraMetrics()
+                        .withTopicRegex("(")
+                        .withTopicExcludeRegex("*")
+                    .endExtraMetrics()
+                .endSpec()
+                .build();
+
+        InvalidResourceException e = assertThrows(InvalidResourceException.class, () -> Sova.fromCrd(
+                new Reconciliation("test", resource.getKind(), NAMESPACE, CLUSTER_NAME),
+                resource, VERSIONS, SHARED_ENV_PROVIDER, KafkaClusterSecurityContext.DEFAULT_KAFKA_CLUSTER_SECURITY_CONTEXT));
+        assertThat(e.getMessage(), containsString("Kafka.spec.extraMetrics.topicRegex"));
+        assertThat(e.getMessage(), containsString("Kafka.spec.extraMetrics.topicExcludeRegex"));
     }
 
     // Utility methods
