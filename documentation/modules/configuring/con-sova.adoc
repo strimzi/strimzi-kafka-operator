@@ -17,6 +17,9 @@ These metrics are typically scraped by Prometheus and visualized in monitoring d
 
 Sova exposes the same metric names as Kafka Exporter, so existing Prometheus rules and Grafana dashboards continue to work without modification after migration.
 
+Sova collects metrics in the background at a regular interval.
+An unavailable Kafka cluster shows up as stale metrics and failed collection cycles reported by Sova's own metrics, not as an unready Sova pod.
+
 Enable Sova when you need to do the following:
 
 * Monitor consumer group lag

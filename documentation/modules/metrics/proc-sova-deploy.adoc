@@ -43,8 +43,12 @@ spec:
     topicRegex: ".*" # <3>
     groupExcludeRegex: "^excluded-.*" # <4>
     topicExcludeRegex: "^excluded-.*" # <5>
+    # Collection tuning (optional)
+    collectionIntervalMs: 30000 # <6>
+    config: # <7>
+      default.api.timeout.ms: 30000
     # Resources requests and limits (recommended)
-    resources: # <6>
+    resources: # <8>
       requests:
         cpu: 200m
         memory: 64Mi
@@ -52,15 +56,15 @@ spec:
         cpu: 500m
         memory: 128Mi
     # Readiness probe (optional)
-    readinessProbe: # <7>
+    readinessProbe: # <9>
       initialDelaySeconds: 15
       timeoutSeconds: 5
     # Liveness probe (optional)
-    livenessProbe: # <8>
+    livenessProbe: # <10>
       initialDelaySeconds: 15
       timeoutSeconds: 5
     # Pod template (optional)
-    template: # <9>
+    template: # <11>
       pod:
         metadata:
           labels:
@@ -72,7 +76,7 @@ spec:
           fsGroup: 0
         terminationGracePeriodSeconds: 120
     # Custom image (optional)
-    image: my-registry.io/my-org/my-sova-cluster:latest # <10>
+    image: my-registry.io/my-org/my-sova-cluster:latest # <12>
 # ...
 ----
 <1> Enables Sova. An empty object (`extraMetrics: {}`) uses default settings.
@@ -80,11 +84,17 @@ spec:
 <3> Regular expression to specify topics to include in metrics.
 <4> Regular expression to specify consumer groups to exclude from metrics.
 <5> Regular expression to specify topics to exclude from metrics.
-<6> CPU and memory resources to reserve.
-<7> Readiness probe to check when Sova is ready to serve metrics.
-<8> Liveness probe to detect and restart Sova if it becomes unresponsive.
-<9> Template customization. Here a pod is scheduled with additional security attributes.
-<10> **ADVANCED OPTION:** Container image configuration, which is recommended only in special situations.
+<6> Interval between metric collection cycles, in milliseconds. Defaults to `30000`.
+<7> Kafka Admin client options used by Sova, for example the timeout for each Admin API call (`default.api.timeout.ms`).
+Properties with the following prefixes cannot be set: `ssl.`, `sasl.`, `security.`, `bootstrap.servers`, and `config.providers`.
+The exceptions are `ssl.endpoint.identification.algorithm`, `ssl.cipher.suites`, `ssl.protocol`, and `ssl.enabled.protocols`.
+Connection and security settings are configured automatically by the Cluster Operator.
+<8> CPU and memory resources to reserve.
+<9> Readiness probe to check that the Sova HTTP server is up and serving metrics.
+Readiness does not reflect the availability of the Kafka cluster or the health of metrics collection.
+<10> Liveness probe to detect and restart Sova if its JVM becomes unresponsive.
+<11> Template customization. Here a pod is scheduled with additional security attributes.
+<12> **ADVANCED OPTION:** Container image configuration, which is recommended only in special situations.
 
 . Apply the changes to the `Kafka` configuration.
 +
@@ -104,6 +114,18 @@ The `strimzi-kafka-exporter.json` dashboard also works without modification beca
 For more information, see xref:proc-metrics-grafana-dashboard-{context}[].
 +
 TIP: Use the _Lag by consumer group_ and _Messages consumed per second_ panels to evaluate lag and the impact of tuning actions.
+
+. (Optional) Monitor the health of Sova itself.
++
+If Sova cannot collect metrics, for example because the Kafka cluster is unavailable, it keeps serving the last collected metrics and its pod stays ready.
+Use the following metrics to detect stale or failing collection:
++
+* `sova_last_successful_collection_timestamp_seconds`: time of the last successful collection cycle
+* `sova_collection_failures_total`: number of collection cycles that failed
+* `sova_collection_duration_seconds`: duration of the last collection cycle
++
+The _Sova health_ row of the `strimzi-sova.json` dashboard shows these metrics.
+The example `prometheus-sova-rules.yaml` file in the `examples/metrics/prometheus-install/prometheus-rules` directory defines the `SovaMetricsStale` and `SovaCollectionFailing` alerts.
 
 .Migrating from `kafkaExporter` to `extraMetrics`
 
@@ -162,7 +184,17 @@ Migrate by moving the configuration to `spec.extraMetrics` using the field mappi
 |_(removed)_
 |Sova always reports metrics for active consumer groups. Disconnected consumer group data is not retained.
 
+|_(none)_
+|`collectionIntervalMs`
+|New. Sets how often Sova collects metrics.
+
+|_(none)_
+|`config`
+|New. Passes Kafka Admin client options, such as `default.api.timeout.ms`, to Sova.
+
 |===
 
 NOTE: The emitted metric names (`kafka_consumergroup_lag`, `kafka_topic_partition_current_offset`, and related metrics) are identical between Kafka Exporter and Sova.
 Existing Prometheus alerting rules and Grafana dashboards work unchanged after migration.
+As with Kafka Exporter, internal topics such as `__consumer_offsets` and `__transaction_state` are included in the metrics.
+To exclude them, set `topicExcludeRegex: "__.*"`.
