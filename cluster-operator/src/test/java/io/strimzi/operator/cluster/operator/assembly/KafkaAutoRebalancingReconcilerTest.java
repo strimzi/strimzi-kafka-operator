@@ -64,11 +64,13 @@ public class KafkaAutoRebalancingReconcilerTest {
 
     private ResourceOperatorSupplier supplier;
     private CrdOperator<KubernetesClient, KafkaRebalance, KafkaRebalanceList> rebalanceOperator;
+    private KafkaAssemblyOperatorMetricsHolder metrics;
 
     @BeforeEach
     public void setup() {
         supplier = ResourceUtils.supplierWithMocks(false);
         rebalanceOperator = supplier.kafkaRebalanceOperator;
+        metrics = new KafkaAssemblyOperatorMetricsHolder(Kafka.RESOURCE_KIND, null, ResourceUtils.metricsProvider());
     }
 
     /**
@@ -82,9 +84,8 @@ public class KafkaAutoRebalancingReconcilerTest {
         when(rebalanceOperator.createOrUpdate(any(), any()))
                 .thenReturn(CompletableFuture.completedFuture(ReconcileResult.created(buildKafkaRebalance(IMBALANCE_KR_NAME, KafkaRebalanceMode.FULL, KafkaRebalanceState.New))));
 
-        KafkaAssemblyOperatorMetricsHolder metrics = new KafkaAssemblyOperatorMetricsHolder(Kafka.RESOURCE_KIND, null, ResourceUtils.metricsProvider());
         Kafka kafka = buildKafkaWithAutoRebalance(KafkaAutoRebalanceState.Idle, KafkaAutoRebalanceMode.IMBALANCE);
-        KafkaStatus kafkaStatus = reconcile(buildReconciler(kafka, buildImbalanceDetector(FIXABLE_VIOLATION, false), Set.of(), metrics));
+        KafkaStatus kafkaStatus = reconcile(buildReconciler(kafka, buildImbalanceDetector(FIXABLE_VIOLATION, false), Set.of()));
 
         assertThat(kafkaStatus.getAutoRebalance().getState(), is(KafkaAutoRebalanceState.RebalanceOnImbalance));
         assertThat(kafkaStatus.getAutoRebalance().getModes(), notNullValue());
@@ -102,9 +103,8 @@ public class KafkaAutoRebalancingReconcilerTest {
         when(rebalanceOperator.getAsync(eq(NAMESPACE), eq(IMBALANCE_KR_NAME)))
                 .thenReturn(CompletableFuture.completedFuture(buildKafkaRebalance(IMBALANCE_KR_NAME, KafkaRebalanceMode.FULL, KafkaRebalanceState.Rebalancing)));
 
-        KafkaAssemblyOperatorMetricsHolder metrics = new KafkaAssemblyOperatorMetricsHolder(Kafka.RESOURCE_KIND, null, ResourceUtils.metricsProvider());
         Kafka kafka = buildKafkaWithAutoRebalance(KafkaAutoRebalanceState.Idle, KafkaAutoRebalanceMode.IMBALANCE);
-        KafkaStatus kafkaStatus = reconcile(buildReconciler(kafka, buildImbalanceDetector(FIXABLE_VIOLATION, false), Set.of(), metrics));
+        KafkaStatus kafkaStatus = reconcile(buildReconciler(kafka, buildImbalanceDetector(FIXABLE_VIOLATION, false), Set.of()));
 
         assertThat(kafkaStatus.getAutoRebalance().getState(), is(KafkaAutoRebalanceState.RebalanceOnImbalance));
         assertThat(kafkaStatus.getAutoRebalance().getModes(), notNullValue());
@@ -250,8 +250,7 @@ public class KafkaAutoRebalancingReconcilerTest {
                         && c.getMessage().equals("Both fixable and unfixable goal violations detected. Unfixable goals: [RackAwareGoal]." +
                         " Fixable goals: [DiskUsageDistributionGoal]." +
                         " Auto-rebalance on imbalance is blocked until resolved." +
-                        " To address fixable violations, create a manual KafkaRebalance with skipHardGoalCheck: true."))
-                , is(true));
+                        " To address fixable violations, create a manual KafkaRebalance with skipHardGoalCheck: true.")), is(true));
     }
 
     /**
@@ -462,13 +461,6 @@ public class KafkaAutoRebalancingReconcilerTest {
 
     private KafkaAutoRebalancingReconciler buildReconciler(Kafka kafka, KafkaAutoRebalanceImbalanceDetector mockDetector,
                                                            Set<Integer> scalingDownBlockedNodes) {
-        return buildReconciler(kafka, mockDetector, scalingDownBlockedNodes,
-                new KafkaAssemblyOperatorMetricsHolder(Kafka.RESOURCE_KIND, null, ResourceUtils.metricsProvider()));
-    }
-
-    private KafkaAutoRebalancingReconciler buildReconciler(Kafka kafka, KafkaAutoRebalanceImbalanceDetector mockDetector,
-                                                           Set<Integer> scalingDownBlockedNodes,
-                                                           KafkaAssemblyOperatorMetricsHolder metrics) {
         return new KafkaAutoRebalancingReconciler(RECONCILIATION, kafka, supplier, scalingDownBlockedNodes, metrics) {
             @Override
             KafkaAutoRebalanceImbalanceDetector createImbalanceDetector(ResourceOperatorSupplier supplier) {
