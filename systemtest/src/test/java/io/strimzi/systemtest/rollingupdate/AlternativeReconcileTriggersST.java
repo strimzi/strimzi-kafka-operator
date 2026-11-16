@@ -488,6 +488,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
      *
      * @steps
      * 1. Deploy a Kafka cluster with multiple JBOD volumes, specifically designating one volume for KRaft metadata.
+     *    - The `Kafka` resource skips the data loss checks, because the test removes a volume which still holds replicas.
      *    - Ensure the cluster is operational and the metadata volume is correctly used.
      * 2. Attach Kafka clients to continuously produce and consume messages, simulating normal cluster activity.
      *    - Verify consistent message traffic to ensure cluster stability.
@@ -532,7 +533,12 @@ class AlternativeReconcileTriggersST extends AbstractST {
                 .build(),
             KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 3).build()
         );
-        KubeResourceManager.get().createResourceWithWait(KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getClusterName(), numberOfKafkaReplicas).build());
+        // The annotation turns off the data loss checks, because the test removes a volume which still holds replicas
+        KubeResourceManager.get().createResourceWithWait(KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getClusterName(), numberOfKafkaReplicas)
+            .editMetadata()
+                .addToAnnotations(Map.of(Annotations.ANNO_STRIMZI_IO_SKIP_BROKER_SCALEDOWN_CHECK, "true"))
+            .endMetadata()
+            .build());
 
         KubeResourceManager.get().createResourceWithWait(KafkaTopicTemplates.topic(testStorage).build());
 

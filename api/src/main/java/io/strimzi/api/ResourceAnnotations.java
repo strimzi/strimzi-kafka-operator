@@ -123,7 +123,7 @@ public class ResourceAnnotations {
     public static final String ANNO_STRIMZI_IO_FORCE_REPLACE = STRIMZI_DOMAIN + "force-replace";
 
     /**
-     * Annotation used to skip the check on broker scale-down
+     * Annotation used to skip the checks which prevent data loss on broker scale-down, role change and JBOD volume removal
      */
     public static final String ANNO_STRIMZI_IO_SKIP_BROKER_SCALEDOWN_CHECK = STRIMZI_DOMAIN + "skip-broker-scaledown-check";
 }

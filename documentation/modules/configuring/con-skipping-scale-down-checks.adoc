@@ -8,7 +8,7 @@
 = Skipping checks on scale-down operations
 
 [role="_abstract"]
-By default, Strimzi performs a check to ensure that there are no partition replicas on brokers before initiating a scale-down operation on a Kafka cluster.
+By default, Strimzi performs a check to ensure that there are no partition replicas on brokers before initiating a scale-down operation on a Kafka cluster, before removing the broker role from a node, and before removing a JBOD volume from a broker.
 The check applies to nodes in node pools that perform the role of broker only or a dual role of broker and controller.
 
 If replicas are found, the scale-down is not done in order to prevent potential data loss.
@@ -29,10 +29,10 @@ Annotate the resource by setting the `strimzi.io/skip-broker-scaledown-check` an
 kubectl annotate Kafka my-kafka-cluster strimzi.io/skip-broker-scaledown-check="true"
 ----
 
-This annotation instructs Strimzi to skip the scale-down check.
+This annotation instructs Strimzi to skip these checks.
 Replace `my-kafka-cluster` with the name of your specific `Kafka` resource.
 
-To restore the check for scale-down operations, remove the annotation:
+To restore the checks, remove the annotation:
 
 .Removing the annotation to skip checks on scale-down operations  
 [source,shell,subs="+quotes,attributes+"]
