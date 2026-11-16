@@ -56,7 +56,7 @@ To build this project you must first install several command line utilities and 
   suggestions for bash/sh shell scripts.
 - [`oras`](https://oras.land/) - OCI registry client, used to pull snapshot distributions from GHCR.
     - Unlike the tools above this one is optional. A released versions are downloaded from its GitHub release with `curl`; only a `-SNAPSHOT` artifacts has no release to download from and is pulled from GHCR instead.
-    - It is also skipped when the dist zip is already in `docker-images/artifacts/binaries/`, so if you would rather not install it, put that zip there yourself.
+    - Snapshots are pulled again on every build, because the snapshot tag is overwritten on every push to Sova `main`. Without `oras`, an existing zip in `docker-images/artifacts/binaries/` is used instead (with a warning that it may be outdated), so if you would rather not install it, put that zip there yourself.
     - The GHCR package is public, so no `oras login` and no credentials are needed.
     - Currently, it is required only for Sova snapshots
 

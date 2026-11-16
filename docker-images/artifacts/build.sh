@@ -60,32 +60,40 @@ function sova {
     echo "Fetching Sova dist zip"
 
     local sova_version=$(cat ../../sova.version)
-
-    if [ -f "binaries/sova-${sova_version}-dist.zip" ]
-    then
-        echo "Sova dist zip binaries/sova-${sova_version}-dist.zip is already present, skipping download"
-        return
-    fi
+    local sova_zip="binaries/sova-${sova_version}-dist.zip"
 
     if [[ "${sova_version^^}" == *-SNAPSHOT ]]
     then
         local sova_artifact="ghcr.io/strimzi/dist-sova:${sova_version}"
 
         # oras is checked here rather than in dependency_check or tools/prerequisites-check.sh
-        # because this is the only path that uses it. Building a released Sova, or building when
-        # the dist zip is already in binaries/, must not be blocked on a tool it does not need.
-        command -v oras >/dev/null 2>&1 || {
+        # because this is the only path that uses it. Building a released Sova must not be blocked
+        # on a tool it does not need.
+        if ! command -v oras >/dev/null 2>&1
+        then
+            # Without oras, fall back to a zip placed into binaries/ by hand, but say that it may be stale.
+            if [ -f "${sova_zip}" ]
+            then
+                >&2 echo "oras is not installed, using the existing ${sova_zip}. It may be an outdated snapshot."
+                return
+            fi
+
             >&2 echo "Pulling the Sova snapshot ${sova_version} from GHCR needs oras, which is not installed."
             >&2 echo "Install it from https://oras.land/, or place sova-${sova_version}-dist.zip into"
             >&2 echo "docker-images/artifacts/binaries/ by hand and re-run the build."
             >&2 echo "Refer to DEV_GUIDE.md for more information"
             exit 1
-        }
+        fi
 
-        # The package is public, so this needs no credentials: GHCR hands out anonymous pull tokens
-        # for public packages and oras performs that handshake itself.
+        # A snapshot tag is overwritten on every push to the Sova main branch, so it is always pulled
+        # again instead of reusing a zip from an earlier build. The package is public, so this needs no
+        # credentials: GHCR hands out anonymous pull tokens for public packages and oras performs that
+        # handshake itself.
         echo "Pulling Sova from: ${sova_artifact}"
         oras pull "${sova_artifact}" -o binaries/
+    elif [ -f "${sova_zip}" ]
+    then
+        echo "Sova dist zip ${sova_zip} is already present, skipping download"
     else
         local sova_url="https://github.com/strimzi/sova/releases/download/${sova_version}/sova-${sova_version}-dist.zip"
 
