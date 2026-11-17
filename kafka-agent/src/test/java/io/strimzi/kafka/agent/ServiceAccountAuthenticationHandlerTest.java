@@ -103,6 +103,7 @@ public class ServiceAccountAuthenticationHandlerTest {
                 null,
                 ISSUER,
                 AUDIENCE,
+                ALLOWED_USERS,
                 tokenPath.toString());
     }
 
@@ -142,7 +143,7 @@ public class ServiceAccountAuthenticationHandlerTest {
         internalConnector.setHost("localhost");
 
         server.setConnectors(new Connector[] {externalConnector, internalConnector});
-        server.setHandler(new ServiceAccountAuthenticationHandler(new OkHandler(), EXTERNAL_CONNECTOR_NAME, validator, ALLOWED_USERS));
+        server.setHandler(new ServiceAccountAuthenticationHandler(new OkHandler(), EXTERNAL_CONNECTOR_NAME, validator));
         server.start();
 
         externalPort = externalConnector.getLocalPort();
@@ -180,13 +181,24 @@ public class ServiceAccountAuthenticationHandlerTest {
     }
 
     @Test
-    public void testUserWhichIsNotAllowedIsRejected() throws Exception {
-        startServer(mockValidator("system:serviceaccount:my-namespace:my-user"));
+    public void testAllowedUserIsAuthenticatedWithRealValidator() throws Exception {
+        startServer(validator);
 
-        HttpResponse<String> response = get(externalPort, "Bearer my-token");
+        HttpResponse<String> response = get(externalPort, "Bearer " + token(signingKey.getPrivate(), KEY_ID, ISSUER, ALLOWED_USER, AUDIENCE, 3600));
 
-        assertThat(response.statusCode(), is(HttpServletResponse.SC_FORBIDDEN));
-        assertThat(response.body(), is("User is not allowed to access this endpoint"));
+        assertThat(response.statusCode(), is(HttpServletResponse.SC_OK));
+        assertThat(response.body(), is("OK"));
+    }
+
+    @Test
+    public void testUserWhichIsNotAllowedIsRejectedDuringAuthentication() throws Exception {
+        startServer(validator);
+
+        HttpResponse<String> response = get(externalPort, "Bearer " + token(signingKey.getPrivate(), KEY_ID, ISSUER, "system:serviceaccount:my-namespace:my-user", AUDIENCE, 3600));
+
+        assertThat(response.statusCode(), is(HttpServletResponse.SC_UNAUTHORIZED));
+        assertThat(response.body(), is("Invalid Bearer token"));
+        assertThat(response.headers().firstValue(HttpHeader.WWW_AUTHENTICATE.asString()).orElse(null), is("Bearer"));
     }
 
     @Test
@@ -252,6 +264,35 @@ public class ServiceAccountAuthenticationHandlerTest {
         String token = token(signingKey.getPrivate(), KEY_ID, "https://my-other-issuer.io", ALLOWED_USER, AUDIENCE, 3600);
 
         assertThrows(TokenValidationException.class, () -> validator.validate(token));
+    }
+
+    @Test
+    public void testTokenOfUserWhichIsNotAllowedIsRejected() {
+        String token = token(signingKey.getPrivate(), KEY_ID, ISSUER, "system:serviceaccount:my-namespace:my-user", AUDIENCE, 3600);
+
+        assertThrows(TokenValidationException.class, () -> validator.validate(token));
+    }
+
+    @Test
+    public void testTokenOfSameServiceAccountNameInAnotherNamespaceIsRejected() {
+        String token = token(signingKey.getPrivate(), KEY_ID, ISSUER, "system:serviceaccount:my-other-namespace:my-cluster-cluster-operator", AUDIENCE, 3600);
+
+        assertThrows(TokenValidationException.class, () -> validator.validate(token));
+    }
+
+    @Test
+    public void testAllowedUsersClaimCheck() {
+        assertThat(ServiceAccountAuthenticationHandler.allowedUsersClaimCheck(Set.of("system:serviceaccount:ns:b", "system:serviceaccount:ns:a")),
+                is("@.sub in ['system:serviceaccount:ns:a', 'system:serviceaccount:ns:b']"));
+        assertThat(ServiceAccountAuthenticationHandler.allowedUsersClaimCheck(Set.of()), is("@.sub in []"));
+    }
+
+    @Test
+    public void testParseAllowedUsers() {
+        assertThat(ServiceAccountAuthenticationHandler.parseAllowedUsers(null), is(Set.of()));
+        assertThat(ServiceAccountAuthenticationHandler.parseAllowedUsers(""), is(Set.of()));
+        assertThat(ServiceAccountAuthenticationHandler.parseAllowedUsers(" system:serviceaccount:ns:a , ,system:serviceaccount:ns:b"),
+                is(Set.of("system:serviceaccount:ns:a", "system:serviceaccount:ns:b")));
     }
 
     @Test

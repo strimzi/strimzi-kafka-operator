@@ -30,7 +30,8 @@ import java.util.stream.Collectors;
  * Handler that authenticates the requests using Kubernetes Service Account tokens. The tokens are expected in the
  * Authorization header as a Bearer token. They are validated against the public keys downloaded from the JWKS endpoint
  * of the Kubernetes API server. This uses the same code from the Strimzi OAuth library and the same validation rules as
- * the Kafka brokers use for the Kafka protocol connections.
+ * the Kafka brokers use for the Kafka protocol connections. Only the tokens belonging to one of the allowed Service
+ * Accounts pass the validation. Tokens of any other Service Accounts are rejected already during the authentication.
  *
  * Only the requests arriving through the external connector are authenticated. The requests arriving through the
  * internal connector are passed through because the internal connector is bound to localhost and is used
@@ -51,7 +52,6 @@ class ServiceAccountAuthenticationHandler extends ConditionalHandler.ElseNext {
     private static final int READ_TIMEOUT_SECONDS = 10;
 
     private final TokenValidator validator;
-    private final Set<String> allowedUsers;
 
     /**
      * Constructor of the ServiceAccountAuthenticationHandler
@@ -63,8 +63,7 @@ class ServiceAccountAuthenticationHandler extends ConditionalHandler.ElseNext {
     ServiceAccountAuthenticationHandler(Handler handler, String connectorName, Map<String, String> config) {
         this(handler,
                 connectorName,
-                createValidator(config.get("tokenJwksUri"), config.get("tokenJwksCaPath"), config.get("tokenIssuer"), config.get("tokenAudience"), config.getOrDefault("tokenPath", KUBERNETES_TOKEN_PATH)),
-                parseAllowedUsers(config.get("tokenAllowedUsers")));
+                createValidator(config.get("tokenJwksUri"), config.get("tokenJwksCaPath"), config.get("tokenIssuer"), config.get("tokenAudience"), parseAllowedUsers(config.get("tokenAllowedUsers")), config.getOrDefault("tokenPath", KUBERNETES_TOKEN_PATH)));
     }
 
     /**
@@ -72,14 +71,13 @@ class ServiceAccountAuthenticationHandler extends ConditionalHandler.ElseNext {
      *
      * @param handler           Handler to which the authenticated requests are passed
      * @param connectorName     Name of the connector on which the requests have to be authenticated
-     * @param validator         Validator used to validate the tokens
-     * @param allowedUsers      Users which are allowed to access the endpoints
+     * @param validator         Validator used to validate the tokens. It is expected to accept only the tokens of
+     *                          the users which are allowed to access the endpoints.
      */
-    /* test */ ServiceAccountAuthenticationHandler(Handler handler, String connectorName, TokenValidator validator, Set<String> allowedUsers) {
+    /* test */ ServiceAccountAuthenticationHandler(Handler handler, String connectorName, TokenValidator validator) {
         super(handler);
 
         this.validator = validator;
-        this.allowedUsers = allowedUsers;
 
         // Only the requests arriving through the configured connector are authenticated. The other requests are passed
         // to the next handler by the onConditionsNotMet method of the ElseNext superclass. This separates the internal
@@ -106,14 +104,6 @@ class ServiceAccountAuthenticationHandler extends ConditionalHandler.ElseNext {
             return unauthorized(response, callback, "Invalid Bearer token");
         }
 
-        if (!allowedUsers.contains(principal)) {
-            LOGGER.warn("User {} is not allowed to access {}", principal, request.getHttpURI());
-            response.getHeaders().put(HttpHeader.CONTENT_TYPE, "text/plain; charset=UTF-8");
-            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
-            response.write(true, StandardCharsets.UTF_8.encode("User is not allowed to access this endpoint"), callback);
-            return true;
-        }
-
         LOGGER.trace("Request to {} was authenticated as user {}", request.getHttpURI(), principal);
 
         return nextHandler(request, response, callback);
@@ -136,19 +126,21 @@ class ServiceAccountAuthenticationHandler extends ConditionalHandler.ElseNext {
     /**
      * Creates the validator which validates the signature and the claims of the Service Account tokens. The keys used
      * to validate the signatures are downloaded from the JWKS endpoint of the Kubernetes API server and periodically
-     * refreshed in the background.
+     * refreshed in the background. Only the tokens of the allowed users (Service Accounts) pass the validation.
      *
      * @param jwksUri               URI of the JWKS endpoint of the Kubernetes API server
      * @param jwksCaPath            Path to the PEM file with the certificates trusted when connecting to the JWKS
      *                              endpoint. When null, the default trust of the JVM is used.
      * @param issuer                Expected issuer of the tokens
      * @param audience              Expected audience of the tokens
+     * @param allowedUsers          Users (Service Account principals) whose tokens are accepted. Tokens of any other
+     *                              users are rejected.
      * @param kubernetesTokenPath   Path to the Service Account token of this Pod which is used to authenticate against
      *                              the JWKS endpoint
      *
      * @return  Token validator
      */
-    /* test */ static TokenValidator createValidator(String jwksUri, String jwksCaPath, String issuer, String audience, String kubernetesTokenPath) {
+    /* test */ static TokenValidator createValidator(String jwksUri, String jwksCaPath, String issuer, String audience, Set<String> allowedUsers, String kubernetesTokenPath) {
         return new JWTSignatureValidator(
                 "kafka-agent", // ID of this validator
                 null, // Client ID is not used, we authenticate with the token of this Pod
@@ -167,12 +159,24 @@ class ServiceAccountAuthenticationHandler extends ConditionalHandler.ElseNext {
                 false, // Only the keys marked for signing are used
                 false, // Service Account tokens do not have the token type claim
                 audience, // Expected audience of the token
-                null, // No custom claim check is needed
+                allowedUsersClaimCheck(allowedUsers), // Only the tokens of the allowed users are accepted
                 CONNECT_TIMEOUT_SECONDS,
                 READ_TIMEOUT_SECONDS,
                 false, // Metrics are not collected by the Kafka Agent
                 false, // The Kafka Agent should not prevent the broker from starting when the keys cannot be downloaded
                 false); // The Kubernetes API server does not handle the Accept header well
+    }
+
+    /**
+     * Creates the JsonPath filter query which accepts only the tokens with the sub claim matching one of the allowed
+     * users. When no users are allowed, the query does not match any token.
+     *
+     * @param allowedUsers  Users which are allowed to access the Kafka Agent endpoints
+     *
+     * @return  JsonPath filter query for the custom claim check
+     */
+    /* test */ static String allowedUsersClaimCheck(Set<String> allowedUsers) {
+        return "@.sub in [" + allowedUsers.stream().sorted().map(user -> "'" + user + "'").collect(Collectors.joining(", ")) + "]";
     }
 
     /**
@@ -182,7 +186,7 @@ class ServiceAccountAuthenticationHandler extends ConditionalHandler.ElseNext {
      *
      * @return  Set with the allowed users
      */
-    private static Set<String> parseAllowedUsers(String allowedUsers) {
+    /* test */ static Set<String> parseAllowedUsers(String allowedUsers) {
         if (allowedUsers == null) {
             return Set.of();
         }

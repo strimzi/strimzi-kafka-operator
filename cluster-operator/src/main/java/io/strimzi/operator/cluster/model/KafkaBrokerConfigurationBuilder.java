@@ -401,7 +401,7 @@ public class KafkaBrokerConfigurationBuilder {
      */
     private void configureControlPlaneListener(String clusterName) {
         printSectionHeader("Control Plane listener");
-        configureReplicationOrControlPlaneListener(CONTROL_PLANE_LISTENER_NAME.toLowerCase(Locale.ENGLISH), clusterName);
+        configureReplicationOrControlPlaneListener(CONTROL_PLANE_LISTENER_NAME.toLowerCase(Locale.ENGLISH), clusterName, controlPlaneServiceAccountPrincipals(reconciliation.namespace(), clusterName));
     }
 
     /**
@@ -410,17 +410,82 @@ public class KafkaBrokerConfigurationBuilder {
      */
     private void configureReplicationListener(String clusterName) {
         printSectionHeader("Replication listener");
-        configureReplicationOrControlPlaneListener(REPLICATION_LISTENER_NAME.toLowerCase(Locale.ENGLISH), clusterName);
+        configureReplicationOrControlPlaneListener(REPLICATION_LISTENER_NAME.toLowerCase(Locale.ENGLISH), clusterName, replicationServiceAccountPrincipals(reconciliation.namespace(), clusterName));
+    }
+
+    /**
+     * Creates the principal (username) of a Kubernetes Service Account as used in the sub claim of its tokens
+     *
+     * @param namespace         Namespace of the Service Account
+     * @param serviceAccount    Name of the Service Account
+     *
+     * @return  Principal of the Service Account
+     */
+    private static String serviceAccountPrincipal(String namespace, String serviceAccount) {
+        return "system:serviceaccount:" + namespace + ":" + serviceAccount;
+    }
+
+    /**
+     * Returns the principals of the Service Accounts which are allowed to authenticate on the control plane listener.
+     * Only the Kafka nodes and the Cluster Operator connect to it.
+     *
+     * @param namespace     Namespace of the Kafka cluster
+     * @param clusterName   Name of the Kafka cluster
+     *
+     * @return  List with the Service Account principals
+     */
+    /* test */ static List<String> controlPlaneServiceAccountPrincipals(String namespace, String clusterName) {
+        return List.of(
+                serviceAccountPrincipal(namespace, KafkaResources.kafkaComponentName(clusterName)),
+                serviceAccountPrincipal(namespace, KafkaResources.clusterOperatorServiceAccount(clusterName))
+        );
+    }
+
+    /**
+     * Returns the principals of the Service Accounts which are allowed to authenticate on the replication listener.
+     * These are all the internal components which connect to the Kafka brokers. The same principals are also
+     * configured as super-users when authorization is enabled.
+     *
+     * @param namespace     Namespace of the Kafka cluster
+     * @param clusterName   Name of the Kafka cluster
+     *
+     * @return  List with the Service Account principals
+     */
+    /* test */ static List<String> replicationServiceAccountPrincipals(String namespace, String clusterName) {
+        return List.of(
+                serviceAccountPrincipal(namespace, KafkaResources.kafkaComponentName(clusterName)),
+                serviceAccountPrincipal(namespace, KafkaResources.entityOperatorDeploymentName(clusterName)),
+                serviceAccountPrincipal(namespace, KafkaExporterResources.serviceAccountName(clusterName)),
+                serviceAccountPrincipal(namespace, CruiseControlResources.serviceAccountName(clusterName)),
+                serviceAccountPrincipal(namespace, KafkaResources.clusterOperatorServiceAccount(clusterName))
+        );
+    }
+
+    /**
+     * Creates the JsonPath filter query used to check the claims of the Service Account tokens. It checks that the
+     * token was issued for the right audience and that it belongs to one of the allowed Service Accounts. Tokens which
+     * do not match are rejected already during the authentication.
+     *
+     * @param audience              Expected audience of the token
+     * @param allowedPrincipals     Principals of the Service Accounts which are allowed to authenticate
+     *
+     * @return  JsonPath filter query for the custom claim check
+     */
+    /* test */ static String serviceAccountClaimCheck(String audience, List<String> allowedPrincipals) {
+        return "@.aud anyof ['" + audience + "'] && @.sub in [" + allowedPrincipals.stream().map(p -> "'" + p + "'").collect(Collectors.joining(", ")) + "]";
     }
 
     /**
      * Internal method which generates the configuration of the internal replication or control plane listener which use
      * the same TLS configuration and differ only on the listener name.
      *
-     * @param listenerName  Name of the listener
+     * @param listenerName          Name of the listener
+     * @param clusterName           Name of the Kafka cluster
+     * @param allowedPrincipals     Principals of the Service Accounts which are allowed to authenticate on this
+     *                              listener when Service Account authentication is used
      */
     @SuppressWarnings("checkstyle:NoFullyQualifiedClassNames") // False positive, fully qualified class name used in a string
-    private void configureReplicationOrControlPlaneListener(String listenerName, String clusterName) {
+    private void configureReplicationOrControlPlaneListener(String listenerName, String clusterName, List<String> allowedPrincipals) {
         // Configure encryption
         if (securityContext.encryption() instanceof TlsEncryptionConfiguration) {
             writer.println("listener.name." + listenerName + ".ssl.truststore.certificates=" + String.format(PLACEHOLDER_SECRET_TEMPLATE_KUBE_CONFIG_PROVIDER, reconciliation.namespace(), KafkaResources.trustBundleSecretName(clusterName), "cluster-ca.crt"));
@@ -443,7 +508,7 @@ public class KafkaBrokerConfigurationBuilder {
             writer.println("listener.name." + listenerName + ".oauthbearer.sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required " +
                     "unsecuredLoginStringClaim_sub=\"unused\" " +
                     "oauth.check.access.token.type=\"false\" " +
-                    "oauth.custom.claim.check=\"@.aud anyof ['" + saConfig.audience() + "']\" " +
+                    "oauth.custom.claim.check=\"" + serviceAccountClaimCheck(saConfig.audience(), allowedPrincipals) + "\" " +
                     "oauth.valid.issuer.uri=\"" + saConfig.issuer() + "\" " +
                     "oauth.jwks.endpoint.uri=\"" + saConfig.jwksUri() + "\" " +
                     "oauth.username.claim=\"sub\" " +
@@ -584,11 +649,7 @@ public class KafkaBrokerConfigurationBuilder {
                 superUsers.add(String.format("User:CN=%s,O=io.strimzi", "cluster-operator"));
             } else if (securityContext.authentication() instanceof ServiceAccountAuthenticationConfiguration) {
                 // Superusers for SA authentication => they represent the internal components
-                superUsers.add(String.format("User:system:serviceaccount:%s:%s", reconciliation.namespace(), KafkaResources.kafkaComponentName(clusterName)));
-                superUsers.add(String.format("User:system:serviceaccount:%s:%s", reconciliation.namespace(), KafkaResources.entityOperatorDeploymentName(clusterName)));
-                superUsers.add(String.format("User:system:serviceaccount:%s:%s", reconciliation.namespace(), KafkaExporterResources.serviceAccountName(clusterName)));
-                superUsers.add(String.format("User:system:serviceaccount:%s:%s", reconciliation.namespace(), CruiseControlResources.serviceAccountName(clusterName)));
-                superUsers.add(String.format("User:system:serviceaccount:%s:%s", reconciliation.namespace(), KafkaResources.clusterOperatorServiceAccount(clusterName)));
+                replicationServiceAccountPrincipals(reconciliation.namespace(), clusterName).forEach(principal -> superUsers.add("User:" + principal));
             }
 
             printSectionHeader("Authorization");
