@@ -219,6 +219,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
     private QuotasPlugin quotas;
     /* test */ KafkaConfiguration configuration;
     private KafkaClusterSecurityContext securityContext;
+    private KafkaClusterDeployedComponents deployedComponents;
     private final boolean inPlaceResizing;
     private final boolean inPlaceResizingWaitForDeferred;
 
@@ -298,6 +299,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
         result.clusterId = clusterId;
         result.nodePools = pools;
         result.securityContext = securityContext;
+        result.deployedComponents = KafkaClusterDeployedComponents.fromCrd(kafka);
 
         // This also validates that the Kafka version is supported
         result.kafkaVersion = versions.supportedVersion(kafkaClusterSpec.getVersion());
@@ -1866,7 +1868,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
      * @return  String with the Kafka broker configuration
      */
     private String generatePerBrokerConfiguration(NodeRef node, KafkaPool pool, Map<Integer, Map<String, String>> advertisedHostnames, Map<Integer, Map<String, String>> advertisedPorts, boolean cordoned)   {
-        return new KafkaBrokerConfigurationBuilder(reconciliation, node, securityContext)
+        return new KafkaBrokerConfigurationBuilder(reconciliation, node, securityContext, deployedComponents)
                 .withRackId(rack)
                 .withKRaft(cluster, namespace, nodes())
                 .withKRaftMetadataLogDir(VolumeUtils.kraftMetadataPath(pool.storage))
