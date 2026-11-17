@@ -149,6 +149,44 @@ public class CertificateUtils {
     }
 
     /**
+     * Builds an error message describing why the user supplied CA cert chain failed the validation.
+     *
+     * @param caRole    The role of the CA
+     * @param key       Key of the Secret entry with the certificate chain
+     * @param e         Exception thrown by the certificate chain validation
+     *
+     * @return  Error message describing why the validation failed
+     */
+    private static String buildInvalidCertChainMessage(Ca.CaRole caRole, String key, CertPathValidatorException e) {
+        String message = "User supplied " + caRole.caName() + " cert chain " + key + " is not valid.";
+
+        CertPathValidatorException.Reason reason = e.getReason();
+
+        if (reason == PKIXReason.NAME_CHAINING || reason == PKIXReason.NO_TRUST_ANCHOR) {
+            message += " Certificates must be provided in the correct order and the chain must be complete.";
+        } else if (e.getCertPath() != null
+                && e.getIndex() >= 0
+                && e.getCertPath().getCertificates().get(e.getIndex()) instanceof X509Certificate failedCert) {
+
+            String subject = failedCert.getSubjectX500Principal().getName();
+            String reasonDescription = switch (reason) {
+                case BasicReason.EXPIRED -> "Certificate " + subject + " expired on " + failedCert.getNotAfter().toInstant() + ".";
+                case BasicReason.NOT_YET_VALID -> "Certificate " + subject + " is not valid before " + failedCert.getNotBefore().toInstant() + ".";
+                case BasicReason.INVALID_SIGNATURE -> "The signature of certificate " + subject + " cannot be verified with the public key of its issuer " + failedCert.getIssuerX500Principal().getName() + ".";
+                case PKIXReason.NOT_CA_CERT, PKIXReason.INVALID_KEY_USAGE -> "Certificate " + subject + " is not allowed to sign other certificates. It must be a CA certificate with the keyCertSign key usage.";
+                case PKIXReason.PATH_TOO_LONG -> "Certificate " + subject + " exceeds the maximum path length (pathLenConstraint) allowed by a CA certificate above it in the chain.";
+                case PKIXReason.INVALID_NAME -> "Certificate " + subject + " violates the name constraints of a CA certificate above it in the chain.";
+                case BasicReason.ALGORITHM_CONSTRAINED -> "Certificate " + subject + " uses a signature algorithm (" + failedCert.getSigAlgName() + ") or key size that is not allowed by the Java security configuration.";
+                default -> "Certificate " + subject + " failed the validation.";
+            };
+
+            message += " " + reasonDescription;
+        }
+
+        return message + " Reason: " + reason + " (" + e.getMessage() + ")";
+    }
+
+    /**
      * Validates whether the provided cert chain is trusted and valid using the provided CA certificate.
      * <p>
      * Uses the <code>CertPathValidator.validate</code> method to check if a cert chain
@@ -186,23 +224,15 @@ public class CertificateUtils {
      */
     private static void validateCertPath(Reconciliation reconciliation, List<X509Certificate> certChainToValidate, X509Certificate caCert)
             throws CertPathValidatorException {
-        CertPathValidator certPathValidator;
-        CertPath eeCertPath;
-        PKIXParameters pkixParams;
         try {
-            certPathValidator = CertPathValidator.getInstance("PKIX");
+            CertPathValidator certPathValidator = CertPathValidator.getInstance("PKIX");
             CertificateFactory factory = CertificateFactory.getInstance("X.509");
             TrustAnchor trustAnchor = new TrustAnchor(caCert, null);
-            pkixParams = new PKIXParameters(Collections.singleton(trustAnchor));
+            PKIXParameters pkixParams = new PKIXParameters(Collections.singleton(trustAnchor));
             pkixParams.setRevocationEnabled(false);
-            eeCertPath = factory.generateCertPath(certChainToValidate);
-        } catch (NoSuchAlgorithmException | CertificateException | InvalidAlgorithmParameterException e) {
-            LOGGER.errorCr(reconciliation, "Error constructing objects to validate certificate chain.", e);
-            throw new RuntimeException(e);
-        }
-        try {
+            CertPath eeCertPath = factory.generateCertPath(certChainToValidate);
             certPathValidator.validate(eeCertPath, pkixParams);
-        } catch (InvalidAlgorithmParameterException e) {
+        } catch (NoSuchAlgorithmException | CertificateException | InvalidAlgorithmParameterException e) {
             LOGGER.errorCr(reconciliation, "Error validating the certificate chain.", e);
             throw new RuntimeException(e);
         }
@@ -286,66 +316,5 @@ public class CertificateUtils {
         return subjectAltNames;
     }
 
-    /**
-     * Builds an error message describing why the user supplied CA cert chain failed the validation.
-     *
-     * @param caRole    The role of the CA
-     * @param key       Key of the Secret entry with the certificate chain
-     * @param e         Exception thrown by the certificate chain validation
-     *
-     * @return  Error message describing why the validation failed
-     */
-    private static String buildInvalidCertChainMessage(Ca.CaRole caRole, String key, CertPathValidatorException e) {
-        String message = "User supplied " + caRole.caName() + " cert chain " + key + " is not valid.";
-
-        CertPathValidatorException.Reason reason = e.getReason();
-        X509Certificate failedCert = getFailedCertificate(e);
-
-        if (reason == PKIXReason.NAME_CHAINING || reason == PKIXReason.NO_TRUST_ANCHOR) {
-            message += " Certificates must be provided in the correct order and the chain must be complete.";
-        } else if (failedCert != null) {
-            message += " " + getCertificateProblem(failedCert, reason);
-        }
-
-        return message + " Reason: " + reason + " (" + e.getMessage() + ")";
-    }
-
-    /**
-     * Describes why the certificate failed the validation. The most common reasons get a dedicated description. For
-     * the other reasons, a generic description is returned and the reason itself is added to the error message.
-     *
-     * @param cert      The certificate which failed the validation
-     * @param reason    Reason of the validation failure
-     *
-     * @return  Description of the certificate problem
-     */
-    private static String getCertificateProblem(X509Certificate cert, CertPathValidatorException.Reason reason) {
-        String subject = cert.getSubjectX500Principal().getName();
-
-        return switch (reason) {
-            case BasicReason.EXPIRED -> "Certificate " + subject + " expired on " + cert.getNotAfter().toInstant() + ".";
-            case BasicReason.NOT_YET_VALID -> "Certificate " + subject + " is not valid before " + cert.getNotBefore().toInstant() + ".";
-            case BasicReason.INVALID_SIGNATURE -> "Certificate " + subject + " is not signed by the next certificate in the chain.";
-            case PKIXReason.NOT_CA_CERT, PKIXReason.INVALID_KEY_USAGE -> "Certificate " + subject + " is not allowed to sign other certificates. It must be a CA certificate with the keyCertSign key usage.";
-            default -> "Certificate " + subject + " failed the validation.";
-        };
-    }
-
-    /**
-     * Returns the certificate which failed the validation, if it is known.
-     *
-     * @param e     Exception thrown by the certificate chain validation
-     *
-     * @return  The certificate which failed the validation or null if it is not known
-     */
-    private static X509Certificate getFailedCertificate(CertPathValidatorException e) {
-        if (e.getCertPath() != null
-                && e.getIndex() >= 0
-                && e.getCertPath().getCertificates().get(e.getIndex()) instanceof X509Certificate cert) {
-            return cert;
-        }
-
-        return null;
-    }
 
 }
